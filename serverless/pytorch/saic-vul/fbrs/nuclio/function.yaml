@@ -3,6 +3,7 @@ metadata:
   namespace: cvat
   annotations:
     name: f-BRS
+    version: 2
     type: interactor
     spec:
     framework: pytorch
@@ -37,9 +38,7 @@ spec:
         - kind: ENV
           value: filename=resnet101_dh256_sbd.pth
         - kind: RUN
-          value: curl -c ./cookie -s -L "https://drive.google.com/uc?export=download&id=${fileid}"
-        - kind: RUN
-          value: curl -Lb ./cookie "https://drive.google.com/uc?export=download&confirm=`awk '/download/ {print $NF}' ./cookie`&id=${fileid}" -o ${filename}
+          value: curl -L "https://drive.google.com/uc?export=download&confirm=t&id=${fileid}" -o ${filename}
         - kind: RUN
           value: apt update && apt install -y libgl1-mesa-glx
         - kind: RUN

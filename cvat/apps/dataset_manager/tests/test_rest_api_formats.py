@@ -1,4 +1,5 @@
 # Copyright (C) 2021-2022 Intel Corporation
+# Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -22,7 +23,7 @@ from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
 import cvat.apps.dataset_manager as dm
-from cvat.apps.dataset_manager.bindings import CvatTaskDataExtractor, TaskData
+from cvat.apps.dataset_manager.bindings import CvatTaskOrJobDataExtractor, TaskData
 from cvat.apps.dataset_manager.task import TaskAnnotation
 from cvat.apps.engine.models import Task
 
@@ -185,7 +186,7 @@ class _DbTestBase(APITestCase):
         task_ann = TaskAnnotation(task_id)
         task_ann.init_from_db()
         task_data = TaskData(task_ann.ir_data, Task.objects.get(pk=task_id))
-        extractor = CvatTaskDataExtractor(task_data, include_images=include_images)
+        extractor = CvatTaskOrJobDataExtractor(task_data, include_images=include_images)
         return Dataset.from_extractors(extractor)
 
     def _get_request_with_data(self, path, data, user):
@@ -196,6 +197,11 @@ class _DbTestBase(APITestCase):
     def _put_request_with_data(self, path, data, user):
         with ForceLogin(user, self.client):
             response = self.client.put(path, data)
+        return response
+
+    def _post_request_with_data(self, path, data, user):
+        with ForceLogin(user, self.client):
+            response = self.client.post(path, data)
         return response
 
     def _delete_request(self, path, user):
@@ -348,6 +354,9 @@ class _DbTestBase(APITestCase):
     def _generate_url_dump_project_dataset(self, project_id, format_name):
         return f"/api/projects/{project_id}/dataset?format={format_name}"
 
+    def _generate_url_upload_project_dataset(self, project_id, format_name):
+        return f"/api/projects/{project_id}/dataset?format={format_name}"
+
     def _remove_annotations(self, url, user):
         response = self._delete_request(url, user)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
@@ -386,20 +395,20 @@ class TaskDumpUploadTest(_DbTestBase):
                     images = self._generate_task_images(3)
                     # create task with annotations
                     if dump_format_name in [
-                        "Market-1501 1.0", "Cityscapes 1.0", \
-                        "ICDAR Localization 1.0", "ICDAR Recognition 1.0", \
-                        "ICDAR Segmentation 1.0", "COCO Keypoints 1.0",
+                        "Cityscapes 1.0", "COCO Keypoints 1.0",
+                        "ICDAR Localization 1.0", "ICDAR Recognition 1.0",
+                        "ICDAR Segmentation 1.0", "Market-1501 1.0", "MOT 1.1"
                     ]:
                         task = self._create_task(tasks[dump_format_name], images)
                     else:
                         task = self._create_task(tasks["main"], images)
                     task_id = task["id"]
                     if dump_format_name in [
-                        "MOT 1.1", "MOTS PNG 1.0", \
-                        "PASCAL VOC 1.1", "Segmentation mask 1.1", \
-                        "TFRecord 1.0", "YOLO 1.1", "ImageNet 1.0", \
-                        "WiderFace 1.0", "VGGFace2 1.0", "Cityscapes 1.0", \
-                        "Datumaro 1.0"\
+                        "Cityscapes 1.0", "Datumaro 1.0",
+                        "ImageNet 1.0", "MOTS PNG 1.0",
+                        "PASCAL VOC 1.1", "Segmentation mask 1.1",
+                        "TFRecord 1.0", "VGGFace2 1.0",
+                        "WiderFace 1.0", "YOLO 1.1"
                     ]:
                         self._create_annotations(task, dump_format_name, "default")
                     else:
@@ -435,7 +444,6 @@ class TaskDumpUploadTest(_DbTestBase):
                 if upload_format_name == "CVAT 1.1":
                     file_zip_name = osp.join(test_dir, f'{test_name}_admin_CVAT for images 1.1.zip')
                 else:
-
                     file_zip_name = osp.join(test_dir, f'{test_name}_admin_{upload_format_name}.zip')
                 if not upload_format.ENABLED or not osp.exists(file_zip_name):
                     continue
@@ -449,9 +457,9 @@ class TaskDumpUploadTest(_DbTestBase):
                             # remove all annotations from task (create new task without annotation)
                             images = self._generate_task_images(3)
                             if upload_format_name in [
-                                "Market-1501 1.0", "Cityscapes 1.0", \
-                                "ICDAR Localization 1.0", "ICDAR Recognition 1.0", \
-                                "ICDAR Segmentation 1.0", "COCO Keypoints 1.0",
+                                "Cityscapes 1.0", "COCO Keypoints 1.0",
+                                "ICDAR Localization 1.0", "ICDAR Recognition 1.0",
+                                "ICDAR Segmentation 1.0", "Market-1501 1.0", "MOT 1.1"
                             ]:
                                 task = self._create_task(tasks[upload_format_name], images)
                             else:
@@ -492,9 +500,9 @@ class TaskDumpUploadTest(_DbTestBase):
                     # create task with annotations
                     video = self._generate_task_videos(1)
                     if dump_format_name in [
-                        "Market-1501 1.0", "Cityscapes 1.0", \
-                        "ICDAR Localization 1.0", "ICDAR Recognition 1.0", \
-                        "ICDAR Segmentation 1.0", "COCO Keypoints 1.0",
+                        "Cityscapes 1.0", "COCO Keypoints 1.0",
+                        "ICDAR Localization 1.0", "ICDAR Recognition 1.0",
+                        "ICDAR Segmentation 1.0", "Market-1501 1.0", "MOT 1.1"
                     ]:
                         task = self._create_task(tasks[dump_format_name], video)
                     else:
@@ -502,10 +510,10 @@ class TaskDumpUploadTest(_DbTestBase):
                     task_id = task["id"]
 
                     if dump_format_name in [
-                            "MOT 1.1", "MOTS PNG 1.0", \
-                            "PASCAL VOC 1.1", "Segmentation mask 1.1", \
-                            "TFRecord 1.0", "YOLO 1.1", "ImageNet 1.0", \
-                            "WiderFace 1.0", "VGGFace2 1.0", "Cityscapes 1.0" \
+                            "Cityscapes 1.0", "ImageNet 1.0",
+                            "MOTS PNG 1.0", "PASCAL VOC 1.1",
+                            "Segmentation mask 1.1", "TFRecord 1.0",
+                            "VGGFace2 1.0", "WiderFace 1.0", "YOLO 1.1"
                     ]:
                         self._create_annotations(task, dump_format_name, "default")
                     else:
@@ -553,9 +561,9 @@ class TaskDumpUploadTest(_DbTestBase):
                             # remove all annotations from task (create new task without annotation)
                             video = self._generate_task_videos(1)
                             if upload_format_name in [
-                                "Market-1501 1.0", "Cityscapes 1.0", \
-                                "ICDAR Localization 1.0", "ICDAR Recognition 1.0", \
-                                "ICDAR Segmentation 1.0", "COCO Keypoints 1.0",
+                                "Cityscapes 1.0", "COCO Keypoints 1.0",
+                                "ICDAR Localization 1.0", "ICDAR Recognition 1.0",
+                                "ICDAR Segmentation 1.0", "Market-1501 1.0", "MOT 1.1"
                             ]:
                                 task = self._create_task(tasks[upload_format_name], video)
                             else:
@@ -777,39 +785,41 @@ class TaskDumpUploadTest(_DbTestBase):
             with open(file_zip_name, 'rb') as binary_file:
                 self._upload_file(url, binary_file, self.admin)
 
-    def test_api_v2_dump_annotations_with_objects_type_is_shape_from_several_jobs(self):
+    def test_api_v2_dump_annotations_from_several_jobs(self):
         test_name = self._testMethodName
-        dump_format_name = "CVAT for images 1.1"
+        dump_formats = ["CVAT for images 1.1", "CVAT for video 1.1"]
         test_cases = ['all', 'first']
 
-        images = self._generate_task_images(10)
-        task = self._create_task(tasks["change overlap and segment size"], images)
-        task_id = task["id"]
+        for dump_format_name in dump_formats:
 
-        for test_case in test_cases:
-            with TestDir() as test_dir:
-                jobs = self._get_jobs(task_id)
-                if test_case == "all":
-                    for job in jobs:
-                        self._create_annotations_in_job(task, job["id"], dump_format_name, "default")
-                else:
-                    self._create_annotations_in_job(task, jobs[0]["id"], dump_format_name, "default")
+            images = self._generate_task_images(10)
+            task = self._create_task(tasks["change overlap and segment size"], images)
+            task_id = task["id"]
 
-                url = self._generate_url_dump_tasks_annotations(task_id)
+            for test_case in test_cases:
+                with TestDir() as test_dir:
+                    jobs = self._get_jobs(task_id)
+                    if test_case == "all":
+                        for job in jobs:
+                            self._create_annotations_in_job(task, job["id"], dump_format_name, "default")
+                    else:
+                        self._create_annotations_in_job(task, jobs[0]["id"], dump_format_name, "default")
 
-                file_zip_name = osp.join(test_dir, f'{test_name}.zip')
-                data = {
-                    "format": dump_format_name,
-                    "action": "download",
-                }
-                self._download_file(url, data, self.admin, file_zip_name)
-                self.assertEqual(osp.exists(file_zip_name), True)
+                    url = self._generate_url_dump_tasks_annotations(task_id)
 
-                # remove annotations
-                self._remove_annotations(url, self.admin)
-                url = self._generate_url_upload_tasks_annotations(task_id, "CVAT 1.1")
-                with open(file_zip_name, 'rb') as binary_file:
-                    self._upload_file(url, binary_file, self.admin)
+                    file_zip_name = osp.join(test_dir, f'{test_name}.zip')
+                    data = {
+                        "format": dump_format_name,
+                        "action": "download",
+                    }
+                    self._download_file(url, data, self.admin, file_zip_name)
+                    self.assertEqual(osp.exists(file_zip_name), True)
+
+                    # remove annotations
+                    self._remove_annotations(url, self.admin)
+                    url = self._generate_url_upload_tasks_annotations(task_id, "CVAT 1.1")
+                    with open(file_zip_name, 'rb') as binary_file:
+                        self._upload_file(url, binary_file, self.admin)
 
     def test_api_v2_export_dataset(self):
         test_name = self._testMethodName
@@ -834,9 +844,9 @@ class TaskDumpUploadTest(_DbTestBase):
                     images = self._generate_task_images(3)
                     # create task with annotations
                     if dump_format_name in [
-                        "Market-1501 1.0", "Cityscapes 1.0", \
-                        "ICDAR Localization 1.0", "ICDAR Recognition 1.0", \
-                        "ICDAR Segmentation 1.0","COCO Keypoints 1.0",
+                        "Cityscapes 1.0", "COCO Keypoints 1.0",
+                        "ICDAR Localization 1.0", "ICDAR Recognition 1.0",
+                        "ICDAR Segmentation 1.0", "Market-1501 1.0", "MOT 1.1"
                     ]:
                         task = self._create_task(tasks[dump_format_name], images)
                     else:
@@ -924,21 +934,20 @@ class TaskDumpUploadTest(_DbTestBase):
         dump_formats = dm.views.get_export_formats()
         with TestDir() as test_dir:
             for dump_format in dump_formats:
-                if not dump_format.ENABLED:
+                if not dump_format.ENABLED or dump_format.DIMENSION == dm.bindings.DimensionType.DIM_3D:
                     continue
                 dump_format_name = dump_format.DISPLAY_NAME
+
                 with self.subTest(format=dump_format_name):
                     if dump_format_name in [
                         "MOTS PNG 1.0",  # issue #2925 and changed points values
-                        'Kitti Raw Format 1.0',
-                        'Sly Point Cloud Format 1.0',
-                        'Datumaro 3D 1.0',
                         "Cityscapes 1.0" # expanding annotations due to background mask
                     ]:
                         self.skipTest("Format is fail")
+
                     images = self._generate_task_images(3)
                     if dump_format_name in [
-                        "Market-1501 1.0", "Cityscapes 1.0", \
+                        "Market-1501 1.0",
                         "ICDAR Localization 1.0", "ICDAR Recognition 1.0", \
                         "ICDAR Segmentation 1.0", "COCO Keypoints 1.0",
                     ]:
@@ -946,11 +955,11 @@ class TaskDumpUploadTest(_DbTestBase):
                     else:
                         task = self._create_task(tasks["main"], images)
                     task_id = task["id"]
+
                     if dump_format_name in [
-                        "MOT 1.1", "MOTS PNG 1.0",
-                        "PASCAL VOC 1.1", "Segmentation mask 1.1",
+                        "MOT 1.1", "PASCAL VOC 1.1", "Segmentation mask 1.1",
                         "TFRecord 1.0", "YOLO 1.1", "ImageNet 1.0",
-                        "WiderFace 1.0", "VGGFace2 1.0", "Cityscapes 1.0",
+                        "WiderFace 1.0", "VGGFace2 1.0",
                         "Datumaro 1.0", "Open Images V6 1.0", "KITTI 1.0"
                     ]:
                         self._create_annotations(task, dump_format_name, "default")
@@ -980,6 +989,7 @@ class TaskDumpUploadTest(_DbTestBase):
 
                     with open(file_zip_name, 'rb') as binary_file:
                         self._upload_file(url, binary_file, self.admin)
+
                     task_ann = TaskAnnotation(task_id)
                     task_ann.init_from_db()
                     task_ann_data = task_ann.data
@@ -1168,7 +1178,44 @@ class TaskDumpUploadTest(_DbTestBase):
 
                     # equals annotations
                     data_from_task_after_upload = self._get_data_from_task(task_id, include_images)
-                    compare_datasets(self, data_from_task_before_upload, data_from_task_after_upload)\
+                    compare_datasets(self, data_from_task_before_upload, data_from_task_after_upload)
+
+    def test_api_v2_check_mot_with_shapes_only(self):
+        test_name = self._testMethodName
+        format_name = "MOT 1.1"
+
+        for include_images in (False, True):
+            with self.subTest():
+                # create task with annotations
+                images = self._generate_task_images(3)
+                task = self._create_task(tasks[format_name], images)
+                self._create_annotations(task, f'{format_name} shapes only', "default")
+
+                task_id = task["id"]
+                data_from_task_before_upload = self._get_data_from_task(task_id, include_images)
+
+                # dump annotations
+                url = self._generate_url_dump_tasks_annotations(task_id)
+                data = {
+                    "format": format_name,
+                    "action": "download",
+                }
+                with TestDir() as test_dir:
+                    file_zip_name = osp.join(test_dir, f'{test_name}_{format_name}.zip')
+                    self._download_file(url, data, self.admin, file_zip_name)
+                    self._check_downloaded_file(file_zip_name)
+
+                    # remove annotations
+                    self._remove_annotations(url, self.admin)
+
+                    # upload annotations
+                    url = self._generate_url_upload_tasks_annotations(task_id, format_name)
+                    with open(file_zip_name, 'rb') as binary_file:
+                        self._upload_file(url, binary_file, self.admin)
+
+                    # equals annotations
+                    data_from_task_after_upload = self._get_data_from_task(task_id, include_images)
+                    compare_datasets(self, data_from_task_before_upload, data_from_task_after_upload)
 
     def test_api_v2_check_attribute_import_in_tracks(self):
         test_name = self._testMethodName
@@ -1208,10 +1255,11 @@ class TaskDumpUploadTest(_DbTestBase):
                     data_from_task_after_upload = self._get_data_from_task(task_id, include_images)
                     compare_datasets(self, data_from_task_before_upload, data_from_task_after_upload)
 
-class ProjectDump(_DbTestBase):
-    def test_api_v2_export_dataset(self):
+class ProjectDumpUpload(_DbTestBase):
+    def test_api_v2_export_import_dataset(self):
         test_name = self._testMethodName
         dump_formats = dm.views.get_export_formats()
+        upload_formats = dm.views.get_import_formats()
 
         expected = {
             self.admin: {'name': 'admin', 'code': status.HTTP_200_OK, 'create code': status.HTTP_201_CREATED,
@@ -1227,41 +1275,83 @@ class ProjectDump(_DbTestBase):
                 if not dump_format.ENABLED or dump_format.DIMENSION == dm.bindings.DimensionType.DIM_3D:
                     continue
                 dump_format_name = dump_format.DISPLAY_NAME
-                with self.subTest(format=dump_format_name):
-                    project = self._create_project(projects['main'])
-                    pid = project['id']
-                    images = self._generate_task_images(3)
-                    tasks['task in project #1']['project_id'] = pid
-                    self._create_task(tasks['task in project #1'], images)
-                    images = self._generate_task_images(3, 3)
-                    tasks['task in project #2']['project_id'] = pid
-                    self._create_task(tasks['task in project #2'], images)
-                    url = self._generate_url_dump_project_dataset(project['id'], dump_format_name)
+                if dump_format_name in [
+                    'Cityscapes 1.0', 'LFW 1.0', 'Market-1501 1.0',
+                    'MOT 1.1', 'TFRecord 1.0'
+                ]:
+                    # TO-DO: fix bug for this formats
+                    continue
+                project = copy.deepcopy(projects['main'])
+                if dump_format_name in tasks:
+                    project['labels'] = tasks[dump_format_name]['labels']
+                project = self._create_project(project)
+                tasks['task in project #1']['project_id'] = project['id']
+                task = self._create_task(tasks['task in project #1'], self._generate_task_images(3))
 
-                    for user, edata in list(expected.items()):
-                        user_name = edata['name']
-                        file_zip_name = osp.join(test_dir, f'{test_name}_{user_name}_{dump_format_name}.zip')
-                        data = {
-                            "format": dump_format_name,
-                        }
-                        response = self._get_request_with_data(url, data, user)
-                        self.assertEqual(response.status_code, edata["accept code"])
-                        response = self._get_request_with_data(url, data, user)
-                        self.assertEqual(response.status_code, edata["create code"])
-                        data = {
-                            "format": dump_format_name,
-                            "action": "download",
-                        }
-                        response = self._get_request_with_data(url, data, user)
-                        self.assertEqual(response.status_code, edata["code"])
-                        if response.status_code == status.HTTP_200_OK:
-                            content = BytesIO(b"".join(response.streaming_content))
-                            with open(file_zip_name, "wb") as f:
-                                f.write(content.getvalue())
-                        self.assertEqual(response.status_code, edata['code'])
-                        self.assertEqual(osp.exists(file_zip_name), edata['file_exists'])
+                url = self._generate_url_dump_project_dataset(project['id'], dump_format_name)
 
-    def test_api_v2_export_annotatios(self):
+                if dump_format_name in [
+                    "Cityscapes 1.0", "Datumaro 1.0", "ImageNet 1.0",
+                    "MOT 1.1", "MOTS PNG 1.0", "PASCAL VOC 1.1",
+                    "Segmentation mask 1.1", "TFRecord 1.0", "VGGFace2 1.0",
+                    "WiderFace 1.0", "YOLO 1.1"
+                ]:
+                    self._create_annotations(task, dump_format_name, "default")
+                else:
+                    self._create_annotations(task, dump_format_name, "random")
+
+                for user, edata in list(expected.items()):
+                    user_name = edata['name']
+                    file_zip_name = osp.join(test_dir, f'{test_name}_{user_name}_{dump_format_name}.zip')
+                    data = {
+                        "format": dump_format_name,
+                    }
+
+                    response = self._get_request_with_data(url, data, user)
+                    self.assertEqual(response.status_code, edata["accept code"])
+
+                    response = self._get_request_with_data(url, data, user)
+                    self.assertEqual(response.status_code, edata["create code"])
+
+                    data = {
+                        "format": dump_format_name,
+                        "action": "download",
+                    }
+                    response = self._get_request_with_data(url, data, user)
+                    self.assertEqual(response.status_code, edata["code"])
+
+                    if response.status_code == status.HTTP_200_OK:
+                        content = BytesIO(b"".join(response.streaming_content))
+                        with open(file_zip_name, "wb") as f:
+                            f.write(content.getvalue())
+
+                    self.assertEqual(response.status_code, edata['code'])
+                    self.assertEqual(osp.exists(file_zip_name), edata['file_exists'])
+
+            for upload_format in upload_formats:
+                if not upload_format.ENABLED or upload_format.DIMENSION == dm.bindings.DimensionType.DIM_3D:
+                    continue
+                upload_format_name = upload_format.DISPLAY_NAME
+                if upload_format_name in [
+                    'Cityscapes 1.0', 'LFW 1.0', 'Market-1501 1.0',
+                    'MOT 1.1', 'TFRecord 1.0'
+                ]:
+                    # TO-DO: fix bug for this formats
+                    continue
+                for user, edata in list(expected.items()):
+                    project = copy.deepcopy(projects['main'])
+                    if upload_format_name in tasks:
+                        project['labels'] = tasks[upload_format_name]['labels']
+                    project = self._create_project(project)
+                    file_zip_name = osp.join(test_dir, f"{test_name}_{edata['name']}_{upload_format_name}.zip")
+                    url = self._generate_url_upload_project_dataset(project['id'], upload_format_name)
+
+                    if osp.exists(file_zip_name):
+                        with open(file_zip_name, 'rb') as binary_file:
+                            response = self._post_request_with_data(url, {"dataset_file": binary_file}, user)
+                            self.assertEqual(response.status_code, edata['accept code'])
+
+    def test_api_v2_export_annotations(self):
         test_name = self._testMethodName
         dump_formats = dm.views.get_export_formats()
 

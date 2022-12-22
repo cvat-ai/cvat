@@ -47,6 +47,11 @@ def make_cmdline_parser() -> argparse.ArgumentParser:
         description="Perform common operations related to CVAT tasks.\n\n"
     )
     parser.add_argument("--version", action="version", version=VERSION)
+    parser.add_argument(
+        "--insecure",
+        action="store_true",
+        help="Allows to disable SSL certificate check",
+    )
 
     task_subparser = parser.add_subparsers(dest="action")
 
@@ -117,7 +122,7 @@ def make_cmdline_parser() -> argparse.ArgumentParser:
     task_create_parser.add_argument(
         "--completion_verification_period",
         dest="status_check_period",
-        default=20,
+        default=2,
         type=float,
         help="""number of seconds to wait until checking
                 if data compression finished (necessary before uploading annotations)""",
@@ -256,7 +261,7 @@ def make_cmdline_parser() -> argparse.ArgumentParser:
     dump_parser.add_argument(
         "--completion_verification_period",
         dest="status_check_period",
-        default=3,
+        default=2,
         type=float,
         help="number of seconds to wait until checking if dataset building finished",
     )
@@ -293,7 +298,7 @@ def make_cmdline_parser() -> argparse.ArgumentParser:
     export_task_parser.add_argument(
         "--completion_verification_period",
         dest="status_check_period",
-        default=3,
+        default=2,
         type=float,
         help="time interval between checks if archive building has been finished, in seconds",
     )
@@ -306,9 +311,9 @@ def make_cmdline_parser() -> argparse.ArgumentParser:
     import_task_parser.add_argument(
         "--completion_verification_period",
         dest="status_check_period",
-        default=3,
+        default=2,
         type=float,
-        help="time interval between checks if archive proessing was finished, in seconds",
+        help="time interval between checks if archive processing was finished, in seconds",
     )
 
     return parser

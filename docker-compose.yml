@@ -7,7 +7,7 @@ version: '3.3'
 services:
   cvat_db:
     container_name: cvat_db
-    image: postgres:10-alpine
+    image: postgres:15-alpine
     restart: always
     environment:
       POSTGRES_USER: root
@@ -27,7 +27,7 @@ services:
 
   cvat_server:
     container_name: cvat_server
-    image: cvat/server:${CVAT_VERSION:-v2.2.0}
+    image: cvat/server:${CVAT_VERSION:-v2.3.0}
     restart: always
     depends_on:
       - cvat_redis
@@ -39,8 +39,14 @@ services:
       CVAT_REDIS_HOST: 'cvat_redis'
       CVAT_POSTGRES_HOST: 'cvat_db'
       ADAPTIVE_AUTO_ANNOTATION: 'false'
+      IAM_OPA_BUNDLE: '1'
       no_proxy: elasticsearch,kibana,logstash,nuclio,opa,${no_proxy}
       NUMPROCS: 1
+      USE_ALLAUTH_SOCIAL_ACCOUNTS: ""
+      SOCIAL_AUTH_GOOGLE_CLIENT_ID: ""
+      SOCIAL_AUTH_GOOGLE_CLIENT_SECRET: ""
+      SOCIAL_AUTH_GITHUB_CLIENT_ID: ""
+      SOCIAL_AUTH_GITHUB_CLIENT_SECRET: ""
     command: -c supervisord/server.conf
     labels:
       - traefik.enable=true
@@ -53,11 +59,13 @@ services:
       - cvat_keys:/home/django/keys
       - cvat_logs:/home/django/logs
     networks:
-      - cvat
+      cvat:
+        aliases:
+          - cvat-server
 
   cvat_utils:
     container_name: cvat_utils
-    image: cvat/server:${CVAT_VERSION:-v2.2.0}
+    image: cvat/server:${CVAT_VERSION:-v2.3.0}
     restart: always
     depends_on:
       - cvat_redis
@@ -77,7 +85,7 @@ services:
 
   cvat_worker_default:
     container_name: cvat_worker_default
-    image: cvat/server:${CVAT_VERSION:-v2.2.0}
+    image: cvat/server:${CVAT_VERSION:-v2.3.0}
     restart: always
     depends_on:
       - cvat_redis
@@ -98,7 +106,7 @@ services:
 
   cvat_worker_low:
     container_name: cvat_worker_low
-    image: cvat/server:${CVAT_VERSION:-v2.2.0}
+    image: cvat/server:${CVAT_VERSION:-v2.3.0}
     restart: always
     depends_on:
       - cvat_redis
@@ -117,9 +125,30 @@ services:
     networks:
       - cvat
 
+  cvat_worker_webhooks:
+    container_name: cvat_worker_webhooks
+    image: cvat/server:${CVAT_VERSION:-v2.3.0}
+    restart: always
+    depends_on:
+      - cvat_redis
+      - cvat_db
+      - cvat_opa
+    environment:
+      CVAT_REDIS_HOST: 'cvat_redis'
+      CVAT_POSTGRES_HOST: 'cvat_db'
+      no_proxy: elasticsearch,kibana,logstash,nuclio,opa,${no_proxy}
+      NUMPROCS: 1
+    command: -c supervisord/worker.webhooks.conf
+    volumes:
+      - cvat_data:/home/django/data
+      - cvat_keys:/home/django/keys
+      - cvat_logs:/home/django/logs
+    networks:
+      - cvat
+
   cvat_ui:
     container_name: cvat_ui
-    image: cvat/ui:${CVAT_VERSION:-v2.2.0}
+    image: cvat/ui:${CVAT_VERSION:-v2.3.0}
     restart: always
     depends_on:
       - cvat_server
@@ -132,7 +161,7 @@ services:
       - cvat
 
   traefik:
-    image: traefik:v2.4
+    image: traefik:v2.9
     container_name: traefik
     restart: always
     command:
@@ -164,11 +193,15 @@ services:
       cvat:
         aliases:
           - opa
-    volumes:
-      - ./cvat/apps/iam/rules:/rules
-    ports:
-      - '8181:8181'
-    command: run --server --addr :8181 --set=decision_logs.console=true /rules
+    command:
+      - run
+      - --server
+      - --set=decision_logs.console=true
+      - --set=services.cvat.url=http://cvat-server:8080
+      - --set=bundles.cvat.service=cvat
+      - --set=bundles.cvat.resource=/api/auth/rules
+      - --set=bundles.cvat.polling.min_delay_seconds=5
+      - --set=bundles.cvat.polling.max_delay_seconds=15
 
 volumes:
   cvat_db:

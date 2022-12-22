@@ -184,6 +184,83 @@
       }
     ]
   },
+  "KITTI 1.0": {
+    "name": "kitti task",
+    "overlap": 0,
+    "segment_size": 100,
+    "labels": [
+      {
+        "name": "car",
+        "color": "#2080c0",
+        "attributes": [
+          {
+            "name": "is_crowd",
+            "mutable": false,
+            "input_type": "checkbox",
+            "default_value": "false",
+            "values": ["false", "true"]
+          }
+        ]
+      },
+      {
+        "name": "person",
+        "color": "#c06060",
+        "attributes": []
+      },
+      {
+        "name": "background",
+        "color": "#000000",
+        "attributes": []
+      }
+    ]
+  },
+  "MOT 1.1": {
+    "name": "MOT task",
+    "overlap": 0,
+    "segment_size": 100,
+    "labels": [
+      {
+        "name": "car",
+        "color": "#2080c0",
+        "attributes": [
+          {
+            "name": "ignored",
+            "mutable": true,
+            "input_type": "checkbox",
+            "default_value": "false",
+            "values": ["false", "true"]
+          },
+          {
+            "name": "visibility",
+            "mutable": false,
+            "input_type": "number",
+            "default_value": "1",
+            "values": ["0", "1", "1"]
+          }
+        ]
+      },
+      {
+        "name": "person",
+        "color": "#c06060",
+        "attributes": [
+          {
+            "name": "ignored",
+            "mutable": true,
+            "input_type": "checkbox",
+            "default_value": "false",
+            "values": ["false", "true"]
+          },
+          {
+            "name": "visibility",
+            "mutable": false,
+            "input_type": "number",
+            "default_value": "1",
+            "values": ["0", "1", "1"]
+          }
+        ]
+      }
+    ]
+  },
   "wrong_checkbox_value": {
     "name": "wrong checkbox value task",
     "overlap": 0,
@@ -336,7 +413,14 @@
         "name": "skeleton",
         "color": "#2080c0",
         "type": "skeleton",
-        "attributes": [],
+        "attributes": [
+          {
+            "name": "attr",
+            "mutable": false,
+            "input_type": "select",
+            "values": ["0", "1", "2"]
+          }
+        ],
         "sublabels": [
           {
             "name": "1",
@@ -353,14 +437,7 @@
           {
             "name": "3",
             "color": "#479ffe",
-            "attributes": [
-              {
-                "name": "attr",
-                "mutable": false,
-                "input_type": "select",
-                "values": ["0", "1", "2"]
-              }
-            ],
+            "attributes": [],
             "type": "points"
           }
         ],

@@ -9,7 +9,6 @@ from rest_framework import routers
 
 from django.views.generic import RedirectView
 from django.conf import settings
-from cvat.apps.restrictions.views import RestrictionsViewSet
 
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
@@ -21,7 +20,6 @@ router.register('users', views.UserViewSet)
 router.register('server', views.ServerViewSet, basename='server')
 router.register('issues', views.IssueViewSet)
 router.register('comments', views.CommentViewSet)
-router.register('restrictions', RestrictionsViewSet, basename='restrictions')
 router.register('cloudstorages', views.CloudStorageViewSet)
 
 urlpatterns = [
@@ -30,9 +28,17 @@ urlpatterns = [
          query_string=True)),
 
     # documentation for API
-    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
-    path('api/swagger/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger'),
-    path('api/docs/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
+    path('api/schema/', SpectacularAPIView.as_view(
+        permission_classes=[] # This endpoint is available for everyone
+    ), name='schema'),
+    path('api/swagger/', SpectacularSwaggerView.as_view(
+        url_name='schema',
+        permission_classes=[] # This endpoint is available for everyone
+    ), name='swagger'),
+    path('api/docs/', SpectacularRedocView.as_view(
+        url_name='schema',
+        permission_classes=[] # This endpoint is available for everyone
+    ), name='redoc'),
 
     # entry point for API
     path('api/', include('cvat.apps.iam.urls')),

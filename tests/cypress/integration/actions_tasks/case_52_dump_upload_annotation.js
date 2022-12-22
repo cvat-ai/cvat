@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -36,25 +37,20 @@ context('Dump/Upload annotation.', { browser: '!firefox' }, () => {
 
     const exportFormat = 'CVAT for images';
     let annotationArchiveName = '';
-    let annotationArchiveNameCustomeName = '';
+    let annotationArchiveNameCustomName = '';
 
     function uploadToTask(toTaskName) {
         cy.contains('.cvat-item-task-name', toTaskName)
             .parents('.cvat-tasks-list-item')
             .find('.cvat-menu-icon')
             .trigger('mouseover');
-        cy.contains('Upload annotations').trigger('mouseover');
-        cy.contains('.cvat-menu-load-submenu-item', exportFormat.split(' ')[0])
-            .should('be.visible')
-            .within(() => {
-                cy.get('.cvat-menu-load-submenu-item-button').click();
-            });
-        // when a user clicks, menu is closing and it triggers rerender
-        // we use mouseout here to emulate user behaviour
-        cy.get('.cvat-actions-menu').trigger('mouseout').should('be.hidden');
-        cy.contains('.cvat-menu-load-submenu-item', exportFormat.split(' ')[0]).within(() => {
-            cy.get('input[type=file]').attachFile(annotationArchiveNameCustomeName);
-        });
+        cy.contains('Upload annotations').click();
+        cy.get('.cvat-modal-import-dataset').find('.cvat-modal-import-select').click();
+        cy.contains('.cvat-modal-import-dataset-option-item', exportFormat.split(' ')[0]).click();
+        cy.get('.cvat-modal-import-select').should('contain.text', exportFormat.split(' ')[0]);
+        cy.get('input[type="file"]').attachFile(annotationArchiveNameCustomName, { subjectType: 'drag-n-drop' });
+        cy.get(`[title="${annotationArchiveNameCustomName}"]`).should('be.visible');
+        cy.contains('button', 'OK').click();
     }
 
     function confirmUpdate(modalWindowClassName) {
@@ -77,13 +73,14 @@ context('Dump/Upload annotation.', { browser: '!firefox' }, () => {
                 as: 'exportAnnotationsRenameArchive',
                 type: 'annotations',
                 format: exportFormat,
-                archiveCustomeName: 'task_export_annotation_custome_name',
+                archiveCustomName: 'task_export_annotation_custome_name',
             };
-            cy.exportTask(exportAnnotationRenameArchive);
+            cy.exportJob(exportAnnotationRenameArchive);
             cy.getDownloadFileName().then((file) => {
-                annotationArchiveNameCustomeName = file;
-                cy.verifyDownload(annotationArchiveNameCustomeName);
+                annotationArchiveNameCustomName = file;
+                cy.verifyDownload(annotationArchiveNameCustomName);
             });
+            cy.verifyNotification();
         });
 
         it('Save job. Dump annotation. Remove annotation. Save job.', () => {
@@ -92,11 +89,12 @@ context('Dump/Upload annotation.', { browser: '!firefox' }, () => {
                 type: 'annotations',
                 format: exportFormat,
             };
-            cy.exportTask(exportAnnotation);
+            cy.exportJob(exportAnnotation);
             cy.getDownloadFileName().then((file) => {
                 annotationArchiveName = file;
                 cy.verifyDownload(annotationArchiveName);
             });
+            cy.verifyNotification();
             cy.removeAnnotations();
             cy.saveJob('PUT');
             cy.get('#cvat_canvas_shape_1').should('not.exist');
@@ -105,20 +103,19 @@ context('Dump/Upload annotation.', { browser: '!firefox' }, () => {
 
         it('Upload annotation to job.', () => {
             cy.interactMenu('Upload annotations');
-            cy.contains('.cvat-menu-load-submenu-item', exportFormat.split(' ')[0])
-                .should('be.visible')
-                .within(() => {
-                    cy.get('.cvat-menu-load-submenu-item-button').click();
-                });
-            // when a user clicks, menu is closing and it triggers rerender
-            // we use mouseout here to emulate user behaviour
-            cy.get('.cvat-annotation-menu').trigger('mouseout').should('be.hidden');
-            cy.contains('.cvat-menu-load-submenu-item', exportFormat.split(' ')[0]).within(() => {
-                cy.get('input[type=file]').attachFile(annotationArchiveName);
-            });
+            cy.get('.cvat-modal-import-dataset');
+            cy.get('.cvat-modal-import-select').click();
+            cy.contains('.cvat-modal-import-dataset-option-item', exportFormat.split(' ')[0]).click();
+            cy.get('.cvat-modal-import-select').should('contain.text', exportFormat.split(' ')[0]);
+            cy.get('input[type="file"]').attachFile(annotationArchiveName, { subjectType: 'drag-n-drop' });
+            cy.get(`[title="${annotationArchiveName}"]`).should('be.visible');
+            cy.contains('button', 'OK').click();
             confirmUpdate('.cvat-modal-content-load-job-annotation');
             cy.intercept('GET', '/api/jobs/**/annotations**').as('uploadAnnotationsGet');
+            cy.get('.cvat-notification-notice-import-annotation-start').should('be.visible');
+            cy.closeNotification('.cvat-notification-notice-import-annotation-start');
             cy.wait('@uploadAnnotationsGet').its('response.statusCode').should('equal', 200);
+            cy.verifyNotification();
             cy.get('#cvat_canvas_shape_1').should('exist');
             cy.get('#cvat-objects-sidebar-state-item-1').should('exist');
             cy.removeAnnotations();
@@ -130,8 +127,9 @@ context('Dump/Upload annotation.', { browser: '!firefox' }, () => {
             cy.goToTaskList();
             uploadToTask(taskName);
             confirmUpdate('.cvat-modal-content-load-task-annotation');
-            cy.contains('Annotations have been loaded').should('be.visible');
-            cy.get('[data-icon="close"]').click();
+            cy.get('.cvat-notification-notice-import-annotation-start').should('be.visible');
+            cy.closeNotification('.cvat-notification-notice-import-annotation-start');
+            cy.verifyNotification();
             cy.openTaskJob(taskName, 0, false);
             cy.get('#cvat_canvas_shape_1').should('exist');
             cy.get('#cvat-objects-sidebar-state-item-1').should('exist');
@@ -154,6 +152,8 @@ context('Dump/Upload annotation.', { browser: '!firefox' }, () => {
             cy.createAnnotationTask(taskNameSecond, labelNameSecond, attrName, textDefaultValue, archiveName);
             uploadToTask(taskNameSecond);
             confirmUpdate('.cvat-modal-content-load-task-annotation');
+            cy.get('.cvat-notification-notice-import-annotation-start').should('be.visible');
+            cy.closeNotification('.cvat-notification-notice-import-annotation-start');
             cy.get('.cvat-notification-notice-load-annotation-failed')
                 .should('exist')
                 .find('[aria-label="close"]')

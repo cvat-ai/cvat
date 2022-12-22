@@ -1,5 +1,6 @@
 #
 # Copyright (C) 2021-2022 Intel Corporation
+# Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 #
@@ -15,6 +16,39 @@ services:
         socks_proxy:
         CLAM_AV:
         INSTALL_SOURCES:
+        CVAT_DEBUG_ENABLED:
+    command: '-c supervisord/server.conf'
+    environment:
+      CVAT_DEBUG_ENABLED: '${CVAT_DEBUG_ENABLED:-no}'
+      CVAT_DEBUG_PORT: '9090'
+      # If 'yes', wait for a debugger connection on startup
+      CVAT_DEBUG_WAIT: '${CVAT_DEBUG_WAIT_CLIENT:-no}'
+    ports:
+      - '9090:9090'
+
+  cvat_worker_default:
+    command: -c supervisord/worker.default.conf
+    environment:
+      # For debugging, make sure to set 1 process
+      # Due to the supervisord specifics, the extra processes will fail and
+      # after few attempts supervisord will give up restarting, leaving only 1 process
+      # NUMPROCS: 1
+      CVAT_DEBUG_ENABLED: '${CVAT_DEBUG_ENABLED:-no}'
+      CVAT_DEBUG_PORT: '9092'
+    ports:
+      - '9092:9092'
+
+  cvat_worker_low:
+    command: -c supervisord/worker.low.conf
+    environment:
+      # For debugging, make sure to set 1 process
+      # Due to the supervisord specifics, the extra processes will fail and
+      # after few attempts supervisord will give up restarting, leaving only 1 process
+      # NUMPROCS: 1
+      CVAT_DEBUG_ENABLED: '${CVAT_DEBUG_ENABLED:-no}'
+      CVAT_DEBUG_PORT: '9091'
+    ports:
+      - '9091:9091'
 
   cvat_ui:
     build:
@@ -25,3 +59,7 @@ services:
         no_proxy:
         socks_proxy:
       dockerfile: Dockerfile.ui
+
+  cvat_opa:
+    ports:
+      - '8181:8181'

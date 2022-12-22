@@ -2,20 +2,80 @@
 
 ---
 
-title: 'Simple command line to prepare dataset manifest file'
+title: 'Dataset Manifest'
 linkTitle: 'Dataset manifest'
 weight: 30
-description: This section on [GitHub](https://github.com/cvat-ai/cvat/tree/develop/utils/dataset_manifest)
+description:
 
 ---
 
 <!--lint disable heading-style-->
 
-### Steps before use
+## Overview
 
-When used separately from Computer Vision Annotation Tool(CVAT), the required dependencies must be installed
+When we create a new task in CVAT, we need to specify where to get the input data from.
+CVAT allows to use different data sources, including local file uploads, a mounted
+file share on the server, cloud storages and remote URLs. In some cases CVAT
+needs to have extra information about the input data. This information can be provided
+in Dataset manifest files. They are mainly used when working with cloud storages to
+reduce the amount of network traffic used and speed up the task creation process.
+However, they can also be used in other cases, which will be explained below.
 
-#### Ubuntu:20.04
+A dataset manifest file is a text file in the JSONL format. These files can be created
+automatically with [the special command-line tool](https://github.com/opencv/cvat/tree/develop/utils/dataset_manifest),
+or manually, following [the manifest file format specification](#file-format).
+
+## How and when to use manifest files
+
+Manifest files can be used in the following cases:
+- A video file or a set of images is used as the data source and
+  the caching mode is enabled. [Read more](/docs/manual/advanced/data_on_fly/)
+- The data is located in a cloud storage. [Read more](/docs/manual/basics/cloud-storages/)
+
+## How to generate manifest files
+
+CVAT provides a dedicated Python tool to generate manifest files.
+The source code can be found [here](https://github.com/opencv/cvat/tree/develop/utils/dataset_manifest).
+
+Using the tool is the recommended way to create manifest files for you data. The data must be
+available locally to the tool to generate manifest.
+
+### Usage
+
+```bash
+usage: create.py [-h] [--force] [--output-dir .] source
+
+positional arguments:
+  source                Source paths
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --force               Use this flag to prepare the manifest file for video data
+                        if by default the video does not meet the requirements
+                        and a manifest file is not prepared
+  --output-dir OUTPUT_DIR
+                        Directory where the manifest file will be saved
+```
+
+### Use the script from a Docker image
+
+This is the recommended way to use the tool.
+
+The script can be used from the `cvat/server` image:
+
+```bash
+docker run -it --rm -u "$(id -u)":"$(id -g)" \
+  -v "${PWD}":"/local" \
+  --entrypoint python3 \
+  cvat/server \
+  utils/dataset_manifest/create.py --output-dir /local /local/<path/to/sources>
+```
+
+Make sure to adapt the command to your file locations.
+
+### Use the script directly
+
+#### Ubuntu 20.04
 
 Install dependencies:
 
@@ -38,73 +98,102 @@ Create an environment and install the necessary python modules:
 python3 -m venv .env
 . .env/bin/activate
 pip install -U pip
-pip install -r requirements.txt
+pip install -r utils/dataset_manifest/requirements.txt
 ```
 
-### Using
+> Please note that if used with video this way, the results may be different from what
+would the server decode. It is related to the ffmpeg library version. For this reason,
+using the Docker-based version of the tool is recommended.
 
-```bash
-usage: python create.py [-h] [--force] [--output-dir .] source
-
-positional arguments:
-  source                Source paths
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --force               Use this flag to prepare the manifest file for video data if by default the video does not meet the requirements
-                        and a manifest file is not prepared
-  --output-dir OUTPUT_DIR
-                        Directory where the manifest file will be saved
-```
-
-### Alternative way to use with cvat/server
-
-```bash
-docker run -it --entrypoint python3 -v /path/to/host/data/:/path/inside/container/:rw cvat/server
-utils/dataset_manifest/create.py --output-dir /path/to/manifest/directory/ /path/to/data/
-```
-
-### Examples of using
+### Examples
 
 Create a dataset manifest in the current directory with video which contains enough keyframes:
 
 ```bash
-python create.py ~/Documents/video.mp4
+python utils/dataset_manifest/create.py ~/Documents/video.mp4
 ```
 
 Create a dataset manifest with video which does not contain enough keyframes:
 
 ```bash
-python create.py --force --output-dir ~/Documents ~/Documents/video.mp4
+python utils/dataset_manifest/create.py --force --output-dir ~/Documents ~/Documents/video.mp4
 ```
 
 Create a dataset manifest with images:
 
 ```bash
-python create.py --output-dir ~/Documents ~/Documents/images/
+python utils/dataset_manifest/create.py --output-dir ~/Documents ~/Documents/images/
 ```
 
 Create a dataset manifest with pattern (may be used `*`, `?`, `[]`):
 
 ```bash
-python create.py --output-dir ~/Documents "/home/${USER}/Documents/**/image*.jpeg"
+python utils/dataset_manifest/create.py --output-dir ~/Documents "/home/${USER}/Documents/**/image*.jpeg"
 ```
 
-Create a dataset manifest with `cvat/server`:
+Create a dataset manifest using Docker image:
 
 ```bash
-docker run -it --entrypoint python3 -v ~/Documents/data/:${HOME}/manifest/:rw cvat/server
-utils/dataset_manifest/create.py --output-dir ~/manifest/ ~/manifest/images/
+docker run -it --rm -u "$(id -u)":"$(id -g)" \
+  -v ~/Documents/data/:${HOME}/manifest/:rw \
+  --entrypoint '/usr/bin/bash' \
+  cvat/server \
+  utils/dataset_manifest/create.py --output-dir ~/manifest/ ~/manifest/images/
 ```
 
-### Examples of generated `manifest.jsonl` files
+### File format
 
-A manifest file contains some intuitive information and some specific like:
+The dataset manifest files are text files in JSONL format. These files have 2 sub-formats:
+_for video_ and _for images and 3d data_.
+
+> Each top-level entry enclosed in curly braces must use 1 string, no empty strings is allowed.
+> The formatting in the descriptions below is only for demonstration.
+
+#### Dataset manifest for video
+
+The file describes a single video.
 
 `pts` - time at which the frame should be shown to the user
-`checksum` - `md5` hash sum for the specific image/frame
+`checksum` - `md5` hash sum for the specific image/frame decoded
 
-#### For a video
+```json
+{ "version": <string, version id> }
+{ "type": "video" }
+{ "properties": {
+  "name": <string, filename>,
+  "resolution": [<int, width>, <int, height>],
+  "length": <int, frame count>
+}}
+{
+  "number": <int, frame number>,
+  "pts": <int, frame pts>,
+  "checksum": <string, md5 frame hash>
+} (repeatable)
+```
+
+#### Dataset manifest for images and other data types
+
+The file describes an ordered set of images and 3d point clouds.
+
+`name` - file basename and leading directories from the dataset root
+`checksum` - `md5` hash sum for the specific image/frame decoded
+
+```json
+{ "version": <string, version id> }
+{ "type": "images" }
+{
+  "name": <string, image filename>,
+  "extension": <string, . + file extension>,
+  "width": <int, width>,
+  "height": <int, height>,
+  "meta": <dict, optional>,
+  "checksum": <string, md5 hash, optional>
+} (repeatable)
+```
+
+### Example files
+
+#### Manifest for a video
 
 ```json
 {"version":"1.0"}
@@ -118,7 +207,7 @@ A manifest file contains some intuitive information and some specific like:
 {"number":675,"pts":2430000,"checksum":"0e72faf67e5218c70b506445ac91cdd7"}
 ```
 
-#### For a dataset with images
+#### Manifest for a dataset with images
 
 ```json
 {"version":"1.0"}

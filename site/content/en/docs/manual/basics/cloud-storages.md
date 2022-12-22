@@ -1,7 +1,7 @@
 ---
 title: 'Cloud storages page'
 linkTitle: 'Cloud storages page'
-weight: 20
+weight: 22
 description: 'Overview of the cloud storages page.'
 ---
 

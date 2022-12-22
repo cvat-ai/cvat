@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -34,12 +35,11 @@ interface Props {
     canvasInstance: Canvas3d | Canvas;
     jobInstance: any;
     frameData: any;
-    curZLayer: number;
     annotations: any[];
     contextMenuVisibility: boolean;
     activeLabelID: number;
-    activatedStateID: number | null;
     activeObjectType: ObjectType;
+    activatedStateID: number | null;
     onSetupCanvas: () => void;
     onGroupObjects: (enabled: boolean) => void;
     onResetCanvas(): void;
@@ -52,9 +52,8 @@ interface Props {
     onDragCanvas: (enabled: boolean) => void;
     onShapeDrawn: () => void;
     workspace: Workspace;
-    automaticBordering: boolean;
-    showObjectsTextAlways: boolean;
     frame: number;
+    resetZoom: boolean;
 }
 
 interface ViewSize {
@@ -184,6 +183,8 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
         frame,
         jobInstance,
         activeLabelID,
+        activatedStateID,
+        resetZoom,
         activeObjectType,
         onShapeDrawn,
         onCreateAnnotations,
@@ -258,6 +259,7 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
         canvasInstanceDOM.perspective.addEventListener('canvas.canceled', onCanvasCancel);
         canvasInstanceDOM.perspective.addEventListener('canvas.dragstart', onCanvasDragStart);
         canvasInstanceDOM.perspective.addEventListener('canvas.dragstop', onCanvasDragDone);
+        canvasInstance.configure({ resetZoom });
     };
 
     const keyControlsKeyDown = (key: KeyboardEvent): void => {
@@ -335,6 +337,14 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
             cancelAnimationFrame(animateId.current);
         };
     }, []);
+
+    useEffect(() => {
+        canvasInstance.activate(activatedStateID);
+    }, [activatedStateID]);
+
+    useEffect(() => {
+        canvasInstance.configure({ resetZoom });
+    }, [resetZoom]);
 
     const updateShapesView = (): void => {
         (canvasInstance as Canvas3d).configureShapes({
@@ -518,16 +528,18 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
                 handle={<span className='cvat-resizable-handle-horizontal' />}
                 onResize={(e: SyntheticEvent) => setViewSize({ type: ViewType.PERSPECTIVE, e })}
             >
-                {frameFetching ? (
-                    <svg id='cvat_canvas_loading_animation'>
-                        <circle id='cvat_canvas_loading_circle' r='30' cx='50%' cy='50%' />
-                    </svg>
-                ) : null}
-                <div className='cvat-canvas3d-perspective' id='cvat-canvas3d-perspective'>
-                    <div className='cvat-canvas-container cvat-canvas-container-overflow' ref={perspectiveView} />
-                    <ArrowGroup />
-                    <ControlGroup />
-                </div>
+                <>
+                    {frameFetching ? (
+                        <svg id='cvat_canvas_loading_animation'>
+                            <circle id='cvat_canvas_loading_circle' r='30' cx='50%' cy='50%' />
+                        </svg>
+                    ) : null}
+                    <div className='cvat-canvas3d-perspective' id='cvat-canvas3d-perspective'>
+                        <div className='cvat-canvas-container cvat-canvas-container-overflow' ref={perspectiveView} />
+                        <ArrowGroup />
+                        <ControlGroup />
+                    </div>
+                </>
             </ResizableBox>
             <div
                 className='cvat-canvas3d-orthographic-views'

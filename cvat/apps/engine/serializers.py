@@ -8,6 +8,7 @@ import re
 import shutil
 
 from tempfile import NamedTemporaryFile
+from typing import OrderedDict
 
 from rest_framework import serializers, exceptions
 from django.contrib.auth.models import User, Group
@@ -134,6 +135,10 @@ class LabelSerializer(SublabelSerializer):
             except models.Label.DoesNotExist:
                 raise exceptions.NotFound(detail='Not found label with id #{} to change'.format(validated_data['id']))
             db_label.name = validated_data.get('name', db_label.name)
+            updated_type = validated_data.get('type', db_label.type)
+            if 'skeleton' not in [db_label.type, updated_type]:
+                # do not permit to change types from/to "skeleton"
+                db_label.type = updated_type
             logger.info("{}({}) label was updated".format(db_label.name, db_label.id))
         else:
             db_label = models.Label.objects.create(name=validated_data.get('name'), type=validated_data.get('type'),
@@ -449,7 +454,7 @@ class StorageSerializer(serializers.ModelSerializer):
         fields = ('id', 'location', 'cloud_storage_id')
 
 class TaskReadSerializer(serializers.ModelSerializer):
-    labels = LabelSerializer(many=True, source='label_set', partial=True, required=False)
+    labels = LabelSerializer(many=True, source='get_labels')
     segments = SegmentSerializer(many=True, source='segment_set', read_only=True)
     data_chunk_size = serializers.ReadOnlyField(source='data.chunk_size', required=False)
     data_compressed_chunk_type = serializers.ReadOnlyField(source='data.compressed_chunk_type', required=False)
@@ -478,11 +483,6 @@ class TaskReadSerializer(serializers.ModelSerializer):
             'overlap': { 'allow_null': True },
         }
 
-    def to_representation(self, instance):
-        response = super().to_representation(instance)
-        if instance.project_id:
-            response["labels"] = LabelSerializer(many=True).to_representation(instance.project.label_set)
-        return response
 
 class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     labels = LabelSerializer(many=True, source='label_set', partial=True, required=False)
@@ -816,12 +816,13 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
                 sublabels = label.pop('sublabels', [])
                 svg = label.pop('svg', '')
                 db_label = LabelSerializer.update_instance(label, instance, parent_label)
-                update_labels(sublabels, parent_label=db_label)
+                if not label.get('deleted'):
+                    update_labels(sublabels, parent_label=db_label)
 
-                if label.get('id') is None and db_label.type == str(models.LabelType.SKELETON):
-                    for db_sublabel in list(db_label.sublabels.all()):
-                        svg = svg.replace(f'data-label-name="{db_sublabel.name}"', f'data-label-id="{db_sublabel.id}"')
-                    models.Skeleton.objects.create(root=db_label, svg=svg)
+                    if label.get('id') is None and db_label.type == str(models.LabelType.SKELETON):
+                        for db_sublabel in list(db_label.sublabels.all()):
+                            svg = svg.replace(f'data-label-name="{db_sublabel.name}"', f'data-label-id="{db_sublabel.id}"')
+                        models.Skeleton.objects.create(root=db_label, svg=svg)
 
         update_labels(labels)
 
@@ -918,14 +919,37 @@ class LabeledImageSerializer(AnnotationSerializer):
     attributes = AttributeValSerializer(many=True,
         source="labeledimageattributeval_set", default=[])
 
+class OptimizedFloatListField(serializers.ListField):
+    '''Default ListField is extremely slow when try to process long lists of points'''
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs, child=serializers.FloatField())
+
+    def to_internal_value(self, data):
+        return self.run_child_validation(data)
+
+    def to_representation(self, data):
+        return data
+
+    def run_child_validation(self, data):
+        errors = OrderedDict()
+        for idx, item in enumerate(data):
+            if type(item) not in [int, float]:
+                errors[idx] = exceptions.ValidationError('Value must be a float or an integer')
+
+        if not errors:
+            return data
+
+        raise exceptions.ValidationError(errors)
+
+
 class ShapeSerializer(serializers.Serializer):
     type = serializers.ChoiceField(choices=models.ShapeType.choices())
     occluded = serializers.BooleanField(default=False)
     outside = serializers.BooleanField(default=False, required=False)
     z_order = serializers.IntegerField(default=0)
     rotation = serializers.FloatField(default=0, min_value=0, max_value=360)
-    points = serializers.ListField(
-        child=serializers.FloatField(),
+    points = OptimizedFloatListField(
         allow_empty=True, required=False
     )
 
@@ -960,6 +984,7 @@ class LabeledDataSerializer(serializers.Serializer):
 class FileInfoSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=1024)
     type = serializers.ChoiceField(choices=["REG", "DIR"])
+    mime_type = serializers.CharField(max_length=255)
 
 class LogEventSerializer(serializers.Serializer):
     job_id = serializers.IntegerField(required=False)

@@ -1,18 +1,20 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
+import { ObjectState } from '.';
 import {
-    Canvas3dModel, Mode, DrawData, ActiveElement, FocusData, GroupData,
+    Canvas3dModel, Mode, DrawData, ActiveElement, GroupData, Configuration,
 } from './canvas3dModel';
 
 export interface Canvas3dController {
     readonly drawData: DrawData;
     readonly activeElement: ActiveElement;
-    readonly selected: any;
-    readonly focused: FocusData;
     readonly groupData: GroupData;
+    readonly configuration: Configuration;
     readonly imageIsDeleted: boolean;
+    readonly objects: ObjectState[];
     mode: Mode;
     group(groupData: GroupData): void;
 }
@@ -40,20 +42,20 @@ export class Canvas3dControllerImpl implements Canvas3dController {
         return this.model.data.activeElement;
     }
 
-    public get selected(): any {
-        return this.model.data.selected;
-    }
-
-    public get focused(): any {
-        return this.model.data.focusData;
-    }
-
     public get imageIsDeleted(): any {
         return this.model.imageIsDeleted;
     }
 
     public get groupData(): GroupData {
         return this.model.groupData;
+    }
+
+    public get configuration(): Configuration {
+        return this.model.configuration;
+    }
+
+    public get objects(): ObjectState[] {
+        return this.model.objects;
     }
 
     public group(groupData: GroupData): void {

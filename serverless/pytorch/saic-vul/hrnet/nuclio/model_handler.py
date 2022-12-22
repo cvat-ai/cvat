@@ -1,4 +1,5 @@
 # Copyright (C) 2021-2022 Intel Corporation
+# Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -12,8 +13,6 @@ from isegm.inference.predictors import get_predictor
 from isegm.inference.clicker import Clicker, Click
 
 def convert_mask_to_polygon(mask):
-    mask = np.array(mask, dtype=np.uint8)
-    cv2.normalize(mask, mask, 0, 255, cv2.NORM_MINMAX)
     contours = None
     if int(cv2.__version__.split('.')[0]) > 3:
         contours = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_TC89_KCOS)[0]
@@ -63,6 +62,8 @@ class ModelHandler:
         if self.device == 'cuda':
             torch.cuda.empty_cache()
         object_mask = object_prob > threshold
+        object_mask = np.array(object_mask, dtype=np.uint8)
+        cv2.normalize(object_mask, object_mask, 0, 255, cv2.NORM_MINMAX)
         polygon = convert_mask_to_polygon(object_mask)
 
-        return polygon
+        return object_mask, polygon

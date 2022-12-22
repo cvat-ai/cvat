@@ -47,8 +47,14 @@ RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:${PATH}"
 RUN python3 -m pip install --no-cache-dir -U pip==22.0.2 setuptools==60.6.0 wheel==0.37.1
 COPY cvat/requirements/ /tmp/requirements/
-RUN DATUMARO_HEADLESS=1 python3 -m pip install --no-cache-dir -r /tmp/requirements/${DJANGO_CONFIGURATION}.txt
+COPY utils/dataset_manifest/ /tmp/dataset_manifest/
 
+# The server implementation depends on the dataset_manifest utility
+# so we need to install its dependencies too
+# https://github.com/opencv/cvat/issues/5096
+RUN DATUMARO_HEADLESS=1 python3 -m pip install --no-cache-dir \
+    -r /tmp/requirements/${DJANGO_CONFIGURATION}.txt \
+    -r /tmp/dataset_manifest/requirements.txt
 
 FROM ubuntu:20.04
 
@@ -142,6 +148,13 @@ ENV PATH="/opt/venv/bin:${PATH}"
 ENV NUMPROCS=1
 COPY --from=build-image /opt/ffmpeg /usr
 
+# These variables are required for supervisord substitutions in files
+# This library allows remote python debugging with VS Code
+ARG CVAT_DEBUG_ENABLED
+RUN if [ "${CVAT_DEBUG_ENABLED}" = 'yes' ]; then \
+        python3 -m pip install --no-cache-dir debugpy; \
+    fi
+
 # Install and initialize CVAT, copy all necessary files
 COPY --chown=${USER} components /tmp/components
 COPY --chown=${USER} supervisord/ ${HOME}/supervisord
@@ -154,7 +167,7 @@ COPY --chown=${USER} cvat/ ${HOME}/cvat
 USER ${USER}
 WORKDIR ${HOME}
 
-RUN mkdir data share media keys logs /tmp/supervisord
+RUN mkdir -p data share keys logs /tmp/supervisord static
 
 EXPOSE 8080
 ENTRYPOINT ["/usr/bin/supervisord"]

@@ -1,4 +1,5 @@
 # Copyright (C) 2021-2022 Intel Corporation
+# Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -7,6 +8,7 @@ from rest_framework.permissions import SAFE_METHODS
 from django.utils.crypto import get_random_string
 
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
+from cvat.apps.engine.mixins import PartialUpdateModelMixin, DestroyModelMixin, CreateModelMixin
 
 from cvat.apps.iam.permissions import (
     InvitationPermission, MembershipPermission, OrganizationPermission)
@@ -25,14 +27,9 @@ from .serializers import (
             '200': OrganizationReadSerializer,
         }),
     list=extend_schema(
-        summary='Method returns a paginated list of organizatins according to query parameters',
+        summary='Method returns a paginated list of organizations according to query parameters',
         responses={
             '200': OrganizationReadSerializer(many=True),
-        }),
-    update=extend_schema(
-        summary='Method updates an organization by id',
-        responses={
-            '200': OrganizationWriteSerializer,
         }),
     partial_update=extend_schema(
         summary='Methods does a partial update of chosen fields in an organization',
@@ -50,7 +47,13 @@ from .serializers import (
             '204': OpenApiResponse(description='The organization has been deleted'),
         })
 )
-class OrganizationViewSet(viewsets.ModelViewSet):
+class OrganizationViewSet(viewsets.GenericViewSet,
+                   mixins.RetrieveModelMixin,
+                   mixins.ListModelMixin,
+                   mixins.CreateModelMixin,
+                   mixins.DestroyModelMixin,
+                   PartialUpdateModelMixin,
+    ):
     queryset = Organization.objects.all()
     search_fields = ('name', 'owner')
     filter_fields = list(search_fields) + ['id', 'slug']
@@ -94,11 +97,6 @@ class OrganizationViewSet(viewsets.ModelViewSet):
         responses={
             '200': MembershipReadSerializer(many=True),
         }),
-    update=extend_schema(
-        summary='Method updates a membership by id',
-        responses={
-            '200': MembershipWriteSerializer,
-        }),
     partial_update=extend_schema(
         summary='Methods does a partial update of chosen fields in a membership',
         responses={
@@ -110,8 +108,8 @@ class OrganizationViewSet(viewsets.ModelViewSet):
             '204': OpenApiResponse(description='The membership has been deleted'),
         })
 )
-class MembershipViewSet(mixins.RetrieveModelMixin, mixins.DestroyModelMixin,
-    mixins.ListModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet):
+class MembershipViewSet(mixins.RetrieveModelMixin, DestroyModelMixin,
+    mixins.ListModelMixin, PartialUpdateModelMixin, viewsets.GenericViewSet):
     queryset = Membership.objects.all()
     ordering = '-id'
     http_method_names = ['get', 'patch', 'delete', 'head', 'options']
@@ -165,7 +163,13 @@ class MembershipViewSet(mixins.RetrieveModelMixin, mixins.DestroyModelMixin,
             '204': OpenApiResponse(description='The invitation has been deleted'),
         })
 )
-class InvitationViewSet(viewsets.ModelViewSet):
+class InvitationViewSet(viewsets.GenericViewSet,
+                   mixins.RetrieveModelMixin,
+                   mixins.ListModelMixin,
+                   mixins.UpdateModelMixin,
+                   CreateModelMixin,
+                   DestroyModelMixin,
+    ):
     queryset = Invitation.objects.all()
     http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
     iam_organization_field = 'membership__organization'
@@ -187,13 +191,13 @@ class InvitationViewSet(viewsets.ModelViewSet):
         permission = InvitationPermission.create_scope_list(self.request)
         return permission.filter(queryset)
 
-    def perform_create(self, serializer):
+    def perform_create(self, serializer, **kwargs):
         extra_kwargs = {
             'owner': self.request.user,
             'key': get_random_string(length=64),
             'organization': self.request.iam_context['organization']
         }
-        serializer.save(**extra_kwargs)
+        super().perform_create(serializer, **extra_kwargs)
 
     def perform_update(self, serializer):
         if 'accepted' in self.request.query_params:

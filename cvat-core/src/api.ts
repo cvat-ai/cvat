@@ -1,4 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,33 +8,36 @@
  * @module API
  */
 
+import PluginRegistry from './plugins';
+import loggerStorage from './logger-storage';
+import { Log } from './log';
+import ObjectState from './object-state';
+import Statistics from './statistics';
+import Comment from './comment';
+import Issue from './issue';
+import { Job, Task } from './session';
+import Project from './project';
+import implementProject from './project-implementation';
+import { Attribute, Label } from './labels';
+import MLModel from './ml-model';
+import { FrameData } from './frames';
+import CloudStorage from './cloud-storage';
+import Organization from './organization';
+import Webhook from './webhook';
+
+import * as enums from './enums';
+
+import {
+    Exception, ArgumentError, DataError, ScriptingError, PluginError, ServerError,
+} from './exceptions';
+
+import User from './user';
+import pjson from '../package.json';
+import config from './config';
+
+import implementAPI from './api-implementation';
+
 function build() {
-    const PluginRegistry = require('./plugins').default;
-    const loggerStorage = require('./logger-storage');
-    const Log = require('./log');
-    const ObjectState = require('./object-state').default;
-    const Statistics = require('./statistics');
-    const Comment = require('./comment');
-    const Issue = require('./issue');
-    const { Job, Task } = require('./session');
-    const { Project } = require('./project');
-    const implementProject = require('./project-implementation');
-    const { Attribute, Label } = require('./labels');
-    const MLModel = require('./ml-model');
-    const { FrameData } = require('./frames');
-    const { CloudStorage } = require('./cloud-storage');
-    const Organization = require('./organization');
-
-    const enums = require('./enums');
-
-    const {
-        Exception, ArgumentError, DataError, ScriptingError, PluginError, ServerError,
-    } = require('./exceptions');
-
-    const User = require('./user');
-    const pjson = require('../package.json');
-    const config = require('./config');
-
     /**
      * API entrypoint
      * @namespace cvat
@@ -125,22 +129,20 @@ function build() {
              * @param {string} firstName A first name for the new account
              * @param {string} lastName A last name for the new account
              * @param {string} email A email address for the new account
-             * @param {string} password1 A password for the new account
-             * @param {string} password2 The confirmation password for the new account
+             * @param {string} password A password for the new account
              * @param {Object} userConfirmations An user confirmations of terms of use if needed
              * @returns {Object} response data
              * @throws {module:API.cvat.exceptions.PluginError}
              * @throws {module:API.cvat.exceptions.ServerError}
              */
-            async register(username, firstName, lastName, email, password1, password2, userConfirmations) {
+            async register(username, firstName, lastName, email, password, userConfirmations) {
                 const result = await PluginRegistry.apiWrapper(
                     cvat.server.register,
                     username,
                     firstName,
                     lastName,
                     email,
-                    password1,
-                    password2,
+                    password,
                     userConfirmations,
                 );
                 return result;
@@ -169,6 +171,10 @@ function build() {
              */
             async logout() {
                 const result = await PluginRegistry.apiWrapper(cvat.server.logout);
+                return result;
+            },
+            async advancedAuthentication() {
+                const result = await PluginRegistry.apiWrapper(cvat.server.advancedAuthentication);
                 return result;
             },
             /**
@@ -240,6 +246,26 @@ function build() {
                 return result;
             },
             /**
+             * Method allows to health check the server
+             * @method healthCheck
+             * @async
+             * @memberof module:API.cvat.server
+             * @param {number} requestTimeout
+             * @returns {Object | undefined} response data if exist
+             * @throws {module:API.cvat.exceptions.PluginError}
+             * @throws {module:API.cvat.exceptions.ServerError}
+             */
+            async healthCheck(maxRetries = 1, checkPeriod = 3000, requestTimeout = 5000, progressCallback = undefined) {
+                const result = await PluginRegistry.apiWrapper(
+                    cvat.server.healthCheck,
+                    maxRetries,
+                    checkPeriod,
+                    requestTimeout,
+                    progressCallback,
+                );
+                return result;
+            },
+            /**
              * Method allows to do requests via cvat-core with authorization headers
              * @method request
              * @async
@@ -266,6 +292,18 @@ function build() {
              */
             async installedApps() {
                 const result = await PluginRegistry.apiWrapper(cvat.server.installedApps);
+                return result;
+            },
+            async loginWithSocialAccount(
+                provider: string,
+                code: string,
+                authParams?: string,
+                process?: string,
+                scope?: string,
+            ) {
+                const result = await PluginRegistry.apiWrapper(
+                    cvat.server.loginWithSocialAccount, provider, code, authParams, process, scope,
+                );
                 return result;
             },
         },
@@ -701,6 +739,9 @@ function build() {
              * @memberof module:API.cvat.config
              * @property {number} uploadChunkSize max size of one data request in mb
              * @memberof module:API.cvat.config
+             * @property {number} removeUnderlyingMaskPixels defines if after adding/changing
+             * a mask it should remove overlapped pixels from other objects
+             * @memberof module:API.cvat.config
              */
             get backendAPI() {
                 return config.backendAPI;
@@ -725,6 +766,12 @@ function build() {
             },
             set uploadChunkSize(value) {
                 config.uploadChunkSize = value;
+            },
+            get removeUnderlyingMaskPixels(): boolean {
+                return config.removeUnderlyingMaskPixels;
+            },
+            set removeUnderlyingMaskPixels(value: boolean) {
+                config.removeUnderlyingMaskPixels = value;
             },
         },
         /**
@@ -844,6 +891,26 @@ function build() {
             },
         },
         /**
+         * This namespace could be used to get webhooks list from the server
+         * @namespace webhooks
+         * @memberof module:API.cvat
+         */
+        webhooks: {
+            /**
+            * Method returns a list of organizations
+            * @method get
+            * @async
+            * @memberof module:API.cvat.webhooks
+            * @returns {module:API.cvat.classes.Webhook[]}
+            * @throws {module:API.cvat.exceptions.PluginError}
+            * @throws {module:API.cvat.exceptions.ServerError}
+            */
+            async get(filter: any) {
+                const result = await PluginRegistry.apiWrapper(cvat.webhooks.get, filter);
+                return result;
+            },
+        },
+        /**
          * Namespace is used for access to classes
          * @namespace classes
          * @memberof module:API.cvat
@@ -864,6 +931,7 @@ function build() {
             FrameData,
             CloudStorage,
             Organization,
+            Webhook,
         },
     };
 
@@ -879,9 +947,8 @@ function build() {
     cvat.cloudStorages = Object.freeze(cvat.cloudStorages);
     cvat.organizations = Object.freeze(cvat.organizations);
 
-    const implementAPI = require('./api-implementation');
     const implemented = Object.freeze(implementAPI(cvat));
     return implemented;
 }
 
-module.exports = build();
+export default build();

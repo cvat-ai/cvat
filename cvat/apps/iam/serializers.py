@@ -3,9 +3,12 @@
 #
 # SPDX-License-Identifier: MIT
 
-from dj_rest_auth.registration.serializers import RegisterSerializer
-from dj_rest_auth.serializers import PasswordResetSerializer
+from dj_rest_auth.registration.serializers import RegisterSerializer, SocialLoginSerializer
+from dj_rest_auth.serializers import PasswordResetSerializer, LoginSerializer
+from rest_framework.exceptions import ValidationError
 from rest_framework import serializers
+from allauth.account import app_settings
+from allauth.account.utils import filter_users_by_email
 
 from django.conf import settings
 
@@ -38,3 +41,60 @@ class PasswordResetSerializerEx(PasswordResetSerializer):
         return {
             'domain_override': domain
         }
+
+class LoginSerializerEx(LoginSerializer):
+    def get_auth_user_using_allauth(self, username, email, password):
+
+        def is_email_authentication():
+            return settings.ACCOUNT_AUTHENTICATION_METHOD == app_settings.AuthenticationMethod.EMAIL
+
+        def is_username_authentication():
+            return settings.ACCOUNT_AUTHENTICATION_METHOD == app_settings.AuthenticationMethod.USERNAME
+
+        # check that the server settings match the request
+        if is_username_authentication() and not username and email:
+            raise ValidationError(
+                'Attempt to authenticate with email/password. '
+                'But username/password are used for authentication on the server. '
+                'Please check your server configuration ACCOUNT_AUTHENTICATION_METHOD.')
+
+        if is_email_authentication() and not email and username:
+            raise ValidationError(
+                'Attempt to authenticate with username/password. '
+                'But email/password are used for authentication on the server. '
+                'Please check your server configuration ACCOUNT_AUTHENTICATION_METHOD.')
+
+        # Authentication through email
+        if settings.ACCOUNT_AUTHENTICATION_METHOD == app_settings.AuthenticationMethod.EMAIL:
+            return self._validate_email(email, password)
+
+        # Authentication through username
+        if settings.ACCOUNT_AUTHENTICATION_METHOD == app_settings.AuthenticationMethod.USERNAME:
+            return self._validate_username(username, password)
+
+        # Authentication through either username or email
+        if email:
+            users = filter_users_by_email(email)
+            if not users or len(users) > 1:
+                raise ValidationError('Unable to login with provided credentials')
+
+        return self._validate_username_email(username, email, password)
+
+
+class SocialLoginSerializerEx(SocialLoginSerializer):
+    auth_params = serializers.CharField(required=False, allow_blank=True, default='')
+    process = serializers.CharField(required=False, allow_blank=True, default='login')
+    scope = serializers.CharField(required=False, allow_blank=True, default='')
+
+    def get_social_login(self, adapter, app, token, response):
+        request = self._get_request()
+        social_login = adapter.complete_login(request, app, token, response=response)
+        social_login.token = token
+
+        social_login.state = {
+            'process': self.initial_data.get('process'),
+            'scope': self.initial_data.get('scope'),
+            'auth_params': self.initial_data.get('auth_params'),
+        }
+
+        return social_login

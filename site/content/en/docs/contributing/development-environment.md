@@ -27,6 +27,28 @@ description: 'Installing a development environment for different operating syste
   brew install git python pyenv redis curl openssl node sqlite3 geos
   ```
 
+  Arch Linux
+  ```bash
+  # Update the system and AUR (you can use any other AUR helper of choice) first:
+  sudo pacman -Syyu
+  pikaur -Syu
+  ```
+
+  ```bash
+  # Install the required dependencies:
+  sudo pacman -S base-devel curl git redis cmake gcc python python-pip tk libldap libsasl pkgconf ffmpeg geos openldap python-lda
+  ```
+
+  ```bash
+  # CVAT supports only Python 3.9, so install it if you don’t have it:
+  pikaur -S python39
+  ```
+
+  ```bash
+  # Install Node.js 16, yarn and npm
+  sudo pacman -S nodejs-lts-gallium yarn npm
+  ```
+
 - Install Chrome
 
 - Install FFmpeg libraries (libav\*) version 4.0 or higher.
@@ -39,7 +61,7 @@ description: 'Installing a development environment for different operating syste
   - [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python)
   - [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
   - [Stylelint](https://marketplace.visualstudio.com/items?itemName=stylelint.vscode-stylelint)
-  - [vscode-remark-lint](https://marketplace.visualstudio.com/items?itemName=drewbourne.vscode-remark-lint)
+  - [Prettier Formatter for Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
   - [licenser](https://marketplace.visualstudio.com/items?itemName=ymotongpoo.licenser)
   - [Trailing Spaces](https://marketplace.visualstudio.com/items?itemName=shardulm94.trailing-spaces)
 
@@ -56,7 +78,7 @@ description: 'Installing a development environment for different operating syste
   python3 -m venv .env
   . .env/bin/activate
   pip install -U pip wheel setuptools
-  pip install -r cvat/requirements/development.txt
+  pip install -r cvat/requirements/development.txt -r utils/dataset_manifest/requirements.txt
   python manage.py migrate
   python manage.py collectstatic
   ```
@@ -65,9 +87,11 @@ description: 'Installing a development environment for different operating syste
   >
   > If you have any problems with installing dependencies from
   > `cvat/requirements/*.txt`, you may need to reinstall your system python
-  > In some cases after system update it can be configured incorrectly and cannot compile some native modules
+  > In some cases after system update it can be configured incorrectly and cannot compile
+  > some native modules
   >
-  > Make sure Homebrew lib path is in `DYLD_LIBRARY_PATH`. For Apple Silicon: `export DYLD_LIBRARY_PATH=/opt/homebrew/lib:$DYLD_LIBRARY_PATH`
+  > Make sure Homebrew lib path is in `DYLD_LIBRARY_PATH`.
+  > For Apple Silicon: `export DYLD_LIBRARY_PATH=/opt/homebrew/lib:$DYLD_LIBRARY_PATH`
   >
   > Homebrew will install FFMpeg 5.0 by default, which does not work, so you should install 4.X.
   > You can install older 4.X FFMpeg using Homebrew like that:
@@ -78,7 +102,8 @@ description: 'Installing a development environment for different operating syste
   >  HOMEBREW_NO_AUTO_UPDATE=1 brew install ffmpeg
   >  git checkout master
   > ```
-  > if you are still facing error `Running setup.py install for av ... error`, you may try more radical variant
+  > if you are still facing error `Running setup.py install for av ... error`, you may
+  > try more radical variant
   > ```
   >  cd "$(brew --repo homebrew/core)"
   >  git checkout addd616edc9134f057e33694c420f4900be59db8
@@ -99,9 +124,26 @@ description: 'Installing a development environment for different operating syste
   > ```
   > sudo ln -s /opt/homebrew/lib/libgeos_c.dylib /usr/local/lib
   > ```
-  > On Mac with Apple Silicon (M1) in order to install TensorFlow you will have to edit `cvat/requirements/base.txt`.
+  > On Mac with Apple Silicon (M1) in order to install TensorFlow you will have
+  > to edit `cvat/requirements/base.txt`.
   > Change `tensorflow` to `tensorflow-macos`
   > May need to downgrade version Python to 3.9.* or upgrade version `tensorflow-macos`
+
+  > Note for Arch Linux users:
+  >
+  > In order to build `python-ldap`, the `gcc` compiler needs to be pointed to the right file,
+  > since lib name has been changed from `libldap_r` to `libldap`, otherwise wheels
+  > for `python-ldap` won't be built and the install will fail. You need to create
+  > a symlink between the newer and older `ldap` libraries:
+  > ```
+  > sudo ln -s /usr/lib/libldap.so /usr/lib/libldap_r.so
+  > ```
+  >
+  > Because PyAV as of version 10.0.0 already [works](https://github.com/PyAV-Org/PyAV/pull/910)
+  > with FFMPEG5, you may consider changing the `av` version requirement
+  > in `/cvat/cvat/requirements/base.txt` to 10.0.0 or higher.
+  >
+  > Perform these actions before installing cvat requirements from the list mentioned above.
 
 - Create a super user for CVAT:
 
@@ -125,10 +167,12 @@ description: 'Installing a development environment for different operating syste
 
 - Install [Docker Engine](https://docs.docker.com/engine/install/ubuntu/) and [Docker-Compose](https://docs.docker.com/compose/install/)
 
-- Pull OpenPolicyAgent Docker-image (run from CVAT root dir):
+- Pull and run OpenPolicyAgent Docker image:
 
   ```bash
-  sudo docker-compose -f docker-compose.yml -f docker-compose.dev.yml up cvat_opa
+   docker run -d --rm --name cvat_opa_debug -p 8181:8181 openpolicyagent/opa:0.34.2-rootless \
+   run --server --set=decision_logs.console=true --set=services.cvat.url=http://host.docker.internal:7000 \
+   --set=bundles.cvat.service=cvat --set=bundles.cvat.resource=/api/auth/rules
   ```
 
 ### Run CVAT
@@ -182,3 +226,10 @@ You develop CVAT under WSL (Windows subsystem for Linux) following next steps.
 
 - You might have to manually start the redis server. You can do this with `redis-server`.
 Alternatively you can also use a redis docker image instead of using the redis-server locally.
+
+## Note for Arch Linux users
+- You need to start `redis` and `docker` services manually in order to begin debugging/running tests:
+  ```bash
+  sudo systemctl start redis.service
+  sudo systemctl start docker.service
+  ```

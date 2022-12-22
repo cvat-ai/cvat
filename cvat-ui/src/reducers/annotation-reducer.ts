@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,6 +9,7 @@ import { AuthActionTypes } from 'actions/auth-actions';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
+import { clamp } from 'utils/math';
 
 import {
     ActiveControl,
@@ -39,6 +41,11 @@ const defaultState: AnnotationState = {
             pointID: null,
             clientID: null,
             parentID: null,
+        },
+        brushTools: {
+            visible: false,
+            top: 0,
+            left: 0,
         },
         instance: null,
         ready: false,
@@ -74,7 +81,7 @@ const defaultState: AnnotationState = {
     },
     drawing: {
         activeShapeType: ShapeType.RECTANGLE,
-        activeLabelID: 0,
+        activeLabelID: null,
         activeObjectType: ObjectType.SHAPE,
     },
     annotations: {
@@ -101,10 +108,6 @@ const defaultState: AnnotationState = {
             cur: 0,
         },
     },
-    propagate: {
-        objectState: null,
-        frames: 50,
-    },
     remove: {
         objectState: null,
         force: false,
@@ -113,6 +116,9 @@ const defaultState: AnnotationState = {
         visible: false,
         collecting: false,
         data: null,
+    },
+    propagate: {
+        visible: false,
     },
     colors: [],
     sidebarCollapsed: false,
@@ -215,7 +221,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
                 drawing: {
                     ...state.drawing,
-                    activeLabelID: job.labels.length ? job.labels[0].id : null,
+                    activeLabelID: defaultLabel ? defaultLabel.id : null,
                     activeObjectType: job.mode === 'interpolation' ? ObjectType.TRACK : ObjectType.SHAPE,
                     activeShapeType,
                 },
@@ -482,22 +488,21 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             const { payload } = action;
 
             let { activeControl } = state.canvas;
-            if (payload.activeShapeType === ShapeType.RECTANGLE) {
-                activeControl = ActiveControl.DRAW_RECTANGLE;
-            } else if (payload.activeShapeType === ShapeType.POLYGON) {
-                activeControl = ActiveControl.DRAW_POLYGON;
-            } else if (payload.activeShapeType === ShapeType.POLYLINE) {
-                activeControl = ActiveControl.DRAW_POLYLINE;
-            } else if (payload.activeShapeType === ShapeType.POINTS) {
-                activeControl = ActiveControl.DRAW_POINTS;
-            } else if (payload.activeShapeType === ShapeType.ELLIPSE) {
-                activeControl = ActiveControl.DRAW_ELLIPSE;
-            } else if (payload.activeShapeType === ShapeType.CUBOID) {
-                activeControl = ActiveControl.DRAW_CUBOID;
-            } else if (payload.activeShapeType === ShapeType.SKELETON) {
-                activeControl = ActiveControl.DRAW_SKELETON;
-            } else if (payload.activeObjectType === ObjectType.TAG) {
+            if ('activeObjectType' in payload && payload.activeObjectType === ObjectType.TAG) {
                 activeControl = ActiveControl.CURSOR;
+            } else if ('activeShapeType' in payload) {
+                const controlMapping = {
+                    [ShapeType.RECTANGLE]: ActiveControl.DRAW_RECTANGLE,
+                    [ShapeType.POLYGON]: ActiveControl.DRAW_POLYGON,
+                    [ShapeType.POLYLINE]: ActiveControl.DRAW_POLYLINE,
+                    [ShapeType.POINTS]: ActiveControl.DRAW_POINTS,
+                    [ShapeType.ELLIPSE]: ActiveControl.DRAW_ELLIPSE,
+                    [ShapeType.CUBOID]: ActiveControl.DRAW_CUBOID,
+                    [ShapeType.SKELETON]: ActiveControl.DRAW_SKELETON,
+                    [ShapeType.MASK]: ActiveControl.DRAW_MASK,
+                };
+
+                activeControl = controlMapping[payload.activeShapeType as ShapeType];
             }
 
             return {
@@ -630,7 +635,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     zLayer: {
                         min: minZLayer,
                         max: maxZLayer,
-                        cur: maxZLayer,
+                        cur: clamp(state.annotations.zLayer.cur, minZLayer, maxZLayer),
                     },
                     states: nextStates,
                     history,
@@ -791,6 +796,9 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 canvas: {
                     ...state.canvas,
                     activeControl,
+                    contextMenu: {
+                        ...defaultState.canvas.contextMenu,
+                    },
                 },
                 annotations: {
                     ...state.annotations,
@@ -821,16 +829,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        case AnnotationActionTypes.PROPAGATE_OBJECT: {
-            const { objectState } = action.payload;
-            return {
-                ...state,
-                propagate: {
-                    ...state.propagate,
-                    objectState,
-                },
-            };
-        }
         case AnnotationActionTypes.PROPAGATE_OBJECT_SUCCESS: {
             const { history } = action.payload;
             return {
@@ -839,20 +837,14 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     ...state.annotations,
                     history,
                 },
-                propagate: {
-                    ...state.propagate,
-                    objectState: null,
-                },
             };
         }
-        case AnnotationActionTypes.CHANGE_PROPAGATE_FRAMES: {
-            const { frames } = action.payload;
-
+        case AnnotationActionTypes.SWITCH_PROPAGATE_VISIBILITY: {
+            const { visible } = action.payload;
             return {
                 ...state,
                 propagate: {
-                    ...state.propagate,
-                    frames,
+                    visible,
                 },
             };
         }
@@ -937,19 +929,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS_SUCCESS: {
-            const { states, job, history } = action.payload;
-            const { loads } = state.activities;
-
-            delete loads[job.id];
+            const { states, history } = action.payload;
 
             return {
                 ...state,
-                activities: {
-                    ...state.activities,
-                    loads: {
-                        ...loads,
-                    },
-                },
                 annotations: {
                     ...state.annotations,
                     history,
@@ -998,6 +981,18 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
+        case AnnotationActionTypes.UPDATE_BRUSH_TOOLS_CONFIG: {
+            return {
+                ...state,
+                canvas: {
+                    ...state.canvas,
+                    brushTools: {
+                        ...state.canvas.brushTools,
+                        ...action.payload,
+                    },
+                },
+            };
+        }
         case AnnotationActionTypes.REDO_ACTION_SUCCESS:
         case AnnotationActionTypes.UNDO_ACTION_SUCCESS: {
             const { activatedStateID } = state.annotations;
@@ -1015,7 +1010,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     zLayer: {
                         min: minZ,
                         max: maxZ,
-                        cur: maxZ,
+                        cur: clamp(state.annotations.zLayer.cur, minZ, maxZ),
                     },
                 },
             };
@@ -1036,7 +1031,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     zLayer: {
                         min: minZ,
                         max: maxZ,
-                        cur: maxZ,
+                        cur: clamp(state.annotations.zLayer.cur, minZ, maxZ),
                     },
                 },
             };
@@ -1074,7 +1069,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     activatedStateID,
                     zLayer: {
                         ...state.annotations.zLayer,
-                        cur: Math.max(Math.min(cur, max), min),
+                        cur: clamp(cur, min, max),
                     },
                 },
             };

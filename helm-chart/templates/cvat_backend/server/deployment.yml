@@ -56,6 +56,32 @@ spec:
             value: {{ .Values.cvat.backend.server.envs.ALLOWED_HOSTS | squote}}
           - name: DJANGO_MODWSGI_EXTRA_ARGS
             value: {{ .Values.cvat.backend.server.envs.DJANGO_MODWSGI_EXTRA_ARGS}}
+          - name: USE_ALLAUTH_SOCIAL_ACCOUNTS
+            value: {{ .Values.cvat.backend.server.envs.USE_ALLAUTH_SOCIAL_ACCOUNTS | squote }}
+          {{- if .Values.cvat.backend.server.envs.USE_ALLAUTH_SOCIAL_ACCOUNTS }}
+          - name: SOCIAL_AUTH_GOOGLE_CLIENT_ID
+            valueFrom:
+              secretKeyRef:
+                name: "{{ tpl (.Values.cvat.backend.server.secret.name) . }}"
+                key:  googleClientId
+          - name: SOCIAL_AUTH_GOOGLE_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: "{{ tpl (.Values.cvat.backend.server.secret.name) . }}"
+                key:  googleClientSecret
+          - name: SOCIAL_AUTH_GITHUB_CLIENT_ID
+            valueFrom:
+              secretKeyRef:
+                name: "{{ tpl (.Values.cvat.backend.server.secret.name) . }}"
+                key:  githubClientId
+          - name: SOCIAL_AUTH_GITHUB_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: "{{ tpl (.Values.cvat.backend.server.secret.name) . }}"
+                key:  googleClientSecret
+          {{- end }}
+          - name: IAM_OPA_BUNDLE
+            value: "1"
           {{- if .Values.redis.enabled }}
           - name: CVAT_REDIS_HOST
             value: "{{ .Release.Name }}-redis-master"
@@ -67,22 +93,22 @@ spec:
           - name: CVAT_POSTGRES_HOST
             valueFrom:
               secretKeyRef:
-                name: "{{ .Release.Name }}-{{ .Values.postgresql.secret.name }}"
+                name: "{{ tpl (.Values.postgresql.secret.name) . }}"
                 key: postgresql-hostname
           - name: CVAT_POSTGRES_USER
             valueFrom:
               secretKeyRef:
-                name: "{{ .Release.Name }}-{{ .Values.postgresql.secret.name }}"
+                name: "{{ tpl (.Values.postgresql.secret.name) . }}"
                 key: postgresql-username
           - name: CVAT_POSTGRES_DBNAME
             valueFrom:
               secretKeyRef:
-                name: "{{ .Release.Name }}-{{ .Values.postgresql.secret.name }}"
+                name: "{{ tpl (.Values.postgresql.secret.name) . }}"
                 key: postgresql-database
           - name: CVAT_POSTGRES_PASSWORD
             valueFrom:
               secretKeyRef:
-                name: "{{ .Release.Name }}-{{ .Values.postgresql.secret.name }}"
+                name: "{{ tpl (.Values.postgresql.secret.name) . }}"
                 key: postgresql-password
           {{- else }}
           - name: CVAT_POSTGRES_HOST

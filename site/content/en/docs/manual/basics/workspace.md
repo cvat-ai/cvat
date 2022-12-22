@@ -1,7 +1,7 @@
 ---
 title: 'Workspace'
 linkTitle: 'Workspace'
-weight: 10
+weight: 12
 description: 'Overview of available functions on the workspace of the annotation tool.'
 ---
 
@@ -28,18 +28,11 @@ In addition the workspace also has the following functions:
 
   - Show `Grid`, change grid size, choose color and transparency:
 
-    ![](/images/image068_mapillary_vistas.jpg)
+  ![](/images/image068_mapillary_vistas.jpg)
 
   - Adjust `Brightness`/`Contrast`/`Saturation` of too exposed or too
-  dark images using `F3` — color settings (changes displaying settings and not the
-  image itself).
+    dark images using color settings (it affects only how a user sees the image, not the image itself).
 
-  Shortcuts:
-
-  - `Shift+B+=`/`Shift+B+-` for brightness.
-  - `Shift+C+=`/`Shift+C+-` for contrast.
-  - `Shift+S+=`/`Shift+S+-` for saturation.
-
-    ![](/images/image164_mapillary_vistas.jpg)
+  ![](/images/image164_mapillary_vistas.jpg)
 
   - `Reset color settings` to default values.
