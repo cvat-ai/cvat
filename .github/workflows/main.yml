@@ -128,7 +128,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     env:
-      CVAT_VERSION: ${{ env.CVAT_VERSION }}
+      CVAT_VERSION: env.CVAT_VERSION
     steps:
       - uses: actions/checkout@v3
 
@@ -193,7 +193,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     env:
-      CVAT_VERSION: ${{ env.CVAT_VERSION }}
+      CVAT_VERSION: env.CVAT_VERSION
     steps:
       - uses: actions/checkout@v3
 
@@ -258,7 +258,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     env:
-      CVAT_VERSION: ${{ env.CVAT_VERSION }}
+      CVAT_VERSION: env.CVAT_VERSION
     strategy:
       fail-fast: false
       matrix:
