@@ -5,6 +5,7 @@
 # SPDX-License-Identifier: MIT
 
 import itertools
+import fnmatch
 import os
 import sys
 from rest_framework.serializers import ValidationError
@@ -378,8 +379,7 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
         if data['filename_pattern'] == '*':
             server_files = cloud_storage_manifest_data
         else:
-            r = re.compile(data['filename_pattern'])
-            server_files = list(filter(r.match, cloud_storage_manifest_data))
+            server_files = fnmatch.filter(cloud_storage_manifest_data, data['filename_pattern'])
         data['server_files'].extend(server_files)
 
     # count and validate uploaded files

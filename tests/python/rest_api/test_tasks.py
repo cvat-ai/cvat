@@ -6,7 +6,7 @@
 import json
 import os.path as osp
 import subprocess
-from contextlib import ExitStack
+from functools import partial
 from copy import deepcopy
 from http import HTTPStatus
 from tempfile import TemporaryDirectory
@@ -679,21 +679,31 @@ class TestPostTaskData:
             self._USERNAME, task_spec, data_spec, content_type="application/json", org=org
         )
 
+    @pytest.mark.parametrize("cloud_storage_id", [1])
     @pytest.mark.parametrize(
-        "cloud_storage_id, manifest, filename_pattern, sub_dir, task_size, org",
+        "manifest, filename_pattern, sub_dir, task_size",
         [
-            (1, "manifest.jsonl", "*", True, 3, ""),  # public bucket
-            (1, "manifest.jsonl", "test/*", True, 3, ""),
-            (1, "manifest.jsonl", "test/sub*1.jpeg", True, 1, ""),
-            (1, "manifest.jsonl", "*image*.jpeg", True, 3, ""),
-            (1, "manifest.jsonl", "wrong_pattern", True, 0, ""),
-            (1, "abc_manifest.jsonl", "[a-c]*.jpeg", False, 2, ""),
-            (1, "abc_manifest.jsonl", "[d]*.jpeg", False, 1, ""),
-            (1, "abc_manifest.jsonl", "[e-z]*.jpeg", False, 0, ""),
+            ("manifest.jsonl", "*", True, 3),  # public bucket
+            ("manifest.jsonl", "test/*", True, 3),
+            ("manifest.jsonl", "test/sub*1.jpeg", True, 1),
+            ("manifest.jsonl", "*image*.jpeg", True, 3),
+            ("manifest.jsonl", "wrong_pattern", True, 0),
+            ("abc_manifest.jsonl", "[a-c]*.jpeg", False, 2),
+            ("abc_manifest.jsonl", "[d]*.jpeg", False, 1),
+            ("abc_manifest.jsonl", "[e-z]*.jpeg", False, 0),
         ],
     )
+    @pytest.mark.parametrize("org", [""])
     def test_create_task_with_file_pattern(
-        self, cloud_storage_id, manifest, filename_pattern, sub_dir, task_size, org, cloud_storages
+        self,
+        cloud_storage_id,
+        manifest,
+        filename_pattern,
+        sub_dir,
+        task_size,
+        org,
+        cloud_storages,
+        request,
     ):
         # prepare dataset on the bucket
         prefixes = ("test_image_",) * 3 if sub_dir else ("a_", "b_", "d_")
@@ -707,6 +717,11 @@ class TestPostTaskData:
                 data=image,
                 bucket=cloud_storage["resource"],
                 filename=f"{'test/sub/' if sub_dir else ''}{image.name}",
+            )
+            request.addfinalizer(
+                partial(
+                    s3_client.remove_file, bucket=cloud_storage["resource"], filename=image.name
+                )
             )
 
         with TemporaryDirectory() as tmp_dir:
@@ -731,12 +746,19 @@ class TestPostTaskData:
                 "/local",
                 "/local",
             ]
-            subprocess.run(command, check=True, stdout=subprocess.DEVNULL)
+            subprocess.run(command, check=True, stdout=subprocess.PIPE)
             with open(osp.join(tmp_dir, "manifest.jsonl"), mode="rb") as m_file:
                 s3_client.create_file(
                     data=m_file.read(),
                     bucket=cloud_storage["resource"],
                     filename=f"test/sub/{manifest}" if sub_dir else manifest,
+                )
+                request.addfinalizer(
+                    partial(
+                        s3_client.remove_file,
+                        bucket=cloud_storage["resource"],
+                        filename=f"test/sub/{manifest}" if sub_dir else manifest,
+                    )
                 )
 
         task_spec = {
@@ -768,17 +790,6 @@ class TestPostTaskData:
         else:
             status = self._test_cannot_create_task(self._USERNAME, task_spec, data_spec)
             assert "No media data found" in status.message
-
-        with ExitStack() as stack:
-            files = [f"{'test/sub/' if sub_dir else ''}{image.name}" for image in images] + [
-                f"test/sub/{manifest}" if sub_dir else manifest
-            ]
-            for f in files:
-                stack.callback(
-                    s3_client.remove_file,
-                    bucket=cloud_storage["resource"],
-                    filename=f,
-                )
 
     @pytest.mark.parametrize(
         "cloud_storage_id, manifest, org",
