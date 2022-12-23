@@ -736,7 +736,6 @@ class TestPostTaskData:
             command = [
                 "docker",
                 "run",
-                "-it",
                 "--rm",
                 "-u",
                 "root:root",
@@ -751,8 +750,10 @@ class TestPostTaskData:
                 "/local",
             ]
             try:
-                result = subprocess.run('docker image ls | grep cvat/server', stdout=subprocess.PIPE, shell=True)
-                print('result: ', result)
+                result = subprocess.run(
+                    "docker image ls | grep cvat/server", stdout=subprocess.PIPE, shell=True
+                )
+                print("result: ", result)
                 subprocess.check_output(command)
             except subprocess.CalledProcessError as ex:
                 print(ex.returncode)
