@@ -749,16 +749,7 @@ class TestPostTaskData:
                 "/local",
                 "/local",
             ]
-            try:
-                result = subprocess.run(
-                    "docker image ls | grep cvat/server", stdout=subprocess.PIPE, shell=True
-                )
-                print("result: ", result)
-                subprocess.check_output(command)
-            except subprocess.CalledProcessError as ex:
-                print(ex.returncode)
-                print(ex.output)
-                raise
+            subprocess.run(command, check=True)
             with open(osp.join(tmp_dir, "manifest.jsonl"), mode="rb") as m_file:
                 s3_client.create_file(
                     data=m_file.read(),
