@@ -28,7 +28,7 @@ export class FrameData {
         stopFrame,
         decodeForward,
         deleted,
-        has_related_context: hasRelatedContext,
+        related_files: relatedFiles,
     }) {
         Object.defineProperties(
             this,
@@ -89,15 +89,15 @@ export class FrameData {
                     writable: false,
                 },
                 /**
-                 * True if some context images are associated with this frame
-                 * @name hasRelatedContext
+                 * Number of context images are associated with this frame
+                 * @name relatedFiles
                  * @type {boolean}
                  * @memberof module:API.cvat.classes.FrameData
                  * @readonly
                  * @instance
                  */
-                hasRelatedContext: {
-                    value: hasRelatedContext,
+                relatedFiles: {
+                    value: relatedFiles,
                     writable: false,
                 },
                 /**

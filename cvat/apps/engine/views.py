@@ -1288,7 +1288,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             'width': item.width,
             'height': item.height,
             'name': item.path,
-            'has_related_context': hasattr(item, 'related_files') and item.related_files.exists()
+            'related_files': item.related_files.count() if hasattr(item, 'related_files') else 0
         } for item in media]
 
         db_data = db_task.data
@@ -1756,7 +1756,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             'width': item.width,
             'height': item.height,
             'name': item.path,
-            'has_related_context': hasattr(item, 'related_files') and item.related_files.exists()
+            'related_files': item.related_files.count() if hasattr(item, 'related_files') else 0
         } for item in media]
 
         db_data.frames = frame_meta

@@ -678,7 +678,7 @@ export interface AnnotationState {
         frame: {
             number: number;
             filename: string;
-            hasRelatedContext: boolean;
+            relatedFiles: number;
             data: any | null;
             fetching: boolean;
             delay: number;

@@ -24,7 +24,7 @@ export const boundariesActions = {
         openTime: number;
         frameNumber: number;
         frameFilename: string;
-        frameHasRelatedContext: boolean;
+        relatedFiles: boolean;
         colors: string[];
         filters: string[];
         frameData: any;
@@ -58,7 +58,7 @@ export function resetAfterErrorAsync(): ThunkAction {
                     openTime: state.annotation.job.openTime || Date.now(),
                     frameNumber,
                     frameFilename: frameData.filename,
-                    frameHasRelatedContext: frameData.hasRelatedContext,
+                    relatedFiles: frameData.relatedFiles,
                     colors,
                     filters: [],
                     frameData,
