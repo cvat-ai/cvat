@@ -20,13 +20,7 @@ from rest_framework.permissions import BasePermission
 
 from cvat.apps.organizations.models import Membership, Organization
 from cvat.apps.engine.models import Project, Task, Job, Issue
-from cvat.apps.limit_manager.core.limits import (CapabilityContext, LimitManager,
-    Limits, OrgCloudStoragesContext, OrgMembersContext, OrgTasksContext, OrgProjectWebhooksContext,
-    OrgCommonWebhooksContext,
-    TasksInOrgProjectContext, TasksInUserSandboxProjectContext, UserOrgsContext,
-    UserSandboxCloudStoragesContext, UserSandboxProjectWebhooksContext,
-    UserSandboxTasksContext,
-    OrgLambdaCallOfflineContext, UserSandboxLambdaCallOfflineContext)
+from cvat.apps.limit_manager.core import limits
 from cvat.apps.webhooks.models import WebhookTypeChoice
 
 
@@ -1416,7 +1410,7 @@ class LimitPermission(OpenPolicyAgentPermission):
     def __init__(self, **kwargs):
         self.url = settings.IAM_OPA_DATA_URL + '/limits/result'
         self.scope_handler: OpenPolicyAgentPermission = kwargs.pop('scope_handler')
-        self.capabilities: Tuple[Limits, CapabilityContext] = kwargs.pop('capabilities')
+        self.capabilities: Tuple[limits.Limits, limits.CapabilityContext] = kwargs.pop('capabilities')
         super().__init__(**kwargs)
 
     @classmethod
@@ -1435,10 +1429,10 @@ class LimitPermission(OpenPolicyAgentPermission):
 
     def get_resource(self):
         data = {}
-        limit_manager = LimitManager()
+        limit_manager = limits.LimitManager()
 
         def _get_capability_status(
-            capability: Limits, context: Optional[CapabilityContext]
+            capability: limits.Limits, context: Optional[limits.CapabilityContext]
         ) -> dict:
             status = limit_manager.get_status(limit=capability, context=context)
             return { 'used': status.used, 'max': status.max }
@@ -1451,12 +1445,12 @@ class LimitPermission(OpenPolicyAgentPermission):
         return { 'limits': data }
 
     @classmethod
-    def _get_capability_name(cls, capability: Limits) -> str:
+    def _get_capability_name(cls, capability: limits.Limits) -> str:
         return capability.name
 
     @classmethod
     def _prepare_capability_params(cls, scope: OpenPolicyAgentPermission
-    ) -> List[Tuple[Limits, CapabilityContext]]:
+    ) -> List[Tuple[limits.Limits, limits.CapabilityContext]]:
         scope_id = (type(scope), scope.scope)
         results = []
 
@@ -1466,13 +1460,13 @@ class LimitPermission(OpenPolicyAgentPermission):
         ]:
             if getattr(scope, 'org_id') is not None:
                 results.append((
-                    Limits.ORG_TASKS,
-                    OrgTasksContext(org_id=scope.org_id)
+                    limits.Limits.ORG_TASKS,
+                    limits.OrgTasksContext(org_id=scope.org_id)
                 ))
             else:
                 results.append((
-                    Limits.USER_SANDBOX_TASKS,
-                    UserSandboxTasksContext(user_id=scope.user_id)
+                    limits.Limits.USER_SANDBOX_TASKS,
+                    limits.UserSandboxTasksContext(user_id=scope.user_id)
                 ))
 
         elif scope_id == (TaskPermission, TaskPermission.Scopes.CREATE_IN_PROJECT):
@@ -1480,27 +1474,27 @@ class LimitPermission(OpenPolicyAgentPermission):
 
             if getattr(project, 'organization') is not None:
                 results.append((
-                    Limits.TASKS_IN_ORG_PROJECT,
-                    TasksInOrgProjectContext(
+                    limits.Limits.TASKS_IN_ORG_PROJECT,
+                    limits.TasksInOrgProjectContext(
                         org_id=project.organization.id,
                         project_id=project.id,
                     )
                 ))
                 results.append((
-                    Limits.ORG_TASKS,
-                    OrgTasksContext(org_id=project.organization.id)
+                    limits.Limits.ORG_TASKS,
+                    limits.OrgTasksContext(org_id=project.organization.id)
                 ))
             else:
                 results.append((
-                    Limits.TASKS_IN_USER_SANDBOX_PROJECT,
-                    TasksInUserSandboxProjectContext(
+                    limits.Limits.TASKS_IN_USER_SANDBOX_PROJECT,
+                    limits.TasksInUserSandboxProjectContext(
                         user_id=project.owner.id,
                         project_id=project.id
                     )
                 ))
                 results.append((
-                    Limits.USER_SANDBOX_TASKS,
-                    UserSandboxTasksContext(user_id=project.owner.id)
+                    limits.Limits.USER_SANDBOX_TASKS,
+                    limits.UserSandboxTasksContext(user_id=project.owner.id)
                 ))
 
         elif scope_id == (TaskPermission, TaskPermission.Scopes.UPDATE_PROJECT):
@@ -1518,8 +1512,8 @@ class LimitPermission(OpenPolicyAgentPermission):
 
             if getattr(project, 'organization', None) is not None:
                 results.append((
-                    Limits.TASKS_IN_ORG_PROJECT,
-                    TasksInOrgProjectContext(
+                    limits.Limits.TASKS_IN_ORG_PROJECT,
+                    limits.TasksInOrgProjectContext(
                         org_id=project.organization.id,
                         project_id=project.id,
                     )
@@ -1527,13 +1521,13 @@ class LimitPermission(OpenPolicyAgentPermission):
 
                 if old_owner != (OwnerType.org, project.organization.id):
                     results.append((
-                        Limits.ORG_TASKS,
-                        OrgTasksContext(org_id=project.organization.id)
+                        limits.Limits.ORG_TASKS,
+                        limits.OrgTasksContext(org_id=project.organization.id)
                     ))
             else:
                 results.append((
-                    Limits.TASKS_IN_USER_SANDBOX_PROJECT,
-                    TasksInUserSandboxProjectContext(
+                    limits.Limits.TASKS_IN_USER_SANDBOX_PROJECT,
+                    limits.TasksInUserSandboxProjectContext(
                         user_id=project.owner.id,
                         project_id=project.id
                     )
@@ -1541,8 +1535,8 @@ class LimitPermission(OpenPolicyAgentPermission):
 
                 if old_owner != (OwnerType.user, project.owner.id):
                     results.append((
-                        Limits.USER_SANDBOX_TASKS,
-                        UserSandboxTasksContext(user_id=project.owner.id)
+                        limits.Limits.USER_SANDBOX_TASKS,
+                        limits.UserSandboxTasksContext(user_id=project.owner.id)
                     ))
 
         elif scope_id == (TaskPermission, TaskPermission.Scopes.UPDATE_OWNER):
@@ -1560,8 +1554,8 @@ class LimitPermission(OpenPolicyAgentPermission):
             new_owner = getattr(scope, 'owner_id', None)
             if new_owner is not None and old_owner != (OwnerType.user, new_owner):
                 results.append((
-                    Limits.USER_SANDBOX_TASKS,
-                    UserSandboxTasksContext(user_id=new_owner)
+                    limits.Limits.USER_SANDBOX_TASKS,
+                    limits.UserSandboxTasksContext(user_id=new_owner)
                 ))
 
         elif scope_id in [
@@ -1570,69 +1564,69 @@ class LimitPermission(OpenPolicyAgentPermission):
         ]:
             if getattr(scope, 'org_id') is not None:
                 results.append((
-                    Limits.ORG_PROJECTS,
-                    OrgTasksContext(org_id=scope.org_id)
+                    limits.Limits.ORG_PROJECTS,
+                    limits.OrgTasksContext(org_id=scope.org_id)
                 ))
             else:
                 results.append((
-                    Limits.USER_SANDBOX_PROJECTS,
-                    UserSandboxTasksContext(user_id=scope.user_id)
+                    limits.Limits.USER_SANDBOX_PROJECTS,
+                    limits.UserSandboxTasksContext(user_id=scope.user_id)
                 ))
 
         elif scope_id == (CloudStoragePermission, CloudStoragePermission.Scopes.CREATE):
             if getattr(scope, 'org_id') is not None:
                 results.append((
-                    Limits.ORG_CLOUD_STORAGES,
-                    OrgCloudStoragesContext(org_id=scope.org_id)
+                    limits.Limits.ORG_CLOUD_STORAGES,
+                    limits.OrgCloudStoragesContext(org_id=scope.org_id)
                 ))
             else:
                 results.append((
-                    Limits.USER_SANDBOX_CLOUD_STORAGES,
-                    UserSandboxCloudStoragesContext(user_id=scope.user_id)
+                    limits.Limits.USER_SANDBOX_CLOUD_STORAGES,
+                    limits.UserSandboxCloudStoragesContext(user_id=scope.user_id)
                 ))
 
         elif scope_id == (OrganizationPermission, OrganizationPermission.Scopes.CREATE):
             results.append((
-                Limits.USER_OWNED_ORGS,
-                UserOrgsContext(user_id=scope.user_id)
+                limits.Limits.USER_OWNED_ORGS,
+                limits.UserOrgsContext(user_id=scope.user_id)
             ))
 
         elif scope_id == (WebhookPermission, WebhookPermission.Scopes.CREATE_IN_ORG):
             results.append((
-                Limits.ORG_COMMON_WEBHOOKS,
-                OrgCommonWebhooksContext(org_id=scope.org_id)
+                limits.Limits.ORG_COMMON_WEBHOOKS,
+                limits.OrgCommonWebhooksContext(org_id=scope.org_id)
             ))
 
         elif scope_id == (WebhookPermission, WebhookPermission.Scopes.CREATE_IN_PROJECT):
             if getattr(scope, 'org_id') is not None:
                 results.append((
-                    Limits.ORG_PROJECT_WEBHOOKS,
-                    OrgProjectWebhooksContext(project_id=scope.project_id, org_id=scope.org_id),
+                    limits.Limits.ORG_PROJECT_WEBHOOKS,
+                    limits.OrgProjectWebhooksContext(project_id=scope.project_id, org_id=scope.org_id),
                 ))
             else:
                 results.append((
-                    Limits.USER_SANDBOX_PROJECT_WEBHOOKS,
-                    UserSandboxProjectWebhooksContext(
+                    limits.Limits.USER_SANDBOX_PROJECT_WEBHOOKS,
+                    limits.UserSandboxProjectWebhooksContext(
                         project_id=scope.project_id, user_id=scope.user_id
                     ),
                 ))
 
         elif scope_id == (InvitationPermission, InvitationPermission.Scopes.CREATE):
             results.append((
-                Limits.ORG_MEMBERS,
-                OrgMembersContext(org_id=scope.org_id)
+                limits.Limits.ORG_MEMBERS,
+                limits.OrgMembersContext(org_id=scope.org_id)
             ))
 
         elif scope_id == (LambdaPermission, LambdaPermission.Scopes.CALL_OFFLINE):
             if getattr(scope, 'org_id') is not None:
                 results.append((
-                    Limits.ORG_LAMBDA_CALL_OFFLINE,
-                    OrgLambdaCallOfflineContext(org_id=scope.org_id)
+                    limits.Limits.ORG_LAMBDA_CALL_OFFLINE,
+                    limits.OrgLambdaCallOfflineContext(org_id=scope.org_id)
                 ))
             else:
                 results.append((
-                    Limits.USER_SANDBOX_LAMBDA_CALL_OFFLINE,
-                    UserSandboxLambdaCallOfflineContext(user_id=scope.user_id)
+                    limits.Limits.USER_SANDBOX_LAMBDA_CALL_OFFLINE,
+                    limits.UserSandboxLambdaCallOfflineContext(user_id=scope.user_id)
                 ))
 
 
