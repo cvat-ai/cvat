@@ -6,7 +6,6 @@
 import os
 import re
 import shutil
-import string
 
 from tempfile import NamedTemporaryFile
 from typing import OrderedDict

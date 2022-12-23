@@ -6,8 +6,8 @@
 import json
 import os.path as osp
 import subprocess
-from functools import partial
 from copy import deepcopy
+from functools import partial
 from http import HTTPStatus
 from tempfile import TemporaryDirectory
 from time import sleep
