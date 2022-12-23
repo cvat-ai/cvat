@@ -393,18 +393,6 @@ class DataSerializer(WriteOnceMixin, serializers.ModelSerializer):
             raise serializers.ValidationError('Chunk size must be a positive integer')
         return value
 
-    # def validate_filename_pattern(self, value):
-    #     supported_wildcards = set(["*", "[", "]", "."])
-    #     non_escaped_symbols = set(['!', '"', '%', "'", ',', '/', ':', ';', '<', '=', '>', '@', "`", "_"])
-    #     allowed_special_chars = supported_wildcards.union(non_escaped_symbols)
-    #     for c in set(string.punctuation) - allowed_special_chars:
-    #         if c in value:
-    #             value.replace(c, r'\\{}'.format(c))
-
-    #     if '*' in value and value != "*":
-    #         value = r'.*'.join(value.split('*'))
-    #     return value
-
     # pylint: disable=no-self-use
     def validate(self, attrs):
         if 'start_frame' in attrs and 'stop_frame' in attrs \
