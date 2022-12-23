@@ -641,6 +641,7 @@ class TestPostTaskData:
         response = get_method(self._USERNAME, f"jobs/{job_id}/annotations")
         assert response.status_code == HTTPStatus.OK
 
+    @pytest.mark.with_external_services
     @pytest.mark.parametrize(
         "cloud_storage_id, manifest, use_bucket_content, org",
         [
@@ -679,6 +680,7 @@ class TestPostTaskData:
             self._USERNAME, task_spec, data_spec, content_type="application/json", org=org
         )
 
+    @pytest.mark.with_external_services
     @pytest.mark.parametrize("cloud_storage_id", [1])
     @pytest.mark.parametrize(
         "manifest, filename_pattern, sub_dir, task_size",
@@ -791,6 +793,7 @@ class TestPostTaskData:
             status = self._test_cannot_create_task(self._USERNAME, task_spec, data_spec)
             assert "No media data found" in status.message
 
+    @pytest.mark.with_external_services
     @pytest.mark.parametrize(
         "cloud_storage_id, manifest, org",
         [(1, "manifest.jsonl", "")],  # public bucket
