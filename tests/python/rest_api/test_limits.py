@@ -318,6 +318,7 @@ class TestUserLimits:
         assert capture.value.status == HTTPStatus.FORBIDDEN
         assert set(json.loads(capture.value.body)) == {self._ORGS_LIMIT_MESSAGE}
 
+    @pytest.mark.with_external_services
     def test_can_reach_cloud_storages_limit(self, request: pytest.FixtureRequest):
         storage_params = get_common_storage_params()
 
@@ -523,6 +524,7 @@ class TestOrgLimits:
         assert capture.value.status == HTTPStatus.FORBIDDEN
         assert set(json.loads(capture.value.body)) == {self._PROJECTS_LIMIT_MESSAGE}
 
+    @pytest.mark.with_external_services
     def test_can_reach_cloud_storages_limit(self, request: pytest.FixtureRequest):
         storage_params = get_common_storage_params()
 
