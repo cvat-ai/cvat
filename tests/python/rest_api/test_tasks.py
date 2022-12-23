@@ -722,7 +722,7 @@ class TestPostTaskData:
             )
             request.addfinalizer(
                 partial(
-                    s3_client.remove_file, bucket=cloud_storage["resource"], filename=image.name
+                    s3_client.remove_file, bucket=cloud_storage["resource"], filename=f"{'test/sub/' if sub_dir else ''}{image.name}"
                 )
             )
 
@@ -748,7 +748,12 @@ class TestPostTaskData:
                 "/local",
                 "/local",
             ]
-            subprocess.run(command, check=True, stdout=subprocess.PIPE)
+            try:
+                subprocess.check_output(command)
+            except subprocess.CalledProcessError as ex:
+                print(ex.returncode)
+                print(ex.output)
+                raise
             with open(osp.join(tmp_dir, "manifest.jsonl"), mode="rb") as m_file:
                 s3_client.create_file(
                     data=m_file.read(),
