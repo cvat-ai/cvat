@@ -722,7 +722,9 @@ class TestPostTaskData:
             )
             request.addfinalizer(
                 partial(
-                    s3_client.remove_file, bucket=cloud_storage["resource"], filename=f"{'test/sub/' if sub_dir else ''}{image.name}"
+                    s3_client.remove_file,
+                    bucket=cloud_storage["resource"],
+                    filename=f"{'test/sub/' if sub_dir else ''}{image.name}",
                 )
             )
 
@@ -737,7 +739,7 @@ class TestPostTaskData:
                 "-it",
                 "--rm",
                 "-u",
-                "django:django",
+                "root:root",
                 "-v",
                 f"{tmp_dir}:/local",
                 "--entrypoint",
@@ -749,6 +751,8 @@ class TestPostTaskData:
                 "/local",
             ]
             try:
+                result = subprocess.run('docker image ls | grep cvat/server', stdout=subprocess.PIPE, shell=True)
+                print('result: ', result)
                 subprocess.check_output(command)
             except subprocess.CalledProcessError as ex:
                 print(ex.returncode)
