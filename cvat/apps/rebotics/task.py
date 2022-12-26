@@ -195,11 +195,11 @@ def _create_thread(task_id, cvat_data):
     ShapesImporter(task_id).perform_import()
 
 
-def create(data: list, retailer: User):
+def create(data: dict, retailer: User):
     project, _ = Project.objects.get_or_create(owner=retailer, name='Retailer import')
-    size = len(data)
+    size = len(data['images'])
     db_data = Data.objects.create(
-        image_quality=80,
+        image_quality=data['image_quality'],
         storage_method=StorageMethodChoice.CACHE,
         size=size,
         stop_frame=size - 1,
@@ -212,11 +212,11 @@ def create(data: list, retailer: User):
         name=now().strftime('Import %Y-%m-%d %H:%M:%S %Z'),
         owner=retailer,
         mode=ModeChoice.ANNOTATION,
-        segment_size=20,
+        segment_size=data['segment_size'],
     )
 
     remote_files = []
-    for image_data in data:
+    for image_data in data['images']:
         url = image_data.pop('image')
         image_data['name'] = _get_file_name(url)
         remote_files.append(RemoteFile(
