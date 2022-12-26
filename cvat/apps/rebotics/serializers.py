@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from cvat.apps.engine.models import Data, RemoteFile
+
+from cvat.apps.engine.serializers import RqStatusSerializer
 
 
 class _BaseImportSerializer(serializers.Serializer):
@@ -11,36 +12,47 @@ class _BaseImportSerializer(serializers.Serializer):
         raise NotImplementedError('Updating export data is not allowed')
 
 
-class _ImportAnnotationSerializer(_BaseImportSerializer):
+class _BaseAnnotationSerializer(_BaseImportSerializer):
     lowerx = serializers.FloatField()
     lowery = serializers.FloatField()
     upperx = serializers.FloatField()
     uppery = serializers.FloatField()
     label = serializers.CharField(max_length=128)
+    points = serializers.CharField(max_length=255, allow_null=True, default=None)
+    type = serializers.CharField(max_length=255, allow_null=True, default=None)
+
+
+class _ImportAnnotationSerializer(_BaseAnnotationSerializer):
     upc = serializers.CharField(max_length=128)
-    points = serializers.CharField(max_length=255, required=False, allow_null=True)
-    type = serializers.CharField(max_length=255, required=False, allow_null=True)
 
 
-class _ImportPriceTagSerializer(_ImportAnnotationSerializer):
-    upc = serializers.CharField(max_length=128, allow_blank=True, allow_null=True, required=False)
+class _ImportPriceTagSerializer(_BaseAnnotationSerializer):
+    upc = serializers.CharField(max_length=128, allow_blank=True, allow_null=True, default=None)
+
+
+class _ImportImageSerializer(_BaseImportSerializer):
+    items = serializers.ListSerializer(child=_ImportAnnotationSerializer())
+    image = serializers.URLField()
+    planogram_title = serializers.CharField(allow_null=True, default=None)
+    processing_action_id = serializers.IntegerField(allow_null=True, default=None)
+    price_tags = serializers.ListSerializer(child=_ImportPriceTagSerializer(),
+                                            default=None, allow_null=True)
 
 
 class ImportSerializer(_BaseImportSerializer):
-    items = serializers.ListSerializer(child=_ImportAnnotationSerializer())
+    images = serializers.ListSerializer(child=_ImportImageSerializer)
+    export_by = serializers.CharField(allow_null=True, default=None)
+    retailer_codename = serializers.CharField(allow_null=True, default=None)
+
+
+class _ImportResponseImageSerializer(_BaseImportSerializer):
+    id = serializers.IntegerField()
     image = serializers.URLField()
-    export_by = serializers.CharField(required=False, allow_null=True)
-    planogram_title = serializers.CharField(required=False, allow_null=True)
-    retailer_codename = serializers.CharField(required=False, allow_null=True)
-    processing_action_id = serializers.IntegerField(required=False, allow_null=True)
-    price_tags = serializers.ListSerializer(
-        child=_ImportPriceTagSerializer(),
-        required=False,
-        allow_null=True
-    )
 
 
 class ImportResponseSerializer(_BaseImportSerializer):
-    id = serializers.IntegerField()
-    image = serializers.URLField()
-    preview = serializers.URLField(required=False)
+    task_id = serializers.IntegerField()
+    preview = serializers.URLField(allow_null=True, default=None)
+    images = serializers.ListSerializer(child=_ImportResponseImageSerializer(),
+                                        allow_null=True, default=None)
+    status = RqStatusSerializer(allow_null=True, default=None)

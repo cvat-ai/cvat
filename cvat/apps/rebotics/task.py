@@ -254,30 +254,40 @@ def create(data: list, retailer: User):
     return task.pk
 
 
+def _delete_task(task_id):
+    try:
+        task = Task.objects.get(pk=task_id)
+        task.data.delete()
+    except Task.DoesNotExist:
+        pass
+
+
+def _get_task_data(task_id):
+    try:
+        task = Task.objects.get(pk=task_id)
+    except Task.DoesNotExist:
+        return None
+    preview_path = task.data.get_s3_preview_path()
+    preview_url = s3_client.get_presigned_url(preview_path)
+    s3_files = task.data.s3_files.all()
+    images = [{'id': file.pk, 'image': file.file.url} for file in s3_files]
+    return preview_url, images
+
+
 def check(task_id):
-    # TODO: get the code of _get_rq_response and implement it here.
-    state = TaskViewSet._get_rq_response(queue='default', job_id=f"/api/tasks/{task_id}")
-    if state['state'] == 'Finished':
-        try:
-            task = Task.objects.get(pk=task_id)
-            preview_path = task.data.get_s3_preview_path()
-            preview_url = s3_client.get_presigned_url(preview_path)
-            s3_files = task.data.s3_files.all()
-            task_data = [
-                {
-                    'id': f.pk,
-                    'image':  f.file.url,
-                    'preview': preview_url,
-                } for f in s3_files
-            ]
-            print(task_data)
-            return None, task_data
-        except Task.DoesNotExist:
-            return None, None
-    if state['state'] == 'Failed':
-        try:
-            task = Task.objects.get(pk=task_id)
-            task.data.delete()
-        except Task.DoesNotExist:
-            pass
-    return state, None
+    status = TaskViewSet._get_rq_response(
+        queue='default',
+        job_id=f"/api/tasks/{task_id}",
+    )
+    response = {
+        'task_id': task_id,
+        'status': status,
+    }
+    if status['state'] == 'Finished':
+        task_data = _get_task_data(task_id)
+        if task_data is None:
+            return None
+        response['preview'], response['images'] = task_data
+    elif status['state'] == 'Failed':
+        _delete_task(task_id)
+    return response
