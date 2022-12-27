@@ -55,6 +55,7 @@ class Client:
         pv.Version("2.1"),
         pv.Version("2.2"),
         pv.Version("2.3"),
+        pv.Version("2.4"),
     )
 
     def __init__(

@@ -1356,11 +1356,8 @@ async function getPreview(tid, jid) {
 
     let response = null;
     try {
-        const url = `${backendAPI}/${jid !== null ? 'jobs' : 'tasks'}/${jid || tid}/data`;
+        const url = `${backendAPI}/${jid !== null ? 'jobs' : 'tasks'}/${jid || tid}/preview`;
         response = await Axios.get(url, {
-            params: {
-                type: 'preview',
-            },
             proxy: config.proxy,
             responseType: 'blob',
         });
