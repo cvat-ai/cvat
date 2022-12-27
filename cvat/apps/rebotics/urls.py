@@ -1,9 +1,9 @@
 from rest_framework.routers import DefaultRouter
 
-from .views import ImportTrainingDataViewSet
+from .views import RetailerImportViewset
 
 router = DefaultRouter(trailing_slash=False)
-router.register('import_training_data', ImportTrainingDataViewSet, basename='import_training_data_viewset')
+router.register('retailer_import', RetailerImportViewset, basename='retailer_import_viewset')
 
 app_name = 'rebotics'
 

@@ -1,18 +1,33 @@
 from rest_framework.viewsets import GenericViewSet
 from rest_framework import status
-from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from .admin_auth import RetailerInAdminAuthentication
-from .serializers import ImportSerializer, ImportResponseSerializer
-from cvat.apps.rebotics import task as task_api
+from drf_spectacular.utils import extend_schema, extend_schema_view
 
 from django.http.response import Http404
 
+from .authentication import RetailerAuthentication
+from .serializers import ImportSerializer, ImportResponseSerializer
+from cvat.apps.rebotics import task as task_api
 
-class ImportTrainingDataViewSet(GenericViewSet):
-    authentication_classes = [RetailerInAdminAuthentication, TokenAuthentication, ]
+
+@extend_schema(tags=['retailer import'])
+@extend_schema_view(
+    create=extend_schema(
+        summary='Starts dataset importing from retailer instance. Returns task id for tracking import progress.',
+        request=ImportSerializer,
+        responses={
+            '202': ImportResponseSerializer,
+        }),
+    retrieve=extend_schema(
+        summary='Returns import status and progress. Adds images\' description if import is finished.',
+        responses={
+            '200': ImportResponseSerializer,
+        }),
+)
+class RetailerImportViewset(GenericViewSet):
+    authentication_classes = [RetailerAuthentication, ]
     permission_classes = [IsAuthenticated, ]
 
     def create(self, request, *args, **kwargs):
