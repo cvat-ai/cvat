@@ -167,6 +167,7 @@ class TestTaskUsecases:
         assert capture.match("No media data found")
         assert self.stdout.getvalue() == ""
 
+    @pytest.mark.with_external_services
     def test_can_create_task_with_git_repo(self, fxt_image_file: Path):
         pbar_out = io.StringIO()
         pbar = make_pbar(file=pbar_out)
