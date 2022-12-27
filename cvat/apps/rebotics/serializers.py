@@ -44,7 +44,7 @@ class ImportSerializer(_BaseImportSerializer):
     segment_size = serializers.IntegerField(min_value=0, default=10)
     export_by = serializers.CharField(allow_null=True, default=None)
     retailer_codename = serializers.CharField(allow_null=True, default=None)
-    images = serializers.ListSerializer(child=_ImportImageSerializer)
+    images = serializers.ListSerializer(child=_ImportImageSerializer())
 
 
 class _ImportResponseImageSerializer(_BaseImportSerializer):
