@@ -12,6 +12,7 @@ on:
 
 env:
   CYPRESS_VERIFY_TIMEOUT: 180000 # https://docs.cypress.io/guides/guides/command-line#cypress-verify
+  CVAT_VERSION: "local"
 
 jobs:
   search_cache:
@@ -158,8 +159,8 @@ jobs:
         run: |
           docker load --input /tmp/cvat_server/image.tar
           docker load --input /tmp/cvat_ui/image.tar
-          docker tag cvat/server:latest cvat/server:dev
-          docker tag cvat/ui:latest cvat/ui:dev
+          docker tag cvat/server:latest cvat/server:${CVAT_VERSION}
+          docker tag cvat/ui:latest cvat/ui:${CVAT_VERSION}
           docker image ls -a
 
       - name: Running REST API and SDK tests
@@ -204,7 +205,7 @@ jobs:
       - name: Load Docker server image
         run: |
           docker load --input /tmp/cvat_server/image.tar
-          docker tag cvat/server:latest cvat/server:dev
+          docker tag cvat/server:latest cvat/server:${CVAT_VERSION}
           docker image ls -a
 
       - name: Running OPA tests
@@ -285,8 +286,8 @@ jobs:
         run: |
           docker load --input /tmp/cvat_server/image.tar
           docker load --input /tmp/cvat_ui/image.tar
-          docker tag cvat/server:latest cvat/server:dev
-          docker tag cvat/ui:latest cvat/ui:dev
+          docker tag cvat/server:latest cvat/server:${CVAT_VERSION}
+          docker tag cvat/ui:latest cvat/ui:${CVAT_VERSION}
           docker image ls -a
 
       - name: Run CVAT instance
