@@ -16,7 +16,7 @@ class ImportTrainingDataViewSet(GenericViewSet):
     permission_classes = [IsAuthenticated, ]
 
     def create(self, request, *args, **kwargs):
-        serializer = ImportSerializer(data=request.data, many=True)
+        serializer = ImportSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         task_id = task_api.create(serializer.data, request.user)
         serializer = ImportResponseSerializer(data={'task_id': task_id})
