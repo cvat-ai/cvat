@@ -12,7 +12,7 @@ from .serializers import ImportSerializer, ImportResponseSerializer
 from cvat.apps.rebotics import task as task_api
 
 
-@extend_schema(tags=['retailer import'])
+@extend_schema(tags=['retailer_import'])
 @extend_schema_view(
     create=extend_schema(
         summary='Starts dataset importing from retailer instance. Returns task id for tracking import progress.',
