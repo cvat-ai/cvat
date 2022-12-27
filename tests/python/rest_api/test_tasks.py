@@ -13,6 +13,7 @@ from cvat_sdk.api_client import apis, models
 from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
 
+import shared.utils.s3 as s3
 from shared.utils.config import get_method, make_api_client, patch_method
 from shared.utils.helpers import generate_image_files
 
@@ -710,9 +711,8 @@ class TestWorkWithTask:
         )
 
         # save image from the "public" bucket and remove it temporary
-        from shared.utils.s3 import make_client
 
-        s3_client = make_client()
+        s3_client = s3.make_client()
         bucket_name = cloud_storages[cloud_storage_id]["resource"]
 
         image = s3_client.download_fileobj(bucket_name, image_name)
