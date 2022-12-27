@@ -15,7 +15,7 @@ from cvat.apps.engine.models import Project, Task, Data, Job, RemoteFile, \
     SortingMethod
 from cvat.apps.engine.views import TaskViewSet
 from cvat.apps.engine.media_extractors import sort
-from rebotics.s3_client import s3_client
+from cvat.rebotics.s3_client import s3_client
 from utils.dataset_manifest import S3ManifestManager
 
 User = get_user_model()
@@ -197,9 +197,12 @@ def _create_thread(task_id, cvat_data):
 
 def create(data: dict, retailer: User):
     project, _ = Project.objects.get_or_create(owner=retailer, name='Retailer import')
-    size = len(data['images'])
+    images = data.pop('images')
+    image_quality = data.pop('image_quality')
+    segment_size = data.pop('segment_size')
+    size = len(images)
     db_data = Data.objects.create(
-        image_quality=data['image_quality'],
+        image_quality=image_quality,
         storage_method=StorageMethodChoice.CACHE,
         size=size,
         stop_frame=size - 1,
@@ -212,11 +215,12 @@ def create(data: dict, retailer: User):
         name=now().strftime('Import %Y-%m-%d %H:%M:%S %Z'),
         owner=retailer,
         mode=ModeChoice.ANNOTATION,
-        segment_size=data['segment_size'],
+        segment_size=segment_size,
+        meta=data,
     )
 
     remote_files = []
-    for image_data in data['images']:
+    for image_data in images:
         url = image_data.pop('image')
         image_data['name'] = _get_file_name(url)
         remote_files.append(RemoteFile(
