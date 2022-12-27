@@ -637,6 +637,7 @@ class TestPostTaskData:
         response = get_method(self._USERNAME, f"jobs/{job_id}/annotations")
         assert response.status_code == HTTPStatus.OK
 
+    @pytest.mark.with_external_services
     @pytest.mark.parametrize(
         "cloud_storage_id, manifest, use_bucket_content, org",
         [
@@ -681,6 +682,7 @@ class TestPostTaskData:
 class TestWorkWithTask:
     _USERNAME = "admin1"
 
+    @pytest.mark.with_external_services
     @pytest.mark.parametrize(
         "cloud_storage_id, manifest, org",
         [(1, "manifest.jsonl", "")],  # public bucket
