@@ -1,36 +1,22 @@
 name: Helm
 on:
+  push:
+    branches:
+      - 'master'
+      - 'develop'
   pull_request:
     types: [edited, ready_for_review, opened, synchronize, reopened]
+    paths-ignore:
+      - 'site/**'
+      - '**/*.md'
   workflow_dispatch:
 
 jobs:
-  check_changes:
-    runs-on: ubuntu-latest
-    outputs:
-      helm_dir_changed: ${{ steps.check_updates.outputs.helm_dir_changed }}
-    steps:
-      - uses: jitterbit/get-changed-files@v1
-        id: files
-        continue-on-error: true
-
-      - name: Run check
-        id: check_updates
-        env:
-          PR_FILES_AM: ${{ steps.files.outputs.added_modified }}
-          PR_FILES_RENAMED: ${{ steps.files.outputs.renamed }}
-        run: |
-          PR_FILES="$PR_FILES_AM $PR_FILES_RENAMED"
-          for FILE in $PR_FILES; do
-              if [[ $FILE == helm-chart/* ]] ; then
-                echo "helm_dir_changed=true" >> $GITHUB_OUTPUT
-                break
-              fi
-          done
-
   testing:
-    needs: check_changes
-    if: needs.check_changes.outputs.helm_dir_changed == 'true'
+    if: |
+      github.event.pull_request.draft == false &&
+      !startsWith(github.event.pull_request.title, '[WIP]') &&
+      !startsWith(github.event.pull_request.title, '[Dependent]')
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
