@@ -54,7 +54,7 @@ To annotate with interactors, do the following:
 
 1. Click **Magic wand** ![Magic wand](/images/image189.jpg), and go to the **Interactors** tab.
 2. From the **Label** drop-down, select a label for the polygon.
-3. From the **Interactor** drop-down, select a model (see [Interactors Models](#interactors-models)).
+3. From the **Interactor** drop-down, select a model (see [Interactors models](#interactors-models)).
    <br>Click the **Question mark** to see information about each model:
    <br>![](/images/image114_detrac.jpg)
 4. (Optional) If the model returns masks, and you need to
@@ -66,18 +66,17 @@ To annotate with interactors, do the following:
 
 ### AI tools: add extra points
 
-> **Note:** The number of points used to approximate
-> an object can impact accuracy and ease of editing.
-> Consider the trade-off between accuracy and ease
-> of editing when deciding on the number of points to use
+> **Note:** More points improve outline accuracy, but make shape editing harder.
+Fewer points make shape editing easier, but reduce outline accuracy.
 
-Each model has a minimum required amount of points for annotation.
-As soon as the required amount is reached, the request is sent to the
-server automatically. The server processes the request and adds a
-polygon to the frame.
 
-In the case of the complex object, if you want to postpone the request
-and finish adding extra points first:
+Each model has a minimum required number of points for annotation.
+Once the required number of points is reached, the request
+is automatically sent to the server.
+The server processes the request and adds a polygon to the frame.
+
+For a more accurate outline, postpone request
+to finish adding extra points first:
 
 1. Hold down the **Ctrl** key.
    <br>On the top panel, the **Block** button will turn blue.
@@ -94,7 +93,7 @@ polygon with the slider:
 
 ### AI tools: delete points
 
-<br>To remove a point, do the following:
+<br>To delete a point, do the following:
 
 1. With the cursor, hover over the point you want to delete.
 2. If the point can be deleted, it will enlarge and the cursor will turn into a cross.
@@ -116,7 +115,7 @@ To use **Intelligent scissors**, do the following:
 4. Add the second point, so that the previous point is within the restrictive threshold.
    <br>After that a line repeating the object boundary will be automatically created between the points.
    ![](/images/image200_detrac.jpg)
-5. To finish placing points, on the top menu **Done** (or **N** on the keyboard).
+5. To finish placing points, on the top menu click **Done** (or **N** on the keyboard).
 
 As a result, a polygon will be created.
 
@@ -143,7 +142,7 @@ During the drawing process, you can remove the last point by clicking on it with
 
 | Model                                                     | Tool    | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Example                                           |
 | --------------------------------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
-| Deep extreme <br>cut (DEXTR)                              | AI Tool | This is an optimized version of the original model, <br>introduced at the end of 2017. It uses the <br>information about extreme points of an object <br>to get its mask. The mask is then converted to a polygon. <br>For now this is the fastest interactor on the CPU. <br><br>For more information, see: <li>[GitHub: DEXTR-PyTorch](https://github.com/scaelles/DEXTR-PyTorch) <li>[Site: DEXTR-PyTorch](https://cvlsegmentation.github.io/dextr)<li>[Paper: Deep Extreme Cut: DEXTR-PyTorch](https://arxiv.org/pdf/1711.09081.pdf)                                                                       | ![](/images/dextr_example.gif)                    |
+| Deep extreme <br>cut (DEXTR)                              | AI Tool | This is an optimized version of the original model, <br>introduced at the end of 2017. It uses the <br>information about extreme points of an object <br>to get its mask. The mask is then converted to a polygon. <br>For now this is the fastest interactor on the CPU. <br><br>For more information, see: <li>[GitHub: DEXTR-PyTorch](https://github.com/scaelles/DEXTR-PyTorch) <li>[Site: DEXTR-PyTorch](https://cvlsegmentation.github.io/dextr)<li>[Paper: DEXTR-PyTorch](https://arxiv.org/pdf/1711.09081.pdf)                                                                       | ![](/images/dextr_example.gif)                    |
 | Feature backpropagating <br>refinement <br>scheme (f-BRS) | AI Tool | The model allows to get a mask for an <br>object using positive points (should be <br>left-clicked on the foreground), <br>and negative points (should be right-clicked <br>on the background, if necessary). <br>It is recommended to run the model on GPU, <br>if possible. <br><br>For more information, see: <li>[GitHub: f-BRS](https://github.com/saic-vul/fbrs_interactive_segmentation) <li>[Paper: f-BRS](https://arxiv.org/pdf/2001.10331.pdf)                                                                                                                                                       | ![](/images/fbrs_example.gif)                     |
 | High Resolution <br>Net (HRNet)                           | AI Tool | The model allows to get a mask for <br>an object using positive points (should <br>be left-clicked on the foreground), <br> and negative points (should be <br>right-clicked on the background, <br> if necessary). <br>It is recommended to run the model on GPU, <br>if possible. <br><br>For more information, see: <li>[GitHub: HRNet](https://github.com/saic-vul/ritm_interactive_segmentation) <li>[Paper: HRNet](https://arxiv.org/pdf/2102.06583.pdf)                                                                                                                                                 | ![](/images/hrnet_example.gif)                    |
 | Inside-Outside-Guidance<br>(IOG)                          | AI Tool | The model uses a bounding box and <br>inside/outside points to create a mask. <br>First of all, you need to create a bounding<br> box, wrapping the object. <br>Then you need to use positive <br>and negative points to say the <br>model where is <br>a foreground, and where is a background.<br>Negative points are optional. <br><br>For more information, see: <li>[GitHub: IOG](https://github.com/shiyinzhang/Inside-Outside-Guidance) <li>[Paper: IOG](https://openaccess.thecvf.com/content_CVPR_2020/papers/Zhang_Interactive_Object_Segmentation_With_Inside-Outside_Guidance_CVPR_2020_paper.pdf) | ![](/images/iog_example.gif)                      |
@@ -182,8 +181,9 @@ For this reason, supported DL models are suitable only for certain labels.
 To annotate with detectors, do the following:
 
 1. Click **Magic wand** ![Magic wand](/images/image189.jpg), and go to the **Detectors** tab.
-2. From the **Model** drop-down, select model (see [Detectors Models](#detectors-models)).
-3. From the left drop-down select the DL model label and match it to the right drop-down - the label of your task.
+2. From the **Model** drop-down, select model (see [Detectors models](#detectors-models)).
+3. From the left drop-down select the DL model label, from the right drop-down
+  select the matching label of your task.
 
    ![](/images/image187.jpg)
 
@@ -204,11 +204,11 @@ see [Automatic annotation](/docs/manual/advanced/automatic-annotation/).
 | Mask RCNN                      | The model generates polygons for each instance of an object in the image. <br><br> For more information, see: <li>[Github: Mask RCNN](https://github.com/matterport/Mask_RCNN) <li>[Paper: Mask RCNN](https://arxiv.org/pdf/1703.06870.pdf)                                                                                                                                                                                    |
 | Faster RCNN                    | The model generates bounding boxes for each instance of an object in the image. <br>In this model, RPN and Fast R-CNN are combined into a single network. <br><br> For more information, see: <li>[Github: Faster RCNN](https://github.com/ShaoqingRen/faster_rcnn) <li>[Paper: Faster RCNN](https://arxiv.org/pdf/1506.01497.pdf)                                                                                             |
 | YOLO v3                        | YOLO v3 is a family of object detection architectures and models pre-trained on the COCO dataset. <br><br> For more information, see: <li>[Github: YOLO v3](https://github.com/ultralytics/yolov3) <li>[Site: YOLO v3](https://docs.ultralytics.com/#yolov3) <li>[Paper: YOLO v3](https://arxiv.org/pdf/1804.02767v1.pdf)                                                                                                      |
-| YOLO v5                        | YOLO v5 is a family of object detection architectures and models based on the Pytorch framework. <br><br> For more information, see: <li>[Github: YOLO v5](https://github.com/ultralytics/yolov5) <li>[Site: YOLO v5](https://docs.ultralytics.com/#yolov5) <li>[Paper: YOLO v5](https://pjreddie.com/darknet/yolo/)                                                                                                           |
+| YOLO v5                        | YOLO v5 is a family of object detection architectures and models based on the Pytorch framework. <br><br> For more information, see: <li>[Github: YOLO v5](https://github.com/ultralytics/yolov5) <li>[Site: YOLO v5](https://docs.ultralytics.com/#yolov5)                                                                                                           |
 | Semantic segmentation for ADAS | This is a segmentation network to classify each pixel into 20 classes. <br><br> For more information, see: <li>[Site: ADAS](https://docs.openvino.ai/2019_R1/_semantic_segmentation_adas_0001_description_semantic_segmentation_adas_0001.html)                                                                                                                                                                                |
 | Mask RCNN with Tensorflow      | Mask RCNN version with Tensorflow. The model generates polygons for each instance of an object in the image. <br><br> For more information, see: <li>[Github: Mask RCNN](https://github.com/matterport/Mask_RCNN) <li>[Paper: Mask RCNN](https://arxiv.org/pdf/1703.06870.pdf)                                                                                                                                                 |
 | Faster RCNN with Tensorflow    | Faster RCNN version with Tensorflow. The model generates bounding boxes for each instance of an object in the image. <br>In this model, RPN and Fast R-CNN are combined into a single network. <br><br> For more information, see: <li>[Site: Faster RCNN with Tensorflow](https://docs.openvino.ai/2021.4/omz_models_model_faster_rcnn_inception_v2_coco.html) <li>[Paper: Faster RCNN](https://arxiv.org/pdf/1506.01497.pdf) |
-| RetinaNet                      | Pytorch implementation of RetinaNet object detection. <br> <br><br> For more information, see: <li>[Github: RetinaNet](https://github.com/yhenon/pytorch-retinanet) <li>[Paper: RetinaNet](https://arxiv.org/pdf/1708.02002.pdf)                                                                                                                                                                                               |
+| RetinaNet                      | Pytorch implementation of RetinaNet object detection. <br> <br><br> For more information, see: <li>[Specification: RetinaNet](https://paperswithcode.com/lib/detectron2/retinanet) <li>[Paper: RetinaNet](https://arxiv.org/pdf/1708.02002.pdf)<li>[Documentation: RetinaNet](https://detectron2.readthedocs.io/en/latest/tutorials/training.html)                                                                                                                                                                                              |
 | Face Detection                 | Face detector based on MobileNetV2 as a backbone for indoor and outdoor scenes shot by a front-facing camera. <br> <br><br> For more information, see: <li>[Site: Face Detection 0205](https://docs.openvino.ai/latest/omz_models_model_face_detection_0205.html)                                                                                                                                                              |
 
 <!--lint enable maximum-line-length-->
@@ -261,7 +261,7 @@ All annotated objects will be automatically tracked when you move to the next fr
 
   ![Tracker switcher](/images/tracker_switcher.jpg)
 
-- Trackable objects have an indication on canvas with a model indication.
+- Trackable objects have an indication on canvas with a model name.
 
   ![Tracker indication](/images/tracker_indication_detrac.jpg)
 
@@ -277,7 +277,8 @@ All annotated objects will be automatically tracked when you move to the next fr
 | ----------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
 | TrackerMIL                    | OpenCV   | TrackerMIL model is not bound to <br>labels and can be used for any <br>object. It is a fast client-side model <br>designed to track simple non-overlapping objects. <br><br>For more information, see: <li>[Article: Object Tracking using OpenCV](https://learnopencv.com/tag/mil/)                                                                                                                                                             | ![Annotation using a tracker](/images/tracker_mil_detrac.gif) |
 | SiamMask                      | AI Tools | Fast online Object Tracking and Segmentation. The trackable object will <br>be tracked automatically if the previous frame <br>was the latest keyframe for the object. <br><br>For more information, see:<li> [Github: SiamMask](https://github.com/foolwood/SiamMask) <li> [Paper: SiamMask](https://arxiv.org/pdf/1812.05050.pdf)                                                                                                               | ![Annotation using a tracker](/images/tracker_ai_tools.gif)   |
-| Transformer Tracking (TransT) | AI Tools | Simple and efficient online object tracking <br>and segmentation tool. <br>Trackable object will be tracked automatically <br>if the previous frame was the latest<br>keyframe for the object. <br>This is a modified version of the python framework<br> PyTracking based on Pytorch. <br><br>For more information, see: <li> [Github: TransT](https://github.com/chenxin-dlut/TransT)<li> [Paper: TransT](https://arxiv.org/pdf/2103.15436.pdf) | ![Annotation using a tracker](/images/tracker_transit.gif)    |
+| Transformer Tracking (TransT) | AI Tools | Simple and efficient online tool for object tracking and segmentation. <br>If the previous frame was the latest keyframe <br>for the object, the trackable object will be tracked automatically.<br>This is a modified version of the PyTracking <br> Python framework based on Pytorch<br> <br><br>For more information, see: <li> [Github: TransT](https://github.com/chenxin-dlut/TransT)<li> [Paper: TransT](https://arxiv.org/pdf/2103.15436.pdf) | ![Annotation using a tracker](/images/tracker_transit.gif)    |
+
 
 <!--lint enable maximum-line-length-->
 
