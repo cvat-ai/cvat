@@ -43,9 +43,9 @@ class S3Client:
                 raise
 
     def download_fileobj(self, bucket: str, key: str) -> bytes:
-        data = BytesIO()
-        self.client.download_fileobj(Bucket=bucket, Key=key, Fileobj=data)
-        return data.getvalue()
+        with BytesIO() as data:
+            self.client.download_fileobj(Bucket=bucket, Key=key, Fileobj=data)
+            return data.getvalue()
 
 
 def make_client() -> S3Client:
