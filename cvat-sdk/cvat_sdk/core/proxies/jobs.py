@@ -112,7 +112,7 @@ class Job(
     def get_preview(
         self,
     ) -> io.RawIOBase:
-        (_, response) = self.api.retrieve_data(self.id, type="preview")
+        (_, response) = self.api.retrieve_preview(self.id)
         return io.BytesIO(response.data)
 
     def download_frames(

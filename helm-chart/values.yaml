@@ -75,7 +75,7 @@ cvat:
     replicas: 1
     image: cvat/server
     tag: dev
-    imagepullploicy: IfNotPresent
+    imagePullPolicy: Always
     permissionFix:
       enabled: true
     service:
@@ -95,7 +95,7 @@ cvat:
     replicas: 1
     image: cvat/ui
     tag: dev
-    imagepullploicy: IfNotPresent
+    imagePullPolicy: Always
     labels: {}
     #  test: test
     annotations: {}
@@ -138,7 +138,7 @@ cvat:
     replicas: 1
     image: openpolicyagent/opa
     tag: 0.34.2-rootless
-    imagepullploicy: IfNotPresent
+    imagePullPolicy: IfNotPresent
     labels: {}
     #  test: test
     annotations: {}
@@ -185,23 +185,20 @@ postgresql:
   external:
     host: 127.0.0.1
     port: 5432
-    user: postgres
-    password: postgres
-    dbname: cvat
  # If not external following config will be applied by default
-  global:
-    postgresql:
-      existingSecret: "{{ .Release.Name }}-postgres-secret"
+  auth:
+    existingSecret: "{{ .Release.Name }}-postgres-secret"
+    username: cvat
+    database: cvat
+  service:
+    ports:
+      postgresql: 5432
   secret:
     create: true
     name: "{{ .Release.Name }}-postgres-secret"
     password: cvat_postgresql
     postgres_password: cvat_postgresql_postgres
     replication_password: cvat_postgresql_replica
-  postgresqlDatabase: cvat
-  postgresqlUsername: cvat
-  service:
-    port: 5432
 
 redis:
   #See https://github.com/bitnami/charts/blob/master/bitnami/redis/ for more info
@@ -209,7 +206,11 @@ redis:
   external:
       host: 127.0.0.1
   auth:
-    enabled: false
+    existingSecret: "{{ .Release.Name }}-redis-secret"
+  secret:
+    create: true
+    name: "{{ .Release.Name }}-redis-secret"
+    password: cvat_redis
   cluster:
     enabled: false
 

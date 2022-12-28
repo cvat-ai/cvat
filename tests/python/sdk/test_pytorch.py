@@ -165,8 +165,8 @@ class TestTaskVisionDataset:
             target_transform=cvatpt.ExtractSingleLabelIndex(),
         )
 
-        assert dataset[5][1] == 0
-        assert dataset[6][1] == 1
+        assert torch.equal(dataset[5][1], torch.tensor(0))
+        assert torch.equal(dataset[6][1], torch.tensor(1))
 
         with pytest.raises(ValueError):
             # no tags
@@ -192,9 +192,15 @@ class TestTaskVisionDataset:
             target_transform=cvatpt.ExtractBoundingBoxes(include_shape_types={"rectangle"}),
         )
 
-        assert dataset[0][1] == {"boxes": [], "labels": []}
-        assert dataset[6][1] == {"boxes": [(1.0, 2.0, 3.0, 4.0)], "labels": [1]}
-        assert dataset[7][1] == {"boxes": [], "labels": []}  # points are filtered out
+        assert torch.equal(dataset[0][1]["boxes"], torch.tensor([]))
+        assert torch.equal(dataset[0][1]["labels"], torch.tensor([]))
+
+        assert torch.equal(dataset[6][1]["boxes"], torch.tensor([(1.0, 2.0, 3.0, 4.0)]))
+        assert torch.equal(dataset[6][1]["labels"], torch.tensor([1]))
+
+        # points are filtered out
+        assert torch.equal(dataset[7][1]["boxes"], torch.tensor([]))
+        assert torch.equal(dataset[7][1]["labels"], torch.tensor([]))
 
     def test_transforms(self):
         dataset = cvatpt.TaskVisionDataset(
@@ -205,3 +211,16 @@ class TestTaskVisionDataset:
 
         assert isinstance(dataset[0][0], cvatpt.Target)
         assert isinstance(dataset[0][1], PIL.Image.Image)
+
+    def test_custom_label_mapping(self):
+        label_name_to_id = {label.name: label.id for label in self.task.labels}
+
+        dataset = cvatpt.TaskVisionDataset(
+            self.client,
+            self.task.id,
+            label_name_to_index={"person": 123, "car": 456},
+        )
+
+        _, target = dataset[5]
+        assert target.label_id_to_index[label_name_to_id["person"]] == 123
+        assert target.label_id_to_index[label_name_to_id["car"]] == 456
