@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Helm: Empty password for Redis (<https://github.com/opencv/cvat/pull/5520>)
 
 ### Security
-- TDB
+- Fixed vulnerability with social authentication (<https://github.com/opencv/cvat/pull/5521>)
 
 ## \[2.3.0] - 2022-12-22
 ### Added
