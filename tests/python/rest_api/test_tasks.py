@@ -4,8 +4,12 @@
 # SPDX-License-Identifier: MIT
 
 import json
+import os.path as osp
+import subprocess
 from copy import deepcopy
+from functools import partial
 from http import HTTPStatus
+from tempfile import TemporaryDirectory
 from time import sleep
 
 import pytest
@@ -682,6 +686,120 @@ class TestPostTaskData:
 @pytest.mark.usefixtures("restore_cvat_data")
 class TestWorkWithTask:
     _USERNAME = "admin1"
+
+    @pytest.mark.with_external_services
+    @pytest.mark.parametrize("cloud_storage_id", [1])
+    @pytest.mark.parametrize(
+        "manifest, filename_pattern, sub_dir, task_size",
+        [
+            ("manifest.jsonl", "*", True, 3),  # public bucket
+            ("manifest.jsonl", "test/*", True, 3),
+            ("manifest.jsonl", "test/sub*1.jpeg", True, 1),
+            ("manifest.jsonl", "*image*.jpeg", True, 3),
+            ("manifest.jsonl", "wrong_pattern", True, 0),
+            ("abc_manifest.jsonl", "[a-c]*.jpeg", False, 2),
+            ("abc_manifest.jsonl", "[d]*.jpeg", False, 1),
+            ("abc_manifest.jsonl", "[e-z]*.jpeg", False, 0),
+        ],
+    )
+    @pytest.mark.parametrize("org", [""])
+    def test_create_task_with_file_pattern(
+        self,
+        cloud_storage_id,
+        manifest,
+        filename_pattern,
+        sub_dir,
+        task_size,
+        org,
+        cloud_storages,
+        request,
+    ):
+        # prepare dataset on the bucket
+        prefixes = ("test_image_",) * 3 if sub_dir else ("a_", "b_", "d_")
+        images = generate_image_files(3, prefixes=prefixes)
+        s3_client = s3.make_client()
+
+        cloud_storage = cloud_storages[cloud_storage_id]
+
+        for image in images:
+            s3_client.create_file(
+                data=image,
+                bucket=cloud_storage["resource"],
+                filename=f"{'test/sub/' if sub_dir else ''}{image.name}",
+            )
+            request.addfinalizer(
+                partial(
+                    s3_client.remove_file,
+                    bucket=cloud_storage["resource"],
+                    filename=f"{'test/sub/' if sub_dir else ''}{image.name}",
+                )
+            )
+
+        with TemporaryDirectory() as tmp_dir:
+            for image in images:
+                with open(osp.join(tmp_dir, image.name), "wb") as f:
+                    f.write(image.getvalue())
+
+            command = [
+                "docker",
+                "run",
+                "--rm",
+                "-u",
+                "root:root",
+                "-v",
+                f"{tmp_dir}:/local",
+                "--entrypoint",
+                "python3",
+                "cvat/server",
+                "utils/dataset_manifest/create.py",
+                "--output-dir",
+                "/local",
+                "/local",
+            ]
+            subprocess.run(command, check=True)
+            with open(osp.join(tmp_dir, "manifest.jsonl"), mode="rb") as m_file:
+                s3_client.create_file(
+                    data=m_file.read(),
+                    bucket=cloud_storage["resource"],
+                    filename=f"test/sub/{manifest}" if sub_dir else manifest,
+                )
+                request.addfinalizer(
+                    partial(
+                        s3_client.remove_file,
+                        bucket=cloud_storage["resource"],
+                        filename=f"test/sub/{manifest}" if sub_dir else manifest,
+                    )
+                )
+
+        task_spec = {
+            "name": f"Task with files from cloud storage {cloud_storage_id}",
+            "labels": [
+                {
+                    "name": "car",
+                }
+            ],
+        }
+
+        data_spec = {
+            "image_quality": 75,
+            "use_cache": True,
+            "cloud_storage_id": cloud_storage_id,
+            "server_files": [f"test/sub/{manifest}" if sub_dir else manifest],
+            "filename_pattern": filename_pattern,
+        }
+
+        if task_size:
+            task_id = self._test_create_task(
+                self._USERNAME, task_spec, data_spec, content_type="application/json", org=org
+            )
+
+            with make_api_client(self._USERNAME) as api_client:
+                (task, response) = api_client.tasks_api.retrieve(task_id, org=org)
+                assert response.status == HTTPStatus.OK
+                assert task.size == task_size
+        else:
+            status = self._test_cannot_create_task(self._USERNAME, task_spec, data_spec)
+            assert "No media data found" in status.message
 
     @pytest.mark.with_external_services
     @pytest.mark.parametrize(
