@@ -1,10 +1,10 @@
 Scope,Resource,Context,Ownership,Limit,Method,URL,Privilege,Membership
 create@project,Webhook,Sandbox,N/A,,POST,/webhooks,Admin,N/A
-create@project,Webhook,Sandbox,Project:owner,resource['num_resources'] < 10,POST,/webhooks,Worker,N/A
-create@project,Webhook,Organization,N/A,resource['num_resources'] < 10,POST,/webhooks,Worker,Maintainer
-create@project,Webhook,Organization,Project:owner,resource['num_resources'] < 10,POST,/webhooks,Worker,Worker
+create@project,Webhook,Sandbox,Project:owner,,POST,/webhooks,Worker,N/A
+create@project,Webhook,Organization,N/A,,POST,/webhooks,Worker,Maintainer
+create@project,Webhook,Organization,Project:owner,,POST,/webhooks,Worker,Worker
 create@organization,Webhook,Organization,N/A,,POST,/webhooks,Admin,N/A
-create@organization,Webhook,Organization,N/A,resource['num_resources'] < 10,POST,/webhooks,Worker,Maintainer
+create@organization,Webhook,Organization,N/A,,POST,/webhooks,Worker,Maintainer
 update,Webhook,Sandbox,N/A,,PATCH,/webhooks/{id},Admin,N/A
 update,Webhook,Sandbox,"Project:owner, owner",,PATCH,/webhooks/{id},Worker,N/A
 update,Webhook,Organization,N/A,,PATCH,/webhooks/{id},Worker,Maintainer
