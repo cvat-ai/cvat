@@ -434,6 +434,7 @@ class Task(models.Model):
         blank=True, on_delete=models.SET_NULL, related_name='+')
     target_storage = models.ForeignKey('Storage', null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name='+')
+    meta = models.JSONField(null=True, blank=True)
 
     # Extend default permission model
     class Meta:

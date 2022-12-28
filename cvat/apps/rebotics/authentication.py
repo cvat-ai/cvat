@@ -1,18 +1,20 @@
 import logging
+from random import randint
 
-import requests
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from random import randint
 from rest_framework import authentication, exceptions
 
+import requests
+
+from .schema import RetailerAuthenticationScheme
 
 User = get_user_model()
 
 logger = logging.getLogger(__name__)
 
 
-class RetailerInAdminAuthentication(authentication.BaseAuthentication):
+class RetailerAuthentication(authentication.BaseAuthentication):
     def authenticate(self, request):
         retailer_codename = request.META.get('HTTP_X_RETAILER_CODENAME')
         secret_key = request.META.get('HTTP_X_RETAILER_SECRET_KEY')
