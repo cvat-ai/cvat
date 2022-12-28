@@ -10,7 +10,7 @@ import pytz
 
 from diskcache import Cache
 from django.conf import settings
-from rest_framework.exceptions import ValidationError, NotFound
+from rest_framework.exceptions import NotFound
 
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.media_extractors import (Mpeg4ChunkWriter,
@@ -22,6 +22,7 @@ from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credenti
 from cvat.apps.engine.utils import md5_hash
 from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
 from cvat.apps.engine.mime_types import mimetypes
+from cvat.apps.engine.exceptions import CVATValidationError
 from utils.dataset_manifest import ImageManifestManager
 
 
@@ -154,7 +155,7 @@ class CacheInteraction:
     def _prepare_cloud_preview(self, db_storage):
         storage = db_storage_to_storage_instance(db_storage)
         if not db_storage.manifests.count():
-            raise ValidationError('Cannot get the cloud storage preview. There is no manifest file')
+            raise CVATValidationError('Cannot get the cloud storage preview. There is no manifest file')
         preview_path = None
         for manifest_model in db_storage.manifests.all():
             manifest_prefix = os.path.dirname(manifest_model.filename)
