@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: {{ .Release.Name }}-backend-data
+  name: {{ .Release.Name }}-backend-server-data
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "cvat.labels" . | nindent 4 }}
@@ -14,4 +14,37 @@ spec:
   resources:
     requests:
       storage: {{ .Values.cvat.backend.defaultStorage.size }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Release.Name }}-backend-wd-data
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cvat.labels" . | nindent 4 }}
+    app: cvat-app
+    tier: backend
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.cvat.backend.defaultStorage.size }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Release.Name }}-backend-wl-data
+  namespace: {{ .Release.Namespace }}
+  labels:
+  {{- include "cvat.labels" . | nindent 4 }}
+    app: cvat-app
+    tier: backend
+spec:
+    accessModes:
+        - ReadWriteOnce
+    resources:
+        requests:
+            storage: {{ .Values.cvat.backend.defaultStorage.size }}
+---
 {{- end}}
