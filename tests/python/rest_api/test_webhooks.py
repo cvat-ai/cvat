@@ -1101,7 +1101,6 @@ class TestDeleteWebhooks:
     )
     def test_member_can_delete_org_webhook(self, role, allow, find_users, organizations, webhooks):
         org_webhooks = [w for w in webhooks if w["type"] == "organization"]
-        print(org_webhooks)
         username, org_id, webhook_id = next(
             (
                 (user["username"], org["id"], webhook["id"])
