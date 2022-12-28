@@ -329,6 +329,7 @@ ingress:
   #   secretName: ingress-tls-cvat
 
 traefik:
+  enabled: true
   logs:
     general:
       level: INFO
