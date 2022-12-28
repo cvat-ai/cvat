@@ -202,11 +202,14 @@ def make_cmdline_parser() -> argparse.ArgumentParser:
         help="""zip chunks before sending them to the server""",
     )
     task_create_parser.add_argument(
-        "--cloud_storage_id", default=None, type=int,
+        "--cloud_storage_id",
+        default=None,
+        type=int,
         help="cloud storage ID if you would like to use data from cloud storage",
     )
     task_create_parser.add_argument(
-        "--filename_pattern", type=str,
+        "--filename_pattern",
+        type=str,
         help="""pattern for filtering data from the manifest file for the upload.
             Only shell-style wildcards are supported:
             * - matches everything
