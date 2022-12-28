@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## \[2.4.0] - Unreleased
 ### Added
 - Filename pattern to simplify uploading cloud storage data for a task (<https://github.com/opencv/cvat/pull/5498>)
-- Additional option to disable traefik in helm chart
+- Helm: Additional option to disable traefik in helm chart
 
 ### Changed
 - TDB
@@ -17,10 +17,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TDB
 
 ### Removed
-- TDB
+- Helm: removed hardcode of traefik
 
 ### Fixed
 - Helm: Empty password for Redis (<https://github.com/opencv/cvat/pull/5520>)
+- Helm: fix server pvc misuse, that prevented backend from starting
 
 ### Security
 - TDB
