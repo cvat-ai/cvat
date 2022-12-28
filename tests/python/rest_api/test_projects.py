@@ -10,13 +10,15 @@ import zipfile
 from copy import deepcopy
 from http import HTTPStatus
 from io import BytesIO
-from itertools import groupby, product
+from itertools import product
 from time import sleep
+from typing import Dict, Optional
 
 import pytest
+from cvat_sdk.api_client import ApiClient, Configuration, models
 from deepdiff import DeepDiff
 
-from shared.utils.config import get_method, make_api_client, patch_method
+from shared.utils.config import BASE_URL, USER_PASS, get_method, make_api_client, patch_method
 
 from .utils import export_dataset
 
@@ -300,39 +302,7 @@ class TestPostProjects:
         spec = {"name": f"test {username} tries to create a project"}
         self._test_create_project_201(username, spec)
 
-    def test_if_user_cannot_have_more_than_3_projects(self, projects, find_users):
-        users = find_users(privilege="user")
-
-        user_id, user_projects = next(
-            (user_id, len(list(projects)))
-            for user_id, projects in groupby(projects, lambda a: a["owner"]["id"])
-            if len(list(projects)) < 3
-        )
-        user = users[user_id]
-
-        for i in range(1, 4 - user_projects):
-            spec = {
-                "name": f'test: {user["username"]} tries to create a project number {user_projects + i}'
-            }
-            self._test_create_project_201(user["username"], spec)
-
-        spec = {"name": f'test {user["username"]} tries to create more than 3 projects'}
-        self._test_create_project_403(user["username"], spec)
-
-    @pytest.mark.parametrize("privilege", ("admin", "business"))
-    def test_if_user_can_have_more_than_3_projects(self, find_users, privilege):
-        privileged_users = find_users(privilege=privilege)
-        assert len(privileged_users)
-
-        user = privileged_users[0]
-
-        for i in range(1, 5):
-            spec = {
-                "name": f'test: {user["username"]} with privilege {privilege} tries to create a project number {i}'
-            }
-            self._test_create_project_201(user["username"], spec)
-
-    def test_if_org_worker_cannot_crate_project(self, find_users):
+    def test_if_org_worker_cannot_create_project(self, find_users):
         workers = find_users(role="worker")
 
         worker = next(u for u in workers if u["org"])
@@ -343,16 +313,52 @@ class TestPostProjects:
         self._test_create_project_403(worker["username"], spec, org_id=worker["org"])
 
     @pytest.mark.parametrize("role", ("supervisor", "maintainer", "owner"))
-    def test_if_org_role_can_create_project(self, find_users, role):
-        privileged_users = find_users(role=role)
-        assert len(privileged_users)
+    def test_if_org_role_can_create_project(self, role, admin_user):
+        # We can hit org or user limits here, so we create a new org and users
+        user = self._create_user(
+            ApiClient(configuration=Configuration(BASE_URL)), email="test_org_roles@localhost"
+        )
 
-        user = next(u for u in privileged_users if u["org"])
+        if role != "owner":
+            org = self._create_org(make_api_client(admin_user), members={user["email"]: role})
+        else:
+            org = self._create_org(make_api_client(user["username"]))
 
         spec = {
             "name": f'test: worker {user["username"]} creating a project for his organization',
         }
-        self._test_create_project_201(user["username"], spec, org_id=user["org"])
+        self._test_create_project_201(user["username"], spec, org_id=org)
+
+    @classmethod
+    def _create_user(cls, api_client: ApiClient, email: str) -> str:
+        username = email.split("@", maxsplit=1)[0]
+        with api_client:
+            (_, response) = api_client.auth_api.create_register(
+                models.RegisterSerializerExRequest(
+                    username=username, password1=USER_PASS, password2=USER_PASS, email=email
+                )
+            )
+
+        api_client.cookies.clear()
+
+        return json.loads(response.data)
+
+    @classmethod
+    def _create_org(cls, api_client: ApiClient, members: Optional[Dict[str, str]] = None) -> str:
+        with api_client:
+            (_, response) = api_client.organizations_api.create(
+                models.OrganizationWriteRequest(slug="test_org_roles"), _parse_response=False
+            )
+            org = json.loads(response.data)["id"]
+
+            for email, role in (members or {}).items():
+                api_client.invitations_api.create(
+                    models.InvitationWriteRequest(role=role, email=email),
+                    org_id=org,
+                    _parse_response=False,
+                )
+
+        return org
 
 
 def _check_cvat_for_video_project_annotations_meta(content, values_to_be_checked):
