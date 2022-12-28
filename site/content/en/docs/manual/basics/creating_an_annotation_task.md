@@ -12,6 +12,32 @@ select **Create new task**.
 
 ![Create new task](/images/image004.jpg)
 
+See:
+
+- [Basic configuration](#basic-configuration)
+  - [Label shape](#label-shape)
+  - [Add an attribute](#add-an-attribute)
+  - [Select files](#select-files)
+  - [RAW](#raw)
+  - [Data formats for a 3D task](#data-formats-for-a-3d-task)
+- [Advanced configuration](#advanced-configuration)
+  - [Sorting method](#sorting-method)
+  - [Use zip/video chunks](#use-zipvideo-chunks)
+  - [Use cache](#use-cache)
+  - [Image Quality](#image-quality)
+  - [Overlap Size](#overlap-size)
+  - [Segment size](#segment-size)
+  - [Start frame](#start-frame)
+  - [Stop frame](#stop-frame)
+  - [Frame Step](#frame-step)
+  - [Chunk size](#chunk-size)
+  - [Dataset Repository](#dataset-repository)
+  - [Use LFS](#use-lfs)
+  - [Issue tracker](#issue-tracker)
+  - [Source storage](#source-storage)
+  - [Target storage](#target-storage)
+
+
 ## Basic configuration
 
 Use a basic configuration window to create a simple task with minimum parameters.
@@ -25,11 +51,11 @@ To create a basic configuration task, do the following:
    ![Name of task](/images/image005.jpg)
 
 2. (Optional) From the **Projects** drop-down, select a project for the new task.
-   <br>Leave this field empty if you do not want to add the task to any project.
+   <br>Leave this field empty if you do not want to assign the task to any project.
 
    ![Select project](/images/image193.jpg)
 
-   > **Note:** Further steps are valid if the task does not belong to the project. If the task is in
+   > **Note:** Further steps are valid if the task does not belong to the project. <br>If the task was assigned
    > project, the project's labels will be applied to the task.
 
 3. On the **Constructor** tab, click **Add label**, the label constructor menu will open:
@@ -38,15 +64,15 @@ To create a basic configuration task, do the following:
 
 4. In the **Label name** field, enter the name of the label.
 5. (Optional) To limit the use of the label to a certain [shape tool](/docs/manual/basics/controls-sidebar/#shapes),
-   from the **Label shape** drop-down select the shape.
+   from the [**Label shape**](#label-shape) drop-down select the shape.
 6. (Optional) Select the color for the label.
 
    ![label shape and color](/images/label_shape.jpg)
 
-7. (Optional) Click **Add an attribute** to add [attribute](#add-an-attribute) and its properties.
-8. Click [**Select files**](#select-files).
+7. (Optional) Click [**Add an attribute**](#add-an-attribute) and set up its properties.
+8. Click [**Select files**](#select-files) to upload files for annotation.
 9. Click **Continue** to submit the label and start adding a new one
-   <br> **Cancel** will terminate current label and return you to labels list.
+   <br> or **Cancel** to terminate current label and return you to labels list.
 10. Click **Submit and open** to submit the configuration and open the created task,
     or **Submit and continue**, to submit the configuration and start a new task.
 
@@ -74,23 +100,34 @@ As a result:
 You can change the shape of the label at any moment.
 The change will not affect the existing annotation.
 
-> **Note:** You cannot change the shape of the label
-> that was created as `skeleton`.
-> <br>The **Label shape** field is disabled for `skeleton` labels.
-
 For example, if the objects were created by polygons, and then the label
 the shape was changed to polylines, all previously created objects will
 be polygons, but you will not be able to add new polygon
 objects with the same label.
 
+> **Note:** You cannot change the shape of the label
+> that was created as `skeleton`.
+> <br>The **Label shape** field is disabled for `skeleton` labels.
+
 ### Add an attribute
 
-**Attribute** is an additional label data, that you can use for annotation.
+**Attribute** is a property of an annotated object,
+such as color, model, or other quality.
+
+![Attributes](/images/attributes_01.png)
 
 For example, you created the label `face` and also want to clarify
 the type of face.
+
 To avoid adding extra labels, you can add attributes of the
 `face`: `male` or `female`.
+
+There are two types of the attributes:
+
+- Immutable attributes - are unique attributes, that do not change from frame to frame.
+For example, `age`, `gender`, and `color` are immutable attributes.
+- Mutable attributes - are temporary attributes, that can change from frame to feame.
+For example, `pose`, `quality`, `truncated` are mutable attributes.
 
 Added attributes will be available from the Objects menu:
 
