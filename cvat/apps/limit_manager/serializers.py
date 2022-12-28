@@ -1,5 +1,6 @@
 from rest_framework.serializers import ModelSerializer, SlugRelatedField
 
+from django.conf import settings
 from cvat.apps.engine.models import User
 from cvat.apps.engine.serializers import BasicUserSerializer
 from cvat.apps.organizations.serializers import OrganizationReadSerializer
@@ -7,21 +8,8 @@ from cvat.apps.organizations.models import Organization
 
 from .models import Limitation
 
-general_limitation_fields = (
-    "tasks",
-    "projects",
-    "cloud_storages",
-    "lambda_requests",
-    "webhooks_per_project",
-    "tasks_per_project",
-)
-
-user_limitation_fields = ("organizations",) + general_limitation_fields
-
-org_limitation_fields = (
-    "webhooks_per_organization",
-    "memberships",
-) + general_limitation_fields
+org_limitation_fields = tuple(settings.ORG_LIMITS_MAPPING.values())
+user_limitation_fields = tuple(settings.USER_LIMITS_MAPPING.values())
 
 
 class UserLimitationReadSerializer(ModelSerializer):
@@ -32,6 +20,7 @@ class UserLimitationReadSerializer(ModelSerializer):
         fields = (
             "id",
             "user",
+            "type"
         ) + user_limitation_fields
 
 
@@ -43,6 +32,7 @@ class OrgLimitationReadSerializer(ModelSerializer):
         fields = (
             "id",
             "org",
+            "type"
         ) + org_limitation_fields
 
 
@@ -51,7 +41,7 @@ class UserLimitationWriteSerializer(ModelSerializer):
 
     class Meta:
         model = Limitation
-        fields = ("user",) + user_limitation_fields
+        fields = ("user", "type") + user_limitation_fields
 
     def create(self, validated_data):
         user_limitation = Limitation.objects.create(**validated_data)
@@ -63,7 +53,7 @@ class OrgLimitationWriteSerializer(ModelSerializer):
 
     class Meta:
         model = Limitation
-        fields = ("org",) + org_limitation_fields
+        fields = ("org", "type") + org_limitation_fields
 
     def create(self, validated_data):
         org_limitation = Limitation.objects.create(**validated_data)

@@ -191,11 +191,8 @@ class LimitationManager:
             context = OrgCapabilityContext(org_id=instance.org_id)
         return LimitationManager(context, instance=instance)
 
-    def _create(self, limits: Optional[dict] = None) -> Limitation:
-        if limits is None:
-            limits = self._default_limits
-
-        serializer = self._serializer_class(data={**self._owner, **limits})
+    def _create_default(self) -> Limitation:
+        serializer = self._serializer_class(data={**self._owner, **self._default_limits})
         serializer.is_valid(raise_exception=True)
         self._instance = serializer.save()
 
@@ -215,14 +212,14 @@ class LimitationManager:
         instance = self.get_or_create()
         serializer = self._serializer_class(instance, data=data, partial=True)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+        self._instance = serializer.save()
         return serializer.data
 
     def get_or_create(self) -> Limitation:
         try:
             self._get()
         except exceptions.NotFound:
-            self._create()
+            self._create_default()
 
         return self._instance
 
