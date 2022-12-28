@@ -681,12 +681,6 @@ class TestPostTaskData:
             self._USERNAME, task_spec, data_spec, content_type="application/json", org=org
         )
 
-
-@pytest.mark.usefixtures("restore_db_per_function")
-@pytest.mark.usefixtures("restore_cvat_data")
-class TestWorkWithTask:
-    _USERNAME = "admin1"
-
     @pytest.mark.with_external_services
     @pytest.mark.parametrize("cloud_storage_id", [1])
     @pytest.mark.parametrize(
@@ -801,6 +795,12 @@ class TestWorkWithTask:
             status = self._test_cannot_create_task(self._USERNAME, task_spec, data_spec)
             assert "No media data found" in status.message
 
+
+@pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.usefixtures("restore_cvat_data")
+class TestWorkWithTask:
+    _USERNAME = "admin1"
+
     @pytest.mark.with_external_services
     @pytest.mark.parametrize(
         "cloud_storage_id, manifest, org",
@@ -841,6 +841,9 @@ class TestWorkWithTask:
                 api_client.tasks_api.retrieve_data(
                     task_id, number=0, quality="original", type="frame"
                 )
+                raise AssertionError("Frame should not exist")
+            except AssertionError:
+                raise
             except Exception as ex:
                 assert ex.status == HTTPStatus.NOT_FOUND
                 assert image_name in ex.body
