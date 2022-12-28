@@ -720,7 +720,7 @@ class DataChunkGetter:
             else:
                 return HttpResponse('unknown data type {}.'.format(self.type),
                     status=status.HTTP_400_BAD_REQUEST)
-        except (CVATValidationError, PermissionDenied, NotFound) as ex:
+        except (ValidationError, PermissionDenied, NotFound) as ex:
             return HttpResponse(str(ex), status=ex.status_code)
 
 @extend_schema(tags=['tasks'])

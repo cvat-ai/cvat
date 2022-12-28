@@ -18,6 +18,7 @@ from cvat.apps.engine import models
 from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials, Status
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.utils import parse_specific_attributes
+from cvat.apps.engine.exceptions import CVATValidationError
 
 from drf_spectacular.utils import OpenApiExample, extend_schema_serializer
 
@@ -31,7 +32,7 @@ class BasicUserSerializer(serializers.ModelSerializer):
                         ' these fields: {}'.format(unknown_keys)
                 else:
                     message = 'Got unknown fields: {}'.format(unknown_keys)
-                raise serializers.ValidationError(message)
+                raise CVATValidationError(message)
         return attrs
 
     class Meta:
@@ -120,7 +121,7 @@ class LabelSerializer(SublabelSerializer):
 
     def validate(self, attrs):
         if attrs.get('deleted') and attrs.get('id') is None:
-            raise serializers.ValidationError('Deleted label must have an ID')
+            raise CVATValidationError('Deleted label must have an ID')
 
         return attrs
 
@@ -388,20 +389,20 @@ class DataSerializer(WriteOnceMixin, serializers.ModelSerializer):
     def validate_frame_filter(self, value):
         match = re.search(r"step\s*=\s*([1-9]\d*)", value)
         if not match:
-            raise serializers.ValidationError("Invalid frame filter expression")
+            raise CVATValidationError("Invalid frame filter expression")
         return value
 
     # pylint: disable=no-self-use
     def validate_chunk_size(self, value):
         if not value > 0:
-            raise serializers.ValidationError('Chunk size must be a positive integer')
+            raise CVATValidationError('Chunk size must be a positive integer')
         return value
 
     # pylint: disable=no-self-use
     def validate(self, attrs):
         if 'start_frame' in attrs and 'stop_frame' in attrs \
             and attrs['start_frame'] > attrs['stop_frame']:
-            raise serializers.ValidationError('Stop frame must be more or equal start frame')
+            raise CVATValidationError('Stop frame must be more or equal start frame')
         return attrs
 
     def create(self, validated_data):
@@ -514,19 +515,19 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     def create(self, validated_data):
         project_id = validated_data.get("project_id")
         if not (validated_data.get("label_set") or project_id):
-            raise serializers.ValidationError('Label set or project_id must be present')
+            raise CVATValidationError('Label set or project_id must be present')
         if validated_data.get("label_set") and project_id:
-            raise serializers.ValidationError('Project must have only one of Label set or project_id')
+            raise CVATValidationError('Project must have only one of Label set or project_id')
 
         project = None
         if project_id:
             try:
                 project = models.Project.objects.get(id=project_id)
             except models.Project.DoesNotExist:
-                raise serializers.ValidationError(f'The specified project #{project_id} does not exist.')
+                raise CVATValidationError(f'The specified project #{project_id} does not exist.')
 
             if project.organization != validated_data.get('organization'):
-                raise serializers.ValidationError(f'The task and its project should be in the same organization.')
+                raise CVATValidationError(f'The task and its project should be in the same organization.')
 
         labels = validated_data.pop('label_set', [])
 
@@ -603,7 +604,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         if validated_project_id is not None and validated_project_id != instance.project_id:
             project = models.Project.objects.get(id=validated_project_id)
             if project.tasks.count() and project.tasks.first().dimension != instance.dimension:
-                raise serializers.ValidationError(f'Dimension ({instance.dimension}) of the task must be the same as other tasks in project ({project.tasks.first().dimension})')
+                raise CVATValidationError(f'Dimension ({instance.dimension}) of the task must be the same as other tasks in project ({project.tasks.first().dimension})')
             if instance.project_id is None:
                 for old_label in instance.label_set.all():
                     try:
@@ -612,7 +613,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                         else:
                             new_label = project.label_set.filter(name=old_label.name).first()
                     except ValueError:
-                        raise serializers.ValidationError(f'Target project does not have label with name "{old_label.name}"')
+                        raise CVATValidationError(f'Target project does not have label with name "{old_label.name}"')
                     old_label.attributespec_set.all().delete()
                     for model in (models.LabeledTrack, models.LabeledShape, models.LabeledImage):
                         model.objects.filter(job__segment__task=instance, label=old_label).update(
@@ -630,7 +631,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                         else:
                             new_label = project.label_set.filter(name=old_label.name).first()
                     except ValueError:
-                        raise serializers.ValidationError(f'Target project does not have label with name "{old_label.name}"')
+                        raise CVATValidationError(f'Target project does not have label with name "{old_label.name}"')
                     for (model, attr, attr_name) in (
                         (models.LabeledTrack, models.LabeledTrackAttributeVal, 'track'),
                         (models.LabeledShape, models.LabeledShapeAttributeVal, 'shape'),
@@ -658,7 +659,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             if project_id is not None:
                 project = models.Project.objects.filter(id=project_id).first()
                 if project is None:
-                    raise serializers.ValidationError(f'Cannot find project with ID {project_id}')
+                    raise CVATValidationError(f'Cannot find project with ID {project_id}')
 
             # Check that all labels can be mapped
             new_label_names = set()
@@ -694,16 +695,16 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 else:
                     target_project_label_names.add(label.name)
             if not new_label_names.issubset(target_project_label_names):
-                raise serializers.ValidationError('All task or project label names must be mapped to the target project')
+                raise CVATValidationError('All task or project label names must be mapped to the target project')
 
             for label, sublabels in new_sublabel_names.items():
                 if sublabels != target_project_sublabel_names.get(label):
-                    raise serializers.ValidationError('All task or project label names must be mapped to the target project')
+                    raise CVATValidationError('All task or project label names must be mapped to the target project')
         else:
             if 'label_set' in attrs.keys():
                 label_names = [label['name'] for label in attrs.get('label_set')]
                 if len(label_names) != len(set(label_names)):
-                    raise serializers.ValidationError('All label names must be unique for the task')
+                    raise CVATValidationError('All label names must be unique for the task')
 
         return attrs
 
@@ -843,7 +844,7 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
         if value:
             label_names = [label['name'] for label in value]
             if len(label_names) != len(set(label_names)):
-                raise serializers.ValidationError('All label names must be unique for the project')
+                raise CVATValidationError('All label names must be unique for the project')
         return value
 
 class ExceptionSerializer(serializers.Serializer):
@@ -1013,7 +1014,7 @@ class DatasetFileSerializer(serializers.Serializer):
     @staticmethod
     def validate_dataset_file(value):
         if os.path.splitext(value.name)[1] != '.zip':
-            raise serializers.ValidationError('Dataset file should be zip archive')
+            raise CVATValidationError('Dataset file should be zip archive')
         return value
 
 class TaskFileSerializer(serializers.Serializer):
@@ -1204,14 +1205,14 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
             attributes = value.split('&')
             for attribute in attributes:
                 if not len(attribute.split('=')) == 2:
-                    raise serializers.ValidationError('Invalid specific attributes')
+                    raise CVATValidationError('Invalid specific attributes')
         return value
 
     def validate(self, attrs):
         provider_type = attrs.get('provider_type')
         if provider_type == models.CloudProviderChoice.AZURE_CONTAINER:
             if not attrs.get('account_name', ''):
-                raise serializers.ValidationError('Account name for Azure container was not specified')
+                raise CVATValidationError('Account name for Azure container was not specified')
         return attrs
 
     @staticmethod
@@ -1220,12 +1221,12 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
         for manifest in manifests:
             file_status = storage.get_file_status(manifest)
             if file_status == Status.NOT_FOUND:
-                raise serializers.ValidationError({
+                raise CVATValidationError({
                     'manifests': "The '{}' file does not exist on '{}' cloud storage" \
                         .format(manifest, storage.name)
                 })
             elif file_status == Status.FORBIDDEN:
-                raise serializers.ValidationError({
+                raise CVATValidationError({
                     'manifests': "The '{}' file does not available on '{}' cloud storage. Access denied" \
                         .format(manifest, storage.name)
                 })
@@ -1302,7 +1303,7 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
         if temporary_file:
             os.remove(temporary_file)
         slogger.glob.error(message)
-        raise serializers.ValidationError({field: message})
+        raise CVATValidationError({ field: message })
 
     # pylint: disable=no-self-use
     def update(self, instance, validated_data):
@@ -1372,7 +1373,7 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
         if temporary_file:
             os.remove(temporary_file)
         slogger.glob.error(message)
-        raise serializers.ValidationError({field: message})
+        raise CVATValidationError({ field: message })
 
 class RelatedFileSerializer(serializers.ModelSerializer):
 
@@ -1411,7 +1412,7 @@ def _update_related_storages(instance, validated_data):
             try:
                 _ = models.CloudStorage.objects.get(id=cloud_storage_id)
             except models.CloudStorage.DoesNotExist:
-                raise serializers.ValidationError(f'The specified cloud storage {cloud_storage_id} does not exist.')
+                raise CVATValidationError(f'The specified cloud storage {cloud_storage_id} does not exist.')
 
         storage_instance.save()
 
@@ -1437,4 +1438,4 @@ def _validate_existence_of_cloud_storage(cloud_storage_id):
     try:
         _ = models.CloudStorage.objects.get(id=cloud_storage_id)
     except models.CloudStorage.DoesNotExist:
-        raise serializers.ValidationError(f'The specified cloud storage {cloud_storage_id} does not exist.')
+        raise CVATValidationError(f'The specified cloud storage {cloud_storage_id} does not exist.')

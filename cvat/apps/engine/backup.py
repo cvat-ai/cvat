@@ -19,7 +19,7 @@ from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
-from rest_framework import serializers, status
+from rest_framework import status
 from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
@@ -44,6 +44,7 @@ from cvat.apps.dataset_manager.bindings import CvatImportError
 from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
 
 from cvat.apps.engine.location import StorageType, get_location_configuration
+from cvat.apps.engine.exceptions import CVATValidationError
 
 class Version(Enum):
     V1 = '1.0'
@@ -737,7 +738,7 @@ def export(db_instance, request):
     filename = request.query_params.get('filename', None)
 
     if action not in (None, 'download'):
-        raise serializers.ValidationError(
+        raise CVATValidationError(
             "Unexpected action specified for the request")
 
     if isinstance(db_instance, Task):
@@ -792,7 +793,7 @@ def export(db_instance, request):
                         try:
                             storage_id = location_conf['storage_id']
                         except KeyError:
-                            raise serializers.ValidationError(
+                            raise CVATValidationError(
                                 'Cloud storage location was selected for destination'
                                 ' but cloud storage id was not specified')
                         db_storage = get_object_or_404(CloudStorageModel, pk=storage_id)
@@ -858,7 +859,7 @@ def _import(importer, request, rq_id, Serializer, file_field_name, location_conf
             try:
                 storage_id = location_conf['storage_id']
             except KeyError:
-                raise serializers.ValidationError(
+                raise CVATValidationError(
                     'Cloud storage location was selected for destination'
                     ' but cloud storage id was not specified')
             db_storage = get_object_or_404(CloudStorageModel, pk=storage_id)
