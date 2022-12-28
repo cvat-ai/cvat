@@ -5,11 +5,11 @@ weight: 14
 description: 'Overview of semi-automatic and automatic annotation tools available in CVAT.'
 ---
 
-Label and annotate your data in semi-automatic and automatic mode with the help of **AI Tools** and **OpenCV** tools.
+Label and annotate your data in semi-automatic and automatic mode with the help of **AI** and **OpenCV** tools.
 
 While [interpolation](/docs/manual/advanced/annotation-with-polygons/track-mode-with-polygons/)
 is good for annotation of the videos made by the security cameras,
-**AI Tools** and **OpenCV** tool are good for both:
+**AI** and **OpenCV** tools are good for both:
 videos where the camera is stable and videos, where it
 moves together with the object, or movements of the object are chaotic.
 
@@ -35,7 +35,7 @@ See:
 
 ## Interactors
 
-Interactors are a part of **AI tools** and **OpenCV** tools.
+Interactors are a part of **AI** and **OpenCV** tools.
 
 Use interactors to label objects in images by
 creating a polygon semi-automatically.
@@ -153,7 +153,7 @@ During the drawing process, you can remove the last point by clicking on it with
 
 ## Detectors
 
-Detectors are a part of **AI tools**.
+Detectors are a part of **AI** tools.
 
 Use detectors to automatically
 identify and locate objects in images or videos.
@@ -215,7 +215,7 @@ see [Automatic annotation](/docs/manual/advanced/automatic-annotation/).
 
 ## Trackers
 
-Trackers are part of **AI Tools** and **OpenCV** tools.
+Trackers are part of **AI** and **OpenCV** tools.
 
 Use trackers to identify and label
 objects in a video or image sequence
