@@ -101,14 +101,20 @@ class TestUserLimits:
     _DEFAULT_PROJECTS_LIMIT = 3
     _DEFAULT_ORGS_LIMIT = 1
     _DEFAULT_CLOUD_STORAGES_LIMIT = 10
+<<<<<<< HEAD
     _DEFAULT_PROJECT_WEBHOOKS_LIMIT = 10
+=======
+>>>>>>> ec3e1f34... Better reporting for user limits (#5225)
 
     _TASK_LIMIT_MESSAGE = "user tasks limit reached"
     _PROJECT_TASK_LIMIT_MESSAGE = "user project tasks limit reached"
     _PROJECTS_LIMIT_MESSAGE = "user projects limit reached"
     _ORGS_LIMIT_MESSAGE = "user orgs limit reached"
     _CLOUD_STORAGES_LIMIT_MESSAGE = "user cloud storages limit reached"
+<<<<<<< HEAD
     _PROJECT_WEBHOOKS_LIMIT_MESSAGE = "user project webhooks limit reached"
+=======
+>>>>>>> ec3e1f34... Better reporting for user limits (#5225)
 
     def _create_task(
         self, *, project: Optional[int] = None, client: Optional[Client] = None
@@ -320,6 +326,10 @@ class TestUserLimits:
         assert capture.value.status == HTTPStatus.FORBIDDEN
         assert set(json.loads(capture.value.body)) == {self._ORGS_LIMIT_MESSAGE}
 
+<<<<<<< HEAD
+=======
+    @pytest.mark.with_external_services
+>>>>>>> ec3e1f34... Better reporting for user limits (#5225)
     def test_can_reach_cloud_storages_limit(self, request: pytest.FixtureRequest):
         storage_params = get_common_storage_params()
 
@@ -356,6 +366,7 @@ class TestUserLimits:
 
 class TestOrgLimits:
     @classmethod
+<<<<<<< HEAD
     def _create_user(cls, api_client: ApiClient, email: str) -> str:
         username = email.split("@", maxsplit=1)[0]
         with api_client:
@@ -370,6 +381,8 @@ class TestOrgLimits:
         return user.username
 
     @classmethod
+=======
+>>>>>>> ec3e1f34... Better reporting for user limits (#5225)
     def _create_org(cls, api_client: ApiClient) -> str:
         with api_client:
             (_, response) = api_client.organizations_api.create(
@@ -405,17 +418,23 @@ class TestOrgLimits:
     _DEFAULT_PROJECT_TASKS_LIMIT = 5
     _DEFAULT_PROJECTS_LIMIT = 3
     _DEFAULT_CLOUD_STORAGES_LIMIT = 10
+<<<<<<< HEAD
     _DEFAULT_PROJECT_WEBHOOKS_LIMIT = 10
     _DEFAULT_COMMON_WEBHOOKS_LIMIT = 10
     _DEFAULT_MEMBERS_LIMIT = 3
+=======
+>>>>>>> ec3e1f34... Better reporting for user limits (#5225)
 
     _TASK_LIMIT_MESSAGE = "org tasks limit reached"
     _PROJECT_TASK_LIMIT_MESSAGE = "org project tasks limit reached"
     _PROJECTS_LIMIT_MESSAGE = "org projects limit reached"
     _CLOUD_STORAGES_LIMIT_MESSAGE = "org cloud storages limit reached"
+<<<<<<< HEAD
     _PROJECT_WEBHOOKS_LIMIT_MESSAGE = "org project webhooks limit reached"
     _COMMON_WEBHOOKS_LIMIT_MESSAGE = "org webhooks limit reached"
     _MEMBERS_LIMIT_MESSAGE = "org members limit reached"
+=======
+>>>>>>> ec3e1f34... Better reporting for user limits (#5225)
 
     @contextmanager
     def _patch_client_with_org(self, client: Optional[Client] = None):
@@ -545,6 +564,10 @@ class TestOrgLimits:
         assert capture.value.status == HTTPStatus.FORBIDDEN
         assert set(json.loads(capture.value.body)) == {self._PROJECTS_LIMIT_MESSAGE}
 
+<<<<<<< HEAD
+=======
+    @pytest.mark.with_external_services
+>>>>>>> ec3e1f34... Better reporting for user limits (#5225)
     def test_can_reach_cloud_storages_limit(self, request: pytest.FixtureRequest):
         storage_params = get_common_storage_params()
 
@@ -578,6 +601,7 @@ class TestOrgLimits:
 
         assert response.status_code == HTTPStatus.FORBIDDEN
         assert set(response.json()) == {self._CLOUD_STORAGES_LIMIT_MESSAGE}
+<<<<<<< HEAD
 
     def test_can_reach_project_webhooks_limit(self):
         def _create_webhook():
@@ -651,3 +675,5 @@ class TestOrgLimits:
 
         assert capture.value.status == HTTPStatus.FORBIDDEN
         assert set(json.loads(capture.value.body)) == {self._MEMBERS_LIMIT_MESSAGE}
+=======
+>>>>>>> ec3e1f34... Better reporting for user limits (#5225)
