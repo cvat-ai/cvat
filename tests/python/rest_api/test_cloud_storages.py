@@ -3,7 +3,9 @@
 #
 # SPDX-License-Identifier: MIT
 
+import io
 from http import HTTPStatus
+from PIL import Image
 
 import pytest
 from deepdiff import DeepDiff
@@ -283,3 +285,78 @@ class TestPatchCloudStorage:
             self._test_can_update(username, storage_id, self._PRIVATE_BUCKET_SPEC, org_id=org_id)
         else:
             self._test_cannot_update(username, storage_id, self._PRIVATE_BUCKET_SPEC, org_id=org_id)
+
+@pytest.mark.usefixtures("restore_db_per_class")
+class TestGetCloudStoragePreview:
+    def _test_can_see(self, user, storage_id, **kwargs):
+        response = get_method(user, f"cloudstorages/{storage_id}/preview", **kwargs)
+
+        assert response.status_code == HTTPStatus.OK
+        assert Image.open(io.BytesIO(response.content)).size != 0
+
+    def _test_cannot_see(self, user, storage_id, **kwargs):
+        response = get_method(user, f"cloudstorages/{storage_id}/preview", **kwargs)
+
+        assert response.status_code == HTTPStatus.FORBIDDEN
+
+    @pytest.mark.parametrize("storage_id", [1])
+    @pytest.mark.parametrize(
+        "group, is_owner, is_allow",
+        [
+            ("admin", False, True),
+            ("business", False, False),
+            ("user", True, True),
+        ],
+    )
+    def test_sandbox_user_get_cloud_storage_preview(
+        self, storage_id, group, is_owner, is_allow, users, cloud_storages
+    ):
+        org = ""
+        cloud_storage = cloud_storages[storage_id]
+        username = (
+            cloud_storage["owner"]["username"]
+            if is_owner
+            else next(
+                (
+                    u
+                    for u in users
+                    if group in u["groups"] and u["id"] != cloud_storage["owner"]["id"]
+                )
+            )["username"]
+        )
+
+        if is_allow:
+            self._test_can_see(username, storage_id, org=org)
+        else:
+            self._test_cannot_see(username, storage_id, org=org)
+
+    @pytest.mark.parametrize("org_id", [2])
+    @pytest.mark.parametrize("storage_id", [2])
+    @pytest.mark.parametrize(
+        "role, is_owner, is_allow",
+        [
+            ("worker", True, True),
+            ("supervisor", False, True),
+            ("worker", False, False),
+        ],
+    )
+    def test_org_user_get_cloud_storage_preview(
+        self, org_id, storage_id, role, is_owner, is_allow, find_users, cloud_storages
+    ):
+        cloud_storage = cloud_storages[storage_id]
+        username = (
+            cloud_storage["owner"]["username"]
+            if is_owner
+            else next(
+                (
+                    u
+                    for u in find_users(role=role, org=org_id)
+                    if u["id"] != cloud_storage["owner"]["id"]
+                )
+            )["username"]
+        )
+
+        if is_allow:
+            self._test_can_see(username, storage_id, org_id=org_id)
+        else:
+            self._test_cannot_see(username, storage_id, org_id=org_id)
