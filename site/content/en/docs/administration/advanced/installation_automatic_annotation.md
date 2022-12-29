@@ -11,21 +11,21 @@ description: 'Information about the installation of components needed for semi-a
 
 <!--lint disable maximum-line-length-->
 
-> **⚠ WARNING: Do not use `docker-compose up`**
-> If you did, make sure all containers are stopped by `docker-compose down`.
+> **⚠ WARNING: Do not use `docker compose up`**
+> If you did, make sure all containers are stopped by `docker compose down`.
 
 - To bring up cvat with auto annotation tool, from cvat root directory, you need to run:
 
   ```bash
-  docker-compose -f docker-compose.yml -f components/serverless/docker-compose.serverless.yml up -d
+  docker compose -f docker-compose.yml -f components/serverless/docker-compose.serverless.yml up -d
   ```
 
-  If you did any changes to the docker-compose files, make sure to add `--build` at the end.
+  If you did any changes to the Docker Compose files, make sure to add `--build` at the end.
 
   To stop the containers, simply run:
 
   ```bash
-  docker-compose -f docker-compose.yml -f components/serverless/docker-compose.serverless.yml down
+  docker compose -f docker-compose.yml -f components/serverless/docker-compose.serverless.yml down
   ```
 
 - You have to install `nuctl` command line tool to build and deploy serverless
@@ -47,7 +47,7 @@ description: 'Information about the installation of components needed for semi-a
 
 - Create `cvat` project inside nuclio dashboard where you will deploy new serverless functions
   and deploy a couple of DL models. Commands below should be run only after CVAT has been installed
-  using `docker-compose` because it runs nuclio dashboard which manages all serverless functions.
+  using `docker compose` because it runs nuclio dashboard which manages all serverless functions.
 
   ```bash
   nuctl create project cvat
