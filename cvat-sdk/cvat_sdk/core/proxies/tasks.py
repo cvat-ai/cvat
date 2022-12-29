@@ -126,8 +126,7 @@ class Task(
                 status_check_period = self._client.config.status_check_period
 
             self._client.logger.info("Awaiting for task %s creation...", self.id)
-            status: models.RqStatus = None
-            while status != models.RqStatusStateEnum.allowed_values[("value",)]["FINISHED"]:
+            while True:
                 sleep(status_check_period)
                 (status, response) = self.api.retrieve_status(self.id)
 
@@ -140,13 +139,16 @@ class Task(
 
                 if (
                     status.state.value
+                    == models.RqStatusStateEnum.allowed_values[("value",)]["FINISHED"]
+                ):
+                    break
+                elif (
+                    status.state.value
                     == models.RqStatusStateEnum.allowed_values[("value",)]["FAILED"]
                 ):
                     raise exceptions.ApiException(
                         status=status.state.value, reason=status.message, http_resp=response
                     )
-
-                status = status.state.value
 
             self.fetch()
 
