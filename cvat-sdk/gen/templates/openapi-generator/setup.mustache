@@ -77,7 +77,7 @@ setup(
     python_requires="{{{generatorLanguageVersion}}}",
     install_requires=BASE_REQUIREMENTS,
     extras_require={
-        "pytorch": ['appdirs', 'torch', 'torchvision'],
+        "pytorch": ['torch', 'torchvision'],
     },
     package_dir={"": "."},
     packages=find_packages(include=["cvat_sdk*"]),
