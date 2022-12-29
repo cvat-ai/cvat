@@ -4,16 +4,12 @@
 
 from enum import Enum, auto
 from typing import Optional, cast
-<<<<<<< HEAD
 from rest_framework import exceptions
-=======
->>>>>>> ec3e1f34... Better reporting for user limits (#5225)
 
 from attrs import define
 from django.conf import settings
 
 from cvat.apps.engine.models import CloudStorage, Project, Task
-<<<<<<< HEAD
 from cvat.apps.organizations.models import Membership, Organization
 from cvat.apps.webhooks.models import Webhook
 
@@ -23,11 +19,6 @@ from cvat.apps.limit_manager.serializers import (
     UserLimitationWriteSerializer,
 )
 
-=======
-from cvat.apps.organizations.models import Organization
-from cvat.apps.webhooks.models import Webhook
-
->>>>>>> ec3e1f34... Better reporting for user limits (#5225)
 
 class Limits(Enum):
     """
@@ -61,120 +52,77 @@ class Limits(Enum):
     TASKS_IN_USER_SANDBOX_PROJECT = auto()
     USER_OWNED_ORGS = auto()
     USER_SANDBOX_CLOUD_STORAGES = auto()
-<<<<<<< HEAD
     USER_SANDBOX_PROJECT_WEBHOOKS = auto()
     USER_SANDBOX_LAMBDA_CALL_OFFLINE = auto()
-=======
->>>>>>> ec3e1f34... Better reporting for user limits (#5225)
 
     ORG_TASKS = auto()
     ORG_PROJECTS = auto()
     TASKS_IN_ORG_PROJECT = auto()
     ORG_CLOUD_STORAGES = auto()
-<<<<<<< HEAD
     ORG_MEMBERS = auto()
     ORG_COMMON_WEBHOOKS = auto()
     ORG_PROJECT_WEBHOOKS = auto()
     ORG_LAMBDA_CALL_OFFLINE = auto()
 
-=======
-    ORG_COMMON_WEBHOOKS = auto()
-
-    PROJECT_WEBHOOKS = auto()
->>>>>>> ec3e1f34... Better reporting for user limits (#5225)
 
 class CapabilityContext:
     pass
 
-<<<<<<< HEAD
 
-=======
->>>>>>> ec3e1f34... Better reporting for user limits (#5225)
 @define(kw_only=True)
 class UserCapabilityContext(CapabilityContext):
     user_id: int
 
-<<<<<<< HEAD
 
-=======
->>>>>>> ec3e1f34... Better reporting for user limits (#5225)
 @define(kw_only=True)
 class OrgCapabilityContext(CapabilityContext):
     org_id: int
 
-<<<<<<< HEAD
 
-=======
->>>>>>> ec3e1f34... Better reporting for user limits (#5225)
 @define(kw_only=True)
 class UserSandboxTasksContext(UserCapabilityContext):
     pass
 
-<<<<<<< HEAD
 
-=======
->>>>>>> ec3e1f34... Better reporting for user limits (#5225)
 @define(kw_only=True)
 class OrgTasksContext(OrgCapabilityContext):
     pass
 
-<<<<<<< HEAD
 
-=======
->>>>>>> ec3e1f34... Better reporting for user limits (#5225)
 @define(kw_only=True)
 class TasksInUserSandboxProjectContext(UserCapabilityContext):
     project_id: int
 
-<<<<<<< HEAD
 
-=======
->>>>>>> ec3e1f34... Better reporting for user limits (#5225)
 @define(kw_only=True)
 class TasksInOrgProjectContext(OrgCapabilityContext):
     project_id: int
 
-<<<<<<< HEAD
 
-=======
->>>>>>> ec3e1f34... Better reporting for user limits (#5225)
 @define(kw_only=True)
 class UserSandboxProjectsContext(UserCapabilityContext):
     pass
 
-<<<<<<< HEAD
 
-=======
->>>>>>> ec3e1f34... Better reporting for user limits (#5225)
 @define(kw_only=True)
 class OrgProjectsContext(OrgCapabilityContext):
     pass
 
-<<<<<<< HEAD
 
-=======
->>>>>>> ec3e1f34... Better reporting for user limits (#5225)
 @define(kw_only=True)
 class UserSandboxCloudStoragesContext(UserCapabilityContext):
     pass
 
-<<<<<<< HEAD
 
-=======
->>>>>>> ec3e1f34... Better reporting for user limits (#5225)
 @define(kw_only=True)
 class OrgCloudStoragesContext(OrgCapabilityContext):
     pass
 
-<<<<<<< HEAD
 
-=======
->>>>>>> ec3e1f34... Better reporting for user limits (#5225)
 @define(kw_only=True)
 class UserOrgsContext(UserCapabilityContext):
     pass
 
-<<<<<<< HEAD
 
 @define(kw_only=True)
 class UserSandboxProjectWebhooksContext(UserCapabilityContext):
@@ -191,17 +139,10 @@ class OrgMembersContext(OrgCapabilityContext):
     pass
 
 
-=======
-@define(kw_only=True)
-class ProjectWebhooksContext(CapabilityContext):
-    project_id: int
-
->>>>>>> ec3e1f34... Better reporting for user limits (#5225)
 @define(kw_only=True)
 class OrgCommonWebhooksContext(OrgCapabilityContext):
     pass
 
-<<<<<<< HEAD
 @define(kw_only=True)
 class UserSandboxLambdaCallOfflineContext(UserCapabilityContext):
     pass
@@ -209,15 +150,12 @@ class UserSandboxLambdaCallOfflineContext(UserCapabilityContext):
 @define(kw_only=True)
 class OrgLambdaCallOfflineContext(OrgCapabilityContext):
     pass
-=======
->>>>>>> ec3e1f34... Better reporting for user limits (#5225)
 
 @define(frozen=True)
 class LimitStatus:
     used: Optional[int]
     max: Optional[int]
 
-<<<<<<< HEAD
 
 class LimitationManager:
     def __init__(self, context: CapabilityContext, instance: Optional[Limitation] = None) -> None:
@@ -296,24 +234,13 @@ class LimitManager:
 
         limitation = LimitationManager(context).get_or_create()
 
-=======
-class LimitManager:
-    def get_status(self,
-        limit: Limits, *,
-        context: Optional[CapabilityContext] = None,
-    ) -> LimitStatus:
->>>>>>> ec3e1f34... Better reporting for user limits (#5225)
         if limit == Limits.USER_OWNED_ORGS:
             assert context is not None
             context = cast(UserOrgsContext, context)
 
             return LimitStatus(
                 Organization.objects.filter(owner_id=context.user_id).count(),
-<<<<<<< HEAD
                 limitation.organizations,
-=======
-                settings.DEFAULT_LIMITS["USER_OWNED_ORGS"],
->>>>>>> ec3e1f34... Better reporting for user limits (#5225)
             )
 
         elif limit == Limits.USER_SANDBOX_PROJECTS:
@@ -323,11 +250,7 @@ class LimitManager:
             return LimitStatus(
                 # TODO: check about active/removed projects
                 Project.objects.filter(owner=context.user_id, organization=None).count(),
-<<<<<<< HEAD
                 limitation.projects
-=======
-                settings.DEFAULT_LIMITS["USER_SANDBOX_PROJECTS"],
->>>>>>> ec3e1f34... Better reporting for user limits (#5225)
             )
 
         elif limit == Limits.ORG_PROJECTS:
@@ -337,11 +260,7 @@ class LimitManager:
             return LimitStatus(
                 # TODO: check about active/removed projects
                 Project.objects.filter(organization=context.org_id).count(),
-<<<<<<< HEAD
                 limitation.projects
-=======
-                settings.DEFAULT_LIMITS["ORG_PROJECTS"],
->>>>>>> ec3e1f34... Better reporting for user limits (#5225)
             )
 
         elif limit == Limits.USER_SANDBOX_TASKS:
@@ -351,11 +270,7 @@ class LimitManager:
             return LimitStatus(
                 # TODO: check about active/removed tasks
                 Task.objects.filter(owner=context.user_id, organization=None).count(),
-<<<<<<< HEAD
                 limitation.tasks
-=======
-                settings.DEFAULT_LIMITS["USER_SANDBOX_TASKS"],
->>>>>>> ec3e1f34... Better reporting for user limits (#5225)
             )
 
         elif limit == Limits.ORG_TASKS:
@@ -365,11 +280,7 @@ class LimitManager:
             return LimitStatus(
                 # TODO: check about active/removed tasks
                 Task.objects.filter(organization=context.org_id).count(),
-<<<<<<< HEAD
                 limitation.tasks
-=======
-                settings.DEFAULT_LIMITS["ORG_TASKS"],
->>>>>>> ec3e1f34... Better reporting for user limits (#5225)
             )
 
         elif limit == Limits.TASKS_IN_USER_SANDBOX_PROJECT:
@@ -379,11 +290,7 @@ class LimitManager:
             return LimitStatus(
                 # TODO: check about active/removed tasks
                 Task.objects.filter(project=context.project_id).count(),
-<<<<<<< HEAD
                 limitation.tasks_per_project
-=======
-                settings.DEFAULT_LIMITS["TASKS_IN_USER_SANDBOX_PROJECT"]
->>>>>>> ec3e1f34... Better reporting for user limits (#5225)
             )
 
         elif limit == Limits.TASKS_IN_ORG_PROJECT:
@@ -393,7 +300,6 @@ class LimitManager:
             return LimitStatus(
                 # TODO: check about active/removed tasks
                 Task.objects.filter(project=context.project_id).count(),
-<<<<<<< HEAD
                 limitation.tasks_per_project
             )
 
@@ -401,24 +307,12 @@ class LimitManager:
             assert isinstance(context,
                 (UserSandboxProjectWebhooksContext, OrgProjectWebhooksContext)
             )
-=======
-                settings.DEFAULT_LIMITS["TASKS_IN_ORG_PROJECT"]
-            )
-
-        elif limit == Limits.PROJECT_WEBHOOKS:
-            assert context is not None
-            context = cast(ProjectWebhooksContext, context)
->>>>>>> ec3e1f34... Better reporting for user limits (#5225)
 
             return LimitStatus(
                 # We only limit webhooks per project, not per user
                 # TODO: think over this limit, maybe we should limit per user
                 Webhook.objects.filter(project=context.project_id).count(),
-<<<<<<< HEAD
                 limitation.webhooks_per_project
-=======
-                settings.DEFAULT_LIMITS["PROJECT_WEBHOOKS"]
->>>>>>> ec3e1f34... Better reporting for user limits (#5225)
             )
 
         elif limit == Limits.ORG_COMMON_WEBHOOKS:
@@ -427,11 +321,7 @@ class LimitManager:
 
             return LimitStatus(
                 Webhook.objects.filter(organization=context.org_id, project=None).count(),
-<<<<<<< HEAD
                 limitation.webhooks_per_organization
-=======
-                settings.DEFAULT_LIMITS["ORG_COMMON_WEBHOOKS"]
->>>>>>> ec3e1f34... Better reporting for user limits (#5225)
             )
 
         elif limit == Limits.USER_SANDBOX_CLOUD_STORAGES:
@@ -440,11 +330,7 @@ class LimitManager:
 
             return LimitStatus(
                 CloudStorage.objects.filter(owner=context.user_id, organization=None).count(),
-<<<<<<< HEAD
                 limitation.cloud_storages
-=======
-                settings.DEFAULT_LIMITS["USER_SANDBOX_CLOUD_STORAGES"]
->>>>>>> ec3e1f34... Better reporting for user limits (#5225)
             )
 
         elif limit == Limits.ORG_CLOUD_STORAGES:
@@ -453,7 +339,6 @@ class LimitManager:
 
             return LimitStatus(
                 CloudStorage.objects.filter(organization=context.org_id).count(),
-<<<<<<< HEAD
                 limitation.cloud_storages
             )
 
@@ -485,9 +370,4 @@ class LimitManager:
             )
 
 
-=======
-                settings.DEFAULT_LIMITS["ORG_CLOUD_STORAGES"]
-            )
-
->>>>>>> ec3e1f34... Better reporting for user limits (#5225)
         raise NotImplementedError(f"Unknown capability {limit.name}")
