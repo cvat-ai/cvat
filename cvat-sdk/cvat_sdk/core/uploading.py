@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import os
-from contextlib import ExitStack
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple
 
@@ -339,22 +338,21 @@ class DataUploader(Uploader):
         self._tus_start_upload(url)
 
         for group, group_size in bulk_file_groups:
-            with ExitStack() as es:
-                files = {}
-                for i, filename in enumerate(group):
-                    files[f"client_files[{i}]"] = (
-                        os.fspath(filename),
-                        es.enter_context(open(filename, "rb")).read(),
-                    )
-                response = self._client.api_client.rest_client.POST(
-                    url,
-                    post_params=dict(**kwargs, **files),
-                    headers={
-                        "Content-Type": "multipart/form-data",
-                        "Upload-Multiple": "",
-                        **self._client.api_client.get_common_headers(),
-                    },
+            files = {}
+            for i, filename in enumerate(group):
+                files[f"client_files[{i}]"] = (
+                    os.fspath(filename),
+                    filename.read_bytes(),
                 )
+            response = self._client.api_client.rest_client.POST(
+                url,
+                post_params=dict(**kwargs, **files),
+                headers={
+                    "Content-Type": "multipart/form-data",
+                    "Upload-Multiple": "",
+                    **self._client.api_client.get_common_headers(),
+                },
+            )
             expect_status(200, response)
 
             if pbar is not None:
