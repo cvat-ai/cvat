@@ -13,11 +13,11 @@ from io import BytesIO
 from itertools import product
 from time import sleep
 from typing import Dict, Optional
-from PIL import Image
 
 import pytest
 from cvat_sdk.api_client import ApiClient, Configuration, models
 from deepdiff import DeepDiff
+from PIL import Image
 
 from shared.utils.config import BASE_URL, USER_PASS, get_method, make_api_client, patch_method
 

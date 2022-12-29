@@ -5,10 +5,10 @@
 
 import io
 from http import HTTPStatus
-from PIL import Image
 
 import pytest
 from deepdiff import DeepDiff
+from PIL import Image
 
 from shared.utils.config import get_method, patch_method, post_method
 
