@@ -1632,7 +1632,6 @@ class LimitPermission(OpenPolicyAgentPermission):
 
         return results
 
-
 class PolicyEnforcer(BasePermission):
     # pylint: disable=no-self-use
     def check_permission(self, request, view, obj):

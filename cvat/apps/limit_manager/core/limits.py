@@ -68,56 +68,45 @@ class Limits(Enum):
 class CapabilityContext:
     pass
 
-
 @define(kw_only=True)
 class UserCapabilityContext(CapabilityContext):
     user_id: int
-
 
 @define(kw_only=True)
 class OrgCapabilityContext(CapabilityContext):
     org_id: int
 
-
 @define(kw_only=True)
 class UserSandboxTasksContext(UserCapabilityContext):
     pass
-
 
 @define(kw_only=True)
 class OrgTasksContext(OrgCapabilityContext):
     pass
 
-
 @define(kw_only=True)
 class TasksInUserSandboxProjectContext(UserCapabilityContext):
     project_id: int
-
 
 @define(kw_only=True)
 class TasksInOrgProjectContext(OrgCapabilityContext):
     project_id: int
 
-
 @define(kw_only=True)
 class UserSandboxProjectsContext(UserCapabilityContext):
     pass
-
 
 @define(kw_only=True)
 class OrgProjectsContext(OrgCapabilityContext):
     pass
 
-
 @define(kw_only=True)
 class UserSandboxCloudStoragesContext(UserCapabilityContext):
     pass
 
-
 @define(kw_only=True)
 class OrgCloudStoragesContext(OrgCapabilityContext):
     pass
-
 
 @define(kw_only=True)
 class UserOrgsContext(UserCapabilityContext):

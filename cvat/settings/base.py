@@ -619,6 +619,8 @@ SPECTACULAR_SETTINGS = {
         'JobStage': 'cvat.apps.engine.models.StageChoice',
         'StorageType': 'cvat.apps.engine.models.StorageChoice',
         'SortingMethod': 'cvat.apps.engine.models.SortingMethod',
+        'WebhookType': 'cvat.apps.webhooks.models.WebhookTypeChoice',
+        'WebhookContentType': 'cvat.apps.webhooks.models.WebhookContentTypeChoice',
     },
 
     # Coercion of {pk} to {id} is controlled by SCHEMA_COERCE_PATH_PK. Additionally,

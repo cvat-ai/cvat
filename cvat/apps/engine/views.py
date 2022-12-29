@@ -251,12 +251,12 @@ class ServerViewSet(viewsets.ViewSet):
     def advanced_authentication(request):
         use_social_auth = settings.USE_ALLAUTH_SOCIAL_ACCOUNTS
         integrated_auth_providers = settings.SOCIALACCOUNT_PROVIDERS.keys() if use_social_auth else []
-        google_auth_is_enabled = (
+        google_auth_is_enabled = bool(
             'google' in integrated_auth_providers
             and settings.SOCIAL_AUTH_GOOGLE_CLIENT_ID
             and settings.SOCIAL_AUTH_GOOGLE_CLIENT_SECRET
         )
-        github_auth_is_enabled = (
+        github_auth_is_enabled = bool(
             'github' in integrated_auth_providers
             and settings.SOCIAL_AUTH_GITHUB_CLIENT_ID
             and settings.SOCIAL_AUTH_GITHUB_CLIENT_SECRET
@@ -319,8 +319,6 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     iam_organization_field = 'organization'
 
     def get_serializer_class(self):
-        # TODO: fix separation into read and write serializers for requests and responses
-        # probably with drf-rw-serializers
         if self.request.path.endswith('tasks'):
             return TaskReadSerializer
         else:
