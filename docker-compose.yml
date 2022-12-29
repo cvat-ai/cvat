@@ -71,6 +71,7 @@ services:
       - cvat_opa
     environment:
       CVAT_REDIS_HOST: 'cvat_redis'
+      CVAT_REDIS_PASSWORD: ''
       CVAT_POSTGRES_HOST: 'cvat_db'
       no_proxy: elasticsearch,kibana,logstash,nuclio,opa,${no_proxy:-}
     command: -c supervisord/utils.conf
