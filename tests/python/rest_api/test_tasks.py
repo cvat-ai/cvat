@@ -828,8 +828,10 @@ class TestGetTaskPreview:
     def _test_task_preview_200(self, username, task_id, **kwargs):
         with make_api_client(username) as api_client:
             (_, response) = api_client.tasks_api.retrieve_preview(task_id, **kwargs)
+
             assert response.status == HTTPStatus.OK
-            assert Image.open(io.BytesIO(response.data)).size != 0
+            (width, height) = Image.open(io.BytesIO(response.data)).size
+            assert width > 0 and height > 0
 
     def _test_task_preview_403(self, username, task_id):
         with make_api_client(username) as api_client:

@@ -293,7 +293,8 @@ class TestGetCloudStoragePreview:
         response = get_method(user, f"cloudstorages/{storage_id}/preview", **kwargs)
 
         assert response.status_code == HTTPStatus.OK
-        assert Image.open(io.BytesIO(response.content)).size != 0
+        (width, height) = Image.open(io.BytesIO(response.content)).size
+        assert width > 0 and height > 0
 
     def _test_cannot_see(self, user, storage_id, **kwargs):
         response = get_method(user, f"cloudstorages/{storage_id}/preview", **kwargs)

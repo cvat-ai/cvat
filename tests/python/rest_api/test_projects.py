@@ -743,8 +743,10 @@ class TestGetProjectPreview:
     def _test_response_200(self, username, project_id, **kwargs):
         with make_api_client(username) as api_client:
             (_, response) = api_client.projects_api.retrieve_preview(project_id, **kwargs)
+
             assert response.status == HTTPStatus.OK
-            assert Image.open(io.BytesIO(response.data)).size != 0
+            (width, height) = Image.open(BytesIO(response.data)).size
+            assert width > 0 and height > 0
 
     def _test_response_403(self, username, project_id):
         with make_api_client(username) as api_client:

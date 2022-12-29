@@ -613,8 +613,10 @@ class TestGetJobPreview:
     def _test_get_job_preview_200(self, username, jid, **kwargs):
         with make_api_client(username) as client:
             (_, response) = client.jobs_api.retrieve_preview(jid, **kwargs)
+
             assert response.status == HTTPStatus.OK
-            assert Image.open(BytesIO(response.data)).size != 0
+            (width, height) = Image.open(BytesIO(response.data)).size
+            assert width > 0 and height > 0
 
     def _test_get_job_preview_403(self, username, jid, **kwargs):
         with make_api_client(username) as client:
