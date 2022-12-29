@@ -286,6 +286,7 @@ class TestPatchCloudStorage:
         else:
             self._test_cannot_update(username, storage_id, self._PRIVATE_BUCKET_SPEC, org_id=org_id)
 
+
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetCloudStoragePreview:
     def _test_can_see(self, user, storage_id, **kwargs):

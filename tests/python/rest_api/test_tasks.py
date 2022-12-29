@@ -822,6 +822,7 @@ class TestPostTaskData:
         status = self._test_cannot_create_task(self._USERNAME, task_spec, data_spec, org=org)
         assert mythical_file in status.message
 
+
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetTaskPreview:
     def _test_task_preview_200(self, username, task_id, **kwargs):

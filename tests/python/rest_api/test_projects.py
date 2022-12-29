@@ -737,6 +737,7 @@ class TestPatchProjectLabel:
         assert response.status_code == HTTPStatus.OK
         assert len(response.json()["labels"]) == len(project["labels"]) + 1
 
+
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetProjectPreview:
     def _test_response_200(self, username, project_id, **kwargs):
@@ -760,7 +761,9 @@ class TestGetProjectPreview:
             assert response.status == HTTPStatus.NOT_FOUND
 
     # Admin can see any project preview even he has no ownerships for this project.
-    def test_project_preview_admin_accessibility(self, projects, find_users, is_project_staff, org_staff):
+    def test_project_preview_admin_accessibility(
+        self, projects, find_users, is_project_staff, org_staff
+    ):
         users = find_users(privilege="admin")
 
         user, project = next(
@@ -807,7 +810,9 @@ class TestGetProjectPreview:
             project_with_assignee["assignee"]["username"], project_with_assignee["id"]
         )
 
-    def test_user_cannot_see_project_preview(self, projects, find_users, is_project_staff, org_staff):
+    def test_user_cannot_see_project_preview(
+        self, projects, find_users, is_project_staff, org_staff
+    ):
         users = find_users(exclude_privilege="admin")
 
         user, project = next(

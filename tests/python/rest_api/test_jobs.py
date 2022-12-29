@@ -607,6 +607,7 @@ class TestJobDataset:
             content = zip_file.read(anno_file_name)
         check_func(content, values_to_be_checked)
 
+
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetJobPreview:
     def _test_get_job_preview_200(self, username, jid, **kwargs):
@@ -632,7 +633,9 @@ class TestGetJobPreview:
 
     @pytest.mark.parametrize("org_id", ["", None, 1, 2])
     @pytest.mark.parametrize("groups", [["business"], ["user"], ["worker"], []])
-    def test_non_admin_get_job_preview(self, org_id, groups, users, jobs, tasks, projects, org_staff):
+    def test_non_admin_get_job_preview(
+        self, org_id, groups, users, jobs, tasks, projects, org_staff
+    ):
         # keep the reasonable amount of users and jobs
         users = [u for u in users if u["groups"] == groups][:4]
         jobs, kwargs = filter_jobs(jobs, tasks, org_id)
