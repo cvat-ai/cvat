@@ -8,9 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## \[2.4.0] - Unreleased
 ### Added
 - Filename pattern to simplify uploading cloud storage data for a task (<https://github.com/opencv/cvat/pull/5498>)
+- \[SDK\] An arg to wait for data processing in the task data uploading function
+  (<https://github.com/opencv/cvat/pull/5502>)
 
 ### Changed
-- TDB
+- \[SDK\] `resource_type` args now have the default value of `local` in task creation functions
+  (<https://github.com/opencv/cvat/pull/5502>)
 
 ### Deprecated
 - TDB
