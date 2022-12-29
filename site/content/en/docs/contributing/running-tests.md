@@ -10,7 +10,7 @@ description: 'Instructions on how to run all existence tests.'
 **Initial steps**:
 1. Run CVAT instance:
    ```
-   docker-compose \
+   docker compose \
              -f docker-compose.yml \
              -f docker-compose.dev.yml \
              -f components/serverless/docker-compose.serverless.yml \
@@ -76,7 +76,7 @@ pytest ./tests/python --rebuild
 
 **Debugging**
 
-Currently, this is only supported in `docker-compose`-based deployments,
+Currently, this is only supported in deployments based on Docker Compose,
 which should be enough to fix errors arising in REST API tests.
 
 To debug a server deployed with Docker, you need to do the following:
@@ -132,7 +132,7 @@ Extra options:
    ```
 1. Run CVAT instance
    ```
-   docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
    ```
 
 **Running tests**

@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/opencv/cvat/pull/5502>)
 
 ### Changed
+- The Docker Compose files now use the Compose Specification version
+  of the format. This version is supported by Docker Compose 1.27.0+
+  (<https://github.com/opencv/cvat/pull/5524>).
 - \[SDK\] `resource_type` args now have the default value of `local` in task creation functions
   (<https://github.com/opencv/cvat/pull/5502>)
 
@@ -25,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Helm: Empty password for Redis (<https://github.com/opencv/cvat/pull/5520>)
 
 ### Security
-- TDB
+- Fixed vulnerability with social authentication (<https://github.com/opencv/cvat/pull/5521>)
 
 ## \[2.3.0] - 2022-12-22
 ### Added
