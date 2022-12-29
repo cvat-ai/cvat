@@ -248,8 +248,12 @@ class TestProjectVisionDataset:
         )
         self.label_ids = sorted(l.id for l in self.project.labels)
 
-        all_images = generate_image_files(9)
-        self.images_per_task = [all_images[i * 3 : i * 3 + 3] for i in range(3)]
+        subsets = ["Train", "Test", "Val"]
+        num_images_per_task = 3
+
+        all_images = generate_image_files(num_images_per_task * len(subsets))
+
+        self.images_per_task = list(zip(*[iter(all_images)] * num_images_per_task))
 
         image_dir = tmp_path / "images"
         image_dir.mkdir()
@@ -274,7 +278,7 @@ class TestProjectVisionDataset:
                 image_paths,
                 data_params={"image_quality": 70},
             )
-            for subset, image_paths in zip(["Train", "Test", "Val"], image_paths_per_task)
+            for subset, image_paths in zip(subsets, image_paths_per_task)
         ]
 
         # sort both self.tasks and self.images_per_task in the order that ProjectVisionDataset uses
