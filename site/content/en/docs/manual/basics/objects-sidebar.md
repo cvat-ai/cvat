@@ -5,13 +5,14 @@ weight: 11
 description: 'Overview of available functions on the objects sidebar of the annotation tool.'
 ---
 
-## Hide objects sidebar
+In the objects sidebar, you can see the list of available objects on the current
+frame. The following figure is an example of how the list might look like:
 
-**Hide** - the button hides the object's sidebar.
+| Shape mode                | Track mode                |
+| ------------------------- | ------------------------- |
+| ![](/images/image044.jpg) | ![](/images/image045.jpg) |
 
-![](/images/image146.jpg)
-
-## Objects
+## Objects properties
 
 **Filter** input box
 
@@ -28,18 +29,11 @@ The way how to use filters is described in the advanced guide [here](/docs/manua
 - Expand/collapse all - collapses/expands the details field of all objects in the frame.
 - Sorting - sort the list of objects: updated time, ID - accent, ID - descent
 
-In the objects sidebar, you can see the list of available objects on the current
-frame. The following figure is an example of how the list might look like:
-
-| Shape mode                | Track mode                |
-| ------------------------- | ------------------------- |
-| ![](/images/image044.jpg) | ![](/images/image045.jpg) |
-
 ---
 
 **Objects** on the sidebar
 
-The type of shape can be changed by selecting **Label** property.
+The type of shape can be changed by selecting the **Label** property.
 For instance, it can look like shown in the figure below:
 
 ![](/images/image050.jpg)
@@ -55,21 +49,20 @@ The action menu contains:
 - **Create object URL** - puts a link to an object on the clipboard.
   After you open the link, this object will be filtered.
 - **Make a copy** - copies an object. The keyboard shortcut is **Ctrl** + **C** > **Ctrl** + **V**.
-- **Propagate** - Copies the form to several frames,
-  invokes a dialog box in which you can specify the number of copies
-  or the frame onto which you want to copy the object.
-  The keyboard shortcut **Ctrl** + **B**. It has two
-  options:
+- **Propagate** function copies the form to multiple frames
+  and displays a dialog box where you can specify the number
+  of copies or the frame to which you want to copy the object.
+  The keyboard shortcut is **Ctr**l + **B**. <br>There are two options available:
 
-  - **Propagate forwards** (![Fw propagate](/images/propagate_fw.png)) creates a
+  - **Propagate forward** (![Fw propagate](/images/propagate_fw.png)) creates a
     copy of the object on `N` _subsequent_ frames at the same position.
-  - **Propagate backwards** (![Back propagate](/images/propagate_back.png)) creates
+  - **Propagate backward** (![Back propagate](/images/propagate_back.png)) creates
     a copy of the object on `N` _previous_ frames at the same position.
 
   ![](/images/image053.jpg)
 
-- **To background** - moves the object to the background. The keyboard shortcut **-**,**\_**.
-- **To foreground** - moves the object to the foreground. The keyboard shortcut **+**,**=**.
+- **To background** - moves the object to the background. The keyboard shortcut **-** or **\_**
+- **To foreground** - moves the object to the foreground. The keyboard shortcut **+** or **=**
 - **Change instance color**- choosing a color using the color picker (available only in instance mode).
 
   ![](/images/image153.jpg)
@@ -126,7 +119,7 @@ After that, you will be able to assign a corresponding label to an object
 by hovering your mouse cursor over it and pressing **Ctrl** + **Num(0..9)**.
 
 In case you do not point the cursor to the object, pressing **Ctrl** + **Num(0..9)** will set a chosen label as default,
-so that the next object you create (use `N` key) will automatically have this label assigned.
+so that the next object you create (use the `N` key) will automatically have this label assigned.
 
 ![](/images/image211.jpg)
 
@@ -184,3 +177,9 @@ If enabled all shapes are displayed in white and the background is black.
 Enables/disables the display of auxiliary perspective lines. Only relevant for cuboids
 
 ![](/images/image090_detrac.jpg)
+
+## Hide objects sidebar
+
+**Hide** - the button hides the object's sidebar.
+
+![](/images/image146.jpg)
