@@ -234,7 +234,8 @@ def start_services(rebuild=False):
 
     _run(
         [
-            "docker-compose",
+            "docker",
+            "compose",
             f"--project-name={PREFIX}",
             # use compatibility mode to have fixed names for containers (with underscores)
             # https://github.com/docker/compose#about-update-and-backward-compatibility
@@ -286,7 +287,8 @@ def pytest_sessionstart(session):
         if stop:
             _run(
                 [
-                    "docker-compose",
+                    "docker",
+                    "compose",
                     f"--project-name={PREFIX}",
                     # use compatibility mode to have fixed names for containers (with underscores)
                     # https://github.com/docker/compose#about-update-and-backward-compatibility

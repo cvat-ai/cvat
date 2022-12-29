@@ -1,5 +1,3 @@
-version: '3.7'
-
 services:
   webhook_receiver:
     image: python:3.9-slim
