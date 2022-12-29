@@ -15,7 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The Docker Compose files now use the Compose Specification version
   of the format. This version is supported by Docker Compose 1.27.0+
   (<https://github.com/opencv/cvat/pull/5524>).
-- \[SDK\] `resource_type` args now have the default value of `local` in task creation functions
+- \[SDK\] The `resource_type` args now have the default value of `local` in task creation functions.
+  The corresponding arguments are keyword-only now.
   (<https://github.com/opencv/cvat/pull/5502>)
 
 ### Deprecated
