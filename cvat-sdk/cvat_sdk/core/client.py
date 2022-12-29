@@ -8,9 +8,11 @@ from __future__ import annotations
 import logging
 import urllib.parse
 from contextlib import suppress
+from pathlib import Path
 from time import sleep
 from typing import Any, Dict, Optional, Sequence, Tuple
 
+import appdirs
 import attrs
 import packaging.version as pv
 import urllib3
@@ -27,6 +29,8 @@ from cvat_sdk.core.proxies.tasks import TasksRepo
 from cvat_sdk.core.proxies.users import UsersRepo
 from cvat_sdk.version import VERSION
 
+_DEFAULT_CACHE_DIR = Path(appdirs.user_cache_dir("cvat-sdk", "CVAT.ai"))
+
 
 @attrs.define
 class Config:
@@ -42,6 +46,9 @@ class Config:
 
     verify_ssl: Optional[bool] = None
     """Whether to verify host SSL certificate or not"""
+
+    cache_dir: Path = attrs.field(converter=Path, default=_DEFAULT_CACHE_DIR)
+    """Directory in which to store cached server data"""
 
 
 class Client:

@@ -30,7 +30,6 @@ class TestTaskVisionDataset:
     @pytest.fixture(autouse=True)
     def setup(
         self,
-        monkeypatch: pytest.MonkeyPatch,
         tmp_path: Path,
         fxt_login: Tuple[Client, str],
         fxt_logger: Tuple[Logger, io.StringIO],
@@ -41,12 +40,11 @@ class TestTaskVisionDataset:
         self.stdout = fxt_stdout
         self.client, self.user = fxt_login
         self.client.logger = logger
+        self.client.config.cache_dir = tmp_path / "cache"
 
         api_client = self.client.api_client
         for k in api_client.configuration.logger:
             api_client.configuration.logger[k] = logger
-
-        monkeypatch.setattr(cvatpt, "_CACHE_DIR", self.tmp_path / "cache")
 
         self._create_task()
 
@@ -106,6 +104,9 @@ class TestTaskVisionDataset:
 
     def test_basic(self):
         dataset = cvatpt.TaskVisionDataset(self.client, self.task.id)
+
+        # verify that the cache is not empty
+        assert list(self.client.config.cache_dir.iterdir())
 
         assert len(dataset) == self.task.size
 
