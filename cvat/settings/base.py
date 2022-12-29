@@ -623,10 +623,10 @@ if USE_ALLAUTH_SOCIAL_ACCOUNTS:
     SOCIALACCOUNT_QUERY_EMAIL = True
     SOCIALACCOUNT_CALLBACK_CANCELLED_URL = '/auth/login'
     # custom variable because by default LOGIN_REDIRECT_URL will be used
-    SOCIAL_APP_LOGIN_REDIRECT_URL = 'http://localhost:8080/auth/login-with-social-app'
+    SOCIAL_APP_LOGIN_REDIRECT_URL = os.getenv('SOCIAL_APP_LOGIN_REDIRECT_URL', 'http://localhost:8080/auth/login-with-social-app')
 
-    GITHUB_CALLBACK_URL = 'http://localhost:8080/api/auth/github/login/callback/'
-    GOOGLE_CALLBACK_URL = 'http://localhost:8080/api/auth/google/login/callback/'
+    GITHUB_CALLBACK_URL = os.getenv('GITHUB_CALLBACK_URL', 'http://localhost:8080/api/auth/github/login/callback/')
+    GOOGLE_CALLBACK_URL = os.getenv('GOOGLE_CALLBACK_URL', 'http://localhost:8080/api/auth/google/login/callback/')
 
     SOCIAL_AUTH_GOOGLE_CLIENT_ID = os.getenv('SOCIAL_AUTH_GOOGLE_CLIENT_ID')
     SOCIAL_AUTH_GOOGLE_CLIENT_SECRET = os.getenv('SOCIAL_AUTH_GOOGLE_CLIENT_SECRET')
