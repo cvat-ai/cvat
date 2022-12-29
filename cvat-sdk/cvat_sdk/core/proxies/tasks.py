@@ -131,7 +131,7 @@ class Task(
                 (status, response) = self.api.retrieve_status(self.id)
 
                 self._client.logger.info(
-                    "Task %s creation status=%s, message=%s",
+                    "Task %s creation status: %s (message=%s)",
                     self.id,
                     status.state.value,
                     status.message,
