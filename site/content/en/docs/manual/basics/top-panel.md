@@ -19,7 +19,8 @@ Button assignment:
 
 - **Upload Annotations** — uploads annotations into a task.
 - **Export as a dataset** — download a data set from a task in one of the [supported formats](/docs/manual/advanced/formats/).
-  You can also enter a **Custom name** and enable the **Save images** checkbox if you want the dataset to contain images.
+  You can also enter a **Custom name** and enable the **Save images**
+  checkbox if you want the dataset to contain images.
 - **Remove Annotations** — calls the confirmation window if you click **Delete**, the annotation of the current job
   will be removed, if you click **Select range** you can remove annotation on range frames, if you activate checkbox
   **Delete only keyframe for tracks** then only keyframes will be deleted from the tracks, on the selected range.
