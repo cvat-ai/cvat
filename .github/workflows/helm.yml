@@ -101,20 +101,5 @@ jobs:
       # We don't have external services in Helm tests, so we ignore corresponding cases
       # They are still tested without Helm
       run: |
-        kubectl cp tests/mounted_file_share/images \
-          $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}'):/home/django/share
-        test_filter=(
-          "not test_create_task_with_cloud_storage_files and "
-          "not test_can_reach_cloud_storages_limit and "
-          "not test_cannot_create_task_with_mythical_cloud_storage_data and "
-          "not test_cant_create_task_with_no_data and "
-          "not test_can_create_task_with_git_repo"
-        ) # newlines are not allowed in the expression
-        test_filter="${test_filter[@]}" # direct substitution doesn't work
-        pytest --platform=kube \
-          --ignore=tests/python/rest_api/test_cloud_storages.py \
-          --ignore=tests/python/rest_api/test_analytics.py \
-          --ignore=tests/python/rest_api/test_resource_import_export.py \
-          --ignore=tests/python/rest_api/test_webhooks_sender.py \
-          -k "$test_filter" \
-          tests/python
+        kubectl cp tests/mounted_file_share/images $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}'):/home/django/share
+        pytest --platform=kube -m "not with_external_services" tests/python
