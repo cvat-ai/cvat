@@ -18,10 +18,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 - Helm: removed hardcode of traefik
+- Helm: disable ingress by default
 
 ### Fixed
 - Helm: Empty password for Redis (<https://github.com/opencv/cvat/pull/5520>)
 - Helm: fix server pvc misuse, that prevented backend from starting
+- Helm: fix inconsistent database address template in backend env variables
 
 ### Security
 - TDB

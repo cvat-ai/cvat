@@ -276,7 +276,7 @@ kibana:
   imageTag: "latest"
 
 ingress:
-  enabled: true
+  enabled: false
 #  annotations:
 #    traefik.ingress.kubernetes.io/router.entrypoints: web
 #    kubernetes.io/ingress.class: traefik

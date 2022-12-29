@@ -47,4 +47,19 @@ spec:
         requests:
             storage: {{ .Values.cvat.backend.defaultStorage.size }}
 ---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Release.Name }}-backend-utils-data
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cvat.labels" . | nindent 4 }}
+    app: cvat-app
+    tier: backend
+spec:
+    accessModes:
+        - ReadWriteOnce
+    resources:
+        requests:
+            storage: {{ .Values.cvat.backend.defaultStorage.size }}
 {{- end}}
