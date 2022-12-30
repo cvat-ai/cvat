@@ -8,7 +8,7 @@ import itertools
 import fnmatch
 import os
 import sys
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 from rest_framework.serializers import ValidationError
 import rq
 import re
@@ -406,7 +406,7 @@ def _create_task_manifest_based_on_cloud_storage_manifest(
 
 @transaction.atomic
 def _create_thread(
-    db_task: models.Task,
+    db_task: Union[int, models.Task],
     data: Dict[str, Any],
     *,
     isBackupRestore: bool = False,
