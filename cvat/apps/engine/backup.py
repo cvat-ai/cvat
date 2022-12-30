@@ -550,7 +550,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         data['use_zip_chunks'] = data.pop('chunk_type') == DataChoice.IMAGESET
         data = data_serializer.data
         data['client_files'] = uploaded_files
-        _create_thread(self._db_task.pk, data.copy(), True)
+        _create_thread(self._db_task.pk, data.copy(), isBackupRestore=True)
         db_data.start_frame = data['start_frame']
         db_data.stop_frame = data['stop_frame']
         db_data.frame_filter = data['frame_filter']
