@@ -6,18 +6,8 @@ import shutil
 import types
 import zipfile
 from concurrent.futures import ThreadPoolExecutor
-from typing import (
-    Callable,
-    Dict,
-    FrozenSet,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    TypeVar,
-)
+from pathlib import Path
+from typing import Callable, Container, Dict, FrozenSet, List, Mapping, Optional, Type, TypeVar
 
 import attrs
 import attrs.validators
@@ -321,6 +311,7 @@ class ProjectVisionDataset(torchvision.datasets.VisionDataset):
         target_transform: Optional[Callable] = None,
         label_name_to_index: Mapping[str, int] = None,
         task_filter: Optional[Callable[[models.ITaskRead], bool]] = None,
+        include_subsets: Optional[Container[str]] = None,
     ) -> None:
         """
         Creates a dataset corresponding to the project with ID `project_id` on the
@@ -332,11 +323,14 @@ class ProjectVisionDataset(torchvision.datasets.VisionDataset):
 
         See `TaskVisionDataset.__init__` for information on `label_name_to_index`.
 
-        `task_filter`, if set to a non-`None` value, determines which of the project's
-        tasks will be included in the dataset. The filter will be called for each task,
-        and only tasks for which it returns a true value will be included.
+        By default, all of the project's tasks will be included in the dataset.
+        The following parameters can be specified to exclude some tasks:
 
-        If `task_filter` is set to None. then all of the project's tasks will be included.
+        * If `task_filter` is set to a callable object, it will be applied to every task.
+          Tasks for which it returns a false value will be excluded.
+
+        * If `include_subsets` is set to a container, then tasks whose subset is
+          not a member of this container will be excluded.
         """
 
         self._logger = client.logger
@@ -360,8 +354,13 @@ class ProjectVisionDataset(torchvision.datasets.VisionDataset):
 
         self._logger.info("Fetching project tasks...")
         tasks = project.get_tasks()
-        if task_filter:
+
+        if task_filter is not None:
             tasks = list(filter(task_filter, tasks))
+
+        if include_subsets is not None:
+            tasks = [task for task in tasks if task.subset in include_subsets]
+
         tasks.sort(key=lambda t: t.id)  # ensure consistent order between executions
 
         self._underlying = torch.utils.data.ConcatDataset(

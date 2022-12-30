@@ -309,10 +309,8 @@ class TestProjectVisionDataset:
         assert dataset[4][1].annotations.tags[0].label_id == self.label_ids[1]
         assert dataset[8][1].annotations.tags[0].label_id == self.label_ids[0]
 
-    def test_task_filter(self):
-        dataset = cvatpt.ProjectVisionDataset(
-            self.client, self.project.id, task_filter=lambda t: t.subset != self.tasks[0].subset
-        )
+    def _test_filtering(self, **kwargs):
+        dataset = cvatpt.ProjectVisionDataset(self.client, self.project.id, **kwargs)
 
         assert len(dataset) == sum(task.size for task in self.tasks[1:])
 
@@ -321,6 +319,12 @@ class TestProjectVisionDataset:
 
         assert dataset[1][1].annotations.tags[0].label_id == self.label_ids[1]
         assert dataset[5][1].annotations.tags[0].label_id == self.label_ids[0]
+
+    def test_task_filter(self):
+        self._test_filtering(task_filter=lambda t: t.subset != self.tasks[0].subset)
+
+    def test_include_subsets(self):
+        self._test_filtering(include_subsets={self.tasks[1].subset, self.tasks[2].subset})
 
     def test_custom_label_mapping(self):
         label_name_to_id = {label.name: label.id for label in self.project.labels}
