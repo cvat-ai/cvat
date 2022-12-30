@@ -853,6 +853,7 @@ class TestWorkWithTask:
                 assert ex.status == HTTPStatus.NOT_FOUND
                 assert image_name in ex.body
 
+
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetTaskPreview:
     def _test_task_preview_200(self, username, task_id, **kwargs):
