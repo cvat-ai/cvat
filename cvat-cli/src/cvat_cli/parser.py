@@ -91,12 +91,14 @@ def make_cmdline_parser() -> argparse.ArgumentParser:
     #######################################################################
     task_create_parser = task_subparser.add_parser(
         "create",
-        description=textwrap.dedent("""\
+        description=textwrap.dedent(
+            """\
             Create a new CVAT task. To create a task, you need
             to specify labels using the --labels argument or
             attach the task to an existing project using the
             --project_id argument.
-        """),
+        """
+        ),
         formatter_class=argparse.RawTextHelpFormatter,
     )
     task_create_parser.add_argument("name", type=str, help="name of the task")
@@ -128,46 +130,56 @@ def make_cmdline_parser() -> argparse.ArgumentParser:
         dest="status_check_period",
         default=2,
         type=float,
-        help=textwrap.dedent("""\
+        help=textwrap.dedent(
+            """\
             number of seconds to wait until checking
             if data compression finished (necessary before uploading annotations)
-        """),
+        """
+        ),
     )
     task_create_parser.add_argument(
         "--copy_data",
         default=False,
         action="store_true",
-        help=textwrap.dedent("""\
+        help=textwrap.dedent(
+            """\
             set the option to copy the data, only used when resource type is
             share (default: %(default)s)
-        """),
+        """
+        ),
     )
     task_create_parser.add_argument(
         "--dataset_repository_url",
         default="",
         type=str,
-        help=textwrap.dedent("""\
+        help=textwrap.dedent(
+            """\
             git repository to store annotations e.g.
             https://github.com/user/repos [annotation/<anno_file_name.zip>]
-        """),
+        """
+        ),
     )
     task_create_parser.add_argument(
         "--frame_step",
         default=None,
         type=int,
-        help=textwrap.dedent("""\
+        help=textwrap.dedent(
+            """\
             set the frame step option in the advanced configuration
             when uploading image series or videos (default: %(default)s)
-        """),
+        """
+        ),
     )
     task_create_parser.add_argument(
         "--image_quality",
         default=70,
         type=int,
-        help=textwrap.dedent("""\
+        help=textwrap.dedent(
+            """\
             set the image quality option in the advanced configuration
             when creating tasks.(default: %(default)s)
-        """),
+        """
+        ),
     )
     task_create_parser.add_argument(
         "--labels",
@@ -222,14 +234,16 @@ def make_cmdline_parser() -> argparse.ArgumentParser:
     task_create_parser.add_argument(
         "--filename_pattern",
         type=str,
-        help=textwrap.dedent("""\
+        help=textwrap.dedent(
+            """\
             pattern for filtering data from the manifest file for the upload.
             Only shell-style wildcards are supported:
             * - matches everything
             ? - matches any single character
             [seq] - matches any character in 'seq'
             [!seq] - matches any character not in seq
-        """),
+        """
+        ),
     )
 
     #######################################################################
