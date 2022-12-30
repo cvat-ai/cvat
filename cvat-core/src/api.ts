@@ -173,8 +173,8 @@ function build() {
                 const result = await PluginRegistry.apiWrapper(cvat.server.logout);
                 return result;
             },
-            async advancedAuthentication() {
-                const result = await PluginRegistry.apiWrapper(cvat.server.advancedAuthentication);
+            async socialAuthentication() {
+                const result = await PluginRegistry.apiWrapper(cvat.server.socialAuthentication);
                 return result;
             },
             /**

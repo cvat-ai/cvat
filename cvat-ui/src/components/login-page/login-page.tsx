@@ -21,7 +21,7 @@ interface LoginPageComponentProps {
     hasEmailVerificationBeenSent: boolean;
     socialAuthMethods: SocialAuthMethods;
     onLogin: (credential: string, password: string) => void;
-    loadAdvancedAuthenticationMethods: () => void;
+    loadSocialAuthenticationMethods: () => void;
 }
 
 const renderSocialAuthMethods = (methods: SocialAuthMethods): JSX.Element[] => {
@@ -43,7 +43,7 @@ function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps
     const history = useHistory();
     const {
         fetching, renderResetPassword, hasEmailVerificationBeenSent,
-        socialAuthMethods, onLogin, loadAdvancedAuthenticationMethods,
+        socialAuthMethods, onLogin, loadSocialAuthenticationMethods,
     } = props;
 
     if (hasEmailVerificationBeenSent) {
@@ -51,7 +51,7 @@ function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps
     }
 
     useEffect(() => {
-        loadAdvancedAuthenticationMethods();
+        loadSocialAuthenticationMethods();
     }, []);
 
     return (

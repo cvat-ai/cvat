@@ -24,8 +24,8 @@ export interface AuthState {
     allowChangePassword: boolean;
     allowResetPassword: boolean;
     hasEmailVerificationBeenSent: boolean;
-    advancedAuthFetching: boolean;
-    advancedAuthInitialized: boolean;
+    socialAuthFetching: boolean;
+    socialAuthInitialized: boolean;
     socialAuthMethods: SocialAuthMethods;
 }
 

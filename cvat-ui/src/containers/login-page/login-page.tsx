@@ -5,7 +5,7 @@
 import { connect } from 'react-redux';
 import LoginPageComponent from 'components/login-page/login-page';
 import { CombinedState } from 'reducers';
-import { loginAsync, loadAdvancedAuthAsync } from 'actions/auth-actions';
+import { loginAsync, loadSocialAuthAsync } from 'actions/auth-actions';
 import { SocialAuthMethods } from 'cvat-core-wrapper';
 
 interface StateToProps {
@@ -17,7 +17,7 @@ interface StateToProps {
 
 interface DispatchToProps {
     onLogin: typeof loginAsync;
-    loadAdvancedAuthenticationMethods: typeof loadAdvancedAuthAsync;
+    loadSocialAuthenticationMethods: typeof loadSocialAuthAsync;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -31,7 +31,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
 const mapDispatchToProps: DispatchToProps = {
     onLogin: loginAsync,
-    loadAdvancedAuthenticationMethods: loadAdvancedAuthAsync,
+    loadSocialAuthenticationMethods: loadSocialAuthAsync,
 };
 
 export default connect(mapStateToProps, mapDispatchToProps)(LoginPageComponent);

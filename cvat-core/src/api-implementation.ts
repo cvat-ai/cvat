@@ -86,8 +86,8 @@ export default function implementAPI(cvat) {
         await serverProxy.server.logout();
     };
 
-    cvat.server.advancedAuthentication.implementation = async () => {
-        const result: SocialAuthMethodsRawType = await serverProxy.server.advancedAuthentication();
+    cvat.server.socialAuthentication.implementation = async () => {
+        const result: SocialAuthMethodsRawType = await serverProxy.server.socialAuthentication();
         const methods = [];
         for (const [provider, value] of Object.entries(result)) {
             methods.push(new SocialAuthMethod({

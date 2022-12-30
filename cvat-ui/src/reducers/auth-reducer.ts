@@ -16,8 +16,8 @@ const defaultState: AuthState = {
     showChangePasswordDialog: false,
     allowResetPassword: false,
     hasEmailVerificationBeenSent: false,
-    advancedAuthFetching: false,
-    advancedAuthInitialized: false,
+    socialAuthFetching: false,
+    socialAuthInitialized: false,
     socialAuthMethods: [],
 };
 
@@ -157,27 +157,27 @@ export default function (state = defaultState, action: AuthActions | BoundariesA
                 allowChangePassword: false,
                 allowResetPassword: false,
             };
-        case AuthActionTypes.LOAD_ADVANCED_AUTHENTICATION: {
+        case AuthActionTypes.LOAD_SOCIAL_AUTHENTICATION: {
             return {
                 ...state,
-                advancedAuthFetching: true,
-                advancedAuthInitialized: false,
+                socialAuthFetching: true,
+                socialAuthInitialized: false,
             };
         }
-        case AuthActionTypes.LOAD_ADVANCED_AUTHENTICATION_SUCCESS: {
+        case AuthActionTypes.LOAD_SOCIAL_AUTHENTICATION_SUCCESS: {
             const { methods } = action.payload;
             return {
                 ...state,
-                advancedAuthFetching: false,
-                advancedAuthInitialized: true,
+                socialAuthFetching: false,
+                socialAuthInitialized: true,
                 socialAuthMethods: methods,
             };
         }
-        case AuthActionTypes.LOAD_ADVANCED_AUTHENTICATION_FAILED: {
+        case AuthActionTypes.LOAD_SOCIAL_AUTHENTICATION_FAILED: {
             return {
                 ...state,
-                advancedAuthFetching: false,
-                advancedAuthInitialized: true,
+                socialAuthFetching: false,
+                socialAuthInitialized: true,
             };
         }
         case BoundariesActionTypes.RESET_AFTER_ERROR: {

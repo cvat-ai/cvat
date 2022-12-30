@@ -2247,7 +2247,7 @@ async function receiveWebhookEvents(type: WebhookSourceType): Promise<string[]> 
     }
 }
 
-async function advancedAuthentication(): Promise<any> {
+async function socialAuthentication(): Promise<any> {
     const { backendAPI } = config;
     try {
         const response = await Axios.get(`${backendAPI}/auth/social/methods`, {
@@ -2267,7 +2267,7 @@ export default Object.freeze({
         exception,
         login,
         logout,
-        advancedAuthentication,
+        socialAuthentication,
         changePassword,
         requestPasswordReset,
         resetPassword,
