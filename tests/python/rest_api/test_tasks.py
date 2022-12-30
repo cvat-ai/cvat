@@ -409,8 +409,8 @@ class TestGetTaskDataset:
         assert response.data
 
 
-# @pytest.mark.usefixtures("restore_db_per_function")
-# @pytest.mark.usefixtures("restore_cvat_data")
+@pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.usefixtures("restore_cvat_data")
 class TestPostTaskData:
     _USERNAME = "admin1"
 
