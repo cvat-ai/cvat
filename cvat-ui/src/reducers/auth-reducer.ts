@@ -18,10 +18,7 @@ const defaultState: AuthState = {
     hasEmailVerificationBeenSent: false,
     advancedAuthFetching: false,
     advancedAuthInitialized: false,
-    advancedAuthList: {
-        GOOGLE_ACCOUNT_AUTHENTICATION: false,
-        GITHUB_ACCOUNT_AUTHENTICATION: false,
-    },
+    socialAuthMethods: [],
 };
 
 export default function (state = defaultState, action: AuthActions | BoundariesActions): AuthState {
@@ -168,12 +165,12 @@ export default function (state = defaultState, action: AuthActions | BoundariesA
             };
         }
         case AuthActionTypes.LOAD_ADVANCED_AUTHENTICATION_SUCCESS: {
-            const { list } = action.payload;
+            const { methods } = action.payload;
             return {
                 ...state,
                 advancedAuthFetching: false,
                 advancedAuthInitialized: true,
-                advancedAuthList: list,
+                socialAuthMethods: methods,
             };
         }
         case AuthActionTypes.LOAD_ADVANCED_AUTHENTICATION_FAILED: {

@@ -98,29 +98,29 @@ context('When clicking on the Logout button, get the user session closed.', () =
         });
 
         it('Login with Google and GitHub. Logout', () => {
-            // TODO: use result from advansed auth methods
-            for (const provider of ['google', 'github']) {
+            let socialAuthMethods;
+            cy.request({
+                method: 'GET',
+                url: '/api/auth/social/methods/',
+            }).then((response) => {
+                socialAuthMethods = Object.keys(response.body);
+                expect(socialAuthMethods).length.gt(0);
                 cy.visit('auth/login');
-                let username = '';
-                cy.get(`.cvat-social-authentication-${provider}`).should('be.visible').click();
-                // eslint-disable-next-line cypress/no-unnecessary-waiting
-                cy.wait(3000);
-                cy.get('.cvat-right-header').within(() => {
-                    cy.get('.cvat-header-menu-user-dropdown-user').should(($div) => {
-                        username = $div.text();
-                    });
-                }).then(() => {
-                    cy.logout(username);
-                });
-            }
-        });
 
-        // it('Try to login with Github. Check the page with the notification that email
-        // confirmation is required', () => {
-        //     cy.get('.cvat-social-authentication-github').should('be.visible').click();
-        //     // eslint-disable-next-line cypress/no-unnecessary-waiting
-        //     cy.wait(3000);
-        //     cy.get('#email-verification-sent-page-container').should('exist');
-        // });
+                for (const provider of socialAuthMethods) {
+                    let username = '';
+                    cy.get(`.cvat-social-authentication-${provider}`).should('be.visible').click();
+                    // eslint-disable-next-line cypress/no-unnecessary-waiting
+                    cy.wait(3000);
+                    cy.get('.cvat-right-header').within(() => {
+                        cy.get('.cvat-header-menu-user-dropdown-user').should(($div) => {
+                            username = $div.text();
+                        });
+                    }).then(() => {
+                        cy.logout(username);
+                    });
+                }
+            });
+        });
     });
 });

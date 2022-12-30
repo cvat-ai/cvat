@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import os.path as osp
 import functools
 import hashlib
 
@@ -43,7 +44,7 @@ from drf_spectacular.utils import (
 from drf_spectacular.contrib.rest_auth import get_token_serializer_class
 
 from .authentication import Signer
-from cvat.apps.iam.serializers import SocialLoginSerializerEx
+from cvat.apps.iam.serializers import SocialLoginSerializerEx, SocialAuthMethodSerializer
 
 
 GitHubAdapter = (
@@ -430,3 +431,51 @@ class GoogleLogin(SocialLoginViewEx):
     adapter_class = GoogleAdapter
     client_class = OAuth2Client
     callback_url = getattr(settings, "GOOGLE_CALLBACK_URL", None)
+
+@extend_schema_view(
+    get=extend_schema(
+        summary='Method provides a list with integrated social accounts authentication.',
+        responses={
+            '200': OpenApiResponse(response=inline_serializer(
+                name="SocialAuthMethodsSerializer",
+                fields={
+                    'google': SocialAuthMethodSerializer(),
+                    'github': SocialAuthMethodSerializer(),
+                }
+            )),
+        }
+    )
+)
+class SocialAuthMethods(views.APIView):
+    serializer_class = SocialAuthMethodSerializer
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    iam_organization_field = None
+
+    def get(self,  request, *args, **kwargs):
+        use_social_auth = settings.USE_ALLAUTH_SOCIAL_ACCOUNTS
+        integrated_auth_providers = settings.SOCIALACCOUNT_PROVIDERS.keys() if use_social_auth else []
+
+        response = dict()
+        for provider in integrated_auth_providers:
+            icon = None
+            is_enabled = bool(
+                provider in integrated_auth_providers
+                and getattr(settings, f'SOCIAL_AUTH_{provider.upper()}_CLIENT_ID', None)
+                and getattr(settings, f'SOCIAL_AUTH_{provider.upper()}_CLIENT_SECRET', None)
+            )
+            icon_path = osp.join(settings.STATIC_ROOT, 'social_authentication', f'social-{provider}-logo.svg')
+            if is_enabled and osp.exists(icon_path):
+                with open(icon_path, 'r') as f:
+                    icon = f.read()
+
+            serializer = SocialAuthMethodSerializer(data={
+                'is_enabled': is_enabled,
+                'icon': icon,
+                'public_name': settings.SOCIALACCOUNT_PROVIDERS[provider].get('PUBLIC_NAME', provider.title())
+            })
+            serializer.is_valid(raise_exception=True)
+
+            response[provider] = serializer.validated_data
+
+        return Response(response)

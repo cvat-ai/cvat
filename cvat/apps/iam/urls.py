@@ -20,6 +20,7 @@ from cvat.apps.iam.views import (
     google_oauth2_login as google_login,
     google_oauth2_callback as google_callback,
     LoginViewEx, GitHubLogin, GoogleLogin,
+    SocialAuthMethods,
 )
 
 urlpatterns = [
@@ -50,6 +51,7 @@ if settings.IAM_TYPE == 'BASIC':
     if settings.USE_ALLAUTH_SOCIAL_ACCOUNTS:
         # social accounts
         urlpatterns += [
+            path('social/methods/', SocialAuthMethods.as_view()),
             path('github/login/', github_login, name='github_login'),
             path('github/login/callback/', github_callback, name='github_callback'),
             path('github/login/token', GitHubLogin.as_view()),

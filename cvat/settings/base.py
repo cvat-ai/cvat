@@ -639,5 +639,6 @@ if USE_ALLAUTH_SOCIAL_ACCOUNTS:
                 'key': ''
             },
             'SCOPE': [ 'read:user', 'user:email' ],
+            'PUBLIC_NAME': 'GitHub',
         },
     }

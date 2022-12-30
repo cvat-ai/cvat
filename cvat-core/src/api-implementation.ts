@@ -3,6 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import { SocialAuthMethod, SocialAuthMethodsRawType } from './auth-methods';
 import config from './config';
 
 import PluginRegistry from './plugins';
@@ -86,8 +87,15 @@ export default function implementAPI(cvat) {
     };
 
     cvat.server.advancedAuthentication.implementation = async () => {
-        const result = await serverProxy.server.advancedAuthentication();
-        return result;
+        const result: SocialAuthMethodsRawType = await serverProxy.server.advancedAuthentication();
+        const methods = [];
+        for (const [provider, value] of Object.entries(result)) {
+            methods.push(new SocialAuthMethod({
+                ...value,
+                provider,
+            }));
+        }
+        return methods;
     };
 
     cvat.server.changePassword.implementation = async (oldPassword, newPassword1, newPassword2) => {

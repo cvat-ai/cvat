@@ -276,7 +276,6 @@ class ServerPermission(OpenPolicyAgentPermission):
             'exception': 'send:exception',
             'logs': 'send:logs',
             'share': 'list:content',
-            'advanced_authentication': 'view',
         }.get(view.action, None)]
 
     def get_resource(self):

@@ -7,7 +7,7 @@ import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import { UserConfirmation } from 'components/register-page/register-form';
 import { getCore } from 'cvat-core-wrapper';
 import isReachable from 'utils/url-checker';
-import { AdvancedAuthMethodsList } from '../reducers';
+import { SocialAuthMethods } from '../cvat-core-wrapper';
 
 const cvat = getCore();
 
@@ -76,8 +76,8 @@ export const authActions = {
     ),
     loadServerAuthActionsFailed: (error: any) => createAction(AuthActionTypes.LOAD_AUTH_ACTIONS_FAILED, { error }),
     loadAdvancedAuth: () => createAction(AuthActionTypes.LOAD_ADVANCED_AUTHENTICATION),
-    loadAdvancedAuthSuccess: (list: AdvancedAuthMethodsList) => (
-        createAction(AuthActionTypes.LOAD_ADVANCED_AUTHENTICATION_SUCCESS, { list })
+    loadAdvancedAuthSuccess: (methods: SocialAuthMethods) => (
+        createAction(AuthActionTypes.LOAD_ADVANCED_AUTHENTICATION_SUCCESS, { methods })
     ),
     loadAdvancedAuthFailed: (error: any) => (
         createAction(AuthActionTypes.LOAD_ADVANCED_AUTHENTICATION_FAILED, { error })
@@ -213,8 +213,8 @@ export const loadAuthActionsAsync = (): ThunkAction => async (dispatch) => {
 export const loadAdvancedAuthAsync = (): ThunkAction => async (dispatch): Promise<void> => {
     dispatch(authActions.loadAdvancedAuth());
     try {
-        const list: AdvancedAuthMethodsList = await cvat.server.advancedAuthentication();
-        dispatch(authActions.loadAdvancedAuthSuccess(list));
+        const methods: SocialAuthMethods = await cvat.server.advancedAuthentication();
+        dispatch(authActions.loadAdvancedAuthSuccess(methods));
     } catch (error) {
         dispatch(authActions.loadAdvancedAuthFailed(error));
     }
