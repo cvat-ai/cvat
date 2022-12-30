@@ -1,4 +1,8 @@
 package tasks
+
+import future.keywords.if
+import future.keywords.in
+
 import data.utils
 import data.organizations
 
@@ -33,9 +37,6 @@ import data.organizations
 #             "assignee": { "id": <num> },
 #             "organization": { "id": <num> } or null,
 #         } or null,
-#         "user": {
-#             "num_resources": <num>
-#         }
 #     }
 # }
 
@@ -85,7 +86,6 @@ allow {
     { utils.CREATE, utils.IMPORT_BACKUP }[input.scope]
     utils.is_sandbox
     utils.has_perm(utils.USER)
-    input.resource.user.num_resources < 10
 }
 
 allow {
@@ -93,7 +93,6 @@ allow {
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
     organizations.has_perm(organizations.SUPERVISOR)
-    input.resource.user.num_resources < 10
 }
 
 allow {
@@ -113,7 +112,6 @@ allow {
     input.scope == utils.CREATE_IN_PROJECT
     utils.is_sandbox
     utils.has_perm(utils.USER)
-    input.resource.user.num_resources < 10
     is_project_staff
 }
 
@@ -122,7 +120,6 @@ allow {
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
     organizations.has_perm(organizations.SUPERVISOR)
-    input.resource.user.num_resources < 10
 }
 
 allow {
@@ -131,7 +128,6 @@ allow {
     utils.has_perm(utils.USER)
     organizations.has_perm(organizations.WORKER)
     is_project_staff
-    input.resource.user.num_resources < 10
 }
 
 allow {

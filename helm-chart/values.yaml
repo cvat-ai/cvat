@@ -75,7 +75,7 @@ cvat:
     replicas: 1
     image: cvat/server
     tag: dev
-    imagepullploicy: IfNotPresent
+    imagePullPolicy: Always
     permissionFix:
       enabled: true
     service:
@@ -95,7 +95,7 @@ cvat:
     replicas: 1
     image: cvat/ui
     tag: dev
-    imagepullploicy: IfNotPresent
+    imagePullPolicy: Always
     labels: {}
     #  test: test
     annotations: {}
@@ -137,7 +137,7 @@ cvat:
   opa:
     replicas: 1
     image: openpolicyagent/opa
-    tag: 0.34.2-rootless
+    tag: 0.45.0-rootless
     imagepullploicy: IfNotPresent
     labels: {}
     #  test: test
@@ -170,7 +170,7 @@ cvat:
     # -   mountPath: /tmp
     #     name: tmp
     #     subPath: test
-    composeCompatibleServiceName: true # Sets service name to opa in order to be docker-compose compatible. Necessary because changing IAM_OPA_DATA_URL via environment variables in current images. Hinders multiple deployment due to duplicate name
+    composeCompatibleServiceName: true # Sets service name to opa in order to be compatible with Docker Compose. Necessary because changing IAM_OPA_DATA_URL via environment variables in current images. Hinders multiple deployment due to duplicate name
     service:
       type: ClusterIP
       ports:

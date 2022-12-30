@@ -6,7 +6,6 @@ import shutil
 import types
 import zipfile
 from concurrent.futures import ThreadPoolExecutor
-from pathlib import Path
 from typing import (
     Callable,
     Dict,
@@ -20,7 +19,6 @@ from typing import (
     TypeVar,
 )
 
-import appdirs
 import attrs
 import attrs.validators
 import PIL.Image
@@ -36,7 +34,6 @@ from cvat_sdk.models import DataMetaRead, LabeledData, LabeledImage, LabeledShap
 
 _ModelType = TypeVar("_ModelType")
 
-_CACHE_DIR = Path(appdirs.user_cache_dir("cvat-sdk", "CVAT.ai"))
 _NUM_DOWNLOAD_THREADS = 4
 
 
@@ -139,7 +136,7 @@ class TaskVisionDataset(torchvision.datasets.VisionDataset):
         server_dir_name = (
             base64.urlsafe_b64encode(client.api_map.host.encode()).rstrip(b"=").decode()
         )
-        server_dir = _CACHE_DIR / f"servers/{server_dir_name}"
+        server_dir = client.config.cache_dir / f"servers/{server_dir_name}"
 
         self._task_dir = server_dir / f"tasks/{self._task.id}"
         self._initialize_task_dir()

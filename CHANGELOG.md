@@ -7,10 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## \[2.4.0] - Unreleased
 ### Added
-- TDB
+- Filename pattern to simplify uploading cloud storage data for a task (<https://github.com/opencv/cvat/pull/5498>)
+- \[SDK\] Configuration setting to change the dataset cache directory
+  (<https://github.com/opencv/cvat/pull/5535>)
 
 ### Changed
-- TDB
+- The Docker Compose files now use the Compose Specification version
+  of the format. This version is supported by Docker Compose 1.27.0+
+  (<https://github.com/opencv/cvat/pull/5524>).
 
 ### Deprecated
 - TDB
@@ -19,10 +23,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TDB
 
 ### Fixed
-- TDB
+- Helm: Empty password for Redis (<https://github.com/opencv/cvat/pull/5520>)
 
 ### Security
-- TDB
+- Fixed vulnerability with social authentication (<https://github.com/opencv/cvat/pull/5521>)
 
 ## \[2.3.0] - 2022-12-22
 ### Added
