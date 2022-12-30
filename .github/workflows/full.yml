@@ -326,6 +326,7 @@ jobs:
       - name: Run CVAT instance
         run: |
           docker compose \
+            --env-file="tests/python/authentication_server/.env" \
             -f docker-compose.yml \
             -f docker-compose.dev.yml \
             -f components/serverless/docker-compose.serverless.yml \

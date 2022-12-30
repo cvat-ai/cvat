@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import os
 import argparse
 import json
 import string
@@ -195,12 +196,12 @@ class AuthServer:
 
 
 class GoogleAuthServer(AuthServer):
-    SERVER_PORT = 8083
+    SERVER_PORT = int(os.environ.get('GOOGLE_SERVER_PORT', "4320"))
     REQUEST_HANDLER_CLASS = GoogleRequestHandlerClass
 
 
 class GithubAuthServer(AuthServer):
-    SERVER_PORT = 4321
+    SERVER_PORT = int(os.environ.get('GITHUB_SERVER_PORT', "4321"))
     REQUEST_HANDLER_CLASS = GithubRequestHandlerClass
 
 
