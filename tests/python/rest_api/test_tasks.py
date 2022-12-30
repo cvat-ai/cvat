@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import io
 import json
 import os.path as osp
 import subprocess
@@ -17,6 +18,7 @@ import pytest
 from cvat_sdk.api_client import apis, models
 from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
+from PIL import Image
 
 import shared.utils.s3 as s3
 from shared.utils.config import get_method, make_api_client, patch_method
@@ -880,3 +882,67 @@ class TestPostTaskData:
                 assert segment.stop_frame == stop_frame
 
                 start_frame = stop_frame + 1
+
+
+@pytest.mark.usefixtures("restore_db_per_class")
+class TestGetTaskPreview:
+    def _test_task_preview_200(self, username, task_id, **kwargs):
+        with make_api_client(username) as api_client:
+            (_, response) = api_client.tasks_api.retrieve_preview(task_id, **kwargs)
+
+            assert response.status == HTTPStatus.OK
+            (width, height) = Image.open(io.BytesIO(response.data)).size
+            assert width > 0 and height > 0
+
+    def _test_task_preview_403(self, username, task_id):
+        with make_api_client(username) as api_client:
+            (_, response) = api_client.tasks_api.retrieve_preview(
+                task_id, _parse_response=False, _check_status=False
+            )
+            assert response.status == HTTPStatus.FORBIDDEN
+
+    def _test_assigned_users_to_see_task_preview(self, tasks, users, is_task_staff, **kwargs):
+        for task in tasks:
+            staff_users = [user for user in users if is_task_staff(user["id"], task["id"])]
+            assert len(staff_users)
+
+            for user in staff_users:
+                self._test_task_preview_200(user["username"], task["id"], **kwargs)
+
+    def _test_assigned_users_cannot_see_task_preview(self, tasks, users, is_task_staff, **kwargs):
+        for task in tasks:
+            not_staff_users = [user for user in users if not is_task_staff(user["id"], task["id"])]
+            assert len(not_staff_users)
+
+            for user in not_staff_users:
+                self._test_task_preview_403(user["username"], task["id"], **kwargs)
+
+    @pytest.mark.parametrize("project_id, groups", [(1, "user")])
+    def test_task_assigned_to_see_task_preview(
+        self, project_id, groups, users, tasks, find_users, is_task_staff
+    ):
+        users = find_users(privilege=groups)
+        tasks = list(filter(lambda x: x["project_id"] == project_id and x["assignee"], tasks))
+        assert len(tasks)
+
+        self._test_assigned_users_to_see_task_preview(tasks, users, is_task_staff)
+
+    @pytest.mark.parametrize("org, project_id, role", [({"id": 2, "slug": "org2"}, 2, "worker")])
+    def test_org_task_assigneed_to_see_task_preview(
+        self, org, project_id, role, users, tasks, find_users, is_task_staff
+    ):
+        users = find_users(org=org["id"], role=role)
+        tasks = list(filter(lambda x: x["project_id"] == project_id and x["assignee"], tasks))
+        assert len(tasks)
+
+        self._test_assigned_users_to_see_task_preview(tasks, users, is_task_staff, org=org["slug"])
+
+    @pytest.mark.parametrize("project_id, groups", [(1, "user")])
+    def test_task_unassigned_cannot_see_task_preview(
+        self, project_id, groups, users, tasks, find_users, is_task_staff
+    ):
+        users = find_users(privilege=groups)
+        tasks = list(filter(lambda x: x["project_id"] == project_id and x["assignee"], tasks))
+        assert len(tasks)
+
+        self._test_assigned_users_cannot_see_task_preview(tasks, users, is_task_staff)
