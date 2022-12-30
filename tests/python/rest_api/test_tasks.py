@@ -807,7 +807,7 @@ class TestWorkWithTask:
         [(1, "manifest.jsonl", "")],  # public bucket
     )
     def test_work_with_task_containing_non_stable_cloud_storage_files(
-        self, cloud_storage_id, manifest, org, cloud_storages
+        self, cloud_storage_id, manifest, org, cloud_storages, request
     ):
         image_name = "image_case_65_1.png"
         cloud_storage_content = [image_name, manifest]
@@ -835,6 +835,9 @@ class TestWorkWithTask:
 
         image = s3_client.download_fileobj(bucket_name, image_name)
         s3_client.remove_file(bucket_name, image_name)
+        request.addfinalizer(
+            partial(s3_client.create_file, bucket=bucket_name, filename=image_name, data=image)
+        )
 
         with make_api_client(self._USERNAME) as api_client:
             try:
@@ -847,5 +850,3 @@ class TestWorkWithTask:
             except Exception as ex:
                 assert ex.status == HTTPStatus.NOT_FOUND
                 assert image_name in ex.body
-
-        s3_client.create_file(bucket_name, image_name, image)
