@@ -745,7 +745,7 @@ class TestPostTaskData:
                 f"{tmp_dir}:/local",
                 "--entrypoint",
                 "python3",
-                "cvat/server",
+                "cvat/server:dev",
                 "utils/dataset_manifest/create.py",
                 "--output-dir",
                 "/local",
