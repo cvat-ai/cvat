@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Filename pattern to simplify uploading cloud storage data for a task (<https://github.com/opencv/cvat/pull/5498>)
 - \[SDK\] Configuration setting to change the dataset cache directory
   (<https://github.com/opencv/cvat/pull/5535>)
+- \[SDK\] Class to represent a project as a PyTorch dataset
+  (<https://github.com/opencv/cvat/pull/5523>)
 
 ### Changed
 - The Docker Compose files now use the Compose Specification version
