@@ -956,6 +956,9 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             self._object.save()
             data = {k: v for k, v in serializer.data.items()}
 
+            if 'job_file_mapping' in serializer.validated_data:
+                data['job_file_mapping'] = serializer.validated_data['job_file_mapping']
+
             data['use_zip_chunks'] = serializer.validated_data['use_zip_chunks']
             data['use_cache'] = serializer.validated_data['use_cache']
             data['copy_data'] = serializer.validated_data['copy_data']

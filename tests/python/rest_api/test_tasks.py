@@ -9,6 +9,7 @@ import subprocess
 from copy import deepcopy
 from functools import partial
 from http import HTTPStatus
+from itertools import chain
 from tempfile import TemporaryDirectory
 from time import sleep
 
@@ -408,8 +409,8 @@ class TestGetTaskDataset:
         assert response.data
 
 
-@pytest.mark.usefixtures("restore_db_per_function")
-@pytest.mark.usefixtures("restore_cvat_data")
+# @pytest.mark.usefixtures("restore_db_per_function")
+# @pytest.mark.usefixtures("restore_cvat_data")
 class TestPostTaskData:
     _USERNAME = "admin1"
 
@@ -426,6 +427,23 @@ class TestPostTaskData:
         with make_api_client(username) as api_client:
             (task, response) = api_client.tasks_api.create(spec, **kwargs)
             assert response.status == HTTPStatus.CREATED
+
+            if data.get("client_files") and "json" in content_type:
+                # Can't encode binary files in json
+                (_, response) = api_client.tasks_api.create_data(
+                    task.id,
+                    data_request=models.DataRequest(
+                        client_files=data["client_files"],
+                        image_quality=data["image_quality"],
+                    ),
+                    upload_multiple=True,
+                    _content_type="multipart/form-data",
+                    **kwargs,
+                )
+                assert response.status == HTTPStatus.OK
+
+                data = data.copy()
+                del data["client_files"]
 
             (_, response) = api_client.tasks_api.create_data(
                 task.id, data_request=deepcopy(data), _content_type=content_type, **kwargs
@@ -819,3 +837,46 @@ class TestPostTaskData:
 
         status = self._test_cannot_create_task(self._USERNAME, task_spec, data_spec, org=org)
         assert mythical_file in status.message
+
+    def test_can_specify_file_job_mapping(self):
+        task_spec = {
+            "name": f"test file-job mapping",
+            "labels": [{"name": "car"}],
+        }
+
+        files = generate_image_files(7)
+        filenames = [osp.basename(f.name) for f in files]
+        expected_segments = [
+            filenames[0:1],
+            filenames[1:5][::-1],  # a reversed fragment
+            filenames[5:7],
+        ]
+
+        data_spec = {
+            "image_quality": 75,
+            "client_files": files,
+            "job_file_mapping": expected_segments,
+        }
+
+        task_id = self._test_create_task(
+            self._USERNAME, task_spec, data_spec, content_type="application/json"
+        )
+
+        with make_api_client(self._USERNAME) as api_client:
+            (task, _) = api_client.tasks_api.retrieve(id=task_id)
+            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(id=task_id)
+
+            assert [f.name for f in task_meta.frames] == list(
+                chain.from_iterable(expected_segments)
+            )
+
+            assert len(task.segments) == len(expected_segments)
+
+            start_frame = 0
+            for i, segment in enumerate(task.segments):
+                expected_size = len(expected_segments[i])
+                stop_frame = start_frame + expected_size - 1
+                assert segment.start_frame == start_frame
+                assert segment.stop_frame == stop_frame
+
+                start_frame = stop_frame + 1
