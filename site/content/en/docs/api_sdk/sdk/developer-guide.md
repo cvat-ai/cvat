@@ -30,7 +30,7 @@ mkdir -p cvat-sdk/schema/ && python manage.py spectacular --file cvat-sdk/schema
 
 If you want to use docker instead:
 ```bash
-docker-compose -f docker-compose.yml -f docker-compose.dev.yml run \
+docker compose -f docker-compose.yml -f docker-compose.dev.yml run \
     --no-deps --entrypoint '/usr/bin/env python' --rm -u "$(id -u)":"$(id -g)" -v "$PWD":"/local" \
     cvat_server \
     manage.py spectacular --file /local/cvat-sdk/schema/schema.yml
