@@ -10,13 +10,16 @@ import zipfile
 from copy import deepcopy
 from http import HTTPStatus
 from io import BytesIO
-from itertools import groupby, product
+from itertools import product
 from time import sleep
+from typing import Dict, Optional
 
 import pytest
+from cvat_sdk.api_client import ApiClient, Configuration, models
 from deepdiff import DeepDiff
+from PIL import Image
 
-from shared.utils.config import get_method, make_api_client, patch_method
+from shared.utils.config import BASE_URL, USER_PASS, get_method, make_api_client, patch_method
 
 from .utils import export_dataset
 
@@ -300,39 +303,7 @@ class TestPostProjects:
         spec = {"name": f"test {username} tries to create a project"}
         self._test_create_project_201(username, spec)
 
-    def test_if_user_cannot_have_more_than_3_projects(self, projects, find_users):
-        users = find_users(privilege="user")
-
-        user_id, user_projects = next(
-            (user_id, len(list(projects)))
-            for user_id, projects in groupby(projects, lambda a: a["owner"]["id"])
-            if len(list(projects)) < 3
-        )
-        user = users[user_id]
-
-        for i in range(1, 4 - user_projects):
-            spec = {
-                "name": f'test: {user["username"]} tries to create a project number {user_projects + i}'
-            }
-            self._test_create_project_201(user["username"], spec)
-
-        spec = {"name": f'test {user["username"]} tries to create more than 3 projects'}
-        self._test_create_project_403(user["username"], spec)
-
-    @pytest.mark.parametrize("privilege", ("admin", "business"))
-    def test_if_user_can_have_more_than_3_projects(self, find_users, privilege):
-        privileged_users = find_users(privilege=privilege)
-        assert len(privileged_users)
-
-        user = privileged_users[0]
-
-        for i in range(1, 5):
-            spec = {
-                "name": f'test: {user["username"]} with privilege {privilege} tries to create a project number {i}'
-            }
-            self._test_create_project_201(user["username"], spec)
-
-    def test_if_org_worker_cannot_crate_project(self, find_users):
+    def test_if_org_worker_cannot_create_project(self, find_users):
         workers = find_users(role="worker")
 
         worker = next(u for u in workers if u["org"])
@@ -343,16 +314,52 @@ class TestPostProjects:
         self._test_create_project_403(worker["username"], spec, org_id=worker["org"])
 
     @pytest.mark.parametrize("role", ("supervisor", "maintainer", "owner"))
-    def test_if_org_role_can_create_project(self, find_users, role):
-        privileged_users = find_users(role=role)
-        assert len(privileged_users)
+    def test_if_org_role_can_create_project(self, role, admin_user):
+        # We can hit org or user limits here, so we create a new org and users
+        user = self._create_user(
+            ApiClient(configuration=Configuration(BASE_URL)), email="test_org_roles@localhost"
+        )
 
-        user = next(u for u in privileged_users if u["org"])
+        if role != "owner":
+            org = self._create_org(make_api_client(admin_user), members={user["email"]: role})
+        else:
+            org = self._create_org(make_api_client(user["username"]))
 
         spec = {
             "name": f'test: worker {user["username"]} creating a project for his organization',
         }
-        self._test_create_project_201(user["username"], spec, org_id=user["org"])
+        self._test_create_project_201(user["username"], spec, org_id=org)
+
+    @classmethod
+    def _create_user(cls, api_client: ApiClient, email: str) -> str:
+        username = email.split("@", maxsplit=1)[0]
+        with api_client:
+            (_, response) = api_client.auth_api.create_register(
+                models.RegisterSerializerExRequest(
+                    username=username, password1=USER_PASS, password2=USER_PASS, email=email
+                )
+            )
+
+        api_client.cookies.clear()
+
+        return json.loads(response.data)
+
+    @classmethod
+    def _create_org(cls, api_client: ApiClient, members: Optional[Dict[str, str]] = None) -> str:
+        with api_client:
+            (_, response) = api_client.organizations_api.create(
+                models.OrganizationWriteRequest(slug="test_org_roles"), _parse_response=False
+            )
+            org = json.loads(response.data)["id"]
+
+            for email, role in (members or {}).items():
+                api_client.invitations_api.create(
+                    models.InvitationWriteRequest(role=role, email=email),
+                    org_id=org,
+                    _parse_response=False,
+                )
+
+        return org
 
 
 def _check_cvat_for_video_project_annotations_meta(content, values_to_be_checked):
@@ -729,3 +736,124 @@ class TestPatchProjectLabel:
         )
         assert response.status_code == HTTPStatus.OK
         assert len(response.json()["labels"]) == len(project["labels"]) + 1
+
+
+@pytest.mark.usefixtures("restore_db_per_class")
+class TestGetProjectPreview:
+    def _test_response_200(self, username, project_id, **kwargs):
+        with make_api_client(username) as api_client:
+            (_, response) = api_client.projects_api.retrieve_preview(project_id, **kwargs)
+
+            assert response.status == HTTPStatus.OK
+            (width, height) = Image.open(BytesIO(response.data)).size
+            assert width > 0 and height > 0
+
+    def _test_response_403(self, username, project_id):
+        with make_api_client(username) as api_client:
+            (_, response) = api_client.projects_api.retrieve_preview(
+                project_id, _parse_response=False, _check_status=False
+            )
+            assert response.status == HTTPStatus.FORBIDDEN
+
+    def _test_response_404(self, username, project_id):
+        with make_api_client(username) as api_client:
+            (_, response) = api_client.projects_api.retrieve_preview(
+                project_id, _parse_response=False, _check_status=False
+            )
+            assert response.status == HTTPStatus.NOT_FOUND
+
+    # Admin can see any project preview even he has no ownerships for this project.
+    def test_project_preview_admin_accessibility(
+        self, projects, find_users, is_project_staff, org_staff
+    ):
+        users = find_users(privilege="admin")
+
+        user, project = next(
+            (user, project)
+            for user, project in product(users, projects)
+            if not is_project_staff(user["id"], project["organization"])
+            and user["id"] not in org_staff(project["organization"])
+            and project["tasks"]
+        )
+        self._test_response_200(user["username"], project["id"])
+
+    # Project owner or project assignee can see project preview.
+    def test_project_preview_owner_accessibility(self, projects):
+        for p in projects:
+            if not p["tasks"]:
+                continue
+            if p["owner"] is not None:
+                project_with_owner = p
+            if p["assignee"] is not None:
+                project_with_assignee = p
+
+        assert project_with_owner is not None
+        assert project_with_assignee is not None
+
+        self._test_response_200(project_with_owner["owner"]["username"], project_with_owner["id"])
+        self._test_response_200(
+            project_with_assignee["assignee"]["username"], project_with_assignee["id"]
+        )
+
+    def test_project_preview_not_found(self, projects):
+        for p in projects:
+            if p["tasks"]:
+                continue
+            if p["owner"] is not None:
+                project_with_owner = p
+            if p["assignee"] is not None:
+                project_with_assignee = p
+
+        assert project_with_owner is not None
+        assert project_with_assignee is not None
+
+        self._test_response_404(project_with_owner["owner"]["username"], project_with_owner["id"])
+        self._test_response_404(
+            project_with_assignee["assignee"]["username"], project_with_assignee["id"]
+        )
+
+    def test_user_cannot_see_project_preview(
+        self, projects, find_users, is_project_staff, org_staff
+    ):
+        users = find_users(exclude_privilege="admin")
+
+        user, project = next(
+            (user, project)
+            for user, project in product(users, projects)
+            if not is_project_staff(user["id"], project["organization"])
+            and user["id"] not in org_staff(project["organization"])
+        )
+        self._test_response_403(user["username"], project["id"])
+
+    @pytest.mark.parametrize("role", ("supervisor", "worker"))
+    def test_if_supervisor_or_worker_cannot_see_project_preview(
+        self, projects, is_project_staff, find_users, role
+    ):
+        user, pid = next(
+            (
+                (user, project["id"])
+                for user in find_users(role=role, exclude_privilege="admin")
+                for project in projects
+                if project["organization"] == user["org"]
+                and not is_project_staff(user["id"], project["id"])
+            )
+        )
+
+        self._test_response_403(user["username"], pid)
+
+    @pytest.mark.parametrize("role", ("maintainer", "owner"))
+    def test_if_maintainer_or_owner_can_see_project_preview(
+        self, find_users, projects, is_project_staff, role
+    ):
+        user, pid = next(
+            (
+                (user, project["id"])
+                for user in find_users(role=role, exclude_privilege="admin")
+                for project in projects
+                if project["organization"] == user["org"]
+                and not is_project_staff(user["id"], project["id"])
+                and project["tasks"]
+            )
+        )
+
+        self._test_response_200(user["username"], pid, org_id=user["org"])
