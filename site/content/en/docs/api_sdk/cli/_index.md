@@ -146,6 +146,18 @@ by using the [label constructor](/docs/manual/basics/creating_an_annotation_task
   --dataset_repository_url https://github.com/user/dataset/blob/main/annotation/anno_file_name.zip \
   --lfs share //share/large_dataset/images/
   ```
+- Create a task named "task with filtered cloud storage data", with filename_pattern `test_images/*.jpeg`
+  and using the data from the cloud storage resource described in the manifest.jsonl:
+  ```bash
+  cvat-cli create "task with filtered cloud storage data" --labels '[{"name": "car"}]'\
+  --use_cache --cloud_storage_id 1 --filename_pattern "test_images/*.jpeg" share manifest.jsonl
+  ```
+- Create a task named "task with filtered cloud storage data" using all data from the cloud storage resource
+  described in the manifest.jsonl by specifying filename_pattern `*`:
+  ```bash
+  cvat-cli create "task with filtered cloud storage data" --labels '[{"name": "car"}]'\
+  --use_cache --cloud_storage_id 1 --filename_pattern "*" share manifest.jsonl
+  ```
 
 ### Delete
 

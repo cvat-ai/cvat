@@ -5,7 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## \[2.3.0] - Unreleased
+## \[2.4.0] - Unreleased
+### Added
+- Filename pattern to simplify uploading cloud storage data for a task (<https://github.com/opencv/cvat/pull/5498>, <https://github.com/opencv/cvat/pull/5525>)
+- \[SDK\] Configuration setting to change the dataset cache directory
+  (<https://github.com/opencv/cvat/pull/5535>)
+- \[SDK\] Class to represent a project as a PyTorch dataset
+  (<https://github.com/opencv/cvat/pull/5523>)
+
+### Changed
+- The Docker Compose files now use the Compose Specification version
+  of the format. This version is supported by Docker Compose 1.27.0+
+  (<https://github.com/opencv/cvat/pull/5524>).
+
+### Deprecated
+- TDB
+
+### Removed
+- TDB
+
+### Fixed
+- Helm: Empty password for Redis (<https://github.com/opencv/cvat/pull/5520>)
+
+### Security
+- Fixed vulnerability with social authentication (<https://github.com/opencv/cvat/pull/5521>)
+
+## \[2.3.0] - 2022-12-22
 ### Added
 - SDK section in docs (<https://github.com/opencv/cvat/pull/4928>)
 - An option to enable or disable host certificate checking in CLI (<https://github.com/opencv/cvat/pull/4928>)
@@ -21,6 +46,7 @@ from online detectors & interactors) (<https://github.com/opencv/cvat/pull/4543>
 - Authentication with social accounts google & github (<https://github.com/opencv/cvat/pull/5147>, <https://github.com/opencv/cvat/pull/5181>, <https://github.com/opencv/cvat/pull/5295>)
 - REST API tests to export job datasets & annotations and validate their structure  (<https://github.com/opencv/cvat/pull/5160>)
 - Propagation backward on UI (<https://github.com/opencv/cvat/pull/5355>)
+- Keyboard shortcut to delete a frame (Alt + Del) (<https://github.com/opencv/cvat/pull/5369>)
 - A PyTorch dataset adapter layer in the SDK
   (<https://github.com/opencv/cvat/pull/5417>)
 - A way to debug the server deployed with Docker (<https://github.com/opencv/cvat/issues/5327>)
@@ -35,9 +61,6 @@ from online detectors & interactors) (<https://github.com/opencv/cvat/pull/4543>
 - Unify error handling with the cloud storage (<https://github.com/opencv/cvat/pull/5389>)
 - In the SDK, functions taking paths as strings now also accept path-like objects
   (<https://github.com/opencv/cvat/pull/5435>)
-
-### Deprecated
-- TDB
 
 ### Removed
 - The `--https` option of CLI (<https://github.com/opencv/cvat/pull/4910>)
@@ -104,9 +127,8 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
 - Missing source tag in project annotations (<https://github.com/opencv/cvat/pull/5408>)
 - Creating a task with a Git repository via the SDK
   (<https://github.com/opencv/cvat/issues/4365>)
-
-### Security
-- TDB
+- `Project.import_dataset` not waiting for completion correctly
+  (<https://github.com/opencv/cvat/pull/5459>)
 
 ## \[2.2.0] - 2022-09-12
 ### Added

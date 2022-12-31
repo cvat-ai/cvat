@@ -304,8 +304,8 @@ class TestPostWebhooks:
 
         assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
 
+    @pytest.mark.skip("Not implemented yet")
     def test_cannot_create_non_unique_webhook(self):
-        pytest.skip("Not implemented yet")
         response = post_method("admin2", "webhooks", self.proj_webhook)
 
         response = post_method("admin2", "webhooks", self.proj_webhook)

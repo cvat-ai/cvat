@@ -90,6 +90,8 @@ class Task(
                     "stop_frame",
                     "use_cache",
                     "use_zip_chunks",
+                    "filename_pattern",
+                    "cloud_storage_id",
                 ],
             )
         )
@@ -159,7 +161,7 @@ class Task(
     def get_preview(
         self,
     ) -> io.RawIOBase:
-        (_, response) = self.api.retrieve_data(self.id, type="preview")
+        (_, response) = self.api.retrieve_preview(self.id)
         return io.BytesIO(response.data)
 
     def download_chunk(
