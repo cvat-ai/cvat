@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## \[2.4.0] - Unreleased
 ### Added
-- Filename pattern to simplify uploading cloud storage data for a task (<https://github.com/opencv/cvat/pull/5498>)
+- Filename pattern to simplify uploading cloud storage data for a task (<https://github.com/opencv/cvat/pull/5498>, <https://github.com/opencv/cvat/pull/5525>)
 - \[SDK\] Configuration setting to change the dataset cache directory
   (<https://github.com/opencv/cvat/pull/5535>)
 - \[SDK\] Class to represent a project as a PyTorch dataset
