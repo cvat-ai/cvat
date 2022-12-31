@@ -29,6 +29,9 @@ export enum TasksActionTypes {
     UPDATE_JOB_FAILED = 'UPDATE_JOB_FAILED',
     HIDE_EMPTY_TASKS = 'HIDE_EMPTY_TASKS',
     SWITCH_MOVE_TASK_MODAL_VISIBLE = 'SWITCH_MOVE_TASK_MODAL_VISIBLE',
+    GET_TASK_PREVIEW = 'GET_TASK_PREVIEW',
+    GET_TASK_PREVIEW_SUCCESS = 'GET_TASK_PREVIEW_SUCCESS',
+    GET_TASK_PREVIEW_FAILED = 'GET_TASK_PREVIEW_FAILED',
 }
 
 function getTasks(query: Partial<TasksQuery>, updateQuery: boolean): AnyAction {
@@ -43,11 +46,10 @@ function getTasks(query: Partial<TasksQuery>, updateQuery: boolean): AnyAction {
     return action;
 }
 
-export function getTasksSuccess(array: any[], previews: string[], count: number): AnyAction {
+export function getTasksSuccess(array: any[], count: number): AnyAction {
     const action = {
         type: TasksActionTypes.GET_TASKS_SUCCESS,
         payload: {
-            previews,
             array,
             count,
         },
@@ -89,10 +91,9 @@ export function getTasksAsync(
         }
 
         const array = Array.from(result);
-        const promises = array.map((task): string => (task as any).frames.preview().catch(() => ''));
 
         dispatch(getInferenceStatusAsync());
-        dispatch(getTasksSuccess(array, await Promise.all(promises), result.count));
+        dispatch(getTasksSuccess(array, result.count));
     };
 }
 
@@ -376,6 +377,53 @@ export function moveTaskToProjectAsync(
             dispatch(updateTaskSuccess(task, task.id));
         } catch (error) {
             dispatch(updateTaskFailed(error, taskInstance));
+        }
+    };
+}
+
+function getTaskPreview(taskID: number): AnyAction {
+    const action = {
+        type: TasksActionTypes.GET_TASK_PREVIEW,
+        payload: {
+            taskID,
+        },
+    };
+
+    return action;
+}
+
+function getTaskPreviewSuccess(taskID: number, preview: string): AnyAction {
+    const action = {
+        type: TasksActionTypes.GET_TASK_PREVIEW_SUCCESS,
+        payload: {
+            taskID,
+            preview,
+        },
+    };
+
+    return action;
+}
+
+function getTaskPreviewFailed(taskID: number, error: any): AnyAction {
+    const action = {
+        type: TasksActionTypes.GET_TASK_PREVIEW_FAILED,
+        payload: {
+            taskID,
+            error,
+        },
+    };
+
+    return action;
+}
+
+export function getTaskPreviewAsync(taskInstance: any): ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        try {
+            dispatch(getTaskPreview(taskInstance.id));
+            const result = await taskInstance.frames.preview();
+            dispatch(getTaskPreviewSuccess(taskInstance.id, result));
+        } catch (error) {
+            dispatch(getTaskPreviewFailed(taskInstance.id, error));
         }
     };
 }

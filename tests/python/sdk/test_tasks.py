@@ -168,6 +168,7 @@ class TestTaskUsecases:
         assert capture.match("No media data found")
         assert self.stdout.getvalue() == ""
 
+    @pytest.mark.with_external_services
     def test_can_create_task_with_git_repo(self, fxt_image_file: Path):
         pbar_out = io.StringIO()
         pbar = make_pbar(file=pbar_out)
@@ -278,15 +279,17 @@ class TestTaskUsecases:
 
     def test_can_download_preview(self, fxt_new_task: Task):
         frame_encoded = fxt_new_task.get_preview()
+        (width, height) = Image.open(frame_encoded).size
 
-        assert Image.open(frame_encoded).size != 0
+        assert width > 0 and height > 0
         assert self.stdout.getvalue() == ""
 
     @pytest.mark.parametrize("quality", ("compressed", "original"))
     def test_can_download_frame(self, fxt_new_task: Task, quality: str):
         frame_encoded = fxt_new_task.get_frame(0, quality=quality)
+        (width, height) = Image.open(frame_encoded).size
 
-        assert Image.open(frame_encoded).size != 0
+        assert width > 0 and height > 0
         assert self.stdout.getvalue() == ""
 
     @pytest.mark.parametrize("quality", ("compressed", "original"))

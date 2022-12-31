@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import io
 import json
 from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional
@@ -54,6 +55,7 @@ class Project(
 
         DatasetUploader(self._client).upload_file_and_wait(
             self.api.create_dataset_endpoint,
+            self.api.retrieve_dataset_endpoint,
             filename,
             format_name,
             url_params={"id": self.id},
@@ -123,6 +125,12 @@ class Project(
 
     def get_tasks(self) -> List[Task]:
         return [Task(self._client, m) for m in self.api.list_tasks(id=self.id)[0].results]
+
+    def get_preview(
+        self,
+    ) -> io.RawIOBase:
+        (_, response) = self.api.retrieve_preview(self.id)
+        return io.BytesIO(response.data)
 
 
 class ProjectsRepo(

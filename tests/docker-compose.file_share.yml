@@ -1,5 +1,3 @@
-version: '3.3'
-
 services:
   cvat_worker_default:
     volumes:
