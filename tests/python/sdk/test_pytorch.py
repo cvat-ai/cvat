@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import io
+import itertools
 import os
 from logging import Logger
 from pathlib import Path
@@ -25,6 +26,22 @@ except ImportError:
 from shared.utils.helpers import generate_image_files
 
 
+@pytest.fixture(autouse=True)
+def _common_setup(
+    tmp_path: Path,
+    fxt_login: Tuple[Client, str],
+    fxt_logger: Tuple[Logger, io.StringIO],
+):
+    logger = fxt_logger[0]
+    client = fxt_login[0]
+    client.logger = logger
+    client.config.cache_dir = tmp_path / "cache"
+
+    api_client = client.api_client
+    for k in api_client.configuration.logger:
+        api_client.configuration.logger[k] = logger
+
+
 @pytest.mark.skipif(cvatpt is None, reason="PyTorch dependencies are not installed")
 class TestTaskVisionDataset:
     @pytest.fixture(autouse=True)
@@ -32,28 +49,11 @@ class TestTaskVisionDataset:
         self,
         tmp_path: Path,
         fxt_login: Tuple[Client, str],
-        fxt_logger: Tuple[Logger, io.StringIO],
-        fxt_stdout: io.StringIO,
     ):
-        self.tmp_path = tmp_path
-        logger, self.logger_stream = fxt_logger
-        self.stdout = fxt_stdout
-        self.client, self.user = fxt_login
-        self.client.logger = logger
-        self.client.config.cache_dir = tmp_path / "cache"
-
-        api_client = self.client.api_client
-        for k in api_client.configuration.logger:
-            api_client.configuration.logger[k] = logger
-
-        self._create_task()
-
-        yield
-
-    def _create_task(self):
+        self.client = fxt_login[0]
         self.images = generate_image_files(10)
 
-        image_dir = self.tmp_path / "images"
+        image_dir = tmp_path / "images"
         image_dir.mkdir()
 
         image_paths = []
@@ -225,3 +225,137 @@ class TestTaskVisionDataset:
         _, target = dataset[5]
         assert target.label_id_to_index[label_name_to_id["person"]] == 123
         assert target.label_id_to_index[label_name_to_id["car"]] == 456
+
+
+@pytest.mark.skipif(cvatpt is None, reason="PyTorch dependencies are not installed")
+class TestProjectVisionDataset:
+    @pytest.fixture(autouse=True)
+    def setup(
+        self,
+        tmp_path: Path,
+        fxt_login: Tuple[Client, str],
+    ):
+        self.client = fxt_login[0]
+
+        self.project = self.client.projects.create(
+            models.ProjectWriteRequest(
+                "PyTorch integration test project",
+                labels=[
+                    models.PatchedLabelRequest(name="person"),
+                    models.PatchedLabelRequest(name="car"),
+                ],
+            )
+        )
+        self.label_ids = sorted(l.id for l in self.project.labels)
+
+        subsets = ["Train", "Test", "Val"]
+        num_images_per_task = 3
+
+        all_images = generate_image_files(num_images_per_task * len(subsets))
+
+        self.images_per_task = list(zip(*[iter(all_images)] * num_images_per_task))
+
+        image_dir = tmp_path / "images"
+        image_dir.mkdir()
+
+        image_paths_per_task = []
+        for images in self.images_per_task:
+            image_paths = []
+            for image in images:
+                image_path = image_dir / image.name
+                image_path.write_bytes(image.getbuffer())
+                image_paths.append(image_path)
+            image_paths_per_task.append(image_paths)
+
+        self.tasks = [
+            self.client.tasks.create_from_data(
+                models.TaskWriteRequest(
+                    "PyTorch integration test task",
+                    project_id=self.project.id,
+                    subset=subset,
+                ),
+                ResourceType.LOCAL,
+                image_paths,
+                data_params={"image_quality": 70},
+            )
+            for subset, image_paths in zip(subsets, image_paths_per_task)
+        ]
+
+        # sort both self.tasks and self.images_per_task in the order that ProjectVisionDataset uses
+        self.tasks, self.images_per_task = zip(
+            *sorted(zip(self.tasks, self.images_per_task), key=lambda t: t[0].id)
+        )
+
+        for task_id, label_index in ((0, 0), (1, 1), (2, 0)):
+            self.tasks[task_id].update_annotations(
+                models.PatchedLabeledDataRequest(
+                    tags=[
+                        models.LabeledImageRequest(
+                            frame=task_id, label_id=self.label_ids[label_index]
+                        ),
+                    ],
+                )
+            )
+
+    def test_basic(self):
+        dataset = cvatpt.ProjectVisionDataset(self.client, self.project.id)
+
+        assert len(dataset) == sum(task.size for task in self.tasks)
+
+        for sample, image in zip(dataset, itertools.chain.from_iterable(self.images_per_task)):
+            assert torch.equal(TF.pil_to_tensor(sample[0]), TF.pil_to_tensor(PIL.Image.open(image)))
+
+        assert dataset[0][1].annotations.tags[0].label_id == self.label_ids[0]
+        assert dataset[4][1].annotations.tags[0].label_id == self.label_ids[1]
+        assert dataset[8][1].annotations.tags[0].label_id == self.label_ids[0]
+
+    def _test_filtering(self, **kwargs):
+        dataset = cvatpt.ProjectVisionDataset(self.client, self.project.id, **kwargs)
+
+        assert len(dataset) == sum(task.size for task in self.tasks[1:])
+
+        for sample, image in zip(dataset, itertools.chain.from_iterable(self.images_per_task[1:])):
+            assert torch.equal(TF.pil_to_tensor(sample[0]), TF.pil_to_tensor(PIL.Image.open(image)))
+
+        assert dataset[1][1].annotations.tags[0].label_id == self.label_ids[1]
+        assert dataset[5][1].annotations.tags[0].label_id == self.label_ids[0]
+
+    def test_task_filter(self):
+        self._test_filtering(task_filter=lambda t: t.subset != self.tasks[0].subset)
+
+    def test_include_subsets(self):
+        self._test_filtering(include_subsets={self.tasks[1].subset, self.tasks[2].subset})
+
+    def test_custom_label_mapping(self):
+        label_name_to_id = {label.name: label.id for label in self.project.labels}
+
+        dataset = cvatpt.ProjectVisionDataset(
+            self.client, self.project.id, label_name_to_index={"person": 123, "car": 456}
+        )
+
+        _, target = dataset[5]
+        assert target.label_id_to_index[label_name_to_id["person"]] == 123
+        assert target.label_id_to_index[label_name_to_id["car"]] == 456
+
+    def test_separate_transforms(self):
+        dataset = cvatpt.ProjectVisionDataset(
+            self.client,
+            self.project.id,
+            transform=torchvision.transforms.ToTensor(),
+            target_transform=cvatpt.ExtractSingleLabelIndex(),
+        )
+
+        assert torch.equal(
+            dataset[0][0], TF.pil_to_tensor(PIL.Image.open(self.images_per_task[0][0]))
+        )
+        assert torch.equal(dataset[0][1], torch.tensor(0))
+
+    def test_combined_transforms(self):
+        dataset = cvatpt.ProjectVisionDataset(
+            self.client,
+            self.project.id,
+            transforms=lambda x, y: (y, x),
+        )
+
+        assert isinstance(dataset[0][0], cvatpt.Target)
+        assert isinstance(dataset[0][1], PIL.Image.Image)
