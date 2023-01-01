@@ -20,6 +20,7 @@ from deepdiff import DeepDiff
 from PIL import Image
 
 import shared.utils.s3 as s3
+from shared.fixtures.init import get_server_image_tag
 from shared.utils.config import get_method, make_api_client, patch_method
 from shared.utils.helpers import generate_image_files
 
@@ -746,13 +747,14 @@ class TestPostTaskData:
                 f"{tmp_dir}:/local",
                 "--entrypoint",
                 "python3",
-                "cvat/server",
+                get_server_image_tag(),
                 "utils/dataset_manifest/create.py",
                 "--output-dir",
                 "/local",
                 "/local",
             ]
-            subprocess.run(command, check=True)
+            subprocess.check_output(command)
+
             with open(osp.join(tmp_dir, "manifest.jsonl"), mode="rb") as m_file:
                 s3_client.create_file(
                     data=m_file.read(),
