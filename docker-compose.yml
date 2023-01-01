@@ -2,8 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-version: '3.3'
-
 services:
   cvat_db:
     container_name: cvat_db
@@ -40,7 +38,7 @@ services:
       CVAT_POSTGRES_HOST: 'cvat_db'
       ADAPTIVE_AUTO_ANNOTATION: 'false'
       IAM_OPA_BUNDLE: '1'
-      no_proxy: elasticsearch,kibana,logstash,nuclio,opa,${no_proxy}
+      no_proxy: elasticsearch,kibana,logstash,nuclio,opa,${no_proxy:-}
       NUMPROCS: 1
       USE_ALLAUTH_SOCIAL_ACCOUNTS: ""
       SOCIAL_AUTH_GOOGLE_CLIENT_ID: ""
@@ -73,8 +71,9 @@ services:
       - cvat_opa
     environment:
       CVAT_REDIS_HOST: 'cvat_redis'
+      CVAT_REDIS_PASSWORD: ''
       CVAT_POSTGRES_HOST: 'cvat_db'
-      no_proxy: elasticsearch,kibana,logstash,nuclio,opa,${no_proxy}
+      no_proxy: elasticsearch,kibana,logstash,nuclio,opa,${no_proxy:-}
     command: -c supervisord/utils.conf
     volumes:
       - cvat_data:/home/django/data
@@ -94,7 +93,7 @@ services:
     environment:
       CVAT_REDIS_HOST: 'cvat_redis'
       CVAT_POSTGRES_HOST: 'cvat_db'
-      no_proxy: elasticsearch,kibana,logstash,nuclio,opa,${no_proxy}
+      no_proxy: elasticsearch,kibana,logstash,nuclio,opa,${no_proxy:-}
       NUMPROCS: 2
     command: -c supervisord/worker.default.conf
     volumes:
@@ -115,7 +114,7 @@ services:
     environment:
       CVAT_REDIS_HOST: 'cvat_redis'
       CVAT_POSTGRES_HOST: 'cvat_db'
-      no_proxy: elasticsearch,kibana,logstash,nuclio,opa,${no_proxy}
+      no_proxy: elasticsearch,kibana,logstash,nuclio,opa,${no_proxy:-}
       NUMPROCS: 1
     command: -c supervisord/worker.low.conf
     volumes:
@@ -136,7 +135,7 @@ services:
     environment:
       CVAT_REDIS_HOST: 'cvat_redis'
       CVAT_POSTGRES_HOST: 'cvat_db'
-      no_proxy: elasticsearch,kibana,logstash,nuclio,opa,${no_proxy}
+      no_proxy: elasticsearch,kibana,logstash,nuclio,opa,${no_proxy:-}
       NUMPROCS: 1
     command: -c supervisord/worker.webhooks.conf
     volumes:
@@ -187,7 +186,7 @@ services:
 
   cvat_opa:
     container_name: cvat_opa
-    image: openpolicyagent/opa:0.34.2-rootless
+    image: openpolicyagent/opa:0.45.0-rootless
     restart: always
     networks:
       cvat:

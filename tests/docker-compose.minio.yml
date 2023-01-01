@@ -1,5 +1,3 @@
-version: '3.3'
-
 services:
   minio:
     image: quay.io/minio/minio:RELEASE.2022-09-17T00-09-45Z
