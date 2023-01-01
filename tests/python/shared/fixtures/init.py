@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import logging
+import os
 import re
 from http import HTTPStatus
 from pathlib import Path
@@ -223,6 +224,10 @@ def kube_restore_data_volumes():
         f"{pod_name}:/tmp/cvat_data.tar.bz2",
     )
     kube_exec_cvat("tar --strip 3 -xjf /tmp/cvat_data.tar.bz2 -C /home/django/data/")
+
+
+def get_server_image_tag():
+    return f"cvat/server:{os.environ.get('CVAT_VERSION', 'dev')}"
 
 
 def start_services(rebuild=False):
