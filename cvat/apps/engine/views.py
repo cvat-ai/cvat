@@ -6,6 +6,7 @@
 import io
 import os
 import os.path as osp
+import zipfile
 import pytz
 import shutil
 import traceback
@@ -721,20 +722,26 @@ class DataChunkGetter:
                 return HttpResponse(buf.getvalue(), content_type=mime)
 
             elif self.type == 'context_image':
-                if not (start <= self.number <= stop):
-                    raise ValidationError('The frame number should be in ' +
-                        f'[{start}, {stop}] range')
+                if start <= self.number <= stop:
+                    zip_buffer = io.BytesIO()
+                    image = Image.objects.get(data_id=db_data.id, frame=self.number)
+                    with zipfile.ZipFile(zip_buffer, 'a', zipfile.ZIP_DEFLATED, False) as zip_file:
+                        if not image.related_files.count():
+                            return Response(data='No context image related to the frame',
+                                status=status.HTTP_404_NOT_FOUND)
 
-                image = Image.objects.get(data_id=db_data.id, frame=self.number)
-                for i in image.related_files.all():
-                    path = os.path.realpath(str(i.path))
-                    image = cv2.imread(path)
-                    success, result = cv2.imencode('.JPEG', image)
-                    if not success:
-                        raise Exception('Failed to encode image to ".jpeg" format')
-                    return HttpResponse(io.BytesIO(result.tobytes()), content_type='image/jpeg')
-                return Response(data='No context image related to the frame',
-                    status=status.HTTP_404_NOT_FOUND)
+                        for idx, i in enumerate(image.related_files.all()):
+                            path = os.path.realpath(str(i.path))
+                            image = cv2.imread(path)
+                            success, result = cv2.imencode('.JPEG', image)
+                            if not success:
+                                raise Exception('Failed to encode image to ".jpeg" format')
+                            zip_file.writestr(f'{str(idx)}.jpg', result.tobytes())
+                            # response = HttpResponse(wrapper, content_type='application/zip')
+                            # response['Content-Disposition'] = 'attachment; filename=your_zipfile.zip'
+                    return HttpResponse(io.BytesIO(zip_buffer.getvalue()), content_type='application/zip')
+                raise ValidationError('The frame number should be in ' +
+                    f'[{start}, {stop}] range')
             else:
                 return Response(data='unknown data type {}.'.format(self.type),
                     status=status.HTTP_400_BAD_REQUEST)

@@ -27,7 +27,6 @@ import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { getCore, Label, LabelType } from 'cvat-core-wrapper';
 import { CombinedState, ObjectType } from 'reducers';
 import { filterApplicableForType } from 'utils/filter-applicable-labels';
-import { adjustContextImagePosition } from 'components/annotation-page/standard-workspace/context-image/context-image';
 import LabelSelector from 'components/label-selector/label-selector';
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
@@ -234,7 +233,6 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
                     ant-layout-sider-zero-width-trigger
                     ant-layout-sider-zero-width-trigger-left`}
                 onClick={() => {
-                    adjustContextImagePosition(!sidebarCollapsed);
                     setSidebarCollapsed(!sidebarCollapsed);
                 }}
             >
@@ -256,7 +254,6 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
                         ant-layout-sider-zero-width-trigger
                         ant-layout-sider-zero-width-trigger-left`}
                     onClick={() => {
-                        adjustContextImagePosition(!sidebarCollapsed);
                         setSidebarCollapsed(!sidebarCollapsed);
                     }}
                 >

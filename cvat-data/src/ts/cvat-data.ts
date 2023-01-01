@@ -18,6 +18,67 @@ export const DimensionType = Object.freeze({
     DIM_2D: '2d',
 });
 
+const createImageBitmap = async function (blob): Promise<HTMLImageElement> {
+    return new Promise((resolve) => {
+        const img = document.createElement('img');
+        img.addEventListener('load', function loadListener() {
+            resolve(this);
+        });
+        img.src = URL.createObjectURL(blob);
+    });
+};
+
+export function decodeZip(block: any, start: number, end: number, dimension: any): Promise<any> {
+    return new Promise((resolve, reject) => {
+        decodeZip.mutex.acquire().then((release) => {
+            const worker = new ZipDecoder();
+            const result: Record<string, HTMLImageElement> = {};
+            let decoded = 0;
+
+            worker.onerror = (e: ErrorEvent) => {
+                release();
+                worker.terminate();
+                reject(new Error(`Archive can not be decoded. ${e.message}`));
+            };
+
+            worker.onmessage = async (event) => {
+                const {
+                    isRaw, error, fileName,
+                } = event.data;
+                if (error) {
+                    worker.onerror(new ErrorEvent('error', { message: error.toString() }));
+                }
+
+                let { data } = event.data;
+
+                if (isRaw) {
+                    // polyfill for safary
+                    data = await createImageBitmap(data);
+                }
+
+                result[fileName.split('.')[0]] = data;
+                decoded++;
+
+                if (decoded === end) {
+                    release();
+                    worker.terminate();
+                    resolve(result);
+                }
+            };
+
+            worker.postMessage({
+                block,
+                start,
+                end,
+                dimension,
+                dimension2D: DimensionType.DIM_2D,
+            });
+        });
+    });
+}
+
+decodeZip.mutex = new Mutex();
+
 export class FrameProvider {
     constructor(
         blockType,
@@ -309,18 +370,6 @@ export class FrameProvider {
                         // there is a way to polyfill it with using document.createElement
                         // but document.createElement doesn't work in worker
                         // so, we get raw data and decode it here, no other way
-
-                        const createImageBitmap = async function (blob) {
-                            return new Promise((resolve) => {
-                                const img = document.createElement('img');
-                                img.addEventListener('load', function loadListener() {
-                                    resolve(this);
-                                });
-                                img.src = URL.createObjectURL(blob);
-                            });
-                        };
-
-                        // eslint-disable-next-line
                         event.data.data = await createImageBitmap(event.data.data);
                     }
 

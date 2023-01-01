@@ -7,7 +7,7 @@ import './styles.scss';
 import React from 'react';
 import Layout from 'antd/lib/layout';
 
-import CanvasWrapperContainer from 'containers/annotation-page/canvas/canvas-wrapper';
+import CanvasLayout from 'components/annotation-page/canvas/canvas-layout';
 import ControlsSideBarContainer from 'containers/annotation-page/standard-workspace/controls-side-bar/controls-side-bar';
 import CanvasContextMenuContainer from 'containers/annotation-page/canvas/canvas-context-menu';
 import ObjectsListContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/objects-list';
@@ -21,7 +21,7 @@ export default function StandardWorkspaceComponent(): JSX.Element {
     return (
         <Layout hasSider className='cvat-standard-workspace'>
             <ControlsSideBarContainer />
-            <CanvasWrapperContainer />
+            <CanvasLayout />
             <ObjectSideBarComponent objectsList={<ObjectsListContainer />} />
             <PropagateConfirmComponent />
             <CanvasContextMenuContainer />

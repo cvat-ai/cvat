@@ -39,6 +39,6 @@ onmessage = (e) => {
                         });
                 }
             });
-        });
+        }).catch((error) => postMessage({ error }));
     }
 };

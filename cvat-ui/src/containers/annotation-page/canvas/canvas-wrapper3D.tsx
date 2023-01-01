@@ -31,7 +31,7 @@ import {
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { Canvas } from 'cvat-canvas-wrapper';
 
-interface StateToProps {
+type StateToProps = {
     opacity: number;
     selectedOpacity: number;
     outlined: boolean;
@@ -49,7 +49,7 @@ interface StateToProps {
     workspace: Workspace;
     frame: number;
     resetZoom: boolean;
-}
+};
 
 interface DispatchToProps {
     onDragCanvas: (enabled: boolean) => void;

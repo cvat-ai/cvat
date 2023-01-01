@@ -181,6 +181,8 @@ button.cvat-predictor-button {
 
 .cvat-player-filename-wrapper {
     max-width: $grid-unit-size * 30;
+    max-height: 27px;
+    line-height: 27px;
     overflow: hidden;
     text-overflow: ellipsis;
     user-select: none;
@@ -515,5 +517,11 @@ button.cvat-predictor-button {
         &::after {
             content: '\00a0';
         }
+    }
+}
+
+.cvat-saving-job-modal {
+    span.anticon {
+        margin-left: $grid-unit-size * 2;
     }
 }

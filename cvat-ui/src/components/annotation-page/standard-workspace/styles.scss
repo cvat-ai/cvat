@@ -7,55 +7,10 @@
 
 .cvat-standard-workspace.ant-layout {
     height: 100%;
-}
 
-.cvat-context-image-wrapper {
-    height: auto;
-    width: $grid-unit-size * 32;
-    position: absolute;
-    top: $grid-unit-size;
-    right: $grid-unit-size;
-    z-index: 100;
-    background: black;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    user-select: none;
-
-    > .cvat-context-image-wrapper-header {
-        height: $grid-unit-size * 4;
-        width: 100%;
-        z-index: 101;
-        background: rgba(0, 0, 0, 0.2);
-        position: absolute;
-        top: 0;
-        left: 0;
+    > .ant-layout-content {
+        overflow: auto;
     }
-
-    > .ant-image {
-        margin: $grid-unit-size * 0.5;
-    }
-
-    > span {
-        position: absolute;
-        font-size: 18px;
-        top: 7px;
-        right: 7px;
-        z-index: 102;
-        color: white;
-
-        &:hover {
-            > svg {
-                transform: scale(1.2);
-            }
-        }
-    }
-}
-
-.cvat-context-image {
-    width: 100%;
-    height: auto;
-    display: block;
 }
 
 .cvat-objects-sidebar-sider {

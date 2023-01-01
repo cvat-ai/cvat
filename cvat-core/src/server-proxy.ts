@@ -1369,7 +1369,7 @@ async function getPreview(tid, jid) {
     return response.data;
 }
 
-async function getImageContext(jid, frame) {
+async function getImageContext(jid, frame, imageId) {
     const { backendAPI } = config;
 
     let response = null;
@@ -1381,7 +1381,7 @@ async function getImageContext(jid, frame) {
                 number: frame,
             },
             proxy: config.proxy,
-            responseType: 'blob',
+            responseType: 'arraybuffer',
         });
     } catch (errorData) {
         throw generateError(errorData);

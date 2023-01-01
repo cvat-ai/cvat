@@ -8,6 +8,7 @@ import { isBrowser, isNode } from 'browser-or-node';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
 import { Exception, ArgumentError, DataError } from './exceptions';
+import { rejects } from 'assert';
 
 // This is the frames storage
 const frameDataCache = {};
@@ -384,7 +385,9 @@ FrameData.prototype.data.implementation = async function (onServerRequest) {
     });
 };
 
-function getFrameMeta(jobID, frame) {
+function getFrameMeta(jobID, frame): any {
+    // todo: fix this function because now meta has not only size
+    // but also number of context images for example
     const { meta, mode, startFrame } = frameDataCache[jobID];
     let size = null;
     if (mode === 'interpolation') {
@@ -413,16 +416,43 @@ class FrameBuffer {
         this._jobID = jobID;
     }
 
-    isContextImageAvailable(frame) {
+    addContextImage(frame, data): void {
+        const promise = new Promise<void>((resolve, reject) => {
+            data.then((resolvedData) => {
+                const meta = getFrameMeta(this._jobID, frame);
+                return cvatData
+                    .decodeZip(resolvedData, 0, meta.related_files, cvatData.DimensionType.DIM_2D);
+            }).then((decodedData) => {
+                this._contextImage[frame] = decodedData;
+                resolve();
+            }).catch((error: Error) => {
+                reject(error);
+            });
+        });
+
+        this._contextImage[frame] = promise;
+    }
+
+    isContextImageAvailable(frame): boolean {
         return frame in this._contextImage;
     }
 
-    getContextImage(frame) {
-        return this._contextImage[frame] || null;
-    }
-
-    addContextImage(frame, data) {
-        this._contextImage[frame] = data;
+    getContextImage(frame): Promise<ImageBitmap[]> {
+        return new Promise((resolve) => {
+            if (frame in this._contextImage) {
+                if (this._contextImage[frame] instanceof Promise) {
+                    this._contextImage[frame].then(() => {
+                        resolve(this.getContextImage(frame));
+                    });
+                } else {
+                    resolve(Object.keys(this._contextImage[frame])
+                        .map((key: string): number => +key).sort()
+                        .map((key: number) => this._contextImage[frame][key]));
+                }
+            } else {
+                resolve([]);
+            }
+        });
     }
 
     getFreeBufferSize() {
@@ -629,7 +659,7 @@ class FrameBuffer {
     }
 }
 
-async function getImageContext(jobID, frame) {
+async function getImageContext(jobID, frame, imageId) {
     return new Promise((resolve, reject) => {
         serverProxy.frames
             .getImageContext(jobID, frame)
@@ -638,11 +668,7 @@ async function getImageContext(jobID, frame) {
                     // eslint-disable-next-line no-undef
                     resolve(global.Buffer.from(result, 'binary').toString('base64'));
                 } else if (isBrowser) {
-                    const reader = new FileReader();
-                    reader.onload = () => {
-                        resolve(reader.result);
-                    };
-                    reader.readAsDataURL(result);
+                    resolve(result);
                 }
             })
             .catch((error) => {
@@ -656,7 +682,7 @@ export async function getContextImage(jobID, frame) {
         return frameDataCache[jobID].frameBuffer.getContextImage(frame);
     }
     const response = getImageContext(jobID, frame);
-    frameDataCache[jobID].frameBuffer.addContextImage(frame, response);
+    await frameDataCache[jobID].frameBuffer.addContextImage(frame, response);
     return frameDataCache[jobID].frameBuffer.getContextImage(frame);
 }
 

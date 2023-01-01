@@ -4,7 +4,6 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import Layout from 'antd/lib/layout';
 import Slider from 'antd/lib/slider';
 import Dropdown from 'antd/lib/dropdown';
 import { PlusCircleOutlined, UpOutlined } from '@ant-design/icons';
@@ -22,7 +21,6 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 import FrameTags from 'components/annotation-page/tag-annotation-workspace/frame-tags';
 import ImageSetupsContent from './image-setups-content';
 import BrushTools from './brush-tools';
-import ContextImage from '../standard-workspace/context-image/context-image';
 
 const cvat = getCore();
 
@@ -72,7 +70,6 @@ interface Props {
     automaticBordering: boolean;
     intelligentPolygonCrop: boolean;
     keyMap: KeyMap;
-    canvasBackgroundColor: string;
     switchableAutomaticBordering: boolean;
     showTagsOnFrame: boolean;
     onSetupCanvas: () => void;
@@ -186,7 +183,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             automaticBordering,
             intelligentPolygonCrop,
             showProjections,
-            canvasBackgroundColor,
             colorBy,
             onFetchAnnotation,
         } = this.props;
@@ -320,15 +316,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                 } else {
                     loadingAnimation.classList.add('cvat_canvas_hidden');
                 }
-            }
-        }
-
-        if (prevProps.canvasBackgroundColor !== canvasBackgroundColor) {
-            const canvasWrapperElement = window.document
-                .getElementsByClassName('cvat-canvas-container')
-                .item(0) as HTMLElement | null;
-            if (canvasWrapperElement) {
-                canvasWrapperElement.style.backgroundColor = canvasBackgroundColor;
             }
         }
 
@@ -683,7 +670,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             brightnessLevel,
             contrastLevel,
             saturationLevel,
-            canvasBackgroundColor,
         } = this.props;
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
 
@@ -707,12 +693,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             CSSImageFilter:
                 `brightness(${brightnessLevel}) contrast(${contrastLevel}) saturate(${saturationLevel})`,
         });
-        const canvasWrapperElement = window.document
-            .getElementsByClassName('cvat-canvas-container')
-            .item(0) as HTMLElement | null;
-        if (canvasWrapperElement) {
-            canvasWrapperElement.style.backgroundColor = canvasBackgroundColor;
-        }
 
         // Events
         canvasInstance.html().addEventListener(
@@ -788,7 +768,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         };
 
         return (
-            <Layout.Content style={{ position: 'relative' }}>
+            <>
                 <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
                 {/*
                     This element doesn't have any props
@@ -804,7 +784,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                     }}
                 />
 
-                <ContextImage />
                 <BrushTools />
 
                 <Dropdown trigger={['click']} placement='topCenter' overlay={<ImageSetupsContent />}>
@@ -832,8 +811,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                         <FrameTags />
                     </div>
                 ) : null}
-                ;
-            </Layout.Content>
+            </>
         );
     }
 }

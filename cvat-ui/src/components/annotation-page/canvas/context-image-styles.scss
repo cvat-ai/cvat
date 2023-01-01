@@ -1,0 +1,84 @@
+// Copyright (C) 2022 CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import '../../../base.scss';
+
+.cvat-context-image-wrapper {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+
+    > .ant-spin {
+        position: absolute;
+        top: 50%;
+        transform: translate(0, -50%);
+    }
+
+    > .ant-empty {
+        width: 100%;
+        height: 100%;
+
+        > .ant-empty-image {
+            height: 60%;
+        }
+    }
+
+    > canvas {
+        object-fit: contain;
+        position: relative;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 100%;
+        height: 100%;
+    }
+
+    > .cvat-context-image-setup-button {
+        position: absolute;
+        top: $grid-unit-size;
+        right: $grid-unit-size;
+        font-size: 24px;
+    }
+}
+
+.cvat-context-image-overlay {
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    background: rgba(255,255,255,0.25);
+    position: absolute;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+
+    .cvat-context-image-switcher {
+        width: 80%;
+        max-height: 80%;
+        position: relative;
+        background: white;
+        padding: $grid-unit-size;
+        display: block;
+        justify-content: space-between;
+        overflow: hidden;
+        overflow-y: auto;
+
+        .cvat-context-image-switcher-item {
+            &.cvat-context-image-switcher-item-current {
+                opacity: 1;
+            }
+
+            &:hover {
+                opacity: 0.9;
+            }
+
+            padding: $grid-unit-size;
+            opacity: 0.6;
+            width: 25%;
+        }
+
+
+    }
+}

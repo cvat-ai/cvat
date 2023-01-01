@@ -96,7 +96,6 @@ interface StateToProps {
     intelligentPolygonCrop: boolean;
     switchableAutomaticBordering: boolean;
     keyMap: KeyMap;
-    canvasBackgroundColor: string;
     showTagsOnFrame: boolean;
 }
 
@@ -153,7 +152,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         },
         settings: {
             player: {
-                canvasBackgroundColor,
                 grid,
                 gridSize,
                 gridColor,
@@ -228,7 +226,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         intelligentPolygonCrop,
         workspace,
         keyMap,
-        canvasBackgroundColor,
         switchableAutomaticBordering:
             activeControl === ActiveControl.DRAW_POLYGON ||
             activeControl === ActiveControl.DRAW_POLYLINE ||

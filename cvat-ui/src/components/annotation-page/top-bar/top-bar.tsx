@@ -17,7 +17,6 @@ import RightGroup from './right-group';
 interface Props {
     playing: boolean;
     saving: boolean;
-    savingStatuses: string[];
     frameNumber: number;
     frameFilename: string;
     frameDeleted: boolean;
@@ -75,7 +74,6 @@ interface Props {
 export default function AnnotationTopBarComponent(props: Props): JSX.Element {
     const {
         saving,
-        savingStatuses,
         undoAction,
         redoAction,
         playing,
@@ -135,7 +133,6 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         <Row justify='space-between'>
             <LeftGroup
                 saving={saving}
-                savingStatuses={savingStatuses}
                 undoAction={undoAction}
                 redoAction={redoAction}
                 saveShortcut={saveShortcut}

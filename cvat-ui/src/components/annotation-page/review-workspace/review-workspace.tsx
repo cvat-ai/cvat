@@ -6,8 +6,8 @@ import './styles.scss';
 import React from 'react';
 import Layout from 'antd/lib/layout';
 
-import CanvasWrapperContainer from 'containers/annotation-page/canvas/canvas-wrapper';
 import ControlsSideBarContainer from 'containers/annotation-page/review-workspace/controls-side-bar/controls-side-bar';
+import CanvasLayout from 'components/annotation-page/canvas/canvas-layout';
 import ObjectSideBarComponent from 'components/annotation-page/standard-workspace/objects-side-bar/objects-side-bar';
 import ObjectsListContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/objects-list';
 import CanvasContextMenuContainer from 'containers/annotation-page/canvas/canvas-context-menu';
@@ -17,7 +17,7 @@ export default function ReviewWorkspaceComponent(): JSX.Element {
     return (
         <Layout hasSider className='cvat-review-workspace'>
             <ControlsSideBarContainer />
-            <CanvasWrapperContainer />
+            <CanvasLayout />
             <ObjectSideBarComponent objectsList={<ObjectsListContainer readonly />} />
             <CanvasContextMenuContainer readonly />
             <IssueAggregatorComponent />
