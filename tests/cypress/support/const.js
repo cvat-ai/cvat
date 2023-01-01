@@ -44,7 +44,7 @@ it('Prepare to testing', () => {
             listItems.push(collection[i].innerText);
         }
         if (listItems.indexOf(taskName) === -1) {
-            cy.task('log', 'A task doesn\'t exist. Creating.');
+            cy.task('log', "A task doesn't exist. Creating.");
             cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
             cy.createZipArchive(directoryToArchive, archivePath);
             cy.createAnnotationTask(
