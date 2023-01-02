@@ -11,7 +11,7 @@ import {
     CombinedState, ContextMenuType, ShapeType, Workspace,
 } from 'reducers';
 
-import CanvasContextMenuComponent from 'components/annotation-page/canvas/canvas-context-menu';
+import CanvasContextMenuComponent from 'components/annotation-page/canvas/views/canvas2d/canvas-context-menu';
 import { updateCanvasContextMenu } from 'actions/annotation-actions';
 import { reviewActions, finishIssueAsync } from 'actions/review-actions';
 import { ThunkDispatch } from 'utils/redux';

@@ -107,6 +107,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     private cube: CuboidModel;
     private isPerspectiveBeingDragged: boolean;
     private activatedElementID: number | null;
+    private isCtrlDown: boolean;
     private drawnObjects: Record<number, {
         data: DrawnObjectData;
         cuboid: CuboidModel;
@@ -184,6 +185,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             },
         };
 
+        this.isCtrlDown = false;
         this.action = {
             scan: null,
             frameCoordinates: {
@@ -330,6 +332,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
         canvasPerspectiveView.addEventListener('mousemove', (event: MouseEvent): void => {
             event.preventDefault();
+            this.isCtrlDown = event.ctrlKey;
             if (this.mode === Mode.DRAG_CANVAS) return;
             const canvas = this.views.perspective.renderer.domElement;
             const rect = canvas.getBoundingClientRect();
@@ -1385,7 +1388,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 const { x, y, z } = intersection.point;
                 object.position.set(x, y, z);
             }
-        } else if (this.mode === Mode.IDLE && !this.isPerspectiveBeingDragged) {
+        } else if (this.mode === Mode.IDLE && !this.isPerspectiveBeingDragged && !this.isCtrlDown) {
             const { renderer } = this.views.perspective.rayCaster;
             const intersects = renderer.intersectObjects(this.getAllVisibleCuboids(), false);
             if (intersects.length !== 0) {

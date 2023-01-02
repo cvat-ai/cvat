@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-@import '../../../base.scss';
+@import 'base.scss';
 
 .cvat-context-image-wrapper {
     width: 100%;
@@ -38,7 +38,17 @@
         position: absolute;
         top: $grid-unit-size;
         right: $grid-unit-size;
-        font-size: 24px;
+        font-size: 16px;
+        opacity: 0;
+        background: #d8d8d8;
+        border-radius: 2px;
+        transition: all 200ms;
+    }
+
+    &:hover {
+        > .cvat-context-image-setup-button {
+            opacity: 1;
+        }
     }
 }
 
@@ -78,7 +88,5 @@
             opacity: 0.6;
             width: 25%;
         }
-
-
     }
 }

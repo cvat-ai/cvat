@@ -4,13 +4,14 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
+import { connect } from 'react-redux';
 import Slider from 'antd/lib/slider';
 import Dropdown from 'antd/lib/dropdown';
 import { PlusCircleOutlined, UpOutlined } from '@ant-design/icons';
 
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import {
-    ColorBy, GridColor, ObjectType, ContextMenuType, Workspace, ShapeType,
+    ColorBy, GridColor, ObjectType, ContextMenuType, Workspace, ShapeType, ActiveControl, CombinedState,
 } from 'reducers';
 import { LogType } from 'cvat-logger';
 import { Canvas } from 'cvat-canvas-wrapper';
@@ -19,14 +20,46 @@ import { getCore } from 'cvat-core-wrapper';
 import consts from 'consts';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import FrameTags from 'components/annotation-page/tag-annotation-workspace/frame-tags';
+import {
+    confirmCanvasReady,
+    dragCanvas,
+    zoomCanvas,
+    resetCanvas,
+    shapeDrawn,
+    mergeObjects,
+    groupObjects,
+    splitTrack,
+    editShape,
+    updateAnnotationsAsync,
+    createAnnotationsAsync,
+    mergeAnnotationsAsync,
+    groupAnnotationsAsync,
+    splitAnnotationsAsync,
+    activateObject,
+    updateCanvasContextMenu,
+    addZLayer,
+    switchZLayer,
+    fetchAnnotationsAsync,
+    getDataFailed,
+} from 'actions/annotation-actions';
+import {
+    switchGrid,
+    changeGridColor,
+    changeGridOpacity,
+    changeBrightnessLevel,
+    changeContrastLevel,
+    changeSaturationLevel,
+    switchAutomaticBordering,
+} from 'actions/settings-actions';
+import { reviewActions } from 'actions/review-actions';
+
 import ImageSetupsContent from './image-setups-content';
 import BrushTools from './brush-tools';
 
 const cvat = getCore();
-
 const MAX_DISTANCE_TO_OPEN_SHAPE = 50;
 
-interface Props {
+interface StateToProps {
     sidebarCollapsed: boolean;
     canvasInstance: Canvas | Canvas3d | null;
     jobInstance: any;
@@ -51,9 +84,6 @@ interface Props {
     gridOpacity: number;
     activeLabelID: number;
     activeObjectType: ObjectType;
-    curZLayer: number;
-    minZLayer: number;
-    maxZLayer: number;
     brightnessLevel: number;
     contrastLevel: number;
     saturationLevel: number;
@@ -67,26 +97,32 @@ interface Props {
     textContent: string;
     showAllInterpolationTracks: boolean;
     workspace: Workspace;
+    minZLayer: number;
+    maxZLayer: number;
+    curZLayer: number;
     automaticBordering: boolean;
     intelligentPolygonCrop: boolean;
-    keyMap: KeyMap;
     switchableAutomaticBordering: boolean;
+    keyMap: KeyMap;
     showTagsOnFrame: boolean;
-    onSetupCanvas: () => void;
+}
+
+interface DispatchToProps {
+    onSetupCanvas(): void;
     onDragCanvas: (enabled: boolean) => void;
     onZoomCanvas: (enabled: boolean) => void;
+    onResetCanvas: () => void;
+    onShapeDrawn: () => void;
     onMergeObjects: (enabled: boolean) => void;
     onGroupObjects: (enabled: boolean) => void;
     onSplitTrack: (enabled: boolean) => void;
     onEditShape: (enabled: boolean) => void;
-    onShapeDrawn: () => void;
-    onResetCanvas: () => void;
     onUpdateAnnotations(states: any[]): void;
     onCreateAnnotations(sessionInstance: any, frame: number, states: any[]): void;
     onMergeAnnotations(sessionInstance: any, frame: number, states: any[]): void;
     onGroupAnnotations(sessionInstance: any, frame: number, states: any[]): void;
     onSplitAnnotations(sessionInstance: any, frame: number, state: any): void;
-    onActivateObject(activatedStateID: number | null, activatedElementID?: number | null): void;
+    onActivateObject: (activatedStateID: number | null, activatedElementID: number | null) => void;
     onUpdateContextMenu(visible: boolean, left: number, top: number, type: ContextMenuType, pointID?: number): void;
     onAddZLayer(): void;
     onSwitchZLayer(cur: number): void;
@@ -102,7 +138,212 @@ interface Props {
     onStartIssue(position: number[]): void;
 }
 
-export default class CanvasWrapperComponent extends React.PureComponent<Props> {
+function mapStateToProps(state: CombinedState): StateToProps {
+    const {
+        annotation: {
+            canvas: { activeControl, instance: canvasInstance },
+            drawing: { activeLabelID, activeObjectType },
+            job: { instance: jobInstance },
+            player: {
+                frame: { data: frameData, number: frame, fetching: frameFetching },
+                frameAngles,
+            },
+            annotations: {
+                states: annotations,
+                activatedStateID,
+                activatedElementID,
+                activatedAttributeID,
+                zLayer: { cur: curZLayer, min: minZLayer, max: maxZLayer },
+            },
+            sidebarCollapsed,
+            workspace,
+        },
+        settings: {
+            player: {
+                grid,
+                gridSize,
+                gridColor,
+                gridOpacity,
+                brightnessLevel,
+                contrastLevel,
+                saturationLevel,
+                resetZoom,
+                smoothImage,
+            },
+            workspace: {
+                aamZoomMargin,
+                showObjectsTextAlways,
+                showAllInterpolationTracks,
+                showTagsOnFrame,
+                automaticBordering,
+                intelligentPolygonCrop,
+                textFontSize,
+                controlPointsSize,
+                textPosition,
+                textContent,
+            },
+            shapes: {
+                opacity, colorBy, selectedOpacity, outlined, outlineColor, showBitmap, showProjections,
+            },
+        },
+        shortcuts: { keyMap },
+    } = state;
+
+    return {
+        sidebarCollapsed,
+        canvasInstance,
+        jobInstance,
+        frameData,
+        frameAngle: frameAngles[frame - jobInstance.startFrame],
+        frameFetching,
+        frame,
+        activatedStateID,
+        activatedElementID,
+        activatedAttributeID,
+        annotations,
+        opacity: opacity / 100,
+        colorBy,
+        selectedOpacity: selectedOpacity / 100,
+        outlined,
+        outlineColor,
+        showBitmap,
+        showProjections,
+        grid,
+        gridSize,
+        gridColor,
+        gridOpacity: gridOpacity / 100,
+        activeLabelID,
+        activeObjectType,
+        brightnessLevel: brightnessLevel / 100,
+        contrastLevel: contrastLevel / 100,
+        saturationLevel: saturationLevel / 100,
+        resetZoom,
+        smoothImage,
+        aamZoomMargin,
+        showObjectsTextAlways,
+        textFontSize,
+        controlPointsSize,
+        textPosition,
+        textContent,
+        showAllInterpolationTracks,
+        showTagsOnFrame,
+        curZLayer,
+        minZLayer,
+        maxZLayer,
+        automaticBordering,
+        intelligentPolygonCrop,
+        workspace,
+        keyMap,
+        switchableAutomaticBordering:
+            activeControl === ActiveControl.DRAW_POLYGON ||
+            activeControl === ActiveControl.DRAW_POLYLINE ||
+            activeControl === ActiveControl.DRAW_MASK ||
+            activeControl === ActiveControl.EDIT,
+    };
+}
+
+function mapDispatchToProps(dispatch: any): DispatchToProps {
+    return {
+        onSetupCanvas(): void {
+            dispatch(confirmCanvasReady());
+        },
+        onDragCanvas(enabled: boolean): void {
+            dispatch(dragCanvas(enabled));
+        },
+        onZoomCanvas(enabled: boolean): void {
+            dispatch(zoomCanvas(enabled));
+        },
+        onResetCanvas(): void {
+            dispatch(resetCanvas());
+        },
+        onShapeDrawn(): void {
+            dispatch(shapeDrawn());
+        },
+        onMergeObjects(enabled: boolean): void {
+            dispatch(mergeObjects(enabled));
+        },
+        onGroupObjects(enabled: boolean): void {
+            dispatch(groupObjects(enabled));
+        },
+        onSplitTrack(enabled: boolean): void {
+            dispatch(splitTrack(enabled));
+        },
+        onEditShape(enabled: boolean): void {
+            dispatch(editShape(enabled));
+        },
+        onUpdateAnnotations(states: any[]): void {
+            dispatch(updateAnnotationsAsync(states));
+        },
+        onCreateAnnotations(sessionInstance: any, frame: number, states: any[]): void {
+            dispatch(createAnnotationsAsync(sessionInstance, frame, states));
+        },
+        onMergeAnnotations(sessionInstance: any, frame: number, states: any[]): void {
+            dispatch(mergeAnnotationsAsync(sessionInstance, frame, states));
+        },
+        onGroupAnnotations(sessionInstance: any, frame: number, states: any[]): void {
+            dispatch(groupAnnotationsAsync(sessionInstance, frame, states));
+        },
+        onSplitAnnotations(sessionInstance: any, frame: number, state: any): void {
+            dispatch(splitAnnotationsAsync(sessionInstance, frame, state));
+        },
+        onActivateObject(activatedStateID: number | null, activatedElementID: number | null = null): void {
+            if (activatedStateID === null) {
+                dispatch(updateCanvasContextMenu(false, 0, 0));
+            }
+
+            dispatch(activateObject(activatedStateID, activatedElementID, null));
+        },
+        onUpdateContextMenu(
+            visible: boolean,
+            left: number,
+            top: number,
+            type: ContextMenuType,
+            pointID?: number,
+        ): void {
+            dispatch(updateCanvasContextMenu(visible, left, top, pointID, type));
+        },
+        onAddZLayer(): void {
+            dispatch(addZLayer());
+        },
+        onSwitchZLayer(cur: number): void {
+            dispatch(switchZLayer(cur));
+        },
+        onChangeBrightnessLevel(level: number): void {
+            dispatch(changeBrightnessLevel(level));
+        },
+        onChangeContrastLevel(level: number): void {
+            dispatch(changeContrastLevel(level));
+        },
+        onChangeSaturationLevel(level: number): void {
+            dispatch(changeSaturationLevel(level));
+        },
+        onChangeGridOpacity(opacity: number): void {
+            dispatch(changeGridOpacity(opacity));
+        },
+        onChangeGridColor(color: GridColor): void {
+            dispatch(changeGridColor(color));
+        },
+        onSwitchGrid(enabled: boolean): void {
+            dispatch(switchGrid(enabled));
+        },
+        onSwitchAutomaticBordering(enabled: boolean): void {
+            dispatch(switchAutomaticBordering(enabled));
+        },
+        onFetchAnnotation(): void {
+            dispatch(fetchAnnotationsAsync());
+        },
+        onGetDataFailed(error: any): void {
+            dispatch(getDataFailed(error));
+        },
+        onStartIssue(position: number[]): void {
+            dispatch(reviewActions.startIssue(position));
+        },
+    };
+}
+
+type Props = StateToProps & DispatchToProps;
+
+class CanvasWrapperComponent extends React.PureComponent<Props> {
     public componentDidMount(): void {
         const {
             automaticBordering,
@@ -308,17 +549,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             }
         }
 
-        if (frameFetching !== prevProps.frameFetching) {
-            const loadingAnimation = window.document.getElementById('cvat_canvas_loading_animation');
-            if (loadingAnimation) {
-                if (frameFetching) {
-                    loadingAnimation.classList.remove('cvat_canvas_hidden');
-                } else {
-                    loadingAnimation.classList.add('cvat_canvas_hidden');
-                }
-            }
-        }
-
         this.activateOnCanvas();
     }
 
@@ -457,7 +687,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         if ((e.target as HTMLElement).tagName === 'svg' && e.button !== 2) {
             if (activatedStateID !== null && workspace !== Workspace.ATTRIBUTE_ANNOTATION) {
-                onActivateObject(null);
+                onActivateObject(null, null);
             }
         }
     };
@@ -513,7 +743,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         // and triggers this event
         // in this case we do not need to update our state
         if (state.clientID === activatedStateID) {
-            onActivateObject(null);
+            onActivateObject(null, null);
         }
     };
 
@@ -544,7 +774,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
 
     private onCanvasEditStart = (): void => {
         const { onActivateObject, onEditShape } = this.props;
-        onActivateObject(null);
+        onActivateObject(null, null);
         onEditShape(true);
     };
 
@@ -815,3 +1045,5 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         );
     }
 }
+
+export default connect(mapStateToProps, mapDispatchToProps)(CanvasWrapperComponent);

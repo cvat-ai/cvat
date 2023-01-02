@@ -6,57 +6,167 @@
 import React, {
     ReactElement, useEffect, useRef,
 } from 'react';
+import { connect, useSelector } from 'react-redux';
 import {
     ArrowDownOutlined, ArrowLeftOutlined, ArrowRightOutlined, ArrowUpOutlined,
 } from '@ant-design/icons';
+
+import {
+    activateObject,
+    confirmCanvasReady,
+    createAnnotationsAsync,
+    dragCanvas,
+    editShape,
+    groupAnnotationsAsync,
+    groupObjects,
+    resetCanvas,
+    shapeDrawn,
+    updateAnnotationsAsync,
+    updateCanvasContextMenu,
+} from 'actions/annotation-actions';
 import {
     ColorBy, CombinedState, ContextMenuType, ObjectType, Workspace,
 } from 'reducers';
-import {
-    CameraAction, Canvas3d, ViewsDOM,
-} from 'cvat-canvas3d-wrapper';
-import { Canvas } from 'cvat-canvas-wrapper';
+import { CameraAction, Canvas3d, ViewsDOM } from 'cvat-canvas3d-wrapper';
+
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { LogType } from 'cvat-logger';
 import { getCore } from 'cvat-core-wrapper';
-import { useSelector } from 'react-redux';
 
 const cvat = getCore();
 
-interface Props {
+interface StateToProps {
     opacity: number;
     selectedOpacity: number;
     outlined: boolean;
     outlineColor: string;
     colorBy: ColorBy;
     frameFetching: boolean;
-    canvasInstance: Canvas3d | Canvas;
+    canvasInstance: Canvas3d;
     jobInstance: any;
     frameData: any;
     annotations: any[];
     contextMenuVisibility: boolean;
-    activeLabelID: number;
-    activeObjectType: ObjectType;
+    activeLabelID: number | null;
     activatedStateID: number | null;
-    onSetupCanvas: () => void;
-    onGroupObjects: (enabled: boolean) => void;
-    onResetCanvas(): void;
-    onCreateAnnotations(sessionInstance: any, frame: number, states: any[]): void;
-    onActivateObject(activatedStateID: number | null): void;
-    onUpdateAnnotations(states: any[]): void;
-    onUpdateContextMenu(visible: boolean, left: number, top: number, type: ContextMenuType, pointID?: number): void;
-    onGroupAnnotations(sessionInstance: any, frame: number, states: any[]): void;
-    onEditShape: (enabled: boolean) => void;
-    onDragCanvas: (enabled: boolean) => void;
-    onShapeDrawn: () => void;
+    activeObjectType: ObjectType;
     workspace: Workspace;
     frame: number;
     resetZoom: boolean;
-    perspectiveRenderContainer: string;
-    topRenderContainer: string;
-    sideRenderContainer: string;
-    frontRenderContainer: string;
+};
+
+interface DispatchToProps {
+    onDragCanvas: (enabled: boolean) => void;
+    onSetupCanvas(): void;
+    onGroupObjects: (enabled: boolean) => void;
+    onResetCanvas(): void;
+    onCreateAnnotations(sessionInstance: any, frame: number, states: any[]): void;
+    onUpdateAnnotations(states: any[]): void;
+    onGroupAnnotations(sessionInstance: any, frame: number, states: any[]): void;
+    onActivateObject: (activatedStateID: number | null) => void;
+    onShapeDrawn: () => void;
+    onEditShape: (enabled: boolean) => void;
+    onUpdateContextMenu(visible: boolean, left: number, top: number, type: ContextMenuType, pointID?: number): void;
 }
+
+function mapStateToProps(state: CombinedState): StateToProps {
+    const {
+        annotation: {
+            canvas: {
+                instance: canvasInstance,
+                contextMenu: { visible: contextMenuVisibility },
+            },
+            drawing: { activeLabelID, activeObjectType },
+            job: { instance: jobInstance },
+            player: {
+                frame: { data: frameData, number: frame, fetching: frameFetching },
+            },
+            annotations: {
+                states: annotations,
+                activatedStateID,
+            },
+            workspace,
+        },
+        settings: {
+            player: {
+                resetZoom,
+            },
+            shapes: {
+                opacity, colorBy, selectedOpacity, outlined, outlineColor,
+            },
+        },
+    } = state;
+
+    return {
+        canvasInstance: canvasInstance as Canvas3d,
+        jobInstance,
+        frameData,
+        contextMenuVisibility,
+        annotations,
+        frameFetching,
+        frame,
+        opacity,
+        colorBy,
+        selectedOpacity,
+        outlined,
+        outlineColor,
+        activeLabelID,
+        activatedStateID,
+        activeObjectType,
+        resetZoom,
+        workspace,
+    };
+}
+
+function mapDispatchToProps(dispatch: any): DispatchToProps {
+    return {
+        onDragCanvas(enabled: boolean): void {
+            dispatch(dragCanvas(enabled));
+        },
+        onSetupCanvas(): void {
+            dispatch(confirmCanvasReady());
+        },
+        onResetCanvas(): void {
+            dispatch(resetCanvas());
+        },
+        onGroupObjects(enabled: boolean): void {
+            dispatch(groupObjects(enabled));
+        },
+        onCreateAnnotations(sessionInstance: any, frame: number, states: any[]): void {
+            dispatch(createAnnotationsAsync(sessionInstance, frame, states));
+        },
+        onShapeDrawn(): void {
+            dispatch(shapeDrawn());
+        },
+        onGroupAnnotations(sessionInstance: any, frame: number, states: any[]): void {
+            dispatch(groupAnnotationsAsync(sessionInstance, frame, states));
+        },
+        onActivateObject(activatedStateID: number | null): void {
+            if (activatedStateID === null) {
+                dispatch(updateCanvasContextMenu(false, 0, 0));
+            }
+
+            dispatch(activateObject(activatedStateID, null, null));
+        },
+        onEditShape(enabled: boolean): void {
+            dispatch(editShape(enabled));
+        },
+        onUpdateAnnotations(states: any[]): void {
+            dispatch(updateAnnotationsAsync(states));
+        },
+        onUpdateContextMenu(
+            visible: boolean,
+            left: number,
+            top: number,
+            type: ContextMenuType,
+            pointID?: number,
+        ): void {
+            dispatch(updateCanvasContextMenu(visible, left, top, pointID, type));
+        },
+    };
+}
+
+type Props = StateToProps & DispatchToProps;
 
 export const PerspectiveViewComponent = React.memo(
     (): JSX.Element => {
@@ -178,11 +288,11 @@ export const PerspectiveViewComponent = React.memo(
         }, []);
 
         return (
-            <div className='cvat-canvas3d-perspective' id='cvat-canvas3d-perspective'>
+            <div className='cvat-canvas3d-perspective'>
                 {
                     frameFetching && (
-                        <svg id='cvat_canvas_loading_animation'>
-                            <circle id='cvat_canvas_loading_circle' r='30' cx='50%' cy='50%' />
+                        <svg className='cvat_canvas_loading_animation'>
+                            <circle className='cvat_canvas_loading_circle' r='30' cx='50%' cy='50%' />
                         </svg>
                     )
                 }
@@ -193,8 +303,8 @@ export const PerspectiveViewComponent = React.memo(
                         visibility: frameFetching ? 'hidden' : undefined,
                     }}
                 />
-                { ArrowGroup }
-                { ControlGroup }
+                <ArrowGroup />
+                <ControlGroup />
             </div>
         );
     },
@@ -216,8 +326,8 @@ export const TopViewComponent = React.memo(
             <div className='cvat-canvas3d-orthographic-view cvat-canvas3d-topview'>
                 {
                     frameFetching && (
-                        <svg id='cvat_canvas_loading_animation'>
-                            <circle id='cvat_canvas_loading_circle' r='30' cx='50%' cy='50%' />
+                        <svg className='cvat_canvas_loading_animation'>
+                            <circle className='cvat_canvas_loading_circle' r='30' cx='50%' cy='50%' />
                         </svg>
                     )
                 }
@@ -250,8 +360,8 @@ export const SideViewComponent = React.memo(
             <div className='cvat-canvas3d-orthographic-view cvat-canvas3d-sideview'>
                 {
                     frameFetching && (
-                        <svg id='cvat_canvas_loading_animation'>
-                            <circle id='cvat_canvas_loading_circle' r='30' cx='50%' cy='50%' />
+                        <svg className='cvat_canvas_loading_animation'>
+                            <circle className='cvat_canvas_loading_circle' r='30' cx='50%' cy='50%' />
                         </svg>
                     )
                 }
@@ -284,8 +394,8 @@ export const FrontViewComponent = React.memo(
             <div className='cvat-canvas3d-orthographic-view cvat-canvas3d-frontview'>
                 {
                     frameFetching && (
-                        <svg id='cvat_canvas_loading_animation'>
-                            <circle id='cvat_canvas_loading_circle' r='30' cx='50%' cy='50%' />
+                        <svg className='cvat_canvas_loading_animation'>
+                            <circle className='cvat_canvas_loading_circle' r='30' cx='50%' cy='50%' />
                         </svg>
                     )
                 }
@@ -302,7 +412,7 @@ export const FrontViewComponent = React.memo(
     },
 );
 
-const CanvasWrapperComponent = (props: Props): ReactElement => {
+const Canvas3DWrapperComponent = React.memo((props: Props): ReactElement => {
     const animateId = useRef(0);
 
     const {
@@ -506,6 +616,6 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
     }, [frameData, annotations, activeLabelID, contextMenuVisibility]);
 
     return <></>;
-};
+});
 
-export default React.memo(CanvasWrapperComponent);
+export default connect(mapStateToProps, mapDispatchToProps)(Canvas3DWrapperComponent);
