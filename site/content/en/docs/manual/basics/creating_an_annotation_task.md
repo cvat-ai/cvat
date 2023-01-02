@@ -21,22 +21,6 @@ See:
   - [RAW](#raw)
   - [Data formats for a 3D task](#data-formats-for-a-3d-task)
 - [Advanced configuration](#advanced-configuration)
-  - [Sorting method](#sorting-method)
-  - [Use zip/video chunks](#use-zipvideo-chunks)
-  - [Use cache](#use-cache)
-  - [Image Quality](#image-quality)
-  - [Overlap Size](#overlap-size)
-  - [Segment size](#segment-size)
-  - [Start frame](#start-frame)
-  - [Stop frame](#stop-frame)
-  - [Frame Step](#frame-step)
-  - [Chunk size](#chunk-size)
-  - [Dataset Repository](#dataset-repository)
-  - [Use LFS](#use-lfs)
-  - [Issue tracker](#issue-tracker)
-  - [Source storage](#source-storage)
-  - [Target storage](#target-storage)
-
 
 ## Basic configuration
 
@@ -72,17 +56,17 @@ To create a basic configuration task, do the following:
 7. (Optional) Click [**Add an attribute**](#add-an-attribute) and set up its properties.
 8. Click [**Select files**](#select-files) to upload files for annotation.
 9. Click **Continue** to submit the label and start adding a new one
-   <br> or **Cancel** to terminate current label and return you to labels list.
+   <br> or **Cancel** to terminate the current label and return you to the labels list.
 10. Click **Submit and open** to submit the configuration and open the created task,
     or **Submit and continue**, to submit the configuration and start a new task.
 
 ### Label shape
 
-Labels (or classes) are classes of the objects you can annotate.
+Labels (or classes) are categories of objects that you can annotate.
 
 **Label shape** limits the use of the label to certain [shape tool](/docs/manual/basics/controls-sidebar/#shapes).
 
-`Any` - is the default shape, that does not limit shape types.
+`Any` is the default value, that does not limit shape types.
 
 For example, you added:
 
@@ -97,77 +81,91 @@ As a result:
 
   ![Label shape](/images/label_shape.gif)
 
-You can change the shape of the label at any moment.
-The change will not affect the existing annotation.
+The tools on the [Controls sidebar](/docs/manual/basics/controls-sidebar/)
+will be limited to the selected types of shapes.
 
-For example, if the objects were created by polygons, and then the label
-the shape was changed to polylines, all previously created objects will
-be polygons, but you will not be able to add new polygon
+For example, if you select `Any`,
+all tools will be available,
+but if you select `Rectangle`,
+only the **Rectangle** tool will be
+visible on the sidebar.
+
+> **Note:** You cannot apply the **Label shape**
+> to the **AI** and **OpenCV** tools,
+> so these tools will always be available
+
+![Type control sidebar](/images/type_tools.png)
+
+You can change the shape of the label at any moment.
+This change will not affect the existing annotation.
+
+For example, if you created objects using polygons and then changed
+the label shape to polylines, all previously created objects will remain
+polygons. However, you will not be able to add new polygon
 objects with the same label.
 
-> **Note:** You cannot change the shape of the label
-> that was created as `skeleton`.
-> <br>The **Label shape** field is disabled for `skeleton` labels.
+> **Note:** You cannot change the shape of the `skeleton` label.
+> <br>The **Label shape** field for the `skeleton` label is disabled.
 
 ### Add an attribute
 
 **Attribute** is a property of an annotated object,
 such as color, model, or other quality.
 
-![Attributes](/images/attributes_01.png)
+For example, you have a label for `face` and want to
+specify the type of face. Instead of creating additional
+labels for `male` and `female`, you can use attributes
+to add this information.
 
-For example, you created the label `face` and also want to clarify
-the type of face.
+There are two types of attributes:
 
-To avoid adding extra labels, you can add attributes of the
-`face`: `male` or `female`.
+- **Immutable** attributes are unique and do not change from frame to frame.
+  For example, `age`, `gender`, and `color`.
+- **Mutable** attributes are temporary and can change from frame to frame.
+  For example, `pose`, `quality`, and `truncated`.
 
-There are two types of the attributes:
-
-- Immutable attributes - are unique attributes, that do not change from frame to frame.
-For example, `age`, `gender`, and `color` are immutable attributes.
-- Mutable attributes - are temporary attributes, that can change from frame to feame.
-For example, `pose`, `quality`, `truncated` are mutable attributes.
-
-Added attributes will be available from the Objects menu:
+Added attributes will be available from the **Objects menu**:
 
 ![Attributes](/images/attributes.jpg)
 
 To add an attribute, do the following:
 
-1. In the **Name** field add the attribute’s name.
-2. From the drop-down, select way to display the attribute:
-   - `Radio` to choose one of several options.
-   - `Checkbox` to choose several options.
-   - `Text` to add text attribute.
-   - `Number` to add number attribute.
-3. Set values for the attribute. To separate values use **Enter**.
+1. Go to the **Constructor** tab and click **Add attribute**.
+
+   ![Attributes](/images/attributes_01.png)
+
+2. In the **Name** field enter the name of the attribute.
+3. From the drop-down, select way to display the attribute in the **Objects menu**:
+   - `Radio` enables the selection of one option from several options.
+   - `Checkbox` enables the selection of multiple options.
+   - `Text` enables the addition of a text attribute.
+   - `Number` enables the addition of a numerical attribute in the following format: `min;max;step`
+4. Set values for the attribute. To separate values use **Enter**.
    To delete the added value, use **Backspace** or near the name of the value, click **x**.
-   > ** Note:** If the specified way of displaying the attribute is `Text` or `Number`,
-   > the entered value will be displayed as text by default (you can specify the text format).
-4. Select **Mutable** if an attribute would be changed from frame to frame.
+5. (Optional) For mutable attributes, select **Mutable**.
 
 To delete an attribute, click **Delete attribute**.
 
 ### Select files
 
-There are several ways to upload files for annotation:
+There are several ways to upload files:
 
-- To upload the file from your PC, go to the **My computer** tab.
-- To upload files from a connected file share or network, go to the **Connected file share** tab.
-- To upload files from remote sources, go to the **Remote source** tab. Enter a list of URLs (one
-  per line). If you upload a video or dataset with images and select the **Use cache** option, you
-  can attach a `manifest.json` file.
-  <br> On how to prepare the `manifest.json` file, see [Dataset manifest.](/docs/manual/advanced/dataset_manifest/)
-- To upload files from cloud storage, go to the **Cloud Storage** tab. Type the cloud storage name,
-  and after that choose the manifest file and select the required files.
-  <br> For more information, see [Attach cloud storage](/docs/manual/basics/attach-cloud-storage/)
+<!--lint disable maximum-line-length-->
+
+| Data source          | Description                                                                                                                                                                                                                        |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| My computer          | Use this option to select files from your laptop or PC. <br> To do this: <br>1. Click on the **Select files** field: <br>![Select files](/images/select_files.jpg). <br> 2. Select files to upload.                                |
+| Connected file share | **Advanced option**. <br>Upload files from a local or cloud-shared folder. <br>**Note**, that you need to mount file share first. <br>For more information, see [Share path](/docs/administration/basics/installation/#share-path) |
+| Remote source        | Enter a list of URLs (one per line) in the field. <br>If you want a `manifest.json` file, select the **Use cache**. <br> For more information, see [Dataset manifest.](/docs/manual/advanced/dataset_manifest/)                    |
+| Cloud Storage        | To upload files from cloud storage, type the cloud storage name, choose the manifest file, and select the required files. <br> For more information, see [Attach cloud storage](/docs/manual/basics/attach-cloud-storage/)         |
+
+<!--lint enable maximum-line-length-->
 
 ### RAW
 
 The **Raw** is a way of working with labels for an advanced user.
 
-> **Note:** Be careful with changing raw specification of an existing task/project.
+> **Note:** Be careful with changing the raw specification of an existing task/project.
 > Removing any "id" properties will lead to losing existing annotations.
 > **This property will be removed automatically from any text you insert to this field**.
 
@@ -178,7 +176,9 @@ The **Done** button applies the changes and the **Reset** button cancels the cha
 
 ### Data formats for a 3D task
 
-To create a 3D task, you must prepare an archive with one of the following directory structures:
+To create a 3D task, you must prepare an archive with one of the following directory structures.
+
+> **Note:** You can't mix 2D and 3D data in the same task.
 
 {{< tabpane >}}
 {{< tab header="Velodyne" >}}
@@ -218,139 +218,33 @@ context_2.jpg
 {{< /tab >}}
 {{< /tabpane >}}
 
-> You can't mix 2D and 3D data in the same task.
-
 ## Advanced configuration
+
+Use advanced configuration to set additional parameters for the task
+and customize it to meet specific needs or requirements.
 
 ![](/images/image128.jpg)
 
-### Sorting method
+The following parameters are available:
 
-To sort image data select one of the sorting methods.
+<!--lint disable maximum-line-length-->
 
-> **Note:** you cannot sort the video data.
+| Element              | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Sorting method       | **Note:** Does not work for the video data. <br><br>Several methods to sort the data. <br> For example, the sequence `2.jpeg`, `10.jpeg`, `1.jpeg` after sorting will be: <br><br><li> **Lexicographica**: `1.jpeg`, `10.jpeg`, `2.jpeg` <li> **Natural**: `1.jpeg`, `2.jpeg`, `10.jpeg` <li> **Predefined**: `2.jpeg`, `10.jpeg`, `1.jpeg` <li> **Random** uploads data in random order.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| Use zip/video chunks | Use this parameter to speed up the annotation process for videos or image collections. When enabled, the server will divide <br>the video into smaller chunks and send them to the client side in an archive, making it easier to work with the data.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| Use cache            | Select checkbox, to enable _on-the-fly_ data processing to reduce task creation time and store data in a cache with a policy of <br>evicting less popular items. <br><br>For more information, see [Data preparation on the fly](/docs/manual/advanced/data_on_fly/).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| Image Quality        | Use this parameter to specify the compression level for uploaded images and to improve the speed of loading high-resolution datasets. <br> Values range from `5` (highly compressed images) to `100` (not compressed images).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| Overlap Size         | Use this parameter to create overlapped segments, making tracking continuous from one segment to another.<br><br>This parameter has the following options: <br><br><li>**Interpolation task** (video sequence). If you annotate with a bounding box on two adjacent segments, they will be<br> merged into a single bounding box. In case the overlap is zero or the bounding box is inaccurate (not enclosing the object <br>properly, misaligned or distorted) on the adjacent segments, CVAT may have difficulty accurately interpolating the object's <br>movement between the segments. As a result, multiple tracks will be created for the object. <br><br><li> **Annotation task** (independent images). If an object exists on overlapped segments with overlap greater than zero, <br>and the annotation quality of these segments is done properly, then the object will be automatically merged into a single<br> object. If the overlap is zero or the annotation is inaccurate (not enclosing the object properly, misaligned, distorted) on the<br> adjacent segments, CVAT may have difficulty accurately annotating the object. As a result, multiple bounding boxes will be <br>created for the object. To avoid this, annotate the object on the first segment and the same object on the second segment. <br>If the annotations on different segments (on overlapped frames) are very different, you will have two shapes for the same <br>object. <br>**Note** that this functionality only works for bounding boxes. |
+| Segment size         | Use this parameter to divide a dataset into smaller segments. For example, if you want to share a dataset among several<br> annotators, you can divide the dataset into smaller segments and assign each segment to a separate job. This will allow <br>the annotators to work on the data in parallel.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| Start frame          | Defines the first frame of the video.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| Stop frame           | Defines the last frame of the video.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| Frame Step           | Use this parameter to filter video frames or images in a dataset. Specify frame step value to include only <br>certain frames or images in the dataset. <br>For example, if the frame step value is `25`, the dataset will include every 25th frame or image. So, if a video <br>has `100` frames, setting the frame step to `25` will include only frames `1`, `26`, `51`, `76`, and `100` in the dataset. <br>This can be useful for reducing the size of the dataset, or for focusing on specific frames or images that are <br>of particular interest.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| Chunk size           | Defines several frames to be packed in a chunk when send from client to server. <br>The server defines automatically if empty. <br>Recommended values: <li> 1080p or less: 36 <li> 2k or less: 8 <li>16 - 4k or less: 4 <li>8 - More: 1 - 4                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| Dataset repository   | **Advanced option**. <br>URL link of the repository that specifies the path to the repository for storage (`default: annotation / <dump_file_name> .zip`).<br>Supports _.zip_ and _.xml_ formats. <br><br>Field format: `URL [PATH]` example: `https://github.com/project/repos.git [1/2/3/4/annotation.xml]` <br><br> Supported URL formats: <li>`https://github.com/project/repos[.git]` <li>`github.com/project/repos[.git]` <li>`git@github.com:project/repos[.git]` <br><br> After the task is created, the synchronization status will show up on the task page. <br> If you specify a dataset repository, when you create a task, you will see a message about the need to grant access with <br>the ssh key. <br> This is the key you need to [add to your github account](https://github.com/settings/keys). <br> For other git systems, you can learn about adding an ssh key in their documentation.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Use LFS              | **Advanced option**. Use this parameter for big annotation files, to create a repository with [LFS](https://git-lfs.github.com/) support.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| Issue tracker        | Optional. Use this parameter to specify the full issue tracker's URL.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| Source storage       | Specify source storage for import resources like annotations and backups. It can be a local or cloud storage. <br> If the task is created in the project, then the **Use project source storage** switch will determine whether <br>to use the default values ​​or specify new ones.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| Target storage       | Specify the target storage for export resources like annotations and backups. It can be a local or cloud storage. <br>If the task is created in the project, then the **Use project target storage** switch will determine whether to use<br> the default values ​​or specify new ones. To save and open the task click on the **Submit & Open** button. <br>Click on the **Submit & Continue** button to create several tasks in sequence. Created tasks will be <br>displayed on a [tasks page](/docs/manual/basics/tasks-page/).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 
-For example, the sequence `2.jpeg`, `10.jpeg`, `1.jpeg` after sorting will be:
-
-- **Lexicographica**: `1.jpeg`, `10.jpeg`, `2.jpeg`
-- **Natural**: `1.jpeg`, `2.jpeg`, `10.jpeg`
-- **Predefined**: `2.jpeg`, `10.jpeg`, `1.jpeg`
-- **Random** uploads data in random order.
-
-### Use zip/video chunks
-
-Force to use zip chunks as compressed data. Cut out content for videos only.
-
-### Use cache
-
-Defines how to work with data. Select the checkbox to switch to "on-the-fly data processing",
-which will reduce the task creation time (by preparing chunks when requests are received)
-and store data in a cache of limited size with a policy of evicting less popular items.
-See more [here](/docs/manual/advanced/data_on_fly/).
-
-### Image Quality
-
-Use this option to specify the quality of uploaded images.
-The option helps to load high-resolution datasets faster.
-Use the value from `5` (almost completely compressed images) to `100` (not compressed images).
-
-### Overlap Size
-
-Use this option to make overlapped segments.
-The option makes tracks continuous from one segment into another.
-Use it for interpolation mode. There are several options for using the parameter:
-
-- For an interpolation task (video sequence).
-  If you annotate a bounding box on two adjacent segments they will be merged into one bounding box.
-  If overlap equals zero or annotation is poor on adjacent segments inside a dumped annotation file,
-  you will have several tracks, one for each segment, which corresponds to the object.
-- For an annotation task (independent images).
-  If an object exists on overlapped segments, the overlap is greater than zero
-  and the annotation is good enough on adjacent segments, it will be automatically merged into one object.
-  If overlap equals zero or annotation is poor on adjacent segments inside a dumped annotation file,
-  you will have several bounding boxes for the same object.
-  Thus, you annotate an object on the first segment.
-  You annotate the same object on the second segment, and if you do it right, you
-  will have one track inside the annotations.
-  If annotations on different segments (on overlapped frames)
-  are very different, you will have two shapes for the same object.
-  This functionality works only for bounding boxes.
-  Polygons, polylines, and points don't support automatic merge on overlapped segments
-  even if the overlap parameter isn't zero and the match between corresponding shapes on adjacent segments is perfect.
-
-### Segment size
-
-Use this option to divide a huge dataset into a few smaller segments.
-For example, one job cannot be annotated by several labelers (it isn't supported).
-Thus using "segment size" you can create several jobs for the same annotation task.
-It will help you to parallel the data annotation process.
-
-### Start frame
-
-Frame from which video in task begins.
-
-### Stop frame
-
-The frame on which the video in the task ends.
-
-### Frame Step
-
-Use this option to filter video frames.
-For example, enter `25` to leave every twenty-fifth frame in the video or every twenty-fifth image.
-
-### Chunk size
-
-Defines several frames to be packed in a chunk when send from client to server.
-The server defines automatically if empty.
-
-Recommended values:
-
-- 1080p or less: 36
-- 2k or less: 8 - 16
-- 4k or less: 4 - 8
-- More: 1 - 4
-
-### Dataset Repository
-
-URL link of the repository optionally specifies the path to the repository for storage
-(`default: annotation / <dump_file_name> .zip`).
-The .zip and .xml file extensions of annotation are supported.
-Field format: `URL [PATH]` example: `https://github.com/project/repos.git [1/2/3/4/annotation.xml]`
-
-Supported URL formats :
-
-- `https://github.com/project/repos[.git]`
-- `github.com/project/repos[.git]`
-- `git@github.com:project/repos[.git]`
-
-After the task is created, the synchronization status is displayed on the task page.
-
-If you specify a dataset repository, when you create a task, you will see a message
-about the need to grant access with the ssh key.
-This is the key you need to [add to your github account](https://github.com/settings/keys).
-For other git systems, you can learn about adding an ssh key in their documentation.
-
-### Use LFS
-
-If the annotation file is large, you can create a repository with
-[LFS](https://git-lfs.github.com/) support.
-
-### Issue tracker
-
-Specify the full issue tracker's URL if it's necessary.
-
-### Source storage
-
-Specify source storage for import resources like annotations and backups. It can be a local or cloud storage.
-If the task is created in the project, then the **Use project source storage** switch will determine whether
-to use the default values ​​or specify new ones.
-
-### Target storage
-
-Specify target storage for export resources like annotations and backups. It can be a local or cloud storage.
-If the task is created in the project, then the **Use project target storage** switch will determine whether
-to use the default values ​​or specify new ones.
-
-To save and open the task click on the **Submit & Open** button. Also, you
-can click on the** Submit & Continue** button for creating several tasks in sequence.
-Then, the created tasks will be displayed on a [tasks page](/docs/manual/basics/tasks-page/).
+<!--lint enable maximum-line-length-->
