@@ -1,6 +1,7 @@
 from http import HTTPStatus
 
 import pytest
+
 from shared.utils.config import delete_method, get_method, patch_method
 
 
