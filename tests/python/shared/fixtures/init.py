@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import logging
+import os
 import re
 from http import HTTPStatus
 from pathlib import Path
@@ -225,6 +226,10 @@ def kube_restore_data_volumes():
     kube_exec_cvat("tar --strip 3 -xjf /tmp/cvat_data.tar.bz2 -C /home/django/data/")
 
 
+def get_server_image_tag():
+    return f"cvat/server:{os.environ.get('CVAT_VERSION', 'dev')}"
+
+
 def start_services(rebuild=False):
     if any([cn in ["cvat_server", "cvat_db"] for cn in running_containers()]):
         pytest.exit(
@@ -234,7 +239,8 @@ def start_services(rebuild=False):
 
     _run(
         [
-            "docker-compose",
+            "docker",
+            "compose",
             f"--project-name={PREFIX}",
             # use compatibility mode to have fixed names for containers (with underscores)
             # https://github.com/docker/compose#about-update-and-backward-compatibility
@@ -286,7 +292,8 @@ def pytest_sessionstart(session):
         if stop:
             _run(
                 [
-                    "docker-compose",
+                    "docker",
+                    "compose",
                     f"--project-name={PREFIX}",
                     # use compatibility mode to have fixed names for containers (with underscores)
                     # https://github.com/docker/compose#about-update-and-backward-compatibility

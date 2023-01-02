@@ -59,17 +59,17 @@ the tutorial.
 
 In the tutorial it is assumed that you already have the cloned
 [CVAT GitHub repo][cvat-github].
-To build CVAT with serverless support you need to run `docker-compose` command
+To build CVAT with serverless support you need to run `docker compose` command
 with specific configuration files. In the case it is `docker-compose.serverless.yml`.
 It has necessary instructions how to build and deploy Nuclio platform as a
 docker container and enable corresponding support in CVAT.
 
 ```bash
-docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f components/serverless/docker-compose.serverless.yml up -d --build
+docker compose -f docker-compose.yml -f docker-compose.dev.yml -f components/serverless/docker-compose.serverless.yml up -d --build
 ```
 
 ```bash
-docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f components/serverless/docker-compose.serverless.yml ps
+docker compose -f docker-compose.yml -f docker-compose.dev.yml -f components/serverless/docker-compose.serverless.yml ps
 ```
 ```
    Name                 Command                  State                            Ports
