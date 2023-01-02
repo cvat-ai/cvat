@@ -15,7 +15,7 @@ const defaultState: JobsState = {
         search: null,
     },
     current: [],
-    previews: [],
+    previews: {},
 };
 
 export default (state: JobsState = defaultState, action: JobsActions): JobsState => {
@@ -36,13 +36,57 @@ export default (state: JobsState = defaultState, action: JobsActions): JobsState
                 fetching: false,
                 count: action.payload.jobs.count,
                 current: action.payload.jobs,
-                previews: action.payload.previews,
             };
         }
         case JobsActionTypes.GET_JOBS_FAILED: {
             return {
                 ...state,
                 fetching: false,
+            };
+        }
+        case JobsActionTypes.GET_JOB_PREVIEW: {
+            const { jobID } = action.payload;
+            const { previews } = state;
+            return {
+                ...state,
+                previews: {
+                    ...previews,
+                    [jobID]: {
+                        preview: '',
+                        fetching: true,
+                        initialized: false,
+                    },
+                },
+            };
+        }
+        case JobsActionTypes.GET_JOB_PREVIEW_SUCCESS: {
+            const { jobID, preview } = action.payload;
+            const { previews } = state;
+            return {
+                ...state,
+                previews: {
+                    ...previews,
+                    [jobID]: {
+                        preview,
+                        fetching: false,
+                        initialized: true,
+                    },
+                },
+            };
+        }
+        case JobsActionTypes.GET_JOB_PREVIEW_FAILED: {
+            const { jobID } = action.payload;
+            const { previews } = state;
+            return {
+                ...state,
+                previews: {
+                    ...previews,
+                    [jobID]: {
+                        ...previews[jobID],
+                        fetching: false,
+                        initialized: true,
+                    },
+                },
             };
         }
         default: {

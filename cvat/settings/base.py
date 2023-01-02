@@ -257,6 +257,22 @@ IAM_OPA_DATA_URL = f'{IAM_OPA_HOST}/v1/data'
 LOGIN_URL = 'rest_login'
 LOGIN_REDIRECT_URL = '/'
 
+DEFAULT_LIMITS = {
+    "USER_SANDBOX_TASKS": 10,
+    "USER_SANDBOX_PROJECTS": 3,
+    "TASKS_IN_USER_SANDBOX_PROJECT": 5,
+    "USER_OWNED_ORGS": 1,
+    "USER_SANDBOX_CLOUD_STORAGES": 10,
+
+    "ORG_TASKS": 10,
+    "ORG_PROJECTS": 3,
+    "TASKS_IN_ORG_PROJECT": 5,
+    "ORG_CLOUD_STORAGES": 10,
+    "ORG_COMMON_WEBHOOKS": 20,
+
+    "PROJECT_WEBHOOKS": 10,
+}
+
 # ORG settings
 ORG_INVITATION_CONFIRM = 'No'
 
@@ -577,6 +593,8 @@ SPECTACULAR_SETTINGS = {
         'JobStage': 'cvat.apps.engine.models.StageChoice',
         'StorageType': 'cvat.apps.engine.models.StorageChoice',
         'SortingMethod': 'cvat.apps.engine.models.SortingMethod',
+        'WebhookType': 'cvat.apps.webhooks.models.WebhookTypeChoice',
+        'WebhookContentType': 'cvat.apps.webhooks.models.WebhookContentTypeChoice',
     },
 
     # Coercion of {pk} to {id} is controlled by SCHEMA_COERCE_PATH_PK. Additionally,
