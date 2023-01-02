@@ -9,6 +9,7 @@ import PropTypes from 'prop-types';
 import notification from 'antd/lib/notification';
 import Spin from 'antd/lib/spin';
 import Empty from 'antd/lib/empty';
+import Text from 'antd/lib/typography/Text';
 import { SettingOutlined } from '@ant-design/icons';
 
 import { CombinedState } from 'reducers';
@@ -70,24 +71,21 @@ function ContextImage(props: Props): JSX.Element {
 
     return (
         <div className='cvat-context-image-wrapper'>
+            <div className='cvat-context-image-header'>
+                <Text>Context image </Text>
+                <Text strong>{contextImageOffset}</Text>
+                { relatedFiles > 1 && (
+                    <SettingOutlined
+                        className='cvat-context-image-setup-button'
+                        onClick={() => {
+                            setShowSelector(true);
+                        }}
+                    />
+                )}
+            </div>
             { hasError && <Empty /> }
             { relatedFiles && contextImageData.length === 0 && !hasError && <Spin size='small' /> }
-            { contextImageData.length > 0 && (
-                <>
-                    <canvas
-                        ref={canvasRef}
-                        className='cvat-context-image-element'
-                    />
-                    { relatedFiles > 1 && (
-                        <SettingOutlined
-                            className='cvat-context-image-setup-button'
-                            onClick={() => {
-                                setShowSelector(true);
-                            }}
-                        />
-                    )}
-                </>
-            )}
+            { contextImageData.length > 0 && <canvas ref={canvasRef} />}
             { showSelector && (
                 <ContextImageSelector
                     images={contextImageData}

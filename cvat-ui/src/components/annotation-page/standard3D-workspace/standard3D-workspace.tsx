@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import './styles.scss';
 import React from 'react';
 import Layout from 'antd/lib/layout';
 

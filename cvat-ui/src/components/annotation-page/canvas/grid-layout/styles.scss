@@ -19,7 +19,7 @@
         z-index: 1000;
         cursor: move;
         font-size: 16px;
-        background: #d8d8d8;
+        background: $header-color;
         border-radius: 2px;
     }
 
@@ -27,7 +27,7 @@
         bottom: 0;
         right: 0;
         cursor: se-resize;
-        background: #d8d8d8;
+        background: $header-color;
         border-radius: $grid-unit-size * 4 0 0 0;
     }
 }

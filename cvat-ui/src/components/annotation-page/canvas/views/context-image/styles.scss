@@ -25,28 +25,36 @@
         }
     }
 
+    .cvat-context-image-header {
+        position: absolute;
+        height: $grid-unit-size * 4;
+        width: 100%;
+        text-align: center;
+        z-index: 1;
+        background: $header-color;
+
+        > .cvat-context-image-setup-button {
+            position: absolute;
+            top: $grid-unit-size;
+            right: $grid-unit-size;
+            font-size: 16px;
+            opacity: 0;
+            border-radius: 2px;
+            transition: all 200ms;
+        }
+    }
+
     > canvas {
         object-fit: contain;
         position: relative;
         top: 50%;
         transform: translateY(-50%);
         width: 100%;
-        height: 100%;
-    }
-
-    > .cvat-context-image-setup-button {
-        position: absolute;
-        top: $grid-unit-size;
-        right: $grid-unit-size;
-        font-size: 16px;
-        opacity: 0;
-        background: #d8d8d8;
-        border-radius: 2px;
-        transition: all 200ms;
+        height: calc(100% - $grid-unit-size * 4);
     }
 
     &:hover {
-        > .cvat-context-image-setup-button {
+        > .cvat-context-image-header  > .cvat-context-image-setup-button {
             opacity: 1;
         }
     }

@@ -3,6 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import './styles.scss';
 import React, {
     ReactElement, useEffect, useRef,
 } from 'react';

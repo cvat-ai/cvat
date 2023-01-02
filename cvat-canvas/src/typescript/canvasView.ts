@@ -1130,8 +1130,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             });
 
         // Setup loading animation
-        this.loadingAnimation.setAttribute('id', 'cvat_canvas_loading_animation');
-        loadingCircle.setAttribute('id', 'cvat_canvas_loading_circle');
+        this.loadingAnimation.classList.add('cvat_canvas_loading_animation');
+        loadingCircle.classList.add('cvat_canvas_loading_circle');
         loadingCircle.setAttribute('r', '30');
         loadingCircle.setAttribute('cx', '50%');
         loadingCircle.setAttribute('cy', '50%');
