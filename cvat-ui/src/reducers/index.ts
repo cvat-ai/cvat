@@ -46,22 +46,16 @@ export interface ProjectsQuery {
     sort: string | null;
 }
 
-interface Preview {
-    fetching: boolean;
-    initialized: boolean;
+export interface Project {
+    instance: any;
     preview: string;
 }
-
-export type Project = any;
 
 export interface ProjectsState {
     initialized: boolean;
     fetching: boolean;
     count: number;
     current: Project[];
-    previews: {
-        [index: number]: Preview;
-    };
     gettingQuery: ProjectsQuery;
     tasksGettingQuery: TasksQuery & { ordering: string };
     activities: {
@@ -84,7 +78,10 @@ export interface TasksQuery {
     projectId: number | null;
 }
 
-export type Task = any; // cvat-core instance
+export interface Task {
+    instance: any; // cvat-core instance
+    preview: string;
+}
 
 export interface JobsQuery {
     page: number;
@@ -93,16 +90,12 @@ export interface JobsQuery {
     filter: string | null;
 }
 
-export type Job = any;
-
 export interface JobsState {
     query: JobsQuery;
     fetching: boolean;
     count: number;
-    current: Job[];
-    previews: {
-        [index: number]: Preview;
-    };
+    current: any[];
+    previews: string[];
 }
 
 export interface TasksState {
@@ -117,9 +110,6 @@ export interface TasksState {
     gettingQuery: TasksQuery;
     count: number;
     current: Task[];
-    previews: {
-        [index: number]: Preview;
-    };
     activities: {
         deletes: {
             [tid: number]: boolean; // deleted (deleting if in dictionary)
@@ -224,11 +214,14 @@ export interface CloudStoragesQuery {
     filter: string | null;
 }
 
-interface CloudStorageStatus {
+interface CloudStorageAdditional {
     fetching: boolean;
     initialized: boolean;
     status: string | null;
+    preview: string;
 }
+type CloudStorageStatus = Pick<CloudStorageAdditional, 'fetching' | 'initialized' | 'status'>;
+type CloudStoragePreview = Pick<CloudStorageAdditional, 'fetching' | 'initialized' | 'preview'>;
 
 export type CloudStorage = any;
 
@@ -241,7 +234,7 @@ export interface CloudStoragesState {
         [index: number]: CloudStorageStatus;
     };
     previews: {
-        [index: number]: Preview;
+        [index: number]: CloudStoragePreview;
     };
     gettingQuery: CloudStoragesQuery;
     activities: {

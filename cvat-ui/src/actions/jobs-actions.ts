@@ -4,7 +4,7 @@
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import { getCore } from 'cvat-core-wrapper';
-import { Indexable, JobsQuery, Job } from 'reducers';
+import { Indexable, JobsQuery } from 'reducers';
 
 const cvat = getCore();
 
@@ -12,9 +12,6 @@ export enum JobsActionTypes {
     GET_JOBS = 'GET_JOBS',
     GET_JOBS_SUCCESS = 'GET_JOBS_SUCCESS',
     GET_JOBS_FAILED = 'GET_JOBS_FAILED',
-    GET_JOB_PREVIEW = 'GET_JOB_PREVIEW',
-    GET_JOB_PREVIEW_SUCCESS = 'GET_JOB_PREVIEW_SUCCESS',
-    GET_JOB_PREVIEW_FAILED = 'GET_JOB_PREVIEW_FAILED',
 }
 
 interface JobsList extends Array<any> {
@@ -23,19 +20,10 @@ interface JobsList extends Array<any> {
 
 const jobsActions = {
     getJobs: (query: Partial<JobsQuery>) => createAction(JobsActionTypes.GET_JOBS, { query }),
-    getJobsSuccess: (jobs: JobsList) => (
-        createAction(JobsActionTypes.GET_JOBS_SUCCESS, { jobs })
+    getJobsSuccess: (jobs: JobsList, previews: string[]) => (
+        createAction(JobsActionTypes.GET_JOBS_SUCCESS, { jobs, previews })
     ),
     getJobsFailed: (error: any) => createAction(JobsActionTypes.GET_JOBS_FAILED, { error }),
-    getJobPreiew: (jobID: number) => (
-        createAction(JobsActionTypes.GET_JOB_PREVIEW, { jobID })
-    ),
-    getJobPreiewSuccess: (jobID: number, preview: string) => (
-        createAction(JobsActionTypes.GET_JOB_PREVIEW_SUCCESS, { jobID, preview })
-    ),
-    getJobPreiewFailed: (jobID: number, error: any) => (
-        createAction(JobsActionTypes.GET_JOB_PREVIEW_FAILED, { jobID, error })
-    ),
 };
 
 export type JobsActions = ActionUnion<typeof jobsActions>;
@@ -52,18 +40,9 @@ export const getJobsAsync = (query: JobsQuery): ThunkAction => async (dispatch) 
 
         dispatch(jobsActions.getJobs(filteredQuery));
         const jobs = await cvat.jobs.get(filteredQuery);
-        dispatch(jobsActions.getJobsSuccess(jobs));
+        const previewPromises = jobs.map((job: any) => (job as any).frames.preview().catch(() => ''));
+        dispatch(jobsActions.getJobsSuccess(jobs, await Promise.all(previewPromises)));
     } catch (error) {
         dispatch(jobsActions.getJobsFailed(error));
-    }
-};
-
-export const getJobPreviewAsync = (job: Job): ThunkAction => async (dispatch) => {
-    dispatch(jobsActions.getJobPreiew(job.id));
-    try {
-        const result = await job.frames.preview();
-        dispatch(jobsActions.getJobPreiewSuccess(job.id, result));
-    } catch (error) {
-        dispatch(jobsActions.getJobPreiewFailed(job.id, error));
     }
 };

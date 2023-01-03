@@ -27,6 +27,7 @@ import data.organizations
 #         "project": {
 #             "owner": { "id": num },
 #         } or null,
+#         "num_resources": <num>
 #     }
 # }
 #
@@ -50,7 +51,9 @@ allow {
     utils.is_sandbox
     utils.has_perm(utils.USER)
     is_project_owner
+    input.resource.num_resources < 10
 }
+
 
 allow {
     input.scope == utils.LIST
@@ -149,6 +152,7 @@ allow {
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.WORKER)
     organizations.has_perm(organizations.MAINTAINER)
+    input.resource.num_resources < 10
 }
 
 allow {
@@ -164,5 +168,6 @@ allow {
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.WORKER)
     organizations.has_perm(organizations.WORKER)
+    input.resource.num_resources < 10
     is_project_owner
 }

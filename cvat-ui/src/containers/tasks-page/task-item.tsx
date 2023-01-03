@@ -1,5 +1,4 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -15,6 +14,7 @@ import { cancelInferenceAsync } from 'actions/models-actions';
 interface StateToProps {
     deleted: boolean;
     hidden: boolean;
+    previewImage: string;
     taskInstance: any;
     activeInference: ActiveInference | null;
 }
@@ -35,9 +35,10 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     const id = own.taskID;
 
     return {
-        hidden: state.tasks.hideEmpty && task.jobs.length === 0,
+        hidden: state.tasks.hideEmpty && task.instance.jobs.length === 0,
         deleted: id in deletes ? deletes[id] === true : false,
-        taskInstance: task,
+        previewImage: task.preview,
+        taskInstance: task.instance,
         activeInference: state.models.inferences[id] || null,
     };
 }

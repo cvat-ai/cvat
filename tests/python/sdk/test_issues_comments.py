@@ -42,7 +42,7 @@ class TestIssuesUsecases:
                 "labels": [{"name": "car"}, {"name": "person"}],
             },
             resource_type=ResourceType.LOCAL,
-            resources=[fxt_image_file],
+            resources=[str(fxt_image_file)],
             data_params={"image_quality": 80},
         )
 
@@ -162,7 +162,7 @@ class TestCommentsUsecases:
                 "labels": [{"name": "car"}, {"name": "person"}],
             },
             resource_type=ResourceType.LOCAL,
-            resources=[fxt_image_file],
+            resources=[str(fxt_image_file)],
             data_params={"image_quality": 80},
         )
 

@@ -369,8 +369,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             try {
                 // run server request
                 this.setState({ fetching: true });
-                const response = await core.lambda.call(jobInstance.taskId, interactor,
-                    { ...data, job: jobInstance.id });
+                const response = await core.lambda.call(jobInstance.taskId, interactor, data);
 
                 // approximation with cv.approxPolyDP
                 const approximated = await this.approximateResponsePoints(response.points);
@@ -741,7 +740,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         const response = await core.lambda.call(jobInstance.taskId, tracker, {
                             frame: frame - 1,
                             shapes: trackableObjects.shapes,
-                            job: jobInstance.id,
                         });
 
                         const { states: serverlessStates } = response;
@@ -789,7 +787,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             frame,
                             shapes: trackableObjects.shapes,
                             states: trackableObjects.states,
-                            job: jobInstance.id,
                         });
 
                         response.shapes = response.shapes.map(trackedRectangleMapper);
@@ -1164,9 +1161,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 runInference={async (model: Model, body: DetectorRequestBody) => {
                     try {
                         this.setState({ mode: 'detection', fetching: true });
-                        const result = await core.lambda.call(jobInstance.taskId, model, {
-                            ...body, frame, job: jobInstance.id,
-                        });
+                        const result = await core.lambda.call(jobInstance.taskId, model, { ...body, frame });
                         const states = result.map(
                             (data: any): any => {
                                 const jobLabel = (jobInstance.labels as Label[])

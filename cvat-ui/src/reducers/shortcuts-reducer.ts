@@ -258,13 +258,6 @@ const defaultKeyMap = ({
         action: 'keydown',
         applicable: [DimensionType.DIM_2D, DimensionType.DIM_3D],
     },
-    DELETE_FRAME: {
-        name: 'Delete frame',
-        description: 'Delete frame',
-        sequences: ['alt+del'],
-        action: 'keydown',
-        applicable: [DimensionType.DIM_2D, DimensionType.DIM_3D],
-    },
     NEXT_FRAME: {
         name: 'Next frame',
         description: 'Go to the next frame',

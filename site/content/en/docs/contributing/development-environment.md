@@ -78,7 +78,7 @@ description: 'Installing a development environment for different operating syste
   python3 -m venv .env
   . .env/bin/activate
   pip install -U pip wheel setuptools
-  pip install -r cvat/requirements/development.txt -r utils/dataset_manifest/requirements.txt
+  pip install -r cvat/requirements/development.txt
   python manage.py migrate
   python manage.py collectstatic
   ```
@@ -170,7 +170,7 @@ description: 'Installing a development environment for different operating syste
 - Pull and run OpenPolicyAgent Docker image:
 
   ```bash
-   docker run -d --rm --name cvat_opa_debug -p 8181:8181 openpolicyagent/opa:0.45.0-rootless \
+   docker run -d --rm --name cvat_opa_debug -p 8181:8181 openpolicyagent/opa:0.34.2-rootless \
    run --server --set=decision_logs.console=true --set=services.cvat.url=http://host.docker.internal:7000 \
    --set=bundles.cvat.service=cvat --set=bundles.cvat.resource=/api/auth/rules
   ```

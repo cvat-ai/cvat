@@ -3,10 +3,13 @@
 # SPDX-License-Identifier: MIT
 
 import json
+import os.path as osp
 
 import pytest
 
 from shared.utils.config import ASSETS_DIR
+
+CVAT_DB_DIR = osp.join(ASSETS_DIR, "cvat_db")
 
 
 class Container:
@@ -36,73 +39,73 @@ class Container:
 
 @pytest.fixture(scope="session")
 def users():
-    with open(ASSETS_DIR / "users.json") as f:
+    with open(osp.join(ASSETS_DIR, "users.json")) as f:
         return Container(json.load(f)["results"])
 
 
 @pytest.fixture(scope="session")
 def organizations():
-    with open(ASSETS_DIR / "organizations.json") as f:
+    with open(osp.join(ASSETS_DIR, "organizations.json")) as f:
         return Container(json.load(f))
 
 
 @pytest.fixture(scope="session")
 def memberships():
-    with open(ASSETS_DIR / "memberships.json") as f:
+    with open(osp.join(ASSETS_DIR, "memberships.json")) as f:
         return Container(json.load(f)["results"])
 
 
 @pytest.fixture(scope="session")
 def tasks():
-    with open(ASSETS_DIR / "tasks.json") as f:
+    with open(osp.join(ASSETS_DIR, "tasks.json")) as f:
         return Container(json.load(f)["results"])
 
 
 @pytest.fixture(scope="session")
 def projects():
-    with open(ASSETS_DIR / "projects.json") as f:
+    with open(osp.join(ASSETS_DIR, "projects.json")) as f:
         return Container(json.load(f)["results"])
 
 
 @pytest.fixture(scope="session")
 def jobs():
-    with open(ASSETS_DIR / "jobs.json") as f:
+    with open(osp.join(ASSETS_DIR, "jobs.json")) as f:
         return Container(json.load(f)["results"])
 
 
 @pytest.fixture(scope="session")
 def invitations():
-    with open(ASSETS_DIR / "invitations.json") as f:
+    with open(osp.join(ASSETS_DIR, "invitations.json")) as f:
         return Container(json.load(f)["results"], key="key")
 
 
 @pytest.fixture(scope="session")
 def annotations():
-    with open(ASSETS_DIR / "annotations.json") as f:
+    with open(osp.join(ASSETS_DIR, "annotations.json")) as f:
         return json.load(f)
 
 
 @pytest.fixture(scope="session")
 def cloud_storages():
-    with open(ASSETS_DIR / "cloudstorages.json") as f:
+    with open(osp.join(ASSETS_DIR, "cloudstorages.json")) as f:
         return Container(json.load(f)["results"])
 
 
 @pytest.fixture(scope="session")
 def issues():
-    with open(ASSETS_DIR / "issues.json") as f:
+    with open(osp.join(ASSETS_DIR, "issues.json")) as f:
         return Container(json.load(f)["results"])
 
 
 @pytest.fixture(scope="session")
 def comments():
-    with open(ASSETS_DIR / "comments.json") as f:
+    with open(osp.join(ASSETS_DIR, "comments.json")) as f:
         return Container(json.load(f)["results"])
 
 
 @pytest.fixture(scope="session")
 def webhooks():
-    with open(ASSETS_DIR / "webhooks.json") as f:
+    with open(osp.join(ASSETS_DIR, "webhooks.json")) as f:
         return Container(json.load(f)["results"])
 
 
@@ -378,11 +381,3 @@ def admin_user(users):
         if user["is_superuser"] and user["is_active"]:
             return user["username"]
     raise Exception("Can't find any admin user in the test DB")
-
-
-@pytest.fixture(scope="session")
-def regular_user(users):
-    for user in users:
-        if not user["is_superuser"] and user["is_active"]:
-            return user["username"]
-    raise Exception("Can't find any regular user in the test DB")

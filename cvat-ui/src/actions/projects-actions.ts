@@ -29,16 +29,13 @@ export enum ProjectsActionTypes {
     DELETE_PROJECT = 'DELETE_PROJECT',
     DELETE_PROJECT_SUCCESS = 'DELETE_PROJECT_SUCCESS',
     DELETE_PROJECT_FAILED = 'DELETE_PROJECT_FAILED',
-    GET_PROJECT_PREVIEW = 'GET_PROJECT_PREVIEW',
-    GET_PROJECT_PREVIEW_SUCCESS = 'GET_PROJECT_PREVIEW_SUCCESS',
-    GET_PROJECT_PREVIEW_FAILED = 'GET_PROJECT_PREVIEW_FAILED',
 }
 
 // prettier-ignore
 const projectActions = {
     getProjects: () => createAction(ProjectsActionTypes.GET_PROJECTS),
-    getProjectsSuccess: (array: any[], count: number) => (
-        createAction(ProjectsActionTypes.GET_PROJECTS_SUCCESS, { array, count })
+    getProjectsSuccess: (array: any[], previews: string[], count: number) => (
+        createAction(ProjectsActionTypes.GET_PROJECTS_SUCCESS, { array, previews, count })
     ),
     getProjectsFailed: (error: any) => createAction(ProjectsActionTypes.GET_PROJECTS_FAILED, { error }),
     updateProjectsGettingQuery: (query: Partial<ProjectsQuery>, tasksQuery: Partial<TasksQuery> = {}) => (
@@ -60,15 +57,6 @@ const projectActions = {
     ),
     deleteProjectFailed: (projectId: number, error: any) => (
         createAction(ProjectsActionTypes.DELETE_PROJECT_FAILED, { projectId, error })
-    ),
-    getProjectPreiew: (projectID: number) => (
-        createAction(ProjectsActionTypes.GET_PROJECT_PREVIEW, { projectID })
-    ),
-    getProjectPreiewSuccess: (projectID: number, preview: string) => (
-        createAction(ProjectsActionTypes.GET_PROJECT_PREVIEW_SUCCESS, { projectID, preview })
-    ),
-    getProjectPreiewFailed: (projectID: number, error: any) => (
-        createAction(ProjectsActionTypes.GET_PROJECT_PREVIEW_FAILED, { projectID, error })
     ),
 };
 
@@ -121,7 +109,8 @@ export function getProjectsAsync(
 
         const array = Array.from(result);
 
-        dispatch(projectActions.getProjectsSuccess(array, result.count));
+        const previewPromises = array.map((project): string => (project as any).preview().catch(() => ''));
+        dispatch(projectActions.getProjectsSuccess(array, await Promise.all(previewPromises), result.count));
 
         // Appropriate tasks fetching proccess needs with retrieving only a single project
         if (Object.keys(filteredQuery).includes('id') && typeof filteredQuery.id === 'number') {
@@ -182,13 +171,3 @@ export function deleteProjectAsync(projectInstance: any): ThunkAction {
         }
     };
 }
-
-export const getProjectsPreviewAsync = (project: any): ThunkAction => async (dispatch) => {
-    dispatch(projectActions.getProjectPreiew(project.id));
-    try {
-        const result = await project.preview();
-        dispatch(projectActions.getProjectPreiewSuccess(project.id, result));
-    } catch (error) {
-        dispatch(projectActions.getProjectPreiewFailed(project.id, error));
-    }
-};

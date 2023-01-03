@@ -31,6 +31,11 @@ from .serializers import (
         responses={
             '200': OrganizationReadSerializer(many=True),
         }),
+    update=extend_schema(
+        summary='Method updates an organization by id',
+        responses={
+            '200': OrganizationWriteSerializer,
+        }),
     partial_update=extend_schema(
         summary='Methods does a partial update of chosen fields in an organization',
         responses={
@@ -96,6 +101,11 @@ class OrganizationViewSet(viewsets.GenericViewSet,
         summary='Method returns a paginated list of memberships according to query parameters',
         responses={
             '200': MembershipReadSerializer(many=True),
+        }),
+    update=extend_schema(
+        summary='Method updates a membership by id',
+        responses={
+            '200': MembershipWriteSerializer,
         }),
     partial_update=extend_schema(
         summary='Methods does a partial update of chosen fields in a membership',
@@ -191,7 +201,7 @@ class InvitationViewSet(viewsets.GenericViewSet,
         permission = InvitationPermission.create_scope_list(self.request)
         return permission.filter(queryset)
 
-    def perform_create(self, serializer, **kwargs):
+    def perform_create(self, serializer):
         extra_kwargs = {
             'owner': self.request.user,
             'key': get_random_string(length=64),

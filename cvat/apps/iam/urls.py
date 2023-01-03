@@ -19,7 +19,7 @@ from cvat.apps.iam.views import (
     github_oauth2_callback as github_callback,
     google_oauth2_login as google_login,
     google_oauth2_callback as google_callback,
-    LoginViewEx, GitHubLogin, GoogleLogin,
+    LoginViewEx,
 )
 
 urlpatterns = [
@@ -52,10 +52,8 @@ if settings.IAM_TYPE == 'BASIC':
         urlpatterns += [
             path('github/login/', github_login, name='github_login'),
             path('github/login/callback/', github_callback, name='github_callback'),
-            path('github/login/token', GitHubLogin.as_view()),
             path('google/login/', google_login, name='google_login'),
             path('google/login/callback/', google_callback, name='google_callback'),
-            path('google/login/token', GoogleLogin.as_view()),
         ]
 
 urlpatterns = [path('auth/', include(urlpatterns))]

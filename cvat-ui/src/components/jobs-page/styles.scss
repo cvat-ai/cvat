@@ -1,5 +1,4 @@
 // Copyright (C) 2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -60,34 +59,17 @@
             }
         }
 
-        .cvat-jobs-page-job-item-card-preview-wrapper {
+        .cvat-jobs-page-job-item-card-preview {
+            .ant-empty-image {
+                height: $grid-unit-size * 10;
+            }
+
             height: 100%;
-            width: 100%;
-
-            > .cvat-jobs-page-job-item-card-preview {
-                .ant-empty-image {
-                    height: $grid-unit-size * 10;
-                }
-
-                height: 100%;
-                width: 100%;
-                display: flex;
-                align-items: center;
-                justify-content: space-around;
-                object-fit: cover;
-                cursor: pointer;
-            }
-        }
-
-        .cvat-job-item-loading-preview,
-        .cvat-job-item-empty-preview {
-            .ant-spin {
-                position: inherit;
-            }
-
-            font-size: $grid-unit-size * 15;
-            text-align: center;
-            height: $grid-unit-size * 24;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            object-fit: cover;
+            cursor: pointer;
         }
 
         .cvat-job-page-list-item-dimension {

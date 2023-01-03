@@ -7,6 +7,7 @@ import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useHistory } from 'react-router';
 import Card from 'antd/lib/card';
+import Empty from 'antd/lib/empty';
 import Descriptions from 'antd/lib/descriptions';
 import { MoreOutlined } from '@ant-design/icons';
 import Dropdown from 'antd/lib/dropdown';
@@ -15,7 +16,6 @@ import Menu from 'antd/lib/menu';
 import { MenuInfo } from 'rc-menu/lib/interface';
 import { useCardHeightHOC } from 'utils/hooks';
 import { exportActions } from 'actions/export-actions';
-import Preview from 'components/common/preview';
 
 const useCardHeight = useCardHeightHOC({
     containerClassName: 'cvat-jobs-page',
@@ -26,11 +26,12 @@ const useCardHeight = useCardHeightHOC({
 
 interface Props {
     job: any;
+    preview: string;
 }
 
 function JobCardComponent(props: Props): JSX.Element {
     const dispatch = useDispatch();
-    const { job } = props;
+    const { job, preview } = props;
     const [expanded, setExpanded] = useState<boolean>(false);
     const history = useHistory();
     const height = useCardHeight();
@@ -52,14 +53,19 @@ function JobCardComponent(props: Props): JSX.Element {
             className='cvat-job-page-list-item'
             cover={(
                 <>
-                    <Preview
-                        job={job}
-                        onClick={onClick}
-                        loadingClassName='cvat-job-item-loading-preview'
-                        emptyPreviewClassName='cvat-job-item-empty-preview'
-                        previewWrapperClassName='cvat-jobs-page-job-item-card-preview-wrapper'
-                        previewClassName='cvat-jobs-page-job-item-card-preview'
-                    />
+                    {preview ? (
+                        <img
+                            className='cvat-jobs-page-job-item-card-preview'
+                            src={preview}
+                            alt='Preview'
+                            onClick={onClick}
+                            aria-hidden
+                        />
+                    ) : (
+                        <div className='cvat-jobs-page-job-item-card-preview' onClick={onClick} aria-hidden>
+                            <Empty description='Preview not found' />
+                        </div>
+                    )}
                     <div className='cvat-job-page-list-item-id'>
                         ID:
                         {` ${job.id}`}

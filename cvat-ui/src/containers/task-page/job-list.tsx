@@ -1,5 +1,4 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -27,7 +26,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 function TaskPageContainer(props: DispatchToProps & OwnProps): JSX.Element {
     const { task, onJobUpdate } = props;
 
-    return <JobListComponent taskInstance={task} onJobUpdate={onJobUpdate} />;
+    return <JobListComponent taskInstance={task.instance} onJobUpdate={onJobUpdate} />;
 }
 
 export default connect(null, mapDispatchToProps)(TaskPageContainer);

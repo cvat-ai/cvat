@@ -996,7 +996,8 @@ export function getJobAsync(
             // Check if the task was already downloaded to the state
             let job: any | null = null;
             const [task] = state.tasks.current
-                .filter((_task: Task) => _task.id === tid);
+                .filter((_task: Task) => _task.instance.id === tid)
+                .map((_task: Task) => _task.instance);
             if (task) {
                 [job] = task.jobs.filter((_job: any) => _job.id === jid);
                 if (!job) {
@@ -1495,13 +1496,13 @@ export function pasteShapeAsync(): ThunkAction {
         if (initialState && canvasInstance) {
             const activeControl = ShapeTypeToControl[initialState.shapeType as ShapeType] || ActiveControl.CURSOR;
 
-            canvasInstance.cancel();
             dispatch({
                 type: AnnotationActionTypes.PASTE_SHAPE,
                 payload: {
                     activeControl,
                 },
             });
+            canvasInstance.cancel();
 
             if (initialState.objectType === ObjectType.TAG) {
                 const objectState = new cvat.classes.ObjectState({

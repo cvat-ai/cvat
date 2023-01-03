@@ -101,7 +101,7 @@ class Canvas3dImpl implements Canvas3d {
     }
 
     public activate(clientID: number | null, attributeID: number | null = null): void {
-        this.model.activate(typeof clientID === 'number' ? String(clientID) : null, attributeID);
+        this.model.activate(String(clientID), attributeID);
     }
 
     public fit(): void {
@@ -118,7 +118,5 @@ class Canvas3dImpl implements Canvas3d {
 }
 
 export {
-    Canvas3dImpl as Canvas3d, Canvas3dVersion, ViewType, MouseInteraction, CameraAction, Mode as CanvasMode,
+    Canvas3dImpl as Canvas3d, Canvas3dVersion, ViewType, MouseInteraction, CameraAction, ViewsDOM, Mode as CanvasMode,
 };
-
-export type { ViewsDOM };

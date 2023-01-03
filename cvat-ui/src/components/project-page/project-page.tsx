@@ -48,7 +48,7 @@ export default function ProjectPageComponent(): JSX.Element {
     const id = +useParams<ParamType>().id;
     const dispatch = useDispatch();
     const history = useHistory();
-    const projects = useSelector((state: CombinedState) => state.projects.current);
+    const projects = useSelector((state: CombinedState) => state.projects.current).map((project) => project.instance);
     const projectsFetching = useSelector((state: CombinedState) => state.projects.fetching);
     const deletes = useSelector((state: CombinedState) => state.projects.activities.deletes);
     const taskDeletes = useSelector((state: CombinedState) => state.tasks.activities.deletes);
@@ -77,7 +77,7 @@ export default function ProjectPageComponent(): JSX.Element {
     const [project] = projects.filter((_project) => _project.id === id);
     const projectSubsets: Array<string> = [];
     for (const task of tasks) {
-        if (!projectSubsets.includes(task.subset)) projectSubsets.push(task.subset);
+        if (!projectSubsets.includes(task.instance.subset)) projectSubsets.push(task.instance.subset);
     }
 
     useEffect(() => {
@@ -121,17 +121,18 @@ export default function ProjectPageComponent(): JSX.Element {
                 <React.Fragment key={subset}>
                     {subset && <Title level={4}>{subset}</Title>}
                     {tasks
-                        .filter((task) => task.projectId === project.id && task.subset === subset)
+                        .filter((task) => task.instance.projectId === project.id && task.instance.subset === subset)
                         .map((task: Task) => (
                             <TaskItem
-                                key={task.id}
-                                deleted={task.id in taskDeletes ? taskDeletes[task.id] : false}
+                                key={task.instance.id}
+                                deleted={task.instance.id in taskDeletes ? taskDeletes[task.instance.id] : false}
                                 hidden={false}
-                                activeInference={tasksActiveInferences[task.id] || null}
+                                activeInference={tasksActiveInferences[task.instance.id] || null}
                                 cancelAutoAnnotation={() => {
-                                    dispatch(cancelInferenceAsync(task.id));
+                                    dispatch(cancelInferenceAsync(task.instance.id));
                                 }}
-                                taskInstance={task}
+                                previewImage={task.preview}
+                                taskInstance={task.instance}
                             />
                         ))}
                 </React.Fragment>

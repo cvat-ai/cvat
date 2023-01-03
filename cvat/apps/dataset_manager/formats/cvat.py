@@ -254,7 +254,6 @@ class CvatExtractor(Extractor):
                     shape['type'] = el.tag
                     shape['occluded'] = (el.attrib.get('occluded') == '1')
                     shape['z_order'] = int(el.attrib.get('z_order', 0))
-                    shape['rotation'] = float(el.attrib.get('rotation', 0))
 
                     if el.tag == 'box':
                         shape['points'] = list(map(float, [
@@ -441,8 +440,6 @@ class CvatExtractor(Extractor):
             attributes['keyframe'] = ann['keyframe']
         if 'track_id' in ann:
             attributes['track_id'] = ann['track_id']
-        if 'rotation' in ann:
-            attributes['rotation'] = ann['rotation']
 
         group = ann.get('group')
 

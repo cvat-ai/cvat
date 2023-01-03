@@ -1,5 +1,4 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -30,16 +29,16 @@ interface DispatchToProps {
 
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     const { list } = state.plugins;
-    const [taskProject] = state.projects.current.filter((project) => project.id === own.task.projectId);
+    const [taskProject] = state.projects.current.filter((project) => project.id === own.task.instance.projectId);
 
     return {
         dumpers: state.formats.annotationFormats.dumpers,
         user: state.auth.user,
         installedGit: list.GIT_INTEGRATION,
-        activeInference: state.models.inferences[own.task.id] || null,
+        activeInference: state.models.inferences[own.task.instance.id] || null,
         projectSubsets: taskProject ?
             ([
-                ...new Set(taskProject.subsets),
+                ...new Set(taskProject.tasks.map((task: any) => task.subset).filter((subset: string) => subset)),
             ] as string[]) :
             [],
     };
@@ -51,7 +50,7 @@ function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {
             dispatch(updateTaskAsync(taskInstance));
         },
         cancelAutoAnnotation(): void {
-            dispatch(cancelInferenceAsync(own.task.id));
+            dispatch(cancelInferenceAsync(own.task.instance.id));
         },
     };
 }
@@ -65,7 +64,8 @@ function TaskPageContainer(props: StateToProps & DispatchToProps & OwnProps): JS
         <DetailsComponent
             dumpers={dumpers}
             user={user}
-            taskInstance={task}
+            previewImage={task.preview}
+            taskInstance={task.instance}
             installedGit={installedGit}
             activeInference={activeInference}
             projectSubsets={projectSubsets}

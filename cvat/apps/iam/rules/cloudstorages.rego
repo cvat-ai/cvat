@@ -23,6 +23,9 @@ import data.organizations
 #         "id": <num>,
 #         "owner": { "id": <num> },
 #         "organization": { "id": <num> } or null,
+#         "user": {
+#             "num_resources": <num>
+#         }
 #     }
 # }
 

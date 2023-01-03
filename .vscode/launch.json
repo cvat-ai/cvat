@@ -5,66 +5,6 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "REST API tests: Attach to server",
-            "type": "python",
-            "request": "attach",
-            "connect": {
-                "host": "127.0.0.1",
-                "port": 9090
-            },
-            "pathMappings": [
-                {
-                    "localRoot": "${workspaceFolder}",
-                    "remoteRoot": "/home/django/"
-                },
-                {
-                    "localRoot": "${workspaceFolder}/.env",
-                    "remoteRoot": "/opt/venv",
-                }
-            ],
-            "justMyCode": false,
-        },
-        {
-            "name": "REST API tests: Attach to RQ low",
-            "type": "python",
-            "request": "attach",
-            "connect": {
-                "host": "127.0.0.1",
-                "port": 9091
-            },
-            "pathMappings": [
-                {
-                    "localRoot": "${workspaceFolder}",
-                    "remoteRoot": "/home/django/"
-                },
-                {
-                    "localRoot": "${workspaceFolder}/.env",
-                    "remoteRoot": "/opt/venv",
-                }
-            ],
-            "justMyCode": false,
-        },
-        {
-            "name": "REST API tests: Attach to RQ default",
-            "type": "python",
-            "request": "attach",
-            "connect": {
-                "host": "127.0.0.1",
-                "port": 9092
-            },
-            "pathMappings": [
-                {
-                    "localRoot": "${workspaceFolder}",
-                    "remoteRoot": "/home/django/"
-                },
-                {
-                    "localRoot": "${workspaceFolder}/.env",
-                    "remoteRoot": "/opt/venv",
-                }
-            ],
-            "justMyCode": false,
-        },
-        {
             "type": "pwa-chrome",
             "request": "launch",
             "preLaunchTask": "npm: start - cvat-ui",
@@ -108,6 +48,7 @@
                 "CVAT_SERVERLESS": "1",
                 "ALLOWED_HOSTS": "*",
                 "IAM_OPA_BUNDLE": "1"
+
             },
             "args": [
                 "runserver",
@@ -144,7 +85,7 @@
                 "rqworker",
                 "default",
                 "--worker-class",
-                "cvat.rqworker.SimpleWorker",
+                "cvat.simpleworker.SimpleWorker",
             ],
             "django": true,
             "cwd": "${workspaceFolder}",
@@ -179,7 +120,7 @@
                 "rqworker",
                 "low",
                 "--worker-class",
-                "cvat.rqworker.SimpleWorker",
+                "cvat.simpleworker.SimpleWorker",
             ],
             "django": true,
             "cwd": "${workspaceFolder}",
@@ -198,7 +139,7 @@
                 "rqworker",
                 "webhooks",
                 "--worker-class",
-                "cvat.rqworker.SimpleWorker",
+                "cvat.simpleworker.SimpleWorker",
             ],
             "django": true,
             "cwd": "${workspaceFolder}",

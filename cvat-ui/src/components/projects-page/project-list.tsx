@@ -1,5 +1,4 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -42,7 +41,7 @@ export default function ProjectListComponent(): JSX.Element {
                 <Col className='cvat-projects-list' {...dimensions}>
                     {projects.map(
                         (project: Project): JSX.Element => (
-                            <ProjectItem key={project.id} projectInstance={project} />
+                            <ProjectItem key={project.instance.id} projectInstance={project} />
                         ),
                     )}
                 </Col>

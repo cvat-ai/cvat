@@ -23,7 +23,6 @@ const defaultState: TasksState = {
     },
     count: 0,
     current: [],
-    previews: {},
     gettingQuery: {
         page: 1,
         id: null,
@@ -57,13 +56,20 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                 } : state.gettingQuery,
             };
         case TasksActionTypes.GET_TASKS_SUCCESS: {
+            const combinedWithPreviews = action.payload.array.map(
+                (task: any, index: number): Task => ({
+                    instance: task,
+                    preview: action.payload.previews[index],
+                }),
+            );
+
             return {
                 ...state,
                 initialized: true,
                 fetching: false,
                 updating: false,
                 count: action.payload.count,
-                current: action.payload.array,
+                current: combinedWithPreviews,
             };
         }
         case TasksActionTypes.GET_TASKS_FAILED:
@@ -134,7 +140,7 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                 return {
                     ...state,
                     updating: false,
-                    current: state.current.filter((_task: Task): boolean => _task.id !== taskID),
+                    current: state.current.filter((_task: Task): boolean => _task.instance.id !== taskID),
                 };
             }
 
@@ -143,8 +149,11 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                 updating: false,
                 current: state.current.map(
                     (_task): Task => {
-                        if (_task.id === task.id) {
-                            return task;
+                        if (_task.instance.id === task.id) {
+                            return {
+                                ..._task,
+                                instance: task,
+                            };
                         }
 
                         return _task;
@@ -158,8 +167,11 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                 updating: false,
                 current: state.current.map(
                     (task): Task => {
-                        if (task.id === action.payload.task.id) {
-                            return action.payload.task;
+                        if (task.instance.id === action.payload.task.id) {
+                            return {
+                                ...task,
+                                instance: action.payload.task,
+                            };
                         }
 
                         return task;
@@ -223,51 +235,6 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
         case BoundariesActionTypes.RESET_AFTER_ERROR:
         case AuthActionTypes.LOGOUT_SUCCESS: {
             return { ...defaultState };
-        }
-        case TasksActionTypes.GET_TASK_PREVIEW: {
-            const { taskID } = action.payload;
-            const { previews } = state;
-            return {
-                ...state,
-                previews: {
-                    ...previews,
-                    [taskID]: {
-                        preview: '',
-                        fetching: true,
-                        initialized: false,
-                    },
-                },
-            };
-        }
-        case TasksActionTypes.GET_TASK_PREVIEW_SUCCESS: {
-            const { taskID, preview } = action.payload;
-            const { previews } = state;
-            return {
-                ...state,
-                previews: {
-                    ...previews,
-                    [taskID]: {
-                        preview,
-                        fetching: false,
-                        initialized: true,
-                    },
-                },
-            };
-        }
-        case TasksActionTypes.GET_TASK_PREVIEW_FAILED: {
-            const { taskID } = action.payload;
-            const { previews } = state;
-            return {
-                ...state,
-                previews: {
-                    ...previews,
-                    [taskID]: {
-                        ...previews[taskID],
-                        fetching: false,
-                        initialized: true,
-                    },
-                },
-            };
         }
         default:
             return state;

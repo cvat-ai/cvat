@@ -1,3 +1,4 @@
+version: '3.3'
 services:
   elasticsearch:
     container_name: cvat_elasticsearch
@@ -53,7 +54,7 @@ services:
         'kibana/export.json',
       ]
     environment:
-      no_proxy: elasticsearch,kibana,${no_proxy:-}
+      no_proxy: elasticsearch,kibana,${no_proxy}
 
   logstash:
     container_name: cvat_logstash
@@ -64,8 +65,8 @@ services:
       context: ./components/analytics/logstash
       args:
         ELK_VERSION: 6.8.23
-        http_proxy: ${http_proxy:-}
-        https_proxy: ${https_proxy:-}
+        http_proxy: ${http_proxy}
+        https_proxy: ${https_proxy}
     environment:
       LOGSTASH_OUTPUT_HOST: elasticsearch:9200
       LOGSTASH_OUTPUT_USER:

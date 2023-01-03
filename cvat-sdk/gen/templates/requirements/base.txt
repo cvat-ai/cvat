@@ -1,6 +1,5 @@
 -r api_client.txt
 
-appdirs
 attrs >= 21.4.0
 packaging >= 21.3
 Pillow >= 9.0.1

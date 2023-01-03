@@ -8,7 +8,6 @@ import getpass
 import json
 import logging
 import os
-import textwrap
 from distutils.util import strtobool
 
 from cvat_sdk.core.proxies.tasks import ResourceType
@@ -91,15 +90,10 @@ def make_cmdline_parser() -> argparse.ArgumentParser:
     #######################################################################
     task_create_parser = task_subparser.add_parser(
         "create",
-        description=textwrap.dedent(
-            """\
-            Create a new CVAT task. To create a task, you need
-            to specify labels using the --labels argument or
-            attach the task to an existing project using the
-            --project_id argument.
-        """
-        ),
-        formatter_class=argparse.RawTextHelpFormatter,
+        description="""Create a new CVAT task. To create a task, you need
+                    to specify labels using the --labels argument or
+                    attach the task to an existing project using the
+                    --project_id argument.""",
     )
     task_create_parser.add_argument("name", type=str, help="name of the task")
     task_create_parser.add_argument(
@@ -128,58 +122,40 @@ def make_cmdline_parser() -> argparse.ArgumentParser:
     task_create_parser.add_argument(
         "--completion_verification_period",
         dest="status_check_period",
-        default=2,
+        default=20,
         type=float,
-        help=textwrap.dedent(
-            """\
-            number of seconds to wait until checking
-            if data compression finished (necessary before uploading annotations)
-        """
-        ),
+        help="""number of seconds to wait until checking
+                if data compression finished (necessary before uploading annotations)""",
     )
     task_create_parser.add_argument(
         "--copy_data",
         default=False,
         action="store_true",
-        help=textwrap.dedent(
-            """\
-            set the option to copy the data, only used when resource type is
-            share (default: %(default)s)
-        """
-        ),
+        help="""set the option to copy the data, only used when resource type is
+                share (default: %(default)s)""",
     )
     task_create_parser.add_argument(
         "--dataset_repository_url",
         default="",
         type=str,
-        help=textwrap.dedent(
-            """\
-            git repository to store annotations e.g.
-            https://github.com/user/repos [annotation/<anno_file_name.zip>]
-        """
+        help=(
+            "git repository to store annotations e.g."
+            " https://github.com/user/repos [annotation/<anno_file_name.zip>]"
         ),
     )
     task_create_parser.add_argument(
         "--frame_step",
         default=None,
         type=int,
-        help=textwrap.dedent(
-            """\
-            set the frame step option in the advanced configuration
-            when uploading image series or videos (default: %(default)s)
-        """
-        ),
+        help="""set the frame step option in the advanced configuration
+                when uploading image series or videos (default: %(default)s)""",
     )
     task_create_parser.add_argument(
         "--image_quality",
         default=70,
         type=int,
-        help=textwrap.dedent(
-            """\
-            set the image quality option in the advanced configuration
-            when creating tasks.(default: %(default)s)
-        """
-        ),
+        help="""set the image quality option in the advanced configuration
+                when creating tasks.(default: %(default)s)""",
     )
     task_create_parser.add_argument(
         "--labels",
@@ -224,26 +200,6 @@ def make_cmdline_parser() -> argparse.ArgumentParser:
         "--use_zip_chunks",
         action="store_true",  # automatically sets default=False
         help="""zip chunks before sending them to the server""",
-    )
-    task_create_parser.add_argument(
-        "--cloud_storage_id",
-        default=None,
-        type=int,
-        help="cloud storage ID if you would like to use data from cloud storage",
-    )
-    task_create_parser.add_argument(
-        "--filename_pattern",
-        type=str,
-        help=textwrap.dedent(
-            """\
-            pattern for filtering data from the manifest file for the upload.
-            Only shell-style wildcards are supported:
-            * - matches everything
-            ? - matches any single character
-            [seq] - matches any character in 'seq'
-            [!seq] - matches any character not in seq
-        """
-        ),
     )
 
     #######################################################################
@@ -305,7 +261,7 @@ def make_cmdline_parser() -> argparse.ArgumentParser:
     dump_parser.add_argument(
         "--completion_verification_period",
         dest="status_check_period",
-        default=2,
+        default=3,
         type=float,
         help="number of seconds to wait until checking if dataset building finished",
     )
@@ -342,7 +298,7 @@ def make_cmdline_parser() -> argparse.ArgumentParser:
     export_task_parser.add_argument(
         "--completion_verification_period",
         dest="status_check_period",
-        default=2,
+        default=3,
         type=float,
         help="time interval between checks if archive building has been finished, in seconds",
     )
@@ -355,9 +311,9 @@ def make_cmdline_parser() -> argparse.ArgumentParser:
     import_task_parser.add_argument(
         "--completion_verification_period",
         dest="status_check_period",
-        default=2,
+        default=3,
         type=float,
-        help="time interval between checks if archive processing was finished, in seconds",
+        help="time interval between checks if archive proessing was finished, in seconds",
     )
 
     return parser

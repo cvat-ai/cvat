@@ -1,5 +1,4 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -82,7 +81,7 @@ class TaskPageComponent extends React.PureComponent<Props> {
                     className='cvat-task-details-wrapper'
                 >
                     <Col md={22} lg={18} xl={16} xxl={14}>
-                        <TopBarComponent taskInstance={task as Task} />
+                        <TopBarComponent taskInstance={(task as Task).instance} />
                         <DetailsContainer task={task as Task} />
                         <JobListContainer task={task as Task} />
                     </Col>

@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import io
+import os.path as osp
 from logging import Logger
 from pathlib import Path
 from typing import Tuple
@@ -45,7 +46,7 @@ class TestJobUsecases:
                 "labels": [{"name": "car"}, {"name": "person"}],
             },
             resource_type=ResourceType.LOCAL,
-            resources=[fxt_image_file],
+            resources=[str(fxt_image_file)],
             data_params={"image_quality": 80},
         )
 
@@ -102,7 +103,7 @@ class TestJobUsecases:
         pbar = make_pbar(file=pbar_out)
 
         task_id = fxt_new_task.id
-        path = self.tmp_path / f"task_{task_id}-cvat.zip"
+        path = str(self.tmp_path / f"task_{task_id}-cvat.zip")
         job_id = fxt_new_task.get_jobs()[0].id
         job = self.client.jobs.retrieve(job_id)
         job.export_dataset(
@@ -113,22 +114,20 @@ class TestJobUsecases:
         )
 
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
-        assert path.is_file()
+        assert osp.isfile(path)
         assert self.stdout.getvalue() == ""
 
     def test_can_download_preview(self, fxt_new_task: Task):
         frame_encoded = fxt_new_task.get_jobs()[0].get_preview()
-        (width, height) = Image.open(frame_encoded).size
 
-        assert width > 0 and height > 0
+        assert Image.open(frame_encoded).size != 0
         assert self.stdout.getvalue() == ""
 
     @pytest.mark.parametrize("quality", ("compressed", "original"))
     def test_can_download_frame(self, fxt_new_task: Task, quality: str):
         frame_encoded = fxt_new_task.get_jobs()[0].get_frame(0, quality=quality)
-        (width, height) = Image.open(frame_encoded).size
 
-        assert width > 0 and height > 0
+        assert Image.open(frame_encoded).size != 0
         assert self.stdout.getvalue() == ""
 
     @pytest.mark.parametrize("quality", ("compressed", "original"))
@@ -136,11 +135,11 @@ class TestJobUsecases:
         fxt_new_task.get_jobs()[0].download_frames(
             [0],
             quality=quality,
-            outdir=self.tmp_path,
+            outdir=str(self.tmp_path),
             filename_pattern="frame-{frame_id}{frame_ext}",
         )
 
-        assert (self.tmp_path / "frame-0.jpg").is_file()
+        assert osp.isfile(self.tmp_path / "frame-0.jpg")
         assert self.stdout.getvalue() == ""
 
     def test_can_upload_annotations(self, fxt_new_task: Task, fxt_coco_file: Path):
@@ -148,7 +147,7 @@ class TestJobUsecases:
         pbar = make_pbar(file=pbar_out)
 
         fxt_new_task.get_jobs()[0].import_annotations(
-            format_name="COCO 1.0", filename=fxt_coco_file, pbar=pbar
+            format_name="COCO 1.0", filename=str(fxt_coco_file), pbar=pbar
         )
 
         assert "uploaded" in self.logger_stream.getvalue()

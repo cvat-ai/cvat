@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import Axios from 'axios';
+const Axios = require('axios');
 
 Axios.defaults.withCredentials = true;
 Axios.defaults.xsrfHeaderName = 'X-CSRFTOKEN';

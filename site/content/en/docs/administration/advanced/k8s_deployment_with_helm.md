@@ -149,7 +149,7 @@ Before starting, ensure that the following prerequisites are met:
 
    - Let's build custom elasticsearch, logstash and kibana images with the following command
      ```shell
-     docker compose -f docker-compose.yml  -f components/analytics/docker-compose.analytics.yml build
+     docker-compose -f docker-compose.yml  -f components/analytics/docker-compose.analytics.yml build
      ```
 
    - Tag images:
@@ -226,85 +226,9 @@ See <https://helm.sh/>
    ```
 ### How to understand what diff will be inflicted by 'helm upgrade'?
 You can use <https://github.com/databus23/helm-diff#install> for that
-### I want to use my own postgresql with your chart.
-Just set `postgresql.enabled` to `false` in the override file, then put the parameters of your database
-instance in the `external` field.
-You may also need to configure `username`, `database` and `password` fields
-to connect to your own database:
-```yml
-postgresql:
-  enabled: false
-  external:
-    host: postgresql.default.svc.cluster.local
-    port: 5432
-  auth:
-    username: cvat
-    database: cvat
-  secret:
-    password: cvat_postgresql
-```
-In example above corresponding secret will be created automatically, but if you want to use existing secret change `secret.create` to `false` and set `name` of existing secret:
-```yml
-postgresql:
-  enabled: false
-  external:
-    host: postgresql.default.svc.cluster.local
-    port: 5432
-  secret:
-    create: false
-    name: "my-postgresql-secret"
-```
-The secret must contain the `database`, `username` and `password`
-keys to access to the database
-like:
-```yml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: "my-postgresql-secret"
-  namespace: default
-type: generic
-stringData:
-  database: cvat
-  username: cvat
-  password: secretpassword
-```
-
-### I want to use my own redis with your chart.
-Just set `redis.enabled` to `false` in the override file, then put the parameters of your Redis
-instance in the `external` field.
-You may also need to configure `password` field to connect to your own Redis:
-```yml
-redis:
-  enabled: false
-  external:
-    host: redis.hostname.local
-  secret:
-    password: cvat_redis
-```
-In the above example the corresponding secret will be created automatically, but if you want to use an existing secret
-change `secret.create` to `false` and set `name` of the existing secret:
-```yml
-redis:
-  enabled: false
-  external:
-    host: redis.hostname.local
-  secret:
-    create: false
-    name: "my-redis-secret"
-```
-The secret must contain the `redis-password` key like:
-```yml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: "my-redis-secret"
-  namespace: default
-type: generic
-stringData:
-  redis-password: secretpassword
-```
-
+### I want to use my own postgresql/redis with your chart.
+Just set `postgresql.enabled` or `redis.enabled` to `false`, as described below.
+Then - put your instance params to "external" field
 ### I want to override some settings in values.yaml.
 Just create file `values.override.yaml` and place your changes here, using same structure as in `values.yaml`.
 Then reference it in helm update/install command using `-f` flag

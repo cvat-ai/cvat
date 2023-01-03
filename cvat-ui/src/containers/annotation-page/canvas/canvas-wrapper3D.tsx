@@ -44,7 +44,6 @@ interface StateToProps {
     annotations: any[];
     contextMenuVisibility: boolean;
     activeLabelID: number;
-    activatedStateID: number | null;
     activeObjectType: ObjectType;
     workspace: Workspace;
     frame: number;
@@ -79,7 +78,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
             },
             annotations: {
                 states: annotations,
-                activatedStateID,
             },
             workspace,
         },
@@ -107,7 +105,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         outlined,
         outlineColor,
         activeLabelID,
-        activatedStateID,
         activeObjectType,
         resetZoom,
         workspace,

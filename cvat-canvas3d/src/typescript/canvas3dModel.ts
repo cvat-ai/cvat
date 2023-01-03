@@ -3,7 +3,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { ObjectState } from '.';
 import { MasterImpl } from './master';
 
 export interface Size {
@@ -18,7 +17,7 @@ export interface ActiveElement {
 
 export interface GroupData {
     enabled: boolean;
-    grouped: ObjectState[];
+    grouped?: [];
 }
 
 export interface Configuration {
@@ -63,6 +62,10 @@ export enum MouseInteraction {
     HOVER = 'hover',
 }
 
+export interface FocusData {
+    clientID: string | null;
+}
+
 export interface ShapeProperties {
     opacity: number;
     outlined: boolean;
@@ -77,20 +80,24 @@ export enum UpdateReasons {
     DRAW = 'draw',
     SELECT = 'select',
     CANCEL = 'cancel',
+    DATA_FAILED = 'data_failed',
     DRAG_CANVAS = 'drag_canvas',
     SHAPE_ACTIVATED = 'shape_activated',
     GROUP = 'group',
     FITTED_CANVAS = 'fitted_canvas',
     CONFIG_UPDATED = 'config_updated',
-    SHAPES_CONFIG_UPDATED = 'shapes_config_updated',
 }
 
 export enum Mode {
     IDLE = 'idle',
+    DRAG = 'drag',
+    RESIZE = 'resize',
     DRAW = 'draw',
     EDIT = 'edit',
+    INTERACT = 'interact',
     DRAG_CANVAS = 'drag_canvas',
     GROUP = 'group',
+    BUSY = 'busy',
 }
 
 export interface Canvas3dDataModel {
@@ -103,15 +110,15 @@ export interface Canvas3dDataModel {
     imageIsDeleted: boolean;
     drawData: DrawData;
     mode: Mode;
-    objects: ObjectState[];
+    objectUpdating: boolean;
+    exception: Error | null;
+    objects: any[];
+    groupedObjects: any[];
+    focusData: FocusData;
+    selected: any;
     shapeProperties: ShapeProperties;
     groupData: GroupData;
     configuration: Configuration;
-    isFrameUpdating: boolean;
-    nextSetupRequest: {
-        frameData: any;
-        objectStates: ObjectState[];
-    } | null;
 }
 
 export interface Canvas3dModel {
@@ -120,20 +127,17 @@ export interface Canvas3dModel {
     readonly imageIsDeleted: boolean;
     readonly groupData: GroupData;
     readonly configuration: Configuration;
-    readonly objects: ObjectState[];
-    setup(frameData: any, objectStates: ObjectState[]): void;
+    setup(frameData: any, objectStates: any[]): void;
     isAbleToChangeFrame(): boolean;
     draw(drawData: DrawData): void;
     cancel(): void;
     dragCanvas(enable: boolean): void;
     activate(clientID: string | null, attributeID: number | null): void;
-    configureShapes(shapeProperties: ShapeProperties): void;
+    configureShapes(shapeProperties: any): void;
     configure(configuration: Configuration): void;
     fit(): void;
     group(groupData: GroupData): void;
     destroy(): void;
-    updateCanvasObjects(): void;
-    unlockFrameUpdating(): void;
 }
 
 export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
@@ -150,7 +154,9 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
                 height: 0,
                 width: 0,
             },
+            objectUpdating: false,
             objects: [],
+            groupedObjects: [],
             image: null,
             imageID: null,
             imageOffset: 0,
@@ -164,10 +170,15 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
                 initialState: null,
             },
             mode: Mode.IDLE,
+            exception: null,
+            focusData: {
+                clientID: null,
+            },
             groupData: {
                 enabled: false,
                 grouped: [],
             },
+            selected: null,
             shapeProperties: {
                 opacity: 40,
                 outlined: false,
@@ -178,48 +189,29 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
             configuration: {
                 resetZoom: false,
             },
-            isFrameUpdating: false,
-            nextSetupRequest: null,
         };
     }
 
-    public updateCanvasObjects(): void {
-        this.notify(UpdateReasons.OBJECTS_UPDATED);
-    }
-
-    public unlockFrameUpdating(): void {
-        this.data.isFrameUpdating = false;
-        if (this.data.nextSetupRequest) {
-            try {
-                const { frameData, objectStates } = this.data.nextSetupRequest;
-                this.setup(frameData, objectStates);
-            } finally {
-                this.data.nextSetupRequest = null;
-            }
-        }
-    }
-
-    public setup(frameData: any, objectStates: ObjectState[]): void {
+    public setup(frameData: any, objectStates: any[]): void {
         if (this.data.imageID !== frameData.number) {
-            if ([Mode.EDIT].includes(this.data.mode)) {
+            if ([Mode.EDIT, Mode.DRAG, Mode.RESIZE].includes(this.data.mode)) {
                 throw Error(`Canvas is busy. Action: ${this.data.mode}`);
             }
         }
-
-        if (this.data.isFrameUpdating) {
-            this.data.nextSetupRequest = {
-                frameData, objectStates,
-            };
+        if ([Mode.EDIT, Mode.BUSY].includes(this.data.mode)) {
             return;
         }
 
         if (frameData.number === this.data.imageID && frameData.deleted === this.data.imageIsDeleted) {
+            if (this.data.objectUpdating) {
+                return;
+            }
             this.data.objects = objectStates;
+            this.data.objectUpdating = true;
             this.notify(UpdateReasons.OBJECTS_UPDATED);
             return;
         }
 
-        this.data.isFrameUpdating = true;
         this.data.imageID = frameData.number;
         frameData
             .data((): void => {
@@ -227,17 +219,24 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
                 this.notify(UpdateReasons.IMAGE_CHANGED);
             })
             .then((data: Image): void => {
+                if (frameData.number !== this.data.imageID) {
+                    // already another image
+                    return;
+                }
+
                 this.data.imageSize = {
                     height: frameData.height as number,
                     width: frameData.width as number,
                 };
                 this.data.imageIsDeleted = frameData.deleted;
                 this.data.image = data;
-                this.data.objects = objectStates;
                 this.notify(UpdateReasons.IMAGE_CHANGED);
+                this.data.objects = objectStates;
+                this.notify(UpdateReasons.OBJECTS_UPDATED);
             })
             .catch((exception: any): void => {
-                this.data.isFrameUpdating = false;
+                this.data.exception = exception;
+                this.notify(UpdateReasons.DATA_FAILED);
                 throw exception;
             });
     }
@@ -250,13 +249,9 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
         return this.data.mode;
     }
 
-    public get objects(): ObjectState[] {
-        return [...this.data.objects];
-    }
-
     public isAbleToChangeFrame(): boolean {
-        const isUnable = [Mode.EDIT].includes(this.data.mode) ||
-            this.data.isFrameUpdating || (this.data.mode === Mode.DRAW && typeof this.data.drawData.redraw === 'number');
+        const isUnable = [Mode.DRAG, Mode.EDIT, Mode.RESIZE, Mode.INTERACT, Mode.BUSY].includes(this.data.mode) ||
+            (this.data.mode === Mode.DRAW && typeof this.data.drawData.redraw === 'number');
         return !isUnable;
     }
 
@@ -307,11 +302,11 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
         this.notify(UpdateReasons.DRAG_CANVAS);
     }
 
-    public activate(clientID: string | null, attributeID: number | null): void {
+    public activate(clientID: string, attributeID: number | null): void {
         if (this.data.activeElement.clientID === clientID && this.data.activeElement.attributeID === attributeID) {
             return;
         }
-        if (this.data.mode !== Mode.IDLE && clientID !== null) {
+        if (this.data.mode !== Mode.IDLE) {
             throw Error(`Canvas is busy. Action: ${this.data.mode}`);
         }
         if (typeof clientID === 'number') {
@@ -353,27 +348,13 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
     }
 
     public configureShapes(shapeProperties: ShapeProperties): void {
-        if (typeof shapeProperties.opacity === 'number') {
-            this.data.shapeProperties.opacity = Math.max(0, Math.min(shapeProperties.opacity, 100));
-        }
-
-        if (typeof shapeProperties.selectedOpacity === 'number') {
-            this.data.shapeProperties.selectedOpacity = Math.max(0, Math.min(shapeProperties.selectedOpacity, 100));
-        }
-
-        if (['Label', 'Instance', 'Group'].includes(shapeProperties.colorBy)) {
-            this.data.shapeProperties.colorBy = shapeProperties.colorBy;
-        }
-
-        if (typeof shapeProperties.outlined === 'boolean') {
-            this.data.shapeProperties.outlined = shapeProperties.outlined;
-        }
-
-        if (typeof shapeProperties.outlineColor === 'string') {
-            this.data.shapeProperties.outlineColor = shapeProperties.outlineColor;
-        }
-
-        this.notify(UpdateReasons.SHAPES_CONFIG_UPDATED);
+        this.data.drawData.enabled = false;
+        this.data.mode = Mode.IDLE;
+        this.cancel();
+        this.data.shapeProperties = {
+            ...shapeProperties,
+        };
+        this.notify(UpdateReasons.OBJECTS_UPDATED);
     }
 
     public fit(): void {

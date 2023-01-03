@@ -8,8 +8,6 @@ import json
 from functools import wraps
 from enum import Enum
 from copy import deepcopy
-import textwrap
-from typing import Any, Dict, Optional
 
 import django_rq
 import requests
@@ -18,17 +16,16 @@ import os
 
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
-from rest_framework import status, viewsets, serializers
+from rest_framework import status, viewsets
 from rest_framework.response import Response
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.engine.frame_provider import FrameProvider
-from cvat.apps.engine.models import Job, Task
+from cvat.apps.engine.models import Task as TaskModel
 from cvat.apps.engine.serializers import LabeledDataSerializer
 from cvat.apps.engine.models import ShapeType, SourceType
 
-from drf_spectacular.utils import (extend_schema, extend_schema_view,
-    OpenApiResponse, OpenApiParameter, inline_serializer)
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiResponse, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 
 class LambdaType(Enum):
@@ -178,13 +175,8 @@ class LambdaFunction:
 
         return response
 
-    def invoke(self, db_task: Task, data: Dict[str, Any], *, db_job: Optional[Job] = None):
+    def invoke(self, db_task, data):
         try:
-            if db_job is not None and db_job.get_task_id() != db_task.id:
-                raise ValidationError("Job task id does not match task id",
-                    code=status.HTTP_400_BAD_REQUEST
-                )
-
             payload = {}
             data = {k: v for k,v in data.items() if v is not None}
             threshold = data.get("threshold")
@@ -232,16 +224,6 @@ class LambdaFunction:
                         mapped_attr = mapped_attributes.get(attr["name"])
                         if mapped_attr in task_attr_names:
                             supported_attrs[func_label].update({ attr["name"]: task_attributes[mapped_label][mapped_attr] })
-
-            # Check job frame boundaries
-            for key, desc in (
-                ('frame', 'frame'),
-                ('frame0', 'start frame'),
-                ('frame1', 'end frame'),
-            ):
-                if key in data and db_job and not db_job.segment.contains_frame(data[key]):
-                    raise ValidationError(f"The {desc} is outside the job range",
-                        code=status.HTTP_400_BAD_REQUEST)
 
             if self.kind == LambdaType.DETECTOR:
                 payload.update({
@@ -665,7 +647,7 @@ class LambdaJob:
     @staticmethod
     def __call__(function, task, quality, cleanup, **kwargs):
         # TODO: need logging
-        db_task = Task.objects.get(pk=task)
+        db_task = TaskModel.objects.get(pk=task)
         if cleanup:
             dm.task.delete_task_data(db_task.id)
         db_labels = (db_task.project.label_set if db_task.project_id else db_task.label_set).prefetch_related("attributespec_set").all()
@@ -703,7 +685,7 @@ def return_response(success_code=status.HTTP_200_OK):
                 status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
                 data = str(err)
             except ValidationError as err:
-                status_code = err.code or status.HTTP_400_BAD_REQUEST
+                status_code = err.code
                 data = err.message
             except ObjectDoesNotExist as err:
                 status_code = status.HTTP_400_BAD_REQUEST
@@ -743,34 +725,12 @@ class FunctionViewSet(viewsets.ViewSet):
         gateway = LambdaGateway()
         return gateway.get(func_id).to_dict()
 
-    @extend_schema(description=textwrap.dedent("""\
-        Allows to execute a function for immediate computation.
-
-        Intended for short-lived executions, useful for interactive calls.
-
-        When executed for interactive annotation, the job id must be specified
-        in the 'job' input field. The task id is not required in this case,
-        but if it is specified, it must match the job task id.
-        """),
-        request=inline_serializer("OnlineFunctionCall", fields={
-            "job": serializers.IntegerField(required=False),
-            "task": serializers.IntegerField(required=False),
-        }),
-        responses=OpenApiResponse(description="Returns function invocation results")
-    )
     @return_response()
     def call(self, request, func_id):
         self.check_object_permissions(request, func_id)
         try:
-            job_id = request.data.get('job')
-            job = None
-            if job_id is not None:
-                job = Job.objects.get(id=job_id)
-                task_id = job.get_task_id()
-            else:
-                task_id = request.data['task']
-
-            db_task = Task.objects.get(pk=task_id)
+            task_id = request.data['task']
+            db_task = TaskModel.objects.get(pk=task_id)
         except (KeyError, ObjectDoesNotExist) as err:
             raise ValidationError(
                 '`{}` lambda function was run '.format(func_id) +
@@ -780,7 +740,7 @@ class FunctionViewSet(viewsets.ViewSet):
         gateway = LambdaGateway()
         lambda_func = gateway.get(func_id)
 
-        return lambda_func.invoke(db_task, request.data, db_job=job)
+        return lambda_func.invoke(db_task, request.data)
 
 @extend_schema(tags=['lambda'])
 @extend_schema_view(

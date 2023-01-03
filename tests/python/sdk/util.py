@@ -2,8 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+import os.path as osp
 import textwrap
-from pathlib import Path
 from typing import Tuple
 
 from cvat_sdk.core.helpers import TqdmProgressReporter
@@ -14,11 +14,11 @@ def make_pbar(file, **kwargs):
     return TqdmProgressReporter(tqdm(file=file, mininterval=0, **kwargs))
 
 
-def generate_coco_json(filename: Path, img_info: Tuple[Path, int, int]):
+def generate_coco_json(filename: str, img_info: Tuple[str, int, int]):
     image_filename, image_width, image_height = img_info
 
     content = generate_coco_anno(
-        image_filename.name,
+        osp.basename(image_filename),
         image_width=image_width,
         image_height=image_height,
     )

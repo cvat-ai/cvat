@@ -6,11 +6,11 @@
 import { StorageLocation } from './enums';
 import { Storage } from './storage';
 
-import PluginRegistry from './plugins';
-import { ArgumentError } from './exceptions';
-import { Label } from './labels';
-import User from './user';
-import { FieldUpdateTrigger } from './common';
+const PluginRegistry = require('./plugins').default;
+const { ArgumentError } = require('./exceptions');
+const { Label } = require('./labels');
+const User = require('./user').default;
+const { FieldUpdateTrigger } = require('./common');
 
 /**
  * Class representing a project

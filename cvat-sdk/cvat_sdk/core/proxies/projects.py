@@ -4,10 +4,9 @@
 
 from __future__ import annotations
 
-import io
 import json
-from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional
+import os.path as osp
+from typing import Optional
 
 from cvat_sdk.api_client import apis, models
 from cvat_sdk.core.downloading import Downloader
@@ -20,11 +19,7 @@ from cvat_sdk.core.proxies.model_proxy import (
     ModelUpdateMixin,
     build_model_bases,
 )
-from cvat_sdk.core.proxies.tasks import Task
 from cvat_sdk.core.uploading import DatasetUploader, Uploader
-
-if TYPE_CHECKING:
-    from _typeshed import StrPath
 
 _ProjectEntityBase, _ProjectRepoBase = build_model_bases(
     models.ProjectRead, apis.ProjectsApi, api_member_name="projects_api"
@@ -32,17 +27,14 @@ _ProjectEntityBase, _ProjectRepoBase = build_model_bases(
 
 
 class Project(
-    _ProjectEntityBase,
-    models.IProjectRead,
-    ModelUpdateMixin[models.IPatchedProjectWriteRequest],
-    ModelDeleteMixin,
+    _ProjectEntityBase, models.IProjectRead, ModelUpdateMixin[models.IPatchedProjectWriteRequest]
 ):
     _model_partial_update_arg = "patched_project_write_request"
 
     def import_dataset(
         self,
         format_name: str,
-        filename: StrPath,
+        filename: str,
         *,
         status_check_period: Optional[int] = None,
         pbar: Optional[ProgressReporter] = None,
@@ -51,11 +43,8 @@ class Project(
         Import dataset for a project in the specified format (e.g. 'YOLO ZIP 1.0').
         """
 
-        filename = Path(filename)
-
         DatasetUploader(self._client).upload_file_and_wait(
             self.api.create_dataset_endpoint,
-            self.api.retrieve_dataset_endpoint,
             filename,
             format_name,
             url_params={"id": self.id},
@@ -68,7 +57,7 @@ class Project(
     def export_dataset(
         self,
         format_name: str,
-        filename: StrPath,
+        filename: str,
         *,
         pbar: Optional[ProgressReporter] = None,
         status_check_period: Optional[int] = None,
@@ -77,9 +66,6 @@ class Project(
         """
         Download annotations for a project in the specified format (e.g. 'YOLO ZIP 1.0').
         """
-
-        filename = Path(filename)
-
         if include_images:
             endpoint = self.api.retrieve_dataset_endpoint
         else:
@@ -98,7 +84,7 @@ class Project(
 
     def download_backup(
         self,
-        filename: StrPath,
+        filename: str,
         *,
         status_check_period: int = None,
         pbar: Optional[ProgressReporter] = None,
@@ -106,8 +92,6 @@ class Project(
         """
         Download a project backup
         """
-
-        filename = Path(filename)
 
         Downloader(self._client).prepare_and_download_file_from_endpoint(
             self.api.retrieve_backup_endpoint,
@@ -123,21 +107,13 @@ class Project(
         (annotations, _) = self.api.retrieve_annotations(self.id)
         return annotations
 
-    def get_tasks(self) -> List[Task]:
-        return [Task(self._client, m) for m in self.api.list_tasks(id=self.id)[0].results]
-
-    def get_preview(
-        self,
-    ) -> io.RawIOBase:
-        (_, response) = self.api.retrieve_preview(self.id)
-        return io.BytesIO(response.data)
-
 
 class ProjectsRepo(
     _ProjectRepoBase,
     ModelCreateMixin[Project, models.IProjectWriteRequest],
     ModelListMixin[Project],
     ModelRetrieveMixin[Project],
+    ModelDeleteMixin,
 ):
     _entity_type = Project
 
@@ -172,7 +148,7 @@ class ProjectsRepo(
 
     def create_from_backup(
         self,
-        filename: StrPath,
+        filename: str,
         *,
         status_check_period: int = None,
         pbar: Optional[ProgressReporter] = None,
@@ -180,16 +156,13 @@ class ProjectsRepo(
         """
         Import a project from a backup file
         """
-
-        filename = Path(filename)
-
         if status_check_period is None:
-            status_check_period = self._client.config.status_check_period
+            status_check_period = self.config.status_check_period
 
-        params = {"filename": filename.name}
-        url = self._client.api_map.make_endpoint_url(self.api.create_backup_endpoint.path)
+        params = {"filename": osp.basename(filename)}
+        url = self.api_map.make_endpoint_url(self.api.create_backup_endpoint.path)
 
-        uploader = Uploader(self._client)
+        uploader = Uploader(self)
         response = uploader.upload_file(
             url,
             filename,
@@ -209,8 +182,6 @@ class ProjectsRepo(
         )
 
         project_id = json.loads(response.data)["id"]
-        self._client.logger.info(
-            f"Project has been imported successfully. Project ID: {project_id}"
-        )
+        self._client.logger.info(f"Project has been imported sucessfully. Project ID: {project_id}")
 
         return self.retrieve(project_id)

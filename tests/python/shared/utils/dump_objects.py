@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import json
+import os.path as osp
 from http import HTTPStatus
 
 from config import ASSETS_DIR, get_method
@@ -23,7 +24,7 @@ if __name__ == "__main__":
         "webhook",
     ]:
         response = get_method("admin1", f"{obj}s", page_size="all")
-        with open(ASSETS_DIR / f"{obj}s.json", "w") as f:
+        with open(osp.join(ASSETS_DIR, f"{obj}s.json"), "w") as f:
             json.dump(response.json(), f, indent=2, sort_keys=True)
 
         if obj in ["job", "task"]:
@@ -34,5 +35,5 @@ if __name__ == "__main__":
                 if response.status_code == HTTPStatus.OK:
                     annotations[obj][oid] = response.json()
 
-    with open(ASSETS_DIR / "annotations.json", "w") as f:
+    with open(osp.join(ASSETS_DIR, f"annotations.json"), "w") as f:
         json.dump(annotations, f, indent=2, sort_keys=True)

@@ -5,11 +5,11 @@
 
 import { Storage } from './storage';
 
-import serverProxy from './server-proxy';
-import { getPreview } from './frames';
+const serverProxy = require('./server-proxy').default;
+const { getPreview } = require('./frames');
 
-import Project from './project';
-import { exportDataset, importDataset } from './annotations';
+const Project = require('./project').default;
+const { exportDataset, importDataset } = require('./annotations');
 
 export default function implementProject(projectClass) {
     projectClass.prototype.save.implementation = async function () {

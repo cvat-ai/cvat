@@ -53,10 +53,10 @@ except ImportError:
 def generate_ssh_keys():
     keys_dir = '{}/keys'.format(os.getcwd())
     ssh_dir = '{}/.ssh'.format(os.getenv('HOME'))
-    pidfile = os.path.join(keys_dir, 'ssh.pid')
+    pidfile = os.path.join(ssh_dir, 'ssh.pid')
 
     def add_ssh_keys():
-        IGNORE_FILES = ('README.md',)
+        IGNORE_FILES = ('README.md', 'ssh.pid')
         keys_to_add = [entry.name for entry in os.scandir(ssh_dir) if entry.name not in IGNORE_FILES]
         keys_to_add = ' '.join(os.path.join(ssh_dir, f) for f in keys_to_add)
         subprocess.run(['ssh-add {}'.format(keys_to_add)], # nosec
@@ -124,11 +124,6 @@ INSTALLED_APPS = [
     'allauth.socialaccount.providers.github',
     'allauth.socialaccount.providers.google',
     'dj_rest_auth.registration',
-    'health_check',
-    'health_check.db',
-    'health_check.cache',
-    'health_check.contrib.migrations',
-    'health_check.contrib.psutil',
     'cvat.apps.iam',
     'cvat.apps.dataset_manager',
     'cvat.apps.organizations',
@@ -137,7 +132,6 @@ INSTALLED_APPS = [
     'cvat.apps.lambda_manager',
     'cvat.apps.opencv',
     'cvat.apps.webhooks',
-    'cvat.apps.health',
 ]
 
 SITE_ID = 1
@@ -252,26 +246,9 @@ IAM_DEFAULT_ROLES = ['user']
 IAM_ADMIN_ROLE = 'admin'
 # Index in the list below corresponds to the priority (0 has highest priority)
 IAM_ROLES = [IAM_ADMIN_ROLE, 'business', 'user', 'worker']
-IAM_OPA_HOST = 'http://opa:8181'
-IAM_OPA_DATA_URL = f'{IAM_OPA_HOST}/v1/data'
+IAM_OPA_DATA_URL = 'http://opa:8181/v1/data'
 LOGIN_URL = 'rest_login'
 LOGIN_REDIRECT_URL = '/'
-
-DEFAULT_LIMITS = {
-    "USER_SANDBOX_TASKS": 10,
-    "USER_SANDBOX_PROJECTS": 3,
-    "TASKS_IN_USER_SANDBOX_PROJECT": 5,
-    "USER_OWNED_ORGS": 1,
-    "USER_SANDBOX_CLOUD_STORAGES": 10,
-
-    "ORG_TASKS": 10,
-    "ORG_PROJECTS": 3,
-    "TASKS_IN_ORG_PROJECT": 5,
-    "ORG_CLOUD_STORAGES": 10,
-    "ORG_COMMON_WEBHOOKS": 20,
-
-    "PROJECT_WEBHOOKS": 10,
-}
 
 # ORG settings
 ORG_INVITATION_CONFIRM = 'No'
@@ -593,8 +570,6 @@ SPECTACULAR_SETTINGS = {
         'JobStage': 'cvat.apps.engine.models.StageChoice',
         'StorageType': 'cvat.apps.engine.models.StorageChoice',
         'SortingMethod': 'cvat.apps.engine.models.SortingMethod',
-        'WebhookType': 'cvat.apps.webhooks.models.WebhookTypeChoice',
-        'WebhookContentType': 'cvat.apps.webhooks.models.WebhookContentTypeChoice',
     },
 
     # Coercion of {pk} to {id} is controlled by SCHEMA_COERCE_PATH_PK. Additionally,
@@ -622,8 +597,6 @@ if USE_ALLAUTH_SOCIAL_ACCOUNTS:
     # default = ACCOUNT_EMAIL_REQUIRED
     SOCIALACCOUNT_QUERY_EMAIL = True
     SOCIALACCOUNT_CALLBACK_CANCELLED_URL = '/auth/login'
-    # custom variable because by default LOGIN_REDIRECT_URL will be used
-    SOCIAL_APP_LOGIN_REDIRECT_URL = 'http://localhost:8080/auth/login-with-social-app'
 
     GITHUB_CALLBACK_URL = 'http://localhost:8080/api/auth/github/login/callback/'
     GOOGLE_CALLBACK_URL = 'http://localhost:8080/api/auth/google/login/callback/'
