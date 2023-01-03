@@ -2023,7 +2023,7 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         return Response(serializer.data)
 
     @action(detail=True, methods=['GET', 'PATCH'])
-    def limitation(self, request, pk):
+    def limitations(self, request, pk):
         user = self.get_object()
         limitation_manager = LimitationManager(UserCapabilityContext(user_id=user.id))
         if request.method == "PATCH":

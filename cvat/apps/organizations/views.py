@@ -92,7 +92,7 @@ class OrganizationViewSet(viewsets.GenericViewSet,
         return super().perform_destroy(instance)
 
     @action(detail=True, methods=['GET', 'PATCH'])
-    def limitation(self, request, pk):
+    def limitations(self, request, pk):
         organization = self.get_object()
         limitation_manager = LimitationManager(OrgCapabilityContext(org_id=organization.id))
         if request.method == "PATCH":
