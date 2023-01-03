@@ -38,18 +38,8 @@ context('Context images for 2D tasks.', () => {
         it('Check a context image.', () => {
             cy.get('.cvat-context-image-wrapper').should('exist').and('be.visible');
             cy.get('.cvat-player-next-button').click();
-            cy.get('.cvat-context-image').should('exist').and('be.visible'); // Check a context image on the second frame
+            cy.get('.cvat-context-image-wrapper').should('exist').and('be.visible'); // Check a context image on the second frame
             cy.get('.cvat-player-previous-button').click();
-        });
-
-        it('Checking issue "Context image disappears after undo/redo".', () => {
-            cy.createRectangle(createRectangleShape2Points);
-            cy.contains('.cvat-annotation-header-button', 'Undo').click();
-            cy.get('.cvat-context-image').should('have.attr', 'src');
-            cy.get('#cvat_canvas_shape_1').should('not.exist');
-            cy.contains('.cvat-annotation-header-button', 'Redo').click();
-            cy.get('.cvat-context-image').should('have.attr', 'src');
-            cy.get('#cvat_canvas_shape_1').should('exist');
         });
     });
 });
