@@ -2,8 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-version: '3.3'
-
 services:
   cvat_db:
     container_name: cvat_db
@@ -73,6 +71,7 @@ services:
       - cvat_opa
     environment:
       CVAT_REDIS_HOST: 'cvat_redis'
+      CVAT_REDIS_PASSWORD: ''
       CVAT_POSTGRES_HOST: 'cvat_db'
       no_proxy: elasticsearch,kibana,logstash,nuclio,opa,${no_proxy:-}
     command: -c supervisord/utils.conf
@@ -187,7 +186,7 @@ services:
 
   cvat_opa:
     container_name: cvat_opa
-    image: openpolicyagent/opa:0.34.2-rootless
+    image: openpolicyagent/opa:0.45.0-rootless
     restart: always
     networks:
       cvat:

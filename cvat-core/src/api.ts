@@ -16,6 +16,7 @@ import Statistics from './statistics';
 import Comment from './comment';
 import Issue from './issue';
 import { Job, Task } from './session';
+import { implementJob, implementTask } from './session-implementation';
 import Project from './project';
 import implementProject from './project-implementation';
 import { Attribute, Label } from './labels';
@@ -918,8 +919,8 @@ function build() {
         classes: {
             User,
             Project: implementProject(Project),
-            Task,
-            Job,
+            Task: implementTask(Task),
+            Job: implementJob(Job),
             Log,
             Attribute,
             Label,
