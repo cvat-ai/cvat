@@ -28,7 +28,7 @@ For access from China, read [sources for users from China](#sources-for-users-fr
 - Open a terminal window. If you don't know how to open a terminal window on
   Ubuntu please read [the answer](https://askubuntu.com/questions/183775/how-do-i-open-a-terminal).
 
-- Type commands below into the terminal window to install `docker`. More
+- Type commands below into the terminal window to install Docker and Docker Compose. More
   instructions can be found [here](https://docs.docker.com/install/linux/docker-ce/ubuntu/).
 
   ```shell
@@ -45,7 +45,8 @@ For access from China, read [sources for users from China](#sources-for-users-fr
     $(lsb_release -cs) \
     stable"
   sudo apt-get update
-  sudo apt-get --no-install-recommends install -y docker-ce docker-ce-cli containerd.io
+  sudo apt-get --no-install-recommends install -y \
+    docker-ce docker-ce-cli containerd.io docker-compose-plugin
   ```
 
 - Perform [post-installation steps](https://docs.docker.com/install/linux/linux-postinstall/)
@@ -59,14 +60,6 @@ For access from China, read [sources for users from China](#sources-for-users-fr
   Log out and log back in (or reboot) so that your group membership is
   re-evaluated. You can type `groups` command in a terminal window after
   that and check if `docker` group is in its output.
-
-- Install docker-compose (1.19.0 or newer). Compose is a tool for
-  defining and running multi-container docker applications.
-
-  ```shell
-  sudo apt-get --no-install-recommends install -y python3-pip python3-setuptools
-  sudo python3 -m pip install setuptools docker-compose
-  ```
 
 - Clone _CVAT_ source code from the
   [GitHub repository](https://github.com/opencv/cvat) with Git.
@@ -90,7 +83,7 @@ For access from China, read [sources for users from China](#sources-for-users-fr
   release and other required images like postgres, redis, etc. from DockerHub and create containers.
 
   ```shell
-  docker-compose up -d
+  docker compose up -d
   ```
 
 - (Optional) Use `CVAT_VERSION` environment variable to specify the version of CVAT you want to
@@ -98,7 +91,7 @@ For access from China, read [sources for users from China](#sources-for-users-fr
   Default behavior: `dev` images will be pulled for develop branch,
   and corresponding release images for release versions.
   ```shell
-  CVAT_VERSION=dev docker-compose up -d
+  CVAT_VERSION=dev docker compose up -d
   ```
 
 - Alternative: if you want to build the images locally with unreleased changes
@@ -170,7 +163,7 @@ For access from China, read [sources for users from China](#sources-for-users-fr
   release and other required images like postgres, redis, etc. from DockerHub and create containers.
 
   ```shell
-  docker-compose up -d
+  docker compose up -d
   ```
 
 - (Optional) Use `CVAT_VERSION` environment variable to specify the version of CVAT you want to
@@ -178,7 +171,7 @@ For access from China, read [sources for users from China](#sources-for-users-fr
   Default behavior: `dev` images will be pulled for develop branch,
   and corresponding release images for release versions.
   ```shell
-  CVAT_VERSION=dev docker-compose up -d
+  CVAT_VERSION=dev docker compose up -d
   ```
 
 - Alternative: if you want to build the images locally with unreleased changes
@@ -252,7 +245,7 @@ For access from China, read [sources for users from China](#sources-for-users-fr
   release and other required images like postgres, redis, etc. from DockerHub and create containers.
 
   ```shell
-  docker-compose up -d
+  docker compose up -d
   ```
 
 - (Optional) Use `CVAT_VERSION` environment variable to specify the version of CVAT you want to
@@ -260,7 +253,7 @@ For access from China, read [sources for users from China](#sources-for-users-fr
   Default behavior: `dev` images will be pulled for develop branch,
   and corresponding release images for release versions.
   ```shell
-  CVAT_VERSION=dev docker-compose up -d
+  CVAT_VERSION=dev docker compose up -d
   ```
 
 - Alternative: if you want to build the images locally with unreleased changes
@@ -345,6 +338,21 @@ unzip v1.7.0.zip && mv cvat-1.7.0 cvat
 cd cvat
 ```
 
+### CVAT healthcheck command
+The following command allows to test the CVAT container to make sure it works.
+```shell
+docker exec -t cvat_server python manage.py health_check
+```
+Expected output of a healthy CVAT container:
+```shell
+Cache backend: default   ... working
+DatabaseBackend          ... working
+DiskUsage                ... working
+MemoryUsage              ... working
+MigrationsHealthCheck    ... working
+OPAHealthCheck           ... working
+```
+
 ### Deploying CVAT behind a proxy
 
 If you deploy CVAT behind a proxy and do not plan to use any of [serverless functions](#semi-automatic-and-automatic-annotation)
@@ -408,7 +416,7 @@ if you want to keep the dashboard in production you should read Traefik's
 
 ```shell
 # Build and run containers with Analytics component support:
-docker-compose -f docker-compose.yml \
+docker compose -f docker-compose.yml \
   -f components/analytics/docker-compose.analytics.yml up -d --build
 ```
 
@@ -421,7 +429,7 @@ Please follow this [guide](/docs/administration/advanced/installation_automatic_
 The command below stops and removes containers and networks created by `up`.
 
 ```shell
-docker-compose down
+docker compose down
 ```
 
 ### Use your own domain
@@ -508,7 +516,7 @@ export ACME_EMAIL=<YOUR_EMAIL>
 Then, use the `docker-compose.https.yml` file to override the base `docker-compose.yml` file:
 
 ```shell
-docker-compose -f docker-compose.yml -f docker-compose.https.yml up -d
+docker compose -f docker-compose.yml -f docker-compose.https.yml up -d
 ```
 
 > In firewall, ports 80 and 443 must be open for inbound connections from any
@@ -530,21 +538,21 @@ Then, the CVAT instance will be available at your domain on ports 443 (HTTPS) an
   prebuilt images from DockerHub using `CVAT_VERSION` environment variable to specify
   the version (e.g. `dev`):
   ```shell
-  CVAT_VERSION=dev docker-compose pull
+  CVAT_VERSION=dev docker compose pull
   ```
 
-- To build images yourself include `docker-compose.dev.yml` compose config file to `docker-compose` command.
+- To build images yourself include `docker-compose.dev.yml` compose config file to `docker compose` command.
   This can be useful if you want to build a CVAT with some source code changes.
   ```shell
-  docker-compose -f docker-compose.yml -f docker-compose.dev.yml build
+  docker compose -f docker-compose.yml -f docker-compose.dev.yml build
   ```
 - To update local images to `latest` or `dev` tags run:
   ```shell
-  CVAT_VERSION=dev docker-compose pull
+  CVAT_VERSION=dev docker compose pull
   ```
   or
   ```shell
-  CVAT_VERSION=latest docker-compose pull
+  CVAT_VERSION=latest docker compose pull
   ```
 
 ## Troubleshooting
@@ -637,7 +645,7 @@ If the error is related to a firewall, then:
 After `acme.json` is removed, stop all cvat docker containers:
 
 ```shell
-docker-compose -f docker-compose.yml -f docker-compose.https.yml down
+docker compose -f docker-compose.yml -f docker-compose.https.yml down
 ```
 
 Make sure variables set (with your values):
@@ -650,5 +658,5 @@ export ACME_EMAIL=<YOUR_EMAIL>
 and restart docker:
 
 ```shell
-docker-compose -f docker-compose.yml -f docker-compose.https.yml up -d
+docker compose -f docker-compose.yml -f docker-compose.https.yml up -d
 ```

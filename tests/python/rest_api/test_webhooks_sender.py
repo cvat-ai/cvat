@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 import json
-import os.path as osp
 from http import HTTPStatus
 from time import sleep
 
@@ -21,10 +20,13 @@ from shared.utils.config import delete_method, get_method, patch_method, post_me
 #  1) trigger some webhook
 #  2) check that webhook is sent by checking value of `response` field for the last delivery of this webhook
 
+# https://docs.pytest.org/en/7.1.x/example/markers.html#marking-whole-classes-or-modules
+pytestmark = [pytest.mark.with_external_services]
+
 
 def target_url():
     env_data = {}
-    with open(osp.join(CVAT_ROOT_DIR, "tests", "python", "webhook_receiver", ".env"), "r") as f:
+    with open(CVAT_ROOT_DIR / "tests/python/webhook_receiver/.env", "r") as f:
         for line in f:
             name, value = tuple(line.strip().split("="))
             env_data[name] = value

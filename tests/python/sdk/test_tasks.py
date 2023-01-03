@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import io
-import os.path as osp
+import json
 import zipfile
 from logging import Logger
 from pathlib import Path
@@ -47,7 +47,7 @@ class TestTaskUsecases:
         backup_path = self.tmp_path / "backup.zip"
 
         fxt_new_task.import_annotations("COCO 1.0", filename=fxt_coco_file)
-        fxt_new_task.download_backup(str(backup_path))
+        fxt_new_task.download_backup(backup_path)
 
         yield backup_path
 
@@ -58,8 +58,7 @@ class TestTaskUsecases:
                 "name": "test_task",
                 "labels": [{"name": "car"}, {"name": "person"}],
             },
-            resource_type=ResourceType.LOCAL,
-            resources=[str(fxt_image_file)],
+            resources=[fxt_image_file],
             data_params={"image_quality": 80},
         )
 
@@ -111,10 +110,9 @@ class TestTaskUsecases:
 
         task_files = generate_image_files(7)
         for i, f in enumerate(task_files):
-            fname = self.tmp_path / osp.basename(f.name)
-            with fname.open("wb") as fd:
-                fd.write(f.getvalue())
-                task_files[i] = str(fname)
+            fname = self.tmp_path / f.name
+            fname.write_bytes(f.getvalue())
+            task_files[i] = fname
 
         task = self.client.tasks.create_from_data(
             spec=task_spec,
@@ -169,6 +167,72 @@ class TestTaskUsecases:
         assert capture.match("No media data found")
         assert self.stdout.getvalue() == ""
 
+    @pytest.mark.with_external_services
+    def test_can_create_task_with_git_repo(self, fxt_image_file: Path):
+        pbar_out = io.StringIO()
+        pbar = make_pbar(file=pbar_out)
+
+        task_spec = {
+            "name": f"task with Git repo",
+            "labels": [{"name": "car"}],
+        }
+
+        repository_url = "root@gitserver:repos/repo.git [annotations/annot.zip]"
+
+        task = self.client.tasks.create_from_data(
+            spec=task_spec,
+            resource_type=ResourceType.LOCAL,
+            resources=[fxt_image_file],
+            pbar=pbar,
+            dataset_repository_url=repository_url,
+        )
+
+        assert task.size == 1
+        assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
+        assert self.stdout.getvalue() == ""
+
+        git_get_response = self.client.api_client.rest_client.GET(
+            self.client.api_map.git_get(task.id),
+            headers=self.client.api_client.get_common_headers(),
+        )
+
+        response_json = json.loads(git_get_response.data)
+        assert response_json["url"]["value"] == repository_url
+        assert response_json["format"] == "CVAT for images 1.1"
+        assert response_json["lfs"] is False
+
+    def test_can_upload_data_to_empty_task(self):
+        pbar_out = io.StringIO()
+        pbar = make_pbar(file=pbar_out)
+
+        task = self.client.tasks.create(
+            {
+                "name": f"test task",
+                "labels": [{"name": "car"}],
+            }
+        )
+
+        data_params = {
+            "image_quality": 75,
+        }
+
+        task_files = generate_image_files(7)
+        for i, f in enumerate(task_files):
+            fname = self.tmp_path / f.name
+            fname.write_bytes(f.getvalue())
+            task_files[i] = fname
+
+        task.upload_data(
+            resources=task_files,
+            resource_type=ResourceType.LOCAL,
+            params=data_params,
+            pbar=pbar,
+        )
+
+        assert task.size == 7
+        assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
+        assert self.stdout.getvalue() == ""
+
     def test_can_retrieve_task(self, fxt_new_task: Task):
         task_id = fxt_new_task.id
 
@@ -218,7 +282,7 @@ class TestTaskUsecases:
         pbar = make_pbar(file=pbar_out)
 
         task_id = fxt_new_task.id
-        path = str(self.tmp_path / f"task_{task_id}-cvat.zip")
+        path = self.tmp_path / f"task_{task_id}-cvat.zip"
         task = self.client.tasks.retrieve(task_id)
         task.export_dataset(
             format_name="CVAT for images 1.1",
@@ -228,7 +292,7 @@ class TestTaskUsecases:
         )
 
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
-        assert osp.isfile(path)
+        assert path.is_file()
         assert self.stdout.getvalue() == ""
 
     def test_can_download_backup(self, fxt_new_task: Task):
@@ -236,25 +300,27 @@ class TestTaskUsecases:
         pbar = make_pbar(file=pbar_out)
 
         task_id = fxt_new_task.id
-        path = str(self.tmp_path / f"task_{task_id}-backup.zip")
+        path = self.tmp_path / f"task_{task_id}-backup.zip"
         task = self.client.tasks.retrieve(task_id)
         task.download_backup(filename=path, pbar=pbar)
 
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
-        assert osp.isfile(path)
+        assert path.is_file()
         assert self.stdout.getvalue() == ""
 
     def test_can_download_preview(self, fxt_new_task: Task):
         frame_encoded = fxt_new_task.get_preview()
+        (width, height) = Image.open(frame_encoded).size
 
-        assert Image.open(frame_encoded).size != 0
+        assert width > 0 and height > 0
         assert self.stdout.getvalue() == ""
 
     @pytest.mark.parametrize("quality", ("compressed", "original"))
     def test_can_download_frame(self, fxt_new_task: Task, quality: str):
         frame_encoded = fxt_new_task.get_frame(0, quality=quality)
+        (width, height) = Image.open(frame_encoded).size
 
-        assert Image.open(frame_encoded).size != 0
+        assert width > 0 and height > 0
         assert self.stdout.getvalue() == ""
 
     @pytest.mark.parametrize("quality", ("compressed", "original"))
@@ -262,11 +328,11 @@ class TestTaskUsecases:
         fxt_new_task.download_frames(
             [0],
             quality=quality,
-            outdir=str(self.tmp_path),
+            outdir=self.tmp_path,
             filename_pattern="frame-{frame_id}{frame_ext}",
         )
 
-        assert osp.isfile(self.tmp_path / "frame-0.jpg")
+        assert (self.tmp_path / "frame-0.jpg").is_file()
         assert self.stdout.getvalue() == ""
 
     @pytest.mark.parametrize("quality", ("compressed", "original"))
@@ -285,9 +351,7 @@ class TestTaskUsecases:
         pbar_out = io.StringIO()
         pbar = make_pbar(file=pbar_out)
 
-        fxt_new_task.import_annotations(
-            format_name="COCO 1.0", filename=str(fxt_coco_file), pbar=pbar
-        )
+        fxt_new_task.import_annotations(format_name="COCO 1.0", filename=fxt_coco_file, pbar=pbar)
 
         assert "uploaded" in self.logger_stream.getvalue()
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
@@ -297,7 +361,7 @@ class TestTaskUsecases:
         pbar_out = io.StringIO()
         pbar = make_pbar(file=pbar_out)
 
-        task = self.client.tasks.create_from_backup(str(fxt_backup_file), pbar=pbar)
+        task = self.client.tasks.create_from_backup(fxt_backup_file, pbar=pbar)
 
         assert task.id
         assert task.id != fxt_new_task.id

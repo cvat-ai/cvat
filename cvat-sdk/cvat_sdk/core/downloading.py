@@ -5,8 +5,8 @@
 
 from __future__ import annotations
 
-import os.path as osp
 from contextlib import closing
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Optional
 
 from cvat_sdk.api_client.api_client import Endpoint
@@ -28,7 +28,7 @@ class Downloader:
     def download_file(
         self,
         url: str,
-        output_path: str,
+        output_path: Path,
         *,
         timeout: int = 60,
         pbar: Optional[ProgressReporter] = None,
@@ -39,7 +39,7 @@ class Downloader:
 
         CHUNK_SIZE = 10 * 2**20
 
-        assert not osp.exists(output_path)
+        assert not output_path.exists()
 
         response = self._client.api_client.rest_client.GET(
             url,
@@ -70,7 +70,7 @@ class Downloader:
     def prepare_and_download_file_from_endpoint(
         self,
         endpoint: Endpoint,
-        filename: str,
+        filename: Path,
         *,
         url_params: Optional[Dict[str, Any]] = None,
         query_params: Optional[Dict[str, Any]] = None,

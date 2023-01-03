@@ -53,12 +53,6 @@ class UserSerializer(serializers.ModelSerializer):
             'last_login': { 'allow_null': True }
         }
 
-class SelfUserSerializer(UserSerializer):
-    key = serializers.CharField(allow_blank=True, required=False)
-
-    class Meta(UserSerializer.Meta):
-        fields = UserSerializer.Meta.fields + ('key',)
-
 class AttributeSerializer(serializers.ModelSerializer):
     values = serializers.ListField(allow_empty=True,
         child=serializers.CharField(max_length=200),
@@ -377,12 +371,13 @@ class DataSerializer(WriteOnceMixin, serializers.ModelSerializer):
     use_cache = serializers.BooleanField(default=False)
     copy_data = serializers.BooleanField(default=False)
     cloud_storage_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
+    filename_pattern = serializers.CharField(allow_null=True, required=False)
 
     class Meta:
         model = models.Data
         fields = ('chunk_size', 'size', 'image_quality', 'start_frame', 'stop_frame', 'frame_filter',
             'compressed_chunk_type', 'original_chunk_type', 'client_files', 'server_files', 'remote_files', 'use_zip_chunks',
-            'cloud_storage_id', 'use_cache', 'copy_data', 'storage_method', 'storage', 'sorting_method')
+            'cloud_storage_id', 'use_cache', 'copy_data', 'storage_method', 'storage', 'sorting_method', 'filename_pattern')
 
     # pylint: disable=no-self-use
     def validate_frame_filter(self, value):
@@ -402,6 +397,7 @@ class DataSerializer(WriteOnceMixin, serializers.ModelSerializer):
         if 'start_frame' in attrs and 'stop_frame' in attrs \
             and attrs['start_frame'] > attrs['stop_frame']:
             raise serializers.ValidationError('Stop frame must be more or equal start frame')
+
         return attrs
 
     def create(self, validated_data):
