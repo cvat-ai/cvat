@@ -11,6 +11,7 @@ import { connect, useSelector } from 'react-redux';
 import {
     ArrowDownOutlined, ArrowLeftOutlined, ArrowRightOutlined, ArrowUpOutlined,
 } from '@ant-design/icons';
+import Spin from 'antd/lib/spin';
 
 import {
     activateObject,
@@ -54,7 +55,7 @@ interface StateToProps {
     workspace: Workspace;
     frame: number;
     resetZoom: boolean;
-};
+}
 
 interface DispatchToProps {
     onDragCanvas: (enabled: boolean) => void;
@@ -169,11 +170,17 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 
 type Props = StateToProps & DispatchToProps;
 
+const Spinner = React.memo(() => (
+    <div className='cvat-spinner-container'>
+        <Spin className='cvat-spinner' />
+    </div>
+));
+
 export const PerspectiveViewComponent = React.memo(
     (): JSX.Element => {
         const ref = useRef<HTMLDivElement>(null);
         const canvas = useSelector((state: CombinedState) => state.annotation.canvas.instance as Canvas3d);
-        const frameFetching = useSelector((state: CombinedState) => state.annotation.player.frame.fetching);
+        const canvasIsReady = useSelector((state: CombinedState) => state.annotation.canvas.ready);
 
         const screenKeyControl = (code: CameraAction, altKey: boolean, shiftKey: boolean): void => {
             canvas.keyControls(new KeyboardEvent('keydown', { code, altKey, shiftKey }));
@@ -290,19 +297,10 @@ export const PerspectiveViewComponent = React.memo(
 
         return (
             <div className='cvat-canvas3d-perspective'>
-                {
-                    frameFetching && (
-                        <svg className='cvat_canvas_loading_animation'>
-                            <circle className='cvat_canvas_loading_circle' r='30' cx='50%' cy='50%' />
-                        </svg>
-                    )
-                }
+                { !canvasIsReady && <Spinner /> }
                 <div
                     className='cvat-canvas-container cvat-canvas-container-overflow'
                     ref={ref}
-                    style={{
-                        visibility: frameFetching ? 'hidden' : undefined,
-                    }}
                 />
                 <ArrowGroup />
                 <ControlGroup />
@@ -315,7 +313,7 @@ export const TopViewComponent = React.memo(
     (): JSX.Element => {
         const ref = useRef<HTMLDivElement>(null);
         const canvas = useSelector((state: CombinedState) => state.annotation.canvas.instance as Canvas3d);
-        const frameFetching = useSelector((state: CombinedState) => state.annotation.player.frame.fetching);
+        const canvasIsReady = useSelector((state: CombinedState) => state.annotation.canvas.ready);
 
         useEffect(() => {
             if (ref.current) {
@@ -325,20 +323,11 @@ export const TopViewComponent = React.memo(
 
         return (
             <div className='cvat-canvas3d-orthographic-view cvat-canvas3d-topview'>
-                {
-                    frameFetching && (
-                        <svg className='cvat_canvas_loading_animation'>
-                            <circle className='cvat_canvas_loading_circle' r='30' cx='50%' cy='50%' />
-                        </svg>
-                    )
-                }
+                { !canvasIsReady && <Spinner /> }
                 <div className='cvat-canvas3d-header'>Top</div>
                 <div
                     className='cvat-canvas3d-fullsize'
                     ref={ref}
-                    style={{
-                        visibility: frameFetching ? 'hidden' : undefined,
-                    }}
                 />
             </div>
         );
@@ -349,7 +338,7 @@ export const SideViewComponent = React.memo(
     (): JSX.Element => {
         const ref = useRef<HTMLDivElement>(null);
         const canvas = useSelector((state: CombinedState) => state.annotation.canvas.instance as Canvas3d);
-        const frameFetching = useSelector((state: CombinedState) => state.annotation.player.frame.fetching);
+        const canvasIsReady = useSelector((state: CombinedState) => state.annotation.canvas.ready);
 
         useEffect(() => {
             if (ref.current) {
@@ -359,20 +348,11 @@ export const SideViewComponent = React.memo(
 
         return (
             <div className='cvat-canvas3d-orthographic-view cvat-canvas3d-sideview'>
-                {
-                    frameFetching && (
-                        <svg className='cvat_canvas_loading_animation'>
-                            <circle className='cvat_canvas_loading_circle' r='30' cx='50%' cy='50%' />
-                        </svg>
-                    )
-                }
+                { !canvasIsReady && <Spinner /> }
                 <div className='cvat-canvas3d-header'>Side</div>
                 <div
                     className='cvat-canvas3d-fullsize'
                     ref={ref}
-                    style={{
-                        visibility: frameFetching ? 'hidden' : undefined,
-                    }}
                 />
             </div>
         );
@@ -383,7 +363,7 @@ export const FrontViewComponent = React.memo(
     (): JSX.Element => {
         const ref = useRef<HTMLDivElement>(null);
         const canvas = useSelector((state: CombinedState) => state.annotation.canvas.instance as Canvas3d);
-        const frameFetching = useSelector((state: CombinedState) => state.annotation.player.frame.fetching);
+        const canvasIsReady = useSelector((state: CombinedState) => state.annotation.canvas.ready);
 
         useEffect(() => {
             if (ref.current) {
@@ -393,20 +373,11 @@ export const FrontViewComponent = React.memo(
 
         return (
             <div className='cvat-canvas3d-orthographic-view cvat-canvas3d-frontview'>
-                {
-                    frameFetching && (
-                        <svg className='cvat_canvas_loading_animation'>
-                            <circle className='cvat_canvas_loading_circle' r='30' cx='50%' cy='50%' />
-                        </svg>
-                    )
-                }
+                { !canvasIsReady && <Spinner /> }
                 <div className='cvat-canvas3d-header'>Front</div>
                 <div
                     className='cvat-canvas3d-fullsize'
                     ref={ref}
-                    style={{
-                        visibility: frameFetching ? 'hidden' : undefined,
-                    }}
                 />
             </div>
         );

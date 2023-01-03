@@ -658,7 +658,7 @@ class FrameBuffer {
     }
 }
 
-async function getImageContext(jobID, frame, imageId) {
+async function getImageContext(jobID, frame) {
     return new Promise((resolve, reject) => {
         serverProxy.frames
             .getImageContext(jobID, frame)

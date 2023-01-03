@@ -6,6 +6,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import Slider from 'antd/lib/slider';
+import Spin from 'antd/lib/spin';
 import Dropdown from 'antd/lib/dropdown';
 import { PlusCircleOutlined, UpOutlined } from '@ant-design/icons';
 
@@ -69,7 +70,7 @@ interface StateToProps {
     annotations: any[];
     frameData: any;
     frameAngle: number;
-    frameFetching: boolean;
+    canvasIsReady: boolean;
     frame: number;
     opacity: number;
     colorBy: ColorBy;
@@ -141,11 +142,11 @@ interface DispatchToProps {
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
         annotation: {
-            canvas: { activeControl, instance: canvasInstance },
+            canvas: { activeControl, instance: canvasInstance, ready: canvasIsReady },
             drawing: { activeLabelID, activeObjectType },
             job: { instance: jobInstance },
             player: {
-                frame: { data: frameData, number: frame, fetching: frameFetching },
+                frame: { data: frameData, number: frame },
                 frameAngles,
             },
             annotations: {
@@ -195,7 +196,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         jobInstance,
         frameData,
         frameAngle: frameAngles[frame - jobInstance.startFrame],
-        frameFetching,
+        canvasIsReady,
         frame,
         activatedStateID,
         activatedElementID,
@@ -414,7 +415,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             contrastLevel,
             saturationLevel,
             workspace,
-            frameFetching,
             showObjectsTextAlways,
             textFontSize,
             controlPointsSize,
@@ -973,6 +973,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             switchableAutomaticBordering,
             automaticBordering,
             showTagsOnFrame,
+            canvasIsReady,
             onSwitchAutomaticBordering,
             onSwitchZLayer,
             onAddZLayer,
@@ -1005,6 +1006,13 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                     So, React isn't going to rerender it
                     And it's a reason why cvat-canvas appended in mount function works
                 */}
+                {
+                    !canvasIsReady && (
+                        <div className='cvat-spinner-container'>
+                            <Spin className='cvat-spinner' />
+                        </div>
+                    )
+                }
                 <div
                     className='cvat-canvas-container'
                     style={{

@@ -1369,7 +1369,7 @@ async function getPreview(tid, jid) {
     return response.data;
 }
 
-async function getImageContext(jid, frame, imageId) {
+async function getImageContext(jid, frame) {
     const { backendAPI } = config;
 
     let response = null;
