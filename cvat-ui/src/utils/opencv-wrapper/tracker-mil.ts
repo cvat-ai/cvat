@@ -27,10 +27,10 @@ export default class TrackerMILImplementation implements TrackerMIL {
         this.imageData = src;
 
         // cut bounding box if its out of image bounds
-        const x1 = clamp(points[0], 0, src.width);
-        const y1 = clamp(points[1], 0, src.height);
-        const x2 = clamp(points[2], 0, src.width);
-        const y2 = clamp(points[3], 0, src.height);
+        const x1 = Math.floor(clamp(points[0], 0, src.width));
+        const y1 = Math.floor(clamp(points[1], 0, src.height));
+        const x2 = Math.floor(clamp(points[2], 0, src.width));
+        const y2 = Math.floor(clamp(points[3], 0, src.height));
 
         const [width, height] = [x2 - x1, y2 - y1];
         if (width === 0 || height === 0) {
@@ -42,6 +42,7 @@ export default class TrackerMILImplementation implements TrackerMIL {
             matImage = this.cv.matFromImageData(src);
             const rect = new this.cv.Rect(x1, y1, width, height);
             this.trackerMIL.init(matImage, rect);
+            this.trackerMIL.update(matImage);
         } finally {
             if (matImage) matImage.delete();
         }

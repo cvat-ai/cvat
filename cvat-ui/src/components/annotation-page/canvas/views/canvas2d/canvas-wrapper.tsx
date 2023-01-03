@@ -61,7 +61,6 @@ const cvat = getCore();
 const MAX_DISTANCE_TO_OPEN_SHAPE = 50;
 
 interface StateToProps {
-    sidebarCollapsed: boolean;
     canvasInstance: Canvas | Canvas3d | null;
     jobInstance: any;
     activatedStateID: number | null;
@@ -156,7 +155,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 activatedAttributeID,
                 zLayer: { cur: curZLayer, min: minZLayer, max: maxZLayer },
             },
-            sidebarCollapsed,
             workspace,
         },
         settings: {
@@ -191,7 +189,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
     } = state;
 
     return {
-        sidebarCollapsed,
         canvasInstance,
         jobInstance,
         frameData,
@@ -402,7 +399,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             frameData,
             frameAngle,
             annotations,
-            sidebarCollapsed,
             activatedStateID,
             curZLayer,
             resetZoom,
@@ -465,19 +461,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         if (prevProps.showAllInterpolationTracks !== showAllInterpolationTracks) {
             onFetchAnnotation();
-        }
-
-        if (prevProps.sidebarCollapsed !== sidebarCollapsed) {
-            const [sidebar] = window.document.getElementsByClassName('cvat-objects-sidebar');
-            if (sidebar) {
-                sidebar.addEventListener(
-                    'transitionend',
-                    () => {
-                        canvasInstance.fitCanvas();
-                    },
-                    { once: true },
-                );
-            }
         }
 
         if (prevProps.activatedStateID !== null && prevProps.activatedStateID !== activatedStateID) {
@@ -582,8 +565,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().removeEventListener('canvas.splitted', this.onCanvasTrackSplitted);
 
         canvasInstance.html().removeEventListener('canvas.error', this.onCanvasErrorOccurrence);
-
-        window.removeEventListener('resize', this.fitCanvas);
     }
 
     private onCanvasErrorOccurrence = (event: any): void => {
@@ -673,13 +654,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         const { state } = event.detail;
         onSplitAnnotations(jobInstance, frame, state);
-    };
-
-    private fitCanvas = (): void => {
-        const { canvasInstance } = this.props;
-        if (canvasInstance) {
-            canvasInstance.fitCanvas();
-        }
     };
 
     private onCanvasMouseDown = (e: MouseEvent): void => {
@@ -902,10 +876,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             saturationLevel,
         } = this.props;
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
-
-        // Size
-        window.addEventListener('resize', this.fitCanvas);
-        this.fitCanvas();
 
         // Grid
         const gridElement = window.document.getElementById('cvat_canvas_grid');

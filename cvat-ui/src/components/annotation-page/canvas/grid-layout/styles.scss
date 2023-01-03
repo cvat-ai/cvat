@@ -9,8 +9,8 @@
 }
 
 .cvat-canvas-grid-item {
-    background-color: rgba(241, 241, 241, 0.25);
-    border-radius: 2px;
+    background-color: rgba(241, 241, 241, 0.7);
+    border-radius: 4px;
 
     .cvat-grid-item-drag-handler {
         position: absolute;
@@ -23,11 +23,18 @@
         border-radius: 2px;
     }
 
-    .cvat-grid-item-resize-handler {
+    .cvat-grid-item-resize-handler.react-resizable-handle {
         bottom: 0;
         right: 0;
         cursor: se-resize;
-        background: $header-color;
-        border-radius: $grid-unit-size * 4 0 0 0;
+
+        &::after {
+            bottom: 0;
+            right: 0;
+            width: 9px;
+            height: 10px;
+            border-right: 2px solid rgba(0, 0, 0, 1);
+            border-bottom: 2px solid rgba(0, 0, 0, 1);
+        }
     }
 }

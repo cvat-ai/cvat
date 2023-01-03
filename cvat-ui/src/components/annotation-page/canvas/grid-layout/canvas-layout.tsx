@@ -64,6 +64,7 @@ const ViewFabric = (itemLayout: ItemLayout): JSX.Element => {
 function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
     const NUM_OF_ROWS = 12;
     const MARGIN = 8;
+    const PADDING = MARGIN / 2;
     const [rowHeight, setRowHeight] = useState<number>(Math.floor(window.screen.availHeight / NUM_OF_ROWS));
     const relatedFiles = useSelector((state: CombinedState) => state.annotation.player.frame.relatedFiles);
     const canvasInstance = useSelector((state: CombinedState) => state.annotation.canvas.instance);
@@ -94,7 +95,7 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
         if (container) {
             const { height } = container.getBoundingClientRect();
             // https://github.com/react-grid-layout/react-grid-layout/issues/628#issuecomment-1228453084
-            setRowHeight(Math.floor((height - MARGIN * (NUM_OF_ROWS + 4)) / NUM_OF_ROWS));
+            setRowHeight(Math.floor((height - MARGIN * (NUM_OF_ROWS)) / NUM_OF_ROWS));
         }
 
         setTimeout(() => {
@@ -104,6 +105,14 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
             }
         });
     }, []);
+
+    useEffect(() => {
+        const onResize = onLayoutChange;
+        window.addEventListener('resize', onResize);
+        return () => {
+            window.removeEventListener('resize', onResize);
+        };
+    }, [onLayoutChange]);
 
     const children = getLayout().map((value: ItemLayout) => ViewFabric((value)));
     const layout = getLayout().map((value: ItemLayout) => ({
@@ -117,7 +126,10 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
     return (
         <Layout.Content>
             <ReactGridLayout
+                maxRows={12}
                 style={{ background: canvasBackgroundColor }}
+                containerPadding={[PADDING, PADDING]}
+                margin={[MARGIN, MARGIN]}
                 className='cvat-canvas-grid-root'
                 rowHeight={rowHeight}
                 layout={layout}

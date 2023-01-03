@@ -12,8 +12,6 @@ import Text from 'antd/lib/typography/Text';
 import Tabs from 'antd/lib/tabs';
 import Layout from 'antd/lib/layout';
 
-import { Canvas } from 'cvat-canvas-wrapper';
-import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { CombinedState, DimensionType } from 'reducers';
 import LabelsList from 'components/annotation-page/standard-workspace/objects-side-bar/labels-list';
 import { collapseSidebar as collapseSidebarAction } from 'actions/annotation-actions';
@@ -26,7 +24,6 @@ interface OwnProps {
 
 interface StateToProps {
     sidebarCollapsed: boolean;
-    canvasInstance: Canvas | Canvas3d;
     jobInstance: any;
 }
 
@@ -38,14 +35,12 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const {
         annotation: {
             sidebarCollapsed,
-            canvas: { instance: canvasInstance },
             job: { instance: jobInstance },
         },
     } = state;
 
     return {
         sidebarCollapsed,
-        canvasInstance,
         jobInstance,
     };
 }
@@ -60,15 +55,14 @@ function mapDispatchToProps(dispatch: Dispatch<AnyAction>): DispatchToProps {
 
 function ObjectsSideBar(props: StateToProps & DispatchToProps & OwnProps): JSX.Element {
     const {
-        sidebarCollapsed, canvasInstance, collapseSidebar, objectsList, jobInstance,
+        sidebarCollapsed, collapseSidebar, objectsList, jobInstance,
     } = props;
 
     const collapse = (): void => {
         const [collapser] = window.document.getElementsByClassName('cvat-objects-sidebar');
         const listener = (event: TransitionEvent): void => {
             if (event.target && event.propertyName === 'width' && event.target === collapser) {
-                canvasInstance.fitCanvas();
-                canvasInstance.fit();
+                window.dispatchEvent(new Event('resize'));
                 (collapser as HTMLElement).removeEventListener('transitionend', listener as any);
             }
         };

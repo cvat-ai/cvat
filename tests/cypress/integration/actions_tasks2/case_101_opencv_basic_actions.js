@@ -35,8 +35,8 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
         labelName,
         tracker: 'TrackerMIL',
         pointsMap: [
-            { x: 440, y: 45 },
-            { x: 650, y: 150 },
+            { x: 430, y: 40 },
+            { x: 640, y: 145 },
         ],
     };
 

@@ -28,6 +28,7 @@
     .cvat-context-image-header {
         position: absolute;
         height: $grid-unit-size * 4;
+        border-radius: 4px 4px 0 0;
         width: 100%;
         text-align: center;
         z-index: 1;
@@ -36,7 +37,7 @@
         > .cvat-context-image-setup-button {
             position: absolute;
             top: $grid-unit-size;
-            right: $grid-unit-size;
+            left: $grid-unit-size * 4;
             font-size: 16px;
             opacity: 0;
             border-radius: 2px;
@@ -47,7 +48,7 @@
     > canvas {
         object-fit: contain;
         position: relative;
-        top: 50%;
+        top: calc(50% + $grid-unit-size * 2);
         transform: translateY(-50%);
         width: 100%;
         height: calc(100% - $grid-unit-size * 4);
