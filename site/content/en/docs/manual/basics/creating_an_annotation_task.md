@@ -98,7 +98,7 @@ visible on the sidebar.
 
 ![Type control sidebar](/images/type_tools.png)
 
-You can change the shape of the label at any moment.
+You can change the shape of the label as needed.
 This change will not affect the existing annotation.
 
 For example, if you created objects using polygons and then changed
