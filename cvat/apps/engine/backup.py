@@ -555,9 +555,9 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         self._manifest['owner_id'] = self._user_id
         self._manifest['project_id'] = self._project_id
 
-        if data.pop('custom_segments', False):
-            custom_segments = self._parse_custom_segments(jobs=jobs)
-            data['job_file_mapping'] = custom_segments
+        if custom_segments := data.pop('custom_segments', False):
+            job_file_mapping = self._parse_custom_segments(jobs=jobs)
+            data['job_file_mapping'] = job_file_mapping
 
             for d in [self._manifest, data]:
                 for k in [
@@ -597,7 +597,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         data = data_serializer.data
         data['client_files'] = uploaded_files
         if custom_segments:
-            data['job_file_mapping'] = custom_segments
+            data['job_file_mapping'] = job_file_mapping
 
         _create_thread(self._db_task.pk, data.copy(), isBackupRestore=True)
         db_data.start_frame = data['start_frame']
