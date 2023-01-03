@@ -3,13 +3,11 @@
 # SPDX-License-Identifier: MIT
 
 import collections
-import json
 import os
-import shutil
 import types
 import zipfile
 from concurrent.futures import ThreadPoolExecutor
-from typing import Callable, Dict, Mapping, Optional, Type, TypeVar
+from typing import Callable, Dict, Mapping, Optional
 
 import PIL.Image
 import torchvision.datasets
@@ -17,16 +15,8 @@ import torchvision.datasets
 import cvat_sdk.core
 import cvat_sdk.core.exceptions
 import cvat_sdk.models as models
-from cvat_sdk.api_client.model_utils import to_json
-from cvat_sdk.core.utils import atomic_writer
-from cvat_sdk.pytorch.common import (
-    FrameAnnotations,
-    Target,
-    UnsupportedDatasetError,
-    get_server_cache_dir,
-)
-
-_ModelType = TypeVar("_ModelType")
+from cvat_sdk.pytorch.caching import CACHE_MANAGER_CLASSES, UpdatePolicy
+from cvat_sdk.pytorch.common import FrameAnnotations, Target, UnsupportedDatasetError
 
 _NUM_DOWNLOAD_THREADS = 4
 
@@ -61,6 +51,7 @@ class TaskVisionDataset(torchvision.datasets.VisionDataset):
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
         label_name_to_index: Mapping[str, int] = None,
+        update_policy: UpdatePolicy = UpdatePolicy.IF_MISSING_OR_STALE,
     ) -> None:
         """
         Creates a dataset corresponding to the task with ID `task_id` on the
@@ -84,8 +75,8 @@ class TaskVisionDataset(torchvision.datasets.VisionDataset):
 
         self._logger = client.logger
 
-        self._logger.info(f"Fetching task {task_id}...")
-        self._task = client.tasks.retrieve(task_id)
+        cache_manager = CACHE_MANAGER_CLASSES[update_policy](client)
+        self._task = cache_manager.retrieve_task(task_id)
 
         if not self._task.size or not self._task.data_chunk_size:
             raise UnsupportedDatasetError("The task has no data")
@@ -96,18 +87,19 @@ class TaskVisionDataset(torchvision.datasets.VisionDataset):
                 f" current chunk type is {self._task.data_original_chunk_type!r}"
             )
 
-        self._task_dir = get_server_cache_dir(client) / f"tasks/{self._task.id}"
-        self._initialize_task_dir()
-
         super().__init__(
-            os.fspath(self._task_dir),
+            os.fspath(cache_manager.task_dir(self._task.id)),
             transforms=transforms,
             transform=transform,
             target_transform=target_transform,
         )
 
-        data_meta = self._ensure_model(
-            "data_meta.json", models.DataMetaRead, self._task.get_meta, "data metadata"
+        data_meta = cache_manager.ensure_task_model(
+            self._task.id,
+            "data_meta.json",
+            models.DataMetaRead,
+            self._task.get_meta,
+            "data metadata",
         )
         self._active_frame_indexes = sorted(
             set(range(self._task.size)) - set(data_meta.deleted_frames)
@@ -115,7 +107,7 @@ class TaskVisionDataset(torchvision.datasets.VisionDataset):
 
         self._logger.info("Downloading chunks...")
 
-        self._chunk_dir = self._task_dir / "chunks"
+        self._chunk_dir = cache_manager.chunk_dir(task_id)
         self._chunk_dir.mkdir(exist_ok=True, parents=True)
 
         needed_chunks = {
@@ -123,7 +115,11 @@ class TaskVisionDataset(torchvision.datasets.VisionDataset):
         }
 
         with ThreadPoolExecutor(_NUM_DOWNLOAD_THREADS) as pool:
-            for _ in pool.map(self._ensure_chunk, sorted(needed_chunks)):
+
+            def ensure_chunk(chunk_index):
+                cache_manager.ensure_chunk(self._task, chunk_index)
+
+            for _ in pool.map(ensure_chunk, sorted(needed_chunks)):
                 # just need to loop through all results so that any exceptions are propagated
                 pass
 
@@ -143,8 +139,12 @@ class TaskVisionDataset(torchvision.datasets.VisionDataset):
                 {label.id: label_name_to_index[label.name] for label in self._task.labels}
             )
 
-        annotations = self._ensure_model(
-            "annotations.json", models.LabeledData, self._task.get_annotations, "annotations"
+        annotations = cache_manager.ensure_task_model(
+            self._task.id,
+            "annotations.json",
+            models.LabeledData,
+            self._task.get_annotations,
+            "annotations",
         )
 
         self._frame_annotations: Dict[int, FrameAnnotations] = collections.defaultdict(
@@ -158,70 +158,6 @@ class TaskVisionDataset(torchvision.datasets.VisionDataset):
             self._frame_annotations[shape.frame].shapes.append(shape)
 
         # TODO: tracks?
-
-    def _initialize_task_dir(self) -> None:
-        task_json_path = self._task_dir / "task.json"
-
-        try:
-            with open(task_json_path, "rb") as task_json_file:
-                saved_task = models.TaskRead._new_from_openapi_data(**json.load(task_json_file))
-        except Exception:
-            self._logger.info("Task is not yet cached or the cache is corrupted")
-
-            # If the cache was corrupted, the directory might already be there; clear it.
-            if self._task_dir.exists():
-                shutil.rmtree(self._task_dir)
-        else:
-            if saved_task.updated_date < self._task.updated_date:
-                self._logger.info(
-                    "Task has been updated on the server since it was cached; purging the cache"
-                )
-                shutil.rmtree(self._task_dir)
-
-        self._task_dir.mkdir(exist_ok=True, parents=True)
-
-        with atomic_writer(task_json_path, "w", encoding="UTF-8") as task_json_file:
-            json.dump(to_json(self._task._model), task_json_file, indent=4)
-            print(file=task_json_file)  # add final newline
-
-    def _ensure_chunk(self, chunk_index: int) -> None:
-        chunk_path = self._chunk_dir / f"{chunk_index}.zip"
-        if chunk_path.exists():
-            return  # already downloaded previously
-
-        self._logger.info(f"Downloading chunk #{chunk_index}...")
-
-        with atomic_writer(chunk_path, "wb") as chunk_file:
-            self._task.download_chunk(chunk_index, chunk_file, quality="original")
-
-    def _ensure_model(
-        self,
-        filename: str,
-        model_type: Type[_ModelType],
-        download: Callable[[], _ModelType],
-        model_description: str,
-    ) -> _ModelType:
-        path = self._task_dir / filename
-
-        try:
-            with open(path, "rb") as f:
-                model = model_type._new_from_openapi_data(**json.load(f))
-            self._logger.info(f"Loaded {model_description} from cache")
-            return model
-        except FileNotFoundError:
-            pass
-        except Exception:
-            self._logger.warning(f"Failed to load {model_description} from cache", exc_info=True)
-
-        self._logger.info(f"Downloading {model_description}...")
-        model = download()
-        self._logger.info(f"Downloaded {model_description}")
-
-        with atomic_writer(path, "w", encoding="UTF-8") as f:
-            json.dump(to_json(model), f, indent=4)
-            print(file=f)  # add final newline
-
-        return model
 
     def __getitem__(self, sample_index: int):
         """
