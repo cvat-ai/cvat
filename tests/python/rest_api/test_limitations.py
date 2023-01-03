@@ -41,6 +41,7 @@ class TestOrgLimitations:
         response = delete_method(admin, f"organizations/{org_id}")
         assert response.status_code == HTTPStatus.BAD_REQUEST
 
+
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestUserLimitations:
     def test_can_update_and_get_user_limitation(self):
