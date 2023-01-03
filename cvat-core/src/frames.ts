@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,7 +8,6 @@ import { isBrowser, isNode } from 'browser-or-node';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
 import { Exception, ArgumentError, DataError } from './exceptions';
-import { rejects } from 'assert';
 
 // This is the frames storage
 const frameDataCache = {};
