@@ -159,7 +159,7 @@ There are several ways to upload files:
 | My computer          | Use this option to select files from your laptop or PC. <br> To select file: <br>1. Click on the **Select files** field: <br>![Select files](/images/select_files.jpg). <br> 2. Select files to upload.                                             |
 | Connected file share | **Advanced option**. <br>Upload files from a local or cloud shared folder. <br>**Note**, that you need to mount a fileshare first. <br>For more information, see [Share path](/docs/administration/basics/installation/#share-path)                 |
 | Remote source        | **Advanced option**.<br>Enter a list of URLs (one per line) in the field. <br>If you want a `manifest.json` file, select the **Use cache**. <br> For more information, see [Dataset manifest.](/docs/manual/advanced/dataset_manifest/)             |
-| Cloud Storage| **Advanced option**. <br>To upload files from cloud storage, type the cloud storage name, choose the manifest file, and select the required files. <br> For more information, see [Attach cloud storage](/docs/manual/basics/attach-cloud-storage/) |
+| Cloud Storage        | **Advanced option**. <br>To upload files from cloud storage, type the cloud storage name, choose the manifest file, and select the required files. <br> For more information, see [Attach cloud storage](/docs/manual/basics/attach-cloud-storage/) |
 
 <!--lint enable maximum-line-length-->
 
