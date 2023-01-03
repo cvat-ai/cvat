@@ -70,8 +70,8 @@ class TestTaskVisionDataset:
                     models.PatchedLabelRequest(name="car"),
                 ],
             ),
-            ResourceType.LOCAL,
-            list(map(os.fspath, image_paths)),
+            resource_type=ResourceType.LOCAL,
+            resources=list(map(os.fspath, image_paths)),
             data_params={"chunk_size": 3},
         )
 
@@ -274,8 +274,8 @@ class TestProjectVisionDataset:
                     project_id=self.project.id,
                     subset=subset,
                 ),
-                ResourceType.LOCAL,
-                image_paths,
+                resource_type=ResourceType.LOCAL,
+                resources=image_paths,
                 data_params={"image_quality": 70},
             )
             for subset, image_paths in zip(subsets, image_paths_per_task)

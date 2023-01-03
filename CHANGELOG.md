@@ -7,7 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## \[2.4.0] - Unreleased
 ### Added
-- Filename pattern to simplify uploading cloud storage data for a task (<https://github.com/opencv/cvat/pull/5498>)
+- \[SDK\] An arg to wait for data processing in the task data uploading function
+  (<https://github.com/opencv/cvat/pull/5502>)
+- Filename pattern to simplify uploading cloud storage data for a task (<https://github.com/opencv/cvat/pull/5498>, <https://github.com/opencv/cvat/pull/5525>)
 - \[SDK\] Configuration setting to change the dataset cache directory
   (<https://github.com/opencv/cvat/pull/5535>)
 - \[SDK\] Class to represent a project as a PyTorch dataset
@@ -19,6 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The Docker Compose files now use the Compose Specification version
   of the format. This version is supported by Docker Compose 1.27.0+
   (<https://github.com/opencv/cvat/pull/5524>).
+- \[SDK\] The `resource_type` args now have the default value of `local` in task creation functions.
+  The corresponding arguments are keyword-only now.
+  (<https://github.com/opencv/cvat/pull/5502>)
 
 ### Deprecated
 - TDB
