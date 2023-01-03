@@ -182,8 +182,8 @@ button.cvat-predictor-button {
 
 .cvat-player-filename-wrapper {
     max-width: $grid-unit-size * 30;
-    max-height: 27px;
-    line-height: 27px;
+    max-height: $grid-unit-size * 3;
+    line-height: $grid-unit-size * 3;
     overflow: hidden;
     text-overflow: ellipsis;
     user-select: none;

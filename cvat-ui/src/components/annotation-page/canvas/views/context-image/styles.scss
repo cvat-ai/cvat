@@ -54,7 +54,7 @@
     }
 
     &:hover {
-        > .cvat-context-image-header  > .cvat-context-image-setup-button {
+        > .cvat-context-image-header > .cvat-context-image-setup-button {
             opacity: 1;
         }
     }
@@ -66,7 +66,7 @@
     top: 0;
     left: 0;
     z-index: 1000;
-    background: rgba(255,255,255,0.25);
+    background: rgba(255, 255, 255, 0.25);
     position: absolute;
     display: flex;
     justify-content: space-around;
