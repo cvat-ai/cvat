@@ -41,7 +41,7 @@ class TestGetCloudStorage:
             ("user", True, True),
         ],
     )
-    def test_sandbox_user_get_coud_storage(
+    def test_sandbox_user_get_cloud_storage(
         self, storage_id, group, is_owner, is_allow, users, cloud_storages
     ):
         org = ""
@@ -73,7 +73,7 @@ class TestGetCloudStorage:
             ("worker", False, False),
         ],
     )
-    def test_org_user_get_coud_storage(
+    def test_org_user_get_cloud_storage(
         self, org_id, storage_id, role, is_owner, is_allow, find_users, cloud_storages
     ):
         cloud_storage = cloud_storages[storage_id]
@@ -161,7 +161,7 @@ class TestPostCloudStorage:
             ("supervisor", False),
         ],
     )
-    def test_org_user_create_coud_storage(self, org_id, role, is_allow, find_users):
+    def test_org_user_create_cloud_storage(self, org_id, role, is_allow, find_users):
         username = find_users(role=role, org=org_id)[0]["username"]
 
         if is_allow:
