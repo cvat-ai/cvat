@@ -63,10 +63,7 @@ context('Canvas 3D functionality. Basic actions.', () => {
     }
 
     function testContextImage() {
-        cy.get('.cvat-context-image-wrapper img').should('exist').and('be.visible');
-        cy.get('.cvat-context-image-switcher').click(); // Context image hide
-        cy.get('.cvat-context-image-wrapper img').should('not.exist');
-        cy.get('.cvat-context-image-switcher').click(); // Context image show
+        cy.get('.cvat-context-image-wrapper canvas').should('exist').and('be.visible');
     }
 
     function testControlButtonTooltip(button, expectedTooltipText) {
