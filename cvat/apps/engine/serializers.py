@@ -408,13 +408,16 @@ class DataSerializer(WriteOnceMixin, serializers.ModelSerializer):
     copy_data = serializers.BooleanField(default=False)
     cloud_storage_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
     filename_pattern = serializers.CharField(allow_null=True, required=False)
-    job_file_mapping = JobFileMapping(required=False)
+    job_file_mapping = JobFileMapping(required=False, write_only=True)
 
     class Meta:
         model = models.Data
         fields = ('chunk_size', 'size', 'image_quality', 'start_frame', 'stop_frame', 'frame_filter',
             'compressed_chunk_type', 'original_chunk_type', 'client_files', 'server_files', 'remote_files', 'use_zip_chunks',
-            'cloud_storage_id', 'use_cache', 'copy_data', 'storage_method', 'storage', 'sorting_method', 'filename_pattern', 'job_file_mapping')
+            'cloud_storage_id', 'use_cache', 'copy_data', 'storage_method', 'storage', 'sorting_method', 'filename_pattern',
+            'job_file_mapping', 'custom_segments')
+
+        read_only_fields = ('custom_segments', )
 
     # pylint: disable=no-self-use
     def validate_frame_filter(self, value):
@@ -449,16 +452,15 @@ class DataSerializer(WriteOnceMixin, serializers.ModelSerializer):
             and attrs['start_frame'] > attrs['stop_frame']:
             raise serializers.ValidationError('Stop frame must be more or equal start frame')
 
-        job_file_incompatible_fields = {'filename_pattern', 'sorting_method'}
-        if 'job_file_mapping' in attrs and attrs.keys() & job_file_incompatible_fields:
-            raise serializers.ValidationError(
-                f"'job_file_mapping' can't be used together with {job_file_incompatible_fields}"
-            )
-
         return attrs
 
     def create(self, validated_data):
+        custom_segments = validated_data.pop('job_file_mapping', None)
+        if custom_segments:
+            validated_data['custom_segments'] = True
+
         files = self._pop_data(validated_data)
+
         db_data = models.Data.objects.create(**validated_data)
         db_data.make_dirs()
 
@@ -515,6 +517,7 @@ class StorageSerializer(serializers.ModelSerializer):
 class TaskReadSerializer(serializers.ModelSerializer):
     labels = LabelSerializer(many=True, source='get_labels')
     segments = SegmentSerializer(many=True, source='segment_set', read_only=True)
+    custom_segments = serializers.ReadOnlyField(source='data.custom_segments', read_only=True)
     data_chunk_size = serializers.ReadOnlyField(source='data.chunk_size', required=False)
     data_compressed_chunk_type = serializers.ReadOnlyField(source='data.compressed_chunk_type', required=False)
     data_original_chunk_type = serializers.ReadOnlyField(source='data.original_chunk_type', required=False)
@@ -534,7 +537,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
             'bug_tracker', 'created_date', 'updated_date', 'overlap', 'segment_size',
             'status', 'labels', 'segments', 'data_chunk_size', 'data_compressed_chunk_type',
             'data_original_chunk_type', 'size', 'image_quality', 'data', 'dimension',
-            'subset', 'organization', 'target_storage', 'source_storage',
+            'subset', 'organization', 'target_storage', 'source_storage', 'custom_segments',
         )
         read_only_fields = fields
         extra_kwargs = {

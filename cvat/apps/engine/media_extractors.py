@@ -153,7 +153,7 @@ class ImageListReader(IMediaReader):
         if not source_path:
             raise Exception('No image found')
 
-        if stop is None:
+        if not stop:
             stop = len(source_path)
         else:
             stop = min(len(source_path), stop + 1)

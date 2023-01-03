@@ -205,6 +205,12 @@ class Data(models.Model):
     sorting_method = models.CharField(max_length=15, choices=SortingMethod.choices(), default=SortingMethod.LEXICOGRAPHICAL)
     deleted_frames = IntArrayField(store_sorted=True, unique_values=True)
 
+    # Avoid storing whole mapping here, its redundant
+    custom_segments = models.BooleanField(default=False)
+    """
+    Determines if files were specified for the task segments explicitly.
+    """
+
     class Meta:
         default_permissions = ()
 
@@ -344,6 +350,7 @@ class Task(models.Model):
     updated_date = models.DateTimeField(auto_now=True)
     overlap = models.PositiveIntegerField(null=True)
     # Zero means that there are no limits (default)
+    # Note that the files can be split into jobs in a custom way in this case
     segment_size = models.PositiveIntegerField(default=0)
     status = models.CharField(max_length=32, choices=StatusChoice.choices(),
                               default=StatusChoice.ANNOTATION)

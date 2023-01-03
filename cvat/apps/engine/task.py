@@ -144,6 +144,7 @@ def _save_task_to_db(db_task: models.Task, *, job_file_mapping: Optional[JobFile
     )
     db_task.segment_size = segment_size
     db_task.overlap = overlap
+    db_task.data.custom_segments = job_file_mapping is not None
 
     for segment_idx, (start_frame, stop_frame) in enumerate(segments):
         slogger.glob.info("New segment for task #{}: idx = {}, start_frame = {}, \
@@ -272,7 +273,7 @@ def _validate_job_file_mapping(
     elif not job_file_mapping or not list(itertools.chain.from_iterable(job_file_mapping)):
         raise ValidationError("job_file_mapping cannot be empty")
 
-    if db_task.segment_size != 0:
+    if db_task.segment_size:
         raise ValidationError("job_file_mapping cannot be used with segment_size")
 
     if (data.get('sorting_method', db_task.data.sorting_method)
@@ -283,10 +284,10 @@ def _validate_job_file_mapping(
     if data.get('start_frame', db_task.data.start_frame):
         raise ValidationError("job_file_mapping cannot be used with start_frame")
 
-    if data.get('stop_frame', db_task.data.stop_frame) is not None:
+    if data.get('stop_frame', db_task.data.stop_frame):
         raise ValidationError("job_file_mapping cannot be used with stop_frame")
 
-    if data.get('frame_filer', db_task.data.frame_filter):
+    if data.get('frame_filter', db_task.data.frame_filter):
         raise ValidationError("job_file_mapping cannot be used with frame_filter")
 
     if db_task.data.get_frame_step() != 1:
@@ -417,11 +418,11 @@ def _create_thread(
 
     slogger.glob.info("create task #{}".format(db_task.id))
 
+    job_file_mapping = _validate_job_file_mapping(db_task, data)
+
     db_data = db_task.data
     upload_dir = db_data.get_upload_dirname() if db_data.storage != models.StorageChoice.SHARE else settings.SHARE_ROOT
     is_data_in_cloud = db_data.storage == models.StorageChoice.CLOUD_STORAGE
-
-    job_file_mapping = _validate_job_file_mapping(db_task, data)
 
     if data['remote_files'] and not isDatasetImport:
         data['remote_files'] = _download_data(data['remote_files'], upload_dir)
@@ -476,6 +477,9 @@ def _create_thread(
     # count and validate uploaded files
     media = _count_files(data)
     media, task_mode = _validate_data(media, manifest_files)
+
+    if job_file_mapping is not None and task_mode != 'annotation':
+        raise ValidationError("job_file_mapping can't be used with sequence-based data like videos")
 
     if data['server_files']:
         if db_data.storage == models.StorageChoice.LOCAL:
@@ -593,11 +597,7 @@ def _create_thread(
             and db_data.storage_method == models.StorageMethodChoice.CACHE
             and db_data.sorting_method in {models.SortingMethod.RANDOM, models.SortingMethod.PREDEFINED}
             and validate_dimension.dimension != models.DimensionType.DIM_3D
-        ) or (
-            not isBackupRestore
-            and not isDatasetImport
-            and job_file_mapping
-        )
+        ) or job_file_mapping
     ):
         sorted_media_files = []
 
