@@ -14,8 +14,8 @@ export enum BlockType {
 }
 
 export enum DimensionType {
-    DIM_3D = '3d',
-    DIM_2D = '2d',
+    DIMENSION_3D = '3d',
+    DIMENSION_2D = '2d',
 }
 
 export function decodeZip(block: any, start: number, end: number, dimension: any): Promise<any> {
@@ -53,7 +53,7 @@ export function decodeZip(block: any, start: number, end: number, dimension: any
                 start,
                 end,
                 dimension,
-                dimension2D: DimensionType.DIM_2D,
+                dimension2D: DimensionType.DIMENSION_2D,
             });
         });
     });
@@ -106,7 +106,7 @@ export class FrameProvider {
         cachedBlockCount: number,
         decodedBlocksCacheSize = 5,
         maxWorkerThreadCount = 2,
-        dimension: DimensionType = DimensionType.DIM_2D,
+        dimension: DimensionType = DimensionType.DIMENSION_2D,
     ) {
         this.mutex = new Mutex();
         this.blocksRanges = [];
@@ -144,7 +144,9 @@ export class FrameProvider {
     }
 
     isChunkCached(start: number, end: number): boolean {
-        return this.blocksRanges.includes(`${start}:${end}`);
+        // todo: always returns false because this.blocksRanges is Array, not dictionary
+        // but if try to correct other errors happens, need to debug..
+        return `${start}:${end}` in this.blocksRanges;
     }
 
     /* This method removes extra data from a cache when memory overflow */
@@ -315,8 +317,9 @@ export class FrameProvider {
                         Math.floor(height / scaleFactor),
                     );
 
-                    if (this.blocksAreBeingDecoded[`${start}:${end}`].resolveCallback) {
-                        this.blocksAreBeingDecoded[`${start}:${end}`].resolveCallback(index);
+                    const { resolveCallback } = this.blocksAreBeingDecoded[`${start}:${end}`];
+                    if (resolveCallback) {
+                        resolveCallback(index);
                     }
 
                     if (index in this.promisedFrames) {
@@ -387,8 +390,9 @@ export class FrameProvider {
                 worker.onmessage = async (event) => {
                     this.frames[event.data.index] = event.data.data;
 
-                    if (this.blocksAreBeingDecoded[`${start}:${end}`].resolveCallback) {
-                        this.blocksAreBeingDecoded[`${start}:${end}`].resolveCallback(event.data.index);
+                    const { resolveCallback } = this.blocksAreBeingDecoded[`${start}:${end}`];
+                    if (resolveCallback) {
+                        resolveCallback(event.data.index);
                     }
 
                     if (event.data.index in this.promisedFrames) {
@@ -425,7 +429,7 @@ export class FrameProvider {
                     start,
                     end,
                     dimension: this.dimension,
-                    dimension2D: DimensionType.DIM_2D,
+                    dimension2D: DimensionType.DIMENSION_2D,
                 });
             }
         } finally {
