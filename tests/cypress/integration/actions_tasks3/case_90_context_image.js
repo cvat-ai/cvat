@@ -12,15 +12,6 @@ context('Context images for 2D tasks.', () => {
     const attrName = `Attr for ${labelName}`;
     const textDefaultValue = 'color';
     const pathToArchive = `../../${__dirname}/assets/case_90/case_90_context_image.zip`;
-    const createRectangleShape2Points = {
-        points: 'By 2 Points',
-        type: 'Shape',
-        labelName,
-        firstX: 250,
-        firstY: 350,
-        secondX: 350,
-        secondY: 450,
-    };
 
     before(() => {
         cy.visit('auth/login');
