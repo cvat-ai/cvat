@@ -19,8 +19,22 @@ from cvat_sdk.core.utils import atomic_writer
 
 
 class UpdatePolicy(Enum):
+    """
+    Defines policies for when the local cache is updated from the CVAT server.
+    """
+
     IF_MISSING_OR_STALE = auto()
+    """
+    Update the cache whenever cached data is missing or the server has a newer version.
+    """
+
     NEVER = auto()
+    """
+    Never update the cache. If an operation requires data that is not cached,
+    it will fail.
+
+    No network access will be performed if this policy is used.
+    """
 
 
 _ModelType = TypeVar("_ModelType", bound=OpenApiModel)

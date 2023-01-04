@@ -34,7 +34,7 @@ class TaskVisionDataset(torchvision.datasets.VisionDataset):
     * target is a `Target` object containing annotations for the frame.
 
     This class caches all data and annotations for the task on the local file system
-    during construction. If the task is updated on the server, the cache is updated.
+    during construction.
 
     Limitations:
 
@@ -71,6 +71,8 @@ class TaskVisionDataset(torchvision.datasets.VisionDataset):
         will map each label ID to a distinct integer in the range [0, `num_labels`), where
         `num_labels` is the number of labels defined in the task. This mapping will be
         generally unpredictable, but consistent for a given task.
+
+        `update_policy` determines when and if the local cache will be updated.
         """
 
         self._logger = client.logger

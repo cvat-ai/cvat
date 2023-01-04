@@ -62,6 +62,8 @@ class ProjectVisionDataset(torchvision.datasets.VisionDataset):
 
         * If `include_subsets` is set to a container, then tasks whose subset is
           not a member of this container will be excluded.
+
+        `update_policy` determines when and if the local cache will be updated.
         """
 
         self._logger = client.logger
