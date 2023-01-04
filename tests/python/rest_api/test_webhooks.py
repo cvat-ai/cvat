@@ -627,7 +627,9 @@ class TestGetListWebhooks:
             )
         )
 
-        expected_response = [w for w in webhooks if w["type"] == "project" and w["project_id"] == pid]
+        expected_response = [
+            w for w in webhooks if w["type"] == "project" and w["project_id"] == pid
+        ]
         filter_val = '{"and":[{"==":[{"var":"project_id"},%s]}]}' % pid
 
         response = get_method(username, "webhooks", filter=filter_val)
