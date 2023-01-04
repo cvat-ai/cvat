@@ -87,8 +87,6 @@ Follow the Docker manual and configure the directory that you want to use as a s
 After that, it should be possible to use this directory as a CVAT share:
 
 ```yaml
-version: '3.3'
-
 services:
   cvat:
     volumes:

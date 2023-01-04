@@ -448,8 +448,6 @@ To do that you can mount it to CVAT docker container. Example of
 docker-compose.override.yml for this purpose:
 
 ```yml
-version: '3.3'
-
 services:
   cvat_server:
     volumes:
