@@ -143,7 +143,7 @@ To add an attribute, do the following:
      the drop-down list will have a blank value.<br>
      This is useful for cases where the attribute of the object cannot be clarified:
 
-   - ![Undefined value](/images/undefined_value.jpg))
+   - ![Undefined value](/images/undefined_value.jpg)
 
    - `Radio` enables the selection of one option from several options.
    - `Checkbox` enables the selection of multiple options.
