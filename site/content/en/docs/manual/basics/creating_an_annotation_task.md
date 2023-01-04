@@ -143,7 +143,7 @@ To add an attribute, do the following:
      the drop-down list will have a blank value.<br>
      This is useful for cases where the attribute of the object cannot be clarified:
 
-     ![Undefined value](/images/undefined_value.jpg))
+   - ![Undefined value](/images/undefined_value.jpg))
 
    - `Radio` enables the selection of one option from several options.
    - `Checkbox` enables the selection of multiple options.
@@ -194,8 +194,6 @@ To create a 3D task, you must prepare an archive with one of the following direc
 
 {{< tabpane >}}
 {{< tab header="Velodyne" >}}
-VELODYNE FORMAT
-Structure:
   VELODYNE FORMAT
     Structure:
       velodyne_points/
@@ -207,7 +205,7 @@ Structure:
         image_01.png
 {{< /tab >}}
 {{< tab header="3D pointcloud" >}}
-    3D POINTCLOUD DATA FORMAT
+   3D POINTCLOUD DATA FORMAT
     Structure:
       pointcloud/
         00001.pcd
@@ -222,6 +220,7 @@ Structure:
       data/
         image.pcd
         image.png
+
 {{< /tab >}}
 {{< tab header="3D Option 2" >}}
     3D, DEFAULT DATAFORMAT Option 2
@@ -231,6 +230,7 @@ Structure:
             image_1.pcd
             context_1.png # or any other name
             context_2.jpg
+
 
 {{< /tab >}}
 {{< /tabpane >}}
