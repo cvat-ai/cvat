@@ -3,7 +3,8 @@
 //
 // SPDX-License-Identifier: MIT
 
-import JSZip from 'jszip';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const JSZip = require('jszip');
 
 onmessage = (e) => {
     const zip = new JSZip();
@@ -20,7 +21,6 @@ onmessage = (e) => {
                     _zip.file(relativePath)
                         .async('blob')
                         .then((fileData) => {
-                            // eslint-disable-next-line no-restricted-globals
                             if (dimension === dimension2D) {
                                 createImageBitmap(fileData).then((img) => {
                                     postMessage({

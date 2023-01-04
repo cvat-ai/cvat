@@ -5,7 +5,7 @@
 
 import { Mutex } from 'async-mutex';
 import { MP4Reader, Bytestream } from './3rdparty/mp4';
-import * as ZipDecoder from './unzip_imgs.worker';
+import ZipDecoder from './unzip_imgs.worker';
 import H264Decoder from './3rdparty/Decoder.worker';
 
 export enum BlockType {
