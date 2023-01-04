@@ -32,7 +32,6 @@ To enable authentication, do the following:
    1. Create `docker-compose.override.yml` with the following code:
 
    ```yaml
-   version: '3.3'
    services:
      cvat_server:
        environment:
@@ -62,7 +61,6 @@ There are 2 basic steps to enable Github account authentication.
    1. Create `docker-compose.override.yml` with the following code:
 
    ```yaml
-   version: '3.3'
    services:
      cvat_server:
        environment:
