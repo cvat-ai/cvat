@@ -29,14 +29,17 @@ Cypress.Commands.add('create3DCuboid', (cuboidCreationParams) => {
 });
 
 Cypress.Commands.add('customScreenshot', (element, screenshotName) => {
-    let getEl;
-    let padding;
-    if (element.includes('perspective')) {
-        getEl = cy.get(element);
-        padding = -130;
-    } else {
-        getEl = cy.get(element).find('.cvat-canvas3d-fullsize');
-        padding = -40;
-    }
-    getEl.screenshot(screenshotName, { padding });
+    cy.get(element).then(([$el]) => {
+        const rect = $el.getBoundingClientRect();
+        cy.wrap(rect);
+    }).then((rect) => {
+        cy.log(rect);
+        cy.screenshot(screenshotName, {
+            overwrite: true,
+            capture: 'fullPage',
+            clip: {
+                x: rect.x, y: rect.y, width: rect.width, height: rect.height,
+            },
+        });
+    });
 });

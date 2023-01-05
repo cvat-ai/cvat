@@ -41,7 +41,7 @@ context('Canvas 3D functionality. Basic actions.', () => {
     function testPerspectiveChangeOnWheel(screenshotNameBefore, screenshotNameAfter) {
         cy.customScreenshot('.cvat-canvas3d-perspective', screenshotNameBefore);
         for (let i = 0; i < 3; i++) {
-            cy.get('.cvat-canvas3d-perspective').trigger('wheel', { deltaY: -50 });
+            cy.get('.cvat-canvas3d-perspective canvas').trigger('wheel', { deltaY: -50 });
         }
         cy.customScreenshot('.cvat-canvas3d-perspective', screenshotNameAfter);
         cy.compareImagesAndCheckResult(
@@ -54,7 +54,7 @@ context('Canvas 3D functionality. Basic actions.', () => {
         cy.customScreenshot(element, screenshotNameBefore);
         cy.get(element).within(() => {
             for (let i = 0; i < 3; i++) {
-                cy.get('.cvat-canvas3d-fullsize').trigger('wheel', { deltaY: -100 });
+                cy.get('.cvat-canvas3d-fullsize canvas').trigger('wheel', { deltaY: -100 });
             }
         });
 
