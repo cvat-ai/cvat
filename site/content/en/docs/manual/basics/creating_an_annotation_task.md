@@ -138,7 +138,7 @@ To add an attribute, do the following:
 2. In the **Name** field enter the name of the attribute.
 3. From the drop-down, select way to display the attribute in the **Objects menu**:
 
-   - `Select` endbles a drop-down list, from which you can select an attibute. <br>If in
+   - `Select` enables a drop-down list, from which you can select an attibute. <br>If in
      the **Attribute value** field you add `__undefined__`,
      the drop-down list will have a blank value.<br>
      This is useful for cases where the attribute of the object cannot be clarified:
@@ -166,7 +166,7 @@ There are several ways to upload files:
 | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | My computer          | Use this option to select files from your laptop or PC. <br> To select file: <br>1. Click on the **Select files** field: <br>![Select files](/images/select_files.jpg). <br> 2. Select files to upload.                                                                                        |
 | Connected file share | **Advanced option**. <br>Upload files from a local or cloud shared folder. <br>**Note**, that you need to mount a fileshare first. <br>For more information, see [Share path](/docs/administration/basics/installation/#share-path)                                                            |
-| Remote source        | Enter a list of URLs (one per line) in the field. <br> **Advanced option**. <br>If you want a `manifest.json` file, select the **Use cache** in [Advanced configuration](#advanced-configuration). <br> For more information, see [Dataset manifest.](/docs/manual/advanced/dataset_manifest/) |
+| Remote source        | Enter a list of URLs (one per line) in the field.|
 | Cloud Storage        | **Advanced option**. <br>To upload files from cloud storage, type the cloud storage name, choose the manifest file, and select the required files. <br> For more information, see [Attach cloud storage](/docs/manual/basics/attach-cloud-storage/)                                            |
 
 <!--lint enable maximum-line-length-->
@@ -175,7 +175,7 @@ There are several ways to upload files:
 
 The **Raw** is a way of working with labels for an advanced user.
 
-It is usefule when you need to copy labels from one independent task to another.
+It is useful when you need to copy labels from one independent task to another.
 
 > **Note:** Be careful with changing the raw specification of an existing task/project.
 > Removing any "id" properties will lead to losing existing annotations.
