@@ -29,10 +29,7 @@ Cypress.Commands.add('create3DCuboid', (cuboidCreationParams) => {
 });
 
 Cypress.Commands.add('customScreenshot', (element, screenshotName) => {
-    cy.get(element).then(([$el]) => {
-        const rect = $el.getBoundingClientRect();
-        cy.wrap(rect);
-    }).then((rect) => {
+    cy.get(element).then(([$el]) => $el.getBoundingClientRect()).then((rect) => {
         cy.log(rect);
         cy.screenshot(screenshotName, {
             overwrite: true,
