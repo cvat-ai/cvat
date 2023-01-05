@@ -75,7 +75,7 @@
     justify-content: space-around;
     align-items: center;
 
-    .cvat-context-image-switcher {
+    .cvat-context-image-gallery {
         width: 80%;
         max-height: 80%;
         position: relative;
@@ -86,8 +86,8 @@
         overflow: hidden;
         overflow-y: auto;
 
-        .cvat-context-image-switcher-item {
-            &.cvat-context-image-switcher-item-current {
+        .cvat-context-image-gallery-item {
+            &.cvat-context-image-gallery-item-current {
                 opacity: 1;
             }
 
@@ -98,6 +98,22 @@
             padding: $grid-unit-size;
             opacity: 0.6;
             width: 25%;
+        }
+
+        .cvat-context-image-gallery-header {
+            text-align: center;
+
+            .cvat-context-image-close-button {
+                &:hover {
+                    opacity: 0.9;
+                }
+
+                transition: all 200ms;
+                opacity: 0.6;
+                position: absolute;
+                top: $grid-unit-size;
+                right: $grid-unit-size;
+            }
         }
     }
 }

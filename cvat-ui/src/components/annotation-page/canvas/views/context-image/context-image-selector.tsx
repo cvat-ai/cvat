@@ -5,6 +5,8 @@
 import React, { useRef, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
+import Text from 'antd/lib/typography/Text';
+import { CloseOutlined } from '@ant-design/icons';
 
 interface Props {
     images: ImageBitmap[];
@@ -33,7 +35,7 @@ function CanvasWithRef({
         <canvas
             ref={ref}
             onClick={onClick}
-            className={(isActive ? ['cvat-context-image-switcher-item cvat-context-image-switcher-item-current'] : ['cvat-context-image-switcher-item']).join(' ')}
+            className={(isActive ? ['cvat-context-image-gallery-item cvat-context-image-gallery-item-current'] : ['cvat-context-image-gallery-item']).join(' ')}
         />
     );
 }
@@ -45,7 +47,13 @@ function ContextImageSelector(props: Props): React.ReactPortal {
 
     return ReactDOM.createPortal((
         <div className='cvat-context-image-overlay'>
-            <div className='cvat-context-image-switcher'>
+            <div className='cvat-context-image-gallery'>
+                <div className='cvat-context-image-gallery-header'>
+                    <Text>
+                        Click the image to display it as a context image
+                    </Text>
+                    <CloseOutlined className='cvat-context-image-close-button' onClick={onClose} />
+                </div>
                 { images.map((image: ImageBitmap, i: number) => (
                     <CanvasWithRef
                         image={image}
