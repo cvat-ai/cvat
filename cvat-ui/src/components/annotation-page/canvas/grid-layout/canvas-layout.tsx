@@ -83,7 +83,17 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
         return defaultLayout.CANVAS_3D_THREE_PLUS_RELATED;
     }, [type, relatedFiles]);
 
+    const onUpdateRawHeight = (): void => {
+        const container = window.document.getElementsByClassName('cvat-annotation-layout-content')[0];
+        if (container) {
+            const { height } = container.getBoundingClientRect();
+            // https://github.com/react-grid-layout/react-grid-layout/issues/628#issuecomment-1228453084
+            setRowHeight(Math.floor((height - MARGIN * (NUM_OF_ROWS)) / NUM_OF_ROWS));
+        }
+    };
+
     const onLayoutChange = useCallback(() => {
+        onUpdateRawHeight();
         if (canvasInstance) {
             canvasInstance.fitCanvas();
             canvasInstance.fit();
@@ -91,13 +101,6 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
     }, [canvasInstance]);
 
     useEffect(() => {
-        const container = window.document.getElementsByClassName('cvat-annotation-layout-content')[0];
-        if (container) {
-            const { height } = container.getBoundingClientRect();
-            // https://github.com/react-grid-layout/react-grid-layout/issues/628#issuecomment-1228453084
-            setRowHeight(Math.floor((height - MARGIN * (NUM_OF_ROWS)) / NUM_OF_ROWS));
-        }
-
         setTimeout(() => {
             if (canvasInstance) {
                 canvasInstance.fitCanvas();
@@ -107,7 +110,11 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
     }, []);
 
     useEffect(() => {
-        const onResize = onLayoutChange;
+        const onResize = (): void => {
+            onLayoutChange();
+            onUpdateRawHeight();
+        };
+
         window.addEventListener('resize', onResize);
         return () => {
             window.removeEventListener('resize', onResize);
