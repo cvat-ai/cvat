@@ -12,7 +12,7 @@ import torchvision.datasets
 import cvat_sdk.core
 import cvat_sdk.core.exceptions
 import cvat_sdk.models as models
-from cvat_sdk.pytorch.caching import CACHE_MANAGER_CLASSES, UpdatePolicy
+from cvat_sdk.pytorch.caching import UpdatePolicy, make_cache_manager
 from cvat_sdk.pytorch.task_dataset import TaskVisionDataset
 
 
@@ -68,7 +68,7 @@ class ProjectVisionDataset(torchvision.datasets.VisionDataset):
 
         self._logger = client.logger
 
-        cache_manager = CACHE_MANAGER_CLASSES[update_policy](client)
+        cache_manager = make_cache_manager(client, update_policy)
         project = cache_manager.retrieve_project(project_id)
 
         super().__init__(

@@ -5,14 +5,14 @@
 import base64
 import json
 import shutil
+from abc import ABCMeta, abstractmethod
 from enum import Enum, auto
 from pathlib import Path
 from typing import Callable, Mapping, Type, TypeVar
 
-import cvat_sdk.core
-import cvat_sdk.core.exceptions
 import cvat_sdk.models as models
 from cvat_sdk.api_client.model_utils import OpenApiModel, to_json
+from cvat_sdk.core.client import Client
 from cvat_sdk.core.proxies.projects import Project
 from cvat_sdk.core.proxies.tasks import Task
 from cvat_sdk.core.utils import atomic_writer
@@ -40,16 +40,17 @@ class UpdatePolicy(Enum):
 _ModelType = TypeVar("_ModelType", bound=OpenApiModel)
 
 
-class CacheManager:
-    def __init__(self, client: cvat_sdk.core.Client) -> None:
+class CacheManager(metaclass=ABCMeta):
+    def __init__(self, client: Client) -> None:
         self._client = client
         self._logger = client.logger
 
+        self._server_dir = client.config.cache_dir / f"servers/{self.server_dir_name}"
+
+    @property
+    def server_dir_name(self) -> str:
         # Base64-encode the name to avoid FS-unsafe characters (like slashes)
-        server_dir_name = (
-            base64.urlsafe_b64encode(client.api_map.host.encode()).rstrip(b"=").decode()
-        )
-        self._server_dir = client.config.cache_dir / f"servers/{server_dir_name}"
+        return base64.urlsafe_b64encode(self._client.api_map.host.encode()).rstrip(b"=").decode()
 
     def task_dir(self, task_id: int) -> Path:
         return self._server_dir / f"tasks/{task_id}"
@@ -75,24 +76,28 @@ class CacheManager:
             json.dump(to_json(model), f, indent=4)
             print(file=f)  # add final newline
 
+    @abstractmethod
     def retrieve_task(self, task_id: int) -> Task:
-        raise NotImplementedError
+        ...
 
+    @abstractmethod
     def ensure_task_model(
         self,
         task_id: int,
         filename: str,
         model_type: Type[_ModelType],
-        download: Callable[[], _ModelType],
+        downloader: Callable[[], _ModelType],
         model_description: str,
     ) -> _ModelType:
-        raise NotImplementedError
+        ...
 
+    @abstractmethod
     def ensure_chunk(self, task: Task, chunk_index: int) -> None:
-        raise NotImplementedError
+        ...
 
+    @abstractmethod
     def retrieve_project(self, project_id: int) -> Project:
-        raise NotImplementedError
+        ...
 
 
 class _CacheManagerOnline(CacheManager):
@@ -110,7 +115,7 @@ class _CacheManagerOnline(CacheManager):
         try:
             saved_task = self.load_model(task_json_path, models.TaskRead)
         except Exception:
-            self._logger.info("Task is not yet cached or the cache is corrupted")
+            self._logger.info(f"Task {task.id} is not yet cached or the cache is corrupted")
 
             # If the cache was corrupted, the directory might already be there; clear it.
             if task_dir.exists():
@@ -118,7 +123,7 @@ class _CacheManagerOnline(CacheManager):
         else:
             if saved_task.updated_date < task.updated_date:
                 self._logger.info(
-                    "Task has been updated on the server since it was cached; purging the cache"
+                    f"Task {task.id} has been updated on the server since it was cached; purging the cache"
                 )
                 shutil.rmtree(task_dir)
 
@@ -130,7 +135,7 @@ class _CacheManagerOnline(CacheManager):
         task_id: int,
         filename: str,
         model_type: Type[_ModelType],
-        download: Callable[[], _ModelType],
+        downloader: Callable[[], _ModelType],
         model_description: str,
     ) -> _ModelType:
         path = self.task_dir(task_id) / filename
@@ -145,7 +150,7 @@ class _CacheManagerOnline(CacheManager):
             self._logger.warning(f"Failed to load {model_description} from cache", exc_info=True)
 
         self._logger.info(f"Downloading {model_description}...")
-        model = download()
+        model = downloader()
         self._logger.info(f"Downloaded {model_description}")
 
         self.save_model(path, model)
@@ -188,7 +193,7 @@ class _CacheManagerOffline(CacheManager):
         task_id: int,
         filename: str,
         model_type: Type[_ModelType],
-        download: Callable[[], _ModelType],
+        downloader: Callable[[], _ModelType],
         model_description: str,
     ) -> _ModelType:
         self._logger.info(f"Loading {model_description} from cache...")
@@ -207,7 +212,11 @@ class _CacheManagerOffline(CacheManager):
         )
 
 
-CACHE_MANAGER_CLASSES: Mapping[UpdatePolicy, Type[CacheManager]] = {
+_CACHE_MANAGER_CLASSES: Mapping[UpdatePolicy, Type[CacheManager]] = {
     UpdatePolicy.IF_MISSING_OR_STALE: _CacheManagerOnline,
     UpdatePolicy.NEVER: _CacheManagerOffline,
 }
+
+
+def make_cache_manager(client: Client, update_policy: UpdatePolicy) -> CacheManager:
+    return _CACHE_MANAGER_CLASSES[update_policy](client)

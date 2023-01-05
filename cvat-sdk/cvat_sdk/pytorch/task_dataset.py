@@ -15,7 +15,7 @@ import torchvision.datasets
 import cvat_sdk.core
 import cvat_sdk.core.exceptions
 import cvat_sdk.models as models
-from cvat_sdk.pytorch.caching import CACHE_MANAGER_CLASSES, UpdatePolicy
+from cvat_sdk.pytorch.caching import UpdatePolicy, make_cache_manager
 from cvat_sdk.pytorch.common import FrameAnnotations, Target, UnsupportedDatasetError
 
 _NUM_DOWNLOAD_THREADS = 4
@@ -77,7 +77,7 @@ class TaskVisionDataset(torchvision.datasets.VisionDataset):
 
         self._logger = client.logger
 
-        cache_manager = CACHE_MANAGER_CLASSES[update_policy](client)
+        cache_manager = make_cache_manager(client, update_policy)
         self._task = cache_manager.retrieve_task(task_id)
 
         if not self._task.size or not self._task.data_chunk_size:
