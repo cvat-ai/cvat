@@ -27,6 +27,7 @@ function ContextImage(props: Props): JSX.Element {
     const frameIndex = frame + (offset[0] || 0);
 
     const [contextImageData, setContextImageData] = useState<ImageBitmap[]>([]);
+    const [fetching, setFetching] = useState<boolean>(false);
     const [contextImageOffset, setContextImageOffset] = useState<number>(
         Math.min(offset[1] || 0, relatedFiles),
     );
@@ -37,6 +38,7 @@ function ContextImage(props: Props): JSX.Element {
     useEffect(() => {
         let unmounted = false;
         const promise = job.frames.contextImage(frameIndex);
+        setFetching(true);
         promise.then((imageBitmaps: ImageBitmap[]) => {
             if (!unmounted) {
                 setContextImageData(imageBitmaps);
@@ -48,6 +50,10 @@ function ContextImage(props: Props): JSX.Element {
                     message: `Could not fetch context images. Frame: ${frameIndex}`,
                     description: error.toString(),
                 });
+            }
+        }).finally(() => {
+            if (!unmounted) {
+                setFetching(false);
             }
         });
 
@@ -61,7 +67,7 @@ function ContextImage(props: Props): JSX.Element {
         if (canvasRef.current) {
             const image = contextImageData[contextImageOffset];
             const context = canvasRef.current.getContext('2d');
-            if (context) {
+            if (context && image) {
                 canvasRef.current.width = image.width;
                 canvasRef.current.height = image.height;
                 context.drawImage(image, 0, 0);
@@ -83,9 +89,12 @@ function ContextImage(props: Props): JSX.Element {
                     />
                 )}
             </div>
-            { hasError && <Empty /> }
-            { relatedFiles && contextImageData.length === 0 && !hasError && <Spin size='small' /> }
-            { contextImageData.length > 0 && <canvas ref={canvasRef} />}
+            { (hasError || (!fetching && contextImageOffset >= contextImageData.length)) && <Empty /> }
+            { fetching && <Spin size='small' /> }
+            {
+                contextImageOffset < contextImageData.length &&
+                <canvas ref={canvasRef} />
+            }
             { showSelector && (
                 <ContextImageSelector
                     images={contextImageData}

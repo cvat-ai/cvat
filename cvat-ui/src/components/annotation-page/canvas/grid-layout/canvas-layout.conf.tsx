@@ -58,7 +58,7 @@ defaultLayout.CANVAS_THREE_PLUS_RELATED = [
     {
         ...defaultLayout.CANVAS_TWO_RELATED[1],
         viewIndex: '3',
-        offset: [0, 2],
+        offset: [0, 5],
         y: 6,
     },
 ];
