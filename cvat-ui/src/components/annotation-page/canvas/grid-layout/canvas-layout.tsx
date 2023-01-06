@@ -59,6 +59,17 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
     const NUM_OF_ROWS = 12;
     const MARGIN = 8;
     const PADDING = MARGIN / 2;
+    const computeRowHeight = (): number => {
+        const container = window.document.getElementsByClassName('cvat-annotation-header')[0];
+        if (container) {
+            const height = window.innerHeight - container.getBoundingClientRect().bottom;
+            // https://github.com/react-grid-layout/react-grid-layout/issues/628#issuecomment-1228453084
+            return Math.floor((height - MARGIN * (NUM_OF_ROWS)) / NUM_OF_ROWS);
+        }
+
+        return window.innerHeight;
+    };
+
     const [rowHeight, setRowHeight] = useState<number>(Math.floor(window.screen.availHeight / NUM_OF_ROWS));
     const [fullscreenKey, setFullscreenKey] = useState<string>('');
     const relatedFiles = useSelector((state: CombinedState) => state.annotation.player.frame.relatedFiles);
@@ -78,17 +89,7 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
         return defaultLayout.CANVAS_3D_THREE_PLUS_RELATED;
     }, [type, relatedFiles]);
 
-    const onUpdateRawHeight = (): void => {
-        const container = window.document.getElementsByClassName('cvat-annotation-layout-content')[0];
-        if (container) {
-            const { height } = container.getBoundingClientRect();
-            // https://github.com/react-grid-layout/react-grid-layout/issues/628#issuecomment-1228453084
-            setRowHeight(Math.floor((height - MARGIN * (NUM_OF_ROWS)) / NUM_OF_ROWS));
-        }
-    };
-
-    const onLayoutChange = useCallback(() => {
-        onUpdateRawHeight();
+    const fitCanvas = useCallback(() => {
         if (canvasInstance) {
             canvasInstance.fitCanvas();
             canvasInstance.fit();
@@ -96,20 +97,25 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
     }, [canvasInstance]);
 
     useEffect(() => {
-        setTimeout(() => {
-            if (canvasInstance) {
-                canvasInstance.fitCanvas();
-                canvasInstance.fit();
+        const onResize = (): void => {
+            setRowHeight(computeRowHeight());
+            const [el] = window.document.getElementsByClassName('cvat-canvas-grid-root');
+            if (el) {
+                el.addEventListener('transitionend', () => {
+                    fitCanvas();
+                }, { once: true });
             }
-        });
-    }, []);
+        };
+
+        window.addEventListener('resize', onResize);
+        return () => {
+            window.removeEventListener('resize', onResize);
+        };
+    }, [fitCanvas]);
 
     useEffect(() => {
-        window.addEventListener('resize', onLayoutChange);
-        return () => {
-            window.removeEventListener('resize', onLayoutChange);
-        };
-    }, [onLayoutChange]);
+        window.dispatchEvent(new Event('resize'));
+    }, []);
 
     const layoutConfig = getLayout();
     const children = layoutConfig.map((value: ItemLayout) => ViewFabric(value));
@@ -121,21 +127,6 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
         i: typeof (value.viewIndex) !== 'undefined' ? `${value.viewType}_${value.viewIndex}` : `${value.viewType}`,
     }));
 
-    const getChildByIndex = (idx: number): Element | undefined => {
-        const [root] = window.document.getElementsByClassName('cvat-canvas-grid-root');
-        return Array.from(root.children)
-            .filter((_child: Element) => _child.classList.contains('cvat-canvas-grid-item'))[idx];
-    };
-
-    const dispatchResizeOnTransitionEnd = (idx: number): void => {
-        const child = getChildByIndex(idx);
-        if (child) {
-            child.addEventListener('transitionend', () => {
-                window.dispatchEvent(new Event('resize'));
-            }, { once: true });
-        }
-    };
-
     return (
         <Layout.Content>
             <ReactGridLayout
@@ -146,8 +137,8 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
                 className='cvat-canvas-grid-root'
                 rowHeight={rowHeight}
                 layout={layout}
-                onLayoutChange={onLayoutChange}
-                onResize={onLayoutChange}
+                onLayoutChange={fitCanvas}
+                onResize={fitCanvas}
                 resizeHandle={(_: any, ref: React.MutableRefObject<HTMLDivElement>) => (
                     <div ref={ref} className='cvat-grid-item-resize-handler react-resizable-handle' />
                 )}
@@ -158,6 +149,7 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
                     const key = typeof viewIndex !== 'undefined' ? `${viewType}_${viewIndex}` : `${viewType}`;
                     return (
                         <div
+                            style={fullscreenKey === key ? { backgroundColor: canvasBackgroundColor } : {}}
                             className={fullscreenKey === key ?
                                 'cvat-canvas-grid-item cvat-canvas-grid-fullscreen-item' :
                                 'cvat-canvas-grid-item'}
@@ -168,7 +160,7 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
                                 <FullscreenExitOutlined
                                     className='cvat-grid-item-fullscreen-handler'
                                     onClick={() => {
-                                        dispatchResizeOnTransitionEnd(idx);
+                                        window.dispatchEvent(new Event('resize'));
                                         setFullscreenKey('');
                                     }}
                                 />
@@ -176,7 +168,7 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
                                 <FullscreenOutlined
                                     className='cvat-grid-item-fullscreen-handler'
                                     onClick={() => {
-                                        dispatchResizeOnTransitionEnd(idx);
+                                        window.dispatchEvent(new Event('resize'));
                                         setFullscreenKey(key);
                                     }}
                                 />

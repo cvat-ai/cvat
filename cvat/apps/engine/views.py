@@ -662,6 +662,21 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         return response
 
+def find_common_path(paths):
+    reference = paths[0].split(os.path.sep)
+    truncate_from = len(reference)
+
+    if len(paths):
+        for idx, fragment in enumerate(reference):
+            thesame = True
+            for path in paths[1:]:
+                fragments = path.split(os.path.sep)
+                thesame = fragment == fragments[idx] if idx < len(fragments) else False
+                if not thesame:
+                    truncate_from = idx
+                    break
+
+    return os.path.sep.join(reference[0:truncate_from])
 
 class DataChunkGetter:
     def __init__(self, data_type, data_num, data_quality, task_dim):
@@ -730,9 +745,10 @@ class DataChunkGetter:
                             return Response(data='No context image related to the frame',
                                 status=status.HTTP_404_NOT_FOUND)
 
+                        common_path = find_common_path(list(map(lambda x: str(x.path), image.related_files.all())))
                         for i in image.related_files.all():
                             path = os.path.realpath(str(i.path))
-                            name = os.path.relpath(str(i.path), db_data.get_upload_dirname())
+                            name = os.path.relpath(str(i.path), common_path)
                             image = cv2.imread(path)
                             success, result = cv2.imencode('.JPEG', image)
                             if not success:

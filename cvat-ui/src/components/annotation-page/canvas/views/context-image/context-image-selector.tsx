@@ -47,6 +47,8 @@ function ContextImageSelector(props: Props): React.ReactPortal {
         images, offset, onChangeOffset, onClose,
     } = props;
 
+    const keys = Object.keys(images).sort();
+
     return ReactDOM.createPortal((
         <div className='cvat-context-image-overlay'>
             <div className='cvat-context-image-gallery'>
@@ -57,10 +59,10 @@ function ContextImageSelector(props: Props): React.ReactPortal {
                     <CloseOutlined className='cvat-context-image-close-button' onClick={onClose} />
                 </div>
                 <div className='cvat-context-image-gallery-items'>
-                    { Object.entries(images).map(([key, value], i: number) => (
+                    { keys.map((key, i: number) => (
                         <CanvasWithRef
                             name={key}
-                            image={value}
+                            image={images[key]}
                             isActive={offset === i}
                             onClick={() => {
                                 onChangeOffset(i);

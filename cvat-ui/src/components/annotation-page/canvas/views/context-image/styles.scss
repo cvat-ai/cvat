@@ -39,13 +39,16 @@
 
         > span.ant-typography {
             line-height: $grid-unit-size * 4;
+            word-break: break-all;
         }
 
         > .cvat-context-image-setup-button {
             font-size: 16px;
             opacity: 0;
             transition: all 200ms;
-            margin-right: $grid-unit-size;
+            position: absolute;
+            top: $grid-unit-size;
+            right: $grid-unit-size;
         }
     }
 
