@@ -10,7 +10,7 @@ import { useSelector } from 'react-redux';
 import RGL, { WidthProvider } from 'react-grid-layout';
 import PropTypes from 'prop-types';
 import Layout from 'antd/lib/layout';
-import { DragOutlined } from '@ant-design/icons';
+import { DragOutlined, FullscreenExitOutlined, FullscreenOutlined } from '@ant-design/icons';
 
 import { DimensionType, CombinedState } from 'reducers';
 import CanvasWrapperComponent from 'components/annotation-page/canvas/views/canvas2d/canvas-wrapper';
@@ -26,8 +26,7 @@ import defaultLayout, { ItemLayout, ViewType } from './canvas-layout.conf';
 const ReactGridLayout = WidthProvider(RGL);
 
 const ViewFabric = (itemLayout: ItemLayout): JSX.Element => {
-    const { viewType: type, offset, viewIndex } = itemLayout;
-    const key = typeof viewIndex !== 'undefined' ? `${type}_${viewIndex}` : `${type}`;
+    const { viewType: type, offset } = itemLayout;
 
     let component = null;
     switch (type) {
@@ -53,12 +52,7 @@ const ViewFabric = (itemLayout: ItemLayout): JSX.Element => {
             component = <div> Undefined view </div>;
     }
 
-    return (
-        <div className='cvat-canvas-grid-item' key={key}>
-            <DragOutlined className='cvat-grid-item-drag-handler' />
-            { component }
-        </div>
-    );
+    return component;
 };
 
 function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
@@ -66,6 +60,7 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
     const MARGIN = 8;
     const PADDING = MARGIN / 2;
     const [rowHeight, setRowHeight] = useState<number>(Math.floor(window.screen.availHeight / NUM_OF_ROWS));
+    const [fullscreenKey, setFullscreenKey] = useState<string>('');
     const relatedFiles = useSelector((state: CombinedState) => state.annotation.player.frame.relatedFiles);
     const canvasInstance = useSelector((state: CombinedState) => state.annotation.canvas.instance);
     const canvasBackgroundColor = useSelector((state: CombinedState) => state.settings.player.canvasBackgroundColor);
@@ -121,8 +116,9 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
         };
     }, [onLayoutChange]);
 
-    const children = getLayout().map((value: ItemLayout) => ViewFabric((value)));
-    const layout = getLayout().map((value: ItemLayout) => ({
+    const layoutConfig = getLayout();
+    const children = layoutConfig.map((value: ItemLayout) => ViewFabric(value));
+    const layout = layoutConfig.map((value: ItemLayout) => ({
         x: value.x,
         y: value.y,
         w: value.w,
@@ -147,7 +143,37 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
                 )}
                 draggableHandle='.cvat-grid-item-drag-handler'
             >
-                { children }
+                { children.map((child: JSX.Element, idx: number): JSX.Element => {
+                    const { viewType, viewIndex } = layoutConfig[idx];
+                    const key = typeof viewIndex !== 'undefined' ? `${viewType}_${viewIndex}` : `${viewType}`;
+                    return (
+                        <div
+                            className={fullscreenKey === key ?
+                                'cvat-canvas-grid-item cvat-canvas-grid-fullscreen-item' :
+                                'cvat-canvas-grid-item'}
+                            key={key}
+                        >
+                            <DragOutlined className='cvat-grid-item-drag-handler' />
+                            {fullscreenKey === key ? (
+                                <FullscreenExitOutlined
+                                    className='cvat-grid-item-fullscreen-handler'
+                                    onClick={() => {
+                                        setFullscreenKey('');
+                                    }}
+                                />
+                            ) : (
+                                <FullscreenOutlined
+                                    className='cvat-grid-item-fullscreen-handler'
+                                    onClick={() => {
+                                        setFullscreenKey(key);
+                                    }}
+                                />
+                            )}
+
+                            { child }
+                        </div>
+                    );
+                }) }
             </ReactGridLayout>
             { type === DimensionType.DIM_3D && <CanvasWrapper3DComponent /> }
         </Layout.Content>

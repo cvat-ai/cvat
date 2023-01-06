@@ -12,15 +12,43 @@
     background-color: rgba(241, 241, 241, 0.7);
     border-radius: 4px;
 
-    .cvat-grid-item-drag-handler {
+    &.cvat-canvas-grid-fullscreen-item {
+        width: 100% !important;
+        height: 100% !important;
+        transform: none !important;
+        z-index: 1;
+
+        .cvat-grid-item-resize-handler.react-resizable-handle,
+        .cvat-grid-item-drag-handler {
+            visibility: hidden;
+        }
+    }
+
+    .cvat-grid-item-fullscreen-handler {
+        left: $grid-unit-size * 4;
+    }
+
+    .cvat-grid-item-drag-handler,
+    .cvat-grid-item-fullscreen-handler {
         position: absolute;
         top: $grid-unit-size;
-        left: $grid-unit-size;
+        left: $grid-unit-size * 4;
         z-index: 1000;
         cursor: move;
         font-size: 16px;
         background: $header-color;
         border-radius: 2px;
+        opacity: 0.6;
+        transition: all 200ms;
+
+        &:hover {
+            opacity: 0.9;
+        }
+
+        &.cvat-grid-item-fullscreen-handler {
+            left: $grid-unit-size;
+            cursor: default;
+        }
     }
 
     .cvat-grid-item-resize-handler.react-resizable-handle {

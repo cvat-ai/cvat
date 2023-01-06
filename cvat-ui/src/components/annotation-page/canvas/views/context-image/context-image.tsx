@@ -80,7 +80,6 @@ function ContextImage(props: Props): JSX.Element {
     return (
         <div className='cvat-context-image-wrapper'>
             <div className='cvat-context-image-header'>
-                <Text strong>{Object.keys(contextImageData).sort()[contextImageOffset]}</Text>
                 { relatedFiles > 1 && (
                     <SettingOutlined
                         className='cvat-context-image-setup-button'
@@ -89,6 +88,7 @@ function ContextImage(props: Props): JSX.Element {
                         }}
                     />
                 )}
+                <Text strong>{Object.keys(contextImageData).sort()[contextImageOffset]}</Text>
             </div>
             { (hasError || (!fetching && contextImageOffset >= Object.keys(contextImageData).length)) && <Empty /> }
             { fetching && <Spin size='small' /> }
