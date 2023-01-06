@@ -155,16 +155,6 @@ def _save_task_to_db(db_task: models.Task, *, job_file_mapping: Optional[JobFile
         slogger.glob.info("New segment for task #{}: idx = {}, start_frame = {}, \
             stop_frame = {}".format(db_task.id, segment_idx, start_frame, stop_frame))
 
-        if start_frame < 0:
-            raise ValidationError(
-                f"Failed to create segment: invalid start frame {start_frame}"
-            )
-
-        if stop_frame >= db_task.data.size:
-            raise ValidationError(
-                f"Failed to create segment: stop frame {stop_frame} is beyond task size"
-            )
-
         db_segment = models.Segment()
         db_segment.task = db_task
         db_segment.start_frame = start_frame
