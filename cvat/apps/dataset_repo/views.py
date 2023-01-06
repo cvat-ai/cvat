@@ -36,7 +36,7 @@ def _legacy_api_view(allowed_method_names=None):
     return decorator
 
 @_legacy_api_view()
-def check_process(_, rq_id):
+def check_process(request, rq_id):
     try:
         queue = django_rq.get_queue(settings.CVAT_QUEUES.EXPORT_DATA.value)
         rq_job = queue.fetch_job(rq_id)
