@@ -40,9 +40,9 @@ from .cloud_provider import db_storage_to_storage_instance
 
 def create(tid, data):
     """Schedule the task"""
-    q = django_rq.get_queue('default')
+    q = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
     q.enqueue_call(func=_create_thread, args=(tid, data),
-        job_id="/api/tasks/{}".format(tid))
+        job_id=f"api-tasks-{tid}")
 
 @transaction.atomic
 def rq_handler(job, exc_type, exc_value, traceback):
