@@ -23,7 +23,6 @@ import dns.resolver
 import django_rq
 import pytz
 
-from attrs import define, field
 from django.conf import settings
 from django.db import transaction
 from datetime import datetime
