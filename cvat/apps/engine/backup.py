@@ -712,7 +712,7 @@ def _create_backup(db_instance, Exporter, output_path, logger, cache_ttl):
                 os.replace(temp_file, output_path)
 
             archive_ctime = os.path.getctime(output_path)
-            scheduler = django_rq.get_scheduler()
+            scheduler = django_rq.get_scheduler(settings.CVAT_QUEUES.IMPORT_DATA.value)
             cleaning_job = scheduler.enqueue_in(time_delta=cache_ttl,
                 func=clear_export_cache,
                 file_path=output_path,
@@ -731,7 +731,7 @@ def _create_backup(db_instance, Exporter, output_path, logger, cache_ttl):
         log_exception(logger)
         raise
 
-def export(db_instance, request):
+def export(db_instance, request, queue_name):
     action = request.query_params.get('action', None)
     filename = request.query_params.get('filename', None)
 
@@ -740,13 +740,13 @@ def export(db_instance, request):
             "Unexpected action specified for the request")
 
     if isinstance(db_instance, Task):
-        filename_prefix = 'task'
+        obj_type = 'task'
         logger = slogger.task[db_instance.pk]
         Exporter = TaskExporter
         cache_ttl = TASK_CACHE_TTL
         use_target_storage_conf = request.query_params.get('use_default_location', True)
     elif isinstance(db_instance, Project):
-        filename_prefix = 'project'
+        obj_type = 'project'
         logger = slogger.project[db_instance.pk]
         Exporter = ProjectExporter
         cache_ttl = PROJECT_CACHE_TTL
@@ -762,8 +762,8 @@ def export(db_instance, request):
         field_name=StorageType.TARGET
     )
 
-    queue = django_rq.get_queue("default")
-    rq_id = "/api/{}s/{}/backup".format(filename_prefix, db_instance.pk)
+    queue = django_rq.get_queue(queue_name)
+    rq_id = f"export:{obj_type}.id{db_instance.pk}-by-{request.user}"
     rq_job = queue.fetch_job(rq_id)
     if rq_job:
         last_project_update_time = timezone.localtime(db_instance.updated_date)
@@ -780,7 +780,7 @@ def export(db_instance, request):
                     timestamp = datetime.strftime(last_project_update_time,
                         "%Y_%m_%d_%H_%M_%S")
                     filename = filename or "{}_{}_backup_{}{}".format(
-                        filename_prefix, db_instance.name, timestamp,
+                        obj_type, db_instance.name, timestamp,
                         os.path.splitext(file_path)[1]).lower()
 
                     location = location_conf.get('location')
@@ -820,7 +820,7 @@ def export(db_instance, request):
     ttl = dm.views.PROJECT_CACHE_TTL.total_seconds()
     queue.enqueue_call(
         func=_create_backup,
-        args=(db_instance, Exporter, '{}_backup.zip'.format(filename_prefix), logger, cache_ttl),
+        args=(db_instance, Exporter, '{}_backup.zip'.format(obj_type), logger, cache_ttl),
         job_id=rq_id,
         meta={ 'request_time': timezone.localtime() },
         result_ttl=ttl, failure_ttl=ttl)
@@ -834,8 +834,7 @@ def _download_file_from_bucket(db_storage, filename, key):
     with open(filename, 'wb+') as f:
         f.write(data.getbuffer())
 
-def _import(importer, request, rq_id, Serializer, file_field_name, location_conf, filename=None):
-    queue = django_rq.get_queue("default")
+def _import(importer, request, queue, rq_id, Serializer, file_field_name, location_conf, filename=None):
     rq_job = queue.fetch_job(rq_id)
 
     if not rq_job:
@@ -905,11 +904,11 @@ def _import(importer, request, rq_id, Serializer, file_field_name, location_conf
 def get_backup_dirname():
     return settings.TMP_FILES_ROOT
 
-def import_project(request, filename=None):
+def import_project(request, queue_name, filename=None):
     if 'rq_id' in request.data:
         rq_id = request.data['rq_id']
     else:
-        rq_id = "{}@/api/projects/{}/import".format(request.user, uuid.uuid4())
+        rq_id = f"import:project.{uuid.uuid4()}-by-{request.user}"
     Serializer = ProjectFileSerializer
     file_field_name = 'project_file'
 
@@ -918,9 +917,12 @@ def import_project(request, filename=None):
         field_name=StorageType.SOURCE,
     )
 
+    queue = django_rq.get_queue(queue_name)
+
     return _import(
         importer=_import_project,
         request=request,
+        queue=queue,
         rq_id=rq_id,
         Serializer=Serializer,
         file_field_name=file_field_name,
@@ -928,11 +930,11 @@ def import_project(request, filename=None):
         filename=filename
     )
 
-def import_task(request, filename=None):
+def import_task(request, queue_name, filename=None):
     if 'rq_id' in request.data:
         rq_id = request.data['rq_id']
     else:
-        rq_id = "{}@/api/tasks/{}/import".format(request.user, uuid.uuid4())
+        rq_id = f"import:task.{uuid.uuid4()}-by-{request.user}"
     Serializer = TaskFileSerializer
     file_field_name = 'task_file'
 
@@ -941,9 +943,12 @@ def import_task(request, filename=None):
         field_name=StorageType.SOURCE
     )
 
+    queue = django_rq.get_queue(queue_name)
+
     return _import(
         importer=_import_task,
         request=request,
+        queue=queue,
         rq_id=rq_id,
         Serializer=Serializer,
         file_field_name=file_field_name,
