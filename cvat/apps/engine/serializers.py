@@ -439,7 +439,8 @@ class DataSerializer(WriteOnceMixin, serializers.ModelSerializer):
             for filename in job_files:
                 if filename in existing_files:
                     raise serializers.ValidationError(
-                        "The same file cannot be used in several jobs in the job file mapping"
+                        f"The same file '{filename}' cannot be used multiple "
+                        "times in the job file mapping"
                     )
 
                 existing_files.add(filename)
