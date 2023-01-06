@@ -6,7 +6,7 @@ cvat:
         name: cvat-backend-data
         subPath: share
     worker:
-      export:
+      import:
         additionalVolumeMounts:
         - mountPath: /home/django/share
           name: cvat-backend-data
