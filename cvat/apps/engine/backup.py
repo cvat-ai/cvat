@@ -740,13 +740,13 @@ def export(db_instance, request, queue_name):
             "Unexpected action specified for the request")
 
     if isinstance(db_instance, Task):
-        filename_prefix = 'task'
+        obj_type = 'task'
         logger = slogger.task[db_instance.pk]
         Exporter = TaskExporter
         cache_ttl = TASK_CACHE_TTL
         use_target_storage_conf = request.query_params.get('use_default_location', True)
     elif isinstance(db_instance, Project):
-        filename_prefix = 'project'
+        obj_type = 'project'
         logger = slogger.project[db_instance.pk]
         Exporter = ProjectExporter
         cache_ttl = PROJECT_CACHE_TTL
@@ -763,7 +763,7 @@ def export(db_instance, request, queue_name):
     )
 
     queue = django_rq.get_queue(queue_name)
-    rq_id = f"api-{filename_prefix}s-{db_instance.pk}/backup"
+    rq_id = f"export:{obj_type}.id{db_instance.pk}-by-{request.user}"
     rq_job = queue.fetch_job(rq_id)
     if rq_job:
         last_project_update_time = timezone.localtime(db_instance.updated_date)
@@ -780,7 +780,7 @@ def export(db_instance, request, queue_name):
                     timestamp = datetime.strftime(last_project_update_time,
                         "%Y_%m_%d_%H_%M_%S")
                     filename = filename or "{}_{}_backup_{}{}".format(
-                        filename_prefix, db_instance.name, timestamp,
+                        obj_type, db_instance.name, timestamp,
                         os.path.splitext(file_path)[1]).lower()
 
                     location = location_conf.get('location')
@@ -820,7 +820,7 @@ def export(db_instance, request, queue_name):
     ttl = dm.views.PROJECT_CACHE_TTL.total_seconds()
     queue.enqueue_call(
         func=_create_backup,
-        args=(db_instance, Exporter, '{}_backup.zip'.format(filename_prefix), logger, cache_ttl),
+        args=(db_instance, Exporter, '{}_backup.zip'.format(obj_type), logger, cache_ttl),
         job_id=rq_id,
         meta={ 'request_time': timezone.localtime() },
         result_ttl=ttl, failure_ttl=ttl)
@@ -908,7 +908,7 @@ def import_project(request, queue_name, filename=None):
     if 'rq_id' in request.data:
         rq_id = request.data['rq_id']
     else:
-        rq_id = f"{request.user}$-api-projects-{uuid.uuid4()}-import"
+        rq_id = f"import:project.{uuid.uuid4()}-by-{request.user}"
     Serializer = ProjectFileSerializer
     file_field_name = 'project_file'
 
@@ -934,7 +934,7 @@ def import_task(request, queue_name, filename=None):
     if 'rq_id' in request.data:
         rq_id = request.data['rq_id']
     else:
-        rq_id = f"{request.user}$-api-tasks-{uuid.uuid4()}-import"
+        rq_id = f"import:task.{uuid.uuid4()}-by-{request.user}"
     Serializer = TaskFileSerializer
     file_field_name = 'task_file'
 

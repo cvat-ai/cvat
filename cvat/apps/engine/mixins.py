@@ -246,7 +246,7 @@ class UploadMixin:
 
 class AnnotationMixin:
     def export_annotations(self, request, pk, db_obj, export_func, callback, get_data=None):
-        format_name = request.query_params.get("format")
+        format_name = request.query_params.get("format", "")
         action = request.query_params.get("action", "").lower()
         filename = request.query_params.get("filename", "")
 
@@ -259,7 +259,8 @@ class AnnotationMixin:
             field_name=StorageType.TARGET,
         )
 
-        rq_id = f"api-{self._object.__class__.__name__.lower()}-{pk}-annotations-{format_name}"
+        object_name = self._object.__class__.__name__.lower()
+        rq_id = f"export:annotations-for-{object_name}.id{pk}-in-{format_name.replace(' ', '_')}-format"
 
         if format_name:
             return export_func(db_instance=self._object,
