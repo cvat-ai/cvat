@@ -730,13 +730,14 @@ class DataChunkGetter:
                             return Response(data='No context image related to the frame',
                                 status=status.HTTP_404_NOT_FOUND)
 
-                        for idx, i in enumerate(image.related_files.all()):
+                        for i in image.related_files.all():
                             path = os.path.realpath(str(i.path))
+                            name = os.path.relpath(str(i.path), db_data.get_upload_dirname())
                             image = cv2.imread(path)
                             success, result = cv2.imencode('.JPEG', image)
                             if not success:
                                 raise Exception('Failed to encode image to ".jpeg" format')
-                            zip_file.writestr(f'{str(idx)}.jpg', result.tobytes())
+                            zip_file.writestr(f'{name}.jpg', result.tobytes())
                             # response = HttpResponse(wrapper, content_type='application/zip')
                             # response['Content-Disposition'] = 'attachment; filename=your_zipfile.zip'
                     return HttpResponse(io.BytesIO(zip_buffer.getvalue()), content_type='application/zip')

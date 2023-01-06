@@ -26,7 +26,7 @@ function ContextImage(props: Props): JSX.Element {
     const { number: frame, relatedFiles } = useSelector((state: CombinedState) => state.annotation.player.frame);
     const frameIndex = frame + (offset[0] || 0);
 
-    const [contextImageData, setContextImageData] = useState<ImageBitmap[]>([]);
+    const [contextImageData, setContextImageData] = useState<Record<string, ImageBitmap>>({});
     const [fetching, setFetching] = useState<boolean>(false);
     const [contextImageOffset, setContextImageOffset] = useState<number>(
         Math.min(offset[1] || 0, relatedFiles),
@@ -39,7 +39,7 @@ function ContextImage(props: Props): JSX.Element {
         let unmounted = false;
         const promise = job.frames.contextImage(frameIndex);
         setFetching(true);
-        promise.then((imageBitmaps: ImageBitmap[]) => {
+        promise.then((imageBitmaps: Record<string, ImageBitmap>) => {
             if (!unmounted) {
                 setContextImageData(imageBitmaps);
             }
@@ -58,14 +58,16 @@ function ContextImage(props: Props): JSX.Element {
         });
 
         return () => {
-            setContextImageData([]);
+            setContextImageData({});
             unmounted = true;
         };
     }, [frameIndex]);
 
     useEffect(() => {
         if (canvasRef.current) {
-            const image = contextImageData[contextImageOffset];
+            const sortedKeys = Object.keys(contextImageData).sort();
+            const key = sortedKeys[contextImageOffset];
+            const image = contextImageData[key];
             const context = canvasRef.current.getContext('2d');
             if (context && image) {
                 canvasRef.current.width = image.width;
@@ -78,8 +80,7 @@ function ContextImage(props: Props): JSX.Element {
     return (
         <div className='cvat-context-image-wrapper'>
             <div className='cvat-context-image-header'>
-                <Text>Context image </Text>
-                <Text strong>{contextImageOffset}</Text>
+                <Text strong>{Object.keys(contextImageData).sort()[contextImageOffset]}</Text>
                 { relatedFiles > 1 && (
                     <SettingOutlined
                         className='cvat-context-image-setup-button'
@@ -89,10 +90,10 @@ function ContextImage(props: Props): JSX.Element {
                     />
                 )}
             </div>
-            { (hasError || (!fetching && contextImageOffset >= contextImageData.length)) && <Empty /> }
+            { (hasError || (!fetching && contextImageOffset >= Object.keys(contextImageData).length)) && <Empty /> }
             { fetching && <Spin size='small' /> }
             {
-                contextImageOffset < contextImageData.length &&
+                contextImageOffset < Object.keys(contextImageData).length &&
                 <canvas ref={canvasRef} />
             }
             { showSelector && (

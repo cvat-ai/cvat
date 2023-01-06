@@ -35,6 +35,11 @@
         text-align: center;
         z-index: 1;
         background: $header-color;
+        overflow: hidden;
+
+        > span.ant-typography {
+            line-height: $grid-unit-size * 4;
+        }
 
         > .cvat-context-image-setup-button {
             position: absolute;
@@ -71,9 +76,9 @@
     z-index: 1000;
     background: rgba(255, 255, 255, 0.25);
     position: absolute;
-    display: flex;
     justify-content: space-around;
     align-items: center;
+    display: flex;
 
     .cvat-context-image-gallery {
         width: 80%;
@@ -86,18 +91,28 @@
         overflow: hidden;
         overflow-y: auto;
 
-        .cvat-context-image-gallery-item {
-            &.cvat-context-image-gallery-item-current {
-                opacity: 1;
-            }
+        .cvat-context-image-gallery-items {
+            display: block;
 
-            &:hover {
-                opacity: 0.9;
-            }
+            .cvat-context-image-gallery-item {
+                text-align: center;
+                padding: $grid-unit-size;
+                opacity: 0.6;
+                width: 25%;
+                float: left;
 
-            padding: $grid-unit-size;
-            opacity: 0.6;
-            width: 25%;
+                &.cvat-context-image-gallery-item-current {
+                    opacity: 1;
+                }
+
+                &:hover {
+                    opacity: 0.9;
+                }
+
+                > canvas {
+                    width: 100%;
+                }
+            }
         }
 
         .cvat-context-image-gallery-header {

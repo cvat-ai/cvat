@@ -372,9 +372,7 @@ class FrameBuffer {
                         resolve(this.getContextImage(frame));
                     });
                 } else {
-                    resolve(Object.keys(this._contextImage[frame])
-                        .map((key: string): number => +key).sort()
-                        .map((key: number) => this._contextImage[frame][key]));
+                    resolve({ ...this._contextImage[frame] });
                 }
             } else {
                 resolve([]);

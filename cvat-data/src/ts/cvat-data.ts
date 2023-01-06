@@ -18,11 +18,13 @@ export enum DimensionType {
     DIMENSION_2D = '2d',
 }
 
-export function decodeZip(block: any, start: number, end: number, dimension: any): Promise<any> {
+export function decodeZip(
+    block: any, start: number, end: number, dimension: any,
+): Promise<Record<string, ImageBitmap>> {
     return new Promise((resolve, reject) => {
         decodeZip.mutex.acquire().then((release) => {
             const worker = new ZipDecoder();
-            const result: Record<string, HTMLImageElement> = {};
+            const result: Record<string, ImageBitmap> = {};
             let decoded = 0;
 
             worker.onerror = (e: ErrorEvent) => {

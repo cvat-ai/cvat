@@ -9,15 +9,15 @@ import Text from 'antd/lib/typography/Text';
 import { CloseOutlined } from '@ant-design/icons';
 
 interface Props {
-    images: ImageBitmap[];
+    images: Record<string, ImageBitmap>;
     offset: number;
     onChangeOffset: (offset: number) => void;
     onClose: () => void;
 }
 
 function CanvasWithRef({
-    image, isActive, onClick,
-}: { image: ImageBitmap, isActive: boolean, onClick: () => void }): JSX.Element {
+    image, isActive, onClick, name,
+}: { image: ImageBitmap, name: string, isActive: boolean, onClick: () => void }): JSX.Element {
     const ref = useRef<HTMLCanvasElement>(null);
 
     useEffect((): void => {
@@ -32,11 +32,13 @@ function CanvasWithRef({
     }, [image, ref]);
 
     return (
-        <canvas
-            ref={ref}
-            onClick={onClick}
-            className={(isActive ? ['cvat-context-image-gallery-item cvat-context-image-gallery-item-current'] : ['cvat-context-image-gallery-item']).join(' ')}
-        />
+        <div className={(isActive ? ['cvat-context-image-gallery-item cvat-context-image-gallery-item-current'] : ['cvat-context-image-gallery-item']).join(' ')}>
+            <Text strong className='cvat-context-image-gallery-item-name'>{name}</Text>
+            <canvas
+                ref={ref}
+                onClick={onClick}
+            />
+        </div>
     );
 }
 
@@ -54,17 +56,20 @@ function ContextImageSelector(props: Props): React.ReactPortal {
                     </Text>
                     <CloseOutlined className='cvat-context-image-close-button' onClick={onClose} />
                 </div>
-                { images.map((image: ImageBitmap, i: number) => (
-                    <CanvasWithRef
-                        image={image}
-                        isActive={offset === i}
-                        onClick={() => {
-                            onChangeOffset(i);
-                            onClose();
-                        }}
-                        key={i}
-                    />
-                ))}
+                <div className='cvat-context-image-gallery-items'>
+                    { Object.entries(images).map(([key, value], i: number) => (
+                        <CanvasWithRef
+                            name={key}
+                            image={value}
+                            isActive={offset === i}
+                            onClick={() => {
+                                onChangeOffset(i);
+                                onClose();
+                            }}
+                            key={i}
+                        />
+                    ))}
+                </div>
             </div>
         </div>
     ), window.document.body);
