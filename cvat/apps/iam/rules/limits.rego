@@ -27,77 +27,77 @@ check_limit_exceeded(current, max) {
 
 
 
-problems contains "user tasks limit reached" if {
+problems contains "tasks per user" if {
     check_limit_exceeded(
         input.resource.limits[CAP_USER_SANDBOX_TASKS].used,
         input.resource.limits[CAP_USER_SANDBOX_TASKS].max
     )
 }
 
-problems contains "user projects limit reached" if {
+problems contains "projects per user" if {
     check_limit_exceeded(
         input.resource.limits[CAP_USER_SANDBOX_PROJECTS].used,
         input.resource.limits[CAP_USER_SANDBOX_PROJECTS].max
     )
 }
 
-problems contains "user project tasks limit reached" if {
+problems contains "tasks per user project" if {
     check_limit_exceeded(
         input.resource.limits[CAP_TASKS_IN_USER_SANDBOX_PROJECT].used,
         input.resource.limits[CAP_TASKS_IN_USER_SANDBOX_PROJECT].max
     )
 }
 
-problems contains "org tasks limit reached" if {
+problems contains "tasks per organization" if {
     check_limit_exceeded(
         input.resource.limits[CAP_ORG_TASKS].used,
         input.resource.limits[CAP_ORG_TASKS].max
     )
 }
 
-problems contains "org projects limit reached" if {
+problems contains "projects per organization" if {
     check_limit_exceeded(
         input.resource.limits[CAP_ORG_PROJECTS].used,
         input.resource.limits[CAP_ORG_PROJECTS].max
     )
 }
 
-problems contains "org project tasks limit reached" if {
+problems contains "tasks per organization project" if {
     check_limit_exceeded(
         input.resource.limits[CAP_TASKS_IN_ORG_PROJECT].used,
         input.resource.limits[CAP_TASKS_IN_ORG_PROJECT].max
     )
 }
 
-problems contains "project webhooks limit reached" if {
+problems contains "webhooks per project" if {
     check_limit_exceeded(
         input.resource.limits[CAP_PROJECT_WEBHOOKS].used,
         input.resource.limits[CAP_PROJECT_WEBHOOKS].max
     )
 }
 
-problems contains "org webhooks limit reached" if {
+problems contains "webhooks per organization" if {
     check_limit_exceeded(
         input.resource.limits[CAP_ORG_COMMON_WEBHOOKS].used,
         input.resource.limits[CAP_ORG_COMMON_WEBHOOKS].max
     )
 }
 
-problems contains "user orgs limit reached" if {
+problems contains "organizations per user" if {
     check_limit_exceeded(
         input.resource.limits[CAP_USER_OWNED_ORGS].used,
         input.resource.limits[CAP_USER_OWNED_ORGS].max
     )
 }
 
-problems contains "user cloud storages limit reached" if {
+problems contains "cloud storages per user" if {
     check_limit_exceeded(
         input.resource.limits[CAP_USER_SANDBOX_CLOUD_STORAGES].used,
         input.resource.limits[CAP_USER_SANDBOX_CLOUD_STORAGES].max
     )
 }
 
-problems contains "org cloud storages limit reached" if {
+problems contains "cloud_storages per organization" if {
     check_limit_exceeded(
         input.resource.limits[CAP_ORG_CLOUD_STORAGES].used,
         input.resource.limits[CAP_ORG_CLOUD_STORAGES].max

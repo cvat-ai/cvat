@@ -32,8 +32,21 @@ class StrEnum(str, Enum):
     def __str__(self) -> str:
         return self.value
 
-class RequestNotAllowedError(PermissionDenied):
-    pass
+class LimitReachedError(PermissionDenied):
+    default_personal_detail = "You've reached the maximum number of {}. Contact the administrator to extend the limits."
+    default_org_detail = "You've reached the maximum number of {}. Contact the administrator to extend the limits for organization."
+
+    def __init__(self, reasons, iam_context):
+        if not reasons or not isinstance(reasons, list):
+            super().__init__(reasons)
+
+        msg = settings.ERROR_MESSAGES.get("PERSONAL_LIMIT_REACHED", self.default_personal_detail)
+        if iam_context["organization"] is not None:
+            msg = settings.ERROR_MESSAGES.get("ORG_OWNER_LIMIT_REACHED", self.default_org_detail)
+
+        msg = msg.format(', '.join(reasons))
+        super().__init__(msg)
+
 
 @define
 class PermissionResult:
@@ -1590,6 +1603,7 @@ class PolicyEnforcer(BasePermission):
                 request, view, obj, basic_permissions
             ))
 
+        self._iam_context = request.iam_context
         allow = self._check_permissions(basic_permissions)
         if allow and conditional_permissions:
             allow = self._check_permissions(conditional_permissions)
@@ -1605,8 +1619,10 @@ class PolicyEnforcer(BasePermission):
 
         if allow:
             return True
+        elif reasons:
+            raise LimitReachedError(reasons, self._iam_context)
         else:
-            raise RequestNotAllowedError(reasons or "not authorized")
+            raise PermissionDenied("not authorized")
 
     def has_permission(self, request, view):
         if not view.detail:
