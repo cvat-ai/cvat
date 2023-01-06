@@ -8,14 +8,22 @@
     position: relative;
 }
 
+.cvat-canvas-grid-fullscreen-item ~ .cvat-canvas-grid-item {
+    visibility: hidden;
+}
+
 .cvat-canvas-grid-item {
     background-color: rgba(241, 241, 241, 0.7);
     border-radius: 4px;
 
+    &.react-grid-item.cssTransforms {
+        transition-property: all;
+    }
+
     &.cvat-canvas-grid-fullscreen-item {
         width: 100% !important;
         height: 100% !important;
-        transform: none !important;
+        transform: translate(4px, 4px) !important;
         z-index: 1;
 
         .cvat-grid-item-resize-handler.react-resizable-handle,

@@ -105,14 +105,9 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
     }, []);
 
     useEffect(() => {
-        const onResize = (): void => {
-            onLayoutChange();
-            onUpdateRawHeight();
-        };
-
-        window.addEventListener('resize', onResize);
+        window.addEventListener('resize', onLayoutChange);
         return () => {
-            window.removeEventListener('resize', onResize);
+            window.removeEventListener('resize', onLayoutChange);
         };
     }, [onLayoutChange]);
 
@@ -125,6 +120,21 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
         h: value.h,
         i: typeof (value.viewIndex) !== 'undefined' ? `${value.viewType}_${value.viewIndex}` : `${value.viewType}`,
     }));
+
+    const getChildByIndex = (idx: number): Element | undefined => {
+        const [root] = window.document.getElementsByClassName('cvat-canvas-grid-root');
+        return Array.from(root.children)
+            .filter((_child: Element) => _child.classList.contains('cvat-canvas-grid-item'))[idx];
+    };
+
+    const dispatchResizeOnTransitionEnd = (idx: number): void => {
+        const child = getChildByIndex(idx);
+        if (child) {
+            child.addEventListener('transitionend', () => {
+                window.dispatchEvent(new Event('resize'));
+            }, { once: true });
+        }
+    };
 
     return (
         <Layout.Content>
@@ -158,6 +168,7 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
                                 <FullscreenExitOutlined
                                     className='cvat-grid-item-fullscreen-handler'
                                     onClick={() => {
+                                        dispatchResizeOnTransitionEnd(idx);
                                         setFullscreenKey('');
                                     }}
                                 />
@@ -165,6 +176,7 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
                                 <FullscreenOutlined
                                     className='cvat-grid-item-fullscreen-handler'
                                     onClick={() => {
+                                        dispatchResizeOnTransitionEnd(idx);
                                         setFullscreenKey(key);
                                     }}
                                 />
