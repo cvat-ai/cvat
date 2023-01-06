@@ -8,7 +8,7 @@ import itertools
 import fnmatch
 import os
 import sys
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
+from typing import Any, Dict, Iterator, List, NamedTuple, Optional, Union
 from rest_framework.serializers import ValidationError
 import rq
 import re
@@ -23,6 +23,7 @@ import dns.resolver
 import django_rq
 import pytz
 
+from attrs import define, field
 from django.conf import settings
 from django.db import transaction
 from datetime import datetime
@@ -63,6 +64,15 @@ def rq_handler(job, exc_type, exc_value, traceback):
 
 JobFileMapping = List[List[str]]
 
+class SegmentParams(NamedTuple):
+    start_frame: int
+    stop_frame: int
+
+class SegmentsParams(NamedTuple):
+    segments: Iterator[SegmentParams]
+    segment_size: int
+    overlap: int
+
 def _copy_data_from_source(server_files, upload_dir, server_dir=None):
     job = rq.get_current_job()
     job.meta['status'] = 'Data are being copied from source..'
@@ -87,11 +97,7 @@ def _get_task_segment_data(
     *,
     data_size: Optional[int] = None,
     job_file_mapping: Optional[JobFileMapping] = None,
-) -> Tuple[Iterable[Tuple[int, int]], int, int]:
-    """
-    Returns [(start, stop), ...], segment size, overlap
-    """
-
+) -> SegmentsParams:
     if job_file_mapping is not None:
         def _segments():
             # It is assumed here that files are already saved ordered in the task
@@ -100,7 +106,7 @@ def _get_task_segment_data(
             for jf in job_file_mapping:
                 segment_size = len(jf)
                 stop_frame = start_frame + segment_size - 1
-                yield start_frame, stop_frame
+                yield SegmentParams(start_frame, stop_frame)
 
                 start_frame = stop_frame + 1
 
@@ -128,11 +134,11 @@ def _get_task_segment_data(
         segment_step -= overlap
 
         segments = (
-            (start_frame, min(start_frame + segment_size - 1, data_size - 1))
+            SegmentParams(start_frame, min(start_frame + segment_size - 1, data_size - 1))
             for start_frame in range(0, data_size, segment_step)
         )
 
-    return segments, segment_size, overlap
+    return SegmentsParams(segments, segment_size, overlap)
 
 def _save_task_to_db(db_task: models.Task, *, job_file_mapping: Optional[JobFileMapping] = None):
     job = rq.get_current_job()
@@ -270,7 +276,7 @@ def _validate_job_file_mapping(
 
     if job_file_mapping is None:
         return None
-    elif not job_file_mapping or not list(itertools.chain.from_iterable(job_file_mapping)):
+    elif not list(itertools.chain.from_iterable(job_file_mapping)):
         raise ValidationError("job_file_mapping cannot be empty")
 
     if db_task.segment_size:
