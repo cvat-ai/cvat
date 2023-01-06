@@ -7,9 +7,6 @@ on:
         required: true
   workflow_dispatch:
     inputs:
-      cvat-dir:
-        type: string
-        required: false
       ref:
         type: string
         required: true
@@ -74,7 +71,6 @@ jobs:
           mkdir /tmp/cvat_server
           mkdir /tmp/cvat_ui
           mkdir /tmp/cvat_sdk
-          cd ${{ inputs.cvat-dir }}
 
       - name: CVAT server. Build and push
         uses: docker/build-push-action@v3
