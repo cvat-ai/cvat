@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -40,6 +41,7 @@ interface Props {
     changeLabel(label: any): void;
     changeColor(color: string): void;
     resetCuboidPerspective(): void;
+    edit(): void;
 }
 
 function ObjectItemComponent(props: Props): JSX.Element {
@@ -69,6 +71,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
         changeLabel,
         changeColor,
         resetCuboidPerspective,
+        edit,
         jobInstance,
     } = props;
 
@@ -124,6 +127,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     toBackground={toBackground}
                     toForeground={toForeground}
                     resetCuboidPerspective={resetCuboidPerspective}
+                    edit={edit}
                 />
                 <ObjectButtonsContainer readonly={readonly} clientID={clientID} />
                 {!!attributes.length && (

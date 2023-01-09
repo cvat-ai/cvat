@@ -280,7 +280,53 @@
       "version": 0
     },
     "14": {
-      "shapes": [],
+      "shapes": [
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 15,
+          "group": 0,
+          "id": 41,
+          "label_id": 6,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            53.062929061787145,
+            301.6390160183091,
+            197.94851258581548,
+            763.3266590389048
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 0
+        },
+        {
+          "attributes": [
+            {
+              "spec_id": 1,
+              "value": "mazda"
+            }
+          ],
+          "elements": [],
+          "frame": 16,
+          "group": 0,
+          "id": 42,
+          "label_id": 5,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            172.0810546875,
+            105.990234375,
+            285.97262095255974,
+            138.40000000000146
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 0
+        }
+      ],
       "tags": [],
       "tracks": [],
       "version": 0
@@ -330,12 +376,12 @@
           "occluded": false,
           "outside": false,
           "points": [
-            106.36066411239153,
-            85.1515964240134,
-            240.08352490421748,
-            241.26526181354166
+            106.361328125,
+            85.150390625,
+            240.083984375,
+            241.263671875
           ],
-          "rotation": 0.0,
+          "rotation": 45.9,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -361,7 +407,24 @@
           "z_order": 0
         }
       ],
-      "tags": [],
+      "tags": [
+        {
+          "attributes": [],
+          "frame": 2,
+          "group": 0,
+          "id": 1,
+          "label_id": 17,
+          "source": "manual"
+        },
+        {
+          "attributes": [],
+          "frame": 3,
+          "group": 0,
+          "id": 2,
+          "label_id": 16,
+          "source": "manual"
+        }
+      ],
       "tracks": [],
       "version": 0
     },
@@ -651,6 +714,53 @@
         }
       ],
       "version": 0
+    },
+    "19": {
+      "shapes": [
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 44,
+          "label_id": 29,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            479.97322623828586,
+            408.0053547523421,
+            942.6238286479238,
+            513.3868808567604
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 0
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 43,
+          "label_id": 30,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            120.81927710843593,
+            213.52074966532928,
+            258.7576974564945,
+            643.614457831327
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 0
+        }
+      ],
+      "tags": [],
+      "tracks": [],
+      "version": 0
     }
   },
   "task": {
@@ -915,6 +1025,51 @@
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 15,
+          "group": 0,
+          "id": 41,
+          "label_id": 6,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            53.062929061787145,
+            301.6390160183091,
+            197.94851258581548,
+            763.3266590389048
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 0
+        },
+        {
+          "attributes": [
+            {
+              "spec_id": 1,
+              "value": "mazda"
+            }
+          ],
+          "elements": [],
+          "frame": 16,
+          "group": 0,
+          "id": 42,
+          "label_id": 5,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            172.0810546875,
+            105.990234375,
+            285.97262095255974,
+            138.40000000000146
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 0
         }
       ],
       "tags": [],
@@ -954,12 +1109,6 @@
       "tracks": [],
       "version": 0
     },
-    "12": {
-      "shapes": [],
-      "tags": [],
-      "tracks": [],
-      "version": 0
-    },
     "13": {
       "shapes": [
         {
@@ -972,12 +1121,12 @@
           "occluded": false,
           "outside": false,
           "points": [
-            106.36066411239153,
-            85.1515964240134,
-            240.08352490421748,
-            241.26526181354166
+            106.361328125,
+            85.150390625,
+            240.083984375,
+            241.263671875
           ],
-          "rotation": 0.0,
+          "rotation": 45.9,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -1003,7 +1152,24 @@
           "z_order": 0
         }
       ],
-      "tags": [],
+      "tags": [
+        {
+          "attributes": [],
+          "frame": 2,
+          "group": 0,
+          "id": 1,
+          "label_id": 17,
+          "source": "manual"
+        },
+        {
+          "attributes": [],
+          "frame": 3,
+          "group": 0,
+          "id": 2,
+          "label_id": 16,
+          "source": "manual"
+        }
+      ],
       "tracks": [],
       "version": 0
     },
@@ -1292,6 +1458,53 @@
           "source": "manual"
         }
       ],
+      "version": 0
+    },
+    "15": {
+      "shapes": [
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 44,
+          "label_id": 29,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            479.97322623828586,
+            408.0053547523421,
+            942.6238286479238,
+            513.3868808567604
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 0
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 43,
+          "label_id": 30,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            120.81927710843593,
+            213.52074966532928,
+            258.7576974564945,
+            643.614457831327
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 0
+        }
+      ],
+      "tags": [],
+      "tracks": [],
       "version": 0
     }
   }

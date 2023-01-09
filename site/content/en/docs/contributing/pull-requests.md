@@ -64,7 +64,7 @@ project:
    git push origin <topic-branch-name>
    ```
 
-1. [Open a Pull Request](hhttps://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/about-pull-requests)
+1. [Open a Pull Request](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/about-pull-requests)
    with a clear title and description.
 
 **IMPORTANT**: By submitting a patch, you agree to allow the project owner to

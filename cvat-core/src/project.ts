@@ -6,11 +6,11 @@
 import { StorageLocation } from './enums';
 import { Storage } from './storage';
 
-const PluginRegistry = require('./plugins').default;
-const { ArgumentError } = require('./exceptions');
-const { Label } = require('./labels');
-const User = require('./user').default;
-const { FieldUpdateTrigger } = require('./common');
+import PluginRegistry from './plugins';
+import { ArgumentError } from './exceptions';
+import { Label } from './labels';
+import User from './user';
+import { FieldUpdateTrigger } from './common';
 
 /**
  * Class representing a project
@@ -409,7 +409,10 @@ Object.defineProperties(
                     useDefaultSettings: boolean,
                     sourceStorage: Storage,
                     file: File | string,
-                    updateStatusCallback = null,
+                    options?: {
+                        convMaskToPoly?: boolean,
+                        updateStatusCallback?: (s: string, n: number) => void,
+                    },
                 ) {
                     const result = await PluginRegistry.apiWrapper.call(
                         this,
@@ -418,7 +421,7 @@ Object.defineProperties(
                         useDefaultSettings,
                         sourceStorage,
                         file,
-                        updateStatusCallback,
+                        options,
                     );
                     return result;
                 },

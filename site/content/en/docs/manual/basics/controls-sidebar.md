@@ -1,7 +1,7 @@
 ---
 title: 'Controls sidebar'
 linkTitle: 'Controls sidebar'
-weight: 8
+weight: 10
 description: 'Overview of available functions on the controls sidebar of the annotation tool.'
 ---
 
@@ -39,6 +39,7 @@ description: 'Overview of available functions on the controls sidebar of the ann
 |![](/images/image170.jpg)|`Points`|[Annotation with points](/docs/manual/advanced/annotation-with-points/)|
 |![](/images/image241.jpg)|`Ellipses`|[Annotation with ellipses](/docs/manual/advanced/annotation-with-ellipses/)|
 |![](/images/image176.jpg)|`Cuboid`|[Annotation with cuboids](/docs/manual/advanced/annotation-with-cuboids/)|
+|![](/images/brushing_tools_icon.png)|`Brushing tools`|[Annotation with brushing](/docs/manual/advanced/annotation-with-brushing-tools/)|
 |![](/images/image171.jpg)|`Tag`|[Annotation with tags](/docs/manual/advanced/annotation-with-tags/)|
 |![](/images/image195.jpg)|`Open an issue`|[Review](/docs/manual/advanced/review/) (available only in review mode)|
 

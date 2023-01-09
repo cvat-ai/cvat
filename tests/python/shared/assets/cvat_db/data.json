@@ -36,7 +36,7 @@
   "pk": 1,
   "fields": {
     "password": "pbkdf2_sha256$260000$DevmxlmLwciP1P6sZs2Qag$U9DFtjTWx96Sk95qY6UXVcvpdQEP2LcoFBftk5D2RKY=",
-    "last_login": "2022-09-29T08:00:09.733Z",
+    "last_login": "2022-12-05T07:46:24.795Z",
     "is_superuser": true,
     "username": "admin1",
     "first_name": "Admin",
@@ -457,6 +457,14 @@
 },
 {
   "model": "sessions.session",
+  "pk": "3p7i7jibc6g827i39r8e0ce5i9f1orzp",
+  "fields": {
+    "session_data": ".eJxVjDEOAiEQAP9CbQiwgGBp7xsIC6ycGkiOu8r4d0NyhbYzk3mzEPethn2UNSyZXZhkp1-GMT1LmyI_Yrt3nnrb1gX5TPhhB7_1XF7Xo_0b1Djq3AoglJTJACKS9zGB0eAdopNkz6TIWq2LLQ611gkEgjFJCTIChFPs8wX0UDee:1p26BE:nXJF4Fl6fGAvhi1ZZfLr4WJSgvc53poHLXXAM5V6NdU",
+    "expire_date": "2022-12-19T07:46:24.799Z"
+  }
+},
+{
+  "model": "sessions.session",
   "pk": "5x9v6r58e4l9if78anupog0ittsq2w3j",
   "fields": {
     "session_data": ".eJxVjMEOwiAQRP-FsyEsobL16N1vIAvLStVAUtqT8d9tkx70OPPezFsFWpcS1p7nMLG6KFCn3y5Seua6A35QvTedWl3mKepd0Qft-tY4v66H-3dQqJdt7UU4MedxGKwFh0RoCBFi4niOTsSAHQFA_JaYmI2nTBEdGRRrSX2-CY443A:1nM644:zfo0j_Zkrm04UxrDj8g_nnsXrpWtRzL4oRx3hAdqyqI",
@@ -485,6 +493,14 @@
   "fields": {
     "session_data": ".eJxVjDsOwjAQBe_iGln-xJ9Q0ucM1q69xgFkS3FSIe5OIqWA9s3Me7MA21rC1mkJc2JXptjld0OIT6oHSA-o98Zjq-syIz8UftLOp5bodTvdv4MCvey1tOiNIpGNATlq55IZvaABd4Ao1RCzARLWJ5dRA2kJGqxU1kfjPRL7fAHVPjfN:1nKDkD:rZM4YHHS9MckfKB5KrsvNBVMegYSRdlMqL3uDJRE0Cg",
     "expire_date": "2022-03-02T06:24:53.914Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "d3rhbsiax4etv2gtdkl6j883hvlz21rc",
+  "fields": {
+    "session_data": ".eJxVjMsOwiAQRf-FtSEMDAIu3fcbyPBQqgaS0q6M_y5NutDtOefeN_O0rcVvPS9-TuzCgJ1-WaD4zHUX6UH13nhsdV3mwPeEH7bzqaX8uh7t30GhXsYaQYNDpYMULqECS9IY0uIGxmYUQdoYMCpIeRgYiXVaDXoWgkImZJ8vqTk2zg:1okTc4:kq0YGX6_uyDwCa3VLl1bcp38oBfM6XfHIk0oE4XzpPw",
+    "expire_date": "2022-10-31T17:09:16.915Z"
   }
 },
 {
@@ -617,12 +633,12 @@
 },
 {
   "model": "authtoken.token",
-  "pk": "4f057576712c65d30847e77456aea605a9df5965",
+  "pk": "2dcf8d2ff5032c3cf7d276549af3a50edb4f11c8",
   "fields": {
     "user": [
       "admin1"
     ],
-    "created": "2022-09-28T12:20:48.631Z"
+    "created": "2022-12-05T07:46:24.792Z"
   }
 },
 {
@@ -1139,10 +1155,39 @@
   }
 },
 {
+  "model": "engine.data",
+  "pk": 14,
+  "fields": {
+    "chunk_size": 72,
+    "size": 25,
+    "image_quality": 70,
+    "start_frame": 0,
+    "stop_frame": 24,
+    "frame_filter": "",
+    "compressed_chunk_type": "imageset",
+    "original_chunk_type": "video",
+    "storage_method": "cache",
+    "storage": "local",
+    "cloud_storage": null,
+    "sorting_method": "lexicographical",
+    "deleted_frames": "[]"
+  }
+},
+{
   "model": "engine.video",
   "pk": 1,
   "fields": {
     "data": 5,
+    "path": "test_video_1.mp4",
+    "width": 1280,
+    "height": 720
+  }
+},
+{
+  "model": "engine.video",
+  "pk": 2,
+  "fields": {
+    "data": 14,
     "path": "test_video_1.mp4",
     "width": 1280,
     "height": 720
@@ -2184,7 +2229,7 @@
     ],
     "bug_tracker": "",
     "created_date": "2021-12-14T19:46:37.969Z",
-    "updated_date": "2022-03-05T09:47:49.679Z",
+    "updated_date": "2022-11-03T13:57:25.895Z",
     "status": "annotation",
     "organization": null,
     "source_storage": null,
@@ -2242,7 +2287,7 @@
     "assignee": null,
     "bug_tracker": "",
     "created_date": "2022-06-08T08:32:45.521Z",
-    "updated_date": "2022-09-28T12:26:54.279Z",
+    "updated_date": "2022-12-05T07:47:01.518Z",
     "status": "annotation",
     "organization": 2,
     "source_storage": null,
@@ -2305,6 +2350,24 @@
     "organization": null,
     "source_storage": 11,
     "target_storage": 12
+  }
+},
+{
+  "model": "engine.project",
+  "pk": 8,
+  "fields": {
+    "name": "project with video data",
+    "owner": [
+      "admin1"
+    ],
+    "assignee": null,
+    "bug_tracker": "",
+    "created_date": "2022-12-01T12:52:42.454Z",
+    "updated_date": "2022-12-01T12:53:34.917Z",
+    "status": "annotation",
+    "organization": null,
+    "source_storage": 13,
+    "target_storage": 14
   }
 },
 {
@@ -2455,7 +2518,7 @@
     ],
     "bug_tracker": "",
     "created_date": "2022-03-05T09:33:10.420Z",
-    "updated_date": "2022-03-05T09:47:49.667Z",
+    "updated_date": "2022-11-03T13:57:26.007Z",
     "overlap": 0,
     "segment_size": 5,
     "status": "annotation",
@@ -2532,7 +2595,7 @@
     "assignee": null,
     "bug_tracker": "",
     "created_date": "2022-06-08T08:33:06.505Z",
-    "updated_date": "2022-06-08T08:33:20.808Z",
+    "updated_date": "2022-12-05T07:47:01.633Z",
     "overlap": 0,
     "segment_size": 5,
     "status": "annotation",
@@ -2567,6 +2630,31 @@
     "organization": 2,
     "source_storage": 7,
     "target_storage": 8
+  }
+},
+{
+  "model": "engine.task",
+  "pk": 15,
+  "fields": {
+    "project": 8,
+    "name": "task with video data",
+    "mode": "interpolation",
+    "owner": [
+      "admin1"
+    ],
+    "assignee": null,
+    "bug_tracker": "",
+    "created_date": "2022-12-01T12:53:10.425Z",
+    "updated_date": "2022-12-01T12:53:35.028Z",
+    "overlap": 5,
+    "segment_size": 25,
+    "status": "annotation",
+    "data": 14,
+    "dimension": "2d",
+    "subset": "",
+    "organization": null,
+    "source_storage": 15,
+    "target_storage": 16
   }
 },
 {
@@ -3322,6 +3410,14 @@
   }
 },
 {
+  "model": "engine.clientfile",
+  "pk": 442,
+  "fields": {
+    "data": 14,
+    "file": "/home/django/data/data/14/raw/test_video_1.mp4"
+  }
+},
+{
   "model": "engine.relatedfile",
   "pk": 1,
   "fields": {
@@ -3439,6 +3535,15 @@
   }
 },
 {
+  "model": "engine.segment",
+  "pk": 19,
+  "fields": {
+    "task": 15,
+    "start_frame": 0,
+    "stop_frame": 24
+  }
+},
+{
   "model": "engine.job",
   "pk": 2,
   "fields": {
@@ -3548,10 +3653,10 @@
   "fields": {
     "segment": 14,
     "assignee": null,
-    "updated_date": "2022-06-22T09:18:45.296Z",
+    "updated_date": "2022-11-03T13:57:26.346Z",
     "status": "annotation",
     "stage": "annotation",
-    "state": "new"
+    "state": "in progress"
   }
 },
 {
@@ -3574,7 +3679,7 @@
   "fields": {
     "segment": 17,
     "assignee": null,
-    "updated_date": "2022-06-22T09:18:45.296Z",
+    "updated_date": "2022-12-05T07:47:01.633Z",
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress"
@@ -3587,6 +3692,18 @@
     "segment": 18,
     "assignee": null,
     "updated_date": "2022-09-23T11:57:02.302Z",
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "in progress"
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 19,
+  "fields": {
+    "segment": 19,
+    "assignee": null,
+    "updated_date": "2022-12-01T12:53:35.354Z",
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress"
@@ -3900,6 +4017,30 @@
     "project": 7,
     "name": "label_0",
     "color": "#bde94a",
+    "type": "any",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 29,
+  "fields": {
+    "task": null,
+    "project": 8,
+    "name": "car",
+    "color": "#2080c0",
+    "type": "any",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 30,
+  "fields": {
+    "task": null,
+    "project": 8,
+    "name": "person",
+    "color": "#c06060",
     "type": "any",
     "parent": null
   }
@@ -4727,6 +4868,177 @@
   }
 },
 {
+  "model": "engine.jobcommit",
+  "pk": 73,
+  "fields": {
+    "scope": "create",
+    "owner": [
+      "admin1"
+    ],
+    "timestamp": "2022-10-17T17:09:36.573Z",
+    "data": {
+      "stage": "annotation",
+      "state": "in progress",
+      "assignee": null
+    },
+    "job": 17
+  }
+},
+{
+  "model": "engine.jobcommit",
+  "pk": 74,
+  "fields": {
+    "scope": "create",
+    "owner": [
+      "business1"
+    ],
+    "timestamp": "2022-11-03T13:57:26.015Z",
+    "data": {
+      "stage": "annotation",
+      "state": "new",
+      "assignee": null
+    },
+    "job": 14
+  }
+},
+{
+  "model": "engine.jobcommit",
+  "pk": 75,
+  "fields": {
+    "scope": "create",
+    "owner": [
+      "business1"
+    ],
+    "timestamp": "2022-11-03T13:57:26.351Z",
+    "data": {
+      "stage": "annotation",
+      "state": "in progress",
+      "assignee": null
+    },
+    "job": 14
+  }
+},
+{
+  "model": "engine.jobcommit",
+  "pk": 76,
+  "fields": {
+    "scope": "update",
+    "owner": [
+      "admin1"
+    ],
+    "timestamp": "2022-11-03T13:57:26.356Z",
+    "data": {
+      "state": "in progress"
+    },
+    "job": 14
+  }
+},
+{
+  "model": "engine.jobcommit",
+  "pk": 77,
+  "fields": {
+    "scope": "create",
+    "owner": [
+      "admin1"
+    ],
+    "timestamp": "2022-12-01T12:53:11.352Z",
+    "data": {
+      "stage": "annotation",
+      "state": "new",
+      "assignee": null
+    },
+    "job": 19
+  }
+},
+{
+  "model": "engine.jobcommit",
+  "pk": 78,
+  "fields": {
+    "scope": "create",
+    "owner": [
+      "admin1"
+    ],
+    "timestamp": "2022-12-01T12:53:35.036Z",
+    "data": {
+      "stage": "annotation",
+      "state": "new",
+      "assignee": null
+    },
+    "job": 19
+  }
+},
+{
+  "model": "engine.jobcommit",
+  "pk": 79,
+  "fields": {
+    "scope": "create",
+    "owner": [
+      "admin1"
+    ],
+    "timestamp": "2022-12-01T12:53:35.360Z",
+    "data": {
+      "stage": "annotation",
+      "state": "in progress",
+      "assignee": null
+    },
+    "job": 19
+  }
+},
+{
+  "model": "engine.jobcommit",
+  "pk": 80,
+  "fields": {
+    "scope": "update",
+    "owner": [
+      "admin1"
+    ],
+    "timestamp": "2022-12-01T12:53:35.363Z",
+    "data": {
+      "state": "in progress"
+    },
+    "job": 19
+  }
+},
+{
+  "model": "engine.jobcommit",
+  "pk": 81,
+  "fields": {
+    "scope": "create",
+    "owner": [
+      "admin1"
+    ],
+    "timestamp": "2022-12-05T07:47:01.635Z",
+    "data": {
+      "stage": "annotation",
+      "state": "in progress",
+      "assignee": null
+    },
+    "job": 17
+  }
+},
+{
+  "model": "engine.labeledimage",
+  "pk": 1,
+  "fields": {
+    "job": 17,
+    "label": 17,
+    "frame": 2,
+    "group": 0,
+    "source": "manual"
+  }
+},
+{
+  "model": "engine.labeledimage",
+  "pk": 2,
+  "fields": {
+    "job": 17,
+    "label": 16,
+    "frame": 3,
+    "group": 0,
+    "source": "manual"
+  }
+},
+{
   "model": "engine.labeledshape",
   "pk": 1,
   "fields": {
@@ -4919,8 +5231,8 @@
     "occluded": false,
     "outside": false,
     "z_order": 0,
-    "points": "[106.36066411239153, 85.1515964240134, 240.08352490421748, 241.26526181354166]",
-    "rotation": 0.0,
+    "points": "[106.361328125, 85.150390625, 240.083984375, 241.263671875]",
+    "rotation": 45.9,
     "parent": null
   }
 },
@@ -5033,6 +5345,78 @@
   }
 },
 {
+  "model": "engine.labeledshape",
+  "pk": 41,
+  "fields": {
+    "job": 14,
+    "label": 6,
+    "frame": 15,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[53.062929061787145, 301.6390160183091, 197.94851258581548, 763.3266590389048]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 42,
+  "fields": {
+    "job": 14,
+    "label": 5,
+    "frame": 16,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[172.0810546875, 105.990234375, 285.97262095255974, 138.40000000000146]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 43,
+  "fields": {
+    "job": 19,
+    "label": 30,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[120.81927710843593, 213.52074966532928, 258.7576974564945, 643.614457831327]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 44,
+  "fields": {
+    "job": 19,
+    "label": 29,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[479.97322623828586, 408.0053547523421, 942.6238286479238, 513.3868808567604]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
   "model": "engine.labeledshapeattributeval",
   "pk": 1,
   "fields": {
@@ -5048,6 +5432,15 @@
     "spec": 3,
     "value": "val1",
     "shape": 39
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 3,
+  "fields": {
+    "spec": 1,
+    "value": "mazda",
+    "shape": 42
   }
 },
 {
@@ -5790,6 +6183,38 @@
   }
 },
 {
+  "model": "engine.storage",
+  "pk": 13,
+  "fields": {
+    "location": "local",
+    "cloud_storage_id": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 14,
+  "fields": {
+    "location": "local",
+    "cloud_storage_id": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 15,
+  "fields": {
+    "location": "local",
+    "cloud_storage_id": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 16,
+  "fields": {
+    "location": "local",
+    "cloud_storage_id": null
+  }
+},
+{
   "model": "webhooks.webhook",
   "pk": 1,
   "fields": {
@@ -5871,6 +6296,85 @@
     ],
     "project": null,
     "organization": 1
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 1,
+  "fields": {
+    "webhook": 2,
+    "event": "update:job",
+    "status_code": 200,
+    "redelivery": false,
+    "created_date": "2022-11-03T13:57:26.380Z",
+    "updated_date": "2022-11-03T13:57:26.908Z",
+    "changed_fields": "state",
+    "request": {
+      "job": {
+        "id": 14,
+        "url": "http://localhost:8080/api/jobs/14",
+        "mode": "annotation",
+        "stage": "annotation",
+        "state": "in progress",
+        "labels": [
+          {
+            "id": 6,
+            "name": "person",
+            "type": "any",
+            "color": "#c06060",
+            "sublabels": [],
+            "attributes": [],
+            "has_parent": false
+          },
+          {
+            "id": 5,
+            "name": "car",
+            "type": "any",
+            "color": "#2080c0",
+            "sublabels": [],
+            "attributes": [
+              {
+                "id": 1,
+                "name": "model",
+                "values": [
+                  "mazda",
+                  "volvo",
+                  "bmw"
+                ],
+                "mutable": false,
+                "input_type": "select",
+                "default_value": "mazda"
+              }
+            ],
+            "has_parent": false
+          }
+        ],
+        "status": "annotation",
+        "task_id": 9,
+        "assignee": null,
+        "dimension": "2d",
+        "project_id": 1,
+        "stop_frame": 19,
+        "bug_tracker": "",
+        "start_frame": 15,
+        "updated_date": "2022-11-03T13:57:26.346824Z",
+        "data_chunk_size": 72,
+        "data_compressed_chunk_type": "imageset"
+      },
+      "event": "update:job",
+      "sender": {
+        "id": 1,
+        "url": "http://localhost:8080/api/users/1",
+        "username": "admin1",
+        "last_name": "First",
+        "first_name": "Admin"
+      },
+      "webhook_id": 2,
+      "before_update": {
+        "state": "new"
+      }
+    },
+    "response": "<!doctype html>\n<html>\n<head>\n    <title>Example Domain</title>\n\n    <meta charset=\"utf-8\" />\n    <meta http-equiv=\"Content-type\" content=\"text/html; charset=utf-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n    <style type=\"text/css\">\n    body {\n        background-color: #f0f0f2;\n        margin: 0;\n        padding: 0;\n        font-family: -apple-system, system-ui, BlinkMacSystemFont, \"Segoe UI\", \"Open Sans\", \"Helvetica Neue\", Helvetica, Arial, sans-serif;\n        \n    }\n    div {\n        width: 600px;\n        margin: 5em auto;\n        padding: 2em;\n        background-color: #fdfdff;\n        border-radius: 0.5em;\n        box-shadow: 2px 3px 7px 2px rgba(0,0,0,0.02);\n    }\n    a:link, a:visited {\n        color: #38488f;\n        text-decoration: none;\n    }\n    @media (max-width: 700px) {\n        div {\n            margin: 0 auto;\n            width: auto;\n        }\n    }\n    </style>    \n</head>\n\n<body>\n<div>\n    <h1>Example Domain</h1>\n    <p>This domain is for use in illustrative examples in documents. You may use this\n    domain in literature without prior coordination or asking for permission.</p>\n    <p><a href=\"https://www.iana.org/domains/example\">More information...</a></p>\n</div>\n</body>\n</html>\n"
   }
 },
 {

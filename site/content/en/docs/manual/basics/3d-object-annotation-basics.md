@@ -1,7 +1,7 @@
 ---
 title: '3D Object annotation (basics)'
 linkTitle: '3D Object annotation'
-weight: 17
+weight: 19
 description: 'Overview of basic operations available when annotating 3D objects.'
 ---
 
@@ -40,7 +40,7 @@ You can place an object only near the dots of the point cloud.
 
   ![](/images/gif026_carla_town3.gif)
 
-To adjust the size precisely, you need to edit the cuboid on the projections, for this change `Сursor` on control
+To adjust the size precisely, you need to edit the cuboid on the projections, for this change `Cursor` on control
 sidebar or press `Esc`. In each projection you can:
 
 Move the object in the projection plane - to do this, hover over the object,

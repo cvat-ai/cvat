@@ -21,7 +21,7 @@ class TestClientUsecases:
     @pytest.fixture(autouse=True)
     def setup(
         self,
-        changedb,  # force fixture call order to allow DB setup
+        restore_db_per_function,  # force fixture call order to allow DB setup
         fxt_logger: Tuple[Logger, io.StringIO],
         fxt_client: Client,
         fxt_stdout: io.StringIO,
@@ -56,6 +56,19 @@ class TestClientUsecases:
         version = self.client.get_server_version()
 
         assert (version.major, version.minor) >= (2, 0)
+
+
+def test_can_strip_trailing_slash_in_hostname_in_make_client(admin_user: str):
+    host, port = BASE_URL.split("://", maxsplit=1)[1].rsplit(":", maxsplit=1)
+
+    with make_client(host=host + "/", port=port, credentials=(admin_user, USER_PASS)) as client:
+        assert client.api_map.host == BASE_URL
+
+
+def test_can_strip_trailing_slash_in_hostname_in_client_ctor(admin_user: str):
+    with Client(url=BASE_URL + "/") as client:
+        client.login((admin_user, USER_PASS))
+        assert client.api_map.host == BASE_URL
 
 
 def test_can_detect_server_schema_if_not_provided():

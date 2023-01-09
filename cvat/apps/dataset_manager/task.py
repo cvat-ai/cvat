@@ -16,7 +16,7 @@ from cvat.apps.engine.plugins import plugin_decorator
 from cvat.apps.profiler import silk_profile
 
 from .annotation import AnnotationIR, AnnotationManager
-from .bindings import TaskData
+from .bindings import TaskData, JobData
 from .formats.registry import make_exporter, make_importer
 from .util import bulk_create
 
@@ -70,9 +70,18 @@ def _merge_table_rows(rows, keys_for_merge, field_id):
     return list(merged_rows.values())
 
 class JobAnnotation:
-    def __init__(self, pk):
-        self.db_job = models.Job.objects.select_related('segment__task') \
-            .select_for_update().get(id=pk)
+    def __init__(self, pk, is_prefetched=False):
+        if is_prefetched:
+            self.db_job = models.Job.objects.select_related('segment__task') \
+                .select_for_update().get(id=pk)
+        else:
+            self.db_job = models.Job.objects.prefetch_related(
+                'segment',
+                'segment__task',
+                Prefetch('segment__task__data', queryset=models.Data.objects.select_related('video').prefetch_related(
+                    Prefetch('images', queryset=models.Image.objects.order_by('frame'))
+                ))
+            ).get(pk=pk)
 
         db_segment = self.db_job.segment
         self.start_frame = db_segment.start_frame
@@ -553,24 +562,24 @@ class JobAnnotation:
         return self.ir_data.data
 
     def export(self, dst_file, exporter, host='', **options):
-        task_data = TaskData(
+        job_data = JobData(
             annotation_ir=self.ir_data,
-            db_task=self.db_job.segment.task,
+            db_job=self.db_job,
             host=host,
         )
-        exporter(dst_file, task_data, **options)
+        exporter(dst_file, job_data, **options)
 
-    def import_annotations(self, src_file, importer):
-        task_data = TaskData(
+    def import_annotations(self, src_file, importer, **options):
+        job_data = JobData(
             annotation_ir=AnnotationIR(),
-            db_task=self.db_job.segment.task,
+            db_job=self.db_job,
             create_callback=self.create,
         )
         self.delete()
 
-        importer(src_file, task_data)
+        importer(src_file, job_data, **options)
 
-        self.create(task_data.data.slice(self.start_frame, self.stop_frame).serialize())
+        self.create(job_data.data.slice(self.start_frame, self.stop_frame).serialize())
 
 class TaskAnnotation:
     def __init__(self, pk):
@@ -630,7 +639,7 @@ class TaskAnnotation:
         self.reset()
 
         for db_job in self.db_jobs:
-            annotation = JobAnnotation(db_job.id)
+            annotation = JobAnnotation(db_job.id, is_prefetched=True)
             annotation.init_from_db()
             if annotation.ir_data.version > self.ir_data.version:
                 self.ir_data.version = annotation.ir_data.version
@@ -766,19 +775,19 @@ def export_task(task_id, dst_file, format_name,
         task.export(f, exporter, host=server_url, save_images=save_images)
 
 @transaction.atomic
-def import_task_annotations(task_id, src_file, format_name):
+def import_task_annotations(task_id, src_file, format_name, conv_mask_to_poly):
     task = TaskAnnotation(task_id)
     task.init_from_db()
 
     importer = make_importer(format_name)
     with open(src_file, 'rb') as f:
-        task.import_annotations(f, importer)
+        task.import_annotations(f, importer, conv_mask_to_poly=conv_mask_to_poly)
 
 @transaction.atomic
-def import_job_annotations(job_id, src_file, format_name):
+def import_job_annotations(job_id, src_file, format_name, conv_mask_to_poly):
     job = JobAnnotation(job_id)
     job.init_from_db()
 
     importer = make_importer(format_name)
     with open(src_file, 'rb') as f:
-        job.import_annotations(f, importer)
+        job.import_annotations(f, importer, conv_mask_to_poly=conv_mask_to_poly)

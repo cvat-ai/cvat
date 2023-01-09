@@ -1,4 +1,5 @@
 # Copyright (C) 2020-2022 Intel Corporation
+# Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -6,6 +7,8 @@ import os
 import cv2
 import numpy as np
 from model_loader import ModelLoader
+from shared import to_cvat_mask
+
 
 class PixelLinkDecoder():
     def __init__(self, pixel_threshold, link_threshold):
@@ -207,11 +210,24 @@ class ModelHandler:
 
         pcd.decode(image.height, image.width, output_layer)
         for box in pcd.bboxes:
+            mask = pcd.pixel_mask
+            mask = np.array(mask, dtype=np.uint8)
+            mask = cv2.resize(mask, dsize=(image.width, image.height), interpolation=cv2.INTER_CUBIC)
+            cv2.normalize(mask, mask, 0, 255, cv2.NORM_MINMAX)
+
+            box = box.ravel().tolist()
+            x_min = min(box[::2])
+            x_max = max(box[::2])
+            y_min = min(box[1::2])
+            y_max = max(box[1::2])
+            cvat_mask = to_cvat_mask((x_min, y_min, x_max, y_max), mask)
+
             results.append({
                 "confidence": None,
                 "label": self.labels.get(obj_class, "unknown"),
-                "points": box.ravel().tolist(),
-                "type": "polygon",
+                "points": box,
+                "mask": cvat_mask,
+                "type": "mask",
             })
 
         return results

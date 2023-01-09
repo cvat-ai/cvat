@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -13,7 +14,7 @@ import Form, { FormInstance } from 'antd/lib/form';
 import Badge from 'antd/lib/badge';
 import { Store } from 'antd/lib/form/interface';
 
-import { RawAttribute } from 'cvat-core-wrapper';
+import { RawAttribute, LabelType } from 'cvat-core-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import ColorPicker from 'components/annotation-page/standard-workspace/objects-side-bar/color-picker';
 import { ColorizeIcon } from 'icons';
@@ -78,7 +79,7 @@ export default class LabelForm extends React.Component<Props> {
             name: values.name,
             id: label ? label.id : idGenerator(),
             color: values.color,
-            type: label && label.id as number > 0 ? label?.type : values.type || label?.type || 'any',
+            type: values.type || label?.type || LabelType.ANY,
             attributes: (values.attributes || []).map((attribute: Store) => {
                 let attrValues: string | string[] = attribute.values;
                 if (!Array.isArray(attrValues)) {
@@ -440,6 +441,7 @@ export default class LabelForm extends React.Component<Props> {
                 <Input
                     ref={this.inputNameRef}
                     placeholder='Label name'
+                    className='cvat-label-name-input'
                     onKeyUp={(event): void => {
                         if (event.key === 'Escape' || event.key === 'Esc' || event.keyCode === 27) {
                             onCancel();
@@ -447,6 +449,37 @@ export default class LabelForm extends React.Component<Props> {
                     }}
                     autoComplete='off'
                 />
+            </Form.Item>
+        );
+    }
+
+    private renderLabelTypeInput(): JSX.Element {
+        const { onSkeletonSubmit } = this.props;
+        const isSkeleton = !!onSkeletonSubmit;
+
+        const types = Object.values(LabelType)
+            .filter((type: string) => type !== LabelType.SKELETON);
+        const { label } = this.props;
+        const defaultType = isSkeleton ? LabelType.SKELETON : LabelType.ANY;
+        const value = label ? label.type : defaultType;
+
+        return (
+            <Form.Item name='type' initialValue={value}>
+                <Select className='cvat-label-type-input' disabled={isSkeleton} showSearch={false}>
+                    {isSkeleton && (
+                        <Select.Option
+                            className='cvat-label-type-option-skeleton'
+                            value='skeleton'
+                        >
+                            Skeleton
+                        </Select.Option>
+                    )}
+                    { types.map((type: string): JSX.Element => (
+                        <Select.Option className={`cvat-label-type-option-${type}`} key={type} value={type}>
+                            {`${type[0].toUpperCase()}${type.slice(1)}`}
+                        </Select.Option>
+                    )) }
+                </Select>
             </Form.Item>
         );
     }
@@ -554,7 +587,8 @@ export default class LabelForm extends React.Component<Props> {
         return (
             <Form onFinish={this.handleSubmit} layout='vertical' ref={this.formRef}>
                 <Row justify='start' align='top'>
-                    <Col span={10}>{this.renderLabelNameInput()}</Col>
+                    <Col span={8}>{this.renderLabelNameInput()}</Col>
+                    <Col span={3} offset={1}>{this.renderLabelTypeInput()}</Col>
                     <Col span={3} offset={1}>
                         {this.renderChangeColorButton()}
                     </Col>

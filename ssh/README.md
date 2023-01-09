@@ -13,7 +13,7 @@ docker exec -it cvat_server bash -ic 'ls .ssh'
   For example:
 
 ```bash
-socks_proxy=proxy-example.com:1080 docker-compose build
+socks_proxy=proxy-example.com:1080 docker compose build
 ```
 
 - Try to clone a repository via SSH directly in the container by the command:

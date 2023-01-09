@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -13,7 +14,7 @@ import {
     pasteShapeAsync,
     copyShape as copyShapeAction,
     activateObject as activateObjectAction,
-    propagateObject as propagateObjectAction,
+    switchPropagateVisibility as switchPropagateVisibilityAction,
     removeObject as removeObjectAction,
 } from 'actions/annotation-actions';
 import {
@@ -22,9 +23,9 @@ import {
 import ObjectStateItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item';
 import { getColor } from 'components/annotation-page/standard-workspace/objects-side-bar/shared';
 import { shift } from 'utils/math';
-import { Label } from 'cvat-core-wrapper';
-import { Canvas } from 'cvat-canvas-wrapper';
+import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
+import { filterApplicableLabels } from 'utils/filter-applicable-labels';
 
 interface OwnProps {
     readonly: boolean;
@@ -55,7 +56,7 @@ interface DispatchToProps {
     activateObject: (activatedStateID: number | null, activatedElementID: number | null) => void;
     removeObject: (objectState: any) => void;
     copyShape: (objectState: any) => void;
-    propagateObject: (objectState: any) => void;
+    switchPropagateVisibility: (visible: boolean) => void;
     changeGroupColor(group: number, color: string): void;
 }
 
@@ -117,8 +118,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             dispatch(copyShapeAction(objectState));
             dispatch(pasteShapeAsync());
         },
-        propagateObject(objectState: any): void {
-            dispatch(propagateObjectAction(objectState));
+        switchPropagateVisibility(visible: boolean): void {
+            dispatch(switchPropagateVisibilityAction(visible));
         },
         changeGroupColor(group: number, color: string): void {
             dispatch(changeGroupColorAsync(group, color));
@@ -136,11 +137,23 @@ class ObjectItemContainer extends React.PureComponent<Props> {
     };
 
     private propagate = (): void => {
-        const { objectState, readonly, propagateObject } = this.props;
+        const { switchPropagateVisibility, readonly } = this.props;
         if (!readonly) {
-            propagateObject(objectState);
+            switchPropagateVisibility(true);
         }
     };
+
+    private edit = (): void => {
+        const { objectState, readonly, canvasInstance } = this.props;
+
+        if (!readonly && canvasInstance instanceof Canvas) {
+            if (canvasInstance.mode() !== CanvasMode.IDLE) {
+                canvasInstance.cancel();
+            }
+
+            canvasInstance.edit({ enabled: true, state: objectState });
+        }
+    }
 
     private remove = (): void => {
         const {
@@ -212,7 +225,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
 
     private activate = (activeElementID?: number): void => {
         const {
-            objectState, ready, activeControl, activateObject, canvasInstance,
+            objectState, ready, activeControl, activateObject,
         } = this.props;
 
         if (ready && activeControl === ActiveControl.CURSOR) {
@@ -220,9 +233,6 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 objectState.clientID,
                 (Number.isInteger(activeElementID) ? activeElementID : null) as number | null,
             );
-            if (canvasInstance instanceof Canvas3d) {
-                canvasInstance.activate(objectState.clientID);
-            }
         }
     };
 
@@ -313,6 +323,8 @@ class ObjectItemContainer extends React.PureComponent<Props> {
             jobInstance,
         } = this.props;
 
+        const applicableLabels = filterApplicableLabels(objectState, labels);
+
         return (
             <ObjectStateItemComponent
                 jobInstance={jobInstance}
@@ -328,9 +340,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 attributes={attributes}
                 elements={objectState.elements}
                 normalizedKeyMap={normalizedKeyMap}
-                labels={labels.filter((label: Label) => (
-                    [objectState.shapeType || objectState.objectType, 'any'].includes(label.type)
-                ))}
+                labels={applicableLabels}
                 colorBy={colorBy}
                 activate={this.activate}
                 remove={this.remove}
@@ -342,6 +352,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 toForeground={this.toForeground}
                 changeColor={this.changeColor}
                 changeLabel={this.changeLabel}
+                edit={this.edit}
                 resetCuboidPerspective={() => this.resetCuboidPerspective()}
             />
         );

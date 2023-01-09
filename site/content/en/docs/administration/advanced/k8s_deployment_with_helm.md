@@ -56,7 +56,7 @@ helm dependency update
      traefik:
        service:
          externalIPs:
-           - "your minikube IP (can be obtained with `minicube ip` command)"
+           - "your minikube IP (can be obtained with `minikube ip` command)"
      ```
    - Also ensure that your CVAT ingress appears on your hosts file (/etc/hosts).
      You can do this by running this command:
@@ -69,10 +69,6 @@ helm dependency update
 1. Create `values.override.yaml` file inside `helm-chart` directory.
 1. Fill `values.override.yaml` with new parameters for chart.
 1. Override [postgresql password](#postgresql-password)
-1. Create a rules.tar.gz archive containing all OPA rules inside this `helm-chart` directory.
-   ```shell
-   find ../cvat/apps/iam/rules -name "*.rego" -and ! -name '*test*' -exec basename {} \; | tar -czf rules.tar.gz -C ../cvat/apps/iam/rules/ -T -
-   ```
 
 ### Postgresql password?
 Put below into your `values.override.yaml`
@@ -153,7 +149,7 @@ Before starting, ensure that the following prerequisites are met:
 
    - Let's build custom elasticsearch, logstash and kibana images with the following command
      ```shell
-     docker-compose -f docker-compose.yml  -f components/analytics/docker-compose.analytics.yml build
+     docker compose -f docker-compose.yml  -f components/analytics/docker-compose.analytics.yml build
      ```
 
    - Tag images:
@@ -230,11 +226,137 @@ See <https://helm.sh/>
    ```
 ### How to understand what diff will be inflicted by 'helm upgrade'?
 You can use <https://github.com/databus23/helm-diff#install> for that
-### I want to use my own postgresql/redis with your chart.
-Just set `postgresql.enabled` or `redis.enabled` to `false`, as described below.
-Then - put your instance params to "external" field
+### I want to use my own postgresql with your chart.
+Just set `postgresql.enabled` to `false` in the override file, then put the parameters of your database
+instance in the `external` field.
+You may also need to configure `username`, `database` and `password` fields
+to connect to your own database:
+```yml
+postgresql:
+  enabled: false
+  external:
+    host: postgresql.default.svc.cluster.local
+    port: 5432
+  auth:
+    username: cvat
+    database: cvat
+  secret:
+    password: cvat_postgresql
+```
+In example above corresponding secret will be created automatically, but if you want to use existing secret change `secret.create` to `false` and set `name` of existing secret:
+```yml
+postgresql:
+  enabled: false
+  external:
+    host: postgresql.default.svc.cluster.local
+    port: 5432
+  secret:
+    create: false
+    name: "my-postgresql-secret"
+```
+The secret must contain the `database`, `username` and `password`
+keys to access to the database
+like:
+```yml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: "my-postgresql-secret"
+  namespace: default
+type: generic
+stringData:
+  database: cvat
+  username: cvat
+  password: secretpassword
+```
+
+### I want to use my own redis with your chart.
+Just set `redis.enabled` to `false` in the override file, then put the parameters of your Redis
+instance in the `external` field.
+You may also need to configure `password` field to connect to your own Redis:
+```yml
+redis:
+  enabled: false
+  external:
+    host: redis.hostname.local
+  secret:
+    password: cvat_redis
+```
+In the above example the corresponding secret will be created automatically, but if you want to use an existing secret
+change `secret.create` to `false` and set `name` of the existing secret:
+```yml
+redis:
+  enabled: false
+  external:
+    host: redis.hostname.local
+  secret:
+    create: false
+    name: "my-redis-secret"
+```
+The secret must contain the `redis-password` key like:
+```yml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: "my-redis-secret"
+  namespace: default
+type: generic
+stringData:
+  redis-password: secretpassword
+```
+
 ### I want to override some settings in values.yaml.
 Just create file `values.override.yaml` and place your changes here, using same structure as in `values.yaml`.
 Then reference it in helm update/install command using `-f` flag
 ### Why you used external charts to provide redis and postgres?
 Because they definitely know what they do better then we are, so we are getting more quality and less support
+### How to use custom domain name with k8s deployment:
+The default value `cvat.local` may be overriden with `--set ingress.hosts[0].host` option like this:
+```shell
+helm upgrade -n default cvat -i --create-namespace helm-chart -f helm-chart/values.yaml -f helm-chart/values.override.yaml --set ingress.hosts[0].host=YOUR_FQDN
+```
+### How to fix fail of `helm upgrade` due label field is immutable reason?
+If an error message like this:
+```shell
+Error: UPGRADE FAILED:cannot patch "cvat-backend-server" with kind Deployment: Deployment.apps "cvat-backend-server" is invalid: spec.selector: Invalid value: v1.LabelSelector{MatchLabels:map[string]string{"app":"cvat-app", "app.kubernetes.io/instance":"cvat", "app.kubernetes.io/managed-by":"Helm", "app.kubernetes.io/name":"cvat", "app.kubernetes.io/version":"latest", "component":"server", "helm.sh/chart":"cvat", "tier":"backend"}, MatchExpressions:[]v1.LabelSelectorRequirement(nil)}: field is immutable
+```
+To fix that, delete CVAT Deployments before upgrading
+```shell
+kubectl delete deployments --namespace=foo -l app=cvat-app
+```
+### How to use existing PersistentVolume to store CVAT data instead of default storage
+It is assumed that you have created a PersistentVolumeClaim named `my-claim-name`
+and a PersistentVolume that backing the claim.
+Claims must exist in the same namespace as the Pod using the claim.
+For details [see](https://kubernetes.io/docs/concepts/storage/persistent-volumes).
+Add these values in the `values.override.yaml`:
+```yaml
+cvat:
+  backend:
+    permissionFix:
+      enabled: false
+    defaultStorage:
+      enabled: false
+    server:
+      additionalVolumes:
+        - name: cvat-backend-data
+          persistentVolumeClaim:
+            claimName: my-claim-name
+    worker:
+      default:
+        additionalVolumes:
+          - name: cvat-backend-data
+            persistentVolumeClaim:
+              claimName: my-claim-name
+      low:
+        additionalVolumes:
+          - name: cvat-backend-data
+            persistentVolumeClaim:
+              claimName: my-claim-name
+    utils:
+      additionalVolumes:
+        - name: cvat-backend-data
+          persistentVolumeClaim:
+            claimName: my-claim-name
+
+```

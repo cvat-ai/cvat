@@ -10,7 +10,7 @@ import pytest
 from shared.utils.config import make_api_client
 
 
-@pytest.mark.usefixtures("dontchangedb")
+@pytest.mark.usefixtures("restore_db_per_class")
 class TestGetServer:
     def test_can_retrieve_about_unauthorized(self):
         with make_api_client(user=None, password=None) as api_client:
@@ -28,7 +28,7 @@ class TestGetServer:
             assert len(data.exporters) != 0
 
 
-@pytest.mark.usefixtures("dontchangedb")
+@pytest.mark.usefixtures("restore_db_per_class")
 class TestGetSchema:
     def test_can_get_schema_unauthorized(self):
         with make_api_client(user=None, password=None) as api_client:

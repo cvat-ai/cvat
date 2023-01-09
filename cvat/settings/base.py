@@ -15,6 +15,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/2.0/ref/settings/
 """
 
+from enum import Enum
 import os
 import sys
 import fcntl
@@ -53,10 +54,10 @@ except ImportError:
 def generate_ssh_keys():
     keys_dir = '{}/keys'.format(os.getcwd())
     ssh_dir = '{}/.ssh'.format(os.getenv('HOME'))
-    pidfile = os.path.join(ssh_dir, 'ssh.pid')
+    pidfile = os.path.join(keys_dir, 'ssh.pid')
 
     def add_ssh_keys():
-        IGNORE_FILES = ('README.md', 'ssh.pid')
+        IGNORE_FILES = ('README.md',)
         keys_to_add = [entry.name for entry in os.scandir(ssh_dir) if entry.name not in IGNORE_FILES]
         keys_to_add = ' '.join(os.path.join(ssh_dir, f) for f in keys_to_add)
         subprocess.run(['ssh-add {}'.format(keys_to_add)], # nosec
@@ -121,16 +122,25 @@ INSTALLED_APPS = [
     'allauth.account',
     'corsheaders',
     'allauth.socialaccount',
+    # social providers
     'allauth.socialaccount.providers.amazon_cognito',
+    'allauth.socialaccount.providers.github',
+    'allauth.socialaccount.providers.google',
+    'dj_rest_auth.registration',
+    'health_check',
+    'health_check.db',
+    'health_check.cache',
+    'health_check.contrib.migrations',
+    'health_check.contrib.psutil',
     'cvat.apps.iam',
     'cvat.apps.dataset_manager',
     'cvat.apps.organizations',
     'cvat.apps.engine',
     'cvat.apps.dataset_repo',
-    'cvat.apps.restrictions',
     'cvat.apps.lambda_manager',
     'cvat.apps.opencv',
     'cvat.apps.webhooks',
+    'cvat.apps.health',
 ]
 
 SITE_ID = 1
@@ -185,7 +195,7 @@ REST_FRAMEWORK = {
 }
 
 REST_AUTH_REGISTER_SERIALIZERS = {
-    'REGISTER_SERIALIZER': 'cvat.apps.restrictions.serializers.RestrictedRegisterSerializer',
+    'REGISTER_SERIALIZER': 'cvat.apps.iam.serializers.RegisterSerializerEx',
 }
 
 REST_AUTH_SERIALIZERS = {
@@ -247,9 +257,26 @@ IAM_DEFAULT_ROLES = ['user']
 IAM_ADMIN_ROLE = 'admin'
 # Index in the list below corresponds to the priority (0 has highest priority)
 IAM_ROLES = [IAM_ADMIN_ROLE, 'business', 'user', 'worker']
-IAM_OPA_DATA_URL = 'http://opa:8181/v1/data'
+IAM_OPA_HOST = 'http://opa:8181'
+IAM_OPA_DATA_URL = f'{IAM_OPA_HOST}/v1/data'
 LOGIN_URL = 'rest_login'
 LOGIN_REDIRECT_URL = '/'
+
+DEFAULT_LIMITS = {
+    "USER_SANDBOX_TASKS": 10,
+    "USER_SANDBOX_PROJECTS": 3,
+    "TASKS_IN_USER_SANDBOX_PROJECT": 5,
+    "USER_OWNED_ORGS": 1,
+    "USER_SANDBOX_CLOUD_STORAGES": 10,
+
+    "ORG_TASKS": 10,
+    "ORG_PROJECTS": 3,
+    "TASKS_IN_ORG_PROJECT": 5,
+    "ORG_CLOUD_STORAGES": 10,
+    "ORG_COMMON_WEBHOOKS": 20,
+
+    "PROJECT_WEBHOOKS": 10,
+}
 
 # ORG settings
 ORG_INVITATION_CONFIRM = 'No'
@@ -274,6 +301,8 @@ SOCIALACCOUNT_ADAPTER = 'cvat.apps.iam.adapters.SocialAccountAdapterEx'
 # set UI url to redirect after a successful e-mail confirmation
 #changed from '/auth/login' to '/auth/email-confirmation' for email confirmation message
 ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = '/auth/email-confirmation'
+ACCOUNT_EMAIL_VERIFICATION_SENT_REDIRECT_URL = '/auth/email-verification-sent'
+INCORRECT_EMAIL_CONFIRMATION_URL = '/auth/incorrect-email-confirmation'
 
 OLD_PASSWORD_FIELD_ENABLED = True
 
@@ -291,20 +320,32 @@ SOCIALACCOUNT_PROVIDERS = {
 # Django-RQ
 # https://github.com/rq/django-rq
 
+class CVAT_QUEUES(Enum):
+    IMPORT_DATA = 'import'
+    EXPORT_DATA = 'export'
+    AUTO_ANNOTATION = 'annotation'
+    WEBHOOKS = 'webhooks'
+
 RQ_QUEUES = {
-    'default': {
+    CVAT_QUEUES.IMPORT_DATA.value: {
         'HOST': 'localhost',
         'PORT': 6379,
         'DB': 0,
         'DEFAULT_TIMEOUT': '4h'
     },
-    'low': {
+    CVAT_QUEUES.EXPORT_DATA.value: {
+        'HOST': 'localhost',
+        'PORT': 6379,
+        'DB': 0,
+        'DEFAULT_TIMEOUT': '4h'
+    },
+    CVAT_QUEUES.AUTO_ANNOTATION.value: {
         'HOST': 'localhost',
         'PORT': 6379,
         'DB': 0,
         'DEFAULT_TIMEOUT': '24h'
     },
-    'webhooks': {
+    CVAT_QUEUES.WEBHOOKS.value: {
         'HOST': 'localhost',
         'PORT': 6379,
         'DB': 0,
@@ -315,9 +356,9 @@ RQ_QUEUES = {
 NUCLIO = {
     'SCHEME': os.getenv('CVAT_NUCLIO_SCHEME', 'http'),
     'HOST': os.getenv('CVAT_NUCLIO_HOST', 'localhost'),
-    'PORT': os.getenv('CVAT_NUCLIO_PORT', 8070),
-    'DEFAULT_TIMEOUT': os.getenv('CVAT_NUCLIO_DEFAULT_TIMEOUT', 120),
-    'FUNCTION_NAMESPACE': os.getenv('CVAT_NUCLIO_FUNCTION_NAMESPACE', 'nuclio'),
+    'PORT': int(os.getenv('CVAT_NUCLIO_PORT', 8070)),
+    'DEFAULT_TIMEOUT': int(os.getenv('CVAT_NUCLIO_DEFAULT_TIMEOUT', 120)),
+    'FUNCTION_NAMESPACE': os.getenv('CVAT_NUCLIO_FUNCTION_NAMESPACE', 'nuclio')
 }
 
 RQ_SHOW_ADMIN_LINK = True
@@ -413,6 +454,9 @@ os.makedirs(CLOUD_STORAGE_ROOT, exist_ok=True)
 TMP_FILES_ROOT = os.path.join(DATA_ROOT, 'tmp')
 os.makedirs(TMP_FILES_ROOT, exist_ok=True)
 
+IAM_OPA_BUNDLE_PATH = os.path.join(STATIC_ROOT, 'opa', 'bundle.tar.gz')
+os.makedirs(Path(IAM_OPA_BUNDLE_PATH).parent, exist_ok=True)
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -482,11 +526,6 @@ LOCAL_LOAD_MAX_FILES_COUNT = 500
 LOCAL_LOAD_MAX_FILES_SIZE = 512 * 1024 * 1024  # 512 MB
 
 RESTRICTIONS = {
-    'user_agreements': [],
-
-    # this setting reduces task visibility to owner and assignee only
-    'reduce_task_visibility': False,
-
     # allow access to analytics component to users with business role
     # otherwise, only the administrator has access
     'analytics_visibility': True,
@@ -590,6 +629,8 @@ SPECTACULAR_SETTINGS = {
         'JobStage': 'cvat.apps.engine.models.StageChoice',
         'StorageType': 'cvat.apps.engine.models.StorageChoice',
         'SortingMethod': 'cvat.apps.engine.models.SortingMethod',
+        'WebhookType': 'cvat.apps.webhooks.models.WebhookTypeChoice',
+        'WebhookContentType': 'cvat.apps.webhooks.models.WebhookContentTypeChoice',
     },
 
     # Coercion of {pk} to {id} is controlled by SCHEMA_COERCE_PATH_PK. Additionally,
@@ -599,3 +640,54 @@ SPECTACULAR_SETTINGS = {
     'SCHEMA_PATH_PREFIX': '/api',
     'SCHEMA_PATH_PREFIX_TRIM': False,
 }
+
+# allauth configuration
+USE_ALLAUTH_SOCIAL_ACCOUNTS = strtobool(os.getenv('USE_ALLAUTH_SOCIAL_ACCOUNTS') or 'False')
+
+ACCOUNT_ADAPTER = 'cvat.apps.iam.adapters.DefaultAccountAdapterEx'
+
+# the same in UI
+ACCOUNT_USERNAME_MIN_LENGTH = 5
+ACCOUNT_LOGOUT_ON_PASSWORD_CHANGE = True
+
+if USE_ALLAUTH_SOCIAL_ACCOUNTS:
+    SOCIALACCOUNT_ADAPTER = 'cvat.apps.iam.adapters.SocialAccountAdapterEx'
+    SOCIALACCOUNT_LOGIN_ON_GET = True
+    # It's required to define email in the case when a user has a private hidden email.
+    # (e.g in github account set keep my email addresses private)
+    # default = ACCOUNT_EMAIL_REQUIRED
+    SOCIALACCOUNT_QUERY_EMAIL = True
+    SOCIALACCOUNT_CALLBACK_CANCELLED_URL = '/auth/login'
+    # custom variable because by default LOGIN_REDIRECT_URL will be used
+    SOCIAL_APP_LOGIN_REDIRECT_URL = 'http://localhost:8080/auth/login-with-social-app'
+
+    GITHUB_CALLBACK_URL = 'http://localhost:8080/api/auth/github/login/callback/'
+    GOOGLE_CALLBACK_URL = 'http://localhost:8080/api/auth/google/login/callback/'
+
+    SOCIAL_AUTH_GOOGLE_CLIENT_ID = os.getenv('SOCIAL_AUTH_GOOGLE_CLIENT_ID')
+    SOCIAL_AUTH_GOOGLE_CLIENT_SECRET = os.getenv('SOCIAL_AUTH_GOOGLE_CLIENT_SECRET')
+
+    SOCIAL_AUTH_GITHUB_CLIENT_ID = os.getenv('SOCIAL_AUTH_GITHUB_CLIENT_ID')
+    SOCIAL_AUTH_GITHUB_CLIENT_SECRET = os.getenv('SOCIAL_AUTH_GITHUB_CLIENT_SECRET')
+
+    SOCIALACCOUNT_PROVIDERS = {
+        'google': {
+            'APP': {
+                'client_id': SOCIAL_AUTH_GOOGLE_CLIENT_ID,
+                'secret': SOCIAL_AUTH_GOOGLE_CLIENT_SECRET,
+                'key': ''
+            },
+            'SCOPE': [ 'profile', 'email', 'openid'],
+            'AUTH_PARAMS': {
+                'access_type': 'online',
+            }
+        },
+        'github': {
+            'APP': {
+                'client_id': SOCIAL_AUTH_GITHUB_CLIENT_ID,
+                'secret': SOCIAL_AUTH_GITHUB_CLIENT_SECRET,
+                'key': ''
+            },
+            'SCOPE': [ 'read:user', 'user:email' ],
+        },
+    }

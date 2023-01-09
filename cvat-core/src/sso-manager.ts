@@ -1,18 +1,14 @@
-// Copyright (C) 2022 Intel Corporation
+// Copyright (C) 2022 CVAT Corporation
 //
 // SPDX-License-Identifier: MIT
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const Axios = require('axios');
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const store = require('store');
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const config = require('./config');
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const { ServerError } = require('./exceptions');
+import Axios from 'axios';
+import store from 'store';
+import config from './config';
+import { ServerError } from './exceptions';
 
-class SSOManager {
-    async validate(accessCode: string) {
+export default class SSOManager {
+    static async validate(accessCode: string) {
         let response = null;
         const ssoBase = `${config.backendAPI}`;
 
@@ -56,5 +52,3 @@ class SSOManager {
         };
     }
 }
-
-module.exports = new SSOManager();

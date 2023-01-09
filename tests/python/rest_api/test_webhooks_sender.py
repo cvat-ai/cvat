@@ -3,8 +3,8 @@
 # SPDX-License-Identifier: MIT
 
 import json
-import os.path as osp
 from http import HTTPStatus
+from time import sleep
 
 import pytest
 from deepdiff import DeepDiff
@@ -20,10 +20,13 @@ from shared.utils.config import delete_method, get_method, patch_method, post_me
 #  1) trigger some webhook
 #  2) check that webhook is sent by checking value of `response` field for the last delivery of this webhook
 
+# https://docs.pytest.org/en/7.1.x/example/markers.html#marking-whole-classes-or-modules
+pytestmark = [pytest.mark.with_external_services]
+
 
 def target_url():
     env_data = {}
-    with open(osp.join(CVAT_ROOT_DIR, "tests", "python", "webhook_receiver", ".env"), "r") as f:
+    with open(CVAT_ROOT_DIR / "tests/python/webhook_receiver/.env", "r") as f:
         for line in f:
             name, value = tuple(line.strip().split("="))
             env_data[name] = value
@@ -63,16 +66,24 @@ def create_webhook(events, webhook_type, project_id=None, org_id=""):
 
 
 def get_deliveries(webhook_id):
-    response = get_method("admin1", f"webhooks/{webhook_id}/deliveries")
-    assert response.status_code == HTTPStatus.OK
+    delivery_response = {}
+    for _ in range(10):
+        response = get_method("admin1", f"webhooks/{webhook_id}/deliveries")
+        assert response.status_code == HTTPStatus.OK
 
-    deliveries = response.json()
-    last_payload = json.loads(deliveries["results"][0]["response"])
+        deliveries = response.json()
+        delivery = deliveries["results"][0]["response"]
 
-    return deliveries, last_payload
+        if delivery:
+            delivery_response = json.loads(delivery)
+            break
+
+        sleep(1)
+
+    return deliveries, delivery_response
 
 
-@pytest.mark.usefixtures("changedb")
+@pytest.mark.usefixtures("restore_db_per_function")
 class TestWebhookProjectEvents:
     def test_webhook_update_project_name(self):
         response = post_method("admin1", "projects", {"name": "project"})
@@ -173,7 +184,7 @@ class TestWebhookProjectEvents:
         )
 
 
-@pytest.mark.usefixtures("changedb")
+@pytest.mark.usefixtures("restore_db_per_function")
 class TestWebhookIntersection:
     # Test case description:
     #     few webhooks are triggered by the same event
@@ -284,7 +295,7 @@ class TestWebhookIntersection:
         )
 
 
-@pytest.mark.usefixtures("changedb")
+@pytest.mark.usefixtures("restore_db_per_function")
 class TestWebhookTaskEvents:
     def test_webhook_update_task_assignee(self, users, tasks):
         task_id, project_id = next(
@@ -382,7 +393,7 @@ class TestWebhookTaskEvents:
         )
 
 
-@pytest.mark.usefixtures("changedb")
+@pytest.mark.usefixtures("restore_db_per_function")
 class TestWebhookJobEvents:
     def test_webhook_update_job_assignee(self, jobs, tasks, users):
         job = next(
@@ -449,7 +460,7 @@ class TestWebhookJobEvents:
         assert payload["job"]["state"] == patch_data["state"]
 
 
-@pytest.mark.usefixtures("changedb")
+@pytest.mark.usefixtures("restore_db_per_function")
 class TestWebhookIssueEvents:
     def test_webhook_update_issue_resolved(self, issues, jobs, tasks):
         issue = next(
@@ -545,7 +556,7 @@ class TestWebhookIssueEvents:
         )
 
 
-@pytest.mark.usefixtures("changedb")
+@pytest.mark.usefixtures("restore_db_per_function")
 class TestWebhookMembershipEvents:
     def test_webhook_update_membership_role(self, memberships):
         roles = {"worker", "supervisor", "maintainer"}
@@ -594,7 +605,7 @@ class TestWebhookMembershipEvents:
         )
 
 
-@pytest.mark.usefixtures("changedb")
+@pytest.mark.usefixtures("restore_db_per_function")
 class TestWebhookOrganizationEvents:
     def test_webhook_update_organization_name(self, organizations):
         org_id = list(organizations)[0]["id"]
@@ -611,7 +622,7 @@ class TestWebhookOrganizationEvents:
         assert payload["organization"]["name"] == patch_data["name"]
 
 
-@pytest.mark.usefixtures("changedb")
+@pytest.mark.usefixtures("restore_db_per_function")
 class TestWebhookCommentEvents:
     def test_webhook_update_comment_message(self, comments, issues, jobs, tasks):
         org_comments = list(
@@ -684,7 +695,7 @@ class TestWebhookCommentEvents:
         )
 
 
-@pytest.mark.usefixtures("changedb")
+@pytest.mark.usefixtures("restore_db_per_function")
 class TestWebhookPing:
     def test_ping_webhook(self, projects):
         project_id = list(projects)[0]["id"]
@@ -709,7 +720,7 @@ class TestWebhookPing:
         )
 
 
-@pytest.mark.usefixtures("changedb")
+@pytest.mark.usefixtures("restore_db_per_function")
 class TestWebhookRedelivery:
     def test_webhook_redelivery(self, projects):
         project = list(projects)[0]

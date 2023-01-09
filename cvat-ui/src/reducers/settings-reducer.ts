@@ -8,10 +8,10 @@ import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
 import { SettingsActionTypes } from 'actions/settings-actions';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
-
 import {
     SettingsState, GridColor, FrameSpeed, ColorBy, DimensionType,
-} from '.';
+} from 'reducers';
+import { ObjectState, ShapeType } from 'cvat-core-wrapper';
 
 const defaultState: SettingsState = {
     shapes: {
@@ -382,6 +382,27 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                     showTagsOnFrame: action.payload.showTagsOnFrame,
                 },
             };
+        }
+        case AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS_SUCCESS:
+        case AnnotationActionTypes.CREATE_ANNOTATIONS_SUCCESS:
+        case AnnotationActionTypes.CHANGE_FRAME_SUCCESS: {
+            const { states } = action.payload;
+            if (states.some((_state: ObjectState): boolean => _state.shapeType === ShapeType.MASK)) {
+                const MIN_OPACITY = 30;
+                const { shapes: { opacity } } = state;
+                if (opacity < MIN_OPACITY) {
+                    return {
+                        ...state,
+                        shapes: {
+                            ...state.shapes,
+                            opacity: MIN_OPACITY,
+                            selectedOpacity: MIN_OPACITY * 2,
+                        },
+                    };
+                }
+            }
+
+            return state;
         }
         case BoundariesActionTypes.RESET_AFTER_ERROR:
         case AnnotationActionTypes.GET_JOB_SUCCESS: {

@@ -9,18 +9,18 @@ import { taskName } from '../../support/const';
 context('Rotate all images feature.', () => {
     const caseId = '19';
 
-    function imageRotate(direction = 'anticlockwise', deg) {
-        cy.get('.cvat-rotate-canvas-control').trigger('mouseover');
-        if (direction === 'clockwise') {
-            cy.get('.cvat-rotate-canvas-controls-right').click();
-        } else {
-            cy.get('.cvat-rotate-canvas-controls-left').click();
-        }
-        checkDegRotate(deg);
-    }
-
     function checkDegRotate(deg) {
         cy.get('#cvat_canvas_background').should('have.attr', 'style').and('contain', `rotate(${deg}deg);`);
+    }
+
+    function imageRotate(direction = 'anticlockwise', deg) {
+        cy.get('.cvat-rotate-canvas-control').trigger('mouseover').should('be.visible');
+        if (direction === 'clockwise') {
+            cy.get('.cvat-rotate-canvas-controls-right').should('be.visible').click();
+        } else {
+            cy.get('.cvat-rotate-canvas-controls-left').should('be.visible').click();
+        }
+        checkDegRotate(deg);
     }
 
     function checkFrameNum(frameNum) {
@@ -40,7 +40,7 @@ context('Rotate all images feature.', () => {
             imageRotate('anticlockwise', 270);
         });
 
-        it("Go to the next frame. It wasn't rotated.", () => {
+        it('Go to the next frame. It wasn\'t rotated.', () => {
             cy.get('.cvat-player-next-button').click();
             checkFrameNum(1);
             checkDegRotate(0);

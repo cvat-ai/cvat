@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -36,7 +37,7 @@ function mapStateToProps(state: CombinedState, own: Props): StateToProps {
 
     const id = +own.match.params.id;
 
-    const filteredTasks = state.tasks.current.filter((task) => task.instance.id === id);
+    const filteredTasks = state.tasks.current.filter((task) => task.id === id);
 
     const task = filteredTasks[0] || (gettingQuery.id === id || Number.isNaN(id) ? undefined : null);
 
@@ -45,7 +46,7 @@ function mapStateToProps(state: CombinedState, own: Props): StateToProps {
         deleteActivity = deletes[id];
     }
 
-    const jobIDs = task ? Object.fromEntries(task.instance.jobs.map((job:any) => [job.id])) : {};
+    const jobIDs = task ? Object.fromEntries(task.jobs.map((job:any) => [job.id])) : {};
     const updatingJobs = Object.keys(jobUpdates);
     const jobUpdating = updatingJobs.some((jobID) => jobID in jobIDs);
 
@@ -65,16 +66,7 @@ function mapDispatchToProps(dispatch: any, own: Props): DispatchToProps {
     return {
         getTask: (): void => {
             dispatch(
-                getTasksAsync({
-                    id,
-                    page: 1,
-                    search: null,
-                    owner: null,
-                    assignee: null,
-                    name: null,
-                    status: null,
-                    mode: null,
-                }),
+                getTasksAsync({ id }),
             );
         },
     };

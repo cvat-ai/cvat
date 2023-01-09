@@ -10,6 +10,10 @@ on:
       - 'site/**'
       - '**/*.md'
 
+env:
+  CYPRESS_VERIFY_TIMEOUT: 180000 # https://docs.cypress.io/guides/guides/command-line#cypress-verify
+  CVAT_VERSION: "local"
+
 jobs:
   search_cache:
     if: |
@@ -41,14 +45,14 @@ jobs:
           echo Default branch is ${DEFAULT_BRANCH}
           echo Workflow will try to get cache from commit: ${SHA}
 
-          echo ::set-output name=default_branch::${DEFAULT_BRANCH}
-          echo ::set-output name=sha::${SHA}
+          echo "default_branch=${DEFAULT_BRANCH}" >> $GITHUB_OUTPUT
+          echo "sha=${SHA}" >> $GITHUB_OUTPUT
 
   build:
     needs: search_cache
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: CVAT server. Getting cache from the default branch
         uses: actions/cache@v3
@@ -91,6 +95,7 @@ jobs:
 
       - name: CVAT SDK. Build
         run: |
+          docker load --input /tmp/cvat_server/image.tar
           docker run --rm -v ${PWD}/cvat-sdk/schema/:/transfer \
             --entrypoint /bin/bash -u root cvat/server \
             -c 'python manage.py spectacular --file /transfer/schema.yml'
@@ -123,9 +128,9 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v3
         with:
           python-version: '3.8'
 
@@ -154,15 +159,16 @@ jobs:
         run: |
           docker load --input /tmp/cvat_server/image.tar
           docker load --input /tmp/cvat_ui/image.tar
-          docker tag cvat/server:latest cvat/server:dev
-          docker tag cvat/ui:latest cvat/ui:dev
+          docker tag cvat/server:latest cvat/server:${CVAT_VERSION}
+          docker tag cvat/ui:latest cvat/ui:${CVAT_VERSION}
           docker image ls -a
 
-      - name: Running REST API tests
+      - name: Running REST API and SDK tests
         run: |
-          pip3 install --user /tmp/cvat_sdk/
+          pip3 install --user '/tmp/cvat_sdk/[pytorch]'
+          pip3 install --user cvat-cli/
           pip3 install --user -r tests/python/requirements.txt
-          pytest tests/python/rest_api -k 'GET' -s
+          pytest tests/python/ -s -v
 
       - name: Creating a log file from cvat containers
         if: failure()
@@ -170,21 +176,22 @@ jobs:
           LOGS_DIR: "${{ github.workspace }}/rest_api_testing"
         run: |
             mkdir $LOGS_DIR
-            docker logs test_cvat_server_1 > $LOGS_DIR/cvat.log
+            docker logs test_cvat_server_1 > $LOGS_DIR/cvat_server.log
+            docker logs test_cvat_worker_default_1 > $LOGS_DIR/cvat_worker_default.log
             docker logs test_cvat_opa_1 2> $LOGS_DIR/cvat_opa.log
 
       - name: Uploading "cvat" container logs as an artifact
         if: failure()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3.1.1
         with:
-          name: container_logs
+          name: rest_api_container_logs
           path: "${{ github.workspace }}/rest_api_testing"
 
   unit_testing:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
@@ -198,12 +205,15 @@ jobs:
       - name: Load Docker server image
         run: |
           docker load --input /tmp/cvat_server/image.tar
-          docker tag cvat/server:latest cvat/server:dev
+          docker tag cvat/server:latest cvat/server:${CVAT_VERSION}
           docker image ls -a
 
       - name: Running OPA tests
         run: |
-          curl -L -o opa https://openpolicyagent.org/downloads/v0.34.2/opa_linux_amd64_static
+          python cvat/apps/iam/rules/tests/generate_tests.py \
+            --output-dir cvat/apps/iam/rules/
+
+          curl -L -o opa https://openpolicyagent.org/downloads/v0.45.0/opa_linux_amd64_static
           chmod +x ./opa
           ./opa test cvat/apps/iam/rules
 
@@ -212,15 +222,15 @@ jobs:
           HOST_COVERAGE_DATA_DIR: ${{ github.workspace }}
           CONTAINER_COVERAGE_DATA_DIR: "/coverage_data"
         run: |
-          docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d cvat_opa
+          docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d cvat_opa cvat_server
 
           max_tries=12
-          while [[  $(curl -s -o /dev/null -w "%{http_code}" localhost:8181/health) != "200" && max_tries -gt 0 ]]; do (( max_tries-- )); sleep 5; done
+          while [[  $(curl -s -o /dev/null -w "%{http_code}" localhost:8181/health?bundles) != "200" && max_tries -gt 0 ]]; do (( max_tries-- )); sleep 5; done
 
-          docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
-          -c 'python manage.py test cvat/apps -k tasks_id -k lambda -k share -v 2'
+          docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
+          -c 'python manage.py test cvat/apps -v 2'
 
-          docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
+          docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
           -c 'yarn --frozen-lockfile --ignore-scripts && yarn workspace cvat-core run test'
 
       - name: Creating a log file from cvat containers
@@ -229,14 +239,14 @@ jobs:
           LOGS_DIR: "${{ github.workspace }}/unit_testing"
         run: |
             mkdir $LOGS_DIR
-            docker logs cvat_server > $LOGS_DIR/cvat.log
+            docker logs cvat_server > $LOGS_DIR/cvat_server.log
             docker logs cvat_opa 2> $LOGS_DIR/cvat_opa.log
 
       - name: Uploading "cvat" container logs as an artifact
         if: failure()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3.1.1
         with:
-          name: container_logs
+          name: unit_tests_container_logs
           path: "${{ github.workspace }}/unit_testing"
 
 
@@ -246,14 +256,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        specs: ['canvas3d_functionality', 'actions']
+        specs: ['actions_tasks', 'actions_tasks2', 'actions_tasks3',
+                'actions_objects', 'actions_objects2', 'actions_users',
+                'actions_projects_models', 'actions_organizations', 'canvas3d_functionality',
+                'canvas3d_functionality_2', 'issues_prs', 'issues_prs2', 'masks', 'skeletons']
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - uses: actions/setup-node@v2
+      - uses: actions/setup-node@v3
         with:
             node-version: '16.x'
 
@@ -263,7 +276,7 @@ jobs:
           name: cvat_server
           path: /tmp/cvat_server/
 
-      - name: Download CVAT UI images
+      - name: Download CVAT UI image
         uses: actions/download-artifact@v3
         with:
           name: cvat_ui
@@ -273,13 +286,13 @@ jobs:
         run: |
           docker load --input /tmp/cvat_server/image.tar
           docker load --input /tmp/cvat_ui/image.tar
-          docker tag cvat/server:latest cvat/server:dev
-          docker tag cvat/ui:latest cvat/ui:dev
+          docker tag cvat/server:latest cvat/server:${CVAT_VERSION}
+          docker tag cvat/ui:latest cvat/ui:${CVAT_VERSION}
           docker image ls -a
 
       - name: Run CVAT instance
         run: |
-          docker-compose \
+          docker compose \
             -f docker-compose.yml \
             -f docker-compose.dev.yml \
             -f components/serverless/docker-compose.serverless.yml \
@@ -312,10 +325,18 @@ jobs:
           cd ./tests
           yarn --frozen-lockfile
 
-          if [ ${{ matrix.specs }} == 'canvas3d_functionality' ]; then
-            npx cypress run --headed --browser chrome --config-file pr_cypress_canvas3d.json
+          if [[ ${{ matrix.specs }} == canvas3d_* ]]; then
+            npx cypress run \
+              --headed \
+              --browser chrome \
+              --env coverage=false \
+              --config-file cypress_canvas3d.json \
+              --spec 'cypress/integration/${{ matrix.specs }}/**/*.js,cypress/integration/remove_users_tasks_projects_organizations.js'
           else
-            npx cypress run --browser chrome --config-file pr_cypress.json
+            npx cypress run \
+              --browser chrome \
+              --env coverage=false \
+              --spec 'cypress/integration/${{ matrix.specs }}/**/*.js,cypress/integration/remove_users_tasks_projects_organizations.js'
           fi
 
       - name: Creating a log file from "cvat" container logs
@@ -325,14 +346,14 @@ jobs:
 
       - name: Uploading "cvat" container logs as an artifact
         if: failure()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3.1.1
         with:
-          name: container_logs
+          name: e2e_container_logs
           path: ${{ github.workspace }}/tests/cvat_${{ matrix.specs }}.log
 
       - name: Uploading cypress screenshots as an artifact
         if: failure()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3.1.1
         with:
           name: cypress_screenshots_${{ matrix.specs }}
           path: ${{ github.workspace }}/tests/cypress/screenshots
@@ -342,7 +363,7 @@ jobs:
     needs: [rest_api_testing, unit_testing, e2e_testing]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           submodules: recursive
           fetch-depth: 0
@@ -370,7 +391,7 @@ jobs:
           extended: true
 
       - name: Setup Node
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
           node-version: '16.x'
 
@@ -397,7 +418,7 @@ jobs:
     needs: [rest_api_testing, unit_testing, e2e_testing, generate_github_pages]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Download CVAT server images
         uses: actions/download-artifact@v3

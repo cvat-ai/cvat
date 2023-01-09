@@ -26,7 +26,7 @@ class TestCLI:
     @pytest.fixture(autouse=True)
     def setup(
         self,
-        changedb,  # force fixture call order to allow DB setup
+        restore_db_per_function,  # force fixture call order to allow DB setup
         fxt_stdout: io.StringIO,
         tmp_path: Path,
         admin_user: str,
@@ -65,13 +65,13 @@ class TestCLI:
         backup_path = self.tmp_path / "backup.zip"
 
         fxt_new_task.import_annotations("COCO 1.0", filename=fxt_coco_file)
-        fxt_new_task.download_backup(str(backup_path))
+        fxt_new_task.download_backup(backup_path)
 
         yield backup_path
 
     @pytest.fixture
     def fxt_new_task(self):
-        files = generate_images(str(self.tmp_path), 5)
+        files = generate_images(self.tmp_path, 5)
 
         task = self.client.tasks.create_from_data(
             spec={
@@ -100,13 +100,13 @@ class TestCLI:
         return self.stdout.getvalue()
 
     def test_can_create_task_from_local_images(self):
-        files = generate_images(str(self.tmp_path), 5)
+        files = generate_images(self.tmp_path, 5)
 
         stdout = self.run_cli(
             "create",
             "test_task",
             ResourceType.LOCAL.name,
-            *files,
+            *map(os.fspath, files),
             "--labels",
             json.dumps([{"name": "car"}, {"name": "person"}]),
             "--completion_verification_period",

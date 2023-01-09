@@ -1,7 +1,7 @@
 ---
 title: 'Top Panel'
 linkTitle: 'Top Panel'
-weight: 7
+weight: 9
 description: 'Overview of controls available on the top panel of the annotation tool.'
 ---
 
@@ -17,18 +17,19 @@ It is the main menu of the annotation tool. It can be used to download, upload a
 
 Button assignment:
 
-- `Upload Annotations` — uploads annotations into a task.
-- `Export as a dataset` — download a data set from a task in one of the [supported formats](/docs/manual/advanced/formats/).
-  You can also enter a `Custom name` and enable the `Save images` checkbox if you want the dataset to contain images.
-- `Remove Annotations` — calls the confirmation window if you click `Delete`, the annotation of the current job
-  will be removed, if you click `Select range` you can remove annotation on range frames, if you activate checkbox
-  `Delete only keyframe for tracks` then only keyframes will be deleted from the tracks, on the selected range.
+- **Upload Annotations** — uploads annotations into a task.
+- **Export as a dataset** — download a data set from a task in one of the [supported formats](/docs/manual/advanced/formats/).
+  You can also enter a **Custom name** and enable the **Save images**
+  checkbox if you want the dataset to contain images.
+- **Remove Annotations** — calls the confirmation window if you click **Delete**, the annotation of the current job
+  will be removed, if you click **Select range** you can remove annotation on range frames, if you activate checkbox
+  **Delete only keyframe for tracks** then only keyframes will be deleted from the tracks, on the selected range.
 
   ![](/images/image229.jpg)
 
-- `Open the task` — opens a page with details about the task.
-- `Change job state` - changes the state of the job (`new`, `in progress`, `rejected`, `completed`).
-- `Finish the job`/`Renew the job` - changes the job stage and state
+- **Open the task** — opens a page with details about the task.
+- **Change job state** - changes the state of the job (`new`, `in progress`, `rejected`, `completed`).
+- **Finish the job**/**Renew the job** - changes the job stage and state
   to `acceptance` and `completed` / `annotation` and `new` correspondingly.
 
 ## Save Work
@@ -57,7 +58,7 @@ Used to complete the creation of the object. This button appears only when the o
 
 ![](/images/image226.jpg)
 
-Used to pause automatic line creation when drawing a polygon with 
+Used to pause automatic line creation when drawing a polygon with
 [OpenCV Intelligent scissors](/docs/manual/advanced/opencv-tools/#intelligent-scissors).
 Also used to postpone server requests when creating an object using [AI Tools](/docs/manual/advanced/ai-tools/).
 When blocking is activated, the button turns blue.
@@ -71,8 +72,8 @@ Go to the first /the latest frames.
 ![](/images/image036.jpg)
 
 Go to the next/previous frame with a predefined step. Shortcuts:
-`V` — step backward, `C` — step forward. By default the step is `10` frames
-(change at `Account Menu` —> `Settings` —> `Player Step`).
+**V** — step backward, **C** — step forward. By default the step is `10` frames
+(change at **Account Menu** —> **Settings** —> **Player Step**).
 
 ![](/images/image037.jpg)
 
@@ -85,18 +86,24 @@ To customize, right-click on the button and select one of three options:
 3. Go to the next / previous frame without annotation at all.
    Use this option in cases when you need to find missed frames quickly.
 
-Shortcuts: `D` - previous, `F` - next.
+Shortcuts: **D** - previous, **F** - next.
 
 ![](/images/image040.jpg)
 
 Play the sequence of frames or the set of images.
-Shortcut: `Space` (change at `Account Menu` —> `Settings` —> `Player Speed`).
+Shortcut: **Space** (change at **Account Menu** —> **Settings** —> **Player Speed**).
 
 ![](/images/image041.jpg)
 
-Go to a specific frame. Press `~` to focus on the element.
+Go to a specific frame. Press **~** to focus on the element.
 
 ![](/images/image060.jpg)
+
+To delete frame.
+
+Shortcut: **Alt**+**Del**
+
+![](/images/delete_frame.jpg)
 
 ---
 

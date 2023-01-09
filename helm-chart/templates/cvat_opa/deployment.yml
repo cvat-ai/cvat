@@ -33,13 +33,16 @@ spec:
       containers:
         - name: cvat-opa-app-container
           image: {{ .Values.cvat.opa.image }}:{{ .Values.cvat.opa.tag }}
+          imagePullPolicy: {{ .Values.cvat.opa.imagePullPolicy }}
           args:
             - run
             - --server
-            - --addr
-            - :8181
             - --set=decision_logs.console=true
-            - /rules/rules.tar.gz
+            - --set=services.cvat.url=http://{{ .Release.Name }}-backend-service:8080
+            - --set=bundles.cvat.service=cvat
+            - --set=bundles.cvat.resource=/api/auth/rules
+            - --set=bundles.cvat.polling.min_delay_seconds=10
+            - --set=bundles.cvat.polling.max_delay_seconds=15
           {{- with .Values.cvat.opa.resources }}
           resources:
           {{- toYaml . | nindent 12 }}
@@ -50,24 +53,14 @@ spec:
           env:
           {{- toYaml . | nindent 10 }}
           {{- end }}
-          volumeMounts:
-          - mountPath: /rules
-            name: cvat-opa-rules
           {{- with .Values.cvat.opa.additionalVolumeMounts }}
+          volumeMounts:
           {{- toYaml . | nindent 10 }}
           {{- end }}
+      {{- with .Values.cvat.opa.additionalVolumes }}
       volumes:
-        {{- if .Values.cvat.opa.defaultStorage.enabled }}
-        - name: cvat-opa-rules
-          configMap:
-            name: "{{ .Release.Name }}-opa-rules"
-            items:
-            - key: "rules.tar.gz"
-              path: "rules.tar.gz"
-        {{- end }}
-        {{- with .Values.cvat.opa.additionalVolumes }}
         {{- toYaml . | nindent 8 }}
-        {{- end }}
+      {{- end }}
       {{- with .Values.cvat.opa.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}

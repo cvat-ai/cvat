@@ -14,6 +14,15 @@ export type StringObject = {
     [index: string]: string;
 };
 
+enum AdvancedAuthMethods {
+    GOOGLE_ACCOUNT_AUTHENTICATION = 'GOOGLE_ACCOUNT_AUTHENTICATION',
+    GITHUB_ACCOUNT_AUTHENTICATION = 'GITHUB_ACCOUNT_AUTHENTICATION',
+}
+
+export type AdvancedAuthMethodsList = {
+    [name in AdvancedAuthMethods]: boolean;
+};
+
 export interface AuthState {
     initialized: boolean;
     fetching: boolean;
@@ -23,6 +32,10 @@ export interface AuthState {
     showChangePasswordDialog: boolean;
     allowChangePassword: boolean;
     allowResetPassword: boolean;
+    hasEmailVerificationBeenSent: boolean;
+    advancedAuthFetching: boolean;
+    advancedAuthInitialized: boolean;
+    advancedAuthList: AdvancedAuthMethodsList;
 }
 
 export interface ProjectsQuery {
@@ -33,16 +46,22 @@ export interface ProjectsQuery {
     sort: string | null;
 }
 
-export interface Project {
-    instance: any;
+interface Preview {
+    fetching: boolean;
+    initialized: boolean;
     preview: string;
 }
+
+export type Project = any;
 
 export interface ProjectsState {
     initialized: boolean;
     fetching: boolean;
     count: number;
     current: Project[];
+    previews: {
+        [index: number]: Preview;
+    };
     gettingQuery: ProjectsQuery;
     tasksGettingQuery: TasksQuery & { ordering: string };
     activities: {
@@ -65,10 +84,7 @@ export interface TasksQuery {
     projectId: number | null;
 }
 
-export interface Task {
-    instance: any; // cvat-core instance
-    preview: string;
-}
+export type Task = any; // cvat-core instance
 
 export interface JobsQuery {
     page: number;
@@ -77,12 +93,16 @@ export interface JobsQuery {
     filter: string | null;
 }
 
+export type Job = any;
+
 export interface JobsState {
     query: JobsQuery;
     fetching: boolean;
     count: number;
-    current: any[];
-    previews: string[];
+    current: Job[];
+    previews: {
+        [index: number]: Preview;
+    };
 }
 
 export interface TasksState {
@@ -97,6 +117,9 @@ export interface TasksState {
     gettingQuery: TasksQuery;
     count: number;
     current: Task[];
+    previews: {
+        [index: number]: Preview;
+    };
     activities: {
         deletes: {
             [tid: number]: boolean; // deleted (deleting if in dictionary)
@@ -201,14 +224,11 @@ export interface CloudStoragesQuery {
     filter: string | null;
 }
 
-interface CloudStorageAdditional {
+interface CloudStorageStatus {
     fetching: boolean;
     initialized: boolean;
     status: string | null;
-    preview: string;
 }
-type CloudStorageStatus = Pick<CloudStorageAdditional, 'fetching' | 'initialized' | 'status'>;
-type CloudStoragePreview = Pick<CloudStorageAdditional, 'fetching' | 'initialized' | 'preview'>;
 
 export type CloudStorage = any;
 
@@ -221,7 +241,7 @@ export interface CloudStoragesState {
         [index: number]: CloudStorageStatus;
     };
     previews: {
-        [index: number]: CloudStoragePreview;
+        [index: number]: Preview;
     };
     gettingQuery: CloudStoragesQuery;
     activities: {
@@ -277,8 +297,9 @@ export interface AboutState {
 
 export interface UserAgreement {
     name: string;
-    displayText: string;
+    urlDisplayText: string;
     url: string;
+    textPrefix: string;
     required: boolean;
 }
 
@@ -316,6 +337,7 @@ export interface Model {
     id: string;
     name: string;
     labels: string[];
+    version: number;
     attributes: Record<string, ModelAttribute[]>;
     framework: string;
     description: string;
@@ -557,6 +579,7 @@ export enum ActiveControl {
     DRAW_POLYLINE = 'draw_polyline',
     DRAW_POINTS = 'draw_points',
     DRAW_ELLIPSE = 'draw_ellipse',
+    DRAW_MASK = 'draw_mask',
     DRAW_CUBOID = 'draw_cuboid',
     DRAW_SKELETON = 'draw_skeleton',
     MERGE = 'merge',
@@ -576,6 +599,7 @@ export enum ShapeType {
     POINTS = 'points',
     ELLIPSE = 'ellipse',
     CUBOID = 'cuboid',
+    MASK = 'mask',
     SKELETON = 'skeleton',
 }
 
@@ -589,6 +613,7 @@ export enum StatesOrdering {
     ID_DESCENT = 'ID - descent',
     ID_ASCENT = 'ID - ascent',
     UPDATED = 'Updated time',
+    Z_ORDER = 'Z Order',
 }
 
 export enum ContextMenuType {
@@ -631,6 +656,11 @@ export interface AnnotationState {
             parentID: number | null;
             clientID: number | null;
         };
+        brushTools: {
+            visible: boolean;
+            top: number;
+            left: number;
+        };
         instance: Canvas | Canvas3d | null;
         ready: boolean;
         activeControl: ActiveControl;
@@ -669,7 +699,7 @@ export interface AnnotationState {
         activeRectDrawingMethod?: RectDrawingMethod;
         activeCuboidDrawingMethod?: CuboidDrawingMethod;
         activeNumOfPoints?: number;
-        activeLabelID: number;
+        activeLabelID: number | null;
         activeObjectType: ObjectType;
         activeInitialState?: any;
     };
@@ -697,10 +727,6 @@ export interface AnnotationState {
             cur: number;
         };
     };
-    propagate: {
-        objectState: any | null;
-        frames: number;
-    };
     remove: {
         objectState: any;
         force: boolean;
@@ -709,6 +735,9 @@ export interface AnnotationState {
         collecting: boolean;
         visible: boolean;
         data: any;
+    };
+    propagate: {
+        visible: boolean;
     };
     colors: any[];
     filtersPanelVisible: boolean;

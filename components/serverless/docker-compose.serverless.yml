@@ -1,4 +1,3 @@
-version: '3.3'
 services:
   nuclio:
     container_name: nuclio
@@ -12,7 +11,7 @@ services:
     environment:
       http_proxy:
       https_proxy:
-      no_proxy: 172.28.0.1,${no_proxy}
+      no_proxy: 172.28.0.1,${no_proxy:-}
       NUCLIO_CHECK_FUNCTION_CONTAINERS_HEALTHINESS: 'true'
       NUCLIO_DASHBOARD_DEFAULT_FUNCTION_MOUNT_MODE: 'volume'
     ports:
@@ -29,6 +28,6 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
-  cvat_worker_low:
+  cvat_worker_annotation:
     extra_hosts:
       - "host.docker.internal:host-gateway"

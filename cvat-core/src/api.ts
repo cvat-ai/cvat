@@ -8,55 +8,37 @@
  * @module API
  */
 
+import PluginRegistry from './plugins';
+import loggerStorage from './logger-storage';
+import { Log } from './log';
+import ObjectState from './object-state';
+import Statistics from './statistics';
+import Comment from './comment';
+import Issue from './issue';
+import { Job, Task } from './session';
+import { implementJob, implementTask } from './session-implementation';
+import Project from './project';
+import implementProject from './project-implementation';
+import { Attribute, Label } from './labels';
+import MLModel from './ml-model';
+import { FrameData } from './frames';
+import CloudStorage from './cloud-storage';
+import Organization from './organization';
+import Webhook from './webhook';
+
+import * as enums from './enums';
+
+import {
+    Exception, ArgumentError, DataError, ScriptingError, PluginError, ServerError,
+} from './exceptions';
+
+import User from './user';
+import pjson from '../package.json';
+import config from './config';
+
+import implementAPI from './api-implementation';
+
 function build() {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const PluginRegistry = require('./plugins').default;
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const loggerStorage = require('./logger-storage').default;
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { Log } = require('./log');
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const ObjectState = require('./object-state').default;
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const Statistics = require('./statistics');
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const Comment = require('./comment').default;
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const Issue = require('./issue').default;
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { Job, Task } = require('./session');
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const Project = require('./project').default;
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const implementProject = require('./project-implementation').default;
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { Attribute, Label } = require('./labels');
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const MLModel = require('./ml-model');
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { FrameData } = require('./frames');
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const CloudStorage = require('./cloud-storage').default;
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const Organization = require('./organization').default;
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const Webhook = require('./webhook').default;
-
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const enums = require('./enums');
-
-    const {
-        Exception, ArgumentError, DataError, ScriptingError, PluginError, ServerError,
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    } = require('./exceptions');
-
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const User = require('./user').default;
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const pjson = require('../package.json');
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const config = require('./config');
-
     /**
      * API entrypoint
      * @namespace cvat
@@ -148,22 +130,20 @@ function build() {
              * @param {string} firstName A first name for the new account
              * @param {string} lastName A last name for the new account
              * @param {string} email A email address for the new account
-             * @param {string} password1 A password for the new account
-             * @param {string} password2 The confirmation password for the new account
+             * @param {string} password A password for the new account
              * @param {Object} userConfirmations An user confirmations of terms of use if needed
              * @returns {Object} response data
              * @throws {module:API.cvat.exceptions.PluginError}
              * @throws {module:API.cvat.exceptions.ServerError}
              */
-            async register(username, firstName, lastName, email, password1, password2, userConfirmations) {
+            async register(username, firstName, lastName, email, password, userConfirmations) {
                 const result = await PluginRegistry.apiWrapper(
                     cvat.server.register,
                     username,
                     firstName,
                     lastName,
                     email,
-                    password1,
-                    password2,
+                    password,
                     userConfirmations,
                 );
                 return result;
@@ -192,6 +172,10 @@ function build() {
              */
             async logout() {
                 const result = await PluginRegistry.apiWrapper(cvat.server.logout);
+                return result;
+            },
+            async advancedAuthentication() {
+                const result = await PluginRegistry.apiWrapper(cvat.server.advancedAuthentication);
                 return result;
             },
             /**
@@ -263,6 +247,26 @@ function build() {
                 return result;
             },
             /**
+             * Method allows to health check the server
+             * @method healthCheck
+             * @async
+             * @memberof module:API.cvat.server
+             * @param {number} requestTimeout
+             * @returns {Object | undefined} response data if exist
+             * @throws {module:API.cvat.exceptions.PluginError}
+             * @throws {module:API.cvat.exceptions.ServerError}
+             */
+            async healthCheck(maxRetries = 1, checkPeriod = 3000, requestTimeout = 5000, progressCallback = undefined) {
+                const result = await PluginRegistry.apiWrapper(
+                    cvat.server.healthCheck,
+                    maxRetries,
+                    checkPeriod,
+                    requestTimeout,
+                    progressCallback,
+                );
+                return result;
+            },
+            /**
              * Method allows to do requests via cvat-core with authorization headers
              * @method request
              * @async
@@ -289,6 +293,18 @@ function build() {
              */
             async installedApps() {
                 const result = await PluginRegistry.apiWrapper(cvat.server.installedApps);
+                return result;
+            },
+            async loginWithSocialAccount(
+                provider: string,
+                code: string,
+                authParams?: string,
+                process?: string,
+                scope?: string,
+            ) {
+                const result = await PluginRegistry.apiWrapper(
+                    cvat.server.loginWithSocialAccount, provider, code, authParams, process, scope,
+                );
                 return result;
             },
         },
@@ -744,6 +760,9 @@ function build() {
              * @memberof module:API.cvat.config
              * @property {number} uploadChunkSize max size of one data request in mb
              * @memberof module:API.cvat.config
+             * @property {number} removeUnderlyingMaskPixels defines if after adding/changing
+             * a mask it should remove overlapped pixels from other objects
+             * @memberof module:API.cvat.config
              */
             get backendAPI() {
                 return config.backendAPI;
@@ -768,6 +787,12 @@ function build() {
             },
             set uploadChunkSize(value) {
                 config.uploadChunkSize = value;
+            },
+            get removeUnderlyingMaskPixels(): boolean {
+                return config.removeUnderlyingMaskPixels;
+            },
+            set removeUnderlyingMaskPixels(value: boolean) {
+                config.removeUnderlyingMaskPixels = value;
             },
         },
         /**
@@ -914,8 +939,8 @@ function build() {
         classes: {
             User,
             Project: implementProject(Project),
-            Task,
-            Job,
+            Task: implementTask(Task),
+            Job: implementJob(Job),
             Log,
             Attribute,
             Label,
@@ -944,10 +969,8 @@ function build() {
     cvat.cloudStorages = Object.freeze(cvat.cloudStorages);
     cvat.organizations = Object.freeze(cvat.organizations);
 
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const implementAPI = require('./api-implementation');
     const implemented = Object.freeze(implementAPI(cvat));
     return implemented;
 }
 
-module.exports = build();
+export default build();

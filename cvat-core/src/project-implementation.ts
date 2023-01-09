@@ -5,11 +5,11 @@
 
 import { Storage } from './storage';
 
-const serverProxy = require('./server-proxy').default;
-const { getPreview } = require('./frames');
+import serverProxy from './server-proxy';
+import { getPreview } from './frames';
 
-const Project = require('./project').default;
-const { exportDataset, importDataset } = require('./annotations');
+import Project from './project';
+import { exportDataset, importDataset } from './annotations';
 
 export default function implementProject(projectClass) {
     projectClass.prototype.save.implementation = async function () {
@@ -85,9 +85,12 @@ export default function implementProject(projectClass) {
         useDefaultSettings: boolean,
         sourceStorage: Storage,
         file: File | string,
-        updateStatusCallback,
+        options?: {
+            convMaskToPoly?: boolean,
+            updateStatusCallback?: (s: string, n: number) => void,
+        },
     ) {
-        return importDataset(this, format, useDefaultSettings, sourceStorage, file, updateStatusCallback);
+        return importDataset(this, format, useDefaultSettings, sourceStorage, file, options);
     };
 
     projectClass.prototype.backup.implementation = async function (

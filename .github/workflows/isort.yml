@@ -4,7 +4,7 @@ jobs:
   Linter:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - id: files
         uses: jitterbit/get-changed-files@v1
         continue-on-error: true
@@ -62,7 +62,7 @@ jobs:
             pip install $(egrep "isort.*" ./cvat-cli/requirements/development.txt)
             mkdir -p isort_report
 
-            echo "isort version: "$(isort --version)
+            echo "isort version: $(isort --version-number)"
             echo "The dirs will be checked: $UPDATED_DIRS"
             EXIT_CODE=0
             for DIR in $UPDATED_DIRS; do
@@ -76,7 +76,7 @@ jobs:
 
       - name: Upload artifacts
         if: failure()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3.1.1
         with:
           name: isort_report
           path: isort_report

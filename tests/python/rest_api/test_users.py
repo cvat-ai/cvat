@@ -14,7 +14,7 @@ from deepdiff import DeepDiff
 from shared.utils.config import make_api_client
 
 
-@pytest.mark.usefixtures("dontchangedb")
+@pytest.mark.usefixtures("restore_db_per_class")
 class TestGetUsers:
     def _test_can_see(
         self,
@@ -67,7 +67,9 @@ class TestGetUsers:
 
     def test_everybody_can_see_self(self, users_by_name):
         for user, data in users_by_name.items():
-            self._test_can_see(user, data, id_="self", exclude_paths="root['last_login']")
+            self._test_can_see(
+                user, data, id_="self", exclude_paths=["root['last_login']", "root['key']"]
+            )
 
     def test_non_members_cannot_see_list_of_members(self):
         self._test_cannot_see("user2", org="org1")
