@@ -24,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/opencv/cvat/pull/5502>)
 - \[Server API\] Added missing pagination or pagination parameters in
   `/project/{id}/tasks`, `/tasks/{id}/jobs`, `/jobs/{id}/issues`,
-  `/jobs/{id}/commits`, `/issues/{id}/comments`
+  `/jobs/{id}/commits`, `/issues/{id}/comments`, `/organizations`
   (<https://github.com/opencv/cvat/pull/5557>)
 
 ### Deprecated
