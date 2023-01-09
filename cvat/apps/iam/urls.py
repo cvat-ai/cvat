@@ -40,6 +40,7 @@ if settings.IAM_TYPE == 'BASIC':
             name='rest_password_reset_confirm'),
         path('password/change', PasswordChangeView.as_view(),
             name='rest_password_change'),
+        path('social/methods/', SocialAuthMethods.as_view(), name='social_auth_methods'),
     ]
     if allauth_settings.EMAIL_VERIFICATION != \
        allauth_settings.EmailVerificationMethod.NONE:
@@ -51,7 +52,6 @@ if settings.IAM_TYPE == 'BASIC':
     if settings.USE_ALLAUTH_SOCIAL_ACCOUNTS:
         # social accounts
         urlpatterns += [
-            path('social/methods/', SocialAuthMethods.as_view()),
             path('github/login/', github_login, name='github_login'),
             path('github/login/callback/', github_callback, name='github_callback'),
             path('github/login/token', GitHubLogin.as_view()),

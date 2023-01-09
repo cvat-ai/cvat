@@ -16,11 +16,6 @@ interface SocialAuthMethodSnakeCase {
     provider?: string;
 }
 
-/**
- * Class representing supported by server social authentication methods
- * @memberof module:API.cvat.classes
- * @hideconstructor
- */
 export class SocialAuthMethod {
     public provider: string;
     public publicName: string;

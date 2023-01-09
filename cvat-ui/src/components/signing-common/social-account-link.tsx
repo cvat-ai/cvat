@@ -35,11 +35,10 @@ function SocialAccountLink(props: SocialAccountLinkProps): JSX.Element {
                 >
                     <Row align='middle' style={{ width: '100%' }}>
                         <Col>
-                            {
-                                svgWrapperRef.current ?
-                                    <div ref={svgWrapperRef as any} /> : <></>
-                            }
-                            <div ref={svgWrapperRef as any} />
+                            <div
+                                ref={svgWrapperRef as any}
+                                className='cvat-social-authentication-icon'
+                            />
                         </Col>
                         <Col flex='auto'>
                             {children}
