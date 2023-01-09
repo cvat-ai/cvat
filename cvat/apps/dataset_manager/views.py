@@ -11,6 +11,7 @@ import django_rq
 from datumaro.util.os_util import make_file_name
 from datumaro.util import to_snake_case
 from django.utils import timezone
+from django.conf import settings
 
 import cvat.apps.dataset_manager.task as task
 import cvat.apps.dataset_manager.project as project
@@ -83,7 +84,7 @@ def export(dst_format, project_id=None, task_id=None, job_id=None, server_url=No
                 os.replace(temp_file, output_path)
 
             archive_ctime = osp.getctime(output_path)
-            scheduler = django_rq.get_scheduler()
+            scheduler = django_rq.get_scheduler(settings.CVAT_QUEUES.EXPORT_DATA.value)
             cleaning_job = scheduler.enqueue_in(time_delta=cache_ttl,
                 func=clear_export_cache,
                 file_path=output_path,

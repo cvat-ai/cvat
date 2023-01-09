@@ -32,7 +32,7 @@ cvat:
       additionalVolumes: []
       additionalVolumeMounts: []
     worker:
-      default:
+      export:
         replicas: 2
         labels: {}
         annotations: {}
@@ -42,7 +42,17 @@ cvat:
         additionalEnv: []
         additionalVolumes: []
         additionalVolumeMounts: []
-      low:
+      import:
+        replicas: 2
+        labels: {}
+        annotations: {}
+        resources: {}
+        affinity: {}
+        tolerations: []
+        additionalEnv: []
+        additionalVolumes: []
+        additionalVolumeMounts: []
+      annotation:
         replicas: 1
         labels: {}
         annotations: {}
