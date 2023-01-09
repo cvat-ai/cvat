@@ -16,5 +16,5 @@ class CVATValidationError(ValidationError):
                     msg = f'{msg} {key}: {value};'
                 else:
                     msg = f'{msg} {key}: {[str(v) for v in value]};'
-            return msg
+            return msg.strip()
         return super().__str__()
