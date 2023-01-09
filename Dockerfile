@@ -155,6 +155,12 @@ RUN if [ "${CVAT_DEBUG_ENABLED}" = 'yes' ]; then \
         python3 -m pip install --no-cache-dir debugpy; \
     fi
 
+ENV CVAT_REDIS_HOST='cvat_redis'
+ENV CVAT_REDIS_PASSWORD=''
+
+ENV CVAT_POSTGRES_HOST='cvat_db'
+ENV CVAT_POSTGRES_PORT=5432
+
 # Install and initialize CVAT, copy all necessary files
 COPY --chown=${USER} components /tmp/components
 COPY --chown=${USER} supervisord/ ${HOME}/supervisord
