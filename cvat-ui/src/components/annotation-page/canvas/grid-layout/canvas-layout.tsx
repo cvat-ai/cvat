@@ -118,10 +118,14 @@ const fitLayout = (type: DimensionType, layoutConfig: ItemLayout[], rows: number
             ...top, x: 0, y: 9, w: Math.ceil(widthAvail / 3), h: 3,
         },
         {
-            ...side, x: 3, y: 9, w: Math.floor(widthAvail / 3), h: 3,
+            ...side, x: Math.ceil(widthAvail / 3), y: 9, w: Math.ceil(widthAvail / 3), h: 3,
         },
         {
-            ...front, x: 6, y: 9, w: Math.floor(widthAvail / 3), h: 3,
+            ...front,
+            x: Math.ceil(widthAvail / 3) * 2,
+            y: 9,
+            w: Math.floor(widthAvail / 3),
+            h: 3,
         });
     }
 
@@ -167,6 +171,7 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
     useEffect(() => {
         const onResize = (): void => {
             setRowHeight(computeRowHeight());
+            fitCanvas();
             const [el] = window.document.getElementsByClassName('cvat-canvas-grid-root');
             if (el) {
                 el.addEventListener('transitionend', () => {
@@ -184,6 +189,10 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
     useEffect(() => {
         setRowHeight(computeRowHeight());
     }, []);
+
+    useEffect(() => {
+        window.dispatchEvent(new Event('resize'));
+    }, [layoutConfig]);
 
     const children = layoutConfig.map((value: ItemLayout) => ViewFabric(value));
     const layout = layoutConfig.map((value: ItemLayout) => ({
@@ -216,10 +225,8 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
 
                         if (!isEqual(layoutConfig, transformedLayout)) {
                             setLayoutConfig(transformedLayout);
-                            fitCanvas();
                         }
                     }}
-                    onResize={fitCanvas}
                     resizeHandle={(_: any, ref: React.MutableRefObject<HTMLDivElement>) => (
                         <div ref={ref} className='cvat-grid-item-resize-handler react-resizable-handle' />
                     )}
