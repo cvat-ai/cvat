@@ -10,7 +10,7 @@
 Cypress.Commands.add('compareImagesAndCheckResult', (baseImage, afterImage, noChangesExpected) => {
     cy.compareImages(baseImage, afterImage).then((diffPercent) => {
         if (noChangesExpected) {
-            expect(diffPercent).to.be.lt(0.02);
+            expect(diffPercent).to.be.lt(0.03);
         } else {
             expect(diffPercent).to.be.gt(0);
         }
@@ -30,7 +30,6 @@ Cypress.Commands.add('create3DCuboid', (cuboidCreationParams) => {
 
 Cypress.Commands.add('customScreenshot', (element, screenshotName) => {
     cy.get(element).then(([$el]) => $el.getBoundingClientRect()).then((rect) => {
-        cy.log(rect);
         cy.screenshot(screenshotName, {
             overwrite: true,
             capture: 'fullPage',

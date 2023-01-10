@@ -9,6 +9,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import RGL, { WidthProvider } from 'react-grid-layout';
 import PropTypes from 'prop-types';
+import { isEqual } from 'lodash';
 import Layout from 'antd/lib/layout';
 import {
     CloseOutlined,
@@ -65,9 +66,6 @@ const ViewFabric = (itemLayout: ItemLayout): JSX.Element => {
 };
 
 const fitLayout = (type: DimensionType, layoutConfig: ItemLayout[], rows: number): ItemLayout[] => {
-    // 9 X 12 for canvas and its elements
-    // 3 x 12 for related images
-
     const updatedLayout: ItemLayout[] = [];
 
     const relatedViews = layoutConfig
@@ -135,13 +133,13 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
 
     const computeRowHeight = (): number => {
         const container = window.document.getElementsByClassName('cvat-annotation-header')[0];
+        let containerHeight = window.innerHeight;
         if (container) {
-            const height = window.innerHeight - container.getBoundingClientRect().bottom;
-            // https://github.com/react-grid-layout/react-grid-layout/issues/628#issuecomment-1228453084
-            return Math.floor((height - MARGIN * (NUM_OF_ROWS)) / NUM_OF_ROWS);
+            containerHeight = window.innerHeight - container.getBoundingClientRect().bottom;
         }
 
-        return window.innerHeight;
+        // https://github.com/react-grid-layout/react-grid-layout/issues/628#issuecomment-1228453084
+        return Math.floor((containerHeight - MARGIN * (NUM_OF_ROWS)) / NUM_OF_ROWS);
     };
 
     const getLayout = useCallback(() => (
@@ -149,7 +147,7 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
     ), [type, relatedFiles]);
 
     const [layoutConfig, setLayoutConfig] = useState<ItemLayout[]>(getLayout());
-    const [rowHeight, setRowHeight] = useState<number>(Math.floor(window.screen.availHeight / NUM_OF_ROWS));
+    const [rowHeight, setRowHeight] = useState<number>(Math.floor(computeRowHeight()));
     const [fullscreenKey, setFullscreenKey] = useState<string>('');
 
     const fitCanvas = useCallback(() => {
@@ -177,7 +175,8 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
     }, [fitCanvas]);
 
     useEffect(() => {
-        window.dispatchEvent(new Event('resize'));
+        setRowHeight(computeRowHeight());
+        // window.dispatchEvent(new Event('resize'));
     }, []);
 
     const children = layoutConfig.map((value: ItemLayout) => ViewFabric(value));
@@ -208,8 +207,10 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
                         h: updatedLayout[i].h,
                     }));
 
-                    setLayoutConfig(transformedLayout);
-                    fitCanvas();
+                    if (!isEqual(layoutConfig, transformedLayout)) {
+                        setLayoutConfig(transformedLayout);
+                        fitCanvas();
+                    }
                 }}
                 onResize={fitCanvas}
                 resizeHandle={(_: any, ref: React.MutableRefObject<HTMLDivElement>) => (
