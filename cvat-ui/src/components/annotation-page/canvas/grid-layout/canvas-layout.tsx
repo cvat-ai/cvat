@@ -231,7 +231,6 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
                             <DragOutlined className='cvat-grid-item-drag-handler' />
                             <CloseOutlined
                                 className='cvat-grid-item-close-button'
-                                disabled={viewType !== ViewType.RELATED_IMAGE}
                                 style={{
                                     pointerEvents: viewType !== ViewType.RELATED_IMAGE ? 'none' : undefined,
                                     opacity: viewType !== ViewType.RELATED_IMAGE ? 0.2 : undefined,
@@ -282,6 +281,10 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
                 </CVATTooltip>
                 <CVATTooltip title='Add context image'>
                     <PlusOutlined
+                        style={{
+                            pointerEvents: !relatedFiles ? 'none' : undefined,
+                            opacity: !relatedFiles ? 0.2 : undefined,
+                        }}
                         disabled={!!relatedFiles}
                         onClick={() => {
                             const MAXIMUM_RELATED = 12;
