@@ -10,7 +10,7 @@
 Cypress.Commands.add('compareImagesAndCheckResult', (baseImage, afterImage, noChangesExpected) => {
     cy.compareImages(baseImage, afterImage).then((diffPercent) => {
         if (noChangesExpected) {
-            expect(diffPercent).to.be.lt(0.03);
+            expect(diffPercent).to.be.lt(0.02);
         } else {
             expect(diffPercent).to.be.gt(0);
         }
