@@ -43,11 +43,13 @@ context('Canvas 3D functionality. Opacity. Outlined borders.', () => {
                 `${screenshotsPath}/canvas3d_perspective_opacty_100.png`,
                 `${screenshotsPath}/canvas3d_perspective_opacty_0.png`,
             );
+            cy.get('body').click();
         });
 
         it('Change selected opacity to 100. To 0.', () => {
             cy.get('.cvat-appearance-selected-opacity-slider').click('right');
             cy.get('.cvat-appearance-selected-opacity-slider').find('[role="slider"]').should('have.attr', 'aria-valuenow', 100);
+            cy.get('body').click();
             cy.get('.cvat-canvas3d-perspective').trigger('mousemove').trigger('mousemove', 500, 250).wait(1000); // Waiting for the cuboid activation
             cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_selected_opacty_100');
             cy.compareImagesAndCheckResult(
