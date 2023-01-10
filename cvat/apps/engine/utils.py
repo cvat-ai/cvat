@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import ast
+# from typing import Optional, Type
 import cv2 as cv
 from collections import namedtuple
 import hashlib
@@ -17,6 +18,11 @@ from av import VideoFrame
 from PIL import Image
 
 from django.core.exceptions import ValidationError
+from django.urls import reverse as _django_reverse
+from django.utils.http import urlencode
+# from django.db.models.query import QuerySet
+# from rest_framework.response import Response
+# from rest_framework.viewsets import GenericViewSet
 
 Import = namedtuple("Import", ["module", "name", "alias"])
 
@@ -146,3 +152,40 @@ def configure_dependent_job(queue, rq_id, rq_func, db_storage, filename, key):
             job_id=rq_job_id_download_file
         )
     return rq_job_download_file
+
+# def make_paginated_response(queryset: QuerySet, *,
+#     viewset: GenericViewSet,
+#     response_type: Type[Response] = Response,
+#     request: Optional[Request] = None,
+#     **serializer_params
+# ) -> Response:
+#     # Adapted from the mixins.ListModelMixin.list()
+
+#     serializer_params.setdefault('many', True)
+
+#     if request is not None:
+#         context = serializer_params.setdefault('context', {})
+#         context.setdefault('request', request)
+
+#     make_serializer = viewset.get_serializer
+
+#     page = viewset.paginate_queryset(queryset)
+#     if page is not None:
+#         serializer = make_serializer(page, **serializer_params)
+#         return viewset.get_paginated_response(serializer.data)
+
+#     serializer = make_serializer(queryset, **serializer_params)
+
+#     return response_type(serializer.data)
+
+def reverse(viewname, *, args=None, kwargs=None, query_params=None) -> str:
+    """
+    The same as reverse(), but adds query params support.
+    """
+
+    url = _django_reverse(viewname, args=args, kwargs=kwargs)
+
+    if query_params:
+        return f'{url}?{urlencode(query_params)}'
+
+    return url
