@@ -70,18 +70,24 @@ const fitLayout = (type: DimensionType, layoutConfig: ItemLayout[], rows: number
 
     const relatedViews = layoutConfig
         .filter((item: ItemLayout) => item.viewType === ViewType.RELATED_IMAGE);
-    const height = Math.floor(rows / relatedViews.length);
+    const cols = relatedViews.length > 6 ? 2 : 1;
+    const height = Math.floor(rows / (relatedViews.length / cols));
     relatedViews.forEach((view: ItemLayout, i: number) => {
         updatedLayout.push({
             ...view,
             h: height,
-            w: 3,
-            x: 9,
+            w: relatedViews.length > 6 ? 2 : 3,
+            x: cols === 1 ? 9 : 8 + (i % 2) * 2,
             y: height * i,
         });
     });
 
-    const widthAvail = relatedViews.length ? 9 : 12;
+    let widthAvail = 12;
+    if (relatedViews.length > 6) {
+        widthAvail = 8;
+    } else if (relatedViews.length > 0) {
+        widthAvail = 9;
+    }
 
     if (type === DimensionType.DIM_2D) {
         const canvas = layoutConfig
@@ -109,13 +115,13 @@ const fitLayout = (type: DimensionType, layoutConfig: ItemLayout[], rows: number
             w: widthAvail,
             h: 9,
         }, {
-            ...top, x: 0, y: 9, w: widthAvail / 3, h: 3,
+            ...top, x: 0, y: 9, w: Math.ceil(widthAvail / 3), h: 3,
         },
         {
-            ...side, x: 3, y: 9, w: widthAvail / 3, h: 3,
+            ...side, x: 3, y: 9, w: Math.floor(widthAvail / 3), h: 3,
         },
         {
-            ...front, x: 6, y: 9, w: widthAvail / 3, h: 3,
+            ...front, x: 6, y: 9, w: Math.floor(widthAvail / 3), h: 3,
         });
     }
 

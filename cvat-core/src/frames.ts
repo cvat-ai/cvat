@@ -9,7 +9,9 @@ import * as cvatData from 'cvat-data';
 import { DimensionType } from 'enums';
 import PluginRegistry from './plugins';
 import serverProxy, { FramesMetaData } from './server-proxy';
-import { Exception, ArgumentError, DataError } from './exceptions';
+import {
+    Exception, ArgumentError, DataError, ServerError,
+} from './exceptions';
 
 // frame storage by job id
 const frameDataCache: Record<string, {
@@ -353,7 +355,12 @@ class FrameBuffer {
                 this._contextImage[frame] = decodedData;
                 resolve();
             }).catch((error: Error) => {
-                reject(error);
+                if (error instanceof ServerError && (error as any).code === 404) {
+                    this._contextImage[frame] = {};
+                    resolve();
+                } else {
+                    reject(error);
+                }
             });
         });
 
