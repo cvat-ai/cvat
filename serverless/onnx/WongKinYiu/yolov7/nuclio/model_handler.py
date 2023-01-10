@@ -9,9 +9,8 @@ import onnxruntime as ort
 
 class ModelHandler:
     def __init__(self, labels):
-        self.model_path = "yolov7-nms-640.onnx"
         self.model = None
-        self.load_network(model=self.model_path)
+        self.load_network(model="yolov7-nms-640.onnx")
         self.labels = labels
 
     def load_network(self, model):

@@ -173,7 +173,7 @@ up to 10x. Here is a list of the algorithms we support, and the platforms they c
 <!--lint disable maximum-line-length-->
 
 | Name                                                                                                    | Type       | Framework  | CPU | GPU |
-|---------------------------------------------------------------------------------------------------------| ---------- | ---------- | --- | --- |
+| ------------------------------------------------------------------------------------------------------- | ---------- | ---------- | --- | --- |
 | [Deep Extreme Cut](/serverless/openvino/dextr/nuclio)                                                   | interactor | OpenVINO   | ✔️  |     |
 | [Faster RCNN](/serverless/openvino/omz/public/faster_rcnn_inception_v2_coco/nuclio)                     | detector   | OpenVINO   | ✔️  |     |
 | [Mask RCNN](/serverless/openvino/omz/public/mask_rcnn_inception_resnet_v2_atrous_coco/nuclio)           | detector   | OpenVINO   | ✔️  |     |
@@ -191,7 +191,7 @@ up to 10x. Here is a list of the algorithms we support, and the platforms they c
 | [Mask RCNN](/serverless/tensorflow/matterport/mask_rcnn/nuclio)                                         | detector   | TensorFlow | ✔️  | ✔️  |
 | [RetinaNet](serverless/pytorch/facebookresearch/detectron2/retinanet/nuclio)                            | detector   | PyTorch    | ✔️  | ✔️  |
 | [Face Detection](/serverless/openvino/omz/intel/face-detection-0205/nuclio)                             | detector   | OpenVINO   | ✔️  |     |
-| [YOLO v7](/serverless/onnx/WongKinYiu/yolov7/nuclio)                                                    | detector   | ONNX       | ✔️  |     |
+
 <!--lint enable maximum-line-length-->
 
 ## License
