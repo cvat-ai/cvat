@@ -10,7 +10,15 @@ import { useSelector } from 'react-redux';
 import RGL, { WidthProvider } from 'react-grid-layout';
 import PropTypes from 'prop-types';
 import Layout from 'antd/lib/layout';
-import { DragOutlined, FullscreenExitOutlined, FullscreenOutlined } from '@ant-design/icons';
+import {
+    CloseOutlined,
+    DragOutlined,
+    FullscreenExitOutlined,
+    FullscreenOutlined,
+    PicCenterOutlined,
+    PlusOutlined,
+    ReloadOutlined,
+} from '@ant-design/icons';
 
 import { DimensionType, CombinedState } from 'reducers';
 import CanvasWrapperComponent from 'components/annotation-page/canvas/views/canvas2d/canvas-wrapper';
@@ -21,6 +29,7 @@ import CanvasWrapper3DComponent, {
     FrontViewComponent,
 } from 'components/annotation-page/canvas/views/canvas3d/canvas-wrapper3D';
 import ContextImage from 'components/annotation-page/canvas/views/context-image/context-image';
+import CVATTooltip from 'components/common/cvat-tooltip';
 import defaultLayout, { ItemLayout, ViewType } from './canvas-layout.conf';
 
 const ReactGridLayout = WidthProvider(RGL);
@@ -55,10 +64,75 @@ const ViewFabric = (itemLayout: ItemLayout): JSX.Element => {
     return component;
 };
 
+const fitLayout = (type: DimensionType, layoutConfig: ItemLayout[], rows: number): ItemLayout[] => {
+    // 9 X 12 for canvas and its elements
+    // 3 x 12 for related images
+
+    const updatedLayout: ItemLayout[] = [];
+
+    const relatedViews = layoutConfig
+        .filter((item: ItemLayout) => item.viewType === ViewType.RELATED_IMAGE);
+    const height = Math.floor(rows / relatedViews.length);
+    relatedViews.forEach((view: ItemLayout, i: number) => {
+        updatedLayout.push({
+            ...view,
+            h: height,
+            w: 3,
+            x: 9,
+            y: height * i,
+        });
+    });
+
+    const widthAvail = relatedViews.length ? 9 : 12;
+
+    if (type === DimensionType.DIM_2D) {
+        const canvas = layoutConfig
+            .find((item: ItemLayout) => item.viewType === ViewType.CANVAS) as ItemLayout;
+        updatedLayout.push({
+            ...canvas,
+            x: 0,
+            y: 0,
+            w: widthAvail,
+            h: 12,
+        });
+    } else {
+        const canvas = layoutConfig
+            .find((item: ItemLayout) => item.viewType === ViewType.CANVAS_3D) as ItemLayout;
+        const top = layoutConfig
+            .find((item: ItemLayout) => item.viewType === ViewType.CANVAS_3D_TOP) as ItemLayout;
+        const side = layoutConfig
+            .find((item: ItemLayout) => item.viewType === ViewType.CANVAS_3D_SIDE) as ItemLayout;
+        const front = layoutConfig
+            .find((item: ItemLayout) => item.viewType === ViewType.CANVAS_3D_FRONT) as ItemLayout;
+        updatedLayout.push({
+            ...canvas,
+            x: 0,
+            y: 0,
+            w: widthAvail,
+            h: 9,
+        }, {
+            ...top, x: 0, y: 9, w: widthAvail / 3, h: 3,
+        },
+        {
+            ...side, x: 3, y: 9, w: widthAvail / 3, h: 3,
+        },
+        {
+            ...front, x: 6, y: 9, w: widthAvail / 3, h: 3,
+        });
+    }
+
+    return updatedLayout;
+};
+
 function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
     const NUM_OF_ROWS = 12;
     const MARGIN = 8;
     const PADDING = MARGIN / 2;
+
+    const relatedFiles = useSelector((state: CombinedState) => state.annotation.player.frame.relatedFiles);
+    const canvasInstance = useSelector((state: CombinedState) => state.annotation.canvas.instance);
+    const canvasBackgroundColor = useSelector((state: CombinedState) => state.settings.player.canvasBackgroundColor);
+
     const computeRowHeight = (): number => {
         const container = window.document.getElementsByClassName('cvat-annotation-header')[0];
         if (container) {
@@ -70,24 +144,13 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
         return window.innerHeight;
     };
 
+    const getLayout = useCallback(() => (
+        defaultLayout[(type as DimensionType).toUpperCase() as '2D' | '3D'][Math.min(relatedFiles, 3)]
+    ), [type, relatedFiles]);
+
+    const [layoutConfig, setLayoutConfig] = useState<ItemLayout[]>(getLayout());
     const [rowHeight, setRowHeight] = useState<number>(Math.floor(window.screen.availHeight / NUM_OF_ROWS));
     const [fullscreenKey, setFullscreenKey] = useState<string>('');
-    const relatedFiles = useSelector((state: CombinedState) => state.annotation.player.frame.relatedFiles);
-    const canvasInstance = useSelector((state: CombinedState) => state.annotation.canvas.instance);
-    const canvasBackgroundColor = useSelector((state: CombinedState) => state.settings.player.canvasBackgroundColor);
-    const getLayout = useCallback(() => {
-        if (type === DimensionType.DIM_2D) {
-            if (!relatedFiles) return defaultLayout.CANVAS_NO_RELATED;
-            if (relatedFiles === 1) return defaultLayout.CANVAS_ONE_RELATED;
-            if (relatedFiles === 2) return defaultLayout.CANVAS_TWO_RELATED;
-            return defaultLayout.CANVAS_THREE_PLUS_RELATED;
-        }
-
-        if (!relatedFiles) return defaultLayout.CANVAS_3D_NO_RELATED;
-        if (relatedFiles === 1) return defaultLayout.CANVAS_3D_ONE_RELATED;
-        if (relatedFiles === 2) return defaultLayout.CANVAS_3D_TWO_RELATED;
-        return defaultLayout.CANVAS_3D_THREE_PLUS_RELATED;
-    }, [type, relatedFiles]);
 
     const fitCanvas = useCallback(() => {
         if (canvasInstance) {
@@ -117,7 +180,6 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
         window.dispatchEvent(new Event('resize'));
     }, []);
 
-    const layoutConfig = getLayout();
     const children = layoutConfig.map((value: ItemLayout) => ViewFabric(value));
     const layout = layoutConfig.map((value: ItemLayout) => ({
         x: value.x,
@@ -130,14 +192,25 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
     return (
         <Layout.Content>
             <ReactGridLayout
-                maxRows={12}
+                maxRows={NUM_OF_ROWS}
                 style={{ background: canvasBackgroundColor }}
                 containerPadding={[PADDING, PADDING]}
                 margin={[MARGIN, MARGIN]}
                 className='cvat-canvas-grid-root'
                 rowHeight={rowHeight}
                 layout={layout}
-                onLayoutChange={fitCanvas}
+                onLayoutChange={(updatedLayout: RGL.Layout[]) => {
+                    const transformedLayout = layoutConfig.map((itemLayout: ItemLayout, i: number): ItemLayout => ({
+                        ...itemLayout,
+                        x: updatedLayout[i].x,
+                        y: updatedLayout[i].y,
+                        w: updatedLayout[i].w,
+                        h: updatedLayout[i].h,
+                    }));
+
+                    setLayoutConfig(transformedLayout);
+                    fitCanvas();
+                }}
                 onResize={fitCanvas}
                 resizeHandle={(_: any, ref: React.MutableRefObject<HTMLDivElement>) => (
                     <div ref={ref} className='cvat-grid-item-resize-handler react-resizable-handle' />
@@ -156,6 +229,24 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
                             key={key}
                         >
                             <DragOutlined className='cvat-grid-item-drag-handler' />
+                            <CloseOutlined
+                                className='cvat-grid-item-close-button'
+                                disabled={viewType !== ViewType.RELATED_IMAGE}
+                                style={{
+                                    pointerEvents: viewType !== ViewType.RELATED_IMAGE ? 'none' : undefined,
+                                    opacity: viewType !== ViewType.RELATED_IMAGE ? 0.2 : undefined,
+                                }}
+                                onClick={() => {
+                                    if (viewType === ViewType.RELATED_IMAGE) {
+                                        setLayoutConfig(
+                                            layoutConfig
+                                                .filter((item: ItemLayout) => !(
+                                                    item.viewType === viewType && item.viewIndex === viewIndex
+                                                )),
+                                        );
+                                    }
+                                }}
+                            />
                             {fullscreenKey === key ? (
                                 <FullscreenExitOutlined
                                     className='cvat-grid-item-fullscreen-handler'
@@ -180,6 +271,58 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
                 }) }
             </ReactGridLayout>
             { type === DimensionType.DIM_3D && <CanvasWrapper3DComponent /> }
+            <div className='cvat-grid-layout-common-setups'>
+                <CVATTooltip title='Fit views'>
+                    <PicCenterOutlined
+                        onClick={() => {
+                            setLayoutConfig(fitLayout(type as DimensionType, layoutConfig, NUM_OF_ROWS));
+                            window.dispatchEvent(new Event('resize'));
+                        }}
+                    />
+                </CVATTooltip>
+                <CVATTooltip title='Add context image'>
+                    <PlusOutlined
+                        disabled={!!relatedFiles}
+                        onClick={() => {
+                            const MAXIMUM_RELATED = 12;
+                            const existingRelated = layoutConfig
+                                .filter((configItem: ItemLayout) => configItem.viewType === ViewType.RELATED_IMAGE);
+
+                            if (existingRelated.length >= MAXIMUM_RELATED) {
+                                return;
+                            }
+
+                            if (existingRelated.length === 0) {
+                                setLayoutConfig(defaultLayout[type?.toUpperCase() as '2D' | '3D']['1']);
+                                return;
+                            }
+
+                            const viewIndexes = existingRelated
+                                .map((item: ItemLayout) => +(item.viewIndex as string)).sort();
+                            const max = Math.max(...viewIndexes);
+                            let viewIndex = max + 1;
+                            for (let i = 0; i < max + 1; i++) {
+                                if (!viewIndexes.includes(i)) {
+                                    viewIndex = i;
+                                    break;
+                                }
+                            }
+
+                            const latest = existingRelated[existingRelated.length - 1];
+                            const copy = { ...latest, offset: [0, viewIndex], viewIndex: `${viewIndex}` };
+                            setLayoutConfig(fitLayout(type as DimensionType, [...layoutConfig, copy], NUM_OF_ROWS));
+                            window.dispatchEvent(new Event('resize'));
+                        }}
+                    />
+                </CVATTooltip>
+                <CVATTooltip title='Reload layout'>
+                    <ReloadOutlined onClick={() => {
+                        setLayoutConfig([...getLayout()]);
+                        window.dispatchEvent(new Event('resize'));
+                    }}
+                    />
+                </CVATTooltip>
+            </div>
         </Layout.Content>
     );
 }

@@ -8,7 +8,6 @@ import { useSelector } from 'react-redux';
 import PropTypes from 'prop-types';
 import notification from 'antd/lib/notification';
 import Spin from 'antd/lib/spin';
-import Empty from 'antd/lib/empty';
 import Text from 'antd/lib/typography/Text';
 import { SettingOutlined } from '@ant-design/icons';
 
@@ -90,7 +89,8 @@ function ContextImage(props: Props): JSX.Element {
                 )}
                 <Text strong>{Object.keys(contextImageData).sort()[contextImageOffset]}</Text>
             </div>
-            { (hasError || (!fetching && contextImageOffset >= Object.keys(contextImageData).length)) && <Empty /> }
+            { (hasError ||
+                (!fetching && contextImageOffset >= Object.keys(contextImageData).length)) && <Text> No data </Text>}
             { fetching && <Spin size='small' /> }
             {
                 contextImageOffset < Object.keys(contextImageData).length &&

@@ -21,8 +21,16 @@ export enum ViewType {
     RELATED_IMAGE = 'relatedImage',
 }
 
-const defaultLayout: { [index: string]: ItemLayout[] } = {};
-defaultLayout.CANVAS_NO_RELATED = [{
+const defaultLayout: {
+    '2D': {
+        [index: string]: ItemLayout[];
+    };
+    '3D': {
+        [index: string]: ItemLayout[];
+    };
+} = { '2D': {}, '3D': {} };
+
+defaultLayout['2D']['0'] = [{
     viewType: ViewType.CANVAS,
     offset: [0],
     x: 0,
@@ -31,39 +39,38 @@ defaultLayout.CANVAS_NO_RELATED = [{
     h: 12,
 }];
 
-defaultLayout.CANVAS_ONE_RELATED = [
-    { ...defaultLayout.CANVAS_NO_RELATED[0], w: 9 }, {
+defaultLayout['2D']['1'] = [
+    { ...defaultLayout['2D']['0'][0], w: 9 }, {
         viewType: ViewType.RELATED_IMAGE,
         offset: [0, 0],
         x: 9,
         y: 0,
         w: 3,
         h: 4,
-        viewIndex: '1',
+        viewIndex: '0',
     },
 ];
 
-defaultLayout.CANVAS_TWO_RELATED = [
-    ...defaultLayout.CANVAS_ONE_RELATED,
-    {
-        ...defaultLayout.CANVAS_ONE_RELATED[1],
-        viewIndex: '2',
+defaultLayout['2D']['2'] = [
+    ...defaultLayout['2D']['1'], {
+        ...defaultLayout['2D']['1'][1],
+        viewType: ViewType.RELATED_IMAGE,
+        viewIndex: '1',
         offset: [0, 1],
         y: 3,
     },
 ];
 
-defaultLayout.CANVAS_THREE_PLUS_RELATED = [
-    ...defaultLayout.CANVAS_TWO_RELATED,
-    {
-        ...defaultLayout.CANVAS_TWO_RELATED[1],
-        viewIndex: '3',
+defaultLayout['2D']['3'] = [
+    ...defaultLayout['2D']['2'], {
+        ...defaultLayout['2D']['2'][2],
+        viewIndex: '2',
         offset: [0, 2],
         y: 6,
     },
 ];
 
-defaultLayout.CANVAS_3D_NO_RELATED = [{
+defaultLayout['3D']['0'] = [{
     viewType: ViewType.CANVAS_3D,
     offset: [0],
     x: 0,
@@ -93,11 +100,11 @@ defaultLayout.CANVAS_3D_NO_RELATED = [{
     h: 3,
 }];
 
-defaultLayout.CANVAS_3D_ONE_RELATED = [
-    { ...defaultLayout.CANVAS_3D_NO_RELATED[0], w: 9 },
-    { ...defaultLayout.CANVAS_3D_NO_RELATED[1], w: 3 },
-    { ...defaultLayout.CANVAS_3D_NO_RELATED[2], x: 3, w: 3 },
-    { ...defaultLayout.CANVAS_3D_NO_RELATED[3], x: 6, w: 3 },
+defaultLayout['3D']['1'] = [
+    { ...defaultLayout['3D']['0'][0], w: 9 },
+    { ...defaultLayout['3D']['0'][1], w: 3 },
+    { ...defaultLayout['3D']['0'][2], x: 3, w: 3 },
+    { ...defaultLayout['3D']['0'][3], x: 6, w: 3 },
     {
         viewType: ViewType.RELATED_IMAGE,
         offset: [0, 0],
@@ -105,25 +112,25 @@ defaultLayout.CANVAS_3D_ONE_RELATED = [
         y: 0,
         w: 3,
         h: 4,
-        viewIndex: '1',
+        viewIndex: '0',
     },
 ];
 
-defaultLayout.CANVAS_3D_TWO_RELATED = [
-    ...defaultLayout.CANVAS_3D_ONE_RELATED,
+defaultLayout['3D']['2'] = [
+    ...defaultLayout['3D']['1'],
     {
-        ...defaultLayout.CANVAS_3D_ONE_RELATED[4],
-        viewIndex: '2',
+        ...defaultLayout['3D']['1'][4],
+        viewIndex: '1',
         offset: [0, 1],
         y: 4,
     },
 ];
 
-defaultLayout.CANVAS_3D_THREE_PLUS_RELATED = [
-    ...defaultLayout.CANVAS_3D_TWO_RELATED,
+defaultLayout['3D']['3'] = [
+    ...defaultLayout['3D']['2'],
     {
-        ...defaultLayout.CANVAS_3D_TWO_RELATED[5],
-        viewIndex: '3',
+        ...defaultLayout['3D']['2'][5],
+        viewIndex: '2',
         offset: [0, 2],
         y: 8,
     },

@@ -8,6 +8,32 @@
     position: relative;
 }
 
+.cvat-grid-layout-common-setups {
+    position: absolute;
+    top: 0;
+    right: 50%;
+    transform: translate(0, calc($grid-unit-size * 12 - 1px));
+    z-index: 1000;
+    background: $background-color-2;
+    line-height: $grid-unit-size * 3;
+    height: calc($grid-unit-size * 3 + 1px);
+    padding-bottom: $grid-unit-size;
+    padding-right: $grid-unit-size;
+    padding-left: $grid-unit-size;
+    border-radius: 0 0 4px 4px;
+    border-bottom: 1px solid $border-color-1;
+    border-right: 1px solid $border-color-1;
+    border-left: 1px solid $border-color-1;
+
+    > span {
+        margin-right: $grid-unit-size * 2;
+
+        &:last-child {
+            margin-right: 0;
+        }
+    }
+}
+
 .cvat-canvas-grid-item {
     background-color: rgba(241, 241, 241, 0.7);
     border-radius: 4px;
@@ -29,17 +55,12 @@
         }
     }
 
-    .cvat-grid-item-fullscreen-handler {
-        left: $grid-unit-size * 4;
-    }
-
     .cvat-grid-item-drag-handler,
-    .cvat-grid-item-fullscreen-handler {
+    .cvat-grid-item-fullscreen-handler,
+    .cvat-grid-item-close-button {
         position: absolute;
         top: $grid-unit-size;
-        left: $grid-unit-size * 4;
         z-index: 1000;
-        cursor: move;
         font-size: 16px;
         background: $header-color;
         border-radius: 2px;
@@ -50,15 +71,23 @@
             opacity: 0.9;
         }
 
+        &.cvat-grid-item-drag-handler {
+            left: $grid-unit-size * 7;
+            cursor: move;
+        }
+
         &.cvat-grid-item-fullscreen-handler {
+            left: $grid-unit-size * 4;
+        }
+
+        &.cvat-grid-item-close-button {
             left: $grid-unit-size;
-            cursor: default;
         }
     }
 
     .cvat-grid-item-resize-handler.react-resizable-handle {
-        bottom: 0;
-        right: 0;
+        bottom: -3px;
+        right: -2px;
         cursor: se-resize;
 
         &::after {
