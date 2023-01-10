@@ -90,7 +90,7 @@ metadata:
       ]
 spec:
   description: YOLO v7 via onnx
-  runtime: 'python:3.6'
+  runtime: 'python:3.8'
   handler: main:handler
   eventTimeout: 30s
   build:
@@ -109,6 +109,8 @@ spec:
           value: /opt/nuclio
         - kind: RUN
           value: wget https://github.com/WongKinYiu/yolov7/releases/download/v0.1/yolov7-nms-640.onnx
+        - kind: RUN
+          value: ln -s /usr/bin/python3 /usr/bin/python
 
   triggers:
     myHttpTrigger:
