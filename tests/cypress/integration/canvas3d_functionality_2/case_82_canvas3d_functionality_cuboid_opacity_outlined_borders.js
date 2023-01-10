@@ -21,7 +21,7 @@ context('Canvas 3D functionality. Opacity. Outlined borders.', () => {
     before(() => {
         cy.openTask(taskName);
         cy.openJob();
-        cy.wait(1000); // Waiting for the point cloud to display
+        cy.wait(2000); // Waiting for the point cloud to display
         cy.create3DCuboid(cuboidCreationParams);
         cy.get('.cvat-canvas3d-perspective').trigger('mousemove').click(); // Deactivate the cuboiud
         cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_deactivate_cuboid');
