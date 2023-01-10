@@ -1,5 +1,5 @@
 # Copyright (C) 2018-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -47,7 +47,7 @@ from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.media_extractors import get_mime
 from cvat.apps.engine.models import (
-    Job, Task, Project, Issue, Data,
+    Job, JobCommit, Task, Project, Issue, Data,
     Comment, StorageMethodChoice, StorageChoice, Image,
     CloudProviderChoice, Location
 )
@@ -63,6 +63,7 @@ from cvat.apps.engine.serializers import (
     ProjectFileSerializer, TaskFileSerializer)
 
 from utils.dataset_manifest import ImageManifestManager
+from cvat.apps.engine.view_utils import make_paginated_response
 from cvat.apps.engine.utils import (
     av_scan_paths, process_failed_job, configure_dependent_job, parse_exception_message, reverse
 )
@@ -343,23 +344,17 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     @extend_schema(
         summary='Method returns information of the tasks of the project with the selected id',
-        responses={
-            '200': TaskReadSerializer(many=True),
-        })
-    @action(detail=True, methods=['GET'], serializer_class=TaskReadSerializer)
+        responses=TaskReadSerializer(many=True)) # Duplicate to still get 'list' op. nam
+    @action(detail=True, methods=['GET'], serializer_class=TaskReadSerializer,
+        pagination_class=viewsets.GenericViewSet.pagination_class,
+        # Remove regular list() parameters from the swagger schema.
+        # Unset, they would be taken from the enclosing class, which is wrong.
+        # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
+        filter_fields=None, search_fields=None, ordering_fields=None)
     def tasks(self, request, pk):
         self.get_object() # force to call check_object_permissions
-        queryset = Task.objects.filter(project_id=pk).order_by('-id')
-
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True,
-                context={"request": request})
-            return self.get_paginated_response(serializer.data)
-
-        serializer = self.get_serializer(queryset, many=True,
-            context={"request": request})
-        return Response(serializer.data)
+        return make_paginated_response(Task.objects.filter(project_id=pk).order_by('-id'),
+            viewset=self, serializer_type=self.serializer_class) # from @action
 
 
     @extend_schema(methods=['GET'], summary='Export project as a dataset in a specific format',
@@ -898,22 +893,17 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
 
     @extend_schema(summary='Method returns a list of jobs for a specific task',
-        responses=JobReadSerializer(many=True))
-    @action(detail=True, methods=['GET'], serializer_class=JobReadSerializer)
+        responses=JobReadSerializer(many=True)) # Duplicate to still get 'list' op. name
+    @action(detail=True, methods=['GET'], serializer_class=JobReadSerializer,
+        pagination_class=viewsets.GenericViewSet.pagination_class,
+        # Remove regular list() parameters from the swagger schema.
+        # Unset, they would be taken from the enclosing class, which is wrong.
+        # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
+        filter_fields=None, search_fields=None, ordering_fields=None)
     def jobs(self, request, pk):
         self.get_object() # force to call check_object_permissions
-        queryset = Job.objects.filter(segment__task_id=pk).order_by('id')
-
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True,
-                context={"request": request})
-            return self.get_paginated_response(serializer.data)
-
-        serializer = self.get_serializer(queryset, many=True,
-            context={"request": request})
-
-        return Response(serializer.data)
+        return make_paginated_response(Job.objects.filter(segment__task_id=pk).order_by('id'),
+            viewset=self, serializer_type=self.serializer_class) # from @action
 
     # UploadMixin method
     def get_upload_dir(self):
@@ -1654,9 +1644,15 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             callback=dm.views.export_job_as_dataset
         )
 
-    @extend_schema(summary='Moved to GET api/issues',
+    @extend_schema(summary='Moved to GET /issues',
+        responses=IssueReadSerializer(many=True), # Duplicate to still get 'list' op. name
         deprecated=True) # TODO: to be removed in v2.5
-    @action(detail=True, methods=['GET'], serializer_class=IssueReadSerializer)
+    @action(detail=True, methods=['GET'], serializer_class=IssueReadSerializer,
+        pagination_class=viewsets.GenericViewSet.pagination_class,
+        # Remove regular list() parameters from the swagger schema.
+        # Unset, they would be taken from the enclosing class, which is wrong.
+        # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
+        filter_fields=None, search_fields=None, ordering_fields=None)
     def issues(self, request, pk):
         # https://www.rfc-editor.org/rfc/rfc9110.html#name-303-see-other
         return Response(status=status.HTTP_303_SEE_OTHER, headers={
@@ -1763,21 +1759,17 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         return Response(serializer.data)
 
     @extend_schema(summary='The action returns the list of tracked changes for the job',
-        responses={
-            '200': JobCommitSerializer(many=True),
-        })
-    @action(detail=True, methods=['GET'], serializer_class=JobCommitSerializer)
+        responses=JobCommitSerializer(many=True)) # Duplicate to still get 'list' op. name
+    @action(detail=True, methods=['GET'], serializer_class=JobCommitSerializer,
+        pagination_class=viewsets.GenericViewSet.pagination_class,
+        # Remove regular list() parameters from the swagger schema.
+        # Unset, they would be taken from the enclosing class, which is wrong.
+        # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
+        filter_fields=None, search_fields=None, ordering_fields=None)
     def commits(self, request, pk):
-        db_job = self.get_object()
-        queryset = db_job.commits.order_by('-id')
-
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, context={'request': request}, many=True)
-            return self.get_paginated_response(serializer.data)
-
-        serializer = self.get_serializer(queryset, context={'request': request}, many=True)
-        return Response(serializer.data)
+        self.get_object() # force to call check_object_permissions
+        return make_paginated_response(JobCommit.objects.filter(job_id=pk).order_by('-id'),
+            viewset=self, serializer_type=self.serializer_class) # from @action
 
     @extend_schema(summary='Method returns a preview image for the job',
         responses={
@@ -1862,22 +1854,17 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         super().perform_create(serializer, owner=self.request.user)
 
     @extend_schema(summary='The action returns all comments of a specific issue',
-        responses=CommentReadSerializer(many=True))
-    @action(detail=True, methods=['GET'], serializer_class=CommentReadSerializer)
+        responses=CommentReadSerializer(many=True)) # Duplicate to still get 'list' op. name
+    @action(detail=True, methods=['GET'], serializer_class=CommentReadSerializer,
+        pagination_class=viewsets.GenericViewSet.pagination_class,
+        # Remove regular list() parameters from the swagger schema.
+        # Unset, they would be taken from the enclosing class, which is wrong.
+        # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
+        filter_fields=None, search_fields=None, ordering_fields=None)
     def comments(self, request, pk):
-        db_issue = self.get_object()
-        queryset = db_issue.comments.order_by('-id')
-
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True,
-                context={"request": request})
-            return self.get_paginated_response(serializer.data)
-
-        serializer = self.get_serializer(queryset,
-            context={'request': request}, many=True)
-
-        return Response(serializer.data)
+        self.get_object() # force to call check_object_permissions
+        return make_paginated_response(Comment.objects.filter(issue_id=pk).order_by('-id'),
+            viewset=self, serializer_type=self.serializer_class) # from @action
 
 @extend_schema(tags=['comments'])
 @extend_schema_view(

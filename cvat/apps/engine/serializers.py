@@ -1,5 +1,5 @@
 # Copyright (C) 2019-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -184,14 +184,14 @@ class JobReadSerializer(serializers.ModelSerializer):
     project_id = serializers.ReadOnlyField(source="get_project_id", allow_null=True)
     start_frame = serializers.ReadOnlyField(source="segment.start_frame")
     stop_frame = serializers.ReadOnlyField(source="segment.stop_frame")
-    assignee = BasicUserSerializer(allow_null=True)
-    dimension = serializers.CharField(max_length=2, source='segment.task.dimension')
-    labels = LabelSerializer(many=True, source='get_labels')
+    assignee = BasicUserSerializer(allow_null=True, read_only=True)
+    dimension = serializers.CharField(max_length=2, source='segment.task.dimension', read_only=True)
+    labels = LabelSerializer(many=True, source='get_labels', read_only=True)
     data_chunk_size = serializers.ReadOnlyField(source='segment.task.data.chunk_size')
     data_compressed_chunk_type = serializers.ReadOnlyField(source='segment.task.data.compressed_chunk_type')
     mode = serializers.ReadOnlyField(source='segment.task.mode')
     bug_tracker = serializers.CharField(max_length=2000, source='get_bug_tracker',
-        allow_null=True)
+        allow_null=True, read_only=True)
 
     class Meta:
         model = models.Job
