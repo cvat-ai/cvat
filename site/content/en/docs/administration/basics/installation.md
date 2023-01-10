@@ -136,7 +136,8 @@ For access from China, read [sources for users from China](#sources-for-users-fr
   [here](https://docs.docker.com/docker-for-windows/wsl/). Note: Check that you are specifically using WSL2 backend
   for Docker.
 
-- In Docker Desktop, go to `Settings >> Resources >> WSL Integration`, and enable integration with the Linux Distribution that you chose.
+- In Docker Desktop, go to `Settings >> Resources >> WSL Integration`, and
+enable integration with the Linux Distribution that you chose.
 
 - Download and install
   [Git for Windows](https://github.com/git-for-windows/git/releases/download/v2.21.0.windows.1/Git-2.21.0-64-bit.exe).
