@@ -492,6 +492,40 @@ class TestPostTaskData:
             (task, _) = api_client.tasks_api.retrieve(task_id)
             assert task.size == 4
 
+    def test_can_create_task_with_sorting_method(self):
+        task_spec = {
+            "name": f"test {self._USERNAME} to create a task with a custom sorting method",
+            "labels": [
+                {
+                    "name": "car",
+                    "color": "#ff00ff",
+                    "attributes": [],
+                }
+            ],
+        }
+
+        image_files = generate_image_files(15)
+
+        task_data = {
+            "client_files": image_files[5:] + image_files[:5],  # perturb the order
+            "image_quality": 70,
+            "sorting_method": "natural",
+        }
+
+        # Besides testing that the sorting method is applied, this also checks for
+        # regressions of <https://github.com/opencv/cvat/issues/4962>.
+        task_id = self._test_create_task(
+            self._USERNAME, task_spec, task_data, content_type="multipart/form-data"
+        )
+
+        # check that the frames were sorted again
+        with make_api_client(self._USERNAME) as api_client:
+            data_meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
+
+            # generate_image_files produces files that are already naturally sorted
+            for image_file, frame in zip(image_files, data_meta.frames):
+                assert image_file.name == frame.name
+
     def test_can_get_annotations_from_new_task_with_skeletons(self):
         spec = {
             "name": f"test admin1 to create a task with skeleton",
