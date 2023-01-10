@@ -57,7 +57,7 @@ defaultLayout['2D']['2'] = [
         viewType: ViewType.RELATED_IMAGE,
         viewIndex: '1',
         offset: [0, 1],
-        y: 3,
+        y: 4,
     },
 ];
 
@@ -66,7 +66,7 @@ defaultLayout['2D']['3'] = [
         ...defaultLayout['2D']['2'][2],
         viewIndex: '2',
         offset: [0, 2],
-        y: 6,
+        y: 8,
     },
 ];
 

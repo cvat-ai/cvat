@@ -142,10 +142,11 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
         let containerHeight = window.innerHeight;
         if (container) {
             containerHeight = window.innerHeight - container.getBoundingClientRect().bottom;
+            // https://github.com/react-grid-layout/react-grid-layout/issues/628#issuecomment-1228453084
+            return Math.floor((containerHeight - MARGIN * (NUM_OF_ROWS)) / NUM_OF_ROWS);
         }
 
-        // https://github.com/react-grid-layout/react-grid-layout/issues/628#issuecomment-1228453084
-        return Math.floor((containerHeight - MARGIN * (NUM_OF_ROWS)) / NUM_OF_ROWS);
+        return 0;
     };
 
     const getLayout = useCallback(() => (
@@ -182,7 +183,6 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
 
     useEffect(() => {
         setRowHeight(computeRowHeight());
-        // window.dispatchEvent(new Event('resize'));
     }, []);
 
     const children = layoutConfig.map((value: ItemLayout) => ViewFabric(value));
@@ -196,86 +196,88 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
 
     return (
         <Layout.Content>
-            <ReactGridLayout
-                maxRows={NUM_OF_ROWS}
-                style={{ background: canvasBackgroundColor }}
-                containerPadding={[PADDING, PADDING]}
-                margin={[MARGIN, MARGIN]}
-                className='cvat-canvas-grid-root'
-                rowHeight={rowHeight}
-                layout={layout}
-                onLayoutChange={(updatedLayout: RGL.Layout[]) => {
-                    const transformedLayout = layoutConfig.map((itemLayout: ItemLayout, i: number): ItemLayout => ({
-                        ...itemLayout,
-                        x: updatedLayout[i].x,
-                        y: updatedLayout[i].y,
-                        w: updatedLayout[i].w,
-                        h: updatedLayout[i].h,
-                    }));
+            { !!rowHeight && (
+                <ReactGridLayout
+                    maxRows={NUM_OF_ROWS}
+                    style={{ background: canvasBackgroundColor }}
+                    containerPadding={[PADDING, PADDING]}
+                    margin={[MARGIN, MARGIN]}
+                    className='cvat-canvas-grid-root'
+                    rowHeight={rowHeight}
+                    layout={layout}
+                    onLayoutChange={(updatedLayout: RGL.Layout[]) => {
+                        const transformedLayout = layoutConfig.map((itemLayout: ItemLayout, i: number): ItemLayout => ({
+                            ...itemLayout,
+                            x: updatedLayout[i].x,
+                            y: updatedLayout[i].y,
+                            w: updatedLayout[i].w,
+                            h: updatedLayout[i].h,
+                        }));
 
-                    if (!isEqual(layoutConfig, transformedLayout)) {
-                        setLayoutConfig(transformedLayout);
-                        fitCanvas();
-                    }
-                }}
-                onResize={fitCanvas}
-                resizeHandle={(_: any, ref: React.MutableRefObject<HTMLDivElement>) => (
-                    <div ref={ref} className='cvat-grid-item-resize-handler react-resizable-handle' />
-                )}
-                draggableHandle='.cvat-grid-item-drag-handler'
-            >
-                { children.map((child: JSX.Element, idx: number): JSX.Element => {
-                    const { viewType, viewIndex } = layoutConfig[idx];
-                    const key = typeof viewIndex !== 'undefined' ? `${viewType}_${viewIndex}` : `${viewType}`;
-                    return (
-                        <div
-                            style={fullscreenKey === key ? { backgroundColor: canvasBackgroundColor } : {}}
-                            className={fullscreenKey === key ?
-                                'cvat-canvas-grid-item cvat-canvas-grid-fullscreen-item' :
-                                'cvat-canvas-grid-item'}
-                            key={key}
-                        >
-                            <DragOutlined className='cvat-grid-item-drag-handler' />
-                            <CloseOutlined
-                                className='cvat-grid-item-close-button'
-                                style={{
-                                    pointerEvents: viewType !== ViewType.RELATED_IMAGE ? 'none' : undefined,
-                                    opacity: viewType !== ViewType.RELATED_IMAGE ? 0.2 : undefined,
-                                }}
-                                onClick={() => {
-                                    if (viewType === ViewType.RELATED_IMAGE) {
-                                        setLayoutConfig(
-                                            layoutConfig
-                                                .filter((item: ItemLayout) => !(
-                                                    item.viewType === viewType && item.viewIndex === viewIndex
-                                                )),
-                                        );
-                                    }
-                                }}
-                            />
-                            {fullscreenKey === key ? (
-                                <FullscreenExitOutlined
-                                    className='cvat-grid-item-fullscreen-handler'
+                        if (!isEqual(layoutConfig, transformedLayout)) {
+                            setLayoutConfig(transformedLayout);
+                            fitCanvas();
+                        }
+                    }}
+                    onResize={fitCanvas}
+                    resizeHandle={(_: any, ref: React.MutableRefObject<HTMLDivElement>) => (
+                        <div ref={ref} className='cvat-grid-item-resize-handler react-resizable-handle' />
+                    )}
+                    draggableHandle='.cvat-grid-item-drag-handler'
+                >
+                    { children.map((child: JSX.Element, idx: number): JSX.Element => {
+                        const { viewType, viewIndex } = layoutConfig[idx];
+                        const key = typeof viewIndex !== 'undefined' ? `${viewType}_${viewIndex}` : `${viewType}`;
+                        return (
+                            <div
+                                style={fullscreenKey === key ? { backgroundColor: canvasBackgroundColor } : {}}
+                                className={fullscreenKey === key ?
+                                    'cvat-canvas-grid-item cvat-canvas-grid-fullscreen-item' :
+                                    'cvat-canvas-grid-item'}
+                                key={key}
+                            >
+                                <DragOutlined className='cvat-grid-item-drag-handler' />
+                                <CloseOutlined
+                                    className='cvat-grid-item-close-button'
+                                    style={{
+                                        pointerEvents: viewType !== ViewType.RELATED_IMAGE ? 'none' : undefined,
+                                        opacity: viewType !== ViewType.RELATED_IMAGE ? 0.2 : undefined,
+                                    }}
                                     onClick={() => {
-                                        window.dispatchEvent(new Event('resize'));
-                                        setFullscreenKey('');
+                                        if (viewType === ViewType.RELATED_IMAGE) {
+                                            setLayoutConfig(
+                                                layoutConfig
+                                                    .filter((item: ItemLayout) => !(
+                                                        item.viewType === viewType && item.viewIndex === viewIndex
+                                                    )),
+                                            );
+                                        }
                                     }}
                                 />
-                            ) : (
-                                <FullscreenOutlined
-                                    className='cvat-grid-item-fullscreen-handler'
-                                    onClick={() => {
-                                        window.dispatchEvent(new Event('resize'));
-                                        setFullscreenKey(key);
-                                    }}
-                                />
-                            )}
+                                {fullscreenKey === key ? (
+                                    <FullscreenExitOutlined
+                                        className='cvat-grid-item-fullscreen-handler'
+                                        onClick={() => {
+                                            window.dispatchEvent(new Event('resize'));
+                                            setFullscreenKey('');
+                                        }}
+                                    />
+                                ) : (
+                                    <FullscreenOutlined
+                                        className='cvat-grid-item-fullscreen-handler'
+                                        onClick={() => {
+                                            window.dispatchEvent(new Event('resize'));
+                                            setFullscreenKey(key);
+                                        }}
+                                    />
+                                )}
 
-                            { child }
-                        </div>
-                    );
-                }) }
-            </ReactGridLayout>
+                                { child }
+                            </div>
+                        );
+                    }) }
+                </ReactGridLayout>
+            )}
             { type === DimensionType.DIM_3D && <CanvasWrapper3DComponent /> }
             <div className='cvat-grid-layout-common-setups'>
                 <CVATTooltip title='Fit views'>
