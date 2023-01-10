@@ -7,16 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## \[2.4.0] - Unreleased
 ### Added
+- \[SDK\] An arg to wait for data processing in the task data uploading function
+  (<https://github.com/opencv/cvat/pull/5502>)
 - Filename pattern to simplify uploading cloud storage data for a task (<https://github.com/opencv/cvat/pull/5498>, <https://github.com/opencv/cvat/pull/5525>)
 - \[SDK\] Configuration setting to change the dataset cache directory
   (<https://github.com/opencv/cvat/pull/5535>)
 - \[SDK\] Class to represent a project as a PyTorch dataset
   (<https://github.com/opencv/cvat/pull/5523>)
+- \[SDK\] A PyTorch adapter setting to disable cache updates
+  (<https://github.com/opencv/cvat/pull/5549>)
+- YOLO v7 serverless feature added using ONNX backend (<https://github.com/opencv/cvat/pull/5552>)
 
 ### Changed
 - The Docker Compose files now use the Compose Specification version
   of the format. This version is supported by Docker Compose 1.27.0+
   (<https://github.com/opencv/cvat/pull/5524>).
+- \[SDK\] The `resource_type` args now have the default value of `local` in task creation functions.
+  The corresponding arguments are keyword-only now.
+  (<https://github.com/opencv/cvat/pull/5502>)
+- Windows Installation Instructions adjusted to work around <https://github.com/nuclio/nuclio/issues/1821>
 
 ### Deprecated
 - TDB
@@ -127,8 +136,13 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
 - Missing source tag in project annotations (<https://github.com/opencv/cvat/pull/5408>)
 - Creating a task with a Git repository via the SDK
   (<https://github.com/opencv/cvat/issues/4365>)
+- Queries via the low-level API using the `multipart/form-data` Content-Type with string fields
+  (<https://github.com/opencv/cvat/pull/5479>)
+
+### Security
 - `Project.import_dataset` not waiting for completion correctly
   (<https://github.com/opencv/cvat/pull/5459>)
+
 
 ## \[2.2.0] - 2022-09-12
 ### Added
