@@ -11,6 +11,7 @@ from typing import Tuple
 
 import pytest
 from cvat_sdk import Client, models
+from cvat_sdk.api_client.rest import RESTClientObject
 from cvat_sdk.core.proxies.tasks import ResourceType
 
 try:
@@ -40,6 +41,13 @@ def _common_setup(
     api_client = client.api_client
     for k in api_client.configuration.logger:
         api_client.configuration.logger[k] = logger
+
+
+def _disable_api_requests(monkeypatch: pytest.MonkeyPatch) -> None:
+    def disabled_request(*args, **kwargs):
+        raise RuntimeError("Disabled!")
+
+    monkeypatch.setattr(RESTClientObject, "request", disabled_request)
 
 
 @pytest.mark.skipif(cvatpt is None, reason="PyTorch dependencies are not installed")
@@ -226,6 +234,27 @@ class TestTaskVisionDataset:
         assert target.label_id_to_index[label_name_to_id["person"]] == 123
         assert target.label_id_to_index[label_name_to_id["car"]] == 456
 
+    def test_offline(self, monkeypatch: pytest.MonkeyPatch):
+        dataset = cvatpt.TaskVisionDataset(
+            self.client,
+            self.task.id,
+            update_policy=cvatpt.UpdatePolicy.IF_MISSING_OR_STALE,
+        )
+
+        fresh_samples = list(dataset)
+
+        _disable_api_requests(monkeypatch)
+
+        dataset = cvatpt.TaskVisionDataset(
+            self.client,
+            self.task.id,
+            update_policy=cvatpt.UpdatePolicy.NEVER,
+        )
+
+        cached_samples = list(dataset)
+
+        assert fresh_samples == cached_samples
+
 
 @pytest.mark.skipif(cvatpt is None, reason="PyTorch dependencies are not installed")
 class TestProjectVisionDataset:
@@ -359,3 +388,24 @@ class TestProjectVisionDataset:
 
         assert isinstance(dataset[0][0], cvatpt.Target)
         assert isinstance(dataset[0][1], PIL.Image.Image)
+
+    def test_offline(self, monkeypatch: pytest.MonkeyPatch):
+        dataset = cvatpt.ProjectVisionDataset(
+            self.client,
+            self.project.id,
+            update_policy=cvatpt.UpdatePolicy.IF_MISSING_OR_STALE,
+        )
+
+        fresh_samples = list(dataset)
+
+        _disable_api_requests(monkeypatch)
+
+        dataset = cvatpt.ProjectVisionDataset(
+            self.client,
+            self.project.id,
+            update_policy=cvatpt.UpdatePolicy.NEVER,
+        )
+
+        cached_samples = list(dataset)
+
+        assert fresh_samples == cached_samples

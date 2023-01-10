@@ -12,7 +12,7 @@ import torchvision.datasets
 import cvat_sdk.core
 import cvat_sdk.core.exceptions
 import cvat_sdk.models as models
-from cvat_sdk.pytorch.common import get_server_cache_dir
+from cvat_sdk.pytorch.caching import UpdatePolicy, make_cache_manager
 from cvat_sdk.pytorch.task_dataset import TaskVisionDataset
 
 
@@ -42,6 +42,7 @@ class ProjectVisionDataset(torchvision.datasets.VisionDataset):
         label_name_to_index: Mapping[str, int] = None,
         task_filter: Optional[Callable[[models.ITaskRead], bool]] = None,
         include_subsets: Optional[Container[str]] = None,
+        update_policy: UpdatePolicy = UpdatePolicy.IF_MISSING_OR_STALE,
     ) -> None:
         """
         Creates a dataset corresponding to the project with ID `project_id` on the
@@ -61,29 +62,24 @@ class ProjectVisionDataset(torchvision.datasets.VisionDataset):
 
         * If `include_subsets` is set to a container, then tasks whose subset is
           not a member of this container will be excluded.
+
+        `update_policy` determines when and if the local cache will be updated.
         """
 
         self._logger = client.logger
 
-        self._logger.info(f"Fetching project {project_id}...")
-        project = client.projects.retrieve(project_id)
-
-        # We don't actually need to save anything to this directory (yet),
-        # but VisionDataset.__init__ requires a root, so make one.
-        # It could be useful in the future to store the project data for
-        # offline-only mode.
-        project_dir = get_server_cache_dir(client) / f"projects/{project_id}"
-        project_dir.mkdir(parents=True, exist_ok=True)
+        cache_manager = make_cache_manager(client, update_policy)
+        project = cache_manager.retrieve_project(project_id)
 
         super().__init__(
-            os.fspath(project_dir),
+            os.fspath(cache_manager.project_dir(project_id)),
             transforms=transforms,
             transform=transform,
             target_transform=target_transform,
         )
 
         self._logger.info("Fetching project tasks...")
-        tasks = project.get_tasks()
+        tasks = [cache_manager.retrieve_task(task_id) for task_id in project.tasks]
 
         if task_filter is not None:
             tasks = list(filter(task_filter, tasks))
@@ -95,7 +91,12 @@ class ProjectVisionDataset(torchvision.datasets.VisionDataset):
 
         self._underlying = torch.utils.data.ConcatDataset(
             [
-                TaskVisionDataset(client, task.id, label_name_to_index=label_name_to_index)
+                TaskVisionDataset(
+                    client,
+                    task.id,
+                    label_name_to_index=label_name_to_index,
+                    update_policy=update_policy,
+                )
                 for task in tasks
             ]
         )
