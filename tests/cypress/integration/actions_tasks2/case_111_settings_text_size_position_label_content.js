@@ -46,25 +46,24 @@ context('Settings. Text size/position. Text labels content.', () => {
         let textTopPosition = 0;
         let getText;
 
-        cy.get(shape).then(($shape) => {
-            shapeLeftPosition = Math.trunc($shape.position().left);
-            shapeTopPosition = Math.trunc($shape.position().top);
-            if (shape === '#cvat_canvas_shape_1') {
-                shapeWidth = $shape.attr('width');
-                shapeHeight = $shape.attr('height');
-            } else {
-                const points = $shape.attr('points').split(' ');
-                shapeWidth = +points[1].split(',')[0] - +points[0].split(',')[0];
-                shapeHeight = +points[2].split(',')[1] - +points[0].split(',')[1];
-            }
+        cy.get(shape).then(([shapeObj]) => {
+            const shapeBBox = shapeObj.getBoundingClientRect();
+            shapeLeftPosition = shapeBBox.left;
+            shapeTopPosition = shapeBBox.top;
+            shapeWidth = shapeBBox.width;
+            shapeHeight = shapeBBox.height;
+
             if (shape === '#cvat_canvas_shape_1') {
                 getText = cy.get('.cvat_canvas_text').first();
             } else {
                 getText = cy.get('.cvat_canvas_text').last();
             }
-            getText.then(($text) => {
-                textLeftPosition = Math.trunc($text.position().left);
-                textTopPosition = Math.trunc($text.position().top);
+
+            getText.then(([textObj]) => {
+                const textBBox = textObj.getBoundingClientRect();
+                textLeftPosition = textBBox.left;
+                textTopPosition = textBBox.top;
+
                 if (expectedPosition === 'outside') {
                     // Text outside the shape of the right. Slightly below the shape upper edge.
                     expect(+shapeLeftPosition + +shapeWidth).lessThan(+textLeftPosition);
