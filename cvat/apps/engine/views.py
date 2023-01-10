@@ -63,9 +63,9 @@ from cvat.apps.engine.serializers import (
     ProjectFileSerializer, TaskFileSerializer)
 
 from utils.dataset_manifest import ImageManifestManager
-from cvat.apps.engine.view_utils import make_paginated_response
+from cvat.apps.engine.view_utils import build_field_search_params, make_paginated_response, reverse
 from cvat.apps.engine.utils import (
-    av_scan_paths, process_failed_job, configure_dependent_job, parse_exception_message, reverse
+    av_scan_paths, process_failed_job, configure_dependent_job, parse_exception_message
 )
 from cvat.apps.engine import backup
 from cvat.apps.engine.mixins import PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin, DestroyModelMixin, CreateModelMixin
@@ -343,8 +343,9 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         )
 
     @extend_schema(
-        summary='Method returns information of the tasks of the project with the selected id',
-        responses=TaskReadSerializer(many=True)) # Duplicate to still get 'list' op. nam
+        summary='Moved to /tasks',
+        responses=TaskReadSerializer(many=True), # Duplicate to still get 'list' op. name
+        deprecated=True) # TODO: remove in v2.5
     @action(detail=True, methods=['GET'], serializer_class=TaskReadSerializer,
         pagination_class=viewsets.GenericViewSet.pagination_class,
         # Remove regular list() parameters from the swagger schema.
@@ -352,10 +353,11 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
         filter_fields=None, search_fields=None, ordering_fields=None)
     def tasks(self, request, pk):
-        self.get_object() # force to call check_object_permissions
-        return make_paginated_response(Task.objects.filter(project_id=pk).order_by('-id'),
-            viewset=self, serializer_type=self.serializer_class) # from @action
-
+        # https://www.rfc-editor.org/rfc/rfc9110.html#name-303-see-other
+        return Response(status=status.HTTP_303_SEE_OTHER, headers={
+            'Location': reverse('task-list',
+                query_params=build_field_search_params('project_id', pk))
+        })
 
     @extend_schema(methods=['GET'], summary='Export project as a dataset in a specific format',
         parameters=[
@@ -892,8 +894,9 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             db_project.save()
 
 
-    @extend_schema(summary='Method returns a list of jobs for a specific task',
-        responses=JobReadSerializer(many=True)) # Duplicate to still get 'list' op. name
+    @extend_schema(summary='Moved to /jobs',
+        responses=JobReadSerializer(many=True), # Duplicate to still get 'list' op. name
+        deprecated=True) # TODO: remove in v2.5
     @action(detail=True, methods=['GET'], serializer_class=JobReadSerializer,
         pagination_class=viewsets.GenericViewSet.pagination_class,
         # Remove regular list() parameters from the swagger schema.
@@ -901,9 +904,11 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
         filter_fields=None, search_fields=None, ordering_fields=None)
     def jobs(self, request, pk):
-        self.get_object() # force to call check_object_permissions
-        return make_paginated_response(Job.objects.filter(segment__task_id=pk).order_by('id'),
-            viewset=self, serializer_type=self.serializer_class) # from @action
+        # https://www.rfc-editor.org/rfc/rfc9110.html#name-303-see-other
+        return Response(status=status.HTTP_303_SEE_OTHER, headers={
+            'Location': reverse('job-list',
+                query_params=build_field_search_params('task_id', pk))
+        })
 
     # UploadMixin method
     def get_upload_dir(self):
@@ -1646,7 +1651,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     @extend_schema(summary='Moved to GET /issues',
         responses=IssueReadSerializer(many=True), # Duplicate to still get 'list' op. name
-        deprecated=True) # TODO: to be removed in v2.5
+        deprecated=True) # TODO: remove in v2.5
     @action(detail=True, methods=['GET'], serializer_class=IssueReadSerializer,
         pagination_class=viewsets.GenericViewSet.pagination_class,
         # Remove regular list() parameters from the swagger schema.
@@ -1656,7 +1661,8 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def issues(self, request, pk):
         # https://www.rfc-editor.org/rfc/rfc9110.html#name-303-see-other
         return Response(status=status.HTTP_303_SEE_OTHER, headers={
-            'Location': reverse('issue-list', query_params={'job_id': pk})
+            'Location': reverse('issue-list',
+                query_params=build_field_search_params('job_id', pk))
         })
 
     @extend_schema(summary='Method returns data for a specific job',
@@ -1853,8 +1859,9 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def perform_create(self, serializer, **kwargs):
         super().perform_create(serializer, owner=self.request.user)
 
-    @extend_schema(summary='The action returns all comments of a specific issue',
-        responses=CommentReadSerializer(many=True)) # Duplicate to still get 'list' op. name
+    @extend_schema(summary='Moved to /comments',
+        responses=CommentReadSerializer(many=True), # Duplicate to still get 'list' op. name
+        deprecated=True) # TODO: remove in v2.5
     @action(detail=True, methods=['GET'], serializer_class=CommentReadSerializer,
         pagination_class=viewsets.GenericViewSet.pagination_class,
         # Remove regular list() parameters from the swagger schema.
@@ -1862,9 +1869,11 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
         filter_fields=None, search_fields=None, ordering_fields=None)
     def comments(self, request, pk):
-        self.get_object() # force to call check_object_permissions
-        return make_paginated_response(Comment.objects.filter(issue_id=pk).order_by('-id'),
-            viewset=self, serializer_type=self.serializer_class) # from @action
+        # https://www.rfc-editor.org/rfc/rfc9110.html#name-303-see-other
+        return Response(status=status.HTTP_303_SEE_OTHER, headers={
+            'Location': reverse('comment-list',
+                query_params=build_field_search_params('issue_id', pk))
+        })
 
 @extend_schema(tags=['comments'])
 @extend_schema_view(
