@@ -1,9 +1,10 @@
-import json
 import base64
-from PIL import Image
 import io
-from model_handler import ModelHandler
+import json
+
 import yaml
+from model_handler import ModelHandler
+from PIL import Image
 
 
 def init_context(context):

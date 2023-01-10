@@ -1,12 +1,10 @@
-# Copyright (C) 2020-2022 Intel Corporation
+# Copyright (C) 2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
-import time
+import cv2
 import numpy as np
 import onnxruntime as ort
-import cv2
-import os, sys
 
 
 class ModelHandler:
@@ -106,13 +104,11 @@ class ModelHandler:
             scores = detections[2]
 
             for label, score, box in zip(labels, scores, boxes):
-
                 if score >= threshold:
                     xtl = max(int(box[0]), 0)
                     ytl = max(int(box[1]), 0)
                     xbr = min(int(box[2]), w)
                     ybr = min(int(box[3]), h)
-                    obj_class = int(label)
 
                     results.append({
                         "confidence": str(score),
