@@ -73,7 +73,7 @@ context('Actions on ellipse.', () => {
         it('Ellipse rotation/interpolation.', () => {
             Cypress.config('scrollBehavior', false);
             cy.get('.cvat-player-last-button').click();
-            cy.shapeRotate('#cvat_canvas_shape_4', '19.0');
+            cy.shapeRotate('#cvat_canvas_shape_4', '19.7');
             testCompareRotate('cvat_canvas_shape_4', 0);
             // Rotation with shift
             cy.shapeRotate('#cvat_canvas_shape_4', '15.0', true);
