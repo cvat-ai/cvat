@@ -29,7 +29,7 @@ Cypress.Commands.add('create3DCuboid', (cuboidCreationParams) => {
 });
 
 Cypress.Commands.add('customScreenshot', (element, screenshotName) => {
-    cy.get(element).then(([$el]) => $el.getBoundingClientRect()).then((rect) => {
+    cy.get(`${element} canvas`).then(([$el]) => ($el.getBoundingClientRect())).then((rect) => {
         cy.screenshot(screenshotName, {
             overwrite: true,
             capture: 'fullPage',
