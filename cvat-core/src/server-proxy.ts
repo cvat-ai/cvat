@@ -121,7 +121,12 @@ async function chunkUpload(file, uploadConfig) {
 
 function generateError(errorData) {
     if (errorData.response) {
-        const message = `${errorData.message}. ${JSON.stringify(errorData.response.data) || ''}.`;
+        if (errorData.response.data?.detail) {
+            const serverError = new ServerError(errorData.response.data?.detail, errorData.response.status);
+            serverError.name = '';
+            return serverError;
+        }
+        const message = `${errorData.message}. ${JSON.stringify(errorData.response.data || '')}.`;
         return new ServerError(message, errorData.response.status);
     }
 
