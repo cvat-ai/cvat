@@ -127,8 +127,7 @@ For access from China, read [sources for users from China](#sources-for-users-fr
 ## Windows 10
 
 - Install WSL2 (Windows subsystem for Linux) refer to [this official guide](https://docs.microsoft.com/windows/wsl/install-win10).
-  WSL2 requires Windows 10, version 2004 or higher. Note: You may not have to install a Linux distribution unless
-  needed.
+  WSL2 requires Windows 10, version 2004 or higher. After installing WSL2, install a Linux Distribution of your choice.
 
 - Download and install [Docker Desktop for Windows](https://desktop.docker.com/win/main/amd64/Docker%20Desktop%20Installer.exe).
   Double-click `Docker for Windows Installer` to run the installer.
@@ -136,6 +135,9 @@ For access from China, read [sources for users from China](#sources-for-users-fr
   Official guide for docker WSL2 backend can be found
   [here](https://docs.docker.com/docker-for-windows/wsl/). Note: Check that you are specifically using WSL2 backend
   for Docker.
+
+- In Docker Desktop, go to `Settings >> Resources >> WSL Integration`, and
+enable integration with the Linux Distribution that you chose.
 
 - Download and install
   [Git for Windows](https://github.com/git-for-windows/git/releases/download/v2.21.0.windows.1/Git-2.21.0-64-bit.exe).
@@ -145,7 +147,7 @@ For access from China, read [sources for users from China](#sources-for-users-fr
 - Download and install [Google Chrome](https://www.google.com/chrome/). It is the only browser
   which is supported by CVAT.
 
-- Go to windows menu, find `Git Bash` application and run it. You should see a terminal window.
+- Go to windows menu, find the Linux distribution you installed and run it. You should see a terminal window.
 
 - Clone _CVAT_ source code from the
   [GitHub repository](https://github.com/opencv/cvat).
@@ -183,7 +185,7 @@ For access from China, read [sources for users from China](#sources-for-users-fr
   below:
 
   ```shell
-  winpty docker exec -it cvat_server bash -ic 'python3 ~/manage.py createsuperuser'
+  sudo docker exec -it cvat_server bash -ic 'python3 ~/manage.py createsuperuser'
   ```
 
   If you don't have winpty installed or the above command does not work, you may also try the following:
@@ -448,8 +450,6 @@ To do that you can mount it to CVAT docker container. Example of
 docker-compose.override.yml for this purpose:
 
 ```yml
-version: '3.3'
-
 services:
   cvat_server:
     volumes:

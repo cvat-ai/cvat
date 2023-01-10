@@ -364,8 +364,7 @@ class LambdaFunction:
 
 class LambdaQueue:
     def _get_queue(self):
-        QUEUE_NAME = "low"
-        return django_rq.get_queue(QUEUE_NAME)
+        return django_rq.get_queue(settings.CVAT_QUEUES.AUTO_ANNOTATION.value)
 
     def get_jobs(self):
         queue = self._get_queue()
