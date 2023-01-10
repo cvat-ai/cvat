@@ -265,6 +265,20 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         const canvasSideView = this.views.side.renderer.domElement;
         const canvasFrontView = this.views.front.renderer.domElement;
 
+        [
+            [canvasPerspectiveView, this.views.perspective.scene],
+            [canvasTopView, this.views.top.scene],
+            [canvasSideView, this.views.side.scene],
+            [canvasFrontView, this.views.front.scene],
+        ].forEach(([view, scene]) => {
+            Object.defineProperty(view, 'scene', {
+                value: scene,
+                enumerable: false,
+                configurable: false,
+                writable: false,
+            });
+        });
+
         canvasPerspectiveView.addEventListener('contextmenu', (e: MouseEvent): void => {
             if (this.model.data.activeElement.clientID !== null) {
                 this.dispatchEvent(
