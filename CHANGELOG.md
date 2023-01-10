@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/opencv/cvat/pull/5523>)
 - \[SDK\] A PyTorch adapter setting to disable cache updates
   (<https://github.com/opencv/cvat/pull/5549>)
+- YOLO v7 serverless feature added using ONNX backend (<https://github.com/opencv/cvat/pull/5552>)
 
 ### Changed
 - The Docker Compose files now use the Compose Specification version
