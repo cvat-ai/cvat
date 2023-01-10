@@ -20,6 +20,7 @@ from rest_framework.permissions import BasePermission
 
 from cvat.apps.organizations.models import Membership, Organization
 from cvat.apps.engine.models import Project, Task, Job, Issue
+from cvat.apps.engine.errors import base_error
 from cvat.apps.limit_manager.core.limits import (CapabilityContext, LimitManager,
     Limits, OrgCloudStoragesContext, OrgTasksContext, ProjectWebhooksContext,
     OrgCommonWebhooksContext,
@@ -31,21 +32,6 @@ from cvat.apps.webhooks.models import WebhookTypeChoice
 class StrEnum(str, Enum):
     def __str__(self) -> str:
         return self.value
-
-class LimitReachedError(PermissionDenied):
-    default_personal_detail = "You've reached the maximum number of {}. Contact the administrator to extend the limits."
-    default_org_detail = "You've reached the maximum number of {}. Contact the administrator to extend the limits for organization."
-
-    def __init__(self, reasons, iam_context):
-        if not reasons or not isinstance(reasons, list):
-            super().__init__(reasons)
-
-        msg = settings.ERROR_MESSAGES.get("PERSONAL_LIMIT_REACHED", self.default_personal_detail)
-        if iam_context["organization"] is not None:
-            msg = settings.ERROR_MESSAGES.get("ORG_OWNER_LIMIT_REACHED", self.default_org_detail)
-
-        msg = msg.format(', '.join(reasons))
-        super().__init__(msg)
 
 
 @define
@@ -1604,6 +1590,7 @@ class PolicyEnforcer(BasePermission):
             ))
 
         self._iam_context = request.iam_context
+
         allow = self._check_permissions(basic_permissions)
         if allow and conditional_permissions:
             allow = self._check_permissions(conditional_permissions)
@@ -1620,7 +1607,7 @@ class PolicyEnforcer(BasePermission):
         if allow:
             return True
         elif reasons:
-            raise LimitReachedError(reasons, self._iam_context)
+            raise base_error.LimitsReachedError(reasons, self._iam_context)
         else:
             raise PermissionDenied("not authorized")
 

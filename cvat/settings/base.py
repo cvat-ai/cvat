@@ -191,6 +191,10 @@ REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'cvat.apps.iam.schema.CustomAutoSchema',
 }
 
+CVAT_ERRORS = {
+    "LimitsReachedError": "cvat.apps.iam.exceptions.LimitsReachedError"
+}
+
 REST_AUTH_REGISTER_SERIALIZERS = {
     'REGISTER_SERIALIZER': 'cvat.apps.iam.serializers.RegisterSerializerEx',
 }
