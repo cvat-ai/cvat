@@ -2,8 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import base64
-from pathlib import Path
 from typing import List, Mapping
 
 import attrs
@@ -42,9 +40,3 @@ class Target:
     A mapping from label_id values in `LabeledImage` and `LabeledShape` objects
     to an integer index. This mapping is consistent across all samples for a given task.
     """
-
-
-def get_server_cache_dir(client: cvat_sdk.core.Client) -> Path:
-    # Base64-encode the name to avoid FS-unsafe characters (like slashes)
-    server_dir_name = base64.urlsafe_b64encode(client.api_map.host.encode()).rstrip(b"=").decode()
-    return client.config.cache_dir / f"servers/{server_dir_name}"

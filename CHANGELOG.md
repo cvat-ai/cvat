@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/opencv/cvat/pull/5535>)
 - \[SDK\] Class to represent a project as a PyTorch dataset
   (<https://github.com/opencv/cvat/pull/5523>)
+- \[SDK\] A PyTorch adapter setting to disable cache updates
+  (<https://github.com/opencv/cvat/pull/5549>)
 
 ### Changed
 - The Docker Compose files now use the Compose Specification version
@@ -26,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `/project/{id}/tasks`, `/tasks/{id}/jobs`, `/jobs/{id}/issues`,
   `/jobs/{id}/commits`, `/issues/{id}/comments`, `/organizations`
   (<https://github.com/opencv/cvat/pull/5557>)
+- Windows Installation Instructions adjusted to work around <https://github.com/nuclio/nuclio/issues/1821>
 
 ### Deprecated
 - TDB

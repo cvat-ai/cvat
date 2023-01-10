@@ -402,7 +402,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             resource_type_field_name=None
         ),
         responses={
-            '202': OpenApiResponse(description='Exporting has been started'),
+            '202': OpenApiResponse(description='Importing has been started'),
             '400': OpenApiResponse(description='Failed to import dataset'),
             '405': OpenApiResponse(description='Format is not available'),
         })
@@ -410,6 +410,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         url_path=r'dataset/?$')
     def dataset(self, request, pk):
         self._object = self.get_object() # force to call check_object_permissions
+        rq_id = f"import:dataset-for-porject.id{pk}-by-{request.user}"
 
         if request.method in {'POST', 'OPTIONS'}:
             return self.import_annotations(
@@ -418,13 +419,13 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 db_obj=self._object,
                 import_func=_import_project_dataset,
                 rq_func=dm.project.import_dataset_as_project,
-                rq_id=f"/api/project/{pk}/dataset_import",
+                rq_id=rq_id,
             )
         else:
             action = request.query_params.get("action", "").lower()
             if action in ("import_status",):
-                queue = django_rq.get_queue("default")
-                rq_job = queue.fetch_job(f"/api/project/{pk}/dataset_import")
+                queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
+                rq_job = queue.fetch_job(rq_id)
                 if rq_job is None:
                     return Response(status=status.HTTP_404_NOT_FOUND)
                 elif rq_job.is_finished:
@@ -444,7 +445,10 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                     )
                 else:
                     return Response(
-                        data=self._get_rq_response('default', f'/api/project/{pk}/dataset_import'),
+                        data=self._get_rq_response(
+                            settings.CVAT_QUEUES.IMPORT_DATA.value,
+                            rq_id,
+                        ),
                         status=status.HTTP_202_ACCEPTED
                     )
             else:
@@ -490,7 +494,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return _import_project_dataset(
                 request=request,
                 filename=uploaded_file,
-                rq_id=f"/api/project/{self._object.pk}/dataset_import",
+                rq_id=f"import:dataset-for-porject.id{self._object.pk}-by-{request.user}",
                 rq_func=dm.project.import_dataset_as_project,
                 pk=self._object.pk,
                 format_name=format_name,
@@ -502,10 +506,14 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 tmp_dir = backup.get_backup_dirname()
                 backup_file = os.path.join(tmp_dir, filename)
                 if os.path.isfile(backup_file):
-                    return backup.import_project(request, filename=backup_file)
+                    return backup.import_project(
+                        request,
+                        settings.CVAT_QUEUES.IMPORT_DATA.value,
+                        filename=backup_file,
+                    )
                 return Response(data='No such file were uploaded',
                         status=status.HTTP_400_BAD_REQUEST)
-            return backup.import_project(request)
+            return backup.import_project(request, settings.CVAT_QUEUES.IMPORT_DATA.value)
         return Response(data='Unknown upload was finished',
                         status=status.HTTP_400_BAD_REQUEST)
 
@@ -927,7 +935,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 return _import_annotations(
                         request=request,
                         filename=annotation_file,
-                        rq_id="{}@/api/tasks/{}/annotations/upload".format(request.user, self._object.pk),
+                        rq_id=(f"import:annotations-for-task.id{self._object.pk}-"
+                            f"in-{format_name.replace(' ', '_')}-by-{request.user}"),
                         rq_func=dm.task.import_task_annotations,
                         pk=self._object.pk,
                         format_name=format_name,
@@ -966,7 +975,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 # the value specified by the user or it's default value from the database
             if 'stop_frame' not in serializer.validated_data:
                 data['stop_frame'] = None
-            task.create(self._object.id, data)
+            task.create(self._object.id, data, request.user)
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
         elif self.action == 'import_backup':
             filename = request.query_params.get("filename", "")
@@ -974,10 +983,14 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 tmp_dir = backup.get_backup_dirname()
                 backup_file = os.path.join(tmp_dir, filename)
                 if os.path.isfile(backup_file):
-                    return backup.import_task(request, filename=backup_file)
+                    return backup.import_task(
+                        request,
+                        settings.CVAT_QUEUES.IMPORT_DATA.value,
+                        filename=backup_file,
+                    )
                 return Response(data='No such file were uploaded',
                         status=status.HTTP_400_BAD_REQUEST)
-            return backup.import_task(request)
+            return backup.import_task(request, settings.CVAT_QUEUES.IMPORT_DATA.value)
         return Response(data='Unknown upload was finished',
                         status=status.HTTP_400_BAD_REQUEST)
 
@@ -1149,16 +1162,17 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 return Response(data="Exporting annotations from a task without data is not allowed",
                     status=status.HTTP_400_BAD_REQUEST)
         elif request.method == 'POST' or request.method == 'OPTIONS':
+            format_name = request.query_params.get('format', '')
             return self.import_annotations(
                 request=request,
                 pk=pk,
                 db_obj=self._object,
                 import_func=_import_annotations,
                 rq_func=dm.task.import_task_annotations,
-                rq_id = "{}@/api/tasks/{}/annotations/upload".format(request.user, pk)
+                rq_id = f"import:annotations-for-task.id{pk}-in-{format_name.replace(' ', '_')}-by-{request.user}"
             )
         elif request.method == 'PUT':
-            format_name = request.query_params.get('format')
+            format_name = request.query_params.get('format', '')
             if format_name:
                 use_settings = strtobool(str(request.query_params.get('use_default_location', True)))
                 conv_mask_to_poly = strtobool(request.query_params.get('conv_mask_to_poly', 'True'))
@@ -1168,7 +1182,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 )
                 return _import_annotations(
                     request=request,
-                    rq_id="{}@/api/tasks/{}/annotations/upload".format(request.user, pk),
+                    rq_id = f"import:annotations-for-task.id{pk}-in-{format_name.replace(' ', '_')}-by-{request.user}",
                     rq_func=dm.task.import_task_annotations,
                     pk=pk,
                     format_name=format_name,
@@ -1220,7 +1234,10 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=True, methods=['GET'], serializer_class=RqStatusSerializer)
     def status(self, request, pk):
         self.get_object() # force to call check_object_permissions
-        response = self._get_rq_response(queue="default", job_id=f"/api/tasks/{pk}")
+        response = self._get_rq_response(
+            queue=settings.CVAT_QUEUES.IMPORT_DATA.value,
+            job_id=f"create:task.id{pk}-by-{request.user}"
+        )
         serializer = RqStatusSerializer(data=response)
 
         if serializer.is_valid(raise_exception=True):
@@ -1431,7 +1448,8 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 return _import_annotations(
                         request=request,
                         filename=annotation_file,
-                        rq_id="{}@/api/jobs/{}/annotations/upload".format(request.user, self._object.pk),
+                        rq_id=(f"import:annotations-for-job.id{self._object.pk}-"
+                            f"in-{format_name.replace(' ', '_')}-by-{request.user}"),
                         rq_func=dm.task.import_job_annotations,
                         pk=self._object.pk,
                         format_name=format_name,
@@ -1538,13 +1556,15 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             )
 
         elif request.method == 'POST' or request.method == 'OPTIONS':
+            format_name = request.query_params.get('format', '')
             return self.import_annotations(
                 request=request,
                 pk=pk,
                 db_obj=self._object.segment.task,
                 import_func=_import_annotations,
                 rq_func=dm.task.import_job_annotations,
-                rq_id = "{}@/api/jobs/{}/annotations/upload".format(request.user, pk)
+                rq_id=(f"import:annotations-for-job.id{self._object.pk}-"
+                            f"in-{format_name.replace(' ', '_')}-by-{request.user}"),
             )
 
         elif request.method == 'PUT':
@@ -1558,7 +1578,8 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 )
                 return _import_annotations(
                     request=request,
-                    rq_id="{}@/api/jobs/{}/annotations/upload".format(request.user, pk),
+                    rq_id=(f"import:annotations-for-job.id{pk}-"
+                            f"in-{format_name.replace(' ', '_')}-by-{request.user}"),
                     rq_func=dm.task.import_job_annotations,
                     pk=pk,
                     format_name=format_name,
@@ -2233,7 +2254,7 @@ def _import_annotations(request, rq_id, rq_func, pk, format_name,
     elif not format_desc.ENABLED:
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    queue = django_rq.get_queue("default")
+    queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
     rq_job = queue.fetch_job(rq_id)
 
     if not rq_job:
@@ -2314,7 +2335,7 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
     elif not format_desc.ENABLED:
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    queue = django_rq.get_queue("default")
+    queue = django_rq.get_queue(settings.CVAT_QUEUES.EXPORT_DATA.value)
     rq_job = queue.fetch_job(rq_id)
 
     if rq_job:
@@ -2405,7 +2426,7 @@ def _import_project_dataset(request, rq_id, rq_func, pk, format_name, filename=N
     elif not format_desc.ENABLED:
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    queue = django_rq.get_queue("default")
+    queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
     rq_job = queue.fetch_job(rq_id)
 
     if not rq_job:
