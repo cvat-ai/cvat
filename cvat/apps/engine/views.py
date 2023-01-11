@@ -75,7 +75,7 @@ from .log import clogger, slogger
 from cvat.apps.iam.permissions import (CloudStoragePermission,
     CommentPermission, IssuePermission, JobPermission, ProjectPermission,
     TaskPermission, UserPermission)
-from cvat.apps.engine.cache import CacheInteraction
+from cvat.apps.engine.cache import MediaCache
 
 
 @extend_schema(tags=['server'])
@@ -721,7 +721,7 @@ class DataChunkGetter:
                         f'[{start}, {stop}] range')
 
                 if self.type == 'preview':
-                    cache = CacheInteraction(self.dimension)
+                    cache = MediaCache(self.dimension)
                     buf, mime = cache.get_local_preview_with_mime(self.number, db_data)
                 else:
                     buf, mime = frame_provider.get_frame(self.number, self.quality)
@@ -2185,7 +2185,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def preview(self, request, pk):
         try:
             db_storage = self.get_object()
-            cache = CacheInteraction()
+            cache = MediaCache()
             preview, mime = cache.get_cloud_preview_with_mime(db_storage)
             return HttpResponse(preview, mime)
         except CloudStorageModel.DoesNotExist:

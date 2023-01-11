@@ -26,7 +26,7 @@ from cvat.apps.engine.mime_types import mimetypes
 from utils.dataset_manifest import ImageManifestManager
 
 
-class CacheInteraction:
+class MediaCache:
     @dataclass()
     class CacheItem:
         data: BytesIO = BytesIO()
@@ -148,14 +148,14 @@ class CacheInteraction:
             images = [image[0] for image in images if os.path.exists(image[0])]
             for image_path in images:
                 os.remove(image_path)
-        return CacheInteraction.CacheItem(data=buff, mime_type=mime_type)
+        return MediaCache.CacheItem(data=buff, mime_type=mime_type)
 
     def _prepare_local_preview(self, frame_number, db_data):
         FrameProvider = self._get_frame_provider()
         frame_provider = FrameProvider(db_data, self._dimension)
         buff, mime_type = frame_provider.get_preview(frame_number)
 
-        return CacheInteraction.CacheItem(data=buff, mime_type=mime_type)
+        return MediaCache.CacheItem(data=buff, mime_type=mime_type)
 
     def _prepare_cloud_preview(self, db_storage):
         storage = db_storage_to_storage_instance(db_storage)
@@ -188,4 +188,4 @@ class CacheInteraction:
         buff = storage.download_fileobj(preview_path)
         mime_type = mimetypes.guess_type(preview_path)[0]
 
-        return CacheInteraction.CacheItem(data=buff, mime_type=mime_type)
+        return MediaCache.CacheItem(data=buff, mime_type=mime_type)
