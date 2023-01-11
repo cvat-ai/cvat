@@ -41,7 +41,7 @@ problems contains "projects per user" if {
     )
 }
 
-problems contains "tasks per user project" if {
+problems contains "tasks per project for the user" if {
     check_limit_exceeded(
         input.resource.limits[CAP_TASKS_IN_USER_SANDBOX_PROJECT].used,
         input.resource.limits[CAP_TASKS_IN_USER_SANDBOX_PROJECT].max
@@ -62,7 +62,7 @@ problems contains "projects per organization" if {
     )
 }
 
-problems contains "tasks per organization project" if {
+problems contains "tasks per project for organization" if {
     check_limit_exceeded(
         input.resource.limits[CAP_TASKS_IN_ORG_PROJECT].used,
         input.resource.limits[CAP_TASKS_IN_ORG_PROJECT].max

@@ -444,7 +444,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
             const message = resource === 'annotation' ?
                 'Annotations have been loaded to the ' +
                 `[task ${instance.taskId || instance.id}](/tasks/${instance.taskId || instance.id}) ` :
-                `Dataset has been imported to the [project ${instance.id}](/projects/${instance.id})`;
+                `Dataset was imported to the [project ${instance.id}](/projects/${instance.id})`;
             return {
                 ...state,
                 messages: {
@@ -711,7 +711,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.messages,
                         models: {
                             ...state.messages.models,
-                            inferenceDone: `Automatic annotation finished for the [task ${taskID}](/tasks/${taskID})`,
+                            inferenceDone: `Automatic annotation accomplished for the [task ${taskID}](/tasks/${taskID})`,
                         },
                     },
                 };
