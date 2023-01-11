@@ -97,7 +97,7 @@ problems contains "cloud storages per user" if {
     )
 }
 
-problems contains "cloud_storages per organization" if {
+problems contains "cloud storages per organization" if {
     check_limit_exceeded(
         input.resource.limits[CAP_ORG_CLOUD_STORAGES].used,
         input.resource.limits[CAP_ORG_CLOUD_STORAGES].max
