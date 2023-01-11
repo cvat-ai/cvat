@@ -2,13 +2,14 @@
 #
 # SPDX-License-Identifier: MIT
 
+from dataclasses import dataclass
 import os
 from io import BytesIO
 from datetime import datetime
 from tempfile import NamedTemporaryFile
 import pytz
 
-from diskcache import Cache
+from django.core.cache import cache
 from django.conf import settings
 from rest_framework.exceptions import ValidationError, NotFound
 
@@ -26,41 +27,46 @@ from utils.dataset_manifest import ImageManifestManager
 
 
 class CacheInteraction:
+    @dataclass()
+    class CacheItem:
+        data: BytesIO = BytesIO()
+        mime_type: str = ''
+
     def __init__(self, dimension=DimensionType.DIM_2D):
-        self._cache = Cache(settings.CACHE_ROOT)
         self._dimension = dimension
 
-    def __del__(self):
-        self._cache.close()
+    @staticmethod
+    def _get_or_set_cache_item(key, create_function):
+        item = cache.get(key)
+        if not item:
+            item = create_function()
+            cache.set(key, item)
+
+        return item
 
     def get_buf_chunk_with_mime(self, chunk_number, quality, db_data):
-        cache_key = f'{db_data.id}_{chunk_number}_{quality}'
-        chunk, tag = self._cache.get(cache_key, tag=True)
+        item = self._get_or_set_cache_item(
+            key=f'{db_data.id}_{chunk_number}_{quality}',
+            create_function=lambda: self._prepare_chunk_buff(db_data, quality, chunk_number),
+        )
 
-        if not chunk:
-            chunk, tag = self._prepare_chunk_buff(db_data, quality, chunk_number)
-            self._cache.set(cache_key, chunk, tag=tag)
-
-        return chunk, tag
+        return item.data, item.mime_type
 
     def get_local_preview_with_mime(self, frame_number, db_data):
-        key = f'data_{db_data.id}_{frame_number}_preview'
-        buf, mime = self._cache.get(key, tag=True)
-        if not buf:
-            buf, mime = self._prepare_local_preview(frame_number, db_data)
-            self._cache.set(key, buf, tag=mime)
+        item = self._get_or_set_cache_item(
+            key=f'data_{db_data.id}_{frame_number}_preview',
+            create_function=lambda: self._prepare_local_preview(frame_number, db_data),
+        )
 
-        return buf, mime
+        return item.data, item.mime_type
 
     def get_cloud_preview_with_mime(self, db_storage):
-        key = f'cloudstorage_{db_storage.id}_preview'
-        preview, mime = self._cache.get(key, tag=True)
+        item = self._get_or_set_cache_item(
+            key=f'cloudstorage_{db_storage.id}_preview',
+            create_function=lambda: self._prepare_cloud_preview(db_storage)
+        )
 
-        if not preview:
-            preview, mime = self._prepare_cloud_preview(db_storage)
-            self._cache.set(key, preview, tag=mime)
-
-        return preview, mime
+        return item.data, item.mime_type
 
     @staticmethod
     def _get_frame_provider():
@@ -142,14 +148,14 @@ class CacheInteraction:
             images = [image[0] for image in images if os.path.exists(image[0])]
             for image_path in images:
                 os.remove(image_path)
-        return buff, mime_type
+        return CacheInteraction.CacheItem(data=buff, mime_type=mime_type)
 
     def _prepare_local_preview(self, frame_number, db_data):
         FrameProvider = self._get_frame_provider()
         frame_provider = FrameProvider(db_data, self._dimension)
-        buf, mime = frame_provider.get_preview(frame_number)
+        buff, mime_type = frame_provider.get_preview(frame_number)
 
-        return buf, mime
+        return CacheInteraction.CacheItem(data=buff, mime_type=mime_type)
 
     def _prepare_cloud_preview(self, db_storage):
         storage = db_storage_to_storage_instance(db_storage)
@@ -179,7 +185,7 @@ class CacheInteraction:
             slogger.cloud_storage[db_storage.pk].info(msg)
             raise NotFound(msg)
 
-        preview = storage.download_fileobj(preview_path)
-        mime = mimetypes.guess_type(preview_path)[0]
+        buff = storage.download_fileobj(preview_path)
+        mime_type = mimetypes.guess_type(preview_path)[0]
 
-        return preview, mime
+        return CacheInteraction.CacheItem(data=buff, mime_type=mime_type)
