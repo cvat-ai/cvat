@@ -388,7 +388,7 @@ class TestOrgLimits:
     _DEFAULT_CLOUD_STORAGES_LIMIT = 10
 
     _TASK_LIMIT_MESSAGE = "tasks per organization"
-    _PROJECT_TASK_LIMIT_MESSAGE = "tasks per organization project"
+    _PROJECT_TASK_LIMIT_MESSAGE = "tasks per project for the organization"
     _PROJECTS_LIMIT_MESSAGE = "projects per organization"
     _CLOUD_STORAGES_LIMIT_MESSAGE = "cloud storages per organization"
 
