@@ -13,19 +13,28 @@ import json
 from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 from django.utils.encoding import force_str
+from django_filters.filterset import BaseFilterSet
 from rest_framework import filters
 from rest_framework.compat import coreapi, coreschema
 from rest_framework.exceptions import ValidationError
-# from rest_framework.viewsets import ViewSet
+from django_filters import FilterSet
 from django_filters.rest_framework import DjangoFilterBackend
 
 
 def get_lookup_fields(view) -> Dict[str, str]:
     filter_fields = getattr(view, 'filter_fields', [])
+    if not filter_fields:
+        return {}
+
     lookup_fields = {field:field for field in filter_fields}
     lookup_fields.update(getattr(view, 'lookup_fields', {}))
 
     return lookup_fields
+
+@contextmanager
+def _patched_attr(obj: Any, name: str, value: Any) -> None:
+    with patch.object(obj, attribute=name, new=value, create=True):
+        yield
 
 class SearchFilter(filters.SearchFilter):
     def get_search_fields(self, view, request):
@@ -229,83 +238,88 @@ class JsonLogicFilter(filters.BaseFilterBackend):
 
 
 class SimpleFilter(DjangoFilterBackend):
+    filter_desc = _('A simple equality filter for the {field_name} field')
+    reserved_names = (
+        JsonLogicFilter.filter_param,
+        OrderingFilter.ordering_param,
+        SearchFilter.search_param,
+    )
+
+    class MappingFiltersetBase(BaseFilterSet):
+        @classmethod
+        def get_filter_name(cls, field_name, lookup_expr):
+            filter_names = getattr(cls, 'filter_names', {})
+
+            field_name = super().get_filter_name(field_name, lookup_expr)
+
+            if filter_names:
+                # Map names after a lookup suffix is applied to allow
+                # mapping specific filters with lookups
+                field_name = filter_names.get(field_name, field_name)
+
+            if field_name in SimpleFilter.reserved_names:
+                raise ValueError(f'Field name {field_name} is reserved')
+
+            return field_name
+
+    filterset_base = MappingFiltersetBase
+
+
     def get_filterset_class(self, view, queryset=None):
         filterset_class = getattr(view, 'filterset_class', None)
         filterset_fields = getattr(view, 'filterset_fields', None)
-        if not filterset_class and not filterset_fields:
+
+        if filterset_class or filterset_fields:
+            return super().get_filterset_class(view, queryset)
+
+        lookup_fields = self.get_lookup_fields(view)
+        if not lookup_fields:
             return None
-        return super().get_filterset_class(view, queryset)
 
+        class MappingFilterset(self.MappingFiltersetBase, metaclass=FilterSet.__class__):
+            filter_names = { v: k for k, v in lookup_fields.items() }
 
-# class SimpleFilter(filters.BaseFilterBackend):
-#     """
-#     This filter allows to do simple queries with no more
-#     than 1 field and the equality check for 1 value.
+        with _patched_attr(view, 'filterset_fields', list(lookup_fields.values())):
+            with _patched_attr(self, 'filterset_base', MappingFilterset):
+                filterset_class = super().get_filterset_class(view, queryset)
 
-#     The main purpose is to provide user-friendly interface for simple cases.
-#     """
+        return filterset_class
 
-#     filter_param = 'filter'
-#     filter_title = _('Filter')
-#     filter_description = _('A filter term.')
+    def get_lookup_fields(self, view):
+        return get_lookup_fields(view)
 
-#     def filter_queryset(self, request, queryset, view):
-#         json_rules = request.query_params.get(self.filter_param)
-#         if json_rules:
-#             try:
-#                 rules = json.loads(json_rules)
-#                 if not len(rules):
-#                     raise ValidationError(f"filter shouldn't be empty")
-#             except json.decoder.JSONDecodeError:
-#                 raise ValidationError(f'filter: Json syntax should be used')
-#             lookup_fields = self._get_lookup_fields(request, view)
-#             try:
-#                 q_object = self._build_Q(rules, lookup_fields)
-#             except KeyError as ex:
-#                 raise ValidationError(f'filter: {str(ex)} term is not supported')
-#             return queryset.filter(q_object)
+    def get_filter_fields(self, view):
+        return list(self.get_lookup_fields(view))
 
-#         return queryset
+    def get_schema_fields(self, view):
+        assert coreapi is not None, 'coreapi must be installed to use `get_schema_fields()`'
+        assert coreschema is not None, 'coreschema must be installed to use `get_schema_fields()`'
 
-#     def get_schema_fields(self, view):
-#         assert coreapi is not None, 'coreapi must be installed to use `get_schema_fields()`'
-#         assert coreschema is not None, 'coreschema must be installed to use `get_schema_fields()`'
+        filter_fields = self.get_filter_fields(view)
 
-#         filter_fields = getattr(view, 'filter_fields', [])
-#         full_description = self.filter_description + \
-#             f' Avaliable filter_fields: {filter_fields}'
+        return [
+            coreapi.Field(
+                name=field_name,
+                location='query',
+                required=False,
+                schema={
+                    'type': 'string',
+                }
+            ) for field_name in filter_fields
+        ]
 
-#         return [
-#             coreapi.Field(
-#                 name=self.filter_param,
-#                 required=False,
-#                 location='query',
-#                 schema=coreschema.String(
-#                     title=force_str(self.filter_title),
-#                     description=force_str(full_description)
-#                 )
-#             )
-#         ]
+    def get_schema_operation_parameters(self, view):
+        filter_fields = self.get_filter_fields(view)
 
-#     def get_schema_operation_parameters(self, view):
-#         filter_fields = getattr(view, 'filter_fields', [])
-#         full_description = self.filter_description + \
-#             f' Avaliable filter_fields: {filter_fields}'
-#         return [
-#             {
-#                 'name': self.filter_param,
-#                 'required': False,
-#                 'in': 'query',
-#                 'description': force_str(full_description),
-#                 'schema': {
-#                     'type': 'string',
-#                 },
-#             },
-#         ]
-
-#     def _get_lookup_fields(self, request, view):
-#         lookup_fields = get_lookup_fields(view)
-
-#         return {
-#             k:
-#         }
+        parameters = []
+        for field_name in filter_fields:
+            parameters.append({
+                'name': field_name,
+                'required': False,
+                'in': 'query',
+                'description': self.filter_desc.format_map({'field_name': field_name}),
+                'schema': {
+                    'type': 'string',
+                },
+            })
+        return parameters
