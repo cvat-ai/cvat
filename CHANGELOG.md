@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   The corresponding arguments are keyword-only now.
   (<https://github.com/opencv/cvat/pull/5502>)
 - Windows Installation Instructions adjusted to work around <https://github.com/nuclio/nuclio/issues/1821>
+- The contour detection function for semantic segmentation (<https://github.com/opencv/cvat/pull/4665>)
 
 ### Deprecated
 - TDB
