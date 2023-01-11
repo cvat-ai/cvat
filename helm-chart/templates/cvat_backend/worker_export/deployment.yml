@@ -1,57 +1,57 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Release.Name }}-backend-worker-default
+  name: {{ .Release.Name }}-backend-worker-export
   namespace: {{ .Release.Namespace }}
   labels:
     app: cvat-app
     tier: backend
-    component: worker-default
+    component: worker-export
     {{- include "cvat.labels" . | nindent 4 }}
-    {{- with .Values.cvat.backend.worker.default.labels }}
+    {{- with .Values.cvat.backend.worker.export.labels }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
-  {{- with .Values.cvat.backend.worker.default.annotations }}
+  {{- with .Values.cvat.backend.worker.export.annotations }}
   annotations:
   {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  replicas: {{ .Values.cvat.backend.worker.default.replicas }}
+  replicas: {{ .Values.cvat.backend.worker.export.replicas }}
   strategy:
     type: Recreate
   selector:
     matchLabels:
       {{- include "cvat.labels" . | nindent 6 }}
-      {{- with .Values.cvat.backend.worker.default.labels }}
+      {{- with .Values.cvat.backend.worker.export.labels }}
       {{- toYaml . | nindent 6 }}
       {{- end }}
-      app: cvat-app-worker-default
+      app: cvat-app
       tier: backend
-      component: worker-default
+      component: worker-export
   template:
     metadata:
       labels:
-        app: cvat-app-worker-default
+        app: cvat-app
         tier: backend
-        component: worker-default
+        component: worker-export
         {{- include "cvat.labels" . | nindent 8 }}
-        {{- with .Values.cvat.backend.worker.default.labels }}
+        {{- with .Values.cvat.backend.worker.export.labels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
-      {{- with .Values.cvat.backend.worker.default.annotations }}
+      {{- with .Values.cvat.backend.worker.export.annotations }}
       annotations:
       {{- toYaml . | nindent 8 }}
       {{- end }}
     spec:
       containers:
-        - name: cvat-app-backend-worker-default-container
+        - name: cvat-app-backend-worker-export-container
           image: {{ .Values.cvat.backend.image }}:{{ .Values.cvat.backend.tag }}
           imagePullPolicy: {{ .Values.cvat.backend.imagePullPolicy }}
-          {{- with .Values.cvat.backend.worker.default.resources }}
+          {{- with .Values.cvat.backend.worker.export.resources }}
           resources:
           {{- toYaml . | nindent 12 }}
           {{- end }}
-          args: ["-c", "supervisord/worker.default.conf"]
+          args: ["-c", "supervisord/worker.export.conf"]
           env:
           {{- if .Values.redis.enabled }}
           - name: CVAT_REDIS_HOST
@@ -97,11 +97,9 @@ spec:
           - name: CVAT_NUCLIO_HOST
             value: "{{ .Release.Name }}-nuclio-dashboard"
           {{- end }}
-          {{- with .Values.cvat.backend.worker.default.additionalEnv }}
+          {{- with .Values.cvat.backend.worker.export.additionalEnv }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
-          ports:
-          - containerPort: 8080
           volumeMounts:
           - mountPath: /home/django/data
             name: cvat-backend-data
@@ -118,7 +116,7 @@ spec:
           - mountPath: /home/django/tmp_storage
             name: cvat-backend-data
             subPath: tmp_storage
-          {{- with .Values.cvat.backend.worker.default.additionalVolumeMounts }}
+          {{- with .Values.cvat.backend.worker.export.additionalVolumeMounts }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
       initContainers:
@@ -126,7 +124,7 @@ spec:
         - name: user-data-permission-fix
           image: busybox
           command: ["/bin/chmod", "-R", "777", "/home/django"]
-          {{- with .Values.cvat.backend.worker.default.resources }}
+          {{- with .Values.cvat.backend.worker.export.resources }}
           resources:
           {{- toYaml . | nindent 12 }}
           {{- end }}
@@ -145,15 +143,15 @@ spec:
             name: cvat-backend-data
             subPath: models
           {{- end }}
-          {{- with .Values.cvat.backend.worker.default.additionalVolumeMounts }}
+          {{- with .Values.cvat.backend.worker.export.additionalVolumeMounts }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
         {{- end }}
-      {{- with .Values.cvat.backend.worker.default.affinity }}
+      {{- with .Values.cvat.backend.worker.export.affinity }}
       affinity:
       {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.cvat.backend.worker.default.tolerations }}
+      {{- with .Values.cvat.backend.worker.export.tolerations }}
       tolerations:
       {{- toYaml . | nindent 8 }}
       {{- end }}
@@ -163,7 +161,7 @@ spec:
           persistentVolumeClaim:
             claimName: "{{ .Release.Name }}-backend-data"
         {{- end }}
-        {{- with .Values.cvat.backend.worker.default.additionalVolumes }}
+        {{- with .Values.cvat.backend.worker.export.additionalVolumes }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- with .Values.imagePullSecrets }}
