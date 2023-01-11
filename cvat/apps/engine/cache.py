@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-from dataclasses import dataclass
 import os
 from io import BytesIO
 from datetime import datetime
@@ -27,11 +26,6 @@ from utils.dataset_manifest import ImageManifestManager
 
 
 class MediaCache:
-    @dataclass()
-    class CacheItem:
-        data: BytesIO = BytesIO()
-        mime_type: str = ''
-
     def __init__(self, dimension=DimensionType.DIM_2D):
         self._dimension = dimension
 
@@ -50,7 +44,7 @@ class MediaCache:
             create_function=lambda: self._prepare_chunk_buff(db_data, quality, chunk_number),
         )
 
-        return item.data, item.mime_type
+        return item
 
     def get_local_preview_with_mime(self, frame_number, db_data):
         item = self._get_or_set_cache_item(
@@ -58,7 +52,7 @@ class MediaCache:
             create_function=lambda: self._prepare_local_preview(frame_number, db_data),
         )
 
-        return item.data, item.mime_type
+        return item
 
     def get_cloud_preview_with_mime(self, db_storage):
         item = self._get_or_set_cache_item(
@@ -66,7 +60,7 @@ class MediaCache:
             create_function=lambda: self._prepare_cloud_preview(db_storage)
         )
 
-        return item.data, item.mime_type
+        return item
 
     @staticmethod
     def _get_frame_provider():
@@ -148,14 +142,14 @@ class MediaCache:
             images = [image[0] for image in images if os.path.exists(image[0])]
             for image_path in images:
                 os.remove(image_path)
-        return MediaCache.CacheItem(data=buff, mime_type=mime_type)
+        return buff, mime_type
 
     def _prepare_local_preview(self, frame_number, db_data):
         FrameProvider = self._get_frame_provider()
         frame_provider = FrameProvider(db_data, self._dimension)
         buff, mime_type = frame_provider.get_preview(frame_number)
 
-        return MediaCache.CacheItem(data=buff, mime_type=mime_type)
+        return buff, mime_type
 
     def _prepare_cloud_preview(self, db_storage):
         storage = db_storage_to_storage_instance(db_storage)
@@ -188,4 +182,4 @@ class MediaCache:
         buff = storage.download_fileobj(preview_path)
         mime_type = mimetypes.guess_type(preview_path)[0]
 
-        return MediaCache.CacheItem(data=buff, mime_type=mime_type)
+        return buff, mime_type
