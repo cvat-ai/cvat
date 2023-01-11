@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -459,7 +459,8 @@ export default function (state = defaultState, action: AnyAction): Notifications
         case ImportActionTypes.IMPORT_DATASET_FAILED: {
             const { instance, resource } = action.payload;
             const message = resource === 'annotation' ?
-                `Could not upload annotation for the [task](/tasks/${instance.taskId || instance.id})` :
+                'Could not upload annotation for the ' +
+                `[task ${instance.taskId || instance.id}](/tasks/${instance.taskId || instance.id})` :
                 `Could not import dataset to the [project ${instance.id}](/projects/${instance.id})`;
             return {
                 ...state,
