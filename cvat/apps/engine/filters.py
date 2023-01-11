@@ -1,19 +1,33 @@
 # Copyright (C) 2022 Intel Corporation
+# Copyright (C) 2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
-from rest_framework import filters
+from contextlib import contextmanager
+from typing import Any, Dict
 from functools import reduce
+from unittest.mock import patch
 import operator
 import json
+
 from django.db.models import Q
-from rest_framework.compat import coreapi, coreschema
 from django.utils.translation import gettext_lazy as _
 from django.utils.encoding import force_str
+from rest_framework import filters
+from rest_framework.compat import coreapi, coreschema
 from rest_framework.exceptions import ValidationError
+# from rest_framework.viewsets import ViewSet
+from django_filters.rest_framework import DjangoFilterBackend
+
+
+def get_lookup_fields(view) -> Dict[str, str]:
+    filter_fields = getattr(view, 'filter_fields', [])
+    lookup_fields = {field:field for field in filter_fields}
+    lookup_fields.update(getattr(view, 'lookup_fields', {}))
+
+    return lookup_fields
 
 class SearchFilter(filters.SearchFilter):
-
     def get_search_fields(self, view, request):
         search_fields = getattr(view, 'search_fields') or []
         lookup_fields = {field:field for field in search_fields}
@@ -211,8 +225,87 @@ class JsonLogicFilter(filters.BaseFilterBackend):
         ]
 
     def _get_lookup_fields(self, request, view):
-        filter_fields = getattr(view, 'filter_fields', [])
-        lookup_fields = {field:field for field in filter_fields}
-        lookup_fields.update(getattr(view, 'lookup_fields', {}))
+        return get_lookup_fields(view)
 
-        return lookup_fields
+
+class SimpleFilter(DjangoFilterBackend):
+    def get_filterset_class(self, view, queryset=None):
+        filterset_class = getattr(view, 'filterset_class', None)
+        filterset_fields = getattr(view, 'filterset_fields', None)
+        if not filterset_class and not filterset_fields:
+            return None
+        return super().get_filterset_class(view, queryset)
+
+
+# class SimpleFilter(filters.BaseFilterBackend):
+#     """
+#     This filter allows to do simple queries with no more
+#     than 1 field and the equality check for 1 value.
+
+#     The main purpose is to provide user-friendly interface for simple cases.
+#     """
+
+#     filter_param = 'filter'
+#     filter_title = _('Filter')
+#     filter_description = _('A filter term.')
+
+#     def filter_queryset(self, request, queryset, view):
+#         json_rules = request.query_params.get(self.filter_param)
+#         if json_rules:
+#             try:
+#                 rules = json.loads(json_rules)
+#                 if not len(rules):
+#                     raise ValidationError(f"filter shouldn't be empty")
+#             except json.decoder.JSONDecodeError:
+#                 raise ValidationError(f'filter: Json syntax should be used')
+#             lookup_fields = self._get_lookup_fields(request, view)
+#             try:
+#                 q_object = self._build_Q(rules, lookup_fields)
+#             except KeyError as ex:
+#                 raise ValidationError(f'filter: {str(ex)} term is not supported')
+#             return queryset.filter(q_object)
+
+#         return queryset
+
+#     def get_schema_fields(self, view):
+#         assert coreapi is not None, 'coreapi must be installed to use `get_schema_fields()`'
+#         assert coreschema is not None, 'coreschema must be installed to use `get_schema_fields()`'
+
+#         filter_fields = getattr(view, 'filter_fields', [])
+#         full_description = self.filter_description + \
+#             f' Avaliable filter_fields: {filter_fields}'
+
+#         return [
+#             coreapi.Field(
+#                 name=self.filter_param,
+#                 required=False,
+#                 location='query',
+#                 schema=coreschema.String(
+#                     title=force_str(self.filter_title),
+#                     description=force_str(full_description)
+#                 )
+#             )
+#         ]
+
+#     def get_schema_operation_parameters(self, view):
+#         filter_fields = getattr(view, 'filter_fields', [])
+#         full_description = self.filter_description + \
+#             f' Avaliable filter_fields: {filter_fields}'
+#         return [
+#             {
+#                 'name': self.filter_param,
+#                 'required': False,
+#                 'in': 'query',
+#                 'description': force_str(full_description),
+#                 'schema': {
+#                     'type': 'string',
+#                 },
+#             },
+#         ]
+
+#     def _get_lookup_fields(self, request, view):
+#         lookup_fields = get_lookup_fields(view)
+
+#         return {
+#             k:
+#         }

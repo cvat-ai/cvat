@@ -108,6 +108,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_rq',
+    'django_filters',
     'compressor',
     'django_sendfile',
     'dj_pagination',
@@ -173,10 +174,12 @@ REST_FRAMEWORK = {
         'cvat.apps.engine.pagination.CustomPagination',
     'PAGE_SIZE': 10,
     'DEFAULT_FILTER_BACKENDS': (
+        'cvat.apps.engine.filters.SimpleFilter',
         'cvat.apps.engine.filters.SearchFilter',
         'cvat.apps.engine.filters.OrderingFilter',
         'cvat.apps.engine.filters.JsonLogicFilter',
-        'cvat.apps.iam.filters.OrganizationFilterBackend'),
+        'cvat.apps.iam.filters.OrganizationFilterBackend',
+    ),
 
     'SEARCH_PARAM': 'search',
     # Disable default handling of the 'format' query parameter by REST framework

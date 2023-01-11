@@ -317,6 +317,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     ordering_fields = filter_fields
     ordering = "-id"
     lookup_fields = {'owner': 'owner__username', 'assignee': 'assignee__username'}
+    filterset_fields = { k: [v] for k, v in lookup_fields.items()}
     iam_organization_field = 'organization'
 
     def get_serializer_class(self):
