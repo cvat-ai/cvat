@@ -103,7 +103,7 @@ class TestUserLimits:
     _DEFAULT_CLOUD_STORAGES_LIMIT = 10
 
     _TASK_LIMIT_MESSAGE = "tasks per user"
-    _PROJECT_TASK_LIMIT_MESSAGE = "tasks per user project"
+    _PROJECT_TASK_LIMIT_MESSAGE = "tasks per project for the user"
     _PROJECTS_LIMIT_MESSAGE = "projects per user"
     _ORGS_LIMIT_MESSAGE = "organizations per user"
     _CLOUD_STORAGES_LIMIT_MESSAGE = "cloud storages per user"
