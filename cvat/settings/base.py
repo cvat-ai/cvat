@@ -193,7 +193,7 @@ REST_FRAMEWORK = {
 }
 
 CVAT_ERRORS = {
-    "LimitsReachedError": "cvat.apps.iam.exceptions.LimitsReachedError"
+    'LimitsReachedError': 'cvat.apps.engine.errors.LimitsReachedError'
 }
 
 REST_AUTH_REGISTER_SERIALIZERS = {
