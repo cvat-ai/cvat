@@ -4,11 +4,11 @@
 # SPDX-License-Identifier: MIT
 
 import os
+
 import cv2
 import numpy as np
 from model_loader import ModelLoader
 from shared import to_cvat_mask
-from skimage.measure import approximate_polygon, find_contours
 
 
 class ModelHandler:
@@ -34,19 +34,18 @@ class ModelHandler:
                 dsize=(image.width, image.height),
                 interpolation=cv2.INTER_NEAREST)
 
-            #contours = find_contours(mask_by_label, 0.5)
-            contours, hierarchy  = cv2.findContours(mask_by_label, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            contours, _  = cv2.findContours(mask_by_label, cv2.RETR_EXTERNAL,
+                cv2.CHAIN_APPROX_SIMPLE)
 
             for contour in contours:
                 contour = np.flip(contour, axis=1)
-                #contour = approximate_polygon(contour, tolerance=2.5)
-
-                x_min = max(0, int(np.min(contour[:,0])))
-                x_max = max(0, int(np.max(contour[:,0])))
-                y_min = max(0, int(np.min(contour[:,1])))
-                y_max = max(0, int(np.max(contour[:,1])))
                 if len(contour) < 3:
                     continue
+
+                x_min = max(0, int(np.min(contour[:,:,0])))
+                x_max = max(0, int(np.max(contour[:,:,0])))
+                y_min = max(0, int(np.min(contour[:,:,1])))
+                y_max = max(0, int(np.max(contour[:,:,1])))
 
                 cvat_mask = to_cvat_mask((x_min, y_min, x_max, y_max), mask_by_label)
 
