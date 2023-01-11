@@ -11,6 +11,7 @@ import Spin from 'antd/lib/spin';
 import Text from 'antd/lib/typography/Text';
 import { SettingOutlined } from '@ant-design/icons';
 
+import CVATTooltop from 'components/common/cvat-tooltip';
 import { CombinedState } from 'reducers';
 import ContextImageSelector from './context-image-selector';
 
@@ -76,6 +77,7 @@ function ContextImage(props: Props): JSX.Element {
         }
     }, [contextImageData, contextImageOffset, canvasRef]);
 
+    const contextImageName = Object.keys(contextImageData).sort()[contextImageOffset];
     return (
         <div className='cvat-context-image-wrapper'>
             <div className='cvat-context-image-header'>
@@ -87,7 +89,11 @@ function ContextImage(props: Props): JSX.Element {
                         }}
                     />
                 )}
-                <Text strong>{Object.keys(contextImageData).sort()[contextImageOffset]}</Text>
+                <div className='cvat-context-image-title'>
+                    <CVATTooltop title={contextImageName}>
+                        <Text>{contextImageName}</Text>
+                    </CVATTooltop>
+                </div>
             </div>
             { (hasError ||
                 (!fetching && contextImageOffset >= Object.keys(contextImageData).length)) && <Text> No data </Text>}

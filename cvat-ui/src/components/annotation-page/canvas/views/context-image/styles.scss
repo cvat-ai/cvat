@@ -31,9 +31,16 @@
         background: $header-color;
         overflow: hidden;
 
-        > span.ant-typography {
-            line-height: $grid-unit-size * 4;
-            word-break: break-all;
+        > .cvat-context-image-title {
+            width: calc(100% - $grid-unit-size * 13);
+            margin-right: $grid-unit-size * 7;
+            margin-left: $grid-unit-size * 7;
+
+            > span.ant-typography {
+                font-size: 12px;
+                line-height: $grid-unit-size * 4;
+                word-break: break-all;
+            }
         }
 
         > .cvat-context-image-setup-button {
@@ -42,7 +49,7 @@
             transition: all 200ms;
             position: absolute;
             top: $grid-unit-size;
-            right: $grid-unit-size;
+            right: $grid-unit-size * 4;
         }
 
         > .cvat-context-image-close-button {

@@ -72,16 +72,16 @@
         }
 
         &.cvat-grid-item-drag-handler {
-            left: $grid-unit-size * 7;
+            left: $grid-unit-size * 4;
             cursor: move;
         }
 
         &.cvat-grid-item-fullscreen-handler {
-            left: $grid-unit-size * 4;
+            left: $grid-unit-size;
         }
 
         &.cvat-grid-item-close-button {
-            left: $grid-unit-size;
+            right: $grid-unit-size;
         }
     }
 
