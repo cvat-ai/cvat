@@ -117,8 +117,7 @@ context('When clicking on the Logout button, get the user session closed.', () =
                     let username = '';
                     cy.get(`.cvat-social-authentication-${provider}`).should('be.visible').click();
                     // eslint-disable-next-line cypress/no-unnecessary-waiting
-                    cy.wait(3000);
-                    cy.get('.cvat-right-header').within(() => {
+                    cy.get('.cvat-right-header').should('exist').and('be.visible').within(() => {
                         cy.get('.cvat-header-menu-user-dropdown-user').should(($div) => {
                             username = $div.text();
                         });
