@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,9 +10,10 @@ import CanvasWrapperContainer from 'containers/annotation-page/canvas/canvas-wra
 import ControlsSideBarContainer from 'containers/annotation-page/standard3D-workspace/controls-side-bar/controls-side-bar';
 import ObjectSideBarComponent from 'components/annotation-page/standard-workspace/objects-side-bar/objects-side-bar';
 import ObjectsListContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/objects-list';
-import PropagateConfirmContainer from 'containers/annotation-page/standard-workspace/propagate-confirm';
 import CanvasContextMenuContainer from 'containers/annotation-page/canvas/canvas-context-menu';
 import CanvasPointContextMenuComponent from 'components/annotation-page/canvas/canvas-point-context-menu';
+import RemoveConfirmComponent from 'components/annotation-page/standard-workspace/remove-confirm';
+import PropagateConfirmComponent from 'components/annotation-page/standard-workspace/propagate-confirm';
 
 export default function StandardWorkspace3DComponent(): JSX.Element {
     return (
@@ -20,9 +21,10 @@ export default function StandardWorkspace3DComponent(): JSX.Element {
             <ControlsSideBarContainer />
             <CanvasWrapperContainer />
             <ObjectSideBarComponent objectsList={<ObjectsListContainer />} />
-            <PropagateConfirmContainer />
+            <PropagateConfirmComponent />
             <CanvasContextMenuContainer />
             <CanvasPointContextMenuComponent />
+            <RemoveConfirmComponent />
         </Layout>
     );
 }

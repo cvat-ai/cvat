@@ -19,7 +19,6 @@ from natsort import os_sorted
 from pyunpack import Archive
 from PIL import Image, ImageFile
 from random import shuffle
-import open3d as o3d
 from cvat.apps.engine.utils import rotate_image
 from cvat.apps.engine.models import DimensionType, SortingMethod
 
@@ -96,6 +95,7 @@ def rotate_within_exif(img: Image):
         ORIENTATION.MIRROR_HORIZONTAL_270_ROTATED ,ORIENTATION.MIRROR_HORIZONTAL_90_ROTATED,
     ]:
         img = img.transpose(Image.FLIP_LEFT_RIGHT)
+
     return img
 
 class IMediaReader(ABC):
@@ -111,7 +111,7 @@ class IMediaReader(ABC):
         pass
 
     @abstractmethod
-    def get_preview(self):
+    def get_preview(self, frame):
         pass
 
     @abstractmethod
@@ -126,8 +126,8 @@ class IMediaReader(ABC):
             preview = Image.open(obj)
         else:
             preview = obj
-        preview.thumbnail(PREVIEW_SIZE)
         preview = rotate_within_exif(preview)
+        preview.thumbnail(PREVIEW_SIZE)
 
         return preview.convert('RGB')
 
@@ -184,7 +184,7 @@ class ImageListReader(IMediaReader):
             source_path,
             step=self._step,
             start=self._start,
-            stop=self._stop,
+            stop=self._stop - 1,
             dimension=self._dimension,
             sorting_method=self._sorting_method
         )
@@ -198,11 +198,11 @@ class ImageListReader(IMediaReader):
     def get_progress(self, pos):
         return (pos - self._start + 1) / (self._stop - self._start)
 
-    def get_preview(self):
+    def get_preview(self, frame):
         if self._dimension == DimensionType.DIM_3D:
             fp = open(os.path.join(os.path.dirname(__file__), 'assets/3d_preview.jpeg'), "rb")
         else:
-            fp = open(self._source_path[0], "rb")
+            fp = open(self._source_path[frame], "rb")
         return self._get_preview(fp)
 
     def get_image_size(self, i):
@@ -338,12 +338,13 @@ class ZipReader(ImageListReader):
     def __del__(self):
         self._zip_source.close()
 
-    def get_preview(self):
+    def get_preview(self, frame):
         if self._dimension == DimensionType.DIM_3D:
             # TODO
             fp = open(os.path.join(os.path.dirname(__file__), 'assets/3d_preview.jpeg'), "rb")
             return self._get_preview(fp)
-        io_image = io.BytesIO(self._zip_source.read(self._source_path[0]))
+
+        io_image = io.BytesIO(self._zip_source.read(self._source_path[frame]))
         return self._get_preview(io_image)
 
     def get_image_size(self, i):
@@ -453,19 +454,23 @@ class VideoReader(IMediaReader):
                 duration = duration_sec * tb_denominator
         return duration
 
-    def get_preview(self):
+    def get_preview(self, frame):
         container = self._get_av_container()
         stream = container.streams.video[0]
-        preview = next(container.decode(stream))
-        return self._get_preview(preview.to_image() if not stream.metadata.get('rotate') \
-            else av.VideoFrame().from_ndarray(
-                rotate_image(
-                    preview.to_ndarray(format='bgr24'),
-                    360 - int(container.streams.video[0].metadata.get('rotate'))
-                ),
-                format ='bgr24'
-            ).to_image()
-        )
+        tb_denominator = stream.time_base.denominator
+        needed_time = int((frame / stream.guessed_rate) * tb_denominator)
+        container.seek(offset=needed_time, stream=stream)
+        for packet in container.demux(stream):
+            for frame in packet.decode():
+                return self._get_preview(frame.to_image() if not stream.metadata.get('rotate') \
+                    else av.VideoFrame().from_ndarray(
+                        rotate_image(
+                            frame.to_ndarray(format='bgr24'),
+                            360 - int(container.streams.video[0].metadata.get('rotate'))
+                        ),
+                        format ='bgr24'
+                    ).to_image()
+                )
 
     def get_image_size(self, i):
         image = (next(iter(self)))[0]
@@ -494,7 +499,7 @@ class FragmentMediaReader:
             if idx < self._start_chunk_frame_number:
                 continue
             elif idx < self._end_chunk_frame_number and \
-                    not ((idx - self._start_chunk_frame_number) % self._step):
+                    not (idx - self._start_chunk_frame_number) % self._step:
                 frame_range.append(idx)
             elif (idx - self._start_chunk_frame_number) % self._step:
                 continue
@@ -654,20 +659,20 @@ class Mpeg4ChunkWriter(IChunkWriter):
             }
 
     def _create_av_container(self, path, w, h, rate, options, f='mp4'):
-            # x264 requires width and height must be divisible by 2 for yuv420p
-            if h % 2:
-                h += 1
-            if w % 2:
-                w += 1
+        # x264 requires width and height must be divisible by 2 for yuv420p
+        if h % 2:
+            h += 1
+        if w % 2:
+            w += 1
 
-            container = av.open(path, 'w',format=f)
-            video_stream = container.add_stream(self._codec_name, rate=rate)
-            video_stream.pix_fmt = "yuv420p"
-            video_stream.width = w
-            video_stream.height = h
-            video_stream.options = options
+        container = av.open(path, 'w',format=f)
+        video_stream = container.add_stream(self._codec_name, rate=rate)
+        video_stream.pix_fmt = "yuv420p"
+        video_stream.width = w
+        video_stream.height = h
+        video_stream.options = options
 
-            return container, video_stream
+        return container, video_stream
 
     def save_as_chunk(self, images, chunk_path):
         if not images:
@@ -779,7 +784,7 @@ def _is_zip(path):
 # 'mode': 'annotation' or 'interpolation' - mode of task that should be created.
 # 'unique': True or False - describes how the type can be combined with other.
 #           True - only one item of this type and no other is allowed
-#           False - this media types can be combined with other which have unique == False
+#           False - this media types can be combined with other which have unique is False
 
 MEDIA_TYPES = {
     'image': {
@@ -820,7 +825,6 @@ MEDIA_TYPES = {
     }
 }
 
-
 class ValidateDimension:
 
     def __init__(self, path=None):
@@ -854,6 +858,21 @@ class ValidateDimension:
 
     @staticmethod
     def convert_bin_to_pcd(path, delete_source=True):
+        def write_header(fileObj, width, height):
+            fileObj.writelines(f'{line}\n' for line in [
+                'VERSION 0.7',
+                'FIELDS x y z',
+                'SIZE 4 4 4',
+                'TYPE F F F',
+                'COUNT 1 1 1',
+                f'WIDTH {width}',
+                f'HEIGHT {height}',
+                'VIEWPOINT 0 0 0 1 0 0 0',
+                f'POINTS {width * height}',
+                'DATA binary',
+            ])
+
+
         list_pcd = []
         with open(path, "rb") as f:
             size_float = 4
@@ -863,10 +882,11 @@ class ValidateDimension:
                 list_pcd.append([x, y, z])
                 byte = f.read(size_float * 4)
         np_pcd = np.asarray(list_pcd)
-        pcd = o3d.geometry.PointCloud()
-        pcd.points = o3d.utility.Vector3dVector(np_pcd)
         pcd_filename = path.replace(".bin", ".pcd")
-        o3d.io.write_point_cloud(pcd_filename, pcd)
+        with open(pcd_filename, "w") as f:
+            write_header(f, np_pcd.shape[0], 1)
+        with open(pcd_filename, "ab") as f:
+            f.write(np_pcd.astype('float32').tobytes())
         if delete_source:
             os.remove(path)
         return pcd_filename

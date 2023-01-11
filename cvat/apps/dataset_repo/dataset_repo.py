@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2021 Intel Corporation
+# Copyright (C) 2018-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -15,6 +15,7 @@ import django_rq
 import git
 from django.db import transaction
 from django.utils import timezone
+from django.conf import settings
 
 from cvat.apps.dataset_manager.formats.registry import format_for
 from cvat.apps.dataset_manager.task import export_task
@@ -26,7 +27,7 @@ from cvat.apps.engine.plugins import add_plugin
 
 def _have_no_access_exception(ex):
     if 'Permission denied' in ex.stderr or 'Could not read from remote repository' in ex.stderr:
-        keys = subprocess.run(['ssh-add -L'], shell = True,
+        keys = subprocess.run(['ssh-add', '-L'], #nosec
             stdout = subprocess.PIPE).stdout.decode('utf-8').split('\n')
         keys = list(filter(len, list(map(lambda x: x.strip(), keys))))
         raise Exception(
@@ -268,7 +269,7 @@ class Git:
 
         # Dump an annotation
         timestamp = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
-        dump_name = os.path.join(db_task.get_task_dirname(),
+        dump_name = os.path.join(db_task.get_dirname(),
                                  "git_annotation_{}_{}.zip".format(self._format, timestamp))
 
         export_task(
@@ -303,7 +304,7 @@ class Git:
         }
 
         old_diffs_dir = os.path.join(os.path.dirname(self._diffs_dir), 'repos_diffs')
-        if (os.path.isdir(old_diffs_dir)):
+        if os.path.isdir(old_diffs_dir):
             _read_old_diffs(old_diffs_dir, summary_diff)
 
         for diff_name in list(map(lambda x: os.path.join(self._diffs_dir, x), os.listdir(self._diffs_dir))):
@@ -427,7 +428,7 @@ def get(tid, user):
         response['url']['value'] = '{} [{}]'.format(db_git.url, db_git.path)
         try:
             rq_id = "git.push.{}".format(tid)
-            queue = django_rq.get_queue('default')
+            queue = django_rq.get_queue(settings.CVAT_QUEUES.EXPORT_DATA.value)
             rq_job = queue.fetch_job(rq_id)
             if rq_job is not None and (rq_job.is_queued or rq_job.is_started):
                 db_git.status = GitStatusChoice.SYNCING
@@ -463,7 +464,9 @@ def update_states():
         try:
             get(db_git.task_id, db_user)
         except Exception:
-            slogger.glob("Exception occurred during a status updating for db_git with tid: {}".format(db_git.task_id))
+            slogger.glob.exception("Exception occurred during a status "
+                "updating for db_git with tid: {}".format(db_git.task_id),
+                exc_info=True)
 
 @transaction.atomic
 def _onsave(jid, data, action):

@@ -1,11 +1,12 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
-import getCore from 'cvat-core-wrapper';
+import { getCore } from 'cvat-core-wrapper';
 
-import { ShareFileInfo } from 'reducers/interfaces';
+import { ShareFileInfo } from 'reducers';
 
 const core = getCore();
 
@@ -28,16 +29,16 @@ const shareActions = {
 
 export type ShareActions = ActionUnion<typeof shareActions>;
 
-export function loadShareDataAsync(directory: string, success: () => void, failure: () => void): ThunkAction {
-    return async (dispatch): Promise<void> => {
+export function loadShareDataAsync(directory: string): ThunkAction {
+    return async (dispatch): Promise<ShareFileInfo[]> => {
         try {
             dispatch(shareActions.loadShareData());
             const values = await core.server.share(directory);
-            success();
             dispatch(shareActions.loadShareDataSuccess(values as ShareFileInfo[], directory));
+            return (values as ShareFileInfo[]);
         } catch (error) {
-            failure();
             dispatch(shareActions.loadShareDataFailed(error));
+            throw error;
         }
     };
 }

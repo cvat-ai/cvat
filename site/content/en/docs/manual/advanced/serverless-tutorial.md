@@ -1,33 +1,29 @@
 ---
 title: 'Serverless tutorial'
 linkTitle: 'Serverless tutorial'
-weight: 31
+weight: 32
 ---
 
 ## Introduction
 
-Computers have now become our partners. They help us to solve routine problems,
-fix mistakes, find information, etc. It is a natural idea to use their
-compute power to annotate datasets. There are multiple DL models for
-classification, object detection, semantic segmentation which can do
-data annotation for us. And it is relatively simple to integrate your
-own ML/DL solution into CVAT.
+Leveraging the power of computers to solve daily routine problems,
+fix mistakes, and find information has become second nature. It is therefore
+natural to use computing power in annotating datasets. There are multiple
+publicly available DL models for classification, object detection, and semantic
+segmentation which can be used for data annotation. Whilst some of these publicly
+available DL models can be found on CVAT, it is relatively simple to integrate your
+privately trained ML/DL model into CVAT.
 
-But the world is not perfect and we don't have a silver bullet which can
-solve all our problems. Usually, available DL models are trained on public
-datasets which cannot cover all specific cases. Very often you want to
-detect objects which cannot be recognized by these models. Our annotation
-requirements can be so strict that automatically
-annotated objects cannot be accepted as is, and it is easier to annotate them
-from scratch. You always need to keep in mind all these mentioned limitations.
-Even if you have a DL solution which can
-_perfectly_ annotate 50% of your data, it means that manual work will only be
-reduced in half.
+With the imperfection of the world, alongside the unavailability of a silver bullet
+that can solve all our problems; publicly available DL models cannot be used when we
+want to detect niche or specific objects on which these publicly available models were not trained.
+As annotation requirements can be sometimes strict, automatically annotated objects cannot be accepted
+as it is, and it is easier to annotate them from scratch. With these limitations in mind, a DL solution
+that can _perfectly_ annotate 50% of your data equates to reducing manual annotation by half.
 
-When we know that DL models can help us to annotate data faster, the next
-question is how to use them? In CVAT all such DL models are implemented
-as serverless functions for the [Nuclio][nuclio-homepage] serverless platform.
-And there are multiple implemented functions which can be
+Since we know DL models can help us to annotate faster, how then do we use them?
+In CVAT all such DL models are implemented as serverless functions using the [Nuclio][nuclio-homepage]
+serverless platform. There are multiple implemented functions that can be
 found in the [serverless][cvat-builtin-serverless] directory such as _Mask RCNN,
 Faster RCNN, SiamMask, Inside Outside Guidance, Deep Extreme Cut_, etc.
 Follow [the installation guide][cvat-auto-annotation-guide] to build and deploy
@@ -59,17 +55,17 @@ the tutorial.
 
 In the tutorial it is assumed that you already have the cloned
 [CVAT GitHub repo][cvat-github].
-To build CVAT with serverless support you need to run `docker-compose` command
+To build CVAT with serverless support you need to run `docker compose` command
 with specific configuration files. In the case it is `docker-compose.serverless.yml`.
 It has necessary instructions how to build and deploy Nuclio platform as a
 docker container and enable corresponding support in CVAT.
 
 ```bash
-docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f components/serverless/docker-compose.serverless.yml up -d --build
+docker compose -f docker-compose.yml -f docker-compose.dev.yml -f components/serverless/docker-compose.serverless.yml up -d --build
 ```
 
 ```bash
-docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f components/serverless/docker-compose.serverless.yml ps
+docker compose -f docker-compose.yml -f docker-compose.dev.yml -f components/serverless/docker-compose.serverless.yml ps
 ```
 ```
    Name                 Command                  State                            Ports
@@ -976,14 +972,14 @@ you can use the Ubuntu subsystem, for this do the following:
 [opencv-python-github]: https://github.com/opencv/opencv-python
 [detectron2-tutorial]: https://detectron2.readthedocs.io/en/latest/tutorials/getting_started.html
 [retinanet-model-zoo]: https://github.com/facebookresearch/detectron2/blob/master/MODEL_ZOO.md#retinanet
-[faster-rcnn-function]: https://raw.githubusercontent.com/openvinotoolkit/cvat/38b774046d41d604ed85a521587e4bacce61b69c/serverless/tensorflow/faster_rcnn_inception_v2_coco/nuclio/function.yaml
+[faster-rcnn-function]: https://raw.githubusercontent.com/cvat-ai/cvat/38b774046d41d604ed85a521587e4bacce61b69c/serverless/tensorflow/faster_rcnn_inception_v2_coco/nuclio/function.yaml
 [nuclio-doc]: https://nuclio.io/docs/latest/reference/function-configuration/function-configuration-reference/
 [nuclio-http-trigger-doc]: https://nuclio.io/docs/latest/reference/triggers/http/
 [nuclio-bkms-doc]: https://nuclio.io/docs/latest/concepts/best-practices-and-common-pitfalls/
-[retinanet-function-yaml]: https://github.com/openvinotoolkit/cvat/blob/b2f616859ca64687c385e636b4a25014fbb9d17c/serverless/pytorch/facebookresearch/detectron2/retinanet/nuclio/function.yaml
-[retinanet-main-py]: https://github.com/openvinotoolkit/cvat/blob/b2f616859ca64687c385e636b4a25014fbb9d17c/serverless/pytorch/facebookresearch/detectron2/retinanet/nuclio/main.py
+[retinanet-function-yaml]: https://github.com/cvat-ai/cvat/blob/b2f616859ca64687c385e636b4a25014fbb9d17c/serverless/pytorch/facebookresearch/detectron2/retinanet/nuclio/function.yaml
+[retinanet-main-py]: https://github.com/cvat-ai/cvat/blob/b2f616859ca64687c385e636b4a25014fbb9d17c/serverless/pytorch/facebookresearch/detectron2/retinanet/nuclio/main.py
 [nuclio-homepage]: https://nuclio.io/
-[cvat-builtin-serverless]: https://github.com/openvinotoolkit/cvat/tree/develop/serverless
+[cvat-builtin-serverless]: https://github.com/cvat-ai/cvat/tree/develop/serverless
 [cvat-auto-annotation-guide]: /docs/administration/advanced/installation_automatic_annotation
 [cvat-installation-guide-windows-10]: /docs/administration/basics/installation/#windows-10
 [cvat-installation-guide-ubuntu-1804]: /docs/administration/basics/installation/#ubuntu-1804-x86_64amd64
@@ -991,8 +987,8 @@ you can use the Ubuntu subsystem, for this do the following:
 [pascal-voc-format]: http://host.robots.ox.ac.uk/pascal/VOC/voc2012/htmldoc/index.html
 [faas-wiki]: https://en.wikipedia.org/wiki/Function_as_a_service
 [cvat-ai-tools-user-guide]: /docs/manual/advanced/ai-tools/
-[cvat-github]: https://github.com/openvinotoolkit/cvat
-[siammask-serverless]: https://github.com/openvinotoolkit/cvat/tree/develop/serverless/pytorch/foolwood/siammask/nuclio
+[cvat-github]: https://github.com/cvat-ai/cvat
+[siammask-serverless]: https://github.com/cvat-ai/cvat/tree/develop/serverless/pytorch/foolwood/siammask/nuclio
 [vtest-avi]: https://github.com/opencv/opencv/blob/master/samples/data/vtest.avi?raw=true
 [intel-openvino-url]: https://software.intel.com/content/www/us/en/develop/tools/openvino-toolkit.html
 [cvat-auto-annotation-user-guide]: /docs/manual/advanced/automatic-annotation/

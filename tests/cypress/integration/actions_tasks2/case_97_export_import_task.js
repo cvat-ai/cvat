@@ -48,7 +48,9 @@ context('Export, import an annotation task.', { browser: '!firefox' }, () => {
         });
         cy.addNewLabel(newLabelName);
         cy.openJob();
-        cy.createRectangle(createRectangleShape2Points);
+        cy.createRectangle(createRectangleShape2Points).then(() => {
+            Cypress.config('scrollBehavior', false);
+        });
         cy.get('#cvat_canvas_shape_1')
             .trigger('mousemove')
             .trigger('mouseover')
@@ -59,7 +61,7 @@ context('Export, import an annotation task.', { browser: '!firefox' }, () => {
             .trigger('mousemove')
             .trigger('mouseover');
         cy.get('.svg_select_points_rot').trigger('mousedown', { button: 0 });
-        cy.get('.cvat-canvas-container').trigger('mousemove', 350, 150);
+        cy.get('.cvat-canvas-container').trigger('mousemove', 340, 150);
         cy.get('.cvat-canvas-container').trigger('mouseup');
         cy.get('#cvat_canvas_shape_1').should('have.attr', 'transform');
         cy.document().then((doc) => {
@@ -83,22 +85,42 @@ context('Export, import an annotation task.', { browser: '!firefox' }, () => {
             cy.get('.ant-dropdown')
                 .not('.ant-dropdown-hidden')
                 .within(() => {
-                    cy.contains('[role="menuitem"]', new RegExp('^Backup Task$')).click().trigger('mouseout');
+                    cy.contains('[role="menuitem"]', new RegExp('^Backup Task$')).click();
                 });
+            cy.get('.cvat-modal-export-task').find('.cvat-modal-export-filename-input').type(archiveName);
+            cy.get('.cvat-modal-export-task').contains('button', 'OK').click();
+            cy.get('.cvat-notification-notice-export-backup-start').should('be.visible');
+            cy.closeNotification('.cvat-notification-notice-export-backup-start');
             cy.getDownloadFileName().then((file) => {
                 taskBackupArchiveFullName = file;
                 cy.verifyDownload(taskBackupArchiveFullName);
             });
+            cy.verifyNotification();
             cy.deleteTask(taskName);
         });
 
         it('Import the task. Check id, labels, shape.', () => {
-            cy.intercept('POST', '/api/tasks/backup?**').as('importTask');
+            cy.intercept({ method: /PATCH|POST/, url: /\/api\/tasks\/backup.*/ }).as('importTask');
             cy.get('.cvat-create-task-dropdown').click();
-            cy.get('.cvat-import-task').click().find('input[type=file]').attachFile(taskBackupArchiveFullName);
-            cy.wait('@importTask', { timeout: 5000 }).its('response.statusCode').should('equal', 202);
+            cy.get('.cvat-import-task-button').click();
+            cy.get('input[type=file]').attachFile(taskBackupArchiveFullName, { subjectType: 'drag-n-drop' });
+            cy.get(`[title="${taskBackupArchiveFullName}"]`).should('be.visible');
+            cy.contains('button', 'OK').click();
+            cy.get('.cvat-notification-notice-import-backup-start').should('be.visible');
+            cy.closeNotification('.cvat-notification-notice-import-backup-start');
+
+            cy.wait('@importTask').its('response.statusCode').should('equal', 202);
             cy.wait('@importTask').its('response.statusCode').should('equal', 201);
-            cy.contains('Task has been imported succesfully').should('exist').and('be.visible');
+            cy.wait('@importTask').its('response.statusCode').should('equal', 204);
+            cy.wait('@importTask').its('response.statusCode').should('equal', 202);
+            cy.wait('@importTask').then((interception) => {
+                cy.wrap(interception).its('response.statusCode').should('be.oneOf', [201, 202]);
+                if (interception.response.statusCode === 202) {
+                    cy.wait('@importTask').its('response.statusCode').should('equal', 201);
+                }
+            });
+            cy.contains('The task has been restored succesfully. Click here to open').should('exist').and('be.visible');
+            cy.closeNotification('.ant-notification-notice-info');
             cy.openTask(taskName);
             cy.url().then((link) => {
                 expect(Number(link.split('/').slice(-1)[0])).to.be.equal(taskId + 1);

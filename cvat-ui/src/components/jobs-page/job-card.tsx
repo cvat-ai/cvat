@@ -1,19 +1,21 @@
 // Copyright (C) 2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React, { useState } from 'react';
+import { useDispatch } from 'react-redux';
 import { useHistory } from 'react-router';
 import Card from 'antd/lib/card';
-import Empty from 'antd/lib/empty';
 import Descriptions from 'antd/lib/descriptions';
 import { MoreOutlined } from '@ant-design/icons';
 import Dropdown from 'antd/lib/dropdown';
 import Menu from 'antd/lib/menu';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { MenuInfo } from 'rc-menu/lib/interface';
-
 import { useCardHeightHOC } from 'utils/hooks';
+import { exportActions } from 'actions/export-actions';
+import Preview from 'components/common/preview';
 
 const useCardHeight = useCardHeightHOC({
     containerClassName: 'cvat-jobs-page',
@@ -24,11 +26,11 @@ const useCardHeight = useCardHeightHOC({
 
 interface Props {
     job: any;
-    preview: string;
 }
 
 function JobCardComponent(props: Props): JSX.Element {
-    const { job, preview } = props;
+    const dispatch = useDispatch();
+    const { job } = props;
     const [expanded, setExpanded] = useState<boolean>(false);
     const history = useHistory();
     const height = useCardHeight();
@@ -50,19 +52,14 @@ function JobCardComponent(props: Props): JSX.Element {
             className='cvat-job-page-list-item'
             cover={(
                 <>
-                    {preview ? (
-                        <img
-                            className='cvat-jobs-page-job-item-card-preview'
-                            src={preview}
-                            alt='Preview'
-                            onClick={onClick}
-                            aria-hidden
-                        />
-                    ) : (
-                        <div className='cvat-jobs-page-job-item-card-preview' onClick={onClick} aria-hidden>
-                            <Empty description='Preview not found' />
-                        </div>
-                    )}
+                    <Preview
+                        job={job}
+                        onClick={onClick}
+                        loadingClassName='cvat-job-item-loading-preview'
+                        emptyPreviewClassName='cvat-job-item-empty-preview'
+                        previewWrapperClassName='cvat-jobs-page-job-item-card-preview-wrapper'
+                        previewClassName='cvat-jobs-page-job-item-card-preview'
+                    />
                     <div className='cvat-job-page-list-item-id'>
                         ID:
                         {` ${job.id}`}
@@ -97,6 +94,7 @@ function JobCardComponent(props: Props): JSX.Element {
                     <Menu.Item key='task' disabled={job.taskId === null}>Go to the task</Menu.Item>
                     <Menu.Item key='project' disabled={job.projectId === null}>Go to the project</Menu.Item>
                     <Menu.Item key='bug_tracker' disabled={!job.bugTracker}>Go to the bug tracker</Menu.Item>
+                    <Menu.Item key='export_job' onClick={() => dispatch(exportActions.openExportDatasetModal(job))}>Export job</Menu.Item>
                 </Menu>
             )}
             >

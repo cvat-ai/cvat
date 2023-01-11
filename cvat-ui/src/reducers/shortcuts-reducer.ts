@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -6,7 +6,7 @@ import { BoundariesActions, BoundariesActionTypes } from 'actions/boundaries-act
 import { AuthActions, AuthActionTypes } from 'actions/auth-actions';
 import { ShortcutsActions, ShortcutsActionsTypes } from 'actions/shortcuts-actions';
 import { KeyMap, KeyMapItem } from 'utils/mousetrap-react';
-import { DimensionType, ShortcutsState } from './interfaces';
+import { DimensionType, ShortcutsState } from '.';
 
 function formatShortcuts(shortcuts: KeyMapItem): string {
     const list: string[] = shortcuts.displayedSequences || (shortcuts.sequences as string[]);
@@ -258,6 +258,13 @@ const defaultKeyMap = ({
         action: 'keydown',
         applicable: [DimensionType.DIM_2D, DimensionType.DIM_3D],
     },
+    DELETE_FRAME: {
+        name: 'Delete frame',
+        description: 'Delete frame',
+        sequences: ['alt+del'],
+        action: 'keydown',
+        applicable: [DimensionType.DIM_2D, DimensionType.DIM_3D],
+    },
     NEXT_FRAME: {
         name: 'Next frame',
         description: 'Go to the next frame',
@@ -325,7 +332,7 @@ const defaultKeyMap = ({
     SWITCH_TOOLS_BLOCKER_STATE: {
         name: 'Switch algorithm blocker',
         description: 'Postpone running the algorithm for interaction tools',
-        sequences: ['сtrl'],
+        sequences: ['ctrl'],
         action: 'keydown',
         applicable: [DimensionType.DIM_2D],
     },
@@ -417,6 +424,13 @@ const defaultKeyMap = ({
         name: 'Camera Zoom Out',
         description: 'Performs zoom out',
         sequences: ['alt+k'],
+        action: 'keydown',
+        applicable: [DimensionType.DIM_3D],
+    },
+    CANCEL_SKELETON_EDGE: {
+        name: 'Cancel skeleton drawing',
+        description: 'Interrupts drawing a new skeleton edge',
+        sequences: ['esc'],
         action: 'keydown',
         applicable: [DimensionType.DIM_3D],
     },

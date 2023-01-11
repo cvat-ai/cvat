@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,12 +8,10 @@ import React, { useEffect, useState } from 'react';
 import { useHistory } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
 import Spin from 'antd/lib/spin';
-
-import { CombinedState, Indexable } from 'reducers/interfaces';
-import { getProjectsAsync, restoreProjectAsync } from 'actions/projects-actions';
+import { CombinedState, Indexable } from 'reducers';
+import { getProjectsAsync } from 'actions/projects-actions';
 import FeedbackComponent from 'components/feedback/feedback';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
-import ImportDatasetModal from 'components/import-dataset-modal/import-dataset-modal';
 import EmptyListComponent from './empty-list';
 import TopBarComponent from './top-bar';
 import ProjectListComponent from './project-list';
@@ -24,7 +23,7 @@ export default function ProjectsPageComponent(): JSX.Element {
     const count = useSelector((state: CombinedState) => state.projects.current.length);
     const query = useSelector((state: CombinedState) => state.projects.gettingQuery);
     const tasksQuery = useSelector((state: CombinedState) => state.projects.tasksGettingQuery);
-    const importing = useSelector((state: CombinedState) => state.projects.restoring);
+    const importing = useSelector((state: CombinedState) => state.import.projects.backup.importing);
     const [isMounted, setIsMounted] = useState(false);
     const anySearch = Object.keys(query).some((value: string) => value !== 'page' && (query as any)[value] !== null);
 
@@ -83,7 +82,6 @@ export default function ProjectsPageComponent(): JSX.Element {
                     );
                 }}
                 query={updatedQuery}
-                onImportProject={(file: File) => dispatch(restoreProjectAsync(file))}
                 importing={importing}
             />
             { fetching ? (
@@ -92,7 +90,6 @@ export default function ProjectsPageComponent(): JSX.Element {
                 </div>
             ) : content }
             <FeedbackComponent />
-            <ImportDatasetModal />
         </div>
     );
 }

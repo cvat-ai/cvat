@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,4 +10,8 @@
         color: $info-icon-color;
         margin-right: $grid-unit-size;
     }
+}
+
+.cvat-modal-export-switch-use-default-storage {
+    display: table-cell;
 }

@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -13,9 +14,9 @@ import { QuestionCircleOutlined } from '@ant-design/icons';
 
 import ProjectSearch from 'components/create-task-page/project-search-field';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState } from 'reducers';
 import { switchMoveTaskModalVisible, moveTaskToProjectAsync } from 'actions/tasks-actions';
-import getCore from 'cvat-core-wrapper';
+import { getCore } from 'cvat-core-wrapper';
 import LabelMapperItem, { LabelMapperItemValue } from './label-mapper-item';
 
 const core = getCore();
@@ -23,8 +24,8 @@ const core = getCore();
 export default function MoveTaskModal(): JSX.Element {
     const visible = useSelector((state: CombinedState) => state.tasks.moveTask.modalVisible);
     const task = useSelector((state: CombinedState) => {
-        const [taskInstance] = state.tasks.current.filter((_task) => _task.instance.id === state.tasks.moveTask.taskId);
-        return taskInstance?.instance;
+        const [taskInstance] = state.tasks.current.filter((_task) => _task.id === state.tasks.moveTask.taskId);
+        return taskInstance;
     });
     const taskUpdating = useSelector((state: CombinedState) => state.tasks.updating);
     const dispatch = useDispatch();

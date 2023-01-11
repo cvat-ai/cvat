@@ -1,4 +1,5 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -26,24 +27,24 @@ context('Export task dataset.', () => {
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Export a task as dataset.', () => {
+        it('Export a job as dataset.', () => {
             const exportDataset = {
                 as: 'exportDataset',
                 type: 'dataset',
                 format: exportFormat,
             };
-            cy.exportTask(exportDataset);
+            cy.exportJob(exportDataset);
             cy.waitForDownload();
         });
 
-        it('Export a task as dataset with renaming the archive.', () => {
+        it('Export a job as dataset with renaming the archive.', () => {
             const exportDataset = {
                 as: 'exportDatasetRenameArchive',
                 type: 'dataset',
                 format: exportFormat,
-                archiveCustomeName: 'task_export_dataset_custome_name',
+                archiveCustomName: 'job_export_dataset_custome_name',
             };
-            cy.exportTask(exportDataset);
+            cy.exportJob(exportDataset);
             cy.waitForDownload();
         });
     });

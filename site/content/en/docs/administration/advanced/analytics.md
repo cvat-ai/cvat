@@ -4,8 +4,8 @@
 
 title: 'Installation Analytics'
 linkTitle: 'Installation Analytics'
-weight: 2
-description: 'Instructions for deployment and customization of Analytics. This section on [GitHub](https://github.com/openvinotoolkit/cvat/tree/develop/components/analytics).'
+weight: 20
+description: 'Instructions for deployment and customization of Analytics. This section on [GitHub](https://github.com/cvat-ai/cvat/tree/develop/components/analytics).'
 
 ---
 
@@ -19,14 +19,14 @@ It is possible to proxy annotation logs from client to ELK. To do that run the f
 
 ```bash
 # From project root directory
-docker-compose -f docker-compose.yml -f components/analytics/docker-compose.analytics.yml build
+docker compose -f docker-compose.yml -f components/analytics/docker-compose.analytics.yml build
 ```
 
 ### Run docker container
 
 ```bash
 # From project root directory
-docker-compose -f docker-compose.yml -f components/analytics/docker-compose.analytics.yml up -d
+docker compose -f docker-compose.yml -f components/analytics/docker-compose.analytics.yml up -d
 ```
 
 At the moment it is not possible to save advanced settings. Below values should be specified manually.

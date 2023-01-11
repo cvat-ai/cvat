@@ -1,4 +1,5 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -6,36 +7,34 @@ import React from 'react';
 import copy from 'copy-to-clipboard';
 import { connect } from 'react-redux';
 
-import { LogType } from 'cvat-logger';
 import {
-    collapseObjectItems,
     updateAnnotationsAsync,
     changeFrameAsync,
-    removeObjectAsync,
     changeGroupColorAsync,
     pasteShapeAsync,
     copyShape as copyShapeAction,
     activateObject as activateObjectAction,
-    propagateObject as propagateObjectAction,
+    switchPropagateVisibility as switchPropagateVisibilityAction,
+    removeObject as removeObjectAction,
 } from 'actions/annotation-actions';
 import {
     ActiveControl, CombinedState, ColorBy, ShapeType,
-} from 'reducers/interfaces';
+} from 'reducers';
 import ObjectStateItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item';
+import { getColor } from 'components/annotation-page/standard-workspace/objects-side-bar/shared';
 import { shift } from 'utils/math';
-import { Canvas } from 'cvat-canvas-wrapper';
+import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
+import { filterApplicableLabels } from 'utils/filter-applicable-labels';
 
 interface OwnProps {
     readonly: boolean;
     clientID: number;
     objectStates: any[];
-    initialCollapsed: boolean;
 }
 
 interface StateToProps {
     objectState: any;
-    collapsed: boolean;
     labels: any[];
     attributes: any[];
     jobInstance: any;
@@ -44,6 +43,7 @@ interface StateToProps {
     colorBy: ColorBy;
     ready: boolean;
     activeControl: ActiveControl;
+    activatedElementID: number | null;
     minZLayer: number;
     maxZLayer: number;
     normalizedKeyMap: Record<string, string>;
@@ -53,11 +53,10 @@ interface StateToProps {
 interface DispatchToProps {
     changeFrame(frame: number): void;
     updateState(objectState: any): void;
-    collapseOrExpand(objectStates: any[], collapsed: boolean): void;
-    activateObject: (activatedStateID: number | null) => void;
-    removeObject: (sessionInstance: any, objectState: any) => void;
+    activateObject: (activatedStateID: number | null, activatedElementID: number | null) => void;
+    removeObject: (objectState: any) => void;
     copyShape: (objectState: any) => void;
-    propagateObject: (objectState: any) => void;
+    switchPropagateVisibility: (visible: boolean) => void;
     changeGroupColor(group: number, color: string): void;
 }
 
@@ -65,7 +64,6 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     const {
         annotation: {
             annotations: {
-                collapsed: statesCollapsed,
                 activatedStateID,
                 zLayer: { min: minZLayer, max: maxZLayer },
             },
@@ -81,16 +79,12 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         shortcuts: { normalizedKeyMap },
     } = state;
 
-    const { objectStates: states, initialCollapsed, clientID } = own;
+    const { objectStates: states, clientID } = own;
     const stateIDs = states.map((_state: any): number => _state.clientID);
     const index = stateIDs.indexOf(clientID);
 
-    const collapsedState =
-        typeof statesCollapsed[clientID] === 'undefined' ? initialCollapsed : statesCollapsed[clientID];
-
     return {
         objectState: states[index],
-        collapsed: collapsedState,
         attributes: jobAttributes[states[index].label.id],
         labels,
         ready,
@@ -114,21 +108,18 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         updateState(state: any): void {
             dispatch(updateAnnotationsAsync([state]));
         },
-        collapseOrExpand(objectStates: any[], collapsed: boolean): void {
-            dispatch(collapseObjectItems(objectStates, collapsed));
-        },
         activateObject(activatedStateID: number | null): void {
-            dispatch(activateObjectAction(activatedStateID, null));
+            dispatch(activateObjectAction(activatedStateID, null, null));
         },
-        removeObject(sessionInstance: any, objectState: any): void {
-            dispatch(removeObjectAsync(sessionInstance, objectState, true));
+        removeObject(objectState: any): void {
+            dispatch(removeObjectAction(objectState, false));
         },
         copyShape(objectState: any): void {
             dispatch(copyShapeAction(objectState));
             dispatch(pasteShapeAsync());
         },
-        propagateObject(objectState: any): void {
-            dispatch(propagateObjectAction(objectState));
+        switchPropagateVisibility(visible: boolean): void {
+            dispatch(switchPropagateVisibilityAction(visible));
         },
         changeGroupColor(group: number, color: string): void {
             dispatch(changeGroupColorAsync(group, color));
@@ -146,19 +137,31 @@ class ObjectItemContainer extends React.PureComponent<Props> {
     };
 
     private propagate = (): void => {
-        const { objectState, readonly, propagateObject } = this.props;
+        const { switchPropagateVisibility, readonly } = this.props;
         if (!readonly) {
-            propagateObject(objectState);
+            switchPropagateVisibility(true);
         }
     };
 
+    private edit = (): void => {
+        const { objectState, readonly, canvasInstance } = this.props;
+
+        if (!readonly && canvasInstance instanceof Canvas) {
+            if (canvasInstance.mode() !== CanvasMode.IDLE) {
+                canvasInstance.cancel();
+            }
+
+            canvasInstance.edit({ enabled: true, state: objectState });
+        }
+    }
+
     private remove = (): void => {
         const {
-            objectState, jobInstance, readonly, removeObject,
+            objectState, readonly, removeObject,
         } = this.props;
 
         if (!readonly) {
-            removeObject(jobInstance, objectState);
+            removeObject(objectState);
         }
     };
 
@@ -220,23 +223,17 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         }
     };
 
-    private activate = (): void => {
+    private activate = (activeElementID?: number): void => {
         const {
-            objectState, ready, activeControl, activateObject, canvasInstance,
+            objectState, ready, activeControl, activateObject,
         } = this.props;
 
         if (ready && activeControl === ActiveControl.CURSOR) {
-            activateObject(objectState.clientID);
-            if (canvasInstance instanceof Canvas3d) {
-                canvasInstance.activate(objectState.clientID);
-            }
+            activateObject(
+                objectState.clientID,
+                (Number.isInteger(activeElementID) ? activeElementID : null) as number | null,
+            );
         }
-    };
-
-    private collapse = (): void => {
-        const { collapseOrExpand, objectState, collapsed } = this.props;
-
-        collapseOrExpand([objectState], !collapsed);
     };
 
     private changeColor = (color: string): void => {
@@ -254,21 +251,6 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         const { objectState, readonly } = this.props;
         if (!readonly) {
             objectState.label = label;
-            this.commit();
-        }
-    };
-
-    private changeAttribute = (id: number, value: string): void => {
-        const { objectState, readonly, jobInstance } = this.props;
-        if (!readonly) {
-            jobInstance.logger.log(LogType.changeAttribute, {
-                id,
-                value,
-                object_id: objectState.clientID,
-            });
-            const attr: Record<number, string> = {};
-            attr[id] = value;
-            objectState.attributes = attr;
             this.commit();
         }
     };
@@ -332,7 +314,6 @@ class ObjectItemContainer extends React.PureComponent<Props> {
     public render(): JSX.Element {
         const {
             objectState,
-            collapsed,
             labels,
             attributes,
             activated,
@@ -342,14 +323,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
             jobInstance,
         } = this.props;
 
-        let stateColor = '';
-        if (colorBy === ColorBy.INSTANCE) {
-            stateColor = objectState.color;
-        } else if (colorBy === ColorBy.GROUP) {
-            stateColor = objectState.group.color;
-        } else if (colorBy === ColorBy.LABEL) {
-            stateColor = objectState.label.color;
-        }
+        const applicableLabels = filterApplicableLabels(objectState, labels);
 
         return (
             <ObjectStateItemComponent
@@ -361,14 +335,13 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 clientID={objectState.clientID}
                 serverID={objectState.serverID}
                 locked={objectState.lock}
-                attrValues={{ ...objectState.attributes }}
                 labelID={objectState.label.id}
-                color={stateColor}
+                color={getColor(objectState, colorBy)}
                 attributes={attributes}
+                elements={objectState.elements}
                 normalizedKeyMap={normalizedKeyMap}
-                labels={labels}
+                labels={applicableLabels}
                 colorBy={colorBy}
-                collapsed={collapsed}
                 activate={this.activate}
                 remove={this.remove}
                 copy={this.copy}
@@ -379,8 +352,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 toForeground={this.toForeground}
                 changeColor={this.changeColor}
                 changeLabel={this.changeLabel}
-                changeAttribute={this.changeAttribute}
-                collapse={this.collapse}
+                edit={this.edit}
                 resetCuboidPerspective={() => this.resetCuboidPerspective()}
             />
         );

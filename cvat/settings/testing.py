@@ -1,4 +1,4 @@
-# Copyright (C) 2018 Intel Corporation
+# Copyright (C) 2018-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -11,11 +11,19 @@ BASE_DIR = _temp_dir.name
 DATA_ROOT = os.path.join(BASE_DIR, 'data')
 os.makedirs(DATA_ROOT, exist_ok=True)
 
-SHARE_ROOT = os.path.join(BASE_DIR, 'share')
-os.makedirs(SHARE_ROOT, exist_ok=True)
+LOGSTASH_DB = os.path.join(DATA_ROOT,'logstash.db')
+os.makedirs(DATA_ROOT, exist_ok=True)
+if not os.path.exists(LOGSTASH_DB):
+    open(LOGSTASH_DB, 'w').close()
 
 MEDIA_DATA_ROOT = os.path.join(DATA_ROOT, 'data')
 os.makedirs(MEDIA_DATA_ROOT, exist_ok=True)
+
+CACHE_ROOT = os.path.join(DATA_ROOT, 'cache')
+os.makedirs(CACHE_ROOT, exist_ok=True)
+
+JOBS_ROOT = os.path.join(DATA_ROOT, 'jobs')
+os.makedirs(JOBS_ROOT, exist_ok=True)
 
 TASKS_ROOT = os.path.join(DATA_ROOT, 'tasks')
 os.makedirs(TASKS_ROOT, exist_ok=True)
@@ -23,11 +31,23 @@ os.makedirs(TASKS_ROOT, exist_ok=True)
 PROJECTS_ROOT = os.path.join(DATA_ROOT, 'projects')
 os.makedirs(PROJECTS_ROOT, exist_ok=True)
 
+SHARE_ROOT = os.path.join(BASE_DIR, 'share')
+os.makedirs(SHARE_ROOT, exist_ok=True)
+
 MODELS_ROOT = os.path.join(DATA_ROOT, 'models')
 os.makedirs(MODELS_ROOT, exist_ok=True)
 
-CACHE_ROOT = os.path.join(DATA_ROOT, 'cache')
-os.makedirs(CACHE_ROOT, exist_ok=True)
+LOGS_ROOT = os.path.join(BASE_DIR, 'logs')
+os.makedirs(LOGS_ROOT, exist_ok=True)
+
+MIGRATIONS_LOGS_ROOT = os.path.join(LOGS_ROOT, 'migrations')
+os.makedirs(MIGRATIONS_LOGS_ROOT, exist_ok=True)
+
+CLOUD_STORAGE_ROOT = os.path.join(DATA_ROOT, 'storages')
+os.makedirs(CLOUD_STORAGE_ROOT, exist_ok=True)
+
+TMP_FILES_ROOT = os.path.join(DATA_ROOT, 'tmp')
+os.makedirs(TMP_FILES_ROOT, exist_ok=True)
 
 # To avoid ERROR django.security.SuspiciousFileOperation:
 # The joined path (...) is located outside of the base path component
@@ -43,6 +63,24 @@ LOGGING["handlers"]["server_file"] = LOGGING["handlers"]["console"]
 PASSWORD_HASHERS = (
     'django.contrib.auth.hashers.MD5PasswordHasher',
 )
+
+# Most of the unit tests don't suppose user limitations
+# Can be changed where the limits are supposed.
+DEFAULT_LIMITS = {
+    "USER_SANDBOX_TASKS": None,
+    "USER_SANDBOX_PROJECTS": None,
+    "TASKS_IN_USER_SANDBOX_PROJECT": None,
+    "USER_OWNED_ORGS": None,
+    "USER_SANDBOX_CLOUD_STORAGES": None,
+
+    "ORG_TASKS": None,
+    "ORG_PROJECTS": None,
+    "TASKS_IN_ORG_PROJECT": None,
+    "ORG_CLOUD_STORAGES": None,
+    "ORG_COMMON_WEBHOOKS": None,
+
+    "PROJECT_WEBHOOKS": None,
+}
 
 # When you run ./manage.py test, Django looks at the TEST_RUNNER setting to
 # determine what to do. By default, TEST_RUNNER points to

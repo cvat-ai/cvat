@@ -6,6 +6,7 @@
 import json
 from collections import OrderedDict
 from io import BytesIO
+from typing import Dict, Optional
 from unittest import mock, skip
 import os
 
@@ -71,70 +72,64 @@ class ForceLogin:
         if self.user:
             self.client.logout()
 
-class LambdaTestCase(APITestCase):
+class _LambdaTestCaseBase(APITestCase):
     def setUp(self):
         self.client = APIClient()
 
-        patcher = mock.patch('cvat.apps.lambda_manager.views.LambdaGateway._http', side_effect = self.__get_response_data_from_lambda_gateway_http)
-        self.addCleanup(patcher.stop)
-        patcher.start()
+        http_patcher = mock.patch('cvat.apps.lambda_manager.views.LambdaGateway._http', side_effect = self.__get_data_from_lambda_manager_http)
+        self.addCleanup(http_patcher.stop)
+        http_patcher.start()
 
-        images_main_task = self._generate_task_images(3)
-        images_assigneed_to_user_task = self._generate_task_images(3)
-        self.main_task = self._create_task(tasks["main"], images_main_task)
-        self.assigneed_to_user_task = self._create_task(tasks["assigneed_to_user"], images_assigneed_to_user_task)
+        invoke_patcher = mock.patch('cvat.apps.lambda_manager.views.LambdaGateway.invoke', side_effect = self.__invoke_function)
+        self.addCleanup(invoke_patcher.stop)
+        invoke_patcher.start()
 
-
-    def __get_response_data_from_lambda_gateway_http(self, *args, **kwargs):
+    def __get_data_from_lambda_manager_http(self, **kwargs):
         url = kwargs["url"]
-        # POST query for get annotations
-        if url == "/api/function_invocations":
-            data = []
-            id_function = kwargs["headers"]["x-nuclio-function-name"]
-            type_function = functions["positive"][id_function]["metadata"]["annotations"]["type"]
-            if type_function == "reid":
-                if id_function == id_function_reid_response_data:
-                    data = [0, 1]
-                else:
-                    data = []
-            elif type_function == "tracker":
-                data = {
-                    "shape": [12.34, 34.0, 35.01, 41.99],
-                    "state": {"key": "value"},
-                }
-            elif type_function == "interactor":
-                data = [
-                    [8, 12],
-                    [34, 56],
-                    [77, 77],
-                ]
-            elif type_function == "detector":
-                data = [
-                    {'confidence': '0.9959098', 'label': 'car', 'points': [3, 3, 15, 15], 'type': 'rectangle'},
-                    {'confidence': '0.89535173', 'label': 'car', 'points': [20, 25, 30, 35], 'type': 'rectangle'},
-                    {'confidence': '0.59464583', 'label': 'car', 'points': [12.17, 45.0, 69.80, 18.99], 'type': 'polygon'},
-                ]
-            return data
-        # GET query for get all functions
-        elif url == "/api/functions":
+        if url == "/api/functions":
             return functions["positive"]
-        # GET query for get function
         else:
-            id_function = url.split("/")[-1]
-            if id_function in functions["positive"]:
-                # raise 500 Internal_Server error
-                if id_function in [id_function_state_building, id_function_state_error]:
+            func_id = url.split("/")[-1]
+            if func_id in functions["positive"]:
+                if func_id in [id_function_state_building, id_function_state_error]:
                     r = requests.RequestException()
                     r.response = HttpResponseServerError()
-                    raise r
-                # return values
-                return functions["positive"][id_function]
-            # raise 404 Not Found error
+                    raise r # raise 500 Internal_Server error
+
+                return functions["positive"][func_id]
             else:
                 r = requests.HTTPError()
                 r.response = HttpResponseNotFound()
-                raise r
+                raise r # raise 404 Not Found error
 
+    def __invoke_function(self, func, payload):
+        data = []
+        func_id = func.id
+        type_function = functions["positive"][func_id]["metadata"]["annotations"]["type"]
+        if type_function == "reid":
+            if func_id == id_function_reid_response_data:
+                data = [0, 1]
+            else:
+                data = []
+        elif type_function == "tracker":
+            data = {
+                "shape": [12.34, 34.0, 35.01, 41.99],
+                "state": {"key": "value"},
+            }
+        elif type_function == "interactor":
+            data = [
+                [8, 12],
+                [34, 56],
+                [77, 77],
+            ]
+        elif type_function == "detector":
+            data = [
+                {'confidence': '0.9959098', 'label': 'car', 'points': [3, 3, 15, 15], 'type': 'rectangle'},
+                {'confidence': '0.89535173', 'label': 'car', 'points': [20, 25, 30, 35], 'type': 'rectangle'},
+                {'confidence': '0.59464583', 'label': 'car', 'points': [12.17, 45.0, 69.80, 18.99], 'type': 'polygon'},
+            ]
+
+        return data
 
     @classmethod
     def _create_db_users(cls):
@@ -144,24 +139,28 @@ class LambdaTestCase(APITestCase):
         user_admin = User.objects.create_superuser(username="admin", email="",
             password="admin")
         user_admin.groups.add(group_admin)
-        user_dummy = User.objects.create_user(username="user", password="user")
+        user_dummy = User.objects.create_user(username="user", password="user",
+            email="user@example.com")
         user_dummy.groups.add(group_user)
 
         cls.admin = user_admin
         cls.user = user_dummy
 
 
-    def _create_task(self, data, image_data):
-        with ForceLogin(self.admin, self.client):
-            response = self.client.post('/api/tasks', data=data, format="json")
+    def _create_task(self, data, image_data, *, owner=None, org_id=None):
+        with ForceLogin(owner or self.admin, self.client):
+            response = self.client.post('/api/tasks', data=data, format="json",
+                QUERY_STRING=f'org_id={org_id}' if org_id is not None else None)
             assert response.status_code == status.HTTP_201_CREATED, response.status_code
             tid = response.data["id"]
 
             response = self.client.post("/api/tasks/%s/data" % tid,
-                data=image_data)
+                data=image_data,
+                QUERY_STRING=f'org_id={org_id}' if org_id is not None else None)
             assert response.status_code == status.HTTP_202_ACCEPTED, response.status_code
 
-            response = self.client.get("/api/tasks/%s" % tid)
+            response = self.client.get("/api/tasks/%s" % tid,
+                QUERY_STRING=f'org_id={org_id}' if org_id is not None else None)
             task = response.data
 
         return task
@@ -181,26 +180,37 @@ class LambdaTestCase(APITestCase):
         cls._create_db_users()
 
 
-    def _get_request(self, path, user):
+    def _get_request(self, path, user, *, org_id=None):
         with ForceLogin(user, self.client):
-            response = self.client.get(path)
+            response = self.client.get(path,
+                QUERY_STRING=f'org_id={org_id}' if org_id is not None else '')
         return response
 
 
-    def _delete_request(self, path, user):
+    def _delete_request(self, path, user, *, org_id=None):
         with ForceLogin(user, self.client):
-            response = self.client.delete(path)
+            response = self.client.delete(path,
+                QUERY_STRING=f'org_id={org_id}' if org_id is not None else '')
         return response
 
 
-    def _post_request(self, path, user, data):
+    def _post_request(self, path, user, data, *, org_id=None):
         data = json.dumps(data)
         with ForceLogin(user, self.client):
-            response = self.client.post(path, data=data, content_type='application/json')
+            response = self.client.post(path, data=data, content_type='application/json',
+                QUERY_STRING=f'org_id={org_id}' if org_id is not None else '')
         return response
 
 
-    def __check_expected_keys_in_response_function(self, data):
+    def _patch_request(self, path, user, data, *, org_id=None):
+        data = json.dumps(data)
+        with ForceLogin(user, self.client):
+            response = self.client.patch(path, data=data, content_type='application/json',
+                QUERY_STRING=f'org_id={org_id}' if org_id is not None else '')
+        return response
+
+
+    def _check_expected_keys_in_response_function(self, data):
         kind = data["kind"]
         if kind == "interactor":
             for key in expected_keys_in_response_function_interactor:
@@ -213,16 +223,27 @@ class LambdaTestCase(APITestCase):
                 self.assertIn(key, data)
 
 
+class LambdaTestCases(_LambdaTestCaseBase):
+    def setUp(self):
+        super().setUp()
+
+        images_main_task = self._generate_task_images(3)
+        images_assigneed_to_user_task = self._generate_task_images(3)
+        self.main_task = self._create_task(tasks["main"], images_main_task)
+        self.assigneed_to_user_task = self._create_task(
+            tasks["assigneed_to_user"], images_assigneed_to_user_task
+        )
+
     def test_api_v2_lambda_functions_list(self):
         response = self._get_request(LAMBDA_FUNCTIONS_PATH, self.admin)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         for data in response.data:
-            self.__check_expected_keys_in_response_function(data)
+            self._check_expected_keys_in_response_function(data)
 
         response = self._get_request(LAMBDA_FUNCTIONS_PATH, self.user)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         for data in response.data:
-            self.__check_expected_keys_in_response_function(data)
+            self._check_expected_keys_in_response_function(data)
 
         response = self._get_request(LAMBDA_FUNCTIONS_PATH, None)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
@@ -258,11 +279,11 @@ class LambdaTestCase(APITestCase):
 
             response = self._get_request(path, self.admin)
             self.assertEqual(response.status_code, status.HTTP_200_OK)
-            self.__check_expected_keys_in_response_function(response.data)
+            self._check_expected_keys_in_response_function(response.data)
 
             response = self._get_request(path, self.user)
             self.assertEqual(response.status_code, status.HTTP_200_OK)
-            self.__check_expected_keys_in_response_function(response.data)
+            self._check_expected_keys_in_response_function(response.data)
 
             response = self._get_request(path, None)
             self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
@@ -324,7 +345,7 @@ class LambdaTestCase(APITestCase):
             "threshold": 55,
             "quality": "original",
             "mapping": {
-                "car": "car",
+                "car": { "name": "car" },
             },
         }
         response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data_main_task)
@@ -364,7 +385,7 @@ class LambdaTestCase(APITestCase):
             "task": self.main_task["id"],
             "cleanup": True,
             "mapping": {
-                "car": "car",
+                "car": { "name": "car" },
             },
         }
         response = self._post_request(f'{LAMBDA_REQUESTS_PATH}', self.admin, data)
@@ -404,7 +425,7 @@ class LambdaTestCase(APITestCase):
                 "threshold": 55,
                 "quality": "original",
                 "mapping": {
-                    "car": "car",
+                    "car": { "name": "car" },
                 },
             }
             data_assigneed_to_user_task = {
@@ -414,7 +435,7 @@ class LambdaTestCase(APITestCase):
                 "quality": "compressed",
                 "max_distance": 70,
                 "mapping": {
-                    "car": "car",
+                    "car": { "name": "car" },
                 },
             }
 
@@ -442,7 +463,7 @@ class LambdaTestCase(APITestCase):
             "task": self.main_task["id"],
             "cleanup": True,
             "mapping": {
-                "car": "car",
+                "car": { "name": "car" },
             },
         }
 
@@ -461,7 +482,7 @@ class LambdaTestCase(APITestCase):
             "task": self.main_task["id"],
             "cleanup": True,
             "mapping": {
-                "car": "car",
+                "car": { "name": "car" },
             },
         }
         response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data)
@@ -474,7 +495,7 @@ class LambdaTestCase(APITestCase):
             "task": self.main_task["id"],
             "cleanup": True,
             "mapping": {
-                "car": "car",
+                "car": { "name": "car" },
             },
         }
         response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data)
@@ -488,7 +509,7 @@ class LambdaTestCase(APITestCase):
             "task": self.main_task["id"],
             "cleanup": True,
             "mapping": {
-                "car": "car",
+                "car": { "name": "car" },
             },
         }
         self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data)
@@ -514,7 +535,7 @@ class LambdaTestCase(APITestCase):
             "function": id_function_detector,
             "task": self.main_task["id"],
             "mapping": {
-                "car": "car",
+                "car": { "name": "car" },
             },
         }
         response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data)
@@ -540,7 +561,7 @@ class LambdaTestCase(APITestCase):
             "function": id_function_detector,
             "cleanup": True,
             "mapping": {
-                "car": "car",
+                "car": { "name": "car" },
             },
         }
         response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data)
@@ -553,7 +574,7 @@ class LambdaTestCase(APITestCase):
             "task": 12345,
             "cleanup": True,
             "mapping": {
-                "car": "car",
+                "car": { "name": "car" },
             },
         }
         response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data)
@@ -569,7 +590,7 @@ class LambdaTestCase(APITestCase):
                 "task": self.main_task["id"],
                 "cleanup": True,
                 "mapping": {
-                    "car": "car",
+                    "car": { "name": "car" },
                 },
             }
 
@@ -584,7 +605,7 @@ class LambdaTestCase(APITestCase):
             "cleanup": True,
             "threshold": 0.55,
             "mapping": {
-                "car": "car",
+                "car": { "name": "car" },
             },
         }
         data_assigneed_to_user_task = {
@@ -592,7 +613,7 @@ class LambdaTestCase(APITestCase):
             "frame": 0,
             "cleanup": True,
             "mapping": {
-                "car": "car",
+                "car": { "name": "car" },
             },
         }
 
@@ -612,7 +633,7 @@ class LambdaTestCase(APITestCase):
             "frame": 0,
             "cleanup": True,
             "mapping": {
-                "car": "car",
+                "car": { "name": "car" },
             },
         }
         response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.user, data)
@@ -753,7 +774,7 @@ class LambdaTestCase(APITestCase):
             "frame": 0,
             "cleanup": True,
             "mapping": {
-                "car": "car",
+                "car": { "name": "car" },
             },
         }
 
@@ -767,7 +788,7 @@ class LambdaTestCase(APITestCase):
             "frame": 0,
             "cleanup": True,
             "mapping": {
-                "car": "car",
+                "car": { "name": "car" },
             },
         }
 
@@ -781,7 +802,7 @@ class LambdaTestCase(APITestCase):
             "frame": 0,
             "cleanup": True,
             "mapping": {
-                "car": "car",
+                "car": { "name": "car" },
             },
         }
 
@@ -796,7 +817,7 @@ class LambdaTestCase(APITestCase):
             "frame": 0,
             "cleanup": True,
             "mapping": {
-                "car": "car",
+                "car": { "name": "car" },
             },
         }
 
@@ -814,7 +835,7 @@ class LambdaTestCase(APITestCase):
                 "cleanup": True,
                 "quality": quality,
                 "mapping": {
-                    "car": "car",
+                    "car": { "name": "car" },
                 },
             }
 
@@ -827,7 +848,7 @@ class LambdaTestCase(APITestCase):
             "cleanup": True,
             "quality": "test-error-quality",
             "mapping": {
-                "car": "car",
+                "car": { "name": "car" },
             },
         }
 
@@ -857,7 +878,7 @@ class LambdaTestCase(APITestCase):
             "task": self.main_task["id"],
             "frame": 0,
             "mapping": {
-                "car": "car",
+                "car": { "name": "car" },
             },
         }
         response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data)
@@ -879,7 +900,7 @@ class LambdaTestCase(APITestCase):
             "frame": 0,
             "cleanup": True,
             "mapping": {
-                "car": "car",
+                "car": { "name": "car" },
             },
         }
         response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data)
@@ -891,7 +912,7 @@ class LambdaTestCase(APITestCase):
             "task": self.main_task["id"],
             "cleanup": True,
             "mapping": {
-                "car": "car",
+                "car": { "name": "car" },
             },
         }
         response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data)
@@ -904,7 +925,7 @@ class LambdaTestCase(APITestCase):
             "frame": 0,
             "cleanup": True,
             "mapping": {
-                "car": "car",
+                "car": { "name": "car" },
             },
         }
         response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/test-functions-wrong-id", self.admin, data)
@@ -917,7 +938,7 @@ class LambdaTestCase(APITestCase):
             "frame": 0,
             "cleanup": True,
             "mapping": {
-                "car": "car",
+                "car": { "name": "car" },
             },
         }
         response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data)
@@ -931,7 +952,7 @@ class LambdaTestCase(APITestCase):
             "frame": 12345,
             "cleanup": True,
             "mapping": {
-                "car": "car",
+                "car": { "name": "car" },
             },
         }
         response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data)
@@ -945,7 +966,7 @@ class LambdaTestCase(APITestCase):
             "frame": 0,
             "cleanup": True,
             "mapping": {
-                "car": "car",
+                "car": { "name": "car" },
             },
         }
         self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data)
@@ -959,7 +980,7 @@ class LambdaTestCase(APITestCase):
             "frame": 0,
             "cleanup": True,
             "mapping": {
-                "car": "car",
+                "car": { "name": "car" },
             },
         }
         response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_state_building}", self.admin, data)
@@ -967,3 +988,151 @@ class LambdaTestCase(APITestCase):
 
         response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_state_error}", self.admin, data)
         self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class Issue4996_Cases(_LambdaTestCaseBase):
+    # Check regressions for https://github.com/opencv/cvat/issues/4996#issuecomment-1266123032
+    # We need to check that job assignee can call functions in the assigned jobs
+    # This requires to pass the job id in the call request.
+
+    def _create_org(self, *, owner: int, members: Dict[int, str] = None) -> dict:
+        org = self._post_request('/api/organizations', user=owner, data={
+            "slug": "testorg",
+            "name": "test Org",
+        })
+        assert org.status_code == status.HTTP_201_CREATED
+        org = org.json()
+
+        for uid, role in members.items():
+            user = self._get_request('/api/users/self', user=uid)
+            assert user.status_code == status.HTTP_200_OK
+            user = user.json()
+
+            invitation = self._post_request('/api/invitations', user=owner, data={
+                'email': user['email'],
+                'role': role,
+            }, org_id=org['id'])
+            assert invitation.status_code == status.HTTP_201_CREATED
+
+        return org
+
+    def _set_task_assignee(self, task: int, assignee: Optional[int], *,
+            org_id: Optional[int] = None):
+        response = self._patch_request(f'/api/tasks/{task}', user=self.admin, data={
+            'assignee_id': assignee,
+        }, org_id=org_id)
+        assert response.status_code == status.HTTP_200_OK
+
+    def _set_job_assignee(self, job: int, assignee: Optional[int], *,
+            org_id: Optional[int] = None):
+        response = self._patch_request(f'/api/jobs/{job}', user=self.admin, data={
+            'assignee': assignee,
+        }, org_id=org_id)
+        assert response.status_code == status.HTTP_200_OK
+
+    def setUp(self):
+        self.org = self._create_org(owner=self.admin, members={self.user: 'worker'})
+
+        task = self._create_task(data={
+                'name': 'test_task',
+                'labels': [{'name': 'cat'}],
+                'segment_size': 2
+            },
+            image_data=self._generate_task_images(6),
+            owner=self.admin,
+            org_id=self.org['id'],
+        )
+        self.task = task
+
+        jobs = self._get_request(f"/api/tasks/{self.task['id']}/jobs", self.admin,
+            org_id=self.org['id'])
+        assert jobs.status_code == status.HTTP_200_OK
+        self.job = jobs.json()[1]
+
+        self.common_data = {
+            "task": self.task['id'],
+            "frame": 0,
+            "cleanup": True,
+            "mapping": {
+                "car": { "name": "car" },
+            },
+        }
+
+        self.function_name = f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}"
+
+        return super().setUp()
+
+    def _get_valid_job_params(self):
+        return {
+            "job": self.job['id'],
+            "frame": 2
+        }
+
+    def _get_invalid_job_params(self):
+        return {
+            "job": self.job['id'],
+            "frame": 0
+        }
+
+    def test_can_call_function_for_job_worker_in_org__deny_unassigned_worker_with_task_request(self):
+        data = self.common_data.copy()
+        with self.subTest(job=None, assignee=None):
+            response = self._post_request(self.function_name, self.user, data,
+                org_id=self.org['id'])
+            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_can_call_function_for_job_worker_in_org__deny_unassigned_worker_with_job_request(self):
+        data = self.common_data.copy()
+        data.update(self._get_valid_job_params())
+        with self.subTest(job='defined', assignee=None):
+            response = self._post_request(self.function_name, self.user, data,
+                org_id=self.org['id'])
+            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_can_call_function_for_job_worker_in_org__allow_task_assigned_worker_with_task_request(self):
+        self._set_task_assignee(self.task['id'], self.user.id, org_id=self.org['id'])
+
+        data = self.common_data.copy()
+        with self.subTest(job=None, assignee='task'):
+            response = self._post_request(self.function_name, self.user, data,
+                org_id=self.org['id'])
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_can_call_function_for_job_worker_in_org__deny_job_assigned_worker_with_task_request(self):
+        self._set_job_assignee(self.job['id'], self.user.id, org_id=self.org['id'])
+
+        data = self.common_data.copy()
+        with self.subTest(job=None, assignee='job'):
+            response = self._post_request(self.function_name, self.user, data,
+                org_id=self.org['id'])
+            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_can_call_function_for_job_worker_in_org__allow_job_assigned_worker_with_job_request(self):
+        self._set_job_assignee(self.job['id'], self.user.id, org_id=self.org['id'])
+
+        data = self.common_data.copy()
+        data.update(self._get_valid_job_params())
+        with self.subTest(job='defined', assignee='job'):
+            response = self._post_request(self.function_name, self.user, data,
+                org_id=self.org['id'])
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_can_check_job_boundaries_in_function_call__fail_for_frame_outside_job(self):
+        self._set_job_assignee(self.job['id'], self.user.id, org_id=self.org['id'])
+
+        data = self.common_data.copy()
+        data.update(self._get_invalid_job_params())
+        with self.subTest(job='defined', frame='outside'):
+            response = self._post_request(self.function_name, self.user, data,
+                org_id=self.org['id'])
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_can_check_job_boundaries_in_function_call__ok_for_frame_inside_job(self):
+        self._set_job_assignee(self.job['id'], self.user.id, org_id=self.org['id'])
+
+        data = self.common_data.copy()
+        data.update(self._get_valid_job_params())
+        with self.subTest(job='defined', frame='inside'):
+            response = self._post_request(self.function_name, self.user, data,
+                org_id=self.org['id'])
+            self.assertEqual(response.status_code, status.HTTP_200_OK)

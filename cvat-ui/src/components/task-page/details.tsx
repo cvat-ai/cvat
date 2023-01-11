@@ -1,4 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -14,10 +15,11 @@ import moment from 'moment';
 import Paragraph from 'antd/lib/typography/Paragraph';
 import Select from 'antd/lib/select';
 import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
-import getCore from 'cvat-core-wrapper';
+import { getCore } from 'cvat-core-wrapper';
 import { getReposData, syncRepos, changeRepo } from 'utils/git-utils';
-import { ActiveInference } from 'reducers/interfaces';
+import { ActiveInference } from 'reducers';
 import AutomaticAnnotationProgress from 'components/tasks-page/automatic-annotation-progress';
+import Preview from 'components/common/preview';
 import Descriptions from 'antd/lib/descriptions';
 import Space from 'antd/lib/space';
 import UserSelector, { User } from './user-selector';
@@ -30,7 +32,6 @@ const { Option } = Select;
 const core = getCore();
 
 interface Props {
-    previewImage: string;
     taskInstance: any;
     installedGit: boolean; // change to git repos url
     activeInference: ActiveInference | null;
@@ -53,8 +54,6 @@ interface State {
 
 export default class DetailsComponent extends React.PureComponent<Props, State> {
     private mounted: boolean;
-    private previewImageElement: HTMLImageElement;
-    private previewWrapperRef: React.RefObject<HTMLDivElement>;
 
     constructor(props: Props) {
         super(props);
@@ -62,8 +61,6 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
         const { taskInstance } = props;
 
         this.mounted = false;
-        this.previewImageElement = new Image();
-        this.previewWrapperRef = React.createRef<HTMLDivElement>();
         this.state = {
             name: taskInstance.name,
             subset: taskInstance.subset,
@@ -76,24 +73,8 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
     }
 
     public componentDidMount(): void {
-        const { taskInstance, previewImage } = this.props;
-        const { previewImageElement, previewWrapperRef } = this;
+        const { taskInstance } = this.props;
         this.mounted = true;
-
-        previewImageElement.onload = () => {
-            const { height, width } = previewImageElement;
-            if (width > height) {
-                previewImageElement.style.width = '100%';
-            } else {
-                previewImageElement.style.height = '100%';
-            }
-        };
-
-        previewImageElement.src = previewImage;
-        previewImageElement.alt = 'Preview';
-        if (previewWrapperRef.current) {
-            previewWrapperRef.current.appendChild(previewImageElement);
-        }
 
         getReposData(taskInstance.id)
             .then((data): void => {
@@ -212,13 +193,6 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
         );
     }
 
-    private renderPreview(): JSX.Element {
-        const { previewWrapperRef } = this;
-
-        // Add image on mount after get its width and height to fit it into wrapper
-        return <div ref={previewWrapperRef} className='cvat-task-preview-wrapper' />;
-    }
-
     private renderParameters(): JSX.Element {
         const { taskInstance } = this.props;
         const { overlap, segmentSize, imageQuality } = taskInstance;
@@ -241,6 +215,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
             <UserSelector
                 value={assignee}
                 onSelect={(value: User | null): void => {
+                    if (taskInstance?.assignee?.id === value?.id) return;
                     taskInstance.assignee = value;
                     onTaskUpdate(taskInstance);
                 }}
@@ -413,7 +388,14 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
                 <Row justify='space-between' align='top'>
                     <Col md={8} lg={7} xl={7} xxl={6}>
                         <Row justify='start' align='middle'>
-                            <Col span={24}>{this.renderPreview()}</Col>
+                            <Col span={24}>
+                                <Preview
+                                    task={taskInstance}
+                                    loadingClassName='cvat-task-item-loading-preview'
+                                    emptyPreviewClassName='cvat-task-item-empty-preview'
+                                    previewClassName='cvat-task-item-preview'
+                                />
+                            </Col>
                         </Row>
                         <Row>
                             <Col span={24}>{this.renderParameters()}</Col>

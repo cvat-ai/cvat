@@ -1,4 +1,4 @@
-FROM openvino/cvat_server
+FROM cvat/server
 
 ENV DJANGO_CONFIGURATION=testing
 USER root
@@ -19,17 +19,19 @@ RUN apt-get update && \
         google-chrome-stable \
         nodejs \
         && \
+        npm install --global yarn && \
     rm -rf /var/lib/apt/lists/*;
 
-COPY cvat/requirements/ /tmp/requirements/
+COPY cvat/requirements/ /tmp/cvat/requirements/
 
-RUN DATUMARO_HEADLESS=1 python3 -m pip install --no-cache-dir -r /tmp/requirements/${DJANGO_CONFIGURATION}.txt && \
+RUN DATUMARO_HEADLESS=1 python3 -m pip install --no-cache-dir -r /tmp/cvat/requirements/${DJANGO_CONFIGURATION}.txt && \
     python3 -m pip install --no-cache-dir coveralls
 RUN gem install coveralls-lcov
 
-COPY utils ${HOME}/utils
 COPY cvat-core ${HOME}/cvat-core
 COPY cvat-data ${HOME}/cvat-data
+COPY package.json ${HOME}/
+COPY yarn.lock ${HOME}/
 COPY tests ${HOME}/tests
 
 COPY .coveragerc .

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import getCore from 'cvat-core-wrapper';
+import { getCore } from 'cvat-core-wrapper';
 
 const core = getCore();
 const baseURL = core.config.backendAPI.slice(0, -7);
@@ -201,6 +201,9 @@ export async function changeRepo(taskId: number, type: string, value: any): Prom
         core.server
             .request(`${baseURL}/git/repository/${taskId}`, {
                 method: 'PATCH',
+                headers: {
+                    'Content-type': 'application/json',
+                },
                 data: JSON.stringify({
                     type,
                     value,

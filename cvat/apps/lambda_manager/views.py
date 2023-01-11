@@ -1,4 +1,5 @@
 # Copyright (C) 2022 Intel Corporation
+# Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -7,22 +8,27 @@ import json
 from functools import wraps
 from enum import Enum
 from copy import deepcopy
+import textwrap
+from typing import Any, Dict, Optional
 
 import django_rq
 import requests
 import rq
+import os
+
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
-from rest_framework import status, viewsets
+from rest_framework import status, viewsets, serializers
 from rest_framework.response import Response
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.engine.frame_provider import FrameProvider
-from cvat.apps.engine.models import Task as TaskModel
+from cvat.apps.engine.models import Job, Task
 from cvat.apps.engine.serializers import LabeledDataSerializer
 from cvat.apps.engine.models import ShapeType, SourceType
 
-from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiResponse, OpenApiParameter
+from drf_spectacular.utils import (extend_schema, extend_schema_view,
+    OpenApiResponse, OpenApiParameter, inline_serializer)
 from drf_spectacular.types import OpenApiTypes
 
 class LambdaType(Enum):
@@ -39,14 +45,16 @@ class LambdaGateway:
     NUCLIO_ROOT_URL = '/api/functions'
 
     def _http(self, method="get", scheme=None, host=None, port=None,
-        url=None, headers=None, data=None):
+        function_namespace=None, url=None, headers=None, data=None):
         NUCLIO_GATEWAY = '{}://{}:{}'.format(
             scheme or settings.NUCLIO['SCHEME'],
             host or settings.NUCLIO['HOST'],
             port or settings.NUCLIO['PORT'])
+        NUCLIO_FUNCTION_NAMESPACE = function_namespace or settings.NUCLIO['FUNCTION_NAMESPACE']
         extra_headers = {
             'x-nuclio-project-name': 'cvat',
-            'x-nuclio-function-namespace': 'nuclio',
+            'x-nuclio-function-namespace': NUCLIO_FUNCTION_NAMESPACE,
+            'x-nuclio-invoke-via': 'domain-name',
         }
         if headers:
             extra_headers.update(headers)
@@ -75,17 +83,25 @@ class LambdaGateway:
         return response
 
     def invoke(self, func, payload):
-        # NOTE: it is overhead to invoke a function using nuclio
-        # dashboard REST API. Better to call host.docker.internal:<port>
-        # Look at https://github.com/docker/for-linux/issues/264.
-        # host.docker.internal isn't supported by docker on Linux.
-        # There are many workarounds but let's try to use the
-        # simple solution.
-        return self._http(method="post", url='/api/function_invocations',
+        if os.getenv('KUBERNETES_SERVICE_HOST'):
+            return self._http(method="post", url='/api/function_invocations',
             data=payload, headers={
                 'x-nuclio-function-name': func.id,
                 'x-nuclio-path': '/'
             })
+
+        # Note: call the function directly without the nuclio dashboard
+        # host.docker.internal for Linux will work only with Docker 20.10+
+        NUCLIO_TIMEOUT = settings.NUCLIO['DEFAULT_TIMEOUT']
+        if os.path.exists('/.dockerenv'): # inside a docker container
+            url = f'http://host.docker.internal:{func.port}'
+        else:
+            url = f'http://localhost:{func.port}'
+        reply = requests.post(url, timeout=NUCLIO_TIMEOUT, json=payload)
+        reply.raise_for_status()
+        response = reply.json()
+
+        return response
 
 class LambdaFunction:
     def __init__(self, gateway, data):
@@ -127,6 +143,7 @@ class LambdaFunction:
         self.min_neg_points = int(meta_anno.get('min_neg_points', -1))
         self.startswith_box = bool(meta_anno.get('startswith_box', False))
         self.animated_gif = meta_anno.get('animated_gif', '')
+        self.version = int(meta_anno.get('version', '1'))
         self.help_message = meta_anno.get('help_message', '')
         self.gateway = gateway
 
@@ -137,7 +154,8 @@ class LambdaFunction:
             'labels': self.labels,
             'description': self.description,
             'framework': self.framework,
-            'name': self.name
+            'name': self.name,
+            'version': self.version
         }
 
         if self.kind is LambdaType.INTERACTOR:
@@ -160,24 +178,32 @@ class LambdaFunction:
 
         return response
 
-    def invoke(self, db_task, data):
+    def invoke(self, db_task: Task, data: Dict[str, Any], *, db_job: Optional[Job] = None):
         try:
+            if db_job is not None and db_job.get_task_id() != db_task.id:
+                raise ValidationError("Job task id does not match task id",
+                    code=status.HTTP_400_BAD_REQUEST
+                )
+
             payload = {}
+            data = {k: v for k,v in data.items() if v is not None}
             threshold = data.get("threshold")
             if threshold:
-                payload.update({
-                    "threshold": threshold,
-                })
+                payload.update({ "threshold": threshold })
             quality = data.get("quality")
             mapping = data.get("mapping", {})
-            mapping_by_default = {}
+
             task_attributes = {}
+            mapping_by_default = {}
             for db_label in (db_task.project.label_set if db_task.project_id else db_task.label_set).prefetch_related("attributespec_set").all():
-                mapping_by_default[db_label.name] = db_label.name
+                mapping_by_default[db_label.name] = {
+                    'name': db_label.name,
+                    'attributes': {}
+                }
                 task_attributes[db_label.name] = {}
                 for attribute in db_label.attributespec_set.all():
                     task_attributes[db_label.name][attribute.name] = {
-                        'input_rype': attribute.input_type,
+                        'input_type': attribute.input_type,
                         'values': attribute.values.split('\n')
                     }
             if not mapping:
@@ -186,15 +212,37 @@ class LambdaFunction:
                 mapping = mapping_by_default
             else:
                 # filter labels in mapping which don't exist in the task
-                mapping = {k:v for k,v in mapping.items() if v in mapping_by_default}
+                mapping = {k:v for k,v in mapping.items() if v['name'] in mapping_by_default}
+
+            attr_mapping = { label: mapping[label]['attributes'] if 'attributes' in mapping[label] else {} for label in mapping }
+            mapping = { modelLabel: mapping[modelLabel]['name'] for modelLabel in mapping }
+
             supported_attrs = {}
             for func_label, func_attrs in self.func_attributes.items():
-                if func_label in mapping:
-                    supported_attrs[func_label] = {}
-                    task_attr_names = [task_attr for task_attr in task_attributes[mapping[func_label]]]
+                if func_label not in mapping:
+                    continue
+
+                mapped_label = mapping[func_label]
+                mapped_attributes = attr_mapping.get(func_label, {})
+                supported_attrs[func_label] = {}
+
+                if mapped_attributes:
+                    task_attr_names = [task_attr for task_attr in task_attributes[mapped_label]]
                     for attr in func_attrs:
-                        if attr['name'] in task_attr_names:
-                            supported_attrs[func_label].update({attr["name"] : attr})
+                        mapped_attr = mapped_attributes.get(attr["name"])
+                        if mapped_attr in task_attr_names:
+                            supported_attrs[func_label].update({ attr["name"]: task_attributes[mapped_label][mapped_attr] })
+
+            # Check job frame boundaries
+            for key, desc in (
+                ('frame', 'frame'),
+                ('frame0', 'start frame'),
+                ('frame1', 'end frame'),
+            ):
+                if key in data and db_job and not db_job.segment.contains_frame(data[key]):
+                    raise ValidationError(f"The {desc} is outside the job range",
+                        code=status.HTTP_400_BAD_REQUEST)
+
             if self.kind == LambdaType.DETECTOR:
                 payload.update({
                     "image": self._get_image(db_task, data["frame"], quality)
@@ -259,29 +307,43 @@ class LambdaFunction:
                     return db_attr_type == "text" or \
                            (db_attr_type in ["select", "radio"] and len(value.split(" ")) == 1)
                 elif func_attr_type == "select":
-                    return db_attr["input_type"] in ["radio", "text"]
+                    return db_attr_type in ["radio", "text"]
                 elif func_attr_type == "radio":
-                    return db_attr["input_type"] in ["select", "text"]
+                    return db_attr_type in ["select", "text"]
                 elif func_attr_type == "checkbox":
                     return value in ["true", "false"]
                 else:
                     return False
         if self.kind == LambdaType.DETECTOR:
             for item in response:
-                if item['label'] in mapping:
-                    attributes = deepcopy(item.get("attributes", []))
-                    item["attributes"] = []
-                    for attr in attributes:
-                        db_attr = supported_attrs.get(item['label'], {}).get(attr["name"])
-                        func_attr = [func_attr for func_attr in self.func_attributes.get(item['label'], []) if func_attr['name'] == attr["name"]]
-                        # Skip current attribute if it was not declared as supportd in function config
-                        if not func_attr:
-                            continue
-                        if attr["name"] in supported_attrs.get(item['label'], {}) and check_attr_value(attr["value"], func_attr[0], db_attr):
-                            item["attributes"].append(attr)
-                    item['label'] = mapping[item['label']]
-                    response_filtered.append(item)
-            response = response_filtered
+                item_label = item['label']
+
+                if item_label not in mapping:
+                    continue
+
+                attributes = deepcopy(item.get("attributes", []))
+                item["attributes"] = []
+                mapped_attributes = attr_mapping[item_label]
+
+                for attr in attributes:
+                    if attr['name'] not in mapped_attributes:
+                        continue
+
+                    func_attr = [func_attr for func_attr in self.func_attributes.get(item_label, []) if func_attr['name'] == attr["name"]]
+                    # Skip current attribute if it was not declared as supported in function config
+                    if not func_attr:
+                        continue
+
+                    db_attr = supported_attrs.get(item_label, {}).get(attr["name"])
+
+                    if check_attr_value(attr["value"], func_attr[0], db_attr):
+                        attr["name"] = mapped_attributes[attr['name']]
+                        item["attributes"].append(attr)
+
+                item['label'] = mapping[item['label']]
+                response_filtered.append(item)
+                response = response_filtered
+
         return response
 
     def _get_image(self, db_task, frame, quality):
@@ -302,8 +364,7 @@ class LambdaFunction:
 
 class LambdaQueue:
     def _get_queue(self):
-        QUEUE_NAME = "low"
-        return django_rq.get_queue(QUEUE_NAME)
+        return django_rq.get_queue(settings.CVAT_QUEUES.AUTO_ANNOTATION.value)
 
     def get_jobs(self):
         queue = self._get_queue()
@@ -317,7 +378,7 @@ class LambdaQueue:
 
         return [LambdaJob(job) for job in jobs if job.meta.get("lambda")]
 
-    def enqueue(self, lambda_func, threshold, task, quality, mapping, cleanup, max_distance):
+    def enqueue(self, lambda_func, threshold, task, quality, mapping, cleanup, conv_mask_to_poly, max_distance):
         jobs = self.get_jobs()
         # It is still possible to run several concurrent jobs for the same task.
         # But the race isn't critical. The filtration is just a light-weight
@@ -340,6 +401,7 @@ class LambdaQueue:
                 "task": task,
                 "quality": quality,
                 "cleanup": cleanup,
+                "conv_mask_to_poly": conv_mask_to_poly,
                 "mapping": mapping,
                 "max_distance": max_distance
             })
@@ -351,7 +413,7 @@ class LambdaQueue:
     def fetch_job(self, pk):
         queue = self._get_queue()
         job = queue.fetch_job(pk)
-        if job == None or not job.meta.get("lambda"):
+        if job is None or not job.meta.get("lambda"):
             raise ValidationError("{} lambda job is not found".format(pk),
                 code=status.HTTP_404_NOT_FOUND)
 
@@ -412,7 +474,7 @@ class LambdaJob:
         self.job.delete()
 
     @staticmethod
-    def _call_detector(function, db_task, labels, quality, threshold, mapping):
+    def _call_detector(function, db_task, labels, quality, threshold, mapping, conv_mask_to_poly):
         class Results:
             def __init__(self, task_id):
                 self.task_id = task_id
@@ -442,9 +504,11 @@ class LambdaJob:
         results = Results(db_task.id)
 
         for frame in range(db_task.data.size):
+            if frame in db_task.data.deleted_frames:
+                continue
             annotations = function.invoke(db_task, data={
                 "frame": frame, "quality": quality, "mapping": mapping,
-                "threshold": threshold})
+                "threshold": threshold })
             progress = (frame + 1) / db_task.data.size
             if not LambdaJob._update_progress(progress):
                 break
@@ -466,22 +530,41 @@ class LambdaJob:
                         "group": None,
                     })
                 else:
-                    results.append_shape({
+                    shape = {
                         "frame": frame,
                         "label_id": label['id'],
                         "type": anno["type"],
                         "occluded": False,
-                        "points": anno["points"],
+                        "points": anno["mask"] if anno["type"] == "mask" else anno["points"],
                         "z_order": 0,
-                        "group": None,
+                        "group": anno["group_id"] if "group_id" in anno else None,
                         "attributes": attrs,
                         "source": "auto"
-                    })
+                    }
+
+                    if anno["type"] == "mask" and "points" in anno and conv_mask_to_poly:
+                        shape["type"] = "polygon"
+                        shape["points"] = anno["points"]
+                    elif anno["type"] == "mask":
+                        [xtl, ytl, xbr, ybr] = shape["points"][-4:]
+                        cut_points = shape["points"][:-4]
+                        rle = [0]
+                        prev = shape["points"][0]
+                        for val in cut_points:
+                            if val == prev:
+                                rle[-1] += 1
+                            else:
+                                rle.append(1)
+                                prev = val
+                        rle.extend([xtl, ytl, xbr, ybr])
+                        shape["points"] = rle
+
+                    results.append_shape(shape)
 
                 # Accumulate data during 100 frames before sumbitting results.
                 # It is optimization to make fewer calls to our server. Also
                 # it isn't possible to keep all results in memory.
-                if frame % 100 == 0:
+                if frame and frame % 100 == 0:
                     results.submit()
 
         results.submit()
@@ -581,7 +664,7 @@ class LambdaJob:
     @staticmethod
     def __call__(function, task, quality, cleanup, **kwargs):
         # TODO: need logging
-        db_task = TaskModel.objects.get(pk=task)
+        db_task = Task.objects.get(pk=task)
         if cleanup:
             dm.task.delete_task_data(db_task.id)
         db_labels = (db_task.project.label_set if db_task.project_id else db_task.label_set).prefetch_related("attributespec_set").all()
@@ -593,7 +676,7 @@ class LambdaJob:
 
         if function.kind == LambdaType.DETECTOR:
             LambdaJob._call_detector(function, db_task, labels, quality,
-                kwargs.get("threshold"), kwargs.get("mapping"))
+                kwargs.get("threshold"), kwargs.get("mapping"), kwargs.get("conv_mask_to_poly"))
         elif function.kind == LambdaType.REID:
             LambdaJob._call_reid(function, db_task, quality,
                 kwargs.get("threshold"), kwargs.get("max_distance"))
@@ -619,7 +702,7 @@ def return_response(success_code=status.HTTP_200_OK):
                 status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
                 data = str(err)
             except ValidationError as err:
-                status_code = err.code
+                status_code = err.code or status.HTTP_400_BAD_REQUEST
                 data = err.message
             except ObjectDoesNotExist as err:
                 status_code = status.HTTP_400_BAD_REQUEST
@@ -633,11 +716,13 @@ def return_response(success_code=status.HTTP_200_OK):
 @extend_schema(tags=['lambda'])
 @extend_schema_view(
     retrieve=extend_schema(
+        operation_id='lambda_retrieve_functions',
         summary='Method returns the information about the function',
         responses={
             '200': OpenApiResponse(response=OpenApiTypes.OBJECT, description='Information about the function'),
         }),
     list=extend_schema(
+        operation_id='lambda_list_functions',
         summary='Method returns a list of functions')
 )
 class FunctionViewSet(viewsets.ViewSet):
@@ -657,12 +742,34 @@ class FunctionViewSet(viewsets.ViewSet):
         gateway = LambdaGateway()
         return gateway.get(func_id).to_dict()
 
+    @extend_schema(description=textwrap.dedent("""\
+        Allows to execute a function for immediate computation.
+
+        Intended for short-lived executions, useful for interactive calls.
+
+        When executed for interactive annotation, the job id must be specified
+        in the 'job' input field. The task id is not required in this case,
+        but if it is specified, it must match the job task id.
+        """),
+        request=inline_serializer("OnlineFunctionCall", fields={
+            "job": serializers.IntegerField(required=False),
+            "task": serializers.IntegerField(required=False),
+        }),
+        responses=OpenApiResponse(description="Returns function invocation results")
+    )
     @return_response()
     def call(self, request, func_id):
         self.check_object_permissions(request, func_id)
         try:
-            task_id = request.data['task']
-            db_task = TaskModel.objects.get(pk=task_id)
+            job_id = request.data.get('job')
+            job = None
+            if job_id is not None:
+                job = Job.objects.get(id=job_id)
+                task_id = job.get_task_id()
+            else:
+                task_id = request.data['task']
+
+            db_task = Task.objects.get(pk=task_id)
         except (KeyError, ObjectDoesNotExist) as err:
             raise ValidationError(
                 '`{}` lambda function was run '.format(func_id) +
@@ -672,11 +779,12 @@ class FunctionViewSet(viewsets.ViewSet):
         gateway = LambdaGateway()
         lambda_func = gateway.get(func_id)
 
-        return lambda_func.invoke(db_task, request.data)
+        return lambda_func.invoke(db_task, request.data, db_job=job)
 
 @extend_schema(tags=['lambda'])
 @extend_schema_view(
     retrieve=extend_schema(
+        operation_id='lambda_retrieve_requests',
         summary='Method returns the status of the request',
         parameters=[
             # specify correct type
@@ -684,6 +792,7 @@ class FunctionViewSet(viewsets.ViewSet):
                 description='Request id'),
         ]),
     list=extend_schema(
+        operation_id='lambda_list_requests',
         summary='Method returns a list of requests'),
     #TODO
     create=extend_schema(
@@ -708,6 +817,7 @@ class RequestViewSet(viewsets.ViewSet):
             task = request.data['task']
             quality = request.data.get("quality")
             cleanup = request.data.get('cleanup', False)
+            conv_mask_to_poly = request.data.get('convMaskToPoly', False)
             mapping = request.data.get('mapping')
             max_distance = request.data.get('max_distance')
         except KeyError as err:
@@ -720,7 +830,7 @@ class RequestViewSet(viewsets.ViewSet):
         queue = LambdaQueue()
         lambda_func = gateway.get(function)
         job = queue.enqueue(lambda_func, threshold, task, quality,
-            mapping, cleanup, max_distance)
+            mapping, cleanup, conv_mask_to_poly, max_distance)
 
         return job.to_dict()
 

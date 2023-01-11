@@ -1,13 +1,13 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
 import Menu from 'antd/lib/menu';
 import Button from 'antd/lib/button';
-import Modal from 'antd/lib/modal';
 import Icon, {
-    LinkOutlined, CopyOutlined, BlockOutlined, RetweetOutlined, DeleteOutlined,
+    LinkOutlined, CopyOutlined, BlockOutlined, RetweetOutlined, DeleteOutlined, EditOutlined,
 } from '@ant-design/icons';
 
 import {
@@ -16,7 +16,7 @@ import {
 import CVATTooltip from 'components/common/cvat-tooltip';
 import {
     ObjectType, ShapeType, ColorBy, DimensionType,
-} from 'reducers/interfaces';
+} from 'reducers';
 import ColorPicker from './color-picker';
 
 interface Props {
@@ -45,6 +45,7 @@ interface Props {
     toForeground(): void;
     resetCuboidPerspective(): void;
     changeColorPickerVisible(visible: boolean): void;
+    edit(): void;
     jobInstance: any;
 }
 
@@ -72,6 +73,20 @@ function MakeCopyItem(props: ItemProps): JSX.Element {
             <CVATTooltip title={`${copyShortcut} and ${pasteShortcut}`}>
                 <Button type='link' icon={<CopyOutlined />} onClick={copy}>
                     Make a copy
+                </Button>
+            </CVATTooltip>
+        </Menu.Item>
+    );
+}
+
+function EditMaskItem(props: ItemProps): JSX.Element {
+    const { toolProps, ...rest } = props;
+    const { edit } = toolProps;
+    return (
+        <Menu.Item {...rest}>
+            <CVATTooltip title='Shift + Double click'>
+                <Button type='link' icon={<EditOutlined />} onClick={edit}>
+                    Edit
                 </Button>
             </CVATTooltip>
         </Menu.Item>
@@ -179,27 +194,14 @@ function SwitchColorItem(props: ItemProps): JSX.Element {
 
 function RemoveItem(props: ItemProps): JSX.Element {
     const { toolProps, ...rest } = props;
-    const { removeShortcut, locked, remove } = toolProps;
+    const { removeShortcut, remove } = toolProps;
     return (
         <Menu.Item {...rest}>
             <CVATTooltip title={`${removeShortcut}`}>
                 <Button
                     type='link'
                     icon={<DeleteOutlined />}
-                    onClick={(): void => {
-                        if (locked) {
-                            Modal.confirm({
-                                className: 'cvat-modal-confirm',
-                                title: 'Object is locked',
-                                content: 'Are you sure you want to remove it?',
-                                onOk() {
-                                    remove();
-                                },
-                            });
-                        } else {
-                            remove();
-                        }
-                    }}
+                    onClick={remove}
                 >
                     Remove
                 </Button>
@@ -223,6 +225,7 @@ export default function ItemMenu(props: Props): JSX.Element {
         TO_FOREGROUND = 'to_foreground',
         SWITCH_COLOR = 'switch_color',
         REMOVE_ITEM = 'remove_item',
+        EDIT_MASK = 'edit_mask',
     }
 
     const is2D = jobInstance.dimension === DimensionType.DIM_2D;
@@ -230,7 +233,10 @@ export default function ItemMenu(props: Props): JSX.Element {
     return (
         <Menu className='cvat-object-item-menu' selectable={false}>
             <CreateURLItem key={MenuKeys.CREATE_URL} toolProps={props} />
-            {!readonly && <MakeCopyItem key={MenuKeys.COPY} toolProps={props} />}
+            {!readonly && objectType !== ObjectType.TAG && (
+                <MakeCopyItem key={MenuKeys.COPY} toolProps={props} />
+            )}
+            {!readonly && <EditMaskItem key={MenuKeys.EDIT_MASK} toolProps={props} />}
             {!readonly && <PropagateItem key={MenuKeys.PROPAGATE} toolProps={props} />}
             {is2D && !readonly && [ShapeType.POLYGON, ShapeType.POLYLINE, ShapeType.CUBOID].includes(shapeType) && (
                 <SwitchOrientationItem key={MenuKeys.SWITCH_ORIENTATION} toolProps={props} />

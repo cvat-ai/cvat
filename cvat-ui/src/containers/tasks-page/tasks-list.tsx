@@ -1,10 +1,11 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
 import { connect } from 'react-redux';
-import { TasksState, TasksQuery, CombinedState } from 'reducers/interfaces';
+import { TasksState, TasksQuery, CombinedState } from 'reducers';
 import TasksListComponent from 'components/tasks-page/task-list';
 import { getTasksAsync } from 'actions/tasks-actions';
 
@@ -37,7 +38,7 @@ function TasksListContainer(props: TasksListContainerProps): JSX.Element {
 
     return (
         <TasksListComponent
-            currentTasksIndexes={tasks.current.map((task): number => task.instance.id)}
+            currentTasksIndexes={tasks.current.map((task): number => task.id)}
         />
     );
 }

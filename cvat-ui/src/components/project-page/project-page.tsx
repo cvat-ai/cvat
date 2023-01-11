@@ -1,4 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,22 +11,24 @@ import Spin from 'antd/lib/spin';
 import { Row, Col } from 'antd/lib/grid';
 import Result from 'antd/lib/result';
 import Button from 'antd/lib/button';
+import Dropdown from 'antd/lib/dropdown';
 import Title from 'antd/lib/typography/Title';
 import Pagination from 'antd/lib/pagination';
+import { MutliPlusIcon } from 'icons';
 import { PlusOutlined } from '@ant-design/icons';
 import Empty from 'antd/lib/empty';
 import Input from 'antd/lib/input';
 
-import { CombinedState, Task, Indexable } from 'reducers/interfaces';
+import { CombinedState, Task, Indexable } from 'reducers';
 import { getProjectsAsync, getProjectTasksAsync } from 'actions/projects-actions';
 import { cancelInferenceAsync } from 'actions/models-actions';
 import TaskItem from 'components/tasks-page/task-item';
 import MoveTaskModal from 'components/move-task-modal/move-task-modal';
 import ModelRunnerDialog from 'components/model-runner-modal/model-runner-dialog';
-import ImportDatasetModal from 'components/import-dataset-modal/import-dataset-modal';
 import {
     SortingComponent, ResourceFilterHOC, defaultVisibility, updateHistoryFromQuery,
 } from 'components/resource-sorting-filtering';
+import CvatDropdownMenuPaper from 'components/common/cvat-dropdown-menu-paper';
 import DetailsComponent from './details';
 import ProjectTopBar from './top-bar';
 
@@ -45,7 +48,7 @@ export default function ProjectPageComponent(): JSX.Element {
     const id = +useParams<ParamType>().id;
     const dispatch = useDispatch();
     const history = useHistory();
-    const projects = useSelector((state: CombinedState) => state.projects.current).map((project) => project.instance);
+    const projects = useSelector((state: CombinedState) => state.projects.current);
     const projectsFetching = useSelector((state: CombinedState) => state.projects.fetching);
     const deletes = useSelector((state: CombinedState) => state.projects.activities.deletes);
     const taskDeletes = useSelector((state: CombinedState) => state.tasks.activities.deletes);
@@ -74,7 +77,7 @@ export default function ProjectPageComponent(): JSX.Element {
     const [project] = projects.filter((_project) => _project.id === id);
     const projectSubsets: Array<string> = [];
     for (const task of tasks) {
-        if (!projectSubsets.includes(task.instance.subset)) projectSubsets.push(task.instance.subset);
+        if (!projectSubsets.includes(task.subset)) projectSubsets.push(task.subset);
     }
 
     useEffect(() => {
@@ -118,18 +121,17 @@ export default function ProjectPageComponent(): JSX.Element {
                 <React.Fragment key={subset}>
                     {subset && <Title level={4}>{subset}</Title>}
                     {tasks
-                        .filter((task) => task.instance.projectId === project.id && task.instance.subset === subset)
+                        .filter((task) => task.projectId === project.id && task.subset === subset)
                         .map((task: Task) => (
                             <TaskItem
-                                key={task.instance.id}
-                                deleted={task.instance.id in taskDeletes ? taskDeletes[task.instance.id] : false}
+                                key={task.id}
+                                deleted={task.id in taskDeletes ? taskDeletes[task.id] : false}
                                 hidden={false}
-                                activeInference={tasksActiveInferences[task.instance.id] || null}
+                                activeInference={tasksActiveInferences[task.id] || null}
                                 cancelAutoAnnotation={() => {
-                                    dispatch(cancelInferenceAsync(task.instance.id));
+                                    dispatch(cancelInferenceAsync(task.id));
                                 }}
-                                previewImage={task.preview}
-                                taskInstance={task.instance}
+                                taskInstance={task}
                             />
                         ))}
                 </React.Fragment>
@@ -225,13 +227,36 @@ export default function ProjectPageComponent(): JSX.Element {
                                     }}
                                 />
                             </div>
+                            <Dropdown
+                                trigger={['click']}
+                                overlay={(
+                                    <CvatDropdownMenuPaper>
+                                        <Button
+                                            type='primary'
+                                            icon={<PlusOutlined />}
+                                            className='cvat-create-task-button'
+                                            onClick={() => history.push(`/tasks/create?projectId=${id}`)}
+                                        >
+                                            Create a new task
+                                        </Button>
+                                        <Button
+                                            type='primary'
+                                            icon={<span className='anticon'><MutliPlusIcon /></span>}
+                                            className='cvat-create-multi-tasks-button'
+                                            onClick={() => history.push(`/tasks/create?projectId=${id}&many=true`)}
+                                        >
+                                            Create multi tasks
+                                        </Button>
+                                    </CvatDropdownMenuPaper>
+                                )}
+                            >
+                                <Button
+                                    type='primary'
+                                    className='cvat-create-task-dropdown'
+                                    icon={<PlusOutlined />}
+                                />
+                            </Dropdown>
                         </div>
-                        <Button
-                            type='primary'
-                            icon={<PlusOutlined />}
-                            className='cvat-create-task-button'
-                            onClick={() => history.push(`/tasks/create?projectId=${id}`)}
-                        />
                     </Col>
                 </Row>
                 { tasksFetching ? (
@@ -241,7 +266,6 @@ export default function ProjectPageComponent(): JSX.Element {
 
             <MoveTaskModal />
             <ModelRunnerDialog />
-            <ImportDatasetModal />
         </Row>
     );
 }

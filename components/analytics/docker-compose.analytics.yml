@@ -1,4 +1,3 @@
-version: '3.3'
 services:
   elasticsearch:
     container_name: cvat_elasticsearch
@@ -23,13 +22,15 @@ services:
       args:
         ELK_VERSION: 6.8.23
     depends_on: ['elasticsearch']
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
     restart: always
 
   cvat_kibana_setup:
     container_name: cvat_kibana_setup
-    image: openvino/cvat_server
+    image: cvat/server:${CVAT_VERSION:-dev}
     volumes: ['./components/analytics/kibana:/home/django/kibana:ro']
-    depends_on: ['cvat']
+    depends_on: ['cvat_server']
     working_dir: '/home/django'
     networks:
       - cvat
@@ -52,7 +53,7 @@ services:
         'kibana/export.json',
       ]
     environment:
-      no_proxy: elasticsearch,kibana,${no_proxy}
+      no_proxy: elasticsearch,kibana,${no_proxy:-}
 
   logstash:
     container_name: cvat_logstash
@@ -63,8 +64,8 @@ services:
       context: ./components/analytics/logstash
       args:
         ELK_VERSION: 6.8.23
-        http_proxy: ${http_proxy}
-        https_proxy: ${https_proxy}
+        http_proxy: ${http_proxy:-}
+        https_proxy: ${https_proxy:-}
     environment:
       LOGSTASH_OUTPUT_HOST: elasticsearch:9200
       LOGSTASH_OUTPUT_USER:
@@ -72,7 +73,7 @@ services:
     depends_on: ['elasticsearch']
     restart: always
 
-  cvat:
+  cvat_server:
     environment:
       DJANGO_LOG_SERVER_HOST: logstash
       DJANGO_LOG_SERVER_PORT: 8080

@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,7 +7,7 @@ import Pagination from 'antd/lib/pagination';
 import Spin from 'antd/lib/spin';
 
 import { useDispatch, useSelector } from 'react-redux';
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState } from 'reducers';
 import { removeOrganizationMemberAsync, updateOrganizationMemberAsync } from 'actions/organization-actions';
 import MemberItem from './member-item';
 

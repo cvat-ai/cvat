@@ -1,0 +1,2 @@
+cvat-sdk~=2.3.0
+Pillow>=6.2.0

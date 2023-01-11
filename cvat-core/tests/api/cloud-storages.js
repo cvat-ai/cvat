@@ -1,17 +1,20 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 // Setup mock for a server
 jest.mock('../../src/server-proxy', () => {
-    const mock = require('../mocks/server-proxy.mock');
-    return mock;
+    return {
+        __esModule: true,
+        default: require('../mocks/server-proxy.mock'),
+    };
 });
 
 // Initialize api
-window.cvat = require('../../src/api');
+window.cvat = require('../../src/api').default;
 
-const { CloudStorage } = require('../../src/cloud-storage');
+const CloudStorage= require('../../src/cloud-storage').default;
 const { cloudStoragesDummyData } = require('../mocks/dummy-data.mock');
 
 describe('Feature: get cloud storages', () => {

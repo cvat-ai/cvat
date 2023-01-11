@@ -1,0 +1,30 @@
+services:
+  webhook_receiver:
+    image: python:3.9-slim
+    restart: always
+    command: python3 /tmp/server.py
+    init: true
+    env_file:
+      - ./tests/python/webhook_receiver/.env
+    expose:
+      - ${SERVER_PORT}
+    volumes:
+      - ./tests/python/webhook_receiver:/tmp
+    networks:
+      cvat:
+        aliases:
+          - webhooks
+
+  git_server:
+    image: alpine/git
+    restart: always
+    depends_on:
+      - cvat_server
+    entrypoint: /mnt/scripts/entrypoint.sh
+    volumes:
+      - ./tests/git_server/:/mnt/scripts:ro
+      - cvat_keys:/mnt/keys:ro
+    networks:
+      cvat:
+        aliases:
+          - gitserver

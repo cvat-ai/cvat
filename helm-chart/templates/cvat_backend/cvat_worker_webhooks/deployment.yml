@@ -1,0 +1,116 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-backend-worker-webhooks
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: cvat-app
+    tier: backend
+    component: worker-webhooks
+    {{- include "cvat.labels" . | nindent 4 }}
+    {{- with .Values.cvat.backend.worker.webhooks.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .Values.cvat.backend.worker.webhooks.annotations }}
+  annotations:
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.cvat.backend.worker.webhooks.replicas }}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "cvat.labels" . | nindent 6 }}
+      {{- with .Values.cvat.backend.worker.webhooks.labels }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+      app: cvat-app-worker-webhooks
+      tier: backend
+      component: worker-webhooks
+  template:
+    metadata:
+      labels:
+        app: cvat-app-worker-webhooks
+        tier: backend
+        component: worker-webhooks
+        {{- include "cvat.labels" . | nindent 8 }}
+        {{- with .Values.cvat.backend.worker.webhooks.labels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.cvat.backend.worker.webhooks.annotations }}
+      annotations:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      containers:
+        - name: cvat-app-backend-worker-webhooks-container
+          image: {{ .Values.cvat.backend.image }}:{{ .Values.cvat.backend.tag }}
+          imagePullPolicy: {{ .Values.cvat.backend.imagePullPolicy }}
+          {{- with .Values.cvat.backend.worker.webhooks.resources }}
+          resources:
+          {{- toYaml . | nindent 12 }}
+          {{- end }}
+          args: ["-c", "supervisord/worker.webhooks.conf"]
+          env:
+          {{- if .Values.redis.enabled }}
+          - name: CVAT_REDIS_HOST
+            value: "{{ .Release.Name }}-redis-master"
+          {{- else }}
+          - name: CVAT_REDIS_HOST
+            value: "{{ .Values.redis.external.host }}"
+          {{- end }}
+          - name: CVAT_REDIS_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: "{{ tpl (.Values.redis.secret.name) . }}"
+                key: redis-password
+          {{- if .Values.postgresql.enabled }}
+          - name: CVAT_POSTGRES_HOST
+            value: "{{ .Release.Name }}-postgresql"
+          - name: CVAT_POSTGRES_PORT
+            value: "{{ .Values.postgresql.service.ports.postgresql }}"
+          {{- else }}
+          - name: CVAT_POSTGRES_HOST
+            value: "{{ .Values.postgresql.external.host }}"
+          - name: CVAT_POSTGRES_PORT
+            value: "{{ .Values.postgresql.external.port }}"
+          {{- end }}
+          - name: CVAT_POSTGRES_USER
+            valueFrom:
+              secretKeyRef:
+                name: "{{ tpl (.Values.postgresql.secret.name) . }}"
+                key: username
+          - name: CVAT_POSTGRES_DBNAME
+            valueFrom:
+              secretKeyRef:
+                name: "{{ tpl (.Values.postgresql.secret.name) . }}"
+                key: database
+          - name: CVAT_POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: "{{ tpl (.Values.postgresql.secret.name) . }}"
+                key: password
+          {{- with .Values.cvat.backend.worker.webhooks.additionalEnv }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+          {{- with .Values.cvat.backend.worker.webhooks.additionalVolumeMounts }}
+          volumeMounts:
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+      {{- with .Values.cvat.backend.worker.webhooks.affinity }}
+      affinity:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.cvat.backend.worker.webhooks.tolerations }}
+      tolerations:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.cvat.backend.worker.webhooks.additionalVolumes }}
+      volumes:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

@@ -1,4 +1,5 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,7 +8,7 @@ import { connect } from 'react-redux';
 
 import JobListComponent from 'components/task-page/job-list';
 import { updateJobAsync } from 'actions/tasks-actions';
-import { Task } from 'reducers/interfaces';
+import { Task } from 'reducers';
 
 interface OwnProps {
     task: Task;
@@ -26,7 +27,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 function TaskPageContainer(props: DispatchToProps & OwnProps): JSX.Element {
     const { task, onJobUpdate } = props;
 
-    return <JobListComponent taskInstance={task.instance} onJobUpdate={onJobUpdate} />;
+    return <JobListComponent taskInstance={task} onJobUpdate={onJobUpdate} />;
 }
 
 export default connect(null, mapDispatchToProps)(TaskPageContainer);

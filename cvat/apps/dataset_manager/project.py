@@ -1,4 +1,4 @@
-# Copyright (C) 2021 Intel Corporation
+# Copyright (C) 2021-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -8,7 +8,7 @@ from typing import Any, Callable, List, Mapping, Tuple
 from django.db import transaction
 
 from cvat.apps.engine import models
-from cvat.apps.engine.serializers import DataSerializer, TaskSerializer
+from cvat.apps.engine.serializers import DataSerializer, TaskWriteSerializer
 from cvat.apps.engine.task import _create_thread as create_task
 from cvat.apps.dataset_manager.task import TaskAnnotation
 
@@ -80,7 +80,7 @@ class ProjectAnnotationAndData:
         })
         data_serializer.is_valid(raise_exception=True)
         db_data = data_serializer.save()
-        db_task = TaskSerializer.create(None, {
+        db_task = TaskWriteSerializer.create(None, {
             **task_fields,
             'data_id': db_data.id,
             'project_id': self.db_project.id
@@ -132,7 +132,7 @@ class ProjectAnnotationAndData:
     def load_dataset_data(self, *args, **kwargs):
         load_dataset_data(self, *args, **kwargs)
 
-    def import_dataset(self, dataset_file, importer):
+    def import_dataset(self, dataset_file, importer, **options):
         project_data = ProjectData(
             annotation_irs=self.annotation_irs,
             db_project=self.db_project,
@@ -141,7 +141,7 @@ class ProjectAnnotationAndData:
         )
         project_data.soft_attribute_import = True
 
-        importer(dataset_file, project_data, self.load_dataset_data)
+        importer(dataset_file, project_data, self.load_dataset_data, **options)
 
         self.create({tid: ir.serialize() for tid, ir in self.annotation_irs.items() if tid in project_data.new_tasks})
 
@@ -150,7 +150,7 @@ class ProjectAnnotationAndData:
         raise NotImplementedError()
 
 @transaction.atomic
-def import_dataset_as_project(project_id, dataset_file, format_name):
+def import_dataset_as_project(project_id, dataset_file, format_name, conv_mask_to_poly):
     rq_job = rq.get_current_job()
     rq_job.meta['status'] = 'Dataset import has been started...'
     rq_job.meta['progress'] = 0.
@@ -161,4 +161,4 @@ def import_dataset_as_project(project_id, dataset_file, format_name):
 
     importer = make_importer(format_name)
     with open(dataset_file, 'rb') as f:
-        project.import_dataset(f, importer)
+        project.import_dataset(f, importer, conv_mask_to_poly=conv_mask_to_poly)

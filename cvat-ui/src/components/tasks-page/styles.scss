@@ -1,34 +1,10 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 @import '../../base.scss';
 @import '../../styles.scss';
-
-.cvat-tasks-page-control-buttons-wrapper {
-    display: flex;
-    flex-direction: column;
-    background: $background-color-1;
-    padding: $grid-unit-size;
-    border-radius: 4px;
-    box-shadow: $box-shadow-base;
-
-    > * {
-        &:not(:first-child) {
-            margin-top: $grid-unit-size;
-        }
-
-        width: 100%;
-
-        .ant-upload {
-            width: 100%;
-
-            button {
-                width: 100%;
-            }
-        }
-    }
-}
 
 .cvat-tasks-page {
     padding-top: $grid-unit-size * 2;
@@ -116,18 +92,28 @@
     &:hover {
         border: 1px solid $border-color-hover;
     }
-}
 
-.cvat-task-item-preview-wrapper {
-    display: flex;
-    justify-content: center;
-    overflow: hidden;
-    margin: 20px;
-    margin-top: 0;
+    .cvat-task-item-loading-preview,
+    .cvat-task-item-empty-preview {
+        .ant-spin {
+            position: inherit;
+        }
 
-    > .cvat-task-item-preview {
-        max-width: 140px;
-        max-height: 80px;
+        font-size: $grid-unit-size * 6;
+        text-align: center;
+    }
+
+    .cvat-task-item-preview-wrapper {
+        display: flex;
+        justify-content: center;
+        overflow: hidden;
+        margin: $grid-unit-size * 3;
+        margin-top: 0;
+
+        > .cvat-task-item-preview {
+            max-width: 140px;
+            max-height: 80px;
+        }
     }
 }
 

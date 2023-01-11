@@ -1,8 +1,11 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
+
+/* eslint-disable no-loop-func */
 
 import { taskName, labelName } from '../../support/const';
 
@@ -11,7 +14,7 @@ context('Group features', () => {
     const createRectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         firstX: 250,
         firstY: 350,
         secondX: 350,
@@ -20,7 +23,7 @@ context('Group features', () => {
     const createRectangleShape2PointsSecond = {
         points: 'By 2 Points',
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         firstX: createRectangleShape2Points.firstX + 300,
         firstY: createRectangleShape2Points.firstY,
         secondX: createRectangleShape2Points.secondX + 300,
@@ -29,7 +32,7 @@ context('Group features', () => {
     const createRectangleTrack2Points = {
         points: 'By 2 Points',
         type: 'Track',
-        labelName: labelName,
+        labelName,
         firstX: 250,
         firstY: 600,
         secondX: 350,
@@ -38,7 +41,7 @@ context('Group features', () => {
     const createRectangleTrack2PointsSecond = {
         points: 'By 2 Points',
         type: 'Track',
-        labelName: labelName,
+        labelName,
         firstX: createRectangleTrack2Points.firstX + 300,
         firstY: createRectangleTrack2Points.firstY,
         secondX: createRectangleTrack2Points.secondX + 300,
@@ -75,7 +78,11 @@ context('Group features', () => {
         for (const shapeToGroup of objectsArray) {
             cy.get(shapeToGroup).click().should('have.class', 'cvat_canvas_shape_grouping');
         }
-        cancelGrouping ? cy.get('body').type('{Esc}') : cy.get('.cvat-group-control').click();
+        if (cancelGrouping) {
+            cy.get('body').type('{Esc}');
+        } else {
+            cy.get('.cvat-group-control').click();
+        }
     }
 
     function testUnGroupObjects() {
@@ -90,8 +97,8 @@ context('Group features', () => {
         cy.get(object).within(() => {
             cy.get('[aria-label="more"]').click();
         });
-        cy.wait(300);
         cy.get('.ant-dropdown')
+            .should('be.visible')
             .not('.ant-dropdown-hidden')
             .within(() => {
                 cy.contains('Change group color').click();
@@ -119,9 +126,11 @@ context('Group features', () => {
             cy.get(objectSideBarShape)
                 .should('have.css', 'background-color')
                 .then(($bColorobjectSideBarShape) => {
-                    // expected rgba(250, 50, 83, 0.533) to not include [ 224, 224, 224, index: 4, input: 'rgb(224, 224, 224)', groups: undefined ]
+                    // expected rgba(250, 50, 83, 0.533) to not include
+                    // [ 224, 224, 224, index: 4, input: 'rgb(224, 224, 224)', groups: undefined ]
                     expect($bColorobjectSideBarShape).to.not.contain(defaultGroupColorRgb.match(/\d+, \d+, \d+/));
-                    // expected rgba(250, 50, 83, 0.533) to include [ 250, 50, 83, index: 4, input: 'rgb(250, 50, 83)', groups: undefined ]
+                    // expected rgba(250, 50, 83, 0.533) to include
+                    // [ 250, 50, 83, index: 4, input: 'rgb(250, 50, 83)', groups: undefined ]
                     expect($bColorobjectSideBarShape).to.be.contain(shapesGroupColor.match(/\d+, \d+, \d+/));
                 });
         }
@@ -151,7 +160,8 @@ context('Group features', () => {
                     cy.get($listObjectsSidebarStateItem[i])
                         .should('have.css', 'background-color')
                         .then(($bColorObjectsSidebarStateItem) => {
-                            // expected rgba(224, 224, 224, 0.533) to include [ 224, 224, 224, index: 4, input: 'rgb(224, 224, 224)', groups: undefined ]
+                            // expected rgba(224, 224, 224, 0.533) to include
+                            // [ 224, 224, 224, index: 4, input: 'rgb(224, 224, 224)', groups: undefined ]
                             expect($bColorObjectsSidebarStateItem).contain(defaultGroupColorRgb.match(/\d+, \d+, \d+/));
                         });
                 }
@@ -191,9 +201,11 @@ context('Group features', () => {
                 cy.get(objectSideBarTrack)
                     .should('have.css', 'background-color')
                     .then(($bColorobjectSideBarTrack) => {
-                        // expected rgba(52, 209, 183, 0.533) to not include [ 224, 224, 224, index: 4, input: 'rgb(224, 224, 224)', groups: undefined ]
+                        // expected rgba(52, 209, 183, 0.533) to not include
+                        // [ 224, 224, 224, index: 4, input: 'rgb(224, 224, 224)', groups: undefined ]
                         expect($bColorobjectSideBarTrack).to.not.contain(defaultGroupColorRgb.match(/\d+, \d+, \d+/));
-                        // expected rgba(52, 209, 183, 0.533) to include [ 52, 209, 183, index: 4, input: 'rgb(52, 209, 183)', groups: undefined ]
+                        // expected rgba(52, 209, 183, 0.533) to include
+                        // [ 52, 209, 183, index: 4, input: 'rgb(52, 209, 183)', groups: undefined ]
                         expect($bColorobjectSideBarTrack).to.be.contain(tracksGroupColor.match(/\d+, \d+, \d+/));
                     });
             }
@@ -205,7 +217,6 @@ context('Group features', () => {
             cy.removeAnnotations();
             cy.saveJob('PUT');
             cy.reload();
-            cy.closeModalUnsupportedPlatform();
             cy.get('.cvat-canvas-container').should('exist');
         });
 
@@ -231,6 +242,7 @@ context('Group features', () => {
 
         it('Change group color.', () => {
             changeGroupColor('#cvat-objects-sidebar-state-item-1', yellowHex);
+            cy.checkCanvasSidebarColorEqualness(1);
         });
 
         it('For these objects, the fill and stroke parameters took the corresponding color values.', () => {
