@@ -21,15 +21,18 @@ interface Props {
 
 function ContextImage(props: Props): JSX.Element {
     const { offset } = props;
+    const defaultFrameOffset = (offset[0] || 0);
+    const defaultContextImageOffset = (offset[1] || 0);
+
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const job = useSelector((state: CombinedState) => state.annotation.job.instance);
     const { number: frame, relatedFiles } = useSelector((state: CombinedState) => state.annotation.player.frame);
-    const frameIndex = frame + (offset[0] || 0);
+    const frameIndex = frame + defaultFrameOffset;
 
     const [contextImageData, setContextImageData] = useState<Record<string, ImageBitmap>>({});
     const [fetching, setFetching] = useState<boolean>(false);
     const [contextImageOffset, setContextImageOffset] = useState<number>(
-        Math.min(offset[1] || 0, relatedFiles),
+        Math.min(defaultContextImageOffset, relatedFiles),
     );
 
     const [hasError, setHasError] = useState<boolean>(false);

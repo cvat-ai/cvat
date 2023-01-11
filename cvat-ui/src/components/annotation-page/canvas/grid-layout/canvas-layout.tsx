@@ -21,6 +21,7 @@ import {
     ReloadOutlined,
 } from '@ant-design/icons';
 
+import consts from 'consts';
 import { DimensionType, CombinedState } from 'reducers';
 import CanvasWrapperComponent from 'components/annotation-page/canvas/views/canvas2d/canvas-wrapper';
 import CanvasWrapper3DComponent, {
@@ -65,28 +66,26 @@ const ViewFabric = (itemLayout: ItemLayout): JSX.Element => {
     return component;
 };
 
-const fitLayout = (type: DimensionType, layoutConfig: ItemLayout[], rows: number): ItemLayout[] => {
+const fitLayout = (type: DimensionType, layoutConfig: ItemLayout[]): ItemLayout[] => {
     const updatedLayout: ItemLayout[] = [];
 
     const relatedViews = layoutConfig
         .filter((item: ItemLayout) => item.viewType === ViewType.RELATED_IMAGE);
-    const cols = relatedViews.length > 6 ? 2 : 1;
-    const height = Math.floor(rows / (relatedViews.length / cols));
+    const relatedViewsCols = relatedViews.length > 6 ? 2 : 1;
+    const height = Math.floor(consts.CANVAS_WORKSPACE_ROWS / (relatedViews.length / relatedViewsCols));
     relatedViews.forEach((view: ItemLayout, i: number) => {
         updatedLayout.push({
             ...view,
             h: height,
             w: relatedViews.length > 6 ? 2 : 3,
-            x: cols === 1 ? 9 : 8 + (i % 2) * 2,
+            x: relatedViewsCols === 1 ? 9 : 8 + (i % 2) * 2,
             y: height * i,
         });
     });
 
-    let widthAvail = 12;
-    if (relatedViews.length > 6) {
-        widthAvail = 8;
-    } else if (relatedViews.length > 0) {
-        widthAvail = 9;
+    let widthAvail = consts.CANVAS_WORKSPACE_COLS;
+    if (updatedLayout.length > 0) {
+        widthAvail -= updatedLayout[0].w * relatedViewsCols;
     }
 
     if (type === DimensionType.DIM_2D) {
@@ -97,7 +96,7 @@ const fitLayout = (type: DimensionType, layoutConfig: ItemLayout[], rows: number
             x: 0,
             y: 0,
             w: widthAvail,
-            h: 12,
+            h: consts.CANVAS_WORKSPACE_ROWS,
         });
     } else {
         const canvas = layoutConfig
@@ -108,24 +107,33 @@ const fitLayout = (type: DimensionType, layoutConfig: ItemLayout[], rows: number
             .find((item: ItemLayout) => item.viewType === ViewType.CANVAS_3D_SIDE) as ItemLayout;
         const front = layoutConfig
             .find((item: ItemLayout) => item.viewType === ViewType.CANVAS_3D_FRONT) as ItemLayout;
+        const helpfulCanvasViewHeight = 3;
         updatedLayout.push({
             ...canvas,
             x: 0,
             y: 0,
             w: widthAvail,
-            h: 9,
+            h: consts.CANVAS_WORKSPACE_ROWS - helpfulCanvasViewHeight,
         }, {
-            ...top, x: 0, y: 9, w: Math.ceil(widthAvail / 3), h: 3,
+            ...top,
+            x: 0,
+            y: consts.CANVAS_WORKSPACE_ROWS,
+            w: Math.ceil(widthAvail / 3),
+            h: helpfulCanvasViewHeight,
         },
         {
-            ...side, x: Math.ceil(widthAvail / 3), y: 9, w: Math.ceil(widthAvail / 3), h: 3,
+            ...side,
+            x: Math.ceil(widthAvail / 3),
+            y: consts.CANVAS_WORKSPACE_ROWS,
+            w: Math.ceil(widthAvail / 3),
+            h: helpfulCanvasViewHeight,
         },
         {
             ...front,
             x: Math.ceil(widthAvail / 3) * 2,
-            y: 9,
+            y: consts.CANVAS_WORKSPACE_ROWS,
             w: Math.floor(widthAvail / 3),
-            h: 3,
+            h: helpfulCanvasViewHeight,
         });
     }
 
@@ -133,10 +141,6 @@ const fitLayout = (type: DimensionType, layoutConfig: ItemLayout[], rows: number
 };
 
 function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
-    const NUM_OF_ROWS = 12;
-    const MARGIN = 8;
-    const PADDING = MARGIN / 2;
-
     const relatedFiles = useSelector((state: CombinedState) => state.annotation.player.frame.relatedFiles);
     const canvasInstance = useSelector((state: CombinedState) => state.annotation.canvas.instance);
     const canvasBackgroundColor = useSelector((state: CombinedState) => state.settings.player.canvasBackgroundColor);
@@ -147,7 +151,10 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
         if (container) {
             containerHeight = window.innerHeight - container.getBoundingClientRect().bottom;
             // https://github.com/react-grid-layout/react-grid-layout/issues/628#issuecomment-1228453084
-            return Math.floor((containerHeight - MARGIN * (NUM_OF_ROWS)) / NUM_OF_ROWS);
+            return Math.floor(
+                (containerHeight - consts.CANVAS_WORKSPACE_MARGIN * (consts.CANVAS_WORKSPACE_ROWS)) /
+                consts.CANVAS_WORKSPACE_ROWS,
+            );
         }
 
         return 0;
@@ -207,10 +214,11 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
         <Layout.Content>
             { !!rowHeight && (
                 <ReactGridLayout
-                    maxRows={NUM_OF_ROWS}
+                    cols={consts.CANVAS_WORKSPACE_COLS}
+                    maxRows={consts.CANVAS_WORKSPACE_ROWS}
                     style={{ background: canvasBackgroundColor }}
-                    containerPadding={[PADDING, PADDING]}
-                    margin={[MARGIN, MARGIN]}
+                    containerPadding={[consts.CANVAS_WORKSPACE_PADDING, consts.CANVAS_WORKSPACE_PADDING]}
+                    margin={[consts.CANVAS_WORKSPACE_MARGIN, consts.CANVAS_WORKSPACE_MARGIN]}
                     className='cvat-canvas-grid-root'
                     rowHeight={rowHeight}
                     layout={layout}
@@ -290,7 +298,7 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
                 <CVATTooltip title='Fit views'>
                     <PicCenterOutlined
                         onClick={() => {
-                            setLayoutConfig(fitLayout(type as DimensionType, layoutConfig, NUM_OF_ROWS));
+                            setLayoutConfig(fitLayout(type as DimensionType, layoutConfig));
                             window.dispatchEvent(new Event('resize'));
                         }}
                     />
@@ -329,7 +337,7 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
 
                             const latest = existingRelated[existingRelated.length - 1];
                             const copy = { ...latest, offset: [0, viewIndex], viewIndex: `${viewIndex}` };
-                            setLayoutConfig(fitLayout(type as DimensionType, [...layoutConfig, copy], NUM_OF_ROWS));
+                            setLayoutConfig(fitLayout(type as DimensionType, [...layoutConfig, copy]));
                             window.dispatchEvent(new Event('resize'));
                         }}
                     />
