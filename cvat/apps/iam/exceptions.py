@@ -24,13 +24,13 @@ class DefaultLimitsReachedException(PermissionDenied):
         super().__init__(msg)
 
 class ExceptionFactory:
-    @classmethod
-    def get_base_exception(cls):
+    def __call__(self, *args, **kwargs):
         dotted_path = getattr(settings, "IAM_BASE_EXCEPTION", None)
+        print(dotted_path)
 
         if dotted_path is None:
-            return DefaultLimitsReachedException
+            return DefaultLimitsReachedException(*args, **kwargs)
 
-        return import_string(dotted_path)
+        return import_string(dotted_path)(*args, **kwargs)
 
-LimitsReachedException = ExceptionFactory.get_base_exception()
+LimitsReachedException = ExceptionFactory()
