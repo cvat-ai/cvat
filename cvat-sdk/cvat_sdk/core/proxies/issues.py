@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from __future__ import annotations
+
 from typing import List
 
 from cvat_sdk.api_client import apis, models
@@ -53,7 +54,10 @@ class Issue(
     _model_partial_update_arg = "patched_issue_write_request"
 
     def get_comments(self) -> List[Comment]:
-        return [Comment(self._client, m) for m in get_paginated_collection(self.api.list_comments_endpoint, id=self.id)]
+        return [
+            Comment(self._client, m)
+            for m in get_paginated_collection(self.api.list_comments_endpoint, id=self.id)
+        ]
 
 
 class IssuesRepo(

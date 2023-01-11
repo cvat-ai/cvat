@@ -25,11 +25,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - \[SDK\] The `resource_type` args now have the default value of `local` in task creation functions.
   The corresponding arguments are keyword-only now.
   (<https://github.com/opencv/cvat/pull/5502>)
-- Windows Installation Instructions adjusted to work around <https://github.com/nuclio/nuclio/issues/1821>
 - \[Server API\] Added missing pagination or pagination parameters in
   `/project/{id}/tasks`, `/tasks/{id}/jobs`, `/jobs/{id}/issues`,
-  `/jobs/{id}/commits`, `/issues/{id}/comments`
+  `/jobs/{id}/commits`, `/issues/{id}/comments`, `/organizations`
   (<https://github.com/opencv/cvat/pull/5557>)
+- Windows Installation Instructions adjusted to work around <https://github.com/nuclio/nuclio/issues/1821>
 
 ### Deprecated
 - TDB

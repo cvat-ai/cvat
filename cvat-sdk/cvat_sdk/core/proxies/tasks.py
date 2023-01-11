@@ -302,8 +302,10 @@ class Task(
         self._client.logger.info(f"Backup for task {self.id} has been downloaded to {filename}")
 
     def get_jobs(self) -> List[Job]:
-        return [Job(self._client, model=m)
-            for m in get_paginated_collection(self.api.list_jobs_endpoint, id=self.id)]
+        return [
+            Job(self._client, model=m)
+            for m in get_paginated_collection(self.api.list_jobs_endpoint, id=self.id)
+        ]
 
     def get_meta(self) -> models.IDataMetaRead:
         (meta, _) = self.api.retrieve_data_meta(self.id)
