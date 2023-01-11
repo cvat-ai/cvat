@@ -41,7 +41,7 @@ problems contains "projects per user" if {
     )
 }
 
-problems contains "tasks per user project" if {
+problems contains "tasks per project for the user" if {
     check_limit_exceeded(
         input.resource.limits[CAP_TASKS_IN_USER_SANDBOX_PROJECT].used,
         input.resource.limits[CAP_TASKS_IN_USER_SANDBOX_PROJECT].max
