@@ -41,6 +41,22 @@ context('Collapse sidebar/appearance. Check issue 3250 (empty sidebar after resi
     });
 
     describe(`Testing case "${caseId}"`, () => {
+        it('Collapse sidebar. Cheeck issue 3250.', () => {
+            // hide sidebar
+            cy.get('.cvat-objects-sidebar-sider').click();
+            cy.get('.cvat-objects-sidebar').should('not.be.visible');
+
+            // unhide sidebar
+            cy.get('.cvat-objects-sidebar-sider').click();
+            cy.get('.cvat-objects-sidebar').should('be.visible');
+            checkEqualBackground();
+
+            // Before the issue fix the sidebar item did not appear accordingly
+            // it was not possible to activate the shape through the sidebar item
+            cy.get('#cvat-objects-sidebar-state-item-1').trigger('mouseover');
+            cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
+        });
+
         it('Collapse appearance', () => {
             // hide
             cy.get('.cvat-objects-appearance-collapse-header').click();
