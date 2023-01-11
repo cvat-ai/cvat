@@ -318,6 +318,9 @@ def _create_task_manifest_based_on_cloud_storage_manifest(
         content = list(map(_add_prefix, raw_content))
     else:
         sequence, content = cloud_storage_manifest.get_subset(sorted_media)
+    if not content:
+        raise ValidationError('There is no intersection of the files specified'
+                            'in the request with the contents of the bucket')
     sorted_content = (i[1] for i in sorted(zip(sequence, content)))
     manifest.create(sorted_content)
 
@@ -354,8 +357,6 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
     )
 
     if is_data_in_cloud:
-        cloud_storage_instance = db_storage_to_storage_instance(db_data.cloud_storage)
-
         manifest = ImageManifestManager(db_data.get_manifest_path())
         cloud_storage_manifest = ImageManifestManager(
             os.path.join(db_data.cloud_storage.get_storage_dirname(), manifest_file),
@@ -391,13 +392,6 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
             _copy_data_from_source(data['server_files'], upload_dir, data.get('server_files_path'))
         elif is_data_in_cloud:
             sorted_media = sort(media['image'], data['sorting_method'])
-
-            # download previews from cloud storage
-            data_size = len(sorted_media)
-            segment_step, *_ = _get_task_segment_data(db_task, data_size)
-            for preview_frame in range(0, data_size, segment_step):
-                preview = sorted_media[preview_frame]
-                cloud_storage_instance.download_file(preview, os.path.join(upload_dir, preview))
 
             # Define task manifest content based on cloud storage manifest content and uploaded files
             _create_task_manifest_based_on_cloud_storage_manifest(

@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/opencv/cvat/pull/5523>)
 - \[SDK\] A PyTorch adapter setting to disable cache updates
   (<https://github.com/opencv/cvat/pull/5549>)
+- YOLO v7 serverless feature added using ONNX backend (<https://github.com/opencv/cvat/pull/5552>)
 
 ### Changed
 - The Docker Compose files now use the Compose Specification version
@@ -138,8 +139,13 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
 - Missing source tag in project annotations (<https://github.com/opencv/cvat/pull/5408>)
 - Creating a task with a Git repository via the SDK
   (<https://github.com/opencv/cvat/issues/4365>)
+- Queries via the low-level API using the `multipart/form-data` Content-Type with string fields
+  (<https://github.com/opencv/cvat/pull/5479>)
+
+### Security
 - `Project.import_dataset` not waiting for completion correctly
   (<https://github.com/opencv/cvat/pull/5459>)
+
 
 ## \[2.2.0] - 2022-09-12
 ### Added
