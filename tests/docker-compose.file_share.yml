@@ -1,7 +1,5 @@
-version: '3.3'
-
 services:
-  cvat_worker_default:
+  cvat_worker_import:
     volumes:
       - ./tests/mounted_file_share:/home/django/share:rw
   cvat_server:

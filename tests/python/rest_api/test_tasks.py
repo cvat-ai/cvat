@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import io
 import json
 import os.path as osp
 import subprocess
@@ -16,8 +17,10 @@ import pytest
 from cvat_sdk.api_client import apis, models
 from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
+from PIL import Image
 
 import shared.utils.s3 as s3
+from shared.fixtures.init import get_server_image_tag
 from shared.utils.config import get_method, make_api_client, patch_method
 from shared.utils.helpers import generate_image_files
 
@@ -422,7 +425,8 @@ class TestPostTaskData:
             sleep(1)
         raise Exception("Cannot create task")
 
-    def _test_create_task(self, username, spec, data, content_type, **kwargs):
+    @staticmethod
+    def _test_create_task(username, spec, data, content_type, **kwargs):
         with make_api_client(username) as api_client:
             (task, response) = api_client.tasks_api.create(spec, **kwargs)
             assert response.status == HTTPStatus.CREATED
@@ -432,7 +436,7 @@ class TestPostTaskData:
             )
             assert response.status == HTTPStatus.ACCEPTED
 
-            status = self._wait_until_task_is_created(api_client.tasks_api, task.id)
+            status = TestPostTaskData._wait_until_task_is_created(api_client.tasks_api, task.id)
             assert status.state.value == "Finished"
 
         return task.id
@@ -487,6 +491,40 @@ class TestPostTaskData:
         with make_api_client(self._USERNAME) as api_client:
             (task, _) = api_client.tasks_api.retrieve(task_id)
             assert task.size == 4
+
+    def test_can_create_task_with_sorting_method(self):
+        task_spec = {
+            "name": f"test {self._USERNAME} to create a task with a custom sorting method",
+            "labels": [
+                {
+                    "name": "car",
+                    "color": "#ff00ff",
+                    "attributes": [],
+                }
+            ],
+        }
+
+        image_files = generate_image_files(15)
+
+        task_data = {
+            "client_files": image_files[5:] + image_files[:5],  # perturb the order
+            "image_quality": 70,
+            "sorting_method": "natural",
+        }
+
+        # Besides testing that the sorting method is applied, this also checks for
+        # regressions of <https://github.com/opencv/cvat/issues/4962>.
+        task_id = self._test_create_task(
+            self._USERNAME, task_spec, task_data, content_type="multipart/form-data"
+        )
+
+        # check that the frames were sorted again
+        with make_api_client(self._USERNAME) as api_client:
+            data_meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
+
+            # generate_image_files produces files that are already naturally sorted
+            for image_file, frame in zip(image_files, data_meta.frames):
+                assert image_file.name == frame.name
 
     def test_can_get_annotations_from_new_task_with_skeletons(self):
         spec = {
@@ -743,13 +781,14 @@ class TestPostTaskData:
                 f"{tmp_dir}:/local",
                 "--entrypoint",
                 "python3",
-                "cvat/server",
+                get_server_image_tag(),
                 "utils/dataset_manifest/create.py",
                 "--output-dir",
                 "/local",
                 "/local",
             ]
-            subprocess.run(command, check=True)
+            subprocess.check_output(command)
+
             with open(osp.join(tmp_dir, "manifest.jsonl"), mode="rb") as m_file:
                 s3_client.create_file(
                     data=m_file.read(),
@@ -794,16 +833,22 @@ class TestPostTaskData:
             status = self._test_cannot_create_task(self._USERNAME, task_spec, data_spec)
             assert "No media data found" in status.message
 
+
+@pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.usefixtures("restore_cvat_data")
+class TestWorkWithTask:
+    _USERNAME = "admin1"
+
     @pytest.mark.with_external_services
     @pytest.mark.parametrize(
         "cloud_storage_id, manifest, org",
         [(1, "manifest.jsonl", "")],  # public bucket
     )
-    def test_cannot_create_task_with_mythical_cloud_storage_data(
-        self, cloud_storage_id, manifest, org
+    def test_work_with_task_containing_non_stable_cloud_storage_files(
+        self, cloud_storage_id, manifest, org, cloud_storages, request
     ):
-        mythical_file = "mythical.jpg"
-        cloud_storage_content = [mythical_file, manifest]
+        image_name = "image_case_65_1.png"
+        cloud_storage_content = [image_name, manifest]
 
         task_spec = {
             "name": f"Task with mythical file from cloud storage {cloud_storage_id}",
@@ -817,5 +862,93 @@ class TestPostTaskData:
             "server_files": cloud_storage_content,
         }
 
-        status = self._test_cannot_create_task(self._USERNAME, task_spec, data_spec, org=org)
-        assert mythical_file in status.message
+        task_id = TestPostTaskData._test_create_task(
+            self._USERNAME, task_spec, data_spec, content_type="application/json", org=org
+        )
+
+        # save image from the "public" bucket and remove it temporary
+
+        s3_client = s3.make_client()
+        bucket_name = cloud_storages[cloud_storage_id]["resource"]
+
+        image = s3_client.download_fileobj(bucket_name, image_name)
+        s3_client.remove_file(bucket_name, image_name)
+        request.addfinalizer(
+            partial(s3_client.create_file, bucket=bucket_name, filename=image_name, data=image)
+        )
+
+        with make_api_client(self._USERNAME) as api_client:
+            try:
+                api_client.tasks_api.retrieve_data(
+                    task_id, number=0, quality="original", type="frame"
+                )
+                raise AssertionError("Frame should not exist")
+            except AssertionError:
+                raise
+            except Exception as ex:
+                assert ex.status == HTTPStatus.NOT_FOUND
+                assert image_name in ex.body
+
+
+@pytest.mark.usefixtures("restore_db_per_class")
+class TestGetTaskPreview:
+    def _test_task_preview_200(self, username, task_id, **kwargs):
+        with make_api_client(username) as api_client:
+            (_, response) = api_client.tasks_api.retrieve_preview(task_id, **kwargs)
+
+            assert response.status == HTTPStatus.OK
+            (width, height) = Image.open(io.BytesIO(response.data)).size
+            assert width > 0 and height > 0
+
+    def _test_task_preview_403(self, username, task_id):
+        with make_api_client(username) as api_client:
+            (_, response) = api_client.tasks_api.retrieve_preview(
+                task_id, _parse_response=False, _check_status=False
+            )
+            assert response.status == HTTPStatus.FORBIDDEN
+
+    def _test_assigned_users_to_see_task_preview(self, tasks, users, is_task_staff, **kwargs):
+        for task in tasks:
+            staff_users = [user for user in users if is_task_staff(user["id"], task["id"])]
+            assert len(staff_users)
+
+            for user in staff_users:
+                self._test_task_preview_200(user["username"], task["id"], **kwargs)
+
+    def _test_assigned_users_cannot_see_task_preview(self, tasks, users, is_task_staff, **kwargs):
+        for task in tasks:
+            not_staff_users = [user for user in users if not is_task_staff(user["id"], task["id"])]
+            assert len(not_staff_users)
+
+            for user in not_staff_users:
+                self._test_task_preview_403(user["username"], task["id"], **kwargs)
+
+    @pytest.mark.parametrize("project_id, groups", [(1, "user")])
+    def test_task_assigned_to_see_task_preview(
+        self, project_id, groups, users, tasks, find_users, is_task_staff
+    ):
+        users = find_users(privilege=groups)
+        tasks = list(filter(lambda x: x["project_id"] == project_id and x["assignee"], tasks))
+        assert len(tasks)
+
+        self._test_assigned_users_to_see_task_preview(tasks, users, is_task_staff)
+
+    @pytest.mark.parametrize("org, project_id, role", [({"id": 2, "slug": "org2"}, 2, "worker")])
+    def test_org_task_assigneed_to_see_task_preview(
+        self, org, project_id, role, users, tasks, find_users, is_task_staff
+    ):
+        users = find_users(org=org["id"], role=role)
+        tasks = list(filter(lambda x: x["project_id"] == project_id and x["assignee"], tasks))
+        assert len(tasks)
+
+        self._test_assigned_users_to_see_task_preview(tasks, users, is_task_staff, org=org["slug"])
+
+    @pytest.mark.parametrize("project_id, groups", [(1, "user")])
+    def test_task_unassigned_cannot_see_task_preview(
+        self, project_id, groups, users, tasks, find_users, is_task_staff
+    ):
+        users = find_users(privilege=groups)
+        tasks = list(filter(lambda x: x["project_id"] == project_id and x["assignee"], tasks))
+        assert len(tasks)
+
+        self._test_assigned_users_cannot_see_task_preview(tasks, users, is_task_staff)

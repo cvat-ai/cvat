@@ -149,7 +149,7 @@ Before starting, ensure that the following prerequisites are met:
 
    - Let's build custom elasticsearch, logstash and kibana images with the following command
      ```shell
-     docker-compose -f docker-compose.yml  -f components/analytics/docker-compose.analytics.yml build
+     docker compose -f docker-compose.yml  -f components/analytics/docker-compose.analytics.yml build
      ```
 
    - Tag images:

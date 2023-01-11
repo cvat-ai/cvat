@@ -2,8 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-version: '3.3'
-
 services:
   cvat_db:
     container_name: cvat_db
@@ -84,20 +82,19 @@ services:
     networks:
       - cvat
 
-  cvat_worker_default:
-    container_name: cvat_worker_default
+  cvat_worker_import:
+    container_name: cvat_worker_import
     image: cvat/server:${CVAT_VERSION:-dev}
     restart: always
     depends_on:
       - cvat_redis
       - cvat_db
-      - cvat_opa
     environment:
       CVAT_REDIS_HOST: 'cvat_redis'
       CVAT_POSTGRES_HOST: 'cvat_db'
       no_proxy: elasticsearch,kibana,logstash,nuclio,opa,${no_proxy:-}
       NUMPROCS: 2
-    command: -c supervisord/worker.default.conf
+    command: -c supervisord/worker.import.conf
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -105,8 +102,28 @@ services:
     networks:
       - cvat
 
-  cvat_worker_low:
-    container_name: cvat_worker_low
+  cvat_worker_export:
+    container_name: cvat_worker_export
+    image: cvat/server:${CVAT_VERSION:-dev}
+    restart: always
+    depends_on:
+      - cvat_redis
+      - cvat_db
+    environment:
+      CVAT_REDIS_HOST: 'cvat_redis'
+      CVAT_POSTGRES_HOST: 'cvat_db'
+      no_proxy: elasticsearch,kibana,logstash,nuclio,opa,${no_proxy:-}
+      NUMPROCS: 2
+    command: -c supervisord/worker.export.conf
+    volumes:
+      - cvat_data:/home/django/data
+      - cvat_keys:/home/django/keys
+      - cvat_logs:/home/django/logs
+    networks:
+      - cvat
+
+  cvat_worker_annotation:
+    container_name: cvat_worker_annotation
     image: cvat/server:${CVAT_VERSION:-dev}
     restart: always
     depends_on:
@@ -118,7 +135,7 @@ services:
       CVAT_POSTGRES_HOST: 'cvat_db'
       no_proxy: elasticsearch,kibana,logstash,nuclio,opa,${no_proxy:-}
       NUMPROCS: 1
-    command: -c supervisord/worker.low.conf
+    command: -c supervisord/worker.annotation.conf
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys

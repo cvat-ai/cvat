@@ -14,6 +14,7 @@ from typing import List
 import pytest
 from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
+from PIL import Image
 
 from shared.utils.config import make_api_client
 
@@ -605,3 +606,49 @@ class TestJobDataset:
             )  # images + annotation file
             content = zip_file.read(anno_file_name)
         check_func(content, values_to_be_checked)
+
+
+@pytest.mark.usefixtures("restore_db_per_class")
+class TestGetJobPreview:
+    def _test_get_job_preview_200(self, username, jid, **kwargs):
+        with make_api_client(username) as client:
+            (_, response) = client.jobs_api.retrieve_preview(jid, **kwargs)
+
+            assert response.status == HTTPStatus.OK
+            (width, height) = Image.open(BytesIO(response.data)).size
+            assert width > 0 and height > 0
+
+    def _test_get_job_preview_403(self, username, jid, **kwargs):
+        with make_api_client(username) as client:
+            (_, response) = client.jobs_api.retrieve(
+                jid, **kwargs, _check_status=False, _parse_response=False
+            )
+            assert response.status == HTTPStatus.FORBIDDEN
+
+    @pytest.mark.parametrize("org", [None, "", 1, 2])
+    def test_admin_get_job_preview(self, jobs, tasks, org):
+        jobs, kwargs = filter_jobs(jobs, tasks, org)
+
+        # keep only the reasonable amount of jobs
+        for job in jobs[:8]:
+            self._test_get_job_preview_200("admin2", job["id"], **kwargs)
+
+    @pytest.mark.parametrize("org_id", ["", None, 1, 2])
+    @pytest.mark.parametrize("groups", [["business"], ["user"], ["worker"], []])
+    def test_non_admin_get_job_preview(
+        self, org_id, groups, users, jobs, tasks, projects, org_staff
+    ):
+        # keep the reasonable amount of users and jobs
+        users = [u for u in users if u["groups"] == groups][:4]
+        jobs, kwargs = filter_jobs(jobs, tasks, org_id)
+        org_staff = org_staff(org_id)
+
+        for job in jobs[:8]:
+            job_staff = get_job_staff(job, tasks, projects)
+
+            # check if the specific user in job_staff to see the job preview
+            for user in users:
+                if user["id"] in job_staff | org_staff:
+                    self._test_get_job_preview_200(user["username"], job["id"], **kwargs)
+                else:
+                    self._test_get_job_preview_403(user["username"], job["id"], **kwargs)
