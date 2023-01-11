@@ -33,43 +33,15 @@ export class SocialAuthMethod {
         Object.defineProperties(
             this,
             Object.freeze({
-                /**
-                 * @name provider
-                 * @type {string}
-                 * @memberof module:API.cvat.classes.SocialAuthMethod
-                 * @instance
-                 * @readonly
-                 */
                 provider: {
                     get: () => data.provider,
                 },
-                /**
-                 * @name publicName
-                 * @type {string}
-                 * @memberof module:API.cvat.classes.SocialAuthMethod
-                 * @instance
-                 * @readonly
-                 */
                 publicName: {
                     get: () => data.publicName,
                 },
-                /**
-                 * @name isEnabled
-                 * @type {boolean}
-                 * @memberof module:API.cvat.classes.SocialAuthMethod
-                 * @instance
-                 * @readonly
-                 */
                 isEnabled: {
                     get: () => data.isEnabled,
                 },
-                /**
-                 * @name icon
-                 * @type {string}
-                 * @memberof module:API.cvat.classes.SocialAuthMethod
-                 * @instance
-                 * @readonly
-                 */
                 icon: {
                     get: () => data.icon,
                 },

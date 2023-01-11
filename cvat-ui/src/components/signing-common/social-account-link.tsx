@@ -24,7 +24,7 @@ function SocialAccountLink(props: SocialAccountLinkProps): JSX.Element {
             // eslint-disable-next-line no-unsanitized/property
             svgWrapperRef.current.innerHTML = icon;
         }
-    }, [icon]);
+    }, [icon, svgWrapperRef.current]);
 
     return (
         <Row>
