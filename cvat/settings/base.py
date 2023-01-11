@@ -126,7 +126,6 @@ INSTALLED_APPS = [
     'allauth.socialaccount.providers.amazon_cognito',
     'allauth.socialaccount.providers.github',
     'allauth.socialaccount.providers.google',
-    'dj_rest_auth.registration',
     'health_check',
     'health_check.db',
     'health_check.cache',
@@ -663,12 +662,17 @@ if USE_ALLAUTH_SOCIAL_ACCOUNTS:
 
     GITHUB_CALLBACK_URL = 'http://localhost:8080/api/auth/github/login/callback/'
     GOOGLE_CALLBACK_URL = 'http://localhost:8080/api/auth/google/login/callback/'
+    COGNITO_REDIRECT_URI = 'http://localhost:8080/api/auth/amazon-cognito/login/callback/'
 
     SOCIAL_AUTH_GOOGLE_CLIENT_ID = os.getenv('SOCIAL_AUTH_GOOGLE_CLIENT_ID')
     SOCIAL_AUTH_GOOGLE_CLIENT_SECRET = os.getenv('SOCIAL_AUTH_GOOGLE_CLIENT_SECRET')
 
     SOCIAL_AUTH_GITHUB_CLIENT_ID = os.getenv('SOCIAL_AUTH_GITHUB_CLIENT_ID')
     SOCIAL_AUTH_GITHUB_CLIENT_SECRET = os.getenv('SOCIAL_AUTH_GITHUB_CLIENT_SECRET')
+
+    SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_ID = os.getenv('SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_ID')
+    SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_SECRET = os.getenv('SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_SECRET')
+    SOCIAL_AUTH_AMAZON_COGNITO_DOMAIN = os.getenv('SOCIAL_AUTH_AMAZON_COGNITO_DOMAIN')
 
     SOCIALACCOUNT_PROVIDERS = {
         'google': {
@@ -690,4 +694,13 @@ if USE_ALLAUTH_SOCIAL_ACCOUNTS:
             },
             'SCOPE': [ 'read:user', 'user:email' ],
         },
+        'amazon_cognito': {
+            'DOMAIN': SOCIAL_AUTH_AMAZON_COGNITO_DOMAIN,
+            'SCOPE': [ 'profile', 'email', 'openid'],
+            'APP': {
+                'client_id': SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_ID,
+                'secret': SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_SECRET,
+                'key': ''
+            },
+        }
     }

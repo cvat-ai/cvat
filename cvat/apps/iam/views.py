@@ -166,11 +166,6 @@ class LoginViewEx(LoginView):
         self.login()
         return self.get_response()
 
-class CognitoView(SocialLoginView):
-    adapter_class = AmazonCognitoOAuth2AdapterEx
-    callback_url = os.environ.get("COGNITO_REDIRECT_URI", "https://www.cvat.ai/")
-    client_class = OAuth2Client
-
 class RegisterViewEx(RegisterView):
     def get_response_data(self, user):
         data = self.get_serializer(user).data
@@ -245,8 +240,11 @@ class OAuth2CallbackViewEx(OAuth2CallbackView):
 
         if not code:
             return HttpResponseBadRequest('Parameter code not found in request')
+
+        provider = self.adapter.provider_id.replace('_', '-')
+
         return HttpResponseRedirect(
-            f'{settings.SOCIAL_APP_LOGIN_REDIRECT_URL}/?provider={self.adapter.provider_id}&code={code}'
+            f'{settings.SOCIAL_APP_LOGIN_REDIRECT_URL}/?provider={provider}&code={code}'
             f'&auth_params={state.get("auth_params")}&process={state.get("process")}'
             f'&scope={state.get("scope")}')
 
@@ -292,6 +290,17 @@ def google_oauth2_login(*args, **kwargs):
     return OAuth2LoginView.adapter_view(GoogleAdapter)(*args, **kwargs)
 
 @extend_schema(
+    summary="Redirects to Amazon Cognito authentication page",
+    description="Redirects to the Amazon Cognito authentication page. "
+                "After successful authentication on the provider side, "
+                "a redirect to the callback endpoint is performed.",
+)
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def amazon_cognito_oauth2_login(*args, **kwargs):
+    return OAuth2LoginView.adapter_view(AmazonCognitoOAuth2AdapterEx)(*args, **kwargs)
+
+@extend_schema(
     summary="Checks the authentication response from Google, redirects to the CVAT client if successful.",
     description="Accepts a request from Google with code and state query parameters. "
                 "In case of successful authentication on the provider side, it will "
@@ -307,6 +316,24 @@ def google_oauth2_login(*args, **kwargs):
 @permission_classes([AllowAny])
 def google_oauth2_callback(*args, **kwargs):
     return OAuth2CallbackViewEx.adapter_view(GoogleAdapter)(*args, **kwargs)
+
+
+@extend_schema(
+    summary="Checks the authentication response from Amazon Cognito, redirects to the CVAT client if successful.",
+    description="Accepts a request from Amazon Cognito with code and state query parameters. "
+                "In case of successful authentication on the provider side, it will "
+                "redirect to the CVAT client",
+    parameters=[
+        OpenApiParameter('code', description='Returned by google',
+            location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
+        OpenApiParameter('state', description='Returned by google',
+            location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
+    ],
+)
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def amazon_cognito_oauth2_callback(*args, **kwargs):
+    return OAuth2CallbackViewEx.adapter_view(AmazonCognitoOAuth2AdapterEx)(*args, **kwargs)
 
 
 class ConfirmEmailViewEx(ConfirmEmailView):
@@ -362,3 +389,8 @@ class GoogleLogin(SocialLoginViewEx):
     adapter_class = GoogleAdapter
     client_class = OAuth2Client
     callback_url = getattr(settings, 'GOOGLE_CALLBACK_URL', None)
+
+class CognitoLogin(SocialLoginViewEx):
+    adapter_class = AmazonCognitoOAuth2AdapterEx
+    client_class = OAuth2Client
+    callback_url = getattr(settings, 'COGNITO_REDIRECT_URI', None)

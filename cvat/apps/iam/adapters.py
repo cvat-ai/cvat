@@ -51,6 +51,9 @@ class GoogleAdapter(GoogleOAuth2Adapter):
         return settings.GOOGLE_CALLBACK_URL
 
 class AmazonCognitoOAuth2AdapterEx(AmazonCognitoOAuth2Adapter):
+    def get_callback_url(self, request, app):
+        return settings.COGNITO_REDIRECT_URI
+
     def complete_login(self, request, app, access_token, **kwargs):
         headers = {
             "Authorization": "Bearer {}".format(access_token),

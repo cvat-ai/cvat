@@ -12,14 +12,14 @@ from dj_rest_auth.views import (
 from allauth.account import app_settings as allauth_settings
 
 from cvat.apps.iam.views import (
-    SigningView, CognitoView, RegisterViewEx, RulesView, ConfirmEmailViewEx,
-)
-from cvat.apps.iam.views import (
+    SigningView, CognitoLogin, RegisterViewEx, RulesView,
+    ConfirmEmailViewEx, LoginViewEx, GitHubLogin, GoogleLogin,
     github_oauth2_login as github_login,
     github_oauth2_callback as github_callback,
     google_oauth2_login as google_login,
     google_oauth2_callback as google_callback,
-    LoginViewEx, GitHubLogin, GoogleLogin,
+    amazon_cognito_oauth2_login as amazon_cognito_login,
+    amazon_cognito_oauth2_callback as amazon_cognito_callback,
 )
 
 urlpatterns = [
@@ -29,7 +29,7 @@ urlpatterns = [
     path('rules', RulesView.as_view(), name='rules'),
 ]
 
-if settings.IAM_TYPE == 'BASIC' or settings.IAM_TYPE == 'COGNITO':
+if settings.IAM_TYPE == 'BASIC':
     urlpatterns += [
         path('register', RegisterViewEx.as_view(), name='rest_register'),
         # password
@@ -56,11 +56,9 @@ if settings.IAM_TYPE == 'BASIC' or settings.IAM_TYPE == 'COGNITO':
             path('google/login/', google_login, name='google_login'),
             path('google/login/callback/', google_callback, name='google_callback'),
             path('google/login/token', GoogleLogin.as_view()),
+            path('amazon-cognito/login/', amazon_cognito_login, name='amazon_cognito_login'),
+            path('amazon-cognito/login/callback/', amazon_cognito_callback, name='amazon_cognito_callback'),
+            path('amazon-cognito/login/token', CognitoLogin.as_view()),
         ]
-
-if settings.IAM_TYPE == 'COGNITO':
-    urlpatterns += [
-        path('cognito', CognitoView.as_view(), name='cognito_login')]
-
 
 urlpatterns = [path('auth/', include(urlpatterns))]
