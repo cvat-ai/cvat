@@ -21,8 +21,10 @@ from django_filters import FilterSet
 from django_filters.rest_framework import DjangoFilterBackend
 
 
-def get_lookup_fields(view) -> Dict[str, str]:
-    filter_fields = getattr(view, 'filter_fields', [])
+def get_lookup_fields(view, filter_fields=None) -> Dict[str, str]:
+    if filter_fields is None:
+        filter_fields = getattr(view, 'filter_fields', [])
+
     if not filter_fields:
         return {}
 
@@ -238,6 +240,16 @@ class JsonLogicFilter(filters.BaseFilterBackend):
 
 
 class SimpleFilter(DjangoFilterBackend):
+    """
+    A simple filter, useful for small search queries and manually-edited
+    requests.
+
+    The only available check is equality.
+    Multiple terms are joined with '&'.
+    Other operators are not supported (e.g. or, less, greater, not etc.).
+    Argument types are numbers and strings.
+    """
+
     filter_desc = _('A simple equality filter for the {field_name} field')
     reserved_names = (
         JsonLogicFilter.filter_param,
@@ -266,27 +278,24 @@ class SimpleFilter(DjangoFilterBackend):
 
 
     def get_filterset_class(self, view, queryset=None):
-        filterset_class = getattr(view, 'filterset_class', None)
-        filterset_fields = getattr(view, 'filterset_fields', None)
-
-        if filterset_class or filterset_fields:
-            return super().get_filterset_class(view, queryset)
-
         lookup_fields = self.get_lookup_fields(view)
-        if not lookup_fields:
+        if not lookup_fields or not queryset:
             return None
 
-        class MappingFilterset(self.MappingFiltersetBase, metaclass=FilterSet.__class__):
+        MetaBase = getattr(self.filterset_base, 'Meta', object)
+
+        class AutoFilterSet(self.filterset_base, metaclass=FilterSet.__class__):
             filter_names = { v: k for k, v in lookup_fields.items() }
 
-        with _patched_attr(view, 'filterset_fields', list(lookup_fields.values())):
-            with _patched_attr(self, 'filterset_base', MappingFilterset):
-                filterset_class = super().get_filterset_class(view, queryset)
+            class Meta(MetaBase):
+                model = queryset.model
+                fields = list(lookup_fields.values())
 
-        return filterset_class
+        return AutoFilterSet
 
     def get_lookup_fields(self, view):
-        return get_lookup_fields(view)
+        simple_filters = getattr(view, 'simple_filters', None)
+        return get_lookup_fields(view, filter_fields=simple_filters)
 
     def get_filter_fields(self, view):
         return list(self.get_lookup_fields(view))
@@ -317,7 +326,7 @@ class SimpleFilter(DjangoFilterBackend):
                 'name': field_name,
                 'required': False,
                 'in': 'query',
-                'description': self.filter_desc.format_map({'field_name': field_name}),
+                'description': force_str(self.filter_desc.format_map({'field_name': field_name})),
                 'schema': {
                     'type': 'string',
                 },
