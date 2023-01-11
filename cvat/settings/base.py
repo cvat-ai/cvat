@@ -192,9 +192,6 @@ REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'cvat.apps.iam.schema.CustomAutoSchema',
 }
 
-CVAT_ERRORS = {
-    'LimitsReachedError': 'cvat.apps.engine.errors.LimitsReachedError'
-}
 
 REST_AUTH_REGISTER_SERIALIZERS = {
     'REGISTER_SERIALIZER': 'cvat.apps.iam.serializers.RegisterSerializerEx',
@@ -277,8 +274,6 @@ DEFAULT_LIMITS = {
 
     "PROJECT_WEBHOOKS": 10,
 }
-
-ERROR_MESSAGES = {}
 
 # ORG settings
 ORG_INVITATION_CONFIRM = 'No'

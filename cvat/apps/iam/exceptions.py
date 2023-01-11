@@ -6,7 +6,7 @@ from django.conf import settings
 from django.utils.module_loading import import_string
 from rest_framework.exceptions import PermissionDenied
 
-class LimitsReachedError(PermissionDenied):
+class DefaultLimitsReachedException(PermissionDenied):
     default_personal_detail = "You've reached the maximum number of {}. Contact the administrator to extend the limits."
     default_org_detail = "You've reached the maximum number of {}. Contact the administrator to extend the limits for `{}` organization."
 
@@ -23,15 +23,14 @@ class LimitsReachedError(PermissionDenied):
 
         super().__init__(msg)
 
-class CVATError:
-    def __getattr__(self, attr):
-        dotted_path = settings.CVAT_ERRORS.get(attr)
+class ExceptionFactory:
+    @classmethod
+    def get_base_exception(cls):
+        dotted_path = getattr(settings, "IAM_BASE_EXCEPTION", None)
+
         if dotted_path is None:
-            raise AttributeError("Error '%s' doesn't declared in settings")
+            return DefaultLimitsReachedException
 
-        val = import_string(dotted_path)
+        return import_string(dotted_path)
 
-        setattr(self, attr, val)
-        return val
-
-base_error = CVATError()
+LimitsReachedException = ExceptionFactory.get_base_exception()

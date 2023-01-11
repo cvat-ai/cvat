@@ -20,7 +20,7 @@ from rest_framework.permissions import BasePermission
 
 from cvat.apps.organizations.models import Membership, Organization
 from cvat.apps.engine.models import Project, Task, Job, Issue
-from cvat.apps.engine.errors import base_error
+from cvat.apps.iam.exceptions import LimitsReachedException
 from cvat.apps.limit_manager.core.limits import (CapabilityContext, LimitManager,
     Limits, OrgCloudStoragesContext, OrgTasksContext, ProjectWebhooksContext,
     OrgCommonWebhooksContext,
@@ -1607,7 +1607,7 @@ class PolicyEnforcer(BasePermission):
         if allow:
             return True
         elif reasons:
-            raise base_error.LimitsReachedError(reasons, self._iam_context)
+            raise LimitsReachedException(reasons, self._iam_context)
         else:
             raise PermissionDenied("not authorized")
 
