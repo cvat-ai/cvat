@@ -412,7 +412,7 @@ class TestOrgLimits:
     _CLOUD_STORAGES_LIMIT_MESSAGE = "cloud storages per organization"
     _PROJECT_WEBHOOKS_LIMIT_MESSAGE = "webhooks per project for the organization"
     _COMMON_WEBHOOKS_LIMIT_MESSAGE = "webhooks for the organization"
-    _MEMBERS_LIMIT_MESSAGE = "members for the organization"
+    _MEMBERS_LIMIT_MESSAGE = "members of organization"
 
     @contextmanager
     def _patch_client_with_org(self, client: Optional[Client] = None):
@@ -573,7 +573,7 @@ class TestOrgLimits:
         response = _add_storage(i)
 
         assert response.status_code == HTTPStatus.FORBIDDEN
-        assert self._CLOUD_STORAGES_LIMITS_MESSAGE in str(response.content)
+        assert self._CLOUD_STORAGES_LIMIT_MESSAGE in str(response.content)
 
     def test_can_reach_project_webhooks_limit(self):
         def _create_webhook():
@@ -602,7 +602,7 @@ class TestOrgLimits:
             _create_webhook()
 
         assert capture.value.status == HTTPStatus.FORBIDDEN
-        assert self._PROJECT_WEBHOOKS_LIMITS_MESSAGE in str(capture.value.body)
+        assert self._PROJECT_WEBHOOKS_LIMIT_MESSAGE in str(capture.value.body)
 
     def test_can_reach_org_common_webhooks_limit(self):
         def _create_webhook():
@@ -628,7 +628,7 @@ class TestOrgLimits:
             _create_webhook()
 
         assert capture.value.status == HTTPStatus.FORBIDDEN
-        assert self._COMMON_WEBHOOKS_LIMITS_MESSAGE in str(capture.value.body)
+        assert self._COMMON_WEBHOOKS_LIMIT_MESSAGE in str(capture.value.body)
 
     def test_can_reach_members_limit(self):
         def _add_member(i: int):
@@ -646,4 +646,4 @@ class TestOrgLimits:
             _add_member(i + 1)
 
         assert capture.value.status == HTTPStatus.FORBIDDEN
-        assert self._MEMBERS_LIMITS_MESSAGE in str(capture.value.body)
+        assert self._MEMBERS_LIMIT_MESSAGE in str(capture.value.body)

@@ -127,7 +127,7 @@ problems contains "cloud storages per organization" if {
     )
 }
 
-problems contains "org members limit reached" if {
+problems contains "members of organization" if {
     check_limit_exceeded(
         input.resource.limits[CAP_ORG_MEMBERS].used,
         input.resource.limits[CAP_ORG_MEMBERS].max
