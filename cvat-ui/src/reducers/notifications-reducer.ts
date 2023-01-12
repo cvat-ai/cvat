@@ -711,7 +711,8 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.messages,
                         models: {
                             ...state.messages.models,
-                            inferenceDone: `Automatic annotation accomplished for the [task ${taskID}](/tasks/${taskID})`,
+                            inferenceDone: 'Automatic annotation accomplished for the ' +
+                                `[task ${taskID}](/tasks/${taskID})`,
                         },
                     },
                 };
