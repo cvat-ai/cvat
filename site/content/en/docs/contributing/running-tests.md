@@ -17,7 +17,7 @@ description: 'Instructions on how to run all existence tests.'
              -f components/serverless/docker-compose.serverless.yml \
              -f tests/docker-compose.minio.yml \
              -f tests/docker-compose.file_share.yml \
-             -f tests/social_auth/docker-compose.yml up -d
+             -f tests/python/social_auth/docker-compose.yml up -d
    ```
 1. Add test user in CVAT:
    ```

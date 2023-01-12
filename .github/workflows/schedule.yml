@@ -325,7 +325,7 @@ jobs:
             -f tests/docker-compose.file_share.yml \
             -f tests/docker-compose.minio.yml \
             -f components/serverless/docker-compose.serverless.yml \
-            -f tests/social_auth/docker-compose.yml up -d
+            -f tests/python/social_auth/docker-compose.yml up -d
 
       - name: Waiting for server
         id: wait-server
