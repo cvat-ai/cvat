@@ -50,6 +50,7 @@
     "react-color": "^2.19.3",
     "react-cookie": "^4.0.3",
     "react-dom": "^16.14.0",
+    "react-markdown": "^8.0.4",
     "react-moment": "^1.1.1",
     "react-redux": "^8.0.2",
     "react-resizable": "^3.0.4",

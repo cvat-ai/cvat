@@ -85,6 +85,7 @@ from online detectors & interactors) (<https://github.com/opencv/cvat/pull/4543>
 non-ascii paths while adding files from "Connected file share" (issue #4428)
 - Removed unnecessary volumes defined in docker-compose.serverless.yml
 (<https://github.com/openvinotoolkit/cvat/pull/4659>)
+- Added support for Image files that use the PIL.Image.mode 'I;16'
 - Project import/export with skeletons (<https://github.com/opencv/cvat/pull/4867>,
   <https://github.com/opencv/cvat/pull/5004>)
 - Shape color is not changed on canvas after changing a label (<https://github.com/opencv/cvat/pull/5045>)
