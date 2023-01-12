@@ -34,7 +34,6 @@ interface ImportedCollection {
 
 export default class Collection {
     public flush: boolean;
-    private startFrame: number;
     private stopFrame: number;
     private frameMeta: any;
     private labels: Record<number, Label>
@@ -49,7 +48,6 @@ export default class Collection {
     private injection: BasicInjection;
 
     constructor(data) {
-        this.startFrame = data.startFrame;
         this.stopFrame = data.stopFrame;
         this.frameMeta = data.frameMeta;
 

@@ -49,7 +49,6 @@ async function getAnnotationsFromServer(session) {
         const collection = new Collection({
             labels: session.labels || session.task.labels,
             history,
-            startFrame,
             stopFrame,
             frameMeta,
         });
