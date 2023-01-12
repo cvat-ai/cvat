@@ -102,11 +102,11 @@ class TestUserLimits:
     _DEFAULT_ORGS_LIMIT = 1
     _DEFAULT_CLOUD_STORAGES_LIMIT = 10
 
-    _TASK_LIMIT_MESSAGE = "user tasks limit reached"
-    _PROJECT_TASK_LIMIT_MESSAGE = "user project tasks limit reached"
-    _PROJECTS_LIMIT_MESSAGE = "user projects limit reached"
-    _ORGS_LIMIT_MESSAGE = "user orgs limit reached"
-    _CLOUD_STORAGES_LIMIT_MESSAGE = "user cloud storages limit reached"
+    _TASK_LIMIT_MESSAGE = "tasks per user"
+    _PROJECT_TASK_LIMIT_MESSAGE = "tasks per project for the user"
+    _PROJECTS_LIMIT_MESSAGE = "projects per user"
+    _ORGS_LIMIT_MESSAGE = "organizations per user"
+    _CLOUD_STORAGES_LIMIT_MESSAGE = "cloud storages per user"
 
     def _create_task(
         self, *, project: Optional[int] = None, client: Optional[Client] = None
@@ -138,7 +138,7 @@ class TestUserLimits:
             self._create_task()
 
         assert capture.value.status == HTTPStatus.FORBIDDEN
-        assert set(json.loads(capture.value.body)) == {self._TASK_LIMIT_MESSAGE}
+        assert self._TASK_LIMIT_MESSAGE in str(capture.value.body)
 
     def test_can_reach_tasks_limit_when_importing_backup(self):
         for _ in range(self._DEFAULT_TASKS_LIMIT):
@@ -151,7 +151,7 @@ class TestUserLimits:
             self.client.tasks.create_from_backup(backup_filename)
 
         assert capture.value.status == HTTPStatus.FORBIDDEN
-        assert set(json.loads(capture.value.body)) == {self._TASK_LIMIT_MESSAGE}
+        assert self._TASK_LIMIT_MESSAGE in str(capture.value.body)
 
     def test_can_reach_tasks_limit_when_creating_in_project(self):
         project = self._create_project().id
@@ -163,7 +163,7 @@ class TestUserLimits:
             self._create_task(project=project)
 
         assert capture.value.status == HTTPStatus.FORBIDDEN
-        assert set(json.loads(capture.value.body)) == {self._PROJECT_TASK_LIMIT_MESSAGE}
+        assert self._PROJECT_TASK_LIMIT_MESSAGE in str(capture.value.body)
 
     def test_can_reach_tasks_limit_when_creating_in_different_projects(self):
         project1 = self._create_project().id
@@ -178,7 +178,7 @@ class TestUserLimits:
             self._create_task()
 
         assert capture.value.status == HTTPStatus.FORBIDDEN
-        assert set(json.loads(capture.value.body)) == {self._TASK_LIMIT_MESSAGE}
+        assert self._TASK_LIMIT_MESSAGE in str(capture.value.body)
 
     def test_can_reach_tasks_limit_when_creating_in_filled_project(self):
         project = self._create_project().id
@@ -192,10 +192,8 @@ class TestUserLimits:
             self._create_task(project=project)
 
         assert capture.value.status == HTTPStatus.FORBIDDEN
-        assert set(json.loads(capture.value.body)) == {
-            self._TASK_LIMIT_MESSAGE,
-            self._PROJECT_TASK_LIMIT_MESSAGE,
-        }
+        assert self._TASK_LIMIT_MESSAGE in str(capture.value.body)
+        assert self._PROJECT_TASK_LIMIT_MESSAGE in str(capture.value.body)
 
     def test_can_reach_project_tasks_limit_when_moving_into_filled_project(self):
         project = self._create_project().id
@@ -208,7 +206,7 @@ class TestUserLimits:
             task.update(models.PatchedTaskWriteRequest(project_id=project))
 
         assert capture.value.status == HTTPStatus.FORBIDDEN
-        assert set(json.loads(capture.value.body)) == {self._PROJECT_TASK_LIMIT_MESSAGE}
+        assert self._PROJECT_TASK_LIMIT_MESSAGE in str(capture.value.body)
 
     @pytest.mark.xfail(
         raises=AssertionError, reason="only admins can change ownership, but they ignore limits"
@@ -229,7 +227,7 @@ class TestUserLimits:
             )
 
         assert capture.value.status == HTTPStatus.FORBIDDEN
-        assert set(json.loads(capture.value.body)) == {self._PROJECT_TASK_LIMIT_MESSAGE}
+        assert self._PROJECT_TASK_LIMIT_MESSAGE in str(capture.value.body)
 
     @pytest.mark.xfail(
         raises=AssertionError, reason="only admins can change ownership, but they ignore limits"
@@ -254,10 +252,8 @@ class TestUserLimits:
             )
 
         assert capture.value.status == HTTPStatus.FORBIDDEN
-        assert set(json.loads(capture.value.body)) == {
-            self._DEFAULT_TASKS_LIMIT,
-            self._PROJECT_TASK_LIMIT_MESSAGE,
-        }
+        assert self._TASK_LIMIT_MESSAGE in str(capture.value.body)
+        assert self._PROJECT_TASK_LIMIT_MESSAGE in str(capture.value.body)
 
     @pytest.mark.xfail(
         raises=AssertionError, reason="only admins can change ownership, but they ignore limits"
@@ -278,7 +274,7 @@ class TestUserLimits:
             )
 
         assert capture.value.status == HTTPStatus.FORBIDDEN
-        assert set(json.loads(capture.value.body)) == {self._PROJECT_TASK_LIMIT_MESSAGE}
+        assert self._PROJECT_TASK_LIMIT_MESSAGE in str(capture.value.body)
 
     def test_can_reach_projects_limit(self):
         for _ in range(self._DEFAULT_PROJECTS_LIMIT):
@@ -288,7 +284,7 @@ class TestUserLimits:
             self._create_project()
 
         assert capture.value.status == HTTPStatus.FORBIDDEN
-        assert set(json.loads(capture.value.body)) == {self._PROJECTS_LIMIT_MESSAGE}
+        assert self._PROJECTS_LIMIT_MESSAGE in str(capture.value.body)
 
     def test_can_reach_projects_limit_when_importing_backup(self):
         for _ in range(self._DEFAULT_PROJECTS_LIMIT):
@@ -301,7 +297,7 @@ class TestUserLimits:
             self.client.projects.create_from_backup(backup_filename)
 
         assert capture.value.status == HTTPStatus.FORBIDDEN
-        assert set(json.loads(capture.value.body)) == {self._PROJECTS_LIMIT_MESSAGE}
+        assert self._PROJECTS_LIMIT_MESSAGE in str(capture.value.body)
 
     def test_can_reach_orgs_limit(self):
         for i in range(self._DEFAULT_ORGS_LIMIT):
@@ -316,7 +312,7 @@ class TestUserLimits:
             )
 
         assert capture.value.status == HTTPStatus.FORBIDDEN
-        assert set(json.loads(capture.value.body)) == {self._ORGS_LIMIT_MESSAGE}
+        assert self._ORGS_LIMIT_MESSAGE in str(capture.value.body)
 
     @pytest.mark.with_external_services
     def test_can_reach_cloud_storages_limit(self, request: pytest.FixtureRequest):
@@ -350,7 +346,7 @@ class TestUserLimits:
         response = _add_storage(i)
 
         assert response.status_code == HTTPStatus.FORBIDDEN
-        assert set(response.json()) == {self._CLOUD_STORAGES_LIMIT_MESSAGE}
+        assert self._CLOUD_STORAGES_LIMIT_MESSAGE in str(response.content)
 
 
 class TestOrgLimits:
@@ -391,10 +387,10 @@ class TestOrgLimits:
     _DEFAULT_PROJECTS_LIMIT = 3
     _DEFAULT_CLOUD_STORAGES_LIMIT = 10
 
-    _TASK_LIMIT_MESSAGE = "org tasks limit reached"
-    _PROJECT_TASK_LIMIT_MESSAGE = "org project tasks limit reached"
-    _PROJECTS_LIMIT_MESSAGE = "org projects limit reached"
-    _CLOUD_STORAGES_LIMIT_MESSAGE = "org cloud storages limit reached"
+    _TASK_LIMIT_MESSAGE = "tasks per organization"
+    _PROJECT_TASK_LIMIT_MESSAGE = "tasks per project for the organization"
+    _PROJECTS_LIMIT_MESSAGE = "projects per organization"
+    _CLOUD_STORAGES_LIMIT_MESSAGE = "cloud storages per organization"
 
     @contextmanager
     def _patch_client_with_org(self, client: Optional[Client] = None):
@@ -442,7 +438,7 @@ class TestOrgLimits:
             self._create_task()
 
         assert capture.value.status == HTTPStatus.FORBIDDEN
-        assert set(json.loads(capture.value.body)) == {self._TASK_LIMIT_MESSAGE}
+        assert self._TASK_LIMIT_MESSAGE in str(capture.value.body)
 
     def test_can_reach_tasks_limit_when_importing_backup(self):
         for _ in range(self._DEFAULT_TASKS_LIMIT):
@@ -455,7 +451,7 @@ class TestOrgLimits:
             self.client.tasks.create_from_backup(backup_filename)
 
         assert capture.value.status == HTTPStatus.FORBIDDEN
-        assert set(json.loads(capture.value.body)) == {self._TASK_LIMIT_MESSAGE}
+        assert self._TASK_LIMIT_MESSAGE in str(capture.value.body)
 
     def test_can_reach_tasks_limit_when_creating_in_project(self):
         project = self._create_project().id
@@ -467,7 +463,7 @@ class TestOrgLimits:
             self._create_task(project=project)
 
         assert capture.value.status == HTTPStatus.FORBIDDEN
-        assert set(json.loads(capture.value.body)) == {self._PROJECT_TASK_LIMIT_MESSAGE}
+        assert self._PROJECT_TASK_LIMIT_MESSAGE in str(capture.value.body)
 
     def test_can_reach_tasks_limit_when_creating_in_different_projects(self):
         project1 = self._create_project().id
@@ -482,7 +478,7 @@ class TestOrgLimits:
             self._create_task()
 
         assert capture.value.status == HTTPStatus.FORBIDDEN
-        assert set(json.loads(capture.value.body)) == {self._TASK_LIMIT_MESSAGE}
+        assert self._TASK_LIMIT_MESSAGE in str(capture.value.body)
 
     def test_can_reach_tasks_limit_when_creating_in_filled_project(self):
         project = self._create_project().id
@@ -496,10 +492,8 @@ class TestOrgLimits:
             self._create_task(project=project)
 
         assert capture.value.status == HTTPStatus.FORBIDDEN
-        assert set(json.loads(capture.value.body)) == {
-            self._TASK_LIMIT_MESSAGE,
-            self._PROJECT_TASK_LIMIT_MESSAGE,
-        }
+        assert self._TASK_LIMIT_MESSAGE in str(capture.value.body)
+        assert self._PROJECT_TASK_LIMIT_MESSAGE in str(capture.value.body)
 
     def test_can_reach_projects_limit(self):
         for _ in range(self._DEFAULT_PROJECTS_LIMIT):
@@ -509,7 +503,7 @@ class TestOrgLimits:
             self._create_project()
 
         assert capture.value.status == HTTPStatus.FORBIDDEN
-        assert set(json.loads(capture.value.body)) == {self._PROJECTS_LIMIT_MESSAGE}
+        assert self._PROJECTS_LIMIT_MESSAGE in str(capture.value.body)
 
     def test_can_reach_projects_limit_when_importing_backup(self):
         for _ in range(self._DEFAULT_PROJECTS_LIMIT):
@@ -522,7 +516,7 @@ class TestOrgLimits:
             self.client.projects.create_from_backup(str(backup_filename))
 
         assert capture.value.status == HTTPStatus.FORBIDDEN
-        assert set(json.loads(capture.value.body)) == {self._PROJECTS_LIMIT_MESSAGE}
+        assert self._PROJECTS_LIMIT_MESSAGE in str(capture.value.body)
 
     @pytest.mark.with_external_services
     def test_can_reach_cloud_storages_limit(self, request: pytest.FixtureRequest):
@@ -557,4 +551,4 @@ class TestOrgLimits:
         response = _add_storage(i)
 
         assert response.status_code == HTTPStatus.FORBIDDEN
-        assert set(response.json()) == {self._CLOUD_STORAGES_LIMIT_MESSAGE}
+        assert self._CLOUD_STORAGES_LIMIT_MESSAGE in str(response.content)
