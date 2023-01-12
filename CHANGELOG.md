@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - \[SDK\] A PyTorch adapter setting to disable cache updates
   (<https://github.com/opencv/cvat/pull/5549>)
 - YOLO v7 serverless feature added using ONNX backend (<https://github.com/opencv/cvat/pull/5552>)
+- Cypress test for social account authentication (<https://github.com/opencv/cvat/pull/5444>)
+- Dummy github and google authentication servers (<https://github.com/opencv/cvat/pull/5444>)
 
 ### Changed
 - The Docker Compose files now use the Compose Specification version
