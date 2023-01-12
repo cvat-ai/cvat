@@ -56,7 +56,7 @@ To upgrade CVAT, follow these steps:
   
 ## How to upgrade CVAT from v2.2.0 to v2.3.0.
 
-Step by step commands how to udgrade CVAT from v2.2.0 to v2.3.0.
+Step by step commands how to upgrade CVAT from v2.2.0 to v2.3.0.
 Let's assume that you have CVAT v2.2.0 working.
 ```shell
 docker exec -it cvat_db pg_dumpall > cvat.db.dump
@@ -82,7 +82,7 @@ docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose
   
 ## How to upgrade CVAT from v1.7.0 to v2.2.0.
 
-Step by step commands how to udgrade CVAT from v1.7.0 to v2.2.0.
+Step by step commands how to upgrade CVAT from v1.7.0 to v2.2.0.
 Let's assume that you have CVAT v1.7.0 working.
 ```shell
 export CVAT_VERSION="2.2.0"
