@@ -10,6 +10,7 @@ import {
 } from 'cvat-core/src/labels';
 import { ShapeType, LabelType } from 'cvat-core/src/enums';
 import { Storage, StorageData } from 'cvat-core/src/storage';
+import { SocialAuthMethods, SocialAuthMethod } from 'cvat-core/src/auth-methods';
 
 const cvat: any = _cvat;
 
@@ -31,10 +32,12 @@ export {
     LabelType,
     Storage,
     Webhook,
+    SocialAuthMethod,
 };
 
 export type {
     RawAttribute,
     RawLabel,
     StorageData,
+    SocialAuthMethods,
 };

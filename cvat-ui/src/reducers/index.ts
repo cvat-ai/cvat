@@ -5,22 +5,13 @@
 
 import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
-import { Webhook } from 'cvat-core-wrapper';
+import { Webhook, SocialAuthMethods } from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap } from 'utils/mousetrap-react';
 import { OpenCVTracker } from 'utils/opencv-wrapper/opencv-interfaces';
 
 export type StringObject = {
     [index: string]: string;
-};
-
-enum AdvancedAuthMethods {
-    GOOGLE_ACCOUNT_AUTHENTICATION = 'GOOGLE_ACCOUNT_AUTHENTICATION',
-    GITHUB_ACCOUNT_AUTHENTICATION = 'GITHUB_ACCOUNT_AUTHENTICATION',
-}
-
-export type AdvancedAuthMethodsList = {
-    [name in AdvancedAuthMethods]: boolean;
 };
 
 export interface AuthState {
@@ -33,9 +24,9 @@ export interface AuthState {
     allowChangePassword: boolean;
     allowResetPassword: boolean;
     hasEmailVerificationBeenSent: boolean;
-    advancedAuthFetching: boolean;
-    advancedAuthInitialized: boolean;
-    advancedAuthList: AdvancedAuthMethodsList;
+    socialAuthFetching: boolean;
+    socialAuthInitialized: boolean;
+    socialAuthMethods: SocialAuthMethods;
 }
 
 export interface ProjectsQuery {
