@@ -310,7 +310,6 @@ class SimpleFilter(DjangoFilterBackend):
             coreapi.Field(
                 name=field_name,
                 location='query',
-                required=False,
                 schema={
                     'type': 'string',
                 }
@@ -324,7 +323,6 @@ class SimpleFilter(DjangoFilterBackend):
         for field_name in filter_fields:
             parameters.append({
                 'name': field_name,
-                'required': False,
                 'in': 'query',
                 'description': force_str(self.filter_desc.format_map({'field_name': field_name})),
                 'schema': {
