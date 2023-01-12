@@ -53,25 +53,53 @@ To upgrade CVAT, follow these steps:
   ```shell
   docker logs cvat_server -f
   ```
+  
+## How to upgrade CVAT from v2.2.0 to v2.3.0.
 
-## How to udgrade CVAT from v1.7.0 to v2.1.0.
+Step by step commands how to udgrade CVAT from v2.2.0 to v2.3.0.
+Let's assume that you have CVAT v2.2.0 working.
+```shell
+docker exec -it cvat_db pg_dumpall > cvat.db.dump
+cd cvat
+docker-compose down
+docker volume rm cvat_cvat_db
+export CVAT_VERSION="2.3.0"
+cd ..
+mv cvat cvat_220
+wget https://github.com/opencv/cvat/archive/refs/tags/v${CVAT_VERSION}.zip
+unzip v${CVAT_VERSION}.zip && mv cvat_${CVAT_VERSION} cvat
+cd cvat
+export CVAT_HOST=cvat.example.com
+export ACME_EMAIL=example@example.com
+docker pull cvat/server:v${CVAT_VERSION}
+docker tag cvat/server:v${CVAT_VERSION} openvino/cvat_server:latest
+docker pull cvat/ui:v${CVAT_VERSION}
+docker tag cvat/ui:v${CVAT_VERSION} openvino/cvat_ui:latest
+docker-compose up -d cvat_db
+docker exec -i cvat_db psql -q -d postgres < ../cvat.db.dump
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.https.yml up -d
+```  
+  
+## How to upgrade CVAT from v1.7.0 to v2.2.0.
 
-Step by step commands how to udgrade CVAT from v1.7.0 to v2.1.0.
+Step by step commands how to udgrade CVAT from v1.7.0 to v2.2.0.
 Let's assume that you have CVAT v1.7.0 working.
 ```shell
+export CVAT_VERSION="2.2.0"
 cd cvat
-docker compose down
+docker-compose down
 cd ..
-mv cvat cvat_old
-wget https://github.com/opencv/cvat/archive/refs/tags/v2.1.0.zip
-unzip v2.1.0.zip && mv cvat-2.1.0 cvat
+mv cvat cvat_170
+wget https://github.com/opencv/cvat/archive/refs/tags/v${CVAT_VERSION}.zip
+unzip v${CVAT_VERSION}.zip && mv cvat_${CVAT_VERSION} cvat
 cd cvat
-docker pull cvat/server:v2.1.0
-docker tag cvat/server:v2.1.0 openvino/cvat_server:latest
-docker pull cvat/ui:v2.1.0
-docker tag cvat/ui:v2.1.0 openvino/cvat_ui:latest
-docker compose up -d
+docker pull cvat/server:v${CVAT_VERSION}
+docker tag cvat/server:v${CVAT_VERSION} openvino/cvat_server:latest
+docker pull cvat/ui:v${CVAT_VERSION}
+docker tag cvat/ui:v${CVAT_VERSION} openvino/cvat_ui:latest
+docker-compose up -d
 ```
+  
 ## How to upgrade PostgreSQL database base image
 
 1. It is highly recommended backup all CVAT data before updating, follow the
