@@ -854,6 +854,49 @@ class TestPostTaskData:
             status = self._test_cannot_create_task(self._USERNAME, task_spec, data_spec)
             assert "No media data found" in status.message
 
+    def test_can_specify_file_job_mapping(self):
+        task_spec = {
+            "name": f"test file-job mapping",
+            "labels": [{"name": "car"}],
+        }
+
+        files = generate_image_files(7)
+        filenames = [osp.basename(f.name) for f in files]
+        expected_segments = [
+            filenames[0:1],
+            filenames[1:5][::-1],  # a reversed fragment
+            filenames[5:7],
+        ]
+
+        data_spec = {
+            "image_quality": 75,
+            "client_files": files,
+            "job_file_mapping": expected_segments,
+        }
+
+        task_id = self._test_create_task(
+            self._USERNAME, task_spec, data_spec, content_type="application/json"
+        )
+
+        with make_api_client(self._USERNAME) as api_client:
+            (task, _) = api_client.tasks_api.retrieve(id=task_id)
+            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(id=task_id)
+
+            assert [f.name for f in task_meta.frames] == list(
+                chain.from_iterable(expected_segments)
+            )
+
+            assert len(task.segments) == len(expected_segments)
+
+            start_frame = 0
+            for i, segment in enumerate(task.segments):
+                expected_size = len(expected_segments[i])
+                stop_frame = start_frame + expected_size - 1
+                assert segment.start_frame == start_frame
+                assert segment.stop_frame == stop_frame
+
+                start_frame = stop_frame + 1
+
 
 @pytest.mark.usefixtures("restore_db_per_function")
 @pytest.mark.usefixtures("restore_cvat_data")
@@ -909,49 +952,6 @@ class TestWorkWithTask:
             except Exception as ex:
                 assert ex.status == HTTPStatus.NOT_FOUND
                 assert image_name in ex.body
-
-    def test_can_specify_file_job_mapping(self):
-        task_spec = {
-            "name": f"test file-job mapping",
-            "labels": [{"name": "car"}],
-        }
-
-        files = generate_image_files(7)
-        filenames = [osp.basename(f.name) for f in files]
-        expected_segments = [
-            filenames[0:1],
-            filenames[1:5][::-1],  # a reversed fragment
-            filenames[5:7],
-        ]
-
-        data_spec = {
-            "image_quality": 75,
-            "client_files": files,
-            "job_file_mapping": expected_segments,
-        }
-
-        task_id = self._test_create_task(
-            self._USERNAME, task_spec, data_spec, content_type="application/json"
-        )
-
-        with make_api_client(self._USERNAME) as api_client:
-            (task, _) = api_client.tasks_api.retrieve(id=task_id)
-            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(id=task_id)
-
-            assert [f.name for f in task_meta.frames] == list(
-                chain.from_iterable(expected_segments)
-            )
-
-            assert len(task.segments) == len(expected_segments)
-
-            start_frame = 0
-            for i, segment in enumerate(task.segments):
-                expected_size = len(expected_segments[i])
-                stop_frame = start_frame + expected_size - 1
-                assert segment.start_frame == start_frame
-                assert segment.stop_frame == stop_frame
-
-                start_frame = stop_frame + 1
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
