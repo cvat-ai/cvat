@@ -268,7 +268,6 @@ class ServerViewSet(viewsets.ViewSet):
         }
         return Response(response)
 
-import django_filters
 @extend_schema(tags=['projects'])
 @extend_schema_view(
     list=extend_schema(
@@ -315,7 +314,8 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     # type fields on the model,such as CharField or TextField
     search_fields = ('name', 'owner', 'assignee', 'status')
     filter_fields = list(search_fields) + ['id', 'updated_date']
-    ordering_fields = filter_fields
+    simple_filters = list(search_fields)
+    ordering_fields = list(filter_fields)
     ordering = "-id"
     lookup_fields = {'owner': 'owner__username', 'assignee': 'assignee__username'}
     iam_organization_field = 'organization'
@@ -789,10 +789,19 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         'project__label_set__attributespec_set',
         'label_set__sublabels__attributespec_set',
         'project__label_set__sublabels__attributespec_set')
-    lookup_fields = {'project_name': 'project__name', 'owner': 'owner__username', 'assignee': 'assignee__username'}
-    search_fields = ('project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension')
+    lookup_fields = {
+        'project_name': 'project__name',
+        'owner': 'owner__username',
+        'assignee': 'assignee__username',
+        'tracker_link': 'bug_tracker',
+    }
+    search_fields = (
+        'project_name', 'name', 'owner', 'status', 'assignee',
+        'subset', 'mode', 'dimension', 'tracker_link'
+    )
     filter_fields = list(search_fields) + ['id', 'project_id', 'updated_date']
-    ordering_fields = filter_fields
+    simple_filters = list(search_fields) + ['project_id']
+    ordering_fields = list(filter_fields)
     ordering = "-id"
     iam_organization_field = 'organization'
 
@@ -1410,7 +1419,8 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     iam_organization_field = 'segment__task__organization'
     search_fields = ('task_name', 'project_name', 'assignee', 'state', 'stage')
     filter_fields = list(search_fields) + ['id', 'task_id', 'project_id', 'updated_date']
-    ordering_fields = filter_fields
+    simple_filters = list(search_fields) + ['task_id', 'project_id']
+    ordering_fields = list(filter_fields)
     ordering = "-id"
     lookup_fields = {
         'dimension': 'segment__task__dimension',
@@ -1854,14 +1864,15 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     queryset = Issue.objects.all().order_by('-id')
     iam_organization_field = 'job__segment__task__organization'
     search_fields = ('owner', 'assignee')
-    filter_fields = list(search_fields) + ['id', 'job_id', 'task_id', 'resolved']
+    filter_fields = list(search_fields) + ['id', 'job_id', 'task_id', 'resolved', 'frame_id']
+    simple_filters = list(search_fields) + ['job_id', 'task_id', 'resolved', 'frame_id']
+    ordering_fields = list(filter_fields)
     lookup_fields = {
         'owner': 'owner__username',
         'assignee': 'assignee__username',
         'job_id': 'job__id',
         'task_id': 'job__segment__task__id',
     }
-    ordering_fields = filter_fields
     ordering = '-id'
 
     def get_queryset(self):
@@ -1935,7 +1946,8 @@ class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     iam_organization_field = 'issue__job__segment__task__organization'
     search_fields = ('owner',)
     filter_fields = list(search_fields) + ['id', 'issue_id']
-    ordering_fields = filter_fields
+    simple_filters = list(search_fields) + ['issue_id']
+    ordering_fields = list(filter_fields)
     ordering = '-id'
     lookup_fields = {'owner': 'owner__username', 'issue_id': 'issue__id'}
 
@@ -1991,11 +2003,12 @@ class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, PartialUpdateModelMixin, mixins.DestroyModelMixin):
     queryset = User.objects.prefetch_related('groups').all()
-    search_fields = ('username', 'first_name', 'last_name')
     iam_organization_field = 'memberships__organization'
 
-    filter_fields = ('id', 'is_active', 'username')
-    ordering_fields = filter_fields
+    search_fields = ('username', 'first_name', 'last_name')
+    filter_fields = list(search_fields) + ['id', 'is_active']
+    simple_filters = list(search_fields) + ['is_active']
+    ordering_fields = list(filter_fields)
     ordering = "-id"
 
     def get_queryset(self):
@@ -2074,12 +2087,13 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 ):
     queryset = CloudStorageModel.objects.all().prefetch_related('data')
 
-    search_fields = ('provider_type', 'display_name', 'resource',
+    search_fields = ('provider_type', 'name', 'resource',
                     'credentials_type', 'owner', 'description')
     filter_fields = list(search_fields) + ['id']
-    ordering_fields = filter_fields
+    simple_filters = list(set(search_fields) - {'description'})
+    ordering_fields = list(filter_fields)
     ordering = "-id"
-    lookup_fields = {'owner': 'owner__username'}
+    lookup_fields = {'owner': 'owner__username', 'name': 'display_name'}
     iam_organization_field = 'organization'
 
     def get_serializer_class(self):

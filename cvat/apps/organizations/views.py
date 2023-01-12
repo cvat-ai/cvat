@@ -57,8 +57,9 @@ class OrganizationViewSet(viewsets.GenericViewSet,
     queryset = Organization.objects.all()
     search_fields = ('name', 'owner')
     filter_fields = list(search_fields) + ['id', 'slug']
+    simple_filters = list(search_fields) + ['slug']
     lookup_fields = {'owner': 'owner__username'}
-    ordering_fields = filter_fields
+    ordering_fields = list(filter_fields)
     ordering = '-id'
     http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
     iam_organization_field = None
@@ -113,9 +114,10 @@ class MembershipViewSet(mixins.RetrieveModelMixin, DestroyModelMixin,
     ordering = '-id'
     http_method_names = ['get', 'patch', 'delete', 'head', 'options']
     search_fields = ('user_name', 'role')
-    filter_fields = list(search_fields) + ['id', 'user']
-    ordering_fields = filter_fields
-    lookup_fields = {'user': 'user__id', 'user_name': 'user__username'}
+    filter_fields = list(search_fields) + ['id', 'user_id']
+    simple_filters = list(search_fields) + ['user_id']
+    ordering_fields = list(filter_fields)
+    lookup_fields = {'user_id': 'user__id', 'user_name': 'user__username'}
     iam_organization_field = 'organization'
 
     def get_serializer_class(self):
@@ -174,7 +176,8 @@ class InvitationViewSet(viewsets.GenericViewSet,
     iam_organization_field = 'membership__organization'
 
     search_fields = ('owner',)
-    filter_fields = search_fields
+    filter_fields = list(search_fields)
+    simple_filters = list(search_fields)
     ordering_fields = list(filter_fields) + ['created_date']
     ordering = '-created_date'
     lookup_fields = {'owner': 'owner__username'}
