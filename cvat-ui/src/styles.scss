@@ -122,3 +122,9 @@ hr {
         background: $highlight-active;
     }
 }
+
+.ant-notification-notice {
+    p {
+        margin-bottom: 0;
+    }
+}

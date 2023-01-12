@@ -20,6 +20,7 @@ from rest_framework.permissions import BasePermission
 
 from cvat.apps.organizations.models import Membership, Organization
 from cvat.apps.engine.models import Project, Task, Job, Issue
+from cvat.apps.iam.exceptions import LimitsReachedException
 from cvat.apps.limit_manager.core import limits
 from cvat.apps.webhooks.models import WebhookTypeChoice
 
@@ -28,8 +29,6 @@ class StrEnum(str, Enum):
     def __str__(self) -> str:
         return self.value
 
-class RequestNotAllowedError(PermissionDenied):
-    pass
 
 @define
 class PermissionResult:
@@ -1654,6 +1653,8 @@ class PolicyEnforcer(BasePermission):
                 request, view, obj, basic_permissions
             ))
 
+        self._iam_context = request.iam_context
+
         allow = self._check_permissions(basic_permissions)
         if allow and conditional_permissions:
             allow = self._check_permissions(conditional_permissions)
@@ -1669,8 +1670,10 @@ class PolicyEnforcer(BasePermission):
 
         if allow:
             return True
+        elif reasons:
+            raise LimitsReachedException(reasons, self._iam_context)
         else:
-            raise RequestNotAllowedError(reasons or "not authorized")
+            raise PermissionDenied("not authorized")
 
     def has_permission(self, request, view):
         if not view.detail:
