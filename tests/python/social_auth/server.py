@@ -210,8 +210,8 @@ if __name__ == "__main__":
     parser.add_argument("--server", choices=["google", "github"], type=str, default="google")
     server = parser.parse_args().server
     auth_servers = {
-        'google': GoogleAuthServer,
-        'github': GithubAuthServer,
+        "google": GoogleAuthServer,
+        "github": GithubAuthServer,
     }
     server_class = auth_servers[server]
     server_class().run()

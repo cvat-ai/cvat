@@ -4,24 +4,27 @@
 
 import os
 
-from django.conf import settings
-
 from allauth.socialaccount.providers.github.views import GitHubOAuth2Adapter
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
+from django.conf import settings
 
 GOOGLE_SERVER_PORT = os.environ.get("GOOGLE_SERVER_PORT")
 GOOGLE_SERVER_HOST = os.environ.get("GOOGLE_SERVER_HOST")
 GITHUB_SERVER_PORT = os.environ.get("GITHUB_SERVER_PORT")
 GITHUB_SERVER_HOST = os.environ.get("GITHUB_SERVER_HOST")
 
+
 class TestGitHubAdapter(GitHubOAuth2Adapter):
-    access_token_url = f"http://{GITHUB_SERVER_HOST}:{GITHUB_SERVER_PORT}/login/oauth/access_token" # nosec
+    access_token_url = (
+        f"http://{GITHUB_SERVER_HOST}:{GITHUB_SERVER_PORT}/login/oauth/access_token"  # nosec
+    )
     authorize_url = f"http://localhost:{GITHUB_SERVER_PORT}/login/oauth/authorize"
     profile_url = f"http://{GITHUB_SERVER_HOST}:{GITHUB_SERVER_PORT}/user"
     emails_url = f"http://{GITHUB_SERVER_HOST}:{GITHUB_SERVER_PORT}/user/emails"
 
     def get_callback_url(self, request, app):
         return settings.GITHUB_CALLBACK_URL
+
 
 class TestGoogleAdapter(GoogleOAuth2Adapter):
     access_token_url = f"http://{GOOGLE_SERVER_HOST}:{GOOGLE_SERVER_PORT}/o/oauth2/token"
