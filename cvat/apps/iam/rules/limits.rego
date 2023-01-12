@@ -62,7 +62,7 @@ problems contains "projects per organization" if {
     )
 }
 
-problems contains "tasks per project for organization" if {
+problems contains "tasks per project for the organization" if {
     check_limit_exceeded(
         input.resource.limits[CAP_TASKS_IN_ORG_PROJECT].used,
         input.resource.limits[CAP_TASKS_IN_ORG_PROJECT].max
