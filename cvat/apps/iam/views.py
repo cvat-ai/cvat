@@ -398,8 +398,7 @@ class SocialAuthMethods(views.APIView):
         for provider in integrated_auth_providers:
             icon = None
             is_enabled = bool(
-                provider in integrated_auth_providers
-                and getattr(settings, f'SOCIAL_AUTH_{provider.upper()}_CLIENT_ID', None)
+                getattr(settings, f'SOCIAL_AUTH_{provider.upper()}_CLIENT_ID', None)
                 and getattr(settings, f'SOCIAL_AUTH_{provider.upper()}_CLIENT_SECRET', None)
             )
             icon_path = osp.join(settings.STATIC_ROOT, 'social_authentication', f'social-{provider}-logo.svg')
