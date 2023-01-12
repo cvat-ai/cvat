@@ -1,4 +1,4 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -209,5 +209,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--server", choices=["google", "github"], type=str, default="google")
     server = parser.parse_args().server
-    server_class = GoogleAuthServer if server == "google" else GithubAuthServer
+    auth_servers = {
+        'google': GoogleAuthServer,
+        'github': GithubAuthServer,
+    }
+    server_class = auth_servers[server]
     server_class().run()

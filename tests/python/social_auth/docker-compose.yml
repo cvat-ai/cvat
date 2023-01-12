@@ -1,5 +1,3 @@
-version: '3.3'
-
 services:
   cvat_server:
     environment:
@@ -8,11 +6,13 @@ services:
       SOCIAL_AUTH_GOOGLE_CLIENT_SECRET: "XXX"
       SOCIAL_AUTH_GITHUB_CLIENT_ID: "XXX"
       SOCIAL_AUTH_GITHUB_CLIENT_SECRET: "XXX"
-      DJANGO_SETTINGS_MODULE: cvat.settings.social_auth_settings
+      DJANGO_SETTINGS_MODULE: social_auth.settings
       GOOGLE_SERVER_HOST:
       GOOGLE_SERVER_PORT:
       GITHUB_SERVER_HOST:
       GITHUB_SERVER_PORT:
+    volumes:
+      - ./tests/python/social_auth:/home/django/social_auth:ro
 
   google_auth_server:
     image: python:3.9-slim
@@ -24,7 +24,7 @@ services:
       - '${GOOGLE_SERVER_PORT}:${GOOGLE_SERVER_PORT}'
     command: python3 /tmp/server.py --server "google"
     volumes:
-      - ./tests/python/authentication_server:/tmp
+      - ./tests/python/social_auth:/tmp
     networks:
       cvat:
         aliases:
@@ -40,7 +40,7 @@ services:
       - '${GITHUB_SERVER_PORT}:${GITHUB_SERVER_PORT}'
     command: python3 /tmp/server.py --server "github"
     volumes:
-      - ./tests/python/authentication_server:/tmp
+      - ./tests/python/social_auth:/tmp
     networks:
       cvat:
         aliases:

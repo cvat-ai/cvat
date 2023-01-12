@@ -668,6 +668,10 @@ if USE_ALLAUTH_SOCIAL_ACCOUNTS:
                 'key': ''
             },
             'SCOPE': [ 'read:user', 'user:email' ],
+            # NOTE: Custom field. This is necessary for the user interface
+            # to render possible social account authentication option.
+            # If this field is not specified, then the option with the provider
+            # key with a capital letter will be used
             'PUBLIC_NAME': 'GitHub',
         },
     }

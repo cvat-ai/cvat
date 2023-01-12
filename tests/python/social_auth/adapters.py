@@ -1,4 +1,4 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -15,7 +15,6 @@ GITHUB_SERVER_PORT = os.environ.get("GITHUB_SERVER_PORT")
 GITHUB_SERVER_HOST = os.environ.get("GITHUB_SERVER_HOST")
 
 class TestGitHubAdapter(GitHubOAuth2Adapter):
-
     access_token_url = f"http://{GITHUB_SERVER_HOST}:{GITHUB_SERVER_PORT}/login/oauth/access_token" # nosec
     authorize_url = f"http://localhost:{GITHUB_SERVER_PORT}/login/oauth/authorize"
     profile_url = f"http://{GITHUB_SERVER_HOST}:{GITHUB_SERVER_PORT}/user"
