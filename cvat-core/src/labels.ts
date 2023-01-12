@@ -16,11 +16,6 @@ export interface RawAttribute {
     id?: number;
 }
 
-/**
- * Class representing an attribute
- * @memberof module:API.cvat.classes
- * @hideconstructor
- */
 export class Attribute {
     public id?: number;
     public defaultValue: string;
@@ -58,63 +53,21 @@ export class Attribute {
         Object.defineProperties(
             this,
             Object.freeze({
-                /**
-                 * @name id
-                 * @type {number}
-                 * @memberof module:API.cvat.classes.Attribute
-                 * @readonly
-                 * @instance
-                 */
                 id: {
                     get: () => data.id,
                 },
-                /**
-                 * @name defaultValue
-                 * @type {string}
-                 * @memberof module:API.cvat.classes.Attribute
-                 * @readonly
-                 * @instance
-                 */
                 defaultValue: {
                     get: () => data.default_value,
                 },
-                /**
-                 * @name inputType
-                 * @type {module:API.cvat.enums.AttributeType}
-                 * @memberof module:API.cvat.classes.Attribute
-                 * @readonly
-                 * @instance
-                 */
                 inputType: {
                     get: () => data.input_type,
                 },
-                /**
-                 * @name mutable
-                 * @type {boolean}
-                 * @memberof module:API.cvat.classes.Attribute
-                 * @readonly
-                 * @instance
-                 */
                 mutable: {
                     get: () => data.mutable,
                 },
-                /**
-                 * @name name
-                 * @type {string}
-                 * @memberof module:API.cvat.classes.Attribute
-                 * @readonly
-                 * @instance
-                 */
                 name: {
                     get: () => data.name,
                 },
-                /**
-                 * @name values
-                 * @type {string[]}
-                 * @memberof module:API.cvat.classes.Attribute
-                 * @readonly
-                 * @instance
-                 */
                 values: {
                     get: () => [...data.values],
                 },
@@ -152,11 +105,6 @@ export interface RawLabel {
     attributes: RawAttribute[];
 }
 
-/**
- * Class representing a label
- * @memberof module:API.cvat.classes
- * @hideconstructor
- */
 export class Label {
     public name: string;
     public readonly id?: number;
@@ -209,22 +157,9 @@ export class Label {
         Object.defineProperties(
             this,
             Object.freeze({
-                /**
-                 * @name id
-                 * @type {number}
-                 * @memberof module:API.cvat.classes.Label
-                 * @readonly
-                 * @instance
-                 */
                 id: {
                     get: () => data.id,
                 },
-                /**
-                 * @name name
-                 * @type {string}
-                 * @memberof module:API.cvat.classes.Label
-                 * @instance
-                 */
                 name: {
                     get: () => data.name,
                     set: (name) => {
@@ -234,12 +169,6 @@ export class Label {
                         data.name = name;
                     },
                 },
-                /**
-                 * @name color
-                 * @type {string}
-                 * @memberof module:API.cvat.classes.Label
-                 * @instance
-                 */
                 color: {
                     get: () => data.color,
                     set: (color) => {
@@ -250,40 +179,12 @@ export class Label {
                         }
                     },
                 },
-                /**
-                 * @name attributes
-                 * @type {module:API.cvat.classes.Attribute[]}
-                 * @memberof module:API.cvat.classes.Label
-                 * @readonly
-                 * @instance
-                 */
                 attributes: {
                     get: () => [...data.attributes],
                 },
-                /**
-                 * @typedef {Object} SkeletonStructure
-                 * @property {module:API.cvat.classes.Label[]} sublabels A list of labels the skeleton includes
-                 * @property {Object[]} svg An SVG representation of the skeleton
-                 * A type of a file
-                 * @global
-                 */
-                /**
-                 * @name type
-                 * @type {string | undefined}
-                 * @memberof module:API.cvat.classes.Label
-                 * @readonly
-                 * @instance
-                 */
                 type: {
                     get: () => data.type,
                 },
-                /**
-                 * @name type
-                 * @type {SkeletonStructure | undefined}
-                 * @memberof module:API.cvat.classes.Label
-                 * @readonly
-                 * @instance
-                 */
                 structure: {
                     get: () => {
                         if (data.type === ShapeType.SKELETON) {
@@ -296,25 +197,12 @@ export class Label {
                         return null;
                     },
                 },
-                /**
-                 * @name deleted
-                 * @type {boolean}
-                 * @memberof module:API.cvat.classes.Label
-                 * @instance
-                 */
                 deleted: {
                     get: () => data.deleted,
                     set: (value) => {
                         data.deleted = value;
                     },
                 },
-                /**
-                 * @name hasParent
-                 * @type {boolean}
-                 * @memberof module:API.cvat.classes.Label
-                 * @readonly
-                 * @instance
-                 */
                 hasParent: {
                     get: () => data.has_parent,
                 },

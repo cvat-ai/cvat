@@ -15,6 +15,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/2.0/ref/settings/
 """
 
+from enum import Enum
 import os
 import sys
 import fcntl
@@ -296,20 +297,32 @@ OLD_PASSWORD_FIELD_ENABLED = True
 # Django-RQ
 # https://github.com/rq/django-rq
 
+class CVAT_QUEUES(Enum):
+    IMPORT_DATA = 'import'
+    EXPORT_DATA = 'export'
+    AUTO_ANNOTATION = 'annotation'
+    WEBHOOKS = 'webhooks'
+
 RQ_QUEUES = {
-    'default': {
+    CVAT_QUEUES.IMPORT_DATA.value: {
         'HOST': 'localhost',
         'PORT': 6379,
         'DB': 0,
         'DEFAULT_TIMEOUT': '4h'
     },
-    'low': {
+    CVAT_QUEUES.EXPORT_DATA.value: {
+        'HOST': 'localhost',
+        'PORT': 6379,
+        'DB': 0,
+        'DEFAULT_TIMEOUT': '4h'
+    },
+    CVAT_QUEUES.AUTO_ANNOTATION.value: {
         'HOST': 'localhost',
         'PORT': 6379,
         'DB': 0,
         'DEFAULT_TIMEOUT': '24h'
     },
-    'webhooks': {
+    CVAT_QUEUES.WEBHOOKS.value: {
         'HOST': 'localhost',
         'PORT': 6379,
         'DB': 0,
@@ -501,6 +514,7 @@ CACHES = {
        'BACKEND' : 'diskcache.DjangoCache',
        'LOCATION' : CACHE_ROOT,
        'TIMEOUT' : None,
+       'SHARDS': 32,
        'OPTIONS' : {
             'size_limit' : 2 ** 40, # 1 Tb
        }

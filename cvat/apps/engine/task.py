@@ -39,11 +39,11 @@ from .cloud_provider import db_storage_to_storage_instance
 
 ############################# Low Level server API
 
-def create(tid, data):
+def create(tid, data, username):
     """Schedule the task"""
-    q = django_rq.get_queue('default')
+    q = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
     q.enqueue_call(func=_create_thread, args=(tid, data),
-        job_id="/api/tasks/{}".format(tid))
+        job_id=f"create:task.id{tid}-by-{username}")
 
 @transaction.atomic
 def rq_handler(job, exc_type, exc_value, traceback):
@@ -397,6 +397,9 @@ def _create_task_manifest_based_on_cloud_storage_manifest(
         content = list(map(_add_prefix, raw_content))
     else:
         sequence, content = cloud_storage_manifest.get_subset(sorted_media)
+    if not content:
+        raise ValidationError('There is no intersection of the files specified'
+                            'in the request with the contents of the bucket')
     sorted_content = (i[1] for i in sorted(zip(sequence, content)))
     manifest.create(sorted_content)
 
@@ -441,8 +444,6 @@ def _create_thread(
     )
 
     if is_data_in_cloud:
-        cloud_storage_instance = db_storage_to_storage_instance(db_data.cloud_storage)
-
         manifest = ImageManifestManager(db_data.get_manifest_path())
         cloud_storage_manifest = ImageManifestManager(
             os.path.join(db_data.cloud_storage.get_storage_dirname(), manifest_file),
@@ -484,14 +485,6 @@ def _create_thread(
                 sorted_media = list(itertools.chain.from_iterable(job_file_mapping))
             else:
                 sorted_media = sort(media['image'], data['sorting_method'])
-
-            # download previews from cloud storage
-            data_size = len(sorted_media)
-            segments, *_ = _get_task_segment_data(db_task,
-                data_size=data_size, job_file_mapping=job_file_mapping)
-            for preview_frame, *_ in segments:
-                preview = sorted_media[preview_frame]
-                cloud_storage_instance.download_file(preview, os.path.join(upload_dir, preview))
 
             # Define task manifest content based on cloud storage manifest content and uploaded files
             _create_task_manifest_based_on_cloud_storage_manifest(
