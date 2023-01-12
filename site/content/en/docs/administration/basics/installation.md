@@ -454,7 +454,7 @@ services:
   cvat_server:
     volumes:
       - cvat_share:/home/django/share:ro
-  cvat_worker_default:
+  cvat_worker_import:
     volumes:
       - cvat_share:/home/django/share:ro
 
