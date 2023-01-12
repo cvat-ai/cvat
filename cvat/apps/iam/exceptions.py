@@ -21,7 +21,7 @@ class DefaultLimitsReachedException(PermissionDenied):
         else:
             msg = msg.format(', '.join(reasons))
 
-        super().__init__(msg)
+        super().__init__({"message": msg})
 
 class ExceptionFactory:
     def __call__(self, *args, **kwargs):
