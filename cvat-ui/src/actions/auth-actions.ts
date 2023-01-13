@@ -7,7 +7,7 @@ import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import { UserConfirmation } from 'components/register-page/register-form';
 import { getCore } from 'cvat-core-wrapper';
 import isReachable from 'utils/url-checker';
-import { AdvancedAuthMethodsList } from '../reducers';
+import { SocialAuthMethods } from '../cvat-core-wrapper';
 
 const cvat = getCore();
 
@@ -36,9 +36,9 @@ export enum AuthActionTypes {
     LOAD_AUTH_ACTIONS = 'LOAD_AUTH_ACTIONS',
     LOAD_AUTH_ACTIONS_SUCCESS = 'LOAD_AUTH_ACTIONS_SUCCESS',
     LOAD_AUTH_ACTIONS_FAILED = 'LOAD_AUTH_ACTIONS_FAILED',
-    LOAD_ADVANCED_AUTHENTICATION = 'LOAD_ADVANCED_AUTHENTICATION',
-    LOAD_ADVANCED_AUTHENTICATION_SUCCESS = 'LOAD_ADVANCED_AUTHENTICATION_SUCCESS',
-    LOAD_ADVANCED_AUTHENTICATION_FAILED = 'LOAD_ADVANCED_AUTHENTICATION_FAILED',
+    LOAD_SOCIAL_AUTHENTICATION = 'LOAD_SOCIAL_AUTHENTICATION',
+    LOAD_SOCIAL_AUTHENTICATION_SUCCESS = 'LOAD_SOCIAL_AUTHENTICATION_SUCCESS',
+    LOAD_SOCIAL_AUTHENTICATION_FAILED = 'LOAD_SOCIAL_AUTHENTICATION_FAILED',
 }
 
 export const authActions = {
@@ -75,12 +75,12 @@ export const authActions = {
         })
     ),
     loadServerAuthActionsFailed: (error: any) => createAction(AuthActionTypes.LOAD_AUTH_ACTIONS_FAILED, { error }),
-    loadAdvancedAuth: () => createAction(AuthActionTypes.LOAD_ADVANCED_AUTHENTICATION),
-    loadAdvancedAuthSuccess: (list: AdvancedAuthMethodsList) => (
-        createAction(AuthActionTypes.LOAD_ADVANCED_AUTHENTICATION_SUCCESS, { list })
+    loadSocialAuth: () => createAction(AuthActionTypes.LOAD_SOCIAL_AUTHENTICATION),
+    loadSocialAuthSuccess: (methods: SocialAuthMethods) => (
+        createAction(AuthActionTypes.LOAD_SOCIAL_AUTHENTICATION_SUCCESS, { methods })
     ),
-    loadAdvancedAuthFailed: (error: any) => (
-        createAction(AuthActionTypes.LOAD_ADVANCED_AUTHENTICATION_FAILED, { error })
+    loadSocialAuthFailed: (error: any) => (
+        createAction(AuthActionTypes.LOAD_SOCIAL_AUTHENTICATION_FAILED, { error })
     ),
 };
 
@@ -210,12 +210,12 @@ export const loadAuthActionsAsync = (): ThunkAction => async (dispatch) => {
     }
 };
 
-export const loadAdvancedAuthAsync = (): ThunkAction => async (dispatch): Promise<void> => {
-    dispatch(authActions.loadAdvancedAuth());
+export const loadSocialAuthAsync = (): ThunkAction => async (dispatch): Promise<void> => {
+    dispatch(authActions.loadSocialAuth());
     try {
-        const list: AdvancedAuthMethodsList = await cvat.server.advancedAuthentication();
-        dispatch(authActions.loadAdvancedAuthSuccess(list));
+        const methods: SocialAuthMethods = await cvat.server.socialAuthentication();
+        dispatch(authActions.loadSocialAuthSuccess(methods));
     } catch (error) {
-        dispatch(authActions.loadAdvancedAuthFailed(error));
+        dispatch(authActions.loadSocialAuthFailed(error));
     }
 };

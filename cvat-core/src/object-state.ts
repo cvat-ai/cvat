@@ -64,10 +64,6 @@ export interface SerializedData {
     };
 }
 
-/**
- * Class representing a state of an object on a specific frame
- * @memberof module:API.cvat.classes
-*/
 export default class ObjectState {
     private readonly __internal: {
         save: (objectState: ObjectState) => ObjectState;
@@ -105,14 +101,6 @@ export default class ObjectState {
     public descriptions: string[];
     public elements: ObjectState[];
 
-    /**
-     * @param {Object} serialized - is an dictionary which contains
-     * initial information about an ObjectState;
-     * </br> Necessary fields: objectType, shapeType, frame, updated, group
-     * </br> Optional fields: keyframes, clientID, serverID, parentID
-     * </br> Optional fields which can be set later: points, zOrder, outside,
-     * occluded, hidden, attributes, lock, label, color, keyframe, source
-     */
     constructor(serialized: SerializedData) {
         if (!isEnum.call(ObjectType, serialized.objectType)) {
             throw new ArgumentError(
@@ -200,82 +188,27 @@ export default class ObjectState {
                     get: () => data.updateFlags,
                 },
                 frame: {
-                    /**
-                     * @name frame
-                     * @type {number}
-                     * @memberof module:API.cvat.classes.ObjectState
-                     * @readonly
-                     * @instance
-                     */
                     get: () => data.frame,
                 },
                 objectType: {
-                    /**
-                     * @name objectType
-                     * @type {module:API.cvat.enums.ObjectType}
-                     * @memberof module:API.cvat.classes.ObjectState
-                     * @readonly
-                     * @instance
-                     */
                     get: () => data.objectType,
                 },
                 shapeType: {
-                    /**
-                     * @name shapeType
-                     * @type {module:API.cvat.enums.ShapeType}
-                     * @memberof module:API.cvat.classes.ObjectState
-                     * @readonly
-                     * @instance
-                     */
                     get: () => data.shapeType,
                 },
                 source: {
-                    /**
-                     * @name source
-                     * @type {module:API.cvat.enums.Source}
-                     * @memberof module:API.cvat.classes.ObjectState
-                     * @readonly
-                     * @instance
-                     */
                     get: () => data.source,
                 },
                 clientID: {
-                    /**
-                     * @name clientID
-                     * @type {number}
-                     * @memberof module:API.cvat.classes.ObjectState
-                     * @readonly
-                     * @instance
-                     */
                     get: () => data.clientID,
                 },
                 serverID: {
-                    /**
-                     * @name serverID
-                     * @type {number}
-                     * @memberof module:API.cvat.classes.ObjectState
-                     * @readonly
-                     * @instance
-                     */
                     get: () => data.serverID,
                 },
                 parentID: {
-                    /**
-                     * @name parentID
-                     * @type {number | null}
-                     * @memberof module:API.cvat.classes.ObjectState
-                     * @readonly
-                     * @instance
-                     */
                     get: () => data.parentID,
                 },
                 label: {
-                    /**
-                     * @name shape
-                     * @type {module:API.cvat.classes.Label}
-                     * @memberof module:API.cvat.classes.ObjectState
-                     * @instance
-                     */
                     get: () => data.label,
                     set: (labelInstance) => {
                         data.updateFlags.label = true;
@@ -283,12 +216,6 @@ export default class ObjectState {
                     },
                 },
                 color: {
-                    /**
-                     * @name color
-                     * @type {string}
-                     * @memberof module:API.cvat.classes.ObjectState
-                     * @instance
-                     */
                     get: () => data.color,
                     set: (color) => {
                         data.updateFlags.color = true;
@@ -296,12 +223,6 @@ export default class ObjectState {
                     },
                 },
                 hidden: {
-                    /**
-                     * @name hidden
-                     * @type {boolean}
-                     * @memberof module:API.cvat.classes.ObjectState
-                     * @instance
-                     */
                     get: () => {
                         if (data.shapeType === ShapeType.SKELETON) {
                             return data.elements.every((element: ObjectState) => element.hidden);
@@ -321,13 +242,6 @@ export default class ObjectState {
                     },
                 },
                 points: {
-                    /**
-                     * @name points
-                     * @type {number[]}
-                     * @memberof module:API.cvat.classes.ObjectState
-                     * @throws {module:API.cvat.exceptions.ArgumentError}
-                     * @instance
-                     */
                     get: () => {
                         if (data.shapeType === ShapeType.SKELETON) {
                             return data.elements.map((element) => element.points).flat();
@@ -370,14 +284,6 @@ export default class ObjectState {
                     },
                 },
                 rotation: {
-                    /**
-                     * @name rotation
-                     * @description angle measured by degrees
-                     * @type {number}
-                     * @memberof module:API.cvat.classes.ObjectState
-                     * @throws {module:API.cvat.exceptions.ArgumentError}
-                     * @instance
-                     */
                     get: () => data.rotation,
                     set: (rotation) => {
                         if (typeof rotation === 'number') {
@@ -394,23 +300,9 @@ export default class ObjectState {
                     },
                 },
                 group: {
-                    /**
-                     * Object with short group info { color, id }
-                     * @name group
-                     * @type {object}
-                     * @memberof module:API.cvat.classes.ObjectState
-                     * @instance
-                     * @readonly
-                     */
                     get: () => data.group,
                 },
                 zOrder: {
-                    /**
-                     * @name zOrder
-                     * @type {integer | null}
-                     * @memberof module:API.cvat.classes.ObjectState
-                     * @instance
-                     */
                     get: () => data.zOrder,
                     set: (zOrder) => {
                         data.updateFlags.zOrder = true;
@@ -418,12 +310,6 @@ export default class ObjectState {
                     },
                 },
                 outside: {
-                    /**
-                     * @name outside
-                     * @type {boolean}
-                     * @memberof module:API.cvat.classes.ObjectState
-                     * @instance
-                     */
                     get: () => {
                         if (data.shapeType === ShapeType.SKELETON) {
                             return data.elements.every((el) => el.outside);
@@ -442,12 +328,6 @@ export default class ObjectState {
                     },
                 },
                 keyframe: {
-                    /**
-                     * @name keyframe
-                     * @type {boolean}
-                     * @memberof module:API.cvat.classes.ObjectState
-                     * @instance
-                     */
                     get: () => {
                         if (data.shapeType === ShapeType.SKELETON) {
                             return data.keyframe || data.elements.some((el) => el.keyframe);
@@ -467,14 +347,6 @@ export default class ObjectState {
                     },
                 },
                 keyframes: {
-                    /**
-                     * Object of keyframes { first, prev, next, last }
-                     * @name keyframes
-                     * @type {object | null}
-                     * @memberof module:API.cvat.classes.ObjectState
-                     * @readonly
-                     * @instance
-                     */
                     get: () => {
                         if (typeof data.keyframes === 'object') {
                             return { ...data.keyframes };
@@ -484,12 +356,6 @@ export default class ObjectState {
                     },
                 },
                 occluded: {
-                    /**
-                     * @name occluded
-                     * @type {boolean}
-                     * @memberof module:API.cvat.classes.ObjectState
-                     * @instance
-                     */
                     get: () => {
                         if (data.shapeType === ShapeType.SKELETON) {
                             return data.elements.every((el) => el.occluded);
@@ -508,12 +374,6 @@ export default class ObjectState {
                     },
                 },
                 lock: {
-                    /**
-                     * @name lock
-                     * @type {boolean}
-                     * @memberof module:API.cvat.classes.ObjectState
-                     * @instance
-                     */
                     get: () => {
                         if (data.shapeType === ShapeType.SKELETON) {
                             return data.elements.every((el) => el.lock);
@@ -532,12 +392,6 @@ export default class ObjectState {
                     },
                 },
                 pinned: {
-                    /**
-                     * @name pinned
-                     * @type {boolean | null}
-                     * @memberof module:API.cvat.classes.ObjectState
-                     * @instance
-                     */
                     get: () => {
                         if (typeof data.pinned === 'boolean') {
                             return data.pinned;
@@ -551,26 +405,9 @@ export default class ObjectState {
                     },
                 },
                 updated: {
-                    /**
-                     * Timestamp of the latest updated of the object
-                     * @name updated
-                     * @type {number}
-                     * @memberof module:API.cvat.classes.ObjectState
-                     * @instance
-                     * @readonly
-                     */
                     get: () => data.updated,
                 },
                 attributes: {
-                    /**
-                     * Object is id:value pairs where "id" is an integer
-                     * attribute identifier and "value" is an attribute value
-                     * @name attributes
-                     * @type {Object}
-                     * @memberof module:API.cvat.classes.ObjectState
-                     * @throws {module:API.cvat.exceptions.ArgumentError}
-                     * @instance
-                     */
                     get: () => data.attributes,
                     set: (attributes) => {
                         if (typeof attributes !== 'object') {
@@ -591,14 +428,6 @@ export default class ObjectState {
                     },
                 },
                 descriptions: {
-                    /**
-                     * Additional text information displayed on canvas
-                     * @name descripttions
-                     * @type {string[]}
-                     * @memberof module:API.cvat.classes.ObjectState
-                     * @throws {module:API.cvat.exceptions.ArgumentError}
-                     * @instance
-                     */
                     get: () => [...data.descriptions],
                     set: (descriptions) => {
                         if (
@@ -615,15 +444,6 @@ export default class ObjectState {
                     },
                 },
                 elements: {
-                    /**
-                     * Returns a list of object states for compound objects (like skeletons)
-                     * @name elements
-                     * @type {string[]}
-                     * @memberof module:API.cvat.classes.ObjectState
-                     * @throws {module:API.cvat.exceptions.ArgumentError}
-                     * @readonly
-                     * @instance
-                     */
                     get: () => {
                         if (data.elements) {
                             return [...data.elements];
@@ -683,35 +503,11 @@ export default class ObjectState {
         }
     }
 
-    /**
-     * Method saves/updates an object state in a collection
-     * @method save
-     * @memberof module:API.cvat.classes.ObjectState
-     * @readonly
-     * @instance
-     * @async
-     * @throws {module:API.cvat.exceptions.PluginError}
-     * @throws {module:API.cvat.exceptions.ArgumentError}
-     * @returns {module:API.cvat.classes.ObjectState} updated state of an object
-     */
     async save(): Promise<ObjectState> {
         const result = await PluginRegistry.apiWrapper.call(this, ObjectState.prototype.save);
         return result;
     }
 
-    /**
-     * Method deletes an object from a collection
-     * @method delete
-     * @memberof module:API.cvat.classes.ObjectState
-     * @readonly
-     * @instance
-     * @param {integer} frame current frame number
-     * @param {boolean} [force=false] delete object even if it is locked
-     * @async
-     * @returns {boolean} true if object has been deleted
-     * @throws {module:API.cvat.exceptions.PluginError}
-     * @throws {module:API.cvat.exceptions.ArgumentError}
-     */
     async delete(frame, force = false): Promise<boolean> {
         const result = await PluginRegistry.apiWrapper.call(this, ObjectState.prototype.delete, frame, force);
         return result;

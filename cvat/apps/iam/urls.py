@@ -20,6 +20,7 @@ from cvat.apps.iam.views import (
     google_oauth2_login as google_login,
     google_oauth2_callback as google_callback,
     LoginViewEx, GitHubLogin, GoogleLogin,
+    SocialAuthMethods,
 )
 
 urlpatterns = [
@@ -39,6 +40,7 @@ if settings.IAM_TYPE == 'BASIC':
             name='rest_password_reset_confirm'),
         path('password/change', PasswordChangeView.as_view(),
             name='rest_password_change'),
+        path('social/methods/', SocialAuthMethods.as_view(), name='social_auth_methods'),
     ]
     if allauth_settings.EMAIL_VERIFICATION != \
        allauth_settings.EmailVerificationMethod.NONE:
