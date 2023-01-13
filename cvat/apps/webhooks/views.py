@@ -65,7 +65,7 @@ from .signals import signal_ping, signal_redelivery
     ),
 )
 class WebhookViewSet(viewsets.ModelViewSet):
-    queryset = Webhook.objects.all()
+    queryset = Webhook.objects.prefetch_related('owner').all()
     ordering = "-id"
     http_method_names = ["get", "post", "delete", "patch", "put"]
 

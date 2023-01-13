@@ -305,10 +305,12 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, CreateModelMixin, DestroyModelMixin,
     PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
 ):
-    queryset = models.Project.objects.select_related('assignee', 'owner',
-        'target_storage', 'source_storage').prefetch_related(
+    queryset = models.Project.objects.select_related(
+        'assignee', 'owner', 'target_storage', 'source_storage'
+    ).prefetch_related(
         'tasks', 'label_set__sublabels__attributespec_set',
-        'label_set__attributespec_set')
+        'label_set__attributespec_set'
+    ).all()
 
     # NOTE: The search_fields attribute should be a list of names of text
     # type fields on the model,such as CharField or TextField
@@ -783,12 +785,16 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, CreateModelMixin, DestroyModelMixin,
     PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
 ):
-    queryset = Task.objects.all().select_related('data', 'assignee', 'owner',
-        'target_storage', 'source_storage').prefetch_related(
+    queryset = Task.objects.select_related(
+        'data', 'assignee', 'owner',
+        'target_storage', 'source_storage'
+    ).prefetch_related(
         'segment_set__job_set__assignee', 'label_set__attributespec_set',
         'project__label_set__attributespec_set',
         'label_set__sublabels__attributespec_set',
-        'project__label_set__sublabels__attributespec_set')
+        'project__label_set__sublabels__attributespec_set'
+    ).all()
+
     lookup_fields = {
         'project_name': 'project__name',
         'owner': 'owner__username',
@@ -1410,12 +1416,14 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, PartialUpdateModelMixin, UploadMixin, AnnotationMixin
 ):
-    queryset = Job.objects.all().select_related('segment__task__data').prefetch_related(
+    queryset = Job.objects.select_related('segment__task__data').prefetch_related(
         'segment__task__label_set', 'segment__task__project__label_set',
         'segment__task__label_set__sublabels__attributespec_set',
         'segment__task__project__label_set__sublabels__attributespec_set',
         'segment__task__label_set__attributespec_set',
-        'segment__task__project__label_set__attributespec_set')
+        'segment__task__project__label_set__attributespec_set'
+    ).all()
+
     iam_organization_field = 'segment__task__organization'
     search_fields = ('task_name', 'project_name', 'assignee', 'state', 'stage')
     filter_fields = list(search_fields) + ['id', 'task_id', 'project_id', 'updated_date']
@@ -1861,7 +1869,10 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, CreateModelMixin, DestroyModelMixin,
     PartialUpdateModelMixin
 ):
-    queryset = Issue.objects.all().order_by('-id')
+    queryset = Issue.objects.prefetch_related(
+        'job__segment__task', 'owner', 'assignee', 'job'
+    ).all()
+
     iam_organization_field = 'job__segment__task__organization'
     search_fields = ('owner', 'assignee')
     filter_fields = list(search_fields) + ['id', 'job_id', 'task_id', 'resolved', 'frame_id']
@@ -1870,8 +1881,9 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     lookup_fields = {
         'owner': 'owner__username',
         'assignee': 'assignee__username',
-        'job_id': 'job__id',
+        'job_id': 'job',
         'task_id': 'job__segment__task__id',
+        'frame_id': 'frame',
     }
     ordering = '-id'
 
@@ -1942,14 +1954,22 @@ class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, CreateModelMixin, DestroyModelMixin,
     PartialUpdateModelMixin
 ):
-    queryset = Comment.objects.all().order_by('-id')
+    queryset = Comment.objects.prefetch_related(
+        'issue', 'issue__job', 'owner'
+    ).all()
+
     iam_organization_field = 'issue__job__segment__task__organization'
     search_fields = ('owner',)
-    filter_fields = list(search_fields) + ['id', 'issue_id']
-    simple_filters = list(search_fields) + ['issue_id']
+    filter_fields = list(search_fields) + ['id', 'issue_id', 'frame_id', 'job_id']
+    simple_filters = list(search_fields) + ['issue_id', 'frame_id', 'job_id']
     ordering_fields = list(filter_fields)
     ordering = '-id'
-    lookup_fields = {'owner': 'owner__username', 'issue_id': 'issue__id'}
+    lookup_fields = {
+        'owner': 'owner__username',
+        'issue_id': 'issue__id',
+        'job_id': 'issue__job__id',
+        'frame_id': 'issue__frame',
+    }
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -2085,7 +2105,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
     PartialUpdateModelMixin
 ):
-    queryset = CloudStorageModel.objects.all().prefetch_related('data')
+    queryset = CloudStorageModel.objects.prefetch_related('data').all()
 
     search_fields = ('provider_type', 'name', 'resource',
                     'credentials_type', 'owner', 'description')
