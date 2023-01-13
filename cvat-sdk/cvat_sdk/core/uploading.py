@@ -346,7 +346,7 @@ class DataUploader(Uploader):
                 )
             response = self._client.api_client.rest_client.POST(
                 url,
-                post_params=dict(**kwargs, **files),
+                post_params={"image_quality": kwargs["image_quality"], **files},
                 headers={
                     "Content-Type": "multipart/form-data",
                     "Upload-Multiple": "",
