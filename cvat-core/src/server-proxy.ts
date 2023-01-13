@@ -513,9 +513,11 @@ async function healthCheck(maxRetries, checkPeriod, requestTimeout, progressCall
             const { data } = error.response;
             let isHealthy = true;
             if (typeof data === 'object') {
-                for (const check in data) {
-                    if (Object.prototype.hasOwnProperty.call(data, check) && check !== 'Cache backend: media' && data[check] !== 'working') {
-                        isHealthy = isHealthy && Boolean(data[check] === 'working');
+                for (const checkName in data) {
+                    if (Object.prototype.hasOwnProperty.call(data, checkName) &&
+                        checkName !== 'Cache backend: media' &&
+                        data[checkName] !== 'working') {
+                        isHealthy = false;
                     }
                 }
             } else {
