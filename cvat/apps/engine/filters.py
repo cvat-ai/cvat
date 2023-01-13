@@ -10,6 +10,7 @@ from unittest.mock import patch
 import operator
 import json
 
+from django.db import models
 from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 from django.utils.encoding import force_str
@@ -244,10 +245,10 @@ class SimpleFilter(DjangoFilterBackend):
     A simple filter, useful for small search queries and manually-edited
     requests.
 
-    The only available check is equality.
-    Multiple terms are joined with '&'.
-    Other operators are not supported (e.g. or, less, greater, not etc.).
-    Argument types are numbers and strings.
+    Argument types are numbers and strings. The only available check is
+    equality for numbers and case-independent inclusion for strings.
+    Operators are not supported (e.g. or, less, greater, not etc.).
+    Multiple filters are joined with '&' as separate query params.
     """
 
     filter_desc = _('A simple equality filter for the {field_name} field')
@@ -258,6 +259,15 @@ class SimpleFilter(DjangoFilterBackend):
     )
 
     class MappingFiltersetBase(BaseFilterSet):
+        class Meta:
+            filter_overrides = {
+                models.CharField: {
+                    'extra': lambda f: {
+                        'lookup_expr': 'icontains',
+                    },
+                },
+            },
+
         @classmethod
         def get_filter_name(cls, field_name, lookup_expr):
             filter_names = getattr(cls, 'filter_names', {})
