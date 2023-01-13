@@ -8,7 +8,7 @@ from datetime import datetime
 from tempfile import NamedTemporaryFile
 import pytz
 
-from django.core.cache import cache
+from django.core.cache import caches
 from django.conf import settings
 from rest_framework.exceptions import ValidationError, NotFound
 
@@ -28,13 +28,13 @@ from utils.dataset_manifest import ImageManifestManager
 class MediaCache:
     def __init__(self, dimension=DimensionType.DIM_2D):
         self._dimension = dimension
+        self._cache = caches['media']
 
-    @staticmethod
-    def _get_or_set_cache_item(key, create_function):
-        item = cache.get(key)
+    def _get_or_set_cache_item(self, key, create_function):
+        item = self._cache.get(key)
         if not item:
             item = create_function()
-            cache.set(key, item)
+            self._cache.set(key, item)
 
         return item
 
