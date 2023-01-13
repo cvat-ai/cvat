@@ -192,6 +192,7 @@ REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'cvat.apps.iam.schema.CustomAutoSchema',
 }
 
+
 REST_AUTH_REGISTER_SERIALIZERS = {
     'REGISTER_SERIALIZER': 'cvat.apps.iam.serializers.RegisterSerializerEx',
 }
@@ -249,6 +250,7 @@ WSGI_APPLICATION = 'cvat.wsgi.application'
 
 # IAM settings
 IAM_TYPE = 'BASIC'
+IAM_BASE_EXCEPTION = None # a class which will be used by IAM to report errors
 IAM_DEFAULT_ROLES = ['user']
 IAM_ADMIN_ROLE = 'admin'
 # Index in the list below corresponds to the priority (0 has highest priority)
@@ -630,6 +632,8 @@ ACCOUNT_LOGOUT_ON_PASSWORD_CHANGE = True
 
 if USE_ALLAUTH_SOCIAL_ACCOUNTS:
     SOCIALACCOUNT_ADAPTER = 'cvat.apps.iam.adapters.SocialAccountAdapterEx'
+    SOCIALACCOUNT_GITHUB_ADAPTER = 'cvat.apps.iam.adapters.GitHubAdapter'
+    SOCIALACCOUNT_GOOGLE_ADAPTER = 'cvat.apps.iam.adapters.GoogleAdapter'
     SOCIALACCOUNT_LOGIN_ON_GET = True
     # It's required to define email in the case when a user has a private hidden email.
     # (e.g in github account set keep my email addresses private)
@@ -658,7 +662,7 @@ if USE_ALLAUTH_SOCIAL_ACCOUNTS:
             'SCOPE': [ 'profile', 'email', 'openid'],
             'AUTH_PARAMS': {
                 'access_type': 'online',
-            }
+            },
         },
         'github': {
             'APP': {
@@ -667,5 +671,10 @@ if USE_ALLAUTH_SOCIAL_ACCOUNTS:
                 'key': ''
             },
             'SCOPE': [ 'read:user', 'user:email' ],
+            # NOTE: Custom field. This is necessary for the user interface
+            # to render possible social account authentication option.
+            # If this field is not specified, then the option with the provider
+            # key with a capital letter will be used
+            'PUBLIC_NAME': 'GitHub',
         },
     }

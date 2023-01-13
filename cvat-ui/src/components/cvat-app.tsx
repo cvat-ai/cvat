@@ -14,6 +14,7 @@ import Spin from 'antd/lib/spin';
 import { DisconnectOutlined } from '@ant-design/icons';
 import Space from 'antd/lib/space';
 import Text from 'antd/lib/typography/Text';
+import ReactMarkdown from 'react-markdown';
 import 'antd/dist/antd.css';
 
 import LogoutComponent from 'components/logout-component';
@@ -306,12 +307,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         function showMessage(title: string): void {
             notification.info({
                 message: (
-                    <div
-                        // eslint-disable-next-line
-                        dangerouslySetInnerHTML={{
-                            __html: title,
-                        }}
-                    />
+                    <ReactMarkdown>{title}</ReactMarkdown>
                 ),
                 duration: null,
             });
@@ -342,15 +338,10 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             notification.error({
                 ...dynamicProps,
                 message: (
-                    <div
-                        // eslint-disable-next-line
-                        dangerouslySetInnerHTML={{
-                            __html: title,
-                        }}
-                    />
+                    <ReactMarkdown>{title}</ReactMarkdown>
                 ),
                 duration: null,
-                description: error.length > 200 ? 'Open the Browser Console to get details' : error,
+                description: error.length > 200 ? 'Open the Browser Console to get details' : <ReactMarkdown>{error}</ReactMarkdown>,
             });
 
             // eslint-disable-next-line no-console

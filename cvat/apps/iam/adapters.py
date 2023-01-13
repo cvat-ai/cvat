@@ -40,9 +40,11 @@ class SocialAccountAdapterEx(DefaultSocialAccountAdapter):
         return
 
 class GitHubAdapter(GitHubOAuth2Adapter):
+
     def get_callback_url(self, request, app):
         return settings.GITHUB_CALLBACK_URL
 
 class GoogleAdapter(GoogleOAuth2Adapter):
+
     def get_callback_url(self, request, app):
         return settings.GOOGLE_CALLBACK_URL
