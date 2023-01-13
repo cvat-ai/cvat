@@ -205,12 +205,6 @@ class Data(models.Model):
     sorting_method = models.CharField(max_length=15, choices=SortingMethod.choices(), default=SortingMethod.LEXICOGRAPHICAL)
     deleted_frames = IntArrayField(store_sorted=True, unique_values=True)
 
-    # Avoid storing whole mapping here, its redundant
-    custom_segments = models.BooleanField(default=False)
-    """
-    Determines if files were specified for the task segments explicitly.
-    """
-
     class Meta:
         default_permissions = ()
 

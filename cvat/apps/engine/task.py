@@ -149,7 +149,6 @@ def _save_task_to_db(db_task: models.Task, *, job_file_mapping: Optional[JobFile
     )
     db_task.segment_size = segment_size
     db_task.overlap = overlap
-    db_task.data.custom_segments = job_file_mapping is not None
 
     for segment_idx, (start_frame, stop_frame) in enumerate(segments):
         slogger.glob.info("New segment for task #{}: idx = {}, start_frame = {}, \

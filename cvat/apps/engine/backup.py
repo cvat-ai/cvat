@@ -334,7 +334,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
             segment = segment_serailizer.data
             segment.update(job_data)
 
-            if self._db_data.custom_segments:
+            if self._db_task.segment_size == 0:
                 segment.update(serialize_custom_file_mapping(db_segment))
 
             return segment
@@ -362,6 +362,9 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
 
             # There are no deleted frames in DataSerializer so we need to pick it
             data['deleted_frames'] = self._db_data.deleted_frames
+
+            if self._db_task.segment_size == 0:
+                data['custom_segments'] = True
 
             return self._prepare_data_meta(data)
 
