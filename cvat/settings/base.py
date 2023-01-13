@@ -643,7 +643,7 @@ if USE_ALLAUTH_SOCIAL_ACCOUNTS:
 
     GITHUB_CALLBACK_URL = f'{CVAT_BASE_URL}/api/auth/github/login/callback/'
     GOOGLE_CALLBACK_URL = f'{CVAT_BASE_URL}/api/auth/google/login/callback/'
-    
+
     SOCIAL_AUTH_GOOGLE_CLIENT_ID = os.getenv('SOCIAL_AUTH_GOOGLE_CLIENT_ID')
     SOCIAL_AUTH_GOOGLE_CLIENT_SECRET = os.getenv('SOCIAL_AUTH_GOOGLE_CLIENT_SECRET')
 
