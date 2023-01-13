@@ -513,13 +513,12 @@ RESTRICTIONS = {
 CACHES = {
    'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'unique-snowflake',
     },
    'media' : {
        'BACKEND' : 'diskcache.DjangoCache',
        'LOCATION' : CACHE_ROOT,
        'TIMEOUT' : None,
-       'SHARDS': 1,
+       'SHARDS': 32,
        'OPTIONS' : {
             'size_limit' : 2 ** 40, # 1 Tb
        }
