@@ -16,8 +16,8 @@ from cvat.apps.engine.cache import CacheInteraction
 from cvat.apps.engine.media_extractors import VideoReader, ZipReader
 from cvat.apps.engine.mime_types import mimetypes
 from cvat.apps.engine.models import DataChoice, StorageMethodChoice, DimensionType
-from cvat.apps.engine.exceptions import CVATValidationError
 from cvat.apps.engine.media_extractors import rotate_within_exif
+from rest_framework.exceptions import ValidationError
 
 class RandomAccessIterator:
     def __init__(self, iterable):
@@ -123,7 +123,7 @@ class FrameProvider:
     def _validate_frame_number(self, frame_number):
         frame_number_ = int(frame_number)
         if frame_number_ < 0 or frame_number_ >= self._db_data.size:
-            raise CVATValidationError('Incorrect requested frame number: {}'.format(frame_number_))
+            raise ValidationError('Incorrect requested frame number: {}'.format(frame_number_))
 
         chunk_number = frame_number_ // self._db_data.chunk_size
         frame_offset = frame_number_ % self._db_data.chunk_size
@@ -136,7 +136,7 @@ class FrameProvider:
     def _validate_chunk_number(self, chunk_number):
         chunk_number_ = int(chunk_number)
         if chunk_number_ < 0 or chunk_number_ >= math.ceil(self._db_data.size / self._db_data.chunk_size):
-            raise CVATValidationError('requested chunk does not exist')
+            raise ValidationError('requested chunk does not exist')
 
         return chunk_number_
 

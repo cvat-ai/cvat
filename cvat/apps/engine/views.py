@@ -70,7 +70,6 @@ from cvat.apps.engine import backup
 from cvat.apps.engine.mixins import PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin, DestroyModelMixin, CreateModelMixin
 from cvat.apps.engine.location import get_location_configuration, StorageType
 from cvat.apps.engine.cache import CacheInteraction
-from cvat.apps.engine.exceptions import CVATValidationError
 
 from . import models, task
 from .log import clogger, slogger
@@ -670,12 +669,12 @@ class DataChunkGetter:
         possible_quality_values = ('compressed', 'original')
 
         if not data_type or data_type not in possible_data_type_values:
-            raise CVATValidationError('Data type not specified or has wrong value')
+            raise serializers.ValidationError('Data type not specified or has wrong value')
         elif data_type == 'chunk' or data_type == 'frame' or data_type == 'preview':
             if data_num is None:
-                raise CVATValidationError('Number is not specified')
+                raise serializers.ValidationError('Number is not specified')
             elif data_quality not in possible_quality_values:
-                raise CVATValidationError('Wrong quality value')
+                raise serializers.ValidationError('Wrong quality value')
 
         self.type = data_type
         self.number = int(data_num) if data_num is not None else None
@@ -696,7 +695,7 @@ class DataChunkGetter:
                 stop_chunk = frame_provider.get_chunk_number(stop)
                 # pylint: disable=superfluous-parens
                 if not (start_chunk <= self.number <= stop_chunk):
-                    raise CVATValidationError('The chunk number should be in ' +
+                    raise serializers.ValidationError('The chunk number should be in ' +
                         f'[{start_chunk}, {stop_chunk}] range')
 
                 # TODO: av.FFmpegError processing
@@ -711,7 +710,7 @@ class DataChunkGetter:
 
             elif self.type == 'frame' or self.type == 'preview':
                 if not (start <= self.number <= stop):
-                    raise CVATValidationError('The frame number should be in ' +
+                    raise serializers.ValidationError('The frame number should be in ' +
                         f'[{start}, {stop}] range')
 
                 if self.type == 'preview':
@@ -724,7 +723,7 @@ class DataChunkGetter:
 
             elif self.type == 'context_image':
                 if not (start <= self.number <= stop):
-                    raise CVATValidationError('The frame number should be in ' +
+                    raise serializers.ValidationError('The frame number should be in ' +
                         f'[{start}, {stop}] range')
 
                 image = Image.objects.get(data_id=db_data.id, frame=self.number)
@@ -740,7 +739,7 @@ class DataChunkGetter:
             else:
                 return HttpResponse('unknown data type {}.'.format(self.type),
                     status=status.HTTP_400_BAD_REQUEST)
-        except (ValidationError, PermissionDenied, NotFound) as ex:
+        except (PermissionDenied, NotFound) as ex: # ValidationError
             return HttpResponse(str(ex), status=ex.status_code)
 
 @extend_schema(tags=['tasks'])
@@ -1192,7 +1191,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         elif request.method == 'PATCH':
             action = self.request.query_params.get("action", None)
             if action not in dm.task.PatchAction.values():
-                raise CVATValidationError(
+                raise serializers.ValidationError(
                     "Please specify a correct 'action' for the request")
             serializer = LabeledDataSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
@@ -1585,7 +1584,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         elif request.method == 'PATCH':
             action = self.request.query_params.get("action", None)
             if action not in dm.task.PatchAction.values():
-                raise CVATValidationError(
+                raise serializers.ValidationError(
                     "Please specify a correct 'action' for the request")
             serializer = LabeledDataSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
@@ -2080,7 +2079,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         if provider_type:
             if provider_type in CloudProviderChoice.list():
                 return queryset.filter(provider_type=provider_type)
-            raise CVATValidationError('Unsupported type of cloud provider')
+            raise serializers.ValidationError('Unsupported type of cloud provider')
         return queryset
 
     def perform_create(self, serializer):
@@ -2098,13 +2097,8 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             response = super().create(request, *args, **kwargs)
         except IntegrityError:
             response = HttpResponseBadRequest('Same storage already exists')
-        except ValidationError as exceptions:
-            msg_body = ""
-            for ex in exceptions.args:
-                for field, ex_msg in ex.items():
-                    msg_body += ': '.join([field, ex_msg if isinstance(ex_msg, str) else str(ex_msg[0])])
-                    msg_body += '\n'
-            return HttpResponseBadRequest(msg_body)
+        except ValidationError: # handle error with extended django exception handler
+            raise
         except APIException as ex:
             return Response(data=ex.get_full_details(), status=ex.status_code)
         except Exception as ex:
@@ -2126,7 +2120,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             db_storage = self.get_object()
             storage = db_storage_to_storage_instance(db_storage)
             if not db_storage.manifests.count():
-                raise CVATValidationError('There is no manifest file')
+                raise serializers.ValidationError('There is no manifest file')
             manifest_path = request.query_params.get('manifest_path', db_storage.manifests.first().filename)
             manifest_prefix = os.path.dirname(manifest_path)
 
@@ -2144,10 +2138,12 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             message = f"Storage {pk} does not exist"
             slogger.glob.error(message)
             return HttpResponseNotFound(message)
-        except (ValidationError, PermissionDenied, NotFound) as ex:
+        except (PermissionDenied, NotFound) as ex:
             msg = str(ex)
             slogger.cloud_storage[pk].info(msg)
             return HttpResponse(msg, status=ex.status_code)
+        except ValidationError: # handle error with extended django exception handler
+            raise
         except Exception as ex:
             slogger.glob.error(str(ex))
             return HttpResponse("An internal error has occurred",
@@ -2170,10 +2166,12 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             message = f"Storage {pk} does not exist"
             slogger.glob.error(message)
             return HttpResponseNotFound(message)
-        except (ValidationError, PermissionDenied, NotFound) as ex:
+        except (PermissionDenied, NotFound) as ex:
             msg = str(ex)
             slogger.cloud_storage[pk].info(msg)
             return HttpResponse(msg, status=ex.status_code)
+        except ValidationError: # handle error with extended django exception handler
+            raise
         except Exception as ex:
             slogger.glob.error(str(ex))
             return HttpResponse("An internal error has occurred",
@@ -2194,6 +2192,8 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             message = f"Storage {pk} does not exist"
             slogger.glob.error(message)
             return HttpResponseNotFound(message)
+        except ValidationError: # handle error with extended django exception handler
+            raise
         except Exception as ex:
             msg = str(ex)
             return HttpResponseBadRequest(msg)
@@ -2241,7 +2241,7 @@ def _import_annotations(request, rq_id, rq_func, pk, format_name,
     format_desc = {f.DISPLAY_NAME: f
         for f in dm.views.get_import_formats()}.get(format_name)
     if format_desc is None:
-        raise CVATValidationError(
+        raise serializers.ValidationError(
             "Unknown input format '{}'".format(format_name))
     elif not format_desc.ENABLED:
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -2271,7 +2271,7 @@ def _import_annotations(request, rq_id, rq_func, pk, format_name,
                 try:
                     storage_id = location_conf['storage_id']
                 except KeyError:
-                    raise CVATValidationError(
+                    raise serializers.ValidationError(
                         'Cloud storage location was selected for destination'
                         ' but cloud storage id was not specified')
                 db_storage = get_object_or_404(CloudStorageModel, pk=storage_id)
@@ -2316,13 +2316,13 @@ def _import_annotations(request, rq_id, rq_func, pk, format_name,
 def _export_annotations(db_instance, rq_id, request, format_name, action, callback,
                         filename, location_conf):
     if action not in {"", "download"}:
-        raise CVATValidationError(
+        raise serializers.ValidationError(
             "Unexpected action specified for the request")
 
     format_desc = {f.DISPLAY_NAME: f
         for f in dm.views.get_export_formats()}.get(format_name)
     if format_desc is None:
-        raise CVATValidationError(
+        raise serializers.ValidationError(
             "Unknown format specified for the request")
     elif not format_desc.ENABLED:
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -2372,7 +2372,7 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
 
                         try:
                             storage.upload_file(file_path, filename)
-                        except (ValidationError, PermissionDenied, NotFound) as ex:
+                        except (PermissionDenied, NotFound) as ex: # ValidationError
                             return HttpResponse(str(ex), status=ex.status_code)
                         return Response(status=status.HTTP_200_OK)
                     else:
@@ -2411,7 +2411,7 @@ def _import_project_dataset(request, rq_id, rq_func, pk, format_name, filename=N
     format_desc = {f.DISPLAY_NAME: f
         for f in dm.views.get_import_formats()}.get(format_name)
     if format_desc is None:
-        raise CVATValidationError(
+        raise serializers.ValidationError(
             "Unknown input format '{}'".format(format_name))
     elif not format_desc.ENABLED:
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -2436,7 +2436,7 @@ def _import_project_dataset(request, rq_id, rq_func, pk, format_name, filename=N
             try:
                 storage_id = location_conf['storage_id']
             except KeyError:
-                raise CVATValidationError(
+                raise serializers.ValidationError(
                     'Cloud storage location was selected for destination'
                     ' but cloud storage id was not specified')
             db_storage = get_object_or_404(CloudStorageModel, pk=storage_id)

@@ -1,5 +1,4 @@
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -11,7 +10,7 @@ import json
 from abc import ABC, abstractmethod, abstractproperty
 from enum import Enum
 from io import BytesIO
-from rest_framework.exceptions import PermissionDenied, NotFound
+from rest_framework.exceptions import PermissionDenied, NotFound, ValidationError
 
 from boto3.s3.transfer import TransferConfig
 from botocore.exceptions import ClientError
@@ -26,7 +25,6 @@ from google.cloud.exceptions import NotFound as GoogleCloudNotFound, Forbidden a
 
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.models import CredentialsTypeChoice, CloudProviderChoice
-from cvat.apps.engine.exceptions import CVATValidationError
 
 class Status(str, Enum):
     AVAILABLE = 'AVAILABLE'
@@ -63,7 +61,7 @@ def validate_bucket_status(func):
                 raise NotFound('The resource {} not found. It may have been deleted.'.format(self.name))
             elif storage_status == Status.AVAILABLE:
                 raise
-            raise CVATValidationError(str(ex))
+            raise ValidationError(str(ex))
         return res
     return wrapper
 
@@ -81,7 +79,7 @@ def validate_file_status(func):
                     raise NotFound("The file '{}' not found on the cloud storage '{}'".format(key, self.name))
                 elif file_status == Status.FORBIDDEN:
                     raise PermissionDenied("Access to the file '{}' on the '{}' cloud storage is denied".format(key, self.name))
-                raise CVATValidationError(str(ex))
+                raise ValidationError(str(ex))
             else:
                 raise
         return res

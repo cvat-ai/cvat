@@ -10,8 +10,7 @@ from django.db.models import Q
 from rest_framework.compat import coreapi, coreschema
 from django.utils.translation import gettext_lazy as _
 from django.utils.encoding import force_str
-
-from cvat.apps.engine.exceptions import CVATValidationError
+from rest_framework.exceptions import ValidationError
 
 class SearchFilter(filters.SearchFilter):
 
@@ -155,7 +154,7 @@ class JsonLogicFilter(filters.BaseFilterBackend):
             var = lookup_fields[args[1]['var']]
             return Q(**{var + '__gte': args[0]}) & Q(**{var + '__lte': args[2]})
         else:
-            raise CVATValidationError(f'filter: {op} operation with {args} arguments is not implemented')
+            raise ValidationError(f'filter: {op} operation with {args} arguments is not implemented')
 
     def filter_queryset(self, request, queryset, view):
         json_rules = request.query_params.get(self.filter_param)
@@ -163,14 +162,14 @@ class JsonLogicFilter(filters.BaseFilterBackend):
             try:
                 rules = json.loads(json_rules)
                 if not len(rules):
-                    raise CVATValidationError(f"filter shouldn't be empty")
+                    raise ValidationError(f"filter shouldn't be empty")
             except json.decoder.JSONDecodeError:
-                raise CVATValidationError(f'filter: Json syntax should be used')
+                raise ValidationError(f'filter: Json syntax should be used')
             lookup_fields = self._get_lookup_fields(request, view)
             try:
                 q_object = self._build_Q(rules, lookup_fields)
             except KeyError as ex:
-                raise CVATValidationError(f'filter: {str(ex)} term is not supported')
+                raise ValidationError(f'filter: {str(ex)} term is not supported')
             return queryset.filter(q_object)
 
         return queryset

@@ -31,7 +31,6 @@ from cvat.apps.engine.log import slogger
 from cvat.apps.engine.media_extractors import (MEDIA_TYPES, Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter,
     ValidateDimension, ZipChunkWriter, ZipCompressedChunkWriter, get_mime, sort)
 from cvat.apps.engine.utils import av_scan_paths
-from cvat.apps.engine.exceptions import CVATValidationError
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager, is_manifest
 from utils.dataset_manifest.core import VideoManifestValidator
 from utils.dataset_manifest.utils import detect_related_images
@@ -238,7 +237,7 @@ def _validate_manifest(manifests, root_dir, is_in_cloud, db_cloud_storage, data_
 def _validate_url(url):
     def _validate_ip_address(ip_address):
         if not ip_address.is_global:
-            raise CVATValidationError('Non public IP address \'{}\' is provided!'.format(ip_address))
+            raise ValidationError('Non public IP address \'{}\' is provided!'.format(ip_address))
 
     ALLOWED_SCHEMES = ['http', 'https']
 
@@ -272,7 +271,7 @@ def _validate_url(url):
             slogger.glob.info('Cannot get AAAA record for domain \'{}\': {}'.format(parsed_url.hostname, e))
 
         if not ip_v4_records and not ip_v6_records:
-            raise CVATValidationError('Cannot resolve IP address for domain \'{}\''.format(parsed_url.hostname))
+            raise ValidationError('Cannot resolve IP address for domain \'{}\''.format(parsed_url.hostname))
 
 def _download_data(urls, upload_dir):
     job = rq.get_current_job()

@@ -116,7 +116,13 @@ def parse_exception_message(msg):
         if 'ErrorDetail' in msg:
             # msg like: 'rest_framework.exceptions.ValidationError:
             # [ErrorDetail(string="...", code=\'invalid\')]\n'
-            parsed_msg = msg.split('string=')[1].split(', code=')[0].strip("\"")
+            # just remove extra info from the string
+            parsed_msg = msg.replace("ErrorDetail(string=", "")
+            for _ in range(parsed_msg.count('code=')):
+                code_idx = parsed_msg.index(", code=")
+                closing_bracket_idx = parsed_msg[code_idx:].index(")")
+                parsed_msg = "".join([parsed_msg[:code_idx], parsed_msg[code_idx + closing_bracket_idx + 1:]])
+            parsed_msg = parsed_msg.replace('\'', '"') # required for json.loads(...)
         elif msg.startswith('rest_framework.exceptions.'):
             parsed_msg = msg.split(':')[1].strip()
     except Exception: # nosec

@@ -189,6 +189,7 @@ REST_FRAMEWORK = {
     },
     'DEFAULT_METADATA_CLASS': 'rest_framework.metadata.SimpleMetadata',
     'DEFAULT_SCHEMA_CLASS': 'cvat.apps.iam.schema.CustomAutoSchema',
+    'EXCEPTION_HANDLER': 'cvat.apps.engine.exceptions.extended_exception_handler'
 }
 
 REST_AUTH_REGISTER_SERIALIZERS = {
