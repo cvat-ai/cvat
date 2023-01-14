@@ -393,4 +393,4 @@ class GoogleLogin(SocialLoginViewEx):
 class CognitoLogin(SocialLoginViewEx):
     adapter_class = AmazonCognitoOAuth2AdapterEx
     client_class = OAuth2Client
-    callback_url = getattr(settings, 'COGNITO_REDIRECT_URI', None)
+    callback_url = getattr(settings, 'AMAZON_COGNITO_REDIRECT_URI', None)

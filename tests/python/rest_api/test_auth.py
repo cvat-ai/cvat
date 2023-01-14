@@ -8,7 +8,7 @@ from http import HTTPStatus
 import pytest
 from cvat_sdk.api_client import ApiClient, Configuration, models
 
-from shared.utils.config import BASE_URL, COGNITO_SETTING, USER_PASS, make_api_client
+from shared.utils.config import BASE_URL, IS_AMAZON_COGNITO_AUTH_ENABLED, USER_PASS, make_api_client
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -21,21 +21,16 @@ class TestBasicAuth:
             assert response.status == HTTPStatus.OK
             assert user.username == username
 
-    def test_can_do_basic_cognito_token_auth(self, admin_user: str):
-        if COGNITO_SETTING != "disabled":
-            username = admin_user
-            config = Configuration(host=BASE_URL, username=username, password=USER_PASS)
-            with ApiClient(config) as client:
-                social_login_request = models.SocialLoginRequest()
-                social_login_request.code = "test-code"
-                (auth, _) = client.auth_api.create_cognito(
-                    social_login_request=social_login_request
-                )
-                assert "sessionid" in client.cookies
-                assert "csrftoken" in client.cookies
-                assert auth.key
-        else:
-            assert COGNITO_SETTING == "disabled"
+    @pytest.mark.skipif(not IS_AMAZON_COGNITO_AUTH_ENABLED, reason="Amazon Cognito enviroment variables are not set")
+    def test_can_do_basic_cognito_token_auth(self):
+        config = Configuration(host=BASE_URL)
+        with ApiClient(config) as client:
+            social_login_request = models.SocialLoginSerializerExRequest()
+            social_login_request.code = "test-code"
+            (auth, _) = client.auth_api.create_amazon_cognito_login_token(social_login_serializer_ex_request=social_login_request)
+            assert "sessionid" in client.cookies
+            assert "csrftoken" in client.cookies
+            assert auth.key
 
 
 @pytest.mark.usefixtures("restore_db_per_function")

@@ -52,7 +52,7 @@ class GoogleAdapter(GoogleOAuth2Adapter):
 
 class AmazonCognitoOAuth2AdapterEx(AmazonCognitoOAuth2Adapter):
     def get_callback_url(self, request, app):
-        return settings.COGNITO_REDIRECT_URI
+        return settings.AMAZON_COGNITO_REDIRECT_URI
 
     def complete_login(self, request, app, access_token, **kwargs):
         headers = {

@@ -36,7 +36,7 @@ DC_FILES = [
         "tests/docker-compose.file_share.yml",
         "tests/docker-compose.minio.yml",
         "tests/docker-compose.test_servers.yml",
-        "tests/docker-compose.mock-oauth2.yml",
+        "tests/python/mock_oauth2/docker-compose.yml",
     )
 ] + CONTAINER_NAME_FILES
 

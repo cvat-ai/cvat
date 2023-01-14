@@ -289,13 +289,8 @@ AUTHENTICATION_BACKENDS = [
 # https://github.com/pennersr/django-allauth
 ACCOUNT_EMAIL_VERIFICATION = 'none'
 ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
-ACCOUNT_UNIQUE_EMAIL = True
-ACCOUNT_USERNAME_REQUIRED = False
-SOCIALACCOUNT_QUERY_EMAIL = True
-
-# Maintain unique email https://medium.com/geekculture/getting-started-with-django-social-authentication-80ee7dc26fe0
-SOCIALACCOUNT_ADAPTER = 'cvat.apps.iam.adapters.SocialAccountAdapterEx'
-
+# ACCOUNT_UNIQUE_EMAIL = True
+# ACCOUNT_USERNAME_REQUIRED = False
 
 # set UI url to redirect after a successful e-mail confirmation
 #changed from '/auth/login' to '/auth/email-confirmation' for email confirmation message
@@ -305,16 +300,6 @@ INCORRECT_EMAIL_CONFIRMATION_URL = '/auth/incorrect-email-confirmation'
 
 OLD_PASSWORD_FIELD_ENABLED = True
 
-# Django socialaccount providers
-#https://django-allauth.readthedocs.io/en/latest/providers.html
-
-SOCIALACCOUNT_PROVIDERS = {
-    'amazon_cognito': {
-        'DOMAIN': os.getenv('COGNITO_USER_POOL_APP', 'http://mock_oauth2:9999'),
-        'APP': {'client_id': os.getenv('COGNITO_CLIENT_ID', 'test-client')},
-        'SCOPE': ["aws.cognito.signin.user.admin", "email", "openid"],
-    }
-}
 
 # Django-RQ
 # https://github.com/rq/django-rq
@@ -662,7 +647,7 @@ if USE_ALLAUTH_SOCIAL_ACCOUNTS:
 
     GITHUB_CALLBACK_URL = 'http://localhost:8080/api/auth/github/login/callback/'
     GOOGLE_CALLBACK_URL = 'http://localhost:8080/api/auth/google/login/callback/'
-    COGNITO_REDIRECT_URI = 'http://localhost:8080/api/auth/amazon-cognito/login/callback/'
+    AMAZON_COGNITO_REDIRECT_URI = 'http://localhost:8080/api/auth/amazon-cognito/login/callback/'
 
     SOCIAL_AUTH_GOOGLE_CLIENT_ID = os.getenv('SOCIAL_AUTH_GOOGLE_CLIENT_ID')
     SOCIAL_AUTH_GOOGLE_CLIENT_SECRET = os.getenv('SOCIAL_AUTH_GOOGLE_CLIENT_SECRET')
@@ -673,6 +658,9 @@ if USE_ALLAUTH_SOCIAL_ACCOUNTS:
     SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_ID = os.getenv('SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_ID')
     SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_SECRET = os.getenv('SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_SECRET')
     SOCIAL_AUTH_AMAZON_COGNITO_DOMAIN = os.getenv('SOCIAL_AUTH_AMAZON_COGNITO_DOMAIN')
+
+    # Django allauth social account providers
+    # https://django-allauth.readthedocs.io/en/latest/providers.html
 
     SOCIALACCOUNT_PROVIDERS = {
         'google': {

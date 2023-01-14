@@ -20,7 +20,7 @@ MINIO_SECRET_KEY = "minio_secret_key"  # nosec
 MINIO_ENDPOINT_URL = "http://localhost:9000"
 
 
-COGNITO_SETTING = "disabled"
+IS_AMAZON_COGNITO_AUTH_ENABLED = True
 
 
 def _to_query_params(**kwargs):
