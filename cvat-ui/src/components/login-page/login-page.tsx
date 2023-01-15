@@ -10,9 +10,8 @@ import { Row, Col } from 'antd/lib/grid';
 
 import SigningLayout, { formSizes } from 'components/signing-common/signing-layout';
 import SocialAccountLink from 'components/signing-common/social-account-link';
-import { SocialGithubLogo, SocialGoogleLogo } from 'icons';
 import LoginForm, { LoginData } from './login-form';
-import { getCore } from '../../cvat-core-wrapper';
+import { getCore, SocialAuthMethods, SocialAuthMethod } from '../../cvat-core-wrapper';
 
 const cvat = getCore();
 
@@ -20,18 +19,31 @@ interface LoginPageComponentProps {
     fetching: boolean;
     renderResetPassword: boolean;
     hasEmailVerificationBeenSent: boolean;
-    googleAuthentication: boolean;
-    githubAuthentication: boolean;
+    socialAuthMethods: SocialAuthMethods;
     onLogin: (credential: string, password: string) => void;
-    loadAdvancedAuthenticationMethods: () => void;
+    loadSocialAuthenticationMethods: () => void;
 }
+
+const renderSocialAuthMethods = (methods: SocialAuthMethods): JSX.Element[] => {
+    const { backendAPI } = cvat.config;
+
+    return methods.map((item: SocialAuthMethod) => ((item.isEnabled) ? (
+        <SocialAccountLink
+            key={item.provider}
+            icon={item.icon}
+            href={`${backendAPI}/auth/${item.provider}/login`}
+            className={`cvat-social-authentication-${item.provider}`}
+        >
+            {`Continue with ${item.publicName}`}
+        </SocialAccountLink>
+    ) : <></>));
+};
 
 function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps): JSX.Element {
     const history = useHistory();
-    const { backendAPI } = cvat.config;
     const {
         fetching, renderResetPassword, hasEmailVerificationBeenSent,
-        googleAuthentication, githubAuthentication, onLogin, loadAdvancedAuthenticationMethods,
+        socialAuthMethods, onLogin, loadSocialAuthenticationMethods,
     } = props;
 
     if (hasEmailVerificationBeenSent) {
@@ -39,7 +51,7 @@ function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps
     }
 
     useEffect(() => {
-        loadAdvancedAuthenticationMethods();
+        loadSocialAuthenticationMethods();
     }, []);
 
     return (
@@ -50,26 +62,9 @@ function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps
                         <LoginForm
                             fetching={fetching}
                             renderResetPassword={renderResetPassword}
-                            socialAuthentication={(googleAuthentication || githubAuthentication) ? (
+                            socialAuthentication={(socialAuthMethods) ? (
                                 <div className='cvat-social-authentication'>
-                                    {githubAuthentication && (
-                                        <SocialAccountLink
-                                            icon={SocialGithubLogo}
-                                            href={`${backendAPI}/auth/github/login`}
-                                            className='cvat-social-authentication-github'
-                                        >
-                                            Continue with GitHub
-                                        </SocialAccountLink>
-                                    )}
-                                    {googleAuthentication && (
-                                        <SocialAccountLink
-                                            icon={SocialGoogleLogo}
-                                            href={`${backendAPI}/auth/google/login`}
-                                            className='cvat-social-authentication-google'
-                                        >
-                                            Continue with Google
-                                        </SocialAccountLink>
-                                    )}
+                                    {renderSocialAuthMethods(socialAuthMethods)}
                                 </div>
                             ) : null}
                             onSubmit={(loginData: LoginData): void => {

@@ -13,7 +13,7 @@ from allauth.account import app_settings as allauth_settings
 
 from cvat.apps.iam.views import (
     SigningView, CognitoLogin, RegisterViewEx, RulesView,
-    ConfirmEmailViewEx, LoginViewEx, GitHubLogin, GoogleLogin,
+    ConfirmEmailViewEx, LoginViewEx, GitHubLogin, GoogleLogin, SocialAuthMethods,
     github_oauth2_login as github_login,
     github_oauth2_callback as github_callback,
     google_oauth2_login as google_login,
@@ -39,6 +39,7 @@ if settings.IAM_TYPE == 'BASIC':
             name='rest_password_reset_confirm'),
         path('password/change', PasswordChangeView.as_view(),
             name='rest_password_change'),
+        path('social/methods/', SocialAuthMethods.as_view(), name='social_auth_methods'),
     ]
     if allauth_settings.EMAIL_VERIFICATION != \
        allauth_settings.EmailVerificationMethod.NONE:

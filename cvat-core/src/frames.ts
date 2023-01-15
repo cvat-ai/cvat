@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -12,11 +12,6 @@ import { Exception, ArgumentError, DataError } from './exceptions';
 // This is the frames storage
 const frameDataCache = {};
 
-/**
- * Class provides meta information about specific frame and frame itself
- * @memberof module:API.cvat.classes
- * @hideconstructor
- */
 export class FrameData {
     constructor({
         width,
@@ -33,93 +28,34 @@ export class FrameData {
         Object.defineProperties(
             this,
             Object.freeze({
-                /**
-                 * @name filename
-                 * @type {string}
-                 * @memberof module:API.cvat.classes.FrameData
-                 * @readonly
-                 * @instance
-                 */
                 filename: {
                     value: name,
                     writable: false,
                 },
-                /**
-                 * @name width
-                 * @type {number}
-                 * @memberof module:API.cvat.classes.FrameData
-                 * @readonly
-                 * @instance
-                 */
                 width: {
                     value: width,
                     writable: false,
                 },
-                /**
-                 * @name height
-                 * @type {number}
-                 * @memberof module:API.cvat.classes.FrameData
-                 * @readonly
-                 * @instance
-                 */
                 height: {
                     value: height,
                     writable: false,
                 },
-                /**
-                 * @name jid
-                 * @type {number}
-                 * @memberof module:API.cvat.classes.FrameData
-                 * @readonly
-                 * @instance
-                 */
                 jid: {
                     value: jobID,
                     writable: false,
                 },
-                /**
-                 * @name number
-                 * @type {number}
-                 * @memberof module:API.cvat.classes.FrameData
-                 * @readonly
-                 * @instance
-                 */
                 number: {
                     value: frameNumber,
                     writable: false,
                 },
-                /**
-                 * True if some context images are associated with this frame
-                 * @name hasRelatedContext
-                 * @type {boolean}
-                 * @memberof module:API.cvat.classes.FrameData
-                 * @readonly
-                 * @instance
-                 */
                 hasRelatedContext: {
                     value: hasRelatedContext,
                     writable: false,
                 },
-                /**
-                 * Start frame of the frame in the job
-                 * @name startFrame
-                 * @type {number}
-                 * @memberof module:API.cvat.classes.FrameData
-                 * @readonly
-                 * @instance
-                 */
                 startFrame: {
                     value: startFrame,
                     writable: false,
                 },
-                /**
-                 * Stop frame of the frame in the job
-                 * @name stopFrame
-                 * @type {number}
-                 * @memberof module:API.cvat.classes.FrameData
-                 * @readonly
-                 * @instance
-                 */
                 stopFrame: {
                     value: stopFrame,
                     writable: false,
@@ -128,14 +64,6 @@ export class FrameData {
                     value: decodeForward,
                     writable: false,
                 },
-                /**
-                 * True if frame was deleted from the task data
-                 * @name deleted
-                 * @type {boolean}
-                 * @memberof module:API.cvat.classes.FrameData
-                 * @readonly
-                 * @instance
-                 */
                 deleted: {
                     value: deleted,
                     writable: false,
@@ -144,18 +72,6 @@ export class FrameData {
         );
     }
 
-    /**
-     * Method returns URL encoded image which can be placed in the img tag
-     * @method data
-     * @returns {string}
-     * @memberof module:API.cvat.classes.FrameData
-     * @instance
-     * @async
-     * @param {function} [onServerRequest = () => {}]
-     * callback which will be called if data absences local
-     * @throws {module:API.cvat.exception.ServerError}
-     * @throws {module:API.cvat.exception.PluginError}
-     */
     async data(onServerRequest = () => {}) {
         const result = await PluginRegistry.apiWrapper.call(this, FrameData.prototype.data, onServerRequest);
         return result;

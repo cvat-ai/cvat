@@ -311,481 +311,8 @@ function buildDuplicatedAPI(prototype) {
     });
 }
 
-/**
- * Base abstract class for Task and Job. It contains common members.
- * @hideconstructor
- * @virtual
- */
-export class Session {
-    /**
-     * An interaction with annotations
-     * @namespace annotations
-     * @memberof Session
-     */
-    /**
-     * Upload annotations from a dump file
-     * You need upload annotations from a server again after successful executing
-     * @method upload
-     * @memberof Session.annotations
-     * @param {File} annotations - a file with annotations
-     * @param {module:API.cvat.classes.Loader} loader - a loader
-     * which will be used to upload
-     * @instance
-     * @async
-     * @throws {module:API.cvat.exceptions.PluginError}
-     * @throws {module:API.cvat.exceptions.ServerError}
-     * @throws {module:API.cvat.exceptions.ArgumentError}
-     */
-    /**
-     * Save all changes in annotations on a server
-     * Objects which hadn't been saved on a server before,
-     * get a serverID after saving. But received object states aren't updated.
-     * So, after successful saving it's recommended to update them manually
-     * (call the annotations.get() again)
-     * @method save
-     * @memberof Session.annotations
-     * @throws {module:API.cvat.exceptions.PluginError}
-     * @throws {module:API.cvat.exceptions.ServerError}
-     * @instance
-     * @async
-     * @param {function} [onUpdate] saving can be long.
-     * This callback can be used to notify a user about current progress
-     * Its argument is a text string
-     */
-    /**
-     * Remove all annotations and optionally reinitialize it
-     * @method clear
-     * @memberof Session.annotations
-     * @param {boolean} [reload = false] reset all changes and
-     * reinitialize annotations by data from a server
-     * @throws {module:API.cvat.exceptions.PluginError}
-     * @throws {module:API.cvat.exceptions.ArgumentError}
-     * @throws {module:API.cvat.exceptions.ServerError}
-     * @instance
-     * @async
-     */
-    /**
-     * Collect short statistics about a task or a job.
-     * @method statistics
-     * @memberof Session.annotations
-     * @returns {module:API.cvat.classes.Statistics} statistics object
-     * @throws {module:API.cvat.exceptions.PluginError}
-     * @instance
-     * @async
-     */
-    /**
-     * Create new objects from one-frame states
-     * After successful adding you need to update object states on a frame
-     * @method put
-     * @memberof Session.annotations
-     * @param {module:API.cvat.classes.ObjectState[]} data
-     * @returns {number[]} identificators of added objects
-     * array of objects on the specific frame
-     * @throws {module:API.cvat.exceptions.PluginError}
-     * @throws {module:API.cvat.exceptions.DataError}
-     * @throws {module:API.cvat.exceptions.ArgumentError}
-     * @instance
-     * @async
-     */
-    /**
-     * Get annotations for a specific frame
-     * </br> Filter supports following operators:
-     * ==, !=, >, >=, <, <=, ~= and (), |, & for grouping.
-     * </br> Filter supports properties:
-     * width, height, label, serverID, clientID, type, shape, occluded
-     * </br> All prop values are case-sensitive. CVAT uses json queries for search.
-     * </br> Examples:
-     * <ul>
-     *   <li> label=="car" | label==["road sign"] </li>
-     *   <li> width >= height </li>
-     *   <li> attr["Attribute 1"] == attr["Attribute 2"] </li>
-     *   <li> type=="track" & shape="rectangle" </li>
-     *   <li> clientID == 50 </li>
-     *   <li> (label=="car" & attr["parked"]==true)
-     * | (label=="pedestrian" & width > 150) </li>
-     *   <li> (( label==["car \"mazda\""]) &
-     * (attr["sunglass ( help ) es"]==true |
-     * (width > 150 | height > 150 & (clientID == serverID))))) </li>
-     * </ul>
-     * <b> If you have double quotes in your query string,
-     * please escape them using back slash: \" </b>
-     * @method get
-     * @param {number} frame get objects from the frame
-     * @param {boolean} allTracks show all tracks
-     * even if they are outside and not keyframe
-     * @param {any[]} [filters = []]
-     * get only objects that satisfied to specific filters
-     * @returns {module:API.cvat.classes.ObjectState[]}
-     * @memberof Session.annotations
-     * @throws {module:API.cvat.exceptions.PluginError}
-     * @throws {module:API.cvat.exceptions.ArgumentError}
-     * @instance
-     * @async
-     */
-    /**
-     * Find a frame in the range [from, to]
-     * that contains at least one object satisfied to a filter
-     * @method search
-     * @memberof Session.annotations
-     * @param {ObjectFilter} [filter = []] filter
-     * @param {number} from lower bound of a search
-     * @param {number} to upper bound of a search
-     * @returns {number|null} a frame that contains objects according to the filter
-     * @throws {module:API.cvat.exceptions.PluginError}
-     * @throws {module:API.cvat.exceptions.ArgumentError}
-     * @instance
-     * @async
-     */
-    /**
-     * Find the nearest empty frame without any annotations
-     * @method searchEmpty
-     * @memberof Session.annotations
-     * @param {number} from lower bound of a search
-     * @param {number} to upper bound of a search
-     * @returns {number|null} a empty frame according boundaries
-     * @throws {module:API.cvat.exceptions.PluginError}
-     * @throws {module:API.cvat.exceptions.ArgumentError}
-     * @instance
-     * @async
-     */
-    /**
-     * Select shape under a cursor by using minimal distance
-     * between a cursor and a shape edge or a shape point
-     * For closed shapes a cursor is placed inside a shape
-     * @method select
-     * @memberof Session.annotations
-     * @param {module:API.cvat.classes.ObjectState[]} objectStates
-     * objects which can be selected
-     * @param {float} x horizontal coordinate
-     * @param {float} y vertical coordinate
-     * @returns {Object}
-     * a pair of {state: ObjectState, distance: number} for selected object.
-     * Pair values can be null if there aren't any sutisfied objects
-     * @throws {module:API.cvat.exceptions.PluginError}
-     * @throws {module:API.cvat.exceptions.ArgumentError}
-     * @instance
-     * @async
-     */
-    /**
-     * Method unites several shapes and tracks into the one
-     * All shapes must be the same (rectangle, polygon, etc)
-     * All labels must be the same
-     * After successful merge you need to update object states on a frame
-     * @method merge
-     * @memberof Session.annotations
-     * @param {module:API.cvat.classes.ObjectState[]} objectStates
-     * @throws {module:API.cvat.exceptions.PluginError}
-     * @throws {module:API.cvat.exceptions.ArgumentError}
-     * @instance
-     * @async
-     */
-    /**
-     * Method splits a track into two parts
-     * (start frame: previous frame), (frame, last frame)
-     * After successful split you need to update object states on a frame
-     * @method split
-     * @memberof Session.annotations
-     * @param {module:API.cvat.classes.ObjectState} objectState
-     * @param {number} frame
-     * @throws {module:API.cvat.exceptions.ArgumentError}
-     * @throws {module:API.cvat.exceptions.PluginError}
-     * @instance
-     * @async
-     */
-    /**
-     * Method creates a new group and put all passed objects into it
-     * After successful split you need to update object states on a frame
-     * @method group
-     * @memberof Session.annotations
-     * @param {module:API.cvat.classes.ObjectState[]} objectStates
-     * @param {boolean} reset pass "true" to reset group value (set it to 0)
-     * @returns {number} an ID of created group
-     * @throws {module:API.cvat.exceptions.ArgumentError}
-     * @throws {module:API.cvat.exceptions.PluginError}
-     * @instance
-     * @async
-     */
-    /**
-     * Method indicates if there are any changes in
-     * annotations which haven't been saved on a server
-     * </br><b> This function cannot be wrapped with a plugin </b>
-     * @method hasUnsavedChanges
-     * @memberof Session.annotations
-     * @returns {boolean}
-     * @throws {module:API.cvat.exceptions.PluginError}
-     * @instance
-     */
-    /**
-     *
-     * Import raw data in a collection
-     * @method import
-     * @memberof Session.annotations
-     * @param {Object} data
-     * @throws {module:API.cvat.exceptions.PluginError}
-     * @throws {module:API.cvat.exceptions.ArgumentError}
-     * @instance
-     * @async
-     */
-    /**
-     *
-     * Export a collection as a row data
-     * @method export
-     * @memberof Session.annotations
-     * @returns {Object} data
-     * @throws {module:API.cvat.exceptions.PluginError}
-     * @throws {module:API.cvat.exceptions.ArgumentError}
-     * @instance
-     * @async
-     */
-    /**
-     * Export as a dataset.
-     * Method builds a dataset in the specified format.
-     * @method exportDataset
-     * @memberof Session.annotations
-     * @param {module:String} format - a format
-     * @returns {string} An URL to the dataset file
-     * @throws {module:API.cvat.exceptions.PluginError}
-     * @throws {module:API.cvat.exceptions.ServerError}
-     * @throws {module:API.cvat.exceptions.ArgumentError}
-     * @instance
-     * @async
-     */
-    /**
-     * Namespace is used for an interaction with frames
-     * @namespace frames
-     * @memberof Session
-     */
-    /**
-     * Get frame by its number
-     * @method get
-     * @memberof Session.frames
-     * @param {number} frame number of frame which you want to get
-     * @returns {module:API.cvat.classes.FrameData}
-     * @instance
-     * @async
-     * @throws {module:API.cvat.exceptions.PluginError}
-     * @throws {module:API.cvat.exceptions.ServerError}
-     * @throws {module:API.cvat.exceptions.DataError}
-     * @throws {module:API.cvat.exceptions.ArgumentError}
-     */
-    /**
-     * @typedef {Object} FrameSearchFilters
-     * @property {boolean} notDeleted if true will search for non-deleted frames
-     * @property {number} offset defines frame step during search
-    /**
-     * Find frame that match the condition
-     * @method search
-     * @memberof Session.frames
-     * @param {FrameSearchFilters} filters filters to search frame for
-     * @param {number} from lower bound of a search
-     * @param {number} to upper bound of a search
-     * @returns {number|null} a non-deleted frame according boundaries
-     * @throws {module:API.cvat.exceptions.PluginError}
-     * @throws {module:API.cvat.exceptions.ArgumentError}
-     * @instance
-     * @async
-     */
-    /**
-     * Delete frame from the job
-     * @method delete
-     * @memberof Session.frames
-     * @param {number} frame number of frame which you want to delete
-     * @throws {module:API.cvat.exceptions.ArgumentError}
-     * @throws {module:API.cvat.exceptions.PluginError}
-     * @instance
-     * @async
-     */
-    /**
-     * Restore frame from the job
-     * @method delete
-     * @memberof Session.frames
-     * @param {number} frame number of frame which you want to restore
-     * @throws {module:API.cvat.exceptions.ArgumentError}
-     * @throws {module:API.cvat.exceptions.PluginError}
-     * @instance
-     * @async
-     */
-    /**
-     * Save any changes in frames if some of them were deleted/restored
-     * @method save
-     * @memberof Session.frames
-     * @throws {module:API.cvat.exceptions.PluginError}
-     * @instance
-     * @async
-     */
-    /**
-     * Get the first frame of a task for preview
-     * @method preview
-     * @memberof Session.frames
-     * @returns {string} - jpeg encoded image
-     * @instance
-     * @async
-     * @throws {module:API.cvat.exceptions.PluginError}
-     * @throws {module:API.cvat.exceptions.ServerError}
-     * @throws {module:API.cvat.exceptions.ArgumentError}
-     */
-    /**
-     * Returns the ranges of cached frames
-     * @method ranges
-     * @memberof Session.frames
-     * @returns {Array.<string>}
-     * @instance
-     * @async
-     */
-    /**
-     * Namespace is used for an interaction with logs
-     * @namespace logger
-     * @memberof Session
-     */
-    /**
-     * Create a log and add it to a log collection <br>
-     * Durable logs will be added after "close" method is called for them <br>
-     * The fields "task_id" and "job_id" automatically added when add logs
-     * through a task or a job <br>
-     * Ignore rules exist for some logs (e.g. zoomImage, changeAttribute) <br>
-     * Payload of ignored logs are shallowly combined to previous logs of the same type
-     * @method log
-     * @memberof Session.logger
-     * @param {module:API.cvat.enums.LogType | string} type - log type
-     * @param {Object} [payload = {}] - any other data that will be appended to the log
-     * @param {boolean} [wait = false] - specifies if log is durable
-     * @returns {module:API.cvat.classes.Log}
-     * @instance
-     * @async
-     * @throws {module:API.cvat.exceptions.PluginError}
-     * @throws {module:API.cvat.exceptions.ArgumentError}
-     */
-    /**
-     * Namespace is used for an interaction with actions
-     * @namespace actions
-     * @memberof Session
-     */
-    /**
-     * @typedef {Object} HistoryActions
-     * @property {string[]} [undo] - array of possible actions to undo
-     * @property {string[]} [redo] - array of possible actions to redo
-     * @global
-     */
-    /**
-     * Make undo
-     * @method undo
-     * @memberof Session.actions
-     * @param {number} [count=1] number of actions to undo
-     * @returns {number[]} Array of affected objects
-     * @throws {module:API.cvat.exceptions.PluginError}
-     * @throws {module:API.cvat.exceptions.ArgumentError}
-     * @instance
-     * @async
-     */
-    /**
-     * Make redo
-     * @method redo
-     * @memberof Session.actions
-     * @param {number} [count=1] number of actions to redo
-     * @returns {number[]} Array of affected objects
-     * @throws {module:API.cvat.exceptions.PluginError}
-     * @throws {module:API.cvat.exceptions.ArgumentError}
-     * @instance
-     * @async
-     */
-    /**
-     * Freeze history (do not save new actions)
-     * @method freeze
-     * @memberof Session.actions
-     * @throws {module:API.cvat.exceptions.PluginError}
-     * @instance
-     * @async
-     */
-    /**
-     * Remove all actions from history
-     * @method clear
-     * @memberof Session.actions
-     * @throws {module:API.cvat.exceptions.PluginError}
-     * @instance
-     * @async
-     */
-    /**
-     * Get actions
-     * @method get
-     * @memberof Session.actions
-     * @returns {HistoryActions}
-     * @throws {module:API.cvat.exceptions.PluginError}
-     * @throws {module:API.cvat.exceptions.ArgumentError}
-     * @returns {Array.<Array.<string|number>>}
-     * array of pairs [action name, frame number]
-     * @instance
-     * @async
-     */
-    /**
-     * Namespace is used for an interaction with events
-     * @namespace events
-     * @memberof Session
-     */
-    /**
-     * Subscribe on an event
-     * @method subscribe
-     * @memberof Session.events
-     * @param {module:API.cvat.enums.EventType} type - event type
-     * @param {functions} callback - function which will be called on event
-     * @throws {module:API.cvat.exceptions.PluginError}
-     * @throws {module:API.cvat.exceptions.ArgumentError}
-     * @instance
-     * @async
-     */
-    /**
-     * Unsubscribe from an event. If callback is not provided,
-     * all callbacks will be removed from subscribers for the event
-     * @method unsubscribe
-     * @memberof Session.events
-     * @param {module:API.cvat.enums.EventType} type - event type
-     * @param {functions} [callback = null] - function which is called on event
-     * @throws {module:API.cvat.exceptions.PluginError}
-     * @throws {module:API.cvat.exceptions.ArgumentError}
-     * @instance
-     * @async
-     */
-    /**
-     * @typedef {Object} PredictorStatus
-     * @property {string} message - message for a user to be displayed somewhere
-     * @property {number} projectScore - model accuracy
-     * @global
-     */
-    /**
-     * Namespace is used for an interaction with events
-     * @namespace predictor
-     * @memberof Session
-     */
-    /**
-     * Subscribe to updates of a ML model binded to the project
-     * @method status
-     * @memberof Session.predictor
-     * @throws {module:API.cvat.exceptions.PluginError}
-     * @throws {module:API.cvat.exceptions.ServerError}
-     * @returns {PredictorStatus}
-     * @instance
-     * @async
-     */
-    /**
-     * Get predictions from a ML model binded to the project
-     * @method predict
-     * @memberof Session.predictor
-     * @param {number} frame - number of frame to inference
-     * @throws {module:API.cvat.exceptions.PluginError}
-     * @throws {module:API.cvat.exceptions.ArgumentError}
-     * @throws {module:API.cvat.exceptions.ServerError}
-     * @throws {module:API.cvat.exceptions.DataError}
-     * @returns {object[] | null} annotations
-     * @instance
-     * @async
-     */
-}
+export class Session {}
 
-/**
- * Class representing a job.
- * @memberof module:API.cvat.classes
- * @hideconstructor
- * @extends Session
- */
 export class Job extends Session {
     constructor(initialData) {
         super();
@@ -838,24 +365,9 @@ export class Job extends Session {
         Object.defineProperties(
             this,
             Object.freeze({
-                /**
-                 * @name id
-                 * @type {number}
-                 * @memberof module:API.cvat.classes.Job
-                 * @readonly
-                 * @instance
-                 */
                 id: {
                     get: () => data.id,
                 },
-                /**
-                 * Instance of a user who is responsible for the job annotations
-                 * @name assignee
-                 * @type {module:API.cvat.classes.User}
-                 * @memberof module:API.cvat.classes.Job
-                 * @instance
-                 * @throws {module:API.cvat.exceptions.ArgumentError}
-                 */
                 assignee: {
                     get: () => data.assignee,
                     set: (assignee) => {
@@ -866,13 +378,6 @@ export class Job extends Session {
                         data.assignee = assignee;
                     },
                 },
-                /**
-                 * @name stage
-                 * @type {module:API.cvat.enums.JobStage}
-                 * @memberof module:API.cvat.classes.Job
-                 * @instance
-                 * @throws {module:API.cvat.exceptions.ArgumentError}
-                 */
                 stage: {
                     get: () => data.stage,
                     set: (stage) => {
@@ -895,13 +400,6 @@ export class Job extends Session {
                         data.stage = stage;
                     },
                 },
-                /**
-                 * @name state
-                 * @type {module:API.cvat.enums.JobState}
-                 * @memberof module:API.cvat.classes.Job
-                 * @instance
-                 * @throws {module:API.cvat.exceptions.ArgumentError}
-                 */
                 state: {
                     get: () => data.state,
                     set: (state) => {
@@ -924,73 +422,24 @@ export class Job extends Session {
                         data.state = state;
                     },
                 },
-                /**
-                 * @name startFrame
-                 * @type {number}
-                 * @memberof module:API.cvat.classes.Job
-                 * @readonly
-                 * @instance
-                 */
                 startFrame: {
                     get: () => data.start_frame,
                 },
-                /**
-                 * @name stopFrame
-                 * @type {number}
-                 * @memberof module:API.cvat.classes.Job
-                 * @readonly
-                 * @instance
-                 */
                 stopFrame: {
                     get: () => data.stop_frame,
                 },
-                /**
-                 * @name projectId
-                 * @type {number|null}
-                 * @memberof module:API.cvat.classes.Job
-                 * @readonly
-                 * @instance
-                 */
                 projectId: {
                     get: () => data.project_id,
                 },
-                /**
-                 * @name taskId
-                 * @type {number}
-                 * @memberof module:API.cvat.classes.Job
-                 * @readonly
-                 * @instance
-                 */
                 taskId: {
                     get: () => data.task_id,
                 },
-                /**
-                 * @name labels
-                 * @type {module:API.cvat.classes.Label[]}
-                 * @memberof module:API.cvat.classes.Job
-                 * @readonly
-                 * @instance
-                 */
                 labels: {
                     get: () => data.labels.filter((_label) => !_label.deleted),
                 },
-                /**
-                 * @name dimension
-                 * @type {module:API.cvat.enums.DimensionType}
-                 * @memberof module:API.cvat.classes.Task
-                 * @readonly
-                 * @instance
-                */
                 dimension: {
                     get: () => data.dimension,
                 },
-                /**
-                 * @name dataChunkSize
-                 * @type {number}
-                 * @memberof module:API.cvat.classes.Job
-                 * @readonly
-                 * @instance
-                 */
                 dataChunkSize: {
                     get: () => data.data_chunk_size,
                     set: (chunkSize) => {
@@ -1003,33 +452,12 @@ export class Job extends Session {
                         data.data_chunk_size = chunkSize;
                     },
                 },
-                /**
-                 * @name dataChunkSize
-                 * @type {string}
-                 * @memberof module:API.cvat.classes.Job
-                 * @readonly
-                 * @instance
-                 */
                 dataChunkType: {
                     get: () => data.data_compressed_chunk_type,
                 },
-                /**
-                 * @name mode
-                 * @type {string}
-                 * @memberof module:API.cvat.classes.Job
-                 * @readonly
-                 * @instance
-                 */
                 mode: {
                     get: () => data.mode,
                 },
-                /**
-                 * @name bugTracker
-                 * @type {string|null}
-                 * @memberof module:API.cvat.classes.Job
-                 * @instance
-                 * @readonly
-                 */
                 bugTracker: {
                     get: () => data.bug_tracker,
                 },
@@ -1090,89 +518,28 @@ export class Job extends Session {
         };
     }
 
-    /**
-     * Method updates job data like state, stage or assignee
-     * @method save
-     * @memberof module:API.cvat.classes.Job
-     * @readonly
-     * @instance
-     * @async
-     * @throws {module:API.cvat.exceptions.ServerError}
-     * @throws {module:API.cvat.exceptions.PluginError}
-     */
     async save() {
         const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.save);
         return result;
     }
 
-    /**
-     * Method returns a list of issues for a job
-     * @method issues
-     * @memberof module:API.cvat.classes.Job
-     * @returns {module:API.cvat.classes.Issue[]}
-     * @readonly
-     * @instance
-     * @async
-     * @throws {module:API.cvat.exceptions.ServerError}
-     * @throws {module:API.cvat.exceptions.PluginError}
-     */
     async issues() {
         const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.issues);
         return result;
     }
 
-    /**
-     * Method adds a new issue to a job
-     * @method openIssue
-     * @memberof module:API.cvat.classes.Job
-     * @returns {module:API.cvat.classes.Issue}
-     * @param {module:API.cvat.classes.Issue} issue
-     * @param {string} message
-     * @readonly
-     * @instance
-     * @async
-     * @throws {module:API.cvat.exceptions.ArgumentError}
-     * @throws {module:API.cvat.exceptions.ServerError}
-     * @throws {module:API.cvat.exceptions.PluginError}
-     */
     async openIssue(issue, message) {
         const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.openIssue, issue, message);
         return result;
     }
 
-    /**
-     * Method removes all job related data from the client (annotations, history, etc.)
-     * @method close
-     * @returns {module:API.cvat.classes.Job}
-     * @memberof module:API.cvat.classes.Job
-     * @readonly
-     * @async
-     * @instance
-     * @throws {module:API.cvat.exceptions.PluginError}
-     */
     async close() {
         const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.close);
         return result;
     }
 }
 
-/**
- * Class representing a task
- * @memberof module:API.cvat.classes
- * @extends Session
- */
 export class Task extends Session {
-    /**
-     * In a fact you need use the constructor only if you want to create a task
-     * @param {object} initialData - Object which is used for initialization
-     * <br> It can contain keys:
-     * <br> <li style="margin-left: 10px;"> name
-     * <br> <li style="margin-left: 10px;"> assignee
-     * <br> <li style="margin-left: 10px;"> bug_tracker
-     * <br> <li style="margin-left: 10px;"> labels
-     * <br> <li style="margin-left: 10px;"> segment_size
-     * <br> <li style="margin-left: 10px;"> overlap
-     */
     constructor(initialData) {
         super();
         const data = {
@@ -1265,23 +632,9 @@ export class Task extends Session {
         Object.defineProperties(
             this,
             Object.freeze({
-                /**
-                 * @name id
-                 * @type {number}
-                 * @memberof module:API.cvat.classes.Task
-                 * @readonly
-                 * @instance
-                 */
                 id: {
                     get: () => data.id,
                 },
-                /**
-                 * @name name
-                 * @type {string}
-                 * @memberof module:API.cvat.classes.Task
-                 * @instance
-                 * @throws {module:API.cvat.exceptions.ArgumentError}
-                 */
                 name: {
                     get: () => data.name,
                     set: (value) => {
@@ -1292,12 +645,6 @@ export class Task extends Session {
                         data.name = value;
                     },
                 },
-                /**
-                 * @name projectId
-                 * @type {number|null}
-                 * @memberof module:API.cvat.classes.Task
-                 * @instance
-                 */
                 projectId: {
                     get: () => data.project_id,
                     set: (projectId) => {
@@ -1309,55 +656,18 @@ export class Task extends Session {
                         data.project_id = projectId;
                     },
                 },
-                /**
-                 * @name status
-                 * @type {module:API.cvat.enums.TaskStatus}
-                 * @memberof module:API.cvat.classes.Task
-                 * @readonly
-                 * @instance
-                 */
                 status: {
                     get: () => data.status,
                 },
-                /**
-                 * @name size
-                 * @type {number}
-                 * @memberof module:API.cvat.classes.Task
-                 * @readonly
-                 * @instance
-                 */
                 size: {
                     get: () => data.size,
                 },
-                /**
-                 * @name mode
-                 * @type {TaskMode}
-                 * @memberof module:API.cvat.classes.Task
-                 * @readonly
-                 * @instance
-                 */
                 mode: {
                     get: () => data.mode,
                 },
-                /**
-                 * Instance of a user who has created the task
-                 * @name owner
-                 * @type {module:API.cvat.classes.User}
-                 * @memberof module:API.cvat.classes.Task
-                 * @readonly
-                 * @instance
-                 */
                 owner: {
                     get: () => data.owner,
                 },
-                /**
-                 * Instance of a user who is responsible for the task
-                 * @name assignee
-                 * @type {module:API.cvat.classes.User}
-                 * @memberof module:API.cvat.classes.Task
-                 * @instance
-                 * @throws {module:API.cvat.exceptions.ArgumentError}
-                 */
                 assignee: {
                     get: () => data.assignee,
                     set: (assignee) => {
@@ -1368,33 +678,12 @@ export class Task extends Session {
                         data.assignee = assignee;
                     },
                 },
-                /**
-                 * @name createdDate
-                 * @type {string}
-                 * @memberof module:API.cvat.classes.Task
-                 * @readonly
-                 * @instance
-                 */
                 createdDate: {
                     get: () => data.created_date,
                 },
-                /**
-                 * @name updatedDate
-                 * @type {string}
-                 * @memberof module:API.cvat.classes.Task
-                 * @readonly
-                 * @instance
-                 */
                 updatedDate: {
                     get: () => data.updated_date,
                 },
-                /**
-                 * @name bugTracker
-                 * @type {string}
-                 * @memberof module:API.cvat.classes.Task
-                 * @instance
-                 * @throws {module:API.cvat.exceptions.ArgumentError}
-                 */
                 bugTracker: {
                     get: () => data.bug_tracker,
                     set: (tracker) => {
@@ -1408,13 +697,6 @@ export class Task extends Session {
                         data.bug_tracker = tracker;
                     },
                 },
-                /**
-                 * @name subset
-                 * @type {string}
-                 * @memberof module:API.cvat.classes.Task
-                 * @instance
-                 * @throws {module:API.cvat.exception.ArgumentError}
-                 */
                 subset: {
                     get: () => data.subset,
                     set: (subset) => {
@@ -1428,13 +710,6 @@ export class Task extends Session {
                         data.subset = subset;
                     },
                 },
-                /**
-                 * @name overlap
-                 * @type {number}
-                 * @memberof module:API.cvat.classes.Task
-                 * @instance
-                 * @throws {module:API.cvat.exceptions.ArgumentError}
-                 */
                 overlap: {
                     get: () => data.overlap,
                     set: (overlap) => {
@@ -1444,13 +719,6 @@ export class Task extends Session {
                         data.overlap = overlap;
                     },
                 },
-                /**
-                 * @name segmentSize
-                 * @type {number}
-                 * @memberof module:API.cvat.classes.Task
-                 * @instance
-                 * @throws {module:API.cvat.exceptions.ArgumentError}
-                 */
                 segmentSize: {
                     get: () => data.segment_size,
                     set: (segment) => {
@@ -1460,13 +728,6 @@ export class Task extends Session {
                         data.segment_size = segment;
                     },
                 },
-                /**
-                 * @name imageQuality
-                 * @type {number}
-                 * @memberof module:API.cvat.classes.Task
-                 * @instance
-                 * @throws {module:API.cvat.exceptions.ArgumentError}
-                 */
                 imageQuality: {
                     get: () => data.image_quality,
                     set: (quality) => {
@@ -1476,13 +737,6 @@ export class Task extends Session {
                         data.image_quality = quality;
                     },
                 },
-                /**
-                 * @name useZipChunks
-                 * @type {boolean}
-                 * @memberof module:API.cvat.classes.Task
-                 * @instance
-                 * @throws {module:API.cvat.exceptions.ArgumentError}
-                 */
                 useZipChunks: {
                     get: () => data.use_zip_chunks,
                     set: (useZipChunks) => {
@@ -1492,13 +746,6 @@ export class Task extends Session {
                         data.use_zip_chunks = useZipChunks;
                     },
                 },
-                /**
-                 * @name useCache
-                 * @type {boolean}
-                 * @memberof module:API.cvat.classes.Task
-                 * @instance
-                 * @throws {module:API.cvat.exceptions.ArgumentError}
-                 */
                 useCache: {
                     get: () => data.use_cache,
                     set: (useCache) => {
@@ -1508,13 +755,6 @@ export class Task extends Session {
                         data.use_cache = useCache;
                     },
                 },
-                /**
-                 * @name copyData
-                 * @type {boolean}
-                 * @memberof module:API.cvat.classes.Task
-                 * @instance
-                 * @throws {module:API.cvat.exceptions.ArgumentError}
-                 */
                 copyData: {
                     get: () => data.copy_data,
                     set: (copyData) => {
@@ -1524,13 +764,6 @@ export class Task extends Session {
                         data.copy_data = copyData;
                     },
                 },
-                /**
-                 * @name labels
-                 * @type {module:API.cvat.classes.Label[]}
-                 * @memberof module:API.cvat.classes.Task
-                 * @instance
-                 * @throws {module:API.cvat.exceptions.ArgumentError}
-                 */
                 labels: {
                     get: () => data.labels.filter((_label) => !_label.deleted),
                     set: (labels) => {
@@ -1556,24 +789,9 @@ export class Task extends Session {
                         data.labels = [...deletedLabels, ...labels];
                     },
                 },
-                /**
-                 * @name jobs
-                 * @type {module:API.cvat.classes.Job[]}
-                 * @memberof module:API.cvat.classes.Task
-                 * @readonly
-                 * @instance
-                 */
                 jobs: {
                     get: () => [...data.jobs],
                 },
-                /**
-                 * List of files from shared resource or list of cloud storage files
-                 * @name serverFiles
-                 * @type {string[]}
-                 * @memberof module:API.cvat.classes.Task
-                 * @instance
-                 * @throws {module:API.cvat.exceptions.ArgumentError}
-                 */
                 serverFiles: {
                     get: () => [...data.files.server_files],
                     set: (serverFiles) => {
@@ -1594,14 +812,6 @@ export class Task extends Session {
                         Array.prototype.push.apply(data.files.server_files, serverFiles);
                     },
                 },
-                /**
-                 * List of files from client host
-                 * @name clientFiles
-                 * @type {File[]}
-                 * @memberof module:API.cvat.classes.Task
-                 * @instance
-                 * @throws {module:API.cvat.exceptions.ArgumentError}
-                 */
                 clientFiles: {
                     get: () => [...data.files.client_files],
                     set: (clientFiles) => {
@@ -1622,14 +832,6 @@ export class Task extends Session {
                         Array.prototype.push.apply(data.files.client_files, clientFiles);
                     },
                 },
-                /**
-                 * List of files from remote host
-                 * @name remoteFiles
-                 * @type {File[]}
-                 * @memberof module:API.cvat.classes.Task
-                 * @instance
-                 * @throws {module:API.cvat.exceptions.ArgumentError}
-                 */
                 remoteFiles: {
                     get: () => [...data.files.remote_files],
                     set: (remoteFiles) => {
@@ -1650,14 +852,6 @@ export class Task extends Session {
                         Array.prototype.push.apply(data.files.remote_files, remoteFiles);
                     },
                 },
-                /**
-                 * The first frame of a video to annotation
-                 * @name startFrame
-                 * @type {number}
-                 * @memberof module:API.cvat.classes.Task
-                 * @instance
-                 * @throws {module:API.cvat.exceptions.ArgumentError}
-                 */
                 startFrame: {
                     get: () => data.start_frame,
                     set: (frame) => {
@@ -1667,14 +861,6 @@ export class Task extends Session {
                         data.start_frame = frame;
                     },
                 },
-                /**
-                 * The last frame of a video to annotation
-                 * @name stopFrame
-                 * @type {number}
-                 * @memberof module:API.cvat.classes.Task
-                 * @instance
-                 * @throws {module:API.cvat.exceptions.ArgumentError}
-                 */
                 stopFrame: {
                     get: () => data.stop_frame,
                     set: (frame) => {
@@ -1684,14 +870,6 @@ export class Task extends Session {
                         data.stop_frame = frame;
                     },
                 },
-                /**
-                 * Filter to ignore some frames during task creation
-                 * @name frameFilter
-                 * @type {string}
-                 * @memberof module:API.cvat.classes.Task
-                 * @instance
-                 * @throws {module:API.cvat.exceptions.ArgumentError}
-                 */
                 frameFilter: {
                     get: () => data.frame_filter,
                     set: (filter) => {
@@ -1719,43 +897,15 @@ export class Task extends Session {
                 dataChunkType: {
                     get: () => data.data_compressed_chunk_type,
                 },
-                /**
-                 * @name dimension
-                 * @type {module:API.cvat.enums.DimensionType}
-                 * @memberof module:API.cvat.classes.Task
-                 * @readonly
-                 * @instance
-                */
                 dimension: {
                     get: () => data.dimension,
                 },
-                /**
-                 * @name cloudStorageId
-                 * @type {integer|null}
-                 * @memberof module:API.cvat.classes.Task
-                 * @instance
-                 */
                 cloudStorageId: {
                     get: () => data.cloud_storage_id,
                 },
                 sortingMethod: {
-                    /**
-                     * @name sortingMethod
-                     * @type {module:API.cvat.enums.SortingMethod}
-                     * @memberof module:API.cvat.classes.Task
-                     * @instance
-                     * @readonly
-                     */
                     get: () => data.sorting_method,
                 },
-                /**
-                 * Source storage for import resources.
-                 * @name sourceStorage
-                 * @type {module:API.cvat.classes.Storage}
-                 * @memberof module:API.cvat.classes.Task
-                 * @instance
-                 * @throws {module:API.cvat.exceptions.ArgumentError}
-                 */
                 sourceStorage: {
                     get: () => (
                         new Storage({
@@ -1764,14 +914,6 @@ export class Task extends Session {
                         })
                     ),
                 },
-                /**
-                 * Target storage for export resources.
-                 * @name targetStorage
-                 * @type {module:API.cvat.classes.Storage}
-                 * @memberof module:API.cvat.classes.Task
-                 * @instance
-                 * @throws {module:API.cvat.exceptions.ArgumentError}
-                 */
                 targetStorage: {
                     get: () => (
                         new Storage({
@@ -1840,65 +982,21 @@ export class Task extends Session {
         };
     }
 
-    /**
-     * Method removes all task related data from the client (annotations, history, etc.)
-     * @method close
-     * @returns {module:API.cvat.classes.Task}
-     * @memberof module:API.cvat.classes.Task
-     * @readonly
-     * @async
-     * @instance
-     * @throws {module:API.cvat.exceptions.PluginError}
-     */
     async close() {
         const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.close);
         return result;
     }
 
-    /**
-     * Method updates data of a created task or creates new task from scratch
-     * @method save
-     * @returns {module:API.cvat.classes.Task}
-     * @memberof module:API.cvat.classes.Task
-     * @param {function} [onUpdate] - the function which is used only if task hasn't
-     * been created yet. It called in order to notify about creation status.
-     * It receives the string parameter which is a status message
-     * @readonly
-     * @instance
-     * @async
-     * @throws {module:API.cvat.exceptions.ServerError}
-     * @throws {module:API.cvat.exceptions.PluginError}
-     */
     async save(onUpdate = () => {}) {
         const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.save, onUpdate);
         return result;
     }
 
-    /**
-     * Method deletes a task from a server
-     * @method delete
-     * @memberof module:API.cvat.classes.Task
-     * @readonly
-     * @instance
-     * @async
-     * @throws {module:API.cvat.exceptions.ServerError}
-     * @throws {module:API.cvat.exceptions.PluginError}
-     */
     async delete() {
         const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.delete);
         return result;
     }
 
-    /**
-     * Method makes a backup of a task
-     * @method backup
-     * @memberof module:API.cvat.classes.Task
-     * @readonly
-     * @instance
-     * @async
-     * @throws {module:API.cvat.exceptions.ServerError}
-     * @throws {module:API.cvat.exceptions.PluginError}
-     */
     async backup(targetStorage: Storage, useDefaultSettings: boolean, fileName?: string) {
         const result = await PluginRegistry.apiWrapper.call(
             this,
@@ -1910,16 +1008,6 @@ export class Task extends Session {
         return result;
     }
 
-    /**
-     * Method restores a task from a backup
-     * @method restore
-     * @memberof module:API.cvat.classes.Task
-     * @readonly
-     * @instance
-     * @async
-     * @throws {module:API.cvat.exceptions.ServerError}
-     * @throws {module:API.cvat.exceptions.PluginError}
-     */
     static async restore(storage: Storage, file: File | string) {
         const result = await PluginRegistry.apiWrapper.call(this, Task.restore, storage, file);
         return result;
