@@ -33,7 +33,7 @@ And specify the following parameters:
    - Enter the name of the task. If the name includes more than one word, use the underscore: `Word1_word2_word3`
    - (Optional) `{{index}}` adds an index to the file in the set (starting from 0).
    - (Optional) `{{file_name}}` adds the file's name to the task's name.
-   > **Note:** use hyphen between three parameters: `Word1_word2_word3-{{index}}-{{file_name}}`
+     > **Note:** use hyphen between three parameters: `Word1_word2_word3-{{index}}-{{file_name}}`
 
 2. (Optional) From the **Projects** drop-down, select a project for the tasks.
    <br>Leave this field empty if you do not want to assign tasks to any project.
@@ -87,6 +87,6 @@ During the process of adding multiple tasks, the following errors may occur:
 | Error                     | Description                                                                                                                                                                                                                                                                                      |
 | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | ![](/images/image262.jpg) | Wrong file format. You can add only video files.                                                                                                                                                                                                                                                 |
-| ![](/images/image263.jpg) | In the process of creating a task, CVAT was not able to process the video file. <br>The name of the failed file will be displayed on the progress bar. <br><br> To fix this issue: <li> If you want to try again, click **Retry failed tasks**. <li> If you want to skip the file, click **OK**.|
+| ![](/images/image263.jpg) | In the process of creating a task, CVAT was not able to process the video file. <br>The name of the failed file will be displayed on the progress bar. <br><br> To fix this issue: <li> If you want to try again, click **Retry failed tasks**. <li> If you want to skip the file, click **OK**. |
 
 <!--lint enable maximum-line-length-->
