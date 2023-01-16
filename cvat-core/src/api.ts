@@ -177,12 +177,6 @@ function build() {
                 return result;
             },
         },
-        sso: {
-            async validate(code) {
-                const result = await PluginRegistry.apiWrapper(cvat.sso.validate, code);
-                return result;
-            },
-        },
         lambda: {
             async list() {
                 const result = await PluginRegistry.apiWrapper(cvat.lambda.list);
@@ -307,7 +301,6 @@ function build() {
     cvat.users = Object.freeze(cvat.users);
     cvat.plugins = Object.freeze(cvat.plugins);
     cvat.lambda = Object.freeze(cvat.lambda);
-    cvat.sso = Object.freeze(cvat.sso);
     cvat.client = Object.freeze(cvat.client);
     cvat.enums = Object.freeze(cvat.enums);
     cvat.cloudStorages = Object.freeze(cvat.cloudStorages);

@@ -5,7 +5,6 @@
 
 const config = {
     backendAPI: '/api',
-    socialSSO: 'cognito',
     proxy: false,
     organizationID: null,
     origin: '',

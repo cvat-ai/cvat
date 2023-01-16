@@ -1,10 +1,5 @@
 /* eslint-disable */
 
-const ssoDummyData = {
-    token: 'test-token',
-    expireAt: '999999999',
-};
-
 const aboutDummyData = {
     name: 'Computer Vision Annotation Tool',
     description:
@@ -3449,7 +3444,6 @@ const webhooksEventsDummyData = {
 module.exports = {
     tasksDummyData,
     projectsDummyData,
-    ssoDummyData,
     aboutDummyData,
     shareDummyData,
     usersDummyData,

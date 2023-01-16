@@ -33,17 +33,6 @@ the server calling REST API directly (as it done by users).
    See the [contributing guide](../../site/content/en/docs/contributing/running-tests.md)
    to get more information about tests running.
 
-   For now testing the Cognito authentication is disabled by default. After building cvat-sdk
-   with a schema.yml created from cvat_server with IAM_TYPE='COGNITO' in cvat/settings/base.py
-   then the test can be run by modifying the 'COGNITO_SETTING' in tests\python\shared\utils\config.py
-   to 'enabled'. The following environmental variables should also be set:
-
-   ```console
-   export COGNITO_USER_POOL_APP=http://mock_oauth2:9999
-   export COGNITO_CLIENT_ID=test-client
-   export COGNITO_REDIRECT_URI=https://www.cvat.ai/
-   ```
-
 ## How to upgrade testing assets?
 
 When you have a new use case which cannot be expressed using objects already

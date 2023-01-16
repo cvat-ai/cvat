@@ -9,7 +9,6 @@ import config from './config';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
 import lambdaManager from './lambda-manager';
-import ssoManager from './sso-manager';
 import {
     isBoolean,
     isInteger,
@@ -31,11 +30,6 @@ import Webhook from './webhook';
 export default function implementAPI(cvat) {
     cvat.plugins.list.implementation = PluginRegistry.list;
     cvat.plugins.register.implementation = PluginRegistry.register.bind(cvat);
-
-    cvat.sso.validate.implementation = async (code) => {
-        const result = await ssoManager.validate(code);
-        return result;
-    };
 
     cvat.lambda.list.implementation = lambdaManager.list.bind(lambdaManager);
     cvat.lambda.run.implementation = lambdaManager.run.bind(lambdaManager);
