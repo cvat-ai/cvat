@@ -29,7 +29,3 @@ export function customWaViewHit(pageName?: string, queryString?: string, hashInf
         }
     }
 }
-
-export function isPublicInstance(): boolean {
-    return process.env.PUBLIC_INSTANCE === 'true';
-}

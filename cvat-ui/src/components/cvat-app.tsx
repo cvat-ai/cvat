@@ -61,7 +61,7 @@ import AnnotationPageContainer from 'containers/annotation-page/annotation-page'
 import { getCore } from 'cvat-core-wrapper';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { NotificationsState } from 'reducers';
-import { customWaViewHit, isPublicInstance } from 'utils/enviroment';
+import { customWaViewHit } from 'utils/enviroment';
 import showPlatformNotification, {
     platformInfo,
     stopNotifications,
@@ -69,6 +69,7 @@ import showPlatformNotification, {
 } from 'utils/platform-checker';
 import '../styles.scss';
 import consts from 'consts';
+import messages from 'messages';
 import EmailConfirmationPage from './email-confirmation-pages/email-confirmed';
 import EmailVerificationSentPage from './email-confirmation-pages/email-verification-sent';
 import IncorrectEmailConfirmationPage from './email-confirmation-pages/incorrect-email-confirmation';
@@ -140,7 +141,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         });
 
         const {
-            HEALH_CHECK_RETRIES, HEALTH_CHECK_PERIOD, HEALTH_CHECK_REQUEST_TIMEOUT, UPGRADE_GUIDE_URL,
+            HEALH_CHECK_RETRIES, HEALTH_CHECK_PERIOD, HEALTH_CHECK_REQUEST_TIMEOUT,
         } = consts;
         core.server.healthCheck(
             HEALH_CHECK_RETRIES,
@@ -157,34 +158,17 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                     healthIinitialized: true,
                     backendIsHealthy: false,
                 });
+
+                const { SERVER_UNAVAILABLE } = messages;
+
                 Modal.error({
                     title: 'Cannot connect to the server',
                     className: 'cvat-modal-cannot-connect-server',
                     closable: false,
-                    content: (
-                        isPublicInstance() ? (
-                            <Text>
-                                Please contact CVAT support&nbsp;
-                                <a href='mailto:support@cvat.ai'>support@cvat.ai</a>
-                            </Text>
-                        ) : (
-                            <Text>
-                                Make sure the CVAT backend and all necessary services
-                                (Database, Redis and Open Policy Agent) are running and avaliable.
-                                If you upgraded from version 2.2.0 or earlier, manual actions may be needed,
-                                see the&nbsp;
-
-                                <a
-                                    target='_blank'
-                                    rel='noopener noreferrer'
-                                    href={UPGRADE_GUIDE_URL}
-                                >
-                                    Upgrade Guide
-                                </a>
-                                .
-                            </Text>
-                        )
-                    ),
+                    content:
+    <Text>
+        {SERVER_UNAVAILABLE}
+    </Text>,
                 });
             });
 
