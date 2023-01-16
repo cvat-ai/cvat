@@ -242,7 +242,6 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'django.template.context_processors.i18n',
 
             ],
         },
@@ -291,8 +290,6 @@ AUTHENTICATION_BACKENDS = [
 # https://github.com/pennersr/django-allauth
 ACCOUNT_EMAIL_VERIFICATION = 'none'
 ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
-# ACCOUNT_UNIQUE_EMAIL = True
-# ACCOUNT_USERNAME_REQUIRED = False
 
 # set UI url to redirect after a successful e-mail confirmation
 #changed from '/auth/login' to '/auth/email-confirmation' for email confirmation message
@@ -301,7 +298,6 @@ ACCOUNT_EMAIL_VERIFICATION_SENT_REDIRECT_URL = '/auth/email-verification-sent'
 INCORRECT_EMAIL_CONFIRMATION_URL = '/auth/incorrect-email-confirmation'
 
 OLD_PASSWORD_FIELD_ENABLED = True
-
 
 # Django-RQ
 # https://github.com/rq/django-rq
