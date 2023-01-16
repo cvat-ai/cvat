@@ -1,5 +1,5 @@
 # Copyright (C) 2018-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -13,7 +13,6 @@ from datetime import datetime
 from distutils.util import strtobool
 from tempfile import mkstemp
 
-import cv2
 from django.db.models.query import Prefetch
 from django.shortcuts import get_object_or_404
 import django_rq
@@ -27,7 +26,7 @@ from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
     OpenApiParameter, OpenApiResponse, PolymorphicProxySerializer,
-    extend_schema_view, extend_schema, inline_serializer
+    extend_schema_view, extend_schema
 )
 from drf_spectacular.plumbing import build_array_type, build_basic_type
 
@@ -50,7 +49,7 @@ from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.media_extractors import get_mime
 from cvat.apps.engine.models import (
     Job, Task, Project, Issue, Data,
-    Comment, StorageMethodChoice, StorageChoice, Image,
+    Comment, StorageMethodChoice, StorageChoice,
     CloudProviderChoice, Location
 )
 from cvat.apps.engine.models import CloudStorage as CloudStorageModel
@@ -233,39 +232,6 @@ class ServerViewSet(viewsets.ViewSet):
             'ANALYTICS': strtobool(os.environ.get("CVAT_ANALYTICS", '0')),
             'MODELS': strtobool(os.environ.get("CVAT_SERVERLESS", '0')),
             'PREDICT': False, # FIXME: it is unused anymore (for UI only)
-        }
-        return Response(response)
-
-    @staticmethod
-    @extend_schema(
-        summary='Method provides a list with advanced integrated authentication methods (e.g. social accounts)',
-        responses={
-            '200': OpenApiResponse(response=inline_serializer(
-                name='AdvancedAuthentication',
-                fields={
-                    'GOOGLE_ACCOUNT_AUTHENTICATION': serializers.BooleanField(),
-                    'GITHUB_ACCOUNT_AUTHENTICATION': serializers.BooleanField(),
-                }
-            )),
-        }
-    )
-    @action(detail=False, methods=['GET'], url_path='advanced-auth', permission_classes=[])
-    def advanced_authentication(request):
-        use_social_auth = settings.USE_ALLAUTH_SOCIAL_ACCOUNTS
-        integrated_auth_providers = settings.SOCIALACCOUNT_PROVIDERS.keys() if use_social_auth else []
-        google_auth_is_enabled = bool(
-            'google' in integrated_auth_providers
-            and settings.SOCIAL_AUTH_GOOGLE_CLIENT_ID
-            and settings.SOCIAL_AUTH_GOOGLE_CLIENT_SECRET
-        )
-        github_auth_is_enabled = bool(
-            'github' in integrated_auth_providers
-            and settings.SOCIAL_AUTH_GITHUB_CLIENT_ID
-            and settings.SOCIAL_AUTH_GITHUB_CLIENT_SECRET
-        )
-        response = {
-            'GOOGLE_ACCOUNT_AUTHENTICATION': google_auth_is_enabled,
-            'GITHUB_ACCOUNT_AUTHENTICATION': github_auth_is_enabled,
         }
         return Response(response)
 
@@ -671,7 +637,6 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         return response
 
-
 class DataChunkGetter:
     def __init__(self, data_type, data_num, data_quality, task_dim):
         possible_data_type_values = ('chunk', 'frame', 'preview', 'context_image')
@@ -731,20 +696,14 @@ class DataChunkGetter:
                 return HttpResponse(buf.getvalue(), content_type=mime)
 
             elif self.type == 'context_image':
-                if not (start <= self.number <= stop):
-                    raise ValidationError('The frame number should be in ' +
-                        f'[{start}, {stop}] range')
-
-                image = Image.objects.get(data_id=db_data.id, frame=self.number)
-                for i in image.related_files.all():
-                    path = os.path.realpath(str(i.path))
-                    image = cv2.imread(path)
-                    success, result = cv2.imencode('.JPEG', image)
-                    if not success:
-                        raise Exception('Failed to encode image to ".jpeg" format')
-                    return HttpResponse(io.BytesIO(result.tobytes()), content_type='image/jpeg')
-                return Response(data='No context image related to the frame',
-                    status=status.HTTP_404_NOT_FOUND)
+                if start <= self.number <= stop:
+                    cache = MediaCache(self.dimension)
+                    buff, mime = cache.get_frame_context_images(db_data, self.number)
+                    if not buff:
+                        return HttpResponseNotFound()
+                    return HttpResponse(io.BytesIO(buff), content_type=mime)
+                raise ValidationError('The frame number should be in ' +
+                    f'[{start}, {stop}] range')
             else:
                 return Response(data='unknown data type {}.'.format(self.type),
                     status=status.HTTP_400_BAD_REQUEST)
@@ -966,6 +925,9 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             self._object.data = db_data
             self._object.save()
             data = {k: v for k, v in serializer.data.items()}
+
+            if 'job_file_mapping' in serializer.validated_data:
+                data['job_file_mapping'] = serializer.validated_data['job_file_mapping']
 
             data['use_zip_chunks'] = serializer.validated_data['use_zip_chunks']
             data['use_cache'] = serializer.validated_data['use_cache']
@@ -1307,7 +1269,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             'width': item.width,
             'height': item.height,
             'name': item.path,
-            'has_related_context': hasattr(item, 'related_files') and item.related_files.exists()
+            'related_files': item.related_files.count() if hasattr(item, 'related_files') else 0
         } for item in media]
 
         db_data = db_task.data
@@ -1779,7 +1741,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             'width': item.width,
             'height': item.height,
             'name': item.path,
-            'has_related_context': hasattr(item, 'related_files') and item.related_files.exists()
+            'related_files': item.related_files.count() if hasattr(item, 'related_files') else 0
         } for item in media]
 
         db_data.frames = frame_meta

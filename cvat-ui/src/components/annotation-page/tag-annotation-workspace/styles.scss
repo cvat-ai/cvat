@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,14 +11,14 @@
 
 .cvat-tag-annotation-sidebar:not(.ant-layout-sider-collapsed) {
     background: $background-color-2;
-    padding: $grid-unit-size * 0.5;
-    padding-left: $grid-unit-size * 1.25;
+    padding: $grid-unit-size;
+    padding-left: $grid-unit-size;
     overflow-y: auto;
 }
 
 .cvat-tag-annotation-sidebar-label-select {
-    padding-top: $grid-unit-size * 1.25;
-    padding-bottom: $grid-unit-size * 1.8;
+    padding-top: $grid-unit-size;
+    padding-bottom: $grid-unit-size * 2;
 
     > .ant-col > .ant-select {
         width: $grid-unit-size * 25;
@@ -25,16 +26,16 @@
 }
 
 .cvat-tag-annotation-sidebar-shortcut-help {
-    padding-top: $grid-unit-size * 1.8;
+    padding-top: $grid-unit-size;
     text-align: center;
 }
 
 .cvat-tag-annotation-sidebar-checkbox-skip-frame {
-    padding-bottom: $grid-unit-size * 1.8;
+    padding-bottom: $grid-unit-size;
 }
 
 .cvat-tag-annotation-label-selects {
-    padding-top: $grid-unit-size * 1.25;
+    padding-top: $grid-unit-size;
 
     .ant-select {
         width: $grid-unit-size * 29;
@@ -42,7 +43,7 @@
     }
 
     .cvat-tag-annotation-shortcut-key {
-        margin-left: $grid-unit-size * 1.25;
+        margin-left: $grid-unit-size;
     }
 }
 
@@ -52,14 +53,13 @@
 
 .cvat-frame-tags {
     .ant-tag {
-        margin: $grid-unit-size * 0.25;
         display: inline-flex;
         justify-content: center;
         align-items: center;
 
         .ant-tag-close-icon {
-            margin-left: $grid-unit-size * 0.5;
-            font-size: $grid-unit-size * 1.5;
+            margin-left: $grid-unit-size;
+            font-size: 12px;
         }
     }
 }
@@ -68,7 +68,7 @@
     @extend .cvat-frame-tags;
 
     position: absolute;
-    top: $layout-sm-grid-size;
+    top: $grid-unit-size * 4;
     left: $grid-unit-size;
     z-index: 3;
 
@@ -78,11 +78,11 @@
 }
 
 .cvat-tag-annotation-sidebar-tag-label {
-    margin-top: $grid-unit-size * 1.8;
+    margin-top: $grid-unit-size * 2;
 }
 
 .cvat-add-tag-button {
-    margin-left: $grid-unit-size * 1.25;
-    width: $grid-unit-size * 3.5;
-    height: $grid-unit-size * 3.5;
+    margin-left: $grid-unit-size;
+    width: $grid-unit-size * 4;
+    height: $grid-unit-size * 3;
 }

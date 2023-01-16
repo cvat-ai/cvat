@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useEffect } from 'react';
-import { useLocation, useHistory } from 'react-router';
+import { Redirect, useLocation, useHistory } from 'react-router';
 import notification from 'antd/lib/notification';
 import Spin from 'antd/lib/spin';
 
@@ -29,6 +29,7 @@ export default function LoginWithSocialAppComponent(): JSX.Element {
                 .catch((exception: Error) => {
                     if (exception.message.includes('Unverified email')) {
                         history.push('/auth/email-verification-sent');
+                        return Promise.resolve();
                     }
                     history.push('/auth/login');
                     notification.error({
@@ -39,6 +40,10 @@ export default function LoginWithSocialAppComponent(): JSX.Element {
                 });
         }
     }, []);
+
+    if (localStorage.getItem('token')) {
+        return <Redirect to={search.get('next') || '/tasks'} />;
+    }
 
     return (
         <div className='cvat-login-page cvat-spinner-container'>

@@ -1,7 +1,9 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const JSZip = require('jszip');
 
 onmessage = (e) => {
@@ -19,8 +21,7 @@ onmessage = (e) => {
                     _zip.file(relativePath)
                         .async('blob')
                         .then((fileData) => {
-                            // eslint-disable-next-line no-restricted-globals
-                            if (dimension === dimension2D && self.createImageBitmap) {
+                            if (dimension === dimension2D) {
                                 createImageBitmap(fileData).then((img) => {
                                     postMessage({
                                         fileName: relativePath,
@@ -33,12 +34,11 @@ onmessage = (e) => {
                                     fileName: relativePath,
                                     index: fileIndex,
                                     data: fileData,
-                                    isRaw: true,
                                 });
                             }
                         });
                 }
             });
-        });
+        }).catch((error) => postMessage({ error }));
     }
 };
