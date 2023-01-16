@@ -61,7 +61,7 @@ import AnnotationPageContainer from 'containers/annotation-page/annotation-page'
 import { getCore } from 'cvat-core-wrapper';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { NotificationsState } from 'reducers';
-import { customWaViewHit } from 'utils/enviroment';
+import { customWaViewHit, isPublicInstance } from 'utils/enviroment';
 import showPlatformNotification, {
     platformInfo,
     stopNotifications,
@@ -162,20 +162,28 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                     className: 'cvat-modal-cannot-connect-server',
                     closable: false,
                     content: (
-                        <Text>
-                            Make sure the CVAT backend and all necessary services
-                            (Database, Redis and Open Policy Agent) are running and avaliable.
-                            If you upgraded from version 2.2.0 or earlier, manual actions may be needed, see the&nbsp;
+                        isPublicInstance() ? (
+                            <Text>
+                                Please contact CVAT support&nbsp;
+                                <a href='mailto:support@cvat.ai'>support@cvat.ai</a>
+                            </Text>
+                        ) : (
+                            <Text>
+                                Make sure the CVAT backend and all necessary services
+                                (Database, Redis and Open Policy Agent) are running and avaliable.
+                                If you upgraded from version 2.2.0 or earlier, manual actions may be needed,
+                                see the&nbsp;
 
-                            <a
-                                target='_blank'
-                                rel='noopener noreferrer'
-                                href={UPGRADE_GUIDE_URL}
-                            >
-                                Upgrade Guide
-                            </a>
-                            .
-                        </Text>
+                                <a
+                                    target='_blank'
+                                    rel='noopener noreferrer'
+                                    href={UPGRADE_GUIDE_URL}
+                                >
+                                    Upgrade Guide
+                                </a>
+                                .
+                            </Text>
+                        )
                     ),
                 });
             });

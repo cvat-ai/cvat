@@ -510,9 +510,10 @@ async function healthCheck(maxRetries, checkPeriod, requestTimeout, progressCall
     })
         .then((response) => response.data)
         .catch((error) => {
-            const { data } = error.response;
             let isHealthy = true;
-            if (typeof data === 'object') {
+            let data;
+            if ('response' in error && typeof error.response.data === 'object') {
+                data = error.response.data;
                 for (const checkName in data) {
                     if (Object.prototype.hasOwnProperty.call(data, checkName) &&
                         checkName !== 'Cache backend: media' &&
