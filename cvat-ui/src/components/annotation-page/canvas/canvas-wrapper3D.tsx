@@ -408,7 +408,7 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
             canvasInstanceDOM.perspective.removeEventListener('canvas.groupped', onCanvasObjectsGroupped);
             window.removeEventListener('resize', onResize);
         };
-    }, [frameData, annotations, activeLabelID, contextMenuVisibility]);
+    }, [frameData, annotations, activeLabelID, contextMenuVisibility, activeObjectType]);
 
     const screenKeyControl = (code: CameraAction, altKey: boolean, shiftKey: boolean): void => {
         canvasInstance.keyControls(new KeyboardEvent('keydown', { code, altKey, shiftKey }));

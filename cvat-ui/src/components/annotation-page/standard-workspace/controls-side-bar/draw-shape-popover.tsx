@@ -155,7 +155,7 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                         <Button onClick={onDrawShape}>Shape</Button>
                     </CVATTooltip>
                 </Col>
-                {is2D && shapeType !== ShapeType.MASK && (
+                {shapeType !== ShapeType.MASK && (
                     <Col span={12}>
                         <CVATTooltip title={`Press ${repeatShapeShortcut} to draw again`}>
                             <Button onClick={onDrawTrack}>Track</Button>
