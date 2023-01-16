@@ -1,9 +1,7 @@
-
 # Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
-import requests
 from django.contrib.auth import get_user_model
 from django.http import HttpResponseRedirect, HttpResponseBadRequest
 from django.conf import settings

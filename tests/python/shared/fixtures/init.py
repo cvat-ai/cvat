@@ -34,15 +34,19 @@ DC_OVERRIDE_FILES = [
     CVAT_ROOT_DIR / "tests/python/mock_oauth2/docker-compose.yml",
 ]
 
-DC_FILES = [
-    CVAT_ROOT_DIR / dc_file
-    for dc_file in (
-        "docker-compose.dev.yml",
-        "tests/docker-compose.file_share.yml",
-        "tests/docker-compose.minio.yml",
-        "tests/docker-compose.test_servers.yml",
-    )
-] + CONTAINER_NAME_FILES + DC_OVERRIDE_FILES
+DC_FILES = (
+    [
+        CVAT_ROOT_DIR / dc_file
+        for dc_file in (
+            "docker-compose.dev.yml",
+            "tests/docker-compose.file_share.yml",
+            "tests/docker-compose.minio.yml",
+            "tests/docker-compose.test_servers.yml",
+        )
+    ]
+    + CONTAINER_NAME_FILES
+    + DC_OVERRIDE_FILES
+)
 
 
 def pytest_addoption(parser):

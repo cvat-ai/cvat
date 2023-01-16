@@ -21,13 +21,17 @@ class TestBasicAuth:
             assert response.status == HTTPStatus.OK
             assert user.username == username
 
-    @pytest.mark.skipif(not IS_AMAZON_COGNITO_AUTH_ENABLED, reason="Amazon Cognito authentication is disabled")
+    @pytest.mark.skipif(
+        not IS_AMAZON_COGNITO_AUTH_ENABLED, reason="Amazon Cognito authentication is disabled"
+    )
     def test_can_do_basic_cognito_token_auth(self):
         config = Configuration(host=BASE_URL)
         with ApiClient(config) as client:
             social_login_request = models.SocialLoginSerializerExRequest()
             social_login_request.code = "test-code"
-            (auth, _) = client.auth_api.create_amazon_cognito_login_token(social_login_serializer_ex_request=social_login_request)
+            (auth, _) = client.auth_api.create_amazon_cognito_login_token(
+                social_login_serializer_ex_request=social_login_request
+            )
             assert "sessionid" in client.cookies
             assert "csrftoken" in client.cookies
             assert auth.key
