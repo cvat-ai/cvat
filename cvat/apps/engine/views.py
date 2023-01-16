@@ -6,7 +6,6 @@
 import io
 import os
 import os.path as osp
-import zipfile
 import pytz
 import shutil
 import traceback
@@ -14,7 +13,6 @@ from datetime import datetime
 from distutils.util import strtobool
 from tempfile import mkstemp
 
-import cv2
 from django.db.models.query import Prefetch
 from django.shortcuts import get_object_or_404
 import django_rq
@@ -49,7 +47,7 @@ from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.media_extractors import get_mime
 from cvat.apps.engine.models import (
     Job, Task, Project, Issue, Data,
-    Comment, StorageMethodChoice, StorageChoice, Image,
+    Comment, StorageMethodChoice, StorageChoice,
     CloudProviderChoice, Location
 )
 from cvat.apps.engine.models import CloudStorage as CloudStorageModel
@@ -697,25 +695,11 @@ class DataChunkGetter:
 
             elif self.type == 'context_image':
                 if start <= self.number <= stop:
-                    zip_buffer = io.BytesIO()
-                    image = Image.objects.get(data_id=db_data.id, frame=self.number)
-                    with zipfile.ZipFile(zip_buffer, 'a', zipfile.ZIP_DEFLATED, False) as zip_file:
-                        if not image.related_files.count():
-                            return Response(data='No context image related to the frame',
-                                status=status.HTTP_404_NOT_FOUND)
-
-                        common_path = os.path.commonpath(list(map(lambda x: str(x.path), image.related_files.all())))
-                        for i in image.related_files.all():
-                            path = os.path.realpath(str(i.path))
-                            name = os.path.relpath(str(i.path), common_path)
-                            image = cv2.imread(path)
-                            success, result = cv2.imencode('.JPEG', image)
-                            if not success:
-                                raise Exception('Failed to encode image to ".jpeg" format')
-                            zip_file.writestr(f'{name}.jpg', result.tobytes())
-                            # response = HttpResponse(wrapper, content_type='application/zip')
-                            # response['Content-Disposition'] = 'attachment; filename=your_zipfile.zip'
-                    return HttpResponse(io.BytesIO(zip_buffer.getvalue()), content_type='application/zip')
+                    cache = MediaCache(self.dimension)
+                    buff, mime = cache.get_frame_context_images(db_data, self.number)
+                    if not buff:
+                        return HttpResponseNotFound()
+                    return HttpResponse(io.BytesIO(buff), content_type=mime)
                 raise ValidationError('The frame number should be in ' +
                     f'[{start}, {stop}] range')
             else:
