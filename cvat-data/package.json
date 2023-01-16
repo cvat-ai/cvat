@@ -1,6 +1,6 @@
 {
   "name": "cvat-data",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "",
   "main": "src/ts/cvat-data.ts",
   "scripts": {

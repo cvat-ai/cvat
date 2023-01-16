@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -11,7 +12,7 @@ context('Attribute annotation mode (AAM) zoom margin feature', () => {
     const rectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         firstX: 100,
         firstY: 100,
         secondX: 150,
@@ -43,6 +44,8 @@ context('Attribute annotation mode (AAM) zoom margin feature', () => {
 
     describe(`Testing case "${caseId}"`, () => {
         it('Change AAM zoom margin on workspace with rectangle', () => {
+            cy.get('.cvat-attribute-annotation-sidebar-object-switcher-right').click();
+            cy.get('.cvat-attribute-annotation-sidebar-object-switcher-left').click();
             cy.get('.cvat-attribute-annotation-sidebar-object-switcher').should('contain', `${labelName} 1 [1/2]`);
             cy.getScaleValue().then((scaleBeforeChangeZoomMargin) => {
                 changeSettingsZoomMargin(150);

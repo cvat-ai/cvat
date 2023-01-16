@@ -3,14 +3,29 @@
 //
 // SPDX-License-Identifier: MIT
 
-import * as cvatData from 'cvat-data';
 import { isBrowser, isNode } from 'browser-or-node';
-import PluginRegistry from './plugins';
-import serverProxy from './server-proxy';
-import { Exception, ArgumentError, DataError } from './exceptions';
 
-// This is the frames storage
-const frameDataCache = {};
+import * as cvatData from 'cvat-data';
+import { DimensionType } from 'enums';
+import PluginRegistry from './plugins';
+import serverProxy, { FramesMetaData } from './server-proxy';
+import {
+    Exception, ArgumentError, DataError, ServerError,
+} from './exceptions';
+
+// frame storage by job id
+const frameDataCache: Record<string, {
+    meta: FramesMetaData;
+    chunkSize: number;
+    mode: 'annotation' | 'interpolation';
+    startFrame: number;
+    stopFrame: number;
+    provider: cvatData.FrameProvider;
+    frameBuffer: FrameBuffer;
+    decodedBlocksCacheSize: number;
+    activeChunkRequest: null;
+    nextChunkRequest: null;
+}> = {};
 
 export class FrameData {
     constructor({
@@ -23,7 +38,7 @@ export class FrameData {
         stopFrame,
         decodeForward,
         deleted,
-        has_related_context: hasRelatedContext,
+        related_files: relatedFiles,
     }) {
         Object.defineProperties(
             this,
@@ -48,8 +63,8 @@ export class FrameData {
                     value: frameNumber,
                     writable: false,
                 },
-                hasRelatedContext: {
-                    value: hasRelatedContext,
+                relatedFiles: {
+                    value: relatedFiles,
                     writable: false,
                 },
                 startFrame: {
@@ -300,7 +315,7 @@ FrameData.prototype.data.implementation = async function (onServerRequest) {
     });
 };
 
-function getFrameMeta(jobID, frame) {
+function getFrameMeta(jobID, frame): FramesMetaData['frames'][0] {
     const { meta, mode, startFrame } = frameDataCache[jobID];
     let size = null;
     if (mode === 'interpolation') {
@@ -314,6 +329,7 @@ function getFrameMeta(jobID, frame) {
     } else {
         throw new DataError(`Invalid mode is specified ${mode}`);
     }
+
     return size;
 }
 
@@ -329,16 +345,46 @@ class FrameBuffer {
         this._jobID = jobID;
     }
 
-    isContextImageAvailable(frame) {
+    addContextImage(frame, data): void {
+        const promise = new Promise<void>((resolve, reject) => {
+            data.then((resolvedData) => {
+                const meta = getFrameMeta(this._jobID, frame);
+                return cvatData
+                    .decodeZip(resolvedData, 0, meta.related_files, cvatData.DimensionType.DIMENSION_2D);
+            }).then((decodedData) => {
+                this._contextImage[frame] = decodedData;
+                resolve();
+            }).catch((error: Error) => {
+                if (error instanceof ServerError && (error as any).code === 404) {
+                    this._contextImage[frame] = {};
+                    resolve();
+                } else {
+                    reject(error);
+                }
+            });
+        });
+
+        this._contextImage[frame] = promise;
+    }
+
+    isContextImageAvailable(frame): boolean {
         return frame in this._contextImage;
     }
 
-    getContextImage(frame) {
-        return this._contextImage[frame] || null;
-    }
-
-    addContextImage(frame, data) {
-        this._contextImage[frame] = data;
+    getContextImage(frame): Promise<ImageBitmap[]> {
+        return new Promise((resolve) => {
+            if (frame in this._contextImage) {
+                if (this._contextImage[frame] instanceof Promise) {
+                    this._contextImage[frame].then(() => {
+                        resolve(this.getContextImage(frame));
+                    });
+                } else {
+                    resolve({ ...this._contextImage[frame] });
+                }
+            } else {
+                resolve([]);
+            }
+        });
     }
 
     getFreeBufferSize() {
@@ -477,7 +523,7 @@ class FrameBuffer {
         }
     }
 
-    async require(frameNumber, jobID, fillBuffer, frameStep) {
+    async require(frameNumber: number, jobID: number, fillBuffer: boolean, frameStep: number): FrameData {
         for (const frame in this._buffer) {
             if (+frame < frameNumber || +frame >= frameNumber + this._size * frameStep) {
                 delete this._buffer[frame];
@@ -554,11 +600,7 @@ async function getImageContext(jobID, frame) {
                     // eslint-disable-next-line no-undef
                     resolve(global.Buffer.from(result, 'binary').toString('base64'));
                 } else if (isBrowser) {
-                    const reader = new FileReader();
-                    reader.onload = () => {
-                        resolve(reader.result);
-                    };
-                    reader.readAsDataURL(result);
+                    resolve(result);
                 }
             })
             .catch((error) => {
@@ -572,7 +614,7 @@ export async function getContextImage(jobID, frame) {
         return frameDataCache[jobID].frameBuffer.getContextImage(frame);
     }
     const response = getImageContext(jobID, frame);
-    frameDataCache[jobID].frameBuffer.addContextImage(frame, response);
+    await frameDataCache[jobID].frameBuffer.addContextImage(frame, response);
     return frameDataCache[jobID].frameBuffer.getContextImage(frame);
 }
 
@@ -600,16 +642,16 @@ export async function getPreview(taskID = null, jobID = null) {
 }
 
 export async function getFrame(
-    jobID,
-    chunkSize,
-    chunkType,
-    mode,
-    frame,
-    startFrame,
-    stopFrame,
-    isPlaying,
-    step,
-    dimension,
+    jobID: number,
+    chunkSize: number,
+    chunkType: 'video' | 'imageset',
+    mode: 'interpolation' | 'annotation', // todo: obsolete, need to remove
+    frame: number,
+    startFrame: number,
+    stopFrame: number,
+    isPlaying: boolean,
+    step: number,
+    dimension: DimensionType,
 ) {
     if (!(jobID in frameDataCache)) {
         const blockType = chunkType === 'video' ? cvatData.BlockType.MP4VIDEO : cvatData.BlockType.ARCHIVE;
@@ -648,8 +690,9 @@ export async function getFrame(
             activeChunkRequest: null,
             nextChunkRequest: null,
         };
+
+        // relevant only for video chunks
         const frameMeta = getFrameMeta(jobID, frame);
-        // actual only for video chunks
         frameDataCache[jobID].provider.setRenderSize(frameMeta.width, frameMeta.height);
     }
 

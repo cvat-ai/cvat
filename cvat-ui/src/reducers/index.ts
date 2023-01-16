@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -457,7 +457,6 @@ export interface NotificationsState {
             saving: null | ErrorState;
             jobFetching: null | ErrorState;
             frameFetching: null | ErrorState;
-            contextImageFetching: null | ErrorState;
             changingLabelColor: null | ErrorState;
             updating: null | ErrorState;
             creating: null | ErrorState;
@@ -669,7 +668,7 @@ export interface AnnotationState {
         frame: {
             number: number;
             filename: string;
-            hasRelatedContext: boolean;
+            relatedFiles: number;
             data: any | null;
             fetching: boolean;
             delay: number;
@@ -678,11 +677,6 @@ export interface AnnotationState {
         navigationBlocked: boolean;
         playing: boolean;
         frameAngles: number[];
-        contextImage: {
-            fetching: boolean;
-            data: string | null;
-            hidden: boolean;
-        };
     };
     drawing: {
         activeInteractor?: Model | OpenCVTool;
@@ -710,7 +704,6 @@ export interface AnnotationState {
         saving: {
             forceExit: boolean;
             uploading: boolean;
-            statuses: string[];
         };
         zLayer: {
             min: number;
