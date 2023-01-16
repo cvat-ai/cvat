@@ -641,6 +641,7 @@ if USE_ALLAUTH_SOCIAL_ACCOUNTS:
     SOCIALACCOUNT_ADAPTER = 'cvat.apps.iam.adapters.SocialAccountAdapterEx'
     SOCIALACCOUNT_GITHUB_ADAPTER = 'cvat.apps.iam.adapters.GitHubAdapter'
     SOCIALACCOUNT_GOOGLE_ADAPTER = 'cvat.apps.iam.adapters.GoogleAdapter'
+    SOCIALACCOUNT_AMAZON_COGNITO_ADAPTER = 'cvat.apps.iam.adapters.AmazonCognitoOAuth2AdapterEx'
     SOCIALACCOUNT_LOGIN_ON_GET = True
     # It's required to define email in the case when a user has a private hidden email.
     # (e.g in github account set keep my email addresses private)
@@ -700,5 +701,6 @@ if USE_ALLAUTH_SOCIAL_ACCOUNTS:
                 'secret': SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_SECRET,
                 'key': ''
             },
+            'PUBLIC_NAME': 'Amazon Cognito',
         }
     }

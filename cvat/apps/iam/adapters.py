@@ -55,17 +55,3 @@ class GoogleAdapter(GoogleOAuth2Adapter):
 class AmazonCognitoOAuth2AdapterEx(AmazonCognitoOAuth2Adapter):
     def get_callback_url(self, request, app):
         return settings.AMAZON_COGNITO_REDIRECT_URI
-
-    def complete_login(self, request, app, access_token, **kwargs):
-        headers = {
-            "Authorization": "Bearer {}".format(access_token),
-        }
-        if 'https' in self.profile_url:
-            extra_data = requests.get(self.profile_url, headers=headers)
-        else:
-            user_url = self.profile_url.lower()
-            extra_data = requests.get(user_url, headers=headers)
-        extra_data.raise_for_status()
-
-        login = self.get_provider().sociallogin_from_response(request, extra_data.json())
-        return login

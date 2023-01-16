@@ -21,7 +21,7 @@ class TestBasicAuth:
             assert response.status == HTTPStatus.OK
             assert user.username == username
 
-    @pytest.mark.skipif(not IS_AMAZON_COGNITO_AUTH_ENABLED, reason="Amazon Cognito enviroment variables are not set")
+    @pytest.mark.skipif(not IS_AMAZON_COGNITO_AUTH_ENABLED, reason="Amazon Cognito authentication is disabled")
     def test_can_do_basic_cognito_token_auth(self):
         config = Configuration(host=BASE_URL)
         with ApiClient(config) as client:

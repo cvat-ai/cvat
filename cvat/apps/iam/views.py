@@ -35,7 +35,6 @@ from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiResponse, OpenApiParameter, extend_schema, inline_serializer, extend_schema_view
 from drf_spectacular.contrib.rest_auth import get_token_serializer_class
 
-from cvat.apps.iam.adapters import AmazonCognitoOAuth2AdapterEx, GitHubAdapter, GoogleAdapter
 from .authentication import Signer
 from  cvat.apps.iam.serializers import SocialLoginSerializerEx, SocialAuthMethodSerializer
 
@@ -46,6 +45,12 @@ GitHubAdapter = (
 )
 GoogleAdapter = (
     import_callable(settings.SOCIALACCOUNT_GOOGLE_ADAPTER)
+    if settings.USE_ALLAUTH_SOCIAL_ACCOUNTS
+    else None
+)
+
+AmazonCognitoAdapter = (
+    import_callable(settings.SOCIALACCOUNT_AMAZON_COGNITO_ADAPTER)
     if settings.USE_ALLAUTH_SOCIAL_ACCOUNTS
     else None
 )
@@ -310,7 +315,7 @@ def google_oauth2_login(*args, **kwargs):
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def amazon_cognito_oauth2_login(*args, **kwargs):
-    return OAuth2LoginView.adapter_view(AmazonCognitoOAuth2AdapterEx)(*args, **kwargs)
+    return OAuth2LoginView.adapter_view(AmazonCognitoAdapter)(*args, **kwargs)
 
 @extend_schema(
     summary="Checks the authentication response from Google, redirects to the CVAT client if successful.",
@@ -345,7 +350,7 @@ def google_oauth2_callback(*args, **kwargs):
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def amazon_cognito_oauth2_callback(*args, **kwargs):
-    return OAuth2CallbackViewEx.adapter_view(AmazonCognitoOAuth2AdapterEx)(*args, **kwargs)
+    return OAuth2CallbackViewEx.adapter_view(AmazonCognitoAdapter)(*args, **kwargs)
 
 
 class ConfirmEmailViewEx(ConfirmEmailView):
@@ -403,7 +408,7 @@ class GoogleLogin(SocialLoginViewEx):
     callback_url = getattr(settings, 'GOOGLE_CALLBACK_URL', None)
 
 class CognitoLogin(SocialLoginViewEx):
-    adapter_class = AmazonCognitoOAuth2AdapterEx
+    adapter_class = AmazonCognitoAdapter
     client_class = OAuth2Client
     callback_url = getattr(settings, 'AMAZON_COGNITO_REDIRECT_URI', None)
 
@@ -416,6 +421,7 @@ class CognitoLogin(SocialLoginViewEx):
                 fields={
                     'google': SocialAuthMethodSerializer(),
                     'github': SocialAuthMethodSerializer(),
+                    'amazon-cognito': SocialAuthMethodSerializer(),
                 }
             )),
         }
@@ -438,7 +444,7 @@ class SocialAuthMethods(views.APIView):
                 getattr(settings, f'SOCIAL_AUTH_{provider.upper()}_CLIENT_ID', None)
                 and getattr(settings, f'SOCIAL_AUTH_{provider.upper()}_CLIENT_SECRET', None)
             )
-            icon_path = osp.join(settings.STATIC_ROOT, 'social_authentication', f'social-{provider}-logo.svg')
+            icon_path = osp.join(settings.STATIC_ROOT, 'social_authentication', f'social-{provider.replace("_", "-")}-logo.svg')
             if is_enabled and osp.exists(icon_path):
                 with open(icon_path, 'r') as f:
                     icon = f.read()
@@ -450,6 +456,6 @@ class SocialAuthMethods(views.APIView):
             })
             serializer.is_valid(raise_exception=True)
 
-            response[provider] = serializer.validated_data
+            response[provider.replace("_", "-")] = serializer.validated_data
 
         return Response(response)

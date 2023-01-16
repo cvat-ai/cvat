@@ -13,7 +13,11 @@ services:
 
   cvat_server:
     environment:
+      USE_ALLAUTH_SOCIAL_ACCOUNTS: "True"
       SOCIAL_AUTH_AMAZON_COGNITO_DOMAIN: "http://mock_oauth2:9999"
       SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_ID: "test-client"
+      DJANGO_SETTINGS_MODULE: mock_oauth2.settings
+    volumes:
+      - ./tests/python/mock_oauth2:/home/django/mock_oauth2:ro
     depends_on:
       - mock_oauth2
