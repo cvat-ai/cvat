@@ -1,6 +1,9 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
+
+/* eslint-disable cypress/no-unnecessary-waiting */
 
 /// <reference types="cypress" />
 
@@ -11,8 +14,9 @@ context('Canvas 3D functionality. Save a job. Remove annotations.', () => {
     const screenshotsPath =
         'cypress/screenshots/canvas3d_functionality/case_88_canvas3d_functionality_save_job_remove_annotation.js';
     const cuboidCreationParams = {
-        labelName: labelName,
+        labelName,
     };
+    const waitTime = 2000;
 
     before(() => {
         cy.openTask(taskName);
@@ -24,20 +28,14 @@ context('Canvas 3D functionality. Save a job. Remove annotations.', () => {
 
     describe(`Testing case "${caseId}"`, () => {
         it('Save a job. Reopen the job.', () => {
-            const waitTime = 1000;
-            cy.wait(waitTime);
             cy.saveJob('PATCH', 200, 'saveJob');
-            cy.wait(waitTime);
             cy.goToTaskList();
-            cy.wait(waitTime);
             cy.openTaskJob(taskName);
-            cy.wait(waitTime); // Waiting for the point cloud to display
             cy.get('.cvat-objects-sidebar-state-item').then((sidebarStateItem) => {
                 expect(sidebarStateItem.length).to.be.equal(1);
             });
             cy.wait(waitTime);
             cy.customScreenshot('.cvat-canvas3d-topview', 'canvas3d_topview_after_reopen_job');
-            cy.wait(waitTime);
             cy.compareImagesAndCheckResult(
                 `${screenshotsPath}/canvas3d_topview_before_all.png`,
                 `${screenshotsPath}/canvas3d_topview_after_reopen_job.png`,
@@ -49,6 +47,7 @@ context('Canvas 3D functionality. Save a job. Remove annotations.', () => {
             cy.saveJob('PUT');
             cy.contains('Saving changes on the server').should('be.hidden');
             cy.get('.cvat-objects-sidebar-state-item').should('not.exist');
+            cy.wait(waitTime);
             cy.customScreenshot('.cvat-canvas3d-topview', 'canvas3d_topview_after_remove_annotations');
             cy.compareImagesAndCheckResult(
                 `${screenshotsPath}/canvas3d_topview_after_reopen_job.png`,
