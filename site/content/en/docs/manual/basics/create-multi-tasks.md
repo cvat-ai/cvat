@@ -19,6 +19,7 @@ See:
 - [Create multi tasks](#create-multi-tasks)
 - [Example](#example)
 - [Errors](#errors)
+- [Advanced configuration](#advanced-configuration)
 
 ## Create multi tasks
 
@@ -90,3 +91,11 @@ During the process of adding multiple tasks, the following errors may occur:
 | ![](/images/image263.jpg) | In the process of creating a task, CVAT was not able to process the video file. <br>The name of the failed file will be displayed on the progress bar. <br><br> To fix this issue: <li> If you want to try again, click **Retry failed tasks**. <li> If you want to skip the file, click **OK**. |
 
 <!--lint enable maximum-line-length-->
+
+## Advanced configuration
+
+Use advanced configuration to set additional parameters for the task
+and customize it to meet specific needs or requirements.
+
+For more information, see
+[Advanced configuration](/docs/manual/basics/create_an_annotation_task/#advanced-configuration)
