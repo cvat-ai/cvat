@@ -630,6 +630,9 @@ ACCOUNT_ADAPTER = 'cvat.apps.iam.adapters.DefaultAccountAdapterEx'
 ACCOUNT_USERNAME_MIN_LENGTH = 5
 ACCOUNT_LOGOUT_ON_PASSWORD_CHANGE = True
 
+CVAT_HOST = os.getenv('CVAT_HOST', 'localhost')
+CVAT_BASE_URL = os.getenv('CVAT_BASE_URL', f'http://{CVAT_HOST}:8080').rstrip('/')
+
 if USE_ALLAUTH_SOCIAL_ACCOUNTS:
     SOCIALACCOUNT_ADAPTER = 'cvat.apps.iam.adapters.SocialAccountAdapterEx'
     SOCIALACCOUNT_GITHUB_ADAPTER = 'cvat.apps.iam.adapters.GitHubAdapter'
@@ -641,17 +644,16 @@ if USE_ALLAUTH_SOCIAL_ACCOUNTS:
     SOCIALACCOUNT_QUERY_EMAIL = True
     SOCIALACCOUNT_CALLBACK_CANCELLED_URL = '/auth/login'
     # custom variable because by default LOGIN_REDIRECT_URL will be used
-    SOCIAL_APP_LOGIN_REDIRECT_URL = 'http://localhost:8080/auth/login-with-social-app'
+    SOCIAL_APP_LOGIN_REDIRECT_URL = f'{CVAT_BASE_URL}/auth/login-with-social-app'
 
-    GITHUB_CALLBACK_URL = 'http://localhost:8080/api/auth/github/login/callback/'
-    GOOGLE_CALLBACK_URL = 'http://localhost:8080/api/auth/google/login/callback/'
+    GITHUB_CALLBACK_URL = f'{CVAT_BASE_URL}/api/auth/github/login/callback/'
+    GOOGLE_CALLBACK_URL = f'{CVAT_BASE_URL}/api/auth/google/login/callback/'
 
     SOCIAL_AUTH_GOOGLE_CLIENT_ID = os.getenv('SOCIAL_AUTH_GOOGLE_CLIENT_ID')
     SOCIAL_AUTH_GOOGLE_CLIENT_SECRET = os.getenv('SOCIAL_AUTH_GOOGLE_CLIENT_SECRET')
 
     SOCIAL_AUTH_GITHUB_CLIENT_ID = os.getenv('SOCIAL_AUTH_GITHUB_CLIENT_ID')
     SOCIAL_AUTH_GITHUB_CLIENT_SECRET = os.getenv('SOCIAL_AUTH_GITHUB_CLIENT_SECRET')
-
     SOCIALACCOUNT_PROVIDERS = {
         'google': {
             'APP': {
