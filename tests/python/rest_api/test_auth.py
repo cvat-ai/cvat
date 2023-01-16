@@ -21,6 +21,7 @@ class TestBasicAuth:
             assert response.status == HTTPStatus.OK
             assert user.username == username
 
+    @pytest.mark.with_external_services
     @pytest.mark.skipif(
         not IS_AMAZON_COGNITO_AUTH_ENABLED, reason="Amazon Cognito authentication is disabled"
     )
