@@ -92,6 +92,10 @@ class WebhookReadSerializer(serializers.ModelSerializer):
             "last_delivery_date",
         )
         read_only_fields = fields
+        extra_kwargs = {
+            'project': { 'allow_null': True },
+            'organization': { 'allow_null': True },
+        }
 
 
 class WebhookWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
@@ -144,3 +148,6 @@ class WebhookDeliveryReadSerializer(serializers.ModelSerializer):
             "response",
         )
         read_only_fields = fields
+        extra_kwargs = {
+            'status_code': { 'allow_null': True },
+        }

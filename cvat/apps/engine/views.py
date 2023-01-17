@@ -56,7 +56,7 @@ from cvat.apps.engine.serializers import (
     AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
     DataMetaReadSerializer, DataMetaWriteSerializer, DataSerializer, ExceptionSerializer,
     FileInfoSerializer, JobReadSerializer, JobWriteSerializer, LabeledDataSerializer,
-    LogEventSerializer, ProjectReadSerializer, ProjectWriteSerializer, ProjectSearchSerializer,
+    LogEventSerializer, ProjectReadSerializer, ProjectWriteSerializer,
     RqStatusSerializer, TaskReadSerializer, TaskWriteSerializer, UserSerializer, PluginsSerializer, IssueReadSerializer,
     IssueWriteSerializer, CommentReadSerializer, CommentWriteSerializer, CloudStorageWriteSerializer,
     CloudStorageReadSerializer, DatasetFileSerializer, JobCommitSerializer,
@@ -271,16 +271,13 @@ class ServerViewSet(viewsets.ViewSet):
 @extend_schema(tags=['projects'])
 @extend_schema_view(
     list=extend_schema(
-        summary='Returns a paginated list of projects according to query parameters (12 projects per page)',
+        summary='Returns a paginated list of projects',
         responses={
-            '200': PolymorphicProxySerializer(component_name='PolymorphicProject',
-                serializers=[
-                    ProjectReadSerializer, ProjectSearchSerializer,
-                ], resource_type_field_name=None, many=True),
+            '200': ProjectReadSerializer(many=True),
         }),
     create=extend_schema(
         summary='Method creates a new project',
-        # request=ProjectWriteSerializer,
+        request=ProjectWriteSerializer,
         responses={
             '201': ProjectReadSerializer, # check ProjectWriteSerializer.to_representation
         }),
@@ -296,7 +293,7 @@ class ServerViewSet(viewsets.ViewSet):
         }),
     partial_update=extend_schema(
         summary='Methods does a partial update of chosen fields in a project',
-        # request=ProjectWriteSerializer,
+        request=ProjectWriteSerializer(partial=True),
         responses={
             '200': ProjectReadSerializer, # check ProjectWriteSerializer.to_representation
         })
@@ -323,13 +320,10 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     iam_organization_field = 'organization'
 
     def get_serializer_class(self):
-        if self.request.path.endswith('tasks'):
-            return TaskReadSerializer
+        if self.request.method in SAFE_METHODS:
+            return ProjectReadSerializer
         else:
-            if self.request.method in SAFE_METHODS:
-                return ProjectReadSerializer
-            else:
-                return ProjectWriteSerializer
+            return ProjectWriteSerializer
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -754,7 +748,7 @@ class DataChunkGetter:
 @extend_schema(tags=['tasks'])
 @extend_schema_view(
     list=extend_schema(
-        summary='Returns a paginated list of tasks according to query parameters (10 tasks per page)',
+        summary='Returns a paginated list of tasks',
         responses={
             '200': TaskReadSerializer(many=True),
         }),
@@ -1401,13 +1395,13 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '200': JobReadSerializer,
         }),
     list=extend_schema(
-        summary='Method returns a paginated list of jobs according to query parameters',
+        summary='Method returns a paginated list of jobs',
         responses={
             '200': JobReadSerializer(many=True),
         }),
     partial_update=extend_schema(
         summary='Methods does a partial update of chosen fields in a job',
-        request=JobWriteSerializer,
+        request=JobWriteSerializer(partial=True),
         responses={
             '200': JobReadSerializer, # check JobWriteSerializer.to_representation
         })
@@ -1843,13 +1837,13 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '200': IssueReadSerializer,
         }),
     list=extend_schema(
-        summary='Method returns a paginated list of issues according to query parameters',
+        summary='Method returns a paginated list of issues',
         responses={
             '200': IssueReadSerializer(many=True),
         }),
     partial_update=extend_schema(
         summary='Methods does a partial update of chosen fields in an issue',
-        request=IssueWriteSerializer,
+        request=IssueWriteSerializer(partial=True),
         responses={
             '200': IssueReadSerializer, # check IssueWriteSerializer.to_representation
         }),
@@ -1928,13 +1922,13 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '200': CommentReadSerializer,
         }),
     list=extend_schema(
-        summary='Method returns a paginated list of comments according to query parameters',
+        summary='Method returns a paginated list of comments',
         responses={
-            '200':CommentReadSerializer(many=True),
+            '200': CommentReadSerializer(many=True),
         }),
     partial_update=extend_schema(
         summary='Methods does a partial update of chosen fields in a comment',
-        request=CommentWriteSerializer,
+        request=CommentWriteSerializer(partial=True),
         responses={
             '200': CommentReadSerializer, # check CommentWriteSerializer.to_representation
         }),
@@ -1991,7 +1985,7 @@ class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 @extend_schema(tags=['users'])
 @extend_schema_view(
     list=extend_schema(
-        summary='Method provides a paginated list of users registered on the server',
+        summary='Method returns a paginated list of users',
         responses={
             '200': PolymorphicProxySerializer(component_name='MetaUser',
                 serializers=[
@@ -2011,7 +2005,7 @@ class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         responses={
             '200': PolymorphicProxySerializer(component_name='MetaUser',
                 serializers=[
-                    UserSerializer, BasicUserSerializer,
+                    UserSerializer(partial=True), BasicUserSerializer(partial=True),
                 ], resource_type_field_name=None),
         }),
     destroy=extend_schema(
@@ -2079,7 +2073,7 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '200': CloudStorageReadSerializer,
         }),
     list=extend_schema(
-        summary='Returns a paginated list of storages according to query parameters',
+        summary='Returns a paginated list of storages',
         responses={
             '200': CloudStorageReadSerializer(many=True),
         }),
@@ -2090,7 +2084,7 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         }),
     partial_update=extend_schema(
         summary='Methods does a partial update of chosen fields in a cloud storage instance',
-        request=CloudStorageWriteSerializer,
+        request=CloudStorageWriteSerializer(partial=True),
         responses={
             '200': CloudStorageReadSerializer, # check CloudStorageWriteSerializer.to_representation
         }),

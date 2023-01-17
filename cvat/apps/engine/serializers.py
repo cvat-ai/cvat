@@ -704,12 +704,6 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         return attrs
 
 
-class ProjectSearchSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.Project
-        fields = ('id', 'name')
-        read_only_fields = ('name',)
-
 class ProjectReadSerializer(serializers.ModelSerializer):
     labels = LabelSerializer(many=True, source='label_set', partial=True, default=[], read_only=True)
     owner = BasicUserSerializer(required=False, read_only=True)
