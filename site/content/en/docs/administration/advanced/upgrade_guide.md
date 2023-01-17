@@ -94,7 +94,7 @@ docker pull cvat/server:v${CVAT_VERSION}
 docker tag cvat/server:v${CVAT_VERSION} openvino/cvat_server:latest
 docker pull cvat/ui:v${CVAT_VERSION}
 docker tag cvat/ui:v${CVAT_VERSION} openvino/cvat_ui:latest
-docker-compose up -d
+docker compose up -d
 ```
   
 ## How to upgrade PostgreSQL database base image
