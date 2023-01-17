@@ -14,7 +14,7 @@ const CopyPlugin = require('copy-webpack-plugin');
 
 module.exports = (env) => {
     console.log()
-    const defaultAppConfig = path.join(__dirname, 'config');
+    const defaultAppConfig = path.join(__dirname, 'src/config.tsx');
     const appConfigFile = process.env.UI_APP_CONFIG ? process.env.UI_APP_CONFIG : defaultAppConfig;
     console.log('Application config file is: ', appConfigFile);
 
