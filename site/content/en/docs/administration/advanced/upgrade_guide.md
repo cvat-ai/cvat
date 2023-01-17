@@ -24,7 +24,7 @@ To upgrade CVAT, follow these steps:
   If you have included [additional components](/docs/administration/basics/installation/#additional-components),
   include all compose configuration files that are used, e.g.:
   ```shell
-  docker compose -f docker-compose.yml -f components/analytics/docker-compose.analytics.yml down
+  docker compose -f docker compose.yml -f components/analytics/docker compose.analytics.yml down
   ```
 
 - Update CVAT source code by any preferable way: clone with git or download zip file from GitHub.
@@ -61,7 +61,7 @@ Let's assume that you have CVAT v2.2.0 working.
 ```shell
 docker exec -it cvat_db pg_dumpall > cvat.db.dump
 cd cvat
-docker-compose down
+docker compose down
 docker volume rm cvat_cvat_db
 export CVAT_VERSION="2.3.0"
 cd ..
@@ -71,10 +71,10 @@ unzip v${CVAT_VERSION}.zip && mv cvat_${CVAT_VERSION} cvat
 cd cvat
 export CVAT_HOST=cvat.example.com
 export ACME_EMAIL=example@example.com
-docker-compose pull
-docker-compose up -d cvat_db
+docker compose pull
+docker compose up -d cvat_db
 docker exec -i cvat_db psql -q -d postgres < ../cvat.db.dump
-docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.https.yml up -d
+docker compose -f docker compose.yml -f docker compose.dev.yml -f docker compose.https.yml up -d
 ```  
   
 ## How to upgrade CVAT from v1.7.0 to v2.2.0.
@@ -84,7 +84,7 @@ Let's assume that you have CVAT v1.7.0 working.
 ```shell
 export CVAT_VERSION="2.2.0"
 cd cvat
-docker-compose down
+docker compose down
 cd ..
 mv cvat cvat_170
 wget https://github.com/opencv/cvat/archive/refs/tags/v${CVAT_VERSION}.zip
