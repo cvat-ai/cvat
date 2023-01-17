@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -1402,7 +1402,7 @@ async function getImageContext(jid, frame) {
                 number: frame,
             },
             proxy: config.proxy,
-            responseType: 'blob',
+            responseType: 'arraybuffer',
         });
     } catch (errorData) {
         throw generateError(errorData);
@@ -1441,7 +1441,23 @@ async function getData(tid, jid, chunk) {
     return response;
 }
 
-async function getMeta(session, jid) {
+export interface FramesMetaData {
+    chunk_size: number;
+    deleted_frames: number[];
+    frame_filter: string;
+    frames: {
+        width: number;
+        height: number;
+        name: string;
+        related_files: number;
+    }[];
+    image_quality: number;
+    size: number;
+    start_frame: number;
+    stop_frame: number;
+}
+
+async function getMeta(session, jid): Promise<FramesMetaData> {
     const { backendAPI } = config;
 
     let response = null;

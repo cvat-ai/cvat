@@ -1,5 +1,5 @@
 # Copyright (C) 2019-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -924,7 +924,7 @@ class FrameMetaSerializer(serializers.Serializer):
     width = serializers.IntegerField()
     height = serializers.IntegerField()
     name = serializers.CharField(max_length=1024)
-    has_related_context = serializers.BooleanField()
+    related_files = serializers.IntegerField()
 
 class PluginsSerializer(serializers.Serializer):
     GIT_INTEGRATION = serializers.BooleanField()
