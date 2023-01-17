@@ -3,14 +3,11 @@
 #
 # SPDX-License-Identifier: MIT
 
-from contextlib import contextmanager
-from typing import Any, Dict
+from typing import Dict, Iterator, Optional
 from functools import reduce
-from unittest.mock import patch
 import operator
 import json
 
-from django.db import models
 from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 from django.utils.encoding import force_str
@@ -21,34 +18,25 @@ from rest_framework.exceptions import ValidationError
 from django_filters import FilterSet
 from django_filters.rest_framework import DjangoFilterBackend
 
+DEFAULT_FILTER_FIELDS_ATTR = 'filter_fields'
+DEFAULT_LOOKUP_MAP_ATTR = 'lookup_fields'
 
-def get_lookup_fields(view, filter_fields=None) -> Dict[str, str]:
-    if filter_fields is None:
-        filter_fields = getattr(view, 'filter_fields', [])
+def get_lookup_fields(view, fields: Optional[Iterator[str]] = None) -> Dict[str, str]:
+    if fields is None:
+        fields = getattr(view, DEFAULT_FILTER_FIELDS_ATTR, None) or []
 
-    if not filter_fields:
-        return {}
-
-    lookup_fields = {field:field for field in filter_fields}
-    lookup_fields.update(getattr(view, 'lookup_fields', {}))
-
+    lookup_overrides = getattr(view, DEFAULT_LOOKUP_MAP_ATTR, None) or {}
+    lookup_fields = {
+        field: lookup_overrides.get(field, field)
+        for field in fields
+    }
     return lookup_fields
 
-@contextmanager
-def _patched_attr(obj: Any, name: str, value: Any) -> None:
-    with patch.object(obj, attribute=name, new=value, create=True):
-        yield
 
 class SearchFilter(filters.SearchFilter):
     def get_search_fields(self, view, request):
         search_fields = getattr(view, 'search_fields') or []
-        lookup_fields = {field:field for field in search_fields}
-        view_lookup_fields = getattr(view, 'lookup_fields', {})
-        keys_to_update = set(search_fields) & set(view_lookup_fields.keys())
-        for key in keys_to_update:
-            lookup_fields[key] = view_lookup_fields[key]
-
-        return lookup_fields.values()
+        return get_lookup_fields(view, search_fields).values()
 
     def get_schema_fields(self, view):
         assert coreapi is not None, 'coreapi must be installed to use `get_schema_fields()`'
@@ -87,6 +75,7 @@ class SearchFilter(filters.SearchFilter):
 
 class OrderingFilter(filters.OrderingFilter):
     ordering_param = 'sort'
+
     def get_ordering(self, request, queryset, view):
         ordering = []
         lookup_fields = self._get_lookup_fields(request, queryset, view)
@@ -101,10 +90,8 @@ class OrderingFilter(filters.OrderingFilter):
 
     def _get_lookup_fields(self, request, queryset, view):
         ordering_fields = self.get_valid_fields(queryset, view, {'request': request})
-        lookup_fields = {field:field for field, _ in ordering_fields}
-        lookup_fields.update(getattr(view, 'lookup_fields', {}))
-
-        return lookup_fields
+        ordering_fields = [v[0] for v in ordering_fields]
+        return get_lookup_fields(view, ordering_fields)
 
     def get_schema_fields(self, view):
         assert coreapi is not None, 'coreapi must be installed to use `get_schema_fields()`'
@@ -258,10 +245,14 @@ class SimpleFilter(DjangoFilterBackend):
         SearchFilter.search_param,
     )
 
+    filter_fields_attr = 'simple_filters'
+
     class MappingFiltersetBase(BaseFilterSet):
+        _filter_name_map_attr = 'filter_names'
+
         @classmethod
         def get_filter_name(cls, field_name, lookup_expr):
-            filter_names = getattr(cls, 'filter_names', {})
+            filter_names = getattr(cls, cls._filter_name_map_attr, {})
 
             field_name = super().get_filter_name(field_name, lookup_expr)
 
@@ -295,17 +286,14 @@ class SimpleFilter(DjangoFilterBackend):
         return AutoFilterSet
 
     def get_lookup_fields(self, view):
-        simple_filters = getattr(view, 'simple_filters', None)
-        return get_lookup_fields(view, filter_fields=simple_filters)
-
-    def get_filter_fields(self, view):
-        return list(self.get_lookup_fields(view))
+        simple_filters = getattr(view, self.filter_fields_attr, None)
+        return get_lookup_fields(view, fields=simple_filters)
 
     def get_schema_fields(self, view):
         assert coreapi is not None, 'coreapi must be installed to use `get_schema_fields()`'
         assert coreschema is not None, 'coreschema must be installed to use `get_schema_fields()`'
 
-        filter_fields = self.get_filter_fields(view)
+        lookup_fields = self.get_lookup_fields(view)
 
         return [
             coreapi.Field(
@@ -314,14 +302,14 @@ class SimpleFilter(DjangoFilterBackend):
                 schema={
                     'type': 'string',
                 }
-            ) for field_name in filter_fields
+            ) for field_name in lookup_fields
         ]
 
     def get_schema_operation_parameters(self, view):
-        filter_fields = self.get_filter_fields(view)
+        lookup_fields = self.get_lookup_fields(view)
 
         parameters = []
-        for field_name in filter_fields:
+        for field_name in lookup_fields:
             parameters.append({
                 'name': field_name,
                 'in': 'query',
