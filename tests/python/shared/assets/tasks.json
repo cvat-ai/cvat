@@ -81,7 +81,7 @@
     },
     {
       "assignee": null,
-      "bug_tracker": "",
+      "bug_tracker": "https://bugtracker.localhost/task/12345",
       "created_date": "2022-09-22T14:22:25.820000Z",
       "data": 13,
       "data_chunk_size": 72,

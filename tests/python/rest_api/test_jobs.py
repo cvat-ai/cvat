@@ -12,13 +12,14 @@ from io import BytesIO
 from typing import List
 
 import pytest
+from cvat_sdk.api_client.api_client import ApiClient
 from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
 from PIL import Image
 
 from shared.utils.config import make_api_client
 
-from .utils import export_dataset
+from .utils import CollectionSimpleFilterTestBase, export_dataset
 
 
 def get_job_staff(job, tasks, projects):
@@ -144,6 +145,35 @@ class TestListJobs:
                 self._test_list_jobs_200(user["username"], user_jobs, **kwargs)
             else:
                 self._test_list_jobs_403(user["username"], **kwargs)
+
+
+class TestJobsListFilters(CollectionSimpleFilterTestBase):
+    field_lookups = {
+        "assignee": ["assignee", "username"],
+    }
+
+    @pytest.fixture(autouse=True)
+    def setup(self, restore_db_per_class, admin_user, jobs, tasks, projects):
+        self.user = admin_user
+        self.samples = jobs
+        self.sample_tasks = tasks
+        self.sample_projects = projects
+
+    def _get_endpoint(self, api_client: ApiClient):
+        return api_client.jobs_api.list_endpoint
+
+    @pytest.mark.parametrize(
+        "field",
+        (
+            "assignee",
+            "state",
+            "stage",
+            "task_id",
+            "project_id",
+        ),
+    )
+    def test_can_use_simple_filter_for_object_list(self, field):
+        return super().test_can_use_simple_filter_for_object_list(field)
 
 
 @pytest.mark.usefixtures("restore_db_per_class")

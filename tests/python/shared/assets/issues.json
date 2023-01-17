@@ -42,7 +42,13 @@
       "updated_date": null
     },
     {
-      "assignee": null,
+      "assignee": {
+        "first_name": "User",
+        "id": 2,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/2",
+        "username": "user1"
+      },
       "comments": [
         {
           "created_date": "2022-03-16T12:40:00.767000Z",
@@ -214,7 +220,7 @@
         244.58581235698148,
         319.63386727689067
       ],
-      "resolved": false,
+      "resolved": true,
       "updated_date": null
     }
   ]

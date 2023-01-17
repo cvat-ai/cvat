@@ -113,11 +113,11 @@ class MembershipViewSet(mixins.RetrieveModelMixin, DestroyModelMixin,
     queryset = Membership.objects.all()
     ordering = '-id'
     http_method_names = ['get', 'patch', 'delete', 'head', 'options']
-    search_fields = ('user_name', 'role')
-    filter_fields = list(search_fields) + ['id', 'user_id']
-    simple_filters = list(search_fields) + ['user_id']
+    search_fields = ('user', 'role')
+    filter_fields = list(search_fields) + ['id']
+    simple_filters = list(search_fields)
     ordering_fields = list(filter_fields)
-    lookup_fields = {'user_id': 'user__id', 'user_name': 'user__username'}
+    lookup_fields = {'user': 'user__username'}
     iam_organization_field = 'organization'
 
     def get_serializer_class(self):

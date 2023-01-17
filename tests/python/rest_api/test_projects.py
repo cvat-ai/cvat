@@ -21,7 +21,7 @@ from PIL import Image
 
 from shared.utils.config import BASE_URL, USER_PASS, get_method, make_api_client, patch_method
 
-from .utils import export_dataset
+from .utils import CollectionSimpleFilterTestBase, export_dataset
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -130,6 +130,33 @@ class TestGetProjects:
         )
 
         self._test_response_200(user["username"], pid, org_id=user["org"])
+
+
+class TestProjectsListFilters(CollectionSimpleFilterTestBase):
+    field_lookups = {
+        "owner": ["owner", "username"],
+        "assignee": ["assignee", "username"],
+    }
+
+    @pytest.fixture(autouse=True)
+    def setup(self, restore_db_per_class, admin_user, projects):
+        self.user = admin_user
+        self.samples = projects
+
+    def _get_endpoint(self, api_client: ApiClient):
+        return api_client.projects_api.list_endpoint
+
+    @pytest.mark.parametrize(
+        "field",
+        (
+            "name",
+            "owner",
+            "assignee",
+            "status",
+        ),
+    )
+    def test_can_use_simple_filter_for_object_list(self, field):
+        return super().test_can_use_simple_filter_for_object_list(field)
 
 
 class TestGetProjectBackup:

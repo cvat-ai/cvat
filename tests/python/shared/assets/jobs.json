@@ -43,7 +43,7 @@
     },
     {
       "assignee": null,
-      "bug_tracker": "",
+      "bug_tracker": "https://bugtracker.localhost/task/12345",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",

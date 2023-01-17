@@ -6,13 +6,17 @@
 import json
 from copy import deepcopy
 from http import HTTPStatus
+from typing import Any, Dict, List, Tuple
 
 import pytest
 from cvat_sdk import models
 from cvat_sdk.api_client import exceptions
+from cvat_sdk.api_client.api_client import ApiClient
 from deepdiff import DeepDiff
 
 from shared.utils.config import make_api_client
+
+from .utils import CollectionSimpleFilterTestBase
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -326,3 +330,65 @@ class TestDeleteIssues:
         username, issue_id = find_issue_staff_user(issues, users, issue_staff, issue_admin)
 
         self._test_check_response(username, issue_id, expect_success, org_id=org)
+
+
+class TestIssuesListFilters(CollectionSimpleFilterTestBase):
+    field_lookups = {
+        "owner": ["owner", "username"],
+        "assignee": ["assignee", "username"],
+        "job_id": ["job"],
+        "frame_id": ["frame"],
+    }
+
+    @pytest.fixture(autouse=True)
+    def setup(self, restore_db_per_class, admin_user, issues):
+        self.user = admin_user
+        self.samples = issues
+
+    def _get_endpoint(self, api_client: ApiClient):
+        return api_client.issues_api.list_endpoint
+
+    @pytest.mark.parametrize(
+        "field",
+        ("owner", "assignee", "job_id", "resolved", "frame_id"),
+    )
+    def test_can_use_simple_filter_for_object_list(self, field):
+        return super().test_can_use_simple_filter_for_object_list(field)
+
+
+class TestCommentsListFilters(CollectionSimpleFilterTestBase):
+    field_lookups = {
+        "owner": ["owner", "username"],
+        "issue_id": ["issue"],
+    }
+
+    @pytest.fixture(autouse=True)
+    def setup(self, restore_db_per_class, admin_user, comments, issues):
+        self.user = admin_user
+        self.samples = comments
+        self.sample_issues = issues
+
+    def _get_endpoint(self, api_client: ApiClient):
+        return api_client.comments_api.list_endpoint
+
+    def _get_field_samples(self, field: str) -> Tuple[Any, List[Dict[str, Any]]]:
+        if field == "job_id":
+            issue_id, issue_comments = super()._get_field_samples("issue_id")
+            issue = next((s for s in self.sample_issues if s["id"] == issue_id))
+            return issue["job"], issue_comments
+        elif field == "frame_id":
+            frame_id = self._find_valid_field_value(self.sample_issues, ["frame"])
+            issues = [s["id"] for s in self.sample_issues if s["frame"] == frame_id]
+            comments = [
+                s for s in self.samples if self._get_field(s, self._map_field("issue_id")) in issues
+            ]
+            return frame_id, comments
+        else:
+            return super()._get_field_samples(field)
+
+    @pytest.mark.parametrize(
+        "field",
+        ("owner", "issue_id", "job_id", "frame_id"),
+    )
+    def test_can_use_simple_filter_for_object_list(self, field):
+        return super().test_can_use_simple_filter_for_object_list(field)

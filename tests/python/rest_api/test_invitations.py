@@ -6,8 +6,11 @@
 from http import HTTPStatus
 
 import pytest
+from cvat_sdk.api_client.api_client import ApiClient
 
 from shared.utils.config import post_method
+
+from .utils import CollectionSimpleFilterTestBase
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -84,3 +87,24 @@ class TestCreateInvitations:
                 {"role": "owner", "email": non_member_users[4]["email"]},
                 org_id=org_id,
             )
+
+
+class TestInvitationsListFilters(CollectionSimpleFilterTestBase):
+    field_lookups = {
+        "owner": ["owner", "username"],
+    }
+
+    @pytest.fixture(autouse=True)
+    def setup(self, restore_db_per_class, admin_user, invitations):
+        self.user = admin_user
+        self.samples = invitations
+
+    def _get_endpoint(self, api_client: ApiClient):
+        return api_client.invitations_api.list_endpoint
+
+    @pytest.mark.parametrize(
+        "field",
+        ("owner",),
+    )
+    def test_can_use_simple_filter_for_object_list(self, field):
+        return super().test_can_use_simple_filter_for_object_list(field)

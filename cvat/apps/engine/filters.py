@@ -259,15 +259,6 @@ class SimpleFilter(DjangoFilterBackend):
     )
 
     class MappingFiltersetBase(BaseFilterSet):
-        class Meta:
-            filter_overrides = {
-                models.CharField: {
-                    'extra': lambda f: {
-                        'lookup_expr': 'icontains',
-                    },
-                },
-            },
-
         @classmethod
         def get_filter_name(cls, field_name, lookup_expr):
             filter_names = getattr(cls, 'filter_names', {})
