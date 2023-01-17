@@ -245,6 +245,26 @@ function HeaderContainer(props: Props): JSX.Element {
         }
     };
 
+    let upgradeMenuItem = null;
+    if (CVAT_BILLING_URL) {
+        let upgradeText = 'Upgrade to Pro';
+        let upgradeLink = `${CVAT_BILLING_URL}/?type=personal`;
+        if (currentOrganization) {
+            upgradeText = 'Upgrade to Team';
+            upgradeLink = `${CVAT_BILLING_URL}/?type=organization&orgId=${currentOrganization.id}`;
+        }
+        upgradeMenuItem = (
+            <Menu.Item
+                className='cvat-menu-item-highlighted'
+                icon={<UpgradeIcon />}
+                key='upgrade'
+                onClick={() => window.open(upgradeLink, '_self')}
+            >
+                {upgradeText}
+            </Menu.Item>
+        );
+    }
+
     const userMenu = (
         <Menu className='cvat-header-menu'>
             {user.isStaff && (
@@ -346,16 +366,7 @@ function HeaderContainer(props: Props): JSX.Element {
                 Settings
             </Menu.Item>
             {
-                CVAT_BILLING_URL && (
-                    <Menu.Item
-                        className='cvat-menu-item-highlighted'
-                        icon={<UpgradeIcon />}
-                        key='upgrade'
-                        onClick={() => window.open(`${CVAT_BILLING_URL}/?type=personal`, '_self')}
-                    >
-                        Upgrade
-                    </Menu.Item>
-                )
+                upgradeMenuItem
             }
             <Menu.Item icon={<InfoCircleOutlined />} key='about' onClick={() => showAboutModal()}>
                 About

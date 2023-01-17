@@ -658,6 +658,8 @@ ACCOUNT_LOGOUT_ON_PASSWORD_CHANGE = True
 
 if USE_ALLAUTH_SOCIAL_ACCOUNTS:
     SOCIALACCOUNT_ADAPTER = 'cvat.apps.iam.adapters.SocialAccountAdapterEx'
+    SOCIALACCOUNT_GITHUB_ADAPTER = 'cvat.apps.iam.adapters.GitHubAdapter'
+    SOCIALACCOUNT_GOOGLE_ADAPTER = 'cvat.apps.iam.adapters.GoogleAdapter'
     SOCIALACCOUNT_LOGIN_ON_GET = True
     # It's required to define email in the case when a user has a private hidden email.
     # (e.g in github account set keep my email addresses private)
@@ -686,7 +688,7 @@ if USE_ALLAUTH_SOCIAL_ACCOUNTS:
             'SCOPE': [ 'profile', 'email', 'openid'],
             'AUTH_PARAMS': {
                 'access_type': 'online',
-            }
+            },
         },
         'github': {
             'APP': {
@@ -695,5 +697,10 @@ if USE_ALLAUTH_SOCIAL_ACCOUNTS:
                 'key': ''
             },
             'SCOPE': [ 'read:user', 'user:email' ],
+            # NOTE: Custom field. This is necessary for the user interface
+            # to render possible social account authentication option.
+            # If this field is not specified, then the option with the provider
+            # key with a capital letter will be used
+            'PUBLIC_NAME': 'GitHub',
         },
     }

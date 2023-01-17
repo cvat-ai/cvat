@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -66,7 +66,6 @@ export interface CanvasView {
 }
 
 export class CanvasViewImpl implements CanvasView, Listener {
-    private loadingAnimation: SVGSVGElement;
     private text: SVGSVGElement;
     private adoptedText: SVG.Container;
     private background: HTMLCanvasElement;
@@ -1082,7 +1081,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
         };
 
         // Create HTML elements
-        this.loadingAnimation = window.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         this.text = window.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         this.adoptedText = SVG.adopt((this.text as any) as HTMLElement) as SVG.Container;
         this.background = window.document.createElement('canvas');
@@ -1100,8 +1098,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.attachmentBoard = window.document.createElement('div');
 
         this.canvas = window.document.createElement('div');
-
-        const loadingCircle: SVGCircleElement = window.document.createElementNS('http://www.w3.org/2000/svg', 'circle');
 
         const gridDefs: SVGDefsElement = window.document.createElementNS('http://www.w3.org/2000/svg', 'defs');
         const gridRect: SVGRectElement = window.document.createElementNS('http://www.w3.org/2000/svg', 'rect');
@@ -1128,13 +1124,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 patternTransform: 'rotate(45)',
                 patternUnits: 'userSpaceOnUse',
             });
-
-        // Setup loading animation
-        this.loadingAnimation.setAttribute('id', 'cvat_canvas_loading_animation');
-        loadingCircle.setAttribute('id', 'cvat_canvas_loading_circle');
-        loadingCircle.setAttribute('r', '30');
-        loadingCircle.setAttribute('cx', '50%');
-        loadingCircle.setAttribute('cy', '50%');
 
         // Setup grid
         this.grid.setAttribute('id', 'cvat_canvas_grid');
@@ -1166,14 +1155,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.canvas.setAttribute('id', 'cvat_canvas_wrapper');
 
         // Unite created HTML elements together
-        this.loadingAnimation.appendChild(loadingCircle);
         this.grid.appendChild(gridDefs);
         this.grid.appendChild(gridRect);
 
         gridDefs.appendChild(this.gridPattern);
         this.gridPattern.appendChild(this.gridPath);
 
-        this.canvas.appendChild(this.loadingAnimation);
         this.canvas.appendChild(this.text);
         this.canvas.appendChild(this.background);
         this.canvas.appendChild(this.masksContent);
@@ -1412,10 +1399,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
         } else if (reason === UpdateReasons.IMAGE_CHANGED) {
             const { image } = model;
-            if (!image) {
-                this.loadingAnimation.classList.remove('cvat_canvas_hidden');
-            } else {
-                this.loadingAnimation.classList.add('cvat_canvas_hidden');
+            if (image) {
                 const ctx = this.background.getContext('2d');
                 this.background.setAttribute('width', `${image.renderWidth}px`);
                 this.background.setAttribute('height', `${image.renderHeight}px`);

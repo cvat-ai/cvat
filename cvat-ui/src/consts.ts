@@ -24,6 +24,10 @@ const LATEST_COMMENTS_SHOWN_QUICK_ISSUE = 3;
 const QUICK_ISSUE_INCORRECT_POSITION_TEXT = 'Wrong position';
 const QUICK_ISSUE_INCORRECT_ATTRIBUTE_TEXT = 'Wrong attribute';
 const DEFAULT_PROJECT_SUBSETS = ['Train', 'Test', 'Validation'];
+const CANVAS_WORKSPACE_ROWS = 12;
+const CANVAS_WORKSPACE_COLS = 12;
+const CANVAS_WORKSPACE_MARGIN = 8;
+const CANVAS_WORKSPACE_PADDING = CANVAS_WORKSPACE_MARGIN / 2;
 const OUTSIDE_PIC_URL = 'https://opencv.github.io/cvat/images/image019.jpg';
 const DEFAULT_AWS_S3_REGIONS: string[][] = [
     ['us-east-1', 'US East (N. Virginia)'],
@@ -84,7 +88,7 @@ const DEFAULT_GOOGLE_CLOUD_STORAGE_LOCATIONS: string[][] = [
     ['NAM4', 'US-CENTRAL1 and US-EAST1'],
 ];
 
-const CVAT_BILLING_URL = process.env.CVAT_BILLING_HOST || 'http://localhost:3001/billing';
+const CVAT_BILLING_URL = process.env.CVAT_BILLING_HOST;
 const HEALH_CHECK_RETRIES = 10;
 const HEALTH_CHECK_PERIOD = 3000; // ms
 const HEALTH_CHECK_REQUEST_TIMEOUT = 5000; // ms
@@ -116,4 +120,8 @@ export default {
     HEALH_CHECK_RETRIES,
     HEALTH_CHECK_PERIOD,
     HEALTH_CHECK_REQUEST_TIMEOUT,
+    CANVAS_WORKSPACE_ROWS,
+    CANVAS_WORKSPACE_COLS,
+    CANVAS_WORKSPACE_MARGIN,
+    CANVAS_WORKSPACE_PADDING,
 };
