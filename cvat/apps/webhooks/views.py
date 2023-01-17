@@ -13,8 +13,8 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import SAFE_METHODS
 from rest_framework.response import Response
-from cvat.apps.engine.view_utils import make_paginated_response
 
+from cvat.apps.engine.view_utils import make_paginated_response
 from cvat.apps.iam.permissions import WebhookPermission
 
 from .event_type import AllEvents, OrganizationEvents, ProjectEvents
@@ -65,7 +65,7 @@ from .signals import signal_ping, signal_redelivery
     ),
 )
 class WebhookViewSet(viewsets.ModelViewSet):
-    queryset = Webhook.objects.prefetch_related('owner').all()
+    queryset = Webhook.objects.prefetch_related("owner").all()
     ordering = "-id"
     http_method_names = ["get", "post", "delete", "patch", "put"]
 
@@ -147,20 +147,12 @@ class WebhookViewSet(viewsets.ModelViewSet):
         methods=["GET"],
         serializer_class=WebhookDeliveryReadSerializer,
         pagination_class=viewsets.GenericViewSet.pagination_class,
+        # These non-root list endpoints do not suppose extra options, just the basic output
         # Unset, they would be taken from the enclosing class, which is wrong.
         # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
-        search_fields=["event", "request", "response", "changed_fields"],
-        filter_fields=[
-            "event",
-            "request",
-            "response",
-            "changed_fields",
-            "status_code",
-            "redelivery",
-            "changed_fields",
-        ],
-        ordering_fields=["event", "status_code", "redelivery"],
-        simple_filters=["event", "status_code", "redelivery", "changed_fields"],
+        search_fields=None,
+        filter_fields=None,
+        ordering_fields=None,
     )
     def deliveries(self, request, pk):
         self.get_object()
