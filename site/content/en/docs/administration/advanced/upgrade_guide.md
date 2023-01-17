@@ -71,10 +71,7 @@ unzip v${CVAT_VERSION}.zip && mv cvat_${CVAT_VERSION} cvat
 cd cvat
 export CVAT_HOST=cvat.example.com
 export ACME_EMAIL=example@example.com
-docker pull cvat/server:v${CVAT_VERSION}
-docker tag cvat/server:v${CVAT_VERSION} openvino/cvat_server:latest
-docker pull cvat/ui:v${CVAT_VERSION}
-docker tag cvat/ui:v${CVAT_VERSION} openvino/cvat_ui:latest
+docker-compose pull
 docker-compose up -d cvat_db
 docker exec -i cvat_db psql -q -d postgres < ../cvat.db.dump
 docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.https.yml up -d
