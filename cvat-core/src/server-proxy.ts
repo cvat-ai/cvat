@@ -514,6 +514,7 @@ async function healthCheck(maxRetries, checkPeriod, requestTimeout, progressCall
             let data;
             if (typeof error?.response?.data === 'object') {
                 data = error.response.data;
+                // Temporary workaround: ignore errors with media cache for debugging purposes only
                 for (const checkName in data) {
                     if (Object.prototype.hasOwnProperty.call(data, checkName) &&
                         checkName !== 'Cache backend: media' &&
