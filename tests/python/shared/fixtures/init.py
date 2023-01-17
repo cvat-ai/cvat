@@ -261,7 +261,6 @@ def start_services(rebuild=False):
     )
 
 
-
 def pytest_sessionstart(session: pytest.Session) -> None:
     stop = session.config.getoption("--stop-services")
     start = session.config.getoption("--start-services")
