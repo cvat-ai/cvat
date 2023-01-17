@@ -6,7 +6,7 @@
 from http import HTTPStatus
 
 import pytest
-from cvat_sdk.api_client.api_client import ApiClient
+from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 
 from shared.utils.config import post_method
 
@@ -99,7 +99,7 @@ class TestInvitationsListFilters(CollectionSimpleFilterTestBase):
         self.user = admin_user
         self.samples = invitations
 
-    def _get_endpoint(self, api_client: ApiClient):
+    def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
         return api_client.invitations_api.list_endpoint
 
     @pytest.mark.parametrize(
@@ -107,4 +107,8 @@ class TestInvitationsListFilters(CollectionSimpleFilterTestBase):
         ("owner",),
     )
     def test_can_use_simple_filter_for_object_list(self, field):
-        return super().test_can_use_simple_filter_for_object_list(field)
+        value, gt_objects = self._get_field_samples(field)
+
+        received_items = self._retrieve_collection(**{field: str(value)})
+
+        assert set(p["key"] for p in gt_objects) == set(p.key for p in received_items)

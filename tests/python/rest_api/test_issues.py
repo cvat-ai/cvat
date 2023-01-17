@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Tuple
 import pytest
 from cvat_sdk import models
 from cvat_sdk.api_client import exceptions
-from cvat_sdk.api_client.api_client import ApiClient
+from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from deepdiff import DeepDiff
 
 from shared.utils.config import make_api_client
@@ -345,7 +345,7 @@ class TestIssuesListFilters(CollectionSimpleFilterTestBase):
         self.user = admin_user
         self.samples = issues
 
-    def _get_endpoint(self, api_client: ApiClient):
+    def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
         return api_client.issues_api.list_endpoint
 
     @pytest.mark.parametrize(
@@ -368,7 +368,7 @@ class TestCommentsListFilters(CollectionSimpleFilterTestBase):
         self.samples = comments
         self.sample_issues = issues
 
-    def _get_endpoint(self, api_client: ApiClient):
+    def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
         return api_client.comments_api.list_endpoint
 
     def _get_field_samples(self, field: str) -> Tuple[Any, List[Dict[str, Any]]]:

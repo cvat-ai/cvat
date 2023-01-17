@@ -6,7 +6,7 @@
 from http import HTTPStatus
 
 import pytest
-from cvat_sdk.api_client.api_client import ApiClient
+from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from deepdiff import DeepDiff
 
 from shared.utils.config import get_method, patch_method
@@ -57,7 +57,7 @@ class TestMembershipsListFilters(CollectionSimpleFilterTestBase):
         self.user = admin_user
         self.samples = memberships
 
-    def _get_endpoint(self, api_client: ApiClient):
+    def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
         return api_client.memberships_api.list_endpoint
 
     @pytest.mark.parametrize(

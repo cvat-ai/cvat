@@ -16,6 +16,7 @@ from typing import Dict, Optional
 
 import pytest
 from cvat_sdk.api_client import ApiClient, Configuration, models
+from cvat_sdk.api_client.api_client import Endpoint
 from deepdiff import DeepDiff
 from PIL import Image
 
@@ -143,7 +144,7 @@ class TestProjectsListFilters(CollectionSimpleFilterTestBase):
         self.user = admin_user
         self.samples = projects
 
-    def _get_endpoint(self, api_client: ApiClient):
+    def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
         return api_client.projects_api.list_endpoint
 
     @pytest.mark.parametrize(

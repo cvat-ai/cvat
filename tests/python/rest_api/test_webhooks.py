@@ -5,11 +5,15 @@
 from copy import deepcopy
 from http import HTTPStatus
 from itertools import product
+from typing import Any, Dict, List
 
 import pytest
+from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from deepdiff import DeepDiff
 
 from shared.utils.config import delete_method, get_method, patch_method, post_method
+
+from .utils import CollectionSimpleFilterTestBase
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -526,6 +530,28 @@ class TestGetWebhooks:
         assert response.status_code == HTTPStatus.OK
         assert "secret" not in response.json()
         assert DeepDiff(webhook, response.json(), ignore_order=True) == {}
+
+
+class TestWebhooksListFilters(CollectionSimpleFilterTestBase):
+    field_lookups = {
+        "owner": ["owner", "username"],
+        "project_id": ["project"],
+    }
+
+    @pytest.fixture(autouse=True)
+    def setup(self, restore_db_per_class, admin_user, webhooks):
+        self.user = admin_user
+        self.samples = webhooks
+
+    def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
+        return api_client.webhooks_api.list_endpoint
+
+    @pytest.mark.parametrize(
+        "field",
+        ("target_url", "owner", "type", "project_id"),
+    )
+    def test_can_use_simple_filter_for_object_list(self, field):
+        return super().test_can_use_simple_filter_for_object_list(field)
 
 
 @pytest.mark.usefixtures("restore_db_per_class")

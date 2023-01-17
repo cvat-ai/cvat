@@ -15,7 +15,7 @@ from time import sleep
 
 import pytest
 from cvat_sdk.api_client import apis, models
-from cvat_sdk.api_client.api_client import ApiClient
+from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
 from PIL import Image
@@ -163,7 +163,7 @@ class TestListTasksFilters(CollectionSimpleFilterTestBase):
         self.user = admin_user
         self.samples = tasks
 
-    def _get_endpoint(self, api_client: ApiClient):
+    def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
         return api_client.tasks_api.list_endpoint
 
     @pytest.mark.parametrize(

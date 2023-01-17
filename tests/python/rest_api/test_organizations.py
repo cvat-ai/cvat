@@ -7,7 +7,7 @@ from copy import deepcopy
 from http import HTTPStatus
 
 import pytest
-from cvat_sdk.api_client.api_client import ApiClient
+from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from deepdiff import DeepDiff
 
 from shared.utils.config import delete_method, get_method, options_method, patch_method
@@ -89,7 +89,7 @@ class TestOrganizationsListFilters(CollectionSimpleFilterTestBase):
         self.user = admin_user
         self.samples = organizations
 
-    def _get_endpoint(self, api_client: ApiClient):
+    def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
         return api_client.organizations_api.list_endpoint
 
     @pytest.mark.parametrize(

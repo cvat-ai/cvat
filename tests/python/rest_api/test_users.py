@@ -8,7 +8,7 @@ import typing
 from http import HTTPStatus
 
 import pytest
-from cvat_sdk.api_client.api_client import ApiClient
+from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
 
@@ -104,7 +104,7 @@ class TestUsersListFilters(CollectionSimpleFilterTestBase):
         self.user = admin_user
         self.samples = users
 
-    def _get_endpoint(self, api_client: ApiClient):
+    def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
         return api_client.users_api.list_endpoint
 
     @pytest.mark.parametrize(

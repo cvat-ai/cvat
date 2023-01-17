@@ -12,7 +12,7 @@ from io import BytesIO
 from typing import List
 
 import pytest
-from cvat_sdk.api_client.api_client import ApiClient
+from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
 from PIL import Image
@@ -159,7 +159,7 @@ class TestJobsListFilters(CollectionSimpleFilterTestBase):
         self.sample_tasks = tasks
         self.sample_projects = projects
 
-    def _get_endpoint(self, api_client: ApiClient):
+    def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
         return api_client.jobs_api.list_endpoint
 
     @pytest.mark.parametrize(

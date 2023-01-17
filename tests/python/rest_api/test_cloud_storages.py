@@ -9,6 +9,7 @@ from typing import List
 
 import pytest
 from cvat_sdk.api_client import ApiClient, models
+from cvat_sdk.api_client.api_client import Endpoint
 from deepdiff import DeepDiff
 from PIL import Image
 
@@ -112,7 +113,7 @@ class TestCloudStoragesListFilters(CollectionSimpleFilterTestBase):
         self.user = admin_user
         self.samples = cloud_storages
 
-    def _get_endpoint(self, api_client: ApiClient):
+    def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
         return api_client.cloudstorages_api.list_endpoint
 
     def _retrieve_collection(self, **kwargs) -> List:
