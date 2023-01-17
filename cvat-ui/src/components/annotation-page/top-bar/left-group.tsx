@@ -1,13 +1,14 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
 import { Col } from 'antd/lib/grid';
-import Icon, { StopOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import Icon, { StopOutlined, CheckCircleOutlined, LoadingOutlined } from '@ant-design/icons';
 import Modal from 'antd/lib/modal';
 import Button from 'antd/lib/button';
-import Timeline from 'antd/lib/timeline';
+import Text from 'antd/lib/typography/Text';
 import Dropdown from 'antd/lib/dropdown';
 
 import AnnotationMenuContainer from 'containers/annotation-page/top-bar/annotation-menu';
@@ -19,7 +20,6 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 
 interface Props {
     saving: boolean;
-    savingStatuses: string[];
     undoAction?: string;
     redoAction?: string;
     saveShortcut: string;
@@ -39,7 +39,6 @@ interface Props {
 function LeftGroup(props: Props): JSX.Element {
     const {
         saving,
-        savingStatuses,
         undoAction,
         redoAction,
         saveShortcut,
@@ -71,12 +70,9 @@ function LeftGroup(props: Props): JSX.Element {
 
     return (
         <>
-            <Modal title='Saving changes on the server' visible={saving} footer={[]} closable={false}>
-                <Timeline pending={savingStatuses[savingStatuses.length - 1] || 'Pending..'}>
-                    {savingStatuses.slice(0, -1).map((status: string, id: number) => (
-                        <Timeline.Item key={id}>{status}</Timeline.Item>
-                    ))}
-                </Timeline>
+            <Modal className='cvat-saving-job-modal' title='Saving changes on the server' visible={saving} footer={[]} closable={false}>
+                <Text>CVAT is working to save annotations, please wait </Text>
+                <LoadingOutlined />
             </Modal>
             <Col className='cvat-annotation-header-left-group'>
                 <Dropdown overlay={<AnnotationMenuContainer />}>
