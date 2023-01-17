@@ -40,7 +40,6 @@ export interface Props {
 
 export enum MenuActions {
     SET_WEBHOOKS = 'SET_WEBHOOKS',
-    UPGRADE = 'UPGRADE',
     REMOVE_ORGANIZATION = 'REMOVE_ORGANIZATION',
 }
 
