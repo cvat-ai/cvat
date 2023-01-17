@@ -368,7 +368,6 @@ class ServerPermission(OpenPolicyAgentPermission):
             'exception': Scopes.SEND_EXCEPTION,
             'logs': Scopes.SEND_LOGS,
             'share': Scopes.LIST_CONTENT,
-            'advanced_authentication': Scopes.VIEW,
         }.get(view.action, None)]
 
     def get_resource(self):

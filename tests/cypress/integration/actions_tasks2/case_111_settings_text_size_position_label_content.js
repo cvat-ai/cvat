@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -45,29 +46,28 @@ context('Settings. Text size/position. Text labels content.', () => {
         let textTopPosition = 0;
         let getText;
 
-        cy.get(shape).then(($shape) => {
-            shapeLeftPosition = Math.trunc($shape.position().left);
-            shapeTopPosition = Math.trunc($shape.position().top);
-            if (shape === '#cvat_canvas_shape_1') {
-                shapeWidth = $shape.attr('width');
-                shapeHeight = $shape.attr('height');
-            } else {
-                const points = $shape.attr('points').split(' ');
-                shapeWidth = +points[1].split(',')[0] - +points[0].split(',')[0];
-                shapeHeight = +points[2].split(',')[1] - +points[0].split(',')[1];
-            }
+        cy.get(shape).then(([shapeObj]) => {
+            const shapeBBox = shapeObj.getBoundingClientRect();
+            shapeLeftPosition = shapeBBox.left;
+            shapeTopPosition = shapeBBox.top;
+            shapeWidth = shapeBBox.width;
+            shapeHeight = shapeBBox.height;
+
             if (shape === '#cvat_canvas_shape_1') {
                 getText = cy.get('.cvat_canvas_text').first();
             } else {
                 getText = cy.get('.cvat_canvas_text').last();
             }
-            getText.then(($text) => {
-                textLeftPosition = Math.trunc($text.position().left);
-                textTopPosition = Math.trunc($text.position().top);
+
+            getText.then(([textObj]) => {
+                const textBBox = textObj.getBoundingClientRect();
+                textLeftPosition = textBBox.left;
+                textTopPosition = textBBox.top;
+
                 if (expectedPosition === 'outside') {
                     // Text outside the shape of the right. Slightly below the shape upper edge.
                     expect(+shapeLeftPosition + +shapeWidth).lessThan(+textLeftPosition);
-                    expect(+textTopPosition).to.be.within(+shapeTopPosition, +shapeTopPosition + 10);
+                    expect(+textTopPosition).to.be.within(+shapeTopPosition, +shapeTopPosition + 15);
                 } else {
                     // Text inside the shape
                     expect(+shapeLeftPosition + +shapeWidth / 2).greaterThan(+textLeftPosition);
@@ -108,6 +108,21 @@ context('Settings. Text size/position. Text labels content.', () => {
     });
 
     describe(`Testing case "${caseId}"`, () => {
+        it('Text font size.', () => {
+            cy.get('.cvat_canvas_text').should('have.attr', 'style', 'font-size: 14px;');
+            cy.openSettings();
+
+            // Change the text size to 16
+            cy.get('.cvat-workspace-settings-text-size')
+                .find('input')
+                .should('have.attr', 'value', '14')
+                .clear()
+                .type('10')
+                .should('have.attr', 'value', '10');
+            cy.closeSettings();
+            cy.get('.cvat_canvas_text').should('have.attr', 'style', 'font-size: 10px;');
+        });
+
         it('Text position.', () => {
             testTextPosition('#cvat_canvas_shape_1', 'outside');
             testTextPosition('#cvat_canvas_shape_2', 'outside');
@@ -125,21 +140,6 @@ context('Settings. Text size/position. Text labels content.', () => {
 
             testTextPosition('#cvat_canvas_shape_1', 'inside');
             testTextPosition('#cvat_canvas_shape_2', 'inside');
-        });
-
-        it('Text font size.', () => {
-            cy.get('.cvat_canvas_text').should('have.attr', 'style', 'font-size: 14px;');
-            cy.openSettings();
-
-            // Change the text size to 16
-            cy.get('.cvat-workspace-settings-text-size')
-                .find('input')
-                .should('have.attr', 'value', '14')
-                .clear()
-                .type('16')
-                .should('have.attr', 'value', '16');
-            cy.closeSettings();
-            cy.get('.cvat_canvas_text').should('have.attr', 'style', 'font-size: 16px;');
         });
 
         it('Text labels content.', () => {

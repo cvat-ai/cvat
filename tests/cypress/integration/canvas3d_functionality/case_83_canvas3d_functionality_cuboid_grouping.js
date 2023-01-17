@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -14,22 +14,22 @@ context('Canvas 3D functionality. Grouping.', () => {
     const screenshotsPath = 'cypress/screenshots/canvas3d_functionality/case_83_canvas3d_functionality_cuboid_grouping.js';
     const firstCuboidCreationParams = {
         labelName,
-        x: 480,
-        y: 150,
+        x: 400,
+        y: 200,
     };
     const secondCuboidCreationParams = {
         labelName,
-        x: 480,
-        y: 200,
+        x: 400,
+        y: 280,
     };
     const thirdCuboidCreationParams = {
         labelName,
-        x: 530,
-        y: 150,
+        x: 500,
+        y: 280,
     };
     const fourthCuboidCreationParams = {
         labelName,
-        x: 530,
+        x: 500,
         y: 200,
     };
     const yellowHex = 'fcbe03';
@@ -64,8 +64,8 @@ context('Canvas 3D functionality. Grouping.', () => {
     describe(`Testing case "${caseId}"`, () => {
         it('Grouping two cuboids.', () => {
             cy.get('.cvat-group-control').click();
-            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 480, 200).click(480, 200);
-            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 530, 150).click(530, 150);
+            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 400, 280).click(400, 280);
+            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 500, 280).click(500, 280);
             cy.get('.cvat-group-control').click();
             cy.changeAppearance('Group');
             cy.get('#cvat-objects-sidebar-state-item-1').invoke('attr', 'style').then((bgColorItem1) => {
@@ -105,8 +105,8 @@ context('Canvas 3D functionality. Grouping.', () => {
         it('Reset group.', () => {
             cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_before_reset_group');
             cy.get('.cvat-group-control').click();
-            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 480, 200).click(480, 200);
-            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 530, 150).click(530, 150);
+            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 400, 280).click(400, 280);
+            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 500, 280).click(500, 280);
             cy.get('body').type('{Shift}g');
             cy.get('#cvat-objects-sidebar-state-item-2').invoke('attr', 'style').then((bgColorItem2) => {
                 expect(bgColorItem).to.be.equal(bgColorItem2);
