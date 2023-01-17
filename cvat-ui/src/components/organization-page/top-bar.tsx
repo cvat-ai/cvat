@@ -18,7 +18,6 @@ import Dropdown from 'antd/lib/dropdown';
 import Menu from 'antd/lib/menu';
 import { useForm } from 'antd/lib/form/Form';
 import { Store } from 'antd/lib/form/interface';
-import consts from 'consts';
 
 import {
     EditTwoTone, EnvironmentOutlined,
@@ -56,8 +55,6 @@ function OrganizationTopBar(props: Props): JSX.Element {
     const [visibleInviteModal, setVisibleInviteModal] = useState<boolean>(false);
     const [editingDescription, setEditingDescription] = useState<boolean>(false);
     const dispatch = useDispatch();
-
-    const { CVAT_BILLING_URL } = consts;
 
     useEffect(() => {
         const listener = (event: MouseEvent): void => {
@@ -139,20 +136,6 @@ function OrganizationTopBar(props: Props): JSX.Element {
                                                 Setup webhooks
                                             </a>
                                         </Menu.Item>
-                                        {
-                                            CVAT_BILLING_URL && (
-                                                <Menu.Item
-                                                    className='cvat-menu-item-highlighted'
-                                                    key={MenuActions.UPGRADE}
-                                                    onClick={() => {
-                                                        window.open(`${CVAT_BILLING_URL}/?type=organization&orgId=${organizationInstance.id}`, '_self');
-                                                    }}
-                                                >
-                                                    Upgrade
-                                                </Menu.Item>
-                                            )
-                                        }
-
                                         {owner && userID === owner.id ? (
                                             <Menu.Item
                                                 key={MenuActions.REMOVE_ORGANIZATION}

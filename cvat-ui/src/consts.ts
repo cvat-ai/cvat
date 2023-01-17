@@ -88,7 +88,7 @@ const DEFAULT_GOOGLE_CLOUD_STORAGE_LOCATIONS: string[][] = [
     ['NAM4', 'US-CENTRAL1 and US-EAST1'],
 ];
 
-const CVAT_BILLING_URL = process.env.CVAT_BILLING_HOST || 'http://localhost:3001/billing';
+const CVAT_BILLING_URL = process.env.CVAT_BILLING_HOST;
 const HEALH_CHECK_RETRIES = 10;
 const HEALTH_CHECK_PERIOD = 3000; // ms
 const HEALTH_CHECK_REQUEST_TIMEOUT = 5000; // ms
