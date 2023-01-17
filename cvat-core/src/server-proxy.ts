@@ -525,7 +525,7 @@ async function healthCheck(maxRetries, checkPeriod, requestTimeout, progressCall
                 isHealthy = false;
             }
 
-            if (isHealthy === false && maxRetries > 0) {
+            if (!isHealthy && maxRetries > 0) {
                 return new Promise((resolve) => setTimeout(resolve, checkPeriod))
                     .then(() => healthCheck(maxRetries - 1, checkPeriod,
                         requestTimeout, progressCallback, attempt + 1));
