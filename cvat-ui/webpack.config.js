@@ -14,8 +14,8 @@ const CopyPlugin = require('copy-webpack-plugin');
 
 module.exports = (env) => {
     console.log()
-    const defaultAppConfig = path.join(__dirname, 'app-config');
-    const appConfigFile = env.UI_APP_CONFIG ? env.UI_APP_CONFIG : defaultAppConfig;
+    const defaultAppConfig = path.join(__dirname, 'config');
+    const appConfigFile = process.env.UI_APP_CONFIG ? process.env.UI_APP_CONFIG : defaultAppConfig;
     console.log('Application config file is: ', appConfigFile);
 
     return {

@@ -1,5 +1,5 @@
 # Copyright (C) 2018-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -13,7 +13,6 @@ from datetime import datetime
 from distutils.util import strtobool
 from tempfile import mkstemp
 
-import cv2
 from django.db.models.query import Prefetch
 from django.shortcuts import get_object_or_404
 import django_rq
@@ -48,7 +47,7 @@ from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.media_extractors import get_mime
 from cvat.apps.engine.models import (
     Job, Task, Project, Issue, Data,
-    Comment, StorageMethodChoice, StorageChoice, Image,
+    Comment, StorageMethodChoice, StorageChoice,
     CloudProviderChoice, Location
 )
 from cvat.apps.engine.models import CloudStorage as CloudStorageModel
@@ -636,7 +635,6 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         return response
 
-
 class DataChunkGetter:
     def __init__(self, data_type, data_num, data_quality, task_dim):
         possible_data_type_values = ('chunk', 'frame', 'preview', 'context_image')
@@ -696,20 +694,14 @@ class DataChunkGetter:
                 return HttpResponse(buf.getvalue(), content_type=mime)
 
             elif self.type == 'context_image':
-                if not (start <= self.number <= stop):
-                    raise ValidationError('The frame number should be in ' +
-                        f'[{start}, {stop}] range')
-
-                image = Image.objects.get(data_id=db_data.id, frame=self.number)
-                for i in image.related_files.all():
-                    path = os.path.realpath(str(i.path))
-                    image = cv2.imread(path)
-                    success, result = cv2.imencode('.JPEG', image)
-                    if not success:
-                        raise Exception('Failed to encode image to ".jpeg" format')
-                    return HttpResponse(io.BytesIO(result.tobytes()), content_type='image/jpeg')
-                return Response(data='No context image related to the frame',
-                    status=status.HTTP_404_NOT_FOUND)
+                if start <= self.number <= stop:
+                    cache = MediaCache(self.dimension)
+                    buff, mime = cache.get_frame_context_images(db_data, self.number)
+                    if not buff:
+                        return HttpResponseNotFound()
+                    return HttpResponse(io.BytesIO(buff), content_type=mime)
+                raise ValidationError('The frame number should be in ' +
+                    f'[{start}, {stop}] range')
             else:
                 return Response(data='unknown data type {}.'.format(self.type),
                     status=status.HTTP_400_BAD_REQUEST)
@@ -1275,7 +1267,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             'width': item.width,
             'height': item.height,
             'name': item.path,
-            'has_related_context': hasattr(item, 'related_files') and item.related_files.exists()
+            'related_files': item.related_files.count() if hasattr(item, 'related_files') else 0
         } for item in media]
 
         db_data = db_task.data
@@ -1747,7 +1739,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             'width': item.width,
             'height': item.height,
             'name': item.path,
-            'has_related_context': hasattr(item, 'related_files') and item.related_files.exists()
+            'related_files': item.related_files.count() if hasattr(item, 'related_files') else 0
         } for item in media]
 
         db_data.frames = frame_meta

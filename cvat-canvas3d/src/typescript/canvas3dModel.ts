@@ -238,7 +238,10 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
             })
             .catch((exception: any): void => {
                 this.data.isFrameUpdating = false;
-                throw exception;
+                // don't notify when the frame is no longer needed
+                if (typeof exception !== 'number' || exception === this.data.imageID) {
+                    throw exception;
+                }
             });
     }
 
