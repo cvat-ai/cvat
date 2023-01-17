@@ -148,11 +148,10 @@ class WebhookViewSet(viewsets.ModelViewSet):
         serializer_class=WebhookDeliveryReadSerializer,
         pagination_class=viewsets.GenericViewSet.pagination_class,
         # These non-root list endpoints do not suppose extra options, just the basic output
+        # Remove regular list() parameters from the swagger schema.
         # Unset, they would be taken from the enclosing class, which is wrong.
         # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
-        search_fields=None,
-        filter_fields=None,
-        ordering_fields=None,
+        filter_backends=[],
     )
     def deliveries(self, request, pk):
         self.get_object()

@@ -345,10 +345,11 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         deprecated=True) # TODO: remove in v2.5
     @action(detail=True, methods=['GET'], serializer_class=TaskReadSerializer,
         pagination_class=viewsets.GenericViewSet.pagination_class,
+        # These non-root list endpoints do not suppose extra options, just the basic output
         # Remove regular list() parameters from the swagger schema.
         # Unset, they would be taken from the enclosing class, which is wrong.
         # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
-        filter_fields=None, search_fields=None, ordering_fields=None)
+        filter_backends=[])
     def tasks(self, request, pk):
         # https://www.rfc-editor.org/rfc/rfc9110.html#name-303-see-other
         return Response(status=status.HTTP_303_SEE_OTHER, headers={
@@ -917,10 +918,11 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         deprecated=True) # TODO: remove in v2.5
     @action(detail=True, methods=['GET'], serializer_class=JobReadSerializer,
         pagination_class=viewsets.GenericViewSet.pagination_class,
+        # These non-root list endpoints do not suppose extra options, just the basic output
         # Remove regular list() parameters from the swagger schema.
         # Unset, they would be taken from the enclosing class, which is wrong.
         # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
-        filter_fields=None, search_fields=None, ordering_fields=None)
+        filter_backends=[])
     def jobs(self, request, pk):
         # https://www.rfc-editor.org/rfc/rfc9110.html#name-303-see-other
         return Response(status=status.HTTP_303_SEE_OTHER, headers={
@@ -1420,8 +1422,8 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     iam_organization_field = 'segment__task__organization'
     search_fields = ('task_name', 'project_name', 'assignee', 'state', 'stage')
-    filter_fields = list(search_fields) + ['id', 'task_id', 'project_id', 'updated_date']
-    simple_filters = list(search_fields) + ['task_id', 'project_id']
+    filter_fields = list(search_fields) + ['id', 'task_id', 'project_id', 'updated_date', 'dimension']
+    simple_filters = list(set(filter_fields) - {'id', 'updated_date'})
     ordering_fields = list(filter_fields)
     ordering = "-id"
     lookup_fields = {
@@ -1688,10 +1690,11 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         deprecated=True) # TODO: remove in v2.5
     @action(detail=True, methods=['GET'], serializer_class=IssueReadSerializer,
         pagination_class=viewsets.GenericViewSet.pagination_class,
+        # These non-root list endpoints do not suppose extra options, just the basic output
         # Remove regular list() parameters from the swagger schema.
         # Unset, they would be taken from the enclosing class, which is wrong.
         # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
-        filter_fields=None, search_fields=None, ordering_fields=None)
+        filter_backends=[])
     def issues(self, request, pk):
         # https://www.rfc-editor.org/rfc/rfc9110.html#name-303-see-other
         return Response(status=status.HTTP_303_SEE_OTHER, headers={
@@ -1802,10 +1805,11 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         responses=JobCommitSerializer(many=True)) # Duplicate to still get 'list' op. name
     @action(detail=True, methods=['GET'], serializer_class=JobCommitSerializer,
         pagination_class=viewsets.GenericViewSet.pagination_class,
+        # These non-root list endpoints do not suppose extra options, just the basic output
         # Remove regular list() parameters from the swagger schema.
         # Unset, they would be taken from the enclosing class, which is wrong.
         # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
-        filter_fields=None, search_fields=None, ordering_fields=None)
+        filter_backends=[])
     def commits(self, request, pk):
         self.get_object() # force to call check_object_permissions
         return make_paginated_response(JobCommit.objects.filter(job_id=pk).order_by('-id'),
@@ -1903,10 +1907,11 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         deprecated=True) # TODO: remove in v2.5
     @action(detail=True, methods=['GET'], serializer_class=CommentReadSerializer,
         pagination_class=viewsets.GenericViewSet.pagination_class,
+        # These non-root list endpoints do not suppose extra options, just the basic output
         # Remove regular list() parameters from the swagger schema.
         # Unset, they would be taken from the enclosing class, which is wrong.
         # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
-        filter_fields=None, search_fields=None, ordering_fields=None)
+        filter_backends=[])
     def comments(self, request, pk):
         # https://www.rfc-editor.org/rfc/rfc9110.html#name-303-see-other
         return Response(status=status.HTTP_303_SEE_OTHER, headers={
