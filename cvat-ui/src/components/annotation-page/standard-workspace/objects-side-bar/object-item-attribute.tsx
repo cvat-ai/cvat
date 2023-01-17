@@ -11,7 +11,7 @@ import Input from 'antd/lib/input';
 import InputNumber from 'antd/lib/input-number';
 import Text from 'antd/lib/typography/Text';
 
-import consts from 'consts';
+import consts from 'app-config';
 import { clamp } from 'utils/math';
 
 interface Props {

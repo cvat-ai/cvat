@@ -17,7 +17,7 @@ import { FormInstance } from 'antd/lib/form';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { EventDataNode } from 'rc-tree/lib/interface';
 
-import consts from 'consts';
+import consts from 'app-config';
 import { CloudStorage } from 'reducers';
 import CloudStorageTab from './cloud-storages-tab';
 import LocalFiles from './local-files';

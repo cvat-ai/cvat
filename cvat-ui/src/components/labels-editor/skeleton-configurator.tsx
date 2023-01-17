@@ -16,7 +16,7 @@ import GlobalHotKeys from 'utils/mousetrap-react';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import ShortcutsContext from 'components/shortcuts.context';
 import { ShapeType } from 'cvat-core-wrapper';
-import consts from 'consts';
+import consts from 'app-config';
 import {
     idGenerator, LabelOptColor, SkeletonConfiguration, toSVGCoord,
 } from './common';

@@ -9,7 +9,7 @@ import { CombinedState, ObjectType } from 'reducers';
 import Text from 'antd/lib/typography/Text';
 import Modal from 'antd/lib/modal';
 
-import consts from 'consts';
+import consts from 'app-config';
 import { removeObjectAsync, removeObject as removeObjectAction } from 'actions/annotation-actions';
 
 export default function RemoveConfirmComponent(): JSX.Element | null {

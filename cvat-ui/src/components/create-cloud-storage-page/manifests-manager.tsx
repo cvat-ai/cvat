@@ -12,7 +12,7 @@ import Input from 'antd/lib/input';
 import Row from 'antd/lib/row';
 import notification from 'antd/lib/notification';
 import Tooltip from 'antd/lib/tooltip';
-import consts from 'consts';
+import consts from 'app-config';
 
 interface Props {
     form: any;

@@ -7,7 +7,7 @@ import { DeleteOutlined, EditOutlined } from '@ant-design/icons';
 import Text from 'antd/lib/typography/Text';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
-import consts from 'consts';
+import consts from 'app-config';
 import { LabelOptColor } from './common';
 
 interface ConstructorViewerItemProps {

@@ -5,7 +5,7 @@
   "main": "src/index.tsx",
   "scripts": {
     "build": "webpack --config ./webpack.config.js",
-    "start": "webpack serve --env API_URL=http://localhost:7000 --config ./webpack.config.js --mode=development",
+    "start": "webpack serve --env API_URL=http://localhost:7000 UI_APP_CONFIG='app-config' --config ./webpack.config.js --mode=development",
     "type-check": "tsc --noEmit",
     "type-check:watch": "yarn run type-check --watch",
     "lint": "eslint './src/**/*.{ts,tsx}'",

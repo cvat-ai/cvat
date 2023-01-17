@@ -19,7 +19,7 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 import ColorPicker from 'components/annotation-page/standard-workspace/objects-side-bar/color-picker';
 import { ColorizeIcon } from 'icons';
 import patterns from 'utils/validation-patterns';
-import consts from 'consts';
+import consts from 'app-config';
 import {
     equalArrayHead, idGenerator, LabelOptColor, SkeletonConfiguration,
 } from './common';

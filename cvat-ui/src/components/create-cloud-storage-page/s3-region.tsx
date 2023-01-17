@@ -1,9 +1,11 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
+
 import React from 'react';
+import consts from 'app-config';
 import Location from './location';
-import consts from '../../consts';
 
 interface Props {
     selectedRegion: any;

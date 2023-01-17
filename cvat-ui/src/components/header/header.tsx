@@ -31,7 +31,7 @@ import Text from 'antd/lib/typography/Text';
 import Select from 'antd/lib/select';
 
 import { getCore } from 'cvat-core-wrapper';
-import consts from 'consts';
+import consts from 'app-config';
 
 import { CVATLogo } from 'icons';
 import ChangePasswordDialog from 'components/change-password-modal/change-password-modal';

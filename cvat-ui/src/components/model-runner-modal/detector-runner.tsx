@@ -19,7 +19,7 @@ import { Model, ModelAttribute, StringObject } from 'reducers';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { Label as LabelInterface } from 'components/labels-editor/common';
 import { clamp } from 'utils/math';
-import consts from 'consts';
+import consts from 'app-config';
 import { DimensionType } from '../../reducers';
 
 interface Props {

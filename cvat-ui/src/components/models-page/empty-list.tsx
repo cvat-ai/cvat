@@ -7,7 +7,7 @@ import Text from 'antd/lib/typography/Text';
 import { Row, Col } from 'antd/lib/grid';
 import Empty from 'antd/lib/empty';
 
-import consts from 'consts';
+import consts from 'app-config';
 
 export default function EmptyListComponent(): JSX.Element {
     return (

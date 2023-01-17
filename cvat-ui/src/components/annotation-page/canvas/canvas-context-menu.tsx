@@ -13,7 +13,7 @@ import ObjectItemElementComponent from 'components/annotation-page/standard-work
 import ObjectItemContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item';
 import { ShapeType, Workspace } from 'reducers';
 import { rotatePoint } from 'utils/math';
-import consts from 'consts';
+import consts from 'app-config';
 
 interface Props {
     readonly: boolean;

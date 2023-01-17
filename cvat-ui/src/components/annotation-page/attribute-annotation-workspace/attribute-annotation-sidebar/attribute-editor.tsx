@@ -11,7 +11,7 @@ import Input from 'antd/lib/input';
 
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 
-import consts from 'consts';
+import consts from 'app-config';
 
 interface InputElementParameters {
     clientID: number;

@@ -18,7 +18,7 @@ import { resetAfterErrorAsync } from 'actions/boundaries-actions';
 import { CombinedState } from 'reducers';
 import logger, { LogType } from 'cvat-logger';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import consts from 'consts';
+import consts from 'app-config';
 
 interface OwnProps {
     children: JSX.Element;

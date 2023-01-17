@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import consts from 'consts';
+import consts from 'app-config';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
 import { ReviewActionTypes } from 'actions/review-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
