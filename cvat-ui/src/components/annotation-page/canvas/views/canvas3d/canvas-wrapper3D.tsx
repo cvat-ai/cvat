@@ -585,7 +585,7 @@ const Canvas3DWrapperComponent = React.memo((props: Props): ReactElement => {
             canvasInstanceDOM.perspective.removeEventListener('click', onCanvasClick);
             canvasInstanceDOM.perspective.removeEventListener('canvas.groupped', onCanvasObjectsGroupped);
         };
-    }, [frameData, annotations, activeLabelID, contextMenuVisibility]);
+    }, [frameData, annotations, activeLabelID, contextMenuVisibility, activeObjectType]);
 
     return <></>;
 });
