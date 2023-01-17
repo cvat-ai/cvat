@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -121,7 +121,10 @@ async function chunkUpload(file, uploadConfig) {
 
 function generateError(errorData) {
     if (errorData.response) {
-        const message = `${errorData.message}. ${JSON.stringify(errorData.response.data) || ''}.`;
+        if (errorData.response.data?.message) {
+            return new ServerError(errorData.response.data?.message, errorData.response.status);
+        }
+        const message = `${errorData.message}. ${JSON.stringify(errorData.response.data || '')}.`;
         return new ServerError(message, errorData.response.status);
     }
 
@@ -366,6 +369,35 @@ async function login(credential, password) {
     Axios.defaults.headers.common.Authorization = `Token ${token}`;
 }
 
+async function loginWithSocialAccount(
+    provider: string,
+    code: string,
+    authParams?: string,
+    process?: string,
+    scope?: string,
+) {
+    removeToken();
+    const data = {
+        code,
+        ...(process ? { process } : {}),
+        ...(scope ? { scope } : {}),
+        ...(authParams ? { auth_params: authParams } : {}),
+    };
+    let authenticationResponse = null;
+    try {
+        authenticationResponse = await Axios.post(`${config.backendAPI}/auth/${provider}/login/token`, data,
+            {
+                proxy: config.proxy,
+            });
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+
+    token = authenticationResponse.data.key;
+    store.set('token', token);
+    Axios.defaults.headers.common.Authorization = `Token ${token}`;
+}
+
 async function logout() {
     try {
         await Axios.post(`${config.backendAPI}/auth/logout`, {
@@ -447,11 +479,7 @@ async function getSelf() {
 
 async function authorized() {
     try {
-        const response = await getSelf();
-        if (!store.get('token')) {
-            store.set('token', response.key);
-            Axios.defaults.headers.common.Authorization = `Token ${response.key}`;
-        }
+        await getSelf();
     } catch (serverError) {
         if (serverError.code === 401) {
             // In CVAT app we use two types of authentication,
@@ -1331,11 +1359,8 @@ async function getPreview(tid, jid) {
 
     let response = null;
     try {
-        const url = `${backendAPI}/${jid !== null ? 'jobs' : 'tasks'}/${jid || tid}/data`;
+        const url = `${backendAPI}/${jid !== null ? 'jobs' : 'tasks'}/${jid || tid}/preview`;
         response = await Axios.get(url, {
-            params: {
-                type: 'preview',
-            },
             proxy: config.proxy,
             responseType: 'blob',
         });
@@ -1359,7 +1384,7 @@ async function getImageContext(jid, frame) {
                 number: frame,
             },
             proxy: config.proxy,
-            responseType: 'blob',
+            responseType: 'arraybuffer',
         });
     } catch (errorData) {
         throw generateError(errorData);
@@ -1398,7 +1423,23 @@ async function getData(tid, jid, chunk) {
     return response;
 }
 
-async function getMeta(session, jid) {
+export interface FramesMetaData {
+    chunk_size: number;
+    deleted_frames: number[];
+    frame_filter: string;
+    frames: {
+        width: number;
+        height: number;
+        name: string;
+        related_files: number;
+    }[];
+    image_quality: number;
+    size: number;
+    start_frame: number;
+    stop_frame: number;
+}
+
+async function getMeta(session, jid): Promise<FramesMetaData> {
     const { backendAPI } = config;
 
     let response = null;
@@ -2225,10 +2266,10 @@ async function receiveWebhookEvents(type: WebhookSourceType): Promise<string[]> 
     }
 }
 
-async function advancedAuthentication(): Promise<any> {
+async function socialAuthentication(): Promise<any> {
     const { backendAPI } = config;
     try {
-        const response = await Axios.get(`${backendAPI}/server/advanced-auth`, {
+        const response = await Axios.get(`${backendAPI}/auth/social/methods`, {
             proxy: config.proxy,
         });
         return response.data;
@@ -2245,7 +2286,7 @@ export default Object.freeze({
         exception,
         login,
         logout,
-        advancedAuthentication,
+        socialAuthentication,
         changePassword,
         requestPasswordReset,
         resetPassword,
@@ -2255,6 +2296,7 @@ export default Object.freeze({
         request: serverRequest,
         userAgreements,
         installedApps,
+        loginWithSocialAccount,
     }),
 
     projects: Object.freeze({

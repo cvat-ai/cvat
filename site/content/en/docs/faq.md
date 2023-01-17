@@ -54,11 +54,11 @@ To change the hostname, simply set the `CVAT_HOST` environemnt variable
 ```bash
 export CVAT_HOST=<YOUR_HOSTNAME_OR_IP>
 ```
-NOTE, if you're using `docker-compose` with `sudo` to run CVAT, then please add the `-E` (or `--preserve-env`)
+NOTE, if you're using `docker compose` with `sudo` to run CVAT, then please add the `-E` (or `--preserve-env`)
 flag to preserve the user environment variable which set above to take effect in your docker containers:
 
 ```bash
-sudo -E docker-compose up -d
+sudo -E docker compose up -d
 ```
 
 If you want to change the default web application port, change the `ports` part of `traefik` service configuration
@@ -87,8 +87,6 @@ Follow the Docker manual and configure the directory that you want to use as a s
 After that, it should be possible to use this directory as a CVAT share:
 
 ```yaml
-version: '3.3'
-
 services:
   cvat:
     volumes:

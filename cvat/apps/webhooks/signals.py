@@ -10,6 +10,7 @@ import json
 import django_rq
 import requests
 from django.dispatch import Signal, receiver
+from django.conf import settings
 
 from cvat.apps.engine.models import Project
 from cvat.apps.engine.serializers import BasicUserSerializer
@@ -75,7 +76,7 @@ def add_to_queue(webhook, payload, redelivery=False):
         response="",
     )
 
-    queue = django_rq.get_queue("webhooks")
+    queue = django_rq.get_queue(settings.CVAT_QUEUES.WEBHOOKS.value)
     queue.enqueue_call(func=send_webhook, args=(webhook, payload, delivery))
 
     return delivery

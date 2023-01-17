@@ -5,7 +5,49 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## \[2.3.0] - Unreleased
+## \[2.4.0] - Unreleased
+### Added
+- \[SDK\] An arg to wait for data processing in the task data uploading function
+  (<https://github.com/opencv/cvat/pull/5502>)
+- Filename pattern to simplify uploading cloud storage data for a task (<https://github.com/opencv/cvat/pull/5498>, <https://github.com/opencv/cvat/pull/5525>)
+- \[SDK\] Configuration setting to change the dataset cache directory
+  (<https://github.com/opencv/cvat/pull/5535>)
+- \[SDK\] Class to represent a project as a PyTorch dataset
+  (<https://github.com/opencv/cvat/pull/5523>)
+- Grid view and multiple context images supported (<https://github.com/opencv/cvat/pull/5542>)
+- Support for custom file to job splits in tasks (server API & SDK only)
+  (<https://github.com/opencv/cvat/pull/5536>)
+- \[SDK\] A PyTorch adapter setting to disable cache updates
+  (<https://github.com/opencv/cvat/pull/5549>)
+- YOLO v7 serverless feature added using ONNX backend (<https://github.com/opencv/cvat/pull/5552>)
+- Cypress test for social account authentication (<https://github.com/opencv/cvat/pull/5444>)
+- Dummy github and google authentication servers (<https://github.com/opencv/cvat/pull/5444>)
+
+### Changed
+- The Docker Compose files now use the Compose Specification version
+  of the format. This version is supported by Docker Compose 1.27.0+
+  (<https://github.com/opencv/cvat/pull/5524>).
+- \[SDK\] The `resource_type` args now have the default value of `local` in task creation functions.
+  The corresponding arguments are keyword-only now.
+  (<https://github.com/opencv/cvat/pull/5502>)
+- Windows Installation Instructions adjusted to work around <https://github.com/nuclio/nuclio/issues/1821>
+- The contour detection function for semantic segmentation (<https://github.com/opencv/cvat/pull/4665>)
+
+### Deprecated
+- TDB
+
+### Removed
+- TDB
+
+### Fixed
+- Helm: Empty password for Redis (<https://github.com/opencv/cvat/pull/5520>)
+- Fixed HRNet serverless function runtime error on images with alpha channel (<https://github.com/opencv/cvat/pull/5570>)
+- Preview & chunk cache settings are ignored (<https://github.com/opencv/cvat/pull/5569>)
+
+### Security
+- Fixed vulnerability with social authentication (<https://github.com/opencv/cvat/pull/5521>)
+
+## \[2.3.0] - 2022-12-22
 ### Added
 - SDK section in docs (<https://github.com/opencv/cvat/pull/4928>)
 - An option to enable or disable host certificate checking in CLI (<https://github.com/opencv/cvat/pull/4928>)
@@ -22,6 +64,7 @@ from online detectors & interactors) (<https://github.com/opencv/cvat/pull/4543>
 - Authentication with social accounts google & github (<https://github.com/opencv/cvat/pull/5147>, <https://github.com/opencv/cvat/pull/5181>, <https://github.com/opencv/cvat/pull/5295>)
 - REST API tests to export job datasets & annotations and validate their structure  (<https://github.com/opencv/cvat/pull/5160>)
 - Propagation backward on UI (<https://github.com/opencv/cvat/pull/5355>)
+- Keyboard shortcut to delete a frame (Alt + Del) (<https://github.com/opencv/cvat/pull/5369>)
 - A PyTorch dataset adapter layer in the SDK
   (<https://github.com/opencv/cvat/pull/5417>)
 - A way to debug the server deployed with Docker (<https://github.com/opencv/cvat/issues/5327>)
@@ -37,9 +80,6 @@ from online detectors & interactors) (<https://github.com/opencv/cvat/pull/4543>
 - In the SDK, functions taking paths as strings now also accept path-like objects
   (<https://github.com/opencv/cvat/pull/5435>)
 
-### Deprecated
-- TDB
-
 ### Removed
 - The `--https` option of CLI (<https://github.com/opencv/cvat/pull/4910>)
 
@@ -49,6 +89,7 @@ from online detectors & interactors) (<https://github.com/opencv/cvat/pull/4543>
 non-ascii paths while adding files from "Connected file share" (issue #4428)
 - Removed unnecessary volumes defined in docker-compose.serverless.yml
 (<https://github.com/openvinotoolkit/cvat/pull/4659>)
+- Added support for Image files that use the PIL.Image.mode 'I;16'
 - Project import/export with skeletons (<https://github.com/opencv/cvat/pull/4867>,
   <https://github.com/opencv/cvat/pull/5004>)
 - Shape color is not changed on canvas after changing a label (<https://github.com/opencv/cvat/pull/5045>)
@@ -104,9 +145,13 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
 - Missing source tag in project annotations (<https://github.com/opencv/cvat/pull/5408>)
 - Creating a task with a Git repository via the SDK
   (<https://github.com/opencv/cvat/issues/4365>)
+- Queries via the low-level API using the `multipart/form-data` Content-Type with string fields
+  (<https://github.com/opencv/cvat/pull/5479>)
 
 ### Security
-- TDB
+- `Project.import_dataset` not waiting for completion correctly
+  (<https://github.com/opencv/cvat/pull/5459>)
+
 
 ## \[2.2.0] - 2022-09-12
 ### Added

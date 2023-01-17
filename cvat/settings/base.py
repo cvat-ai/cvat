@@ -15,6 +15,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/2.0/ref/settings/
 """
 
+from enum import Enum
 import os
 import sys
 import fcntl
@@ -191,6 +192,7 @@ REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'cvat.apps.iam.schema.CustomAutoSchema',
 }
 
+
 REST_AUTH_REGISTER_SERIALIZERS = {
     'REGISTER_SERIALIZER': 'cvat.apps.iam.serializers.RegisterSerializerEx',
 }
@@ -248,6 +250,7 @@ WSGI_APPLICATION = 'cvat.wsgi.application'
 
 # IAM settings
 IAM_TYPE = 'BASIC'
+IAM_BASE_EXCEPTION = None # a class which will be used by IAM to report errors
 IAM_DEFAULT_ROLES = ['user']
 IAM_ADMIN_ROLE = 'admin'
 # Index in the list below corresponds to the priority (0 has highest priority)
@@ -256,6 +259,22 @@ IAM_OPA_HOST = 'http://opa:8181'
 IAM_OPA_DATA_URL = f'{IAM_OPA_HOST}/v1/data'
 LOGIN_URL = 'rest_login'
 LOGIN_REDIRECT_URL = '/'
+
+DEFAULT_LIMITS = {
+    "USER_SANDBOX_TASKS": 10,
+    "USER_SANDBOX_PROJECTS": 3,
+    "TASKS_IN_USER_SANDBOX_PROJECT": 5,
+    "USER_OWNED_ORGS": 1,
+    "USER_SANDBOX_CLOUD_STORAGES": 10,
+
+    "ORG_TASKS": 10,
+    "ORG_PROJECTS": 3,
+    "TASKS_IN_ORG_PROJECT": 5,
+    "ORG_CLOUD_STORAGES": 10,
+    "ORG_COMMON_WEBHOOKS": 20,
+
+    "PROJECT_WEBHOOKS": 10,
+}
 
 # ORG settings
 ORG_INVITATION_CONFIRM = 'No'
@@ -280,20 +299,32 @@ OLD_PASSWORD_FIELD_ENABLED = True
 # Django-RQ
 # https://github.com/rq/django-rq
 
+class CVAT_QUEUES(Enum):
+    IMPORT_DATA = 'import'
+    EXPORT_DATA = 'export'
+    AUTO_ANNOTATION = 'annotation'
+    WEBHOOKS = 'webhooks'
+
 RQ_QUEUES = {
-    'default': {
+    CVAT_QUEUES.IMPORT_DATA.value: {
         'HOST': 'localhost',
         'PORT': 6379,
         'DB': 0,
         'DEFAULT_TIMEOUT': '4h'
     },
-    'low': {
+    CVAT_QUEUES.EXPORT_DATA.value: {
+        'HOST': 'localhost',
+        'PORT': 6379,
+        'DB': 0,
+        'DEFAULT_TIMEOUT': '4h'
+    },
+    CVAT_QUEUES.AUTO_ANNOTATION.value: {
         'HOST': 'localhost',
         'PORT': 6379,
         'DB': 0,
         'DEFAULT_TIMEOUT': '24h'
     },
-    'webhooks': {
+    CVAT_QUEUES.WEBHOOKS.value: {
         'HOST': 'localhost',
         'PORT': 6379,
         'DB': 0,
@@ -485,6 +516,7 @@ CACHES = {
        'BACKEND' : 'diskcache.DjangoCache',
        'LOCATION' : CACHE_ROOT,
        'TIMEOUT' : None,
+       'SHARDS': 32,
        'OPTIONS' : {
             'size_limit' : 2 ** 40, # 1 Tb
        }
@@ -577,6 +609,8 @@ SPECTACULAR_SETTINGS = {
         'JobStage': 'cvat.apps.engine.models.StageChoice',
         'StorageType': 'cvat.apps.engine.models.StorageChoice',
         'SortingMethod': 'cvat.apps.engine.models.SortingMethod',
+        'WebhookType': 'cvat.apps.webhooks.models.WebhookTypeChoice',
+        'WebhookContentType': 'cvat.apps.webhooks.models.WebhookContentTypeChoice',
     },
 
     # Coercion of {pk} to {id} is controlled by SCHEMA_COERCE_PATH_PK. Additionally,
@@ -596,24 +630,30 @@ ACCOUNT_ADAPTER = 'cvat.apps.iam.adapters.DefaultAccountAdapterEx'
 ACCOUNT_USERNAME_MIN_LENGTH = 5
 ACCOUNT_LOGOUT_ON_PASSWORD_CHANGE = True
 
+CVAT_HOST = os.getenv('CVAT_HOST', 'localhost')
+CVAT_BASE_URL = os.getenv('CVAT_BASE_URL', f'http://{CVAT_HOST}:8080').rstrip('/')
+
 if USE_ALLAUTH_SOCIAL_ACCOUNTS:
     SOCIALACCOUNT_ADAPTER = 'cvat.apps.iam.adapters.SocialAccountAdapterEx'
+    SOCIALACCOUNT_GITHUB_ADAPTER = 'cvat.apps.iam.adapters.GitHubAdapter'
+    SOCIALACCOUNT_GOOGLE_ADAPTER = 'cvat.apps.iam.adapters.GoogleAdapter'
     SOCIALACCOUNT_LOGIN_ON_GET = True
     # It's required to define email in the case when a user has a private hidden email.
     # (e.g in github account set keep my email addresses private)
     # default = ACCOUNT_EMAIL_REQUIRED
     SOCIALACCOUNT_QUERY_EMAIL = True
     SOCIALACCOUNT_CALLBACK_CANCELLED_URL = '/auth/login'
+    # custom variable because by default LOGIN_REDIRECT_URL will be used
+    SOCIAL_APP_LOGIN_REDIRECT_URL = f'{CVAT_BASE_URL}/auth/login-with-social-app'
 
-    GITHUB_CALLBACK_URL = 'http://localhost:8080/api/auth/github/login/callback/'
-    GOOGLE_CALLBACK_URL = 'http://localhost:8080/api/auth/google/login/callback/'
+    GITHUB_CALLBACK_URL = f'{CVAT_BASE_URL}/api/auth/github/login/callback/'
+    GOOGLE_CALLBACK_URL = f'{CVAT_BASE_URL}/api/auth/google/login/callback/'
 
     SOCIAL_AUTH_GOOGLE_CLIENT_ID = os.getenv('SOCIAL_AUTH_GOOGLE_CLIENT_ID')
     SOCIAL_AUTH_GOOGLE_CLIENT_SECRET = os.getenv('SOCIAL_AUTH_GOOGLE_CLIENT_SECRET')
 
     SOCIAL_AUTH_GITHUB_CLIENT_ID = os.getenv('SOCIAL_AUTH_GITHUB_CLIENT_ID')
     SOCIAL_AUTH_GITHUB_CLIENT_SECRET = os.getenv('SOCIAL_AUTH_GITHUB_CLIENT_SECRET')
-
     SOCIALACCOUNT_PROVIDERS = {
         'google': {
             'APP': {
@@ -624,7 +664,7 @@ if USE_ALLAUTH_SOCIAL_ACCOUNTS:
             'SCOPE': [ 'profile', 'email', 'openid'],
             'AUTH_PARAMS': {
                 'access_type': 'online',
-            }
+            },
         },
         'github': {
             'APP': {
@@ -633,5 +673,10 @@ if USE_ALLAUTH_SOCIAL_ACCOUNTS:
                 'key': ''
             },
             'SCOPE': [ 'read:user', 'user:email' ],
+            # NOTE: Custom field. This is necessary for the user interface
+            # to render possible social account authentication option.
+            # If this field is not specified, then the option with the provider
+            # key with a capital letter will be used
+            'PUBLIC_NAME': 'GitHub',
         },
     }

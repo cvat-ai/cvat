@@ -364,8 +364,7 @@ class LambdaFunction:
 
 class LambdaQueue:
     def _get_queue(self):
-        QUEUE_NAME = "low"
-        return django_rq.get_queue(QUEUE_NAME)
+        return django_rq.get_queue(settings.CVAT_QUEUES.AUTO_ANNOTATION.value)
 
     def get_jobs(self):
         queue = self._get_queue()
@@ -562,11 +561,11 @@ class LambdaJob:
 
                     results.append_shape(shape)
 
-                # Accumulate data during 100 frames before sumbitting results.
-                # It is optimization to make fewer calls to our server. Also
-                # it isn't possible to keep all results in memory.
-                if frame and frame % 100 == 0:
-                    results.submit()
+            # Accumulate data during 100 frames before sumbitting results.
+            # It is optimization to make fewer calls to our server. Also
+            # it isn't possible to keep all results in memory.
+            if frame and frame % 100 == 0:
+                results.submit()
 
         results.submit()
 

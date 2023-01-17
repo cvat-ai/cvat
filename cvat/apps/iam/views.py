@@ -1,8 +1,9 @@
-# Copyright (C) 2021-2022 Intel Corporation
+# Copyright (C) 2021-2023 Intel Corporation
 # Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
+import os.path as osp
 import functools
 import hashlib
 
@@ -12,24 +13,41 @@ from django.http import Http404, HttpResponseBadRequest, HttpResponseRedirect
 from rest_framework import views, serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny
+from rest_framework.decorators import api_view, permission_classes
 from django.conf import settings
 from django.http import HttpResponse
 from django.views.decorators.http import etag as django_etag
 from rest_framework.response import Response
-from dj_rest_auth.registration.views import RegisterView
+from dj_rest_auth.registration.views import RegisterView, SocialLoginView
 from dj_rest_auth.views import LoginView
+from dj_rest_auth.utils import import_callable
 from allauth.account import app_settings as allauth_settings
 from allauth.account.views import ConfirmEmailView
 from allauth.account.utils import has_verified_email, send_email_confirmation
+from allauth.socialaccount.models import SocialLogin
 from allauth.socialaccount.providers.oauth2.views import OAuth2CallbackView, OAuth2LoginView
+from allauth.socialaccount.providers.oauth2.client import OAuth2Client
+from allauth.utils import get_request_param
 from furl import furl
 
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import OpenApiResponse, extend_schema, inline_serializer, extend_schema_view
+from drf_spectacular.utils import OpenApiResponse, OpenApiParameter, extend_schema, inline_serializer, extend_schema_view
 from drf_spectacular.contrib.rest_auth import get_token_serializer_class
 
 from cvat.apps.iam.adapters import GitHubAdapter, GoogleAdapter
 from .authentication import Signer
+from  cvat.apps.iam.serializers import SocialLoginSerializerEx, SocialAuthMethodSerializer
+
+GitHubAdapter = (
+    import_callable(settings.SOCIALACCOUNT_GITHUB_ADAPTER)
+    if settings.USE_ALLAUTH_SOCIAL_ACCOUNTS
+    else None
+)
+GoogleAdapter = (
+    import_callable(settings.SOCIALACCOUNT_GOOGLE_ADAPTER)
+    if settings.USE_ALLAUTH_SOCIAL_ACCOUNTS
+    else None
+)
 
 def get_context(request):
     from cvat.apps.organizations.models import Organization, Membership
@@ -215,16 +233,87 @@ class RulesView(views.APIView):
 class OAuth2CallbackViewEx(OAuth2CallbackView):
     def dispatch(self, request, *args, **kwargs):
         # Distinguish cancel from error
-        if (auth_error := request.GET.get('error', None)) and \
-            auth_error == self.adapter.login_cancelled_error:
-            return HttpResponseRedirect(settings.SOCIALACCOUNT_CALLBACK_CANCELLED_URL)
-        return super().dispatch(request, *args, **kwargs)
+        if (auth_error := request.GET.get('error', None)):
+            if auth_error == self.adapter.login_cancelled_error:
+                return HttpResponseRedirect(settings.SOCIALACCOUNT_CALLBACK_CANCELLED_URL)
+            else: # unknown error
+                raise ValidationError(auth_error)
 
-github_oauth2_login = OAuth2LoginView.adapter_view(GitHubAdapter)
-github_oauth2_callback = OAuth2CallbackViewEx.adapter_view(GitHubAdapter)
+        code = request.GET.get('code')
 
-google_oauth2_login = OAuth2LoginView.adapter_view(GoogleAdapter)
-google_oauth2_callback = OAuth2CallbackViewEx.adapter_view(GoogleAdapter)
+        # verify request state
+        if self.adapter.supports_state:
+            state = SocialLogin.verify_and_unstash_state(
+                request, get_request_param(request, 'state')
+            )
+        else:
+            state = SocialLogin.unstash_state(request)
+
+        if not code:
+            return HttpResponseBadRequest('Parameter code not found in request')
+        return HttpResponseRedirect(
+            f'{settings.SOCIAL_APP_LOGIN_REDIRECT_URL}/?provider={self.adapter.provider_id}&code={code}'
+            f'&auth_params={state.get("auth_params")}&process={state.get("process")}'
+            f'&scope={state.get("scope")}')
+
+
+@extend_schema(
+    summary="Redirets to Github authentication page",
+    description="Redirects to the Github authentication page. "
+                "After successful authentication on the provider side, "
+                "a redirect to the callback endpoint is performed",
+)
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def github_oauth2_login(*args, **kwargs):
+    return OAuth2LoginView.adapter_view(GitHubAdapter)(*args, **kwargs)
+
+@extend_schema(
+    summary="Checks the authentication response from Github, redirects to the CVAT client if successful.",
+    description="Accepts a request from Github with code and state query parameters. "
+                "In case of successful authentication on the provider side, it will "
+                "redirect to the CVAT client",
+    parameters=[
+        OpenApiParameter('code', description='Returned by github',
+            location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
+        OpenApiParameter('state', description='Returned by github',
+            location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
+    ],
+)
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def github_oauth2_callback(*args, **kwargs):
+    return OAuth2CallbackViewEx.adapter_view(GitHubAdapter)(*args, **kwargs)
+
+
+@extend_schema(
+    summary="Redirects to Google authentication page",
+    description="Redirects to the Google authentication page. "
+                "After successful authentication on the provider side, "
+                "a redirect to the callback endpoint is performed.",
+)
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def google_oauth2_login(*args, **kwargs):
+    return OAuth2LoginView.adapter_view(GoogleAdapter)(*args, **kwargs)
+
+@extend_schema(
+    summary="Checks the authentication response from Google, redirects to the CVAT client if successful.",
+    description="Accepts a request from Google with code and state query parameters. "
+                "In case of successful authentication on the provider side, it will "
+                "redirect to the CVAT client",
+    parameters=[
+        OpenApiParameter('code', description='Returned by google',
+            location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
+        OpenApiParameter('state', description='Returned by google',
+            location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
+    ],
+)
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def google_oauth2_callback(*args, **kwargs):
+    return OAuth2CallbackViewEx.adapter_view(GoogleAdapter)(*args, **kwargs)
+
 
 class ConfirmEmailViewEx(ConfirmEmailView):
     template_name = 'account/email/email_confirmation_signup_message.html'
@@ -236,3 +325,94 @@ class ConfirmEmailViewEx(ConfirmEmailView):
             return self.post(*args, **kwargs)
         except Http404:
             return HttpResponseRedirect(settings.INCORRECT_EMAIL_CONFIRMATION_URL)
+
+@extend_schema(
+    methods=['POST'],
+    summary='Method returns an authentication token based on code parameter',
+    description="After successful authentication on the provider side, "
+                "the provider returns the 'code' parameter used to receive "
+                "an authentication token required for CVAT authentication.",
+    parameters=[
+        OpenApiParameter('auth_params', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
+        OpenApiParameter('process', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
+        OpenApiParameter('scope', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
+    ],
+    responses=get_token_serializer_class()
+)
+class SocialLoginViewEx(SocialLoginView):
+    serializer_class = SocialLoginSerializerEx
+
+    def post(self, request, *args, **kwargs):
+        # we have to re-implement this method because
+        # there is one case not covered by dj_rest_auth but covered by allauth
+        # user can be logged in with social account and "unverified" email
+        # (e.g. the provider doesn't provide information about email verification)
+
+        self.request = request
+        self.serializer = self.get_serializer(data=self.request.data)
+        self.serializer.is_valid(raise_exception=True)
+
+        if allauth_settings.EMAIL_VERIFICATION == allauth_settings.EmailVerificationMethod.MANDATORY and \
+            not has_verified_email(self.serializer.validated_data.get('user')):
+            return HttpResponseBadRequest('Unverified email')
+
+        self.login()
+        return self.get_response()
+
+class GitHubLogin(SocialLoginViewEx):
+    adapter_class = GitHubAdapter
+    client_class = OAuth2Client
+    callback_url = getattr(settings, 'GITHUB_CALLBACK_URL', None)
+
+class GoogleLogin(SocialLoginViewEx):
+    adapter_class = GoogleAdapter
+    client_class = OAuth2Client
+    callback_url = getattr(settings, 'GOOGLE_CALLBACK_URL', None)
+
+
+@extend_schema_view(
+    get=extend_schema(
+        summary='Method provides a list with integrated social accounts authentication.',
+        responses={
+            '200': OpenApiResponse(response=inline_serializer(
+                name="SocialAuthMethodsSerializer",
+                fields={
+                    'google': SocialAuthMethodSerializer(),
+                    'github': SocialAuthMethodSerializer(),
+                }
+            )),
+        }
+    )
+)
+class SocialAuthMethods(views.APIView):
+    serializer_class = SocialAuthMethodSerializer
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    iam_organization_field = None
+
+    def get(self,  request, *args, **kwargs):
+        use_social_auth = settings.USE_ALLAUTH_SOCIAL_ACCOUNTS
+        integrated_auth_providers = settings.SOCIALACCOUNT_PROVIDERS.keys() if use_social_auth else []
+
+        response = dict()
+        for provider in integrated_auth_providers:
+            icon = None
+            is_enabled = bool(
+                getattr(settings, f'SOCIAL_AUTH_{provider.upper()}_CLIENT_ID', None)
+                and getattr(settings, f'SOCIAL_AUTH_{provider.upper()}_CLIENT_SECRET', None)
+            )
+            icon_path = osp.join(settings.STATIC_ROOT, 'social_authentication', f'social-{provider}-logo.svg')
+            if is_enabled and osp.exists(icon_path):
+                with open(icon_path, 'r') as f:
+                    icon = f.read()
+
+            serializer = SocialAuthMethodSerializer(data={
+                'is_enabled': is_enabled,
+                'icon': icon,
+                'public_name': settings.SOCIALACCOUNT_PROVIDERS[provider].get('PUBLIC_NAME', provider.title())
+            })
+            serializer.is_valid(raise_exception=True)
+
+            response[provider] = serializer.validated_data
+
+        return Response(response)

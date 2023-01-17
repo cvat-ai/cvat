@@ -249,9 +249,6 @@ class Data(models.Model):
         return os.path.join(self.get_compressed_cache_dirname(),
             self._get_compressed_chunk_name(chunk_number))
 
-    def get_preview_path(self):
-        return os.path.join(self.get_data_dirname(), 'preview.jpeg')
-
     def get_manifest_path(self):
         return os.path.join(self.get_upload_dirname(), 'manifest.jsonl')
 
@@ -347,6 +344,7 @@ class Task(models.Model):
     updated_date = models.DateTimeField(auto_now=True)
     overlap = models.PositiveIntegerField(null=True)
     # Zero means that there are no limits (default)
+    # Note that the files can be split into jobs in a custom way in this case
     segment_size = models.PositiveIntegerField(default=0)
     status = models.CharField(max_length=32, choices=StatusChoice.choices(),
                               default=StatusChoice.ANNOTATION)
@@ -500,9 +498,6 @@ class Job(models.Model):
                 'stage': self.stage, 'state': self.state, 'assignee': self.assignee
             })
         db_commit.save()
-
-    def get_preview_path(self):
-        return os.path.join(self.get_dirname(), "preview.jpeg")
 
     class Meta:
         default_permissions = ()
@@ -810,9 +805,6 @@ class CloudStorage(models.Model):
 
     def get_log_path(self):
         return os.path.join(self.get_storage_logs_dirname(), "storage.log")
-
-    def get_preview_path(self):
-        return os.path.join(self.get_storage_dirname(), 'preview.jpeg')
 
     def get_specific_attributes(self):
         return parse_specific_attributes(self.specific_attributes)

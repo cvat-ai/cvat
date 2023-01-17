@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -125,7 +125,6 @@ export enum AnnotationActionTypes {
     SAVE_ANNOTATIONS = 'SAVE_ANNOTATIONS',
     SAVE_ANNOTATIONS_SUCCESS = 'SAVE_ANNOTATIONS_SUCCESS',
     SAVE_ANNOTATIONS_FAILED = 'SAVE_ANNOTATIONS_FAILED',
-    SAVE_UPDATE_ANNOTATIONS_STATUS = 'SAVE_UPDATE_ANNOTATIONS_STATUS',
     SWITCH_PLAY = 'SWITCH_PLAY',
     CONFIRM_CANVAS_READY = 'CONFIRM_CANVAS_READY',
     DRAG_CANVAS = 'DRAG_CANVAS',
@@ -196,10 +195,6 @@ export enum AnnotationActionTypes {
     GET_PREDICTIONS = 'GET_PREDICTIONS',
     GET_PREDICTIONS_FAILED = 'GET_PREDICTIONS_FAILED',
     GET_PREDICTIONS_SUCCESS = 'GET_PREDICTIONS_SUCCESS',
-    HIDE_SHOW_CONTEXT_IMAGE = 'HIDE_SHOW_CONTEXT_IMAGE',
-    GET_CONTEXT_IMAGE = 'GET_CONTEXT_IMAGE',
-    GET_CONTEXT_IMAGE_SUCCESS = 'GET_CONTEXT_IMAGE_SUCCESS',
-    GET_CONTEXT_IMAGE_FAILED = 'GET_CONTEXT_IMAGE_FAILED',
     SWITCH_NAVIGATION_BLOCKED = 'SWITCH_NAVIGATION_BLOCKED',
     DELETE_FRAME = 'DELETE_FRAME',
     DELETE_FRAME_SUCCESS = 'DELETE_FRAME_SUCCESS',
@@ -700,7 +695,7 @@ export function changeFrameAsync(
                         number: currentState.annotation.player.frame.number,
                         data: currentState.annotation.player.frame.data,
                         filename: currentState.annotation.player.frame.filename,
-                        hasRelatedContext: currentState.annotation.player.frame.hasRelatedContext,
+                        relatedFiles: currentState.annotation.player.frame.relatedFiles,
                         delay: currentState.annotation.player.frame.delay,
                         changeTime: currentState.annotation.player.frame.changeTime,
                         states: currentState.annotation.annotations.states,
@@ -767,7 +762,7 @@ export function changeFrameAsync(
                     number: toFrame,
                     data,
                     filename: data.filename,
-                    hasRelatedContext: data.hasRelatedContext,
+                    relatedFiles: data.relatedFiles,
                     states,
                     minZ,
                     maxZ,
@@ -996,8 +991,7 @@ export function getJobAsync(
             // Check if the task was already downloaded to the state
             let job: any | null = null;
             const [task] = state.tasks.current
-                .filter((_task: Task) => _task.instance.id === tid)
-                .map((_task: Task) => _task.instance);
+                .filter((_task: Task) => _task.id === tid);
             if (task) {
                 [job] = task.jobs.filter((_job: any) => _job.id === jid);
                 if (!job) {
@@ -1047,7 +1041,7 @@ export function getJobAsync(
                     states,
                     frameNumber,
                     frameFilename: frameData.filename,
-                    frameHasRelatedContext: frameData.hasRelatedContext,
+                    relatedFiles: frameData.relatedFiles,
                     frameData,
                     colors,
                     filters,
@@ -1114,19 +1108,8 @@ export function saveAnnotationsAsync(sessionInstance: any, afterSave?: () => voi
         try {
             const saveJobEvent = await sessionInstance.logger.log(LogType.saveJob, {}, true);
 
-            dispatch({
-                type: AnnotationActionTypes.SAVE_UPDATE_ANNOTATIONS_STATUS,
-                payload: { status: 'Saving frames' },
-            });
             await sessionInstance.frames.save();
-            await sessionInstance.annotations.save((status: string) => {
-                dispatch({
-                    type: AnnotationActionTypes.SAVE_UPDATE_ANNOTATIONS_STATUS,
-                    payload: {
-                        status,
-                    },
-                });
-            });
+            await sessionInstance.annotations.save();
             await saveJobEvent.close();
             await sessionInstance.logger.log(LogType.sendTaskInfo, await jobInfoGenerator(sessionInstance));
             dispatch(saveLogsAsync());
@@ -1496,13 +1479,13 @@ export function pasteShapeAsync(): ThunkAction {
         if (initialState && canvasInstance) {
             const activeControl = ShapeTypeToControl[initialState.shapeType as ShapeType] || ActiveControl.CURSOR;
 
+            canvasInstance.cancel();
             dispatch({
                 type: AnnotationActionTypes.PASTE_SHAPE,
                 payload: {
                     activeControl,
                 },
             });
-            canvasInstance.cancel();
 
             if (initialState.objectType === ObjectType.TAG) {
                 const objectState = new cvat.classes.ObjectState({
@@ -1666,40 +1649,6 @@ export function switchPredictor(predictorEnabled: boolean): AnyAction {
         payload: {
             enabled: predictorEnabled,
         },
-    };
-}
-export function hideShowContextImage(hidden: boolean): AnyAction {
-    return {
-        type: AnnotationActionTypes.HIDE_SHOW_CONTEXT_IMAGE,
-        payload: {
-            hidden,
-        },
-    };
-}
-
-export function getContextImageAsync(): ThunkAction {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        const state: CombinedState = getStore().getState();
-        const { instance: job } = state.annotation.job;
-        const { number: frameNumber } = state.annotation.player.frame;
-
-        try {
-            dispatch({
-                type: AnnotationActionTypes.GET_CONTEXT_IMAGE,
-                payload: {},
-            });
-
-            const contextImageData = await job.frames.contextImage(frameNumber);
-            dispatch({
-                type: AnnotationActionTypes.GET_CONTEXT_IMAGE_SUCCESS,
-                payload: { contextImageData },
-            });
-        } catch (error) {
-            dispatch({
-                type: AnnotationActionTypes.GET_CONTEXT_IMAGE_FAILED,
-                payload: { error },
-            });
-        }
     };
 }
 

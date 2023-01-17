@@ -1,5 +1,5 @@
 # Copyright (C) 2019-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -8,6 +8,7 @@ import re
 import shutil
 
 from tempfile import NamedTemporaryFile
+import textwrap
 from typing import OrderedDict
 
 from rest_framework import serializers, exceptions
@@ -52,12 +53,6 @@ class UserSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'last_login': { 'allow_null': True }
         }
-
-class SelfUserSerializer(UserSerializer):
-    key = serializers.CharField(allow_blank=True, required=False)
-
-    class Meta(UserSerializer.Meta):
-        fields = UserSerializer.Meta.fields + ('key',)
 
 class AttributeSerializer(serializers.ModelSerializer):
     values = serializers.ListField(allow_empty=True,
@@ -368,6 +363,41 @@ class WriteOnceMixin:
 
         return extra_kwargs
 
+
+class JobFiles(serializers.ListField):
+    """
+    Read JobFileMapping docs for more info.
+    """
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('child', serializers.CharField(allow_blank=False, max_length=1024))
+        kwargs.setdefault('allow_empty', False)
+        super().__init__(*args, **kwargs)
+
+
+class JobFileMapping(serializers.ListField):
+    """
+    Represents a file-to-job mapping. Useful to specify a custom job
+    configuration during task creation. This option is not compatible with
+    most other job split-related options.
+
+    Example:
+    [
+        ["file1.jpg", "file2.jpg"], # job #1 files
+        ["file3.png"], # job #2 files
+        ["file4.jpg", "file5.png", "file6.bmp"], # job #3 files
+    ]
+
+    Files in the jobs must not overlap and repeat.
+    """
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('child', JobFiles())
+        kwargs.setdefault('allow_empty', False)
+        kwargs.setdefault('help_text', textwrap.dedent(__class__.__doc__))
+        super().__init__(*args, **kwargs)
+
+
 class DataSerializer(WriteOnceMixin, serializers.ModelSerializer):
     image_quality = serializers.IntegerField(min_value=0, max_value=100)
     use_zip_chunks = serializers.BooleanField(default=False)
@@ -377,12 +407,15 @@ class DataSerializer(WriteOnceMixin, serializers.ModelSerializer):
     use_cache = serializers.BooleanField(default=False)
     copy_data = serializers.BooleanField(default=False)
     cloud_storage_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
+    filename_pattern = serializers.CharField(allow_null=True, required=False)
+    job_file_mapping = JobFileMapping(required=False, write_only=True)
 
     class Meta:
         model = models.Data
         fields = ('chunk_size', 'size', 'image_quality', 'start_frame', 'stop_frame', 'frame_filter',
             'compressed_chunk_type', 'original_chunk_type', 'client_files', 'server_files', 'remote_files', 'use_zip_chunks',
-            'cloud_storage_id', 'use_cache', 'copy_data', 'storage_method', 'storage', 'sorting_method')
+            'cloud_storage_id', 'use_cache', 'copy_data', 'storage_method', 'storage', 'sorting_method', 'filename_pattern',
+            'job_file_mapping')
 
     # pylint: disable=no-self-use
     def validate_frame_filter(self, value):
@@ -397,15 +430,32 @@ class DataSerializer(WriteOnceMixin, serializers.ModelSerializer):
             raise serializers.ValidationError('Chunk size must be a positive integer')
         return value
 
+    def validate_job_file_mapping(self, value):
+        existing_files = set()
+
+        for job_files in value:
+            for filename in job_files:
+                if filename in existing_files:
+                    raise serializers.ValidationError(
+                        f"The same file '{filename}' cannot be used multiple "
+                        "times in the job file mapping"
+                    )
+
+                existing_files.add(filename)
+
+        return value
+
     # pylint: disable=no-self-use
     def validate(self, attrs):
         if 'start_frame' in attrs and 'stop_frame' in attrs \
             and attrs['start_frame'] > attrs['stop_frame']:
             raise serializers.ValidationError('Stop frame must be more or equal start frame')
+
         return attrs
 
     def create(self, validated_data):
         files = self._pop_data(validated_data)
+
         db_data = models.Data.objects.create(**validated_data)
         db_data.make_dirs()
 
@@ -427,6 +477,8 @@ class DataSerializer(WriteOnceMixin, serializers.ModelSerializer):
         client_files = validated_data.pop('client_files')
         server_files = validated_data.pop('server_files')
         remote_files = validated_data.pop('remote_files')
+
+        validated_data.pop('job_file_mapping', None) # optional
 
         for extra_key in { 'use_zip_chunks', 'use_cache', 'copy_data' }:
             validated_data.pop(extra_key)
@@ -872,7 +924,7 @@ class FrameMetaSerializer(serializers.Serializer):
     width = serializers.IntegerField()
     height = serializers.IntegerField()
     name = serializers.CharField(max_length=1024)
-    has_related_context = serializers.BooleanField()
+    related_files = serializers.IntegerField()
 
 class PluginsSerializer(serializers.Serializer):
     GIT_INTEGRATION = serializers.BooleanField()
