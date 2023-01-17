@@ -16,7 +16,7 @@ import GlobalHotKeys from 'utils/mousetrap-react';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import ShortcutsContext from 'components/shortcuts.context';
 import { ShapeType } from 'cvat-core-wrapper';
-import consts from 'app-config';
+import config from 'config';
 import {
     idGenerator, LabelOptColor, SkeletonConfiguration, toSVGCoord,
 } from './common';
@@ -429,7 +429,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
             setAttributes(circle, {
                 r: 1.5,
                 stroke: 'black',
-                fill: consts.NEW_LABEL_COLOR,
+                fill: config.NEW_LABEL_COLOR,
                 cx: x,
                 cy: y,
                 'stroke-width': 0.1,

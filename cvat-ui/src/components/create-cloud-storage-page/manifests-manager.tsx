@@ -12,7 +12,7 @@ import Input from 'antd/lib/input';
 import Row from 'antd/lib/row';
 import notification from 'antd/lib/notification';
 import Tooltip from 'antd/lib/tooltip';
-import consts from 'app-config';
+import config from 'config';
 
 interface Props {
     form: any;
@@ -24,7 +24,7 @@ export default function ManifestsManager(props: Props): JSX.Element {
     const { form, manifestNames, setManifestNames } = props;
     const maxManifestsCount = useRef(5);
     const [limitingAddingManifestNotification, setLimitingAddingManifestNotification] = useState(false);
-    const { DATASET_MANIFEST_GUIDE_URL } = consts;
+    const { DATASET_MANIFEST_GUIDE_URL } = config;
 
     const updateManifestFields = (): void => {
         const newManifestFormItems = manifestNames.map((name, idx) => ({

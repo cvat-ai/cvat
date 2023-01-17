@@ -13,7 +13,7 @@ import ObjectItemElementComponent from 'components/annotation-page/standard-work
 import ObjectItemContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item';
 import { ShapeType, Workspace } from 'reducers';
 import { rotatePoint } from 'utils/math';
-import consts from 'app-config';
+import config from 'config';
 
 interface Props {
     readonly: boolean;
@@ -141,9 +141,9 @@ export default function CanvasContextMenu(props: Props): JSX.Element | null {
                         if (param.key === ReviewContextMenuKeys.OPEN_ISSUE) {
                             onStartIssue(points);
                         } else if (param.key === ReviewContextMenuKeys.QUICK_ISSUE_POSITION) {
-                            openIssue(points, consts.QUICK_ISSUE_INCORRECT_POSITION_TEXT);
+                            openIssue(points, config.QUICK_ISSUE_INCORRECT_POSITION_TEXT);
                         } else if (param.key === ReviewContextMenuKeys.QUICK_ISSUE_ATTRIBUTE) {
-                            openIssue(points, consts.QUICK_ISSUE_INCORRECT_ATTRIBUTE_TEXT);
+                            openIssue(points, config.QUICK_ISSUE_INCORRECT_ATTRIBUTE_TEXT);
                         } else if (
                             param.keyPath.length === 2 &&
                             param.keyPath[1] === ReviewContextMenuKeys.QUICK_ISSUE_FROM_LATEST

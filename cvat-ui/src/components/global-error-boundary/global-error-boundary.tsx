@@ -18,7 +18,7 @@ import { resetAfterErrorAsync } from 'actions/boundaries-actions';
 import { CombinedState } from 'reducers';
 import logger, { LogType } from 'cvat-logger';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import consts from 'app-config';
+import config from 'config';
 
 interface OwnProps {
     children: JSX.Element;
@@ -166,7 +166,7 @@ class GlobalErrorBoundary extends React.PureComponent<Props, State> {
                                 </li>
                                 <li>
                                     Notify an administrator or submit the issue directly on
-                                    <a href={consts.GITHUB_URL}> GitHub. </a>
+                                    <a href={config.GITHUB_URL}> GitHub. </a>
                                     Please, provide also:
                                     <ul>
                                         <li>Steps to reproduce the issue</li>

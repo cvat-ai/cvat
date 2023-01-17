@@ -7,9 +7,7 @@
 */
 
 const path = require('path');
-const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
 const Dotenv = require('dotenv-webpack');
 const CopyPlugin = require('copy-webpack-plugin');
 
@@ -57,13 +55,14 @@ module.exports = (env) => {
         },
         resolve: {
             extensions: ['.tsx', '.ts', '.jsx', '.js', '.json'],
-            plugins: [new TsconfigPathsPlugin({ configFile: './tsconfig.json' })],
+
             fallback: {
                 fs: false,
             },
             alias: {
-                config: appConfigFile,
-            }
+                config$: appConfigFile,
+            },
+            modules: [path.resolve(__dirname, 'src'), 'node_modules'],
         },
         module: {
             rules: [

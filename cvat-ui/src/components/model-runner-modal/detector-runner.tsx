@@ -19,7 +19,7 @@ import { Model, ModelAttribute, StringObject } from 'reducers';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { Label as LabelInterface } from 'components/labels-editor/common';
 import { clamp } from 'utils/math';
-import consts from 'app-config';
+import config from 'config';
 import { DimensionType } from '../../reducers';
 
 interface Props {
@@ -265,7 +265,7 @@ function DetectorRunner(props: Props): JSX.Element {
                         .find((_label: LabelInterface): boolean => (
                             _label.name === mapping[modelLabel].name)) as LabelInterface;
 
-                    const color = label ? label.color : consts.NEW_LABEL_COLOR;
+                    const color = label ? label.color : config.NEW_LABEL_COLOR;
                     const notMatchedModelAttributes = model.attributes[modelLabel]
                         .filter((_attribute: ModelAttribute): boolean => (
                             !(_attribute.name in (mapping[modelLabel].attributes || {}))
@@ -292,7 +292,7 @@ function DetectorRunner(props: Props): JSX.Element {
                                 Object.keys(mapping[modelLabel].attributes || {})
                                     .map((mappedModelAttr: string) => (
                                         renderMappingRow(
-                                            consts.NEW_LABEL_COLOR,
+                                            config.NEW_LABEL_COLOR,
                                             mappedModelAttr,
                                             mapping[modelLabel].attributes[mappedModelAttr],
                                             'Remove the mapped attribute',

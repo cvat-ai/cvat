@@ -19,7 +19,7 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 import ColorPicker from 'components/annotation-page/standard-workspace/objects-side-bar/color-picker';
 import { ColorizeIcon } from 'icons';
 import patterns from 'utils/validation-patterns';
-import consts from 'app-config';
+import config from 'config';
 import {
     equalArrayHead, idGenerator, LabelOptColor, SkeletonConfiguration,
 } from './common';
@@ -544,7 +544,7 @@ export default class LabelForm extends React.Component<Props> {
                                 <Button type='default' className='cvat-change-task-label-color-button'>
                                     <Badge
                                         className='cvat-change-task-label-color-badge'
-                                        color={this.formRef.current?.getFieldValue('color') || consts.NEW_LABEL_COLOR}
+                                        color={this.formRef.current?.getFieldValue('color') || config.NEW_LABEL_COLOR}
                                         text={<Icon component={ColorizeIcon} />}
                                     />
                                 </Button>
