@@ -68,8 +68,7 @@ import showPlatformNotification, {
     showUnsupportedNotification,
 } from 'utils/platform-checker';
 import '../styles.scss';
-import consts from 'consts';
-import messages from 'messages';
+import appConfig from 'config';
 import EmailConfirmationPage from './email-confirmation-pages/email-confirmed';
 import EmailVerificationSentPage from './email-confirmation-pages/email-verification-sent';
 import IncorrectEmailConfirmationPage from './email-confirmation-pages/incorrect-email-confirmation';
@@ -141,10 +140,10 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         });
 
         const {
-            HEALH_CHECK_RETRIES, HEALTH_CHECK_PERIOD, HEALTH_CHECK_REQUEST_TIMEOUT,
-        } = consts;
+            HEALTH_CHECK_RETRIES, HEALTH_CHECK_PERIOD, HEALTH_CHECK_REQUEST_TIMEOUT, SERVER_UNAVAILABLE_COMPONENT,
+        } = appConfig;
         core.server.healthCheck(
-            HEALH_CHECK_RETRIES,
+            HEALTH_CHECK_RETRIES,
             HEALTH_CHECK_PERIOD,
             HEALTH_CHECK_REQUEST_TIMEOUT,
         ).then(() => {
@@ -159,15 +158,13 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                     backendIsHealthy: false,
                 });
 
-                const { SERVER_UNAVAILABLE } = messages;
-
                 Modal.error({
                     title: 'Cannot connect to the server',
                     className: 'cvat-modal-cannot-connect-server',
                     closable: false,
                     content:
     <Text>
-        {SERVER_UNAVAILABLE}
+        {SERVER_UNAVAILABLE_COMPONENT}
     </Text>,
                 });
             });
