@@ -351,6 +351,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
         filter_fields=None, ordering_fields=None, search_fields=None, simple_filters=None)
     def tasks(self, request, pk):
+        self.get_object() # force call of check_object_permissions()
         # https://www.rfc-editor.org/rfc/rfc9110.html#name-303-see-other
         return Response(status=status.HTTP_303_SEE_OTHER, headers={
             'Location': reverse('task-list',
@@ -409,7 +410,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=True, methods=['GET', 'POST', 'OPTIONS'], serializer_class=None,
         url_path=r'dataset/?$')
     def dataset(self, request, pk):
-        self._object = self.get_object() # force to call check_object_permissions
+        self._object = self.get_object() # force call of check_object_permissions()
         rq_id = f"import:dataset-for-porject.id{pk}-by-{request.user}"
 
         if request.method in {'POST', 'OPTIONS'}:
@@ -549,7 +550,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=True, methods=['GET'],
         serializer_class=LabeledDataSerializer)
     def annotations(self, request, pk):
-        self._object = self.get_object() # force to call check_object_permissions
+        self._object = self.get_object() # force call of check_object_permissions()
         return self.export_annotations(
             request=request,
             pk=pk,
@@ -924,6 +925,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
         filter_fields=None, ordering_fields=None, search_fields=None, simple_filters=None)
     def jobs(self, request, pk):
+        self.get_object() # force call of check_object_permissions()
         # https://www.rfc-editor.org/rfc/rfc9110.html#name-303-see-other
         return Response(status=status.HTTP_303_SEE_OTHER, headers={
             'Location': reverse('job-list',
@@ -1164,7 +1166,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH', 'POST', 'OPTIONS'], url_path=r'annotations/?$',
         serializer_class=None)
     def annotations(self, request, pk):
-        self._object = self.get_object() # force to call check_object_permissions
+        self._object = self.get_object() # force call of check_object_permissions()
         if request.method == 'GET':
             if self._object.data:
                 return self.export_annotations(
@@ -1250,7 +1252,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         })
     @action(detail=True, methods=['GET'], serializer_class=RqStatusSerializer)
     def status(self, request, pk):
-        self.get_object() # force to call check_object_permissions
+        self.get_object() # force call of check_object_permissions()
         response = self._get_rq_response(
             queue=settings.CVAT_QUEUES.IMPORT_DATA.value,
             job_id=f"create:task.id{pk}-by-{request.user}"
@@ -1354,7 +1356,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=True, methods=['GET'], serializer_class=None,
         url_path='dataset')
     def dataset_export(self, request, pk):
-        self._object = self.get_object() # force to call check_object_permissions
+        self._object = self.get_object() # force call of check_object_permissions()
 
         if self._object.data:
             return self.export_annotations(
@@ -1564,7 +1566,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH', 'POST', 'OPTIONS'], url_path=r'annotations/?$',
         serializer_class=LabeledDataSerializer)
     def annotations(self, request, pk):
-        self._object = self.get_object() # force to call check_object_permissions
+        self._object = self.get_object() # force call of check_object_permissions()
         if request.method == 'GET':
             return self.export_annotations(
                 request=request,
@@ -1675,7 +1677,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=True, methods=['GET'], serializer_class=None,
         url_path='dataset')
     def dataset_export(self, request, pk):
-        self._object = self.get_object() # force to call check_object_permissions
+        self._object = self.get_object() # force call of check_object_permissions()
 
         return self.export_annotations(
             request=request,
@@ -1696,6 +1698,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
         filter_fields=None, ordering_fields=None, search_fields=None, simple_filters=None)
     def issues(self, request, pk):
+        self.get_object() # force call of check_object_permissions()
         # https://www.rfc-editor.org/rfc/rfc9110.html#name-303-see-other
         return Response(status=status.HTTP_303_SEE_OTHER, headers={
             'Location': reverse('issue-list',
@@ -1742,7 +1745,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=True, methods=['GET', 'PATCH'], serializer_class=DataMetaReadSerializer,
         url_path='data/meta')
     def metadata(self, request, pk):
-        self.get_object() # force to call check_object_permissions
+        self.get_object() # force call of check_object_permissions()
         db_job = models.Job.objects.prefetch_related(
             'segment',
             'segment__task',
@@ -1811,7 +1814,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
         filter_fields=None, ordering_fields=None, search_fields=None, simple_filters=None)
     def commits(self, request, pk):
-        self.get_object() # force to call check_object_permissions
+        self.get_object() # force call of check_object_permissions()
         return make_paginated_response(JobCommit.objects.filter(job_id=pk).order_by('-id'),
             viewset=self, serializer_type=self.serializer_class) # from @action
 
@@ -1913,6 +1916,7 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
         filter_fields=None, ordering_fields=None, search_fields=None, simple_filters=None)
     def comments(self, request, pk):
+        self.get_object() # force call of check_object_permissions()
         # https://www.rfc-editor.org/rfc/rfc9110.html#name-303-see-other
         return Response(status=status.HTTP_303_SEE_OTHER, headers={
             'Location': reverse('comment-list',

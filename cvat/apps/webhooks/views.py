@@ -154,7 +154,7 @@ class WebhookViewSet(viewsets.ModelViewSet):
         filter_fields=None, ordering_fields=None, search_fields=None, simple_filters=None,
     )
     def deliveries(self, request, pk):
-        self.get_object()
+        self.get_object() # force call of check_object_permissions()
         queryset = WebhookDelivery.objects.filter(webhook_id=pk).order_by(
             "-updated_date"
         )
@@ -173,7 +173,7 @@ class WebhookViewSet(viewsets.ModelViewSet):
         serializer_class=WebhookDeliveryReadSerializer,
     )
     def retrieve_delivery(self, request, pk, delivery_id):
-        self.get_object()
+        self.get_object() # force call of check_object_permissions()
         queryset = WebhookDelivery.objects.get(webhook_id=pk, id=delivery_id)
         serializer = WebhookDeliveryReadSerializer(
             queryset, context={"request": request}
@@ -207,7 +207,7 @@ class WebhookViewSet(viewsets.ModelViewSet):
         detail=True, methods=["POST"], serializer_class=WebhookDeliveryReadSerializer
     )
     def ping(self, request, pk):
-        instance = self.get_object()
+        instance = self.get_object() # force call of check_object_permissions()
         serializer = WebhookReadSerializer(instance, context={"request": request})
 
         delivery = signal_ping.send(sender=self, serializer=serializer)[0][1]
