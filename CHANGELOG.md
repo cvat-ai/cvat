@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - YOLO v7 serverless feature added using ONNX backend (<https://github.com/opencv/cvat/pull/5552>)
 - Cypress test for social account authentication (<https://github.com/opencv/cvat/pull/5444>)
 - Dummy github and google authentication servers (<https://github.com/opencv/cvat/pull/5444>)
+- \[Server API\] Simple filters for object collection endpoints
+  (<https://github.com/opencv/cvat/pull/5575>)
 
 ### Changed
 - The Docker Compose files now use the Compose Specification version
@@ -38,7 +40,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The contour detection function for semantic segmentation (<https://github.com/opencv/cvat/pull/4665>)
 
 ### Deprecated
-- TDB
+- \[Server API\] Endpoints with collections are deprecated in favor of their full variants
+  `/project/{id}/tasks`, `/tasks/{id}/jobs`, `/jobs/{id}/issues`, `/issues/{id}/comments`
+  (<https://github.com/opencv/cvat/pull/5575>)
 
 ### Removed
 - TDB
@@ -48,6 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed HRNet serverless function runtime error on images with alpha channel (<https://github.com/opencv/cvat/pull/5570>)
 - Preview & chunk cache settings are ignored (<https://github.com/opencv/cvat/pull/5569>)
 - Export annotations to Azure container (<https://github.com/opencv/cvat/pull/5596>)
+- \[Server API\] Various errors in schema (<https://github.com/opencv/cvat/pull/5575>)
 
 ### Security
 - Fixed vulnerability with social authentication (<https://github.com/opencv/cvat/pull/5521>)
