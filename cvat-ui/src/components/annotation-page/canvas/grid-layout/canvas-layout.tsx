@@ -73,9 +73,7 @@ const fitLayout = (type: DimensionType, layoutConfig: ItemLayout[]): ItemLayout[
         .filter((item: ItemLayout) => item.viewType === ViewType.RELATED_IMAGE);
     const relatedViewsCols = relatedViews.length > 6 ? 2 : 1;
     let height = Math.floor(config.CANVAS_WORKSPACE_ROWS / (relatedViews.length / relatedViewsCols));
-    if (height > 4) {
-        height = 4;
-    }
+    height = Math.min(height, config.CANVAS_WORKSPACE_DEFAULT_CONTEXT_HEIGHT);
     relatedViews.forEach((view: ItemLayout, i: number) => {
         updatedLayout.push({
             ...view,
@@ -216,12 +214,6 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
     const singleClassName = 'cvat-canvas-grid-root-single';
     const className = !relatedFiles && children.length <= 1 ?
         `cvat-canvas-grid-root ${singleClassName}` : 'cvat-canvas-grid-root';
-
-    useEffect(() => {
-        if (className.includes(singleClassName)) {
-            setLayoutConfig(fitLayout(type as DimensionType, layoutConfig));
-        }
-    }, [className]);
 
     return (
         <Layout.Content>
