@@ -24,7 +24,7 @@ To upgrade CVAT, follow these steps:
   If you have included [additional components](/docs/administration/basics/installation/#additional-components),
   include all compose configuration files that are used, e.g.:
   ```shell
-  docker compose -f docker compose.yml -f components/analytics/docker compose.analytics.yml down
+  docker compose -f docker-compose.yml -f components/analytics/docker-compose.analytics.yml down
   ```
 
 - Update CVAT source code by any preferable way: clone with git or download zip file from GitHub.
