@@ -9,6 +9,7 @@ from enum import Enum
 import re
 import shutil
 import tempfile
+from typing import Any, Dict, Iterable
 import uuid
 from zipfile import ZipFile
 from datetime import datetime
@@ -37,7 +38,7 @@ from cvat.apps.engine.utils import av_scan_paths, process_failed_job, configure_
 from cvat.apps.engine.models import (
     StorageChoice, StorageMethodChoice, DataChoice, Task, Project, Location,
     CloudStorage as CloudStorageModel)
-from cvat.apps.engine.task import _create_thread
+from cvat.apps.engine.task import JobFileMapping, _create_thread
 from cvat.apps.dataset_manager.views import TASK_CACHE_TTL, PROJECT_CACHE_TTL, get_export_cache_dir, clear_export_cache, log_exception
 from cvat.apps.dataset_manager.bindings import CvatImportError
 from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
@@ -133,6 +134,8 @@ class _TaskBackupBase(_BackupBase):
             'storage',
             'sorting_method',
             'deleted_frames',
+            'custom_segments',
+            'job_file_mapping',
         }
 
         self._prepare_meta(allowed_fields, data)
@@ -331,6 +334,9 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
             segment = segment_serailizer.data
             segment.update(job_data)
 
+            if self._db_task.segment_size == 0:
+                segment.update(serialize_custom_file_mapping(db_segment))
+
             return segment
 
         def serialize_jobs():
@@ -338,12 +344,28 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
             db_segments.sort(key=lambda i: i.job_set.first().id)
             return (serialize_segment(s) for s in db_segments)
 
+        def serialize_custom_file_mapping(db_segment: models.Segment):
+            if self._db_task.mode == 'annotation':
+                files: Iterable[models.Image] = self._db_data.images.all().order_by('frame')
+                segment_files = files[db_segment.start_frame : db_segment.stop_frame + 1]
+                return {'files': list(frame.path for frame in segment_files)}
+            else:
+                assert False, (
+                    "Backups with custom file mapping are not supported"
+                    " in the 'interpolation' task mode"
+                )
+
         def serialize_data():
             data_serializer = DataSerializer(self._db_data)
             data = data_serializer.data
             data['chunk_type'] = data.pop('compressed_chunk_type')
+
             # There are no deleted frames in DataSerializer so we need to pick it
             data['deleted_frames'] = self._db_data.deleted_frames
+
+            if self._db_task.segment_size == 0:
+                data['custom_segments'] = True
+
             return self._prepare_data_meta(data)
 
         task = serialize_task()
@@ -491,6 +513,20 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
 
         return segment_size, overlap
 
+    @staticmethod
+    def _parse_custom_segments(*, jobs: Dict[str, Any]) -> JobFileMapping:
+        segments = []
+
+        for i, segment in enumerate(jobs):
+            segment_size = segment['stop_frame'] - segment['start_frame'] + 1
+            segment_files = segment['files']
+            if len(segment_files) != segment_size:
+                raise ValidationError(f"segment {i}: segment files do not match segment size")
+
+            segments.append(segment_files)
+
+        return segments
+
     def _import_task(self):
         def _write_data(zip_object):
             data_path = self._db_task.data.get_upload_dirname()
@@ -519,9 +555,22 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         jobs = self._manifest.pop('jobs')
 
         self._prepare_task_meta(self._manifest)
-        self._manifest['segment_size'], self._manifest['overlap'] = self._calculate_segment_size(jobs)
         self._manifest['owner_id'] = self._user_id
         self._manifest['project_id'] = self._project_id
+
+        if custom_segments := data.pop('custom_segments', False):
+            job_file_mapping = self._parse_custom_segments(jobs=jobs)
+            data['job_file_mapping'] = job_file_mapping
+
+            for d in [self._manifest, data]:
+                for k in [
+                    'segment_size', 'overlap', 'start_frame', 'stop_frame',
+                    'sorting_method', 'frame_filter', 'filename_pattern'
+                ]:
+                    d.pop(k, None)
+        else:
+            self._manifest['segment_size'], self._manifest['overlap'] = \
+                self._calculate_segment_size(jobs)
 
         self._db_task = models.Task.objects.create(**self._manifest, organization_id=self._org_id)
         task_path = self._db_task.get_dirname()
@@ -550,7 +599,10 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         data['use_zip_chunks'] = data.pop('chunk_type') == DataChoice.IMAGESET
         data = data_serializer.data
         data['client_files'] = uploaded_files
-        _create_thread(self._db_task.pk, data.copy(), True)
+        if custom_segments:
+            data['job_file_mapping'] = job_file_mapping
+
+        _create_thread(self._db_task.pk, data.copy(), isBackupRestore=True)
         db_data.start_frame = data['start_frame']
         db_data.stop_frame = data['stop_frame']
         db_data.frame_filter = data['frame_filter']

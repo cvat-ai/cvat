@@ -3,12 +3,15 @@
 # SPDX-License-Identifier: MIT
 
 import os
+import io
+import zipfile
 from io import BytesIO
 from datetime import datetime
 from tempfile import NamedTemporaryFile
+import cv2
 import pytz
 
-from django.core.cache import cache
+from django.core.cache import caches
 from django.conf import settings
 from rest_framework.exceptions import ValidationError, NotFound
 
@@ -16,7 +19,7 @@ from cvat.apps.engine.log import slogger
 from cvat.apps.engine.media_extractors import (Mpeg4ChunkWriter,
     Mpeg4CompressedChunkWriter, ZipChunkWriter, ZipCompressedChunkWriter,
     ImageDatasetManifestReader, VideoDatasetManifestReader)
-from cvat.apps.engine.models import DataChoice, StorageChoice
+from cvat.apps.engine.models import DataChoice, StorageChoice, Image
 from cvat.apps.engine.models import DimensionType
 from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials
 from cvat.apps.engine.utils import md5_hash
@@ -28,13 +31,14 @@ from utils.dataset_manifest import ImageManifestManager
 class MediaCache:
     def __init__(self, dimension=DimensionType.DIM_2D):
         self._dimension = dimension
+        self._cache = caches['media']
 
-    @staticmethod
-    def _get_or_set_cache_item(key, create_function):
-        item = cache.get(key)
+    def _get_or_set_cache_item(self, key, create_function):
+        item = self._cache.get(key)
         if not item:
             item = create_function()
-            cache.set(key, item)
+            if item[0]:
+                self._cache.set(key, item)
 
         return item
 
@@ -62,13 +66,20 @@ class MediaCache:
 
         return item
 
+    def get_frame_context_images(self, db_data, frame_number):
+        item = self._get_or_set_cache_item(
+            key=f'context_image_{db_data.id}_{frame_number}',
+            create_function=lambda: self._prepare_context_image(db_data, frame_number)
+        )
+
+        return item
+
     @staticmethod
     def _get_frame_provider():
         from cvat.apps.engine.frame_provider import FrameProvider # TODO: remove circular dependency
         return FrameProvider
 
     def _prepare_chunk_buff(self, db_data, quality, chunk_number):
-
         FrameProvider = self._get_frame_provider()
 
         writer_classes = {
@@ -182,4 +193,26 @@ class MediaCache:
         buff = storage.download_fileobj(preview_path)
         mime_type = mimetypes.guess_type(preview_path)[0]
 
+        return buff, mime_type
+
+    def _prepare_context_image(self, db_data, frame_number):
+        zip_buffer = io.BytesIO()
+        try:
+            image = Image.objects.get(data_id=db_data.id, frame=frame_number)
+        except Image.DoesNotExist:
+            return None, None
+        with zipfile.ZipFile(zip_buffer, 'a', zipfile.ZIP_DEFLATED, False) as zip_file:
+            if not image.related_files.count():
+                return None, None
+            common_path = os.path.commonpath(list(map(lambda x: str(x.path), image.related_files.all())))
+            for i in image.related_files.all():
+                path = os.path.realpath(str(i.path))
+                name = os.path.relpath(str(i.path), common_path)
+                image = cv2.imread(path)
+                success, result = cv2.imencode('.JPEG', image)
+                if not success:
+                    raise Exception('Failed to encode image to ".jpeg" format')
+                zip_file.writestr(f'{name}.jpg', result.tobytes())
+        buff = zip_buffer.getvalue()
+        mime_type = 'application/zip'
         return buff, mime_type

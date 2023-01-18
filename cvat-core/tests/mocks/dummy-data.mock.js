@@ -2963,22 +2963,22 @@ const frameMetaDummyData = {
             width: 2560,
             height: 1703,
             name: '1598296101_1033667.jpg',
-            has_related_context: false
+            related_files: 0
         }, {
             width: 1600,
             height: 1200,
             name: '30fdce7f27b9c7b1d50108d7c16d23ef.jpg',
-            has_related_context: false
+            related_files: 0
         }, {
             width: 2880,
             height: 1800,
             name: '567362-ily-comedy-drama-1finding-3.jpg',
-            has_related_context: false
+            related_files: 0
         }, {
             width: 1920,
             height: 1080,
             name: '730443-under-the-sea-wallpapers-1920x1080-windows-10.jpg',
-            has_related_context: false
+            related_files: 0
         }],
         deleted_frames: []
     },

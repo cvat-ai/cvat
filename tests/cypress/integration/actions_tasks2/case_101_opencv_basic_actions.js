@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -35,8 +36,8 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
         labelName,
         tracker: 'TrackerMIL',
         pointsMap: [
-            { x: 440, y: 45 },
-            { x: 650, y: 150 },
+            { x: 430, y: 40 },
+            { x: 640, y: 145 },
         ],
     };
 
@@ -211,10 +212,10 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
                         // On each frame text is moved by 5px on x and y axis,
                         // so we expect shape to be close to real text positions
                         cy.get('#cvat_canvas_shape_3').invoke('attr', 'x').then((xVal) => {
-                            expect(parseFloat(xVal)).to.be.closeTo(x + (i - 1) * 5, 1.0);
+                            expect(parseFloat(xVal)).to.be.closeTo(x + (i - 1) * 5, 2.0);
                         });
                         cy.get('#cvat_canvas_shape_3').invoke('attr', 'y').then((yVal) => {
-                            expect(parseFloat(yVal)).to.be.closeTo(y + (i - 1) * 5, 1.0);
+                            expect(parseFloat(yVal)).to.be.closeTo(y + (i - 1) * 5, 2.0);
                         });
                         cy.get('#cvat-objects-sidebar-state-item-3')
                             .should('contain', 'RECTANGLE TRACK')

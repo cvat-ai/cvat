@@ -10,19 +10,23 @@ import subprocess
 from copy import deepcopy
 from functools import partial
 from http import HTTPStatus
+from itertools import chain
+from pathlib import Path
 from tempfile import TemporaryDirectory
 from time import sleep
 
 import pytest
+from cvat_sdk import Client, Config
 from cvat_sdk.api_client import apis, models
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from cvat_sdk.core.helpers import get_paginated_collection
+from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from deepdiff import DeepDiff
 from PIL import Image
 
 import shared.utils.s3 as s3
 from shared.fixtures.init import get_server_image_tag
-from shared.utils.config import get_method, make_api_client, patch_method
+from shared.utils.config import BASE_URL, USER_PASS, get_method, make_api_client, patch_method
 from shared.utils.helpers import generate_image_files
 
 from .utils import CollectionSimpleFilterTestBase, export_dataset
@@ -465,6 +469,23 @@ class TestPostTaskData:
             (task, response) = api_client.tasks_api.create(spec, **kwargs)
             assert response.status == HTTPStatus.CREATED
 
+            if data.get("client_files") and "json" in content_type:
+                # Can't encode binary files in json
+                (_, response) = api_client.tasks_api.create_data(
+                    task.id,
+                    data_request=models.DataRequest(
+                        client_files=data["client_files"],
+                        image_quality=data["image_quality"],
+                    ),
+                    upload_multiple=True,
+                    _content_type="multipart/form-data",
+                    **kwargs,
+                )
+                assert response.status == HTTPStatus.OK
+
+                data = data.copy()
+                del data["client_files"]
+
             (_, response) = api_client.tasks_api.create_data(
                 task.id, data_request=deepcopy(data), _content_type=content_type, **kwargs
             )
@@ -867,6 +888,49 @@ class TestPostTaskData:
             status = self._test_cannot_create_task(self._USERNAME, task_spec, data_spec)
             assert "No media data found" in status.message
 
+    def test_can_specify_file_job_mapping(self):
+        task_spec = {
+            "name": f"test file-job mapping",
+            "labels": [{"name": "car"}],
+        }
+
+        files = generate_image_files(7)
+        filenames = [osp.basename(f.name) for f in files]
+        expected_segments = [
+            filenames[0:1],
+            filenames[1:5][::-1],  # a reversed fragment
+            filenames[5:7],
+        ]
+
+        data_spec = {
+            "image_quality": 75,
+            "client_files": files,
+            "job_file_mapping": expected_segments,
+        }
+
+        task_id = self._test_create_task(
+            self._USERNAME, task_spec, data_spec, content_type="application/json"
+        )
+
+        with make_api_client(self._USERNAME) as api_client:
+            (task, _) = api_client.tasks_api.retrieve(id=task_id)
+            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(id=task_id)
+
+            assert [f.name for f in task_meta.frames] == list(
+                chain.from_iterable(expected_segments)
+            )
+
+            assert len(task.segments) == len(expected_segments)
+
+            start_frame = 0
+            for i, segment in enumerate(task.segments):
+                expected_size = len(expected_segments[i])
+                stop_frame = start_frame + expected_size - 1
+                assert segment.start_frame == start_frame
+                assert segment.stop_frame == stop_frame
+
+                start_frame = stop_frame + 1
+
 
 @pytest.mark.usefixtures("restore_db_per_function")
 @pytest.mark.usefixtures("restore_cvat_data")
@@ -986,3 +1050,91 @@ class TestGetTaskPreview:
         assert len(tasks)
 
         self._test_assigned_users_cannot_see_task_preview(tasks, users, is_task_staff)
+
+
+class TestUnequalJobs:
+    def _make_client(self) -> Client:
+        return Client(BASE_URL, config=Config(status_check_period=0.01))
+
+    @pytest.fixture(autouse=True)
+    def setup(self, restore_db_per_function, tmp_path: Path, admin_user: str):
+        self.tmp_dir = tmp_path
+
+        self.client = self._make_client()
+        self.user = admin_user
+
+        with self.client:
+            self.client.login((self.user, USER_PASS))
+
+    @pytest.fixture
+    def fxt_task_with_unequal_jobs(self):
+        task_spec = {
+            "name": f"test file-job mapping",
+            "labels": [{"name": "car"}],
+        }
+
+        files = generate_image_files(7)
+        filenames = [osp.basename(f.name) for f in files]
+        for file_data in files:
+            with open(self.tmp_dir / file_data.name, "wb") as f:
+                f.write(file_data.getvalue())
+
+        expected_segments = [
+            filenames[0:1],
+            filenames[1:5][::-1],  # a reversed fragment
+            filenames[5:7],
+        ]
+
+        data_spec = {
+            "job_file_mapping": expected_segments,
+        }
+
+        return self.client.tasks.create_from_data(
+            spec=task_spec,
+            resource_type=ResourceType.LOCAL,
+            resources=[self.tmp_dir / fn for fn in filenames],
+            data_params=data_spec,
+        )
+
+    def test_can_export(self, fxt_task_with_unequal_jobs: Task):
+        task = fxt_task_with_unequal_jobs
+
+        filename = self.tmp_dir / f"task_{task.id}_coco.zip"
+        task.export_dataset("COCO 1.0", filename)
+
+        assert filename.is_file()
+        assert filename.stat().st_size > 0
+
+    def test_can_import_annotations(self, fxt_task_with_unequal_jobs: Task):
+        task = fxt_task_with_unequal_jobs
+
+        format_name = "COCO 1.0"
+        filename = self.tmp_dir / f"task_{task.id}_coco.zip"
+        task.export_dataset(format_name, filename)
+
+        task.import_annotations(format_name, filename)
+
+    def test_can_dump_backup(self, fxt_task_with_unequal_jobs: Task):
+        task = fxt_task_with_unequal_jobs
+
+        filename = self.tmp_dir / f"task_{task.id}_backup.zip"
+        task.download_backup(filename)
+
+        assert filename.is_file()
+        assert filename.stat().st_size > 0
+
+    def test_can_import_backup(self, fxt_task_with_unequal_jobs: Task):
+        task = fxt_task_with_unequal_jobs
+
+        filename = self.tmp_dir / f"task_{task.id}_backup.zip"
+        task.download_backup(filename)
+
+        restored_task = self.client.tasks.create_from_backup(filename)
+
+        old_jobs = task.get_jobs()
+        new_jobs = restored_task.get_jobs()
+        assert len(old_jobs) == len(new_jobs)
+
+        for old_job, new_job in zip(old_jobs, new_jobs):
+            assert old_job.start_frame == new_job.start_frame
+            assert old_job.stop_frame == new_job.stop_frame
