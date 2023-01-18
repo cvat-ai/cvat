@@ -51,19 +51,29 @@ def make_paginated_response(
 
     return response_type(serializer.data)
 
-def reverse(viewname, *, args=None, kwargs=None, query_params=None) -> str:
+def reverse(viewname, *, args=None, kwargs=None,
+    query_params: Optional[Dict[str, str]] = None,
+    request: Optional[HttpRequest] = None,
+) -> str:
     """
     The same as Django reverse(), but adds query params support.
+    The original request can be passed in the 'request' kwarg parameter to
+    forward parameters.
     """
 
     url = _django_reverse(viewname, args=args, kwargs=kwargs)
+
+    if request:
+        new_query_params = query_params or {}
+        query_params = request.GET.dict()
+        query_params.update(new_query_params)
 
     if query_params:
         return f'{url}?{urlencode(query_params)}'
 
     return url
 
-def build_field_search_params(field: str, value: Any) -> Dict[str, str]:
+def build_field_filter_params(field: str, value: Any) -> Dict[str, str]:
     """
     Builds a collection filter query params for a single field and value.
     """

@@ -151,7 +151,7 @@ class WebhookViewSet(viewsets.ModelViewSet):
         # Remove regular list() parameters from the swagger schema.
         # Unset, they would be taken from the enclosing class, which is wrong.
         # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
-        filter_backends=[],
+        filter_fields=None, ordering_fields=None, search_fields=None, simple_filters=None,
     )
     def deliveries(self, request, pk):
         self.get_object()
