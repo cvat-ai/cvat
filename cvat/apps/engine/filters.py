@@ -279,7 +279,7 @@ class SimpleFilter(DjangoFilterBackend):
         class AutoFilterSet(self.filterset_base, metaclass=FilterSet.__class__):
             filter_names = { v: k for k, v in lookup_fields.items() }
 
-            class Meta(MetaBase):
+            class Meta(MetaBase): # pylint: disable=useless-object-inheritance
                 model = queryset.model
                 fields = list(lookup_fields.values())
 
