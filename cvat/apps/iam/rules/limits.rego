@@ -29,14 +29,14 @@ check_limit_exceeded(current, max) {
     current >= max
 }
 
-problems contains "performing lambda requests not available for you" if {
+problems contains "lambda requests per user" if {
     check_limit_exceeded(
         input.resource.limits[CAP_USER_SANDBOX_LAMBDA_CALL_OFFLINE].used,
         input.resource.limits[CAP_USER_SANDBOX_LAMBDA_CALL_OFFLINE].max
     )
 }
 
-problems contains "performing lambda requests not available for your organization" if {
+problems contains "lambda requests per organization" if {
     check_limit_exceeded(
         input.resource.limits[CAP_ORG_LAMBDA_CALL_OFFLINE].used,
         input.resource.limits[CAP_ORG_LAMBDA_CALL_OFFLINE].max
