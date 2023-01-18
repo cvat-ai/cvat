@@ -158,8 +158,8 @@ class TestPatchIssues:
             data.pop("updated_date")
             data.pop("id")
             data.pop("owner")
-            if assignee := data.get('assignee', None):
-                data['assignee'] = assignee['id']
+            if assignee := data.get("assignee", None):
+                data["assignee"] = assignee["id"]
             return data
 
         return get_data
