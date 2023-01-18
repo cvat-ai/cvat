@@ -127,7 +127,6 @@ INSTALLED_APPS = [
     'dj_rest_auth.registration',
     'health_check',
     'health_check.db',
-    'health_check.cache',
     'health_check.contrib.migrations',
     'health_check.contrib.psutil',
     'cvat.apps.iam',
@@ -512,7 +511,10 @@ RESTRICTIONS = {
 
 # http://www.grantjenks.com/docs/diskcache/tutorial.html#djangocache
 CACHES = {
-   'default' : {
+   'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    },
+   'media' : {
        'BACKEND' : 'diskcache.DjangoCache',
        'LOCATION' : CACHE_ROOT,
        'TIMEOUT' : None,

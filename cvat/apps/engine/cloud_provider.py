@@ -1,4 +1,4 @@
-# Copyright (C) 2021-2022 Intel Corporation
+# Copyright (C) 2021-2023 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -455,8 +455,8 @@ class AzureBlobContainer(_CloudStorage):
     def upload_file(self, file_path, file_name=None):
         if not file_name:
             file_name = os.path.basename(file_path)
-        with open(file_path, 'r') as f:
-            self.upload_fileobj(f, file_name)
+        with open(file_path, 'rb') as f:
+            self.upload_fileobj(f.read(), file_name)
 
     # TODO:
     # def multipart_upload(self, file_obj):

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import consts from 'consts';
+import config from 'config';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
 import { ReviewActionTypes } from 'actions/review-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
@@ -103,12 +103,12 @@ export default function (state: ReviewState = defaultState, action: any): Review
                         new Set(
                             [...state.latestComments, issue.comments[0].message].filter(
                                 (message: string): boolean => ![
-                                    consts.QUICK_ISSUE_INCORRECT_POSITION_TEXT,
-                                    consts.QUICK_ISSUE_INCORRECT_ATTRIBUTE_TEXT,
+                                    config.QUICK_ISSUE_INCORRECT_POSITION_TEXT,
+                                    config.QUICK_ISSUE_INCORRECT_ATTRIBUTE_TEXT,
                                 ].includes(message),
                             ),
                         ),
-                    ).slice(-consts.LATEST_COMMENTS_SHOWN_QUICK_ISSUE),
+                    ).slice(-config.LATEST_COMMENTS_SHOWN_QUICK_ISSUE),
                 frameIssues,
                 issues,
                 newIssuePosition: null,

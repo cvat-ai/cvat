@@ -11,7 +11,7 @@ import Input from 'antd/lib/input';
 
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 
-import consts from 'consts';
+import config from 'config';
 
 interface InputElementParameters {
     clientID: number;
@@ -51,7 +51,7 @@ function renderInputElement(parameters: InputElementParameters): JSX.Element {
                     {values.map(
                         (value: string): JSX.Element => (
                             <Select.Option key={value} value={value}>
-                                {value === consts.UNDEFINED_ATTRIBUTE_VALUE ? consts.NO_BREAK_SPACE : value}
+                                {value === config.UNDEFINED_ATTRIBUTE_VALUE ? config.NO_BREAK_SPACE : value}
                             </Select.Option>
                         ),
                     )}
@@ -68,7 +68,7 @@ function renderInputElement(parameters: InputElementParameters): JSX.Element {
                     {values.map(
                         (value: string): JSX.Element => (
                             <Radio style={{ display: 'block' }} key={value} value={value}>
-                                {value === consts.UNDEFINED_ATTRIBUTE_VALUE ? consts.NO_BREAK_SPACE : value}
+                                {value === config.UNDEFINED_ATTRIBUTE_VALUE ? config.NO_BREAK_SPACE : value}
                             </Radio>
                         ),
                     )}
@@ -185,7 +185,7 @@ function renderList(parameters: ListParameters): JSX.Element | null {
             [key: string]: (keyEvent?: KeyboardEvent) => void;
         } = {};
 
-        const filteredValues = values.filter((value: string): boolean => value !== consts.UNDEFINED_ATTRIBUTE_VALUE);
+        const filteredValues = values.filter((value: string): boolean => value !== config.UNDEFINED_ATTRIBUTE_VALUE);
         filteredValues.slice(0, 10).forEach((value: string, index: number): void => {
             const key = `SET_${index}_VALUE`;
             keyMap[key] = {

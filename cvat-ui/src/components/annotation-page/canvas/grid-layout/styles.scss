@@ -8,6 +8,28 @@
     position: relative;
 }
 
+.cvat-canvas-grid-root-single {
+    .cvat-grid-item-drag-handler {
+        display: none;
+    }
+
+    .cvat-grid-item-fullscreen-handler {
+        display: none;
+    }
+
+    .cvat-grid-item-resize-handler {
+        display: none;
+    }
+
+    .cvat-grid-item-close-button {
+        display: none;
+    }
+
+    & +.cvat-grid-layout-common-setups {
+        display: none;
+    }
+}
+
 .cvat-grid-layout-common-setups {
     position: absolute;
     top: 0;

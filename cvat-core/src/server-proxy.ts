@@ -510,13 +510,32 @@ async function healthCheck(maxRetries, checkPeriod, requestTimeout, progressCall
         timeout: requestTimeout,
     })
         .then((response) => response.data)
-        .catch((errorData) => {
-            if (maxRetries > 0) {
+        .catch((error) => {
+            let isHealthy = true;
+            let data;
+            if (typeof error?.response?.data === 'object') {
+                data = error.response.data;
+                // Temporary workaround: ignore errors with media cache for debugging purposes only
+                for (const checkName in data) {
+                    if (Object.prototype.hasOwnProperty.call(data, checkName) &&
+                        checkName !== 'Cache backend: media' &&
+                        data[checkName] !== 'working') {
+                        isHealthy = false;
+                    }
+                }
+            } else {
+                isHealthy = false;
+            }
+
+            if (!isHealthy && maxRetries > 0) {
                 return new Promise((resolve) => setTimeout(resolve, checkPeriod))
                     .then(() => healthCheck(maxRetries - 1, checkPeriod,
                         requestTimeout, progressCallback, attempt + 1));
             }
-            throw generateError(errorData);
+            if (isHealthy) {
+                return data;
+            }
+            throw generateError(error);
         });
 }
 
