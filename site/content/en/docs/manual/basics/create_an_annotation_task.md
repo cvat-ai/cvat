@@ -14,7 +14,7 @@ select **Create new task**.
 
 See:
 
-- [Creating a task](#creating-a-task)
+- [Create a task](#create-a-task)
   - [Label shape](#label-shape)
   - [Add an attribute](#add-an-attribute)
   - [Select files](#select-files)
@@ -22,7 +22,7 @@ See:
   - [Data formats for a 3D task](#data-formats-for-a-3d-task)
 - [Advanced configuration](#advanced-configuration)
 
-## Creating a task
+## Create a task
 
 To create a new task, open task configurator:
 
@@ -39,7 +39,7 @@ And specify the following parameters:
 
    ![Select project](/images/image193.jpg)
 
-   > **Note:** Followin steps are valid if the task does not belong to a project.
+   > **Note:** Following steps are valid if the task does not belong to a project.
    > <br>If the task has been assigned to a project, the project's labels will be applied to the task.
 
 3. On the **Constructor** tab, click **Add label**.
