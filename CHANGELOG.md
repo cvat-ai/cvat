@@ -43,6 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Helm: Empty password for Redis (<https://github.com/opencv/cvat/pull/5520>)
 - Fixed HRNet serverless function runtime error on images with alpha channel (<https://github.com/opencv/cvat/pull/5570>)
 - Preview & chunk cache settings are ignored (<https://github.com/opencv/cvat/pull/5569>)
+- Export annotations to Azure container (<https://github.com/opencv/cvat/pull/5596>)
 
 ### Security
 - Fixed vulnerability with social authentication (<https://github.com/opencv/cvat/pull/5521>)

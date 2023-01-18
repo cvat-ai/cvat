@@ -31,7 +31,7 @@ import Text from 'antd/lib/typography/Text';
 import Select from 'antd/lib/select';
 
 import { getCore } from 'cvat-core-wrapper';
-import consts from 'consts';
+import config from 'config';
 
 import { CVATLogo, UpgradeIcon } from 'icons';
 import ChangePasswordDialog from 'components/change-password-modal/change-password-modal';
@@ -164,7 +164,7 @@ function HeaderContainer(props: Props): JSX.Element {
 
     const {
         CHANGELOG_URL, LICENSE_URL, GITTER_URL, GITHUB_URL, GUIDE_URL, DISCORD_URL, CVAT_BILLING_URL,
-    } = consts;
+    } = config;
 
     const history = useHistory();
     const location = useLocation();
