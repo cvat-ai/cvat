@@ -486,7 +486,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     importing: {
                         ...state.messages.importing,
                         backup:
-                            `The ${instanceType} has been restored succesfully.
+                            `The ${instanceType} has been restored successfully.
                             Click [here](/${instanceType}s/${instanceId}) to open`,
                     },
                 },

@@ -2977,7 +2977,7 @@ export class SkeletonTrack extends Track {
             );
 
             if (errors.length) {
-                throw new Error(`Several errors occured during saving skeleton:\n ${errors.join(';\n')}`);
+                throw new Error(`Several errors occurred during saving skeleton:\n ${errors.join(';\n')}`);
             }
         };
 

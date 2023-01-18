@@ -55,7 +55,7 @@ const DEFAULT_AWS_S3_REGIONS: string[][] = [
 const SERVER_UNAVAILABLE_COMPONENT = (
     <>
         Make sure the CVAT backend and all necessary services
-        (Database, Redis and Open Policy Agent) are running and avaliable.
+        (Database, Redis and Open Policy Agent) are running and available.
         If you upgraded from version 2.2.0 or earlier, manual actions may be needed,
         see the&nbsp;
         <a

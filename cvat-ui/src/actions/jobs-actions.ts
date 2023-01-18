@@ -27,13 +27,13 @@ const jobsActions = {
         createAction(JobsActionTypes.GET_JOBS_SUCCESS, { jobs })
     ),
     getJobsFailed: (error: any) => createAction(JobsActionTypes.GET_JOBS_FAILED, { error }),
-    getJobPreiew: (jobID: number) => (
+    getJobPreview: (jobID: number) => (
         createAction(JobsActionTypes.GET_JOB_PREVIEW, { jobID })
     ),
-    getJobPreiewSuccess: (jobID: number, preview: string) => (
+    getJobPreviewSuccess: (jobID: number, preview: string) => (
         createAction(JobsActionTypes.GET_JOB_PREVIEW_SUCCESS, { jobID, preview })
     ),
-    getJobPreiewFailed: (jobID: number, error: any) => (
+    getJobPreviewFailed: (jobID: number, error: any) => (
         createAction(JobsActionTypes.GET_JOB_PREVIEW_FAILED, { jobID, error })
     ),
 };
@@ -59,11 +59,11 @@ export const getJobsAsync = (query: JobsQuery): ThunkAction => async (dispatch) 
 };
 
 export const getJobPreviewAsync = (job: Job): ThunkAction => async (dispatch) => {
-    dispatch(jobsActions.getJobPreiew(job.id));
+    dispatch(jobsActions.getJobPreview(job.id));
     try {
         const result = await job.frames.preview();
-        dispatch(jobsActions.getJobPreiewSuccess(job.id, result));
+        dispatch(jobsActions.getJobPreviewSuccess(job.id, result));
     } catch (error) {
-        dispatch(jobsActions.getJobPreiewFailed(job.id, error));
+        dispatch(jobsActions.getJobPreviewFailed(job.id, error));
     }
 };
