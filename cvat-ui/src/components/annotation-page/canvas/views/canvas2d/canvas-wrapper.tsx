@@ -18,7 +18,7 @@ import { LogType } from 'cvat-logger';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { getCore } from 'cvat-core-wrapper';
-import consts from 'consts';
+import config from 'config';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import FrameTags from 'components/annotation-page/tag-annotation-workspace/frame-tags';
 import {
@@ -369,7 +369,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         canvasInstance.configure({
             forceDisableEditing: workspace === Workspace.REVIEW_WORKSPACE,
-            undefinedAttrValue: consts.UNDEFINED_ATTRIBUTE_VALUE,
+            undefinedAttrValue: config.UNDEFINED_ATTRIBUTE_VALUE,
             displayAllText: showObjectsTextAlways,
             autoborders: automaticBordering,
             showProjections,
@@ -442,7 +442,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             prevProps.outlined !== outlined
         ) {
             canvasInstance.configure({
-                undefinedAttrValue: consts.UNDEFINED_ATTRIBUTE_VALUE,
+                undefinedAttrValue: config.UNDEFINED_ATTRIBUTE_VALUE,
                 displayAllText: showObjectsTextAlways,
                 autoborders: automaticBordering,
                 showProjections,
