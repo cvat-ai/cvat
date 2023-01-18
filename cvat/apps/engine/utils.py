@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 import ast
-# from typing import Optional, Type
 import cv2 as cv
 from collections import namedtuple
 import hashlib

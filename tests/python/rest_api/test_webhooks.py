@@ -1,11 +1,10 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from copy import deepcopy
 from http import HTTPStatus
 from itertools import product
-from typing import Any, Dict, List
 
 import pytest
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
