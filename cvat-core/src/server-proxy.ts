@@ -5,7 +5,7 @@
 
 import FormData from 'form-data';
 import store from 'store';
-import Axios from 'axios';
+import Axios, { AxiosResponse } from 'axios';
 import * as tus from 'tus-js-client';
 import { Storage } from './storage';
 import { StorageLocation, WebhookSourceType } from './enums';
@@ -1258,19 +1258,69 @@ async function getJobs(filter = {}) {
     return response.data;
 }
 
+function fetchAll(url): Promise<any[]> {
+    const pageSize = 500;
+    let collection = [];
+    return new Promise((resolve, reject) => {
+        Axios.get(url, {
+            params: {
+                page_size: pageSize,
+                page: 1,
+            },
+            proxy: config.proxy,
+        }).then((initialData) => {
+            const { count, results } = initialData.data;
+            collection = collection.concat(results);
+            if (count <= pageSize) {
+                resolve(collection);
+                return;
+            }
+
+            const pages = Math.ceil(count / pageSize);
+            const promises = Array(pages).fill(0).map((_: number, i: number) => {
+                if (i) {
+                    return Axios.get(url, {
+                        params: {
+                            page_size: pageSize,
+                            page: i + 1,
+                        },
+                        proxy: config.proxy,
+                    });
+                }
+
+                return Promise.resolve(null);
+            });
+
+            Promise.all(promises).then((responses: AxiosResponse<any, any>[]) => {
+                responses.forEach((resp) => {
+                    if (resp) {
+                        collection = collection.concat(resp.data.results);
+                    }
+                });
+
+                // removing possible dublicates
+                const obj = collection.reduce((acc: Record<string, any>, item: any) => {
+                    acc[item.id] = item;
+                    return acc;
+                }, {});
+
+                resolve(Object.values(obj));
+            }).catch((error) => reject(error));
+        }).catch((error) => reject(error));
+    });
+}
+
 async function getJobIssues(jobID) {
     const { backendAPI } = config;
 
     let response = null;
     try {
-        response = await Axios.get(`${backendAPI}/jobs/${jobID}/issues`, {
-            proxy: config.proxy,
-        });
+        response = await fetchAll(`${backendAPI}/jobs/${jobID}/issues`);
     } catch (errorData) {
         throw generateError(errorData);
     }
 
-    return response.data;
+    return response;
 }
 
 async function createComment(data) {
@@ -1989,14 +2039,12 @@ async function getOrganizations() {
 
     let response = null;
     try {
-        response = await Axios.get(`${backendAPI}/organizations`, {
-            proxy: config.proxy,
-        });
+        response = await fetchAll(`${backendAPI}/organizations?page_size`);
     } catch (errorData) {
         throw generateError(errorData);
     }
 
-    return response.data;
+    return response;
 }
 
 async function createOrganization(data) {

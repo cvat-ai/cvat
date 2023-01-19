@@ -61,7 +61,6 @@ class OrganizationViewSet(viewsets.GenericViewSet,
     ordering_fields = filter_fields
     ordering = '-id'
     http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
-    pagination_class = None
     iam_organization_field = None
 
     def get_queryset(self):
