@@ -76,7 +76,7 @@ jobs:
         gen/generate.sh
         cd ..
 
-    - name: Install test requrements
+    - name: Install test requirements
       run: |
         pip3 install --user cvat-sdk/
         pip3 install --user cvat-cli/

@@ -102,7 +102,7 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
   (<https://github.com/opencv/cvat/issues/4962>)
 - HRNET serverless function (<https://github.com/opencv/cvat/pull/4944>)
 - Invalid export of segmentation masks when the `background` label gets nonzero id (<https://github.com/opencv/cvat/pull/5056>)
-- A trailing slash in hostname does't allow SDK to send some requests
+- A trailing slash in hostname doesn't allow SDK to send some requests
   (<https://github.com/opencv/cvat/pull/5057>)
 - Double modal export/backup a task/project (<https://github.com/opencv/cvat/pull/5075>)
 - Fixed bug of computing Job's unsolved/resolved issues numbers (<https://github.com/opencv/cvat/pull/5101>)
@@ -137,7 +137,7 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
 - An exception when run export for an empty task (<https://github.com/opencv/cvat/pull/5396>)
 - Fixed FBRS serverless function runtime error on images with alpha channel (<https://github.com/opencv/cvat/pull/5384>)
 - Attaching manifest with custom name (<https://github.com/opencv/cvat/pull/5377>)
-- Uploading non-zip annotaion files (<https://github.com/opencv/cvat/pull/5386>)
+- Uploading non-zip annotation files (<https://github.com/opencv/cvat/pull/5386>)
 - Loss of rotation in CVAT format (<https://github.com/opencv/cvat/pull/5407>)
 - A permission problem with interactive model launches for workers in orgs (<https://github.com/opencv/cvat/issues/4996>)
 - Fix chart not being upgradable (<https://github.com/opencv/cvat/pull/5371>)
@@ -222,7 +222,7 @@ Skeleton (<https://github.com/cvat-ai/cvat/pull/1>), (<https://github.com/opencv
 - Added helm chart support for CVAT 2.X and made ingress compatible with Kubernetes >=1.22 (<https://github.com/openvinotoolkit/cvat/pull/4448>)
 
 ### Fixed
-- Permission error occured when accessing the JobCommits (<https://github.com/openvinotoolkit/cvat/pull/4435>)
+- Permission error occurred when accessing the JobCommits (<https://github.com/openvinotoolkit/cvat/pull/4435>)
 - job assignee can remove or update any issue created by the task owner (<https://github.com/openvinotoolkit/cvat/pull/4436>)
 - Bug: Incorrect point deletion with keyboard shortcut (<https://github.com/openvinotoolkit/cvat/pull/4420>)
 - some AI Tools were not sending responses properly (<https://github.com/openvinotoolkit/cvat/issues/4432>)
@@ -307,7 +307,7 @@ Skeleton (<https://github.com/cvat-ai/cvat/pull/1>), (<https://github.com/opencv
 - Annotations search does not work correctly in some corner cases (when use complex properties with width, height) (<https://github.com/openvinotoolkit/cvat/pull/4198>)
 - Kibana requests are not proxied due to django-revproxy incompatibility with Django >3.2.x (<https://github.com/openvinotoolkit/cvat/issues/4085>)
 - Content type for getting frame with tasks/{id}/data/ endpoint (<https://github.com/openvinotoolkit/cvat/pull/4333>)
-- Bug: Permission error occured when accessing the comments of a specific issue (<https://github.com/openvinotoolkit/cvat/issues/4416>)
+- Bug: Permission error occurred when accessing the comments of a specific issue (<https://github.com/openvinotoolkit/cvat/issues/4416>)
 
 
 ### Security
@@ -362,7 +362,7 @@ Skeleton (<https://github.com/cvat-ai/cvat/pull/1>), (<https://github.com/opencv
 ### Added
 
 - Added ability to import data from share with cli without copying the data (<https://github.com/openvinotoolkit/cvat/issues/2862>)
-- Notification if the browser does not support nesassary API
+- Notification if the browser does not support necessary API
 - Added ability to export project as a dataset (<https://github.com/openvinotoolkit/cvat/pull/3365>)
   and project with 3D tasks (<https://github.com/openvinotoolkit/cvat/pull/3502>)
 - Additional inline tips in interactors with demo gifs (<https://github.com/openvinotoolkit/cvat/pull/3473>)

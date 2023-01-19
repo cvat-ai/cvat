@@ -381,7 +381,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         url_path=r'dataset/?$')
     def dataset(self, request, pk):
         self._object = self.get_object() # force to call check_object_permissions
-        rq_id = f"import:dataset-for-porject.id{pk}-by-{request.user}"
+        rq_id = f"import:dataset-for-project.id{pk}-by-{request.user}"
 
         if request.method in {'POST', 'OPTIONS'}:
             return self.import_annotations(
@@ -465,7 +465,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return _import_project_dataset(
                 request=request,
                 filename=uploaded_file,
-                rq_id=f"import:dataset-for-porject.id{self._object.pk}-by-{request.user}",
+                rq_id=f"import:dataset-for-project.id{self._object.pk}-by-{request.user}",
                 rq_func=dm.project.import_dataset_as_project,
                 pk=self._object.pk,
                 format_name=format_name,

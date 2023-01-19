@@ -761,7 +761,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
                     undoShortcut={normalizedKeyMap.UNDO}
                     redoShortcut={normalizedKeyMap.REDO}
                     drawShortcut={normalizedKeyMap.SWITCH_DRAW_MODE}
-                    // this shortcut is handled in interactionHandler.ts separatelly
+                    // this shortcut is handled in interactionHandler.ts separately
                     switchToolsBlockerShortcut={normalizedKeyMap.SWITCH_TOOLS_BLOCKER_STATE}
                     playPauseShortcut={normalizedKeyMap.PLAY_PAUSE}
                     deleteFrameShortcut={normalizedKeyMap.DELETE_FRAME}

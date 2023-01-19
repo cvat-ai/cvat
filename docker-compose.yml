@@ -41,13 +41,13 @@ services:
       no_proxy: elasticsearch,kibana,logstash,nuclio,opa,${no_proxy:-}
       NUMPROCS: 1
       USE_ALLAUTH_SOCIAL_ACCOUNTS:
-      # Google enviroment variables
+      # Google environment variables
       SOCIAL_AUTH_GOOGLE_CLIENT_ID:
       SOCIAL_AUTH_GOOGLE_CLIENT_SECRET:
-      # GitHub enviroment variables
+      # GitHub environment variables
       SOCIAL_AUTH_GITHUB_CLIENT_ID:
       SOCIAL_AUTH_GITHUB_CLIENT_SECRET:
-      # Amazon Cognito enviroment variables
+      # Amazon Cognito environment variables
       SOCIAL_AUTH_AMAZON_COGNITO_DOMAIN:
       SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_ID:
       SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_SECRET:
