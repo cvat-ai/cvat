@@ -3,12 +3,15 @@
 # SPDX-License-Identifier: MIT
 
 import os
+import io
+import zipfile
 from io import BytesIO
 from datetime import datetime
 from tempfile import NamedTemporaryFile
+import cv2
 import pytz
 
-from diskcache import Cache
+from django.core.cache import caches
 from django.conf import settings
 from rest_framework.exceptions import ValidationError, NotFound
 
@@ -16,7 +19,7 @@ from cvat.apps.engine.log import slogger
 from cvat.apps.engine.media_extractors import (Mpeg4ChunkWriter,
     Mpeg4CompressedChunkWriter, ZipChunkWriter, ZipCompressedChunkWriter,
     ImageDatasetManifestReader, VideoDatasetManifestReader)
-from cvat.apps.engine.models import DataChoice, StorageChoice
+from cvat.apps.engine.models import DataChoice, StorageChoice, Image
 from cvat.apps.engine.models import DimensionType
 from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials
 from cvat.apps.engine.utils import md5_hash
@@ -25,42 +28,51 @@ from cvat.apps.engine.mime_types import mimetypes
 from utils.dataset_manifest import ImageManifestManager
 
 
-class CacheInteraction:
+class MediaCache:
     def __init__(self, dimension=DimensionType.DIM_2D):
-        self._cache = Cache(settings.CACHE_ROOT)
         self._dimension = dimension
+        self._cache = caches['media']
 
-    def __del__(self):
-        self._cache.close()
+    def _get_or_set_cache_item(self, key, create_function):
+        item = self._cache.get(key)
+        if not item:
+            item = create_function()
+            if item[0]:
+                self._cache.set(key, item)
+
+        return item
 
     def get_buf_chunk_with_mime(self, chunk_number, quality, db_data):
-        cache_key = f'{db_data.id}_{chunk_number}_{quality}'
-        chunk, tag = self._cache.get(cache_key, tag=True)
+        item = self._get_or_set_cache_item(
+            key=f'{db_data.id}_{chunk_number}_{quality}',
+            create_function=lambda: self._prepare_chunk_buff(db_data, quality, chunk_number),
+        )
 
-        if not chunk:
-            chunk, tag = self._prepare_chunk_buff(db_data, quality, chunk_number)
-            self._cache.set(cache_key, chunk, tag=tag)
-
-        return chunk, tag
+        return item
 
     def get_local_preview_with_mime(self, frame_number, db_data):
-        key = f'data_{db_data.id}_{frame_number}_preview'
-        buf, mime = self._cache.get(key, tag=True)
-        if not buf:
-            buf, mime = self._prepare_local_preview(frame_number, db_data)
-            self._cache.set(key, buf, tag=mime)
+        item = self._get_or_set_cache_item(
+            key=f'data_{db_data.id}_{frame_number}_preview',
+            create_function=lambda: self._prepare_local_preview(frame_number, db_data),
+        )
 
-        return buf, mime
+        return item
 
     def get_cloud_preview_with_mime(self, db_storage):
-        key = f'cloudstorage_{db_storage.id}_preview'
-        preview, mime = self._cache.get(key, tag=True)
+        item = self._get_or_set_cache_item(
+            key=f'cloudstorage_{db_storage.id}_preview',
+            create_function=lambda: self._prepare_cloud_preview(db_storage)
+        )
 
-        if not preview:
-            preview, mime = self._prepare_cloud_preview(db_storage)
-            self._cache.set(key, preview, tag=mime)
+        return item
 
-        return preview, mime
+    def get_frame_context_images(self, db_data, frame_number):
+        item = self._get_or_set_cache_item(
+            key=f'context_image_{db_data.id}_{frame_number}',
+            create_function=lambda: self._prepare_context_image(db_data, frame_number)
+        )
+
+        return item
 
     @staticmethod
     def _get_frame_provider():
@@ -68,7 +80,6 @@ class CacheInteraction:
         return FrameProvider
 
     def _prepare_chunk_buff(self, db_data, quality, chunk_number):
-
         FrameProvider = self._get_frame_provider()
 
         writer_classes = {
@@ -147,9 +158,9 @@ class CacheInteraction:
     def _prepare_local_preview(self, frame_number, db_data):
         FrameProvider = self._get_frame_provider()
         frame_provider = FrameProvider(db_data, self._dimension)
-        buf, mime = frame_provider.get_preview(frame_number)
+        buff, mime_type = frame_provider.get_preview(frame_number)
 
-        return buf, mime
+        return buff, mime_type
 
     def _prepare_cloud_preview(self, db_storage):
         storage = db_storage_to_storage_instance(db_storage)
@@ -179,7 +190,29 @@ class CacheInteraction:
             slogger.cloud_storage[db_storage.pk].info(msg)
             raise NotFound(msg)
 
-        preview = storage.download_fileobj(preview_path)
-        mime = mimetypes.guess_type(preview_path)[0]
+        buff = storage.download_fileobj(preview_path)
+        mime_type = mimetypes.guess_type(preview_path)[0]
 
-        return preview, mime
+        return buff, mime_type
+
+    def _prepare_context_image(self, db_data, frame_number):
+        zip_buffer = io.BytesIO()
+        try:
+            image = Image.objects.get(data_id=db_data.id, frame=frame_number)
+        except Image.DoesNotExist:
+            return None, None
+        with zipfile.ZipFile(zip_buffer, 'a', zipfile.ZIP_DEFLATED, False) as zip_file:
+            if not image.related_files.count():
+                return None, None
+            common_path = os.path.commonpath(list(map(lambda x: str(x.path), image.related_files.all())))
+            for i in image.related_files.all():
+                path = os.path.realpath(str(i.path))
+                name = os.path.relpath(str(i.path), common_path)
+                image = cv2.imread(path)
+                success, result = cv2.imencode('.JPEG', image)
+                if not success:
+                    raise Exception('Failed to encode image to ".jpeg" format')
+                zip_file.writestr(f'{name}.jpg', result.tobytes())
+        buff = zip_buffer.getvalue()
+        mime_type = 'application/zip'
+        return buff, mime_type

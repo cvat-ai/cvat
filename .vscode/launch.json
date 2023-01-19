@@ -133,7 +133,7 @@
             }
         },
         {
-            "name": "server: RQ - default",
+            "name": "server: RQ - import",
             "type": "python",
             "request": "launch",
             "stopOnEntry": false,
@@ -142,7 +142,26 @@
             "program": "${workspaceRoot}/manage.py",
             "args": [
                 "rqworker",
-                "default",
+                "import",
+                "--worker-class",
+                "cvat.rqworker.SimpleWorker",
+            ],
+            "django": true,
+            "cwd": "${workspaceFolder}",
+            "env": {},
+            "console": "internalConsole"
+        },
+        {
+            "name": "server: RQ - export",
+            "type": "python",
+            "request": "launch",
+            "stopOnEntry": false,
+            "justMyCode": false,
+            "python": "${command:python.interpreterPath}",
+            "program": "${workspaceRoot}/manage.py",
+            "args": [
+                "rqworker",
+                "export",
                 "--worker-class",
                 "cvat.rqworker.SimpleWorker",
             ],
@@ -161,6 +180,8 @@
             "program": "${workspaceRoot}/manage.py",
             "args": [
                 "rqscheduler",
+                "--queue",
+                "export"
             ],
             "django": true,
             "cwd": "${workspaceFolder}",
@@ -168,7 +189,7 @@
             "console": "internalConsole"
         },
         {
-            "name": "server: RQ - low",
+            "name": "server: RQ - annotation",
             "type": "python",
             "request": "launch",
             "justMyCode": false,
@@ -177,7 +198,7 @@
             "program": "${workspaceRoot}/manage.py",
             "args": [
                 "rqworker",
-                "low",
+                "annotation",
                 "--worker-class",
                 "cvat.rqworker.SimpleWorker",
             ],
@@ -379,8 +400,9 @@
             "name": "server: debug",
             "configurations": [
                 "server: django",
-                "server: RQ - default",
-                "server: RQ - low",
+                "server: RQ - import",
+                "server: RQ - export",
+                "server: RQ - annotation",
                 "server: RQ - webhooks",
                 "server: RQ - scheduler",
                 "server: git",

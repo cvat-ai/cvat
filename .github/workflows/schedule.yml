@@ -319,11 +319,13 @@ jobs:
       - name: Run CVAT instance
         run: |
           docker compose \
+            --env-file="tests/python/social_auth/.env" \
             -f docker-compose.yml \
             -f docker-compose.dev.yml \
             -f tests/docker-compose.file_share.yml \
             -f tests/docker-compose.minio.yml \
-            -f components/serverless/docker-compose.serverless.yml up -d
+            -f components/serverless/docker-compose.serverless.yml \
+            -f tests/python/social_auth/docker-compose.yml up -d
 
       - name: Waiting for server
         id: wait-server

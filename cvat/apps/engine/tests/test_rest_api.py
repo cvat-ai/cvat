@@ -35,6 +35,7 @@ from cvat.apps.engine.models import (AttributeSpec, AttributeType, Data, Job,
     Project, Segment, StageChoice, StatusChoice, Task, Label, StorageMethodChoice,
     StorageChoice, DimensionType, SortingMethod)
 from cvat.apps.engine.media_extractors import ValidateDimension, sort
+from cvat.apps.engine.tests.utils import get_paginated_collection
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 
 #supress av warnings
@@ -4225,8 +4226,9 @@ class JobAnnotationAPITestCase(APITestCase):
             response = self.client.get("/api/tasks/{}".format(tid))
             task = response.data
 
-            response = self.client.get("/api/tasks/{}/jobs".format(tid))
-            jobs = response.data
+            jobs = get_paginated_collection(lambda page:
+                self.client.get("/api/tasks/{}/jobs?page={}".format(tid, page))
+            )
 
         return (task, jobs)
 

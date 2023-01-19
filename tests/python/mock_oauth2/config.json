@@ -1,0 +1,24 @@
+{
+    "interactiveLogin": true,
+    "httpServer": "NettyWrapper",
+    "tokenCallbacks": [
+        {
+            "issuerId": "oauth2",
+            "tokenExpiry": 120,
+            "requestMappings": [
+                {
+                    "requestParam": "client_id",
+                    "match": "test-client",
+                    "claims": {
+                        "sub": "test-sub",
+                        "aud": [
+                            "test-aud"
+                        ],
+                        "email": "admin@localhost.company",
+                        "email_verified": true
+                    }
+                }
+            ]
+        }
+    ]
+}

@@ -17,7 +17,7 @@ import { FormInstance } from 'antd/lib/form';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { EventDataNode } from 'rc-tree/lib/interface';
 
-import consts from 'consts';
+import config from 'config';
 import { CloudStorage } from 'reducers';
 import CloudStorageTab from './cloud-storages-tab';
 import LocalFiles from './local-files';
@@ -155,7 +155,7 @@ export class FileManager extends React.PureComponent<Props, State> {
                 }));
         }
 
-        const { SHARE_MOUNT_GUIDE_URL } = consts;
+        const { SHARE_MOUNT_GUIDE_URL } = config;
         const { treeData, onUploadShareFiles, onLoadData } = this.props;
         const { expandedKeys, files } = this.state;
 

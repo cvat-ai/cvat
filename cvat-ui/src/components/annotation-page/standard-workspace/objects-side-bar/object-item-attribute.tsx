@@ -11,7 +11,7 @@ import Input from 'antd/lib/input';
 import InputNumber from 'antd/lib/input-number';
 import Text from 'antd/lib/typography/Text';
 
-import consts from 'consts';
+import config from 'config';
 import { clamp } from 'utils/math';
 
 interface Props {
@@ -84,7 +84,7 @@ function ItemAttributeComponent(props: Props): JSX.Element {
                         {attrValues.map(
                             (value: string): JSX.Element => (
                                 <Radio key={value} value={value}>
-                                    {value === consts.UNDEFINED_ATTRIBUTE_VALUE ? consts.NO_BREAK_SPACE : value}
+                                    {value === config.UNDEFINED_ATTRIBUTE_VALUE ? config.NO_BREAK_SPACE : value}
                                 </Radio>
                             ),
                         )}
@@ -113,7 +113,7 @@ function ItemAttributeComponent(props: Props): JSX.Element {
                         {attrValues.map(
                             (value: string): JSX.Element => (
                                 <Select.Option key={value} value={value}>
-                                    {value === consts.UNDEFINED_ATTRIBUTE_VALUE ? consts.NO_BREAK_SPACE : value}
+                                    {value === config.UNDEFINED_ATTRIBUTE_VALUE ? config.NO_BREAK_SPACE : value}
                                 </Select.Option>
                             ),
                         )}

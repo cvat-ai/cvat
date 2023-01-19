@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import os
-from contextlib import ExitStack, closing
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple
 
@@ -206,40 +205,6 @@ class Uploader:
             positive_statuses=positive_statuses,
         )
 
-    def _split_files_by_requests(
-        self, filenames: List[Path]
-    ) -> Tuple[List[Tuple[List[Path], int]], List[Path], int]:
-        bulk_files: Dict[str, int] = {}
-        separate_files: Dict[str, int] = {}
-
-        # sort by size
-        for filename in filenames:
-            filename = filename.resolve()
-            file_size = filename.stat().st_size
-            if MAX_REQUEST_SIZE < file_size:
-                separate_files[filename] = file_size
-            else:
-                bulk_files[filename] = file_size
-
-        total_size = sum(bulk_files.values()) + sum(separate_files.values())
-
-        # group small files by requests
-        bulk_file_groups: List[Tuple[List[str], int]] = []
-        current_group_size: int = 0
-        current_group: List[str] = []
-        for filename, file_size in bulk_files.items():
-            if MAX_REQUEST_SIZE < current_group_size + file_size:
-                bulk_file_groups.append((current_group, current_group_size))
-                current_group_size = 0
-                current_group = []
-
-            current_group.append(filename)
-            current_group_size += file_size
-        if current_group:
-            bulk_file_groups.append((current_group, current_group_size))
-
-        return bulk_file_groups, separate_files, total_size
-
     @staticmethod
     def _make_tus_uploader(api_client: ApiClient, url: str, **kwargs):
         # Add headers required by CVAT server
@@ -353,6 +318,10 @@ class DatasetUploader(Uploader):
 
 
 class DataUploader(Uploader):
+    def __init__(self, client: Client, *, max_request_size: int = MAX_REQUEST_SIZE):
+        super().__init__(client)
+        self.max_request_size = max_request_size
+
     def upload_files(
         self,
         url: str,
@@ -369,22 +338,21 @@ class DataUploader(Uploader):
         self._tus_start_upload(url)
 
         for group, group_size in bulk_file_groups:
-            with ExitStack() as es:
-                files = {}
-                for i, filename in enumerate(group):
-                    files[f"client_files[{i}]"] = (
-                        os.fspath(filename),
-                        es.enter_context(closing(open(filename, "rb"))).read(),
-                    )
-                response = self._client.api_client.rest_client.POST(
-                    url,
-                    post_params=dict(**kwargs, **files),
-                    headers={
-                        "Content-Type": "multipart/form-data",
-                        "Upload-Multiple": "",
-                        **self._client.api_client.get_common_headers(),
-                    },
+            files = {}
+            for i, filename in enumerate(group):
+                files[f"client_files[{i}]"] = (
+                    os.fspath(filename),
+                    filename.read_bytes(),
                 )
+            response = self._client.api_client.rest_client.POST(
+                url,
+                post_params={"image_quality": kwargs["image_quality"], **files},
+                headers={
+                    "Content-Type": "multipart/form-data",
+                    "Upload-Multiple": "",
+                    **self._client.api_client.get_common_headers(),
+                },
+            )
             expect_status(200, response)
 
             if pbar is not None:
@@ -401,3 +369,38 @@ class DataUploader(Uploader):
             )
 
         self._tus_finish_upload(url, fields=kwargs)
+
+    def _split_files_by_requests(
+        self, filenames: List[Path]
+    ) -> Tuple[List[Tuple[List[Path], int]], List[Path], int]:
+        bulk_files: Dict[str, int] = {}
+        separate_files: Dict[str, int] = {}
+        max_request_size = self.max_request_size
+
+        # sort by size
+        for filename in filenames:
+            filename = filename.resolve()
+            file_size = filename.stat().st_size
+            if max_request_size < file_size:
+                separate_files[filename] = file_size
+            else:
+                bulk_files[filename] = file_size
+
+        total_size = sum(bulk_files.values()) + sum(separate_files.values())
+
+        # group small files by requests
+        bulk_file_groups: List[Tuple[List[str], int]] = []
+        current_group_size: int = 0
+        current_group: List[str] = []
+        for filename, file_size in bulk_files.items():
+            if max_request_size < current_group_size + file_size:
+                bulk_file_groups.append((current_group, current_group_size))
+                current_group_size = 0
+                current_group = []
+
+            current_group.append(filename)
+            current_group_size += file_size
+        if current_group:
+            bulk_file_groups.append((current_group, current_group_size))
+
+        return bulk_file_groups, separate_files, total_size

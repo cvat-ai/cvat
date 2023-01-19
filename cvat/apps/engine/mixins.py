@@ -246,7 +246,7 @@ class UploadMixin:
 
 class AnnotationMixin:
     def export_annotations(self, request, pk, db_obj, export_func, callback, get_data=None):
-        format_name = request.query_params.get("format")
+        format_name = request.query_params.get("format", "")
         action = request.query_params.get("action", "").lower()
         filename = request.query_params.get("filename", "")
 
@@ -259,7 +259,8 @@ class AnnotationMixin:
             field_name=StorageType.TARGET,
         )
 
-        rq_id = "/api/{}/{}/annotations/{}".format(self._object.__class__.__name__.lower(), pk, format_name)
+        object_name = self._object.__class__.__name__.lower()
+        rq_id = f"export:annotations-for-{object_name}.id{pk}-in-{format_name.replace(' ', '_')}-format"
 
         if format_name:
             return export_func(db_instance=self._object,
@@ -316,13 +317,21 @@ class AnnotationMixin:
 class SerializeMixin:
     def serialize(self, request, export_func):
         db_object = self.get_object() # force to call check_object_permissions
-        return export_func(db_object, request)
+        return export_func(
+            db_object,
+            request,
+            queue_name=settings.CVAT_QUEUES.EXPORT_DATA.value,
+        )
 
     def deserialize(self, request, import_func):
         location = request.query_params.get("location", Location.LOCAL)
         if location == Location.CLOUD_STORAGE:
             file_name = request.query_params.get("filename", "")
-            return import_func(request, filename=file_name)
+            return import_func(
+                request,
+                queue_name=settings.CVAT_QUEUES.IMPORT_DATA.value,
+                filename=file_name,
+            )
         return self.upload_data(request)
 
 

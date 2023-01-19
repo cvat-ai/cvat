@@ -98,3 +98,9 @@ class SocialLoginSerializerEx(SocialLoginSerializer):
         }
 
         return social_login
+
+
+class SocialAuthMethodSerializer(serializers.Serializer):
+    is_enabled = serializers.BooleanField(default=False)
+    icon = serializers.CharField(allow_blank=True, allow_null=True, required=False)
+    public_name = serializers.CharField()

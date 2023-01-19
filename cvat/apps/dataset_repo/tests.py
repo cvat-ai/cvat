@@ -19,6 +19,7 @@ from django.contrib.auth.models import Group, User
 from cvat.apps.engine.models import Task
 from cvat.apps.dataset_repo.dataset_repo import (Git, initial_create, push, get)
 from cvat.apps.dataset_repo.models import GitData, GitStatusChoice
+from cvat.apps.engine.tests.utils import get_paginated_collection
 
 orig_execute = git.cmd.Git.execute
 GIT_URL = "https://1.2.3.4/repo/exist.git"
@@ -198,8 +199,10 @@ class GitDatasetRepoTest(APITestCase):
 
     def _get_jobs(self, task_id):
         with ForceLogin(self.admin, self.client):
-            response = self.client.get("/api/tasks/{}/jobs".format(task_id))
-        return response.data
+            values = get_paginated_collection(lambda page:
+                self.client.get("/api/tasks/{}/jobs?page={}".format(task_id, page))
+            )
+        return values
 
     def _create_task(self, init_repos=False):
         data = {

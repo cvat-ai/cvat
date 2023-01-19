@@ -1,11 +1,11 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import FormData from 'form-data';
 import store from 'store';
-import Axios from 'axios';
+import Axios, { AxiosResponse } from 'axios';
 import * as tus from 'tus-js-client';
 import { Storage } from './storage';
 import { StorageLocation, WebhookSourceType } from './enums';
@@ -121,7 +121,10 @@ async function chunkUpload(file, uploadConfig) {
 
 function generateError(errorData) {
     if (errorData.response) {
-        const message = `${errorData.message}. ${JSON.stringify(errorData.response.data) || ''}.`;
+        if (errorData.response.data?.message) {
+            return new ServerError(errorData.response.data?.message, errorData.response.status);
+        }
+        const message = `${errorData.message}. ${JSON.stringify(errorData.response.data || '')}.`;
         return new ServerError(message, errorData.response.status);
     }
 
@@ -506,13 +509,32 @@ async function healthCheck(maxRetries, checkPeriod, requestTimeout, progressCall
         timeout: requestTimeout,
     })
         .then((response) => response.data)
-        .catch((errorData) => {
-            if (maxRetries > 0) {
+        .catch((error) => {
+            let isHealthy = true;
+            let data;
+            if (typeof error?.response?.data === 'object') {
+                data = error.response.data;
+                // Temporary workaround: ignore errors with media cache for debugging purposes only
+                for (const checkName in data) {
+                    if (Object.prototype.hasOwnProperty.call(data, checkName) &&
+                        checkName !== 'Cache backend: media' &&
+                        data[checkName] !== 'working') {
+                        isHealthy = false;
+                    }
+                }
+            } else {
+                isHealthy = false;
+            }
+
+            if (!isHealthy && maxRetries > 0) {
                 return new Promise((resolve) => setTimeout(resolve, checkPeriod))
                     .then(() => healthCheck(maxRetries - 1, checkPeriod,
                         requestTimeout, progressCallback, attempt + 1));
             }
-            throw generateError(errorData);
+            if (isHealthy) {
+                return data;
+            }
+            throw generateError(error);
         });
 }
 
@@ -1236,19 +1258,69 @@ async function getJobs(filter = {}) {
     return response.data;
 }
 
+function fetchAll(url): Promise<any[]> {
+    const pageSize = 500;
+    let collection = [];
+    return new Promise((resolve, reject) => {
+        Axios.get(url, {
+            params: {
+                page_size: pageSize,
+                page: 1,
+            },
+            proxy: config.proxy,
+        }).then((initialData) => {
+            const { count, results } = initialData.data;
+            collection = collection.concat(results);
+            if (count <= pageSize) {
+                resolve(collection);
+                return;
+            }
+
+            const pages = Math.ceil(count / pageSize);
+            const promises = Array(pages).fill(0).map((_: number, i: number) => {
+                if (i) {
+                    return Axios.get(url, {
+                        params: {
+                            page_size: pageSize,
+                            page: i + 1,
+                        },
+                        proxy: config.proxy,
+                    });
+                }
+
+                return Promise.resolve(null);
+            });
+
+            Promise.all(promises).then((responses: AxiosResponse<any, any>[]) => {
+                responses.forEach((resp) => {
+                    if (resp) {
+                        collection = collection.concat(resp.data.results);
+                    }
+                });
+
+                // removing possible dublicates
+                const obj = collection.reduce((acc: Record<string, any>, item: any) => {
+                    acc[item.id] = item;
+                    return acc;
+                }, {});
+
+                resolve(Object.values(obj));
+            }).catch((error) => reject(error));
+        }).catch((error) => reject(error));
+    });
+}
+
 async function getJobIssues(jobID) {
     const { backendAPI } = config;
 
     let response = null;
     try {
-        response = await Axios.get(`${backendAPI}/jobs/${jobID}/issues`, {
-            proxy: config.proxy,
-        });
+        response = await fetchAll(`${backendAPI}/jobs/${jobID}/issues`);
     } catch (errorData) {
         throw generateError(errorData);
     }
 
-    return response.data;
+    return response;
 }
 
 async function createComment(data) {
@@ -1381,7 +1453,7 @@ async function getImageContext(jid, frame) {
                 number: frame,
             },
             proxy: config.proxy,
-            responseType: 'blob',
+            responseType: 'arraybuffer',
         });
     } catch (errorData) {
         throw generateError(errorData);
@@ -1420,7 +1492,23 @@ async function getData(tid, jid, chunk) {
     return response;
 }
 
-async function getMeta(session, jid) {
+export interface FramesMetaData {
+    chunk_size: number;
+    deleted_frames: number[];
+    frame_filter: string;
+    frames: {
+        width: number;
+        height: number;
+        name: string;
+        related_files: number;
+    }[];
+    image_quality: number;
+    size: number;
+    start_frame: number;
+    stop_frame: number;
+}
+
+async function getMeta(session, jid): Promise<FramesMetaData> {
     const { backendAPI } = config;
 
     let response = null;
@@ -1951,14 +2039,12 @@ async function getOrganizations() {
 
     let response = null;
     try {
-        response = await Axios.get(`${backendAPI}/organizations`, {
-            proxy: config.proxy,
-        });
+        response = await fetchAll(`${backendAPI}/organizations?page_size`);
     } catch (errorData) {
         throw generateError(errorData);
     }
 
-    return response.data;
+    return response;
 }
 
 async function createOrganization(data) {
@@ -2247,10 +2333,10 @@ async function receiveWebhookEvents(type: WebhookSourceType): Promise<string[]> 
     }
 }
 
-async function advancedAuthentication(): Promise<any> {
+async function socialAuthentication(): Promise<any> {
     const { backendAPI } = config;
     try {
-        const response = await Axios.get(`${backendAPI}/server/advanced-auth`, {
+        const response = await Axios.get(`${backendAPI}/auth/social/methods`, {
             proxy: config.proxy,
         });
         return response.data;
@@ -2267,7 +2353,7 @@ export default Object.freeze({
         exception,
         login,
         logout,
-        advancedAuthentication,
+        socialAuthentication,
         changePassword,
         requestPasswordReset,
         resetPassword,
