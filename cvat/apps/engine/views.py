@@ -62,7 +62,9 @@ from cvat.apps.engine.serializers import (
     ProjectFileSerializer, TaskFileSerializer)
 
 from utils.dataset_manifest import ImageManifestManager
-from cvat.apps.engine.view_utils import build_field_filter_params, make_paginated_response, reverse
+from cvat.apps.engine.view_utils import (make_paginated_response,
+    redirect_to_full_collection_endpoint
+)
 from cvat.apps.engine.utils import (
     av_scan_paths, process_failed_job, configure_dependent_job, parse_exception_message
 )
@@ -318,11 +320,9 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         filter_fields=None, ordering_fields=None, search_fields=None, simple_filters=None)
     def tasks(self, request, pk):
         self.get_object() # force call of check_object_permissions()
-        # https://www.rfc-editor.org/rfc/rfc9110.html#name-303-see-other
-        return Response(status=status.HTTP_303_SEE_OTHER, headers={
-            'Location': reverse('task-list',
-                query_params=build_field_filter_params('project_id', pk), request=request)
-        })
+        return redirect_to_full_collection_endpoint('task-list',
+            filter_field='project_id', filter_key=pk, request=request
+        )
 
     @extend_schema(methods=['GET'], summary='Export project as a dataset in a specific format',
         parameters=[
@@ -884,11 +884,9 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         filter_fields=None, ordering_fields=None, search_fields=None, simple_filters=None)
     def jobs(self, request, pk):
         self.get_object() # force call of check_object_permissions()
-        # https://www.rfc-editor.org/rfc/rfc9110.html#name-303-see-other
-        return Response(status=status.HTTP_303_SEE_OTHER, headers={
-            'Location': reverse('job-list',
-                query_params=build_field_filter_params('task_id', pk), request=request)
-        })
+        return redirect_to_full_collection_endpoint('job-list',
+            filter_field='task_id', filter_key=pk, request=request
+        )
 
     # UploadMixin method
     def get_upload_dir(self):
@@ -1660,11 +1658,9 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         filter_fields=None, ordering_fields=None, search_fields=None, simple_filters=None)
     def issues(self, request, pk):
         self.get_object() # force call of check_object_permissions()
-        # https://www.rfc-editor.org/rfc/rfc9110.html#name-303-see-other
-        return Response(status=status.HTTP_303_SEE_OTHER, headers={
-            'Location': reverse('issue-list',
-                query_params=build_field_filter_params('job_id', pk), request=request)
-        })
+        return redirect_to_full_collection_endpoint('issue-list',
+            filter_field='job_id', filter_key=pk, request=request
+        )
 
     @extend_schema(summary='Method returns data for a specific job',
         parameters=[
@@ -1878,11 +1874,9 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         filter_fields=None, ordering_fields=None, search_fields=None, simple_filters=None)
     def comments(self, request, pk):
         self.get_object() # force call of check_object_permissions()
-        # https://www.rfc-editor.org/rfc/rfc9110.html#name-303-see-other
-        return Response(status=status.HTTP_303_SEE_OTHER, headers={
-            'Location': reverse('comment-list',
-                query_params=build_field_filter_params('issue_id', pk), request=request)
-        })
+        return redirect_to_full_collection_endpoint('comment-list',
+            filter_field='issue_id', filter_key=pk, request=request
+        )
 
 @extend_schema(tags=['comments'])
 @extend_schema_view(

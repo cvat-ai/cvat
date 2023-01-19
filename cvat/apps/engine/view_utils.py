@@ -11,6 +11,8 @@ from django.http.request import HttpRequest
 from django.http.response import HttpResponse
 from django.urls import reverse as _django_reverse
 from django.utils.http import urlencode
+from rest_framework import status
+from rest_framework.response import Response
 from rest_framework.serializers import Serializer
 from rest_framework.viewsets import GenericViewSet
 
@@ -77,9 +79,19 @@ def build_field_filter_params(field: str, value: Any) -> Dict[str, str]:
     """
     Builds a collection filter query params for a single field and value.
     """
-    # Uses Reverse Polish Notation
-    return {
-        'filter': '{"==":[{"var":"%(field)s"},%(value)s]}' % {
-            'field': field, 'value':value
-        }
-    }
+    return { field: value }
+
+def redirect_to_full_collection_endpoint(location: str, *, request: HttpRequest,
+    filter_field: str, filter_key: str
+) -> HttpResponse:
+    """
+    Builds a redirection response for a collection endpoint.
+    """
+
+    # https://www.rfc-editor.org/rfc/rfc9110.html#name-303-see-other
+    return Response(status=status.HTTP_303_SEE_OTHER, headers={
+        'Location': reverse(location,
+            query_params=build_field_filter_params(filter_field, filter_key),
+            request=request
+        )
+    })
