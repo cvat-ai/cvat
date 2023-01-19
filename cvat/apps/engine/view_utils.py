@@ -31,7 +31,6 @@ def make_paginated_response(
     serializer_params.setdefault('many', True)
 
     if response_type is None:
-        from rest_framework.response import Response
         response_type = Response
 
     if request is None:
