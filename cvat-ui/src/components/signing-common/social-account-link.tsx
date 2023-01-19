@@ -5,20 +5,27 @@ import './styles.scss';
 import React from 'react';
 import { Col, Row } from 'antd/lib/grid';
 import Button from 'antd/lib/button/button';
-import Icon from '@ant-design/icons';
-import { CustomIconComponentProps } from '@ant-design/icons/lib/components/Icon';
 
 interface SocialAccountLinkProps {
     children: string;
     className?: string;
     href: string;
-    icon: React.ForwardRefExoticComponent<CustomIconComponentProps>;
+    icon: string;
 }
 
 function SocialAccountLink(props: SocialAccountLinkProps): JSX.Element {
+    const svgWrapperRef = React.useRef();
     const {
         children, className, href, icon,
     } = props;
+
+    React.useEffect(() => {
+        if (icon) {
+            // eslint-disable-next-line no-unsanitized/property
+            svgWrapperRef.current.innerHTML = icon;
+        }
+    }, [icon, svgWrapperRef.current]);
+
     return (
         <Row>
             <Col flex='auto'>
@@ -28,7 +35,10 @@ function SocialAccountLink(props: SocialAccountLinkProps): JSX.Element {
                 >
                     <Row align='middle' style={{ width: '100%' }}>
                         <Col>
-                            <Icon component={icon} />
+                            <div
+                                ref={svgWrapperRef as any}
+                                className='cvat-social-authentication-icon'
+                            />
                         </Col>
                         <Col flex='auto'>
                             {children}

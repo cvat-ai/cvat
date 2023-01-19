@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -22,12 +22,9 @@ import {
     changeFrameAsync,
     rememberObject,
 } from 'actions/annotation-actions';
-import { Canvas } from 'cvat-canvas-wrapper';
-import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { getCore, Label, LabelType } from 'cvat-core-wrapper';
 import { CombinedState, ObjectType } from 'reducers';
 import { filterApplicableForType } from 'utils/filter-applicable-labels';
-import { adjustContextImagePosition } from 'components/annotation-page/standard-workspace/context-image/context-image';
 import LabelSelector from 'components/label-selector/label-selector';
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
@@ -39,7 +36,6 @@ interface StateToProps {
     states: any[];
     labels: any[];
     jobInstance: any;
-    canvasInstance: Canvas | Canvas3d;
     frameNumber: number;
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
@@ -61,7 +57,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
             },
             annotations: { states },
             job: { instance: jobInstance, labels },
-            canvas: { instance: canvasInstance },
         },
         shortcuts: { keyMap, normalizedKeyMap },
     } = state;
@@ -70,7 +65,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         jobInstance,
         labels,
         states,
-        canvasInstance: canvasInstance as Canvas | Canvas3d,
         frameNumber,
         keyMap,
         normalizedKeyMap,
@@ -102,7 +96,6 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
         removeObject,
         jobInstance,
         changeFrame,
-        canvasInstance,
         frameNumber,
         onRememberObject,
         createAnnotations,
@@ -143,8 +136,7 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
                 (event as TransitionEvent).propertyName === 'width' &&
                 ((event.target as any).classList as DOMTokenList).contains('cvat-tag-annotation-sidebar')
             ) {
-                canvasInstance.fitCanvas();
-                canvasInstance.fit();
+                window.dispatchEvent(new Event('resize'));
             }
         };
 
@@ -234,7 +226,6 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
                     ant-layout-sider-zero-width-trigger
                     ant-layout-sider-zero-width-trigger-left`}
                 onClick={() => {
-                    adjustContextImagePosition(!sidebarCollapsed);
                     setSidebarCollapsed(!sidebarCollapsed);
                 }}
             >
@@ -256,7 +247,6 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
                         ant-layout-sider-zero-width-trigger
                         ant-layout-sider-zero-width-trigger-left`}
                     onClick={() => {
-                        adjustContextImagePosition(!sidebarCollapsed);
                         setSidebarCollapsed(!sidebarCollapsed);
                     }}
                 >

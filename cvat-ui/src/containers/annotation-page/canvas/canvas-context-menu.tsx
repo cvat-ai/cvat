@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -11,7 +11,7 @@ import {
     CombinedState, ContextMenuType, ShapeType, Workspace,
 } from 'reducers';
 
-import CanvasContextMenuComponent from 'components/annotation-page/canvas/canvas-context-menu';
+import CanvasContextMenuComponent from 'components/annotation-page/canvas/views/canvas2d/canvas-context-menu';
 import { updateCanvasContextMenu } from 'actions/annotation-actions';
 import { reviewActions, finishIssueAsync } from 'actions/review-actions';
 import { ThunkDispatch } from 'utils/redux';

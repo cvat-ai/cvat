@@ -14,6 +14,7 @@ import Spin from 'antd/lib/spin';
 import { DisconnectOutlined } from '@ant-design/icons';
 import Space from 'antd/lib/space';
 import Text from 'antd/lib/typography/Text';
+import ReactMarkdown from 'react-markdown';
 import 'antd/dist/antd.css';
 
 import LogoutComponent from 'components/logout-component';
@@ -60,14 +61,14 @@ import AnnotationPageContainer from 'containers/annotation-page/annotation-page'
 import { getCore } from 'cvat-core-wrapper';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { NotificationsState } from 'reducers';
-import { customWaViewHit } from 'utils/enviroment';
+import { customWaViewHit } from 'utils/environment';
 import showPlatformNotification, {
     platformInfo,
     stopNotifications,
     showUnsupportedNotification,
 } from 'utils/platform-checker';
 import '../styles.scss';
-import consts from 'consts';
+import appConfig from 'config';
 import EmailConfirmationPage from './email-confirmation-pages/email-confirmed';
 import EmailVerificationSentPage from './email-confirmation-pages/email-verification-sent';
 import IncorrectEmailConfirmationPage from './email-confirmation-pages/incorrect-email-confirmation';
@@ -139,10 +140,10 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         });
 
         const {
-            HEALH_CHECK_RETRIES, HEALTH_CHECK_PERIOD, HEALTH_CHECK_REQUEST_TIMEOUT, UPGRADE_GUIDE_URL,
-        } = consts;
+            HEALTH_CHECK_RETRIES, HEALTH_CHECK_PERIOD, HEALTH_CHECK_REQUEST_TIMEOUT, SERVER_UNAVAILABLE_COMPONENT,
+        } = appConfig;
         core.server.healthCheck(
-            HEALH_CHECK_RETRIES,
+            HEALTH_CHECK_RETRIES,
             HEALTH_CHECK_PERIOD,
             HEALTH_CHECK_REQUEST_TIMEOUT,
         ).then(() => {
@@ -156,26 +157,15 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                     healthIinitialized: true,
                     backendIsHealthy: false,
                 });
+
                 Modal.error({
                     title: 'Cannot connect to the server',
                     className: 'cvat-modal-cannot-connect-server',
                     closable: false,
-                    content: (
-                        <Text>
-                            Make sure the CVAT backend and all necessary services
-                            (Database, Redis and Open Policy Agent) are running and avaliable.
-                            If you upgraded from version 2.2.0 or earlier, manual actions may be needed, see the&nbsp;
-
-                            <a
-                                target='_blank'
-                                rel='noopener noreferrer'
-                                href={UPGRADE_GUIDE_URL}
-                            >
-                                Upgrade Guide
-                            </a>
-                            .
-                        </Text>
-                    ),
+                    content:
+    <Text>
+        {SERVER_UNAVAILABLE_COMPONENT}
+    </Text>,
                 });
             });
 
@@ -306,12 +296,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         function showMessage(title: string): void {
             notification.info({
                 message: (
-                    <div
-                        // eslint-disable-next-line
-                        dangerouslySetInnerHTML={{
-                            __html: title,
-                        }}
-                    />
+                    <ReactMarkdown>{title}</ReactMarkdown>
                 ),
                 duration: null,
             });
@@ -342,15 +327,10 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             notification.error({
                 ...dynamicProps,
                 message: (
-                    <div
-                        // eslint-disable-next-line
-                        dangerouslySetInnerHTML={{
-                            __html: title,
-                        }}
-                    />
+                    <ReactMarkdown>{title}</ReactMarkdown>
                 ),
                 duration: null,
-                description: error.length > 200 ? 'Open the Browser Console to get details' : error,
+                description: error.length > 200 ? 'Open the Browser Console to get details' : <ReactMarkdown>{error}</ReactMarkdown>,
             });
 
             // eslint-disable-next-line no-console

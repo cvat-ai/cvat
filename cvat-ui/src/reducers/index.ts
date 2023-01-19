@@ -1,26 +1,17 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
-import { Webhook } from 'cvat-core-wrapper';
+import { Webhook, SocialAuthMethods } from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap } from 'utils/mousetrap-react';
 import { OpenCVTracker } from 'utils/opencv-wrapper/opencv-interfaces';
 
 export type StringObject = {
     [index: string]: string;
-};
-
-enum AdvancedAuthMethods {
-    GOOGLE_ACCOUNT_AUTHENTICATION = 'GOOGLE_ACCOUNT_AUTHENTICATION',
-    GITHUB_ACCOUNT_AUTHENTICATION = 'GITHUB_ACCOUNT_AUTHENTICATION',
-}
-
-export type AdvancedAuthMethodsList = {
-    [name in AdvancedAuthMethods]: boolean;
 };
 
 export interface AuthState {
@@ -33,9 +24,9 @@ export interface AuthState {
     allowChangePassword: boolean;
     allowResetPassword: boolean;
     hasEmailVerificationBeenSent: boolean;
-    advancedAuthFetching: boolean;
-    advancedAuthInitialized: boolean;
-    advancedAuthList: AdvancedAuthMethodsList;
+    socialAuthFetching: boolean;
+    socialAuthInitialized: boolean;
+    socialAuthMethods: SocialAuthMethods;
 }
 
 export interface ProjectsQuery {
@@ -466,7 +457,6 @@ export interface NotificationsState {
             saving: null | ErrorState;
             jobFetching: null | ErrorState;
             frameFetching: null | ErrorState;
-            contextImageFetching: null | ErrorState;
             changingLabelColor: null | ErrorState;
             updating: null | ErrorState;
             creating: null | ErrorState;
@@ -678,7 +668,7 @@ export interface AnnotationState {
         frame: {
             number: number;
             filename: string;
-            hasRelatedContext: boolean;
+            relatedFiles: number;
             data: any | null;
             fetching: boolean;
             delay: number;
@@ -687,11 +677,6 @@ export interface AnnotationState {
         navigationBlocked: boolean;
         playing: boolean;
         frameAngles: number[];
-        contextImage: {
-            fetching: boolean;
-            data: string | null;
-            hidden: boolean;
-        };
     };
     drawing: {
         activeInteractor?: Model | OpenCVTool;
@@ -719,7 +704,6 @@ export interface AnnotationState {
         saving: {
             forceExit: boolean;
             uploading: boolean;
-            statuses: string[];
         };
         zLayer: {
             min: number;

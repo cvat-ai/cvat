@@ -88,13 +88,13 @@ const cloudStoragesActions = {
     getCloudStorageStatusFailed: (cloudStorageID: number, error: any) => (
         createAction(CloudStorageActionTypes.GET_CLOUD_STORAGE_STATUS_FAILED, { cloudStorageID, error })
     ),
-    getCloudStoragePreiew: (cloudStorageID: number) => (
+    getCloudStoragePreview: (cloudStorageID: number) => (
         createAction(CloudStorageActionTypes.GET_CLOUD_STORAGE_PREVIEW, { cloudStorageID })
     ),
-    getCloudStoragePreiewSuccess: (cloudStorageID: number, preview: string) => (
+    getCloudStoragePreviewSuccess: (cloudStorageID: number, preview: string) => (
         createAction(CloudStorageActionTypes.GET_CLOUD_STORAGE_PREVIEW_SUCCESS, { cloudStorageID, preview })
     ),
-    getCloudStoragePreiewFailed: (cloudStorageID: number, error: any) => (
+    getCloudStoragePreviewFailed: (cloudStorageID: number, error: any) => (
         createAction(CloudStorageActionTypes.GET_CLOUD_STORAGE_PREVIEW_FAILED, { cloudStorageID, error })
     ),
 };
@@ -199,12 +199,12 @@ export function getCloudStorageStatusAsync(cloudStorage: CloudStorage): ThunkAct
 
 export function getCloudStoragePreviewAsync(cloudStorage: CloudStorage): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        dispatch(cloudStoragesActions.getCloudStoragePreiew(cloudStorage.id));
+        dispatch(cloudStoragesActions.getCloudStoragePreview(cloudStorage.id));
         try {
             const result = await cloudStorage.getPreview();
-            dispatch(cloudStoragesActions.getCloudStoragePreiewSuccess(cloudStorage.id, result));
+            dispatch(cloudStoragesActions.getCloudStoragePreviewSuccess(cloudStorage.id, result));
         } catch (error) {
-            dispatch(cloudStoragesActions.getCloudStoragePreiewFailed(cloudStorage.id, error));
+            dispatch(cloudStoragesActions.getCloudStoragePreviewFailed(cloudStorage.id, error));
         }
     };
 }

@@ -13,7 +13,6 @@ from datetime import datetime
 from distutils.util import strtobool
 from tempfile import mkstemp
 
-import cv2
 from django.db.models.query import Prefetch
 from django.shortcuts import get_object_or_404
 import django_rq
@@ -27,7 +26,7 @@ from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
     OpenApiParameter, OpenApiResponse, PolymorphicProxySerializer,
-    extend_schema_view, extend_schema, inline_serializer
+    extend_schema_view, extend_schema
 )
 from drf_spectacular.plumbing import build_array_type, build_basic_type
 
@@ -47,8 +46,8 @@ from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.media_extractors import get_mime
 from cvat.apps.engine.models import (
-    Job, JobCommit, Task, Project, Issue, Data,
-    Comment, StorageMethodChoice, StorageChoice, Image,
+    Job, Task, Project, Issue, Data,
+    Comment, StorageMethodChoice, StorageChoice,
     CloudProviderChoice, Location
 )
 from cvat.apps.engine.models import CloudStorage as CloudStorageModel
@@ -76,7 +75,7 @@ from .log import clogger, slogger
 from cvat.apps.iam.permissions import (CloudStoragePermission,
     CommentPermission, IssuePermission, JobPermission, ProjectPermission,
     TaskPermission, UserPermission)
-from cvat.apps.engine.cache import CacheInteraction
+from cvat.apps.engine.cache import MediaCache
 
 
 @extend_schema(tags=['server'])
@@ -235,39 +234,6 @@ class ServerViewSet(viewsets.ViewSet):
         }
         return Response(response)
 
-    @staticmethod
-    @extend_schema(
-        summary='Method provides a list with advanced integrated authentication methods (e.g. social accounts)',
-        responses={
-            '200': OpenApiResponse(response=inline_serializer(
-                name='AdvancedAuthentication',
-                fields={
-                    'GOOGLE_ACCOUNT_AUTHENTICATION': serializers.BooleanField(),
-                    'GITHUB_ACCOUNT_AUTHENTICATION': serializers.BooleanField(),
-                }
-            )),
-        }
-    )
-    @action(detail=False, methods=['GET'], url_path='advanced-auth', permission_classes=[])
-    def advanced_authentication(request):
-        use_social_auth = settings.USE_ALLAUTH_SOCIAL_ACCOUNTS
-        integrated_auth_providers = settings.SOCIALACCOUNT_PROVIDERS.keys() if use_social_auth else []
-        google_auth_is_enabled = bool(
-            'google' in integrated_auth_providers
-            and settings.SOCIAL_AUTH_GOOGLE_CLIENT_ID
-            and settings.SOCIAL_AUTH_GOOGLE_CLIENT_SECRET
-        )
-        github_auth_is_enabled = bool(
-            'github' in integrated_auth_providers
-            and settings.SOCIAL_AUTH_GITHUB_CLIENT_ID
-            and settings.SOCIAL_AUTH_GITHUB_CLIENT_SECRET
-        )
-        response = {
-            'GOOGLE_ACCOUNT_AUTHENTICATION': google_auth_is_enabled,
-            'GITHUB_ACCOUNT_AUTHENTICATION': github_auth_is_enabled,
-        }
-        return Response(response)
-
 @extend_schema(tags=['projects'])
 @extend_schema_view(
     list=extend_schema(
@@ -410,7 +376,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         url_path=r'dataset/?$')
     def dataset(self, request, pk):
         self._object = self.get_object() # force to call check_object_permissions
-        rq_id = f"import:dataset-for-porject.id{pk}-by-{request.user}"
+        rq_id = f"import:dataset-for-project.id{pk}-by-{request.user}"
 
         if request.method in {'POST', 'OPTIONS'}:
             return self.import_annotations(
@@ -494,7 +460,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return _import_project_dataset(
                 request=request,
                 filename=uploaded_file,
-                rq_id=f"import:dataset-for-porject.id{self._object.pk}-by-{request.user}",
+                rq_id=f"import:dataset-for-project.id{self._object.pk}-by-{request.user}",
                 rq_func=dm.project.import_dataset_as_project,
                 pk=self._object.pk,
                 format_name=format_name,
@@ -664,7 +630,6 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         return response
 
-
 class DataChunkGetter:
     def __init__(self, data_type, data_num, data_quality, task_dim):
         possible_data_type_values = ('chunk', 'frame', 'preview', 'context_image')
@@ -716,7 +681,7 @@ class DataChunkGetter:
                         f'[{start}, {stop}] range')
 
                 if self.type == 'preview':
-                    cache = CacheInteraction(self.dimension)
+                    cache = MediaCache(self.dimension)
                     buf, mime = cache.get_local_preview_with_mime(self.number, db_data)
                 else:
                     buf, mime = frame_provider.get_frame(self.number, self.quality)
@@ -724,20 +689,14 @@ class DataChunkGetter:
                 return HttpResponse(buf.getvalue(), content_type=mime)
 
             elif self.type == 'context_image':
-                if not (start <= self.number <= stop):
-                    raise ValidationError('The frame number should be in ' +
-                        f'[{start}, {stop}] range')
-
-                image = Image.objects.get(data_id=db_data.id, frame=self.number)
-                for i in image.related_files.all():
-                    path = os.path.realpath(str(i.path))
-                    image = cv2.imread(path)
-                    success, result = cv2.imencode('.JPEG', image)
-                    if not success:
-                        raise Exception('Failed to encode image to ".jpeg" format')
-                    return HttpResponse(io.BytesIO(result.tobytes()), content_type='image/jpeg')
-                return Response(data='No context image related to the frame',
-                    status=status.HTTP_404_NOT_FOUND)
+                if start <= self.number <= stop:
+                    cache = MediaCache(self.dimension)
+                    buff, mime = cache.get_frame_context_images(db_data, self.number)
+                    if not buff:
+                        return HttpResponseNotFound()
+                    return HttpResponse(io.BytesIO(buff), content_type=mime)
+                raise ValidationError('The frame number should be in ' +
+                    f'[{start}, {stop}] range')
             else:
                 return Response(data='unknown data type {}.'.format(self.type),
                     status=status.HTTP_400_BAD_REQUEST)
@@ -958,6 +917,9 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             self._object.data = db_data
             self._object.save()
             data = {k: v for k, v in serializer.data.items()}
+
+            if 'job_file_mapping' in serializer.validated_data:
+                data['job_file_mapping'] = serializer.validated_data['job_file_mapping']
 
             data['use_zip_chunks'] = serializer.validated_data['use_zip_chunks']
             data['use_cache'] = serializer.validated_data['use_cache']
@@ -1299,7 +1261,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             'width': item.width,
             'height': item.height,
             'name': item.path,
-            'has_related_context': hasattr(item, 'related_files') and item.related_files.exists()
+            'related_files': item.related_files.count() if hasattr(item, 'related_files') else 0
         } for item in media]
 
         db_data = db_task.data
@@ -1769,7 +1731,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             'width': item.width,
             'height': item.height,
             'name': item.path,
-            'has_related_context': hasattr(item, 'related_files') and item.related_files.exists()
+            'related_files': item.related_files.count() if hasattr(item, 'related_files') else 0
         } for item in media]
 
         db_data.frames = frame_meta
@@ -2170,7 +2132,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def preview(self, request, pk):
         try:
             db_storage = self.get_object()
-            cache = CacheInteraction()
+            cache = MediaCache()
             preview, mime = cache.get_cloud_preview_with_mime(db_storage)
             return HttpResponse(preview, mime)
         except CloudStorageModel.DoesNotExist:

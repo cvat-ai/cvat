@@ -12,7 +12,7 @@ import cv2
 import numpy as np
 from PIL import Image
 
-from cvat.apps.engine.cache import CacheInteraction
+from cvat.apps.engine.cache import MediaCache
 from cvat.apps.engine.media_extractors import VideoReader, ZipReader
 from cvat.apps.engine.mime_types import mimetypes
 from cvat.apps.engine.models import DataChoice, StorageMethodChoice, DimensionType
@@ -97,7 +97,7 @@ class FrameProvider:
         }
 
         if db_data.storage_method == StorageMethodChoice.CACHE:
-            cache = CacheInteraction(dimension=dimension)
+            cache = MediaCache(dimension=dimension)
 
             self._loaders[self.Quality.COMPRESSED] = self.BuffChunkLoader(
                 reader_class[db_data.compressed_chunk_type],

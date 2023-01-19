@@ -290,7 +290,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         } catch (error: any) {
             notification.error({
                 description: error.toString(),
-                message: 'OpenCV.js processing error occured',
+                message: 'OpenCV.js processing error occurred',
                 className: 'cvat-notification-notice-opencv-processing-error',
             });
         }
@@ -346,7 +346,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         } catch (error: any) {
             notification.error({
                 description: error.toString(),
-                message: 'Tracking error occured',
+                message: 'Tracking error occurred',
             });
         }
     };
@@ -401,7 +401,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         } catch (error: any) {
             notification.error({
                 description: error.toString(),
-                message: 'OpenCV.js processing error occured',
+                message: 'OpenCV.js processing error occurred',
                 className: 'cvat-notification-notice-opencv-processing-error',
             });
         } finally {
@@ -836,7 +836,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
             isActivated, canvasInstance, labels, frameData,
         } = this.props;
         const { libraryInitialized, approxPolyAccuracy, mode } = this.state;
-        const dynamcPopoverPros = isActivated ?
+        const dynamicPopoverProps = isActivated ?
             {
                 overlayStyle: {
                     display: 'none',
@@ -860,7 +860,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         ) : (
             <>
                 <CustomPopover
-                    {...dynamcPopoverPros}
+                    {...dynamicPopoverProps}
                     placement='right'
                     overlayClassName='cvat-opencv-control-popover'
                     content={this.renderContent()}

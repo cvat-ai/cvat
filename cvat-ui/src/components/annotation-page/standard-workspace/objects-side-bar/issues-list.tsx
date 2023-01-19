@@ -25,7 +25,7 @@ export default function LabelsListComponent(): JSX.Element {
     const issuesResolvedHidden = useSelector((state: CombinedState): any => state.review.issuesResolvedHidden);
     const frames = issues.map((issue: any): number => issue.frame).sort((a: number, b: number) => +a - +b);
     const nearestLeft = frames.filter((_frame: number): boolean => _frame < frame).reverse()[0];
-    const dinamicLeftProps: any = Number.isInteger(nearestLeft) ?
+    const dynamicLeftProps: any = Number.isInteger(nearestLeft) ?
         {
             onClick: () => dispatch(changeFrameAsync(nearestLeft)),
         } :
@@ -37,7 +37,7 @@ export default function LabelsListComponent(): JSX.Element {
         };
 
     const nearestRight = frames.filter((_frame: number): boolean => _frame > frame)[0];
-    const dinamicRightProps: any = Number.isInteger(nearestRight) ?
+    const dynamicRightProps: any = Number.isInteger(nearestRight) ?
         {
             onClick: () => dispatch(changeFrameAsync(nearestRight)),
         } :
@@ -54,12 +54,12 @@ export default function LabelsListComponent(): JSX.Element {
                 <Row justify='start' align='middle'>
                     <Col>
                         <CVATTooltip title='Find the previous frame with issues'>
-                            <LeftOutlined className='cvat-issues-sidebar-previous-frame' {...dinamicLeftProps} />
+                            <LeftOutlined className='cvat-issues-sidebar-previous-frame' {...dynamicLeftProps} />
                         </CVATTooltip>
                     </Col>
                     <Col offset={1}>
                         <CVATTooltip title='Find the next frame with issues'>
-                            <RightOutlined className='cvat-issues-sidebar-next-frame' {...dinamicRightProps} />
+                            <RightOutlined className='cvat-issues-sidebar-next-frame' {...dynamicRightProps} />
                         </CVATTooltip>
                     </Col>
                     <Col offset={2}>

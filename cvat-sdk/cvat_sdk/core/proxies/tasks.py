@@ -93,6 +93,7 @@ class Task(
                     "stop_frame",
                     "use_cache",
                     "use_zip_chunks",
+                    "job_file_mapping",
                     "filename_pattern",
                     "cloud_storage_id",
                 ],
