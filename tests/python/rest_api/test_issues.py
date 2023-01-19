@@ -127,10 +127,11 @@ class TestPostIssues:
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestPatchIssues:
     def _test_check_response(self, user, issue_id, data, is_allow, **kwargs):
+        request_data, expected_response_data = data
         with make_api_client(user) as client:
             (_, response) = client.issues_api.partial_update(
                 issue_id,
-                patched_issue_write_request=models.PatchedIssueWriteRequest(**data),
+                patched_issue_write_request=models.PatchedIssueWriteRequest(**request_data),
                 **kwargs,
                 _parse_response=False,
                 _check_status=False,
@@ -140,7 +141,7 @@ class TestPatchIssues:
             assert response.status == HTTPStatus.OK
             assert (
                 DeepDiff(
-                    data,
+                    expected_response_data,
                     json.loads(response.data),
                     exclude_regex_paths=r"root\['created_date|updated_date|comments|id|owner'\]",
                 )
@@ -150,17 +151,28 @@ class TestPatchIssues:
             assert response.status == HTTPStatus.FORBIDDEN
 
     @pytest.fixture(scope="class")
-    def request_data(self, issues):
-        def get_data(issue_id):
-            data = deepcopy(issues[issue_id])
-            data["resolved"] = not data["resolved"]
-            data.pop("comments")
-            data.pop("updated_date")
-            data.pop("id")
-            data.pop("owner")
-            if assignee := data.get("assignee", None):
-                data["assignee"] = assignee["id"]
-            return data
+    def request_and_response_data(self, issues, users):
+        def get_data(issue_id, *, username: str = None):
+            request_data = deepcopy(issues[issue_id])
+            request_data["resolved"] = not request_data["resolved"]
+
+            response_data = deepcopy(request_data)
+
+            request_data.pop("comments")
+            request_data.pop("updated_date")
+            request_data.pop("id")
+            request_data.pop("owner")
+
+            if username:
+                assignee = next(u for u in users if u["username"] == username)
+                request_data["assignee"] = assignee["id"]
+                response_data["assignee"] = {
+                    k: assignee[k] for k in ["id", "username", "url", "first_name", "last_name"]
+                }
+            else:
+                request_data["assignee"] = None
+
+            return request_data, response_data
 
         return get_data
 
@@ -189,13 +201,13 @@ class TestPatchIssues:
         find_issue_staff_user,
         find_users,
         issues_by_org,
-        request_data,
+        request_and_response_data,
     ):
         users = find_users(privilege=privilege)
         issues = issues_by_org[org]
         username, issue_id = find_issue_staff_user(issues, users, issue_staff, issue_admin)
 
-        data = request_data(issue_id)
+        data = request_and_response_data(issue_id, username=username)
         self._test_check_response(username, issue_id, data, is_allow)
 
     @pytest.mark.parametrize("org", [2])
@@ -223,13 +235,13 @@ class TestPatchIssues:
         find_issue_staff_user,
         find_users,
         issues_by_org,
-        request_data,
+        request_and_response_data,
     ):
         users = find_users(role=role, org=org)
         issues = issues_by_org[org]
         username, issue_id = find_issue_staff_user(issues, users, issue_staff, issue_admin)
 
-        data = request_data(issue_id)
+        data = request_and_response_data(issue_id, username=username)
         self._test_check_response(username, issue_id, data, is_allow, org_id=org)
 
     @pytest.mark.xfail(
