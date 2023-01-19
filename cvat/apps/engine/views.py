@@ -461,7 +461,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return _import_project_dataset(
                 request=request,
                 filename=uploaded_file,
-                rq_id=f"import:dataset-for-porject.id{self._object.pk}-by-{request.user}",
+                rq_id=f"import:dataset-for-project.id{self._object.pk}-by-{request.user}",
                 rq_func=dm.project.import_dataset_as_project,
                 pk=self._object.pk,
                 format_name=format_name,
@@ -871,7 +871,6 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         if instance.project:
             db_project = instance.project
             db_project.save()
-
 
     @extend_schema(summary='Moved to /jobs',
         responses=JobReadSerializer(many=True), # Duplicate to still get 'list' op. name

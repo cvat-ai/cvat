@@ -118,7 +118,7 @@ export const BrushIcon = React.memo((): JSX.Element => <SVGBrushIcon />);
 export const EraserIcon = React.memo((): JSX.Element => <SVGEraserIcon />);
 export const PolygonPlusIcon = React.memo((): JSX.Element => <SVGPolygonPlusIcon />);
 export const PolygonMinusIcon = React.memo((): JSX.Element => <SVGPolygonMinusIcon />);
-export const MutliPlusIcon = React.memo((): JSX.Element => <SVGMultiPlusIcon />);
+export const MultiPlusIcon = React.memo((): JSX.Element => <SVGMultiPlusIcon />);
 export const BackArrowIcon = React.memo((): JSX.Element => <SVGBackArrowIcon />);
 export const ClearIcon = React.memo((): JSX.Element => <SVGClearIcon />);
 export const ShowPasswordIcon = React.memo((): JSX.Element => <SVGShowPasswordIcon />);

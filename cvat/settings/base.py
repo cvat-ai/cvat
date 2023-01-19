@@ -112,20 +112,21 @@ INSTALLED_APPS = [
     'django_filters',
     'compressor',
     'django_sendfile',
+    "dj_rest_auth",
+    'dj_rest_auth.registration',
     'dj_pagination',
     'rest_framework',
     'rest_framework.authtoken',
     'drf_spectacular',
-    'dj_rest_auth',
     'django.contrib.sites',
     'allauth',
     'allauth.account',
     'corsheaders',
     'allauth.socialaccount',
     # social providers
+    'allauth.socialaccount.providers.amazon_cognito',
     'allauth.socialaccount.providers.github',
     'allauth.socialaccount.providers.google',
-    'dj_rest_auth.registration',
     'health_check',
     'health_check.db',
     'health_check.contrib.migrations',
@@ -243,6 +244,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+
             ],
         },
     },
@@ -290,6 +292,7 @@ AUTHENTICATION_BACKENDS = [
 # https://github.com/pennersr/django-allauth
 ACCOUNT_EMAIL_VERIFICATION = 'none'
 ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
+
 # set UI url to redirect after a successful e-mail confirmation
 #changed from '/auth/login' to '/auth/email-confirmation' for email confirmation message
 ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = '/auth/email-confirmation'
@@ -642,6 +645,7 @@ if USE_ALLAUTH_SOCIAL_ACCOUNTS:
     SOCIALACCOUNT_ADAPTER = 'cvat.apps.iam.adapters.SocialAccountAdapterEx'
     SOCIALACCOUNT_GITHUB_ADAPTER = 'cvat.apps.iam.adapters.GitHubAdapter'
     SOCIALACCOUNT_GOOGLE_ADAPTER = 'cvat.apps.iam.adapters.GoogleAdapter'
+    SOCIALACCOUNT_AMAZON_COGNITO_ADAPTER = 'cvat.apps.iam.adapters.AmazonCognitoOAuth2AdapterEx'
     SOCIALACCOUNT_LOGIN_ON_GET = True
     # It's required to define email in the case when a user has a private hidden email.
     # (e.g in github account set keep my email addresses private)
@@ -651,6 +655,7 @@ if USE_ALLAUTH_SOCIAL_ACCOUNTS:
     # custom variable because by default LOGIN_REDIRECT_URL will be used
     SOCIAL_APP_LOGIN_REDIRECT_URL = f'{CVAT_BASE_URL}/auth/login-with-social-app'
 
+    AMAZON_COGNITO_REDIRECT_URI = f'{CVAT_BASE_URL}/api/auth/amazon-cognito/login/callback/'
     GITHUB_CALLBACK_URL = f'{CVAT_BASE_URL}/api/auth/github/login/callback/'
     GOOGLE_CALLBACK_URL = f'{CVAT_BASE_URL}/api/auth/google/login/callback/'
 
@@ -659,6 +664,13 @@ if USE_ALLAUTH_SOCIAL_ACCOUNTS:
 
     SOCIAL_AUTH_GITHUB_CLIENT_ID = os.getenv('SOCIAL_AUTH_GITHUB_CLIENT_ID')
     SOCIAL_AUTH_GITHUB_CLIENT_SECRET = os.getenv('SOCIAL_AUTH_GITHUB_CLIENT_SECRET')
+
+    SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_ID = os.getenv('SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_ID')
+    SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_SECRET = os.getenv('SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_SECRET')
+    SOCIAL_AUTH_AMAZON_COGNITO_DOMAIN = os.getenv('SOCIAL_AUTH_AMAZON_COGNITO_DOMAIN')
+
+    # Django allauth social account providers
+    # https://django-allauth.readthedocs.io/en/latest/providers.html
     SOCIALACCOUNT_PROVIDERS = {
         'google': {
             'APP': {
@@ -684,4 +696,14 @@ if USE_ALLAUTH_SOCIAL_ACCOUNTS:
             # key with a capital letter will be used
             'PUBLIC_NAME': 'GitHub',
         },
+        'amazon_cognito': {
+            'DOMAIN': SOCIAL_AUTH_AMAZON_COGNITO_DOMAIN,
+            'SCOPE': [ 'profile', 'email', 'openid'],
+            'APP': {
+                'client_id': SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_ID,
+                'secret': SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_SECRET,
+                'key': ''
+            },
+            'PUBLIC_NAME': 'Amazon Cognito',
+        }
     }
