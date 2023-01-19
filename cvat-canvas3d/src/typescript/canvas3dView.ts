@@ -408,6 +408,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 if (!intersects.length) {
                     const { x, y, z } = this.action.frameCoordinates;
                     this.positionAllViews(x, y, z, true);
+                    this.updateCameraFrustrumPlane();
                 }
                 return;
             }
