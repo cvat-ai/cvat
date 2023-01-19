@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,6 +9,7 @@ import Webhook from 'cvat-core/src/webhook';
 import {
     Label, Attribute, RawAttribute, RawLabel,
 } from 'cvat-core/src/labels';
+import { Job, Task } from 'cvat-core/src/session';
 import { ShapeType, LabelType } from 'cvat-core/src/enums';
 import { Storage, StorageData } from 'cvat-core/src/storage';
 import { SocialAuthMethods, SocialAuthMethod } from 'cvat-core/src/auth-methods';
@@ -27,6 +29,8 @@ export {
     getCore,
     ObjectState,
     Label,
+    Job,
+    Task,
     Attribute,
     ShapeType,
     LabelType,

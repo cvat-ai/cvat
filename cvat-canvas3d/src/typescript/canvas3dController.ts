@@ -5,7 +5,8 @@
 
 import { ObjectState } from '.';
 import {
-    Canvas3dModel, Mode, DrawData, ActiveElement, GroupData, Configuration,
+    Canvas3dModel, Mode, DrawData, ActiveElement,
+    GroupData, Configuration, MergeData, SplitData,
 } from './canvas3dModel';
 
 export interface Canvas3dController {
@@ -17,6 +18,8 @@ export interface Canvas3dController {
     readonly objects: ObjectState[];
     mode: Mode;
     group(groupData: GroupData): void;
+    merge(mergeData: MergeData): void;
+    split(splitData: SplitData): void;
 }
 
 export class Canvas3dControllerImpl implements Canvas3dController {
@@ -60,5 +63,13 @@ export class Canvas3dControllerImpl implements Canvas3dController {
 
     public group(groupData: GroupData): void {
         this.model.group(groupData);
+    }
+
+    public merge(mergeData: MergeData): void {
+        this.model.merge(mergeData);
+    }
+
+    public split(splitData: SplitData): void {
+        this.model.split(splitData);
     }
 }
