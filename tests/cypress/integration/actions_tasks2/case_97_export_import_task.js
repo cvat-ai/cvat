@@ -119,7 +119,7 @@ context('Export, import an annotation task.', { browser: '!firefox' }, () => {
                     cy.wait('@importTask').its('response.statusCode').should('equal', 201);
                 }
             });
-            cy.contains('The task has been restored succesfully. Click here to open').should('exist').and('be.visible');
+            cy.contains('The task has been restored successfully. Click here to open').should('exist').and('be.visible');
             cy.closeNotification('.ant-notification-notice-info');
             cy.openTask(taskName);
             cy.url().then((link) => {

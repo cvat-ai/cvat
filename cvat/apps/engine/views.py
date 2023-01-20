@@ -46,7 +46,7 @@ from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.media_extractors import get_mime
 from cvat.apps.engine.models import (
-    Job, Task, Project, Issue, Data,
+    Job, JobCommit, Task, Project, Issue, Data,
     Comment, StorageMethodChoice, StorageChoice,
     CloudProviderChoice, Location
 )
@@ -62,6 +62,7 @@ from cvat.apps.engine.serializers import (
     ProjectFileSerializer, TaskFileSerializer)
 
 from utils.dataset_manifest import ImageManifestManager
+from cvat.apps.engine.view_utils import make_paginated_response
 from cvat.apps.engine.utils import (
     av_scan_paths, process_failed_job, configure_dependent_job, parse_exception_message
 )
@@ -309,23 +310,17 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     @extend_schema(
         summary='Method returns information of the tasks of the project with the selected id',
-        responses={
-            '200': TaskReadSerializer(many=True),
-        })
-    @action(detail=True, methods=['GET'], serializer_class=TaskReadSerializer)
+        responses=TaskReadSerializer(many=True)) # Duplicate to still get 'list' op. nam
+    @action(detail=True, methods=['GET'], serializer_class=TaskReadSerializer,
+        pagination_class=viewsets.GenericViewSet.pagination_class,
+        # Remove regular list() parameters from the swagger schema.
+        # Unset, they would be taken from the enclosing class, which is wrong.
+        # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
+        filter_fields=None, search_fields=None, ordering_fields=None)
     def tasks(self, request, pk):
         self.get_object() # force to call check_object_permissions
-        queryset = Task.objects.filter(project_id=pk).order_by('-id')
-
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True,
-                context={"request": request})
-            return self.get_paginated_response(serializer.data)
-
-        serializer = self.get_serializer(queryset, many=True,
-            context={"request": request})
-        return Response(serializer.data)
+        return make_paginated_response(Task.objects.filter(project_id=pk).order_by('-id'),
+            viewset=self, serializer_type=self.serializer_class) # from @action
 
 
     @extend_schema(methods=['GET'], summary='Export project as a dataset in a specific format',
@@ -381,7 +376,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         url_path=r'dataset/?$')
     def dataset(self, request, pk):
         self._object = self.get_object() # force to call check_object_permissions
-        rq_id = f"import:dataset-for-porject.id{pk}-by-{request.user}"
+        rq_id = f"import:dataset-for-project.id{pk}-by-{request.user}"
 
         if request.method in {'POST', 'OPTIONS'}:
             return self.import_annotations(
@@ -465,7 +460,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return _import_project_dataset(
                 request=request,
                 filename=uploaded_file,
-                rq_id=f"import:dataset-for-porject.id{self._object.pk}-by-{request.user}",
+                rq_id=f"import:dataset-for-project.id{self._object.pk}-by-{request.user}",
                 rq_func=dm.project.import_dataset_as_project,
                 pk=self._object.pk,
                 format_name=format_name,
@@ -866,17 +861,16 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     @extend_schema(summary='Method returns a list of jobs for a specific task',
         responses=JobReadSerializer(many=True)) # Duplicate to still get 'list' op. name
-    @action(detail=True, methods=['GET'], serializer_class=JobReadSerializer(many=True),
-        # Remove regular list() parameters from swagger schema
+    @action(detail=True, methods=['GET'], serializer_class=JobReadSerializer,
+        pagination_class=viewsets.GenericViewSet.pagination_class,
+        # Remove regular list() parameters from the swagger schema.
+        # Unset, they would be taken from the enclosing class, which is wrong.
         # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
-        pagination_class=None, filter_fields=None, search_fields=None, ordering_fields=None)
+        filter_fields=None, search_fields=None, ordering_fields=None)
     def jobs(self, request, pk):
         self.get_object() # force to call check_object_permissions
-        queryset = Job.objects.filter(segment__task_id=pk)
-        serializer = JobReadSerializer(queryset, many=True,
-            context={"request": request})
-
-        return Response(serializer.data)
+        return make_paginated_response(Job.objects.filter(segment__task_id=pk).order_by('id'),
+            viewset=self, serializer_type=self.serializer_class) # from @action
 
     # UploadMixin method
     def get_upload_dir(self):
@@ -1635,18 +1629,16 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     @extend_schema(summary='Method returns list of issues for the job',
         responses=IssueReadSerializer(many=True)) # Duplicate to still get 'list' op. name
-    @action(detail=True, methods=['GET'], serializer_class=IssueReadSerializer(many=True),
-        # Remove regular list() parameters from swagger schema
+    @action(detail=True, methods=['GET'], serializer_class=IssueReadSerializer,
+        pagination_class=viewsets.GenericViewSet.pagination_class,
+        # Remove regular list() parameters from the swagger schema.
+        # Unset, they would be taken from the enclosing class, which is wrong.
         # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
-        pagination_class=None, filter_fields=None, search_fields=None, ordering_fields=None)
+        filter_fields=None, search_fields=None, ordering_fields=None)
     def issues(self, request, pk):
-        db_job = self.get_object()
-        queryset = db_job.issues
-        serializer = IssueReadSerializer(queryset,
-            context={'request': request}, many=True)
-
-        return Response(serializer.data)
-
+        self.get_object() # force to call check_object_permissions
+        return make_paginated_response(Issue.objects.filter(job_id=pk).order_by('id'),
+            viewset=self, serializer_type=self.serializer_class) # from @action
 
     @extend_schema(summary='Method returns data for a specific job',
         parameters=[
@@ -1688,7 +1680,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=True, methods=['GET', 'PATCH'], serializer_class=DataMetaReadSerializer,
         url_path='data/meta')
     def metadata(self, request, pk):
-        self.get_object() #force to call check_object_permissions
+        self.get_object() # force to call check_object_permissions
         db_job = models.Job.objects.prefetch_related(
             'segment',
             'segment__task',
@@ -1748,21 +1740,17 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         return Response(serializer.data)
 
     @extend_schema(summary='The action returns the list of tracked changes for the job',
-        responses={
-            '200': JobCommitSerializer(many=True),
-        })
-    @action(detail=True, methods=['GET'], serializer_class=None)
+        responses=JobCommitSerializer(many=True)) # Duplicate to still get 'list' op. name
+    @action(detail=True, methods=['GET'], serializer_class=JobCommitSerializer,
+        pagination_class=viewsets.GenericViewSet.pagination_class,
+        # Remove regular list() parameters from the swagger schema.
+        # Unset, they would be taken from the enclosing class, which is wrong.
+        # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
+        filter_fields=None, search_fields=None, ordering_fields=None)
     def commits(self, request, pk):
-        db_job = self.get_object()
-        queryset = db_job.commits.order_by('-id')
-
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = JobCommitSerializer(page, context={'request': request}, many=True)
-            return self.get_paginated_response(serializer.data)
-
-        serializer = JobCommitSerializer(queryset, context={'request': request}, many=True)
-        return Response(serializer.data)
+        self.get_object() # force to call check_object_permissions
+        return make_paginated_response(JobCommit.objects.filter(job_id=pk).order_by('-id'),
+            viewset=self, serializer_type=self.serializer_class) # from @action
 
     @extend_schema(summary='Method returns a preview image for the job',
         responses={
@@ -1848,19 +1836,16 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     @extend_schema(summary='The action returns all comments of a specific issue',
         responses=CommentReadSerializer(many=True)) # Duplicate to still get 'list' op. name
-    @action(detail=True, methods=['GET'], serializer_class=CommentReadSerializer(many=True),
-        # Remove regular list() parameters from swagger schema
+    @action(detail=True, methods=['GET'], serializer_class=CommentReadSerializer,
+        pagination_class=viewsets.GenericViewSet.pagination_class,
+        # Remove regular list() parameters from the swagger schema.
+        # Unset, they would be taken from the enclosing class, which is wrong.
         # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
-        pagination_class=None, filter_fields=None, search_fields=None, ordering_fields=None)
+        filter_fields=None, search_fields=None, ordering_fields=None)
     def comments(self, request, pk):
-        # TODO: remove this endpoint? It is totally covered by issue body.
-
-        db_issue = self.get_object()
-        queryset = db_issue.comments
-        serializer = CommentReadSerializer(queryset,
-            context={'request': request}, many=True)
-
-        return Response(serializer.data)
+        self.get_object() # force to call check_object_permissions
+        return make_paginated_response(Comment.objects.filter(issue_id=pk).order_by('-id'),
+            viewset=self, serializer_type=self.serializer_class) # from @action
 
 @extend_schema(tags=['comments'])
 @extend_schema_view(

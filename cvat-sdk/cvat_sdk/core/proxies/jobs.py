@@ -1,4 +1,4 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -161,7 +161,10 @@ class Job(
         )
 
     def get_issues(self) -> List[Issue]:
-        return [Issue(self._client, m) for m in self.api.list_issues(id=self.id)[0]]
+        return [
+            Issue(self._client, m)
+            for m in get_paginated_collection(self.api.list_issues_endpoint, id=self.id)
+        ]
 
     def get_commits(self) -> List[models.IJobCommit]:
         return get_paginated_collection(self.api.list_commits_endpoint, id=self.id)
