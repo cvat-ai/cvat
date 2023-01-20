@@ -279,8 +279,10 @@ class SimpleFilter(filters.BaseFilterBackend):
 
     def get_lookup_fields(self, view):
         simple_filters = getattr(view, self.filter_fields_attr, None)
-        for k in self.reserved_names:
-            assert k not in simple_filters, f"Field '{k}' is reserved"
+        if simple_filters:
+            for k in self.reserved_names:
+                assert k not in simple_filters, \
+                    f"Query parameter '{k}' is reserved, try to change the filter name."
 
         return get_lookup_fields(view, fields=simple_filters)
 
