@@ -29,7 +29,6 @@ const DEFAULT_PROJECT_SUBSETS = ['Train', 'Test', 'Validation'];
 const CANVAS_WORKSPACE_ROWS = 12;
 const CANVAS_WORKSPACE_COLS = 12;
 const CANVAS_WORKSPACE_MARGIN = 8;
-const CANVAS_WORKSPACE_DEFAULT_CONTEXT_HEIGHT = 4;
 const CANVAS_WORKSPACE_PADDING = CANVAS_WORKSPACE_MARGIN / 2;
 const OUTSIDE_PIC_URL = 'https://opencv.github.io/cvat/images/image019.jpg';
 const DEFAULT_AWS_S3_REGIONS: string[][] = [
@@ -55,7 +54,7 @@ const DEFAULT_AWS_S3_REGIONS: string[][] = [
 const SERVER_UNAVAILABLE_COMPONENT = (
     <>
         Make sure the CVAT backend and all necessary services
-        (Database, Redis and Open Policy Agent) are running and available.
+        (Database, Redis and Open Policy Agent) are running and avaliable.
         If you upgraded from version 2.2.0 or earlier, manual actions may be needed,
         see the&nbsp;
         <a
@@ -108,7 +107,8 @@ const DEFAULT_GOOGLE_CLOUD_STORAGE_LOCATIONS: string[][] = [
     ['NAM4', 'US-CENTRAL1 and US-EAST1'],
 ];
 
-const HEALTH_CHECK_RETRIES = 10;
+const CVAT_BILLING_URL = process.env.CVAT_BILLING_HOST;
+const HEALH_CHECK_RETRIES = 10;
 const HEALTH_CHECK_PERIOD = 3000; // ms
 const HEALTH_CHECK_REQUEST_TIMEOUT = 5000; // ms
 
@@ -135,7 +135,8 @@ export default {
     DEFAULT_GOOGLE_CLOUD_STORAGE_LOCATIONS,
     OUTSIDE_PIC_URL,
     DATASET_MANIFEST_GUIDE_URL,
-    HEALTH_CHECK_RETRIES,
+    CVAT_BILLING_URL,
+    HEALH_CHECK_RETRIES,
     HEALTH_CHECK_PERIOD,
     HEALTH_CHECK_REQUEST_TIMEOUT,
     SERVER_UNAVAILABLE_COMPONENT,
@@ -143,5 +144,4 @@ export default {
     CANVAS_WORKSPACE_COLS,
     CANVAS_WORKSPACE_MARGIN,
     CANVAS_WORKSPACE_PADDING,
-    CANVAS_WORKSPACE_DEFAULT_CONTEXT_HEIGHT,
 };
