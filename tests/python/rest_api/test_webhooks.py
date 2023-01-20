@@ -381,7 +381,7 @@ class TestGetWebhooks:
                 for webhook in proj_webhooks
                 if "admin" in user["groups"]
                 and webhook["owner"]["id"] != user["id"]
-                and projects[webhook["project"]]["owner"]["id"] != user["id"]
+                and projects[webhook["project_id"]]["owner"]["id"] != user["id"]
             )
         )
 
@@ -400,7 +400,7 @@ class TestGetWebhooks:
                 for user in users
                 for webhook in proj_webhooks
                 if privilege not in user["groups"]
-                and projects[webhook["project"]]["owner"]["id"] == user["id"]
+                and projects[webhook["project_id"]]["owner"]["id"] == user["id"]
             )
         )
 
@@ -437,7 +437,7 @@ class TestGetWebhooks:
                 for user in users
                 for webhook in proj_webhooks
                 if privilege in user["groups"]
-                and projects[webhook["project"]]["owner"]["id"] != user["id"]
+                and projects[webhook["project_id"]]["owner"]["id"] != user["id"]
                 and webhook["owner"]["id"] != user["id"]
             )
         )
@@ -467,7 +467,7 @@ class TestGetWebhooks:
                 (user["username"], webhook)
                 for webhook in proj_webhooks
                 for user in find_users(role=role, org=webhook["organization"])
-                if projects[webhook["project"]]["owner"]["id"] != user["id"]
+                if projects[webhook["project_id"]]["owner"]["id"] != user["id"]
                 and webhook["owner"]["id"] != user["id"]
             )
         )
@@ -497,7 +497,7 @@ class TestGetWebhooks:
                 (user["username"], webhook)
                 for webhook in proj_webhooks
                 for user in find_users(role=role, org=webhook["organization"])
-                if projects[webhook["project"]]["owner"]["id"] != user["id"]
+                if projects[webhook["project_id"]]["owner"]["id"] != user["id"]
                 and webhook["owner"]["id"] != user["id"]
             )
         )
@@ -516,7 +516,7 @@ class TestGetWebhooks:
                 (user["username"], webhook)
                 for webhook in proj_webhooks
                 for user in find_users(role=role, org=webhook["organization"])
-                if projects[webhook["project"]]["owner"]["id"] == user["id"]
+                if projects[webhook["project_id"]]["owner"]["id"] == user["id"]
                 or webhook["owner"]["id"] == user["id"]
             )
         )
@@ -540,7 +540,7 @@ class TestGetListWebhooks:
     def test_admin_can_get_webhooks_for_project(self, webhooks):
         pid = next(
             (
-                webhook["project"]
+                webhook["project_id"]
                 for webhook in webhooks
                 if webhook["type"] == "project" and webhook["organization"] is None
             )
@@ -549,7 +549,7 @@ class TestGetListWebhooks:
         expected_response = [
             webhook
             for webhook in webhooks
-            if webhook["type"] == "project" and webhook["project"] == pid
+            if webhook["type"] == "project" and webhook["project_id"] == pid
         ]
         filter_val = '{"and":[{"==":[{"var":"project_id"},%s]}]}' % pid
 
@@ -573,7 +573,7 @@ class TestGetListWebhooks:
     def test_admin_can_get_webhooks_for_project_in_org(self, webhooks):
         pid, oid = next(
             (
-                (webhook["project"], webhook["organization"])
+                (webhook["project_id"], webhook["organization"])
                 for webhook in webhooks
                 if webhook["type"] == "project" and webhook["organization"] is not None
             )
@@ -582,7 +582,7 @@ class TestGetListWebhooks:
         expected_response = [
             webhook
             for webhook in webhooks
-            if webhook["project"] == pid and webhook["organization"] == oid
+            if webhook["project_id"] == pid and webhook["organization"] == oid
         ]
         filter_val = '{"and":[{"==":[{"var":"project_id"},%s]}]}' % pid
 
@@ -597,13 +597,13 @@ class TestGetListWebhooks:
     ):
         username, pid = next(
             (
-                (user["username"], webhook["project"])
+                (user["username"], webhook["project_id"])
                 for user in find_users(privilege=privilege)
                 for webhook in webhooks
                 if webhook["type"] == "project"
                 and webhook["organization"] is None
                 and webhook["owner"]["id"] != user["id"]
-                and projects[webhook["project"]]["owner"]["id"] != user["id"]
+                and projects[webhook["project_id"]]["owner"]["id"] != user["id"]
             )
         )
 
@@ -618,16 +618,18 @@ class TestGetListWebhooks:
     def test_user_can_get_webhook_list_for_project(self, privilege, find_users, webhooks, projects):
         username, pid = next(
             (
-                (user["username"], webhook["project"])
+                (user["username"], webhook["project_id"])
                 for user in find_users(privilege=privilege)
                 for webhook in webhooks
                 if webhook["type"] == "project"
                 and webhook["organization"] is None
-                and projects[webhook["project"]]["owner"]["id"] == user["id"]
+                and projects[webhook["project_id"]]["owner"]["id"] == user["id"]
             )
         )
 
-        expected_response = [w for w in webhooks if w["type"] == "project" and w["project"] == pid]
+        expected_response = [
+            w for w in webhooks if w["type"] == "project" and w["project_id"] == pid
+        ]
         filter_val = '{"and":[{"==":[{"var":"project_id"},%s]}]}' % pid
 
         response = get_method(username, "webhooks", filter=filter_val)
@@ -691,8 +693,8 @@ class TestGetListWebhooks:
             and (
                 webhook["owner"]["username"] == username
                 or (
-                    webhook["project"]
-                    and projects[webhook["project"]]["owner"]["username"] == username
+                    webhook["project_id"]
+                    and projects[webhook["project_id"]]["owner"]["username"] == username
                 )
             )
         ]
@@ -714,7 +716,7 @@ class TestGetListWebhooks:
                 for user in find_users(role=role, org=org["id"])
                 if webhook["organization"] == org["id"]
                 and webhook["type"] == "project"
-                and projects[webhook["project"]]["owner"]["id"] == user["id"]
+                and projects[webhook["project_id"]]["owner"]["id"] == user["id"]
             )
         )
 
@@ -723,7 +725,7 @@ class TestGetListWebhooks:
             for webhook in webhooks
             if webhook["organization"] == org_id
             and webhook["type"] == "project"
-            and projects[webhook["project"]]["owner"]["username"] == username
+            and projects[webhook["project_id"]]["owner"]["username"] == username
         ]
 
         response = get_method(username, "webhooks", org_id=org_id)
@@ -914,7 +916,7 @@ class TestPatchWebhooks:
                 for u in find_users(role=role, org=o["id"])
                 for w in proj_webhooks
                 for p in projects_by_org.get(o["id"], [])
-                if w["project"] == p["id"]
+                if w["project_id"] == p["id"]
                 and w["organization"] == o["id"]
                 and not is_project_staff(u["id"], p["id"])
                 and w["owner"]["id"] != u["id"]
@@ -953,7 +955,7 @@ class TestPatchWebhooks:
                 for u in find_users(role=role, org=o["id"])
                 for w in proj_webhooks
                 for p in projects_by_org.get(o["id"], [])
-                if w["project"] == p["id"]
+                if w["project_id"] == p["id"]
                 and w["organization"] == o["id"]
                 and u["id"] == p["owner"]["id"]
             )
@@ -994,7 +996,7 @@ class TestDeleteWebhooks:
                 if webhook["type"] == "project"
                 and webhook["organization"] is None
                 and webhook["owner"]["id"] != user["id"]
-                and projects[webhook["project"]]["owner"]["id"] != user["id"]
+                and projects[webhook["project_id"]]["owner"]["id"] != user["id"]
             )
         )
 
@@ -1020,7 +1022,7 @@ class TestDeleteWebhooks:
                 if webhook["type"] == "project"
                 and webhook["organization"] is not None
                 and webhook["owner"]["id"] != user["id"]
-                and projects[webhook["project"]]["owner"]["id"] != user["id"]
+                and projects[webhook["project_id"]]["owner"]["id"] != user["id"]
                 and not is_org_member(user["id"], webhook["organization"])
             )
         )
@@ -1063,7 +1065,7 @@ class TestDeleteWebhooks:
                 for webhook in webhooks
                 if webhook["type"] == "project"
                 and webhook["organization"] is None
-                and projects[webhook["project"]]["owner"]["id"] == user["id"]
+                and projects[webhook["project_id"]]["owner"]["id"] == user["id"]
             )
         )
 
@@ -1101,7 +1103,6 @@ class TestDeleteWebhooks:
     )
     def test_member_can_delete_org_webhook(self, role, allow, find_users, organizations, webhooks):
         org_webhooks = [w for w in webhooks if w["type"] == "organization"]
-        print(org_webhooks)
         username, org_id, webhook_id = next(
             (
                 (user["username"], org["id"], webhook["id"])
@@ -1138,7 +1139,7 @@ class TestDeleteWebhooks:
                 for webhook in proj_webhooks
                 if webhook["organization"]
                 and webhook["organization"] == org["id"]
-                and projects[webhook["project"]]["owner"]["id"] != user["id"]
+                and projects[webhook["project_id"]]["owner"]["id"] != user["id"]
                 and webhook["owner"]["id"] != user["id"]
             )
         )
@@ -1167,7 +1168,7 @@ class TestDeleteWebhooks:
                 if webhook["organization"]
                 and webhook["organization"] == org["id"]
                 and (
-                    projects[webhook["project"]]["owner"]["id"] == user["id"]
+                    projects[webhook["project_id"]]["owner"]["id"] == user["id"]
                     or webhook["owner"]["id"] == user["id"]
                 )
             )
