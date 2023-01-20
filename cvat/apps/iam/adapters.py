@@ -8,6 +8,7 @@ from django.conf import settings
 
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 from allauth.account.adapter import DefaultAccountAdapter
+from allauth.socialaccount.providers.amazon_cognito.views import AmazonCognitoOAuth2Adapter
 from allauth.socialaccount.providers.github.views import GitHubOAuth2Adapter
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from allauth.exceptions import ImmediateHttpResponse
@@ -48,3 +49,7 @@ class GoogleAdapter(GoogleOAuth2Adapter):
 
     def get_callback_url(self, request, app):
         return settings.GOOGLE_CALLBACK_URL
+
+class AmazonCognitoOAuth2AdapterEx(AmazonCognitoOAuth2Adapter):
+    def get_callback_url(self, request, app):
+        return settings.AMAZON_COGNITO_REDIRECT_URI

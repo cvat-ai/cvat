@@ -75,7 +75,7 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
                     </span>
                 )}
                 description={(
-                    <div className='cvat-porjects-project-item-description'>
+                    <div className='cvat-projects-project-item-description'>
                         <div>
                             {ownerName && (
                                 <>

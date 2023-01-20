@@ -17,6 +17,8 @@ from PIL import Image
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
+from cvat.apps.engine.tests.utils import get_paginated_collection
+
 LAMBDA_ROOT_PATH = '/api/lambda'
 LAMBDA_FUNCTIONS_PATH = f'{LAMBDA_ROOT_PATH}/functions'
 LAMBDA_REQUESTS_PATH = f'{LAMBDA_ROOT_PATH}/requests'
@@ -1044,10 +1046,13 @@ class Issue4996_Cases(_LambdaTestCaseBase):
         )
         self.task = task
 
-        jobs = self._get_request(f"/api/tasks/{self.task['id']}/jobs", self.admin,
-            org_id=self.org['id'])
-        assert jobs.status_code == status.HTTP_200_OK
-        self.job = jobs.json()[1]
+        jobs = get_paginated_collection(lambda page:
+            self._get_request(
+                f"/api/tasks/{self.task['id']}/jobs?page={page}",
+                self.admin, org_id=self.org['id']
+            )
+        )
+        self.job = jobs[1]
 
         self.common_data = {
             "task": self.task['id'],

@@ -411,7 +411,7 @@ def push(tid, user, scheme, host):
         except git.exc.GitCommandError as ex:
             _have_no_access_exception(ex)
     except Exception as ex:
-        slogger.task[tid].exception('push to remote repository errors occured', exc_info = True)
+        slogger.task[tid].exception('push to remote repository errors occurred', exc_info = True)
         raise ex
 
 

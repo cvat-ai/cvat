@@ -29,6 +29,7 @@ const DEFAULT_PROJECT_SUBSETS = ['Train', 'Test', 'Validation'];
 const CANVAS_WORKSPACE_ROWS = 12;
 const CANVAS_WORKSPACE_COLS = 12;
 const CANVAS_WORKSPACE_MARGIN = 8;
+const CANVAS_WORKSPACE_DEFAULT_CONTEXT_HEIGHT = 4;
 const CANVAS_WORKSPACE_PADDING = CANVAS_WORKSPACE_MARGIN / 2;
 const OUTSIDE_PIC_URL = 'https://opencv.github.io/cvat/images/image019.jpg';
 const DEFAULT_AWS_S3_REGIONS: string[][] = [
@@ -54,7 +55,7 @@ const DEFAULT_AWS_S3_REGIONS: string[][] = [
 const SERVER_UNAVAILABLE_COMPONENT = (
     <>
         Make sure the CVAT backend and all necessary services
-        (Database, Redis and Open Policy Agent) are running and avaliable.
+        (Database, Redis and Open Policy Agent) are running and available.
         If you upgraded from version 2.2.0 or earlier, manual actions may be needed,
         see the&nbsp;
         <a
@@ -142,4 +143,5 @@ export default {
     CANVAS_WORKSPACE_COLS,
     CANVAS_WORKSPACE_MARGIN,
     CANVAS_WORKSPACE_PADDING,
+    CANVAS_WORKSPACE_DEFAULT_CONTEXT_HEIGHT,
 };
