@@ -36,7 +36,7 @@ Cypress.Commands.add('deleteOrganizations', (authResponse, otrganizationsToDelet
             Authorization: `Token ${authKey}`,
         },
     }).then((_response) => {
-        const responceResult = _response.body;
+        const responceResult = _response.body.results;
         for (const organization of responceResult) {
             const { id, slug } = organization;
             for (const organizationToDelete of otrganizationsToDelete) {
@@ -62,7 +62,9 @@ Cypress.Commands.add('activateOrganization', (organizationShortName) => {
         .find('[role="menuitem"]')
         .filter(':contains("Organization")')
         .trigger('mouseover');
-    cy.contains('.cvat-header-menu-organization-item', organizationShortName).click();
+    cy.contains('.cvat-header-menu-organization-item', organizationShortName)
+        .should('be.visible')
+        .click();
     cy.get('.cvat-header-menu-user-dropdown').should('be.visible');
     cy.get('.cvat-header-menu-user-dropdown-organization')
         .should('exist')

@@ -1,0 +1,148 @@
+// Copyright (C) 2023 CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import 'base.scss';
+
+.cvat-context-image-wrapper {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+
+    > .ant-spin {
+        position: absolute;
+        top: 50%;
+        transform: translate(0, -50%);
+    }
+
+    > .ant-typography {
+        top: 50%;
+        position: absolute;
+    }
+
+    .cvat-context-image-header {
+        position: absolute;
+        height: $grid-unit-size * 4;
+        border-radius: 4px 4px 0 0;
+        width: 100%;
+        text-align: center;
+        z-index: 1;
+        background: $header-color;
+        overflow: hidden;
+
+        > .cvat-context-image-title {
+            width: calc(100% - $grid-unit-size * 13);
+            margin-right: $grid-unit-size * 7;
+            margin-left: $grid-unit-size * 7;
+
+            > span.ant-typography {
+                font-size: 12px;
+                line-height: $grid-unit-size * 4;
+                word-break: break-all;
+            }
+        }
+
+        > .cvat-context-image-setup-button {
+            font-size: 16px;
+            opacity: 0;
+            transition: all 200ms;
+            position: absolute;
+            top: $grid-unit-size;
+            right: $grid-unit-size * 4;
+        }
+
+        > .cvat-context-image-close-button {
+            font-size: 16px;
+            opacity: 0;
+            transition: all 200ms;
+            position: absolute;
+            top: $grid-unit-size;
+            right: $grid-unit-size;
+        }
+    }
+
+    > canvas {
+        object-fit: contain;
+        position: relative;
+        top: calc(50% + $grid-unit-size * 2);
+        transform: translateY(-50%);
+        width: 100%;
+        height: calc(100% - $grid-unit-size * 4);
+    }
+
+    &:hover {
+        > .cvat-context-image-header > .cvat-context-image-setup-button {
+            opacity: 0.6;
+
+            &:hover {
+                opacity: 0.9;
+            }
+        }
+    }
+}
+
+.cvat-context-image-overlay {
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    background: rgba(255, 255, 255, 0.25);
+    position: absolute;
+    justify-content: space-around;
+    align-items: center;
+    display: flex;
+
+    .cvat-context-image-gallery {
+        width: 80%;
+        max-height: 80%;
+        position: relative;
+        background: white;
+        padding: $grid-unit-size;
+        display: block;
+        justify-content: space-between;
+        overflow: hidden;
+        overflow-y: auto;
+
+        .cvat-context-image-gallery-items {
+            display: block;
+
+            .cvat-context-image-gallery-item {
+                text-align: center;
+                padding: $grid-unit-size;
+                opacity: 0.6;
+                width: 25%;
+                float: left;
+
+                &.cvat-context-image-gallery-item-current {
+                    opacity: 1;
+                }
+
+                &:hover {
+                    opacity: 0.9;
+                }
+
+                > canvas {
+                    width: 100%;
+                }
+            }
+        }
+
+        .cvat-context-image-gallery-header {
+            text-align: center;
+
+            .cvat-context-image-close-button {
+                &:hover {
+                    opacity: 0.9;
+                }
+
+                transition: all 200ms;
+                opacity: 0.6;
+                position: absolute;
+                top: $grid-unit-size;
+                right: $grid-unit-size;
+            }
+        }
+    }
+}

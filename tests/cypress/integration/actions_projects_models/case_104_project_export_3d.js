@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -86,7 +87,7 @@ context('Export project dataset with 3D task.', { browser: '!firefox' }, () => {
                 as: 'exportAnnotations3dRenameArchive',
                 type: 'annotations',
                 dumpType: 'Datumaro 3D',
-                archiveCustomeName: 'export_project_3d_annotation',
+                archiveCustomName: 'export_project_3d_annotation',
             };
             cy.exportProject(exportAnnotations3dRenameArchive);
             cy.waitForDownload();

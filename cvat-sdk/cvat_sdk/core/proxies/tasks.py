@@ -1,4 +1,4 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -7,17 +7,18 @@ from __future__ import annotations
 import io
 import json
 import mimetypes
-import os
-import os.path as osp
+import shutil
 from enum import Enum
+from pathlib import Path
 from time import sleep
-from typing import Any, Dict, List, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence
 
 from PIL import Image
 
 from cvat_sdk.api_client import apis, exceptions, models
 from cvat_sdk.core import git
 from cvat_sdk.core.downloading import Downloader
+from cvat_sdk.core.helpers import get_paginated_collection
 from cvat_sdk.core.progress import ProgressReporter
 from cvat_sdk.core.proxies.annotations import AnnotationCrudMixin
 from cvat_sdk.core.proxies.jobs import Job
@@ -31,6 +32,9 @@ from cvat_sdk.core.proxies.model_proxy import (
 )
 from cvat_sdk.core.uploading import AnnotationUploader, DataUploader, Uploader
 from cvat_sdk.core.utils import filter_dict
+
+if TYPE_CHECKING:
+    from _typeshed import StrPath, SupportsWrite
 
 
 class ResourceType(Enum):
@@ -62,26 +66,21 @@ class Task(
 
     def upload_data(
         self,
-        resource_type: ResourceType,
-        resources: Sequence[str],
+        resources: Sequence[StrPath],
         *,
+        resource_type: ResourceType = ResourceType.LOCAL,
         pbar: Optional[ProgressReporter] = None,
         params: Optional[Dict[str, Any]] = None,
+        wait_for_completion: bool = True,
+        status_check_period: Optional[int] = None,
     ) -> None:
         """
         Add local, remote, or shared files to an existing task.
         """
         params = params or {}
 
-        data = {}
-        if resource_type is ResourceType.LOCAL:
-            pass  # handled later
-        elif resource_type is ResourceType.REMOTE:
-            data["remote_files"] = resources
-        elif resource_type is ResourceType.SHARE:
-            data["server_files"] = resources
+        data = {"image_quality": 70}
 
-        data["image_quality"] = 70
         data.update(
             filter_dict(
                 params,
@@ -94,6 +93,9 @@ class Task(
                     "stop_frame",
                     "use_cache",
                     "use_zip_chunks",
+                    "job_file_mapping",
+                    "filename_pattern",
+                    "cloud_storage_id",
                 ],
             )
         )
@@ -101,6 +103,15 @@ class Task(
             data["frame_filter"] = f"step={params.get('frame_step')}"
 
         if resource_type in [ResourceType.REMOTE, ResourceType.SHARE]:
+            for resource in resources:
+                if not isinstance(resource, str):
+                    raise TypeError(f"resources: expected instances of str, got {type(resource)}")
+
+            if resource_type is ResourceType.REMOTE:
+                data["remote_files"] = resources
+            elif resource_type is ResourceType.SHARE:
+                data["server_files"] = resources
+
             self.api.create_data(
                 self.id,
                 data_request=models.DataRequest(**data),
@@ -110,12 +121,45 @@ class Task(
                 self.api.create_data_endpoint.path, kwsub={"id": self.id}
             )
 
-            DataUploader(self._client).upload_files(url, resources, pbar=pbar, **data)
+            DataUploader(self._client).upload_files(
+                url, list(map(Path, resources)), pbar=pbar, **data
+            )
+
+        if wait_for_completion:
+            if status_check_period is None:
+                status_check_period = self._client.config.status_check_period
+
+            self._client.logger.info("Awaiting for task %s creation...", self.id)
+            while True:
+                sleep(status_check_period)
+                (status, response) = self.api.retrieve_status(self.id)
+
+                self._client.logger.info(
+                    "Task %s creation status: %s (message=%s)",
+                    self.id,
+                    status.state.value,
+                    status.message,
+                )
+
+                if (
+                    status.state.value
+                    == models.RqStatusStateEnum.allowed_values[("value",)]["FINISHED"]
+                ):
+                    break
+                elif (
+                    status.state.value
+                    == models.RqStatusStateEnum.allowed_values[("value",)]["FAILED"]
+                ):
+                    raise exceptions.ApiException(
+                        status=status.state.value, reason=status.message, http_resp=response
+                    )
+
+            self.fetch()
 
     def import_annotations(
         self,
         format_name: str,
-        filename: str,
+        filename: StrPath,
         *,
         status_check_period: Optional[int] = None,
         pbar: Optional[ProgressReporter] = None,
@@ -123,6 +167,8 @@ class Task(
         """
         Upload annotations for a task in the specified format (e.g. 'YOLO ZIP 1.0').
         """
+
+        filename = Path(filename)
 
         AnnotationUploader(self._client).upload_file_and_wait(
             self.api.create_annotations_endpoint,
@@ -150,14 +196,31 @@ class Task(
     def get_preview(
         self,
     ) -> io.RawIOBase:
-        (_, response) = self.api.retrieve_data(self.id, type="preview")
+        (_, response) = self.api.retrieve_preview(self.id)
         return io.BytesIO(response.data)
+
+    def download_chunk(
+        self,
+        chunk_id: int,
+        output_file: SupportsWrite[bytes],
+        *,
+        quality: Optional[str] = None,
+    ) -> None:
+        params = {}
+        if quality:
+            params["quality"] = quality
+        (_, response) = self.api.retrieve_data(
+            self.id, number=chunk_id, **params, type="chunk", _parse_response=False
+        )
+
+        with response:
+            shutil.copyfileobj(response, output_file)
 
     def download_frames(
         self,
         frame_ids: Sequence[int],
         *,
-        outdir: str = "",
+        outdir: StrPath = ".",
         quality: str = "original",
         filename_pattern: str = "frame_{frame_id:06d}{frame_ext}",
     ) -> Optional[List[Image.Image]]:
@@ -165,7 +228,9 @@ class Task(
         Download the requested frame numbers for a task and save images as outdir/filename_pattern
         """
         # TODO: add arg descriptions in schema
-        os.makedirs(outdir, exist_ok=True)
+
+        outdir = Path(outdir)
+        outdir.mkdir(exist_ok=True)
 
         for frame_id in frame_ids:
             frame_bytes = self.get_frame(frame_id, quality=quality)
@@ -181,12 +246,12 @@ class Task(
                 im_ext = ".jpg"
 
             outfile = filename_pattern.format(frame_id=frame_id, frame_ext=im_ext)
-            im.save(osp.join(outdir, outfile))
+            im.save(outdir / outfile)
 
     def export_dataset(
         self,
         format_name: str,
-        filename: str,
+        filename: StrPath,
         *,
         pbar: Optional[ProgressReporter] = None,
         status_check_period: Optional[int] = None,
@@ -195,6 +260,9 @@ class Task(
         """
         Download annotations for a task in the specified format (e.g. 'YOLO ZIP 1.0').
         """
+
+        filename = Path(filename)
+
         if include_images:
             endpoint = self.api.retrieve_dataset_endpoint
         else:
@@ -213,7 +281,7 @@ class Task(
 
     def download_backup(
         self,
-        filename: str,
+        filename: StrPath,
         *,
         status_check_period: int = None,
         pbar: Optional[ProgressReporter] = None,
@@ -221,6 +289,8 @@ class Task(
         """
         Download a task backup
         """
+
+        filename = Path(filename)
 
         Downloader(self._client).prepare_and_download_file_from_endpoint(
             self.api.retrieve_backup_endpoint,
@@ -233,7 +303,10 @@ class Task(
         self._client.logger.info(f"Backup for task {self.id} has been downloaded to {filename}")
 
     def get_jobs(self) -> List[Job]:
-        return [Job(self._client, m) for m in self.api.list_jobs(id=self.id)[0]]
+        return [
+            Job(self._client, model=m)
+            for m in get_paginated_collection(self.api.list_jobs_endpoint, id=self.id)
+        ]
 
     def get_meta(self) -> models.IDataMetaRead:
         (meta, _) = self.api.retrieve_data_meta(self.id)
@@ -261,9 +334,9 @@ class TasksRepo(
     def create_from_data(
         self,
         spec: models.ITaskWriteRequest,
-        resource_type: ResourceType,
         resources: Sequence[str],
         *,
+        resource_type: ResourceType = ResourceType.LOCAL,
         data_params: Optional[Dict[str, Any]] = None,
         annotation_path: str = "",
         annotation_format: str = "CVAT XML 1.1",
@@ -278,9 +351,6 @@ class TasksRepo(
 
         Returns: id of the created task
         """
-        if status_check_period is None:
-            status_check_period = self._client.config.status_check_period
-
         if getattr(spec, "project_id", None) and getattr(spec, "labels", None):
             raise exceptions.ApiValueError(
                 "Can't set labels to a task inside a project. "
@@ -291,34 +361,21 @@ class TasksRepo(
         task = self.create(spec=spec)
         self._client.logger.info("Created task ID: %s NAME: %s", task.id, task.name)
 
-        task.upload_data(resource_type, resources, pbar=pbar, params=data_params)
-
-        self._client.logger.info("Awaiting for task %s creation...", task.id)
-        status: models.RqStatus = None
-        while status != models.RqStatusStateEnum.allowed_values[("value",)]["FINISHED"]:
-            sleep(status_check_period)
-            (status, response) = self.api.retrieve_status(task.id)
-
-            self._client.logger.info(
-                "Task %s creation status=%s, message=%s",
-                task.id,
-                status.state.value,
-                status.message,
-            )
-
-            if status.state.value == models.RqStatusStateEnum.allowed_values[("value",)]["FAILED"]:
-                raise exceptions.ApiException(
-                    status=status.state.value, reason=status.message, http_resp=response
-                )
-
-            status = status.state.value
+        task.upload_data(
+            resource_type=resource_type,
+            resources=resources,
+            pbar=pbar,
+            params=data_params,
+            wait_for_completion=True,
+            status_check_period=status_check_period,
+        )
 
         if annotation_path:
             task.import_annotations(annotation_format, annotation_path, pbar=pbar)
 
         if dataset_repository_url:
             git.create_git_repo(
-                self,
+                self._client,
                 task_id=task.id,
                 repo_url=dataset_repository_url,
                 status_check_period=status_check_period,
@@ -349,7 +406,7 @@ class TasksRepo(
 
     def create_from_backup(
         self,
-        filename: str,
+        filename: StrPath,
         *,
         status_check_period: int = None,
         pbar: Optional[ProgressReporter] = None,
@@ -357,10 +414,13 @@ class TasksRepo(
         """
         Import a task from a backup file
         """
+
+        filename = Path(filename)
+
         if status_check_period is None:
             status_check_period = self._client.config.status_check_period
 
-        params = {"filename": osp.basename(filename)}
+        params = {"filename": filename.name}
         url = self._client.api_map.make_endpoint_url(self.api.create_backup_endpoint.path)
         uploader = Uploader(self._client)
         response = uploader.upload_file(

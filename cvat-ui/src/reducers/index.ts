@@ -1,26 +1,17 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
-import { Webhook } from 'cvat-core-wrapper';
+import { Webhook, SocialAuthMethods } from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap } from 'utils/mousetrap-react';
 import { OpenCVTracker } from 'utils/opencv-wrapper/opencv-interfaces';
 
 export type StringObject = {
     [index: string]: string;
-};
-
-enum AdvancedAuthMethods {
-    GOOGLE_ACCOUNT_AUTHENTICATION = 'GOOGLE_ACCOUNT_AUTHENTICATION',
-    GITHUB_ACCOUNT_AUTHENTICATION = 'GITHUB_ACCOUNT_AUTHENTICATION',
-}
-
-export type AdvancedAuthMethodsList = {
-    [name in AdvancedAuthMethods]: boolean;
 };
 
 export interface AuthState {
@@ -33,9 +24,9 @@ export interface AuthState {
     allowChangePassword: boolean;
     allowResetPassword: boolean;
     hasEmailVerificationBeenSent: boolean;
-    advancedAuthFetching: boolean;
-    advancedAuthInitialized: boolean;
-    advancedAuthList: AdvancedAuthMethodsList;
+    socialAuthFetching: boolean;
+    socialAuthInitialized: boolean;
+    socialAuthMethods: SocialAuthMethods;
 }
 
 export interface ProjectsQuery {
@@ -46,16 +37,22 @@ export interface ProjectsQuery {
     sort: string | null;
 }
 
-export interface Project {
-    instance: any;
+interface Preview {
+    fetching: boolean;
+    initialized: boolean;
     preview: string;
 }
+
+export type Project = any;
 
 export interface ProjectsState {
     initialized: boolean;
     fetching: boolean;
     count: number;
     current: Project[];
+    previews: {
+        [index: number]: Preview;
+    };
     gettingQuery: ProjectsQuery;
     tasksGettingQuery: TasksQuery & { ordering: string };
     activities: {
@@ -78,10 +75,7 @@ export interface TasksQuery {
     projectId: number | null;
 }
 
-export interface Task {
-    instance: any; // cvat-core instance
-    preview: string;
-}
+export type Task = any; // cvat-core instance
 
 export interface JobsQuery {
     page: number;
@@ -90,12 +84,16 @@ export interface JobsQuery {
     filter: string | null;
 }
 
+export type Job = any;
+
 export interface JobsState {
     query: JobsQuery;
     fetching: boolean;
     count: number;
-    current: any[];
-    previews: string[];
+    current: Job[];
+    previews: {
+        [index: number]: Preview;
+    };
 }
 
 export interface TasksState {
@@ -110,6 +108,9 @@ export interface TasksState {
     gettingQuery: TasksQuery;
     count: number;
     current: Task[];
+    previews: {
+        [index: number]: Preview;
+    };
     activities: {
         deletes: {
             [tid: number]: boolean; // deleted (deleting if in dictionary)
@@ -214,14 +215,11 @@ export interface CloudStoragesQuery {
     filter: string | null;
 }
 
-interface CloudStorageAdditional {
+interface CloudStorageStatus {
     fetching: boolean;
     initialized: boolean;
     status: string | null;
-    preview: string;
 }
-type CloudStorageStatus = Pick<CloudStorageAdditional, 'fetching' | 'initialized' | 'status'>;
-type CloudStoragePreview = Pick<CloudStorageAdditional, 'fetching' | 'initialized' | 'preview'>;
 
 export type CloudStorage = any;
 
@@ -234,7 +232,7 @@ export interface CloudStoragesState {
         [index: number]: CloudStorageStatus;
     };
     previews: {
-        [index: number]: CloudStoragePreview;
+        [index: number]: Preview;
     };
     gettingQuery: CloudStoragesQuery;
     activities: {
@@ -470,7 +468,6 @@ export interface NotificationsState {
             saving: null | ErrorState;
             jobFetching: null | ErrorState;
             frameFetching: null | ErrorState;
-            contextImageFetching: null | ErrorState;
             changingLabelColor: null | ErrorState;
             updating: null | ErrorState;
             creating: null | ErrorState;
@@ -682,7 +679,7 @@ export interface AnnotationState {
         frame: {
             number: number;
             filename: string;
-            hasRelatedContext: boolean;
+            relatedFiles: number;
             data: any | null;
             fetching: boolean;
             delay: number;
@@ -691,11 +688,6 @@ export interface AnnotationState {
         navigationBlocked: boolean;
         playing: boolean;
         frameAngles: number[];
-        contextImage: {
-            fetching: boolean;
-            data: string | null;
-            hidden: boolean;
-        };
     };
     drawing: {
         activeInteractor?: Model | OpenCVTool;
@@ -723,17 +715,12 @@ export interface AnnotationState {
         saving: {
             forceExit: boolean;
             uploading: boolean;
-            statuses: string[];
         };
         zLayer: {
             min: number;
             max: number;
             cur: number;
         };
-    };
-    propagate: {
-        objectState: any | null;
-        frames: number;
     };
     remove: {
         objectState: any;
@@ -743,6 +730,9 @@ export interface AnnotationState {
         collecting: boolean;
         visible: boolean;
         data: any;
+    };
+    propagate: {
+        visible: boolean;
     };
     colors: any[];
     filtersPanelVisible: boolean;

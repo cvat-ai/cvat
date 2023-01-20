@@ -5,8 +5,7 @@
 
 from tempfile import TemporaryDirectory
 
-import datumaro.components.extractor as datumaro
-from datumaro.components.dataset import Dataset
+import datumaro as dm
 from pyunpack import Archive
 
 from cvat.apps.dataset_manager.bindings import GetCVATDataExtractor
@@ -14,9 +13,10 @@ from cvat.apps.dataset_manager.util import make_zip_archive
 
 from .registry import dm_env, exporter, importer
 
+
 def _import_to_task(dataset, instance_data):
     tracks = {}
-    label_cat = dataset.categories()[datumaro.AnnotationType.label]
+    label_cat = dataset.categories()[dm.AnnotationType.label]
 
     for item in dataset:
         # NOTE: MOT frames start from 1
@@ -25,21 +25,26 @@ def _import_to_task(dataset, instance_data):
         frame_number = instance_data.abs_frame_id(frame_number)
 
         for ann in item.annotations:
-            if ann.type != datumaro.AnnotationType.bbox:
+            if ann.type != dm.AnnotationType.bbox:
                 continue
 
-            track_id = ann.attributes.get('track_id')
+            occluded = ann.attributes.pop('occluded', False) is True
+            track_id = ann.attributes.pop('track_id', None)
+            attributes = [
+                instance_data.Attribute(name=n, value=str(v))
+                for n, v in ann.attributes.items()
+            ]
             if track_id is None:
                 # Extension. Import regular boxes:
                 instance_data.add_shape(instance_data.LabeledShape(
                     type='rectangle',
                     label=label_cat.items[ann.label].name,
                     points=ann.points,
-                    occluded=ann.attributes.get('occluded') is True,
+                    occluded=occluded,
                     z_order=ann.z_order,
                     group=0,
                     frame=frame_number,
-                    attributes=[],
+                    attributes=attributes,
                     source='manual',
                 ))
                 continue
@@ -47,12 +52,12 @@ def _import_to_task(dataset, instance_data):
             shape = instance_data.TrackedShape(
                 type='rectangle',
                 points=ann.points,
-                occluded=ann.attributes.get('occluded') is True,
+                occluded=occluded,
                 outside=False,
                 keyframe=True,
                 z_order=ann.z_order,
                 frame=frame_number,
-                attributes=[],
+                attributes=attributes,
                 source='manual',
             )
 
@@ -91,7 +96,7 @@ def _import_to_task(dataset, instance_data):
 
 @exporter(name='MOT', ext='ZIP', version='1.1')
 def _export(dst_file, instance_data, save_images=False):
-    dataset = Dataset.from_extractors(GetCVATDataExtractor(
+    dataset = dm.Dataset.from_extractors(GetCVATDataExtractor(
         instance_data, include_images=save_images), env=dm_env)
     with TemporaryDirectory() as temp_dir:
         dataset.export(temp_dir, 'mot_seq_gt', save_images=save_images)
@@ -103,7 +108,7 @@ def _import(src_file, instance_data, load_data_callback=None, **kwargs):
     with TemporaryDirectory() as tmp_dir:
         Archive(src_file.name).extractall(tmp_dir)
 
-        dataset = Dataset.import_from(tmp_dir, 'mot_seq', env=dm_env)
+        dataset = dm.Dataset.import_from(tmp_dir, 'mot_seq', env=dm_env)
         if load_data_callback is not None:
             load_data_callback(dataset, instance_data)
 
@@ -113,4 +118,3 @@ def _import(src_file, instance_data, load_data_callback=None, **kwargs):
                 _import_to_task(sub_dataset, task_data)
         else:
             _import_to_task(dataset, instance_data)
-

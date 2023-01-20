@@ -4,8 +4,8 @@ ARG http_proxy
 ARG https_proxy
 ARG no_proxy
 ARG socks_proxy
-ARG PUBLIC_INSTANCE
 ARG WA_PAGE_VIEW_HIT
+ARG UI_APP_CONFIG
 
 ENV TERM=xterm \
     http_proxy=${http_proxy}   \
@@ -34,9 +34,9 @@ COPY cvat-core/ /tmp/cvat-core/
 COPY cvat-canvas3d/ /tmp/cvat-canvas3d/
 COPY cvat-canvas/ /tmp/cvat-canvas/
 COPY cvat-ui/ /tmp/cvat-ui/
-RUN yarn run build:cvat-ui
+RUN UI_APP_CONFIG="${UI_APP_CONFIG}" yarn run build:cvat-ui
 
-FROM nginx:1.23.1-alpine
+FROM nginx:mainline-alpine
 # Replace default.conf configuration to remove unnecessary rules
 COPY cvat-ui/react_nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=cvat-ui /tmp/cvat-ui/dist /usr/share/nginx/html/

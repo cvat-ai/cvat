@@ -11,12 +11,16 @@ import Layout from 'antd/lib/layout';
 import Modal from 'antd/lib/modal';
 import notification from 'antd/lib/notification';
 import Spin from 'antd/lib/spin';
+import { DisconnectOutlined } from '@ant-design/icons';
+import Space from 'antd/lib/space';
 import Text from 'antd/lib/typography/Text';
+import ReactMarkdown from 'react-markdown';
 import 'antd/dist/antd.css';
 
 import LogoutComponent from 'components/logout-component';
 import LoginPageContainer from 'containers/login-page/login-page';
 import LoginWithTokenComponent from 'components/login-with-token/login-with-token';
+import LoginWithSocialAppComponent from 'components/login-with-social-app/login-with-social-app';
 import RegisterPageContainer from 'containers/register-page/register-page';
 import ResetPasswordPageConfirmComponent from 'components/reset-password-confirm-page/reset-password-confirm-page';
 import ResetPasswordPageComponent from 'components/reset-password-page/reset-password-page';
@@ -57,13 +61,14 @@ import AnnotationPageContainer from 'containers/annotation-page/annotation-page'
 import { getCore } from 'cvat-core-wrapper';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { NotificationsState } from 'reducers';
-import { customWaViewHit } from 'utils/enviroment';
+import { customWaViewHit } from 'utils/environment';
 import showPlatformNotification, {
     platformInfo,
     stopNotifications,
     showUnsupportedNotification,
 } from 'utils/platform-checker';
 import '../styles.scss';
+import appConfig from 'config';
 import EmailConfirmationPage from './email-confirmation-pages/email-confirmed';
 import EmailVerificationSentPage from './email-confirmation-pages/email-verification-sent';
 import IncorrectEmailConfirmationPage from './email-confirmation-pages/incorrect-email-confirmation';
@@ -104,10 +109,23 @@ interface CVATAppProps {
     isModelPluginActive: boolean;
 }
 
-class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentProps> {
+interface CVATAppState {
+    healthIinitialized: boolean;
+    backendIsHealthy: boolean;
+}
+
+class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentProps, CVATAppState> {
+    constructor(props: CVATAppProps & RouteComponentProps) {
+        super(props);
+
+        this.state = {
+            healthIinitialized: false,
+            backendIsHealthy: false,
+        };
+    }
     public componentDidMount(): void {
         const core = getCore();
-        const { verifyAuthorized, history, location } = this.props;
+        const { history, location } = this.props;
         // configure({ ignoreRepeatedEventsWhenKeyHeldDown: false });
 
         // Logger configuration
@@ -122,7 +140,35 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             customWaViewHit(_location.pathname, _location.search, _location.hash);
         });
 
-        verifyAuthorized();
+        const {
+            HEALTH_CHECK_RETRIES, HEALTH_CHECK_PERIOD, HEALTH_CHECK_REQUEST_TIMEOUT, SERVER_UNAVAILABLE_COMPONENT,
+        } = appConfig;
+        core.server.healthCheck(
+            HEALTH_CHECK_RETRIES,
+            HEALTH_CHECK_PERIOD,
+            HEALTH_CHECK_REQUEST_TIMEOUT,
+        ).then(() => {
+            this.setState({
+                healthIinitialized: true,
+                backendIsHealthy: true,
+            });
+        })
+            .catch(() => {
+                this.setState({
+                    healthIinitialized: true,
+                    backendIsHealthy: false,
+                });
+
+                Modal.error({
+                    title: 'Cannot connect to the server',
+                    className: 'cvat-modal-cannot-connect-server',
+                    closable: false,
+                    content:
+    <Text>
+        {SERVER_UNAVAILABLE_COMPONENT}
+    </Text>,
+                });
+            });
 
         const {
             name, version, engine, os,
@@ -199,6 +245,12 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             isModelPluginActive,
         } = this.props;
 
+        const { backendIsHealthy } = this.state;
+
+        if (!backendIsHealthy) {
+            return;
+        }
+
         this.showErrors();
         this.showMessages();
 
@@ -245,12 +297,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         function showMessage(title: string): void {
             notification.info({
                 message: (
-                    <div
-                        // eslint-disable-next-line
-                        dangerouslySetInnerHTML={{
-                            __html: title,
-                        }}
-                    />
+                    <ReactMarkdown>{title}</ReactMarkdown>
                 ),
                 duration: null,
             });
@@ -281,15 +328,10 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             notification.error({
                 ...dynamicProps,
                 message: (
-                    <div
-                        // eslint-disable-next-line
-                        dangerouslySetInnerHTML={{
-                            __html: title,
-                        }}
-                    />
+                    <ReactMarkdown>{title}</ReactMarkdown>
                 ),
                 duration: null,
-                description: error.length > 200 ? 'Open the Browser Console to get details' : error,
+                description: error.length > 200 ? 'Open the Browser Console to get details' : <ReactMarkdown>{error}</ReactMarkdown>,
             });
 
             // eslint-disable-next-line no-console
@@ -332,6 +374,8 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             location,
             isModelPluginActive,
         } = this.props;
+
+        const { healthIinitialized, backendIsHealthy } = this.state;
 
         const notRegisteredUserInitialized = (userInitialized && (user == null || !user.isVerified));
         let readyForRender = userAgreementsInitialized && authActionsInitialized;
@@ -440,8 +484,13 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                         <Route exact path='/auth/login' component={LoginPageContainer} />
                         <Route
                             exact
-                            path='/auth/login-with-token/:sessionId/:token'
+                            path='/auth/login-with-token/:token'
                             component={LoginWithTokenComponent}
+                        />
+                        <Route
+                            exact
+                            path='/auth/login-with-social-app/'
+                            component={LoginWithSocialAppComponent}
                         />
                         <Route exact path='/auth/password/reset' component={ResetPasswordPageComponent} />
                         <Route
@@ -460,7 +509,15 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             );
         }
 
-        return <Spin size='large' className='cvat-spinner' />;
+        if (healthIinitialized && !backendIsHealthy) {
+            return (
+                <Space align='center' direction='vertical' className='cvat-spinner'>
+                    <DisconnectOutlined className='cvat-disconnected' />
+                    Cannot connect to the server.
+                </Space>
+            );
+        }
+        return <Spin size='large' className='cvat-spinner' tip='Connecting...' />;
     }
 }
 

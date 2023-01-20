@@ -11,8 +11,10 @@ $error-color: #ff4d4f;
 $action-button-color-1: black;
 $action-button-color-2: gray;
 $action-button-color-3: #d4d4d4;
+$placeholder-color: #c5bfbf;
 
 $base-transition: all 0.8s ease;
+$input-transition: all 0.3s ease;
 
 $social-google-background: #4286f5;
 
@@ -36,7 +38,13 @@ $social-google-background: #4286f5;
 
 .cvat-signing-header {
     background: transparent;
-    position: absolute;
+    position: fixed;
+    padding: $grid-unit-size*2 0 0 0;
+    width: 100%;
+
+    svg {
+        transform: none;
+    }
 }
 
 .cvat-signing-background {
@@ -60,6 +68,31 @@ $social-google-background: #4286f5;
     }
 }
 
+.cvat-input-floating-label {
+    .ant-input-prefix {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 1;
+        font-size: 20px;
+        transition: $input-transition;
+        transform-origin: left top;
+
+        .ant-typography {
+            color: $placeholder-color;
+        }
+    }
+}
+
+.cvat-input-floating-label-above {
+    @extend .cvat-input-floating-label;
+
+    .ant-input-prefix {
+        transition: $input-transition;
+        transform: translateY(-100%) scale(0.7);
+    }
+}
+
 .cvat-credentials-form-item {
     .ant-input-affix-wrapper {
         border: none;
@@ -69,12 +102,9 @@ $social-google-background: #4286f5;
         transition: $base-transition;
     }
 
-    .ant-input-prefix {
-        position: absolute;
-        z-index: 1;
-    }
-
     .ant-input-affix-wrapper-focused {
+        @extend .cvat-input-floating-label-above;
+
         box-shadow: 0 2px 0 0 black;
     }
 
@@ -94,11 +124,8 @@ $social-google-background: #4286f5;
         }
     }
 
-    .ant-typography {
-        text-transform: uppercase;
-        color: $border-color-1;
-        font-size: 12px;
-        letter-spacing: 1px;
+    .cvat-signing-input-not-empty {
+        @extend .cvat-input-floating-label;
     }
 }
 
@@ -322,8 +349,8 @@ $social-google-background: #4286f5;
     }
 
     letter-spacing: 1px;
+    padding: 0 $grid-unit-size*4 !important;
     margin-bottom: $grid-unit-size;
-    padding: $grid-unit-size $grid-unit-size*4;
     display: flex;
 }
 

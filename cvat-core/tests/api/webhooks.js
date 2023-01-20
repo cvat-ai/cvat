@@ -11,7 +11,7 @@ jest.mock('../../src/server-proxy', () => {
 });
 
 // Initialize api
-window.cvat = require('../../src/api');
+window.cvat = require('../../src/api').default;
 
 const Webhook = require('../../src/webhook').default;
 const { webhooksDummyData, webhooksEventsDummyData } = require('../mocks/dummy-data.mock');

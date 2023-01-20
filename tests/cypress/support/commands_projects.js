@@ -82,7 +82,7 @@ Cypress.Commands.add('projectActions', (projectName) => {
     cy.contains('.cvat-projects-project-item-title', projectName)
         .parents('.cvat-projects-project-item-card')
         .within(() => {
-            cy.get('.cvat-porjects-project-item-description').within(() => {
+            cy.get('.cvat-projects-project-item-description').within(() => {
                 cy.get('[type="button"]').trigger('mouseover');
             });
         });
@@ -104,7 +104,7 @@ Cypress.Commands.add('deleteProject', (projectName, projectID, expectedResult = 
 });
 
 Cypress.Commands.add('exportProject', ({
-    projectName, type, dumpType, archiveCustomeName,
+    projectName, type, dumpType, archiveCustomName,
 }) => {
     cy.projectActions(projectName);
     cy.get('.cvat-project-actions-menu').contains('Export dataset').click();
@@ -114,8 +114,8 @@ Cypress.Commands.add('exportProject', ({
     if (type === 'dataset') {
         cy.get('.cvat-modal-export-project').find('.cvat-modal-export-save-images').should('not.be.checked').click();
     }
-    if (archiveCustomeName) {
-        cy.get('.cvat-modal-export-project').find('.cvat-modal-export-filename-input').type(archiveCustomeName);
+    if (archiveCustomName) {
+        cy.get('.cvat-modal-export-project').find('.cvat-modal-export-filename-input').type(archiveCustomName);
     }
     cy.get('.cvat-modal-export-project').contains('button', 'OK').click();
     cy.get('.cvat-notification-notice-export-project-start').should('be.visible');
@@ -223,7 +223,7 @@ Cypress.Commands.add('restoreProject', (archiveWithBackup, sourceStorage = null)
         }
     });
 
-    cy.contains('The project has been restored succesfully. Click here to open')
+    cy.contains('The project has been restored successfully. Click here to open')
         .should('exist')
         .and('be.visible');
     cy.closeNotification('.ant-notification-notice-info');

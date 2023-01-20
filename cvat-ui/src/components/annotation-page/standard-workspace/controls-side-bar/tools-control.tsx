@@ -143,7 +143,7 @@ interface State {
     convertMasksToPolygons: boolean;
     trackedShapes: TrackedShape[];
     fetching: boolean;
-    pointsRecieved: boolean;
+    pointsReceived: boolean;
     approxPolyAccuracy: number;
     mode: 'detection' | 'interaction' | 'tracking';
     portals: React.ReactPortal[];
@@ -231,7 +231,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             approxPolyAccuracy: props.defaultApproxPolyAccuracy,
             trackedShapes: [],
             fetching: false,
-            pointsRecieved: false,
+            pointsReceived: false,
             mode: 'interaction',
             portals: [],
         };
@@ -294,7 +294,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
             this.setState({
                 approxPolyAccuracy: defaultApproxPolyAccuracy,
-                pointsRecieved: false,
+                pointsReceived: false,
             });
             window.addEventListener('contextmenu', this.contextmenuDisabler);
         }
@@ -369,7 +369,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             try {
                 // run server request
                 this.setState({ fetching: true });
-                const response = await core.lambda.call(jobInstance.taskId, interactor, data);
+                const response = await core.lambda.call(jobInstance.taskId, interactor,
+                    { ...data, job: jobInstance.id });
 
                 // approximation with cv.approxPolyDP
                 const approximated = await this.approximateResponsePoints(response.points);
@@ -385,7 +386,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 };
                 this.interaction.lastestApproximatedPoints = approximated;
 
-                this.setState({ pointsRecieved: !!response.points.length });
+                this.setState({ pointsReceived: !!response.points.length });
             } finally {
                 if (this.interaction.id === interactionId && this.interaction.hideMessage) {
                     this.interaction.hideMessage();
@@ -415,7 +416,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         } catch (err: any) {
             notification.error({
                 description: err.toString(),
-                message: 'Interaction error occured',
+                message: 'Interaction error occurred',
             });
         }
     };
@@ -507,7 +508,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         } catch (err: any) {
             notification.error({
                 description: err.toString(),
-                message: 'Tracking error occured',
+                message: 'Tracking error occurred',
             });
         }
     };
@@ -662,7 +663,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
         if (prevProps.frame !== frame && trackedShapes.length) {
             // 1. find all trackable objects on the current frame
-            // 2. devide them into two groups: with relevant state, without relevant state
+            // 2. divide them into two groups: with relevant state, without relevant state
             const trackingData = trackedShapes.reduce<AccumulatorType>(
                 (acc: AccumulatorType, trackedShape: TrackedShape): AccumulatorType => {
                     const {
@@ -740,6 +741,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         const response = await core.lambda.call(jobInstance.taskId, tracker, {
                             frame: frame - 1,
                             shapes: trackableObjects.shapes,
+                            job: jobInstance.id,
                         });
 
                         const { states: serverlessStates } = response;
@@ -787,6 +789,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             frame,
                             shapes: trackableObjects.shapes,
                             states: trackableObjects.states,
+                            job: jobInstance.id,
                         });
 
                         response.shapes = response.shapes.map(trackedRectangleMapper);
@@ -1161,7 +1164,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 runInference={async (model: Model, body: DetectorRequestBody) => {
                     try {
                         this.setState({ mode: 'detection', fetching: true });
-                        const result = await core.lambda.call(jobInstance.taskId, model, { ...body, frame });
+                        const result = await core.lambda.call(jobInstance.taskId, model, {
+                            ...body, frame, job: jobInstance.id,
+                        });
                         const states = result.map(
                             (data: any): any => {
                                 const jobLabel = (jobInstance.labels as Label[])
@@ -1272,7 +1277,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             interactors, detectors, trackers, isActivated, canvasInstance, labels, frameIsDeleted,
         } = this.props;
         const {
-            fetching, approxPolyAccuracy, pointsRecieved, mode, portals, convertMasksToPolygons,
+            fetching, approxPolyAccuracy, pointsReceived, mode, portals, convertMasksToPolygons,
         } = this.state;
 
         if (![...interactors, ...detectors, ...trackers].length) return null;
@@ -1297,7 +1302,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             };
 
         const showAnyContent = labels.length && !frameIsDeleted;
-        const showInteractionContent = isActivated && mode === 'interaction' && pointsRecieved && convertMasksToPolygons;
+        const showInteractionContent = isActivated && mode === 'interaction' && pointsReceived && convertMasksToPolygons;
         const showDetectionContent = fetching && mode === 'detection';
 
         const interactionContent: JSX.Element | null = showInteractionContent ? (

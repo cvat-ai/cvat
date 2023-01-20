@@ -19,7 +19,7 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 import ColorPicker from 'components/annotation-page/standard-workspace/objects-side-bar/color-picker';
 import { ColorizeIcon } from 'icons';
 import patterns from 'utils/validation-patterns';
-import consts from 'consts';
+import config from 'config';
 import {
     equalArrayHead, idGenerator, LabelOptColor, SkeletonConfiguration,
 } from './common';
@@ -441,6 +441,7 @@ export default class LabelForm extends React.Component<Props> {
                 <Input
                     ref={this.inputNameRef}
                     placeholder='Label name'
+                    className='cvat-label-name-input'
                     onKeyUp={(event): void => {
                         if (event.key === 'Escape' || event.key === 'Esc' || event.keyCode === 27) {
                             onCancel();
@@ -464,7 +465,7 @@ export default class LabelForm extends React.Component<Props> {
 
         return (
             <Form.Item name='type' initialValue={value}>
-                <Select disabled={isSkeleton} showSearch={false}>
+                <Select className='cvat-label-type-input' disabled={isSkeleton} showSearch={false}>
                     {isSkeleton && (
                         <Select.Option
                             className='cvat-label-type-option-skeleton'
@@ -543,7 +544,7 @@ export default class LabelForm extends React.Component<Props> {
                                 <Button type='default' className='cvat-change-task-label-color-button'>
                                     <Badge
                                         className='cvat-change-task-label-color-badge'
-                                        color={this.formRef.current?.getFieldValue('color') || consts.NEW_LABEL_COLOR}
+                                        color={this.formRef.current?.getFieldValue('color') || config.NEW_LABEL_COLOR}
                                         text={<Icon component={ColorizeIcon} />}
                                     />
                                 </Button>

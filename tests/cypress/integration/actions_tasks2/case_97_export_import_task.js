@@ -61,7 +61,7 @@ context('Export, import an annotation task.', { browser: '!firefox' }, () => {
             .trigger('mousemove')
             .trigger('mouseover');
         cy.get('.svg_select_points_rot').trigger('mousedown', { button: 0 });
-        cy.get('.cvat-canvas-container').trigger('mousemove', 340, 150);
+        cy.get('.cvat-canvas-container').trigger('mousemove', 345, 150);
         cy.get('.cvat-canvas-container').trigger('mouseup');
         cy.get('#cvat_canvas_shape_1').should('have.attr', 'transform');
         cy.document().then((doc) => {
@@ -119,7 +119,7 @@ context('Export, import an annotation task.', { browser: '!firefox' }, () => {
                     cy.wait('@importTask').its('response.statusCode').should('equal', 201);
                 }
             });
-            cy.contains('The task has been restored succesfully. Click here to open').should('exist').and('be.visible');
+            cy.contains('The task has been restored successfully. Click here to open').should('exist').and('be.visible');
             cy.closeNotification('.ant-notification-notice-info');
             cy.openTask(taskName);
             cy.url().then((link) => {

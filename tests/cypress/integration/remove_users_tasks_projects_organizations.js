@@ -70,7 +70,7 @@ describe('Delete users, tasks, projects, organizations created during the tests 
                 Authorization: `Token ${authKey}`,
             },
         }).then((response) => {
-            const responseResult = response.body;
+            const responseResult = response.body.results;
             for (const org of responseResult) {
                 const { id } = org;
                 cy.request({

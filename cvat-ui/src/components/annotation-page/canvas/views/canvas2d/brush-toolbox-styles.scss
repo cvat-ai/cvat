@@ -1,0 +1,57 @@
+// Copyright (C) 2022-2023 CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import 'base.scss';
+
+.cvat-brush-tools-toolbox {
+    position: absolute;
+    margin: $grid-unit-size;
+    padding: 0 $grid-unit-size;
+    border-radius: 4px;
+    background: $background-color-2;
+    display: flex;
+    align-items: center;
+    z-index: 100;
+    box-shadow: $box-shadow-base;
+
+    > hr {
+        width: 1px;
+        height: $grid-unit-size * 4;
+        background: $border-color-1;
+    }
+
+    > * {
+        margin-right: $grid-unit-size;
+    }
+
+    > button {
+        font-size: 20px;
+
+        > span.anticon {
+            font-size: inherit;
+        }
+    }
+
+    .cvat-brush-tools-brush,
+    .cvat-brush-tools-eraser {
+        svg {
+            width: 24px;
+            height: 25px;
+        }
+    }
+
+    .cvat-brush-tools-draggable-area {
+        display: flex;
+        font-size: 20px;
+
+        svg {
+            width: 24px;
+            height: 25px;
+        }
+    }
+
+    .cvat-brush-tools-active-tool {
+        background: $header-color;
+    }
+}

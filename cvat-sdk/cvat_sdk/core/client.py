@@ -8,9 +8,11 @@ from __future__ import annotations
 import logging
 import urllib.parse
 from contextlib import suppress
+from pathlib import Path
 from time import sleep
 from typing import Any, Dict, Optional, Sequence, Tuple
 
+import appdirs
 import attrs
 import packaging.version as pv
 import urllib3
@@ -26,6 +28,8 @@ from cvat_sdk.core.proxies.projects import ProjectsRepo
 from cvat_sdk.core.proxies.tasks import TasksRepo
 from cvat_sdk.core.proxies.users import UsersRepo
 from cvat_sdk.version import VERSION
+
+_DEFAULT_CACHE_DIR = Path(appdirs.user_cache_dir("cvat-sdk", "CVAT.ai"))
 
 
 @attrs.define
@@ -43,6 +47,9 @@ class Config:
     verify_ssl: Optional[bool] = None
     """Whether to verify host SSL certificate or not"""
 
+    cache_dir: Path = attrs.field(converter=Path, default=_DEFAULT_CACHE_DIR)
+    """Directory in which to store cached server data"""
+
 
 class Client:
     """
@@ -55,6 +62,7 @@ class Client:
         pv.Version("2.1"),
         pv.Version("2.2"),
         pv.Version("2.3"),
+        pv.Version("2.4"),
     )
 
     def __init__(
@@ -290,6 +298,9 @@ class CVAT_API_V2:
 
     def git_check(self, rq_id: int) -> str:
         return self.git + f"check/{rq_id}"
+
+    def git_get(self, task_id: int) -> str:
+        return self.git + f"get/{task_id}"
 
     def make_endpoint_url(
         self,

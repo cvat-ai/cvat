@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -65,7 +65,7 @@ const defaultState: AnnotationState = {
             number: 0,
             filename: '',
             data: null,
-            hasRelatedContext: false,
+            relatedFiles: 0,
             fetching: false,
             delay: 0,
             changeTime: null,
@@ -73,11 +73,6 @@ const defaultState: AnnotationState = {
         playing: false,
         frameAngles: [],
         navigationBlocked: false,
-        contextImage: {
-            fetching: false,
-            data: null,
-            hidden: false,
-        },
     },
     drawing: {
         activeShapeType: ShapeType.RECTANGLE,
@@ -91,7 +86,6 @@ const defaultState: AnnotationState = {
         saving: {
             forceExit: false,
             uploading: false,
-            statuses: [],
         },
         collapsed: {},
         collapsedAll: true,
@@ -108,10 +102,6 @@ const defaultState: AnnotationState = {
             cur: 0,
         },
     },
-    propagate: {
-        objectState: null,
-        frames: 50,
-    },
     remove: {
         objectState: null,
         force: false,
@@ -120,6 +110,9 @@ const defaultState: AnnotationState = {
         visible: false,
         collecting: false,
         data: null,
+    },
+    propagate: {
+        visible: false,
     },
     colors: [],
     sidebarCollapsed: false,
@@ -161,7 +154,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 openTime,
                 frameNumber: number,
                 frameFilename: filename,
-                frameHasRelatedContext,
+                relatedFiles,
                 colors,
                 filters,
                 frameData: data,
@@ -214,7 +207,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     frame: {
                         ...state.player.frame,
                         filename,
-                        hasRelatedContext: frameHasRelatedContext,
+                        relatedFiles,
                         number,
                         data,
                     },
@@ -278,7 +271,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 number,
                 data,
                 filename,
-                hasRelatedContext,
+                relatedFiles,
                 states,
                 minZ,
                 maxZ,
@@ -294,15 +287,11 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     frame: {
                         data,
                         filename,
-                        hasRelatedContext,
+                        relatedFiles,
                         number,
                         fetching: false,
                         changeTime,
                         delay,
-                    },
-                    contextImage: {
-                        ...state.player.contextImage,
-                        ...(state.player.frame.number === number ? {} : { data: null }),
                     },
                 },
                 annotations: {
@@ -352,7 +341,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     saving: {
                         ...state.annotations.saving,
                         uploading: true,
-                        statuses: [],
                     },
                 },
             };
@@ -382,20 +370,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     saving: {
                         ...state.annotations.saving,
                         uploading: false,
-                    },
-                },
-            };
-        }
-        case AnnotationActionTypes.SAVE_UPDATE_ANNOTATIONS_STATUS: {
-            const { status } = action.payload;
-
-            return {
-                ...state,
-                annotations: {
-                    ...state.annotations,
-                    saving: {
-                        ...state.annotations.saving,
-                        statuses: [...state.annotations.saving.statuses, status],
                     },
                 },
             };
@@ -830,16 +804,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        case AnnotationActionTypes.PROPAGATE_OBJECT: {
-            const { objectState } = action.payload;
-            return {
-                ...state,
-                propagate: {
-                    ...state.propagate,
-                    objectState,
-                },
-            };
-        }
         case AnnotationActionTypes.PROPAGATE_OBJECT_SUCCESS: {
             const { history } = action.payload;
             return {
@@ -848,20 +812,14 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     ...state.annotations,
                     history,
                 },
-                propagate: {
-                    ...state.propagate,
-                    objectState: null,
-                },
             };
         }
-        case AnnotationActionTypes.CHANGE_PROPAGATE_FRAMES: {
-            const { frames } = action.payload;
-
+        case AnnotationActionTypes.SWITCH_PROPAGATE_VISIBILITY: {
+            const { visible } = action.payload;
             return {
                 ...state,
                 propagate: {
-                    ...state.propagate,
-                    frames,
+                    visible,
                 },
             };
         }
@@ -1202,58 +1160,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 canvas: {
                     ...state.canvas,
                     activeControl: ActiveControl.CURSOR,
-                },
-            };
-        }
-        case AnnotationActionTypes.HIDE_SHOW_CONTEXT_IMAGE: {
-            const { hidden } = action.payload;
-            return {
-                ...state,
-                player: {
-                    ...state.player,
-                    contextImage: {
-                        ...state.player.contextImage,
-                        hidden,
-                    },
-                },
-            };
-        }
-        case AnnotationActionTypes.GET_CONTEXT_IMAGE: {
-            return {
-                ...state,
-                player: {
-                    ...state.player,
-                    contextImage: {
-                        ...state.player.contextImage,
-                        fetching: true,
-                    },
-                },
-            };
-        }
-        case AnnotationActionTypes.GET_CONTEXT_IMAGE_SUCCESS: {
-            const { contextImageData } = action.payload;
-
-            return {
-                ...state,
-                player: {
-                    ...state.player,
-                    contextImage: {
-                        ...state.player.contextImage,
-                        fetching: false,
-                        data: contextImageData,
-                    },
-                },
-            };
-        }
-        case AnnotationActionTypes.GET_CONTEXT_IMAGE_FAILED: {
-            return {
-                ...state,
-                player: {
-                    ...state.player,
-                    contextImage: {
-                        ...state.player.contextImage,
-                        fetching: false,
-                    },
                 },
             };
         }

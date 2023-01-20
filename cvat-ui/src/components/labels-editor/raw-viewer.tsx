@@ -16,7 +16,7 @@ import { RawLabel, RawAttribute } from 'cvat-core-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { validateParsedLabel, idGenerator, LabelOptColor } from './common';
 
-function replaceTraillingCommas(value: string): string {
+function replaceTrailingCommas(value: string): string {
     return value.replace(/,{1}[\s]*}/g, '}');
 }
 
@@ -53,7 +53,7 @@ function transformSkeletonSVG(value: string): string {
 
 function validateLabels(_: RuleObject, value: string): Promise<void> {
     try {
-        const parsed = JSON.parse(replaceTraillingCommas(value));
+        const parsed = JSON.parse(replaceTrailingCommas(value));
         if (!Array.isArray(parsed)) {
             return Promise.reject(new Error('Field is expected to be a JSON array'));
         }
@@ -117,7 +117,7 @@ export default class RawViewer extends React.PureComponent<Props> {
     private handleSubmit = (values: Store): void => {
         const { onSubmit, labels } = this.props;
         const parsed = JSON.parse(
-            replaceTraillingCommas(values.labels),
+            replaceTrailingCommas(values.labels),
         ) as RawLabel[];
 
         const labelIDs: number[] = [];

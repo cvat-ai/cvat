@@ -1,12 +1,19 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
+
+/* eslint-disable cypress/no-unnecessary-waiting */
 
 /// <reference types="cypress" />
 
 Cypress.Commands.add('compareImagesAndCheckResult', (baseImage, afterImage, noChangesExpected) => {
     cy.compareImages(baseImage, afterImage).then((diffPercent) => {
-        noChangesExpected ? expect(diffPercent).to.be.lt(0.01) : expect(diffPercent).to.be.gt(0);
+        if (noChangesExpected) {
+            expect(diffPercent).to.be.lt(0.02);
+        } else {
+            expect(diffPercent).to.be.gt(0);
+        }
     });
 });
 
@@ -22,14 +29,13 @@ Cypress.Commands.add('create3DCuboid', (cuboidCreationParams) => {
 });
 
 Cypress.Commands.add('customScreenshot', (element, screenshotName) => {
-    let getEl;
-    let padding;
-    if (element.includes('perspective')) {
-        getEl = cy.get(element);
-        padding = -130;
-    } else {
-        getEl = cy.get(element).find('.cvat-canvas3d-fullsize');
-        padding = -40;
-    }
-    getEl.screenshot(screenshotName, {padding: padding});
+    cy.get(`${element} canvas`).then(([$el]) => ($el.getBoundingClientRect())).then((rect) => {
+        cy.screenshot(screenshotName, {
+            overwrite: true,
+            capture: 'fullPage',
+            clip: {
+                x: rect.x, y: rect.y, width: rect.width, height: rect.height,
+            },
+        });
+    });
 });

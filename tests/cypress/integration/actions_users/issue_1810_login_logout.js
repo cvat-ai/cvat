@@ -12,8 +12,8 @@ context('When clicking on the Logout button, get the user session closed.', () =
     let taskId;
 
     function login(credential, password) {
-        cy.get('[placeholder="enter your email or username"]').clear().type(credential);
-        cy.get('[placeholder="enter your password"]').clear().type(password);
+        cy.get('#credential').clear().type(credential);
+        cy.get('#password').clear().type(password);
         cy.get('[type="submit"]').click();
     }
 
@@ -66,10 +66,8 @@ context('When clicking on the Logout button, get the user session closed.', () =
                     password: Cypress.env('password'),
                 },
             }).then(async (response) => {
-                const cookies = await response.headers['set-cookie'];
-                const csrfToken = cookies[0].match(/csrftoken=\w+/)[0].replace('csrftoken=', '');
-                const sessionId = cookies[1].match(/sessionid=\w+/)[0].replace('sessionid=', '');
-                cy.visit(`/login-with-token/${sessionId}/${csrfToken}?next=/tasks/${taskId}`);
+                const token = response.body.key;
+                cy.visit(`/auth/login-with-token/${token}?next=/tasks/${taskId}`);
                 cy.contains('.cvat-task-details-task-name', `${taskName}`).should('be.visible');
             });
         });
@@ -97,6 +95,37 @@ context('When clicking on the Logout button, get the user session closed.', () =
             login('randomUser123', 'randomPassword123');
             cy.url().should('include', '/auth/login');
             cy.closeNotification('.cvat-notification-notice-login-failed');
+        });
+
+        it('Login with Google and GitHub. Logout', () => {
+            let socialAuthMethods;
+            cy.request({
+                method: 'GET',
+                url: '/api/auth/social/methods/',
+            }).then((response) => {
+                socialAuthMethods = Object.keys(response.body).filter((item) => response.body[item].is_enabled);
+                expect(socialAuthMethods).length.gt(0);
+                cy.visit('auth/login');
+
+                cy.get('.cvat-social-authentication-icon').should('have.length', socialAuthMethods.length).within((items) => {
+                    for (const item of items) {
+                        expect(item.children.length).to.be.equal(1); // check that icon was received from the server
+                    }
+                });
+
+                for (const provider of socialAuthMethods) {
+                    let username = '';
+                    cy.get(`.cvat-social-authentication-${provider}`).should('be.visible').click();
+                    // eslint-disable-next-line cypress/no-unnecessary-waiting
+                    cy.get('.cvat-right-header').should('exist').and('be.visible').within(() => {
+                        cy.get('.cvat-header-menu-user-dropdown-user').should(($div) => {
+                            username = $div.text();
+                        });
+                    }).then(() => {
+                        cy.logout(username);
+                    });
+                }
+            });
         });
     });
 });
