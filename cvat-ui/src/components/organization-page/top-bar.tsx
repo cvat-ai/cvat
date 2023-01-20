@@ -69,39 +69,6 @@ function OrganizationTopBar(props: Props): JSX.Element {
         };
     });
 
-    const onRemove = (): void => {
-        const modal = Modal.confirm({
-            onOk: () => {
-                dispatch(removeOrganizationAsync(organizationInstance));
-            },
-            content: (
-                <div className='cvat-remove-organization-submit'>
-                    <Text type='warning'>
-                        To remove the organization,
-                        enter its short name below
-                    </Text>
-                    <Input
-                        onChange={
-                            (event: React.ChangeEvent<HTMLInputElement>) => {
-                                modal.update({
-                                    okButtonProps: {
-                                        disabled: event.target.value !== organizationInstance.slug,
-                                        danger: true,
-                                    },
-                                });
-                            }
-                        }
-                    />
-                </div>
-            ),
-            okButtonProps: {
-                disabled: true,
-                danger: true,
-            },
-            okText: 'Remove',
-        });
-    };
-
     let organizationName = name;
     let organizationDescription = description;
     let organizationContacts = contact;
@@ -138,7 +105,37 @@ function OrganizationTopBar(props: Props): JSX.Element {
                                         {owner && userID === owner.id ? (
                                             <Menu.Item
                                                 key={MenuActions.REMOVE_ORGANIZATION}
-                                                onClick={onRemove}
+                                                onClick={() => {
+                                                    const modal = Modal.confirm({
+                                                        onOk: () => {
+                                                            dispatch(removeOrganizationAsync(organizationInstance));
+                                                        },
+                                                        content: (
+                                                            <div className='cvat-remove-organization-submit'>
+                                                                <Text type='warning'>
+                                                                    To remove the organization,
+                                                                    enter its short name below
+                                                                </Text>
+                                                                <Input
+                                                                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                                                                        modal.update({
+                                                                            okButtonProps: {
+                                                                                disabled:
+                                                                    event.target.value !== organizationInstance.slug,
+                                                                                danger: true,
+                                                                            },
+                                                                        });
+                                                                    }}
+                                                                />
+                                                            </div>
+                                                        ),
+                                                        okButtonProps: {
+                                                            disabled: true,
+                                                            danger: true,
+                                                        },
+                                                        okText: 'Remove',
+                                                    });
+                                                }}
                                             >
                                                 Remove organization
                                             </Menu.Item>
