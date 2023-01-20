@@ -1566,6 +1566,19 @@ async function getFunctions() {
     }
 }
 
+async function getFunctionProviders() {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.get(`${backendAPI}/functions/info`, {
+            proxy: config.proxy,
+        });
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
 // Session is 'task' or 'job'
 async function updateAnnotations(session, id, data, action) {
     const { backendAPI } = config;
@@ -2510,6 +2523,15 @@ export default Object.freeze({
         run: runLambdaRequest,
         call: callLambdaFunction,
         cancel: cancelLambdaRequest,
+    }),
+
+    functions: Object.freeze({
+        list: getFunctions,
+        status: getFunctionRequestStatus,
+        run: runFunctionRequest,
+        call: callFunction,
+        create: createFunction,
+        providers: getFunctionProviders,
     }),
 
     issues: Object.freeze({

@@ -25,6 +25,10 @@ const defaultState: ModelsState = {
         filter: null,
         sort: null,
     },
+    providers: {
+        fetching: false,
+        current: [],
+    },
 };
 
 export default function (state = defaultState, action: ModelsActions | AuthActions | BoundariesActions): ModelsState {
@@ -125,6 +129,33 @@ export default function (state = defaultState, action: ModelsActions | AuthActio
             return {
                 ...state,
                 inferences: { ...inferences },
+            };
+        }
+        case ModelsActionTypes.GET_MODEL_PROVIDERS: {
+            return {
+                ...state,
+                providers: {
+                    ...state.providers,
+                    fetching: true,
+                },
+            };
+        }
+        case ModelsActionTypes.GET_MODEL_PROVIDERS_SUCCESS: {
+            return {
+                ...state,
+                providers: {
+                    fetching: false,
+                    current: action.payload.providers,
+                },
+            };
+        }
+        case ModelsActionTypes.GET_MODEL_PROVIDERS_FAILED: {
+            return {
+                ...state,
+                providers: {
+                    ...state.providers,
+                    fetching: false,
+                },
             };
         }
         case BoundariesActionTypes.RESET_AFTER_ERROR:

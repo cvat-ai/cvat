@@ -20,7 +20,3 @@ export enum StorageStatuses {
     FORBIDDEN = 'FORBIDDEN',
     NOT_FOUND = 'NOT_FOUND',
 }
-
-export enum ModelsProviderType {
-    ROBOFLOW = 'ROBOFLOW',
-}

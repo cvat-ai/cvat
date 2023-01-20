@@ -5,7 +5,7 @@
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import {
-    Model, ActiveInference, RQStatus, ModelsQuery, Indexable,
+    Model, ActiveInference, RQStatus, ModelsQuery, Indexable, ModelProvider,
 } from 'reducers';
 import { getCore } from 'cvat-core-wrapper';
 
@@ -26,6 +26,9 @@ export enum ModelsActionTypes {
     CLOSE_RUN_MODEL_DIALOG = 'CLOSE_RUN_MODEL_DIALOG',
     CANCEL_INFERENCE_SUCCESS = 'CANCEL_INFERENCE_SUCCESS',
     CANCEL_INFERENCE_FAILED = 'CANCEL_INFERENCE_FAILED',
+    GET_MODEL_PROVIDERS = 'GET_MODEL_PROVIDERS',
+    GET_MODEL_PROVIDERS_SUCCESS = 'GET_MODEL_PROVIDERS_SUCCESS',
+    GET_MODEL_PROVIDERS_FAILED = 'GET_MODEL_PROVIDERS_FAILED',
 }
 
 export const modelsActions = {
@@ -37,7 +40,9 @@ export const modelsActions = {
         error,
     }),
     createModel: () => createAction(ModelsActionTypes.CREATE_MODEL),
-    createModelSuccess: () => createAction(ModelsActionTypes.CREATE_MODEL_SUCCESS),
+    createModelSuccess: (model: Model) => createAction(ModelsActionTypes.CREATE_MODEL_SUCCESS, {
+        model,
+    }),
     createModelFailed: (error: any) => createAction(ModelsActionTypes.CREATE_MODEL_FAILED, { error }),
     fetchMetaFailed: (error: any) => createAction(ModelsActionTypes.FETCH_META_FAILED, { error }),
     getInferenceStatusSuccess: (taskID: number, activeInference: ActiveInference) => (
@@ -75,6 +80,12 @@ export const modelsActions = {
             taskInstance,
         })
     ),
+    getModelProviders: () => createAction(ModelsActionTypes.GET_MODEL_PROVIDERS),
+    getModelProvidersSuccess: (providers: ModelProvider[]) => (
+        createAction(ModelsActionTypes.GET_MODEL_PROVIDERS_SUCCESS, {
+            providers,
+        })),
+    getModelProvidersFailed: (error: any) => createAction(ModelsActionTypes.GET_MODEL_PROVIDERS_FAILED, { error }),
 };
 
 export type ModelsActions = ActionUnion<typeof modelsActions>;
@@ -103,7 +114,7 @@ export function getModelsAsync(query?: ModelsQuery): ThunkAction {
     };
 }
 
-export function createModelAsync(modelData: Store): ThunkAction {
+export function createModelAsync(modelData: Record<string, string>): ThunkAction {
     return async function (dispatch) {
         const model = new cvat.classes.MLModel(modelData);
 
@@ -210,6 +221,18 @@ export function cancelInferenceAsync(taskID: number): ThunkAction {
             dispatch(modelsActions.cancelInferenceSuccess(taskID));
         } catch (error) {
             dispatch(modelsActions.cancelInferenceFailed(taskID, error));
+        }
+    };
+}
+
+export function getModelProvidersAsync(): ThunkAction {
+    return async function (dispatch) {
+        dispatch(modelsActions.getModelProviders());
+        try {
+            const providers = await cvat.functions.providers();
+            dispatch(modelsActions.getModelProvidersSuccess(providers));
+        } catch (error) {
+            dispatch(modelsActions.getModelProvidersFailed(error));
         }
     };
 }

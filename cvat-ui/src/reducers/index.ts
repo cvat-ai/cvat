@@ -318,6 +318,11 @@ export interface ShareState {
     root: ShareItem;
 }
 
+export interface ModelProvider {
+    name: string,
+    attributes: Record<string, string>
+}
+
 export interface ModelAttribute {
     name: string;
     values: string[];
@@ -401,6 +406,10 @@ export interface ModelsState {
     modelRunnerIsVisible: boolean;
     modelRunnerTask: any;
     query: ModelsQuery;
+    providers: {
+        fetching: boolean;
+        current: ModelProvider[];
+    }
 }
 
 export interface ErrorState {

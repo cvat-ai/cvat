@@ -11,38 +11,62 @@ import Form from 'antd/lib/form';
 import Button from 'antd/lib/button';
 import Select from 'antd/lib/select';
 import notification from 'antd/lib/notification';
+import Input from 'antd/lib/input/Input';
 
-import { CombinedState } from 'reducers';
-import { ModelsProviderType } from 'utils/enums';
+import { CombinedState, ModelProvider } from 'reducers';
 import { useHistory } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
 import { createModelAsync } from 'actions/models-actions';
-import RoboflowConfiguration from './providers/roboflow-configuration';
 
-const modelProviders = {
-    [ModelsProviderType.ROBOFLOW]: <RoboflowConfiguration />,
-};
+interface Props {
+    providers: ModelProvider[];
+}
 
-function ModelForm(): JSX.Element {
+function createProviderFormItems(providerAttributes: Record<string, string>): JSX.Element {
+    return (
+        <>
+            {
+                Object.entries(providerAttributes).map(([key, text]) => (
+                    <Form.Item
+                        key={key}
+                        name={key}
+                        label={text}
+                        rules={[{ required: true, message: 'Please, specify API key' }]}
+                    >
+                        <Input />
+                    </Form.Item>
+                ))
+            }
+        </>
+    );
+}
+
+function ModelForm(props: Props): JSX.Element {
+    const { providers } = props;
+    const providerList = providers.map((provider) => ({
+        value: provider.name,
+        text: provider.name.charAt(0).toUpperCase() + provider.name.slice(1),
+    }));
+    const providerMap = Object.fromEntries(providers.map((provider) => [provider.name, provider.attributes]));
+
     const [form] = Form.useForm();
     const history = useHistory();
     const dispatch = useDispatch();
     const fetching = useSelector((state: CombinedState) => state.models.fetching);
-    const [currentProvider, setCurrentProvider] = useState<JSX.Element | null>(null);
-    const onChangeProviderValue = useCallback((provider: ModelsProviderType) => {
-        setCurrentProvider(modelProviders[provider]);
+    const [currentProviderForm, setCurrentProviderForm] = useState<JSX.Element | null>(null);
+    const onChangeProviderValue = useCallback((provider: string) => {
+        setCurrentProviderForm(createProviderFormItems(providerMap[provider]));
+        const emptiedKeys: Record<string, string | null> = { ...providerMap[provider] };
+        Object.keys(providerMap[provider]).forEach((k) => { emptiedKeys[k] = null; });
+        form.setFieldsValue(emptiedKeys);
     }, []);
 
     const handleSubmit = useCallback(async (): Promise<void> => {
         try {
             const values: Store = await form.validateFields();
-            const rawModelData = {
-                api_key: values.apiKey,
-                provider: values.provider.toLowerCase(),
-                url: values.url,
-            };
-            await dispatch(createModelAsync(rawModelData));
+            await dispatch(createModelAsync(values));
             form.resetFields();
+            setCurrentProviderForm(null);
             notification.info({
                 message: 'Model has been successfully created',
                 className: 'cvat-notification-create-model-success',
@@ -69,15 +93,20 @@ function ModelForm(): JSX.Element {
                             onChange={onChangeProviderValue}
                             className='cvat-select-model-provider'
                         >
-                            <Select.Option value={ModelsProviderType.ROBOFLOW}>
-                                <span className='cvat-cloud-storage-select-provider'>
-                                    Roboflow
-                                </span>
-                            </Select.Option>
+                            {
+                                providerList.map(({ value, text }) => (
+                                    <Select.Option value={value} key={value}>
+                                        <span className='cvat-cloud-storage-select-provider'>
+                                            {text}
+                                        </span>
+                                    </Select.Option>
+                                ))
+                            }
+
                         </Select>
                     </Form.Item>
                     <Col offset={1}>
-                        {currentProvider}
+                        {currentProviderForm}
                     </Col>
                 </Form>
             </Col>

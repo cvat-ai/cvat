@@ -203,6 +203,12 @@ function build() {
                 return result;
             },
         },
+        functions: {
+            async providers() {
+                const result = await PluginRegistry.apiWrapper(cvat.functions.providers);
+                return result;
+            },
+        },
         logger: loggerStorage,
         config: {
             get backendAPI() {
@@ -305,6 +311,7 @@ function build() {
     cvat.enums = Object.freeze(cvat.enums);
     cvat.cloudStorages = Object.freeze(cvat.cloudStorages);
     cvat.organizations = Object.freeze(cvat.organizations);
+    cvat.functions = Object.freeze(cvat.functions);
 
     const implemented = Object.freeze(implementAPI(cvat));
     return implemented;
