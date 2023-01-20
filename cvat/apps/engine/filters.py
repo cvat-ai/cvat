@@ -3,20 +3,18 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Dict, Iterator, Optional
+from typing import Any, Dict, Iterator, Optional
 from functools import reduce
 import operator
 import json
 
 from django.db.models import Q
+from django.db.models.query import QuerySet
 from django.utils.translation import gettext_lazy as _
 from django.utils.encoding import force_str
-from django_filters.filterset import BaseFilterSet
 from rest_framework import filters
 from rest_framework.compat import coreapi, coreschema
 from rest_framework.exceptions import ValidationError
-from django_filters import FilterSet
-from django_filters.rest_framework import DjangoFilterBackend
 
 DEFAULT_FILTER_FIELDS_ATTR = 'filter_fields'
 DEFAULT_LOOKUP_MAP_ATTR = 'lookup_fields'
@@ -129,6 +127,7 @@ class OrderingFilter(filters.OrderingFilter):
         }]
 
 class JsonLogicFilter(filters.BaseFilterBackend):
+    Rules = Dict[str, Any]
     filter_param = 'filter'
     filter_title = _('Filter')
     filter_description = _('A filter term.')
@@ -169,21 +168,32 @@ class JsonLogicFilter(filters.BaseFilterBackend):
         else:
             raise ValidationError(f'filter: {op} operation with {args} arguments is not implemented')
 
+    def _parse_query(self, json_rules: str) -> Rules:
+        try:
+            rules = json.loads(json_rules)
+            if not len(rules):
+                raise ValidationError(f"filter shouldn't be empty")
+        except json.decoder.JSONDecodeError:
+            raise ValidationError(f'filter: Json syntax should be used')
+
+        return rules
+
+    def apply_filter(self,
+        queryset: QuerySet, parsed_rules: Rules, *, lookup_fields: Dict[str, Any]
+    ) -> QuerySet:
+        try:
+            q_object = self._build_Q(parsed_rules, lookup_fields)
+        except KeyError as ex:
+            raise ValidationError(f'filter: {str(ex)} term is not supported')
+
+        return queryset.filter(q_object)
+
     def filter_queryset(self, request, queryset, view):
         json_rules = request.query_params.get(self.filter_param)
         if json_rules:
-            try:
-                rules = json.loads(json_rules)
-                if not len(rules):
-                    raise ValidationError(f"filter shouldn't be empty")
-            except json.decoder.JSONDecodeError:
-                raise ValidationError(f'filter: Json syntax should be used')
-            lookup_fields = self._get_lookup_fields(request, view)
-            try:
-                q_object = self._build_Q(rules, lookup_fields)
-            except KeyError as ex:
-                raise ValidationError(f'filter: {str(ex)} term is not supported')
-            return queryset.filter(q_object)
+            parsed_rules = self._parse_query(json_rules)
+            lookup_fields = self._get_lookup_fields(view)
+            queryset = self.apply_filter(queryset, parsed_rules, lookup_fields=lookup_fields)
 
         return queryset
 
@@ -223,11 +233,11 @@ class JsonLogicFilter(filters.BaseFilterBackend):
             },
         ]
 
-    def _get_lookup_fields(self, request, view):
+    def _get_lookup_fields(self, view):
         return get_lookup_fields(view)
 
 
-class SimpleFilter(DjangoFilterBackend):
+class SimpleFilter(filters.BaseFilterBackend):
     """
     A simple filter, useful for small search queries and manually-edited
     requests.
@@ -247,46 +257,31 @@ class SimpleFilter(DjangoFilterBackend):
 
     filter_fields_attr = 'simple_filters'
 
-    class MappingFiltersetBase(BaseFilterSet):
-        _filter_name_map_attr = 'filter_names'
+    def _build_rules(self, query_params: Dict[str, Any]) -> JsonLogicFilter.Rules:
+        field_rules = []
+        rules = {"and": field_rules}
+        for field, value in query_params.items():
+            field_rules.append({"==": [{"var": field}, value]})
+        return rules
 
-        @classmethod
-        def get_filter_name(cls, field_name, lookup_expr):
-            filter_names = getattr(cls, cls._filter_name_map_attr, {})
-
-            field_name = super().get_filter_name(field_name, lookup_expr)
-
-            if filter_names:
-                # Map names after a lookup suffix is applied to allow
-                # mapping specific filters with lookups
-                field_name = filter_names.get(field_name, field_name)
-
-            if field_name in SimpleFilter.reserved_names:
-                raise ValueError(f'Field name {field_name} is reserved')
-
-            return field_name
-
-    filterset_base = MappingFiltersetBase
-
-
-    def get_filterset_class(self, view, queryset=None):
+    def filter_queryset(self, request, queryset, view):
         lookup_fields = self.get_lookup_fields(view)
-        if not lookup_fields or not queryset:
-            return None
+        query_params = {
+            k: request.query_params[k] for k in lookup_fields if k in request.query_params
+        }
 
-        MetaBase = getattr(self.filterset_base, 'Meta', object)
+        if query_params:
+            json_filter = JsonLogicFilter()
+            rules = self._build_rules(query_params)
+            queryset = json_filter.apply_filter(queryset, rules, lookup_fields=lookup_fields)
 
-        class AutoFilterSet(self.filterset_base, metaclass=FilterSet.__class__):
-            filter_names = { v: k for k, v in lookup_fields.items() }
-
-            class Meta(MetaBase): # pylint: disable=useless-object-inheritance
-                model = queryset.model
-                fields = list(lookup_fields.values())
-
-        return AutoFilterSet
+        return queryset
 
     def get_lookup_fields(self, view):
         simple_filters = getattr(view, self.filter_fields_attr, None)
+        for k in self.reserved_names:
+            assert k not in simple_filters, f"Field '{k}' is reserved"
+
         return get_lookup_fields(view, fields=simple_filters)
 
     def get_schema_fields(self, view):
