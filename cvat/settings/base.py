@@ -109,7 +109,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_rq',
-    'django_filters',
     'compressor',
     'django_sendfile',
     "dj_rest_auth",
