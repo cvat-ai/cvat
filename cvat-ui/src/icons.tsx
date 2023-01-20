@@ -64,7 +64,6 @@ import SVGClearIcon from './assets/clear-icon.svg';
 import SVGShowPasswordIcon from './assets/show-password.svg';
 import SVGPlusIcon from './assets/plus-icon.svg';
 import SVGCheckIcon from './assets/check-icon.svg';
-import SVGUpgradeIcon from './assets/upgrade-icon.svg';
 
 export const CVATLogo = React.memo((): JSX.Element => <SVGCVATLogo />);
 export const CVATMinimalisticLogo = React.memo((): JSX.Element => <SVGCVATMinimalisticLogo />);
@@ -125,4 +124,3 @@ export const ClearIcon = React.memo((): JSX.Element => <SVGClearIcon />);
 export const ShowPasswordIcon = React.memo((): JSX.Element => <SVGShowPasswordIcon />);
 export const PlusIcon = React.memo((): JSX.Element => <SVGPlusIcon />);
 export const CheckIcon = React.memo((): JSX.Element => <SVGCheckIcon />);
-export const UpgradeIcon = React.memo((): JSX.Element => <SVGUpgradeIcon />);
