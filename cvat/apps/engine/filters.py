@@ -242,8 +242,7 @@ class SimpleFilter(filters.BaseFilterBackend):
     A simple filter, useful for small search queries and manually-edited
     requests.
 
-    Argument types are numbers and strings. The only available check is
-    equality for numbers and case-independent inclusion for strings.
+    Argument types are numbers and strings. The only available check is equality.
     Operators are not supported (e.g. or, less, greater, not etc.).
     Multiple filters are joined with '&' as separate query params.
     """
