@@ -5,13 +5,14 @@
 import { connect } from 'react-redux';
 
 import ModelsPageComponent from 'components/models-page/models-page';
-import { Model, CombinedState } from 'reducers';
+import { CombinedState } from 'reducers';
+import { MLModel } from 'cvat-core-wrapper';
 
 interface StateToProps {
-    interactors: Model[];
-    detectors: Model[];
-    trackers: Model[];
-    reid: Model[];
+    interactors: MLModel[];
+    detectors: MLModel[];
+    trackers: MLModel[];
+    reid: MLModel[];
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {

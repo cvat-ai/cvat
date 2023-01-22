@@ -5,9 +5,9 @@
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import {
-    Model, ActiveInference, RQStatus, ModelsQuery, Indexable, ModelProvider,
+    ActiveInference, RQStatus, ModelsQuery, Indexable, ModelProvider,
 } from 'reducers';
-import { getCore } from 'cvat-core-wrapper';
+import { getCore, MLModel } from 'cvat-core-wrapper';
 
 const cvat = getCore();
 
@@ -18,6 +18,9 @@ export enum ModelsActionTypes {
     CREATE_MODEL = 'CREATE_MODEL',
     CREATE_MODEL_SUCCESS = 'CREATE_MODEL_SUCCESS',
     CREATE_MODEL_FAILED = 'CREATE_MODEL_FAILED',
+    DELETE_MODEL = 'DELETE_MODEL',
+    DELETE_MODEL_SUCCESS = 'DELETE_MODEL_SUCCESS',
+    DELETE_MODEL_FAILED = 'DELETE_MODEL_FAILED',
     START_INFERENCE_FAILED = 'START_INFERENCE_FAILED',
     GET_INFERENCE_STATUS_SUCCESS = 'GET_INFERENCE_STATUS_SUCCESS',
     GET_INFERENCE_STATUS_FAILED = 'GET_INFERENCE_STATUS_FAILED',
@@ -33,17 +36,20 @@ export enum ModelsActionTypes {
 
 export const modelsActions = {
     getModels: (query?: ModelsQuery) => createAction(ModelsActionTypes.GET_MODELS, { query }),
-    getModelsSuccess: (models: Model[]) => createAction(ModelsActionTypes.GET_MODELS_SUCCESS, {
+    getModelsSuccess: (models: MLModel[]) => createAction(ModelsActionTypes.GET_MODELS_SUCCESS, {
         models,
     }),
     getModelsFailed: (error: any) => createAction(ModelsActionTypes.GET_MODELS_FAILED, {
         error,
     }),
     createModel: () => createAction(ModelsActionTypes.CREATE_MODEL),
-    createModelSuccess: (model: Model) => createAction(ModelsActionTypes.CREATE_MODEL_SUCCESS, {
+    createModelSuccess: (model: MLModel) => createAction(ModelsActionTypes.CREATE_MODEL_SUCCESS, {
         model,
     }),
     createModelFailed: (error: any) => createAction(ModelsActionTypes.CREATE_MODEL_FAILED, { error }),
+    deleteModel: (model: MLModel) => createAction(ModelsActionTypes.DELETE_MODEL, { model }),
+    deleteModelSuccess: (modelID: string) => createAction(ModelsActionTypes.DELETE_MODEL_SUCCESS, { modelID }),
+    deleteModelFailed: (error: any) => createAction(ModelsActionTypes.DELETE_MODEL_FAILED, { error }),
     fetchMetaFailed: (error: any) => createAction(ModelsActionTypes.FETCH_META_FAILED, { error }),
     getInferenceStatusSuccess: (taskID: number, activeInference: ActiveInference) => (
         createAction(ModelsActionTypes.GET_INFERENCE_STATUS_SUCCESS, {
@@ -129,6 +135,19 @@ export function createModelAsync(modelData: Record<string, string>): ThunkAction
     };
 }
 
+export function deleteModelAsync(model: MLModel): ThunkAction {
+    return async function (dispatch) {
+        dispatch(modelsActions.deleteModel(model));
+        try {
+            await model.delete();
+            dispatch(modelsActions.deleteModelSuccess(model.id));
+        } catch (error) {
+            dispatch(modelsActions.deleteModelFailed(error));
+            throw error;
+        }
+    };
+}
+
 interface InferenceMeta {
     taskID: number;
     requestID: string;
@@ -192,7 +211,7 @@ export function getInferenceStatusAsync(): ThunkAction {
     };
 }
 
-export function startInferenceAsync(taskId: number, model: Model, body: object): ThunkAction {
+export function startInferenceAsync(taskId: number, model: MLModel, body: object): ThunkAction {
     return async (dispatch): Promise<void> => {
         try {
             const requestID: string = await core.lambda.run(taskId, model, body);

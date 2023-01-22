@@ -14,20 +14,21 @@ import Button from 'antd/lib/button';
 import Switch from 'antd/lib/switch';
 import notification from 'antd/lib/notification';
 
-import { Model, ModelAttribute, StringObject } from 'reducers';
+import { ModelAttribute, StringObject } from 'reducers';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { Label as LabelInterface } from 'components/labels-editor/common';
 import { clamp } from 'utils/math';
 import config from 'config';
+import { MLModel } from 'cvat-core-wrapper';
 import { DimensionType } from '../../reducers';
 
 interface Props {
     withCleanup: boolean;
-    models: Model[];
+    models: MLModel[];
     labels: LabelInterface[];
     dimension: DimensionType;
-    runInference(model: Model, body: object): void;
+    runInference(model: MLModel, body: object): void;
 }
 
 interface MappedLabel {
@@ -220,7 +221,7 @@ function DetectorRunner(props: Props): JSX.Element {
     return (
         <div className='cvat-run-model-content'>
             <Row align='middle'>
-                <Col span={4}>Model:</Col>
+                <Col span={4}>MLModel:</Col>
                 <Col span={20}>
                     <Select
                         placeholder={dimension === DimensionType.DIM_2D ? 'Select a model' : 'No models available'}
@@ -249,7 +250,7 @@ function DetectorRunner(props: Props): JSX.Element {
                         }}
                     >
                         {models.map(
-                            (_model: Model): JSX.Element => (
+                            (_model: MLModel): JSX.Element => (
                                 <Select.Option value={_model.id} key={_model.id}>
                                     {_model.name}
                                 </Select.Option>

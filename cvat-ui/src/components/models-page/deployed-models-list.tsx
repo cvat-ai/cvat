@@ -6,11 +6,11 @@ import React from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 
-import { Model } from 'reducers';
+import { MLModel } from 'cvat-core-wrapper';
 import DeployedModelItem from './deployed-model-item';
 
 interface Props {
-    models: Model[];
+    models: MLModel[];
 }
 
 export default function DeployedModelsListComponent(props: Props): JSX.Element {

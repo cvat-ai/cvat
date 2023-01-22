@@ -5,7 +5,8 @@
 import { BoundariesActions, BoundariesActionTypes } from 'actions/boundaries-actions';
 import { ModelsActionTypes, ModelsActions } from 'actions/models-actions';
 import { AuthActionTypes, AuthActions } from 'actions/auth-actions';
-import { ModelsState, Model } from '.';
+import { MLModel } from 'cvat-core-wrapper';
+import { ModelsState } from '.';
 
 const defaultState: ModelsState = {
     initialized: false,
@@ -43,10 +44,10 @@ export default function (state = defaultState, action: ModelsActions | AuthActio
         case ModelsActionTypes.GET_MODELS_SUCCESS: {
             return {
                 ...state,
-                interactors: action.payload.models.filter((model: Model) => ['interactor'].includes(model.type)),
-                detectors: action.payload.models.filter((model: Model) => ['detector'].includes(model.type)),
-                trackers: action.payload.models.filter((model: Model) => ['tracker'].includes(model.type)),
-                reid: action.payload.models.filter((model: Model) => ['reid'].includes(model.type)),
+                interactors: action.payload.models.filter((model: MLModel) => ['interactor'].includes(model.type)),
+                detectors: action.payload.models.filter((model: MLModel) => ['detector'].includes(model.type)),
+                trackers: action.payload.models.filter((model: MLModel) => ['tracker'].includes(model.type)),
+                reid: action.payload.models.filter((model: MLModel) => ['reid'].includes(model.type)),
                 initialized: true,
                 fetching: false,
             };

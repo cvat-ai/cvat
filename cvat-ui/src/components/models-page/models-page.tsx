@@ -12,18 +12,19 @@ import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import { Row, Col } from 'antd/lib/grid';
 import Pagination from 'antd/lib/pagination';
 import Spin from 'antd/lib/spin';
+import { MLModel } from 'cvat-core-wrapper';
 
 import DeployedModelsList from './deployed-models-list';
 import EmptyListComponent from './empty-list';
 import FeedbackComponent from '../feedback/feedback';
-import { CombinedState, Model } from '../../reducers';
+import { CombinedState } from '../../reducers';
 import TopBar from './top-bar';
 
 interface Props {
-    interactors: Model[];
-    detectors: Model[];
-    trackers: Model[];
-    reid: Model[];
+    interactors: MLModel[];
+    detectors: MLModel[];
+    trackers: MLModel[];
+    reid: MLModel[];
 }
 const PAGE_SIZE = 10;
 

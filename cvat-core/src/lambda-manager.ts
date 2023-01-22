@@ -81,7 +81,6 @@ class LambdaManager {
         };
 
         let result;
-        console.log('call', model);
         if (model.provider === 'cvat') {
             result = await serverProxy.lambda.call(model.id, body);
         } else {

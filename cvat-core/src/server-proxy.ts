@@ -1579,6 +1579,21 @@ async function getFunctionProviders() {
     }
 }
 
+async function deleteFunction(functionId: number) {
+    const { backendAPI } = config;
+
+    try {
+        await Axios.delete(`${backendAPI}/functions/${functionId}`, {
+            proxy: config.proxy,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
 // Session is 'task' or 'job'
 async function updateAnnotations(session, id, data, action) {
     const { backendAPI } = config;
@@ -2532,6 +2547,7 @@ export default Object.freeze({
         call: callFunction,
         create: createFunction,
         providers: getFunctionProviders,
+        delete: deleteFunction,
     }),
 
     issues: Object.freeze({

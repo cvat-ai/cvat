@@ -30,6 +30,7 @@
 }
 
 .cvat-models-list-item {
+    position: relative;
     width: 100%;
     height: auto;
     border: 1px solid $border-color-1;
@@ -58,6 +59,11 @@
         white-space: nowrap;
         overflow: hidden;
     }
+}
+
+.cvat-models-list-item-removed {
+    opacity: 0.5;
+    pointer-events: none;
 }
 
 .cvat-models-page-top-bar {
@@ -90,4 +96,17 @@
 
 .cvat-models-add-wrapper {
     display: inline-block;
+}
+
+.cvat-model-delete {
+    position: absolute;
+    top: $grid-unit-size;
+    right: $grid-unit-size;
+    color: #8c8c8c;
+    font-size: 10px;
+
+    &:hover {
+        cursor: pointer;
+        color: #595959;
+    }
 }

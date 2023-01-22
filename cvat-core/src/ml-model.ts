@@ -6,7 +6,6 @@
 import serverProxy from './server-proxy';
 import PluginRegistry from './plugins';
 import { ModelType } from './enums';
-import User from './user';
 
 interface ModelAttribute {
     name: string;
@@ -119,6 +118,10 @@ export default class MLModel {
         return this.serialized.provider ? this.serialized.provider : 'cvat';
     }
 
+    public get deletable(): boolean {
+        return this.provider !== 'cvat';
+    }
+
     // Used to set a callback when the tool is blocked in UI
     public set onChangeToolsBlockerState(onChangeToolsBlockerState: (event: string) => void) {
         this.changeToolsBlockerStateCallback = onChangeToolsBlockerState;
@@ -126,6 +129,11 @@ export default class MLModel {
 
     public async save(): Promise<MLModel> {
         const result = await PluginRegistry.apiWrapper.call(this, MLModel.prototype.save);
+        return result;
+    }
+
+    public async delete(): Promise<MLModel> {
+        const result = await PluginRegistry.apiWrapper.call(this, MLModel.prototype.delete);
         return result;
     }
 }
@@ -143,6 +151,18 @@ Object.defineProperties(MLModel.prototype.save, {
 
             const model = await serverProxy.functions.create(modelData);
             return new MLModel(model);
+        },
+    },
+});
+
+Object.defineProperties(MLModel.prototype.delete, {
+    implementation: {
+        writable: false,
+        enumerable: false,
+        value: async function implementation(): Promise<void> {
+            if (Number.isInteger(this.id) && this.deletable) {
+                await serverProxy.functions.delete(this.id);
+            }
         },
     },
 });

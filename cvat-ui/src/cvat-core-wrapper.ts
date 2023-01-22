@@ -5,6 +5,7 @@
 import _cvat from 'cvat-core/src/api';
 import ObjectState from 'cvat-core/src/object-state';
 import Webhook from 'cvat-core/src/webhook';
+import MLModel from 'cvat-core/src/ml-model';
 import {
     Label, Attribute, RawAttribute, RawLabel,
 } from 'cvat-core/src/labels';
@@ -33,6 +34,7 @@ export {
     Storage,
     Webhook,
     SocialAuthMethod,
+    MLModel,
 };
 
 export type {

@@ -2,24 +2,29 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Tag from 'antd/lib/tag';
 import Select from 'antd/lib/select';
 import Text from 'antd/lib/typography/Text';
-import { Model } from 'reducers';
+import { CloseOutlined } from '@ant-design/icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
+import { useDispatch } from 'react-redux';
+import Modal from 'antd/lib/modal';
+import { deleteModelAsync } from 'actions/models-actions';
+import { MLModel } from 'cvat-core-wrapper';
 
 interface Props {
-    model: Model;
+    model: MLModel;
 }
 
 export default function DeployedModelItem(props: Props): JSX.Element {
     const { model } = props;
-    console.log(model);
+    const dispatch = useDispatch();
+    const [isRemoved, setIsRemoved] = useState(false);
 
     return (
-        <Row className='cvat-models-list-item'>
+        <Row className={`cvat-models-list-item ${isRemoved ? 'cvat-models-list-item-removed' : ''}`}>
             <Col span={2}>
                 <Tag color='blue'>{model.provider}</Tag>
             </Col>
@@ -50,6 +55,27 @@ export default function DeployedModelItem(props: Props): JSX.Element {
                     )}
                 </Select>
             </Col>
+            {
+                model.deletable ? (
+                    <Col
+                        className='cvat-model-delete'
+                        onClick={() => {
+                            Modal.confirm({
+                                title: 'Are you sure you want to remove this model?',
+                                content: 'You will not be able to use it anymore',
+                                className: 'cvat-modal-confirm-remove-webhook',
+                                onOk: () => {
+                                    dispatch(deleteModelAsync(model)).then(() => {
+                                        setIsRemoved(true);
+                                    });
+                                },
+                            });
+                        }}
+                    >
+                        <CloseOutlined />
+                    </Col>
+                ) : null
+            }
         </Row>
     );
 }

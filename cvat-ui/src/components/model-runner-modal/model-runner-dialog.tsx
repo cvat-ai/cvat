@@ -9,18 +9,19 @@ import Modal from 'antd/lib/modal';
 
 import { ThunkDispatch } from 'utils/redux';
 import { modelsActions, startInferenceAsync } from 'actions/models-actions';
-import { Model, CombinedState } from 'reducers';
+import { CombinedState } from 'reducers';
+import MLModel from 'cvat-core/src/ml-model';
 import DetectorRunner from './detector-runner';
 
 interface StateToProps {
     visible: boolean;
     task: any;
-    detectors: Model[];
-    reid: Model[];
+    detectors: MLModel[];
+    reid: MLModel[];
 }
 
 interface DispatchToProps {
-    runInference(task: any, model: Model, body: object): void;
+    runInference(task: any, model: MLModel, body: object): void;
     closeDialog(): void;
 }
 
@@ -38,7 +39,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
 function mapDispatchToProps(dispatch: ThunkDispatch): DispatchToProps {
     return {
-        runInference(taskID: number, model: Model, body: object) {
+        runInference(taskID: number, model: MLModel, body: object) {
             dispatch(startInferenceAsync(taskID, model, body));
         },
         closeDialog() {

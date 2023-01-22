@@ -5,7 +5,7 @@
 
 import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
-import { Webhook, SocialAuthMethods } from 'cvat-core-wrapper';
+import { Webhook, SocialAuthMethods, MLModel } from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap } from 'utils/mousetrap-react';
 import { OpenCVTracker } from 'utils/opencv-wrapper/opencv-interfaces';
@@ -329,27 +329,6 @@ export interface ModelAttribute {
     input_type: 'select' | 'number' | 'checkbox' | 'radio' | 'text';
 }
 
-export interface Model {
-    id: string;
-    name: string;
-    labels: string[];
-    version: number;
-    attributes: Record<string, ModelAttribute[]>;
-    framework: string;
-    description: string;
-    type: string;
-    provider: string;
-    owner: string;
-    onChangeToolsBlockerState: (event: string) => void;
-    tip: {
-        message: string;
-        gif: string;
-    };
-    params: {
-        canvas: Record<string, number | boolean>;
-    };
-}
-
 export interface ModelsQuery {
     page: number;
     id: number | null;
@@ -396,10 +375,10 @@ export interface ModelsState {
     initialized: boolean;
     fetching: boolean;
     creatingStatus: string;
-    interactors: Model[];
-    detectors: Model[];
-    trackers: Model[];
-    reid: Model[];
+    interactors: MLModel[];
+    detectors: MLModel[];
+    trackers: MLModel[];
+    reid: MLModel[];
     inferences: {
         [index: number]: ActiveInference;
     };
@@ -699,7 +678,7 @@ export interface AnnotationState {
         frameAngles: number[];
     };
     drawing: {
-        activeInteractor?: Model | OpenCVTool;
+        activeInteractor?: MLModel | OpenCVTool;
         activeShapeType: ShapeType;
         activeRectDrawingMethod?: RectDrawingMethod;
         activeCuboidDrawingMethod?: CuboidDrawingMethod;
