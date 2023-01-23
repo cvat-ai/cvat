@@ -54,6 +54,9 @@ class Limits(Enum):
     USER_SANDBOX_CLOUD_STORAGES = auto()
     USER_SANDBOX_PROJECT_WEBHOOKS = auto()
     USER_SANDBOX_LAMBDA_CALL_OFFLINE = auto()
+    USER_SANDBOX_JOB_EXPORT_DATASET = auto()
+    USER_SANDBOX_TASK_EXPORT_DATASET = auto()
+    USER_SANDBOX_PROJECT_EXPORT_DATASET = auto()
 
     ORG_TASKS = auto()
     ORG_PROJECTS = auto()
@@ -63,6 +66,9 @@ class Limits(Enum):
     ORG_COMMON_WEBHOOKS = auto()
     ORG_PROJECT_WEBHOOKS = auto()
     ORG_LAMBDA_CALL_OFFLINE = auto()
+    ORG_JOB_EXPORT_DATASET = auto()
+    ORG_TASK_EXPORT_DATASET = auto()
+    ORG_PROJECT_EXPORT_DATASET = auto()
 
 
 class CapabilityContext:
@@ -119,6 +125,26 @@ class UserSandboxProjectWebhooksContext(UserCapabilityContext):
 
 
 @define(kw_only=True)
+class UserSandboxLambdaCallOfflineContext(UserCapabilityContext):
+    pass
+
+
+@define(kw_only=True)
+class UserSandboxJobExportDatasetContext(UserCapabilityContext):
+    pass
+
+
+@define(kw_only=True)
+class UserSandboxTaskExportDatasetContext(UserCapabilityContext):
+    pass
+
+
+@define(kw_only=True)
+class UserSandboxProjectExportDatasetContext(UserCapabilityContext):
+    pass
+
+
+@define(kw_only=True)
 class OrgProjectWebhooksContext(OrgCapabilityContext):
     project_id: int
 
@@ -132,13 +158,26 @@ class OrgMembersContext(OrgCapabilityContext):
 class OrgCommonWebhooksContext(OrgCapabilityContext):
     pass
 
-@define(kw_only=True)
-class UserSandboxLambdaCallOfflineContext(UserCapabilityContext):
-    pass
 
 @define(kw_only=True)
 class OrgLambdaCallOfflineContext(OrgCapabilityContext):
     pass
+
+
+@define(kw_only=True)
+class OrgJobExportDatasetContext(OrgCapabilityContext):
+    pass
+
+
+@define(kw_only=True)
+class OrgTaskExportDatasetContext(OrgCapabilityContext):
+    pass
+
+
+@define(kw_only=True)
+class OrgProjectExportDatasetContext(OrgCapabilityContext):
+    pass
+
 
 @define(frozen=True)
 class LimitStatus:
@@ -349,6 +388,33 @@ class LimitManager:
                 limitation.lambda_requests
             )
 
+        elif limit == Limits.USER_SANDBOX_JOB_EXPORT_DATASET:
+            assert context is not None
+            context = cast(UserSandboxJobExportDatasetContext, context)
+
+            return LimitStatus(
+                0,
+                limitation.job_export_dataset
+            )
+
+        elif limit == Limits.USER_SANDBOX_TASK_EXPORT_DATASET:
+            assert context is not None
+            context = cast(UserSandboxTaskExportDatasetContext, context)
+
+            return LimitStatus(
+                0,
+                limitation.task_export_dataset
+            )
+
+        elif limit == Limits.USER_SANDBOX_PROJECT_EXPORT_DATASET:
+            assert context is not None
+            context = cast(UserSandboxProjectExportDatasetContext, context)
+
+            return LimitStatus(
+                0,
+                limitation.project_export_dataset
+            )
+
         elif limit == Limits.ORG_LAMBDA_CALL_OFFLINE:
             assert context is not None
             context = cast(OrgLambdaCallOfflineContext, context)
@@ -356,6 +422,33 @@ class LimitManager:
             return LimitStatus(
                 0,
                 limitation.lambda_requests
+            )
+
+        elif limit == Limits.ORG_JOB_EXPORT_DATASET:
+            assert context is not None
+            context = cast(OrgJobExportDatasetContext, context)
+
+            return LimitStatus(
+                0,
+                limitation.job_export_dataset
+            )
+
+        elif limit == Limits.ORG_TASK_EXPORT_DATASET:
+            assert context is not None
+            context = cast(OrgTaskExportDatasetContext, context)
+
+            return LimitStatus(
+                0,
+                limitation.task_export_dataset
+            )
+
+        elif limit == Limits.ORG_PROJECT_EXPORT_DATASET:
+            assert context is not None
+            context = cast(OrgProjectExportDatasetContext, context)
+
+            return LimitStatus(
+                0,
+                limitation.project_export_dataset
             )
 
 
