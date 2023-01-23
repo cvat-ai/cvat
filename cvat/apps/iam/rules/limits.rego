@@ -14,6 +14,9 @@ CAP_USER_OWNED_ORGS = "USER_OWNED_ORGS"
 CAP_USER_SANDBOX_CLOUD_STORAGES = "USER_SANDBOX_CLOUD_STORAGES"
 CAP_USER_SANDBOX_PROJECT_WEBHOOKS = "USER_SANDBOX_PROJECT_WEBHOOKS"
 CAP_USER_SANDBOX_LAMBDA_CALL_OFFLINE = "USER_SANDBOX_LAMBDA_CALL_OFFLINE"
+CAP_USER_SANDBOX_JOB_EXPORT_DATASET = "USER_SANDBOX_JOB_EXPORT_DATASET"
+CAP_USER_SANDBOX_TASK_EXPORT_DATASET = "USER_SANDBOX_TASK_EXPORT_DATASET"
+CAP_USER_SANDBOX_PROJECT_EXPORT_DATASET = "USER_SANDBOX_PROJECT_EXPORT_DATASET"
 CAP_ORG_TASKS = "ORG_TASKS"
 CAP_ORG_PROJECTS = "ORG_PROJECTS"
 CAP_TASKS_IN_ORG_PROJECT = "TASKS_IN_ORG_PROJECT"
@@ -21,6 +24,9 @@ CAP_ORG_CLOUD_STORAGES = "ORG_CLOUD_STORAGES"
 CAP_ORG_COMMON_WEBHOOKS = "ORG_COMMON_WEBHOOKS"
 CAP_ORG_PROJECT_WEBHOOKS = "ORG_PROJECT_WEBHOOKS"
 CAP_ORG_LAMBDA_CALL_OFFLINE = "ORG_LAMBDA_CALL_OFFLINE"
+CAP_ORG_JOB_EXPORT_DATASET = "ORG_JOB_EXPORT_DATASET"
+CAP_ORG_TASK_EXPORT_DATASET = "ORG_TASK_EXPORT_DATASET"
+CAP_ORG_PROJECT_EXPORT_DATASET = "ORG_PROJECT_EXPORT_DATASET"
 CAP_ORG_MEMBERS = "ORG_MEMBERS"
 
 
@@ -29,6 +35,28 @@ check_limit_exceeded(current, max) {
     current >= max
 }
 
+problems contains "exporting job dataset with images per user" if {
+    check_limit_exceeded(
+        input.resource.limits[CAP_USER_SANDBOX_JOB_EXPORT_DATASET].used,
+        input.resource.limits[CAP_USER_SANDBOX_JOB_EXPORT_DATASET].max
+    )
+}
+
+problems contains "exporting task dataset with images per user" if {
+    check_limit_exceeded(
+        input.resource.limits[CAP_USER_SANDBOX_TASK_EXPORT_DATASET].used,
+        input.resource.limits[CAP_USER_SANDBOX_TASK_EXPORT_DATASET].max
+    )
+}
+
+problems contains "exporting project dataset with images per user" if {
+    check_limit_exceeded(
+        input.resource.limits[CAP_USER_SANDBOX_PROJECT_EXPORT_DATASET].used,
+        input.resource.limits[CAP_USER_SANDBOX_PROJECT_EXPORT_DATASET].max
+    )
+}
+
+
 problems contains "lambda requests per user" if {
     check_limit_exceeded(
         input.resource.limits[CAP_USER_SANDBOX_LAMBDA_CALL_OFFLINE].used,
@@ -36,12 +64,34 @@ problems contains "lambda requests per user" if {
     )
 }
 
-problems contains "lambda requests per organization" if {
+problems contains "lambda requests per with images organization" if {
     check_limit_exceeded(
         input.resource.limits[CAP_ORG_LAMBDA_CALL_OFFLINE].used,
         input.resource.limits[CAP_ORG_LAMBDA_CALL_OFFLINE].max
     )
 }
+
+problems contains "exporting job dataset per with images organization" if {
+    check_limit_exceeded(
+        input.resource.limits[CAP_ORG_JOB_EXPORT_DATASET].used,
+        input.resource.limits[CAP_ORG_JOB_EXPORT_DATASET].max
+    )
+}
+
+problems contains "exporting task dataset per with images organization" if {
+    check_limit_exceeded(
+        input.resource.limits[CAP_ORG_TASK_EXPORT_DATASET].used,
+        input.resource.limits[CAP_ORG_TASK_EXPORT_DATASET].max
+    )
+}
+
+problems contains "exporting project dataset per with images organization" if {
+    check_limit_exceeded(
+        input.resource.limits[CAP_ORG_PROJECT_EXPORT_DATASET].used,
+        input.resource.limits[CAP_ORG_PROJECT_EXPORT_DATASET].max
+    )
+}
+
 
 problems contains "tasks per user" if {
     check_limit_exceeded(

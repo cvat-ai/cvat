@@ -270,6 +270,9 @@ DEFAULT_LIMITS = {
     "USER_SANDBOX_CLOUD_STORAGES": 1,
     "USER_SANDBOX_PROJECT_WEBHOOKS": 10,
     "USER_SANDBOX_LAMBDA_CALL_OFFLINE": 0,
+    "USER_SANDBOX_JOB_EXPORT_DATASET": 0,
+    "USER_SANDBOX_TASK_EXPORT_DATASET": 0,
+    "USER_SANDBOX_PROJECT_EXPORT_DATASET": 0,
 
     "ORG_TASKS": 10,
     "ORG_PROJECTS": 3,
@@ -279,6 +282,9 @@ DEFAULT_LIMITS = {
     "ORG_COMMON_WEBHOOKS": 10,
     "ORG_PROJECT_WEBHOOKS": 10,
     "ORG_LAMBDA_CALL_OFFLINE": 0,
+    "ORG_JOB_EXPORT_DATASET": 0,
+    "ORG_TASK_EXPORT_DATASET": 0,
+    "ORG_PROJECT_EXPORT_DATASET": 0,
 }
 
 
@@ -291,6 +297,9 @@ ORG_LIMITS_MAPPING = {
     "ORG_COMMON_WEBHOOKS": "webhooks_per_organization",
     "ORG_PROJECT_WEBHOOKS": "webhooks_per_project",
     "ORG_LAMBDA_CALL_OFFLINE": "lambda_requests",
+    "ORG_JOB_EXPORT_DATASET": "job_export_dataset",
+    "ORG_TASK_EXPORT_DATASET": "task_export_dataset",
+    "ORG_PROJECT_EXPORT_DATASET": "project_export_dataset",
 }
 
 USER_LIMITS_MAPPING = {
@@ -301,6 +310,9 @@ USER_LIMITS_MAPPING = {
     "USER_SANDBOX_CLOUD_STORAGES": "cloud_storages",
     "USER_SANDBOX_PROJECT_WEBHOOKS": "webhooks_per_project",
     "USER_SANDBOX_LAMBDA_CALL_OFFLINE": "lambda_requests",
+    "USER_SANDBOX_JOB_EXPORT_DATASET": "job_export_dataset",
+    "USER_SANDBOX_TASK_EXPORT_DATASET": "task_export_dataset",
+    "USER_SANDBOX_PROJECT_EXPORT_DATASET": "project_export_dataset",
 }
 
 # ORG settings
