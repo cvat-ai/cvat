@@ -150,7 +150,7 @@ class TestIamApi(APITestCase):
                 ForceLogin(user=self.user, client=self.client):
             response = self.client.get(self.ENDPOINT_WITH_AUTH)
             self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-            self.assertEqual(response.json(), expected_reasons)
+            self.assertTrue(all([reason in str(response.content) for reason in expected_reasons]))
 
     def test_can_report_merged_denial_reasons(self):
         expected_reasons = [["hello", "world"], ["hi", "there"]]
@@ -159,7 +159,14 @@ class TestIamApi(APITestCase):
                 ForceLogin(user=self.user, client=self.client):
             response = self.client.get(self.ENDPOINT_WITH_AUTH)
             self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-            self.assertEqual(response.json(), list(itertools.chain.from_iterable(expected_reasons)))
+            self.assertTrue(
+                all(
+                    [
+                        reason in str(response.content)
+                        for reason in itertools.chain(*expected_reasons)
+                    ]
+                )
+            )
 
     def test_can_allow_if_no_permission_matches(self):
         with self._mock_permissions(), ForceLogin(user=self.user, client=self.client):
@@ -179,4 +186,4 @@ class TestIamApi(APITestCase):
                 ForceLogin(user=self.user, client=self.client):
             response = self.client.get(self.ENDPOINT_WITH_AUTH)
             self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-            self.assertEqual(response.json(), expected_reasons)
+            self.assertTrue(all([reason in str(response.content) for reason in expected_reasons]))

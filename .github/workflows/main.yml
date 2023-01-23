@@ -135,9 +135,6 @@ jobs:
         with:
           python-version: '3.8'
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
       - name: Download CVAT server image
         uses: actions/download-artifact@v3
         with:
@@ -194,9 +191,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
 
       - name: Download CVAT server image
         uses: actions/download-artifact@v3
@@ -264,9 +258,6 @@ jobs:
                 'canvas3d_functionality_2', 'issues_prs', 'issues_prs2', 'masks', 'skeletons']
     steps:
       - uses: actions/checkout@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
 
       - uses: actions/setup-node@v3
         with:
