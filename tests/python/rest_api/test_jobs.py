@@ -16,7 +16,7 @@ from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
 from PIL import Image
 
-from shared.utils.config import make_api_client
+from shared.utils.config import make_api_client, patch_method
 
 from .utils import export_dataset
 
@@ -540,16 +540,20 @@ class TestJobDataset:
         assert response.data
 
     def test_non_admin_can_export_dataset(self, users, tasks, jobs_with_shapes):
-        job_id, username = next(
+        job_id, user = next(
             (
-                (job["id"], tasks[job["task_id"]]["owner"]["username"])
+                (job["id"], tasks[job["task_id"]]["owner"])
                 for job in jobs_with_shapes
                 if "admin" not in users[tasks[job["task_id"]]["owner"]["id"]]["groups"]
                 and tasks[job["task_id"]]["target_storage"] is None
                 and tasks[job["task_id"]]["organization"] is None
             )
         )
-        response = self._export_dataset(username, job_id, format="CVAT for images 1.1")
+
+        response = patch_method("admin1", f"users/{user['id']}/limitations", {"job_export_dataset": None})
+        assert response.status_code == HTTPStatus.OK
+
+        response = self._export_dataset(user["username"], job_id, format="CVAT for images 1.1")
         assert response.data
 
     def test_non_admin_can_export_annotations(self, users, tasks, jobs_with_shapes):
