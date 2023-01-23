@@ -14,7 +14,7 @@ def set_default_export_limits(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('limit_manager', '0006_auto_20230120_1548'),
+        ('limit_manager', '0006_auto_20230123_1057'),
     ]
 
     operations = [
