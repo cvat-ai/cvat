@@ -42,6 +42,3 @@ class Limitation(models.Model):
     webhooks_per_organization = models.PositiveIntegerField(null=True, blank=True)
 
     lambda_requests = models.PositiveIntegerField(null=True)
-    job_export_dataset = models.PositiveIntegerField(null=True)
-    task_export_dataset = models.PositiveIntegerField(null=True)
-    project_export_dataset = models.PositiveIntegerField(null=True)

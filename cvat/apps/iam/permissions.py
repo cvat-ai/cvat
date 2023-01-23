@@ -1627,41 +1627,6 @@ class LimitPermission(OpenPolicyAgentPermission):
                     limits.UserSandboxLambdaCallOfflineContext(user_id=scope.user_id)
                 ))
 
-        elif scope_id == (JobPermission, JobPermission.Scopes.EXPORT_DATASET):
-            if getattr(scope, 'org_id') is not None:
-                results.append((
-                    limits.Limits.ORG_JOB_EXPORT_DATASET,
-                    limits.OrgJobExportDatasetContext(org_id=scope.org_id)
-                ))
-            else:
-                results.append((
-                    limits.Limits.USER_SANDBOX_JOB_EXPORT_DATASET,
-                    limits.UserSandboxJobExportDatasetContext(user_id=scope.user_id)
-                ))
-
-        elif scope_id == (TaskPermission, TaskPermission.Scopes.EXPORT_DATASET):
-            if getattr(scope, 'org_id') is not None:
-                results.append((
-                    limits.Limits.ORG_TASK_EXPORT_DATASET,
-                    limits.OrgTaskExportDatasetContext(org_id=scope.org_id)
-                ))
-            else:
-                results.append((
-                    limits.Limits.USER_SANDBOX_TASK_EXPORT_DATASET,
-                    limits.UserSandboxTaskExportDatasetContext(user_id=scope.user_id)
-                ))
-
-        elif scope_id == (ProjectPermission, ProjectPermission.Scopes.EXPORT_DATASET):
-            if getattr(scope, 'org_id') is not None:
-                results.append((
-                    limits.Limits.ORG_PROJECT_EXPORT_DATASET,
-                    limits.OrgProjectExportDatasetContext(org_id=scope.org_id)
-                ))
-            else:
-                results.append((
-                    limits.Limits.USER_SANDBOX_PROJECT_EXPORT_DATASET,
-                    limits.UserSandboxProjectExportDatasetContext(user_id=scope.user_id)
-                ))
 
         return results
 
