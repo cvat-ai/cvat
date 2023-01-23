@@ -174,10 +174,6 @@ class OrgCommonWebhooksContext(OrgCapabilityContext):
     pass
 
 
-@define(kw_only=True)
-class OrgLambdaCallOfflineContext(OrgCapabilityContext):
-    pass
-
 @define(frozen=True)
 class LimitStatus:
     used: Optional[int]
