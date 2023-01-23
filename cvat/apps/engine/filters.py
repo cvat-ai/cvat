@@ -8,6 +8,9 @@ from functools import reduce
 import operator
 import json
 
+from django_filters import FilterSet
+from django_filters.filterset import BaseFilterSet
+from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q
 from django.db.models.query import QuerySet
 from django.utils.translation import gettext_lazy as _
@@ -237,7 +240,7 @@ class JsonLogicFilter(filters.BaseFilterBackend):
         return get_lookup_fields(view)
 
 
-class SimpleFilter(filters.BaseFilterBackend):
+class SimpleFilter(DjangoFilterBackend):
     """
     A simple filter, useful for small search queries and manually-edited
     requests.
@@ -256,25 +259,43 @@ class SimpleFilter(filters.BaseFilterBackend):
 
     filter_fields_attr = 'simple_filters'
 
-    def _build_rules(self, query_params: Dict[str, Any]) -> JsonLogicFilter.Rules:
-        field_rules = []
-        rules = {"and": field_rules}
-        for field, value in query_params.items():
-            field_rules.append({"==": [{"var": field}, value]})
-        return rules
+    class MappingFiltersetBase(BaseFilterSet):
+        _filter_name_map_attr = 'filter_names'
 
-    def filter_queryset(self, request, queryset, view):
+        @classmethod
+        def get_filter_name(cls, field_name, lookup_expr):
+            filter_names = getattr(cls, cls._filter_name_map_attr, {})
+
+            field_name = super().get_filter_name(field_name, lookup_expr)
+
+            if filter_names:
+                # Map names after a lookup suffix is applied to allow
+                # mapping specific filters with lookups
+                field_name = filter_names.get(field_name, field_name)
+
+            if field_name in SimpleFilter.reserved_names:
+                raise ValueError(f'Field name {field_name} is reserved')
+
+            return field_name
+
+    filterset_base = MappingFiltersetBase
+
+
+    def get_filterset_class(self, view, queryset=None):
         lookup_fields = self.get_lookup_fields(view)
-        query_params = {
-            k: request.query_params[k] for k in lookup_fields if k in request.query_params
-        }
+        if not lookup_fields or not queryset:
+            return None
 
-        if query_params:
-            json_filter = JsonLogicFilter()
-            rules = self._build_rules(query_params)
-            queryset = json_filter.apply_filter(queryset, rules, lookup_fields=lookup_fields)
+        MetaBase = getattr(self.filterset_base, 'Meta', object)
 
-        return queryset
+        class AutoFilterSet(self.filterset_base, metaclass=FilterSet.__class__):
+            filter_names = { v: k for k, v in lookup_fields.items() }
+
+            class Meta(MetaBase): # pylint: disable=useless-object-inheritance
+                model = queryset.model
+                fields = list(lookup_fields.values())
+
+        return AutoFilterSet
 
     def get_lookup_fields(self, view):
         simple_filters = getattr(view, self.filter_fields_attr, None)

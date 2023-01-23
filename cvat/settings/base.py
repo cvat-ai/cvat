@@ -114,6 +114,7 @@ INSTALLED_APPS = [
     "dj_rest_auth",
     'dj_rest_auth.registration',
     'dj_pagination',
+    'django_filters',
     'rest_framework',
     'rest_framework.authtoken',
     'drf_spectacular',
