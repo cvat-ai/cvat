@@ -20,7 +20,7 @@ from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credenti
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.utils import parse_specific_attributes
 
-from drf_spectacular.utils import OpenApiExample, extend_schema_serializer
+from drf_spectacular.utils import OpenApiExample, extend_schema_field, extend_schema_serializer
 
 class BasicUserSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
@@ -925,6 +925,13 @@ class FrameMetaSerializer(serializers.Serializer):
     height = serializers.IntegerField()
     name = serializers.CharField(max_length=1024)
     related_files = serializers.IntegerField()
+
+    # for compatibility with version 2.3.0
+    has_related_context = serializers.SerializerMethodField()
+
+    @extend_schema_field(serializers.BooleanField)
+    def get_has_related_context(self, obj: dict) -> bool:
+        return obj['related_files'] != 0
 
 class PluginsSerializer(serializers.Serializer):
     GIT_INTEGRATION = serializers.BooleanField()
