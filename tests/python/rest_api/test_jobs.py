@@ -550,7 +550,9 @@ class TestJobDataset:
             )
         )
 
-        response = patch_method("admin1", f"users/{user['id']}/limitations", {"job_export_dataset": None})
+        response = patch_method(
+            "admin1", f"users/{user['id']}/limitations", {"job_export_dataset": None}
+        )
         assert response.status_code == HTTPStatus.OK
 
         response = self._export_dataset(user["username"], job_id, format="CVAT for images 1.1")
