@@ -1048,7 +1048,7 @@ class Issue4996_Cases(_LambdaTestCaseBase):
 
         jobs = get_paginated_collection(lambda page:
             self._get_request(
-                f"/api/tasks/{self.task['id']}/jobs?page={page}",
+                f"/api/jobs?task_id={self.task['id']}&page={page}",
                 self.admin, org_id=self.org['id']
             )
         )

@@ -1224,7 +1224,7 @@ class ProjectListOfTasksAPITestCase(APITestCase):
 
     def _run_api_v2_projects_id_tasks(self, user, pid):
         with ForceLogin(user, self.client):
-            response = self.client.get('/api/projects/{}/tasks'.format(pid))
+            response = self.client.get('/api/tasks?project_id={}'.format(pid))
 
         return response
 
@@ -1247,7 +1247,8 @@ class ProjectListOfTasksAPITestCase(APITestCase):
     def test_api_v2_projects_id_tasks_somebody(self):
         project = self.projects[1]
         response = self._run_api_v2_projects_id_tasks(self.somebody, project.id)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual([], response.data['results'])
 
     def test_api_v2_projects_id_tasks_no_auth(self):
         project = self.projects[1]
@@ -4227,7 +4228,7 @@ class JobAnnotationAPITestCase(APITestCase):
             task = response.data
 
             jobs = get_paginated_collection(lambda page:
-                self.client.get("/api/tasks/{}/jobs?page={}".format(tid, page))
+                self.client.get("/api/jobs?task_id={}&page={}".format(tid, page))
             )
 
         return (task, jobs)
