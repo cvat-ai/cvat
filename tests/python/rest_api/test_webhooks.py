@@ -534,7 +534,6 @@ class TestGetWebhooks:
 class TestWebhooksListFilters(CollectionSimpleFilterTestBase):
     field_lookups = {
         "owner": ["owner", "username"],
-        "project_id": ["project"],
     }
 
     @pytest.fixture(autouse=True)
