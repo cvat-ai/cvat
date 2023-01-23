@@ -54,7 +54,7 @@ from cvat.apps.engine.models import CloudStorage as CloudStorageModel
 from cvat.apps.engine.serializers import (
     AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
     DataMetaReadSerializer, DataMetaWriteSerializer, DataSerializer, ExceptionSerializer,
-    FileInfoSerializer, JobReadSerializer, JobWriteSerializer, LabeledDataSerializer,
+    FileInfoSerializer, JobReadSerializer, JobWriteSerializer, LabelSerializer, LabeledDataSerializer,
     LogEventSerializer, ProjectReadSerializer, ProjectWriteSerializer, ProjectSearchSerializer,
     RqStatusSerializer, TaskReadSerializer, TaskWriteSerializer, UserSerializer, PluginsSerializer, IssueReadSerializer,
     IssueWriteSerializer, CommentReadSerializer, CommentWriteSerializer, CloudStorageWriteSerializer,
@@ -629,6 +629,20 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             response['progress'] = job.meta.get('progress', 0.)
 
         return response
+
+    @extend_schema(description="Return a paginated list of labels",
+        responses=LabelSerializer(many=True)) # Duplicate to still get 'list' op. name
+    @action(detail=True, methods=['GET'], serializer_class=LabelSerializer,
+        pagination_class=viewsets.GenericViewSet.pagination_class,
+        # Remove regular list() parameters from the swagger schema.
+        # Unset, they would be taken from the enclosing class, which is wrong.
+        # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
+        filter_fields=None, search_fields=None, ordering_fields=None)
+    def labels(self, pk):
+        queryset = self.get_object().labels
+        return make_paginated_response(queryset,
+            viewset=self, serializer_type=self.serializer_class) # from @action
+
 
 class DataChunkGetter:
     def __init__(self, data_type, data_num, data_quality, task_dim):
