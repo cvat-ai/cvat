@@ -1,5 +1,5 @@
 # Copyright (C) 2018-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -9,7 +9,6 @@ import zipfile
 from collections import OrderedDict
 from glob import glob
 from io import BufferedWriter
-from tempfile import TemporaryDirectory
 from typing import Callable
 
 from datumaro.components.annotation import (AnnotationType, Bbox, Label,
@@ -1349,64 +1348,63 @@ def dump_media_files(instance_data: CommonData, img_dir: str, project_data: Proj
         with open(img_path, 'wb') as f:
             f.write(frame_data.getvalue())
 
-def _export_task_or_job(dst_file, instance_data, anno_callback, save_images=False):
-    with TemporaryDirectory() as temp_dir:
-        with open(osp.join(temp_dir, 'annotations.xml'), 'wb') as f:
-            dump_task_or_job_anno(f, instance_data, anno_callback)
+def _export_task_or_job(dst_file, temp_dir, instance_data, anno_callback, save_images=False):
+    with open(osp.join(temp_dir, 'annotations.xml'), 'wb') as f:
+        dump_task_or_job_anno(f, instance_data, anno_callback)
 
-        if save_images:
-            dump_media_files(instance_data, osp.join(temp_dir, 'images'))
+    if save_images:
+        dump_media_files(instance_data, osp.join(temp_dir, 'images'))
 
-        make_zip_archive(temp_dir, dst_file)
+    make_zip_archive(temp_dir, dst_file)
 
-def _export_project(dst_file: str, project_data: ProjectData, anno_callback: Callable, save_images: bool=False):
-    with TemporaryDirectory() as temp_dir:
-        with open(osp.join(temp_dir, 'annotations.xml'), 'wb') as f:
-            dump_project_anno(f, project_data, anno_callback)
+def _export_project(dst_file: str, temp_dir: str, project_data: ProjectData,
+    anno_callback: Callable, save_images: bool=False
+):
+    with open(osp.join(temp_dir, 'annotations.xml'), 'wb') as f:
+        dump_project_anno(f, project_data, anno_callback)
 
-        if save_images:
-            for task_data in project_data.task_data:
-                subset = get_defaulted_subset(task_data.db_instance.subset, project_data.subsets)
-                subset_dir = osp.join(temp_dir, 'images', subset)
-                os.makedirs(subset_dir, exist_ok=True)
-                dump_media_files(task_data, subset_dir, project_data)
+    if save_images:
+        for task_data in project_data.task_data:
+            subset = get_defaulted_subset(task_data.db_instance.subset, project_data.subsets)
+            subset_dir = osp.join(temp_dir, 'images', subset)
+            os.makedirs(subset_dir, exist_ok=True)
+            dump_media_files(task_data, subset_dir, project_data)
 
-        make_zip_archive(temp_dir, dst_file)
+    make_zip_archive(temp_dir, dst_file)
 
 @exporter(name='CVAT for video', ext='ZIP', version='1.1')
-def _export_video(dst_file, instance_data, save_images=False):
+def _export_video(dst_file, temp_dir, instance_data, save_images=False):
     if isinstance(instance_data, ProjectData):
-        _export_project(dst_file, instance_data,
+        _export_project(dst_file, temp_dir, instance_data,
             anno_callback=dump_as_cvat_interpolation, save_images=save_images)
     else:
-        _export_task_or_job(dst_file, instance_data,
+        _export_task_or_job(dst_file, temp_dir, instance_data,
             anno_callback=dump_as_cvat_interpolation, save_images=save_images)
 
 @exporter(name='CVAT for images', ext='ZIP', version='1.1')
-def _export_images(dst_file, instance_data, save_images=False):
+def _export_images(dst_file, temp_dir, instance_data, save_images=False):
     if isinstance(instance_data, ProjectData):
-        _export_project(dst_file, instance_data,
+        _export_project(dst_file, temp_dir, instance_data,
             anno_callback=dump_as_cvat_annotation, save_images=save_images)
     else:
-        _export_task_or_job(dst_file, instance_data,
+        _export_task_or_job(dst_file, temp_dir, instance_data,
             anno_callback=dump_as_cvat_annotation, save_images=save_images)
 
 @importer(name='CVAT', ext='XML, ZIP', version='1.1')
-def _import(src_file, instance_data, load_data_callback=None, **kwargs):
+def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
     is_zip = zipfile.is_zipfile(src_file)
     src_file.seek(0)
     if is_zip:
-        with TemporaryDirectory() as tmp_dir:
-            zipfile.ZipFile(src_file).extractall(tmp_dir)
+        zipfile.ZipFile(src_file).extractall(temp_dir)
 
-            if isinstance(instance_data, ProjectData):
-                dataset = Dataset.import_from(tmp_dir, 'cvat', env=dm_env)
-                if load_data_callback is not None:
-                    load_data_callback(dataset, instance_data)
-                import_dm_annotations(dataset, instance_data)
-            else:
-                anno_paths = glob(osp.join(tmp_dir, '**', '*.xml'), recursive=True)
-                for p in anno_paths:
-                    load_anno(p, instance_data)
+        if isinstance(instance_data, ProjectData):
+            dataset = Dataset.import_from(temp_dir, 'cvat', env=dm_env)
+            if load_data_callback is not None:
+                load_data_callback(dataset, instance_data)
+            import_dm_annotations(dataset, instance_data)
+        else:
+            anno_paths = glob(osp.join(temp_dir, '**', '*.xml'), recursive=True)
+            for p in anno_paths:
+                load_anno(p, instance_data)
     else:
         load_anno(src_file, instance_data)
