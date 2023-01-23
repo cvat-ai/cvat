@@ -468,6 +468,9 @@ class Job(models.Model):
     def get_dirname(self):
         return os.path.join(settings.JOBS_ROOT, str(self.id))
 
+    def get_tmp_dirname(self):
+        return os.path.join(self.get_dirname(), 'tmp')
+
     @extend_schema_field(OpenApiTypes.INT)
     def get_project_id(self):
         project = self.segment.task.project

@@ -334,7 +334,7 @@ class TasksRepo(
     def create_from_data(
         self,
         spec: models.ITaskWriteRequest,
-        resources: Sequence[str],
+        resources: Sequence[StrPath],
         *,
         resource_type: ResourceType = ResourceType.LOCAL,
         data_params: Optional[Dict[str, Any]] = None,
