@@ -1836,6 +1836,20 @@ async function callFunction(funId, body) {
     }
 }
 
+async function getFunctionsRequests() {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.get(`${backendAPI}/functions/requests/`, {
+            proxy: config.proxy,
+        });
+
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
 async function getLambdaFunctions() {
     const { backendAPI } = config;
 
@@ -2543,11 +2557,13 @@ export default Object.freeze({
     functions: Object.freeze({
         list: getFunctions,
         status: getFunctionRequestStatus,
+        requests: getFunctionsRequests,
         run: runFunctionRequest,
         call: callFunction,
         create: createFunction,
         providers: getFunctionProviders,
         delete: deleteFunction,
+        cancel: cancelFunctionRequest,
     }),
 
     issues: Object.freeze({

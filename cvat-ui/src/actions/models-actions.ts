@@ -151,12 +151,13 @@ export function deleteModelAsync(model: MLModel): ThunkAction {
 interface InferenceMeta {
     taskID: number;
     requestID: string;
+    functionID: string;
 }
 
 function listen(inferenceMeta: InferenceMeta, dispatch: (action: ModelsActions) => void): void {
-    const { taskID, requestID } = inferenceMeta;
+    const { taskID, requestID, functionID } = inferenceMeta;
     core.lambda
-        .listen(requestID, (status: RQStatus, progress: number, message: string) => {
+        .listen(requestID, functionID, (status: RQStatus, progress: number, message: string) => {
             if (status === RQStatus.failed || status === RQStatus.unknown) {
                 dispatch(
                     modelsActions.getInferenceStatusFailed(
@@ -172,6 +173,7 @@ function listen(inferenceMeta: InferenceMeta, dispatch: (action: ModelsActions) 
                 modelsActions.getInferenceStatusSuccess(taskID, {
                     status,
                     progress,
+                    functionID,
                     error: message,
                     id: requestID,
                 }),
@@ -184,6 +186,7 @@ function listen(inferenceMeta: InferenceMeta, dispatch: (action: ModelsActions) 
                     progress: 0,
                     error: error.toString(),
                     id: requestID,
+                    functionID,
                 }),
             );
         });
@@ -201,6 +204,7 @@ export function getInferenceStatusAsync(): ThunkAction {
                 .map((request: any): object => ({
                     taskID: +request.function.task,
                     requestID: request.id,
+                    functionID: request.function.id,
                 }))
                 .forEach((inferenceMeta: InferenceMeta): void => {
                     listen(inferenceMeta, dispatchCallback);
@@ -222,6 +226,7 @@ export function startInferenceAsync(taskId: number, model: MLModel, body: object
             listen(
                 {
                     taskID: taskId,
+                    functionID: model.id,
                     requestID,
                 },
                 dispatchCallback,
@@ -236,7 +241,7 @@ export function cancelInferenceAsync(taskID: number): ThunkAction {
     return async (dispatch, getState): Promise<void> => {
         try {
             const inference = getState().models.inferences[taskID];
-            await core.lambda.cancel(inference.id);
+            await core.lambda.cancel(inference.id, inference.functionID);
             dispatch(modelsActions.cancelInferenceSuccess(taskID));
         } catch (error) {
             dispatch(modelsActions.cancelInferenceFailed(taskID, error));

@@ -60,7 +60,7 @@ class LambdaManager {
             task: taskID,
             function: model.id,
         };
-        console.log('run');
+
         let result;
         if (model.provider === 'cvat') {
             result = await serverProxy.lambda.run(body);
@@ -90,30 +90,49 @@ class LambdaManager {
     }
 
     async requests() {
-        // const lambdaRequests = await serverProxy.lambda.requests();
+        const lambdaRequests = await serverProxy.lambda.requests();
         const functionsRequests = await serverProxy.functions.requests();
-        const result = [...functionsRequests];
-        console.log(result);
+        const result = [...lambdaRequests, ...functionsRequests];
         return result.filter((request) => ['queued', 'started'].includes(request.status));
     }
 
-    async cancel(requestID): Promise<void> {
+    async cancel(requestID, functionID): Promise<void> {
         if (typeof requestID !== 'string') {
             throw new ArgumentError(`Request id argument is required to be a string. But got ${requestID}`);
+        }
+        const model = this.cachedList.find((_model) => _model.id === functionID);
+        if (!model) {
+            throw new ArgumentError('Incorrect Function Id provided');
         }
 
         if (this.listening[requestID]) {
             clearTimeout(this.listening[requestID].timeout);
             delete this.listening[requestID];
         }
-        await serverProxy.functions.cancel();
+
+        const { provider } = model;
+        if (provider === 'cvat') {
+            await serverProxy.lambda.cancel(requestID);
+        } else {
+            await serverProxy.functions.cancel(requestID);
+        }
     }
 
-    async listen(requestID, onUpdate): Promise<void> {
+    async listen(requestID, functionID, onUpdate): Promise<void> {
+        const model = this.cachedList.find((_model) => _model.id === functionID);
+        if (!model) {
+            throw new ArgumentError('Incorrect Function Id provided');
+        }
+        const { provider } = model;
         const timeoutCallback = async (): Promise<void> => {
             try {
                 this.listening[requestID].timeout = null;
-                const response = await serverProxy.functions.status(requestID);
+                let response = null;
+                if (provider === 'cvat') {
+                    response = await serverProxy.lambda.status(requestID);
+                } else {
+                    response = await serverProxy.functions.status(requestID);
+                }
 
                 if (response.status === RQStatus.QUEUED || response.status === RQStatus.STARTED) {
                     onUpdate(response.status, response.progress || 0);
@@ -138,6 +157,7 @@ class LambdaManager {
 
         this.listening[requestID] = {
             onUpdate,
+            functionID,
             timeout: setTimeout(timeoutCallback, 2000),
         };
     }

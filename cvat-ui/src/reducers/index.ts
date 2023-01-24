@@ -369,6 +369,7 @@ export interface ActiveInference {
     progress: number;
     error: string;
     id: string;
+    functionID: string;
 }
 
 export interface ModelsState {

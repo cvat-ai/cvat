@@ -190,12 +190,12 @@ function build() {
                 const result = await PluginRegistry.apiWrapper(cvat.lambda.call, task, model, args);
                 return result;
             },
-            async cancel(requestID) {
-                const result = await PluginRegistry.apiWrapper(cvat.lambda.cancel, requestID);
+            async cancel(requestID, functionID) {
+                const result = await PluginRegistry.apiWrapper(cvat.lambda.cancel, requestID, functionID);
                 return result;
             },
-            async listen(requestID, onChange) {
-                const result = await PluginRegistry.apiWrapper(cvat.lambda.listen, requestID, onChange);
+            async listen(requestID, functionID, onChange) {
+                const result = await PluginRegistry.apiWrapper(cvat.lambda.listen, requestID, functionID, onChange);
                 return result;
             },
             async requests() {
