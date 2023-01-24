@@ -17,6 +17,7 @@ interface Props {
     sortingFields: string[];
     defaultFields: string[];
     visible: boolean;
+    disabled?: boolean;
     onVisibleChange(visible: boolean): void;
     onApplySorting(sorting: string | null): void;
 }
@@ -97,7 +98,7 @@ const SortableList = SortableContainer(
 function SortingModalComponent(props: Props): JSX.Element {
     const {
         sortingFields: sortingFieldsProp,
-        defaultFields, visible, onApplySorting, onVisibleChange,
+        defaultFields, visible, onApplySorting, onVisibleChange, disabled,
     } = props;
     const [appliedSorting, setAppliedSorting] = useState<Record<string, string>>(
         defaultFields.reduce((acc: Record<string, string>, field: string) => {
@@ -174,6 +175,7 @@ function SortingModalComponent(props: Props): JSX.Element {
 
     return (
         <Dropdown
+            disabled={disabled}
             destroyPopupOnHide
             visible={visible}
             placement='bottomLeft'

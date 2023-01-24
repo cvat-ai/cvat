@@ -18,10 +18,6 @@ class LambdaManager {
     }
 
     async list(): Promise<MLModel[]> {
-        if (Array.isArray(this.cachedList)) {
-            return [...this.cachedList];
-        }
-
         const lambdaFunctions = await serverProxy.lambda.list();
         const functions = await serverProxy.functions.list();
         const result = [...lambdaFunctions, ...functions];

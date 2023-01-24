@@ -380,6 +380,7 @@ export interface ModelsState {
     detectors: MLModel[];
     trackers: MLModel[];
     reid: MLModel[];
+    totalCount: number;
     inferences: {
         [index: number]: ActiveInference;
     };

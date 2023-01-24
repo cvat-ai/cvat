@@ -19,6 +19,7 @@ const defaultState: ModelsState = {
     modelRunnerIsVisible: false,
     modelRunnerTask: null,
     inferences: {},
+    totalCount: 0,
     query: {
         page: 1,
         id: null,
@@ -48,6 +49,7 @@ export default function (state = defaultState, action: ModelsActions | AuthActio
                 detectors: action.payload.models.filter((model: MLModel) => ['detector'].includes(model.type)),
                 trackers: action.payload.models.filter((model: MLModel) => ['tracker'].includes(model.type)),
                 reid: action.payload.models.filter((model: MLModel) => ['reid'].includes(model.type)),
+                totalCount: action.payload.models.length,
                 initialized: true,
                 fetching: false,
             };
@@ -72,9 +74,37 @@ export default function (state = defaultState, action: ModelsActions | AuthActio
             };
         }
         case ModelsActionTypes.CREATE_MODEL_SUCCESS: {
-            return {
+            const mutual = {
                 ...state,
                 fetching: false,
+            };
+            if (['interactor'].includes(action.payload.model.type)) {
+                return {
+                    ...mutual,
+                    interactors: [...state.interactors, action.payload.model],
+                };
+            }
+            if (['detector'].includes(action.payload.model.type)) {
+                return {
+                    ...mutual,
+                    detectors: [...state.detectors, action.payload.model],
+                };
+            }
+            if (['tracker'].includes(action.payload.model.type)) {
+                return {
+                    ...mutual,
+                    trackers: [...state.trackers, action.payload.model],
+                };
+            }
+            if (['reid'].includes(action.payload.model.type)) {
+                return {
+                    ...mutual,
+                    trackers: [...state.reid, action.payload.model],
+                };
+            }
+            return {
+                ...mutual,
+                interactors: [...state.interactors, action.payload.model],
             };
         }
         case ModelsActionTypes.SHOW_RUN_MODEL_DIALOG: {

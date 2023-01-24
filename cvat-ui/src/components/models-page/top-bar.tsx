@@ -23,11 +23,12 @@ interface VisibleTopBarProps {
     onApplySearch(search: string | null): void;
     query: ModelsQuery;
     onCreateModel(): void;
+    disabled?: boolean;
 }
 
 export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element {
     const {
-        query, onApplyFilter, onApplySorting, onApplySearch, onCreateModel,
+        query, onApplyFilter, onApplySorting, onApplySearch, onCreateModel, disabled,
     } = props;
     const [visibility, setVisibility] = useState(defaultVisibility);
 
@@ -36,6 +37,7 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
             <Col md={22} lg={18} xl={16} xxl={14}>
                 <div className='cvat-models-page-filters-wrapper'>
                     <Input.Search
+                        disabled={disabled}
                         enterButton
                         onSearch={(phrase: string) => {
                             onApplySearch(phrase);
@@ -46,6 +48,7 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
                     />
                     <div>
                         <SortingComponent
+                            disabled={disabled}
                             visible={visibility.sorting}
                             onVisibleChange={(visible: boolean) => (
                                 setVisibility({ ...defaultVisibility, sorting: visible })
@@ -55,6 +58,7 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
                             onApplySorting={onApplySorting}
                         />
                         <FilteringComponent
+                            disabled={disabled}
                             value={query.filter}
                             predefinedVisible={visibility.predefined}
                             builderVisible={visibility.builder}

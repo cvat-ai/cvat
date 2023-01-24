@@ -49,7 +49,9 @@ export const modelsActions = {
     createModelFailed: (error: any) => createAction(ModelsActionTypes.CREATE_MODEL_FAILED, { error }),
     deleteModel: (model: MLModel) => createAction(ModelsActionTypes.DELETE_MODEL, { model }),
     deleteModelSuccess: (modelID: string) => createAction(ModelsActionTypes.DELETE_MODEL_SUCCESS, { modelID }),
-    deleteModelFailed: (error: any) => createAction(ModelsActionTypes.DELETE_MODEL_FAILED, { error }),
+    deleteModelFailed: (modelID: string, error: any) => (
+        createAction(ModelsActionTypes.DELETE_MODEL_FAILED, { modelID, error })
+    ),
     fetchMetaFailed: (error: any) => createAction(ModelsActionTypes.FETCH_META_FAILED, { error }),
     getInferenceStatusSuccess: (taskID: number, activeInference: ActiveInference) => (
         createAction(ModelsActionTypes.GET_INFERENCE_STATUS_SUCCESS, {
@@ -142,7 +144,7 @@ export function deleteModelAsync(model: MLModel): ThunkAction {
             await model.delete();
             dispatch(modelsActions.deleteModelSuccess(model.id));
         } catch (error) {
-            dispatch(modelsActions.deleteModelFailed(error));
+            dispatch(modelsActions.deleteModelFailed(model.id, error));
             throw error;
         }
     };

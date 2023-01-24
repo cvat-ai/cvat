@@ -3,18 +3,18 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
+import { useSelector } from 'react-redux';
 import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
-
-import { MLModel } from 'cvat-core-wrapper';
+import { CombinedState } from 'reducers';
 import DeployedModelItem from './deployed-model-item';
 
-interface Props {
-    models: MLModel[];
-}
-
-export default function DeployedModelsListComponent(props: Props): JSX.Element {
-    const { models } = props;
+export default function DeployedModelsListComponent(): JSX.Element {
+    const interactors = useSelector((state: CombinedState) => state.models.interactors);
+    const detectors = useSelector((state: CombinedState) => state.models.detectors);
+    const trackers = useSelector((state: CombinedState) => state.models.trackers);
+    const reid = useSelector((state: CombinedState) => state.models.reid);
+    const models = [...interactors, ...detectors, ...trackers, ...reid];
 
     const items = models.map((model): JSX.Element => <DeployedModelItem key={model.id} model={model} />);
 

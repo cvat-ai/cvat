@@ -33,9 +33,9 @@ import ExportDatasetModal from 'components/export-dataset/export-dataset-modal';
 import ExportBackupModal from 'components/export-backup/export-backup-modal';
 import ImportDatasetModal from 'components/import-dataset/import-dataset-modal';
 import ImportBackupModal from 'components/import-backup/import-backup-modal';
-import ModelsPageContainer from 'containers/models-page/models-page';
 
 import JobsPageComponent from 'components/jobs-page/jobs-page';
+import ModelsPageComponent from 'components/models-page/models-page';
 
 import TasksPageContainer from 'containers/tasks-page/tasks-page';
 import CreateTaskPageContainer from 'containers/create-task-page/create-task-page';
@@ -451,7 +451,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                             <Route exact path='/organization' component={OrganizationPage} />
                                             {isModelPluginActive && (
                                                 <>
-                                                    <Route exact path='/models' component={ModelsPageContainer} />
+                                                    <Route exact path='/models' component={ModelsPageComponent} />
                                                     <Route exact path='/models/create' component={CreateModelPage} />
                                                 </>
                                             )}
