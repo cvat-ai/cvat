@@ -36,7 +36,7 @@ def send_webhook(webhook, payload, delivery):
             "sha256="
             + hmac.new(
                 webhook.secret.encode("utf-8"),
-                (json.dumps(payload) + "\n").encode("utf-8"),
+                json.dumps(payload).encode("utf-8"),
                 digestmod=hashlib.sha256,
             ).hexdigest()
         )
