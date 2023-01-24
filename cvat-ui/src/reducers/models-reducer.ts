@@ -49,6 +49,7 @@ export default function (state = defaultState, action: ModelsActions | AuthActio
                 detectors: action.payload.models.filter((model: MLModel) => ['detector'].includes(model.type)),
                 trackers: action.payload.models.filter((model: MLModel) => ['tracker'].includes(model.type)),
                 reid: action.payload.models.filter((model: MLModel) => ['reid'].includes(model.type)),
+                classifiers: action.payload.models.filter((model: MLModel) => ['classifier'].includes(model.type)),
                 totalCount: action.payload.models.length,
                 initialized: true,
                 fetching: false,

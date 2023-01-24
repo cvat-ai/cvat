@@ -106,6 +106,13 @@ function ModelForm(props: Props): JSX.Element {
                         </Select>
                     </Form.Item>
                     <Col offset={1}>
+                        <Form.Item
+                            name='model_url'
+                            label='Model URL'
+                            rules={[{ required: true, message: 'Please, specify Model URL' }]}
+                        >
+                            <Input />
+                        </Form.Item>
                         {currentProviderForm}
                     </Col>
                 </Form>

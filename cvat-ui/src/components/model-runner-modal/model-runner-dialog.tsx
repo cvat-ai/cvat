@@ -18,6 +18,7 @@ interface StateToProps {
     task: any;
     detectors: MLModel[];
     reid: MLModel[];
+    classifiers: MLModel[];
 }
 
 interface DispatchToProps {
@@ -27,13 +28,14 @@ interface DispatchToProps {
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const { models } = state;
-    const { detectors, reid } = models;
+    const { detectors, reid, classifiers } = models;
 
     return {
         visible: models.modelRunnerIsVisible,
         task: models.modelRunnerTask,
         reid,
         detectors,
+        classifiers,
     };
 }
 
@@ -50,10 +52,10 @@ function mapDispatchToProps(dispatch: ThunkDispatch): DispatchToProps {
 
 function ModelRunnerDialog(props: StateToProps & DispatchToProps): JSX.Element {
     const {
-        reid, detectors, task, visible, runInference, closeDialog,
+        reid, detectors, classifiers, task, visible, runInference, closeDialog,
     } = props;
 
-    const models = [...reid, ...detectors];
+    const models = [...reid, ...detectors, ...classifiers];
 
     return (
         <Modal

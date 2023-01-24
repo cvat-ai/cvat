@@ -14,7 +14,8 @@ export default function DeployedModelsListComponent(): JSX.Element {
     const detectors = useSelector((state: CombinedState) => state.models.detectors);
     const trackers = useSelector((state: CombinedState) => state.models.trackers);
     const reid = useSelector((state: CombinedState) => state.models.reid);
-    const models = [...interactors, ...detectors, ...trackers, ...reid];
+    const classifiers = useSelector((state: CombinedState) => state.models.classifiers);
+    const models = [...interactors, ...detectors, ...trackers, ...reid, ...classifiers];
 
     const items = models.map((model): JSX.Element => <DeployedModelItem key={model.id} model={model} />);
 

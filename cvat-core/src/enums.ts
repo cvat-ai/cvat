@@ -136,6 +136,8 @@ export enum ModelType {
     DETECTOR = 'detector',
     INTERACTOR = 'interactor',
     TRACKER = 'tracker',
+    CLASSIFIER = 'classifier',
+    REID = 'reid',
 }
 
 export const colors = [
