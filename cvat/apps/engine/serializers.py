@@ -187,7 +187,6 @@ class JobReadSerializer(serializers.ModelSerializer):
     stop_frame = serializers.ReadOnlyField(source="segment.stop_frame")
     assignee = BasicUserSerializer(allow_null=True, read_only=True)
     dimension = serializers.CharField(max_length=2, source='segment.task.dimension', read_only=True)
-    labels = LabelSerializer(many=True, source='get_labels', read_only=True)
     data_chunk_size = serializers.ReadOnlyField(source='segment.task.data.chunk_size')
     data_compressed_chunk_type = serializers.ReadOnlyField(source='segment.task.data.compressed_chunk_type')
     mode = serializers.ReadOnlyField(source='segment.task.mode')
@@ -197,7 +196,7 @@ class JobReadSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Job
         fields = ('url', 'id', 'task_id', 'project_id', 'assignee',
-            'dimension', 'labels', 'bug_tracker', 'status', 'stage', 'state', 'mode',
+            'dimension', 'bug_tracker', 'status', 'stage', 'state', 'mode',
             'start_frame', 'stop_frame', 'data_chunk_size', 'data_compressed_chunk_type',
             'updated_date',)
         read_only_fields = fields
@@ -512,8 +511,6 @@ class StorageSerializer(serializers.ModelSerializer):
         fields = ('id', 'location', 'cloud_storage_id')
 
 class TaskReadSerializer(serializers.ModelSerializer):
-    labels = LabelSerializer(many=True, source='get_labels')
-    segments = SegmentSerializer(many=True, source='segment_set', read_only=True)
     data_chunk_size = serializers.ReadOnlyField(source='data.chunk_size', required=False)
     data_compressed_chunk_type = serializers.ReadOnlyField(source='data.compressed_chunk_type', required=False)
     data_original_chunk_type = serializers.ReadOnlyField(source='data.original_chunk_type', required=False)
@@ -531,7 +528,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
         model = models.Task
         fields = ('url', 'id', 'name', 'project_id', 'mode', 'owner', 'assignee',
             'bug_tracker', 'created_date', 'updated_date', 'overlap', 'segment_size',
-            'status', 'labels', 'segments', 'data_chunk_size', 'data_compressed_chunk_type',
+            'status', 'data_chunk_size', 'data_compressed_chunk_type',
             'data_original_chunk_type', 'size', 'image_quality', 'data', 'dimension',
             'subset', 'organization', 'target_storage', 'source_storage',
         )
@@ -767,7 +764,6 @@ class ProjectSearchSerializer(serializers.ModelSerializer):
         read_only_fields = ('name',)
 
 class ProjectReadSerializer(serializers.ModelSerializer):
-    labels = LabelSerializer(many=True, source='label_set', partial=True, default=[], read_only=True)
     owner = BasicUserSerializer(required=False, read_only=True)
     assignee = BasicUserSerializer(allow_null=True, required=False, read_only=True)
     task_subsets = serializers.ListField(child=serializers.CharField(), required=False, read_only=True)
@@ -777,14 +773,11 @@ class ProjectReadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Project
-        fields = ('url', 'id', 'name', 'labels', 'tasks', 'owner', 'assignee',
+        fields = ('url', 'id', 'name', 'owner', 'assignee',
             'bug_tracker', 'task_subsets', 'created_date', 'updated_date', 'status',
             'dimension', 'organization', 'target_storage', 'source_storage',
         )
-        read_only_fields = ('created_date', 'updated_date', 'status', 'owner',
-            'assignee', 'task_subsets', 'dimension', 'organization', 'tasks',
-            'target_storage', 'source_storage',
-        )
+        read_only_fields = fields
         extra_kwargs = { 'organization': { 'allow_null': True } }
 
     def to_representation(self, instance):
@@ -933,7 +926,6 @@ class PluginsSerializer(serializers.Serializer):
     PREDICT = serializers.BooleanField()
 
 class DataMetaReadSerializer(serializers.ModelSerializer):
-    frames = FrameMetaSerializer(many=True, allow_null=True)
     image_quality = serializers.IntegerField(min_value=0, max_value=100)
     deleted_frames = serializers.ListField(child=serializers.IntegerField(min_value=0))
 
@@ -946,7 +938,6 @@ class DataMetaReadSerializer(serializers.ModelSerializer):
             'start_frame',
             'stop_frame',
             'frame_filter',
-            'frames',
             'deleted_frames',
         )
         read_only_fields = fields
