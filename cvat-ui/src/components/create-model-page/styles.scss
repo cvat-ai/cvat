@@ -8,14 +8,22 @@
     width: 100%;
     height: 100%;
     padding-top: $grid-unit-size * 5;
+
+    .cvat-title {
+        font-size: 36px;
+    }
 }
 
 .cvat-create-model-form-wrapper {
-    margin-top: $grid-unit-size;
+    margin-top: $grid-unit-size * 3;
     height: auto;
     border: 1px solid $border-color-1;
     border-radius: 3px;
     padding: $grid-unit-size * 3;
     background: $background-color-1;
     text-align: initial;
+}
+
+.cvat-create-models-actions {
+    margin-top: $grid-unit-size * 2;
 }

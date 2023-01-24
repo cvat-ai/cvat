@@ -23,6 +23,7 @@ interface Props {
 }
 
 function createProviderFormItems(providerAttributes: Record<string, string>): JSX.Element {
+    delete providerAttributes.url;
     return (
         <>
             {
@@ -31,7 +32,7 @@ function createProviderFormItems(providerAttributes: Record<string, string>): JS
                         key={key}
                         name={key}
                         label={text}
-                        rules={[{ required: true, message: 'Please, specify API key' }]}
+                        rules={[{ required: true, message: `Please, specify ${text}` }]}
                     >
                         <Input />
                     </Form.Item>
@@ -60,6 +61,8 @@ function ModelForm(props: Props): JSX.Element {
         Object.keys(providerMap[provider]).forEach((k) => { emptiedKeys[k] = null; });
         form.setFieldsValue(emptiedKeys);
     }, []);
+    const [providerTouched, setProviderTouched] = useState(false);
+    const [currentUrlEmpty, setCurrentUrlEmpty] = useState(true);
 
     const handleSubmit = useCallback(async (): Promise<void> => {
         try {
@@ -67,6 +70,7 @@ function ModelForm(props: Props): JSX.Element {
             await dispatch(createModelAsync(values));
             form.resetFields();
             setCurrentProviderForm(null);
+            setProviderTouched(false);
             notification.info({
                 message: 'Model has been successfully created',
                 className: 'cvat-notification-create-model-success',
@@ -83,41 +87,56 @@ function ModelForm(props: Props): JSX.Element {
                     form={form}
                     layout='vertical'
                 >
-                    <Form.Item
-                        label='Provider'
-                        name='provider'
-                        rules={[{ required: true, message: 'Please, specify model provider' }]}
-                    >
-                        <Select
-                            virtual={false}
-                            onChange={onChangeProviderValue}
-                            className='cvat-select-model-provider'
-                        >
-                            {
-                                providerList.map(({ value, text }) => (
-                                    <Select.Option value={value} key={value}>
-                                        <span className='cvat-cloud-storage-select-provider'>
-                                            {text}
-                                        </span>
-                                    </Select.Option>
-                                ))
-                            }
-
-                        </Select>
-                    </Form.Item>
-                    <Col offset={1}>
+                    <Col>
                         <Form.Item
-                            name='model_url'
+                            name='url'
                             label='Model URL'
                             rules={[{ required: true, message: 'Please, specify Model URL' }]}
                         >
-                            <Input />
+                            <Input onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                                const { value } = event.target;
+                                const guessedProvider = providers.find((provider) => value.includes(provider.name));
+                                if (guessedProvider && !providerTouched) {
+                                    form.setFieldsValue({ provider: guessedProvider.name });
+                                    setCurrentProviderForm(createProviderFormItems(providerMap[guessedProvider.name]));
+                                }
+                                setCurrentUrlEmpty(!value);
+                            }}
+                            />
                         </Form.Item>
-                        {currentProviderForm}
                     </Col>
+                    {
+                        !currentUrlEmpty && (
+                            <>
+                                <Form.Item
+                                    label='Provider'
+                                    name='provider'
+                                    rules={[{ required: true, message: 'Please, specify model provider' }]}
+                                >
+                                    <Select
+                                        virtual={false}
+                                        onChange={onChangeProviderValue}
+                                        className='cvat-select-model-provider'
+                                        onSelect={() => { setProviderTouched(true); }}
+                                    >
+                                        {
+                                            providerList.map(({ value, text }) => (
+                                                <Select.Option value={value} key={value}>
+                                                    <span className='cvat-cloud-storage-select-provider'>
+                                                        {text}
+                                                    </span>
+                                                </Select.Option>
+                                            ))
+                                        }
+                                    </Select>
+                                </Form.Item>
+                                {currentProviderForm}
+                            </>
+                        )
+                    }
                 </Form>
             </Col>
-            <Col span={24}>
+            <Col span={24} className='cvat-create-models-actions'>
                 <Row justify='end'>
                     <Col>
                         <Button onClick={() => history.goBack()}>
@@ -125,7 +144,7 @@ function ModelForm(props: Props): JSX.Element {
                         </Button>
                     </Col>
                     <Col offset={1}>
-                        <Button type='primary' onClick={handleSubmit} loading={fetching}>
+                        <Button type='primary' onClick={handleSubmit} loading={fetching} disabled={currentUrlEmpty}>
                             Submit
                         </Button>
                     </Col>
