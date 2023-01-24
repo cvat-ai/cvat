@@ -36,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/opencv/cvat/pull/5557>)
 - Windows Installation Instructions adjusted to work around <https://github.com/nuclio/nuclio/issues/1821>
 - The contour detection function for semantic segmentation (<https://github.com/opencv/cvat/pull/4665>)
+- Delete newline character when generating a webhook signature (<https://github.com/opencv/cvat/pull/5622>)
 
 ### Deprecated
 - TDB
