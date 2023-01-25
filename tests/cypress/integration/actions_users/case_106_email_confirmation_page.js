@@ -5,7 +5,6 @@
 /// <reference types="cypress" />
 
 context('Email confirmation page.', () => {
-
     const caseId = 106;
 
     describe(`Testing "Case ${caseId}."`, () => {

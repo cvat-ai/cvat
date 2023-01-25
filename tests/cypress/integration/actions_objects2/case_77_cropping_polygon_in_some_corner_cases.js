@@ -11,7 +11,7 @@ context('Cropping polygon in some corner cases.', () => {
     const createPolygonShapeRightSide = {
         reDraw: false,
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         pointsMap: [
             { x: 500, y: 120 },
             { x: 900, y: 10 },
@@ -25,7 +25,7 @@ context('Cropping polygon in some corner cases.', () => {
     const createPolygonShapeLeftSide = {
         reDraw: false,
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         pointsMap: [
             { x: 500, y: 120 },
             { x: 30, y: 10 },

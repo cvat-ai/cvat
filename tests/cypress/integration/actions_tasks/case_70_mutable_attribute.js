@@ -10,7 +10,9 @@ context('Mutable attribute.', () => {
     const caseId = '70';
     const labelTrack = `Case ${caseId}`;
     const additionalAttrsLabelShape = [
-        { additionalAttrName: 'tree', additionalValue: 'birch tree', typeAttribute: 'Text', mutable: true },
+        {
+            additionalAttrName: 'tree', additionalValue: 'birch tree', typeAttribute: 'Text', mutable: true,
+        },
     ];
 
     const createRectangleTrack2Points = {
@@ -64,7 +66,8 @@ context('Mutable attribute.', () => {
             [
                 [
                     0,
-                    `${additionalAttrsLabelShape[0].additionalAttrName}: ${additionalAttrsLabelShape[0].additionalValue}`,
+                    `${additionalAttrsLabelShape[0].additionalAttrName}: ${
+                        additionalAttrsLabelShape[0].additionalValue}`,
                 ],
                 [1, `${additionalAttrsLabelShape[0].additionalAttrName}: ${attrValueSecondFrame}`],
                 [2, `${additionalAttrsLabelShape[0].additionalAttrName}: ${attrValueThirdFrame}`],

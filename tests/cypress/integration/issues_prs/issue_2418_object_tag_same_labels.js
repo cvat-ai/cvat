@@ -11,7 +11,7 @@ context('Check hide/unhide functionality from label tab for object and tag with 
     const createRectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         firstX: 260,
         firstY: 200,
         secondX: 360,
