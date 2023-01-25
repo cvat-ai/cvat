@@ -392,6 +392,9 @@ export interface ModelsState {
         fetching: boolean;
         current: ModelProvider[];
     }
+    previews: {
+        [index: string]: Preview;
+    };
 }
 
 export interface ErrorState {

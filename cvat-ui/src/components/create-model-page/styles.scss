@@ -27,3 +27,20 @@
 .cvat-create-models-actions {
     margin-top: $grid-unit-size * 2;
 }
+
+.cvat-model-provider-icon {
+    display: flex;
+
+    svg {
+        margin-top: 3px;
+        margin-right: $grid-unit-size;
+        width: $grid-unit-size * 2;
+        height: $grid-unit-size * 2;
+    }
+}
+
+.cvat-select-model-provider {
+    svg {
+        margin-top: 6px;
+    }
+}

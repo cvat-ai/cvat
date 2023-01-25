@@ -3,6 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import { isBrowser, isNode } from 'browser-or-node';
 import serverProxy from './server-proxy';
 import PluginRegistry from './plugins';
 import { ModelType } from './enums';
@@ -45,6 +46,8 @@ interface SerializedModel {
     min_pos_points?: number;
     min_neg_points?: number;
     startswith_box?: boolean;
+    created_date?: string;
+    updated_date?: string;
 }
 
 export default class MLModel {
@@ -122,6 +125,18 @@ export default class MLModel {
         return this.provider !== 'cvat';
     }
 
+    public get createdDate(): string {
+        return this.serialized.created_date;
+    }
+
+    public get updatedDate(): string {
+        return this.serialized.updated_date;
+    }
+
+    public get url(): string {
+        return this.serialized.url;
+    }
+
     // Used to set a callback when the tool is blocked in UI
     public set onChangeToolsBlockerState(onChangeToolsBlockerState: (event: string) => void) {
         this.changeToolsBlockerStateCallback = onChangeToolsBlockerState;
@@ -134,6 +149,11 @@ export default class MLModel {
 
     public async delete(): Promise<MLModel> {
         const result = await PluginRegistry.apiWrapper.call(this, MLModel.prototype.delete);
+        return result;
+    }
+
+    public async getPreview(): Promise<string | ArrayBuffer> {
+        const result = await PluginRegistry.apiWrapper.call(this, MLModel.prototype.getPreview);
         return result;
     }
 }
@@ -163,6 +183,36 @@ Object.defineProperties(MLModel.prototype.delete, {
             if (Number.isInteger(this.id) && this.deletable) {
                 await serverProxy.functions.delete(this.id);
             }
+        },
+    },
+});
+
+Object.defineProperties(MLModel.prototype.getPreview, {
+    implementation: {
+        writable: false,
+        enumerable: false,
+        value: async function implementation(): Promise<string | ArrayBuffer> {
+            if (this.provider === 'cvat') {
+                return '';
+            }
+            return new Promise((resolve, reject) => {
+                serverProxy.functions
+                    .getPreview(this.id)
+                    .then((result) => {
+                        if (isNode) {
+                            resolve(global.Buffer.from(result, 'binary').toString('base64'));
+                        } else if (isBrowser) {
+                            const reader = new FileReader();
+                            reader.onload = () => {
+                                resolve(reader.result);
+                            };
+                            reader.readAsDataURL(result);
+                        }
+                    })
+                    .catch((error) => {
+                        reject(error);
+                    });
+            });
         },
     },
 });

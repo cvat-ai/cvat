@@ -17,6 +17,8 @@ import { CombinedState, ModelProvider } from 'reducers';
 import { useHistory } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
 import { createModelAsync } from 'actions/models-actions';
+import { HuggingFaceSmallIcon, RoboflowSmallIcon } from 'icons';
+import Icon from '@ant-design/icons';
 
 interface Props {
     providers: ModelProvider[];
@@ -40,6 +42,18 @@ function createProviderFormItems(providerAttributes: Record<string, string>): JS
             }
         </>
     );
+}
+
+function createProviderIcon(provider: string): JSX.Element | null {
+    // TODO tmp solution, need to get it from server
+    let icon: JSX.Element | null = null;
+    if (provider === 'roboflow') {
+        icon = <Icon component={RoboflowSmallIcon} />;
+    }
+    if (provider === 'huggingface') {
+        icon = <Icon component={HuggingFaceSmallIcon} />;
+    }
+    return icon;
 }
 
 function ModelForm(props: Props): JSX.Element {
@@ -71,6 +85,7 @@ function ModelForm(props: Props): JSX.Element {
             form.resetFields();
             setCurrentProviderForm(null);
             setProviderTouched(false);
+            setCurrentUrlEmpty(true);
             notification.info({
                 message: 'Model has been successfully created',
                 className: 'cvat-notification-create-model-success',
@@ -122,9 +137,12 @@ function ModelForm(props: Props): JSX.Element {
                                         {
                                             providerList.map(({ value, text }) => (
                                                 <Select.Option value={value} key={value}>
-                                                    <span className='cvat-cloud-storage-select-provider'>
-                                                        {text}
-                                                    </span>
+                                                    <div className='cvat-model-provider-icon'>
+                                                        {createProviderIcon(value)}
+                                                        <span className='cvat-cloud-storage-select-provider'>
+                                                            {text}
+                                                        </span>
+                                                    </div>
                                                 </Select.Option>
                                             ))
                                         }

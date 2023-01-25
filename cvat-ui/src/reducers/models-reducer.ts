@@ -16,6 +16,7 @@ const defaultState: ModelsState = {
     detectors: [],
     trackers: [],
     reid: [],
+    classifiers: [],
     modelRunnerIsVisible: false,
     modelRunnerTask: null,
     inferences: {},
@@ -31,6 +32,7 @@ const defaultState: ModelsState = {
         fetching: false,
         current: [],
     },
+    previews: {},
 };
 
 export default function (state = defaultState, action: ModelsActions | AuthActions | BoundariesActions): ModelsState {
@@ -187,6 +189,51 @@ export default function (state = defaultState, action: ModelsActions | AuthActio
                 providers: {
                     ...state.providers,
                     fetching: false,
+                },
+            };
+        }
+        case ModelsActionTypes.GET_MODEL_PREVIEW: {
+            const { modelID } = action.payload;
+            const { previews } = state;
+            return {
+                ...state,
+                previews: {
+                    ...previews,
+                    [modelID]: {
+                        preview: '',
+                        fetching: true,
+                        initialized: false,
+                    },
+                },
+            };
+        }
+        case ModelsActionTypes.GET_MODEL_PREVIEW_SUCCESS: {
+            const { modelID, preview } = action.payload;
+            const { previews } = state;
+            return {
+                ...state,
+                previews: {
+                    ...previews,
+                    [modelID]: {
+                        preview,
+                        fetching: false,
+                        initialized: true,
+                    },
+                },
+            };
+        }
+        case ModelsActionTypes.GET_MODEL_PREVIEW_FAILED: {
+            const { modelID } = action.payload;
+            const { previews } = state;
+            return {
+                ...state,
+                previews: {
+                    ...previews,
+                    [modelID]: {
+                        ...previews[modelID],
+                        fetching: false,
+                        initialized: true,
+                    },
                 },
             };
         }

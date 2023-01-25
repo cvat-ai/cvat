@@ -64,6 +64,10 @@ import SVGClearIcon from './assets/clear-icon.svg';
 import SVGShowPasswordIcon from './assets/show-password.svg';
 import SVGPlusIcon from './assets/plus-icon.svg';
 import SVGCheckIcon from './assets/check-icon.svg';
+import SVGRoboflowIcon from './assets/roboflow.svg';
+import SVGHuggingFaceIcon from './assets/huggingface.svg';
+import SVGRoboflowSmallIcon from './assets/roboflow-small.svg';
+import SVGHuggingFaceSmallIcon from './assets/huggingface-small.svg';
 
 export const CVATLogo = React.memo((): JSX.Element => <SVGCVATLogo />);
 export const CVATMinimalisticLogo = React.memo((): JSX.Element => <SVGCVATMinimalisticLogo />);
@@ -124,3 +128,7 @@ export const ClearIcon = React.memo((): JSX.Element => <SVGClearIcon />);
 export const ShowPasswordIcon = React.memo((): JSX.Element => <SVGShowPasswordIcon />);
 export const PlusIcon = React.memo((): JSX.Element => <SVGPlusIcon />);
 export const CheckIcon = React.memo((): JSX.Element => <SVGCheckIcon />);
+export const RoboflowIcon = React.memo((): JSX.Element => <SVGRoboflowIcon />);
+export const HuggingFaceIcon = React.memo((): JSX.Element => <SVGHuggingFaceIcon />);
+export const RoboflowSmallIcon = React.memo((): JSX.Element => <SVGRoboflowSmallIcon />);
+export const HuggingFaceSmallIcon = React.memo((): JSX.Element => <SVGHuggingFaceSmallIcon />);

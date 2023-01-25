@@ -14,12 +14,15 @@ import { getCloudStoragePreviewAsync } from 'actions/cloud-storage-actions';
 import {
     CombinedState, Job, Task, Project, CloudStorage,
 } from 'reducers';
+import MLModel from 'cvat-core/src/ml-model';
+import { getModelPreviewAsync } from 'actions/models-actions';
 
 interface Props {
     job?: Job | undefined;
     task?: Task | undefined;
     project?: Project | undefined;
     cloudStorage?: CloudStorage | undefined;
+    model?: MLModel | undefined;
     onClick?: (event: React.MouseEvent) => void;
     loadingClassName?: string;
     emptyPreviewClassName?: string;
@@ -35,6 +38,7 @@ export default function Preview(props: Props): JSX.Element {
         task,
         project,
         cloudStorage,
+        model,
         onClick,
         loadingClassName,
         emptyPreviewClassName,
@@ -51,6 +55,8 @@ export default function Preview(props: Props): JSX.Element {
             return state.tasks.previews[task.id];
         } if (cloudStorage !== undefined) {
             return state.cloudStorages.previews[cloudStorage.id];
+        } if (model !== undefined) {
+            return state.models.previews[model.id];
         }
         return '';
     });
@@ -65,6 +71,8 @@ export default function Preview(props: Props): JSX.Element {
                 dispatch(getTaskPreviewAsync(task));
             } else if (cloudStorage !== undefined) {
                 dispatch(getCloudStoragePreviewAsync(cloudStorage));
+            } else if (model !== undefined) {
+                dispatch(getModelPreviewAsync(model));
             }
         }
     }, [preview]);

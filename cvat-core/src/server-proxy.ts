@@ -1560,10 +1560,28 @@ async function getFunctions() {
         const response = await Axios.get(`${backendAPI}/functions`, {
             proxy: config.proxy,
         });
-        return response.data;
+        return response.data.results;
     } catch (errorData) {
         throw generateError(errorData);
     }
+}
+
+async function getFunctionPreview(modelID) {
+    const { backendAPI } = config;
+
+    let response = null;
+    try {
+        const url = `${backendAPI}/functions/${modelID}/preview`;
+        response = await Axios.get(url, {
+            proxy: config.proxy,
+            responseType: 'blob',
+        });
+    } catch (errorData) {
+        const code = errorData.response ? errorData.response.status : errorData.code;
+        throw new ServerError(`Could not get preview for the model ${modelID} from the server`, code);
+    }
+
+    return response.data;
 }
 
 async function getFunctionProviders() {
@@ -2564,6 +2582,7 @@ export default Object.freeze({
         providers: getFunctionProviders,
         delete: deleteFunction,
         cancel: cancelFunctionRequest,
+        getPreview: getFunctionPreview,
     }),
 
     issues: Object.freeze({

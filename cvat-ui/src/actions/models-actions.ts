@@ -32,6 +32,9 @@ export enum ModelsActionTypes {
     GET_MODEL_PROVIDERS = 'GET_MODEL_PROVIDERS',
     GET_MODEL_PROVIDERS_SUCCESS = 'GET_MODEL_PROVIDERS_SUCCESS',
     GET_MODEL_PROVIDERS_FAILED = 'GET_MODEL_PROVIDERS_FAILED',
+    GET_MODEL_PREVIEW = 'GET_MODEL_PREVIEW',
+    GET_MODEL_PREVIEW_SUCCESS = 'GET_MODEL_PREVIEW_SUCCESS',
+    GET_MODEL_PREVIEW_FAILED = 'GET_MODEL_PREVIEW_FAILED',
 }
 
 export const modelsActions = {
@@ -94,6 +97,15 @@ export const modelsActions = {
             providers,
         })),
     getModelProvidersFailed: (error: any) => createAction(ModelsActionTypes.GET_MODEL_PROVIDERS_FAILED, { error }),
+    getModelPreview: (modelID: string) => (
+        createAction(ModelsActionTypes.GET_MODEL_PREVIEW, { modelID })
+    ),
+    getModelPreviewSuccess: (modelID: string, preview: ArrayBuffer | string) => (
+        createAction(ModelsActionTypes.GET_MODEL_PREVIEW_SUCCESS, { modelID, preview })
+    ),
+    getModelPreviewFailed: (modelID: string, error: any) => (
+        createAction(ModelsActionTypes.GET_MODEL_PREVIEW_FAILED, { modelID, error })
+    ),
 };
 
 export type ModelsActions = ActionUnion<typeof modelsActions>;
@@ -255,6 +267,7 @@ export function getModelProvidersAsync(): ThunkAction {
     return async function (dispatch) {
         dispatch(modelsActions.getModelProviders());
         try {
+            // TODO change it to lambda
             const providers = await cvat.functions.providers();
             dispatch(modelsActions.getModelProvidersSuccess(providers));
         } catch (error) {
@@ -262,3 +275,13 @@ export function getModelProvidersAsync(): ThunkAction {
         }
     };
 }
+
+export const getModelPreviewAsync = (model: MLModel): ThunkAction => async (dispatch) => {
+    dispatch(modelsActions.getModelPreview(model.id));
+    try {
+        const result = await model.getPreview();
+        dispatch(modelsActions.getModelPreviewSuccess(model.id, result));
+    } catch (error) {
+        dispatch(modelsActions.getModelPreviewFailed(model.id, error));
+    }
+};

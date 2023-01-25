@@ -5,7 +5,6 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
 import { Row, Col } from 'antd/lib/grid';
-import Text from 'antd/lib/typography/Text';
 import { CombinedState } from 'reducers';
 import DeployedModelItem from './deployed-model-item';
 
@@ -22,27 +21,7 @@ export default function DeployedModelsListComponent(): JSX.Element {
     return (
         <>
             <Row justify='center' align='middle'>
-                <Col md={22} lg={18} xl={16} xxl={14} className='cvat-models-list'>
-                    <Row align='middle' className='cvat-models-heading'>
-                        <Col span={2}>
-                            <Text strong>Provider</Text>
-                        </Col>
-                        <Col span={3}>
-                            <Text strong>Name</Text>
-                        </Col>
-                        <Col span={2} offset={1}>
-                            <Text strong>Owner</Text>
-                        </Col>
-                        <Col span={3}>
-                            <Text strong>Type</Text>
-                        </Col>
-                        <Col span={8}>
-                            <Text strong>Description</Text>
-                        </Col>
-                        <Col span={5}>
-                            <Text strong>Labels</Text>
-                        </Col>
-                    </Row>
+                <Col md={22} lg={18} xl={16} xxl={16} className='cvat-models-list'>
                     {items}
                 </Col>
             </Row>

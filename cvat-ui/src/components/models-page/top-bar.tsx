@@ -34,7 +34,7 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
 
     return (
         <Row className='cvat-models-page-top-bar' justify='center' align='middle'>
-            <Col md={22} lg={18} xl={16} xxl={14}>
+            <Col md={22} lg={18} xl={16} xxl={16}>
                 <div className='cvat-models-page-filters-wrapper'>
                     <Input.Search
                         disabled={disabled}
