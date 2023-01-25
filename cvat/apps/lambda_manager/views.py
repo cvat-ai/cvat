@@ -22,6 +22,7 @@ from rest_framework import status, viewsets, serializers
 from rest_framework.response import Response
 
 import cvat.apps.dataset_manager as dm
+from cvat.apps.dataset_manager.task import TaskAnnotation
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.models import Job, Task
 from cvat.apps.engine.serializers import LabeledDataSerializer
@@ -583,83 +584,87 @@ class LambdaJob:
 
     @staticmethod
     def _call_reid(function, db_task, quality, threshold, max_distance):
-        data = dm.task.get_task_data(db_task.id)
-        boxes_by_frame = [[] for _ in range(db_task.data.size)]
-        shapes_without_boxes = []
-        for shape in data["shapes"]:
-            if shape["type"] == str(ShapeType.RECTANGLE):
-                boxes_by_frame[shape["frame"]].append(shape)
-            else:
-                shapes_without_boxes.append(shape)
+        jobs = TaskAnnotation(pk=db_task.id).db_jobs
+        for job in jobs:
+            data = dm.task.get_job_data(job.id)
+            boxes_by_frame = [[] for _ in range(db_task.data.size)]
 
-        paths = {}
-        for frame in range(db_task.data.size - 1):
-            boxes0 = boxes_by_frame[frame]
-            for box in boxes0:
+            shapes_without_boxes = []
+            for shape in data["shapes"]:
+                if shape["type"] == str(ShapeType.RECTANGLE):
+                    boxes_by_frame[shape["frame"]].append(shape)
+                else:
+                    shapes_without_boxes.append(shape)
+
+            paths = {}
+            for frame in range(job.segment.start_frame, job.segment.stop_frame):
+                boxes0 = boxes_by_frame[frame]
+                for box in boxes0:
+                    if "path_id" not in box:
+                        path_id = len(paths)
+                        paths[path_id] = [box]
+                        box["path_id"] = path_id
+
+                boxes1 = boxes_by_frame[frame + 1]
+                if boxes0 and boxes1:
+                    matching = function.invoke(db_task, data={
+                        "frame0": frame, "frame1": frame + 1, "quality": quality,
+                        "boxes0": boxes0, "boxes1": boxes1, "threshold": threshold,
+                        "max_distance": max_distance})
+
+                    for idx0, idx1 in enumerate(matching):
+                        if idx1 >= 0:
+                            path_id = boxes0[idx0]["path_id"]
+                            boxes1[idx1]["path_id"] = path_id
+                            paths[path_id].append(boxes1[idx1])
+
+                progress = (frame + 2) / db_task.data.size
+                if not LambdaJob._update_progress(progress):
+                    break
+
+
+            for box in boxes_by_frame[db_task.data.size - 1]:
                 if "path_id" not in box:
                     path_id = len(paths)
                     paths[path_id] = [box]
                     box["path_id"] = path_id
 
-            boxes1 = boxes_by_frame[frame + 1]
-            if boxes0 and boxes1:
-                matching = function.invoke(db_task, data={
-                    "frame0": frame, "frame1": frame + 1, "quality": quality,
-                    "boxes0": boxes0, "boxes1": boxes1, "threshold": threshold,
-                    "max_distance": max_distance})
+            tracks = []
+            for path_id in paths:
+                box0 = paths[path_id][0]
+                tracks.append({
+                    "label_id": box0["label_id"],
+                    "group": None,
+                    "attributes": [],
+                    "frame": box0["frame"],
+                    "shapes": paths[path_id],
+                    "source": str(SourceType.AUTO)
+                })
 
-                for idx0, idx1 in enumerate(matching):
-                    if idx1 >= 0:
-                        path_id = boxes0[idx0]["path_id"]
-                        boxes1[idx1]["path_id"] = path_id
-                        paths[path_id].append(boxes1[idx1])
+                for box in tracks[-1]["shapes"]:
+                    box.pop("id", None)
+                    box.pop("path_id")
+                    box.pop("group")
+                    box.pop("label_id")
+                    box.pop("source")
+                    box["outside"] = False
+                    box["attributes"] = []
 
-            progress = (frame + 2) / db_task.data.size
-            if not LambdaJob._update_progress(progress):
-                break
+            for track in tracks:
+                if track["shapes"][-1]["frame"] != db_task.data.size - 1:
+                    box = track["shapes"][-1].copy()
+                    box["outside"] = True
+                    box["frame"] += 1
+                    track["shapes"].append(box)
 
 
-        for box in boxes_by_frame[db_task.data.size - 1]:
-            if "path_id" not in box:
-                path_id = len(paths)
-                paths[path_id] = [box]
-                box["path_id"] = path_id
+            if tracks:
+                data["shapes"] = shapes_without_boxes
+                data["tracks"].extend(tracks)
 
-        tracks = []
-        for path_id in paths:
-            box0 = paths[path_id][0]
-            tracks.append({
-                "label_id": box0["label_id"],
-                "group": None,
-                "attributes": [],
-                "frame": box0["frame"],
-                "shapes": paths[path_id],
-                "source": str(SourceType.AUTO)
-            })
-
-            for box in tracks[-1]["shapes"]:
-                box.pop("id", None)
-                box.pop("path_id")
-                box.pop("group")
-                box.pop("label_id")
-                box.pop("source")
-                box["outside"] = False
-                box["attributes"] = []
-
-        for track in tracks:
-            if track["shapes"][-1]["frame"] != db_task.data.size - 1:
-                box = track["shapes"][-1].copy()
-                box["outside"] = True
-                box["frame"] += 1
-                track["shapes"].append(box)
-
-        if tracks:
-            data["shapes"] = shapes_without_boxes
-            data["tracks"].extend(tracks)
-
-            serializer = LabeledDataSerializer(data=data)
-            if serializer.is_valid(raise_exception=True):
-                dm.task.put_task_data(db_task.id, serializer.data)
+                serializer = LabeledDataSerializer(data=data)
+                if serializer.is_valid(raise_exception=True):
+                    dm.task.put_job_data(job.id, serializer.data)
 
     @staticmethod
     def __call__(function, task, quality, cleanup, **kwargs):
