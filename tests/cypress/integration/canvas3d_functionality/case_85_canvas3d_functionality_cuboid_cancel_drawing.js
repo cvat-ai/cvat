@@ -14,6 +14,8 @@ context('Canvas 3D functionality. Cancel drawing.', () => {
     before(() => {
         cy.openTask(taskName);
         cy.openJob();
+
+        // eslint-disable-next-line cypress/no-unnecessary-waiting
         cy.wait(1000); // Waiting for the point cloud to display
     });
 
@@ -26,7 +28,7 @@ context('Canvas 3D functionality. Cancel drawing.', () => {
                 .within(() => {
                     cy.contains(new RegExp(`^${labelName}$`)).click();
                 });
-            cy.get('.cvat-draw-cuboid-popover').find('button').click();
+            cy.get('.cvat-draw-cuboid-popover').contains('Shape').click();
             cy.get('.cvat-canvas3d-perspective').trigger('mousemove');
             cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_drawning');
             cy.get('body').type('{Esc}');
@@ -38,8 +40,7 @@ context('Canvas 3D functionality. Cancel drawing.', () => {
             );
         });
 
-        // Temporarily disabling the test until it is fixed https://github.com/openvinotoolkit/cvat/issues/3438#issuecomment-892432089
-        it.skip('Repeat draw.', () => {
+        it('Repeat draw.', () => {
             cy.get('body').type('n');
             cy.get('.cvat-canvas3d-perspective').trigger('mousemove');
             cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 450, 250).dblclick(450, 250);
