@@ -319,7 +319,7 @@ class TestPostWebhooks:
 
         response = post_method("admin2", "webhooks", post_data, org_id=org_id)
 
-        assert response.status_code == HTTPStatus.BAD_REQUEST
+        assert response.status_code == HTTPStatus.NOT_FOUND
 
     def test_cannot_create_for_non_existent_project(self, projects):
         post_data = deepcopy(self.proj_webhook)
