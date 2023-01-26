@@ -1,5 +1,5 @@
 # Copyright (C) 2018-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -307,6 +307,9 @@ class Project(models.Model):
     target_storage = models.ForeignKey('Storage', null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name='+')
 
+    def get_labels(self):
+        return self.label_set
+
     def get_dirname(self):
         return os.path.join(settings.PROJECTS_ROOT, str(self.id))
 
@@ -364,7 +367,7 @@ class Task(models.Model):
 
     def get_labels(self):
         project = self.project
-        return project.label_set if project else self.label_set
+        return project.get_labels() if project else self.label_set
 
     def get_dirname(self):
         return os.path.join(settings.TASKS_ROOT, str(self.id))
@@ -489,7 +492,7 @@ class Job(models.Model):
     def get_labels(self):
         task = self.segment.task
         project = task.project
-        return project.label_set if project else task.label_set
+        return project.get_labels() if project else task.get_labels()
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)

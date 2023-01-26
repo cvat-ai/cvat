@@ -1,4 +1,4 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -53,12 +53,13 @@ class TestJobUsecases:
 
     @pytest.fixture
     def fxt_task_with_shapes(self, fxt_new_task: Task):
+        labels = fxt_new_task.get_labels()
         fxt_new_task.set_annotations(
             models.LabeledDataRequest(
                 shapes=[
                     models.LabeledShapeRequest(
                         frame=0,
-                        label_id=fxt_new_task.labels[0].id,
+                        label_id=labels[0].id,
                         type="rectangle",
                         points=[1, 1, 2, 2],
                     ),
@@ -94,6 +95,14 @@ class TestJobUsecases:
 
         updated_job = self.client.jobs.retrieve(job.id)
         assert updated_job.assignee.id == new_assignee.id
+        assert self.stdout.getvalue() == ""
+
+    def test_can_get_labels(self, fxt_new_task: Task):
+        expected_labels = {'car', 'person'}
+
+        received_labels = fxt_new_task.get_jobs()[0].get_labels()
+
+        assert {obj.name for obj in received_labels} == expected_labels
         assert self.stdout.getvalue() == ""
 
     @pytest.mark.parametrize("include_images", (True, False))
@@ -160,11 +169,18 @@ class TestJobUsecases:
 
         assert meta.image_quality == 80
         assert meta.size == 1
-        assert len(meta.frames) == meta.size
-        assert meta.frames[0].name == "img.png"
-        assert meta.frames[0].width == 5
-        assert meta.frames[0].height == 10
         assert not meta.deleted_frames
+        assert self.stdout.getvalue() == ""
+
+    def test_can_get_frame_info(self, fxt_new_task: Task):
+        job = meta = fxt_new_task.get_jobs()[0]
+        meta = job.get_meta()
+        frames = job.get_frames_info()
+
+        assert len(frames) == meta.size
+        assert frames[0].name == "img.png"
+        assert frames[0].width == 5
+        assert frames[0].height == 10
         assert self.stdout.getvalue() == ""
 
     def test_can_remove_frames(self, fxt_new_task: Task):
@@ -197,9 +213,10 @@ class TestJobUsecases:
         assert self.stdout.getvalue() == ""
 
     def test_can_set_annotations(self, fxt_new_task: Task):
+        labels = fxt_new_task.get_labels()
         fxt_new_task.get_jobs()[0].set_annotations(
             models.LabeledDataRequest(
-                tags=[models.LabeledImageRequest(frame=0, label_id=fxt_new_task.labels[0].id)],
+                tags=[models.LabeledImageRequest(frame=0, label_id=labels[0].id)],
             )
         )
 
@@ -218,18 +235,19 @@ class TestJobUsecases:
         assert self.stdout.getvalue() == ""
 
     def test_can_remove_annotations(self, fxt_new_task: Task):
+        labels = fxt_new_task.get_labels()
         fxt_new_task.get_jobs()[0].set_annotations(
             models.LabeledDataRequest(
                 shapes=[
                     models.LabeledShapeRequest(
                         frame=0,
-                        label_id=fxt_new_task.labels[0].id,
+                        label_id=labels[0].id,
                         type="rectangle",
                         points=[1, 1, 2, 2],
                     ),
                     models.LabeledShapeRequest(
                         frame=0,
-                        label_id=fxt_new_task.labels[0].id,
+                        label_id=labels[0].id,
                         type="rectangle",
                         points=[2, 2, 3, 3],
                     ),
@@ -247,12 +265,13 @@ class TestJobUsecases:
         assert self.stdout.getvalue() == ""
 
     def test_can_update_annotations(self, fxt_task_with_shapes: Task):
+        labels = fxt_task_with_shapes.get_labels()
         fxt_task_with_shapes.get_jobs()[0].update_annotations(
             models.PatchedLabeledDataRequest(
                 shapes=[
                     models.LabeledShapeRequest(
                         frame=0,
-                        label_id=fxt_task_with_shapes.labels[0].id,
+                        label_id=labels[0].id,
                         type="rectangle",
                         points=[0, 1, 2, 3],
                     ),
@@ -260,7 +279,7 @@ class TestJobUsecases:
                 tracks=[
                     models.LabeledTrackRequest(
                         frame=0,
-                        label_id=fxt_task_with_shapes.labels[0].id,
+                        label_id=labels[0].id,
                         shapes=[
                             models.TrackedShapeRequest(
                                 frame=0, type="polygon", points=[3, 2, 2, 3, 3, 4]
@@ -269,7 +288,7 @@ class TestJobUsecases:
                     )
                 ],
                 tags=[
-                    models.LabeledImageRequest(frame=0, label_id=fxt_task_with_shapes.labels[0].id)
+                    models.LabeledImageRequest(frame=0, label_id=labels[0].id)
                 ],
             )
         )

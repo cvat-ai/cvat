@@ -151,8 +151,11 @@ class Job(
         (meta, _) = self.api.retrieve_data_meta(self.id)
         return meta
 
+    def get_labels(self) -> List[models.ILabel]:
+        return get_paginated_collection(self.api.list_labels_endpoint, id=self.id)
+
     def get_frames_info(self) -> List[models.IFrameMeta]:
-        return self.get_meta().frames
+        return get_paginated_collection(self.api.list_data_meta_frames_endpoint, id=self.id)
 
     def remove_frames_by_ids(self, ids: Sequence[int]) -> None:
         self._client.api_client.tasks_api.jobs_partial_update_data_meta(

@@ -57,7 +57,7 @@ from cvat.apps.engine.serializers import (
     FileInfoSerializer, FrameMetaSerializer, JobReadSerializer, JobWriteSerializer,
     LabelSerializer, LabeledDataSerializer,
     LogEventSerializer, ProjectReadSerializer, ProjectWriteSerializer, ProjectSearchSerializer,
-    RqStatusSerializer, SegmentSerializer, TaskReadSerializer, TaskWriteSerializer,
+    RqStatusSerializer, TaskReadSerializer, TaskWriteSerializer,
     UserSerializer, PluginsSerializer, IssueReadSerializer,
     IssueWriteSerializer, CommentReadSerializer, CommentWriteSerializer, CloudStorageWriteSerializer,
     CloudStorageReadSerializer, DatasetFileSerializer, JobCommitSerializer,
@@ -322,7 +322,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def tasks(self, request, pk):
         self.get_object() # force to call check_object_permissions
         return make_paginated_response(Task.objects.filter(project_id=pk).order_by('-id'),
-            viewset=self, serializer_type=self.serializer_class) # from @action
+            viewset=self, serializer_type=self.serializer_class, request=request) # from @action
 
 
     @extend_schema(methods=['GET'], summary='Export project as a dataset in a specific format',
@@ -640,10 +640,10 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         # Unset, they would be taken from the enclosing class, which is wrong.
         # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
         filter_fields=None, search_fields=None, ordering_fields=None)
-    def labels(self, pk):
-        queryset = self.get_object().label_set
+    def labels(self, request, pk):
+        queryset = self.get_object().get_labels().order_by('id')
         return make_paginated_response(queryset,
-            viewset=self, serializer_type=self.serializer_class) # from @action
+            viewset=self, serializer_type=self.serializer_class, request=request) # from @action
 
 
 class DataChunkGetter:
@@ -757,7 +757,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 ):
     queryset = Task.objects.all().select_related('data', 'assignee', 'owner',
         'target_storage', 'source_storage').prefetch_related(
-        'segment_set__job_set__assignee', 'label_set__attributespec_set',
+        'label_set__attributespec_set',
         'project__label_set__attributespec_set',
         'label_set__sublabels__attributespec_set',
         'project__label_set__sublabels__attributespec_set')
@@ -886,7 +886,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def jobs(self, request, pk):
         self.get_object() # force to call check_object_permissions
         return make_paginated_response(Job.objects.filter(segment__task_id=pk).order_by('id'),
-            viewset=self, serializer_type=self.serializer_class) # from @action
+            viewset=self, serializer_type=self.serializer_class, request=request) # from @action
 
     # UploadMixin method
     def get_upload_dir(self):
@@ -1271,7 +1271,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     @extend_schema(summary='Returns a paginated list of frame metadata',
         responses=FrameMetaSerializer(many=True))
-    @action(detail=True, methods=['GET'], serializer_class=DataMetaReadSerializer,
+    @action(detail=True, methods=['GET'], serializer_class=FrameMetaSerializer,
         url_path='data/meta/frames')
     def metadata_frames(self, request, pk):
         self.get_object() #force to call check_object_permissions
@@ -1368,23 +1368,10 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         # Unset, they would be taken from the enclosing class, which is wrong.
         # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
         filter_fields=None, search_fields=None, ordering_fields=None)
-    def labels(self, pk):
-        queryset = self.get_object().get_labels()
+    def labels(self, request, pk):
+        queryset = self.get_object().get_labels().order_by('id')
         return make_paginated_response(queryset,
-            viewset=self, serializer_type=self.serializer_class) # from @action
-
-    @extend_schema(description="Return a paginated list of segments",
-        responses=SegmentSerializer(many=True)) # Duplicate to still get 'list' op. name
-    @action(detail=True, methods=['GET'], serializer_class=SegmentSerializer,
-        pagination_class=viewsets.GenericViewSet.pagination_class,
-        # Remove regular list() parameters from the swagger schema.
-        # Unset, they would be taken from the enclosing class, which is wrong.
-        # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
-        filter_fields=None, search_fields=None, ordering_fields=None)
-    def segments(self, pk):
-        queryset = self.get_object().segment_set
-        return make_paginated_response(queryset,
-            viewset=self, serializer_type=self.serializer_class) # from @action
+            viewset=self, serializer_type=self.serializer_class, request=request) # from @action
 
 
 @extend_schema(tags=['jobs'])
@@ -1691,7 +1678,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def issues(self, request, pk):
         self.get_object() # force to call check_object_permissions
         return make_paginated_response(Issue.objects.filter(job_id=pk).order_by('id'),
-            viewset=self, serializer_type=self.serializer_class) # from @action
+            viewset=self, serializer_type=self.serializer_class, request=request) # from @action
 
     @extend_schema(summary='Method returns data for a specific job',
         parameters=[
@@ -1737,9 +1724,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         db_job = models.Job.objects.prefetch_related(
             'segment',
             'segment__task',
-            Prefetch('segment__task__data', queryset=models.Data.objects.select_related('video').prefetch_related(
-                Prefetch('images', queryset=models.Image.objects.prefetch_related('related_files').order_by('frame'))
-            ))
+            Prefetch('segment__task__data', queryset=models.Data.objects.select_related('video'))
         ).get(pk=pk)
 
         db_data = db_job.segment.task.data
@@ -1763,14 +1748,6 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 if db_job.segment.task.project:
                     db_job.segment.task.project.save()
 
-        if hasattr(db_data, 'video'):
-            media = [db_data.video]
-        else:
-            media = list(db_data.images.filter(
-                frame__gte=data_start_frame,
-                frame__lte=data_stop_frame,
-            ).all())
-
         # Filter data with segment size
         # Should data.size also be cropped by segment size?
         db_data.deleted_frames = filter(
@@ -1780,16 +1757,45 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         db_data.start_frame = data_start_frame
         db_data.stop_frame = data_stop_frame
 
+        serializer = DataMetaReadSerializer(db_data)
+        return Response(serializer.data)
+
+    @extend_schema(summary='Returns a paginated list of frame metadata',
+        responses=FrameMetaSerializer(many=True))
+    @action(detail=True, methods=['GET'], serializer_class=FrameMetaSerializer,
+        url_path='data/meta/frames')
+    def metadata_frames(self, request, pk):
+        self.get_object() #force to call check_object_permissions
+        db_job = models.Job.objects.prefetch_related(
+            'segment',
+            'segment__task',
+            Prefetch('segment__task__data', queryset=models.Data.objects.select_related('video').prefetch_related(
+                Prefetch('images', queryset=models.Image.objects.prefetch_related('related_files').order_by('frame'))
+            ))
+        ).get(pk=pk)
+
+        db_data = db_job.segment.task.data
+        start_frame = db_job.segment.start_frame
+        stop_frame = db_job.segment.stop_frame
+        data_start_frame = db_data.start_frame + start_frame * db_data.get_frame_step()
+        data_stop_frame = db_data.start_frame + stop_frame * db_data.get_frame_step()
+
+        if hasattr(db_data, 'video'):
+            media = [db_data.video]
+        else:
+            media = list(db_data.images.filter(
+                frame__gte=data_start_frame,
+                frame__lte=data_stop_frame,
+            ).all())
+
         frame_meta = [{
             'width': item.width,
             'height': item.height,
             'name': item.path,
-            'related_files': item.related_files.count() if hasattr(item, 'related_files') else 0
+            'related_files': item.related_files.count() if hasattr(item, 'related_files') else 0,
         } for item in media]
 
-        db_data.frames = frame_meta
-
-        serializer = DataMetaReadSerializer(db_data)
+        serializer = FrameMetaSerializer(frame_meta, many=True)
         return Response(serializer.data)
 
     @extend_schema(summary='The action returns the list of tracked changes for the job',
@@ -1803,7 +1809,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def commits(self, request, pk):
         self.get_object() # force to call check_object_permissions
         return make_paginated_response(JobCommit.objects.filter(job_id=pk).order_by('-id'),
-            viewset=self, serializer_type=self.serializer_class) # from @action
+            viewset=self, serializer_type=self.serializer_class, request=request) # from @action
 
     @extend_schema(summary='Method returns a preview image for the job',
         responses={
@@ -1831,10 +1837,10 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         # Unset, they would be taken from the enclosing class, which is wrong.
         # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
         filter_fields=None, search_fields=None, ordering_fields=None)
-    def labels(self, pk):
-        queryset = self.get_object().get_labels()
+    def labels(self, request, pk):
+        queryset = self.get_object().get_labels().order_by('id')
         return make_paginated_response(queryset,
-            viewset=self, serializer_type=self.serializer_class) # from @action
+            viewset=self, serializer_type=self.serializer_class, request=request) # from @action
 
 
 @extend_schema(tags=['issues'])
@@ -1912,7 +1918,7 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def comments(self, request, pk):
         self.get_object() # force to call check_object_permissions
         return make_paginated_response(Comment.objects.filter(issue_id=pk).order_by('-id'),
-            viewset=self, serializer_type=self.serializer_class) # from @action
+            viewset=self, serializer_type=self.serializer_class, request=request) # from @action
 
 @extend_schema(tags=['comments'])
 @extend_schema_view(

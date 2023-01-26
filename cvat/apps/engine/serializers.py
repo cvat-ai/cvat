@@ -1093,12 +1093,11 @@ class IssueReadSerializer(serializers.ModelSerializer):
     position = serializers.ListField(
         child=serializers.FloatField(), allow_empty=False
     )
-    comments = CommentReadSerializer(many=True)
 
     class Meta:
         model = models.Issue
         fields = ('id', 'frame', 'position', 'job', 'owner', 'assignee',
-            'created_date', 'updated_date', 'comments', 'resolved')
+            'created_date', 'updated_date', 'resolved')
         read_only_fields = fields
         extra_kwargs = {
             'created_date': { 'allow_null': True },

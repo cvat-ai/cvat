@@ -130,6 +130,9 @@ class Project(
             for m in get_paginated_collection(self.api.list_tasks_endpoint, id=self.id)
         ]
 
+    def get_labels(self) -> List[models.ILabel]:
+        return get_paginated_collection(self.api.list_labels_endpoint, id=self.id)
+
     def get_preview(
         self,
     ) -> io.RawIOBase:
