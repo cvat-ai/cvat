@@ -62,9 +62,7 @@ from cvat.apps.engine.serializers import (
     ProjectFileSerializer, TaskFileSerializer)
 
 from utils.dataset_manifest import ImageManifestManager
-from cvat.apps.engine.view_utils import (make_paginated_response,
-    redirect_to_full_collection_endpoint
-)
+from cvat.apps.engine.view_utils import make_paginated_response
 from cvat.apps.engine.utils import (
     av_scan_paths, process_failed_job, configure_dependent_job, parse_exception_message
 )
@@ -305,23 +303,6 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             serializer,
             owner=self.request.user,
             organization=self.request.iam_context['organization']
-        )
-
-    @extend_schema(
-        summary='Moved to /tasks',
-        responses=TaskReadSerializer(many=True), # Duplicate to still get 'list' op. name
-        deprecated=True) # TODO: remove in v2.5
-    @action(detail=True, methods=['GET'], serializer_class=TaskReadSerializer,
-        pagination_class=viewsets.GenericViewSet.pagination_class,
-        # These non-root list endpoints do not suppose extra options, just the basic output
-        # Remove regular list() parameters from the swagger schema.
-        # Unset, they would be taken from the enclosing class, which is wrong.
-        # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
-        filter_fields=None, ordering_fields=None, search_fields=None, simple_filters=None)
-    def tasks(self, request, pk):
-        self.get_object() # force call of check_object_permissions()
-        return redirect_to_full_collection_endpoint('task-list',
-            filter_field='project_id', filter_key=pk, request=request
         )
 
     @extend_schema(methods=['GET'], summary='Export project as a dataset in a specific format',
@@ -871,22 +852,6 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         if instance.project:
             db_project = instance.project
             db_project.save()
-
-    @extend_schema(summary='Moved to /jobs',
-        responses=JobReadSerializer(many=True), # Duplicate to still get 'list' op. name
-        deprecated=True) # TODO: remove in v2.5
-    @action(detail=True, methods=['GET'], serializer_class=JobReadSerializer,
-        pagination_class=viewsets.GenericViewSet.pagination_class,
-        # These non-root list endpoints do not suppose extra options, just the basic output
-        # Remove regular list() parameters from the swagger schema.
-        # Unset, they would be taken from the enclosing class, which is wrong.
-        # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
-        filter_fields=None, ordering_fields=None, search_fields=None, simple_filters=None)
-    def jobs(self, request, pk):
-        self.get_object() # force call of check_object_permissions()
-        return redirect_to_full_collection_endpoint('job-list',
-            filter_field='task_id', filter_key=pk, request=request
-        )
 
     # UploadMixin method
     def get_upload_dir(self):
@@ -1646,22 +1611,6 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             callback=dm.views.export_job_as_dataset
         )
 
-    @extend_schema(summary='Moved to GET /issues',
-        responses=IssueReadSerializer(many=True), # Duplicate to still get 'list' op. name
-        deprecated=True) # TODO: remove in v2.5
-    @action(detail=True, methods=['GET'], serializer_class=IssueReadSerializer,
-        pagination_class=viewsets.GenericViewSet.pagination_class,
-        # These non-root list endpoints do not suppose extra options, just the basic output
-        # Remove regular list() parameters from the swagger schema.
-        # Unset, they would be taken from the enclosing class, which is wrong.
-        # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
-        filter_fields=None, ordering_fields=None, search_fields=None, simple_filters=None)
-    def issues(self, request, pk):
-        self.get_object() # force call of check_object_permissions()
-        return redirect_to_full_collection_endpoint('issue-list',
-            filter_field='job_id', filter_key=pk, request=request
-        )
-
     @extend_schema(summary='Method returns data for a specific job',
         parameters=[
             OpenApiParameter('type', description='Specifies the type of the requested data',
@@ -1861,22 +1810,6 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     def perform_create(self, serializer, **kwargs):
         super().perform_create(serializer, owner=self.request.user)
-
-    @extend_schema(summary='Moved to /comments',
-        responses=CommentReadSerializer(many=True), # Duplicate to still get 'list' op. name
-        deprecated=True) # TODO: remove in v2.5
-    @action(detail=True, methods=['GET'], serializer_class=CommentReadSerializer,
-        pagination_class=viewsets.GenericViewSet.pagination_class,
-        # These non-root list endpoints do not suppose extra options, just the basic output
-        # Remove regular list() parameters from the swagger schema.
-        # Unset, they would be taken from the enclosing class, which is wrong.
-        # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
-        filter_fields=None, ordering_fields=None, search_fields=None, simple_filters=None)
-    def comments(self, request, pk):
-        self.get_object() # force call of check_object_permissions()
-        return redirect_to_full_collection_endpoint('comment-list',
-            filter_field='issue_id', filter_key=pk, request=request
-        )
 
 @extend_schema(tags=['comments'])
 @extend_schema_view(

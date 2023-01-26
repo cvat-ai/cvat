@@ -9,10 +9,10 @@ from typing import Any, Dict, Optional, Type
 from django.db.models.query import QuerySet
 from django.http.request import HttpRequest
 from django.http.response import HttpResponse
-from django.urls import reverse as _django_reverse
 from django.utils.http import urlencode
-from rest_framework import status
 from rest_framework.response import Response
+from rest_framework.reverse import reverse as _reverse
+from rest_framework.utils.urls import remove_query_param
 from rest_framework.serializers import Serializer
 from rest_framework.viewsets import GenericViewSet
 
@@ -57,17 +57,12 @@ def reverse(viewname, *, args=None, kwargs=None,
     request: Optional[HttpRequest] = None,
 ) -> str:
     """
-    The same as Django reverse(), but adds query params support.
-    The original request can be passed in the 'request' kwarg parameter to
-    forward parameters.
+    The same as rest_framework's reverse(), but adds custom query params support.
+    The original request can be passed in the 'request' parameter to
+    return absolute URLs.
     """
 
-    url = _django_reverse(viewname, args=args, kwargs=kwargs)
-
-    if request:
-        new_query_params = query_params or {}
-        query_params = request.GET.dict()
-        query_params.update(new_query_params)
+    url = _reverse(viewname, args, kwargs, request)
 
     if query_params:
         return f'{url}?{urlencode(query_params)}'
@@ -80,17 +75,13 @@ def build_field_filter_params(field: str, value: Any) -> Dict[str, str]:
     """
     return { field: value }
 
-def redirect_to_full_collection_endpoint(location: str, *, request: HttpRequest,
-    filter_field: str, filter_key: str
-) -> HttpResponse:
+def get_list_view_name(model):
+    # Implemented after
+    # rest_framework/utils/field_mapping.py.get_detail_view_name()
     """
-    Builds a redirection response for a collection endpoint.
+    Given a model class, return the view name to use for URL relationships
+    that refer to instances of the model.
     """
-
-    # https://www.rfc-editor.org/rfc/rfc9110.html#name-303-see-other
-    return Response(status=status.HTTP_303_SEE_OTHER, headers={
-        'Location': reverse(location,
-            query_params=build_field_filter_params(filter_field, filter_key),
-            request=request
-        )
-    })
+    return '%(model_name)s-list' % {
+        'model_name': model._meta.object_name.lower()
+    }

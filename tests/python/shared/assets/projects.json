@@ -50,9 +50,7 @@
         "location": "local"
       },
       "task_subsets": [],
-      "tasks": [
-        15
-      ],
+      "tasks": "http://localhost:8080/api/tasks?project_id=8",
       "updated_date": "2022-12-01T12:53:34.917000Z",
       "url": "http://localhost:8080/api/projects/8"
     },
@@ -100,7 +98,7 @@
         "location": "local"
       },
       "task_subsets": [],
-      "tasks": [],
+      "tasks": "http://localhost:8080/api/tasks?project_id=7",
       "updated_date": "2022-09-28T12:26:29.285000Z",
       "url": "http://localhost:8080/api/projects/7"
     },
@@ -148,7 +146,7 @@
         "location": "local"
       },
       "task_subsets": [],
-      "tasks": [],
+      "tasks": "http://localhost:8080/api/tasks?project_id=6",
       "updated_date": "2022-09-28T12:25:54.563000Z",
       "url": "http://localhost:8080/api/projects/6"
     },
@@ -358,9 +356,7 @@
         "location": "local"
       },
       "task_subsets": [],
-      "tasks": [
-        14
-      ],
+      "tasks": "http://localhost:8080/api/tasks?project_id=5",
       "updated_date": "2022-09-28T12:26:49.493000Z",
       "url": "http://localhost:8080/api/projects/5"
     },
@@ -403,9 +399,7 @@
       "status": "annotation",
       "target_storage": null,
       "task_subsets": [],
-      "tasks": [
-        13
-      ],
+      "tasks": "http://localhost:8080/api/tasks?project_id=4",
       "updated_date": "2022-12-05T07:47:01.518000Z",
       "url": "http://localhost:8080/api/projects/4"
     },
@@ -435,7 +429,7 @@
       "status": "annotation",
       "target_storage": null,
       "task_subsets": [],
-      "tasks": [],
+      "tasks": "http://localhost:8080/api/tasks?project_id=3",
       "updated_date": "2022-03-28T13:06:09.283000Z",
       "url": "http://localhost:8080/api/projects/3"
     },
@@ -494,9 +488,7 @@
       "task_subsets": [
         "Train"
       ],
-      "tasks": [
-        11
-      ],
+      "tasks": "http://localhost:8080/api/tasks?project_id=2",
       "updated_date": "2022-06-30T08:56:45.601000Z",
       "url": "http://localhost:8080/api/projects/2"
     },
@@ -558,9 +550,7 @@
       "status": "annotation",
       "target_storage": null,
       "task_subsets": [],
-      "tasks": [
-        9
-      ],
+      "tasks": "http://localhost:8080/api/tasks?project_id=1",
       "updated_date": "2022-11-03T13:57:25.895000Z",
       "url": "http://localhost:8080/api/projects/1"
     }
