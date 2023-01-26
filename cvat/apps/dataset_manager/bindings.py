@@ -1754,7 +1754,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                         if ann.attributes.get('source', '').lower() in {'auto', 'manual'} else 'manual'
 
                     shape_type = shapes[ann.type]
-                    if track_id is None or dm_dataset.format not in ['cvat', 'datumaro', 'sly_pointcloud']:
+                    if track_id is None or 'keyframe' not in ann.attributes or dm_dataset.format not in ['cvat', 'datumaro', 'sly_pointcloud']:
                         elements = []
                         if ann.type == dm.AnnotationType.skeleton:
                             for element in ann.elements:
