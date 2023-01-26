@@ -7,7 +7,6 @@ import io
 import os
 import os.path as osp
 import pytz
-import shutil
 import traceback
 from datetime import datetime
 from distutils.util import strtobool
