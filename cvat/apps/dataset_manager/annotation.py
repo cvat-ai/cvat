@@ -6,7 +6,6 @@
 from copy import copy, deepcopy
 
 import numpy as np
-from functools import reduce
 from itertools import chain
 from scipy.optimize import linear_sum_assignment
 from shapely import geometry
