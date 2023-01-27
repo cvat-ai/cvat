@@ -1330,7 +1330,12 @@ async function getJobIssues(jobID) {
 
     let response = null;
     try {
-        response = await fetchAll(`${backendAPI}/jobs/${jobID}/issues`, { ...enableOrganization() });
+        response = await fetchAll(`${backendAPI}/issues`, {
+            params: {
+                job_id: jobID,
+                ...enableOrganization(),
+            },
+        });
     } catch (errorData) {
         throw generateError(errorData);
     }
