@@ -16,6 +16,7 @@ interface RawIssueData {
     position: number[];
     frame: number;
     id?: number;
+    comments?: RawCommentData[];
     owner?: any;
     resolved?: boolean;
     created_date?: string;
@@ -26,7 +27,7 @@ export default class Issue {
     public readonly job: number;
     public readonly frame: number;
     public readonly owner?: User;
-    public readonly comments?: Comment[];
+    public readonly comments: Comment[];
     public readonly resolved?: boolean;
     public readonly createdDate?: string;
     public position?: number[];
@@ -54,6 +55,12 @@ export default class Issue {
 
         if (typeof data.created_date === 'undefined') {
             data.created_date = new Date().toISOString();
+        }
+
+        if (Array.isArray(initialData.comments)) {
+            data.comments = initialData.comments.map((comment: RawCommentData): Comment => new Comment(comment));
+        } else {
+            data.comments = [];
         }
 
         Object.defineProperties(
@@ -111,12 +118,6 @@ export default class Issue {
         return coordinates;
     }
 
-    // Method fetches comments list from the server
-    public async initComments(): Promise<void> {
-        const result = await PluginRegistry.apiWrapper.call(this, Issue.prototype.initComments);
-        return result;
-    }
-
     // Method appends a comment to the issue
     // For a new issue it saves comment locally, for a saved issue it saves comment on the server
     public async comment(data: RawCommentData): Promise<void> {
@@ -168,24 +169,6 @@ export default class Issue {
     }
 }
 
-Object.defineProperties(Issue.prototype.initComments, {
-    implementation: {
-        writable: false,
-        enumerable: false,
-        value: async function implementation(this: Issue) {
-            const internalData = Object.getOwnPropertyDescriptor(this, '__internal').get();
-            if (this.id) {
-                const rawComments = await serverProxy.comments.get(this.id);
-                internalData.comments = rawComments.map((comment: RawCommentData): Comment => new Comment(comment));
-                return [...internalData.comments];
-            }
-
-            internalData.comments = [];
-            return [...internalData.comments];
-        },
-    },
-});
-
 Object.defineProperties(Issue.prototype.comment, {
     implementation: {
         writable: false,
@@ -199,10 +182,6 @@ Object.defineProperties(Issue.prototype.comment, {
             }
 
             const internalData = Object.getOwnPropertyDescriptor(this, '__internal').get();
-            if (!internalData.comments) {
-                await Object.getOwnPropertyDescriptor(this.initComments, 'implementation').value();
-            }
-
             const comment = new Comment(data);
             if (typeof this.id === 'number') {
                 const serialized = comment.serialize();

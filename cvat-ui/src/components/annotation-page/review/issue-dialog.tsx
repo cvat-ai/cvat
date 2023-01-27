@@ -4,10 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, {
-    useState,
-    useEffect,
-    useRef,
-    useCallback,
+    useState, useEffect, useRef, useCallback,
 } from 'react';
 import ReactDOM from 'react-dom';
 import { useDispatch } from 'react-redux';
@@ -44,7 +41,6 @@ interface Props {
 export default function IssueDialog(props: Props): JSX.Element {
     const ref = useRef<HTMLDivElement>(null);
     const [currentText, setCurrentText] = useState<string>('');
-    const [comments, setComments] = useState<CommentModel[]>([]);
     const dispatch = useDispatch();
     const {
         issue,
@@ -62,7 +58,7 @@ export default function IssueDialog(props: Props): JSX.Element {
         blur,
     } = props;
 
-    const { id } = issue;
+    const { id, comments } = issue;
 
     useEffect(() => {
         if (!resolved) {
@@ -71,12 +67,6 @@ export default function IssueDialog(props: Props): JSX.Element {
             setTimeout(blur);
         }
     }, [resolved]);
-
-    useEffect(() => {
-        issue.initComments().then(() => {
-            setComments(issue.comments as CommentModel[]);
-        });
-    }, []);
 
     const onDeleteIssue = useCallback((): void => {
         Modal.confirm({

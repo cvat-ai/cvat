@@ -4,13 +4,13 @@
 // SPDX-License-Identifier: MIT
 
 import React, {
-    ReactPortal, useEffect, useRef, useState,
+    ReactPortal, useEffect, useRef,
 } from 'react';
 import ReactDOM from 'react-dom';
 import Tag from 'antd/lib/tag';
-import { CheckCircleOutlined, CloseCircleOutlined, LoadingOutlined } from '@ant-design/icons';
+import { CheckCircleOutlined, CloseCircleOutlined, WarningOutlined } from '@ant-design/icons';
 
-import { Issue, Comment } from 'cvat-core-wrapper';
+import { Issue } from 'cvat-core-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
 
 interface Props {
@@ -30,11 +30,8 @@ export default function HiddenIssueLabel(props: Props): ReactPortal {
         issue, top, left, angle, scale, resolved, onClick, highlight, blur,
     } = props;
 
-    const { id } = issue;
-
+    const { id, comments } = issue;
     const ref = useRef<HTMLElement>(null);
-    const [firstComment, setFirstComments] = useState<Comment | null>(null);
-
     useEffect(() => {
         if (!resolved) {
             setTimeout(highlight);
@@ -43,15 +40,9 @@ export default function HiddenIssueLabel(props: Props): ReactPortal {
         }
     }, [resolved]);
 
-    useEffect(() => {
-        issue.initComments().then(() => {
-            setFirstComments((issue.comments as Comment[])[0]);
-        });
-    }, []);
-
     const elementID = `cvat-hidden-issue-label-${id}`;
     return ReactDOM.createPortal(
-        <CVATTooltip title={firstComment ? firstComment.message : 'Loading..'}>
+        <CVATTooltip title={comments[0]?.message || 'Messages not found'}>
             <Tag
                 ref={ref}
                 id={elementID}
@@ -76,7 +67,7 @@ export default function HiddenIssueLabel(props: Props): ReactPortal {
                 ) : (
                     <CloseCircleOutlined className='cvat-hidden-issue-unsolved-indicator' />
                 )}
-                {firstComment ? firstComment.message : <LoadingOutlined />}
+                {comments[0]?.message || <WarningOutlined />}
             </Tag>
         </CVATTooltip>,
         window.document.getElementById('cvat_canvas_attachment_board') as HTMLElement,
