@@ -1233,7 +1233,7 @@ async function createTask(taskSpec, taskDataSpec, onUpdate) {
 }
 
 function fetchAll(url, filter = {}): Promise<any> {
-    const pageSize = 2;
+    const pageSize = 500;
     const result = {
         count: 0,
         results: [],
