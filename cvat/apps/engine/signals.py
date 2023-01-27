@@ -10,10 +10,13 @@ from django.dispatch import receiver
 from .models import (CloudStorage, Data, Job, Profile, Project,
     StatusChoice, Task)
 
+# TODO: need to log any problems reported by shutil.rmtree when the new
+# analytics feature is available. Now the log system can write information
+# into a file inside removed directory.
 
 @receiver(post_save, sender=Job,
-    dispatch_uid=__name__ + ".update_task_status_handler")
-def __update_task_status_handler(instance, **kwargs):
+    dispatch_uid=__name__ + ".save_job_handler")
+def __save_job_handler(instance, **kwargs):
     db_task = instance.segment.task
     db_jobs = list(Job.objects.filter(segment__task_id=db_task.id))
     status = StatusChoice.COMPLETED
@@ -27,8 +30,8 @@ def __update_task_status_handler(instance, **kwargs):
         db_task.save()
 
 @receiver(post_save, sender=User,
-    dispatch_uid=__name__ + ".create_profile_handler")
-def __create_profile_handler(instance, **kwargs):
+    dispatch_uid=__name__ + ".save_user_handler")
+def __save_user_handler(instance, **kwargs):
     if not hasattr(instance, 'profile'):
         profile = Profile()
         profile.user = instance
@@ -67,4 +70,3 @@ def __delete_data_handler(instance, **kwargs):
     dispatch_uid=__name__ + ".delete_cloudstorage_handler")
 def __delete_cloudstorage_handler(instance, **kwargs):
     shutil.rmtree(instance.get_storage_dirname(), ignore_errors=True)
-
