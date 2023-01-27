@@ -5,7 +5,11 @@
 from django.conf import settings
 from django.contrib.auth.models import User, Group
 from django.db.models.signals import post_save, post_migrate
-
+from django.dispatch import receiver
+from allauth.account.adapter import get_adapter
+from allauth.account.signals import user_signed_up
+from allauth.account.utils import user_email
+from allauth.account import app_settings as allauth_settings
 
 def register_groups(sender, **kwargs):
     # Create all groups which corresponds system roles
@@ -14,7 +18,6 @@ def register_groups(sender, **kwargs):
 
 if settings.IAM_TYPE == 'BASIC':
     def create_user(sender, instance, created, **kwargs):
-        from allauth.account import app_settings as allauth_settings
         from allauth.account.models import EmailAddress
 
         if instance.is_superuser and instance.is_staff:
@@ -62,3 +65,13 @@ def register_signals(app_config):
         # Map groups from LDAP to roles, convert a user to super user if he/she
         # has an admin group.
         django_auth_ldap.backend.populate_user.connect(create_user)
+
+@receiver(user_signed_up, dispatch_uid='send_welcome_email_after_sign_up')
+def send_welcome_email(request, user, **kwargs):
+    adapter = get_adapter(request)
+    email = user_email(user)
+    if email and settings.ACCOUNT_EMAIL_VERIFICATION != allauth_settings.EmailVerificationMethod.NONE:
+        context={
+            'email': email,
+        }
+        adapter.send_mail(template_prefix='account/email/welcome', email=email, context=context)
