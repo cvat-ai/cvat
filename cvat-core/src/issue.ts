@@ -1,11 +1,10 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import quickhull from 'quickhull';
 
-import { Job } from 'session';
 import PluginRegistry from './plugins';
 import Comment, { RawCommentData } from './comment';
 import User from './user';
@@ -13,28 +12,28 @@ import { ArgumentError } from './exceptions';
 import serverProxy from './server-proxy';
 
 interface RawIssueData {
+    job: number;
+    position: number[];
+    frame: number;
     id?: number;
-    job?: any;
-    position?: number[];
-    frame?: number;
     owner?: any;
     resolved?: boolean;
     created_date?: string;
 }
 
 export default class Issue {
-    public readonly id: number;
-    public readonly job: Job;
+    public readonly id?: number;
+    public readonly job: number;
     public readonly frame: number;
-    public readonly owner: User;
-    public readonly comments: Promise<Comment[]>;
-    public readonly resolved: boolean;
-    public readonly createdDate: string;
-    public position: number[];
+    public readonly owner?: User;
+    public readonly comments?: Comment[];
+    public readonly resolved?: boolean;
+    public readonly createdDate?: string;
+    public position?: number[];
+    private readonly __internal: RawIssueData & { comments: Comment[] };
 
     constructor(initialData: RawIssueData) {
-        let comments: Comment[];
-        const data: RawIssueData = {
+        const data: RawIssueData & { comments: Comment[] } = {
             id: undefined,
             job: undefined,
             position: undefined,
@@ -42,6 +41,7 @@ export default class Issue {
             created_date: undefined,
             owner: undefined,
             resolved: undefined,
+            comments: undefined,
         };
 
         for (const property in data) {
@@ -75,18 +75,7 @@ export default class Issue {
                     get: () => data.job,
                 },
                 comments: {
-                    get: () => new Promise((resolve, reject) => {
-                        if (comments) {
-                            resolve(comments);
-                        }
-
-                        serverProxy.comments.get(this.id).then((_comments: RawCommentData[]) => {
-                            comments = _comments.map((comment: RawCommentData): Comment => new Comment(comment));
-                            resolve(comments);
-                        }).catch((error) => {
-                            reject(error);
-                        });
-                    }),
+                    get: () => data.comments,
                 },
                 frame: {
                     get: () => data.frame,
@@ -122,6 +111,12 @@ export default class Issue {
         return coordinates;
     }
 
+    // Method fetches comments list from the server
+    public async initComments(): Promise<void> {
+        const result = await PluginRegistry.apiWrapper.call(this, Issue.prototype.initComments);
+        return result;
+    }
+
     // Method appends a comment to the issue
     // For a new issue it saves comment locally, for a saved issue it saves comment on the server
     public async comment(data: RawCommentData): Promise<void> {
@@ -150,18 +145,14 @@ export default class Issue {
     }
 
     public serialize(): RawIssueData {
-        const { comments } = this;
         const data: RawIssueData = {
+            job: this.job,
             position: this.position,
             frame: this.frame,
-            comments: comments.map((comment) => comment.serialize()),
         };
 
         if (typeof this.id === 'number') {
             data.id = this.id;
-        }
-        if (typeof this.job === 'number') {
-            data.job = this.job;
         }
         if (typeof this.createdDate === 'string') {
             data.created_date = this.createdDate;
@@ -177,16 +168,39 @@ export default class Issue {
     }
 }
 
+Object.defineProperties(Issue.prototype.initComments, {
+    implementation: {
+        writable: false,
+        enumerable: false,
+        value: async function implementation(this: Issue) {
+            const internalData = Object.getOwnPropertyDescriptor(this, '__internal').get();
+            if (this.id) {
+                const rawComments = await serverProxy.comments.get(this.id);
+                internalData.comments = rawComments.map((comment: RawCommentData): Comment => new Comment(comment));
+                return [...internalData.comments];
+            }
+
+            internalData.comments = [];
+            return [...internalData.comments];
+        },
+    },
+});
+
 Object.defineProperties(Issue.prototype.comment, {
     implementation: {
         writable: false,
         enumerable: false,
-        value: async function implementation(data: RawCommentData) {
+        value: async function implementation(this: Issue, data: RawCommentData) {
             if (typeof data !== 'object' || data === null) {
                 throw new ArgumentError(`The argument "data" must be an object. Got "${data}"`);
             }
             if (typeof data.message !== 'string' || data.message.length < 1) {
                 throw new ArgumentError(`Comment message must be a not empty string. Got "${data.message}"`);
+            }
+
+            const internalData = Object.getOwnPropertyDescriptor(this, '__internal').get();
+            if (!internalData.comments) {
+                await Object.getOwnPropertyDescriptor(this.initComments, 'implementation').value();
             }
 
             const comment = new Comment(data);
@@ -195,9 +209,9 @@ Object.defineProperties(Issue.prototype.comment, {
                 serialized.issue = this.id;
                 const response = await serverProxy.comments.create(serialized);
                 const savedComment = new Comment(response);
-                this.__internal.comments.push(savedComment);
+                internalData.comments.push(savedComment);
             } else {
-                this.__internal.comments.push(comment);
+                internalData.comments.push(comment);
             }
         },
     },

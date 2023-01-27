@@ -73,8 +73,8 @@ export default function IssueDialog(props: Props): JSX.Element {
     }, [resolved]);
 
     useEffect(() => {
-        issue.comments.then((_comments: CommentModel[]) => {
-            setComments(_comments);
+        issue.initComments().then(() => {
+            setComments(issue.comments as CommentModel[]);
         });
     }, []);
 

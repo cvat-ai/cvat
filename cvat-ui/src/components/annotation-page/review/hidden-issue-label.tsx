@@ -44,8 +44,8 @@ export default function HiddenIssueLabel(props: Props): ReactPortal {
     }, [resolved]);
 
     useEffect(() => {
-        issue.comments.then((_comments: Comment[]) => {
-            setFirstComments(_comments[0]);
+        issue.initComments().then(() => {
+            setFirstComments((issue.comments as Comment[])[0]);
         });
     }, []);
 
