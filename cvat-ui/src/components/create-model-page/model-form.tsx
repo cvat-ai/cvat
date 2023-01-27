@@ -17,7 +17,7 @@ import { CombinedState, ModelProvider } from 'reducers';
 import { useHistory } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
 import { createModelAsync } from 'actions/models-actions';
-import { HuggingFaceSmallIcon, RoboflowSmallIcon } from 'icons';
+import { HuggingFaceIcon, RoboflowIcon } from 'icons';
 import Icon from '@ant-design/icons';
 
 interface Props {
@@ -48,10 +48,10 @@ function createProviderIcon(provider: string): JSX.Element | null {
     // TODO tmp solution, need to get it from server
     let icon: JSX.Element | null = null;
     if (provider === 'roboflow') {
-        icon = <Icon component={RoboflowSmallIcon} />;
+        icon = <Icon component={RoboflowIcon} />;
     }
     if (provider === 'huggingface') {
-        icon = <Icon component={HuggingFaceSmallIcon} />;
+        icon = <Icon component={HuggingFaceIcon} />;
     }
     return icon;
 }

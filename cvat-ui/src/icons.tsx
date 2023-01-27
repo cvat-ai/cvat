@@ -67,8 +67,6 @@ import SVGCheckIcon from './assets/check-icon.svg';
 import SVGUpgradeIcon from './assets/upgrade-icon.svg';
 import SVGRoboflowIcon from './assets/roboflow.svg';
 import SVGHuggingFaceIcon from './assets/huggingface.svg';
-import SVGRoboflowSmallIcon from './assets/roboflow-small.svg';
-import SVGHuggingFaceSmallIcon from './assets/huggingface-small.svg';
 
 export const CVATLogo = React.memo((): JSX.Element => <SVGCVATLogo />);
 export const CVATMinimalisticLogo = React.memo((): JSX.Element => <SVGCVATMinimalisticLogo />);
@@ -132,5 +130,3 @@ export const CheckIcon = React.memo((): JSX.Element => <SVGCheckIcon />);
 export const UpgradeIcon = React.memo((): JSX.Element => <SVGUpgradeIcon />);
 export const RoboflowIcon = React.memo((): JSX.Element => <SVGRoboflowIcon />);
 export const HuggingFaceIcon = React.memo((): JSX.Element => <SVGHuggingFaceIcon />);
-export const RoboflowSmallIcon = React.memo((): JSX.Element => <SVGRoboflowSmallIcon />);
-export const HuggingFaceSmallIcon = React.memo((): JSX.Element => <SVGHuggingFaceSmallIcon />);
