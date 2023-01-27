@@ -7,7 +7,7 @@ import './styles.scss';
 import React, { useCallback, useEffect } from 'react';
 import { useHistory } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
-import { getModelsAsync } from 'actions/models-actions';
+import { getModelProvidersAsync, getModelsAsync } from 'actions/models-actions';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import Spin from 'antd/lib/spin';
 
@@ -36,6 +36,7 @@ function ModelsPageComponent(): JSX.Element {
     }, [query]);
 
     useEffect(() => {
+        dispatch(getModelProvidersAsync());
         dispatch(getModelsAsync());
     }, []);
 

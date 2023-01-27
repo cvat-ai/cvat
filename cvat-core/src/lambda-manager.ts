@@ -8,6 +8,12 @@ import { ArgumentError } from './exceptions';
 import MLModel from './ml-model';
 import { ModelProviders, RQStatus } from './enums';
 
+export interface ModelProvider {
+    name: string;
+    icon: string;
+    attributes: Record<string, string>;
+}
+
 class LambdaManager {
     private listening: any;
     private cachedList: any;
@@ -168,11 +174,17 @@ class LambdaManager {
         };
     }
 
-    async providers(): Promise<any> {
-        const providersData = await serverProxy.functions.providers();
-        const providers = Object.entries(providersData).map(([provider, attributes]) => (
-            { name: provider, attributes }
-        ));
+    async providers(): Promise<ModelProvider[]> {
+        const providersData: Record<string, Record<string, string>> = await serverProxy.functions.providers();
+        const providers = Object.entries(providersData).map(([provider, attributes]) => {
+            const { icon } = attributes;
+            delete attributes.icon;
+            return {
+                name: provider,
+                icon,
+                attributes,
+            };
+        });
         return providers;
     }
 }

@@ -5,7 +5,9 @@
 
 import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
-import { Webhook, SocialAuthMethods, MLModel } from 'cvat-core-wrapper';
+import {
+    Webhook, SocialAuthMethods, MLModel, ModelProvider,
+} from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap } from 'utils/mousetrap-react';
 import { OpenCVTracker } from 'utils/opencv-wrapper/opencv-interfaces';
@@ -316,11 +318,6 @@ export interface ShareItem {
 
 export interface ShareState {
     root: ShareItem;
-}
-
-export interface ModelProvider {
-    name: string,
-    attributes: Record<string, string>
 }
 
 export interface ModelAttribute {

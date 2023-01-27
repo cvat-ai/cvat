@@ -13,12 +13,12 @@ import Select from 'antd/lib/select';
 import notification from 'antd/lib/notification';
 import Input from 'antd/lib/input/Input';
 
-import { CombinedState, ModelProvider } from 'reducers';
+import { CombinedState } from 'reducers';
 import { useHistory } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
 import { createModelAsync } from 'actions/models-actions';
-import { HuggingFaceIcon, RoboflowIcon } from 'icons';
-import Icon from '@ant-design/icons';
+import { ModelProvider } from 'cvat-core-wrapper';
+import ModelProviderIcon from 'components/models-page/model-provider-icon';
 
 interface Props {
     providers: ModelProvider[];
@@ -42,18 +42,6 @@ function createProviderFormItems(providerAttributes: Record<string, string>): JS
             }
         </>
     );
-}
-
-function createProviderIcon(provider: string): JSX.Element | null {
-    // TODO tmp solution, need to get it from server
-    let icon: JSX.Element | null = null;
-    if (provider === 'roboflow') {
-        icon = <Icon component={RoboflowIcon} />;
-    }
-    if (provider === 'huggingface') {
-        icon = <Icon component={HuggingFaceIcon} />;
-    }
-    return icon;
 }
 
 function ModelForm(props: Props): JSX.Element {
@@ -138,7 +126,7 @@ function ModelForm(props: Props): JSX.Element {
                                             providerList.map(({ value, text }) => (
                                                 <Select.Option value={value} key={value}>
                                                     <div className='cvat-model-provider-icon'>
-                                                        {createProviderIcon(value)}
+                                                        <ModelProviderIcon providerName={value} />
                                                         <span className='cvat-cloud-storage-select-provider'>
                                                             {text}
                                                         </span>

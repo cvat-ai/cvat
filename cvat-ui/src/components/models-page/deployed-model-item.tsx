@@ -6,18 +6,19 @@ import React, { useCallback, useState } from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Tag from 'antd/lib/tag';
 import Text from 'antd/lib/typography/Text';
-import Icon, { MoreOutlined } from '@ant-design/icons';
+import { MoreOutlined } from '@ant-design/icons';
 import Modal from 'antd/lib/modal';
 import { MLModel } from 'cvat-core-wrapper';
-import {
-    Card, Dropdown, Button, Divider,
-} from 'antd';
 import Title from 'antd/lib/typography/Title';
-import { RoboflowIcon, HuggingFaceIcon } from 'icons';
 import Meta from 'antd/lib/card/Meta';
 import Preview from 'components/common/preview';
 import moment from 'moment';
+import Divider from 'antd/lib/divider';
+import Card from 'antd/lib/card';
+import Dropdown from 'antd/lib/dropdown';
+import Button from 'antd/lib/button';
 import ModelActionsMenuComponent from './models-action-menu';
+import ModelProviderIcon from './model-provider-icon';
 
 interface Props {
     model: MLModel;
@@ -41,14 +42,7 @@ export default function DeployedModelItem(props: Props): JSX.Element {
     }, []);
 
     const created = moment(model.createdDate).fromNow();
-    // TODO tmp solution, need to get it from server
-    let icon: JSX.Element | null = null;
-    if (provider === 'roboflow') {
-        icon = <Icon component={RoboflowIcon} />;
-    }
-    if (provider === 'huggingface') {
-        icon = <Icon component={HuggingFaceIcon} />;
-    }
+    const icon = <ModelProviderIcon providerName={provider} />;
     return (
         <>
             <Modal
