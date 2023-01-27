@@ -319,7 +319,7 @@ class CVAT_API_V2:
 
 
 def make_client(
-    host: str, *, port: Optional[int] = None, credentials: Optional[Tuple[int, int]] = None
+    host: str, *, port: Optional[int] = None, credentials: Optional[Tuple[str, str]] = None
 ) -> Client:
     url = host.rstrip("/")
     if port:

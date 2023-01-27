@@ -301,6 +301,30 @@ Example of header value for empty request body and `secret = mykey`:
 X-Signature-256: e1b24265bf2e0b20c81837993b4f1415f7b68c503114d100a40601eca6a2745f
 ```
 
+Here is an example of how you can verify a webhook signature in your webhook receiver service:
+
+```python
+# webhook_receiver.py
+
+import hmac
+from hashlib import sha256
+from flask import Flask, request
+
+app = Flask(__name__)
+
+@app.route("/webhook", methods=["POST"])
+def webhook():
+    signature = (
+        "sha256="
+        + hmac.new("mykey".encode("utf-8"), request.data, digestmod=sha256).hexdigest()
+    )
+
+    if hmac.compare_digest(request.headers["X-Signature-256"], signature):
+        return app.response_class(status=200)
+
+    raise app.response_class(status=500, response="Signatures didn't match!")
+```
+
 ## Ping Webhook
 
 To check that webhook configured well and CVAT can connect with target URL you can use `ping` webhook.
