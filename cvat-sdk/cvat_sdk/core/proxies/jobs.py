@@ -164,7 +164,7 @@ class Job(
         return [
             Issue(self._client, m)
             for m in get_paginated_collection(
-                self._client.api_client.issues_api.list_endpoint, job_id=self.id
+                self._client.api_client.issues_api.list_endpoint, job_id=str(self.id)
             )
         ]
 

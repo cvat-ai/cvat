@@ -34,7 +34,11 @@ class TestPostIssues:
             assert response.status == HTTPStatus.CREATED
             response_json = json.loads(response.data)
             assert user == response_json["owner"]["username"]
-            assert data["message"] == response_json["comments"][0]["message"]
+
+            with make_api_client(user) as client:
+                (comments, _) = client.comments_api.list(issue_id=str(response_json["id"]))
+            assert data["message"] == comments.results[0].message
+
             assert (
                 DeepDiff(
                     data,

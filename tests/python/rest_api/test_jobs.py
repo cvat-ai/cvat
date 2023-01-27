@@ -153,11 +153,9 @@ class TestJobsListFilters(CollectionSimpleFilterTestBase):
     }
 
     @pytest.fixture(autouse=True)
-    def setup(self, restore_db_per_class, admin_user, jobs, tasks, projects):
+    def setup(self, restore_db_per_class, admin_user, jobs):
         self.user = admin_user
         self.samples = jobs
-        self.sample_tasks = tasks
-        self.sample_projects = projects
 
     def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
         return api_client.jobs_api.list_endpoint
