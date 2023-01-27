@@ -78,7 +78,7 @@ export default function DeployedModelItem(props: Props): JSX.Element {
                                 <Text className='cvat-model-info-modal-labels-title'>Labels:</Text>
                             </div>
                             <div className='cvat-model-info-container cvat-model-info-modal-labels-list'>
-                                {model.labels.map((label) => <Tag>{label}</Tag>)}
+                                {model.labels.map((label) => <Tag key={label}>{label}</Tag>)}
                             </div>
                             <Divider />
                         </>

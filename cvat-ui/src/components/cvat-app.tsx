@@ -450,10 +450,15 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                             <Route exact path='/webhooks/update/:id' component={UpdateWebhookPage} />
                                             <Route exact path='/organization' component={OrganizationPage} />
                                             {isModelPluginActive && (
-                                                <>
-                                                    <Route exact path='/models' component={ModelsPageComponent} />
-                                                    <Route exact path='/models/create' component={CreateModelPage} />
-                                                </>
+                                                <Route
+                                                    exact
+                                                    path='/models'
+                                                >
+                                                    <Switch>
+                                                        <Route exact path='/models' component={ModelsPageComponent} />
+                                                        <Route exact path='/models/create' component={CreateModelPage} />
+                                                    </Switch>
+                                                </Route>
                                             )}
                                             <Redirect
                                                 push
