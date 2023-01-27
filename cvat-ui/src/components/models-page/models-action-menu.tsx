@@ -6,7 +6,7 @@ import React, { useCallback } from 'react';
 import { useDispatch } from 'react-redux';
 import Modal from 'antd/lib/modal';
 import Menu from 'antd/lib/menu';
-import { MLModel } from 'cvat-core-wrapper';
+import { MLModel, ModelProviders } from 'cvat-core-wrapper';
 import { deleteModelAsync } from 'actions/models-actions';
 
 interface Props {
@@ -17,7 +17,7 @@ interface Props {
 export default function ModelActionsMenuComponent(props: Props): JSX.Element {
     const { model, onDelete } = props;
     const { provider } = model;
-    const cvatProvider = provider === 'cvat';
+    const cvatProvider = provider === ModelProviders.CVAT;
 
     const dispatch = useDispatch();
 

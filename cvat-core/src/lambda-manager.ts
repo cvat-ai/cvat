@@ -6,7 +6,7 @@
 import serverProxy from './server-proxy';
 import { ArgumentError } from './exceptions';
 import MLModel from './ml-model';
-import { RQStatus } from './enums';
+import { ModelProviders, RQStatus } from './enums';
 
 class LambdaManager {
     private listening: any;
@@ -57,7 +57,7 @@ class LambdaManager {
         };
 
         let result;
-        if (model.provider === 'cvat') {
+        if (model.provider === ModelProviders.CVAT) {
             result = await serverProxy.lambda.run(body);
         } else {
             result = await serverProxy.functions.run(body);
@@ -76,7 +76,7 @@ class LambdaManager {
         };
 
         let result;
-        if (model.provider === 'cvat') {
+        if (model.provider === ModelProviders.CVAT) {
             result = await serverProxy.lambda.call(model.id, body);
         } else {
             result = await serverProxy.functions.call(model.id, body);
@@ -106,7 +106,7 @@ class LambdaManager {
         }
 
         const { provider } = model;
-        if (provider === 'cvat') {
+        if (provider === ModelProviders.CVAT) {
             await serverProxy.lambda.cancel(requestID);
         } else {
             await serverProxy.functions.cancel(requestID);
@@ -123,7 +123,7 @@ class LambdaManager {
             try {
                 this.listening[requestID].timeout = null;
                 let response = null;
-                if (provider === 'cvat') {
+                if (provider === ModelProviders.CVAT) {
                     response = await serverProxy.lambda.status(requestID);
                 } else {
                     response = await serverProxy.functions.status(requestID);

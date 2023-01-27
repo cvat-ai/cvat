@@ -9,7 +9,9 @@ import MLModel from 'cvat-core/src/ml-model';
 import {
     Label, Attribute, RawAttribute, RawLabel,
 } from 'cvat-core/src/labels';
-import { ShapeType, LabelType, ModelType } from 'cvat-core/src/enums';
+import {
+    ShapeType, LabelType, ModelType, ModelProviders,
+} from 'cvat-core/src/enums';
 import { Storage, StorageData } from 'cvat-core/src/storage';
 import { SocialAuthMethods, SocialAuthMethod } from 'cvat-core/src/auth-methods';
 
@@ -36,6 +38,7 @@ export {
     SocialAuthMethod,
     MLModel,
     ModelType,
+    ModelProviders,
 };
 
 export type {

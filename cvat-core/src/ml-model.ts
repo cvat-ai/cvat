@@ -6,7 +6,7 @@
 import { isBrowser, isNode } from 'browser-or-node';
 import serverProxy from './server-proxy';
 import PluginRegistry from './plugins';
-import { ModelType } from './enums';
+import { ModelProviders, ModelType } from './enums';
 
 interface ModelAttribute {
     name: string;
@@ -119,11 +119,11 @@ export default class MLModel {
     }
 
     public get provider(): string {
-        return this.serialized.provider ? this.serialized.provider : 'cvat';
+        return this.serialized.provider ? this.serialized.provider : ModelProviders.CVAT;
     }
 
     public get deletable(): boolean {
-        return this.provider !== 'cvat';
+        return this.provider !== ModelProviders.CVAT;
     }
 
     public get createdDate(): string {
@@ -193,7 +193,7 @@ Object.defineProperties(MLModel.prototype.getPreview, {
         writable: false,
         enumerable: false,
         value: async function implementation(): Promise<string | ArrayBuffer> {
-            if (this.provider === 'cvat') {
+            if (this.provider === ModelProviders.CVAT) {
                 return '';
             }
             return new Promise((resolve, reject) => {

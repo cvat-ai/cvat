@@ -140,6 +140,10 @@ export enum ModelType {
     REID = 'reid',
 }
 
+export enum ModelProviders {
+    CVAT = 'cvat',
+}
+
 export const colors = [
     '#33ddff',
     '#fa3253',
