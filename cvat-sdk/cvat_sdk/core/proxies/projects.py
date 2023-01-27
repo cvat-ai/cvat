@@ -128,7 +128,7 @@ class Project(
         return [
             Task(self._client, m)
             for m in get_paginated_collection(
-                self._client.api_client.tasks_api.list_endpoint, project_id=self.id
+                self._client.api_client.tasks_api.list_endpoint, project_id=str(self.id)
             )
         ]
 

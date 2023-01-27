@@ -660,6 +660,30 @@
   }
 },
 {
+  "model": "account.emailaddress",
+  "pk": 1,
+  "fields": {
+    "user": [
+      "admin1"
+    ],
+    "email": "admin1@cvat.org",
+    "verified": true,
+    "primary": true
+  }
+},
+{
+  "model": "account.emailaddress",
+  "pk": 2,
+  "fields": {
+    "user": [
+      "admin2"
+    ],
+    "email": "admin2@cvat.org",
+    "verified": true,
+    "primary": true
+  }
+},
+{
   "model": "organizations.organization",
   "pk": 1,
   "fields": {
@@ -5905,7 +5929,9 @@
     "owner": [
       "user1"
     ],
-    "assignee": 2,
+    "assignee": [
+      "user1"
+    ],
     "created_date": "2022-03-16T12:40:00.764Z",
     "updated_date": null,
     "resolved": false

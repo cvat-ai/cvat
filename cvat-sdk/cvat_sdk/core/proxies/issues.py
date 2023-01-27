@@ -57,7 +57,7 @@ class Issue(
         return [
             Comment(self._client, m)
             for m in get_paginated_collection(
-                self._client.api_client.comments_api.list_endpoint, issue_id=self.id
+                self._client.api_client.comments_api.list_endpoint, issue_id=str(self.id)
             )
         ]
 

@@ -306,7 +306,7 @@ class Task(
         return [
             Job(self._client, model=m)
             for m in get_paginated_collection(
-                self._client.api_client.jobs_api.list_endpoint, task_id=self.id
+                self._client.api_client.jobs_api.list_endpoint, task_id=str(self.id)
             )
         ]
 

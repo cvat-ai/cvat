@@ -575,12 +575,13 @@ class TestImportExportDatasetProject:
             "name": project["name"],
             "tasks": [
                 {
-                    "id": tid,
-                    "name": (task := tasks[tid])["name"],
+                    "id": task["id"],
+                    "name": task["name"],
                     "size": str(task["size"]),
                     "mode": task["mode"],
                 }
-                for tid in project["tasks"]
+                for task in tasks
+                if task["project_id"] == project["id"]
             ],
         }
 
@@ -823,9 +824,9 @@ class TestGetProjectPreview:
             project_with_assignee["assignee"]["username"], project_with_assignee["id"]
         )
 
-    def test_project_preview_not_found(self, projects):
+    def test_project_preview_not_found(self, projects, tasks):
         for p in projects:
-            if p["tasks"]:
+            if any(t["project_id"] == p["id"] for t in tasks):
                 continue
             if p["owner"] is not None:
                 project_with_owner = p
