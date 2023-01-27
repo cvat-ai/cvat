@@ -1232,7 +1232,67 @@ async function createTask(taskSpec, taskDataSpec, onUpdate) {
     return createdTask[0];
 }
 
-async function getJobs(filter = {}) {
+function fetchAll(url, filter = {}): Promise<any> {
+    const pageSize = 2;
+    const result = {
+        count: 0,
+        results: [],
+    };
+    return new Promise((resolve, reject) => {
+        Axios.get(url, {
+            params: {
+                ...filter,
+                page_size: pageSize,
+                page: 1,
+            },
+            proxy: config.proxy,
+        }).then((initialData) => {
+            const { count, results } = initialData.data;
+            result.results = result.results.concat(results);
+            if (count <= pageSize) {
+                resolve(result);
+                return;
+            }
+
+            const pages = Math.ceil(count / pageSize);
+            const promises = Array(pages).fill(0).map((_: number, i: number) => {
+                if (i) {
+                    return Axios.get(url, {
+                        params: {
+                            ...filter,
+                            page_size: pageSize,
+                            page: i + 1,
+                        },
+                        proxy: config.proxy,
+                    });
+                }
+
+                return Promise.resolve(null);
+            });
+
+            Promise.all(promises).then((responses: AxiosResponse<any, any>[]) => {
+                responses.forEach((resp) => {
+                    if (resp) {
+                        result.results = result.results.concat(resp.data.results);
+                    }
+                });
+
+                // removing possible dublicates
+                const obj = result.results.reduce((acc: Record<string, any>, item: any) => {
+                    acc[item.id] = item;
+                    return acc;
+                }, {});
+
+                result.results = Object.values(obj);
+                result.count = result.results.length;
+
+                resolve(result);
+            }).catch((error) => reject(error));
+        }).catch((error) => reject(error));
+    });
+}
+
+async function getJobs(filter = {}, aggregate = false) {
     const { backendAPI } = config;
     const id = filter.id || null;
 
@@ -1243,6 +1303,13 @@ async function getJobs(filter = {}) {
                 proxy: config.proxy,
             });
         } else {
+            if (aggregate) {
+                return await fetchAll(`${backendAPI}/jobs`, {
+                    ...filter,
+                    ...enableOrganization(),
+                });
+            }
+
             response = await Axios.get(`${backendAPI}/jobs`, {
                 proxy: config.proxy,
                 params: {
@@ -1258,69 +1325,17 @@ async function getJobs(filter = {}) {
     return response.data;
 }
 
-function fetchAll(url): Promise<any[]> {
-    const pageSize = 500;
-    let collection = [];
-    return new Promise((resolve, reject) => {
-        Axios.get(url, {
-            params: {
-                page_size: pageSize,
-                page: 1,
-            },
-            proxy: config.proxy,
-        }).then((initialData) => {
-            const { count, results } = initialData.data;
-            collection = collection.concat(results);
-            if (count <= pageSize) {
-                resolve(collection);
-                return;
-            }
-
-            const pages = Math.ceil(count / pageSize);
-            const promises = Array(pages).fill(0).map((_: number, i: number) => {
-                if (i) {
-                    return Axios.get(url, {
-                        params: {
-                            page_size: pageSize,
-                            page: i + 1,
-                        },
-                        proxy: config.proxy,
-                    });
-                }
-
-                return Promise.resolve(null);
-            });
-
-            Promise.all(promises).then((responses: AxiosResponse<any, any>[]) => {
-                responses.forEach((resp) => {
-                    if (resp) {
-                        collection = collection.concat(resp.data.results);
-                    }
-                });
-
-                // removing possible dublicates
-                const obj = collection.reduce((acc: Record<string, any>, item: any) => {
-                    acc[item.id] = item;
-                    return acc;
-                }, {});
-
-                resolve(Object.values(obj));
-            }).catch((error) => reject(error));
-        }).catch((error) => reject(error));
-    });
-}
-
 async function getJobIssues(jobID) {
     const { backendAPI } = config;
 
     let response = null;
     try {
-        response = await fetchAll(`${backendAPI}/jobs/${jobID}/issues`);
+        response = await fetchAll(`${backendAPI}/jobs/${jobID}/issues`, { ...enableOrganization() });
     } catch (errorData) {
         throw generateError(errorData);
     }
 
-    return response;
+    return response.results;
 }
 
 async function createComment(data) {
@@ -2017,12 +2032,12 @@ async function getOrganizations() {
 
     let response = null;
     try {
-        response = await fetchAll(`${backendAPI}/organizations?page_size`);
+        response = await fetchAll(`${backendAPI}/organizations`);
     } catch (errorData) {
         throw generateError(errorData);
     }
 
-    return response;
+    return response.results;
 }
 
 async function createOrganization(data) {

@@ -564,7 +564,6 @@ export class Task extends Session {
             data_chunk_size: undefined,
             data_compressed_chunk_type: undefined,
             data_original_chunk_type: undefined,
-            deleted_frames: undefined,
             use_zip_chunks: undefined,
             use_cache: undefined,
             copy_data: undefined,
@@ -599,33 +598,29 @@ export class Task extends Session {
                 .map((labelData) => new Label(labelData)).filter((label) => !label.hasParent);
         }
 
-        if (Array.isArray(initialData.segments)) {
-            for (const segment of initialData.segments) {
-                if (Array.isArray(segment.jobs)) {
-                    for (const job of segment.jobs) {
-                        const jobInstance = new Job({
-                            url: job.url,
-                            id: job.id,
-                            assignee: job.assignee,
-                            state: job.state,
-                            stage: job.stage,
-                            start_frame: segment.start_frame,
-                            stop_frame: segment.stop_frame,
-                            // following fields also returned when doing API request /jobs/<id>
-                            // here we know them from task and append to constructor
-                            task_id: data.id,
-                            project_id: data.project_id,
-                            labels: data.labels,
-                            bug_tracker: data.bug_tracker,
-                            mode: data.mode,
-                            dimension: data.dimension,
-                            data_compressed_chunk_type: data.data_compressed_chunk_type,
-                            data_chunk_size: data.data_chunk_size,
-                        });
+        if (Array.isArray(initialData.jobs)) {
+            for (const job of initialData.jobs) {
+                const jobInstance = new Job({
+                    url: job.url,
+                    id: job.id,
+                    assignee: job.assignee,
+                    state: job.state,
+                    stage: job.stage,
+                    start_frame: job.start_frame,
+                    stop_frame: job.stop_frame,
+                    // following fields also returned when doing API request /jobs/<id>
+                    // here we know them from task and append to constructor
+                    task_id: data.id,
+                    project_id: data.project_id,
+                    labels: data.labels,
+                    bug_tracker: data.bug_tracker,
+                    mode: data.mode,
+                    dimension: data.dimension,
+                    data_compressed_chunk_type: data.data_compressed_chunk_type,
+                    data_chunk_size: data.data_chunk_size,
+                });
 
-                        data.jobs.push(jobInstance);
-                    }
-                }
+                data.jobs.push(jobInstance);
             }
         }
 
