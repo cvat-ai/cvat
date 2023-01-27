@@ -40,7 +40,6 @@ export default function (state = defaultState, action: ModelsActions | AuthActio
         case ModelsActionTypes.GET_MODELS: {
             return {
                 ...state,
-                initialized: false,
                 fetching: true,
             };
         }

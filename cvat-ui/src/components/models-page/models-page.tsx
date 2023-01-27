@@ -35,6 +35,10 @@ function ModelsPageComponent(): JSX.Element {
         });
     }, [query]);
 
+    useEffect(() => {
+        dispatch(getModelsAsync());
+    }, []);
+
     const content = totalCount ? (
         <DeployedModelsList />
     ) : <EmptyListComponent />;
