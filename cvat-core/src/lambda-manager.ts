@@ -27,7 +27,6 @@ class LambdaManager {
             models.push(
                 new MLModel({
                     ...model,
-                    type: model.kind,
                 }),
             );
         }

@@ -36,7 +36,8 @@ interface SerializedModel {
     attributes?: Record<string, ModelAttribute>;
     framework?: string;
     description?: string;
-    type?: ModelType;
+    kind?: ModelType;
+    type?: string;
     owner?: any;
     provider?: string;
     api_key?: string;
@@ -87,7 +88,7 @@ export default class MLModel {
     }
 
     public get type(): ModelType {
-        return this.serialized.type;
+        return this.serialized.kind;
     }
 
     public get params(): ModelParams {

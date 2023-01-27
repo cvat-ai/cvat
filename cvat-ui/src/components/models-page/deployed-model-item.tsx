@@ -140,11 +140,7 @@ export default function DeployedModelItem(props: Props): JSX.Element {
                     description={(
                         <div className='cvat-models-item-description'>
                             <Row onClick={onOpenModel} className='cvat-models-item-text-description'>
-                                {model.owner && (
-                                    <>
-                                        <Text>{`${model.owner ? `${model.owner}` : ''}`}</Text>
-                                    </>
-                                )}
+                                <Text strong>{model.owner}</Text>
                                 <Text type='secondary'>{` Added ${created}`}</Text>
                             </Row>
                             <Dropdown overlay={<ModelActionsMenuComponent model={model} onDelete={onDelete} />}>
