@@ -1,17 +1,20 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import React, { ReactPortal, useEffect, useRef } from 'react';
+import React, {
+    ReactPortal, useEffect, useRef, useState,
+} from 'react';
 import ReactDOM from 'react-dom';
 import Tag from 'antd/lib/tag';
-import { CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
+import { CheckCircleOutlined, CloseCircleOutlined, LoadingOutlined } from '@ant-design/icons';
 
+import { Issue, Comment } from 'cvat-core-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
 
 interface Props {
-    id: number;
-    message: string;
+    issue: Issue;
     top: number;
     left: number;
     angle: number;
@@ -24,10 +27,13 @@ interface Props {
 
 export default function HiddenIssueLabel(props: Props): ReactPortal {
     const {
-        id, message, top, left, angle, scale, resolved, onClick, highlight, blur,
+        issue, top, left, angle, scale, resolved, onClick, highlight, blur,
     } = props;
 
+    const { id } = issue;
+
     const ref = useRef<HTMLElement>(null);
+    const [firstComment, setFirstComments] = useState<Comment | null>(null);
 
     useEffect(() => {
         if (!resolved) {
@@ -37,9 +43,15 @@ export default function HiddenIssueLabel(props: Props): ReactPortal {
         }
     }, [resolved]);
 
+    useEffect(() => {
+        issue.comments.then((_comments: Comment[]) => {
+            setFirstComments(_comments[0]);
+        });
+    }, []);
+
     const elementID = `cvat-hidden-issue-label-${id}`;
     return ReactDOM.createPortal(
-        <CVATTooltip title={message}>
+        <CVATTooltip title={firstComment ? firstComment.message : 'Loading..'}>
             <Tag
                 ref={ref}
                 id={elementID}
@@ -64,7 +76,7 @@ export default function HiddenIssueLabel(props: Props): ReactPortal {
                 ) : (
                     <CloseCircleOutlined className='cvat-hidden-issue-unsolved-indicator' />
                 )}
-                {message}
+                {firstComment ? firstComment.message : <LoadingOutlined />}
             </Tag>
         </CVATTooltip>,
         window.document.getElementById('cvat_canvas_attachment_board') as HTMLElement,

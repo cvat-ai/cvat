@@ -1343,6 +1343,22 @@ async function getJobIssues(jobID) {
     return response.results;
 }
 
+async function getComments(issueID: number) {
+    const { backendAPI } = config;
+
+    let response = null;
+    try {
+        response = await fetchAll(`${backendAPI}/comments`, {
+            issue_id: issueID,
+            ...enableOrganization(),
+        });
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+
+    return response.results;
+}
+
 async function createComment(data) {
     const { backendAPI } = config;
 
@@ -2436,6 +2452,7 @@ export default Object.freeze({
     }),
 
     comments: Object.freeze({
+        get: getComments,
         create: createComment,
     }),
 

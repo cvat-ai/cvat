@@ -16,7 +16,6 @@ interface RawIssueData {
     id?: number;
     job?: any;
     position?: number[];
-    comments?: any;
     frame?: number;
     owner?: any;
     resolved?: boolean;
@@ -26,19 +25,19 @@ interface RawIssueData {
 export default class Issue {
     public readonly id: number;
     public readonly job: Job;
-    public readonly comments: Comment[];
     public readonly frame: number;
     public readonly owner: User;
+    public readonly comments: Promise<Comment[]>;
     public readonly resolved: boolean;
     public readonly createdDate: string;
     public position: number[];
 
     constructor(initialData: RawIssueData) {
+        let comments: Comment[];
         const data: RawIssueData = {
             id: undefined,
             job: undefined,
             position: undefined,
-            comments: [],
             frame: undefined,
             created_date: undefined,
             owner: undefined,
@@ -52,10 +51,6 @@ export default class Issue {
         }
 
         if (data.owner && !(data.owner instanceof User)) data.owner = new User(data.owner);
-
-        if (data.comments) {
-            data.comments = data.comments.map((comment) => new Comment(comment));
-        }
 
         if (typeof data.created_date === 'undefined') {
             data.created_date = new Date().toISOString();
@@ -80,7 +75,18 @@ export default class Issue {
                     get: () => data.job,
                 },
                 comments: {
-                    get: () => [...data.comments],
+                    get: () => new Promise((resolve, reject) => {
+                        if (comments) {
+                            resolve(comments);
+                        }
+
+                        serverProxy.comments.get(this.id).then((_comments: RawCommentData[]) => {
+                            comments = _comments.map((comment: RawCommentData): Comment => new Comment(comment));
+                            resolve(comments);
+                        }).catch((error) => {
+                            reject(error);
+                        });
+                    }),
                 },
                 frame: {
                     get: () => data.frame,

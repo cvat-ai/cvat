@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -17,14 +18,15 @@ import Comment from 'antd/lib/comment';
 import Text from 'antd/lib/typography/Text';
 import Title from 'antd/lib/typography/Title';
 import Button from 'antd/lib/button';
+import Spin from 'antd/lib/spin';
 import Input from 'antd/lib/input';
 import moment from 'moment';
 import CVATTooltip from 'components/common/cvat-tooltip';
+import { Issue, Comment as CommentModel } from 'cvat-core-wrapper';
 import { deleteIssueAsync } from 'actions/review-actions';
 
 interface Props {
-    id: number;
-    comments: any[];
+    issue: Issue;
     left: number;
     top: number;
     resolved: boolean;
@@ -42,10 +44,10 @@ interface Props {
 export default function IssueDialog(props: Props): JSX.Element {
     const ref = useRef<HTMLDivElement>(null);
     const [currentText, setCurrentText] = useState<string>('');
+    const [comments, setComments] = useState<CommentModel[]>([]);
     const dispatch = useDispatch();
     const {
-        comments,
-        id,
+        issue,
         left,
         top,
         scale,
@@ -60,6 +62,8 @@ export default function IssueDialog(props: Props): JSX.Element {
         blur,
     } = props;
 
+    const { id } = issue;
+
     useEffect(() => {
         if (!resolved) {
             setTimeout(highlight);
@@ -67,6 +71,12 @@ export default function IssueDialog(props: Props): JSX.Element {
             setTimeout(blur);
         }
     }, [resolved]);
+
+    useEffect(() => {
+        issue.comments.then((_comments: CommentModel[]) => {
+            setComments(_comments);
+        });
+    }, []);
 
     const onDeleteIssue = useCallback((): void => {
         Modal.confirm({
@@ -85,7 +95,7 @@ export default function IssueDialog(props: Props): JSX.Element {
     }, []);
 
     const lines = comments.map(
-        (_comment: any): JSX.Element => {
+        (_comment: CommentModel): JSX.Element => {
             const created = _comment.createdDate ? moment(_comment.createdDate) : moment(moment.now());
             const diff = created.fromNow();
 
@@ -128,7 +138,9 @@ export default function IssueDialog(props: Props): JSX.Element {
                 </Col>
             </Row>
             <Row className='cvat-issue-dialog-chat' justify='start'>
-                <Col style={{ display: 'block' }}>{lines}</Col>
+                {
+                    lines.length > 0 ? <Col style={{ display: 'block' }}>{lines}</Col> : <Spin />
+                }
             </Row>
             <Row className='cvat-issue-dialog-input' justify='start'>
                 <Col span={24}>
