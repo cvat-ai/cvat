@@ -19,13 +19,18 @@ class LambdaManager {
 
     async list(): Promise<MLModel[]> {
         let lambdaFunctions = [];
+        let functions = [];
         try {
             // lambda.list returns error if list is empty, but we should work with models anyway
             lambdaFunctions = await serverProxy.lambda.list();
         // eslint-disable-next-line no-empty
         } catch (error) {}
 
-        const functions = await serverProxy.functions.list();
+        try {
+            functions = await serverProxy.functions.list();
+        // eslint-disable-next-line no-empty
+        } catch (error) {}
+
         const result = [...lambdaFunctions, ...functions];
         const models = [];
 

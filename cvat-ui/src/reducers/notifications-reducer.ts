@@ -722,7 +722,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
             };
         }
         case ModelsActionTypes.FETCH_META_FAILED: {
-            if (action.payload.error.code === 403) {
+            if (action.payload.error.code === 403 || action.payload.error.code === 404) {
                 return state;
             }
 

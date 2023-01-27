@@ -451,7 +451,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                             <Route exact path='/organization' component={OrganizationPage} />
                                             {isModelPluginActive && (
                                                 <Route
-                                                    exact
                                                     path='/models'
                                                 >
                                                     <Switch>
