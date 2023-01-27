@@ -100,7 +100,7 @@ export const modelsActions = {
     getModelPreview: (modelID: string) => (
         createAction(ModelsActionTypes.GET_MODEL_PREVIEW, { modelID })
     ),
-    getModelPreviewSuccess: (modelID: string, preview: ArrayBuffer | string) => (
+    getModelPreviewSuccess: (modelID: string, preview: string) => (
         createAction(ModelsActionTypes.GET_MODEL_PREVIEW_SUCCESS, { modelID, preview })
     ),
     getModelPreviewFailed: (modelID: string, error: any) => (

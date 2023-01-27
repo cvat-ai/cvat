@@ -5,7 +5,7 @@
 import { BoundariesActions, BoundariesActionTypes } from 'actions/boundaries-actions';
 import { ModelsActionTypes, ModelsActions } from 'actions/models-actions';
 import { AuthActionTypes, AuthActions } from 'actions/auth-actions';
-import { MLModel } from 'cvat-core-wrapper';
+import { MLModel, ModelType } from 'cvat-core-wrapper';
 import { ModelsState } from '.';
 
 const defaultState: ModelsState = {
@@ -47,11 +47,21 @@ export default function (state = defaultState, action: ModelsActions | AuthActio
         case ModelsActionTypes.GET_MODELS_SUCCESS: {
             return {
                 ...state,
-                interactors: action.payload.models.filter((model: MLModel) => ['interactor'].includes(model.type)),
-                detectors: action.payload.models.filter((model: MLModel) => ['detector'].includes(model.type)),
-                trackers: action.payload.models.filter((model: MLModel) => ['tracker'].includes(model.type)),
-                reid: action.payload.models.filter((model: MLModel) => ['reid'].includes(model.type)),
-                classifiers: action.payload.models.filter((model: MLModel) => ['classifier'].includes(model.type)),
+                interactors: action.payload.models.filter((model: MLModel) => (
+                    [ModelType.INTERACTOR].includes(model.type)
+                )),
+                detectors: action.payload.models.filter((model: MLModel) => (
+                    [ModelType.DETECTOR].includes(model.type)
+                )),
+                trackers: action.payload.models.filter((model: MLModel) => (
+                    [ModelType.TRACKER].includes(model.type)
+                )),
+                reid: action.payload.models.filter((model: MLModel) => (
+                    [ModelType.REID].includes(model.type)
+                )),
+                classifiers: action.payload.models.filter((model: MLModel) => (
+                    [ModelType.CLASSIFIER].includes(model.type)
+                )),
                 totalCount: action.payload.models.length,
                 initialized: true,
                 fetching: false,
@@ -81,25 +91,25 @@ export default function (state = defaultState, action: ModelsActions | AuthActio
                 ...state,
                 fetching: false,
             };
-            if (['interactor'].includes(action.payload.model.type)) {
+            if ([ModelType.INTERACTOR].includes(action.payload.model.type)) {
                 return {
                     ...mutual,
                     interactors: [...state.interactors, action.payload.model],
                 };
             }
-            if (['detector'].includes(action.payload.model.type)) {
+            if ([ModelType.DETECTOR].includes(action.payload.model.type)) {
                 return {
                     ...mutual,
                     detectors: [...state.detectors, action.payload.model],
                 };
             }
-            if (['tracker'].includes(action.payload.model.type)) {
+            if ([ModelType.TRACKER].includes(action.payload.model.type)) {
                 return {
                     ...mutual,
                     trackers: [...state.trackers, action.payload.model],
                 };
             }
-            if (['reid'].includes(action.payload.model.type)) {
+            if ([ModelType.REID].includes(action.payload.model.type)) {
                 return {
                     ...mutual,
                     trackers: [...state.reid, action.payload.model],

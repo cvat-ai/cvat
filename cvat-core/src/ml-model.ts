@@ -153,7 +153,7 @@ export default class MLModel {
         return result;
     }
 
-    public async getPreview(): Promise<string | ArrayBuffer> {
+    public async getPreview(): Promise<string> {
         const result = await PluginRegistry.apiWrapper.call(this, MLModel.prototype.getPreview);
         return result;
     }
