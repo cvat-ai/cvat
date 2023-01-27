@@ -79,7 +79,7 @@ export default function Preview(props: Props): JSX.Element {
 
     if (preview.initialized && !preview.preview) {
         return (
-            <div className={emptyPreviewClassName || ''} aria-hidden>
+            <div onClick={onClick} className={emptyPreviewClassName || ''} aria-hidden>
                 <PictureOutlined />
             </div>
         );

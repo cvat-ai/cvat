@@ -7,12 +7,12 @@ import {
     deleteFrame,
     restoreFrame,
     getRanges,
-    getPreview,
     clear as clearFrames,
     findNotDeletedFrame,
     getContextImage,
     patchMeta,
     getDeletedFrames,
+    decodePreview,
 } from './frames';
 import Issue from './issue';
 import { checkObjectType } from './common';
@@ -146,8 +146,9 @@ export function implementJob(Job) {
             return '';
         }
 
-        const frameData = await getPreview(this.taskId, this.id);
-        return frameData;
+        const preview = await serverProxy.jobs.getPreview(this.id);
+        const decoded = await decodePreview(preview);
+        return decoded;
     };
 
     Job.prototype.frames.contextImage.implementation = async function (frameId) {
@@ -547,8 +548,9 @@ export function implementTask(Task) {
             return '';
         }
 
-        const frameData = await getPreview(this.id);
-        return frameData;
+        const preview = await serverProxy.tasks.getPreview(this.id);
+        const decoded = await decodePreview(preview);
+        return decoded;
     };
 
     Task.prototype.frames.delete.implementation = async function (frame) {

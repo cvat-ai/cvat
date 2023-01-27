@@ -1423,22 +1423,24 @@ async function getUsers(filter = { page_size: 'all' }) {
     return response.data.results;
 }
 
-async function getPreview(tid, jid) {
-    const { backendAPI } = config;
+function getPreview(instance) {
+    return async function (id: number) {
+        const { backendAPI } = config;
 
-    let response = null;
-    try {
-        const url = `${backendAPI}/${jid !== null ? 'jobs' : 'tasks'}/${jid || tid}/preview`;
-        response = await Axios.get(url, {
-            proxy: config.proxy,
-            responseType: 'blob',
-        });
-    } catch (errorData) {
-        const code = errorData.response ? errorData.response.status : errorData.code;
-        throw new ServerError(`Could not get preview frame for the task ${tid} from the server`, code);
-    }
+        let response = null;
+        try {
+            const url = `${backendAPI}/${instance}/${id}/preview`;
+            response = await Axios.get(url, {
+                proxy: config.proxy,
+                responseType: 'blob',
+            });
+        } catch (errorData) {
+            const code = errorData.response ? errorData.response.status : errorData.code;
+            throw new ServerError(`Could not get preview for "${instance}/${id}"`, code);
+        }
 
-    return response.data;
+        return response.data;
+    };
 }
 
 async function getImageContext(jid, frame) {
@@ -1982,30 +1984,6 @@ async function getCloudStorageContent(id, manifestPath) {
     return response.data;
 }
 
-async function getCloudStoragePreview(id) {
-    const { backendAPI } = config;
-
-    let response = null;
-    try {
-        const url = `${backendAPI}/cloudstorages/${id}/preview`;
-        response = await workerAxios.get(url, {
-            params: enableOrganization(),
-            proxy: config.proxy,
-            responseType: 'arraybuffer',
-        });
-    } catch (errorData) {
-        throw generateError({
-            message: '',
-            response: {
-                ...errorData.response,
-                data: String.fromCharCode.apply(null, new Uint8Array(errorData.response.data)),
-            },
-        });
-    }
-
-    return new Blob([new Uint8Array(response)]);
-}
-
 async function getCloudStorageStatus(id) {
     const { backendAPI } = config;
 
@@ -2373,6 +2351,7 @@ export default Object.freeze({
         create: createProject,
         delete: deleteProject,
         exportDataset: exportDataset('projects'),
+        getPreview: getPreview('projects'),
         backup: backupProject,
         restore: restoreProject,
         importDataset,
@@ -2384,12 +2363,14 @@ export default Object.freeze({
         create: createTask,
         delete: deleteTask,
         exportDataset: exportDataset('tasks'),
+        getPreview: getPreview('tasks'),
         backup: backupTask,
         restore: restoreTask,
     }),
 
     jobs: Object.freeze({
         get: getJobs,
+        getPreview: getPreview('jobs'),
         save: saveJob,
         exportDataset: exportDataset('jobs'),
     }),
@@ -2446,7 +2427,7 @@ export default Object.freeze({
     cloudStorages: Object.freeze({
         get: getCloudStorages,
         getContent: getCloudStorageContent,
-        getPreview: getCloudStoragePreview,
+        getPreview: getPreview('cloudstorages'),
         getStatus: getCloudStorageStatus,
         create: createCloudStorage,
         delete: deleteCloudStorage,

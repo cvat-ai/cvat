@@ -262,11 +262,7 @@ export default function implementAPI(cvat) {
         }
 
         const projectsData = await serverProxy.projects.get(searchParams);
-        const projects = projectsData.map((project) => {
-            project.task_ids = project.tasks;
-            return project;
-        }).map((project) => new Project(project));
-
+        const projects = projectsData.map((project) => new Project(project));
         projects.count = projectsData.count;
 
         return projects;
