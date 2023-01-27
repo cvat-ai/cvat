@@ -621,11 +621,11 @@ class TaskAnnotation:
                 _data.data = patch_job_data(jid, job_data, action)
             if _data.version > self.ir_data.version:
                 self.ir_data.version = _data.version
-            self._merge_data(_data, jobs[jid]["start"], self.db_task.overlap)
+            self._merge_data(_data, jobs[jid]["start"], self.db_task.overlap, self.db_task.dimension)
 
-    def _merge_data(self, data, start_frame, overlap):
+    def _merge_data(self, data, start_frame, overlap, dimension):
         annotation_manager = AnnotationManager(self.ir_data)
-        annotation_manager.merge(data, start_frame, overlap)
+        annotation_manager.merge(data, start_frame, overlap, dimension)
 
     def put(self, data):
         self._patch_data(data, None)
@@ -654,7 +654,8 @@ class TaskAnnotation:
             db_segment = db_job.segment
             start_frame = db_segment.start_frame
             overlap = self.db_task.overlap
-            self._merge_data(annotation.ir_data, start_frame, overlap)
+            dimension = self.db_task.dimension
+            self._merge_data(annotation.ir_data, start_frame, overlap, dimension)
 
     def export(self, dst_file, exporter, host='', **options):
         task_data = TaskData(

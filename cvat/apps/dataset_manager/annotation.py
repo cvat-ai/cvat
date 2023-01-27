@@ -1,15 +1,17 @@
 # Copyright (C) 2019-2022 Intel Corporation
+# Copyright (C) 2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from copy import copy, deepcopy
 
 import numpy as np
+from functools import reduce
 from itertools import chain
 from scipy.optimize import linear_sum_assignment
 from shapely import geometry
 
-from cvat.apps.engine.models import ShapeType
+from cvat.apps.engine.models import ShapeType, DimensionType
 from cvat.apps.engine.serializers import LabeledDataSerializer
 
 
@@ -147,15 +149,15 @@ class AnnotationManager:
     def __init__(self, data):
         self.data = data
 
-    def merge(self, data, start_frame, overlap):
+    def merge(self, data, start_frame, overlap, dimension):
         tags = TagManager(self.data.tags)
-        tags.merge(data.tags, start_frame, overlap)
+        tags.merge(data.tags, start_frame, overlap, dimension)
 
         shapes = ShapeManager(self.data.shapes)
-        shapes.merge(data.shapes, start_frame, overlap)
+        shapes.merge(data.shapes, start_frame, overlap, dimension)
 
         tracks = TrackManager(self.data.tracks)
-        tracks.merge(data.tracks, start_frame, overlap)
+        tracks.merge(data.tracks, start_frame, overlap, dimension)
 
     def to_shapes(self, end_frame):
         shapes = self.data.shapes
@@ -190,7 +192,7 @@ class ObjectManager:
         raise NotImplementedError()
 
     @staticmethod
-    def _calc_objects_similarity(obj0, obj1, start_frame, overlap):
+    def _calc_objects_similarity(obj0, obj1, start_frame, overlap, dimension):
         raise NotImplementedError()
 
     @staticmethod
@@ -200,7 +202,7 @@ class ObjectManager:
     def _modify_unmached_object(self, obj, end_frame):
         raise NotImplementedError()
 
-    def merge(self, objects, start_frame, overlap):
+    def merge(self, objects, start_frame, overlap, dimension):
         # 1. Split objects on two parts: new and which can be intersected
         # with existing objects.
         new_objects = [obj for obj in objects
@@ -239,7 +241,7 @@ class ObjectManager:
                 for i, int_obj in enumerate(int_objects):
                     for j, old_obj in enumerate(old_objects):
                         cost_matrix[i][j] = 1 - self._calc_objects_similarity(
-                            int_obj, old_obj, start_frame, overlap)
+                            int_obj, old_obj, start_frame, overlap, dimension)
 
                 # 6. Find optimal solution using Hungarian algorithm.
                 row_ind, col_ind = linear_sum_assignment(cost_matrix)
@@ -274,7 +276,7 @@ class TagManager(ObjectManager):
         return 0.25
 
     @staticmethod
-    def _calc_objects_similarity(obj0, obj1, start_frame, overlap):
+    def _calc_objects_similarity(obj0, obj1, start_frame, overlap, dimension):
         # TODO: improve the trivial implementation, compare attributes
         return 1 if obj0["label_id"] == obj1["label_id"] else 0
 
@@ -320,7 +322,7 @@ class ShapeManager(ObjectManager):
         return 0.25
 
     @staticmethod
-    def _calc_objects_similarity(obj0, obj1, start_frame, overlap):
+    def _calc_objects_similarity(obj0, obj1, start_frame, overlap, dimension):
         def _calc_polygons_similarity(p0, p1):
             if p0.is_valid and p1.is_valid: # check validity of polygons
                 overlap_area = p0.intersection(p1).area
@@ -335,17 +337,61 @@ class ShapeManager(ObjectManager):
         has_same_label = obj0.get("label_id") == obj1.get("label_id")
         if has_same_type and has_same_label:
             if obj0["type"] == ShapeType.RECTANGLE:
+                # FIXME: need to consider rotated boxes
                 p0 = geometry.box(*obj0["points"])
                 p1 = geometry.box(*obj1["points"])
 
                 return _calc_polygons_similarity(p0, p1)
+            elif obj0["type"] == ShapeType.CUBOID and dimension == DimensionType.DIM_3D:
+                [x_c0, y_c0, z_c0] = obj0["points"][0:3]
+                [x_c1, y_c1, z_c1] = obj1["points"][0:3]
+
+                [x_len0, y_len0, z_len0] = obj0["points"][6:9]
+                [x_len1, y_len1, z_len1] = obj1["points"][6:9]
+
+                top_view_0 = [
+                    x_c0 - x_len0 / 2,
+                    y_c0 - y_len0 / 2,
+                    x_c0 + x_len0 / 2,
+                    y_c0 + y_len0 / 2
+                ]
+
+                top_view_1 = [
+                    x_c1 - x_len1 / 2,
+                    y_c1 - y_len1 / 2,
+                    x_c1 + x_len1 / 2,
+                    y_c1 + y_len1 / 2
+                ]
+
+                p_top0 = geometry.box(*top_view_0)
+                p_top1 = geometry.box(*top_view_1)
+                top_similarity =_calc_polygons_similarity(p_top0, p_top1)
+
+                side_view_0 = [
+                    x_c0 - x_len0 / 2,
+                    z_c0 - z_len0 / 2,
+                    x_c0 + x_len0 / 2,
+                    z_c0 + z_len0 / 2
+                ]
+
+                side_view_1 = [
+                    x_c1 - x_len1 / 2,
+                    z_c1 - z_len1 / 2,
+                    x_c1 + x_len1 / 2,
+                    z_c1 + z_len1 / 2
+                ]
+                p_side0 = geometry.box(*side_view_0)
+                p_side1 = geometry.box(*side_view_1)
+                side_similarity =_calc_polygons_similarity(p_side0, p_side1)
+
+                return top_similarity * side_similarity
             elif obj0["type"] == ShapeType.POLYGON:
                 p0 = geometry.Polygon(pairwise(obj0["points"]))
                 p1 = geometry.Polygon(pairwise(obj1["points"]))
 
                 return _calc_polygons_similarity(p0, p1)
             else:
-                return 0 # FIXME: need some similarity for points and polylines
+                return 0 # FIXME: need some similarity for points, polylines, ellipses and 2D cuboids
         return 0
 
     @staticmethod
@@ -404,7 +450,7 @@ class TrackManager(ObjectManager):
         return 0.5
 
     @staticmethod
-    def _calc_objects_similarity(obj0, obj1, start_frame, overlap):
+    def _calc_objects_similarity(obj0, obj1, start_frame, overlap, dimension):
         if obj0["label_id"] == obj1["label_id"]:
             # Here start_frame is the start frame of next segment
             # and stop_frame is the stop frame of current segment
@@ -424,7 +470,7 @@ class TrackManager(ObjectManager):
                     if shape0["outside"] != shape1["outside"]:
                         error += 1
                     else:
-                        error += 1 - ShapeManager._calc_objects_similarity(shape0, shape1, start_frame, overlap)
+                        error += 1 - ShapeManager._calc_objects_similarity(shape0, shape1, start_frame, overlap, dimension)
                     count += 1
                 elif shape0 or shape1:
                     error += 1
@@ -741,11 +787,15 @@ class TrackManager(ObjectManager):
         for shape in sorted(track["shapes"], key=lambda shape: shape["frame"]):
             curr_frame = shape["frame"]
             if end_frame <= curr_frame:
-                if not prev_shape:
-                    shape["keyframe"] = True
-                    shapes.append(shape)
-                    prev_shape = shape
-                break
+                # if we exceed endframe, we still need to interpolate using the next keyframe
+                # but we keep the results only up to end_frame
+                interpolated = interpolate(prev_shape, deepcopy(shape))
+                for shape in sorted(interpolated, key=lambda shape: shape["frame"]):
+                    if shape["frame"] < end_frame:
+                        shapes.append(shape)
+                    else:
+                        break
+                return shapes
 
             if prev_shape:
                 assert shape["frame"] > prev_shape["frame"]
@@ -760,6 +810,7 @@ class TrackManager(ObjectManager):
             prev_shape = shape
 
         if not prev_shape["outside"]:
+            # valid when the latest keyframe of a track less than end_frame and it is not outside, so, need to propagate
             shape = deepcopy(prev_shape)
             shape["frame"] = end_frame
             shapes.extend(interpolate(prev_shape, shape))
