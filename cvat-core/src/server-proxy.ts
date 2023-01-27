@@ -1353,7 +1353,7 @@ async function getJobIssues(jobID: number) {
         }, {});
 
         for (const issue of Object.keys(commentsByIssue)) {
-            commentsByIssue[issue] = [...commentsResponse.results].sort((a, b) => a.id - b.id);
+            commentsByIssue[issue].sort((a, b) => a.id - b.id);
             issuesById[issue].comments = commentsByIssue[issue];
         }
     } catch (errorData) {
