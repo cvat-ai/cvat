@@ -1,13 +1,13 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import {
-    ActiveInference, RQStatus, ModelsQuery, Indexable, ModelProvider,
+    ActiveInference, RQStatus, ModelsQuery, Indexable,
 } from 'reducers';
-import { getCore, MLModel } from 'cvat-core-wrapper';
+import { getCore, MLModel, ModelProvider } from 'cvat-core-wrapper';
 
 const cvat = getCore();
 
