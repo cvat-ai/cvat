@@ -47,7 +47,7 @@ context('Base actions on the project', () => {
     function getProjectID(myProjectName) {
         cy.contains('.cvat-project-name', myProjectName)
             .parents('.cvat-project-details')
-            .should('have.attr', 'cvat-project-id')
+            .should('have.attr', 'data-cvat-project-id')
             .then(($projectID) => {
                 projectID = $projectID;
             });
