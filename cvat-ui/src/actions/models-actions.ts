@@ -267,8 +267,7 @@ export function getModelProvidersAsync(): ThunkAction {
     return async function (dispatch) {
         dispatch(modelsActions.getModelProviders());
         try {
-            // TODO change it to lambda
-            const providers = await cvat.functions.providers();
+            const providers = await cvat.lambda.providers();
             dispatch(modelsActions.getModelProvidersSuccess(providers));
         } catch (error) {
             dispatch(modelsActions.getModelProvidersFailed(error));

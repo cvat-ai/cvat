@@ -202,10 +202,8 @@ function build() {
                 const result = await PluginRegistry.apiWrapper(cvat.lambda.requests);
                 return result;
             },
-        },
-        functions: {
             async providers() {
-                const result = await PluginRegistry.apiWrapper(cvat.functions.providers);
+                const result = await PluginRegistry.apiWrapper(cvat.lambda.providers);
                 return result;
             },
         },
@@ -311,7 +309,6 @@ function build() {
     cvat.enums = Object.freeze(cvat.enums);
     cvat.cloudStorages = Object.freeze(cvat.cloudStorages);
     cvat.organizations = Object.freeze(cvat.organizations);
-    cvat.functions = Object.freeze(cvat.functions);
 
     const implemented = Object.freeze(implementAPI(cvat));
     return implemented;

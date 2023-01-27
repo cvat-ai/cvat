@@ -37,6 +37,7 @@ export default function implementAPI(cvat) {
     cvat.lambda.cancel.implementation = lambdaManager.cancel.bind(lambdaManager);
     cvat.lambda.listen.implementation = lambdaManager.listen.bind(lambdaManager);
     cvat.lambda.requests.implementation = lambdaManager.requests.bind(lambdaManager);
+    cvat.lambda.providers.implementation = lambdaManager.providers.bind(lambdaManager);
 
     cvat.server.about.implementation = async () => {
         const result = await serverProxy.server.about();
@@ -345,12 +346,5 @@ export default function implementAPI(cvat) {
         return webhooks;
     };
 
-    cvat.functions.providers.implementation = async () => {
-        const providersData = await serverProxy.functions.providers();
-        const providers = Object.entries(providersData).map(([provider, attributes]) => (
-            { name: provider, attributes }
-        ));
-        return providers;
-    };
     return cvat;
 }

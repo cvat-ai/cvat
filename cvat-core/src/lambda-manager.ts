@@ -162,6 +162,14 @@ class LambdaManager {
             timeout: setTimeout(timeoutCallback, 2000),
         };
     }
+
+    async providers(): Promise<any> {
+        const providersData = await serverProxy.functions.providers();
+        const providers = Object.entries(providersData).map(([provider, attributes]) => (
+            { name: provider, attributes }
+        ));
+        return providers;
+    }
 }
 
 export default new LambdaManager();
