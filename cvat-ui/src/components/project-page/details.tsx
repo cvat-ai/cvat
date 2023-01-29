@@ -28,7 +28,7 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
     const [projectName, setProjectName] = useState(project.name);
 
     return (
-        <div cvat-project-id={project.id} className='cvat-project-details'>
+        <div data-cvat-project-id={project.id} className='cvat-project-details'>
             <Row>
                 <Col>
                     <Title

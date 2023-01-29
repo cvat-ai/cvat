@@ -6,7 +6,7 @@
 
 import { taskName, advancedConfigurationParams, labelName } from '../../support/const';
 
-context('Point coordinates are not duplicated while polygon\'s interpolation.', () => {
+context("Point coordinates are not duplicated while polygon's interpolation.", () => {
     const issueId = '1886';
     const pointsCoordinates = [];
     const createPolygonTrack = {

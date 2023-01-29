@@ -31,7 +31,7 @@ context('Delete a label from a project.', () => {
     function getProjectID() {
         cy.contains('.cvat-project-name', projectName)
             .parents('.cvat-project-details')
-            .should('have.attr', 'cvat-project-id')
+            .should('have.attr', 'data-cvat-project-id')
             .then(($projectID) => {
                 projectID = $projectID;
             });
