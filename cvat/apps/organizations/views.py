@@ -3,17 +3,13 @@
 #
 # SPDX-License-Identifier: MIT
 
-from rest_framework import mixins, viewsets, exceptions, status, response
+from rest_framework import mixins, viewsets
 from rest_framework.permissions import SAFE_METHODS
-from rest_framework.decorators import action
 from django.utils.crypto import get_random_string
 
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
 from cvat.apps.engine.mixins import PartialUpdateModelMixin, DestroyModelMixin, CreateModelMixin
 
-from cvat.apps.limit_manager.core.limits import LimitationManager, OrgCapabilityContext
-from cvat.apps.limit_manager.serializers import OrgLimitationReadSerializer
-from cvat.apps.limit_manager.models import LimitationTypeChoice
 from cvat.apps.iam.permissions import (
     InvitationPermission, MembershipPermission, OrganizationPermission)
 from .models import Invitation, Membership, Organization
@@ -83,22 +79,6 @@ class OrganizationViewSet(viewsets.GenericViewSet,
         if not serializer.validated_data.get('name'):
             extra_kwargs.update({ 'name': serializer.validated_data['slug'] })
         serializer.save(**extra_kwargs)
-
-    def perform_destroy(self, instance):
-        limitation = LimitationManager(OrgCapabilityContext(org_id=instance.id)).get_or_create()
-        if limitation.type == LimitationTypeChoice.PAID:
-            raise exceptions.ParseError("Unable to remove organization with a paid plan")
-        return super().perform_destroy(instance)
-
-    @action(detail=True, methods=['GET', 'PATCH'])
-    def limitations(self, request, pk):
-        organization = self.get_object()
-        limitation_manager = LimitationManager(OrgCapabilityContext(org_id=organization.id))
-        if request.method == "PATCH":
-            limitation_manager.update(request.data)
-        instance = limitation_manager.get_or_create()
-        serializer = OrgLimitationReadSerializer(instance=instance, context={'request': request})
-        return response.Response(serializer.data, status=status.HTTP_200_OK)
 
     class Meta:
         model = Membership
