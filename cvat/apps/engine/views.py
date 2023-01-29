@@ -40,8 +40,6 @@ from django_sendfile import sendfile
 
 import cvat.apps.dataset_manager as dm
 import cvat.apps.dataset_manager.views  # pylint: disable=unused-import
-from cvat.apps.limit_manager.core.limits import LimitationManager, UserCapabilityContext
-from cvat.apps.limit_manager.serializers import UserLimitationReadSerializer
 from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
 from cvat.apps.dataset_manager.bindings import CvatImportError
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
@@ -1989,16 +1987,6 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         serializer_class = self.get_serializer_class()
         serializer = serializer_class(request.user, context={ "request": request })
         return Response(serializer.data)
-
-    @action(detail=True, methods=['GET', 'PATCH'])
-    def limitations(self, request, pk):
-        user = self.get_object()
-        limitation_manager = LimitationManager(UserCapabilityContext(user_id=user.id))
-        if request.method == "PATCH":
-            limitation_manager.update(request.data)
-        instance = limitation_manager.get_or_create()
-        serializer = UserLimitationReadSerializer(instance=instance, context={'request': request})
-        return Response(serializer.data, status=status.HTTP_200_OK)
 
 @extend_schema(tags=['cloudstorages'])
 @extend_schema_view(
