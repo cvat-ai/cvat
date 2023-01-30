@@ -7,28 +7,16 @@ from http import HTTPStatus
 
 import pytest
 
-from shared.utils.config import get_method, patch_method, post_method
+from shared.utils.config import post_method
 
 
 class TestCreateInvitations:
     ROLES = ["worker", "supervisor", "maintainer", "owner"]
 
-    @classmethod
-    def _increase_limits(cls, org_id, admin_user):
-        response = get_method(admin_user, "limitations", org_id=org_id)
-        response.raise_for_status()
-
-        limitation = response.json()[0]
-        response = patch_method(
-            admin_user, f"limitations/{limitation['id']}", data={"memberships": 100}, org_id=org_id
-        )
-        response.raise_for_status()
-
     @pytest.fixture(autouse=True)
     def setup(self, restore_db_per_function, organizations, memberships, admin_user):
         self.org_id = 2
         self.owner = self.get_member("owner", memberships, self.org_id)
-        self._increase_limits(self.org_id, admin_user)
 
     def _test_post_invitation_201(self, user, data, invitee, **kwargs):
         response = post_method(user, "invitations", data, **kwargs)
@@ -41,7 +29,7 @@ class TestCreateInvitations:
     def _test_post_invitation_403(self, user, data, **kwargs):
         response = post_method(user, "invitations", data, **kwargs)
         assert response.status_code == HTTPStatus.FORBIDDEN, response.content
-        assert response.json() == {"detail": "not authorized"}  # check for the correct reason
+        assert "You do not have permission" in str(response.content)
 
     @staticmethod
     def get_non_member_users(memberships, users):

@@ -125,13 +125,6 @@ class TestPostCloudStorage:
         }
     ]
 
-    @pytest.fixture(autouse=True)
-    def _remove_limitations(self, restore_db_per_function, organizations, admin_user):
-        data = {"cloud_storages": None}
-        for org in organizations:
-            response = patch_method(admin_user, f"organizations/{org['id']}/limitations", data)
-            assert response.status_code == HTTPStatus.OK, "Failed limitations removing"
-
     def _test_can_create(self, user, spec, **kwargs):
         response = post_method(user, "cloudstorages", spec, **kwargs)
         response_data = response.json()
