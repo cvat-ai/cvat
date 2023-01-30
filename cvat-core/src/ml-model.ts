@@ -6,7 +6,7 @@
 import { isBrowser, isNode } from 'browser-or-node';
 import serverProxy from './server-proxy';
 import PluginRegistry from './plugins';
-import { ModelProviders, ModelKind } from './enums';
+import { ModelProviders, ModelKind, ModelReturnType } from './enums';
 
 interface ModelAttribute {
     name: string;
@@ -38,6 +38,7 @@ interface SerializedModel {
     description?: string;
     kind?: ModelKind;
     type?: string;
+    return_type?: ModelReturnType;
     owner?: any;
     provider?: string;
     api_key?: string;
@@ -136,6 +137,10 @@ export default class MLModel {
 
     public get url(): string | undefined {
         return this.serialized?.url;
+    }
+
+    public get returnType(): ModelReturnType | undefined {
+        return this.serialized?.return_type;
     }
 
     // Used to set a callback when the tool is blocked in UI

@@ -21,7 +21,7 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 import { Label as LabelInterface } from 'components/labels-editor/common';
 import { clamp } from 'utils/math';
 import config from 'config';
-import { MLModel, ModelKind } from 'cvat-core-wrapper';
+import { MLModel, ModelKind, ModelReturnType } from 'cvat-core-wrapper';
 import { DimensionType } from '../../reducers';
 
 interface Props {
@@ -68,6 +68,8 @@ function DetectorRunner(props: Props): JSX.Element {
     const isDetector = model && model.kind === ModelKind.DETECTOR;
     const isReId = model && model.kind === ModelKind.REID;
     const isClassifier = model && model.kind === ModelKind.CLASSIFIER;
+    const convertMasksToPolygonsAvailable = isDetector &&
+                    (!model.returnType || model.returnType === ModelReturnType.MASK);
     const buttonEnabled =
         model && (model.kind === ModelKind.REID ||
             (model.kind === ModelKind.DETECTOR && !!Object.keys(mapping).length) ||
@@ -225,7 +227,7 @@ function DetectorRunner(props: Props): JSX.Element {
     return (
         <div className='cvat-run-model-content'>
             <Row align='middle'>
-                <Col span={4}>MLModel:</Col>
+                <Col span={4}>Model:</Col>
                 <Col span={20}>
                     <Select
                         placeholder={dimension === DimensionType.DIM_2D ? 'Select a model' : 'No models available'}
@@ -359,7 +361,7 @@ function DetectorRunner(props: Props): JSX.Element {
                     </Row>
                 </>
             ) : null}
-            {isDetector && (
+            {convertMasksToPolygonsAvailable && (
                 <div className='detector-runner-convert-masks-to-polygons-wrapper'>
                     <Switch
                         checked={convertMasksToPolygons}
