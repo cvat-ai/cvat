@@ -33,20 +33,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   The corresponding arguments are keyword-only now.
   (<https://github.com/opencv/cvat/pull/5502>)
 - \[Server API\] Added missing pagination or pagination parameters in
-  `/project/{id}/tasks`, `/tasks/{id}/jobs`, `/jobs/{id}/issues`,
-  `/jobs/{id}/commits`, `/issues/{id}/comments`, `/organizations`
+  `/jobs/{id}/commits`, `/organizations`
   (<https://github.com/opencv/cvat/pull/5557>)
 - Windows Installation Instructions adjusted to work around <https://github.com/nuclio/nuclio/issues/1821>
 - The contour detection function for semantic segmentation (<https://github.com/opencv/cvat/pull/4665>)
 - Delete newline character when generating a webhook signature (<https://github.com/opencv/cvat/pull/5622>)
 
 ### Deprecated
-- \[Server API\] Endpoints with collections are deprecated in favor of their full variants
-  `/project/{id}/tasks`, `/tasks/{id}/jobs`, `/jobs/{id}/issues`, `/issues/{id}/comments`
-  (<https://github.com/opencv/cvat/pull/5575>)
+- TBD
 
 ### Removed
-- TDB
+- \[Server API\] Endpoints with collections are removed in favor of their full variants
+  `/project/{id}/tasks`, `/tasks/{id}/jobs`, `/jobs/{id}/issues`, `/issues/{id}/comments`.
+  Corresponding fields are added or changed to provide a link to the child collection
+  in `/projects/{id}`, `/tasks/{id}`, `/jobs/{id}`, `/issues/{id}`
+  (<https://github.com/opencv/cvat/pull/5575>)
 
 ### Fixed
 - Helm: Empty password for Redis (<https://github.com/opencv/cvat/pull/5520>)
