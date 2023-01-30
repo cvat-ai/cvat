@@ -7,7 +7,6 @@ import io
 import os
 import os.path as osp
 import pytz
-import shutil
 import traceback
 from datetime import datetime
 from distutils.util import strtobool
@@ -848,18 +847,6 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             db_project = serializer.instance.project
             db_project.save()
             assert serializer.instance.organization == db_project.organization
-
-    def perform_destroy(self, instance):
-        task_dirname = instance.get_dirname()
-        super().perform_destroy(instance)
-        shutil.rmtree(task_dirname, ignore_errors=True)
-        if instance.data and not instance.data.tasks.all():
-            shutil.rmtree(instance.data.get_data_dirname(), ignore_errors=True)
-            instance.data.delete()
-        if instance.project:
-            db_project = instance.project
-            db_project.save()
-
 
     @extend_schema(summary='Method returns a list of jobs for a specific task',
         responses=JobReadSerializer(many=True)) # Duplicate to still get 'list' op. name
@@ -2067,11 +2054,6 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         serializer.save(
             owner=self.request.user,
             organization=self.request.iam_context['organization'])
-
-    def perform_destroy(self, instance):
-        cloud_storage_dirname = instance.get_storage_dirname()
-        super().perform_destroy(instance)
-        shutil.rmtree(cloud_storage_dirname, ignore_errors=True)
 
     def create(self, request, *args, **kwargs):
         try:

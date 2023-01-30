@@ -108,6 +108,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     private isPerspectiveBeingDragged: boolean;
     private activatedElementID: number | null;
     private isCtrlDown: boolean;
+    private sceneBBox: THREE.Box3;
     private drawnObjects: Record<number, {
         data: DrawnObjectData;
         cuboid: CuboidModel;
@@ -162,6 +163,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         this.activatedElementID = null;
         this.drawnObjects = {};
         this.model = model;
+        this.sceneBBox = new THREE.Box3();
         this.cameraSettings = {
             perspective: {
                 position: [-15, 0, 8],
@@ -406,6 +408,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 if (!intersects.length) {
                     const { x, y, z } = this.action.frameCoordinates;
                     this.positionAllViews(x, y, z, true);
+                    this.updateCameraFrustrumPlane();
                 }
                 return;
             }
@@ -555,47 +558,110 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             .map(({ cuboid }) => cuboid[view]).filter((mesh: THREE.Mesh) => mesh.visible);
     }
 
+    private updateCameraFrustrumPlane(viewType?: ViewType): void {
+        const setCameraFrustrumPlane = (
+            camera: THREE.OrthographicCamera,
+            center: THREE.Vector3, dimensions: THREE.Vector3,
+            view: ViewType,
+        ): void => {
+            const [width, length] = dimensions.toArray();
+            const [cx, cy, cz] = center.toArray();
+            const distanceUpToCamera = Math.sqrt(
+                (camera.position.x - cx) ** 2 +
+                (camera.position.y - cy) ** 2 +
+                (camera.position.z - cz) ** 2,
+            );
+
+            const MARGIN = 0.1;
+            if (view === ViewType.FRONT) {
+                const objectOffset = Math.min(1 - ((width / 2) / distanceUpToCamera));
+                camera.near = distanceUpToCamera * objectOffset - MARGIN;
+                camera.far = camera.near + width + MARGIN * 2;
+            } else if (view === ViewType.SIDE) {
+                const objectOffset = Math.min(1, 1 - ((length / 2) / distanceUpToCamera));
+                camera.near = distanceUpToCamera * objectOffset - MARGIN;
+                camera.far = camera.near + length + MARGIN * 2;
+            } else if (view === ViewType.TOP) {
+                camera.near = 0;
+                camera.far = 1000;
+            }
+        };
+
+        const { selectedCuboid } = this;
+        const sceneCenter = this.sceneBBox.getCenter(new THREE.Vector3());
+        const sceneDimensions = this.sceneBBox.max.clone().sub(this.sceneBBox.min);
+
+        let center = sceneCenter;
+        let dimensions = sceneDimensions;
+
+        if (selectedCuboid) {
+            center = selectedCuboid.perspective.position.clone();
+            dimensions = selectedCuboid.perspective.scale.clone();
+        }
+
+        if (viewType !== ViewType.FRONT) {
+            setCameraFrustrumPlane(
+                this.views.front.camera as THREE.OrthographicCamera, center, dimensions, ViewType.FRONT,
+            );
+        }
+
+        if (viewType !== ViewType.TOP) {
+            setCameraFrustrumPlane(
+                this.views.top.camera as THREE.OrthographicCamera, center, dimensions, ViewType.TOP,
+            );
+        }
+
+        if (viewType !== ViewType.SIDE) {
+            setCameraFrustrumPlane(
+                this.views.side.camera as THREE.OrthographicCamera, center, dimensions, ViewType.SIDE,
+            );
+        }
+    }
+
     private setDefaultZoom(): void {
         if (this.model.data.activeElement.clientID === null) {
-            Object.keys(this.views).forEach((view: string): void => {
+            this.updateCameraFrustrumPlane();
+            Object.keys(this.views).forEach((view: ViewType): void => {
                 const viewType = this.views[view as keyof Views];
                 if (view !== ViewType.PERSPECTIVE) {
-                    viewType.camera.zoom = CONST.FOV_DEFAULT;
+                    const { camera } = viewType;
+                    camera.zoom = CONST.FOV_DEFAULT;
                     viewType.camera.updateProjectionMatrix();
                 }
             });
         } else {
-            const canvasTop = this.views.top.renderer.domElement;
+            const { top, front, side } = this.views;
+            const { renderer: { domElement: canvasTop }, camera: cameraTop } = top;
             const bboxtop = new THREE.Box3().setFromObject(this.selectedCuboid.top);
             const x1 = Math.min(
                 canvasTop.offsetWidth / (bboxtop.max.x - bboxtop.min.x),
                 canvasTop.offsetHeight / (bboxtop.max.y - bboxtop.min.y),
             ) * 0.4;
-            this.views.top.camera.zoom = x1 / 50;
-            this.views.top.camera.updateProjectionMatrix();
-            this.views.top.camera.updateMatrix();
+            cameraTop.zoom = x1 / 50;
+            cameraTop.updateProjectionMatrix();
+            cameraTop.updateMatrix();
             this.updateHelperPointsSize(ViewType.TOP);
 
-            const canvasFront = this.views.top.renderer.domElement;
+            const { renderer: { domElement: canvasFront }, camera: cameraFront } = front;
             const bboxfront = new THREE.Box3().setFromObject(this.selectedCuboid.front);
             const x2 = Math.min(
                 canvasFront.offsetWidth / (bboxfront.max.y - bboxfront.min.y),
                 canvasFront.offsetHeight / (bboxfront.max.z - bboxfront.min.z),
             ) * 0.4;
-            this.views.front.camera.zoom = x2 / 50;
-            this.views.front.camera.updateProjectionMatrix();
-            this.views.front.camera.updateMatrix();
+            cameraFront.zoom = x2 / 50;
+            cameraFront.updateProjectionMatrix();
+            cameraFront.updateMatrix();
             this.updateHelperPointsSize(ViewType.FRONT);
 
-            const canvasSide = this.views.side.renderer.domElement;
+            const { renderer: { domElement: canvasSide }, camera: cameraSide } = side;
             const bboxside = new THREE.Box3().setFromObject(this.selectedCuboid.side);
             const x3 = Math.min(
                 canvasSide.offsetWidth / (bboxside.max.x - bboxside.min.x),
                 canvasSide.offsetHeight / (bboxside.max.z - bboxside.min.z),
             ) * 0.4;
-            this.views.side.camera.zoom = x3 / 50;
-            this.views.side.camera.updateProjectionMatrix();
-            this.views.side.camera.updateMatrix();
+            cameraSide.zoom = x3 / 50;
+            cameraSide.updateProjectionMatrix();
+            cameraSide.updateMatrix();
             this.updateHelperPointsSize(ViewType.SIDE);
         }
     }
@@ -858,7 +924,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
             this.activatedElementID = +clientID;
             this.rotatePlane(null, null);
-            this.detachCamera(null);
+            this.detachCamera();
+            this.updateCameraFrustrumPlane();
             [ViewType.TOP, ViewType.SIDE, ViewType.FRONT]
                 .forEach((type) => this.updateHelperPointsSize(type));
         }
@@ -1268,6 +1335,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             );
         }
 
+        this.sceneBBox = new THREE.Box3().setFromObject(points);
         this.views.perspective.scene.add(points.clone());
         this.views.perspective.scene.add(new THREE.AxesHelper(5));
         // Setup TopView
@@ -1369,7 +1437,10 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         }
     }
 
-    private static resizeRendererToDisplaySize(viewName: string, view: RenderView): void {
+    private static resizeRendererToDisplaySize(
+        viewName: string,
+        view: RenderView,
+    ): void {
         const { camera, renderer } = view;
         const canvas = renderer.domElement;
         if (!canvas.parentElement) return;
@@ -1389,8 +1460,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                     camera.top = viewSize / 2 + topViewFactor;
                     camera.bottom = -viewSize / 2 - topViewFactor;
                 }
-                camera.near = -50;
-                camera.far = 50;
             }
             view.renderer.setSize(width, height);
             view.camera.updateProjectionMatrix();
@@ -1432,6 +1501,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         Object.keys(this.views).forEach((view: string): void => {
             const viewType = this.views[view as keyof Views];
             if (!(viewType.controls && viewType.camera && viewType.rayCaster)) return;
+
+            const { clientID } = this.model.data.activeElement;
             Canvas3dViewImpl.resizeRendererToDisplaySize(view, viewType);
             if (viewType.controls.enabled) {
                 viewType.controls.update(this.clock.getDelta());
@@ -1442,7 +1513,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             if (view === ViewType.PERSPECTIVE && viewType.scene.children.length !== 0) {
                 this.renderRayCaster(viewType);
             }
-            const { clientID } = this.model.data.activeElement;
             if (clientID !== null && view !== ViewType.PERSPECTIVE) {
                 viewType.rayCaster.renderer.setFromCamera(viewType.rayCaster.mouseVector, viewType.camera);
                 // First Scan
@@ -1468,7 +1538,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
         if (this.action.detachCam && this.action.detachCamRef === this.model.data.activeElement.clientID) {
             try {
-                this.detachCamera(null);
+                this.detachCamera();
             } finally {
                 this.action.detachCam = false;
             }
@@ -1476,23 +1546,28 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     }
 
     private adjustPerspectiveCameras(): void {
+        const { camera: cameraTop } = this.views.top;
+        const { camera: cameraSide } = this.views.side;
+        const { camera: cameraFront } = this.views.front;
+        const { selectedCuboid } = this;
+
         const coordinatesTop = this.selectedCuboid.getReferenceCoordinates(ViewType.TOP);
         const sphericalTop = new THREE.Spherical();
         sphericalTop.setFromVector3(coordinatesTop);
-        this.views.top.camera.position.setFromSpherical(sphericalTop);
-        this.views.top.camera.updateProjectionMatrix();
+        cameraTop.position.setFromSpherical(sphericalTop);
+        cameraTop.updateProjectionMatrix();
 
-        const coordinatesSide = this.selectedCuboid.getReferenceCoordinates(ViewType.SIDE);
+        const coordinatesSide = selectedCuboid.getReferenceCoordinates(ViewType.SIDE);
         const sphericalSide = new THREE.Spherical();
         sphericalSide.setFromVector3(coordinatesSide);
-        this.views.side.camera.position.setFromSpherical(sphericalSide);
-        this.views.side.camera.updateProjectionMatrix();
+        cameraSide.position.setFromSpherical(sphericalSide);
+        cameraSide.updateProjectionMatrix();
 
-        const coordinatesFront = this.selectedCuboid.getReferenceCoordinates(ViewType.FRONT);
+        const coordinatesFront = selectedCuboid.getReferenceCoordinates(ViewType.FRONT);
         const sphericalFront = new THREE.Spherical();
         sphericalFront.setFromVector3(coordinatesFront);
-        this.views.front.camera.position.setFromSpherical(sphericalFront);
-        this.views.front.camera.updateProjectionMatrix();
+        cameraFront.position.setFromSpherical(sphericalFront);
+        cameraFront.updateProjectionMatrix();
     }
 
     private renderTranslateAction(view: ViewType, viewType: any): void {
@@ -1511,6 +1586,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             const coordinates = intersects[0].point;
             this.action.translation.coordinates = coordinates;
             this.moveObject(coordinates);
+            this.detachCamera(view);
+            this.updateCameraFrustrumPlane(view);
         }
     }
 
@@ -1532,23 +1609,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
         this.updateResizeHelperPos();
         this.updateRotationHelperPos();
-    }
-
-    private setSelectedChildScale(x: number, y: number, z: number): void {
-        const cuboid = this.selectedCuboid;
-        if (cuboid) {
-            BOTTOM_VIEWS.forEach((view: ViewType): void => {
-                cuboid[view].children.forEach((element: any): void => {
-                    if (element.name !== CONST.CUBOID_EDGE_NAME) {
-                        element.scale.set(
-                            x == null ? element.scale.x : x,
-                            y == null ? element.scale.y : y,
-                            z == null ? element.scale.z : z,
-                        );
-                    }
-                });
-            });
-        }
     }
 
     private renderResizeAction(view: ViewType, viewType: any): void {
@@ -1634,6 +1694,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         this.moveObject(newPosition);
         cuboid.setScale(scale.x, scale.y, scale.z);
         this.adjustPerspectiveCameras();
+        this.updateCameraFrustrumPlane(view);
 
         this.action.resize.previousPosition = currentPointCoordOnPlane;
     }
@@ -1690,7 +1751,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         }
     }
 
-    private detachCamera(view: ViewType): void {
+    private detachCamera(view?: ViewType): void {
         const coordTop = this.selectedCuboid.getReferenceCoordinates(ViewType.TOP);
         const sphericaltop = new THREE.Spherical();
         sphericaltop.setFromVector3(coordTop);
@@ -1704,42 +1765,36 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         sphericalfront.setFromVector3(coordFront);
 
         const { side: objectSideView, front: objectFrontView, top: objectTopView } = this.selectedCuboid;
+        const sideWorld = objectSideView.getWorldPosition(new THREE.Vector3());
+        const frontWorld = objectFrontView.getWorldPosition(new THREE.Vector3());
+        const topWorld = objectTopView.getWorldPosition(new THREE.Vector3());
+
         const { camera: sideCamera } = this.views.side;
         const { camera: frontCamera } = this.views.front;
         const { camera: topCamera } = this.views.top;
 
+        const camFrontRotate = objectFrontView
+            .getObjectByName('camRefRot')
+            .getWorldQuaternion(new THREE.Quaternion());
         switch (view) {
             case ViewType.TOP: {
-                const camRotationSide = objectSideView
-                    .getObjectByName('cameraSide')
-                    .getWorldQuaternion(new THREE.Quaternion());
-                objectSideView.remove(sideCamera);
                 sideCamera.position.setFromSpherical(sphericalside);
                 sideCamera.lookAt(objectSideView.position.x, objectSideView.position.y, objectSideView.position.z);
-                sideCamera.setRotationFromQuaternion(camRotationSide);
+                sideCamera.rotation.z = this.views.side.scene.getObjectByName(Planes.SIDE).rotation.z;
                 sideCamera.scale.set(1, 1, 1);
 
-                const camRotationFront = objectFrontView
-                    .getObjectByName('cameraFront')
-                    .getWorldQuaternion(new THREE.Quaternion());
-                objectFrontView.remove(frontCamera);
                 frontCamera.position.setFromSpherical(sphericalfront);
                 frontCamera.lookAt(objectFrontView.position.x, objectFrontView.position.y, objectFrontView.position.z);
-                frontCamera.setRotationFromQuaternion(camRotationFront);
+                frontCamera.setRotationFromQuaternion(camFrontRotate);
                 frontCamera.scale.set(1, 1, 1);
                 break;
             }
             case ViewType.SIDE: {
-                const camRotationFront = objectFrontView
-                    .getObjectByName('cameraFront')
-                    .getWorldQuaternion(new THREE.Quaternion());
-                objectFrontView.remove(frontCamera);
                 frontCamera.position.setFromSpherical(sphericalfront);
                 frontCamera.lookAt(objectFrontView.position.x, objectFrontView.position.y, objectFrontView.position.z);
-                frontCamera.setRotationFromQuaternion(camRotationFront);
+                frontCamera.setRotationFromQuaternion(camFrontRotate);
                 frontCamera.scale.set(1, 1, 1);
 
-                objectTopView.remove(topCamera);
                 topCamera.position.setFromSpherical(sphericaltop);
                 topCamera.lookAt(objectTopView.position.x, objectTopView.position.y, objectTopView.position.z);
                 topCamera.setRotationFromEuler(objectTopView.rotation);
@@ -1747,23 +1802,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 break;
             }
             case ViewType.FRONT: {
-                const camRotationSide = objectSideView
-                    .getObjectByName('cameraSide')
-                    .getWorldQuaternion(new THREE.Quaternion());
-                objectSideView.remove(sideCamera);
-                sideCamera.position.setFromSpherical(sphericalside);
-                sideCamera.lookAt(objectSideView.position.x, objectSideView.position.y, objectSideView.position.z);
-                sideCamera.setRotationFromQuaternion(camRotationSide);
-                sideCamera.scale.set(1, 1, 1);
-
-                objectTopView.remove(topCamera);
-                topCamera.position.setFromSpherical(sphericaltop);
-                topCamera.lookAt(objectTopView.position.x, objectTopView.position.y, objectTopView.position.z);
-                topCamera.setRotationFromEuler(objectTopView.rotation);
-                topCamera.scale.set(1, 1, 1);
-                break;
-            }
-            default: {
                 sideCamera.position.setFromSpherical(sphericalside);
                 sideCamera.lookAt(objectSideView.position.x, objectSideView.position.y, objectSideView.position.z);
                 sideCamera.rotation.z = this.views.side.scene.getObjectByName(Planes.SIDE).rotation.z;
@@ -1773,12 +1811,21 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 topCamera.lookAt(objectTopView.position.x, objectTopView.position.y, objectTopView.position.z);
                 topCamera.setRotationFromEuler(objectTopView.rotation);
                 topCamera.scale.set(1, 1, 1);
+                break;
+            }
+            default: {
+                sideCamera.position.setFromSpherical(sphericalside);
+                sideCamera.lookAt(sideWorld.x, sideWorld.y, sideWorld.z);
+                sideCamera.rotation.z = this.views.side.scene.getObjectByName(Planes.SIDE).rotation.z;
+                sideCamera.scale.set(1, 1, 1);
 
-                const camFrontRotate = objectFrontView
-                    .getObjectByName('camRefRot')
-                    .getWorldQuaternion(new THREE.Quaternion());
+                topCamera.position.setFromSpherical(sphericaltop);
+                topCamera.lookAt(topWorld.x, topWorld.y, topWorld.z);
+                topCamera.setRotationFromEuler(objectTopView.rotation);
+                topCamera.scale.set(1, 1, 1);
+
                 frontCamera.position.setFromSpherical(sphericalfront);
-                frontCamera.lookAt(objectFrontView.position.x, objectFrontView.position.y, objectFrontView.position.z);
+                frontCamera.lookAt(frontWorld.x, frontWorld.y, frontWorld.z);
                 frontCamera.setRotationFromQuaternion(camFrontRotate);
                 frontCamera.scale.set(1, 1, 1);
             }
@@ -1869,7 +1916,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
         this.updateResizeHelperPos();
         this.updateRotationHelperPos();
-        this.detachCamera(null);
+        this.detachCamera();
+        this.updateCameraFrustrumPlane();
         this.action.rotation.screenInit.x = this.action.rotation.screenMove.x;
         this.action.rotation.screenInit.y = this.action.rotation.screenMove.y;
     }

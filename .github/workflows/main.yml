@@ -399,6 +399,8 @@ jobs:
           pip install -r site/requirements.txt
           python site/process_sdk_docs.py --input-dir /tmp/cvat_sdk/docs/ --site-root site/
           python site/build_docs.py
+        env:
+          HUGO_ENV: production
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3

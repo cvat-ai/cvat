@@ -189,14 +189,14 @@ context('New organization pipeline.', () => {
             cy.closeNotification('.cvat-notification-notice-leave-organization-failed');
         });
 
-        it('The second user login. The user is able to see the organization, can\'t see the task.', () => {
+        it("The second user login. The user is able to see the organization, can't see the task.", () => {
             cy.logout();
             cy.login(secondUserName, secondUser.password);
             cy.checkOrganizationExists(organizationParams.shortName);
             cy.contains('.cvat-item-task-name', taskName).should('not.exist');
         });
 
-        it('The second user activates the organization, can\'t see the project because it is not assigned to him.', () => {
+        it("The second user activates the organization, can't see the project because it is not assigned to him.", () => {
             cy.activateOrganization(organizationParams.shortName);
             cy.goToProjectsList();
             cy.contains('.cvat-projects-project-item-title', project.name).should('not.exist');
@@ -232,7 +232,7 @@ context('New organization pipeline.', () => {
             });
         });
 
-        it('Logout, the third user login. The user does not see the project, the task. The user can\'t open the job using direct link.', () => {
+        it("Logout, the third user login. The user does not see the project, the task. The user can't open the job using direct link.", () => {
             cy.logout(secondUserName);
             cy.login(thirdUserName, thirdUser.password);
             cy.contains('.cvat-item-task-name', taskName).should('not.exist');
