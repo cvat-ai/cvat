@@ -43,9 +43,6 @@ if apps.is_installed('cvat.apps.opencv'):
 if apps.is_installed('cvat.apps.webhooks'):
     urlpatterns.append(path('api/', include('cvat.apps.webhooks.urls')))
 
-if apps.is_installed('cvat.apps.limit_manager'):
-    urlpatterns.append(path('api/', include('cvat.apps.limit_manager.urls')))
-
 if apps.is_installed('silk'):
     urlpatterns.append(path('profiler/', include('silk.urls')))
 
