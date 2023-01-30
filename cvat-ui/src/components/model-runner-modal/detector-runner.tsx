@@ -21,7 +21,7 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 import { Label as LabelInterface } from 'components/labels-editor/common';
 import { clamp } from 'utils/math';
 import config from 'config';
-import { MLModel, ModelType } from 'cvat-core-wrapper';
+import { MLModel, ModelKind } from 'cvat-core-wrapper';
 import { DimensionType } from '../../reducers';
 
 interface Props {
@@ -65,18 +65,18 @@ function DetectorRunner(props: Props): JSX.Element {
     const [attrMatches, setAttrMatch] = useState<Record<string, Match>>({});
 
     const model = models.filter((_model): boolean => _model.id === modelID)[0];
-    const isDetector = model && model.type === ModelType.DETECTOR;
-    const isReId = model && model.type === ModelType.REID;
-    const isClassifier = model && model.type === ModelType.CLASSIFIER;
+    const isDetector = model && model.kind === ModelKind.DETECTOR;
+    const isReId = model && model.kind === ModelKind.REID;
+    const isClassifier = model && model.kind === ModelKind.CLASSIFIER;
     const buttonEnabled =
-        model && (model.type === ModelType.REID ||
-            (model.type === ModelType.DETECTOR && !!Object.keys(mapping).length) ||
-            (model.type === ModelType.CLASSIFIER && !!Object.keys(mapping).length));
+        model && (model.kind === ModelKind.REID ||
+            (model.kind === ModelKind.DETECTOR && !!Object.keys(mapping).length) ||
+            (model.kind === ModelKind.CLASSIFIER && !!Object.keys(mapping).length));
     const canHaveMapping = isDetector || isClassifier;
     const modelLabels = (canHaveMapping ? model.labels : []).filter((_label: string): boolean => !(_label in mapping));
     const taskLabels = canHaveMapping ? labels.map((label: any): string => label.name) : [];
 
-    if (model && model.type === ModelType.REID && !model.labels.length) {
+    if (model && model.kind === ModelKind.REID && !model.labels.length) {
         notification.warning({
             message: 'The selected model does not include any labels',
         });
@@ -429,18 +429,18 @@ function DetectorRunner(props: Props): JSX.Element {
                         type='primary'
                         onClick={() => {
                             let requestBody: object = {};
-                            if (model.type === ModelType.DETECTOR) {
+                            if (model.kind === ModelKind.DETECTOR) {
                                 requestBody = {
                                     mapping,
                                     cleanup,
                                     convMaskToPoly: convertMasksToPolygons,
                                 };
-                            } else if (model.type === ModelType.REID) {
+                            } else if (model.kind === ModelKind.REID) {
                                 requestBody = {
                                     threshold,
                                     max_distance: distance,
                                 };
-                            } else if (model.type === ModelType.CLASSIFIER) {
+                            } else if (model.kind === ModelKind.CLASSIFIER) {
                                 requestBody = {
                                     mapping,
                                 };

@@ -366,7 +366,7 @@ export interface ActiveInference {
     progress: number;
     error: string;
     id: string;
-    functionID: string;
+    functionID: string | number;
 }
 
 export interface ModelsState {
@@ -387,7 +387,7 @@ export interface ModelsState {
     query: ModelsQuery;
     providers: {
         fetching: boolean;
-        current: ModelProvider[];
+        list: ModelProvider[];
     }
     previews: {
         [index: string]: Preview;
@@ -454,6 +454,8 @@ export interface NotificationsState {
             canceling: null | ErrorState;
             metaFetching: null | ErrorState;
             inferenceStatusFetching: null | ErrorState;
+            creating: null | ErrorState;
+            deleting: null | ErrorState;
         };
         annotation: {
             saving: null | ErrorState;

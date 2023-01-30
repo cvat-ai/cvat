@@ -51,9 +51,9 @@ export const modelsActions = {
     }),
     createModelFailed: (error: any) => createAction(ModelsActionTypes.CREATE_MODEL_FAILED, { error }),
     deleteModel: (model: MLModel) => createAction(ModelsActionTypes.DELETE_MODEL, { model }),
-    deleteModelSuccess: (modelID: string) => createAction(ModelsActionTypes.DELETE_MODEL_SUCCESS, { modelID }),
-    deleteModelFailed: (modelID: string, error: any) => (
-        createAction(ModelsActionTypes.DELETE_MODEL_FAILED, { modelID, error })
+    deleteModelSuccess: (modelID: string | number) => createAction(ModelsActionTypes.DELETE_MODEL_SUCCESS, { modelID }),
+    deleteModelFailed: (modelName: string, error: any) => (
+        createAction(ModelsActionTypes.DELETE_MODEL_FAILED, { modelName, error })
     ),
     fetchMetaFailed: (error: any) => createAction(ModelsActionTypes.FETCH_META_FAILED, { error }),
     getInferenceStatusSuccess: (taskID: number, activeInference: ActiveInference) => (
@@ -97,13 +97,13 @@ export const modelsActions = {
             providers,
         })),
     getModelProvidersFailed: (error: any) => createAction(ModelsActionTypes.GET_MODEL_PROVIDERS_FAILED, { error }),
-    getModelPreview: (modelID: string) => (
+    getModelPreview: (modelID: string | number) => (
         createAction(ModelsActionTypes.GET_MODEL_PREVIEW, { modelID })
     ),
-    getModelPreviewSuccess: (modelID: string, preview: string) => (
+    getModelPreviewSuccess: (modelID: string | number, preview: string) => (
         createAction(ModelsActionTypes.GET_MODEL_PREVIEW_SUCCESS, { modelID, preview })
     ),
-    getModelPreviewFailed: (modelID: string, error: any) => (
+    getModelPreviewFailed: (modelID: string | number, error: any) => (
         createAction(ModelsActionTypes.GET_MODEL_PREVIEW_FAILED, { modelID, error })
     ),
 };
@@ -156,8 +156,7 @@ export function deleteModelAsync(model: MLModel): ThunkAction {
             await model.delete();
             dispatch(modelsActions.deleteModelSuccess(model.id));
         } catch (error) {
-            dispatch(modelsActions.deleteModelFailed(model.id, error));
-            throw error;
+            dispatch(modelsActions.deleteModelFailed(model.name, error));
         }
     };
 }
@@ -165,7 +164,7 @@ export function deleteModelAsync(model: MLModel): ThunkAction {
 interface InferenceMeta {
     taskID: number;
     requestID: string;
-    functionID: string;
+    functionID: string | number;
 }
 
 function listen(inferenceMeta: InferenceMeta, dispatch: (action: ModelsActions) => void): void {

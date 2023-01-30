@@ -6,7 +6,7 @@
 import { BoundariesActions, BoundariesActionTypes } from 'actions/boundaries-actions';
 import { ModelsActionTypes, ModelsActions } from 'actions/models-actions';
 import { AuthActionTypes, AuthActions } from 'actions/auth-actions';
-import { MLModel, ModelType } from 'cvat-core-wrapper';
+import { MLModel, ModelKind } from 'cvat-core-wrapper';
 import { ModelsState } from '.';
 
 const defaultState: ModelsState = {
@@ -31,7 +31,7 @@ const defaultState: ModelsState = {
     },
     providers: {
         fetching: false,
-        current: [],
+        list: [],
     },
     previews: {},
 };
@@ -48,19 +48,19 @@ export default function (state = defaultState, action: ModelsActions | AuthActio
             return {
                 ...state,
                 interactors: action.payload.models.filter((model: MLModel) => (
-                    [ModelType.INTERACTOR].includes(model.type)
+                    model.kind === ModelKind.INTERACTOR
                 )),
                 detectors: action.payload.models.filter((model: MLModel) => (
-                    [ModelType.DETECTOR].includes(model.type)
+                    model.kind === ModelKind.DETECTOR
                 )),
                 trackers: action.payload.models.filter((model: MLModel) => (
-                    [ModelType.TRACKER].includes(model.type)
+                    model.kind === ModelKind.TRACKER
                 )),
                 reid: action.payload.models.filter((model: MLModel) => (
-                    [ModelType.REID].includes(model.type)
+                    model.kind === ModelKind.REID
                 )),
                 classifiers: action.payload.models.filter((model: MLModel) => (
-                    [ModelType.CLASSIFIER].includes(model.type)
+                    model.kind === ModelKind.CLASSIFIER
                 )),
                 totalCount: action.payload.models.length,
                 initialized: true,
@@ -91,33 +91,15 @@ export default function (state = defaultState, action: ModelsActions | AuthActio
                 ...state,
                 fetching: false,
             };
-            if ([ModelType.INTERACTOR].includes(action.payload.model.type)) {
+            if (action.payload.model.kind === ModelKind.REID) {
                 return {
                     ...mutual,
-                    interactors: [...state.interactors, action.payload.model],
-                };
-            }
-            if ([ModelType.DETECTOR].includes(action.payload.model.type)) {
-                return {
-                    ...mutual,
-                    detectors: [...state.detectors, action.payload.model],
-                };
-            }
-            if ([ModelType.TRACKER].includes(action.payload.model.type)) {
-                return {
-                    ...mutual,
-                    trackers: [...state.trackers, action.payload.model],
-                };
-            }
-            if ([ModelType.REID].includes(action.payload.model.type)) {
-                return {
-                    ...mutual,
-                    trackers: [...state.reid, action.payload.model],
+                    reid: [...state.reid, action.payload.model],
                 };
             }
             return {
                 ...mutual,
-                interactors: [...state.interactors, action.payload.model],
+                [`${action.payload.model.kind}s`]: [...`${action.payload.model.kind}s`, action.payload.model],
             };
         }
         case ModelsActionTypes.SHOW_RUN_MODEL_DIALOG: {
@@ -189,7 +171,7 @@ export default function (state = defaultState, action: ModelsActions | AuthActio
                 ...state,
                 providers: {
                     fetching: false,
-                    current: action.payload.providers,
+                    list: action.payload.providers,
                 },
             };
         }

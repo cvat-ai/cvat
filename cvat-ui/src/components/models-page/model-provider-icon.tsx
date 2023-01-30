@@ -13,10 +13,10 @@ interface Props {
 
 export default function ModelProviderIcon(props: Props): JSX.Element | null {
     const { providerName } = props;
-    const providers = useSelector((state: CombinedState) => state.models.providers);
+    const providers = useSelector((state: CombinedState) => state.models.providers.list);
 
     let icon: JSX.Element | null = null;
-    const providerInstance = providers.current.find((_provider: ModelProvider) => _provider.name === providerName);
+    const providerInstance = providers.find((_provider: ModelProvider) => _provider.name === providerName);
     if (providerInstance) {
         icon = (
             <img

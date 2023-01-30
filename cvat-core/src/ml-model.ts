@@ -6,7 +6,7 @@
 import { isBrowser, isNode } from 'browser-or-node';
 import serverProxy from './server-proxy';
 import PluginRegistry from './plugins';
-import { ModelProviders, ModelType } from './enums';
+import { ModelProviders, ModelKind } from './enums';
 
 interface ModelAttribute {
     name: string;
@@ -29,14 +29,14 @@ interface ModelTip {
 }
 
 interface SerializedModel {
-    id?: string;
+    id?: string | number;
     name?: string;
     labels?: string[];
     version?: number;
     attributes?: Record<string, ModelAttribute>;
     framework?: string;
     description?: string;
-    kind?: ModelType;
+    kind?: ModelKind;
     type?: string;
     owner?: any;
     provider?: string;
@@ -59,7 +59,7 @@ export default class MLModel {
         this.serialized = { ...serialized };
     }
 
-    public get id(): string {
+    public get id(): string | number {
         return this.serialized.id;
     }
 
@@ -87,7 +87,7 @@ export default class MLModel {
         return this.serialized.description;
     }
 
-    public get type(): ModelType {
+    public get kind(): ModelKind {
         return this.serialized.kind;
     }
 
@@ -115,27 +115,27 @@ export default class MLModel {
     }
 
     public get owner(): string {
-        return this.serialized?.owner?.username || 'admin';
+        return this.serialized?.owner?.username || '';
     }
 
     public get provider(): string {
-        return this.serialized.provider ? this.serialized.provider : ModelProviders.CVAT;
+        return this.serialized?.provider || ModelProviders.CVAT;
     }
 
-    public get deletable(): boolean {
+    public get isDeletable(): boolean {
         return this.provider !== ModelProviders.CVAT;
     }
 
-    public get createdDate(): string {
-        return this.serialized.created_date;
+    public get createdDate(): string | undefined {
+        return this.serialized?.created_date;
     }
 
-    public get updatedDate(): string {
-        return this.serialized.updated_date;
+    public get updatedDate(): string | undefined {
+        return this.serialized?.updated_date;
     }
 
-    public get url(): string {
-        return this.serialized.url;
+    public get url(): string | undefined {
+        return this.serialized?.url;
     }
 
     // Used to set a callback when the tool is blocked in UI
@@ -181,7 +181,7 @@ Object.defineProperties(MLModel.prototype.delete, {
         writable: false,
         enumerable: false,
         value: async function implementation(): Promise<void> {
-            if (Number.isInteger(this.id) && this.deletable) {
+            if (Number.isInteger(this.id) && this.isDeletable) {
                 await serverProxy.functions.delete(this.id);
             }
         },

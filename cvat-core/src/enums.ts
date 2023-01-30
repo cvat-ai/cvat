@@ -132,7 +132,7 @@ export enum HistoryActions {
     RESTORED_FRAME = 'Restored frame',
 }
 
-export enum ModelType {
+export enum ModelKind {
     DETECTOR = 'detector',
     INTERACTOR = 'interactor',
     TRACKER = 'tracker',

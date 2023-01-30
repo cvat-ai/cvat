@@ -16,7 +16,7 @@ import ModelForm from './model-form';
 function CreateModelPage(): JSX.Element {
     const dispatch = useDispatch();
     const fetching = useSelector((state: CombinedState) => state.models.providers.fetching);
-    const providers = useSelector((state: CombinedState) => state.models.providers.current);
+    const providers = useSelector((state: CombinedState) => state.models.providers.list);
     useEffect(() => {
         dispatch(getModelProvidersAsync());
     }, []);

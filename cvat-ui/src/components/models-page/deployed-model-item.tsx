@@ -67,7 +67,7 @@ export default function DeployedModelItem(props: Props): JSX.Element {
                 </div>
                 <Divider />
                 {
-                    model.labels.length ? (
+                    model.labels?.length ? (
                         <>
                             <div className='cvat-model-info-container'>
                                 <Text className='cvat-model-info-modal-labels-title'>Labels:</Text>
@@ -94,22 +94,24 @@ export default function DeployedModelItem(props: Props): JSX.Element {
                                 {model.provider}
                             </Col>
                             <Col>
-                                {model.type}
+                                {model.kind}
                             </Col>
                         </Row>
                     </Col>
-                    <Col>
-                        <Row>
-                            <Col>
-                                <Text strong>Owner</Text>
-                            </Col>
-                        </Row>
-                        <Row>
-                            <Col>
-                                {model.owner}
-                            </Col>
-                        </Row>
-                    </Col>
+                    {model.owner && (
+                        <Col>
+                            <Row>
+                                <Col>
+                                    <Text strong>Owner</Text>
+                                </Col>
+                            </Row>
+                            <Row>
+                                <Col>
+                                    {model.owner}
+                                </Col>
+                            </Row>
+                        </Col>
+                    )}
                 </Row>
             </Modal>
             <Card
@@ -135,7 +137,7 @@ export default function DeployedModelItem(props: Props): JSX.Element {
                     description={(
                         <div className='cvat-models-item-description'>
                             <Row onClick={onOpenModel} className='cvat-models-item-text-description'>
-                                <Text strong>{model.owner}</Text>
+                                {model.owner && (<Text strong>{model.owner}</Text>)}
                                 <Text type='secondary'>{` Added ${created}`}</Text>
                             </Row>
                             <Dropdown overlay={<ModelActionsMenuComponent model={model} onDelete={onDelete} />}>

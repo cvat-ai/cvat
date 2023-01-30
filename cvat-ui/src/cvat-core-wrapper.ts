@@ -12,7 +12,7 @@ import {
     Label, Attribute, RawAttribute, RawLabel,
 } from 'cvat-core/src/labels';
 import {
-    ShapeType, LabelType, ModelType, ModelProviders,
+    ShapeType, LabelType, ModelKind, ModelProviders,
 } from 'cvat-core/src/enums';
 import { Storage, StorageData } from 'cvat-core/src/storage';
 import { SocialAuthMethods, SocialAuthMethod } from 'cvat-core/src/auth-methods';
@@ -39,7 +39,7 @@ export {
     Webhook,
     SocialAuthMethod,
     MLModel,
-    ModelType,
+    ModelKind,
     ModelProviders,
 };
 

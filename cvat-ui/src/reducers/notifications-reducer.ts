@@ -80,6 +80,8 @@ const defaultState: NotificationsState = {
             canceling: null,
             metaFetching: null,
             inferenceStatusFetching: null,
+            creating: null,
+            deleting: null,
         },
         annotation: {
             saving: null,
@@ -722,7 +724,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
             };
         }
         case ModelsActionTypes.FETCH_META_FAILED: {
-            if (action.payload.error.code === 403 || action.payload.error.code === 404) {
+            if (action.payload.error.code === 403) {
                 return state;
             }
 
@@ -810,7 +812,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     ...state.errors,
                     models: {
                         ...state.errors.models,
-                        canceling: {
+                        creating: {
                             message: 'Could not create model',
                             reason: action.payload.error.toString(),
                         },
@@ -819,14 +821,15 @@ export default function (state = defaultState, action: AnyAction): Notifications
             };
         }
         case ModelsActionTypes.DELETE_MODEL_FAILED: {
+            const { modelName } = action.payload;
             return {
                 ...state,
                 errors: {
                     ...state.errors,
                     models: {
                         ...state.errors.models,
-                        canceling: {
-                            message: 'Could not delete model',
+                        deleting: {
+                            message: `Could not delete model ${modelName}`,
                             reason: action.payload.error.toString(),
                         },
                     },

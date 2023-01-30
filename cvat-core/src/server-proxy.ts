@@ -1562,6 +1562,9 @@ async function getFunctions() {
         });
         return response.data.results;
     } catch (errorData) {
+        if (errorData.response.status === 404) {
+            return [];
+        }
         throw generateError(errorData);
     }
 }
@@ -1593,6 +1596,9 @@ async function getFunctionProviders() {
         });
         return response.data;
     } catch (errorData) {
+        if (errorData.response.status === 404) {
+            return [];
+        }
         throw generateError(errorData);
     }
 }
@@ -1877,6 +1883,9 @@ async function getLambdaFunctions() {
         });
         return response.data;
     } catch (errorData) {
+        if (errorData.response.status === 503) {
+            return [];
+        }
         throw generateError(errorData);
     }
 }

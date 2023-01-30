@@ -169,7 +169,7 @@
     display: flex;
     justify-content: space-between;
 
-    .ant-typography-secondary {
+    > div > span:nth-child(2) {
         margin-left: $grid-unit-size;
     }
 

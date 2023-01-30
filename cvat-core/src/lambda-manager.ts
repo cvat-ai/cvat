@@ -14,6 +14,13 @@ export interface ModelProvider {
     attributes: Record<string, string>;
 }
 
+interface ModelProxy {
+    run: (body: any) => Promise<any>;
+    call: (modelID: string | number, body: any) => Promise<any>;
+    status: (requestID: string) => Promise<any>;
+    cancel: (requestID: string) => Promise<any>;
+}
+
 class LambdaManager {
     private listening: any;
     private cachedList: any;
@@ -24,18 +31,8 @@ class LambdaManager {
     }
 
     async list(): Promise<MLModel[]> {
-        let lambdaFunctions = [];
-        let functions = [];
-        try {
-            // lambda.list returns error if list is empty, but we should work with models anyway
-            lambdaFunctions = await serverProxy.lambda.list();
-        // eslint-disable-next-line no-empty
-        } catch (error) {}
-
-        try {
-            functions = await serverProxy.functions.list();
-        // eslint-disable-next-line no-empty
-        } catch (error) {}
+        const lambdaFunctions = await serverProxy.lambda.list();
+        const functions = await serverProxy.functions.list();
 
         const result = [...lambdaFunctions, ...functions];
         const models = [];
@@ -73,12 +70,7 @@ class LambdaManager {
             function: model.id,
         };
 
-        let result;
-        if (model.provider === ModelProviders.CVAT) {
-            result = await serverProxy.lambda.run(body);
-        } else {
-            result = await serverProxy.functions.run(body);
-        }
+        const result = await LambdaManager.getModelProxy(model).run(body);
         return result.id;
     }
 
@@ -92,12 +84,7 @@ class LambdaManager {
             task: taskID,
         };
 
-        let result;
-        if (model.provider === ModelProviders.CVAT) {
-            result = await serverProxy.lambda.call(model.id, body);
-        } else {
-            result = await serverProxy.functions.call(model.id, body);
-        }
+        const result = await LambdaManager.getModelProxy(model).call(model.id, body);
         return result;
     }
 
@@ -122,12 +109,7 @@ class LambdaManager {
             delete this.listening[requestID];
         }
 
-        const { provider } = model;
-        if (provider === ModelProviders.CVAT) {
-            await serverProxy.lambda.cancel(requestID);
-        } else {
-            await serverProxy.functions.cancel(requestID);
-        }
+        await LambdaManager.getModelProxy(model).cancel(requestID);
     }
 
     async listen(requestID, functionID, onUpdate): Promise<void> {
@@ -135,16 +117,10 @@ class LambdaManager {
         if (!model) {
             throw new ArgumentError('Incorrect Function Id provided');
         }
-        const { provider } = model;
         const timeoutCallback = async (): Promise<void> => {
             try {
                 this.listening[requestID].timeout = null;
-                let response = null;
-                if (provider === ModelProviders.CVAT) {
-                    response = await serverProxy.lambda.status(requestID);
-                } else {
-                    response = await serverProxy.functions.status(requestID);
-                }
+                const response = await LambdaManager.getModelProxy(model).status(requestID);
 
                 if (response.status === RQStatus.QUEUED || response.status === RQStatus.STARTED) {
                     onUpdate(response.status, response.progress || 0);
@@ -186,6 +162,10 @@ class LambdaManager {
             };
         });
         return providers;
+    }
+
+    private static getModelProxy(model: MLModel): ModelProxy {
+        return model.provider === ModelProviders.CVAT ? serverProxy.lambda : serverProxy.functions;
     }
 }
 
