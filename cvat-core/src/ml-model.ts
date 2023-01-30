@@ -181,7 +181,7 @@ Object.defineProperties(MLModel.prototype.delete, {
         writable: false,
         enumerable: false,
         value: async function implementation(): Promise<void> {
-            if (Number.isInteger(this.id) && this.isDeletable) {
+            if (this.isDeletable) {
                 await serverProxy.functions.delete(this.id);
             }
         },
