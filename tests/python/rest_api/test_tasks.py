@@ -52,13 +52,6 @@ class TestGetTasks:
             )
             assert DeepDiff(data, results, ignore_order=True, exclude_paths=exclude_paths) == {}
 
-    def _test_task_list_403(self, user, project_id, **kwargs):
-        with make_api_client(user) as api_client:
-            (_, response) = api_client.tasks_api.list(
-                project_id=str(project_id), **kwargs, _parse_response=False, _check_status=False
-            )
-            assert response.status == HTTPStatus.FORBIDDEN
-
     def _test_users_to_see_task_list(
         self, project_id, tasks, users, is_staff, is_allow, is_project_staff, **kwargs
     ):
@@ -69,10 +62,12 @@ class TestGetTasks:
         assert len(users)
 
         for user in users:
-            if is_allow:
-                self._test_task_list_200(user["username"], project_id, tasks, **kwargs)
-            else:
-                self._test_task_list_403(user["username"], project_id, **kwargs)
+            if not is_allow:
+                # Users outside project or org should not know if one exists.
+                # Thus, no error should be produced on a list request.
+                tasks = []
+
+            self._test_task_list_200(user["username"], project_id, tasks, **kwargs)
 
     def _test_assigned_users_to_see_task_data(self, tasks, users, is_task_staff, **kwargs):
         for task in tasks:

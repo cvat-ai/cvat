@@ -607,7 +607,7 @@ class TestImportExportDatasetProject:
 
         self._test_import_project(username, project_id, "CVAT 1.1", import_data)
 
-        response = get_method(username, f"/projects/{project_id}/tasks")
+        response = get_method(username, f"/tasks?project_id={project_id}")
         assert response.status_code == HTTPStatus.OK
         tasks = response.json()["results"]
 

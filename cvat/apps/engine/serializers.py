@@ -43,7 +43,10 @@ class HyperlinkedModelViewSerializer(serializers.Serializer):
         return instance
 
     def to_representation(self, instance):
-        request = self.context['request']
+        request = self.context.get('request')
+        if not request:
+            return None
+
         return serializers.Hyperlink(
             reverse(self.view_name, request=request,
                 query_params=build_field_filter_params(
