@@ -5,9 +5,10 @@
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import {
-    ActiveInference, RQStatus, ModelsQuery, Indexable,
+    ActiveInference, RQStatus, ModelsQuery,
 } from 'reducers';
 import { getCore, MLModel, ModelProvider } from 'cvat-core-wrapper';
+import { filterNull } from 'utils/filter-null';
 
 const cvat = getCore();
 
@@ -112,19 +113,11 @@ export type ModelsActions = ActionUnion<typeof modelsActions>;
 
 const core = getCore();
 
-export function getModelsAsync(query?: ModelsQuery): ThunkAction {
+export function getModelsAsync(query: ModelsQuery): ThunkAction {
     return async (dispatch): Promise<void> => {
         dispatch(modelsActions.getModels(query));
 
-        const filteredQuery = { ...query };
-        if (query) {
-            for (const key of Object.keys(query)) {
-                if ((filteredQuery as Indexable)[key] === null) {
-                    delete (filteredQuery as Indexable)[key];
-                }
-            }
-        }
-
+        const filteredQuery = filterNull(query);
         try {
             const models = await core.lambda.list(filteredQuery);
             dispatch(modelsActions.getModelsSuccess(models));
