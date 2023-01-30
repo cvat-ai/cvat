@@ -1870,6 +1870,9 @@ async function getFunctionsRequests() {
 
         return response.data;
     } catch (errorData) {
+        if (errorData.response.status === 404) {
+            return [];
+        }
         throw generateError(errorData);
     }
 }
