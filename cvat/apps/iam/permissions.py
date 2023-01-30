@@ -4,24 +4,22 @@
 # SPDX-License-Identifier: MIT
 
 from __future__ import annotations
+
+import operator
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
-from enum import Enum, auto
-import operator
-from typing import Any, List, Optional, Sequence, Tuple, cast
-
-from attrs import define, field
-from rest_framework.exceptions import ValidationError, PermissionDenied
+from enum import Enum
+from typing import Any, List, Optional, Sequence, cast
 
 import requests
+from attrs import define, field
 from django.conf import settings
 from django.db.models import Q
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import BasePermission
 
+from cvat.apps.engine.models import Issue, Job, Project, Task
 from cvat.apps.organizations.models import Membership, Organization
-from cvat.apps.engine.models import Project, Task, Job, Issue
-from cvat.apps.iam.exceptions import LimitsReachedException
-from cvat.apps.limit_manager.core import limits
 from cvat.apps.webhooks.models import WebhookTypeChoice
 
 
@@ -1386,258 +1384,10 @@ class LimitationPermission(OpenPolicyAgentPermission):
 
         return data
 
-class LimitPermission(OpenPolicyAgentPermission):
-    @classmethod
-    def create(cls, request, view, obj):
-        return [] # There are no basic (unconditional) permissions
-
-    @classmethod
-    def create_from_scopes(cls, request, view, obj, scopes: List[OpenPolicyAgentPermission]):
-        scope_to_caps = [
-            (scope_handler, cls._prepare_capability_params(scope_handler))
-            for scope_handler in scopes
-        ]
-        return [
-            cls.create_base_perm(request, view, str(scope_handler.scope), obj,
-                scope_handler=scope_handler, capabilities=capabilities,
-            )
-            for scope_handler, capabilities in scope_to_caps
-            if capabilities
-        ]
-
-    def __init__(self, **kwargs):
-        self.url = settings.IAM_OPA_DATA_URL + '/limits/result'
-        self.scope_handler: OpenPolicyAgentPermission = kwargs.pop('scope_handler')
-        self.capabilities: Tuple[limits.Limits, limits.CapabilityContext] = kwargs.pop('capabilities')
-        super().__init__(**kwargs)
-
-    @classmethod
-    def get_scopes(cls, request, view, obj):
-        scopes = [
-            (scope_handler, cls._prepare_capability_params(scope_handler))
-            for ctx in OpenPolicyAgentPermission.__subclasses__()
-            if not issubclass(ctx, cls)
-            for scope_handler in ctx.create(request, view, obj)
-        ]
-        return [
-            (scope, capabilities)
-            for scope, capabilities in scopes
-            if capabilities
-        ]
-
-    def get_resource(self):
-        data = {}
-        limit_manager = limits.LimitManager()
-
-        def _get_capability_status(
-            capability: limits.Limits, context: Optional[limits.CapabilityContext]
-        ) -> dict:
-            status = limit_manager.get_status(limit=capability, context=context)
-            return { 'used': status.used, 'max': status.max }
-
-        for capability, context in self.capabilities:
-            data[self._get_capability_name(capability)] = _get_capability_status(
-                capability=capability, context=context,
-            )
-
-        return { 'limits': data }
-
-    @classmethod
-    def _get_capability_name(cls, capability: limits.Limits) -> str:
-        return capability.name
-
-    @classmethod
-    def _prepare_capability_params(cls, scope: OpenPolicyAgentPermission
-    ) -> List[Tuple[limits.Limits, limits.CapabilityContext]]:
-        scope_id = (type(scope), scope.scope)
-        results = []
-
-        if scope_id in [
-            (TaskPermission, TaskPermission.Scopes.CREATE),
-            (TaskPermission, TaskPermission.Scopes.IMPORT_BACKUP),
-        ]:
-            if getattr(scope, 'org_id') is not None:
-                results.append((
-                    limits.Limits.ORG_TASKS,
-                    limits.OrgTasksContext(org_id=scope.org_id)
-                ))
-            else:
-                results.append((
-                    limits.Limits.USER_SANDBOX_TASKS,
-                    limits.UserSandboxTasksContext(user_id=scope.user_id)
-                ))
-
-        elif scope_id == (TaskPermission, TaskPermission.Scopes.CREATE_IN_PROJECT):
-            project = Project.objects.get(id=scope.project_id)
-
-            if getattr(project, 'organization') is not None:
-                results.append((
-                    limits.Limits.TASKS_IN_ORG_PROJECT,
-                    limits.TasksInOrgProjectContext(
-                        org_id=project.organization.id,
-                        project_id=project.id,
-                    )
-                ))
-                results.append((
-                    limits.Limits.ORG_TASKS,
-                    limits.OrgTasksContext(org_id=project.organization.id)
-                ))
-            else:
-                results.append((
-                    limits.Limits.TASKS_IN_USER_SANDBOX_PROJECT,
-                    limits.TasksInUserSandboxProjectContext(
-                        user_id=project.owner.id,
-                        project_id=project.id
-                    )
-                ))
-                results.append((
-                    limits.Limits.USER_SANDBOX_TASKS,
-                    limits.UserSandboxTasksContext(user_id=project.owner.id)
-                ))
-
-        elif scope_id == (TaskPermission, TaskPermission.Scopes.UPDATE_PROJECT):
-            task = cast(Task, scope.obj)
-            project = Project.objects.get(id=scope.project_id)
-
-            class OwnerType(Enum):
-                org = auto()
-                user = auto()
-
-            if getattr(task, 'organization', None):
-                old_owner = (OwnerType.org, task.organization.id)
-            else:
-                old_owner = (OwnerType.user, task.owner.id)
-
-            if getattr(project, 'organization', None) is not None:
-                results.append((
-                    limits.Limits.TASKS_IN_ORG_PROJECT,
-                    limits.TasksInOrgProjectContext(
-                        org_id=project.organization.id,
-                        project_id=project.id,
-                    )
-                ))
-
-                if old_owner != (OwnerType.org, project.organization.id):
-                    results.append((
-                        limits.Limits.ORG_TASKS,
-                        limits.OrgTasksContext(org_id=project.organization.id)
-                    ))
-            else:
-                results.append((
-                    limits.Limits.TASKS_IN_USER_SANDBOX_PROJECT,
-                    limits.TasksInUserSandboxProjectContext(
-                        user_id=project.owner.id,
-                        project_id=project.id
-                    )
-                ))
-
-                if old_owner != (OwnerType.user, project.owner.id):
-                    results.append((
-                        limits.Limits.USER_SANDBOX_TASKS,
-                        limits.UserSandboxTasksContext(user_id=project.owner.id)
-                    ))
-
-        elif scope_id == (TaskPermission, TaskPermission.Scopes.UPDATE_OWNER):
-            task = cast(Task, scope.obj)
-
-            class OwnerType(Enum):
-                org = auto()
-                user = auto()
-
-            if getattr(task, 'organization', None) is not None:
-                old_owner = (OwnerType.org, task.organization.id)
-            else:
-                old_owner = (OwnerType.user, task.owner.id)
-
-            new_owner = getattr(scope, 'owner_id', None)
-            if new_owner is not None and old_owner != (OwnerType.user, new_owner):
-                results.append((
-                    limits.Limits.USER_SANDBOX_TASKS,
-                    limits.UserSandboxTasksContext(user_id=new_owner)
-                ))
-
-        elif scope_id in [
-            (ProjectPermission, ProjectPermission.Scopes.CREATE),
-            (ProjectPermission, ProjectPermission.Scopes.IMPORT_BACKUP),
-        ]:
-            if getattr(scope, 'org_id') is not None:
-                results.append((
-                    limits.Limits.ORG_PROJECTS,
-                    limits.OrgTasksContext(org_id=scope.org_id)
-                ))
-            else:
-                results.append((
-                    limits.Limits.USER_SANDBOX_PROJECTS,
-                    limits.UserSandboxTasksContext(user_id=scope.user_id)
-                ))
-
-        elif scope_id == (CloudStoragePermission, CloudStoragePermission.Scopes.CREATE):
-            if getattr(scope, 'org_id') is not None:
-                results.append((
-                    limits.Limits.ORG_CLOUD_STORAGES,
-                    limits.OrgCloudStoragesContext(org_id=scope.org_id)
-                ))
-            else:
-                results.append((
-                    limits.Limits.USER_SANDBOX_CLOUD_STORAGES,
-                    limits.UserSandboxCloudStoragesContext(user_id=scope.user_id)
-                ))
-
-        elif scope_id == (OrganizationPermission, OrganizationPermission.Scopes.CREATE):
-            results.append((
-                limits.Limits.USER_OWNED_ORGS,
-                limits.UserOrgsContext(user_id=scope.user_id)
-            ))
-
-        elif scope_id == (WebhookPermission, WebhookPermission.Scopes.CREATE_IN_ORG):
-            results.append((
-                limits.Limits.ORG_COMMON_WEBHOOKS,
-                limits.OrgCommonWebhooksContext(org_id=scope.org_id)
-            ))
-
-        elif scope_id == (WebhookPermission, WebhookPermission.Scopes.CREATE_IN_PROJECT):
-            if getattr(scope, 'org_id') is not None:
-                results.append((
-                    limits.Limits.ORG_PROJECT_WEBHOOKS,
-                    limits.OrgProjectWebhooksContext(project_id=scope.project_id, org_id=scope.org_id),
-                ))
-            else:
-                results.append((
-                    limits.Limits.USER_SANDBOX_PROJECT_WEBHOOKS,
-                    limits.UserSandboxProjectWebhooksContext(
-                        project_id=scope.project_id, user_id=scope.user_id
-                    ),
-                ))
-
-        elif scope_id == (InvitationPermission, InvitationPermission.Scopes.CREATE):
-            results.append((
-                limits.Limits.ORG_MEMBERS,
-                limits.OrgMembersContext(org_id=scope.org_id)
-            ))
-
-        elif scope_id == (LambdaPermission, LambdaPermission.Scopes.CALL_OFFLINE):
-            if getattr(scope, 'org_id') is not None:
-                results.append((
-                    limits.Limits.ORG_LAMBDA_CALL_OFFLINE,
-                    limits.OrgLambdaCallOfflineContext(org_id=scope.org_id)
-                ))
-            else:
-                results.append((
-                    limits.Limits.USER_SANDBOX_LAMBDA_CALL_OFFLINE,
-                    limits.UserSandboxLambdaCallOfflineContext(user_id=scope.user_id)
-                ))
-
-
-        return results
-
 class PolicyEnforcer(BasePermission):
     # pylint: disable=no-self-use
     def check_permission(self, request, view, obj):
-        # Some permissions are only needed to be checked if the action
-        # is permitted in general. To achieve this, we split checks
-        # into 2 groups, and check one after another.
-        basic_permissions: List[OpenPolicyAgentPermission] = []
-        conditional_permissions: List[OpenPolicyAgentPermission] = []
+        permissions: List[OpenPolicyAgentPermission] = []
 
         # DRF can send OPTIONS request. Internally it will try to get
         # information about serializers for PUT and POST requests (clone
@@ -1646,33 +1396,14 @@ class PolicyEnforcer(BasePermission):
         # the condition below is enough.
         if not self.is_metadata_request(request, view):
             for perm in OpenPolicyAgentPermission.__subclasses__():
-                basic_permissions.extend(perm.create(request, view, obj))
+                permissions.extend(perm.create(request, view, obj))
 
-            conditional_permissions.extend(LimitPermission.create_from_scopes(
-                request, view, obj, basic_permissions
-            ))
-
-        self._iam_context = request.iam_context
-
-        allow = self._check_permissions(basic_permissions)
-        if allow and conditional_permissions:
-            allow = self._check_permissions(conditional_permissions)
-        return allow
-
-    def _check_permissions(self, permissions: List[OpenPolicyAgentPermission]) -> bool:
         allow = True
-        reasons = []
         for perm in permissions:
             result = perm.check_access()
             allow &= result.allow
-            reasons.extend(result.reasons)
 
-        if allow:
-            return True
-        elif reasons:
-            raise LimitsReachedException(reasons, self._iam_context)
-        else:
-            raise PermissionDenied("not authorized")
+        return allow
 
     def has_permission(self, request, view):
         if not view.detail:
