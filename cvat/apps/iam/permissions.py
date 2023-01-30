@@ -1341,49 +1341,6 @@ class IssuePermission(OpenPolicyAgentPermission):
 
         return data
 
-class LimitationPermission(OpenPolicyAgentPermission):
-    class Scopes(StrEnum):
-        LIST = 'list'
-        UPDATE = 'update'
-
-    @classmethod
-    def create(cls, request, view, obj):
-        permissions = []
-        if view.basename == 'limitation':
-            for scope in cls.get_scopes(request, view, obj):
-                self = cls.create_base_perm(request, view, scope, obj)
-                permissions.append(self)
-
-        return permissions
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.url = settings.IAM_OPA_DATA_URL + '/limitations/allow'
-
-    def get_scopes(request, view, obj):
-        Scopes = __class__.Scopes
-        scope = {
-            ('partial_update', 'PATCH'): Scopes.UPDATE,
-            ('list', 'GET'): Scopes.LIST,
-        }.get((view.action, request.method))
-
-        return [scope]
-
-    def get_resource(self):
-        data = None
-        if self.obj:
-            data = {
-                'id': self.obj.id,
-                'organization': {
-                    'id': getattr(self.obj.org, 'id', None)
-                },
-                'user': {
-                    'id': getattr(self.obj.user, 'id', None)
-                }
-            }
-
-        return data
-
 class PolicyEnforcer(BasePermission):
     # pylint: disable=no-self-use
     def check_permission(self, request, view, obj):
