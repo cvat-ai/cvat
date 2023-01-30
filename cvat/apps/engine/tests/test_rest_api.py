@@ -2976,6 +2976,7 @@ class TaskImportExportAPITestCase(APITestCase):
                             "data",
                             "source_storage",
                             "target_storage",
+                            "jobs",
                         ),
                     )
 
