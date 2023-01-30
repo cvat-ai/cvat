@@ -9,7 +9,7 @@ import Tag from 'antd/lib/tag';
 import Text from 'antd/lib/typography/Text';
 import { MoreOutlined } from '@ant-design/icons';
 import Modal from 'antd/lib/modal';
-import { MLModel } from 'cvat-core-wrapper';
+import { MLModel, ModelProviders } from 'cvat-core-wrapper';
 import Title from 'antd/lib/typography/Title';
 import Meta from 'antd/lib/card/Meta';
 import Preview from 'components/common/preview';
@@ -140,9 +140,13 @@ export default function DeployedModelItem(props: Props): JSX.Element {
                                 {model.owner && (<Text strong>{model.owner}</Text>)}
                                 <Text type='secondary'>{` Added ${created}`}</Text>
                             </Row>
-                            <Dropdown overlay={<ModelActionsMenuComponent model={model} onDelete={onDelete} />}>
-                                <Button type='link' size='large' icon={<MoreOutlined />} />
-                            </Dropdown>
+                            {
+                                model.provider !== ModelProviders.CVAT && (
+                                    <Dropdown overlay={<ModelActionsMenuComponent model={model} onDelete={onDelete} />}>
+                                        <Button type='link' size='large' icon={<MoreOutlined />} />
+                                    </Dropdown>
+                                )
+                            }
                         </div>
                     )}
                 />
