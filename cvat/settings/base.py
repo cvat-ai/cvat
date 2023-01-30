@@ -262,47 +262,6 @@ IAM_OPA_DATA_URL = f'{IAM_OPA_HOST}/v1/data'
 LOGIN_URL = 'rest_login'
 LOGIN_REDIRECT_URL = '/'
 
-DEFAULT_LIMITS = {
-    "USER_SANDBOX_TASKS": 10,
-    "USER_SANDBOX_PROJECTS": 3,
-    "TASKS_IN_USER_SANDBOX_PROJECT": 5,
-    "USER_OWNED_ORGS": 1,
-    "USER_SANDBOX_CLOUD_STORAGES": 1,
-    "USER_SANDBOX_PROJECT_WEBHOOKS": 10,
-    "USER_SANDBOX_LAMBDA_CALL_OFFLINE": 0,
-
-    "ORG_TASKS": 10,
-    "ORG_PROJECTS": 3,
-    "ORG_MEMBERS": 3,
-    "TASKS_IN_ORG_PROJECT": 5,
-    "ORG_CLOUD_STORAGES": 1,
-    "ORG_COMMON_WEBHOOKS": 10,
-    "ORG_PROJECT_WEBHOOKS": 10,
-    "ORG_LAMBDA_CALL_OFFLINE": 0,
-}
-
-
-ORG_LIMITS_MAPPING = {
-    "ORG_TASKS": "tasks",
-    "ORG_PROJECTS": "projects",
-    "ORG_MEMBERS": "memberships",
-    "TASKS_IN_ORG_PROJECT": "tasks_per_project",
-    "ORG_CLOUD_STORAGES": "cloud_storages",
-    "ORG_COMMON_WEBHOOKS": "webhooks_per_organization",
-    "ORG_PROJECT_WEBHOOKS": "webhooks_per_project",
-    "ORG_LAMBDA_CALL_OFFLINE": "lambda_requests",
-}
-
-USER_LIMITS_MAPPING = {
-    "USER_SANDBOX_TASKS": "tasks",
-    "USER_SANDBOX_PROJECTS": "projects",
-    "TASKS_IN_USER_SANDBOX_PROJECT": "tasks_per_project",
-    "USER_OWNED_ORGS": "organizations",
-    "USER_SANDBOX_CLOUD_STORAGES": "cloud_storages",
-    "USER_SANDBOX_PROJECT_WEBHOOKS": "webhooks_per_project",
-    "USER_SANDBOX_LAMBDA_CALL_OFFLINE": "lambda_requests",
-}
-
 # ORG settings
 ORG_INVITATION_CONFIRM = 'No'
 
