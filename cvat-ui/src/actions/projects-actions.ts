@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,11 +7,12 @@ import { Dispatch, ActionCreator } from 'redux';
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import {
-    ProjectsQuery, TasksQuery, CombinedState, Indexable,
+    ProjectsQuery, TasksQuery, CombinedState,
 } from 'reducers';
 import { getTasksAsync } from 'actions/tasks-actions';
 import { getCVATStore } from 'cvat-store';
 import { getCore } from 'cvat-core-wrapper';
+import { filterNull } from 'utils/filter-null';
 
 const cvat = getCore();
 
@@ -99,17 +100,10 @@ export function getProjectsAsync(
         dispatch(projectActions.updateProjectsGettingQuery(query, tasksQuery));
 
         // Clear query object from null fields
-        const filteredQuery: Partial<ProjectsQuery> = {
+        const filteredQuery: Partial<ProjectsQuery> = filterNull({
             page: 1,
             ...query,
-        };
-
-        for (const key of Object.keys(filteredQuery)) {
-            const value = (filteredQuery as Indexable)[key];
-            if (value === null || typeof value === 'undefined') {
-                delete (filteredQuery as Indexable)[key];
-            }
-        }
+        });
 
         let result = null;
         try {

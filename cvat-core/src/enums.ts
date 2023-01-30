@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier = MIT
 
@@ -132,10 +132,23 @@ export enum HistoryActions {
     RESTORED_FRAME = 'Restored frame',
 }
 
-export enum ModelType {
+export enum ModelKind {
     DETECTOR = 'detector',
     INTERACTOR = 'interactor',
     TRACKER = 'tracker',
+    CLASSIFIER = 'classifier',
+    REID = 'reid',
+}
+
+export enum ModelProviders {
+    CVAT = 'cvat',
+}
+
+export enum ModelReturnType {
+    RECTANGLE = 'rectangle',
+    TAG = 'tag',
+    POLYGON = 'polygon',
+    MASK = 'mask',
 }
 
 export const colors = [

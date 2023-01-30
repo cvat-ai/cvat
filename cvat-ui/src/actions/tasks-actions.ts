@@ -1,14 +1,15 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { AnyAction, Dispatch, ActionCreator } from 'redux';
 import { ThunkAction } from 'redux-thunk';
 import {
-    TasksQuery, CombinedState, Indexable, StorageLocation,
+    TasksQuery, CombinedState, StorageLocation,
 } from 'reducers';
 import { getCore, Storage } from 'cvat-core-wrapper';
+import { filterNull } from 'utils/filter-null';
 import { getInferenceStatusAsync } from './models-actions';
 
 const cvat = getCore();
@@ -74,13 +75,7 @@ export function getTasksAsync(
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         dispatch(getTasks(query, updateQuery));
 
-        // We remove all keys with null values from the query
-        const filteredQuery = { ...query };
-        for (const key of Object.keys(query)) {
-            if ((filteredQuery as Indexable)[key] === null) {
-                delete (filteredQuery as Indexable)[key];
-            }
-        }
+        const filteredQuery = filterNull(query);
 
         let result = null;
         try {

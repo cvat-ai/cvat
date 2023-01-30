@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -26,10 +27,12 @@ import lodash from 'lodash';
 
 import { AIToolsIcon } from 'icons';
 import { Canvas, convertShapesForInteractor } from 'cvat-canvas-wrapper';
-import { getCore, Attribute, Label } from 'cvat-core-wrapper';
+import {
+    getCore, Attribute, Label, MLModel,
+} from 'cvat-core-wrapper';
 import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 import {
-    CombinedState, ActiveControl, Model, ObjectType, ShapeType, ToolsBlockerState, ModelAttribute,
+    CombinedState, ActiveControl, ObjectType, ShapeType, ToolsBlockerState, ModelAttribute,
 } from 'reducers';
 import {
     interactWithCanvas,
@@ -57,9 +60,9 @@ interface StateToProps {
     jobInstance: any;
     isActivated: boolean;
     frame: number;
-    interactors: Model[];
-    detectors: Model[];
-    trackers: Model[];
+    interactors: MLModel[];
+    detectors: MLModel[];
+    trackers: MLModel[];
     curZOrder: number;
     defaultApproxPolyAccuracy: number;
     toolsBlockerState: ToolsBlockerState;
@@ -67,7 +70,7 @@ interface StateToProps {
 }
 
 interface DispatchToProps {
-    onInteractionStart(activeInteractor: Model, activeLabelID: number): void;
+    onInteractionStart(activeInteractor: MLModel, activeLabelID: number): void;
     updateAnnotations(statesToUpdate: any[]): void;
     createAnnotations(sessionInstance: any, frame: number, statesToCreate: any[]): void;
     fetchAnnotations(): void;
@@ -133,13 +136,13 @@ interface TrackedShape {
     clientID: number;
     serverlessState: any;
     shapePoints: number[];
-    trackerModel: Model;
+    trackerModel: MLModel;
 }
 
 interface State {
-    activeInteractor: Model | null;
+    activeInteractor: MLModel | null;
     activeLabelID: number;
-    activeTracker: Model | null;
+    activeTracker: MLModel | null;
     convertMasksToPolygons: boolean;
     trackedShapes: TrackedShape[];
     fetching: boolean;
@@ -211,7 +214,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         };
         lastestApproximatedPoints: number[][];
         latestRequest: null | {
-            interactor: Model;
+            interactor: MLModel;
             data: {
                 frame: number;
                 neg_points: number[][];
@@ -444,7 +447,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 this.constructFromPoints(this.interaction.lastestApproximatedPoints);
             }
         } else if (shapesUpdated) {
-            const interactor = activeInteractor as Model;
+            const interactor = activeInteractor as MLModel;
             this.interaction.latestRequest = {
                 interactor,
                 data: {
@@ -498,7 +501,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         clientID,
                         serverlessState: null,
                         shapePoints: points,
-                        trackerModel: activeTracker as Model,
+                        trackerModel: activeTracker as MLModel,
                     },
                 ],
             });
@@ -527,7 +530,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     private setActiveInteractor = (value: string): void => {
         const { interactors } = this.props;
-        const [interactor] = interactors.filter((_interactor: Model) => _interactor.id === value);
+        const [interactor] = interactors.filter((_interactor: MLModel) => _interactor.id === value);
 
         if (interactor.version < MIN_SUPPORTED_INTERACTOR_VERSION) {
             notification.warning({
@@ -544,7 +547,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     private setActiveTracker = (value: string): void => {
         const { trackers } = this.props;
         this.setState({
-            activeTracker: trackers.filter((tracker: Model) => tracker.id === value)[0],
+            activeTracker: trackers.filter((tracker: MLModel) => tracker.id === value)[0],
         });
     };
 
@@ -723,7 +726,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 for (const trackerID of Object.keys(trackingData.stateless)) {
                     let hideMessage = null;
                     try {
-                        const [tracker] = trackers.filter((_tracker: Model) => _tracker.id === trackerID);
+                        const [tracker] = trackers.filter((_tracker: MLModel) => _tracker.id === trackerID);
                         if (!tracker) {
                             throw new Error(`Suitable tracker with ID ${trackerID} not found in tracker list`);
                         }
@@ -770,7 +773,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     // 4. run tracking for all the objects
                     let hideMessage = null;
                     try {
-                        const [tracker] = trackers.filter((_tracker: Model) => _tracker.id === trackerID);
+                        const [tracker] = trackers.filter((_tracker: MLModel) => _tracker.id === trackerID);
                         if (!tracker) {
                             throw new Error(`Suitable tracker with ID ${trackerID} not found in tracker list`);
                         }
@@ -955,7 +958,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             onChange={this.setActiveTracker}
                         >
                             {trackers.map(
-                                (tracker: Model): JSX.Element => (
+                                (tracker: MLModel): JSX.Element => (
                                     <Select.Option value={tracker.id} title={tracker.description} key={tracker.id}>
                                         {tracker.name}
                                     </Select.Option>
@@ -1030,7 +1033,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             onChange={this.setActiveInteractor}
                         >
                             {interactors.map(
-                                (interactor: Model): JSX.Element => (
+                                (interactor: MLModel): JSX.Element => (
                                     <Select.Option
                                         value={interactor.id}
                                         title={interactor.description}
@@ -1161,7 +1164,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 models={detectors}
                 labels={jobInstance.labels}
                 dimension={jobInstance.dimension}
-                runInference={async (model: Model, body: DetectorRequestBody) => {
+                runInference={async (model: MLModel, body: DetectorRequestBody) => {
                     try {
                         this.setState({ mode: 'detection', fetching: true });
                         const result = await core.lambda.call(jobInstance.taskId, model, {

@@ -1550,8 +1550,72 @@ async function getAnnotations(session, id) {
     } catch (errorData) {
         throw generateError(errorData);
     }
+    return response.data;
+}
+
+async function getFunctions() {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.get(`${backendAPI}/functions`, {
+            proxy: config.proxy,
+        });
+        return response.data.results;
+    } catch (errorData) {
+        if (errorData.response.status === 404) {
+            return [];
+        }
+        throw generateError(errorData);
+    }
+}
+
+async function getFunctionPreview(modelID) {
+    const { backendAPI } = config;
+
+    let response = null;
+    try {
+        const url = `${backendAPI}/functions/${modelID}/preview`;
+        response = await Axios.get(url, {
+            proxy: config.proxy,
+            responseType: 'blob',
+        });
+    } catch (errorData) {
+        const code = errorData.response ? errorData.response.status : errorData.code;
+        throw new ServerError(`Could not get preview for the model ${modelID} from the server`, code);
+    }
 
     return response.data;
+}
+
+async function getFunctionProviders() {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.get(`${backendAPI}/functions/info`, {
+            proxy: config.proxy,
+        });
+        return response.data;
+    } catch (errorData) {
+        if (errorData.response.status === 404) {
+            return [];
+        }
+        throw generateError(errorData);
+    }
+}
+
+async function deleteFunction(functionId: number) {
+    const { backendAPI } = config;
+
+    try {
+        await Axios.delete(`${backendAPI}/functions/${functionId}`, {
+            proxy: config.proxy,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
 }
 
 // Session is 'task' or 'job'
@@ -1580,8 +1644,24 @@ async function updateAnnotations(session, id, data, action) {
     } catch (errorData) {
         throw generateError(errorData);
     }
-
     return response.data;
+}
+
+async function runFunctionRequest(body) {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.post(`${backendAPI}/functions/requests/`, JSON.stringify(body), {
+            proxy: config.proxy,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
 }
 
 // Session is 'task' or 'job'
@@ -1604,7 +1684,6 @@ async function uploadAnnotations(
     };
 
     const url = `${backendAPI}/${session}s/${id}/annotations`;
-
     async function wait() {
         return new Promise<void>((resolve, reject) => {
             async function requestStatus() {
@@ -1666,9 +1745,21 @@ async function uploadAnnotations(
             throw generateError(errorData);
         }
     }
-
     try {
         return await wait();
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function getFunctionRequestStatus(requestID) {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.get(`${backendAPI}/functions/requests/${requestID}`, {
+            proxy: config.proxy,
+        });
+        return response.data;
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -1703,9 +1794,38 @@ async function dumpAnnotations(id, name, format) {
                     reject(generateError(errorData));
                 });
         }
-
         setTimeout(request);
     });
+}
+
+async function cancelFunctionRequest(requestId) {
+    const { backendAPI } = config;
+
+    try {
+        await Axios.delete(`${backendAPI}/functions/requests/${requestId}`, {
+            method: 'DELETE',
+        });
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function createFunction(functionData: any) {
+    const params = enableOrganization();
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.post(`${backendAPI}/functions`, JSON.stringify(functionData), {
+            proxy: config.proxy,
+            params,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
 }
 
 async function saveLogs(logs) {
@@ -1723,6 +1843,40 @@ async function saveLogs(logs) {
     }
 }
 
+async function callFunction(funId, body) {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.post(`${backendAPI}/functions/${funId}/run`, JSON.stringify(body), {
+            proxy: config.proxy,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function getFunctionsRequests() {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.get(`${backendAPI}/functions/requests/`, {
+            proxy: config.proxy,
+        });
+
+        return response.data;
+    } catch (errorData) {
+        if (errorData.response.status === 404) {
+            return [];
+        }
+        throw generateError(errorData);
+    }
+}
+
 async function getLambdaFunctions() {
     const { backendAPI } = config;
 
@@ -1732,6 +1886,9 @@ async function getLambdaFunctions() {
         });
         return response.data;
     } catch (errorData) {
+        if (errorData.response.status === 503) {
+            return [];
+        }
         throw generateError(errorData);
     }
 }
@@ -2425,6 +2582,19 @@ export default Object.freeze({
         run: runLambdaRequest,
         call: callLambdaFunction,
         cancel: cancelLambdaRequest,
+    }),
+
+    functions: Object.freeze({
+        list: getFunctions,
+        status: getFunctionRequestStatus,
+        requests: getFunctionsRequests,
+        run: runFunctionRequest,
+        call: callFunction,
+        create: createFunction,
+        providers: getFunctionProviders,
+        delete: deleteFunction,
+        cancel: cancelFunctionRequest,
+        getPreview: getFunctionPreview,
     }),
 
     issues: Object.freeze({
