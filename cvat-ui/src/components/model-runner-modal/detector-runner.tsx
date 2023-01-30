@@ -248,7 +248,6 @@ function DetectorRunner(props: Props): JSX.Element {
                                     return acc;
                                 }, {},
                             );
-                            console.log(defaultMapping);
                             setMapping(defaultMapping);
                             setMatch({ model: null, task: null });
                             setAttrMatch({});

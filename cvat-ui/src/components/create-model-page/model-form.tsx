@@ -78,9 +78,8 @@ function ModelForm(props: Props): JSX.Element {
                 message: 'Model has been successfully created',
                 className: 'cvat-notification-create-model-success',
             });
-        } catch (e) {
-            console.log(e);
-        }
+        // eslint-disable-next-line no-empty
+        } catch (e) {}
     }, []);
 
     return (
