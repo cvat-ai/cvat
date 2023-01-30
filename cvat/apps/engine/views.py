@@ -841,17 +841,6 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             db_project.save()
             assert serializer.instance.organization == db_project.organization
 
-    def perform_destroy(self, instance):
-        task_dirname = instance.get_dirname()
-        super().perform_destroy(instance)
-        shutil.rmtree(task_dirname, ignore_errors=True)
-        if instance.data and not instance.data.tasks.all():
-            shutil.rmtree(instance.data.get_data_dirname(), ignore_errors=True)
-            instance.data.delete()
-        if instance.project:
-            db_project = instance.project
-            db_project.save()
-
     # UploadMixin method
     def get_upload_dir(self):
         if 'annotations' in self.action:
