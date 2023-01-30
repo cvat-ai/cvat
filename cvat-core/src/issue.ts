@@ -1,11 +1,10 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import quickhull from 'quickhull';
 
-import { Job } from 'session';
 import PluginRegistry from './plugins';
 import Comment, { RawCommentData } from './comment';
 import User from './user';
@@ -13,36 +12,37 @@ import { ArgumentError } from './exceptions';
 import serverProxy from './server-proxy';
 
 interface RawIssueData {
+    job: number;
+    position: number[];
+    frame: number;
     id?: number;
-    job?: any;
-    position?: number[];
-    comments?: any;
-    frame?: number;
+    comments?: RawCommentData[];
     owner?: any;
     resolved?: boolean;
     created_date?: string;
 }
 
 export default class Issue {
-    public readonly id: number;
-    public readonly job: Job;
-    public readonly comments: Comment[];
+    public readonly id?: number;
+    public readonly job: number;
     public readonly frame: number;
-    public readonly owner: User;
-    public readonly resolved: boolean;
-    public readonly createdDate: string;
-    public position: number[];
+    public readonly owner?: User;
+    public readonly comments: Comment[];
+    public readonly resolved?: boolean;
+    public readonly createdDate?: string;
+    public position?: number[];
+    private readonly __internal: RawIssueData & { comments: Comment[] };
 
     constructor(initialData: RawIssueData) {
-        const data: RawIssueData = {
+        const data: RawIssueData & { comments: Comment[] } = {
             id: undefined,
             job: undefined,
             position: undefined,
-            comments: [],
             frame: undefined,
             created_date: undefined,
             owner: undefined,
             resolved: undefined,
+            comments: undefined,
         };
 
         for (const property in data) {
@@ -53,12 +53,14 @@ export default class Issue {
 
         if (data.owner && !(data.owner instanceof User)) data.owner = new User(data.owner);
 
-        if (data.comments) {
-            data.comments = data.comments.map((comment) => new Comment(comment));
-        }
-
         if (typeof data.created_date === 'undefined') {
             data.created_date = new Date().toISOString();
+        }
+
+        if (Array.isArray(initialData.comments)) {
+            data.comments = initialData.comments.map((comment: RawCommentData): Comment => new Comment(comment));
+        } else {
+            data.comments = [];
         }
 
         Object.defineProperties(
@@ -80,7 +82,7 @@ export default class Issue {
                     get: () => data.job,
                 },
                 comments: {
-                    get: () => [...data.comments],
+                    get: () => data.comments,
                 },
                 frame: {
                     get: () => data.frame,
@@ -144,18 +146,14 @@ export default class Issue {
     }
 
     public serialize(): RawIssueData {
-        const { comments } = this;
         const data: RawIssueData = {
+            job: this.job,
             position: this.position,
             frame: this.frame,
-            comments: comments.map((comment) => comment.serialize()),
         };
 
         if (typeof this.id === 'number') {
             data.id = this.id;
-        }
-        if (typeof this.job === 'number') {
-            data.job = this.job;
         }
         if (typeof this.createdDate === 'string') {
             data.created_date = this.createdDate;
@@ -175,7 +173,7 @@ Object.defineProperties(Issue.prototype.comment, {
     implementation: {
         writable: false,
         enumerable: false,
-        value: async function implementation(data: RawCommentData) {
+        value: async function implementation(this: Issue, data: RawCommentData) {
             if (typeof data !== 'object' || data === null) {
                 throw new ArgumentError(`The argument "data" must be an object. Got "${data}"`);
             }
@@ -183,15 +181,16 @@ Object.defineProperties(Issue.prototype.comment, {
                 throw new ArgumentError(`Comment message must be a not empty string. Got "${data.message}"`);
             }
 
+            const internalData = Object.getOwnPropertyDescriptor(this, '__internal').get();
             const comment = new Comment(data);
             if (typeof this.id === 'number') {
                 const serialized = comment.serialize();
                 serialized.issue = this.id;
                 const response = await serverProxy.comments.create(serialized);
                 const savedComment = new Comment(response);
-                this.__internal.comments.push(savedComment);
+                internalData.comments.push(savedComment);
             } else {
-                this.__internal.comments.push(comment);
+                internalData.comments.push(comment);
             }
         },
     },

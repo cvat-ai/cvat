@@ -1233,7 +1233,7 @@ async function createTask(taskSpec, taskDataSpec, onUpdate) {
 }
 
 function fetchAll(url, filter = {}): Promise<any> {
-    const pageSize = 2;
+    const pageSize = 500;
     const result = {
         count: 0,
         results: [],
@@ -1325,17 +1325,37 @@ async function getJobs(filter = {}, aggregate = false) {
     return response.data;
 }
 
-async function getJobIssues(jobID) {
+async function getJobIssues(jobID: number) {
     const { backendAPI } = config;
 
     let response = null;
     try {
+        const organization = enableOrganization();
         response = await fetchAll(`${backendAPI}/issues`, {
-            params: {
-                job_id: jobID,
-                ...enableOrganization(),
-            },
+            job_id: jobID,
+            ...organization,
         });
+
+        const commentsResponse = await fetchAll(`${backendAPI}/comments`, {
+            job_id: jobID,
+            ...organization,
+        });
+
+        const issuesById = response.results.reduce((acc, val: { id: number }) => {
+            acc[val.id] = val;
+            return acc;
+        }, {});
+
+        const commentsByIssue = commentsResponse.results.reduce((acc, val) => {
+            acc[val.issue] = acc[val.issue] || [];
+            acc[val.issue].push(val);
+            return acc;
+        }, {});
+
+        for (const issue of Object.keys(commentsByIssue)) {
+            commentsByIssue[issue].sort((a, b) => a.id - b.id);
+            issuesById[issue].comments = commentsByIssue[issue];
+        }
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -1366,12 +1386,21 @@ async function createIssue(data) {
 
     let response = null;
     try {
+        const organization = enableOrganization();
         response = await Axios.post(`${backendAPI}/issues`, JSON.stringify(data), {
             proxy: config.proxy,
+            params: { ...organization },
             headers: {
                 'Content-Type': 'application/json',
             },
         });
+
+        const commentsResponse = await fetchAll(`${backendAPI}/comments`, {
+            issue_id: response.data.id,
+            ...organization,
+        });
+
+        response.data.comments = commentsResponse.results;
     } catch (errorData) {
         throw generateError(errorData);
     }
