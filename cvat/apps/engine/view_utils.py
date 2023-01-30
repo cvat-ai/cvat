@@ -12,7 +12,6 @@ from django.http.response import HttpResponse
 from django.utils.http import urlencode
 from rest_framework.response import Response
 from rest_framework.reverse import reverse as _reverse
-from rest_framework.utils.urls import remove_query_param
 from rest_framework.serializers import Serializer
 from rest_framework.viewsets import GenericViewSet
 
