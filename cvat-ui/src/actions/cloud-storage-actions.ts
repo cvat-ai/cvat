@@ -1,11 +1,13 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { Dispatch, ActionCreator } from 'redux';
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import { getCore } from 'cvat-core-wrapper';
-import { CloudStoragesQuery, CloudStorage, Indexable } from 'reducers';
+import { CloudStoragesQuery, CloudStorage } from 'reducers';
+import { filterNull } from 'utils/filter-null';
 
 const cvat = getCore();
 
@@ -106,12 +108,7 @@ export function getCloudStoragesAsync(query: Partial<CloudStoragesQuery>): Thunk
         dispatch(cloudStoragesActions.getCloudStorages());
         dispatch(cloudStoragesActions.updateCloudStoragesGettingQuery(query));
 
-        const filteredQuery = { ...query };
-        for (const key in filteredQuery) {
-            if ((filteredQuery as Indexable)[key] === null) {
-                delete (filteredQuery as Indexable)[key];
-            }
-        }
+        const filteredQuery = filterNull(query);
 
         let result = null;
         try {

@@ -1,6 +1,6 @@
 {
   "name": "cvat-core",
-  "version": "8.0.0",
+  "version": "8.1.0",
   "description": "Part of Computer Vision Tool which presents an interface for client-side integration",
   "main": "src/api.ts",
   "scripts": {
