@@ -3,11 +3,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-from contextlib import contextmanager
-from itertools import repeat
-import itertools
-from typing import Sequence, Type
-from unittest import mock
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase, APIClient
@@ -16,10 +11,8 @@ from django.test import override_settings
 from django.urls import path, re_path
 from allauth.account.views import EmailVerificationSentView
 
-from cvat.apps.iam.permissions import OpenPolicyAgentPermission, PermissionResult
 from cvat.apps.iam.urls import urlpatterns as iam_url_patterns
 from cvat.apps.iam.views import ConfirmEmailViewEx
-from cvat.apps.engine.models import User
 
 
 urlpatterns = iam_url_patterns + [
