@@ -38,6 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/opencv/cvat/pull/5557>)
 - Windows Installation Instructions adjusted to work around <https://github.com/nuclio/nuclio/issues/1821>
 - The contour detection function for semantic segmentation (<https://github.com/opencv/cvat/pull/4665>)
+- Delete newline character when generating a webhook signature (<https://github.com/opencv/cvat/pull/5622>)
 
 ### Deprecated
 - \[Server API\] Endpoints with collections are deprecated in favor of their full variants
@@ -54,6 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Export annotations to Azure container (<https://github.com/opencv/cvat/pull/5596>)
 - Fix the type of the credentials parameter of make_client from the Python SDK
 - Reduced number of noisy information on ortho views for 3D canvas (<https://github.com/opencv/cvat/pull/5608>)
+- Clean up disk space after a project is removed (<https://github.com/opencv/cvat/pull/5632>)
 - \[Server API\] Various errors in the generated schema (<https://github.com/opencv/cvat/pull/5575>)
 
 ### Security

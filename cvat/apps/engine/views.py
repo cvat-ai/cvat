@@ -7,7 +7,6 @@ import io
 import os
 import os.path as osp
 import pytz
-import shutil
 import traceback
 from datetime import datetime
 from distutils.util import strtobool
@@ -2030,11 +2029,6 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         serializer.save(
             owner=self.request.user,
             organization=self.request.iam_context['organization'])
-
-    def perform_destroy(self, instance):
-        cloud_storage_dirname = instance.get_storage_dirname()
-        super().perform_destroy(instance)
-        shutil.rmtree(cloud_storage_dirname, ignore_errors=True)
 
     def create(self, request, *args, **kwargs):
         try:
