@@ -1,5 +1,5 @@
 // Copyright (C) 2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -26,6 +26,7 @@ interface ResourceFilterProps {
     recentVisible: boolean;
     builderVisible: boolean;
     value: string | null;
+    disabled?: boolean;
     onPredefinedVisibleChange?: (visible: boolean) => void;
     onBuilderVisibleChange(visible: boolean): void;
     onRecentVisibleChange(visible: boolean): void;
@@ -117,6 +118,7 @@ export default function ResourceFilterHOC(
         const {
             predefinedVisible, builderVisible, recentVisible, value,
             onPredefinedVisibleChange, onBuilderVisibleChange, onRecentVisibleChange, onApplyFilter,
+            disabled,
         } = props;
 
         const user = useSelector((state: CombinedState) => state.auth.user);
@@ -248,6 +250,7 @@ export default function ResourceFilterHOC(
                     ) : null
                 }
                 <Dropdown
+                    disabled={disabled}
                     placement='bottomRight'
                     visible={builderVisible}
                     destroyPopupOnHide
@@ -356,7 +359,7 @@ export default function ResourceFilterHOC(
                     </Button>
                 </Dropdown>
                 <Button
-                    disabled={!(appliedFilter.built || appliedFilter.predefined || appliedFilter.recent)}
+                    disabled={!(appliedFilter.built || appliedFilter.predefined || appliedFilter.recent) || disabled}
                     size='small'
                     type='link'
                     onClick={() => { setAppliedFilter({ ...defaultAppliedFilter }); }}
