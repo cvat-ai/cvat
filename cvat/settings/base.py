@@ -710,7 +710,7 @@ if USE_ALLAUTH_SOCIAL_ACCOUNTS:
 CLICKHOUSE = {
     'logs': {
         'NAME': os.getenv('CLICKHOUSE_DB', 'cvat'),
-        'HOST': os.getenv('CLICKHOUSE_HOST', 'localhost'),
+        'HOST': os.getenv('CLICKHOUSE_HOST', 'clickhouse'),
         'PORT': os.getenv('CLICKHOUSE_PORT', 8123),
         'USER': os.getenv('CLICKHOUSE_USER', 'user'),
         'PASSWORD': os.getenv('CLICKHOUSE_PASSWORD', 'user'),

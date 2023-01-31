@@ -132,7 +132,7 @@ def export(request, queue_name, logger):
             return Response(status=status.HTTP_202_ACCEPTED)
 
     ttl = dm.views.PROJECT_CACHE_TTL.total_seconds()
-    output_filename = f"{log_id}.csv"
+    output_filename = os.path.join(settings.TMP_FILES_ROOT, f"{log_id}.csv")
     queue.enqueue_call(
         func=_create_csv,
         args=(query_params, output_filename, DEFAULT_CACHE_TTL),
