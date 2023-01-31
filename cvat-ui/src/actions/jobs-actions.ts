@@ -1,10 +1,12 @@
 // Copyright (C) 2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import { getCore } from 'cvat-core-wrapper';
-import { Indexable, JobsQuery, Job } from 'reducers';
+import { JobsQuery, Job } from 'reducers';
+import { filterNull } from 'utils/filter-null';
 
 const cvat = getCore();
 
@@ -43,14 +45,9 @@ export type JobsActions = ActionUnion<typeof jobsActions>;
 export const getJobsAsync = (query: JobsQuery): ThunkAction => async (dispatch) => {
     try {
         // We remove all keys with null values from the query
-        const filteredQuery = { ...query };
-        for (const key of Object.keys(query)) {
-            if ((filteredQuery as Indexable)[key] === null) {
-                delete (filteredQuery as Indexable)[key];
-            }
-        }
+        const filteredQuery = filterNull(query);
 
-        dispatch(jobsActions.getJobs(filteredQuery));
+        dispatch(jobsActions.getJobs(filteredQuery as JobsQuery));
         const jobs = await cvat.jobs.get(filteredQuery);
         dispatch(jobsActions.getJobsSuccess(jobs));
     } catch (error) {

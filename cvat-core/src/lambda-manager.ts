@@ -1,12 +1,25 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import serverProxy from './server-proxy';
 import { ArgumentError } from './exceptions';
 import MLModel from './ml-model';
-import { RQStatus } from './enums';
+import { ModelProviders, RQStatus } from './enums';
+
+export interface ModelProvider {
+    name: string;
+    icon: string;
+    attributes: Record<string, string>;
+}
+
+interface ModelProxy {
+    run: (body: any) => Promise<any>;
+    call: (modelID: string | number, body: any) => Promise<any>;
+    status: (requestID: string) => Promise<any>;
+    cancel: (requestID: string) => Promise<any>;
+}
 
 class LambdaManager {
     private listening: any;
@@ -18,18 +31,16 @@ class LambdaManager {
     }
 
     async list(): Promise<MLModel[]> {
-        if (Array.isArray(this.cachedList)) {
-            return [...this.cachedList];
-        }
+        const lambdaFunctions = await serverProxy.lambda.list();
+        const functions = await serverProxy.functions.list();
 
-        const result = await serverProxy.lambda.list();
+        const result = [...lambdaFunctions, ...functions];
         const models = [];
 
         for (const model of result) {
             models.push(
                 new MLModel({
                     ...model,
-                    type: model.kind,
                 }),
             );
         }
@@ -59,7 +70,7 @@ class LambdaManager {
             function: model.id,
         };
 
-        const result = await serverProxy.lambda.run(body);
+        const result = await LambdaManager.getModelProxy(model).run(body);
         return result.id;
     }
 
@@ -73,32 +84,43 @@ class LambdaManager {
             task: taskID,
         };
 
-        const result = await serverProxy.lambda.call(model.id, body);
+        const result = await LambdaManager.getModelProxy(model).call(model.id, body);
         return result;
     }
 
     async requests() {
-        const result = await serverProxy.lambda.requests();
+        const lambdaRequests = await serverProxy.lambda.requests();
+        const functionsRequests = await serverProxy.functions.requests();
+        const result = [...lambdaRequests, ...functionsRequests];
         return result.filter((request) => ['queued', 'started'].includes(request.status));
     }
 
-    async cancel(requestID): Promise<void> {
+    async cancel(requestID, functionID): Promise<void> {
         if (typeof requestID !== 'string') {
             throw new ArgumentError(`Request id argument is required to be a string. But got ${requestID}`);
+        }
+        const model = this.cachedList.find((_model) => _model.id === functionID);
+        if (!model) {
+            throw new ArgumentError('Incorrect Function Id provided');
         }
 
         if (this.listening[requestID]) {
             clearTimeout(this.listening[requestID].timeout);
             delete this.listening[requestID];
         }
-        await serverProxy.lambda.cancel(requestID);
+
+        await LambdaManager.getModelProxy(model).cancel(requestID);
     }
 
-    async listen(requestID, onUpdate): Promise<void> {
+    async listen(requestID, functionID, onUpdate): Promise<void> {
+        const model = this.cachedList.find((_model) => _model.id === functionID);
+        if (!model) {
+            throw new ArgumentError('Incorrect Function Id provided');
+        }
         const timeoutCallback = async (): Promise<void> => {
             try {
                 this.listening[requestID].timeout = null;
-                const response = await serverProxy.lambda.status(requestID);
+                const response = await LambdaManager.getModelProxy(model).status(requestID);
 
                 if (response.status === RQStatus.QUEUED || response.status === RQStatus.STARTED) {
                     onUpdate(response.status, response.progress || 0);
@@ -123,8 +145,27 @@ class LambdaManager {
 
         this.listening[requestID] = {
             onUpdate,
+            functionID,
             timeout: setTimeout(timeoutCallback, 2000),
         };
+    }
+
+    async providers(): Promise<ModelProvider[]> {
+        const providersData: Record<string, Record<string, string>> = await serverProxy.functions.providers();
+        const providers = Object.entries(providersData).map(([provider, attributes]) => {
+            const { icon } = attributes;
+            delete attributes.icon;
+            return {
+                name: provider,
+                icon,
+                attributes,
+            };
+        });
+        return providers;
+    }
+
+    private static getModelProxy(model: MLModel): ModelProxy {
+        return model.provider === ModelProviders.CVAT ? serverProxy.lambda : serverProxy.functions;
     }
 }
 
