@@ -72,7 +72,7 @@ def send_welcome_email(request, **kwargs):
     """
         Send welcome email in 2 cases:
         - CVAT server is configured with MANDATORY email verification and the user has confirmed the email (handle email_confirmed signal)
-        - CVAT server is configured with OPTIONAL or NONE email verification policy and the user has signed up (handle user_signed_up signal)
+        - CVAT server is configured with OPTIONAL email verification policy and the user has signed up (handle user_signed_up signal)
         signal user_signed_up provides: request, user
         signal email_confirmed provides: request, email_address
     """
@@ -81,6 +81,12 @@ def send_welcome_email(request, **kwargs):
         return (
             settings.ACCOUNT_EMAIL_VERIFICATION
             == allauth_settings.EmailVerificationMethod.MANDATORY
+        )
+
+    def _is_optional_email_verification():
+        return (
+            settings.ACCOUNT_EMAIL_VERIFICATION
+            == allauth_settings.EmailVerificationMethod.OPTIONAL
         )
 
     def _define_user_and_email():
@@ -97,7 +103,7 @@ def send_welcome_email(request, **kwargs):
         email
         and (
             (
-                not _is_mandatory_email_verification()
+                _is_optional_email_verification()
                 and 'register' in request.path
             )
             or (
