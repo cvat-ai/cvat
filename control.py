@@ -8,7 +8,7 @@ FAKE = False
 
 APP_CVAT = 'retechlabs/rebotics-cvat'
 APP_OPA = 'retechlabs/rebotics-cvat-opa'
-APP_LOGSTASH = 'retechlabs/rebotics-cvat-logstsah'
+APP_LOGSTASH = 'retechlabs/rebotics-cvat-logstash'
 APP_CHOICES = (APP_CVAT, APP_OPA, APP_LOGSTASH)
 
 ECR_NAME_MAP = {
