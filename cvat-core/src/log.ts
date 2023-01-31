@@ -10,7 +10,7 @@ import { ArgumentError } from './exceptions';
 
 export class Log {
     public readonly id: number;
-    public readonly type: LogType;
+    public readonly scope: LogType;
     public readonly time: Date;
 
     public payload: any;
@@ -20,7 +20,7 @@ export class Log {
     constructor(logType: LogType, payload: any) {
         this.onCloseCallback = null;
 
-        this.type = logType;
+        this.scope = logType;
         this.payload = { ...payload };
         this.time = new Date();
     }
@@ -45,11 +45,22 @@ export class Log {
     public dump(): any {
         const payload = { ...this.payload };
         const body = {
-            name: this.type,
-            time: this.time.toISOString(),
+            scope: this.scope,
+            timestamp: this.time.toISOString(),
         };
 
-        for (const field of ['client_id', 'job_id', 'task_id', 'is_active']) {
+        for (const field of [
+            'obj_name',
+            'obj_id',
+            'obj_val',
+            'count',
+            'duration',
+            'project',
+            'task',
+            'job',
+            'user',
+            'organization',
+        ]) {
             if (field in payload) {
                 body[field] = payload[field];
                 delete payload[field];
@@ -58,7 +69,7 @@ export class Log {
 
         return {
             ...body,
-            payload,
+            payload: JSON.stringify(payload),
         };
     }
 
@@ -90,7 +101,7 @@ class LogWithCount extends Log {
     public validatePayload(): void {
         super.validatePayload.call(this);
         if (!Number.isInteger(this.payload.count) || this.payload.count < 1) {
-            const message = `The field "count" is required for "${this.type}" log. It must be a positive integer`;
+            const message = `The field "count" is required for "${this.scope}" log. It must be a positive integer`;
             throw new ArgumentError(message);
         }
     }
@@ -99,7 +110,7 @@ class LogWithCount extends Log {
 class LogWithObjectsInfo extends Log {
     public validatePayload(): void {
         const generateError = (name: string, range: string): void => {
-            const message = `The field "${name}" is required for "${this.type}" log. ${range}`;
+            const message = `The field "${name}" is required for "${this.scope}" log. ${range}`;
             throw new ArgumentError(message);
         };
 
@@ -137,74 +148,45 @@ class LogWithObjectsInfo extends Log {
     }
 }
 
-class LogWithWorkingTime extends Log {
-    public validatePayload(): void {
-        super.validatePayload.call(this);
-
-        if (
-            !('working_time' in this.payload) ||
-            !(typeof this.payload.working_time === 'number') ||
-            this.payload.working_time < 0
-        ) {
-            const message = `
-                The field "working_time" is required for ${this.type} log. It must be a number not less than 0
-            `;
-            throw new ArgumentError(message);
-        }
-    }
-}
-
 class LogWithExceptionInfo extends Log {
     public validatePayload(): void {
         super.validatePayload.call(this);
 
         if (typeof this.payload.message !== 'string') {
-            const message = `The field "message" is required for ${this.type} log. It must be a string`;
+            const message = `The field "message" is required for ${this.scope} log. It must be a string`;
             throw new ArgumentError(message);
         }
 
         if (typeof this.payload.filename !== 'string') {
-            const message = `The field "filename" is required for ${this.type} log. It must be a string`;
+            const message = `The field "filename" is required for ${this.scope} log. It must be a string`;
             throw new ArgumentError(message);
         }
 
         if (typeof this.payload.line !== 'number') {
-            const message = `The field "line" is required for ${this.type} log. It must be a number`;
+            const message = `The field "line" is required for ${this.scope} log. It must be a number`;
             throw new ArgumentError(message);
         }
 
         if (typeof this.payload.column !== 'number') {
-            const message = `The field "column" is required for ${this.type} log. It must be a number`;
+            const message = `The field "column" is required for ${this.scope} log. It must be a number`;
             throw new ArgumentError(message);
         }
 
         if (typeof this.payload.stack !== 'string') {
-            const message = `The field "stack" is required for ${this.type} log. It must be a string`;
+            const message = `The field "stack" is required for ${this.scope} log. It must be a string`;
             throw new ArgumentError(message);
         }
     }
 
     public dump(): any {
-        let body = super.dump();
-        const { payload } = body;
+        const body = super.dump();
         const client = detect();
-        body = {
-            ...body,
-            message: payload.message,
-            filename: payload.filename,
-            line: payload.line,
-            column: payload.column,
-            stack: payload.stack,
+        body.payload = {
+            ...body.payload,
             system: client.os,
             client: client.name,
             version: client.version,
         };
-
-        delete payload.message;
-        delete payload.filename;
-        delete payload.line;
-        delete payload.column;
-        delete payload.stack;
 
         return body;
     }
@@ -226,11 +208,7 @@ export default function logFactory(logType: LogType, payload: any): Log {
         return new LogWithObjectsInfo(logType, payload);
     }
 
-    if (logType === LogType.sendUserActivity) {
-        return new LogWithWorkingTime(logType, payload);
-    }
-
-    if (logType === LogType.sendException) {
+    if (logType === LogType.exception) {
         return new LogWithExceptionInfo(logType, payload);
     }
 

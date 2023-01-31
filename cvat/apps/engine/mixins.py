@@ -17,6 +17,7 @@ from cvat.apps.engine.models import Location
 from cvat.apps.engine.location import StorageType, get_location_configuration
 from cvat.apps.engine.serializers import DataSerializer, LabeledDataSerializer
 from cvat.apps.webhooks.signals import signal_update, signal_create, signal_delete
+from cvat.apps.logs.signals import log_signal_create, log_signal_update, log_signal_delete
 
 class TusFile:
     _tus_cache_timeout = 3600
@@ -339,6 +340,7 @@ class CreateModelMixin(mixins.CreateModelMixin):
     def perform_create(self, serializer, **kwargs):
         serializer.save(**kwargs)
         signal_create.send(self, instance=serializer.instance)
+        log_signal_create.send(self, instance=serializer.instance)
 
 class PartialUpdateModelMixin:
     """
@@ -361,6 +363,7 @@ class PartialUpdateModelMixin:
             serializer.instance._prefetched_objects_cache = {}
 
         signal_update.send(self, instance=serializer.instance, old_values=old_values)
+        log_signal_update.send(self, instance=serializer.instance, old_values=old_values)
 
     def partial_update(self, request, *args, **kwargs):
         kwargs['partial'] = True
@@ -369,4 +372,5 @@ class PartialUpdateModelMixin:
 class DestroyModelMixin(mixins.DestroyModelMixin):
     def perform_destroy(self, instance):
         signal_delete.send(self, instance=instance)
+        log_signal_delete.send(self, instance=instance)
         super().perform_destroy(instance)

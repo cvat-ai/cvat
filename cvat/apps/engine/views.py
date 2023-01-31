@@ -9,7 +9,7 @@ import os.path as osp
 import pytz
 import shutil
 import traceback
-from datetime import datetime
+import datetime
 from distutils.util import strtobool
 from tempfile import mkstemp
 
@@ -35,7 +35,6 @@ from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import APIException, NotFound, ValidationError, PermissionDenied
 from rest_framework.permissions import SAFE_METHODS
-from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from django_sendfile import sendfile
 
@@ -54,9 +53,9 @@ from cvat.apps.engine.models import (
 from cvat.apps.engine.models import CloudStorage as CloudStorageModel
 from cvat.apps.engine.serializers import (
     AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
-    DataMetaReadSerializer, DataMetaWriteSerializer, DataSerializer, ExceptionSerializer,
+    DataMetaReadSerializer, DataMetaWriteSerializer, DataSerializer,
     FileInfoSerializer, JobReadSerializer, JobWriteSerializer, LabeledDataSerializer,
-    LogEventSerializer, ProjectReadSerializer, ProjectWriteSerializer, ProjectSearchSerializer,
+    ProjectReadSerializer, ProjectWriteSerializer, ProjectSearchSerializer,
     RqStatusSerializer, TaskReadSerializer, TaskWriteSerializer, UserSerializer, PluginsSerializer, IssueReadSerializer,
     IssueWriteSerializer, CommentReadSerializer, CommentWriteSerializer, CloudStorageWriteSerializer,
     CloudStorageReadSerializer, DatasetFileSerializer, JobCommitSerializer,
@@ -76,7 +75,7 @@ from cvat.apps.iam.permissions import (CloudStoragePermission,
     CommentPermission, IssuePermission, JobPermission, ProjectPermission,
     TaskPermission, UserPermission)
 from cvat.apps.engine.cache import MediaCache
-
+from cvat.apps.logs.signals import log_signal_annotations_patch
 
 @extend_schema(tags=['server'])
 class ServerViewSet(viewsets.ViewSet):
@@ -112,56 +111,6 @@ class ServerViewSet(viewsets.ViewSet):
         serializer = AboutSerializer(data=about)
         if serializer.is_valid(raise_exception=True):
             return Response(data=serializer.data)
-
-    @staticmethod
-    @extend_schema(summary='Method saves an exception from a client on the server',
-        description='Sends logs to the ELK if it is connected',
-        request=ExceptionSerializer, responses={
-            '201': ExceptionSerializer,
-        })
-    @action(detail=False, methods=['POST'], serializer_class=ExceptionSerializer)
-    def exception(request):
-        serializer = ExceptionSerializer(data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            additional_info = {
-                "username": request.user.username,
-                "name": "Send exception",
-            }
-            message = JSONRenderer().render({**serializer.data, **additional_info}).decode('UTF-8')
-            jid = serializer.data.get("job_id")
-            tid = serializer.data.get("task_id")
-            if jid:
-                clogger.job[jid].error(message)
-            elif tid:
-                clogger.task[tid].error(message)
-            else:
-                clogger.glob.error(message)
-
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-    @staticmethod
-    @extend_schema(summary='Method saves logs from a client on the server',
-        description='Sends logs to the ELK if it is connected',
-        request=LogEventSerializer(many=True),
-        responses={
-            '201': LogEventSerializer(many=True),
-        })
-    @action(detail=False, methods=['POST'], serializer_class=LogEventSerializer)
-    def logs(request):
-        serializer = LogEventSerializer(many=True, data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            user = { "username": request.user.username }
-            for event in serializer.data:
-                message = JSONRenderer().render({**event, **user}).decode('UTF-8')
-                jid = event.get("job_id")
-                tid = event.get("task_id")
-                if jid:
-                    clogger.job[jid].info(message)
-                elif tid:
-                    clogger.task[tid].info(message)
-                else:
-                    clogger.glob.info(message)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @staticmethod
     @extend_schema(
@@ -1582,6 +1531,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             if serializer.is_valid(raise_exception=True):
                 try:
                     data = dm.task.patch_job_data(pk, serializer.data, action)
+                    log_signal_annotations_patch.send(self, instance=self._object, annotations=data, action=action)
                 except (AttributeError, IntegrityError) as e:
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
                 return Response(data)

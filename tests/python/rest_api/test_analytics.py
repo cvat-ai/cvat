@@ -15,7 +15,7 @@ pytestmark = [pytest.mark.with_external_services]
 
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetAnalytics:
-    endpoint = "analytics/app/kibana"
+    endpoint = "analytics"
 
     def _test_can_see(self, user):
         response = server_get(user, self.endpoint)

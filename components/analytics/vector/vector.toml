@@ -1,0 +1,29 @@
+[sources.http-logs]
+type = "http_server"
+address = "0.0.0.0:80"
+encoding = "json"
+
+[sinks.console]
+type = "console"
+inputs = [ "http-logs" ]
+target = "stdout"
+
+  [sinks.console.encoding]
+  codec = "json"
+
+
+
+
+
+[sinks.clickhouse]
+inputs = [ "http-logs" ]
+type = "clickhouse"
+database = "${CLICKHOUSE_DB}"
+table = "logs"
+auth.strategy = "basic"
+auth.user = "${CLICKHOUSE_USER}"
+auth.password = "${CLICKHOUSE_PASSWORD}"
+endpoint = "http://clickhouse:8123"
+batch.timeout_secs = 10
+request.concurrency = "adaptive"
+encoding.only_fields = ["scope", "obj_name", "obj_id", "obj_val", "source", "timestamp", "count",  "duration", "project", "task", "job", "user", "organization", "payload"]

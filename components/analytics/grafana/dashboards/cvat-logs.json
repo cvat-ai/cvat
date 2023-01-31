@@ -1,0 +1,237 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        },
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 2,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PDEE91DDB90597936"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "displayMode": "auto",
+            "filterable": false,
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 13,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "footer": {
+          "enablePagination": true,
+          "fields": [
+            "Working time(h)",
+            "Activity"
+          ],
+          "reducer": [
+            "sum"
+          ],
+          "show": true
+        },
+        "showHeader": true,
+        "sortBy": []
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PDEE91DDB90597936"
+          },
+          "format": 1,
+          "meta": {
+            "builderOptions": {
+              "fields": [],
+              "limit": 100,
+              "mode": "list"
+            }
+          },
+          "queryType": "sql",
+          "rawSql": "SELECT\r\n  user as User,\r\n  project as Project,\r\n  task as Task,\r\n  job as Job, sum(JSONExtractUInt(payload, 'working_time')) / 1000 / 3600 as \"Working time(h)\",\r\n  count() as Activity\r\nFROM cvat.logs\r\nWHERE JSONHas(payload, 'working_time')\r\n  AND $__timeFilter(timestamp)\r\n  AND user IN (${users})\r\n  AND (-1 IN (${projects}) OR project IN (${projects}))\r\n  AND task IN (${tasks})\r\n  AND job IN (${jobs})\r\n  AND source = 'client'\r\nGROUP BY user, project, task, job",
+          "refId": "A"
+        }
+      ],
+      "title": "Working time",
+      "type": "table"
+    }
+  ],
+  "schemaVersion": 37,
+  "style": "dark",
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "PDEE91DDB90597936"
+        },
+        "definition": "SELECT user\nFROM cvat.logs\nWHERE $__timeFilter(timestamp)\n  AND source = 'client'",
+        "hide": 0,
+        "includeAll": true,
+        "label": "User",
+        "multi": true,
+        "name": "users",
+        "options": [],
+        "query": "SELECT user\nFROM cvat.logs\nWHERE $__timeFilter(timestamp)\n  AND source = 'client'",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "allValue": "-1",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "PDEE91DDB90597936"
+        },
+        "definition": "SELECT project\nFROM cvat.logs\nWHERE  $__timeFilter(timestamp)\n  AND project IS NOT NULL\n  AND source = 'client'",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Project",
+        "multi": true,
+        "name": "projects",
+        "options": [],
+        "query": "SELECT project\nFROM cvat.logs\nWHERE  $__timeFilter(timestamp)\n  AND project IS NOT NULL\n  AND source = 'client'",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "PDEE91DDB90597936"
+        },
+        "definition": "SELECT task\nFROM cvat.logs\nWHERE $__timeFilter(timestamp) \n  AND task IS NOT NULL\n  AND source = 'client'\n  AND (-1 IN (${projects}) OR project IN (${projects}))",
+        "description": "",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Task",
+        "multi": true,
+        "name": "tasks",
+        "options": [],
+        "query": "SELECT task\nFROM cvat.logs\nWHERE $__timeFilter(timestamp) \n  AND task IS NOT NULL\n  AND source = 'client'\n  AND (-1 IN (${projects}) OR project IN (${projects}))",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "PDEE91DDB90597936"
+        },
+        "definition": "SELECT job\nFROM cvat.logs\nWHERE $__timeFilter(timestamp)\n  AND job IS NOT NULL\n  AND source = 'client'\n  AND task in (${tasks})",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Job",
+        "multi": true,
+        "name": "jobs",
+        "options": [],
+        "query": "SELECT job\nFROM cvat.logs\nWHERE $__timeFilter(timestamp)\n  AND job IS NOT NULL\n  AND source = 'client'\n  AND task in (${tasks})",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-3h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "CVAT Statistics",
+  "uid": "w0if6WAVz",
+  "version": 26,
+  "weekStart": ""
+}

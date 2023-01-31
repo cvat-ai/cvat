@@ -449,12 +449,12 @@ function HeaderContainer(props: Props): JSX.Element {
                     <Button
                         className='cvat-header-button'
                         type='link'
-                        href={`${tool.server.host}/analytics/app/kibana`}
+                        href={`${tool.server.host}/analytics`}
                         onClick={(event: React.MouseEvent): void => {
                             event.preventDefault();
                             // false positive
                             // eslint-disable-next-line
-                            window.open(`${tool.server.host}/analytics/app/kibana`, '_blank');
+                            window.open(`${tool.server.host}/analytics`, '_blank');
                         }}
                     >
                         Analytics

@@ -139,6 +139,8 @@ INSTALLED_APPS = [
     'cvat.apps.opencv',
     'cvat.apps.webhooks',
     'cvat.apps.health',
+    'cvat.apps.log_viewer',
+    'cvat.apps.logs',
 ]
 
 SITE_ID = 1
@@ -201,9 +203,6 @@ REST_AUTH_SERIALIZERS = {
     'LOGIN_SERIALIZER': 'cvat.apps.iam.serializers.LoginSerializerEx',
     'PASSWORD_RESET_SERIALIZER': 'cvat.apps.iam.serializers.PasswordResetSerializerEx',
 }
-
-if strtobool(os.getenv('CVAT_ANALYTICS', '0')):
-    INSTALLED_APPS += ['cvat.apps.log_viewer']
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -436,14 +435,13 @@ os.makedirs(TMP_FILES_ROOT, exist_ok=True)
 IAM_OPA_BUNDLE_PATH = os.path.join(STATIC_ROOT, 'opa', 'bundle.tar.gz')
 os.makedirs(Path(IAM_OPA_BUNDLE_PATH).parent, exist_ok=True)
 
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
-        'logstash': {
-            '()': 'logstash_async.formatter.DjangoLogstashFormatter',
-            'message_type': 'python-logstash',
-            'fqdn': False, # Fully qualified domain name. Default value: false.
+        'vector': {
+            '()': 'cvat.apps.logs.formatter.CvatFormatter',
         },
         'standard': {
             'format': '[%(asctime)s] %(levelname)s %(name)s: %(message)s'
@@ -463,10 +461,10 @@ LOGGING = {
             'maxBytes': 1024*1024*50, # 50 MB
             'backupCount': 5,
         },
-        'logstash': {
+        'vector': {
             'level': 'INFO',
             'class': 'logstash_async.handler.AsynchronousLogstashHandler',
-            'formatter': 'logstash',
+            'formatter': 'vector',
             'transport': 'logstash_async.transport.HttpTransport',
             'ssl_enable': False,
             'ssl_verify': False,
@@ -491,13 +489,17 @@ LOGGING = {
             'handlers': ['console', 'server_file'],
             'level': 'INFO',
             'propagate': True
+        },
+        'vector': {
+            'handlers': [],
+            'level': 'INFO',
+            'propagate': True
         }
     },
 }
 
 if os.getenv('DJANGO_LOG_SERVER_HOST'):
-    LOGGING['loggers']['cvat.server']['handlers'] += ['logstash']
-    LOGGING['loggers']['cvat.client']['handlers'] += ['logstash']
+    LOGGING['loggers']['vector']['handlers'] += ['vector']
 
 DATA_UPLOAD_MAX_MEMORY_SIZE = 100 * 1024 * 1024  # 100 MB
 DATA_UPLOAD_MAX_NUMBER_FIELDS = None   # this django check disabled
@@ -678,3 +680,13 @@ if USE_ALLAUTH_SOCIAL_ACCOUNTS:
             'PUBLIC_NAME': 'GitHub',
         },
     }
+
+CLICKHOUSE = {
+    'logs': {
+        'NAME': os.getenv('CLICKHOUSE_DB', 'cvat'),
+        'HOST': os.getenv('CLICKHOUSE_HOST', 'localhost'),
+        'PORT': os.getenv('CLICKHOUSE_PORT', 8123),
+        'USER': os.getenv('CLICKHOUSE_USER', 'user'),
+        'PASSWORD': os.getenv('CLICKHOUSE_PASSWORD', 'user'),
+    }
+}

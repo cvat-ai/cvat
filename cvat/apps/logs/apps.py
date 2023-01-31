@@ -6,4 +6,7 @@ from django.apps import AppConfig
 
 
 class LogViewerConfig(AppConfig):
-    name = 'cvat.apps.log_viewer'
+    name = 'cvat.apps.logs'
+
+    def ready(self):
+        from . import signals  # pylint: disable=unused-import

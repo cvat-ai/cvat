@@ -97,9 +97,9 @@ class GlobalErrorBoundary extends React.PureComponent<Props, State> {
         };
 
         if (job) {
-            job.logger.log(LogType.sendException, logPayload);
+            job.logger.log(LogType.exception, logPayload);
         } else {
-            logger.log(LogType.sendException, logPayload);
+            logger.log(LogType.exception, logPayload);
         }
     }
 

@@ -9,8 +9,6 @@ import logFactory, { Log } from './log';
 import { LogType } from './enums';
 import { ArgumentError } from './exceptions';
 
-const WORKING_TIME_THRESHOLD = 100000; // ms, 1.66 min
-
 function sleep(ms): Promise<void> {
     return new Promise((resolve) => {
         setTimeout(resolve, ms);
@@ -25,8 +23,6 @@ interface IgnoreRule {
 
 class LoggerStorage {
     public clientID: string;
-    public lastLogTime: number;
-    public workingTime: number;
     public collection: Array<Log>;
     public ignoreRules: Record<LogType.zoomImage | LogType.changeAttribute, IgnoreRule>;
     public isActiveChecker: (() => boolean) | null;
@@ -34,8 +30,6 @@ class LoggerStorage {
 
     constructor() {
         this.clientID = Date.now().toString().substr(-6);
-        this.lastLogTime = Date.now();
-        this.workingTime = 0;
         this.collection = [];
         this.isActiveChecker = null;
         this.saving = false;
@@ -57,15 +51,6 @@ class LoggerStorage {
                 },
             },
         };
-    }
-
-    protected updateWorkingTime(): void {
-        if (!this.isActiveChecker || this.isActiveChecker()) {
-            const lastLogTime = Date.now();
-            const diff = lastLogTime - this.lastLogTime;
-            this.workingTime += diff < WORKING_TIME_THRESHOLD ? diff : 0;
-            this.lastLogTime = lastLogTime;
-        }
     }
 
     public async configure(isActiveChecker, activityHelper): Promise<void> {
@@ -103,7 +88,6 @@ Object.defineProperties(LoggerStorage.prototype.configure, {
             }
 
             this.isActiveChecker = () => !!isActiveChecker();
-            userActivityCallback.push(this.updateWorkingTime.bind(this));
         },
     },
 });
@@ -130,7 +114,6 @@ Object.defineProperties(LoggerStorage.prototype.log, {
                         ...payload,
                     };
 
-                    this.updateWorkingTime();
                     return ignoreRule.lastLog;
                 }
             }
@@ -147,13 +130,12 @@ Object.defineProperties(LoggerStorage.prototype.log, {
             }
 
             const pushEvent = (): void => {
-                this.updateWorkingTime();
                 log.validatePayload();
                 log.onClose(null);
                 this.collection.push(log);
             };
 
-            if (log.type === LogType.sendException) {
+            if (log.scope === LogType.exception) {
                 serverProxy.server.exception(log.dump()).catch(() => {
                     pushEvent();
                 });
@@ -186,30 +168,28 @@ Object.defineProperties(LoggerStorage.prototype.save, {
 
             const logPayload: any = {
                 client_id: this.clientID,
-                working_time: this.workingTime,
             };
 
             if (this.isActiveChecker) {
                 logPayload.is_active = this.isActiveChecker();
             }
 
-            if (lastLog && lastLog.type === LogType.sendTaskInfo) {
+            if (lastLog && lastLog.scope === LogType.sendTaskInfo) {
                 logPayload.job_id = lastLog.payload.job_id;
                 logPayload.task_id = lastLog.payload.task_id;
             }
 
-            const userActivityLog = logFactory(LogType.sendUserActivity, logPayload);
-            collectionToSend.push(userActivityLog);
-
             try {
                 this.saving = true;
-                await serverProxy.logs.save(collectionToSend.map((log) => log.dump()));
+                const sendTimestamp = new Date();
+                await serverProxy.logs.save({
+                    events: collectionToSend.map((log) => log.dump()),
+                    send_timestamp: sendTimestamp.toISOString(),
+                });
                 for (const rule of Object.values<IgnoreRule>(this.ignoreRules)) {
                     rule.lastLog = null;
                 }
                 this.collection = [];
-                this.workingTime = 0;
-                this.lastLogTime = Date.now();
             } finally {
                 this.saving = false;
             }

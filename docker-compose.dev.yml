@@ -67,6 +67,18 @@ services:
         socks_proxy:
       dockerfile: Dockerfile.ui
 
+  cvat_redis:
+    ports:
+      - '6379:6379'
+
   cvat_opa:
     ports:
       - '8181:8181'
+
+  vector:
+    ports:
+      - '8282:80'
+
+  clickhouse:
+    ports:
+      - '8123:8123'

@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import json
 import logging
 import sys
 import os.path as osp
@@ -171,6 +172,8 @@ class ServerLogManager(_AggregateLogManager):
 
 slogger = ServerLogManager()
 
+vlogger = logging.getLogger('vector')
+
 def close_all():
     """Closes all opened loggers"""
 
@@ -179,6 +182,8 @@ def close_all():
 
     for logger in _opened_loggers.values():
         _close_logger(logger)
+
+    _close_logger(vlogger)
 
 @contextmanager
 def get_migration_logger(migration_name):
