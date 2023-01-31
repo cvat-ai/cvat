@@ -12,6 +12,8 @@
   },
   "testFiles": [
     "auth_page.js",
+    "skeletons_pipeline.js",
+    "webhooks.js",
     "actions_tasks/**/*.js",
     "actions_tasks2/**/*.js",
     "actions_tasks3/**/*.js",

@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -15,7 +15,7 @@ import { Col, Row } from 'antd/lib/grid';
 
 import StatesOrderingSelector from 'components/annotation-page/standard-workspace/objects-side-bar/states-ordering-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { StatesOrdering } from 'reducers/interfaces';
+import { StatesOrdering } from 'reducers';
 
 interface Props {
     readonly: boolean;

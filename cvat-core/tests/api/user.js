@@ -1,17 +1,20 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 // Setup mock for a server
 jest.mock('../../src/server-proxy', () => {
-    const mock = require('../mocks/server-proxy.mock');
-    return mock;
+    return {
+        __esModule: true,
+        default: require('../mocks/server-proxy.mock'),
+    };
 });
 
 // Initialize api
 window.cvat = require('../../src/api');
 
-const User = require('../../src/user');
+const User = require('../../src/user').default;
 
 // Test cases
 describe('Feature: get a list of users', () => {

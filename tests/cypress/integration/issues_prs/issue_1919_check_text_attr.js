@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -29,7 +29,7 @@ context('Check label attribute changes', () => {
             cy.get('#cvat_canvas_shape_1').trigger('mousemove').rightclick();
         });
         it('Open object menu details', () => {
-            cy.get('.cvat-canvas-context-menu').contains('Details').click();
+            cy.get('.cvat-canvas-context-menu').contains('DETAILS').click();
         });
         it('Clear field of text attribute and write new value', () => {
             cy.get('.cvat-canvas-context-menu')

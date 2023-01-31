@@ -4,7 +4,7 @@
 
 title: 'Semi-automatic and Automatic Annotation'
 linkTitle: 'Installation Auto Annotation'
-weight: 5
+weight: 10
 description: 'Information about the installation of components needed for semi-automatic and automatic annotation.'
 
 ---
@@ -29,9 +29,9 @@ description: 'Information about the installation of components needed for semi-a
   ```
 
 - You have to install `nuctl` command line tool to build and deploy serverless
-  functions. Download [version 1.5.16](https://github.com/nuclio/nuclio/releases/tag/1.5.16).
+  functions. Download [version 1.8.14](https://github.com/nuclio/nuclio/releases/tag/1.8.14).
   It is important that the version you download matches the version in
-  [docker-compose.serverless.yml](https://github.com/openvinotoolkit/cvat/blob/develop/components/serverless/docker-compose.serverless.yml).
+  [docker-compose.serverless.yml](https://github.com/cvat-ai/cvat/blob/develop/components/serverless/docker-compose.serverless.yml).
   For example, using wget.
 
   ```bash
@@ -69,7 +69,7 @@ description: 'Information about the installation of components needed for semi-a
 
   **Note:**
 
-  - See [deploy_cpu.sh](https://github.com/openvinotoolkit/cvat/blob/develop/serverless/deploy_cpu.sh)
+  - See [deploy_cpu.sh](https://github.com/cvat-ai/cvat/blob/develop/serverless/deploy_cpu.sh)
     for more examples.
 
   #### GPU Support
@@ -92,7 +92,7 @@ description: 'Information about the installation of components needed for semi-a
   **Note:**
 
   - The number of GPU deployed functions will be limited to your GPU memory.
-  - See [deploy_gpu.sh](https://github.com/openvinotoolkit/cvat/blob/develop/serverless/deploy_gpu.sh)
+  - See [deploy_gpu.sh](https://github.com/cvat-ai/cvat/blob/develop/serverless/deploy_gpu.sh)
     script for more examples.
   - For some models (namely [SiamMask](/docs/manual/advanced/ai-tools#trackers)) you need an [Nvidia driver](https://www.nvidia.com/en-us/drivers/unix/)
     version greater than or equal to 450.80.02.

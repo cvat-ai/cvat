@@ -1,58 +1,167 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { createAction, ActionUnion, ThunkAction } from 'utils/redux';
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState } from 'reducers';
+import { getCore, Storage } from 'cvat-core-wrapper';
+import { LogType } from 'cvat-logger';
 import { getProjectsAsync } from './projects-actions';
+import { jobInfoGenerator, receiveAnnotationsParameters, AnnotationActionTypes } from './annotation-actions';
+
+const core = getCore();
 
 export enum ImportActionTypes {
-    OPEN_IMPORT_MODAL = 'OPEN_IMPORT_MODAL',
-    CLOSE_IMPORT_MODAL = 'CLOSE_IMPORT_MODAL',
+    OPEN_IMPORT_DATASET_MODAL = 'OPEN_IMPORT_DATASET_MODAL',
+    CLOSE_IMPORT_DATASET_MODAL = 'CLOSE_IMPORT_DATASET_MODAL',
     IMPORT_DATASET = 'IMPORT_DATASET',
     IMPORT_DATASET_SUCCESS = 'IMPORT_DATASET_SUCCESS',
     IMPORT_DATASET_FAILED = 'IMPORT_DATASET_FAILED',
     IMPORT_DATASET_UPDATE_STATUS = 'IMPORT_DATASET_UPDATE_STATUS',
+    OPEN_IMPORT_BACKUP_MODAL = 'OPEN_IMPORT_BACKUP_MODAL',
+    CLOSE_IMPORT_BACKUP_MODAL = 'CLOSE_IMPORT_BACKUP_MODAL',
+    IMPORT_BACKUP = 'IMPORT_BACKUP',
+    IMPORT_BACKUP_SUCCESS = 'IMPORT_BACKUP_SUCCESS',
+    IMPORT_BACKUP_FAILED = 'IMPORT_BACKUP_FAILED',
 }
 
 export const importActions = {
-    openImportModal: (instance: any) => createAction(ImportActionTypes.OPEN_IMPORT_MODAL, { instance }),
-    closeImportModal: () => createAction(ImportActionTypes.CLOSE_IMPORT_MODAL),
-    importDataset: (projectId: number) => (
-        createAction(ImportActionTypes.IMPORT_DATASET, { id: projectId })
+    openImportDatasetModal: (instance: any) => (
+        createAction(ImportActionTypes.OPEN_IMPORT_DATASET_MODAL, { instance })
     ),
-    importDatasetSuccess: () => (
-        createAction(ImportActionTypes.IMPORT_DATASET_SUCCESS)
+    closeImportDatasetModal: (instance: any) => (
+        createAction(ImportActionTypes.CLOSE_IMPORT_DATASET_MODAL, { instance })
     ),
-    importDatasetFailed: (instance: any, error: any) => (
+    importDataset: (instance: any, format: string) => (
+        createAction(ImportActionTypes.IMPORT_DATASET, { instance, format })
+    ),
+    importDatasetSuccess: (instance: any, resource: 'dataset' | 'annotation') => (
+        createAction(ImportActionTypes.IMPORT_DATASET_SUCCESS, { instance, resource })
+    ),
+    importDatasetFailed: (instance: any, resource: 'dataset' | 'annotation', error: any) => (
         createAction(ImportActionTypes.IMPORT_DATASET_FAILED, {
             instance,
+            resource,
             error,
         })
     ),
-    importDatasetUpdateStatus: (progress: number, status: string) => (
-        createAction(ImportActionTypes.IMPORT_DATASET_UPDATE_STATUS, { progress, status })
+    importDatasetUpdateStatus: (instance: any, progress: number, status: string) => (
+        createAction(ImportActionTypes.IMPORT_DATASET_UPDATE_STATUS, { instance, progress, status })
+    ),
+    openImportBackupModal: (instanceType: 'project' | 'task') => (
+        createAction(ImportActionTypes.OPEN_IMPORT_BACKUP_MODAL, { instanceType })
+    ),
+    closeImportBackupModal: (instanceType: 'project' | 'task') => (
+        createAction(ImportActionTypes.CLOSE_IMPORT_BACKUP_MODAL, { instanceType })
+    ),
+    importBackup: () => createAction(ImportActionTypes.IMPORT_BACKUP),
+    importBackupSuccess: (instanceId: number, instanceType: 'project' | 'task') => (
+        createAction(ImportActionTypes.IMPORT_BACKUP_SUCCESS, { instanceId, instanceType })
+    ),
+    importBackupFailed: (instanceType: 'project' | 'task', error: any) => (
+        createAction(ImportActionTypes.IMPORT_BACKUP_FAILED, { instanceType, error })
     ),
 };
 
-export const importDatasetAsync = (instance: any, format: string, file: File): ThunkAction => (
+export const importDatasetAsync = (
+    instance: any,
+    format: string,
+    useDefaultSettings: boolean,
+    sourceStorage: Storage,
+    file: File | string,
+): ThunkAction => (
     async (dispatch, getState) => {
+        const resource = instance instanceof core.classes.Project ? 'dataset' : 'annotation';
+
         try {
             const state: CombinedState = getState();
-            if (state.import.importingId !== null) {
-                throw Error('Only one importing of dataset allowed at the same time');
+
+            if (instance instanceof core.classes.Project) {
+                if (state.import.projects.dataset.current?.[instance.id]) {
+                    throw Error('Only one importing of annotation/dataset allowed at the same time');
+                }
+                dispatch(importActions.importDataset(instance, format));
+                await instance.annotations
+                    .importDataset(format, useDefaultSettings, sourceStorage, file,
+                        (message: string, progress: number) => (
+                            dispatch(importActions.importDatasetUpdateStatus(
+                                instance, Math.floor(progress * 100), message,
+                            ))
+                        ));
+            } else if (instance instanceof core.classes.Task) {
+                if (state.import.tasks.dataset.current?.[instance.id]) {
+                    throw Error('Only one importing of annotation/dataset allowed at the same time');
+                }
+                dispatch(importActions.importDataset(instance, format));
+                await instance.annotations.upload(format, useDefaultSettings, sourceStorage, file);
+            } else { // job
+                if (state.import.tasks.dataset.current?.[instance.taskId]) {
+                    throw Error('Annotations is being uploaded for the task');
+                }
+                if (state.import.jobs.dataset.current?.[instance.id]) {
+                    throw Error('Only one uploading of annotations for a job allowed at the same time');
+                }
+                const { filters, showAllInterpolationTracks } = receiveAnnotationsParameters();
+
+                dispatch(importActions.importDataset(instance, format));
+
+                const frame = state.annotation.player.frame.number;
+                await instance.annotations.upload(format, useDefaultSettings, sourceStorage, file);
+
+                await instance.logger.log(LogType.uploadAnnotations, {
+                    ...(await jobInfoGenerator(instance)),
+                });
+
+                await instance.annotations.clear(true);
+                await instance.actions.clear();
+                const history = await instance.actions.get();
+
+                // One more update to escape some problems
+                // in canvas when shape with the same
+                // clientID has different type (polygon, rectangle) for example
+                dispatch({
+                    type: AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS_SUCCESS,
+                    payload: {
+                        states: [],
+                        history,
+                    },
+                });
+
+                const states = await instance.annotations.get(frame, showAllInterpolationTracks, filters);
+
+                setTimeout(() => {
+                    dispatch({
+                        type: AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS_SUCCESS,
+                        payload: {
+                            history,
+                            states,
+                        },
+                    });
+                });
             }
-            dispatch(importActions.importDataset(instance.id));
-            await instance.annotations.importDataset(format, file, (message: string, progress: number) => (
-                dispatch(importActions.importDatasetUpdateStatus(progress * 100, message))
-            ));
         } catch (error) {
-            dispatch(importActions.importDatasetFailed(instance, error));
+            dispatch(importActions.importDatasetFailed(instance, resource, error));
             return;
         }
 
-        dispatch(importActions.importDatasetSuccess());
-        dispatch(getProjectsAsync({ id: instance.id }, getState().projects.tasksGettingQuery));
+        dispatch(importActions.importDatasetSuccess(instance, resource));
+        if (instance instanceof core.classes.Project) {
+            dispatch(getProjectsAsync({ id: instance.id }, getState().projects.tasksGettingQuery));
+        }
+    }
+);
+
+export const importBackupAsync = (instanceType: 'project' | 'task', storage: Storage, file: File | string): ThunkAction => (
+    async (dispatch) => {
+        dispatch(importActions.importBackup());
+        try {
+            const inctanceClass = (instanceType === 'task') ? core.classes.Task : core.classes.Project;
+            const instance = await inctanceClass.restore(storage, file);
+            dispatch(importActions.importBackupSuccess(instance.id, instanceType));
+        } catch (error) {
+            dispatch(importActions.importBackupFailed(instanceType, error));
+        }
     }
 );
 

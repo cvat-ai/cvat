@@ -1,4 +1,5 @@
 # Copyright (C) 2022 Intel Corporation
+# Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -12,6 +13,7 @@ from django.conf import settings
 from django.db.models import Q
 from rest_framework.permissions import BasePermission
 
+from cvat.apps.webhooks.models import Webhook
 from cvat.apps.organizations.models import Membership, Organization
 from cvat.apps.engine.models import Project, Task, Job, Issue
 
@@ -63,7 +65,7 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
                         'user': {
                             'role': self.org_role,
                         },
-                    } if self.org_id != None else None
+                    } if self.org_id is not None else None
                 }
             }
         }
@@ -210,7 +212,7 @@ class InvitationPermission(OpenPolicyAgentPermission):
                 'role': self.role,
                 'organization': {
                     'id': self.org_id
-                } if self.org_id != None else None
+                } if self.org_id is not None else None
             }
 
         return data
@@ -417,7 +419,8 @@ class CloudStoragePermission(OpenPolicyAgentPermission):
             'destroy': 'delete',
             'content': 'list:content',
             'preview': 'view',
-            'status': 'view'
+            'status': 'view',
+            'actions': 'view',
         }.get(view.action)]
 
     def get_resource(self):
@@ -427,7 +430,7 @@ class CloudStoragePermission(OpenPolicyAgentPermission):
                 'owner': { 'id': self.user_id },
                 'organization': {
                     'id': self.org_id
-                } if self.org_id != None else None,
+                } if self.org_id is not None else None,
                 'user': {
                     'num_resources': Organization.objects.filter(
                         owner=self.user_id).count()
@@ -498,6 +501,8 @@ class ProjectPermission(OpenPolicyAgentPermission):
             ('dataset', 'GET'): 'export:dataset',
             ('export_backup', 'GET'): 'export:backup',
             ('import_backup', 'POST'): 'import:backup',
+            ('append_backup_chunk', 'PATCH'): 'import:backup',
+            ('append_backup_chunk', 'HEAD'): 'import:backup',
         }.get((view.action, request.method))
 
         scopes = []
@@ -618,9 +623,9 @@ class TaskPermission(OpenPolicyAgentPermission):
                 perm = TaskPermission.create_scope_create(request, org_id)
                 # We don't create a project, just move it. Thus need to decrease
                 # the number of resources.
-                if obj != None:
+                if obj is not None:
                     perm.payload['input']['resource']['user']['num_resources'] -= 1
-                    if obj.project != None:
+                    if obj.project is not None:
                         ValidationError('Cannot change the organization for '
                             'a task inside a project')
                 permissions.append(perm)
@@ -649,13 +654,16 @@ class TaskPermission(OpenPolicyAgentPermission):
             ('append_annotations_chunk', 'PATCH'): 'update:annotations',
             ('append_annotations_chunk', 'HEAD'): 'update:annotations',
             ('dataset_export', 'GET'): 'export:dataset',
+            ('metadata', 'GET'): 'view:metadata',
+            ('metadata', 'PATCH'): 'update:metadata',
             ('data', 'GET'): 'view:data',
-            ('data_info', 'GET'): 'view:data',
             ('data', 'POST'): 'upload:data',
             ('append_data_chunk', 'PATCH'): 'upload:data',
             ('append_data_chunk', 'HEAD'): 'upload:data',
             ('jobs', 'GET'): 'view',
             ('import_backup', 'POST'): 'import:backup',
+            ('append_backup_chunk', 'PATCH'): 'import:backup',
+            ('append_backup_chunk', 'HEAD'): 'import:backup',
             ('export_backup', 'GET'): 'export:backup',
         }.get((view.action, request.method))
 
@@ -757,6 +765,99 @@ class TaskPermission(OpenPolicyAgentPermission):
 
         return data
 
+
+class WebhookPermission(OpenPolicyAgentPermission):
+    @classmethod
+    def create(cls, request, view, obj):
+        permissions = []
+        if view.basename == 'webhook':
+
+            project_id = request.data.get('project_id')
+            for scope in cls.get_scopes(request, view, obj):
+                self = cls.create_base_perm(request, view, scope, obj,
+                    project_id=project_id)
+                permissions.append(self)
+
+            owner = request.data.get('owner_id') or request.data.get('owner')
+            if owner:
+                perm = UserPermission.create_scope_view(request, owner)
+                permissions.append(perm)
+
+            if project_id:
+                perm = ProjectPermission.create_scope_view(request, project_id)
+                permissions.append(perm)
+
+        return permissions
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.url = settings.IAM_OPA_DATA_URL + '/webhooks/allow'
+
+    @staticmethod
+    def get_scopes(request, view, obj):
+        scope = {
+            ('create', 'POST'): 'create',
+            ('destroy', 'DELETE'): 'delete',
+            ('partial_update', 'PATCH'): 'update',
+            ('update', 'PUT'): 'update',
+            ('list', 'GET'): 'list',
+            ('retrieve', 'GET'): 'view',
+        }.get((view.action, request.method))
+
+        scopes = []
+        if scope == 'create':
+            webhook_type = request.data.get('type')
+            if webhook_type:
+                scope += f'@{webhook_type}'
+                scopes.append(scope)
+        elif scope in ['update', 'delete', 'list', 'view']:
+            scopes.append(scope)
+
+        return scopes
+
+    def get_resource(self):
+        data = None
+        if self.obj:
+            data = {
+                "id": self.obj.id,
+                "owner": {"id": getattr(self.obj.owner, 'id', None) },
+                'organization': {
+                    "id": getattr(self.obj.organization, 'id', None)
+                },
+                "project": None
+            }
+            if self.obj.type == 'project' and getattr(self.obj, 'project', None):
+                data['project'] = {
+                    'owner': {'id': getattr(self.obj.project.owner, 'id', None)}
+                }
+        elif self.scope in ['create@project', 'create@organization']:
+            project = None
+            if self.project_id:
+                try:
+                    project = Project.objects.get(id=self.project_id)
+                except Project.DoesNotExist:
+                    raise ValidationError(f"Could not find project with provided id: {self.project_id}")
+
+            num_resources = Webhook.objects.filter(project=self.project_id).count() if project \
+                else Webhook.objects.filter(organization=self.org_id, project=None).count()
+
+            data = {
+                'id': None,
+                'owner': self.user_id,
+                'organization': {
+                    'id': self.org_id
+                },
+                'num_resources': num_resources
+            }
+
+            data['project'] = None if project is None else {
+                'owner': {
+                    'id': getattr(project.owner, 'id', None)
+                },
+            }
+
+        return data
+
 class JobPermission(OpenPolicyAgentPermission):
     @classmethod
     def create(cls, request, view, obj):
@@ -797,6 +898,8 @@ class JobPermission(OpenPolicyAgentPermission):
             ('append_annotations_chunk', 'PATCH'): 'update:annotations',
             ('append_annotations_chunk', 'HEAD'): 'update:annotations',
             ('data', 'GET'): 'view:data',
+            ('metadata','GET'): 'view:metadata',
+            ('metadata','PATCH'): 'update:metadata',
             ('issues', 'GET'): 'view',
             ('commits', 'GET'): 'view:commits'
         }.get((view.action, request.method))
@@ -1021,6 +1124,7 @@ class IssuePermission(OpenPolicyAgentPermission):
 
         return data
 
+
 class PolicyEnforcer(BasePermission):
     # pylint: disable=no-self-use
     def check_permission(self, request, view, obj):
@@ -1047,7 +1151,8 @@ class PolicyEnforcer(BasePermission):
 
     @staticmethod
     def is_metadata_request(request, view):
-        return request.method == 'OPTIONS' or view.action == 'metadata'
+        return request.method == 'OPTIONS' \
+            or (request.method == 'POST' and view.action == 'metadata' and len(request.data) == 0)
 
 class IsMemberInOrganization(BasePermission):
     message = 'You should be an active member in the organization.'
@@ -1062,3 +1167,4 @@ class IsMemberInOrganization(BasePermission):
             return membership is not None
 
         return True
+

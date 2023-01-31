@@ -12,7 +12,9 @@ services:
     volumes:
       - reb_cvat_db:/var/lib/postgresql/data
     networks:
-      - reb_cvat
+      reb_cvat:
+        aliases:
+          - postgres
     ports:
       - 5432:5432
 
@@ -21,9 +23,11 @@ services:
     image: redis:4.0-alpine
     restart: unless-stopped
     networks:
-      - reb_cvat
+      reb_cvat:
+        aliases:
+          - redis
 
-  cvat:
+  cvat_server:
     container_name: reb_cvat
     image: retechlabs/rebotics-cvat:${VERSION:-latest}
     restart: unless-stopped

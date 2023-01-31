@@ -8,7 +8,7 @@ metadata:
     framework: pytorch
     min_pos_points: 1
     min_neg_points: 0
-    animated_gif: https://raw.githubusercontent.com/openvinotoolkit/cvat/develop/site/content/en/images/hrnet_example.gif
+    animated_gif: https://raw.githubusercontent.com/opencv/cvat/develop/site/content/en/images/hrnet_example.gif
     help_message: The interactor allows to get a mask for an object using positive points, and negative points
 
 spec:
@@ -21,7 +21,7 @@ spec:
       value: /opt/nuclio/hrnet
 
   build:
-    image: cvat/pth.saic-vul.hrnet
+    image: cvat-pth.saic-vul.hrnet
     baseImage: ubuntu:20.04
 
     directives:

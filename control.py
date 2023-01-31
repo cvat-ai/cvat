@@ -6,13 +6,15 @@ import click
 
 FAKE = False
 
-APPLICATION_CVAT = 'retechlabs/rebotics-cvat'
-APPLICATION_OPA = 'retechlabs/rebotics-cvat-opa'
-APPLICATION_CHOICES = (APPLICATION_CVAT, APPLICATION_OPA)
+APP_CVAT = 'retechlabs/rebotics-cvat'
+APP_OPA = 'retechlabs/rebotics-cvat-opa'
+APP_LOGSTASH = 'retechlabs/rebotics-cvat-logstsah'
+APP_CHOICES = (APP_CVAT, APP_OPA, APP_LOGSTASH)
 
 ECR_NAME_MAP = {
-    APPLICATION_CVAT: 'cvat',
-    APPLICATION_OPA: 'opa',
+    APP_CVAT: 'cvat',
+    APP_OPA: 'opa',
+    APP_LOGSTASH: 'logstash',
 }
 
 NOTIFY_YES = 'yes'
@@ -21,8 +23,9 @@ NOTIFY_ONLY = 'only'
 NOTIFY_CHOICES = (NOTIFY_YES, NOTIFY_NO, NOTIFY_ONLY)
 
 ECS_NOTIFICATION_PREFIX = {
-    APPLICATION_CVAT: '',
-    APPLICATION_OPA: 'opa_',
+    APP_CVAT: '',
+    APP_OPA: 'opa_',
+    APP_LOGSTASH: 'logstash_'
 }
 
 
@@ -99,7 +102,7 @@ def _deploy_app(environment, application, version, ecr_template, s3_template, s3
         try:
             sys_call("zip ecs_notification.zip ecs_notification.image.json")
             s3_notification_key = s3_template.format(
-                app_name=ECR_NAME_MAP[APPLICATION_CVAT],
+                app_name=ECR_NAME_MAP[APP_CVAT],
                 environment=environment,
             )
             sys_call(f"aws --profile {s3_profile} s3 cp ecs_notification.zip {s3_notification_key}")

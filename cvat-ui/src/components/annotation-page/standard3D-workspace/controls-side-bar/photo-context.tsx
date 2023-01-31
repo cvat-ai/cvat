@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,7 +8,7 @@ import CameraIcon from '@ant-design/icons/CameraOutlined';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { Canvas } from 'cvat-canvas-wrapper';
-import { ActiveControl } from 'reducers/interfaces';
+import { ActiveControl } from 'reducers';
 
 interface Props {
     canvasInstance: Canvas3d | Canvas;

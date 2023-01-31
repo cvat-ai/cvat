@@ -283,6 +283,139 @@
     ],
     "tracks": []
   },
+  "COCO Keypoints 1.0": {
+    "version": 0,
+    "tags": [],
+    "shapes": [
+      {
+        "type": "skeleton",
+        "occluded": false,
+        "outside": false,
+        "z_order": 0,
+        "rotation": 0,
+        "points": [],
+        "frame": 0,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "attributes": [],
+        "elements": [
+          {
+            "type": "points",
+            "occluded": false,
+            "outside": true,
+            "z_order": 0,
+            "rotation": 0,
+            "points": [
+              223.02,
+              72.83
+            ],
+            "frame": 0,
+            "label_id": null,
+            "group": 0,
+            "source": "manual",
+            "attributes": []
+          },
+          {
+            "type": "points",
+            "occluded": false,
+            "outside": false,
+            "z_order": 0,
+            "rotation": 0,
+            "points": [
+              232.98,
+              124.6
+            ],
+            "frame": 0,
+            "label_id": null,
+            "group": 0,
+            "source": "manual",
+            "attributes": []
+          },
+          {
+            "type": "points",
+            "occluded": false,
+            "outside": false,
+            "z_order": 0,
+            "rotation": 0,
+            "points": [
+              281.22,
+              36.63
+            ],
+            "frame": 0,
+            "label_id": null,
+            "group": 0,
+            "source": "manual",
+            "attributes": []
+          }
+        ]
+      },
+      {
+        "type": "skeleton",
+        "occluded": false,
+        "outside": false,
+        "z_order": 0,
+        "rotation": 0,
+        "points": [],
+        "frame": 1,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "attributes": [],
+        "elements": [
+          {
+            "type": "points",
+            "occluded": false,
+            "outside": false,
+            "z_order": 0,
+            "rotation": 0,
+            "points": [
+              248.61,
+              72.83
+            ],
+            "frame": 1,
+            "label_id": null,
+            "group": 0,
+            "source": "manual",
+            "attributes": []
+          },
+          {
+            "type": "points",
+            "occluded": false,
+            "outside": false,
+            "z_order": 0,
+            "rotation": 0,
+            "points": [
+              267.06,
+              122.43
+            ],
+            "frame": 1,
+            "label_id": null,
+            "group": 0,
+            "source": "manual",
+            "attributes": []
+          },
+          {
+            "type": "points",
+            "occluded": true,
+            "outside": false,
+            "z_order": 0,
+            "rotation": 0,
+            "points": [
+              356.43,
+              38.15
+            ],
+            "frame": 1,
+            "label_id": null,
+            "group": 0,
+            "source": "manual",
+            "attributes": []
+          }
+        ]
+      }
+    ],
+    "tracks": []
+  },
   "ICDAR Localization 1.0": {
     "version": 0,
     "tags": [],
@@ -400,15 +533,7 @@
   },
   "Market-1501 1.0": {
     "version": 0,
-    "tags": [
-      {
-        "frame": 1,
-        "label_id": null,
-        "group": 0,
-        "source": "manual",
-        "attributes": []
-      }
-    ],
+    "tags": [],
     "shapes": [],
     "tracks": []
   },
@@ -574,43 +699,6 @@
         "occluded": false,
         "z_order": 0,
         "points": [8.3, 9.1, 19.2, 14.8],
-        "frame": 0,
-        "label_id": null,
-        "group": 0,
-        "source": "manual",
-        "attributes": []
-      }
-    ],
-    "tracks": []
-  },
-  "WiderFace 1.0": {
-    "version": 0,
-    "tags": [
-      {
-        "frame": 0,
-        "label_id": null,
-        "group": 0,
-        "source": "manual",
-        "attributes": []
-      }
-    ],
-    "shapes": [
-      {
-        "type": "rectangle",
-        "occluded": false,
-        "z_order": 0,
-        "points": [7.55, 9.75, 16.44, 15.85],
-        "frame": 0,
-        "label_id": null,
-        "group": 0,
-        "source": "manual",
-        "attributes": []
-      },
-      {
-        "type": "rectangle",
-        "occluded": true,
-        "z_order": 0,
-        "points": [3.55, 27.75, 11.33, 33.71],
         "frame": 0,
         "label_id": null,
         "group": 0,
@@ -960,7 +1048,6 @@
             "points": [66.45, 147.08, 182.16, 204.56],
             "frame": 0,
             "outside": false,
-            "outside": true,
             "attributes": []
           },
           {
@@ -1083,50 +1170,6 @@
             "points": [24.62, 13.01, 34.88, 20.03, 18.14, 18.08],
             "frame": 1,
             "outside": false,
-            "attributes": []
-          }
-        ],
-        "attributes": []
-      }
-    ]
-  },
-  "CVAT for video 1.1 polygon": {
-    "version": 0,
-    "tags": [],
-    "shapes": [],
-    "tracks": [
-      {
-        "frame": 0,
-        "label_id": null,
-        "group": 1,
-        "source": "manual",
-        "shapes": [
-          {
-            "type": "polygon",
-            "occluded": false,
-            "z_order": 0,
-            "points": [24.62, 13.01, 34.88, 20.03, 18.14, 18.08],
-            "frame": 0,
-            "outside": false,
-            "attributes": []
-          },
-          {
-            "type": "polygon",
-            "occluded": false,
-            "z_order": 0,
-            "points": [24.62, 13.01, 34.88, 20.03, 18.14, 18.08],
-            "frame": 1,
-            "outside": true,
-            "attributes": []
-          },
-          {
-            "type": "polygon",
-            "occluded": false,
-            "z_order": 0,
-            "points": [24.62, 13.01, 34.88, 20.03, 18.14, 18.08],
-            "frame": 2,
-            "outside": false,
-            "keyframe": true,
             "attributes": []
           }
         ],

@@ -125,6 +125,25 @@
             "console": "internalConsole"
         },
         {
+            "name": "server: RQ - webhooks",
+            "type": "python",
+            "request": "launch",
+            "justMyCode": false,
+            "stopOnEntry": false,
+            "python": "${command:python.interpreterPath}",
+            "program": "${workspaceRoot}/manage.py",
+            "args": [
+                "rqworker",
+                "webhooks",
+                "--worker-class",
+                "cvat.simpleworker.SimpleWorker",
+            ],
+            "django": true,
+            "cwd": "${workspaceFolder}",
+            "env": {},
+            "console": "internalConsole"
+        },
+        {
             "name": "server: git",
             "type": "python",
             "request": "launch",
@@ -169,7 +188,82 @@
                 "--settings",
                 "cvat.settings.testing",
                 "cvat/apps",
-                "utils/cli"
+                "cvat-cli/"
+            ],
+            "django": true,
+            "cwd": "${workspaceFolder}",
+            "env": {},
+            "console": "internalConsole"
+        },
+        {
+            "name": "server: REST API tests",
+            "type": "python",
+            "request": "launch",
+            "justMyCode": false,
+            "stopOnEntry": false,
+            "python": "${command:python.interpreterPath}",
+            "module": "pytest",
+            "args": [
+                "tests/python/rest_api/"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "sdk: tests",
+            "type": "python",
+            "request": "launch",
+            "justMyCode": false,
+            "stopOnEntry": false,
+            "python": "${command:python.interpreterPath}",
+            "module": "pytest",
+            "args": [
+                "tests/python/sdk/"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "cli: tests",
+            "type": "python",
+            "request": "launch",
+            "justMyCode": false,
+            "stopOnEntry": false,
+            "python": "${command:python.interpreterPath}",
+            "module": "pytest",
+            "args": [
+                "tests/python/cli/"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "api client: Postprocess generator output",
+            "type": "python",
+            "request": "launch",
+            "justMyCode": false,
+            "stopOnEntry": false,
+            "python": "${command:python.interpreterPath}",
+            "program": "${workspaceFolder}/cvat-sdk/gen/postprocess.py",
+            "args": [
+                "--schema", "${workspaceFolder}/cvat-sdk/schema/schema.yml",
+                "--input-path", "${workspaceFolder}/cvat-sdk/cvat_sdk/"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "server: Generate REST API Schema",
+            "type": "python",
+            "request": "launch",
+            "justMyCode": false,
+            "stopOnEntry": false,
+            "python": "${command:python.interpreterPath}",
+            "program": "${workspaceRoot}/manage.py",
+            "args": [
+                "spectacular",
+                "--file",
+                "schema.yml"
             ],
             "django": true,
             "cwd": "${workspaceFolder}",
@@ -210,6 +304,7 @@
                 "server: django",
                 "server: RQ - default",
                 "server: RQ - low",
+                "server: RQ - webhooks",
                 "server: RQ - scheduler",
                 "server: git",
             ]

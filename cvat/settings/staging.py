@@ -1,11 +1,11 @@
-# Copyright (C) 2018 Intel Corporation
+# Copyright (C) 2018-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from .production import *
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = bool(int(os.getenv('DJANGO_DEBUG', 1)))
+DEBUG = bool(int(os.getenv('DEBUG', 1)))
 
 INSTALLED_APPS += [
     'silk'

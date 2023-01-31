@@ -1,11 +1,14 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 // Setup mock for a server
 jest.mock('../../src/server-proxy', () => {
-    const mock = require('../mocks/server-proxy.mock');
-    return mock;
+    return {
+        __esModule: true,
+        default: require('../mocks/server-proxy.mock'),
+    };
 });
 
 // Initialize api
@@ -40,6 +43,48 @@ describe('Feature: get frame meta', () => {
     test('do not pass any frame number', async () => {
         const task = (await window.cvat.tasks.get({ id: 100 }))[0];
         expect(task.frames.get()).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+    });
+});
+
+describe('Feature: delete/restore frame', () => {
+    test('delete frame from job', async () => {
+        const job = (await window.cvat.jobs.get({ jobID: 100 }))[0];
+        await job.annotations.clear(true);
+        let frame = await job.frames.get(0);
+        expect(frame.deleted).toBe(false);
+        await job.frames.delete(0);
+        frame = await job.frames.get(0);
+        expect(frame.deleted).toBe(true);
+    });
+
+    test('restore frame from job', async () => {
+        const job = (await window.cvat.jobs.get({ jobID: 100 }))[0];
+        await job.annotations.clear(true);
+        let frame = await job.frames.get(8);
+        expect(frame.deleted).toBe(true);
+        await job.frames.restore(8);
+        frame = await job.frames.get(8);
+        expect(frame.deleted).toBe(false);
+    });
+
+    test('delete frame from task', async () => {
+        const task = (await window.cvat.tasks.get({ id: 100 }))[0];
+        await task.annotations.clear(true);
+        let frame = await task.frames.get(1);
+        expect(frame.deleted).toBe(false);
+        await task.frames.delete(1);
+        frame = await task.frames.get(1);
+        expect(frame.deleted).toBe(true);
+    });
+
+    test('restore frame from task', async () => {
+        const task = (await window.cvat.tasks.get({ id: 100 }))[0];
+        await task.annotations.clear(true);
+        let frame = await task.frames.get(7);
+        expect(frame.deleted).toBe(true);
+        await task.frames.restore(7);
+        frame = await task.frames.get(7);
+        expect(frame.deleted).toBe(false);
     });
 });
 

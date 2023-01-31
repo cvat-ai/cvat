@@ -72,12 +72,14 @@ context('Paste labels from one task to another.', { browser: '!firefox' }, () =>
                 expect(raw.text()).not.contain('"id":');
             });
             cy.contains('button', 'Done').click();
+            cy.intercept('PATCH', '/api/tasks/**').as('patchTaskLabels');
             cy.get('.cvat-modal-confirm-remove-existing-labels').should('be.visible').within(() => {
                 cy.get('.cvat-modal-confirm-content-remove-existing-labels').should('have.text', task.labelSecond);
                 cy.get('.cvat-modal-confirm-content-remove-existing-attributes')
                     .should('have.text', task.attrNameSecond);
                 cy.contains('button', 'Delete existing data').click();
             });
+            cy.wait('@patchTaskLabels').its('response.statusCode').should('equal', 200);
             cy.get('.cvat-modal-confirm-remove-existing-labels').should('not.exist');
             cy.get('.cvat-raw-labels-viewer').then((raw) => {
                 expect(raw.text()).contain('"id":');

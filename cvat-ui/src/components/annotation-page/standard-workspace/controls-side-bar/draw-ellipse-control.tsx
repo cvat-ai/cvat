@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,7 +8,7 @@ import Icon from '@ant-design/icons';
 
 import { Canvas } from 'cvat-canvas-wrapper';
 import { EllipseIcon } from 'icons';
-import { ShapeType } from 'reducers/interfaces';
+import { ShapeType } from 'reducers';
 
 import DrawShapePopoverContainer from 'containers/annotation-page/standard-workspace/controls-side-bar/draw-shape-popover';
 import withVisibilityHandling from './handle-popover-visibility';
@@ -20,7 +20,7 @@ export interface Props {
 }
 
 const CustomPopover = withVisibilityHandling(Popover, 'draw-ellipse');
-function DrawPointsControl(props: Props): JSX.Element {
+function DrawEllipseControl(props: Props): JSX.Element {
     const { canvasInstance, isDrawing, disabled } = props;
     const dynamicPopoverProps = isDrawing ? {
         overlayStyle: {
@@ -51,4 +51,4 @@ function DrawPointsControl(props: Props): JSX.Element {
     );
 }
 
-export default React.memo(DrawPointsControl);
+export default React.memo(DrawEllipseControl);

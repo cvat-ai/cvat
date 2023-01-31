@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -19,7 +19,7 @@ import {
 } from 'icons';
 import {
     CombinedState, DimensionType, Workspace, PredictorState,
-} from 'reducers/interfaces';
+} from 'reducers';
 
 interface Props {
     workspace: Workspace;

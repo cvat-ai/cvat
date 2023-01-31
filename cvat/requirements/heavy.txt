@@ -1,2 +1,18 @@
+# these are copied from base.txt, to be able to install them
+# separately, so docker build on slow connection won't fail on
+# all requirements, but just these.
 tensorflow==2.8.0
 open3d==0.11.2
+opencv-python-headless==4.4.0.42
+numpy==1.22.0
+
+# these are not directly in requirements
+# they are requirements of other requirements
+scipy==1.9.0
+scikit-learn==1.1.2
+pandas==1.4.3
+matplotlib==3.5.3
+notebook==6.4.12
+# this duplicates, because cvat install headless version
+# for some reason, then one of its requirements installs this.
+# opencv-python==4.6.0.66

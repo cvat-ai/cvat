@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -12,7 +12,7 @@ context('Objects ordering feature', () => {
     const createRectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         firstX: 250,
         firstY: 350,
         secondX: 350,
@@ -22,7 +22,7 @@ context('Objects ordering feature', () => {
     const createRectangleShape2PointsSecond = {
         points: 'By 2 Points',
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         firstX: createRectangleShape2Points.firstX + 300,
         firstY: createRectangleShape2Points.firstY,
         secondX: createRectangleShape2Points.secondX + 300,
@@ -30,18 +30,20 @@ context('Objects ordering feature', () => {
     };
 
     function checkSideBarItemOrdering(ordering) {
-        let cvatObjectsSidebarStateItemIdList = [];
+        const cvatObjectsSidebarStateItemIdList1 = [];
         cy.get('.cvat-objects-sidebar-state-item').then(($cvatObjectsSidebarStateItemId) => {
             for (let i = 0; i < $cvatObjectsSidebarStateItemId.length; i++) {
-                cvatObjectsSidebarStateItemIdList.push(Number($cvatObjectsSidebarStateItemId[i].id.match(/\d+$/)));
+                cvatObjectsSidebarStateItemIdList1.push(Number($cvatObjectsSidebarStateItemId[i].id.match(/\d+$/)));
             }
-            const idAscent = cvatObjectsSidebarStateItemIdList.reduce((previousValue, currentValue) => {
-                return previousValue > currentValue ? false : true;
-            });
+            const idAscent = cvatObjectsSidebarStateItemIdList1.reduce((previousValue, currentValue) => (
+                !(previousValue > currentValue)
+            ));
             if (ordering === 'ascent') {
-                expect(idAscent).to.be.true; //expected true to be true (ascent)
+                /* eslint-disable-next-line */
+                expect(idAscent).to.be.true; // expected true to be true (ascent)
             } else {
-                expect(idAscent).to.be.false; //expected false to be false (descent)
+                /* eslint-disable-next-line */
+                expect(idAscent).to.be.false; // expected false to be false (descent)
             }
         });
     }
@@ -65,7 +67,7 @@ context('Objects ordering feature', () => {
             cy.sidebarItemSortBy('Updated time');
             cy.get('#cvat_canvas_shape_1').trigger('mousemove').rightclick();
             cy.get('.cvat-canvas-context-menu').within(() => {
-                cy.contains('.cvat-objects-sidebar-state-item-collapse', 'Details').click();
+                cy.contains('.cvat-objects-sidebar-state-item-collapse', 'DETAILS').click();
                 cy.contains('.cvat-object-item-attribute-wrapper', attrName).within(() => {
                     cy.get('.cvat-object-item-text-attribute').clear();
                 });

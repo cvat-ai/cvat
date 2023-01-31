@@ -1,4 +1,5 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,17 +10,17 @@ import Tabs from 'antd/lib/tabs';
 import Input from 'antd/lib/input';
 import Text from 'antd/lib/typography/Text';
 import Paragraph from 'antd/lib/typography/Paragraph';
-import Upload, { RcFile } from 'antd/lib/upload';
+import { RcFile } from 'antd/lib/upload';
 import Empty from 'antd/lib/empty';
 import Tree, { TreeNodeNormal } from 'antd/lib/tree/Tree';
 import { FormInstance } from 'antd/lib/form';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { EventDataNode } from 'rc-tree/lib/interface';
-import { InboxOutlined } from '@ant-design/icons';
 
 import consts from 'consts';
-import { CloudStorage } from 'reducers/interfaces';
+import { CloudStorage } from 'reducers';
 import CloudStorageTab from './cloud-storages-tab';
+import LocalFiles from './local-files';
 
 export interface Files {
     local: File[];
@@ -37,9 +38,15 @@ interface State {
 }
 
 interface Props {
-    treeData: TreeNodeNormal[];
-    onLoadData: (key: string, success: () => void, failure: () => void) => void;
+    treeData: (TreeNodeNormal & { mime_type: string })[];
+    share: any;
+    many: boolean;
+    onLoadData: (key: string) => Promise<any>;
     onChangeActiveKey(key: string): void;
+    onUploadLocalFiles(files: File[]): void;
+    onUploadRemoteFiles(urls: string[]): void;
+    onUploadShareFiles(keys: string[]): Promise<void>;
+    onUploadCloudStorageFiles(cloudStorageFiles: string[]): void;
 }
 
 export class FileManager extends React.PureComponent<Props, State> {
@@ -48,6 +55,7 @@ export class FileManager extends React.PureComponent<Props, State> {
     public constructor(props: Props) {
         super(props);
         this.cloudStorageTabFormRef = React.createRef<FormInstance>();
+        const { onLoadData } = this.props;
 
         this.state = {
             files: {
@@ -62,17 +70,19 @@ export class FileManager extends React.PureComponent<Props, State> {
             active: 'local',
         };
 
-        this.loadData('/');
+        onLoadData('/');
     }
 
-    private onSelectCloudStorageFiles = (cloudStorageFiles: string[]): void => {
+    private handleUploadCloudStorageFiles = (cloudStorageFiles: string[]): void => {
         const { files } = this.state;
+        const { onUploadCloudStorageFiles } = this.props;
         this.setState({
             files: {
                 ...files,
                 cloudStorage: cloudStorageFiles,
             },
         });
+        onUploadCloudStorageFiles(cloudStorageFiles);
     };
 
     public getCloudStorageId(): number | null {
@@ -89,14 +99,6 @@ export class FileManager extends React.PureComponent<Props, State> {
             cloudStorage: active === 'cloudStorage' ? files.cloudStorage : [],
         };
     }
-
-    private loadData = (key: string): Promise<void> => new Promise<void>((resolve, reject): void => {
-        const { onLoadData } = this.props;
-
-        const success = (): void => resolve();
-        const failure = (): void => reject();
-        onLoadData(key, success, failure);
-    });
 
     public reset(): void {
         const { active } = this.state;
@@ -118,65 +120,43 @@ export class FileManager extends React.PureComponent<Props, State> {
     }
 
     private renderLocalSelector(): JSX.Element {
+        const { many, onUploadLocalFiles } = this.props;
         const { files } = this.state;
 
         return (
             <Tabs.TabPane className='cvat-file-manager-local-tab' key='local' tab='My computer'>
-                <Upload.Dragger
-                    multiple
-                    listType='text'
-                    fileList={files.local as any[]}
-                    showUploadList={
-                        files.local.length < 5 && {
-                            showRemoveIcon: false,
-                        }
-                    }
-                    beforeUpload={(_: RcFile, newLocalFiles: RcFile[]): boolean => {
+                <LocalFiles
+                    files={files.local}
+                    many={many}
+                    onUpload={(_: RcFile, newLocalFiles: RcFile[]): boolean => {
                         this.setState({
                             files: {
                                 ...files,
                                 local: newLocalFiles,
                             },
                         });
+                        onUploadLocalFiles(newLocalFiles);
                         return false;
                     }}
-                >
-                    <p className='ant-upload-drag-icon'>
-                        <InboxOutlined />
-                    </p>
-                    <p className='ant-upload-text'>Click or drag files to this area</p>
-                    <p className='ant-upload-hint'>Support for a bulk images or a single video</p>
-                </Upload.Dragger>
-                {files.local.length >= 5 && (
-                    <>
-                        <br />
-                        <Text className='cvat-text-color'>{`${files.local.length} files selected`}</Text>
-                    </>
-                )}
+                />
             </Tabs.TabPane>
         );
     }
 
     private renderShareSelector(): JSX.Element {
-        function renderTreeNodes(data: TreeNodeNormal[]): JSX.Element[] {
+        function getTreeNodes(data: TreeNodeNormal[]): TreeNodeNormal[] {
             // sort alphabetically
-            data.sort((a: TreeNodeNormal, b: TreeNodeNormal): number => (
-                a.key.toLocaleString().localeCompare(b.key.toLocaleString())));
-            return data.map((item: TreeNodeNormal) => {
-                if (item.children) {
-                    return (
-                        <Tree.TreeNode title={item.title} key={item.key} data={item} isLeaf={item.isLeaf}>
-                            {renderTreeNodes(item.children)}
-                        </Tree.TreeNode>
-                    );
-                }
-
-                return <Tree.TreeNode {...item} key={item.key} data={item} />;
-            });
+            return data
+                .sort((a: TreeNodeNormal, b: TreeNodeNormal): number => (
+                    a.key.toLocaleString().localeCompare(b.key.toLocaleString())))
+                .map((it) => ({
+                    ...it,
+                    children: it.children ? getTreeNodes(it.children) : undefined,
+                }));
         }
 
         const { SHARE_MOUNT_GUIDE_URL } = consts;
-        const { treeData } = this.props;
+        const { treeData, onUploadShareFiles, onLoadData } = this.props;
         const { expandedKeys, files } = this.state;
 
         return (
@@ -190,7 +170,7 @@ export class FileManager extends React.PureComponent<Props, State> {
                         checkStrictly={false}
                         expandedKeys={expandedKeys}
                         checkedKeys={files.share}
-                        loadData={(event: EventDataNode): Promise<void> => this.loadData(event.key.toLocaleString())}
+                        loadData={(event: EventDataNode): Promise<void> => onLoadData(event.key.toLocaleString())}
                         onExpand={(newExpandedKeys: ReactText[]): void => {
                             this.setState({
                                 expandedKeys: newExpandedKeys.map((text: ReactText): string => text.toLocaleString()),
@@ -212,10 +192,10 @@ export class FileManager extends React.PureComponent<Props, State> {
                                     share: keys,
                                 },
                             });
+                            onUploadShareFiles(keys).then().catch();
                         }}
-                    >
-                        {renderTreeNodes(treeData)}
-                    </Tree>
+                        treeData={getTreeNodes(treeData)}
+                    />
                 ) : (
                     <div className='cvat-empty-share-tree'>
                         <Empty />
@@ -233,6 +213,7 @@ export class FileManager extends React.PureComponent<Props, State> {
     }
 
     private renderRemoteSelector(): JSX.Element {
+        const { onUploadRemoteFiles } = this.props;
         const { files } = this.state;
 
         return (
@@ -243,12 +224,14 @@ export class FileManager extends React.PureComponent<Props, State> {
                     rows={6}
                     value={[...files.remote].join('\n')}
                     onChange={(event: React.ChangeEvent<HTMLTextAreaElement>): void => {
+                        const urls = event.target.value.split('\n');
                         this.setState({
                             files: {
                                 ...files,
-                                remote: event.target.value.split('\n'),
+                                remote: urls,
                             },
                         });
+                        onUploadRemoteFiles(urls.filter(Boolean));
                     }}
                 />
             </Tabs.TabPane>
@@ -274,14 +257,14 @@ export class FileManager extends React.PureComponent<Props, State> {
                     setSearchPhrase={(_potentialCloudStorage: string) => {
                         this.setState({ potentialCloudStorage: _potentialCloudStorage });
                     }}
-                    onSelectFiles={this.onSelectCloudStorageFiles}
+                    onSelectFiles={this.handleUploadCloudStorageFiles}
                 />
             </Tabs.TabPane>
         );
     }
 
     public render(): JSX.Element {
-        const { onChangeActiveKey } = this.props;
+        const { onChangeActiveKey, many } = this.props;
         const { active } = this.state;
 
         return (
@@ -300,7 +283,7 @@ export class FileManager extends React.PureComponent<Props, State> {
                     {this.renderLocalSelector()}
                     {this.renderShareSelector()}
                     {this.renderRemoteSelector()}
-                    {this.renderCloudStorageSelector()}
+                    {!many && this.renderCloudStorageSelector()}
                 </Tabs>
             </>
         );

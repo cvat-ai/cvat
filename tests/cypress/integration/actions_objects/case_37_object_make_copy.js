@@ -103,14 +103,13 @@ context('Object make a copy.', () => {
         cy.createPolyline(createPolylinesShape);
         cy.createEllipse(createEllipseShape);
         cy.createPoint(createPointsShape);
-        cy.createTag(labelName);
     });
 
     describe(`Testing case "${caseId}"`, () => {
         it('Make a copy via sidebar.', () => {
             let coordX = 100;
             const coordY = 300;
-            for (let id = 1; id < countObject + 2; id++) {
+            for (let id = 1; id < countObject + 1; id++) {
                 cy.get(`#cvat-objects-sidebar-state-item-${id}`).within(() => {
                     cy.get('[aria-label="more"]').trigger('mouseover').wait(300); // Wait dropdown menu transition
                 });
@@ -123,15 +122,15 @@ context('Object make a copy.', () => {
         });
 
         it('After copying via sidebar, the attributes of the objects are the same.', () => {
-            checkObjectArrSize(12, 14);
+            checkObjectArrSize(12, 12);
             for (let id = 1; id < countObject; id++) {
                 // Parameters id 1 equal patameters id 8, 2 to 9, etc.
-                compareObjectsAttr(`#cvat_canvas_shape_${id}`, `#cvat_canvas_shape_${id + countObject + 1}`);
+                compareObjectsAttr(`#cvat_canvas_shape_${id}`, `#cvat_canvas_shape_${id + countObject}`);
             }
             for (let idSidebar = 1; idSidebar < 7; idSidebar++) {
                 compareObjectsSidebarAttr(
                     `#cvat-objects-sidebar-state-item-${idSidebar}`,
-                    `#cvat-objects-sidebar-state-item-${idSidebar + countObject + 1}`,
+                    `#cvat-objects-sidebar-state-item-${idSidebar + countObject}`,
                 ); // Parameters sidebar id 1 equal patameters sidebar id 8, 2 to 9, etc.
             }
         });
@@ -165,15 +164,15 @@ context('Object make a copy.', () => {
             'After copying via object context menu, the attributes of the objects are the same.',
             { browser: '!firefox' },
             () => {
-                checkObjectArrSize(17, 19); // The point and tag was not copied via the object's context menu
+                checkObjectArrSize(17, 17); // The point was not copied via the object's context menu
                 for (let id = 1; id < countObject; id++) {
                     // Parameters id 1 equal patameters id 13, 2 to 14, etc.
-                    compareObjectsAttr(`#cvat_canvas_shape_${id}`, `#cvat_canvas_shape_${id + countObject + 8}`);
+                    compareObjectsAttr(`#cvat_canvas_shape_${id}`, `#cvat_canvas_shape_${id + 2 * countObject}`);
                 }
-                for (let idSidebar = 1; idSidebar < 6; idSidebar++) {
+                for (let idSidebar = 1; idSidebar < countObject; idSidebar++) {
                     compareObjectsSidebarAttr(
                         `#cvat-objects-sidebar-state-item-${idSidebar}`,
-                        `#cvat-objects-sidebar-state-item-${idSidebar + countObject + 8}`,
+                        `#cvat-objects-sidebar-state-item-${idSidebar + 2 * countObject}`,
                     ); // Parameters sidebar id 1 equal patameters sidebar id 15, 2 to 16, etc.
                 }
             },

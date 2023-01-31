@@ -1,7 +1,8 @@
 -r base.txt
-pylint==2.7.0
-pylint-django==2.3.0
-pylint-plugin-utils==0.6
+
+pylint==2.14.5
+pylint-django==2.5.3
+pylint-plugin-utils==0.7
 rope==0.17.0
 django-extensions==3.0.8
 Werkzeug==1.0.1
