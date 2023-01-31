@@ -53,7 +53,7 @@ RUN DATUMARO_HEADLESS=1 python3 -m pip install --no-cache-dir -r /tmp/requiremen
 COPY rebotics/requirements.txt /tmp/requirements/rebotics.txt
 RUN python3 -m pip install --no-cache-dir -r /tmp/requirements/rebotics.txt
 
-FROM node:lts-slim AS cvat-ui
+FROM node:16-slim AS cvat-ui
 
 ARG http_proxy
 ARG https_proxy

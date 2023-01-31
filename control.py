@@ -57,6 +57,18 @@ def get_version(version_file):
     click.echo(version_file.read())
 
 
+def _login_to_ecr(
+        ecr_template: str,
+        profile: str,
+        region: str
+):
+    click.echo("Logging in to ECR...")
+    ecr_endpoint = ecr_template.split('/')[0]
+    sys_call(f"aws ecr get-login-password --region {region} --profile {profile} "
+             f"| docker login --username AWS --password-stdin {ecr_endpoint}")
+    click.echo("-" * 100)
+
+
 def _deploy_app(environment, application, version, ecr_template, s3_template, s3_profile, notify_ecs):
     ecs_notification = dict()
 
@@ -116,9 +128,11 @@ def deploy_app(version, environment, application,
                ecr_profile, s3_profile,
                ecr_template, s3_template,
                aws_region, notify_ecs):
-    click.echo("Logging in to ECR...")
-    sys_call(f"eval $(aws ecr get-login --no-include-email --region {aws_region} --profile {ecr_profile})")
-    click.echo('-' * 100)
+    _login_to_ecr(
+        ecr_template=ecr_template,
+        profile=ecr_profile,
+        region=aws_region
+    )
 
     _deploy_app(environment=environment,
                 application=application,
