@@ -1,15 +1,17 @@
 {
   "name": "cvat-core",
-  "version": "5.0.1",
+  "version": "7.0.0",
   "description": "Part of Computer Vision Tool which presents an interface for client-side integration",
-  "main": "babel.config.js",
+  "main": "src/api.ts",
   "scripts": {
     "build": "webpack",
     "test": "jest --config=jest.config.js --coverage",
     "docs": "jsdoc --readme README.md src/*.js -p -c jsdoc.config.js -d docs",
-    "coveralls": "cat ./reports/coverage/lcov.info | coveralls"
+    "coveralls": "cat ./reports/coverage/lcov.info | coveralls",
+    "type-check": "tsc --noEmit",
+    "type-check:watch": "yarn run type-check -- --watch"
   },
-  "author": "Intel",
+  "author": "CVAT.ai",
   "license": "MIT",
   "browserslist": [
     "Chrome >= 63",
@@ -21,17 +23,18 @@
     "coveralls": "^3.0.5",
     "jest": "^26.6.3",
     "jest-junit": "^6.4.0",
-    "jsdoc": "^3.6.6"
+    "jsdoc": "^3.6.6",
+    "ts-jest": "26"
   },
   "dependencies": {
-    "axios": "^0.21.4",
-    "browser-or-node": "^1.2.1",
-    "cvat-data": "../cvat-data",
+    "axios": "^0.27.2",
+    "browser-or-node": "^2.0.0",
+    "cvat-data": "file:../cvat-data",
     "detect-browser": "^5.2.1",
     "error-stack-parser": "^2.0.2",
-    "form-data": "^2.5.0",
-    "jest-config": "^26.6.3",
-    "js-cookie": "^2.2.0",
+    "form-data": "^4.0.0",
+    "jest-config": "^28.1.2",
+    "js-cookie": "^3.0.1",
     "json-logic-js": "^2.0.1",
     "platform": "^1.3.5",
     "quickhull": "^1.0.3",

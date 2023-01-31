@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,42 +10,79 @@
 
 .cvat-tag-annotation-sidebar:not(.ant-layout-sider-collapsed) {
     background: $background-color-2;
-    padding: 5px;
-
-    > div > .ant-row > .ant-col > .ant-tag {
-        margin: 4px;
-    }
+    padding: $grid-unit-size * 0.5;
+    padding-left: $grid-unit-size * 1.25;
+    overflow-y: auto;
 }
 
 .cvat-tag-annotation-sidebar-label-select {
-    padding-top: 40px;
-    padding-bottom: 15px;
+    padding-top: $grid-unit-size * 1.25;
+    padding-bottom: $grid-unit-size * 1.8;
 
     > .ant-col > .ant-select {
-        padding-left: 5px;
-        width: 230px;
+        width: $grid-unit-size * 25;
     }
 }
 
 .cvat-tag-annotation-sidebar-shortcut-help {
-    padding-top: 15px;
+    padding-top: $grid-unit-size * 1.8;
     text-align: center;
 }
 
-.cvat-tag-annotation-sidebar-buttons,
 .cvat-tag-annotation-sidebar-checkbox-skip-frame {
-    padding-bottom: 15px;
+    padding-bottom: $grid-unit-size * 1.8;
 }
 
 .cvat-tag-annotation-label-selects {
-    padding-top: 10px;
+    padding-top: $grid-unit-size * 1.25;
 
     .ant-select {
-        width: 230px;
-        padding: 5px 10px;
+        width: $grid-unit-size * 29;
+        margin: $grid-unit-size * 0.5 0;
+    }
+
+    .cvat-tag-annotation-shortcut-key {
+        margin-left: $grid-unit-size * 1.25;
     }
 }
 
 .labels-tag-annotation-sidebar-not-found-wrapper {
     margin-top: $grid-unit-size * 4;
+}
+
+.cvat-frame-tags {
+    .ant-tag {
+        margin: $grid-unit-size * 0.25;
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+
+        .ant-tag-close-icon {
+            margin-left: $grid-unit-size * 0.5;
+            font-size: $grid-unit-size * 1.5;
+        }
+    }
+}
+
+.cvat-canvas-frame-tags {
+    @extend .cvat-frame-tags;
+
+    position: absolute;
+    top: $layout-sm-grid-size;
+    left: $grid-unit-size;
+    z-index: 3;
+
+    .ant-tag {
+        user-select: none;
+    }
+}
+
+.cvat-tag-annotation-sidebar-tag-label {
+    margin-top: $grid-unit-size * 1.8;
+}
+
+.cvat-add-tag-button {
+    margin-left: $grid-unit-size * 1.25;
+    width: $grid-unit-size * 3.5;
+    height: $grid-unit-size * 3.5;
 }

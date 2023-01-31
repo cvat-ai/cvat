@@ -1,4 +1,5 @@
-# Copyright (C) 2021 Intel Corporation
+# Copyright (C) 2021-2022 Intel Corporation
+# Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -29,7 +30,7 @@ def _import(src_file, instance_data, load_data_callback=None):
         zipfile.ZipFile(src_file).extractall(tmp_dir)
 
         dataset = Dataset.import_from(tmp_dir, 'vgg_face2', env=dm_env)
-        dataset.transform('rename', r"|([^/]+/)?(.+)|\2|")
+        dataset.transform('rename', regex=r"|([^/]+/)?(.+)|\2|")
         if load_data_callback is not None:
             load_data_callback(dataset, instance_data)
         import_dm_annotations(dataset, instance_data)

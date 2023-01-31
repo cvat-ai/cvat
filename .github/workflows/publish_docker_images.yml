@@ -1,58 +1,16 @@
 name: Publish Docker images
 on:
   release:
-    types: [published]
+    types: [released]
 
 jobs:
-  Unit_testing:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Run unit tests
-        env:
-          HOST_COVERAGE_DATA_DIR: ${{ github.workspace }}
-          CONTAINER_COVERAGE_DATA_DIR: '/coverage_data'
-        run: |
-          docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'coverage run -a manage.py test cvat/apps utils/cli'
-          docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'cd cvat-data && npm ci && cd ../cvat-core && npm ci && npm run test'
-
-  E2E_testing:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
-        with:
-            node-version: '16.x'
-      - name: Run end-to-end tests
-        env:
-          DJANGO_SU_NAME: 'admin'
-          DJANGO_SU_EMAIL: 'admin@localhost.company'
-          DJANGO_SU_PASSWORD: '12qwaszx'
-          API_ABOUT_PAGE: "localhost:8080/api/server/about"
-        run: |
-          docker-compose -f docker-compose.yml -f docker-compose.dev.yml build
-          docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f components/serverless/docker-compose.serverless.yml -f tests/docker-compose.file_share.yml up -d
-          /bin/bash -c 'while [[ $(curl -s -o /dev/null -w "%{http_code}" ${API_ABOUT_PAGE}) != "401" ]]; do sleep 5; done'
-          docker exec -i cvat /bin/bash -c "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell"
-          cd ./tests
-          npm ci
-          npm run cypress:run:chrome
-          npm run cypress:run:chrome:canvas3d
-      - name: Uploading cypress screenshots as an artifact
-        if: failure()
-        uses: actions/upload-artifact@v2
-        with:
-          name: cypress_screenshots
-          path: ${{ github.workspace }}/tests/cypress/screenshots
-
   Push_to_registry:
     runs-on: ubuntu-latest
-    needs: [Unit_testing, E2E_testing]
     steps:
       - uses: actions/checkout@v2
       - name: Build images
         run: |
-          CLAM_AV=yes INSTALL_SOURCES=yes docker-compose -f docker-compose.yml -f docker-compose.dev.yml build
+          CVAT_VERSION=latest CLAM_AV=yes INSTALL_SOURCES=yes docker-compose -f docker-compose.yml -f docker-compose.dev.yml build
       - name: Login to Docker Hub
         uses: docker/login-action@v1
         with:
@@ -60,9 +18,9 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Push to Docker Hub
         env:
-          DOCKERHUB_WORKSPACE: 'openvino'
-          SERVER_IMAGE_REPO: 'cvat_server'
-          UI_IMAGE_REPO: 'cvat_ui'
+          DOCKERHUB_WORKSPACE: ${{ secrets.DOCKERHUB_WORKSPACE }}
+          SERVER_IMAGE_REPO: 'server'
+          UI_IMAGE_REPO: 'ui'
         run: |
           docker tag "${DOCKERHUB_WORKSPACE}/${SERVER_IMAGE_REPO}:latest" "${DOCKERHUB_WORKSPACE}/${SERVER_IMAGE_REPO}:${{ github.event.release.tag_name }}"
           docker push "${DOCKERHUB_WORKSPACE}/${SERVER_IMAGE_REPO}:${{ github.event.release.tag_name }}"

@@ -1,5 +1,6 @@
 
 # Copyright (C) 2020-2022 Intel Corporation
+# Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -275,6 +276,7 @@ class TaskExportTest(_DbTestBase):
         self.assertEqual({f.DISPLAY_NAME for f in formats},
         {
             'COCO 1.0',
+            'COCO Keypoints 1.0',
             'CVAT for images 1.1',
             'CVAT for video 1.1',
             'Datumaro 1.0',
@@ -308,6 +310,7 @@ class TaskExportTest(_DbTestBase):
         self.assertEqual({f.DISPLAY_NAME for f in formats},
         {
             'COCO 1.0',
+            'COCO Keypoints 1.0',
             'CVAT 1.1',
             'LabelMe 3.0',
             'MOT 1.1',
@@ -360,6 +363,7 @@ class TaskExportTest(_DbTestBase):
 
         for format_name, importer_name in [
             ('COCO 1.0', 'coco'),
+            ('COCO Keypoints 1.0', 'coco_person_keypoints'),
             ('CVAT for images 1.1', 'cvat'),
             # ('CVAT for video 1.1', 'cvat'), # does not support
             ('Datumaro 1.0', 'datumaro'),
@@ -610,6 +614,14 @@ class TaskAnnotationsImportTest(_DbTestBase):
             "client_files[%d]" % i: generate_image_file("%s_%d.jpg" % (name, i),
                 **image_params)
             for i in range(count)
+        }
+        images["image_quality"] = 75
+        return images
+
+    def _generate_task_images_by_names(self, names, **image_params):
+        images = {
+            f"client_files[{i}]": generate_image_file(f"{name}.jpg", **image_params)
+            for i, name in enumerate(names)
         }
         images["image_quality"] = 75
         return images
@@ -908,7 +920,10 @@ class TaskAnnotationsImportTest(_DbTestBase):
         for f in dm.views.get_import_formats():
             format_name = f.DISPLAY_NAME
 
-            images = self._generate_task_images(3, "img0.0.0")
+            if format_name == "Market-1501 1.0":
+                images = self._generate_task_images_by_names(["img0.0.0_0", "1.0_c3s1_000000_00", "img0.0.0_1"])
+            else:
+                images = self._generate_task_images(3, "img0.0.0")
             task = self._generate_task(images, format_name)
             self._generate_annotations(task, format_name)
 

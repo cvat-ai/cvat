@@ -1,34 +1,94 @@
+![CVAT logo](site/content/en/images/cvat_poster_with_name.png)
 # Computer Vision Annotation Tool (CVAT)
+
+<a href="https://www.producthunt.com/posts/cvat-computer-vision-annotation-tool?utm_source=badge-featured&utm_medium=badge&utm_souce=badge-cvat&#0045;computer&#0045;vision&#0045;annotation&#0045;tool" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=353415&theme=light" alt="CVAT&#0032;–&#0032;Computer&#0032;Vision&#0032;Annotation&#0032;Tool - The&#0032;open&#0032;data&#0032;annotation&#0032;platform&#0032;for&#0032;AI | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a>
 
 [![CI][ci-img]][ci-url]
 [![Gitter chat][gitter-img]][gitter-url]
+[![Discord][discord-img]][discord-url]
 [![Coverage Status][coverage-img]][coverage-url]
 [![server pulls][docker-server-pulls-img]][docker-server-image-url]
 [![ui pulls][docker-ui-pulls-img]][docker-ui-image-url]
 [![DOI][doi-img]][doi-url]
 
-CVAT is free, online, interactive video and image annotation
-tool for computer vision. It is being used by our team to
-annotate million of objects with different properties. Many UI
-and UX decisions are based on feedbacks from professional data
-annotation team. Try it online [cvat.org](https://cvat.org).
+CVAT is an interactive video and image annotation
+tool for computer vision. It is used by tens of thousands of users and
+companies around the world. CVAT is free and open-source.
 
-![CVAT screenshot](site/content/en/images/cvat.jpg)
+**A new repo**: CVAT core team moved the active development of the tool
+to this new repository. Our mission is to help developers, companies and
+organizations around the world to solve real problems using the Data-centric
+AI approach.
 
-## Documentation
+Start using CVAT online for free: [cvat.ai](https://cvat.ai). Or set it up as a self-hosted solution:
+[read here](https://opencv.github.io/cvat/docs/administration/basics/installation/).
 
-- [Contributing](https://openvinotoolkit.github.io/cvat/docs/contributing/)
-- [Installation guide](https://openvinotoolkit.github.io/cvat/docs/administration/basics/installation/)
-- [Manual](https://openvinotoolkit.github.io/cvat/docs/manual/)
-- [Django REST API documentation](https://openvinotoolkit.github.io/cvat/docs/administration/basics/rest_api_guide/)
-- [Datumaro dataset framework](https://github.com/openvinotoolkit/datumaro/blob/develop/README.md)
-- [Command line interface](https://openvinotoolkit.github.io/cvat/docs/manual/advanced/cli/)
-- [XML annotation format](https://openvinotoolkit.github.io/cvat/docs/manual/advanced/xml_format/)
-- [AWS Deployment Guide](https://openvinotoolkit.github.io/cvat/docs/administration/basics/aws-deployment-guide/)
-- [Frequently asked questions](https://openvinotoolkit.github.io/cvat/docs/faq/)
-- [Questions](#questions)
+![CVAT screencast](site/content/en/images/cvat-ai-screencast.gif)
 
-## Screencasts
+## Quick start ⚡
+
+- [Installation guide](https://opencv.github.io/cvat/docs/administration/basics/installation/)
+- [Manual](https://opencv.github.io/cvat/docs/manual/)
+- [Contributing](https://opencv.github.io/cvat/docs/contributing/)
+- [Datumaro dataset framework](https://github.com/cvat-ai/datumaro/blob/develop/README.md)
+- [Server API](#api)
+- [Python SDK](#sdk)
+- [Command line tool](#cli)
+- [XML annotation format](https://opencv.github.io/cvat/docs/manual/advanced/xml_format/)
+- [AWS Deployment Guide](https://opencv.github.io/cvat/docs/administration/basics/aws-deployment-guide/)
+- [Frequently asked questions](https://opencv.github.io/cvat/docs/faq/)
+- [Where to ask questions](#where-to-ask-questions)
+
+## Partners ❤️
+
+CVAT is used by teams all over the world. If you use us, please drop us a line at
+[contact@cvat.ai](mailto:contact+github@cvat.ai) - and we'll add you to this list.
+
+- [ATLANTIS](https://github.com/smhassanerfani/atlantis), an open-source dataset for semantic segmentation
+  of waterbody images, depeloped by [iWERS](http://ce.sc.edu/iwers/) group in the
+  Department of Civil and Environmental Engineering at University of South Carolina, is using CVAT.
+  For developing a semantic segmentation dataset using CVAT, please check
+  [ATLANTIS published article](https://www.sciencedirect.com/science/article/pii/S1364815222000391),
+  [ATLANTIS Development Kit](https://github.com/smhassanerfani/atlantis/tree/master/adk)
+  and [annotation tutorial videos](https://www.youtube.com/playlist?list=PLIfLGY-zZChS5trt7Lc3MfNhab7OWl2BR).
+- [Onepanel](https://github.com/onepanelio/core) is an open-source
+  vision AI platform that fully integrates CVAT with scalable data processing
+  and parallelized training pipelines.
+- [DataIsKey](https://dataiskey.eu/annotation-tool/) uses CVAT as their prime data labeling tool
+  to offer annotation services for projects of any size.
+- [Human Protocol](https://hmt.ai) uses CVAT as a way of adding annotation service to the Human Protocol.
+- [Cogito Tech LLC](https://bit.ly/3klT0h6), a Human-in-the-Loop Workforce Solutions Provider, used CVAT
+  in annotation of about 5,000 images for a brand operating in the fashion segment.
+- [FiftyOne](https://fiftyone.ai) is an open-source dataset curation and model analysis
+tool for visualizing, exploring, and improving computer vision datasets and models that is
+[tightly integrated](https://voxel51.com/docs/fiftyone/integrations/cvat.html) with CVAT
+for annotation and label refinement.
+
+## CVAT online: [cvat.ai](https://cvat.ai)
+
+This is an online version of CVAT. It's free, efficient, and easy to use.
+
+[cvat.ai](https://cvat.ai) runs the latest version of the tool. You can create up
+to 10 tasks there and upload up to 500Mb of data to annotate. It will only be
+visible to you or people you assign to it.
+
+For now, it does not have [analytics features](https://opencv.github.io/cvat/docs/administration/advanced/analytics/)
+like management and monitoring the data annotation team.
+
+We plan to enhance [cvat.ai](https://cvat.ai) with new powerful features. Stay tuned!
+
+## Prebuilt Docker images 🐳
+
+Prebuilt docker images are the easiest way to start using CVAT locally. They are available on Docker Hub:
+
+- [cvat/server](https://hub.docker.com/r/cvat/server)
+- [cvat/ui](https://hub.docker.com/r/cvat/ui)
+
+The images have been downloaded more than 1M times so far.
+
+## Screencasts 🎦
+
+Here are some screencasts showing how to use CVAT.
 
 - [Introduction](https://youtu.be/JERohTFp-NI)
 - [Annotation mode](https://youtu.be/vH_639N67HI)
@@ -40,97 +100,92 @@ annotation team. Try it online [cvat.org](https://cvat.org).
 - [Tutorial for polygons](https://youtu.be/C7-r9lZbjBw)
 - [Semi-automatic segmentation](https://youtu.be/9HszWP_qsRQ)
 
+## API
+
+- [Documentation](https://opencv.github.io/cvat/docs/api_sdk/api/)
+
+## SDK
+
+- Install with `pip install cvat-sdk`
+- [PyPI package homepage](https://pypi.org/project/cvat-sdk/)
+- [Documentation](https://opencv.github.io/cvat/docs/api_sdk/sdk/)
+
+## CLI
+
+- Install with `pip install cvat-cli`
+- [PyPI package homepage](https://pypi.org/project/cvat-cli/)
+- [Documentation](https://opencv.github.io/cvat/docs/api_sdk/cli/)
+
 ## Supported annotation formats
 
-Format selection is possible after clicking on the Upload annotation and Dump
-annotation buttons. [Datumaro](https://github.com/openvinotoolkit/datumaro)
+CVAT supports multiple annotation formats. You can select the format after clicking the "Upload annotation" and "Dump
+annotation" buttons. [Datumaro](https://github.com/cvat-ai/datumaro)
 dataset framework allows additional dataset transformations via its command
 line tool and Python library.
 
-For more information about supported formats look at the
-[documentation](https://openvinotoolkit.github.io/cvat/docs/manual/advanced/formats/).
+For more information about the supported formats, look at the
+[documentation](https://opencv.github.io/cvat/docs/manual/advanced/formats/).
 
 <!--lint disable maximum-line-length-->
 
 | Annotation format                                                                                         | Import | Export |
 | --------------------------------------------------------------------------------------------------------- | ------ | ------ |
-| [CVAT for images](https://openvinotoolkit.github.io/cvat/docs/manual/advanced/xml_format/#annotation)     | X      | X      |
-| [CVAT for a video](https://openvinotoolkit.github.io/cvat/docs/manual/advanced/xml_format/#interpolation) | X      | X      |
-| [Datumaro](https://github.com/openvinotoolkit/datumaro)                                                   |        | X      |
-| [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/)                                                     | X      | X      |
-| Segmentation masks from [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/)                             | X      | X      |
-| [YOLO](https://pjreddie.com/darknet/yolo/)                                                                | X      | X      |
-| [MS COCO Object Detection](http://cocodataset.org/#format-data)                                           | X      | X      |
-| [TFrecord](https://www.tensorflow.org/tutorials/load_data/tfrecord)                                       | X      | X      |
-| [MOT](https://motchallenge.net/)                                                                          | X      | X      |
-| [LabelMe 3.0](http://labelme.csail.mit.edu/Release3.0)                                                    | X      | X      |
-| [ImageNet](http://www.image-net.org)                                                                      | X      | X      |
-| [CamVid](http://mi.eng.cam.ac.uk/research/projects/VideoRec/CamVid/)                                      | X      | X      |
-| [WIDER Face](http://shuoyang1213.me/WIDERFACE/)                                                           | X      | X      |
-| [VGGFace2](https://github.com/ox-vgg/vgg_face2)                                                           | X      | X      |
-| [Market-1501](https://www.aitribune.com/dataset/2018051063)                                               | X      | X      |
-| [ICDAR13/15](https://rrc.cvc.uab.es/?ch=2)                                                                | X      | X      |
-| [Open Images V6](https://storage.googleapis.com/openimages/web/index.html)                                | X      | X      |
-| [Cityscapes](https://www.cityscapes-dataset.com/login/)                                                   | X      | X      |
-| [KITTI](http://www.cvlibs.net/datasets/kitti/)                                                            | X      | X      |
-| [LFW](http://vis-www.cs.umass.edu/lfw/)                                                                   | X      | X      |
+| [CVAT for images](https://opencv.github.io/cvat/docs/manual/advanced/xml_format/#annotation)     |   ✔️    |   ✔️    |
+| [CVAT for a video](https://opencv.github.io/cvat/docs/manual/advanced/xml_format/#interpolation) |   ✔️    |   ✔️    |
+| [Datumaro](https://github.com/cvat-ai/datumaro)                                                   |        |   ✔️    |
+| [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/)                                                     |   ✔️    |   ✔️    |
+| Segmentation masks from [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/)                             |   ✔️    |   ✔️    |
+| [YOLO](https://pjreddie.com/darknet/yolo/)                                                                |   ✔️    |   ✔️    |
+| [MS COCO Object Detection](http://cocodataset.org/#format-data)                                           |   ✔️    |   ✔️    |
+| [MS COCO Keypoints Detection](http://cocodataset.org/#format-data)                                        |   ✔️    |   ✔️    |
+| [TFrecord](https://www.tensorflow.org/tutorials/load_data/tfrecord)                                       |   ✔️    |   ✔️    |
+| [MOT](https://motchallenge.net/)                                                                          |   ✔️    |   ✔️    |
+| [LabelMe 3.0](http://labelme.csail.mit.edu/Release3.0)                                                    |   ✔️    |   ✔️    |
+| [ImageNet](http://www.image-net.org)                                                                      |   ✔️    |   ✔️    |
+| [CamVid](http://mi.eng.cam.ac.uk/research/projects/VideoRec/CamVid/)                                      |   ✔️    |   ✔️    |
+| [WIDER Face](http://shuoyang1213.me/WIDERFACE/)                                                           |   ✔️    |   ✔️    |
+| [VGGFace2](https://github.com/ox-vgg/vgg_face2)                                                           |   ✔️    |   ✔️    |
+| [Market-1501](https://www.aitribune.com/dataset/2018051063)                                               |   ✔️    |   ✔️    |
+| [ICDAR13/15](https://rrc.cvc.uab.es/?ch=2)                                                                |   ✔️    |   ✔️    |
+| [Open Images V6](https://storage.googleapis.com/openimages/web/index.html)                                |   ✔️    |   ✔️    |
+| [Cityscapes](https://www.cityscapes-dataset.com/login/)                                                   |   ✔️    |   ✔️    |
+| [KITTI](http://www.cvlibs.net/datasets/kitti/)                                                            |   ✔️    |   ✔️    |
+| [LFW](http://vis-www.cs.umass.edu/lfw/)                                                                   |   ✔️    |   ✔️    |
 
 <!--lint enable maximum-line-length-->
 
 ## Deep learning serverless functions for automatic labeling
 
+CVAT supports automatic labelling. It can speed up the annotation process
+up to 10x. Here is a list of the algorithms we support, and the platforms they
+can be ran on:
+
 <!--lint disable maximum-line-length-->
 
 | Name                                                                                                    | Type       | Framework  | CPU | GPU |
 | ------------------------------------------------------------------------------------------------------- | ---------- | ---------- | --- | --- |
-| [Deep Extreme Cut](/serverless/openvino/dextr/nuclio)                                                   | interactor | OpenVINO   | X   |     |
-| [Faster RCNN](/serverless/openvino/omz/public/faster_rcnn_inception_v2_coco/nuclio)                     | detector   | OpenVINO   | X   |     |
-| [Mask RCNN](/serverless/openvino/omz/public/mask_rcnn_inception_resnet_v2_atrous_coco/nuclio)           | detector   | OpenVINO   | X   |     |
-| [YOLO v3](/serverless/openvino/omz/public/yolo-v3-tf/nuclio)                                            | detector   | OpenVINO   | X   |     |
-| [Object reidentification](/serverless/openvino/omz/intel/person-reidentification-retail-300/nuclio)     | reid       | OpenVINO   | X   |     |
-| [Semantic segmentation for ADAS](/serverless/openvino/omz/intel/semantic-segmentation-adas-0001/nuclio) | detector   | OpenVINO   | X   |     |
-| [Text detection v4](/serverless/openvino/omz/intel/text-detection-0004/nuclio)                          | detector   | OpenVINO   | X   |     |
-| [YOLO v5](/serverless/pytorch/ultralytics/yolov5/nuclio)                                                | detector   | PyTorch    | X   |     |
-| [SiamMask](/serverless/pytorch/foolwood/siammask/nuclio)                                                | tracker    | PyTorch    | X   | X   |
-| [f-BRS](/serverless/pytorch/saic-vul/fbrs/nuclio)                                                       | interactor | PyTorch    | X   |     |
-| [HRNet](/serverless/pytorch/saic-vul/hrnet/nuclio)                                                      | interactor | PyTorch    |     | X   |
-| [Inside-Outside Guidance](/serverless/pytorch/shiyinzhang/iog/nuclio)                                   | interactor | PyTorch    | X   |     |
-| [Faster RCNN](/serverless/tensorflow/faster_rcnn_inception_v2_coco/nuclio)                              | detector   | TensorFlow | X   | X   |
-| [Mask RCNN](/serverless/tensorflow/matterport/mask_rcnn/nuclio)                                         | detector   | TensorFlow | X   | X   |
-| [RetinaNet](serverless/pytorch/facebookresearch/detectron2/retinanet/nuclio)                            | detector   | PyTorch    | X   | X   |
-| [Face Detection](/serverless/openvino/omz/intel/face-detection-0205/nuclio)                             | detector   | OpenVINO   | X   |     |
+| [Deep Extreme Cut](/serverless/openvino/dextr/nuclio)                                                   | interactor | OpenVINO   |  ✔️  |     |
+| [Faster RCNN](/serverless/openvino/omz/public/faster_rcnn_inception_v2_coco/nuclio)                     | detector   | OpenVINO   |  ✔️  |     |
+| [Mask RCNN](/serverless/openvino/omz/public/mask_rcnn_inception_resnet_v2_atrous_coco/nuclio)           | detector   | OpenVINO   |  ✔️  |     |
+| [YOLO v3](/serverless/openvino/omz/public/yolo-v3-tf/nuclio)                                            | detector   | OpenVINO   |  ✔️  |     |
+| [Object reidentification](/serverless/openvino/omz/intel/person-reidentification-retail-300/nuclio)     | reid       | OpenVINO   |  ✔️  |     |
+| [Semantic segmentation for ADAS](/serverless/openvino/omz/intel/semantic-segmentation-adas-0001/nuclio) | detector   | OpenVINO   |  ✔️  |     |
+| [Text detection v4](/serverless/openvino/omz/intel/text-detection-0004/nuclio)                          | detector   | OpenVINO   |  ✔️  |     |
+| [YOLO v5](/serverless/pytorch/ultralytics/yolov5/nuclio)                                                | detector   | PyTorch    |  ✔️  |     |
+| [SiamMask](/serverless/pytorch/foolwood/siammask/nuclio)                                                | tracker    | PyTorch    |  ✔️  |  ✔️  |
+| [f-BRS](/serverless/pytorch/saic-vul/fbrs/nuclio)                                                       | interactor | PyTorch    |  ✔️  |     |
+| [HRNet](/serverless/pytorch/saic-vul/hrnet/nuclio)                                                      | interactor | PyTorch    |     |  ✔️  |
+| [Inside-Outside Guidance](/serverless/pytorch/shiyinzhang/iog/nuclio)                                   | interactor | PyTorch    |  ✔️  |     |
+| [Faster RCNN](/serverless/tensorflow/faster_rcnn_inception_v2_coco/nuclio)                              | detector   | TensorFlow |  ✔️  |  ✔️  |
+| [Mask RCNN](/serverless/tensorflow/matterport/mask_rcnn/nuclio)                                         | detector   | TensorFlow |  ✔️  |  ✔️  |
+| [RetinaNet](serverless/pytorch/facebookresearch/detectron2/retinanet/nuclio)                            | detector   | PyTorch    |  ✔️  |  ✔️  |
+| [Face Detection](/serverless/openvino/omz/intel/face-detection-0205/nuclio)                             | detector   | OpenVINO   |  ✔️  |     |
 
 <!--lint enable maximum-line-length-->
 
-## Online demo: [cvat.org](https://cvat.org)
+## License
 
-This is an online demo with the latest version of the annotation tool.
-Try it online without local installation. Only own or assigned tasks
-are visible to users.
-
-Disabled features:
-
-- [Analytics: management and monitoring of data annotation team](https://openvinotoolkit.github.io/cvat/docs/administration/advanced/analytics/)
-
-Limitations:
-
-- No more than 10 tasks per user
-- Uploaded data is limited to 500Mb
-
-## Prebuilt Docker images
-
-Prebuilt docker images for CVAT releases are available on Docker Hub:
-
-- [cvat_server](https://hub.docker.com/r/openvino/cvat_server)
-- [cvat_ui](https://hub.docker.com/r/openvino/cvat_ui)
-
-## REST API
-The current REST API version is `2.0-alpha`. We focus on its improvement and therefore
-REST API may be changed in the next release.
-
-## LICENSE
-
-Code released under the [MIT License](https://opensource.org/licenses/MIT).
+The code is released under the [MIT License](https://opensource.org/licenses/MIT).
 
 This software uses LGPL licensed libraries from the [FFmpeg](https://www.ffmpeg.org) project.
 The exact steps on how FFmpeg was configured and compiled can be found in the [Dockerfile](Dockerfile).
@@ -138,49 +193,24 @@ The exact steps on how FFmpeg was configured and compiled can be found in the [D
 FFmpeg is an open source framework licensed under LGPL and GPL.
 See [https://www.ffmpeg.org/legal.html](https://www.ffmpeg.org/legal.html). You are solely responsible
 for determining if your use of FFmpeg requires any
-additional licenses. Intel is not responsible for obtaining any
+additional licenses. CVAT.ai Corporation is not responsible for obtaining any
 such licenses, nor liable for any licensing fees due in
 connection with your use of FFmpeg.
 
-## Partners
+## Where to ask questions
 
-- [ATLANTIS](https://github.com/smhassanerfani/atlantis) is an open-source dataset for semantic segmentation 
-  of waterbody images, depevoped by [iWERS](http://ce.sc.edu/iwers/) group in the 
-  Department of Civil and Environmental Engineering at University of South Carolina, using CVAT.
-  For developing a semantic segmentation dataset using CVAT, please check
-  [ATLANTIS published article](https://www.sciencedirect.com/science/article/pii/S1364815222000391),
-  [ATLANTIS Development Kit](https://github.com/smhassanerfani/atlantis/tree/master/adk) 
-  and [annotation tutorial videos](https://www.youtube.com/playlist?list=PLIfLGY-zZChS5trt7Lc3MfNhab7OWl2BR).
-- [Onepanel](https://github.com/onepanelio/core) is an open source
-  vision AI platform that fully integrates CVAT with scalable data processing
-  and parallelized training pipelines.
-- [DataIsKey](https://dataiskey.eu/annotation-tool/) uses CVAT as their prime data labeling tool
-  to offer annotation services for projects of any size.
-- [Human Protocol](https://hmt.ai) uses CVAT as a way of adding annotation service to the human protocol.
-- [Cogito Tech LLC](https://bit.ly/3klT0h6), a Human-in-the-Loop Workforce Solutions Provider, used CVAT
-  in annotation of about 5,000 images for a brand operating in the fashion segment.
-- [FiftyOne](https://fiftyone.ai) is an open-source dataset curation and model analysis
-tool for visualizing, exploring, and improving computer vision datasets and models that is
-[tightly integrated](https://voxel51.com/docs/fiftyone/integrations/cvat.html) with CVAT
-for annotation and label refinement.
+[Gitter chat][gitter-url]: you can post CVAT usage related questions there.
+Typically they get answered fast by the core team or community. There you can also browse other common questions.
 
-## Questions
+[Discord][discord-url] is the place to also ask questions or discuss any other stuff related to CVAT.
 
-CVAT usage related questions or unclear concepts can be posted in our
-[Gitter chat](https://gitter.im/opencv-cvat) for **quick replies** from
-contributors and other users.
+[GitHub issues](https://github.com/cvat-ai/cvat/issues): please post them for feature requests or bug reports.
+If it's a bug, please add the steps to reproduce it.
 
-However, if you have a feature request or a bug report that can reproduced,
-feel free to open an issue (with steps to reproduce the bug if it's a bug
-report) on [GitHub\* issues](https://github.com/opencv/cvat/issues).
+[\#cvat](https://stackoverflow.com/search?q=%23cvat) tag on StackOverflow is one more way to ask
+questions and get our support.
 
-If you are not sure or just want to browse other users common questions,
-[Gitter chat](https://gitter.im/opencv-cvat) is the way to go.
-
-Other ways to ask questions and get our support:
-
-- [\#cvat](https://stackoverflow.com/search?q=%23cvat) tag on StackOverflow\*
-- [Forum on Intel Developer Zone](https://software.intel.com/en-us/forums/computer-vision)
+[contact@cvat.ai](mailto:contact+github@cvat.ai): reach out to us with feedback, comments, or inquiries.
 
 ## Links
 
@@ -191,15 +221,23 @@ Other ways to ask questions and get our support:
   <!-- prettier-ignore-start -->
   <!-- Badges -->
 
-[docker-server-pulls-img]: https://img.shields.io/docker/pulls/openvino/cvat_server.svg?style=flat-square&label=server%20pulls
-[docker-server-image-url]: https://hub.docker.com/r/openvino/cvat_server
-[docker-ui-pulls-img]: https://img.shields.io/docker/pulls/openvino/cvat_ui.svg?style=flat-square&label=UI%20pulls
-[docker-ui-image-url]: https://hub.docker.com/r/openvino/cvat_ui
-[ci-img]: https://github.com/openvinotoolkit/cvat/workflows/CI/badge.svg?branch=develop
-[ci-url]: https://github.com/openvinotoolkit/cvat/actions
-[gitter-img]: https://badges.gitter.im/opencv-cvat/gitter.png
+[docker-server-pulls-img]: https://img.shields.io/docker/pulls/cvat/server.svg?style=flat-square&label=server%20pulls
+[docker-server-image-url]: https://hub.docker.com/r/cvat/server
+
+[docker-ui-pulls-img]: https://img.shields.io/docker/pulls/cvat/ui.svg?style=flat-square&label=UI%20pulls
+[docker-ui-image-url]: https://hub.docker.com/r/cvat/ui
+
+[ci-img]: https://github.com/cvat-ai/cvat/workflows/CI/badge.svg?branch=develop
+[ci-url]: https://github.com/cvat-ai/cvat/actions
+
+[gitter-img]: https://img.shields.io/gitter/room/opencv-cvat/public?style=flat
 [gitter-url]: https://gitter.im/opencv-cvat
-[coverage-img]: https://coveralls.io/repos/github/openvinotoolkit/cvat/badge.svg?branch=develop
-[coverage-url]: https://coveralls.io/github/openvinotoolkit/cvat?branch=develop
+
+[coverage-img]: https://coveralls.io/repos/github/cvat-ai/cvat/badge.svg?branch=develop
+[coverage-url]: https://coveralls.io/github/cvat-ai/cvat?branch=develop
+
 [doi-img]: https://zenodo.org/badge/139156354.svg
 [doi-url]: https://zenodo.org/badge/latestdoi/139156354
+
+[discord-img]: https://img.shields.io/discord/1000789942802337834?label=discord
+[discord-url]: https://discord.gg/fNR3eXfk6C

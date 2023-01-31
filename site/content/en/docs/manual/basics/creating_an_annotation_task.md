@@ -139,9 +139,9 @@ For example, the sequence `2.jpeg, 10.jpeg, 1.jpeg` after sorting will be:
 - `natural`: 1.jpeg, 2.jpeg, 10.jpeg
 - `predefined`: 2.jpeg, 10.jpeg, 1.jpeg
 
-### Use zip chunks
+### Use zip/video chunks
 
-Force to use zip chunks as compressed data. Actual for videos only.
+Force to use zip chunks as compressed data. Cut out content for videos only.
 
 ### Use cache
 
@@ -241,5 +241,18 @@ If the annotation file is large, you can create a repository with
 
 Specify full issue tracker's URL if it's necessary.
 
-Push `Submit` button and it will be added into the list of annotation tasks.
-Then, the created task will be displayed on a [tasks page](/docs/manual/basics/tasks-page/).
+### Source storage
+
+Specify source storage for import resources like annotations and backups. It can be a local or a cloud storage.
+If the task is created in the project, then the `Use project source storage` switch will determine whether
+to use the default values ​​or specify new ones.
+
+### Target storage
+
+Specify target storage for export resources like annotations and backups. It can be a local or a cloud storage.
+If the task is created in the project, then the `Use project target storage` switch will determine whether
+to use the default values ​​or specify new ones.
+
+To save and open task click on `Submit & Open` button. Also you
+can click on `Submit & Continue` button for creating several tasks in sequence.
+Then, the created tasks will be displayed on a [tasks page](/docs/manual/basics/tasks-page/).

@@ -1,0 +1,89 @@
+name: Comment
+on:
+  issue_comment:
+    types: [created]
+
+env:
+  WORKFLOW_RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+jobs:
+  verify_author:
+    if: contains(github.event.issue.html_url, '/pull') &&
+      contains(github.event.comment.body, '/check')
+    runs-on: ubuntu-latest
+    outputs:
+      ref: ${{ steps.get-ref.outputs.ref }}
+      cid: ${{ steps.send-status.outputs.cid }}
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Check author of comment
+        id: check-author
+        run: |
+          PERM=$(gh api repos/${{ github.repository }}/collaborators/${{ github.event.comment.user.login }}/permission | jq -r '.permission')
+          if [[ $PERM == "write" || $PERM == "maintain" || $PERM == "admin" ]];
+          then
+            ALLOW="true"
+          fi
+          echo ::set-output name=allow::${ALLOW}
+
+      - name: Verify that author of comment is collaborator
+        if: steps.check-author.outputs.allow == ''
+        uses: actions/github-script@v3
+        with:
+          script: |
+            core.setFailed('User that send comment with /check command is not collaborator')
+
+      - name: Get branch name
+        id: get-ref
+        run: |
+          SHA=$(gh api /repos/${{ github.repository }}/pulls/${{ github.event.issue.number }} | jq -r '.head.sha')
+          echo ::set-output name=ref::${SHA}
+
+      - name: Send comment. Test are executing
+        id: send-status
+        run: |
+          BODY=":hourglass: Tests are executing, see more information [here](${{ env.WORKFLOW_RUN_URL }})"
+          BODY=$BODY"\n :warning: Cancel [this](${{ env.WORKFLOW_RUN_URL }}) workflow manually first, if you want to restart full check"
+          BODY=$(echo -e $BODY)
+
+          COMMENT_ID=$(gh api --method POST \
+            /repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/comments \
+            -f body="${BODY}" | jq '.id')
+
+          echo ::set-output name=cid::${COMMENT_ID}
+
+  run-full:
+    needs: verify_author
+    uses: ./.github/workflows/full.yml
+    with:
+      ref: ${{ needs.verify_author.outputs.ref }}
+
+  send_status:
+    runs-on: ubuntu-latest
+    needs: [run-full, verify_author]
+    if: needs.run-full.result != 'skipped' && always()
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Send status in comments
+        run: |
+          BODY=""
+
+          if [[ "${{ needs.run-full.result }}" == "failure" ]]
+          then
+            BODY=":x: Some checks failed"
+          elif [[ "${{ needs.run-full.result }}" == "success" ]]
+          then
+            BODY=":heavy_check_mark: All checks completed successfully"
+          elif [[ "${{ needs.run-full.result }}" == "cancelled" ]]
+          then
+            BODY=":no_entry_sign: Workflows has been canceled"
+          fi
+
+          BODY=$BODY"\n :page_facing_up: See logs [here](${WORKFLOW_RUN_URL})"
+          BODY=$(echo -e $BODY)
+
+          gh api --method PATCH \
+            /repos/${{ github.repository }}/issues/comments/${{ needs.verify_author.outputs.cid }} \
+            -f body="${BODY}"

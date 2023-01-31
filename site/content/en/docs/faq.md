@@ -1,32 +1,35 @@
 ---
 title: 'Frequently asked questions'
 linkTitle: 'FAQ'
-weight: 20
+weight: 2
 description: 'Answers to frequently asked questions'
 ---
 
 <!--lint disable heading-style-->
 
-## How to update CVAT
+## How to migrate data from CVAT.org to CVAT.ai
 
-Before updating, please follow the [backup guide](/docs/administration/advanced/backup_guide/)
+Please follow the [export tasks and projects guide](/docs/manual/advanced/backup/#backup) to
+download an archive with data which corresponds to your task or project. The backup for a
+project will have all tasks which are inside the project. Thus you don't need to export
+them separately.
+
+Please follow the [import tasks and projects guide](/docs/manual/advanced/backup/#create-from-backup)
+to upload your backup with a task or project to a CVAT instance.
+
+See a quick demo below. It is really a simple process. If your data is huge, it may take some time.
+Please be patient.
+
+![Export and import backup demo](
+  https://user-images.githubusercontent.com/40690625/180879954-44afcd95-1e94-451a-9a60-2f3bd6482cbf.gif)
+
+
+## How to upgrade CVAT
+
+Before upgrading, please follow the [backup guide](/docs/administration/advanced/backup_guide/)
 and backup all CVAT volumes.
 
-To update CVAT, you should clone or download the new version of CVAT and rebuild the CVAT docker images as usual.
-
-```bash
-docker-compose build
-```
-
-and run containers:
-
-```bash
-docker-compose up -d
-```
-
-Sometimes the update process takes a lot of time due to changes in the database schema and data.
-You can check the current status with `docker logs cvat`.
-Please do not terminate the migration and wait till the process is complete.
+Follow the [upgrade guide](/docs/administration/advanced/upgrade_guide/).
 
 ## Kibana app works, but no logs are displayed
 
@@ -101,7 +104,7 @@ volumes:
 
 ## How to make unassigned tasks not visible to all users
 
-Set [reduce_task_visibility](https://github.com/openvinotoolkit/cvat/blob/develop/cvat/settings/base.py#L424)
+Set [reduce_task_visibility](https://github.com/cvat-ai/cvat/blob/develop/cvat/settings/base.py#L455)
 variable to `True`.
 
 ## Where are uploaded images/videos stored
@@ -135,7 +138,7 @@ Follow this [guide](/docs/administration/basics/installation/#windows-10).
 
 ## I do not have the Analytics tab on the header section. How can I add analytics
 
-You should build CVAT images with ['Analytics' component](https://github.com/openvinotoolkit/cvat/tree/develop/components/analytics).
+You should build CVAT images with ['Analytics' component](https://github.com/cvat-ai/cvat/tree/develop/components/analytics).
 
 ## How to upload annotations to an entire task from UI when there are multiple jobs in the task
 
@@ -168,3 +171,13 @@ section.
 ## How to transfer CVAT to another machine
 
 Follow the [backup/restore guide](/docs/administration/advanced/backup_guide/#how-to-backup-all-cvat-data).
+
+## How to load your own DL model into CVAT
+
+See the information here in the [Serverless tutorial](/docs/manual/advanced/serverless-tutorial/#adding-your-own-dl-models).
+
+## My server uses a custom SSL certificate and I don't want to check it.
+
+You can call control SSL certificate check with the `--insecure` CLI argument.
+For SDK, you can specify `ssl_verify = True/False` in the `cvat_sdk.core.client.Config` object.
+

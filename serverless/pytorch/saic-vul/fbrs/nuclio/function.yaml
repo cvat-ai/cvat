@@ -8,7 +8,7 @@ metadata:
     framework: pytorch
     min_pos_points: 1
     min_neg_points: 0
-    animated_gif: https://raw.githubusercontent.com/openvinotoolkit/cvat/0fbb19ae3846a017853d52e187f0ce149adced7d/site/content/en/images/fbrs_example.gif
+    animated_gif: https://raw.githubusercontent.com/opencv/cvat/0fbb19ae3846a017853d52e187f0ce149adced7d/site/content/en/images/fbrs_example.gif
     help_message: The interactor allows to get a mask for an object using positive points, and negative points
 
 spec:
@@ -21,7 +21,7 @@ spec:
       value: /opt/nuclio/fbrs
 
   build:
-    image: cvat/pth.saic-vul.fbrs
+    image: cvat.pth.saic-vul.fbrs
     baseImage: python:3.6.11
 
     directives:

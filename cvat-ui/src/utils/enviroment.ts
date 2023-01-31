@@ -1,4 +1,5 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corp
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,10 +8,6 @@
 
 export function isDev(): boolean {
     return process.env.NODE_ENV === 'development';
-}
-
-export function isPublic(): boolean {
-    return process.env.PUBLIC_INSTANCE === 'true';
 }
 
 export function customWaViewHit(pageName?: string, queryString?: string, hashInfo?: string): void {
@@ -26,7 +23,7 @@ export function customWaViewHit(pageName?: string, queryString?: string, hashInf
         );
         try {
             waHitFunction(pageName, queryString, hashInfo);
-        } catch (error) {
+        } catch (error: any) {
             // eslint-disable-next-line
             console.error(`Web analitycs hit function has failed. ${error.toString()}`);
         }

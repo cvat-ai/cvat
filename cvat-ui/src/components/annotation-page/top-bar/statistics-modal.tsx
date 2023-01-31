@@ -1,18 +1,18 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
 import { connect } from 'react-redux';
 import { Row, Col } from 'antd/lib/grid';
-import { QuestionCircleOutlined } from '@ant-design/icons';
+import { ArrowRightOutlined, QuestionCircleOutlined, RightOutlined } from '@ant-design/icons';
 import Table from 'antd/lib/table';
 import Modal from 'antd/lib/modal';
 import Spin from 'antd/lib/spin';
 import Text from 'antd/lib/typography/Text';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { CombinedState, DimensionType } from 'reducers/interfaces';
+import { CombinedState, DimensionType } from 'reducers';
 import { showStatistics } from 'actions/annotation-actions';
 
 interface StateToProps {
@@ -113,7 +113,8 @@ function StatisticsModalComponent(props: StateToProps & DispatchToProps): JSX.El
         points: `${data.label[key].points.shape} / ${data.label[key].points.track}`,
         ellipse: `${data.label[key].ellipse.shape} / ${data.label[key].ellipse.track}`,
         cuboid: `${data.label[key].cuboid.shape} / ${data.label[key].cuboid.track}`,
-        tags: data.label[key].tags,
+        skeleton: `${data.label[key].skeleton.shape} / ${data.label[key].skeleton.track}`,
+        tag: data.label[key].tag,
         manually: data.label[key].manually,
         interpolated: data.label[key].interpolated,
         total: data.label[key].total,
@@ -128,7 +129,8 @@ function StatisticsModalComponent(props: StateToProps & DispatchToProps): JSX.El
         points: `${data.total.points.shape} / ${data.total.points.track}`,
         ellipse: `${data.total.ellipse.shape} / ${data.total.ellipse.track}`,
         cuboid: `${data.total.cuboid.shape} / ${data.total.cuboid.track}`,
-        tags: data.total.tags,
+        skeleton: `${data.total.skeleton.shape} / ${data.total.skeleton.track}`,
+        tag: data.total.tag,
         manually: data.total.manually,
         interpolated: data.total.interpolated,
         total: data.total.total,
@@ -147,57 +149,93 @@ function StatisticsModalComponent(props: StateToProps & DispatchToProps): JSX.El
         {
             title: <Text strong> Label </Text>,
             dataIndex: 'label',
+            render: (text: string) => {
+                const sep = '{{cvat.skeleton.lbl.sep}}';
+                if (text.split(sep).length > 1) {
+                    const [label, part] = text.split(sep);
+                    return (
+                        <>
+                            <Text strong>{label}</Text>
+                            {' \u2B95 '}
+                            <Text strong>{part}</Text>
+                        </>
+                    );
+                }
+
+                return (<Text strong>{text}</Text>);
+            },
+            fixed: 'left',
             key: 'label',
+            width: 120,
         },
         {
             title: makeShapesTracksTitle('Rectangle'),
             dataIndex: 'rectangle',
             key: 'rectangle',
+            width: 100,
         },
         {
             title: makeShapesTracksTitle('Polygon'),
             dataIndex: 'polygon',
             key: 'polygon',
+            width: 100,
         },
         {
             title: makeShapesTracksTitle('Polyline'),
             dataIndex: 'polyline',
             key: 'polyline',
+            width: 100,
         },
         {
             title: makeShapesTracksTitle('Points'),
             dataIndex: 'points',
             key: 'points',
+            width: 100,
         },
         {
             title: makeShapesTracksTitle('Ellipse'),
             dataIndex: 'ellipse',
             key: 'ellipse',
+            width: 100,
         },
         {
-            title: makeShapesTracksTitle('Cuboids'),
+            title: makeShapesTracksTitle('Cuboid'),
             dataIndex: 'cuboid',
             key: 'cuboid',
+            width: 100,
         },
         {
-            title: <Text strong> Tags </Text>,
-            dataIndex: 'tags',
-            key: 'tags',
+            title: makeShapesTracksTitle('Skeleton'),
+            dataIndex: 'skeleton',
+            key: 'skeleton',
+            width: 100,
+        },
+        {
+            title: <Text strong> Tag </Text>,
+            dataIndex: 'tag',
+            key: 'tag',
+            width: 100,
         },
         {
             title: <Text strong> Manually </Text>,
             dataIndex: 'manually',
             key: 'manually',
+            fixed: 'right',
+            width: 100,
         },
         {
             title: <Text strong> Interpolated </Text>,
             dataIndex: 'interpolated',
             key: 'interpolated',
+            fixed: 'right',
+            width: 100,
         },
         {
             title: <Text strong> Total </Text>,
             dataIndex: 'total',
             key: 'total',
+            fixed: 'right',
+            width: 100,
         },
     ];
 
@@ -267,7 +305,7 @@ function StatisticsModalComponent(props: StateToProps & DispatchToProps): JSX.El
                     <Col span={24}>
                         <Text className='cvat-text'>Annotations statistics</Text>
                         <Table
-                            scroll={{ y: 400 }}
+                            scroll={{ x: 'max-content', y: 400 }}
                             bordered
                             pagination={false}
                             columns={is2D ? columns : columns3D}

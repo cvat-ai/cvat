@@ -4,8 +4,8 @@
 
 title: 'Simple command line to prepare dataset manifest file'
 linkTitle: 'Dataset manifest'
-weight: 29
-description: This section on [GitHub](https://github.com/openvinotoolkit/cvat/tree/develop/utils/dataset_manifest)
+weight: 30
+description: This section on [GitHub](https://github.com/cvat-ai/cvat/tree/develop/utils/dataset_manifest)
 
 ---
 
@@ -57,10 +57,10 @@ optional arguments:
                         Directory where the manifest file will be saved
 ```
 
-### Alternative way to use with openvino/cvat_server
+### Alternative way to use with cvat/server
 
 ```bash
-docker run -it --entrypoint python3 -v /path/to/host/data/:/path/inside/container/:rw openvino/cvat_server
+docker run -it --entrypoint python3 -v /path/to/host/data/:/path/inside/container/:rw cvat/server
 utils/dataset_manifest/create.py --output-dir /path/to/manifest/directory/ /path/to/data/
 ```
 
@@ -90,10 +90,10 @@ Create a dataset manifest with pattern (may be used `*`, `?`, `[]`):
 python create.py --output-dir ~/Documents "/home/${USER}/Documents/**/image*.jpeg"
 ```
 
-Create a dataset manifest with `openvino/cvat_server`:
+Create a dataset manifest with `cvat/server`:
 
 ```bash
-docker run -it --entrypoint python3 -v ~/Documents/data/:${HOME}/manifest/:rw openvino/cvat_server
+docker run -it --entrypoint python3 -v ~/Documents/data/:${HOME}/manifest/:rw cvat/server
 utils/dataset_manifest/create.py --output-dir ~/manifest/ ~/manifest/images/
 ```
 

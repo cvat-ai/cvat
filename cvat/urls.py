@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2019 Intel Corporation
+# Copyright (C) 2018-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -39,6 +39,9 @@ if apps.is_installed('cvat.apps.lambda_manager'):
 
 if apps.is_installed('cvat.apps.opencv'):
     urlpatterns.append(path('opencv/', include('cvat.apps.opencv.urls')))
+
+if apps.is_installed('cvat.apps.webhooks'):
+    urlpatterns.append(path('api/', include('cvat.apps.webhooks.urls')))
 
 if apps.is_installed('silk'):
     urlpatterns.append(path('profiler/', include('silk.urls')))

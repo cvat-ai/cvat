@@ -1,3 +1,8 @@
+# Copyright (C) 2021-2022 Intel Corporation
+# Copyright (C) 2022 CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
+
 from distutils.util import strtobool
 from django.conf import settings
 from django.db import models
@@ -50,6 +55,9 @@ class Invitation(models.Model):
     created_date = models.DateTimeField(auto_now_add=True)
     owner = models.ForeignKey(get_user_model(), null=True, on_delete=models.SET_NULL)
     membership = models.OneToOneField(Membership, on_delete=models.CASCADE)
+
+    def get_organization_id(self):
+        return self.membership.organization_id
 
     def send(self):
         if not strtobool(settings.ORG_INVITATION_CONFIRM):

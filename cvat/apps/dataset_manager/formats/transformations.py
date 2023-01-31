@@ -1,4 +1,4 @@
-# Copyright (C) 2021 Intel Corporation
+# Copyright (C) 2021-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -9,7 +9,7 @@ from itertools import chain
 from pycocotools import mask as mask_utils
 
 from datumaro.components.extractor import ItemTransform
-import datumaro.components.annotation as datum_annotation
+import datumaro.components.annotation as dm
 
 class RotatedBoxesToPolygons(ItemTransform):
     def _rotate_point(self, p, angle, cx, cy):
@@ -20,7 +20,7 @@ class RotatedBoxesToPolygons(ItemTransform):
 
     def transform_item(self, item):
         annotations = item.annotations[:]
-        anns = [p for p in annotations if p.type == datum_annotation.AnnotationType.bbox and p.attributes['rotation']]
+        anns = [p for p in annotations if p.type == dm.AnnotationType.bbox and p.attributes['rotation']]
         for ann in anns:
             rotation = math.radians(ann.attributes['rotation'])
             x0, y0, x1, y1 = ann.points
@@ -30,7 +30,7 @@ class RotatedBoxesToPolygons(ItemTransform):
             ))
 
             annotations.remove(ann)
-            annotations.append(datum_annotation.Polygon(anno_points,
+            annotations.append(dm.Polygon(anno_points,
                 label=ann.label, attributes=ann.attributes, group=ann.group,
                 z_order=ann.z_order))
 
@@ -48,5 +48,5 @@ class EllipsesToMasks:
         mat = np.zeros((img_h, img_w), dtype=np.uint8)
         cv2.ellipse(mat, center, axis, angle, 0, 360, 255, thickness=-1)
         rle = mask_utils.encode(np.asfortranarray(mat))
-        return datum_annotation.RleMask(rle=rle, label=ellipse.label, z_order=ellipse.z_order,
+        return dm.RleMask(rle=rle, label=ellipse.label, z_order=ellipse.z_order,
             attributes=ellipse.attributes, group=ellipse.group)

@@ -1,8 +1,8 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Select, { SelectProps } from 'antd/lib/select';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { OptionData, OptionGroupData } from 'rc-select/lib/interface';
@@ -11,17 +11,27 @@ interface Props extends SelectProps<string> {
     labels: any[];
     value: any | number | null;
     onChange: (label: any) => void;
+    onEnterPress?: (labelID: number) => void;
 }
 
 export default function LabelSelector(props: Props): JSX.Element {
     const {
-        labels, value, onChange, ...rest
+        labels, value, onChange, onEnterPress, ...rest
     } = props;
     const dinamicProps = value ?
         {
             value: typeof value === 'number' ? value : value.id,
         } :
         {};
+
+    const [enterPressed, setEnterPressed] = useState(false);
+
+    useEffect(() => {
+        if (enterPressed && onEnterPress) {
+            onEnterPress(value);
+            setEnterPressed(false);
+        }
+    }, [value, enterPressed]);
 
     return (
         <Select
@@ -46,6 +56,11 @@ export default function LabelSelector(props: Props): JSX.Element {
                     onChange(label);
                 } else {
                     throw new Error(`Label with id ${newValue} was not found within the list`);
+                }
+            }}
+            onInputKeyDown={(event) => {
+                if (onEnterPress) {
+                    setEnterPressed(event.key === 'Enter');
                 }
             }}
         >

@@ -1,4 +1,5 @@
 # Copyright (C) 2018-2022 Intel Corporation
+# Copyright (C) 2022 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -19,9 +20,11 @@ import requests
 import ipaddress
 import dns.resolver
 import django_rq
+import pytz
 
 from django.conf import settings
 from django.db import transaction
+from datetime import datetime
 
 from cvat.apps.engine import models
 from cvat.apps.engine.log import slogger
@@ -33,7 +36,7 @@ from utils.dataset_manifest import ImageManifestManager, VideoManifestManager, \
     CachedIndexManifestManager, is_manifest, clean_filenames
 from utils.dataset_manifest.core import VideoManifestValidator
 from utils.dataset_manifest.utils import detect_related_images
-from .cloud_provider import get_cloud_storage_instance, Credentials
+from .cloud_provider import db_storage_to_storage_instance
 
 from cvat.rebotics.s3_client import s3_client
 
@@ -86,27 +89,32 @@ def _copy_data_from_source(server_files, upload_dir, server_dir=None):
             shutil.copyfile(source_path, target_path)
 
 
-def _save_task_to_db(db_task):
-    job = rq.get_current_job()
-    job.meta['status'] = 'Task is being saved in database'
-    job.save_meta()
-
+def _get_task_segment_data(db_task, data_size):
     segment_size = db_task.segment_size
     segment_step = segment_size
-    if segment_size == 0 or segment_size > db_task.data.size:
-        segment_size = db_task.data.size
-        db_task.segment_size = segment_size
+    if segment_size == 0 or segment_size > data_size:
+        segment_size = data_size
 
         # Segment step must be more than segment_size + overlap in single-segment tasks
         # Otherwise a task contains an extra segment
         segment_step = sys.maxsize
 
-    default_overlap = 5 if db_task.mode == 'interpolation' else 0
-    if db_task.overlap is None:
-        db_task.overlap = default_overlap
-    db_task.overlap = min(db_task.overlap, segment_size  // 2)
+    overlap = 5 if db_task.mode == 'interpolation' else 0
+    if db_task.overlap is not None:
+        overlap = min(db_task.overlap, segment_size  // 2)
 
-    segment_step -= db_task.overlap
+    segment_step -= overlap
+    return segment_step, segment_size, overlap
+
+
+def _save_task_to_db(db_task, extractor):
+    job = rq.get_current_job()
+    job.meta['status'] = 'Task is being saved in database'
+    job.save_meta()
+
+    segment_step, segment_size, overlap = _get_task_segment_data(db_task, db_task.data.size)
+    db_task.segment_size = segment_size
+    db_task.overlap = overlap
 
     for start_frame in range(0, db_task.data.size, segment_step):
         stop_frame = min(start_frame + segment_size - 1, db_task.data.size - 1)
@@ -123,6 +131,13 @@ def _save_task_to_db(db_task):
         db_job = models.Job(segment=db_segment)
         db_job.save()
 
+        job_path = db_job.get_dirname()
+        if os.path.isdir(job_path):
+            shutil.rmtree(job_path)
+        os.makedirs(job_path)
+
+        preview = extractor.get_preview(frame=start_frame)
+        preview.save(db_job.get_preview_path())
 
     db_task.data.save()
     db_task.save()
@@ -210,13 +225,21 @@ def _validate_data(counter, manifest_files=None):
     return counter, task_modes[0]
 
 
-def _validate_manifest(manifests, root_dir):
+def _validate_manifest(manifests, root_dir, is_in_cloud, db_cloud_storage):
     if manifests:
         if len(manifests) != 1:
             raise Exception('Only one manifest file can be attached with data')
+        manifest_file = manifests[0]
         full_manifest_path = os.path.join(root_dir, manifests[0])
+        if is_in_cloud:
+            cloud_storage_instance = db_storage_to_storage_instance(db_cloud_storage)
+            # check that cloud storage manifest file exists and is up to date
+            if not os.path.exists(full_manifest_path) or \
+                    datetime.utcfromtimestamp(os.path.getmtime(full_manifest_path)).replace(tzinfo=pytz.UTC) \
+                    < cloud_storage_instance.get_file_last_modified(manifest_file):
+                cloud_storage_instance.download_file(manifest_file, full_manifest_path)
         if is_manifest(full_manifest_path):
-            return manifests[0]
+            return manifest_file
         raise Exception('Invalid manifest was uploaded')
     return None
 
@@ -261,10 +284,12 @@ def _validate_url(url):
             raise ValidationError('Cannot resolve IP address for domain \'{}\''.format(parsed_url.hostname))
 
 
-def _download_data(urls, upload_dir):
+def _download_data(db_data: models.Data, upload_dir):
     job = rq.get_current_job()
     local_files = {}
-    for url in urls:
+    remote_files = db_data.remote_files.all()
+    for file in remote_files:
+        url = file.file
         name = os.path.basename(urlrequest.url2pathname(urlparse.urlparse(url).path))
         if name in local_files:
             raise Exception("filename collision: {}".format(name))
@@ -282,7 +307,8 @@ def _download_data(urls, upload_dir):
             raise Exception("Failed to download " + url)
 
         local_files[name] = True
-
+        file.file = name
+    models.RemoteFile.objects.bulk_update(remote_files, fields=('file',))
     return list(local_files.keys())
 
 
@@ -300,38 +326,66 @@ def _move_manifest_to_s3(db_data: models.Data):
     os.remove(path)
 
 
-def _move_files_to_s3(db_data: models.Data):
-    # TODO: add some try-catch
-    client_files = db_data.client_files.all()
-    for client_file in client_files:
-        path = client_file.file.path
-        if os.path.exists(path):
-            slogger.glob.info(path)
-            name = path.rsplit('/', 1)[-1]
-            with open(path, 'rb') as f:
-                models.S3File.objects.create(
-                    file=File(f, name=name),
-                    data=db_data,
-                )
-            os.remove(path)
-    client_files.delete()
+def _move_file_to_s3(path, db_data, meta):
+    if os.path.exists(path):
+        slogger.glob.info(path)
+        name = path.rsplit('/', 1)[-1]
+        with open(path, 'rb') as f:
+            models.S3File.objects.create(
+                file=File(f, name=name),
+                data=db_data,
+                meta=meta,
+            )
+        os.remove(path)
 
 
-def _move_preview_to_s3(db_data: models.Data):
-    # TODO: add some try-catch
-    path = db_data.get_preview_path()
-    key = db_data.get_s3_preview_path()
+def _move_preview_to_s3(path, key):
     slogger.glob.info('{} -> {}'.format(path, key))
     s3_client.upload_from_path(path, key)
     os.remove(path)
 
 
-def _move_data_to_s3(db_data: models.Data):
+def _move_client_files_to_s3(db_data: models.Data):
+    client_files = db_data.client_files.all()
+    for client_file in client_files:
+        path = client_file.file.path
+        _move_file_to_s3(path, db_data, client_file.meta)
+    client_files.delete()
+
+
+def _move_remote_files_to_s3(db_data: models.Data):
+    upload_dirname = db_data.get_upload_dirname()
+    remote_files = db_data.remote_files.all()
+    for remote_file in remote_files:
+        path = os.path.join(upload_dirname, remote_file.file)
+        _move_file_to_s3(path, db_data, remote_file.meta)
+    remote_files.delete()
+
+
+def _move_task_preview_to_s3(db_data: models.Data):
+    path = db_data.get_preview_path()
+    key = db_data.get_s3_preview_path()
+    _move_preview_to_s3(path, key)
+
+
+def _move_job_previews_to_s3(db_task: models.Task, db_data: models.Data):
+    db_jobs = models.Job.objects.filter(segment__task=db_task)
+    for db_job in db_jobs:
+        path = db_job.get_preview_path()
+        key = db_job.get_s3_preview_path(data=db_data)
+        _move_preview_to_s3(path, key)
+        shutil.rmtree(db_job.get_dirname())
+
+
+def _move_data_to_s3(db_task: models.Task, db_data: models.Data):
     # This does not apply to video, cloud storages or share uploads.
     slogger.glob.info('Moving files to s3 for data {}:'.format(db_data.id))
     _move_manifest_to_s3(db_data)
-    _move_files_to_s3(db_data)
-    _move_preview_to_s3(db_data)
+    _move_client_files_to_s3(db_data)
+    _move_remote_files_to_s3(db_data)
+    _move_task_preview_to_s3(db_data)
+    _move_job_previews_to_s3(db_task, db_data)
+    shutil.rmtree(db_data.get_data_dirname())
     slogger.glob.info('Done.')
 
 
@@ -344,9 +398,10 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
 
     db_data = db_task.data
     upload_dir = db_data.get_upload_dirname()
+    is_data_in_cloud = db_data.storage == models.StorageChoice.CLOUD_STORAGE
 
     if data['remote_files'] and not isDatasetImport:
-        data['remote_files'] = _download_data(data['remote_files'], upload_dir)
+        data['remote_files'] = _download_data(db_data, upload_dir)
 
     manifest_files = []
     media = _count_files(data, manifest_files)
@@ -361,31 +416,25 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
     manifest_root = None
     if db_data.storage in {models.StorageChoice.LOCAL, models.StorageChoice.SHARE}:
         manifest_root = upload_dir
-    elif db_data.storage == models.StorageChoice.CLOUD_STORAGE:
+    elif is_data_in_cloud:
         manifest_root = db_data.cloud_storage.get_storage_dirname()
 
-    manifest_file = _validate_manifest(manifest_files, manifest_root)
+    manifest_file = _validate_manifest(
+        manifest_files, manifest_root,
+        is_data_in_cloud, db_data.cloud_storage if is_data_in_cloud else None
+    )
     if manifest_file and (not settings.USE_CACHE or db_data.storage_method != models.StorageMethodChoice.CACHE):
         raise Exception("File with meta information can be uploaded if 'Use cache' option is also selected")
 
-    if data['server_files'] and db_data.storage == models.StorageChoice.CLOUD_STORAGE:
-        if not manifest_file: raise Exception('A manifest file not found')
-        db_cloud_storage = db_data.cloud_storage
-        credentials = Credentials()
-        credentials.convert_from_db({
-            'type': db_cloud_storage.credentials_type,
-            'value': db_cloud_storage.credentials,
-        })
-
-        details = {
-            'resource': db_cloud_storage.resource,
-            'credentials': credentials,
-            'specific_attributes': db_cloud_storage.get_specific_attributes()
-        }
-        cloud_storage_instance = get_cloud_storage_instance(cloud_provider=db_cloud_storage.provider_type, **details)
+    if data['server_files'] and is_data_in_cloud:
+        cloud_storage_instance = db_storage_to_storage_instance(db_data.cloud_storage)
         sorted_media = sort(media['image'], data['sorting_method'])
-        first_sorted_media_image = sorted_media[0]
-        cloud_storage_instance.download_file(first_sorted_media_image, os.path.join(upload_dir, first_sorted_media_image))
+
+        data_size = len(sorted_media)
+        segment_step, *_ = _get_task_segment_data(db_task, data_size)
+        for start_frame in range(0, data_size, segment_step):
+            first_sorted_media_image = sorted_media[start_frame]
+            cloud_storage_instance.download_file(first_sorted_media_image, os.path.join(upload_dir, first_sorted_media_image))
 
         # prepare task manifest file from cloud storage manifest file
         # NOTE we should create manifest before defining chunk_size
@@ -395,8 +444,20 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
             os.path.join(db_data.cloud_storage.get_storage_dirname(), manifest_file),
             db_data.cloud_storage.get_storage_dirname()
         )
+        cloud_storage_manifest_prefix = os.path.dirname(manifest_file)
         cloud_storage_manifest.set_index()
-        sequence, content = cloud_storage_manifest.get_subset(sorted_media)
+        if cloud_storage_manifest_prefix:
+            sorted_media_without_manifest_prefix = [
+                os.path.relpath(i, cloud_storage_manifest_prefix) for i in sorted_media
+            ]
+            sequence, raw_content = cloud_storage_manifest.get_subset(sorted_media_without_manifest_prefix)
+            def _add_prefix(properties):
+                file_name = properties['name']
+                properties['name'] = os.path.join(cloud_storage_manifest_prefix, file_name)
+                return properties
+            content = list(map(_add_prefix, raw_content))
+        else:
+            sequence, content = cloud_storage_manifest.get_subset(sorted_media)
         sorted_content = (i[1] for i in sorted(zip(sequence, content)))
         manifest.create(sorted_content)
 
@@ -551,7 +612,7 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
     # calculate chunk size if it isn't specified
     if db_data.chunk_size is None:
         if isinstance(compressed_chunk_writer, ZipCompressedChunkWriter):
-            if not (db_data.storage == models.StorageChoice.CLOUD_STORAGE):
+            if not is_data_in_cloud:
                 w, h = extractor.get_image_size(0)
             else:
                 img_properties = manifest[0]
@@ -569,7 +630,7 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
         job.save_meta()
 
     if settings.USE_CACHE and db_data.storage_method == models.StorageMethodChoice.CACHE:
-       for media_type, media_files in media.items():
+        for media_type, media_files in media.items():
 
             if not media_files:
                 continue
@@ -671,9 +732,6 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
         counter = itertools.count()
         generator = itertools.groupby(extractor, lambda x: next(counter) // db_data.chunk_size)
         for chunk_idx, chunk_data in generator:
-            # TODO: upload chunks to s3 here
-            #  when not using cache, chunks are stored locally in
-            #  original and compressed dirs as zip archives.
 
             chunk_data = list(chunk_data)
             original_chunk_path = db_data.get_original_chunk_path(chunk_idx)
@@ -728,13 +786,12 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
         db_data.stop_frame = min(db_data.stop_frame,
                                  db_data.start_frame + (db_data.size - 1) * db_data.get_frame_step())
 
-    preview = extractor.get_preview()
-    preview_path = db_data.get_preview_path()
-    preview.save(preview_path)
+    task_preview = extractor.get_preview(frame=0)
+    task_preview.save(db_data.get_preview_path())
 
     slogger.glob.info("Found frames {} for Data #{}".format(db_data.size, db_data.id))
 
-    if settings.USE_S3:
-        _move_data_to_s3(db_data)
+    _save_task_to_db(db_task, extractor)
 
-    _save_task_to_db(db_task)
+    if settings.USE_S3:
+        _move_data_to_s3(db_task, db_data)

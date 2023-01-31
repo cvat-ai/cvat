@@ -21,7 +21,7 @@ context('Connected file share.', () => {
             .should('be.visible')
             .within(() => {
                 cy.get('[aria-label="plus-square"]').click();
-                cy.exec('docker exec -i cvat /bin/bash -c "ls ~/share"').then((command) => {
+                cy.exec('docker exec -i cvat_server /bin/bash -c "ls ~/share"').then((command) => {
                     stdoutToList = command.stdout.split('\n');
                     // [image_case_107_1.png, image_case_107_2.png, image_case_107_3.png]
                     expect(stdoutToList.length).to.be.eq(3);
@@ -34,9 +34,7 @@ context('Connected file share.', () => {
                     });
                 });
             });
-        cy.contains('button', 'Submit').click();
-        cy.get('.cvat-notification-create-task-success').should('exist').find('button').click();
-        cy.get('.cvat-notification-create-task-success').should('exist').find('[data-icon="close"]').click();
+        cy.contains('button', 'Submit & Open').click();
         cy.get('.cvat-task-details').should('exist');
     }
 
@@ -77,7 +75,7 @@ context('Connected file share.', () => {
                     expect(fileRenameCommand.code).to.be.eq(0);
                 },
             );
-            cy.exec('docker exec -i cvat /bin/bash -c "find ~/share -name "*.png" -type f"').then(
+            cy.exec('docker exec -i cvat_server /bin/bash -c "find ~/share -name *.png -type f"').then(
                 (findFilesCommand) => {
                     // [image_case_107_2.png, image_case_107_3.png]
                     expect(findFilesCommand.stdout.split('\n').length).to.be.eq(2);

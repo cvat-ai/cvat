@@ -1,4 +1,4 @@
-# Copyright (C) 2018 Intel Corporation
+# Copyright (C) 2018-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -7,7 +7,7 @@ import logging
 import os
 
 
-DEBUG = bool(int(os.getenv('DJANGO_DEBUG', 0)))
+DEBUG = bool(int(os.getenv('DEBUG', 0)))
 
 INSTALLED_APPS += [
     'mod_wsgi.server',

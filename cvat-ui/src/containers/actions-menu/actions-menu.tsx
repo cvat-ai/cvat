@@ -1,4 +1,5 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -6,18 +7,16 @@ import React from 'react';
 import { connect } from 'react-redux';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { MenuInfo } from 'rc-menu/lib/interface';
-
 import ActionsMenuComponent, { Actions } from 'components/actions-menu/actions-menu';
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState } from 'reducers';
 
 import { modelsActions } from 'actions/models-actions';
 import {
-    loadAnnotationsAsync,
     deleteTaskAsync,
-    exportTaskAsync,
     switchMoveTaskModalVisible,
 } from 'actions/tasks-actions';
 import { exportActions } from 'actions/export-actions';
+import { importActions } from 'actions/import-actions';
 
 interface OwnProps {
     taskInstance: any;
@@ -25,17 +24,15 @@ interface OwnProps {
 
 interface StateToProps {
     annotationFormats: any;
-    loadActivity: string | null;
     inferenceIsActive: boolean;
-    exportIsActive: boolean;
+    backupIsActive: boolean;
 }
 
 interface DispatchToProps {
-    loadAnnotations: (taskInstance: any, loader: any, file: File) => void;
-    showExportModal: (taskInstance: any) => void;
-    deleteTask: (taskInstance: any) => void;
+    showExportModal: (taskInstance: any, resource: 'dataset' | 'backup') => void;
+    showImportModal: (taskInstance: any) => void;
     openRunModelWindow: (taskInstance: any) => void;
-    exportTask: (taskInstance: any) => void;
+    deleteTask: (taskInstance: any) => void;
     openMoveTaskToProjectWindow: (taskInstance: any) => void;
 }
 
@@ -46,35 +43,32 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
 
     const {
         formats: { annotationFormats },
-        tasks: {
-            activities: { loads, backups },
-        },
     } = state;
 
     return {
-        loadActivity: tid in loads ? loads[tid] : null,
         annotationFormats,
         inferenceIsActive: tid in state.models.inferences,
-        exportIsActive: tid in backups,
+        backupIsActive: state.export.tasks.backup.current[tid],
     };
 }
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        loadAnnotations: (taskInstance: any, loader: any, file: File): void => {
-            dispatch(loadAnnotationsAsync(taskInstance, loader, file));
+        showExportModal: (taskInstance: any, resource: 'dataset' | 'backup'): void => {
+            if (resource === 'dataset') {
+                dispatch(exportActions.openExportDatasetModal(taskInstance));
+            } else {
+                dispatch(exportActions.openExportBackupModal(taskInstance));
+            }
         },
-        showExportModal: (taskInstance: any): void => {
-            dispatch(exportActions.openExportModal(taskInstance));
+        showImportModal: (taskInstance: any): void => {
+            dispatch(importActions.openImportDatasetModal(taskInstance));
         },
         deleteTask: (taskInstance: any): void => {
             dispatch(deleteTaskAsync(taskInstance));
         },
         openRunModelWindow: (taskInstance: any): void => {
             dispatch(modelsActions.showRunModelDialog(taskInstance));
-        },
-        exportTask: (taskInstance: any): void => {
-            dispatch(exportTaskAsync(taskInstance));
         },
         openMoveTaskToProjectWindow: (taskId: number): void => {
             dispatch(switchMoveTaskModalVisible(true, taskId));
@@ -86,40 +80,34 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
     const {
         taskInstance,
         annotationFormats: { loaders, dumpers },
-        loadActivity,
         inferenceIsActive,
-        exportIsActive,
-        loadAnnotations,
+        backupIsActive,
         showExportModal,
+        showImportModal,
         deleteTask,
         openRunModelWindow,
-        exportTask,
         openMoveTaskToProjectWindow,
     } = props;
 
-    function onClickMenu(params: MenuInfo): void {
+    const onClickMenu = (params: MenuInfo): void | JSX.Element => {
         const [action] = params.keyPath;
         if (action === Actions.EXPORT_TASK_DATASET) {
-            showExportModal(taskInstance);
+            showExportModal(taskInstance, 'dataset');
         } else if (action === Actions.DELETE_TASK) {
             deleteTask(taskInstance);
         } else if (action === Actions.OPEN_BUG_TRACKER) {
+            /* eslint-disable-next-line security/detect-non-literal-fs-filename */
             window.open(`${taskInstance.bugTracker}`, '_blank');
         } else if (action === Actions.RUN_AUTO_ANNOTATION) {
             openRunModelWindow(taskInstance);
-        } else if (action === Actions.EXPORT_TASK) {
-            exportTask(taskInstance);
+        } else if (action === Actions.BACKUP_TASK) {
+            showExportModal(taskInstance, 'backup');
         } else if (action === Actions.MOVE_TASK_TO_PROJECT) {
             openMoveTaskToProjectWindow(taskInstance.id);
+        } else if (action === Actions.LOAD_TASK_ANNO) {
+            showImportModal(taskInstance);
         }
-    }
-
-    function onUploadAnnotations(format: string, file: File): void {
-        const [loader] = loaders.filter((_loader: any): boolean => _loader.name === format);
-        if (loader && file) {
-            loadAnnotations(taskInstance, loader, file);
-        }
-    }
+    };
 
     return (
         <ActionsMenuComponent
@@ -128,12 +116,10 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
             bugTracker={taskInstance.bugTracker}
             loaders={loaders}
             dumpers={dumpers}
-            loadActivity={loadActivity}
             inferenceIsActive={inferenceIsActive}
             onClickMenu={onClickMenu}
-            onUploadAnnotations={onUploadAnnotations}
             taskDimension={taskInstance.dimension}
-            exportIsActive={exportIsActive}
+            backupIsActive={backupIsActive}
         />
     );
 }

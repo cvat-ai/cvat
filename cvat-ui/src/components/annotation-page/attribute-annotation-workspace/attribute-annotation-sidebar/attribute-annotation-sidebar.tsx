@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -23,7 +23,7 @@ import { ThunkDispatch } from 'utils/redux';
 import AppearanceBlock from 'components/annotation-page/appearance-block';
 import ObjectButtonsContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-buttons';
 import { adjustContextImagePosition } from 'components/annotation-page/standard-workspace/context-image/context-image';
-import { CombinedState, ObjectType } from 'reducers/interfaces';
+import { CombinedState, ObjectType } from 'reducers';
 import AttributeEditor from './attribute-editor';
 import AttributeSwitcher from './attribute-switcher';
 import ObjectBasicsEditor from './object-basics-edtior';
@@ -84,7 +84,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
 function mapDispatchToProps(dispatch: ThunkDispatch): DispatchToProps {
     return {
         activateObject(clientID: number, attrID: number): void {
-            dispatch(activateObjectAction(clientID, attrID));
+            dispatch(activateObjectAction(clientID, null, attrID));
         },
         updateAnnotations(states): void {
             dispatch(updateAnnotationsAsync(states));

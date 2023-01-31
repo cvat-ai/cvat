@@ -31,7 +31,7 @@ context('Create more than one task per time when create from project.', () => {
         });
         cy.get('.cvat-constructor-viewer-new-item').should('not.exist');
         cy.get('input[type="file"]').attachFile(archiveName, { subjectType: 'drag-n-drop' });
-        cy.contains('button', 'Submit').click();
+        cy.contains('button', 'Submit & Continue').click();
         cy.get('.cvat-notification-create-task-success').should('exist');
         cy.get('.cvat-notification-create-task-fail').should('not.exist');
     }
@@ -44,6 +44,7 @@ context('Create more than one task per time when create from project.', () => {
 
     describe(`Testing "Issue ${issueID}"`, () => {
         it('Create more than one task per time from project.', () => {
+            cy.get('.cvat-create-task-dropdown').click();
             cy.get('.cvat-create-task-button').click();
             createTask(taskName.firstTask);
             createTask(taskName.secondTask);
