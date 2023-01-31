@@ -264,7 +264,7 @@ services:
       - ./components/analytics/vector/vector.toml:/etc/vector/vector.toml:ro
 
   grafana:
-    image: grafana-custom
+    image: azhavoro/cvat_grafana
     container_name: cvat_grafana
     environment:
       - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
@@ -272,9 +272,6 @@ services:
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
       - GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=grafana-clickhouse-datasource
       - GF_SERVER_ROOT_URL=http://${CVAT_HOST:-localhost}/analytics
-      # - GF_SERVER_SERVE_FROM_SUB_PATH=true
-      # - GF_SECURITY_ADMIN_USER=admin
-      # - GF_SECURITY_ADMIN_PASSWORD=admin
     entrypoint:
       - sh
       - -euc
