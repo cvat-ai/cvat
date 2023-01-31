@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import json
 import logging
 import sys
 import os.path as osp

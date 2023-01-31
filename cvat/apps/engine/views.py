@@ -69,7 +69,7 @@ from cvat.apps.engine.mixins import PartialUpdateModelMixin, UploadMixin, Annota
 from cvat.apps.engine.location import get_location_configuration, StorageType
 
 from . import models, task
-from .log import clogger, slogger
+from .log import slogger
 from cvat.apps.iam.permissions import (CloudStoragePermission,
     CommentPermission, IssuePermission, JobPermission, ProjectPermission,
     TaskPermission, UserPermission)
