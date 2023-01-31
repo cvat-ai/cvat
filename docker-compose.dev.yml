@@ -82,3 +82,7 @@ services:
   clickhouse:
     ports:
       - '8123:8123'
+
+  grafana:
+    ports:
+      - "3001:3000"

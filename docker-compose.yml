@@ -249,7 +249,7 @@ services:
           - clickhouse
     volumes:
       - ./components/analytics/clickhouse/init.sh:/docker-entrypoint-initdb.d/init.sh:ro
-      - cvat_logs:/var/lib/clickhouse/
+      - cvat_log_db:/var/lib/clickhouse/
 
   vector:
     container_name: cvat_vector
@@ -270,7 +270,7 @@ services:
       - ./components/analytics/vector/vector.toml:/etc/vector/vector.toml:ro
 
   grafana:
-    image: azhavoro/cvat_grafana
+    image: grafana/grafana-oss:9.3.6
     container_name: cvat_grafana
     environment:
       - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
@@ -278,6 +278,9 @@ services:
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
       - GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=grafana-clickhouse-datasource
       - GF_SERVER_ROOT_URL=http://${CVAT_HOST:-localhost}/analytics
+      - GF_INSTALL_PLUGINS=https://github.com/grafana/clickhouse-datasource/releases/download/v2.0.7/grafana-clickhouse-datasource-2.0.7.linux_amd64.zip;grafana-clickhouse-datasource
+    volumes:
+      - ./components/analytics/grafana/dashboards/cvat-logs.json:/var/lib/grafana/dashboards/cvat-logs.json:ro
     entrypoint:
       - sh
       - -euc
@@ -323,6 +326,7 @@ volumes:
   cvat_data:
   cvat_keys:
   cvat_logs:
+  cvat_log_db:
 
 networks:
   cvat:
