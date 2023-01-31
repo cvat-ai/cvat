@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -37,6 +37,7 @@ export default function implementAPI(cvat) {
     cvat.lambda.cancel.implementation = lambdaManager.cancel.bind(lambdaManager);
     cvat.lambda.listen.implementation = lambdaManager.listen.bind(lambdaManager);
     cvat.lambda.requests.implementation = lambdaManager.requests.bind(lambdaManager);
+    cvat.lambda.providers.implementation = lambdaManager.providers.bind(lambdaManager);
 
     cvat.server.about.implementation = async () => {
         const result = await serverProxy.server.about();

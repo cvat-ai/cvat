@@ -1,11 +1,11 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import FormData from 'form-data';
 import store from 'store';
-import Axios from 'axios';
+import Axios, { AxiosResponse } from 'axios';
 import * as tus from 'tus-js-client';
 import { Storage } from './storage';
 import { StorageLocation, WebhookSourceType } from './enums';
@@ -509,13 +509,32 @@ async function healthCheck(maxRetries, checkPeriod, requestTimeout, progressCall
         timeout: requestTimeout,
     })
         .then((response) => response.data)
-        .catch((errorData) => {
-            if (maxRetries > 0) {
+        .catch((error) => {
+            let isHealthy = true;
+            let data;
+            if (typeof error?.response?.data === 'object') {
+                data = error.response.data;
+                // Temporary workaround: ignore errors with media cache for debugging purposes only
+                for (const checkName in data) {
+                    if (Object.prototype.hasOwnProperty.call(data, checkName) &&
+                        checkName !== 'Cache backend: media' &&
+                        data[checkName] !== 'working') {
+                        isHealthy = false;
+                    }
+                }
+            } else {
+                isHealthy = false;
+            }
+
+            if (!isHealthy && maxRetries > 0) {
                 return new Promise((resolve) => setTimeout(resolve, checkPeriod))
                     .then(() => healthCheck(maxRetries - 1, checkPeriod,
                         requestTimeout, progressCallback, attempt + 1));
             }
-            throw generateError(errorData);
+            if (isHealthy) {
+                return data;
+            }
+            throw generateError(error);
         });
 }
 
@@ -1239,19 +1258,69 @@ async function getJobs(filter = {}) {
     return response.data;
 }
 
+function fetchAll(url): Promise<any[]> {
+    const pageSize = 500;
+    let collection = [];
+    return new Promise((resolve, reject) => {
+        Axios.get(url, {
+            params: {
+                page_size: pageSize,
+                page: 1,
+            },
+            proxy: config.proxy,
+        }).then((initialData) => {
+            const { count, results } = initialData.data;
+            collection = collection.concat(results);
+            if (count <= pageSize) {
+                resolve(collection);
+                return;
+            }
+
+            const pages = Math.ceil(count / pageSize);
+            const promises = Array(pages).fill(0).map((_: number, i: number) => {
+                if (i) {
+                    return Axios.get(url, {
+                        params: {
+                            page_size: pageSize,
+                            page: i + 1,
+                        },
+                        proxy: config.proxy,
+                    });
+                }
+
+                return Promise.resolve(null);
+            });
+
+            Promise.all(promises).then((responses: AxiosResponse<any, any>[]) => {
+                responses.forEach((resp) => {
+                    if (resp) {
+                        collection = collection.concat(resp.data.results);
+                    }
+                });
+
+                // removing possible dublicates
+                const obj = collection.reduce((acc: Record<string, any>, item: any) => {
+                    acc[item.id] = item;
+                    return acc;
+                }, {});
+
+                resolve(Object.values(obj));
+            }).catch((error) => reject(error));
+        }).catch((error) => reject(error));
+    });
+}
+
 async function getJobIssues(jobID) {
     const { backendAPI } = config;
 
     let response = null;
     try {
-        response = await Axios.get(`${backendAPI}/jobs/${jobID}/issues`, {
-            proxy: config.proxy,
-        });
+        response = await fetchAll(`${backendAPI}/jobs/${jobID}/issues`);
     } catch (errorData) {
         throw generateError(errorData);
     }
 
-    return response.data;
+    return response;
 }
 
 async function createComment(data) {
@@ -1384,7 +1453,7 @@ async function getImageContext(jid, frame) {
                 number: frame,
             },
             proxy: config.proxy,
-            responseType: 'blob',
+            responseType: 'arraybuffer',
         });
     } catch (errorData) {
         throw generateError(errorData);
@@ -1423,7 +1492,23 @@ async function getData(tid, jid, chunk) {
     return response;
 }
 
-async function getMeta(session, jid) {
+export interface FramesMetaData {
+    chunk_size: number;
+    deleted_frames: number[];
+    frame_filter: string;
+    frames: {
+        width: number;
+        height: number;
+        name: string;
+        related_files: number;
+    }[];
+    image_quality: number;
+    size: number;
+    start_frame: number;
+    stop_frame: number;
+}
+
+async function getMeta(session, jid): Promise<FramesMetaData> {
     const { backendAPI } = config;
 
     let response = null;
@@ -1465,8 +1550,72 @@ async function getAnnotations(session, id) {
     } catch (errorData) {
         throw generateError(errorData);
     }
+    return response.data;
+}
+
+async function getFunctions() {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.get(`${backendAPI}/functions`, {
+            proxy: config.proxy,
+        });
+        return response.data.results;
+    } catch (errorData) {
+        if (errorData.response.status === 404) {
+            return [];
+        }
+        throw generateError(errorData);
+    }
+}
+
+async function getFunctionPreview(modelID) {
+    const { backendAPI } = config;
+
+    let response = null;
+    try {
+        const url = `${backendAPI}/functions/${modelID}/preview`;
+        response = await Axios.get(url, {
+            proxy: config.proxy,
+            responseType: 'blob',
+        });
+    } catch (errorData) {
+        const code = errorData.response ? errorData.response.status : errorData.code;
+        throw new ServerError(`Could not get preview for the model ${modelID} from the server`, code);
+    }
 
     return response.data;
+}
+
+async function getFunctionProviders() {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.get(`${backendAPI}/functions/info`, {
+            proxy: config.proxy,
+        });
+        return response.data;
+    } catch (errorData) {
+        if (errorData.response.status === 404) {
+            return [];
+        }
+        throw generateError(errorData);
+    }
+}
+
+async function deleteFunction(functionId: number) {
+    const { backendAPI } = config;
+
+    try {
+        await Axios.delete(`${backendAPI}/functions/${functionId}`, {
+            proxy: config.proxy,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
 }
 
 // Session is 'task' or 'job'
@@ -1495,8 +1644,24 @@ async function updateAnnotations(session, id, data, action) {
     } catch (errorData) {
         throw generateError(errorData);
     }
-
     return response.data;
+}
+
+async function runFunctionRequest(body) {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.post(`${backendAPI}/functions/requests/`, JSON.stringify(body), {
+            proxy: config.proxy,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
 }
 
 // Session is 'task' or 'job'
@@ -1519,7 +1684,6 @@ async function uploadAnnotations(
     };
 
     const url = `${backendAPI}/${session}s/${id}/annotations`;
-
     async function wait() {
         return new Promise<void>((resolve, reject) => {
             async function requestStatus() {
@@ -1581,9 +1745,21 @@ async function uploadAnnotations(
             throw generateError(errorData);
         }
     }
-
     try {
         return await wait();
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function getFunctionRequestStatus(requestID) {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.get(`${backendAPI}/functions/requests/${requestID}`, {
+            proxy: config.proxy,
+        });
+        return response.data;
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -1618,9 +1794,38 @@ async function dumpAnnotations(id, name, format) {
                     reject(generateError(errorData));
                 });
         }
-
         setTimeout(request);
     });
+}
+
+async function cancelFunctionRequest(requestId) {
+    const { backendAPI } = config;
+
+    try {
+        await Axios.delete(`${backendAPI}/functions/requests/${requestId}`, {
+            method: 'DELETE',
+        });
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function createFunction(functionData: any) {
+    const params = enableOrganization();
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.post(`${backendAPI}/functions`, JSON.stringify(functionData), {
+            proxy: config.proxy,
+            params,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
 }
 
 async function saveLogs(logs) {
@@ -1638,6 +1843,40 @@ async function saveLogs(logs) {
     }
 }
 
+async function callFunction(funId, body) {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.post(`${backendAPI}/functions/${funId}/run`, JSON.stringify(body), {
+            proxy: config.proxy,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function getFunctionsRequests() {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.get(`${backendAPI}/functions/requests/`, {
+            proxy: config.proxy,
+        });
+
+        return response.data;
+    } catch (errorData) {
+        if (errorData.response.status === 404) {
+            return [];
+        }
+        throw generateError(errorData);
+    }
+}
+
 async function getLambdaFunctions() {
     const { backendAPI } = config;
 
@@ -1647,6 +1886,9 @@ async function getLambdaFunctions() {
         });
         return response.data;
     } catch (errorData) {
+        if (errorData.response.status === 503) {
+            return [];
+        }
         throw generateError(errorData);
     }
 }
@@ -1954,14 +2196,12 @@ async function getOrganizations() {
 
     let response = null;
     try {
-        response = await Axios.get(`${backendAPI}/organizations`, {
-            proxy: config.proxy,
-        });
+        response = await fetchAll(`${backendAPI}/organizations?page_size`);
     } catch (errorData) {
         throw generateError(errorData);
     }
 
-    return response.data;
+    return response;
 }
 
 async function createOrganization(data) {
@@ -2342,6 +2582,19 @@ export default Object.freeze({
         run: runLambdaRequest,
         call: callLambdaFunction,
         cancel: cancelLambdaRequest,
+    }),
+
+    functions: Object.freeze({
+        list: getFunctions,
+        status: getFunctionRequestStatus,
+        requests: getFunctionsRequests,
+        run: runFunctionRequest,
+        call: callFunction,
+        create: createFunction,
+        providers: getFunctionProviders,
+        delete: deleteFunction,
+        cancel: cancelFunctionRequest,
+        getPreview: getFunctionPreview,
     }),
 
     issues: Object.freeze({

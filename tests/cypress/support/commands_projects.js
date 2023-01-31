@@ -82,7 +82,7 @@ Cypress.Commands.add('projectActions', (projectName) => {
     cy.contains('.cvat-projects-project-item-title', projectName)
         .parents('.cvat-projects-project-item-card')
         .within(() => {
-            cy.get('.cvat-porjects-project-item-description').within(() => {
+            cy.get('.cvat-projects-project-item-description').within(() => {
                 cy.get('[type="button"]').trigger('mouseover');
             });
         });
@@ -223,7 +223,7 @@ Cypress.Commands.add('restoreProject', (archiveWithBackup, sourceStorage = null)
         }
     });
 
-    cy.contains('The project has been restored succesfully. Click here to open')
+    cy.contains('The project has been restored successfully. Click here to open')
         .should('exist')
         .and('be.visible');
     cy.closeNotification('.ant-notification-notice-info');

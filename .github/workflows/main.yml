@@ -97,6 +97,7 @@ jobs:
         run: |
           docker load --input /tmp/cvat_server/image.tar
           docker run --rm -v ${PWD}/cvat-sdk/schema/:/transfer \
+            -e USE_ALLAUTH_SOCIAL_ACCOUNTS="True" \
             --entrypoint /bin/bash -u root cvat/server \
             -c 'python manage.py spectacular --file /transfer/schema.yml'
           pip3 install --user -r cvat-sdk/gen/requirements.txt
@@ -133,9 +134,6 @@ jobs:
       - uses: actions/setup-python@v3
         with:
           python-version: '3.8'
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
 
       - name: Download CVAT server image
         uses: actions/download-artifact@v3
@@ -193,9 +191,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
 
       - name: Download CVAT server image
         uses: actions/download-artifact@v3
@@ -263,9 +258,6 @@ jobs:
                 'canvas3d_functionality_2', 'issues_prs', 'issues_prs2', 'masks', 'skeletons']
     steps:
       - uses: actions/checkout@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
 
       - uses: actions/setup-node@v3
         with:
@@ -407,6 +399,8 @@ jobs:
           pip install -r site/requirements.txt
           python site/process_sdk_docs.py --input-dir /tmp/cvat_sdk/docs/ --site-root site/
           python site/build_docs.py
+        env:
+          HUGO_ENV: production
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3

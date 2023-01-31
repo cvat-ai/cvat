@@ -1,0 +1,124 @@
+// Copyright (C) 2023 CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import 'base.scss';
+
+.cvat-canvas-grid-root {
+    position: relative;
+}
+
+.cvat-canvas-grid-root-single {
+    .cvat-grid-item-drag-handler {
+        display: none;
+    }
+
+    .cvat-grid-item-fullscreen-handler {
+        display: none;
+    }
+
+    .cvat-grid-item-resize-handler {
+        display: none;
+    }
+
+    .cvat-grid-item-close-button {
+        display: none;
+    }
+
+    & +.cvat-grid-layout-common-setups {
+        display: none;
+    }
+}
+
+.cvat-grid-layout-common-setups {
+    position: absolute;
+    top: 0;
+    right: 50%;
+    transform: translate(0, calc($grid-unit-size * 12 - 1px));
+    z-index: 1000;
+    background: $background-color-2;
+    line-height: $grid-unit-size * 3;
+    height: calc($grid-unit-size * 3 + 1px);
+    padding-bottom: $grid-unit-size;
+    padding-right: $grid-unit-size;
+    padding-left: $grid-unit-size;
+    border-radius: 0 0 4px 4px;
+    border-bottom: 1px solid $border-color-1;
+    border-right: 1px solid $border-color-1;
+    border-left: 1px solid $border-color-1;
+
+    > span {
+        margin-right: $grid-unit-size * 2;
+
+        &:last-child {
+            margin-right: 0;
+        }
+    }
+}
+
+.cvat-canvas-grid-item {
+    background-color: rgba(241, 241, 241, 0.7);
+    border-radius: 4px;
+
+    &.react-grid-item.cssTransforms {
+        transition-property: all;
+    }
+
+    &.cvat-canvas-grid-fullscreen-item {
+        width: 100% !important;
+        height: 100% !important;
+        padding-right: $grid-unit-size;
+        transform: translate(4px, 4px) !important;
+        z-index: 1;
+
+        .cvat-grid-item-resize-handler.react-resizable-handle,
+        .cvat-grid-item-drag-handler {
+            visibility: hidden;
+        }
+    }
+
+    .cvat-grid-item-drag-handler,
+    .cvat-grid-item-fullscreen-handler,
+    .cvat-grid-item-close-button {
+        position: absolute;
+        top: $grid-unit-size;
+        z-index: 1000;
+        font-size: 16px;
+        background: $header-color;
+        border-radius: 2px;
+        opacity: 0.6;
+        transition: all 200ms;
+
+        &:hover {
+            opacity: 0.9;
+        }
+
+        &.cvat-grid-item-drag-handler {
+            left: $grid-unit-size * 4;
+            cursor: move;
+        }
+
+        &.cvat-grid-item-fullscreen-handler {
+            left: $grid-unit-size;
+        }
+
+        &.cvat-grid-item-close-button {
+            right: $grid-unit-size;
+        }
+    }
+
+    .cvat-grid-item-resize-handler.react-resizable-handle {
+        bottom: -3px;
+        right: -3px;
+        cursor: se-resize;
+
+        &::after {
+            bottom: 0;
+            right: 0;
+            width: 9px;
+            height: 10px;
+            border-right: 2px solid rgba(0, 0, 0, 1);
+            border-bottom: 2px solid rgba(0, 0, 0, 1);
+        }
+    }
+}

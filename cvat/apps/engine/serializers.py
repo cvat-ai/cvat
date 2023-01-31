@@ -1,5 +1,5 @@
 # Copyright (C) 2019-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -20,7 +20,7 @@ from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credenti
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.utils import parse_specific_attributes
 
-from drf_spectacular.utils import OpenApiExample, extend_schema_serializer
+from drf_spectacular.utils import OpenApiExample, extend_schema_field, extend_schema_serializer
 
 class BasicUserSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
@@ -185,14 +185,14 @@ class JobReadSerializer(serializers.ModelSerializer):
     project_id = serializers.ReadOnlyField(source="get_project_id", allow_null=True)
     start_frame = serializers.ReadOnlyField(source="segment.start_frame")
     stop_frame = serializers.ReadOnlyField(source="segment.stop_frame")
-    assignee = BasicUserSerializer(allow_null=True)
-    dimension = serializers.CharField(max_length=2, source='segment.task.dimension')
-    labels = LabelSerializer(many=True, source='get_labels')
+    assignee = BasicUserSerializer(allow_null=True, read_only=True)
+    dimension = serializers.CharField(max_length=2, source='segment.task.dimension', read_only=True)
+    labels = LabelSerializer(many=True, source='get_labels', read_only=True)
     data_chunk_size = serializers.ReadOnlyField(source='segment.task.data.chunk_size')
     data_compressed_chunk_type = serializers.ReadOnlyField(source='segment.task.data.compressed_chunk_type')
     mode = serializers.ReadOnlyField(source='segment.task.mode')
     bug_tracker = serializers.CharField(max_length=2000, source='get_bug_tracker',
-        allow_null=True)
+        allow_null=True, read_only=True)
 
     class Meta:
         model = models.Job
@@ -906,7 +906,14 @@ class FrameMetaSerializer(serializers.Serializer):
     width = serializers.IntegerField()
     height = serializers.IntegerField()
     name = serializers.CharField(max_length=1024)
-    has_related_context = serializers.BooleanField()
+    related_files = serializers.IntegerField()
+
+    # for compatibility with version 2.3.0
+    has_related_context = serializers.SerializerMethodField()
+
+    @extend_schema_field(serializers.BooleanField)
+    def get_has_related_context(self, obj: dict) -> bool:
+        return obj['related_files'] != 0
 
 class PluginsSerializer(serializers.Serializer):
     GIT_INTEGRATION = serializers.BooleanField()

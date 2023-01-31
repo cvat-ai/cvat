@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -33,9 +33,9 @@ import ExportDatasetModal from 'components/export-dataset/export-dataset-modal';
 import ExportBackupModal from 'components/export-backup/export-backup-modal';
 import ImportDatasetModal from 'components/import-dataset/import-dataset-modal';
 import ImportBackupModal from 'components/import-backup/import-backup-modal';
-import ModelsPageContainer from 'containers/models-page/models-page';
 
 import JobsPageComponent from 'components/jobs-page/jobs-page';
+import ModelsPageComponent from 'components/models-page/models-page';
 
 import TasksPageContainer from 'containers/tasks-page/tasks-page';
 import CreateTaskPageContainer from 'containers/create-task-page/create-task-page';
@@ -61,17 +61,18 @@ import AnnotationPageContainer from 'containers/annotation-page/annotation-page'
 import { getCore } from 'cvat-core-wrapper';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { NotificationsState } from 'reducers';
-import { customWaViewHit } from 'utils/enviroment';
+import { customWaViewHit } from 'utils/environment';
 import showPlatformNotification, {
     platformInfo,
     stopNotifications,
     showUnsupportedNotification,
 } from 'utils/platform-checker';
 import '../styles.scss';
-import consts from 'consts';
+import appConfig from 'config';
 import EmailConfirmationPage from './email-confirmation-pages/email-confirmed';
 import EmailVerificationSentPage from './email-confirmation-pages/email-verification-sent';
 import IncorrectEmailConfirmationPage from './email-confirmation-pages/incorrect-email-confirmation';
+import CreateModelPage from './create-model-page/create-model-page';
 
 interface CVATAppProps {
     loadFormats: () => void;
@@ -140,10 +141,10 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         });
 
         const {
-            HEALH_CHECK_RETRIES, HEALTH_CHECK_PERIOD, HEALTH_CHECK_REQUEST_TIMEOUT, UPGRADE_GUIDE_URL,
-        } = consts;
+            HEALTH_CHECK_RETRIES, HEALTH_CHECK_PERIOD, HEALTH_CHECK_REQUEST_TIMEOUT, SERVER_UNAVAILABLE_COMPONENT,
+        } = appConfig;
         core.server.healthCheck(
-            HEALH_CHECK_RETRIES,
+            HEALTH_CHECK_RETRIES,
             HEALTH_CHECK_PERIOD,
             HEALTH_CHECK_REQUEST_TIMEOUT,
         ).then(() => {
@@ -157,26 +158,15 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                     healthIinitialized: true,
                     backendIsHealthy: false,
                 });
+
                 Modal.error({
                     title: 'Cannot connect to the server',
                     className: 'cvat-modal-cannot-connect-server',
                     closable: false,
-                    content: (
-                        <Text>
-                            Make sure the CVAT backend and all necessary services
-                            (Database, Redis and Open Policy Agent) are running and avaliable.
-                            If you upgraded from version 2.2.0 or earlier, manual actions may be needed, see the&nbsp;
-
-                            <a
-                                target='_blank'
-                                rel='noopener noreferrer'
-                                href={UPGRADE_GUIDE_URL}
-                            >
-                                Upgrade Guide
-                            </a>
-                            .
-                        </Text>
-                    ),
+                    content:
+    <Text>
+        {SERVER_UNAVAILABLE_COMPONENT}
+    </Text>,
                 });
             });
 
@@ -341,7 +331,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                     <ReactMarkdown>{title}</ReactMarkdown>
                 ),
                 duration: null,
-                description: error.length > 200 ? 'Open the Browser Console to get details' : <ReactMarkdown>{error}</ReactMarkdown>,
+                description: error.length > 300 ? 'Open the Browser Console to get details' : <ReactMarkdown>{error}</ReactMarkdown>,
             });
 
             // eslint-disable-next-line no-console
@@ -460,7 +450,14 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                             <Route exact path='/webhooks/update/:id' component={UpdateWebhookPage} />
                                             <Route exact path='/organization' component={OrganizationPage} />
                                             {isModelPluginActive && (
-                                                <Route exact path='/models' component={ModelsPageContainer} />
+                                                <Route
+                                                    path='/models'
+                                                >
+                                                    <Switch>
+                                                        <Route exact path='/models' component={ModelsPageComponent} />
+                                                        <Route exact path='/models/create' component={CreateModelPage} />
+                                                    </Switch>
+                                                </Route>
                                             )}
                                             <Redirect
                                                 push

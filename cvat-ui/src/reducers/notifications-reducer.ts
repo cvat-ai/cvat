@@ -80,12 +80,13 @@ const defaultState: NotificationsState = {
             canceling: null,
             metaFetching: null,
             inferenceStatusFetching: null,
+            creating: null,
+            deleting: null,
         },
         annotation: {
             saving: null,
             jobFetching: null,
             frameFetching: null,
-            contextImageFetching: null,
             changingLabelColor: null,
             updating: null,
             creating: null,
@@ -487,7 +488,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     importing: {
                         ...state.messages.importing,
                         backup:
-                            `The ${instanceType} has been restored succesfully.
+                            `The ${instanceType} has been restored successfully.
                             Click [here](/${instanceType}s/${instanceId}) to open`,
                     },
                 },
@@ -723,7 +724,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
             };
         }
         case ModelsActionTypes.FETCH_META_FAILED: {
-            if (action.payload.error.toString().includes('status code 403')) {
+            if (action.payload.error.code === 403) {
                 return state;
             }
 
@@ -804,6 +805,37 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
+        case ModelsActionTypes.CREATE_MODEL_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    models: {
+                        ...state.errors.models,
+                        creating: {
+                            message: 'Could not create model',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case ModelsActionTypes.DELETE_MODEL_FAILED: {
+            const { modelName } = action.payload;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    models: {
+                        ...state.errors.models,
+                        deleting: {
+                            message: `Could not delete model ${modelName}`,
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
         case AnnotationActionTypes.GET_JOB_FAILED: {
             return {
                 ...state,
@@ -830,21 +862,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         frameFetching: {
                             message: `Could not receive frame ${action.payload.number}`,
                             reason: action.payload.error.toString(),
-                        },
-                    },
-                },
-            };
-        }
-        case AnnotationActionTypes.GET_CONTEXT_IMAGE_FAILED: {
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    annotation: {
-                        ...state.errors.annotation,
-                        contextImageFetching: {
-                            message: 'Could not fetch context image from the server',
-                            reason: action.payload.error,
                         },
                     },
                 },
