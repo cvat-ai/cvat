@@ -27,7 +27,7 @@ def _create_csv(query_params, output_filename, cache_ttl):
         'to': query_params.pop('to'),
     }
 
-    query = f"SELECT * FROM {clickhouse_settings['NAME']}.logs"
+    query = f"SELECT * FROM cvat.logs"
     conditions = []
     parameters = {}
     for param, value in query_params.items():

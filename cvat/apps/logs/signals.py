@@ -105,14 +105,13 @@ def resource_created(sender, instance=None, **kwargs):
     if not any((oid, pid, tid, jid, uid)):
         return
 
-    payload = {}
     try:
         serializer = sender.get_serializer_class()(
             instance=instance, context={"request": sender.request}
         )
         payload=serializer.data
     except Exception:
-        pass
+        payload = {}
 
     event = create_event(
         scope=scope,
