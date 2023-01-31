@@ -4,7 +4,7 @@
   "description": "CVAT single-page application",
   "main": "src/index.tsx",
   "scripts": {
-    "build": "webpack --openssl-legacy-provider --config ./webpack.config.js",
+    "build": "webpack --config ./webpack.config.js",
     "start": "webpack-dev-server --env.API_URL=http://localhost:7000 --config ./webpack.config.js --mode=development",
     "type-check": "tsc --noEmit",
     "type-check:watch": "npm run type-check -- --watch",
