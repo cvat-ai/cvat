@@ -129,7 +129,7 @@
             <td align="center" valign="bottom">
               <a href="https://www.cvat.ai/" target="_blank" style="display: inline-block;">
                 <img
-                  src="https://github.com/opencv/cvat/blob/develop/site/content/en/images/cvat_poster_with_name.png?raw=true"
+                  src="https://github.com/opencv/cvat/blob/develop/site/content/en/images/wlcmbr.jpg?raw=true"
                   alt="Logo"
                   border="0"
                   width="100%"
@@ -160,7 +160,7 @@
           <tr>
             <td align="left" bgcolor="#ffffff" style="padding: 36px 24px 0; font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif; border-top: 3px solid #d4dadf;">
               <h1 style="margin: 0; font-size: 32px; font-weight: 700; letter-spacing: -1px; line-height: 48px;">
-                Confirm Your Email Address
+                Hi <strong>{{ username}}</strong>! &#128075
               </h1>
             </td>
           </tr>
@@ -189,46 +189,49 @@
             <td align="left" bgcolor="#ffffff" style="padding: 24px; font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif; font-size: 16px; line-height: 24px;">
               {% blocktrans with site_name=current_site.name site_domain=current_site.domain %}
               <p>
-                Thank you for signing up for CVAT!
+                I am Anna, the CVAT.ai co-founder. Thank you for choosing us, and welcome onboard!
               </p>
               <p style="margin: 0;">
-                To complete registration and start annotating, simply tap the button below and confirm your email address.
-                If you didn't create an account with <strong>{{ site_name }}</strong>,
-                you can safely delete this email.
-              </p>
+                To ensure a smooth start, take a look at the following resources:
+                   <p>
+
+                  <li>To familiarize yourself with CVAT, we recommend watching our Product Tour.
+                    You’ll learn how to annotate with <a href="https://www.youtube.com/watch?v=prsxK2BeG6k&list=PL0to7Ng4Puua37NJVMIShl_pzqJTigFzg&index=2">bounding boxes</a>
+                    and <a href="https://www.youtube.com/watch?v=88TVX58GHIc&list=PL0to7Ng4Puua37NJVMIShl_pzqJTigFzg&index=3">skeletons</a>,
+                    how to <a href="https://www.youtube.com/watch?v=sA_H3EGzO60&list=PL0to7Ng4Puua37NJVMIShl_pzqJTigFzg&index=4">speed up annotation
+                      with interpolation mode</a>, and much more. </li>
+                  <li>If you have any questions, take a look at our <a href="https://opencv.github.io/cvat/docs/"> documentation</a>.</li>
+                   </p>
+                   <p>
+                   Please note, that while the free version of CVAT.ai has limitations on the number of images and
+                   annotations per project, the paid plans do not. The paid plans also offer features such as team
+                   collaboration and annotation management.
+                </p>
+                <p>
+                Check out all the benefits on our <a href="https://www.cvat.ai/pricing">pricing page</a> and enjoy a 20% one-time discount for any <a href="https://www.cvat.ai/post/new-pricing-plans">paid plan</a> with this promo code: <stong>NEW20FF</stong>.
+                </p>
+                <p>
+                If you have any questions, please reach out to us via our social media accounts:
+                </p>
+                 <p>
+                 <li><a href="https://discord.gg/S6sRHhuQ7K">Discord</a></li>
+                 <li><a href="https://www.linkedin.com/company/cvat-ai">Linkedin</a></li>
+                 <li><a href="https://gitter.im/opencv-cvat/public">Gitter</a></li>
+                 <li><a href="https://github.com/opencv/cvat">Github</a></li>
+                <p>
+                We hope you have a fantastic experience with CVAT!
+                </p>
+                 <p>
+                 Best,
+                <p>Anna and the CVAT.ai Team &#10084;</p>
+
+             </p>
+           </p>
+             </p>
               {% endblocktrans %}
             </td>
           </tr>
           <!-- end copy -->
-
-          <!-- start button -->
-          <tr>
-            <td align="left" bgcolor="#ffffff">
-              <table border="0" cellpadding="0" cellspacing="0" width="100%">
-                <tr>
-                  <td align="center" bgcolor="#ffffff" style="padding: 12px;">
-                    <table border="0" cellpadding="0" cellspacing="0">
-                      <tr>
-                        <td align="center" bgcolor="#FCA836" style="border-radius: 6px;">
-                          <a
-                            href="{{ activate_url }}"
-                            target="_blank"
-                            style="display: inline-block; padding: 16px 36px;"
-                                  "font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif;"
-                                  "font-size: 16px; color: #ffffff; text-decoration: none; border-radius: 6px;"
-                            rel="noopener noreferrer"
-                          >
-                            Confirm
-                          </a>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-          <!-- end button -->
 
           <!-- start copy -->
           <tr>
