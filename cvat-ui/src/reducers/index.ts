@@ -764,13 +764,13 @@ export enum ColorBy {
 
 export interface PlayerSettingsState {
     canvasBackgroundColor: string;
+    dataQuality: boolean;
     frameStep: number;
     frameSpeed: FrameSpeed;
     resetZoom: boolean;
     rotateAll: boolean;
     smoothImage: boolean;
     showDeletedFrames: boolean;
-    showOriginalImage: boolean;
     grid: boolean;
     gridSize: number;
     gridColor: GridColor;

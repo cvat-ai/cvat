@@ -26,7 +26,7 @@ interface Props {
     rotateAll: boolean;
     smoothImage: boolean;
     showDeletedFrames: boolean;
-    showOriginalImage: boolean;
+    dataQuality: boolean;
     canvasBackgroundColor: string;
     onChangeFrameStep(step: number): void;
     onChangeFrameSpeed(speed: FrameSpeed): void;
@@ -35,7 +35,7 @@ interface Props {
     onChangeCanvasBackgroundColor(color: string): void;
     onSwitchSmoothImage(enabled: boolean): void;
     onSwitchShowingDeletedFrames(enabled: boolean): void;
-    onSwitchShowOriginalImage(enabled: boolean): void;
+    onSwitchDataQuality(enabled: boolean): void;
 }
 
 export default function PlayerSettingsComponent(props: Props): JSX.Element {
@@ -46,7 +46,7 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
         rotateAll,
         smoothImage,
         showDeletedFrames,
-        showOriginalImage,
+        dataQuality,
         canvasBackgroundColor,
         onChangeFrameStep,
         onChangeFrameSpeed,
@@ -55,7 +55,7 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
         onSwitchSmoothImage,
         onChangeCanvasBackgroundColor,
         onSwitchShowingDeletedFrames,
-        onSwitchShowOriginalImage,
+        onSwitchDataQuality,
     } = props;
 
     const minFrameStep = 2;
@@ -226,20 +226,20 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
             </Row>
             <Row justify='start'>
                 <Col span={7}>
-                    <Row className='cvat-player-settings-show-original'>
-                        <Col span={24} className='cvat-player-settings-show-original-checkbox'>
+                    <Row className='cvat-player-settings-data-quality'>
+                        <Col span={24} className='cvat-player-settings-data-quality-checkbox'>
                             <Checkbox
                                 className='cvat-text-color'
-                                checked={showOriginalImage}
+                                checked={dataQuality}
                                 onChange={(event: CheckboxChangeEvent): void => {
-                                    onSwitchShowOriginalImage(event.target.checked);
+                                    onSwitchDataQuality(event.target.checked);
                                 }}
                             >
-                                Show original image
+                                Prefer original data quality
                             </Checkbox>
                         </Col>
                         <Col span={24}>
-                            <Text type='secondary'> Downloads the original image instead of the compressed version </Text>
+                            <Text type='secondary'> Downloads the original images instead of the compressed if possible </Text>
                         </Col>
                     </Row>
                 </Col>

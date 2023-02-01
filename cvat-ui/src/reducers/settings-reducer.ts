@@ -44,13 +44,13 @@ const defaultState: SettingsState = {
     },
     player: {
         canvasBackgroundColor: '#ffffff',
+        dataQuality: false,
         frameStep: 10,
         frameSpeed: FrameSpeed.Usual,
         resetZoom: false,
         rotateAll: false,
         smoothImage: true,
         showDeletedFrames: false,
-        showOriginalImage: false,
         grid: false,
         gridSize: 100,
         gridColor: GridColor.White,
@@ -384,12 +384,12 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 },
             };
         }
-        case SettingsActionTypes.SWITCH_SHOW_ORIGINAL_IMAGE: {
+        case SettingsActionTypes.SWITCH_DATA_QUALITY: {
             return {
                 ...state,
                 player: {
                     ...state.player,
-                    showOriginalImage: action.payload.showOriginalImage,
+                    dataQuality: action.payload.dataQuality,
                 },
             };
         }

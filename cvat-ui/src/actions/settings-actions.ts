@@ -44,7 +44,7 @@ export enum SettingsActionTypes {
     SWITCH_TOOLS_BLOCKER_STATE = 'SWITCH_TOOLS_BLOCKER_STATE',
     SWITCH_SHOWING_DELETED_FRAMES = 'SWITCH_SHOWING_DELETED_FRAMES',
     SWITCH_SHOWING_TAGS_ON_FRAME = 'SWITCH_SHOWING_TAGS_ON_FRAME',
-    SWITCH_SHOW_ORIGINAL_IMAGE = 'SWITCH_SHOW_ORIGINAL_IMAGE',
+    SWITCH_DATA_QUALITY = 'SWITCH_DATA_QUALITY',
 }
 
 export function changeShapesOpacity(opacity: number): AnyAction {
@@ -372,11 +372,11 @@ export function switchShowingTagsOnFrame(showTagsOnFrame: boolean): AnyAction {
     };
 }
 
-export function switchShowOriginalImage(showOriginalImage: boolean): AnyAction {
+export function switchDataQuality(dataQuality: boolean): AnyAction {
     return {
-        type: SettingsActionTypes.SWITCH_SHOW_ORIGINAL_IMAGE,
+        type: SettingsActionTypes.SWITCH_DATA_QUALITY,
         payload: {
-            showOriginalImage,
+            dataQuality,
         },
     };
 }

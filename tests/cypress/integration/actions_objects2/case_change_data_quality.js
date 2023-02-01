@@ -4,8 +4,8 @@
 
 /// <reference types="cypress" />
 
-context('Change switch between compressed and original images.', () => {
-    const labelName = 'Show Original Test';
+context('Change data quality switch.', () => {
+    const labelName = 'Change data quality test';
     const taskName = `New annotation task for ${labelName}`;
     const attrName = `Attr for ${labelName}`;
     const textDefaultValue = 'Some default value for type Text';
@@ -45,7 +45,7 @@ context('Change switch between compressed and original images.', () => {
                     posX,
                     posY,
                     labelName,
-                    imagesCount
+                    imagesCount,
                 );
                 cy.createZipArchive(directoryToArchive, archivePath);
                 cy.createAnnotationTask(
@@ -67,7 +67,7 @@ context('Change switch between compressed and original images.', () => {
     describe('Tests feature to switch between downloading original and compressed chunks.', () => {
         it('Check switching to show original changes query to quality=original.', () => {
             cy.openSettings();
-            cy.get('.cvat-player-settings-show-original').within(() => {
+            cy.get('.cvat-player-settings-data-quality-checkbox').within(() => {
                 cy.get('[type="checkbox"]').should('not.be.checked').check();
             });
             cy.closeSettings();
@@ -80,7 +80,7 @@ context('Change switch between compressed and original images.', () => {
 
         it('Change back to compressed and check next chunk.', () => {
             cy.openSettings();
-            cy.get('.cvat-player-settings-show-original').within(() => {
+            cy.get('.cvat-player-settings-data-quality-checkbox').within(() => {
                 cy.get('[type="checkbox"]').should('be.checked').uncheck();
             });
             cy.closeSettings();
@@ -93,7 +93,7 @@ context('Change switch between compressed and original images.', () => {
 
         it('Change to show original and check initial chunk load.', () => {
             cy.openSettings();
-            cy.get('.cvat-player-settings-show-original').within(() => {
+            cy.get('.cvat-player-settings-data-quality-checkbox').within(() => {
                 cy.get('[type="checkbox"]').should('not.be.checked').check();
             });
             cy.saveSettings();
@@ -109,7 +109,7 @@ context('Change switch between compressed and original images.', () => {
 
         it('Change back to compressed and check initial chunk load.', () => {
             cy.openSettings();
-            cy.get('.cvat-player-settings-show-original').within(() => {
+            cy.get('.cvat-player-settings-data-quality-checkbox').within(() => {
                 cy.get('[type="checkbox"]').should('be.checked').uncheck();
             });
             cy.saveSettings();

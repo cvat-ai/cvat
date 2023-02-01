@@ -38,7 +38,7 @@ export class FrameData {
         stopFrame,
         decodeForward,
         deleted,
-        downloadOriginal,
+        dataQuality,
         related_files: relatedFiles,
     }) {
         Object.defineProperties(
@@ -84,16 +84,8 @@ export class FrameData {
                     value: deleted,
                     writable: false,
                 },
-                /**
-                 * True if frame downloaded is from original data
-                 * @name downloadOriginal
-                 * @type {boolean}
-                 * @memberof module:API.cvat.classes.FrameData
-                 * @readonly
-                 * @instance
-                 */
-                downloadOriginal: {
-                    value: downloadOriginal,
+                dataQuality: {
+                    value: dataQuality,
                     writable: false,
                 },
             }),
@@ -171,7 +163,7 @@ FrameData.prototype.data.implementation = async function (onServerRequest) {
             const taskDataCache = frameDataCache[this.jid];
             const activeChunk = taskDataCache.activeChunkRequest;
             activeChunk.request = serverProxy.frames
-                .getData(null, this.jid, activeChunk.chunkNumber, this.downloadOriginal)
+                .getData(null, this.jid, activeChunk.chunkNumber, this.dataQuality)
                 .then((chunk) => {
                     frameDataCache[this.jid].activeChunkRequest.completed = true;
                     if (!taskDataCache.nextChunkRequest) {
@@ -409,7 +401,7 @@ class FrameBuffer {
         return this._size - Object.keys(this._buffer).length - requestedFrameCount;
     }
 
-    requestOneChunkFrames(chunkIdx, original) {
+    requestOneChunkFrames(chunkIdx, dataQuality) {
         return new Promise((resolve, reject) => {
             this._requestedChunks[chunkIdx] = {
                 ...this._requestedChunks[chunkIdx],
@@ -427,7 +419,7 @@ class FrameBuffer {
                     stopFrame: frameDataCache[this._jobID].stopFrame,
                     decodeForward: false,
                     deleted: requestedFrame in frameDataCache[this._jobID].meta,
-                    downloadOriginal: original,
+                    dataQuality,
                 });
 
                 frameData
@@ -456,7 +448,7 @@ class FrameBuffer {
         });
     }
 
-    fillBuffer(startFrame, frameStep = 1, count = null, original = false) {
+    fillBuffer(startFrame, frameStep = 1, count = null, dataQuality = false) {
         const freeSize = this.getFreeBufferSize();
         const requestedFrameCount = count ? count * frameStep : freeSize * frameStep;
         const stopFrame = Math.min(startFrame + requestedFrameCount, this._stopFrame + 1);
@@ -498,7 +490,7 @@ class FrameBuffer {
         return new Promise(async (resolve, reject) => {
             for (const chunkIdx of Object.keys(this._requestedChunks)) {
                 try {
-                    const chunkFrames = await this.requestOneChunkFrames(chunkIdx, original);
+                    const chunkFrames = await this.requestOneChunkFrames(chunkIdx, dataQuality);
                     if (chunkIdx in this._requestedChunks) {
                         bufferedFrames = new Set([...bufferedFrames, ...chunkFrames]);
 
@@ -522,11 +514,11 @@ class FrameBuffer {
         });
     }
 
-    async makeFillRequest(start, step, count = null, original = false) {
+    async makeFillRequest(start, step, count = null, dataQuality = false) {
         if (!this._activeFillBufferRequest) {
             this._activeFillBufferRequest = true;
             try {
-                await this.fillBuffer(start, step, count, original);
+                await this.fillBuffer(start, step, count, dataQuality);
                 this._activeFillBufferRequest = false;
             } catch (error) {
                 if (typeof error === 'number' && error in this._requestedChunks) {
@@ -542,7 +534,7 @@ class FrameBuffer {
         jobID: number,
         fillBuffer: boolean,
         frameStep: number,
-        downloadOriginal: boolean,
+        dataQuality: boolean,
     ): FrameData {
         for (const frame in this._buffer) {
             if (+frame < frameNumber || +frame >= frameNumber + this._size * frameStep) {
@@ -560,7 +552,7 @@ class FrameBuffer {
             stopFrame: frameDataCache[jobID].stopFrame,
             decodeForward: !fillBuffer,
             deleted: frameNumber in frameDataCache[jobID].meta.deleted_frames,
-            downloadOriginal,
+            dataQuality,
         });
 
         if (frameNumber in this._buffer) {
@@ -575,7 +567,7 @@ class FrameBuffer {
             ) {
                 const maxFrame = cachedFrames ? Math.max(...cachedFrames) : frameNumber;
                 if (maxFrame < this._stopFrame) {
-                    this.makeFillRequest(maxFrame + 1, frameStep, null, downloadOriginal).catch((e) => {
+                    this.makeFillRequest(maxFrame + 1, frameStep, null, dataQuality).catch((e) => {
                         if (e !== 'not needed') {
                             throw e;
                         }
@@ -584,7 +576,7 @@ class FrameBuffer {
             }
         } else if (fillBuffer) {
             this.clear();
-            await this.makeFillRequest(frameNumber, frameStep, fillBuffer ? null : 1, downloadOriginal);
+            await this.makeFillRequest(frameNumber, frameStep, fillBuffer ? null : 1, dataQuality);
             frame = this._buffer[frameNumber];
         } else {
             this.clear();
@@ -673,7 +665,7 @@ export async function getFrame(
     isPlaying: boolean,
     step: number,
     dimension: DimensionType,
-    downloadOriginal: boolean,
+    dataQuality: boolean,
 ) {
     if (!(jobID in frameDataCache)) {
         const blockType = chunkType === 'video' ? cvatData.BlockType.MP4VIDEO : cvatData.BlockType.ARCHIVE;
@@ -718,7 +710,7 @@ export async function getFrame(
         frameDataCache[jobID].provider.setRenderSize(frameMeta.width, frameMeta.height);
     }
 
-    return frameDataCache[jobID].frameBuffer.require(frame, jobID, isPlaying, step, downloadOriginal);
+    return frameDataCache[jobID].frameBuffer.require(frame, jobID, isPlaying, step, dataQuality);
 }
 
 export async function getDeletedFrames(instanceType, id) {

@@ -13,7 +13,7 @@ import {
     changeCanvasBackgroundColor,
     switchSmoothImage,
     switchShowingDeletedFrames,
-    switchShowOriginalImage,
+    switchDataQuality,
 } from 'actions/settings-actions';
 import { CombinedState, FrameSpeed } from 'reducers';
 
@@ -25,7 +25,7 @@ interface StateToProps {
     smoothImage: boolean;
     canvasBackgroundColor: string;
     showDeletedFrames: boolean;
-    showOriginalImage: boolean;
+    dataQuality: boolean;
 }
 
 interface DispatchToProps {
@@ -36,7 +36,7 @@ interface DispatchToProps {
     onChangeCanvasBackgroundColor(color: string): void;
     onSwitchSmoothImage(enabled: boolean): void;
     onSwitchShowingDeletedFrames(enabled: boolean): void;
-    onSwitchShowOriginalImage(enabled: boolean): void;
+    onSwitchDataQuality(enabled: boolean): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -70,8 +70,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onSwitchShowingDeletedFrames(enabled: boolean): void {
             dispatch(switchShowingDeletedFrames(enabled));
         },
-        onSwitchShowOriginalImage(enabled: boolean): void {
-            dispatch(switchShowOriginalImage(enabled));
+        onSwitchDataQuality(enabled: boolean): void {
+            dispatch(switchDataQuality(enabled));
         },
     };
 }
