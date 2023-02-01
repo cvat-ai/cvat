@@ -573,6 +573,7 @@ export class Task extends Session {
             sorting_method: undefined,
             source_storage: undefined,
             target_storage: undefined,
+            progress: undefined,
         };
 
         const updateTrigger = new FieldUpdateTrigger();
@@ -588,6 +589,21 @@ export class Task extends Session {
 
         data.labels = [];
         data.jobs = [];
+
+        // FIX ME: progress shoud come from server, not from segments
+        const progress = {
+            completedJobs: 0,
+            totalJobs: 0,
+        };
+        if (Array.isArray(initialData.segments)) {
+            for (const segment of initialData.segments) {
+                for (const job of segment.jobs) {
+                    progress.totalJobs += 1;
+                    if (job.stage === 'acceptance') progress.completedJobs += 1;
+                }
+            }
+        }
+        data.progress = progress;
         data.files = Object.freeze({
             server_files: [],
             client_files: [],
@@ -917,6 +933,9 @@ export class Task extends Session {
                             cloudStorageId: data.target_storage?.cloud_storage_id,
                         })
                     ),
+                },
+                progress: {
+                    get: () => data.progress,
                 },
                 _internalData: {
                     get: () => data,

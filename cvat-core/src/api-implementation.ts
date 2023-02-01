@@ -234,9 +234,13 @@ export default function implementAPI(cvat) {
         const tasksData = await serverProxy.tasks.get(searchParams);
         const tasks = await Promise.all(tasksData.map(async (taskItem) => {
             // Temporary workaround for UI
-            const jobs = await serverProxy.jobs.get({
-                filter: JSON.stringify({ and: [{ '==': [{ var: 'task_id' }, taskItem.id] }] }),
-            }, true);
+            // Fixme: too much requests on tasks page
+            let jobs = { results: [] };
+            if ('id' in filter) {
+                jobs = await serverProxy.jobs.get({
+                    filter: JSON.stringify({ and: [{ '==': [{ var: 'task_id' }, taskItem.id] }] }),
+                }, true);
+            }
             return new Task({ ...taskItem, jobs: jobs.results });
         }));
 
