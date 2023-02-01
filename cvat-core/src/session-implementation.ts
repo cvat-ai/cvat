@@ -486,7 +486,11 @@ export function implementTask(Task) {
         }
 
         const task = await serverProxy.tasks.create(taskSpec, taskDataSpec, onUpdate);
-        return new Task(task);
+        // Temporary workaround for UI
+        const jobs = await serverProxy.jobs.get({
+            filter: JSON.stringify({ and: [{ '==': [{ var: 'task_id' }, task.id] }] }),
+        }, true);
+        return new Task({ ...task, jobs: jobs.results });
     };
 
     Task.prototype.delete.implementation = async function () {
