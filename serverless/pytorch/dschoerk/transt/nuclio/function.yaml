@@ -32,7 +32,7 @@ spec:
           value: apt update && apt install -y --no-install-recommends wget git ca-certificates libglib2.0-0 libgl1 && rm -rf /var/lib/apt/lists/* # libxrender1 libxext6
         - kind: RUN
           value: wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh &&
-            chmod +x Miniconda3-latest-Linux-x86_64.sh && ./Miniconda3-latest-Linux-x86_64.sh -b &&
+            chmod +x Miniconda3-latest-Linux-x86_64.sh && bash Miniconda3-latest-Linux-x86_64.sh -b &&
             rm -f Miniconda3-latest-Linux-x86_64.sh
         - kind: WORKDIR
           value: /opt/nuclio
