@@ -215,6 +215,24 @@ class ServerProxy {
         }
 
         async function getJobs(filter = {}) {
+            function make_json_filter(json_expr) {
+                if (!json_expr) {
+                    return (job) => true;
+                }
+
+                // This function only covers test cases. Extend it if needed.
+                function escapeRegExp(string) {
+                    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                }
+                let pattern = JSON.stringify({
+                    and: [{ '==': [{ var: 'task_id' }, '<id>'] }]
+                });
+                pattern = escapeRegExp(pattern).replace('"<id>"', '(\\d+)');
+                const matches = json_expr.match(pattern);
+                const task_id = Number.parseInt(matches[1]);
+                return (job) => job.task_id === task_id;
+            };
+
             const id = filter.id || null;
             const jobs = tasksDummyData.results
                 .reduce((acc, task) => {
@@ -237,10 +255,18 @@ class ServerProxy {
 
                     return acc;
                 }, [])
-                .filter((job) => job.id === id);
+                .filter(make_json_filter(filter.filter || null));
+
+            if (id !== null) {
+                // A specific object is requested
+                return jobs.filter((job) => job.id === id)[0] || null;
+            }
 
             return (
-                jobs[0] || {
+                jobs ? {
+                    results: jobs,
+                    count: jobs.length,
+                } : {
                     detail: 'Not found.',
                 }
             );
@@ -510,6 +536,7 @@ class ServerProxy {
                         save: saveTask,
                         create: createTask,
                         delete: deleteTask,
+                        getPreview: getPreview,
                     }),
                     writable: false,
                 },
@@ -518,6 +545,7 @@ class ServerProxy {
                     value: Object.freeze({
                         get: getJobs,
                         save: saveJob,
+                        getPreview: getPreview,
                     }),
                     writable: false,
                 },

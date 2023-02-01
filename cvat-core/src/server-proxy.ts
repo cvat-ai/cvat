@@ -1322,7 +1322,7 @@ async function getJobs(filter = {}, aggregate = false) {
         throw generateError(errorData);
     }
 
-    return response.data;
+    return response.results;
 }
 
 async function getJobIssues(jobID: number) {
