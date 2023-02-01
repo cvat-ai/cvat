@@ -53,6 +53,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix the type of the credentials parameter of make_client from the Python SDK
 - Reduced number of noisy information on ortho views for 3D canvas (<https://github.com/opencv/cvat/pull/5608>)
 - Clean up disk space after a project is removed (<https://github.com/opencv/cvat/pull/5632>)
+- SiamMask and TransT serverless functions (<https://github.com/opencv/cvat/pull/5658>)
 
 ### Security
 - Fixed vulnerability with social authentication (<https://github.com/opencv/cvat/pull/5521>)
