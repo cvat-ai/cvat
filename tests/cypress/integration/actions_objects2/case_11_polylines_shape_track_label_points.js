@@ -11,7 +11,7 @@ context('Actions on polylines.', () => {
     const newLabelName = `New label for case ${caseId}`;
     const createPolylinesShape = {
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         pointsMap: [
             { x: 200, y: 200 },
             { x: 250, y: 200 },
@@ -20,7 +20,7 @@ context('Actions on polylines.', () => {
     };
     const createPolylinesTrack = {
         type: 'Track',
-        labelName: labelName,
+        labelName,
         pointsMap: [
             { x: 300, y: 200 },
             { x: 350, y: 200 },
@@ -29,7 +29,7 @@ context('Actions on polylines.', () => {
     };
     const createPolylinesShapePoints = {
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         pointsMap: [
             { x: 400, y: 200 },
             { x: 450, y: 200 },
@@ -41,7 +41,7 @@ context('Actions on polylines.', () => {
     };
     const createPolylinesTrackPoints = {
         type: 'Track',
-        labelName: labelName,
+        labelName,
         pointsMap: [
             { x: 500, y: 200 },
             { x: 550, y: 200 },
@@ -95,17 +95,17 @@ context('Actions on polylines.', () => {
         });
 
         it('Change direction.', () => {
-            let firtsPointCoords = {
+            const firtsPointCoords = {
                 x: 0,
                 y: 0,
             };
-            let lastPointCoords = {
+            const lastPointCoords = {
                 x: 0,
                 y: 0,
             };
             cy.get('#cvat_canvas_shape_4')
-                .trigger('mousemove', {scrollBehavior: false})
-                .trigger('mouseover', {scrollBehavior: false})
+                .trigger('mousemove', { scrollBehavior: false })
+                .trigger('mouseover', { scrollBehavior: false })
                 .should('have.class', 'cvat_canvas_shape_activated');
             cy.get('.svg_select_points_point').first().then((firtsPoint) => {
                 firtsPointCoords.x = firtsPoint.attr('cx');
@@ -115,11 +115,11 @@ context('Actions on polylines.', () => {
                     lastPointCoords.y = lastPoint.attr('cy');
                     cy.get('.cvat_canvas_first_poly_point')
                         .should('have.attr', 'cx', firtsPointCoords.x)
-                        .and('have.attr', 'cy', firtsPointCoords.y)
-                    cy.get('.cvat_canvas_poly_direction').click({scrollBehavior: false});
+                        .and('have.attr', 'cy', firtsPointCoords.y);
+                    cy.get('.cvat_canvas_poly_direction').click({ scrollBehavior: false });
                     cy.get('.cvat_canvas_first_poly_point')
                         .should('have.attr', 'cx', lastPointCoords.x)
-                        .and('have.attr', 'cy', lastPointCoords.y)
+                        .and('have.attr', 'cy', lastPointCoords.y);
                 });
             });
         });
