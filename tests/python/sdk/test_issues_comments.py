@@ -123,13 +123,14 @@ class TestIssuesUsecases:
                 message="hello",
             )
         )
+        comments = issue.get_comments()
 
         issue.remove()
 
         with pytest.raises(exceptions.NotFoundException):
             issue.fetch()
         with pytest.raises(exceptions.NotFoundException):
-            self.client.comments.retrieve(issue.get_comments()[0].id)
+            self.client.comments.retrieve(comments[0].id)
         assert self.stdout.getvalue() == ""
 
 

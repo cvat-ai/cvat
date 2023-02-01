@@ -51,7 +51,7 @@ describe('Feature: get a list of jobs', () => {
 
     test('get jobs by an unknown job id', async () => {
         const result = await window.cvat.jobs.get({
-            taskID: 50,
+            jobID: 50,
         });
         expect(Array.isArray(result)).toBeTruthy();
         expect(result).toHaveLength(0);

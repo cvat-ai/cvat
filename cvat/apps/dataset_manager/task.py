@@ -1,11 +1,12 @@
-
 # Copyright (C) 2019-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from collections import OrderedDict
 from enum import Enum
+import os
+from tempfile import TemporaryDirectory
 
 from django.db import transaction
 from django.db.models.query import Prefetch
@@ -567,7 +568,11 @@ class JobAnnotation:
             db_job=self.db_job,
             host=host,
         )
-        exporter(dst_file, job_data, **options)
+
+        temp_dir_base = self.db_job.get_tmp_dirname()
+        os.makedirs(temp_dir_base, exist_ok=True)
+        with TemporaryDirectory(dir=temp_dir_base) as temp_dir:
+            exporter(dst_file, temp_dir, job_data, **options)
 
     def import_annotations(self, src_file, importer, **options):
         job_data = JobData(
@@ -577,7 +582,10 @@ class JobAnnotation:
         )
         self.delete()
 
-        importer(src_file, job_data, **options)
+        temp_dir_base = self.db_job.get_tmp_dirname()
+        os.makedirs(temp_dir_base, exist_ok=True)
+        with TemporaryDirectory(dir=temp_dir_base) as temp_dir:
+            importer(src_file, temp_dir, job_data, **options)
 
         self.create(job_data.data.slice(self.start_frame, self.stop_frame).serialize())
 
@@ -654,7 +662,11 @@ class TaskAnnotation:
             db_task=self.db_task,
             host=host,
         )
-        exporter(dst_file, task_data, **options)
+
+        temp_dir_base = self.db_task.get_tmp_dirname()
+        os.makedirs(temp_dir_base, exist_ok=True)
+        with TemporaryDirectory(dir=temp_dir_base) as temp_dir:
+            exporter(dst_file, temp_dir, task_data, **options)
 
     def import_annotations(self, src_file, importer, **options):
         task_data = TaskData(
@@ -664,7 +676,10 @@ class TaskAnnotation:
         )
         self.delete()
 
-        importer(src_file, task_data, **options)
+        temp_dir_base = self.db_task.get_tmp_dirname()
+        os.makedirs(temp_dir_base, exist_ok=True)
+        with TemporaryDirectory(dir=temp_dir_base) as temp_dir:
+            importer(src_file, temp_dir, task_data, **options)
 
         self.create(task_data.data.serialize())
 
@@ -709,8 +724,7 @@ def delete_job_data(pk):
     annotation = JobAnnotation(pk)
     annotation.delete()
 
-def export_job(job_id, dst_file, format_name,
-        server_url=None, save_images=False):
+def export_job(job_id, dst_file, format_name, server_url=None, save_images=False):
     # For big tasks dump function may run for a long time and
     # we dont need to acquire lock after the task has been initialized from DB.
     # But there is the bug with corrupted dump file in case 2 or
@@ -759,8 +773,7 @@ def delete_task_data(pk):
     annotation = TaskAnnotation(pk)
     annotation.delete()
 
-def export_task(task_id, dst_file, format_name,
-        server_url=None, save_images=False):
+def export_task(task_id, dst_file, format_name, server_url=None, save_images=False):
     # For big tasks dump function may run for a long time and
     # we dont need to acquire lock after the task has been initialized from DB.
     # But there is the bug with corrupted dump file in case 2 or

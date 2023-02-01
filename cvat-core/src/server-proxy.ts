@@ -1232,7 +1232,67 @@ async function createTask(taskSpec, taskDataSpec, onUpdate) {
     return createdTask[0];
 }
 
-async function getJobs(filter = {}) {
+function fetchAll(url, filter = {}): Promise<any> {
+    const pageSize = 500;
+    const result = {
+        count: 0,
+        results: [],
+    };
+    return new Promise((resolve, reject) => {
+        Axios.get(url, {
+            params: {
+                ...filter,
+                page_size: pageSize,
+                page: 1,
+            },
+            proxy: config.proxy,
+        }).then((initialData) => {
+            const { count, results } = initialData.data;
+            result.results = result.results.concat(results);
+            if (count <= pageSize) {
+                resolve(result);
+                return;
+            }
+
+            const pages = Math.ceil(count / pageSize);
+            const promises = Array(pages).fill(0).map((_: number, i: number) => {
+                if (i) {
+                    return Axios.get(url, {
+                        params: {
+                            ...filter,
+                            page_size: pageSize,
+                            page: i + 1,
+                        },
+                        proxy: config.proxy,
+                    });
+                }
+
+                return Promise.resolve(null);
+            });
+
+            Promise.all(promises).then((responses: AxiosResponse<any, any>[]) => {
+                responses.forEach((resp) => {
+                    if (resp) {
+                        result.results = result.results.concat(resp.data.results);
+                    }
+                });
+
+                // removing possible dublicates
+                const obj = result.results.reduce((acc: Record<string, any>, item: any) => {
+                    acc[item.id] = item;
+                    return acc;
+                }, {});
+
+                result.results = Object.values(obj);
+                result.count = result.results.length;
+
+                resolve(result);
+            }).catch((error) => reject(error));
+        }).catch((error) => reject(error));
+    });
+}
+
+async function getJobs(filter = {}, aggregate = false) {
     const { backendAPI } = config;
     const id = filter.id || null;
 
@@ -1243,6 +1303,13 @@ async function getJobs(filter = {}) {
                 proxy: config.proxy,
             });
         } else {
+            if (aggregate) {
+                return await fetchAll(`${backendAPI}/jobs`, {
+                    ...filter,
+                    ...enableOrganization(),
+                });
+            }
+
             response = await Axios.get(`${backendAPI}/jobs`, {
                 proxy: config.proxy,
                 params: {
@@ -1258,69 +1325,42 @@ async function getJobs(filter = {}) {
     return response.data;
 }
 
-function fetchAll(url): Promise<any[]> {
-    const pageSize = 500;
-    let collection = [];
-    return new Promise((resolve, reject) => {
-        Axios.get(url, {
-            params: {
-                page_size: pageSize,
-                page: 1,
-            },
-            proxy: config.proxy,
-        }).then((initialData) => {
-            const { count, results } = initialData.data;
-            collection = collection.concat(results);
-            if (count <= pageSize) {
-                resolve(collection);
-                return;
-            }
-
-            const pages = Math.ceil(count / pageSize);
-            const promises = Array(pages).fill(0).map((_: number, i: number) => {
-                if (i) {
-                    return Axios.get(url, {
-                        params: {
-                            page_size: pageSize,
-                            page: i + 1,
-                        },
-                        proxy: config.proxy,
-                    });
-                }
-
-                return Promise.resolve(null);
-            });
-
-            Promise.all(promises).then((responses: AxiosResponse<any, any>[]) => {
-                responses.forEach((resp) => {
-                    if (resp) {
-                        collection = collection.concat(resp.data.results);
-                    }
-                });
-
-                // removing possible dublicates
-                const obj = collection.reduce((acc: Record<string, any>, item: any) => {
-                    acc[item.id] = item;
-                    return acc;
-                }, {});
-
-                resolve(Object.values(obj));
-            }).catch((error) => reject(error));
-        }).catch((error) => reject(error));
-    });
-}
-
-async function getJobIssues(jobID) {
+async function getJobIssues(jobID: number) {
     const { backendAPI } = config;
 
     let response = null;
     try {
-        response = await fetchAll(`${backendAPI}/jobs/${jobID}/issues`);
+        const organization = enableOrganization();
+        response = await fetchAll(`${backendAPI}/issues`, {
+            job_id: jobID,
+            ...organization,
+        });
+
+        const commentsResponse = await fetchAll(`${backendAPI}/comments`, {
+            job_id: jobID,
+            ...organization,
+        });
+
+        const issuesById = response.results.reduce((acc, val: { id: number }) => {
+            acc[val.id] = val;
+            return acc;
+        }, {});
+
+        const commentsByIssue = commentsResponse.results.reduce((acc, val) => {
+            acc[val.issue] = acc[val.issue] || [];
+            acc[val.issue].push(val);
+            return acc;
+        }, {});
+
+        for (const issue of Object.keys(commentsByIssue)) {
+            commentsByIssue[issue].sort((a, b) => a.id - b.id);
+            issuesById[issue].comments = commentsByIssue[issue];
+        }
     } catch (errorData) {
         throw generateError(errorData);
     }
 
-    return response;
+    return response.results;
 }
 
 async function createComment(data) {
@@ -1346,12 +1386,21 @@ async function createIssue(data) {
 
     let response = null;
     try {
+        const organization = enableOrganization();
         response = await Axios.post(`${backendAPI}/issues`, JSON.stringify(data), {
             proxy: config.proxy,
+            params: { ...organization },
             headers: {
                 'Content-Type': 'application/json',
             },
         });
+
+        const commentsResponse = await fetchAll(`${backendAPI}/comments`, {
+            issue_id: response.data.id,
+            ...organization,
+        });
+
+        response.data.comments = commentsResponse.results;
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -1423,22 +1472,24 @@ async function getUsers(filter = { page_size: 'all' }) {
     return response.data.results;
 }
 
-async function getPreview(tid, jid) {
-    const { backendAPI } = config;
+function getPreview(instance) {
+    return async function (id: number) {
+        const { backendAPI } = config;
 
-    let response = null;
-    try {
-        const url = `${backendAPI}/${jid !== null ? 'jobs' : 'tasks'}/${jid || tid}/preview`;
-        response = await Axios.get(url, {
-            proxy: config.proxy,
-            responseType: 'blob',
-        });
-    } catch (errorData) {
-        const code = errorData.response ? errorData.response.status : errorData.code;
-        throw new ServerError(`Could not get preview frame for the task ${tid} from the server`, code);
-    }
+        let response = null;
+        try {
+            const url = `${backendAPI}/${instance}/${id}/preview`;
+            response = await Axios.get(url, {
+                proxy: config.proxy,
+                responseType: 'blob',
+            });
+        } catch (errorData) {
+            const code = errorData.response ? errorData.response.status : errorData.code;
+            throw new ServerError(`Could not get preview for "${instance}/${id}"`, code);
+        }
 
-    return response.data;
+        return response.data;
+    };
 }
 
 async function getImageContext(jid, frame) {
@@ -1550,8 +1601,72 @@ async function getAnnotations(session, id) {
     } catch (errorData) {
         throw generateError(errorData);
     }
+    return response.data;
+}
+
+async function getFunctions() {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.get(`${backendAPI}/functions`, {
+            proxy: config.proxy,
+        });
+        return response.data.results;
+    } catch (errorData) {
+        if (errorData.response.status === 404) {
+            return [];
+        }
+        throw generateError(errorData);
+    }
+}
+
+async function getFunctionPreview(modelID) {
+    const { backendAPI } = config;
+
+    let response = null;
+    try {
+        const url = `${backendAPI}/functions/${modelID}/preview`;
+        response = await Axios.get(url, {
+            proxy: config.proxy,
+            responseType: 'blob',
+        });
+    } catch (errorData) {
+        const code = errorData.response ? errorData.response.status : errorData.code;
+        throw new ServerError(`Could not get preview for the model ${modelID} from the server`, code);
+    }
 
     return response.data;
+}
+
+async function getFunctionProviders() {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.get(`${backendAPI}/functions/info`, {
+            proxy: config.proxy,
+        });
+        return response.data;
+    } catch (errorData) {
+        if (errorData.response.status === 404) {
+            return [];
+        }
+        throw generateError(errorData);
+    }
+}
+
+async function deleteFunction(functionId: number) {
+    const { backendAPI } = config;
+
+    try {
+        await Axios.delete(`${backendAPI}/functions/${functionId}`, {
+            proxy: config.proxy,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
 }
 
 // Session is 'task' or 'job'
@@ -1580,8 +1695,24 @@ async function updateAnnotations(session, id, data, action) {
     } catch (errorData) {
         throw generateError(errorData);
     }
-
     return response.data;
+}
+
+async function runFunctionRequest(body) {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.post(`${backendAPI}/functions/requests/`, JSON.stringify(body), {
+            proxy: config.proxy,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
 }
 
 // Session is 'task' or 'job'
@@ -1604,7 +1735,6 @@ async function uploadAnnotations(
     };
 
     const url = `${backendAPI}/${session}s/${id}/annotations`;
-
     async function wait() {
         return new Promise<void>((resolve, reject) => {
             async function requestStatus() {
@@ -1666,9 +1796,21 @@ async function uploadAnnotations(
             throw generateError(errorData);
         }
     }
-
     try {
         return await wait();
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function getFunctionRequestStatus(requestID) {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.get(`${backendAPI}/functions/requests/${requestID}`, {
+            proxy: config.proxy,
+        });
+        return response.data;
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -1703,9 +1845,38 @@ async function dumpAnnotations(id, name, format) {
                     reject(generateError(errorData));
                 });
         }
-
         setTimeout(request);
     });
+}
+
+async function cancelFunctionRequest(requestId) {
+    const { backendAPI } = config;
+
+    try {
+        await Axios.delete(`${backendAPI}/functions/requests/${requestId}`, {
+            method: 'DELETE',
+        });
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function createFunction(functionData: any) {
+    const params = enableOrganization();
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.post(`${backendAPI}/functions`, JSON.stringify(functionData), {
+            proxy: config.proxy,
+            params,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
 }
 
 async function saveLogs(logs) {
@@ -1723,6 +1894,40 @@ async function saveLogs(logs) {
     }
 }
 
+async function callFunction(funId, body) {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.post(`${backendAPI}/functions/${funId}/run`, JSON.stringify(body), {
+            proxy: config.proxy,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function getFunctionsRequests() {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.get(`${backendAPI}/functions/requests/`, {
+            proxy: config.proxy,
+        });
+
+        return response.data;
+    } catch (errorData) {
+        if (errorData.response.status === 404) {
+            return [];
+        }
+        throw generateError(errorData);
+    }
+}
+
 async function getLambdaFunctions() {
     const { backendAPI } = config;
 
@@ -1732,6 +1937,9 @@ async function getLambdaFunctions() {
         });
         return response.data;
     } catch (errorData) {
+        if (errorData.response.status === 503) {
+            return [];
+        }
         throw generateError(errorData);
     }
 }
@@ -1982,30 +2190,6 @@ async function getCloudStorageContent(id, manifestPath) {
     return response.data;
 }
 
-async function getCloudStoragePreview(id) {
-    const { backendAPI } = config;
-
-    let response = null;
-    try {
-        const url = `${backendAPI}/cloudstorages/${id}/preview`;
-        response = await workerAxios.get(url, {
-            params: enableOrganization(),
-            proxy: config.proxy,
-            responseType: 'arraybuffer',
-        });
-    } catch (errorData) {
-        throw generateError({
-            message: '',
-            response: {
-                ...errorData.response,
-                data: String.fromCharCode.apply(null, new Uint8Array(errorData.response.data)),
-            },
-        });
-    }
-
-    return new Blob([new Uint8Array(response)]);
-}
-
 async function getCloudStorageStatus(id) {
     const { backendAPI } = config;
 
@@ -2039,12 +2223,12 @@ async function getOrganizations() {
 
     let response = null;
     try {
-        response = await fetchAll(`${backendAPI}/organizations?page_size`);
+        response = await fetchAll(`${backendAPI}/organizations`);
     } catch (errorData) {
         throw generateError(errorData);
     }
 
-    return response;
+    return response.results;
 }
 
 async function createOrganization(data) {
@@ -2373,6 +2557,7 @@ export default Object.freeze({
         create: createProject,
         delete: deleteProject,
         exportDataset: exportDataset('projects'),
+        getPreview: getPreview('projects'),
         backup: backupProject,
         restore: restoreProject,
         importDataset,
@@ -2384,12 +2569,14 @@ export default Object.freeze({
         create: createTask,
         delete: deleteTask,
         exportDataset: exportDataset('tasks'),
+        getPreview: getPreview('tasks'),
         backup: backupTask,
         restore: restoreTask,
     }),
 
     jobs: Object.freeze({
         get: getJobs,
+        getPreview: getPreview('jobs'),
         save: saveJob,
         exportDataset: exportDataset('jobs'),
     }),
@@ -2427,6 +2614,19 @@ export default Object.freeze({
         cancel: cancelLambdaRequest,
     }),
 
+    functions: Object.freeze({
+        list: getFunctions,
+        status: getFunctionRequestStatus,
+        requests: getFunctionsRequests,
+        run: runFunctionRequest,
+        call: callFunction,
+        create: createFunction,
+        providers: getFunctionProviders,
+        delete: deleteFunction,
+        cancel: cancelFunctionRequest,
+        getPreview: getFunctionPreview,
+    }),
+
     issues: Object.freeze({
         create: createIssue,
         update: updateIssue,
@@ -2446,7 +2646,7 @@ export default Object.freeze({
     cloudStorages: Object.freeze({
         get: getCloudStorages,
         getContent: getCloudStorageContent,
-        getPreview: getCloudStoragePreview,
+        getPreview: getPreview('cloudstorages'),
         getStatus: getCloudStorageStatus,
         create: createCloudStorage,
         delete: deleteCloudStorage,

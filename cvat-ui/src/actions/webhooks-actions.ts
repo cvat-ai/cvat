@@ -1,11 +1,12 @@
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { getCore, Webhook } from 'cvat-core-wrapper';
 import { Dispatch, ActionCreator, Store } from 'redux';
-import { Indexable, WebhooksQuery } from 'reducers';
+import { WebhooksQuery } from 'reducers';
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
+import { filterNull } from 'utils/filter-null';
 
 const cvat = getCore();
 
@@ -47,13 +48,7 @@ export const getWebhooksAsync = (query: WebhooksQuery): ThunkAction => (
     async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         dispatch(webhooksActions.getWebhooks(query));
 
-        // We remove all keys with null values from the query
-        const filteredQuery = { ...query };
-        for (const key of Object.keys(query)) {
-            if ((filteredQuery as Indexable)[key] === null) {
-                delete (filteredQuery as Indexable)[key];
-            }
-        }
+        const filteredQuery = filterNull(query);
 
         let result = null;
         try {

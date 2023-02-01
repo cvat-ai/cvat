@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -20,7 +20,6 @@ import {
 
 import User from './user';
 import { AnnotationFormats } from './annotation-formats';
-import { ArgumentError } from './exceptions';
 import { Task, Job } from './session';
 import Project from './project';
 import CloudStorage from './cloud-storage';
@@ -37,6 +36,7 @@ export default function implementAPI(cvat) {
     cvat.lambda.cancel.implementation = lambdaManager.cancel.bind(lambdaManager);
     cvat.lambda.listen.implementation = lambdaManager.listen.bind(lambdaManager);
     cvat.lambda.requests.implementation = lambdaManager.requests.bind(lambdaManager);
+    cvat.lambda.providers.implementation = lambdaManager.providers.bind(lambdaManager);
 
     cvat.server.about.implementation = async () => {
         const result = await serverProxy.server.about();
@@ -166,8 +166,8 @@ export default function implementAPI(cvat) {
         return users;
     };
 
-    cvat.jobs.get.implementation = async (filter) => {
-        checkFilter(filter, {
+    cvat.jobs.get.implementation = async (query) => {
+        checkFilter(query, {
             page: isInteger,
             filter: isString,
             sort: isString,
@@ -176,30 +176,24 @@ export default function implementAPI(cvat) {
             jobID: isInteger,
         });
 
-        if ('taskID' in filter && 'jobID' in filter) {
-            throw new ArgumentError('Filter fields "taskID" and "jobID" are not permitted to be used at the same time');
-        }
-
-        if ('taskID' in filter) {
-            const [task] = await serverProxy.tasks.get({ id: filter.taskID });
-            if (task) {
-                return new Task(task).jobs;
+        checkExclusiveFields(query, ['jobID', 'taskID', 'filter', 'search'], ['page', 'sort']);
+        if ('jobID' in query) {
+            const job = await serverProxy.jobs.get({ id: query.jobID });
+            if (job) {
+                return [new Job(job)];
             }
 
             return [];
         }
 
-        if ('jobID' in filter) {
-            const job = await serverProxy.jobs.get({ id: filter.jobID });
-            if (job) {
-                return [new Job(job)];
-            }
+        if ('taskID' in query) {
+            query.filter = JSON.stringify({ and: [{ '==': [{ var: 'task_id' }, query.taskID] }] });
         }
 
         const searchParams = {};
-        for (const key of Object.keys(filter)) {
+        for (const key of Object.keys(query)) {
             if (['page', 'sort', 'search', 'filter'].includes(key)) {
-                searchParams[key] = filter[key];
+                searchParams[key] = query[key];
             }
         }
 
@@ -228,8 +222,7 @@ export default function implementAPI(cvat) {
             }
         }
 
-        let tasksData = null;
-        if (filter.projectId) {
+        if ('projectId' in filter) {
             if (searchParams.filter) {
                 const parsed = JSON.parse(searchParams.filter);
                 searchParams.filter = JSON.stringify({ and: [parsed, { '==': [{ var: 'project_id' }, filter.projectId] }] });
@@ -238,8 +231,19 @@ export default function implementAPI(cvat) {
             }
         }
 
-        tasksData = await serverProxy.tasks.get(searchParams);
-        const tasks = tasksData.map((task) => new Task(task));
+        const tasksData = await serverProxy.tasks.get(searchParams);
+        const tasks = await Promise.all(tasksData.map(async (taskItem) => {
+            // Temporary workaround for UI
+            // Fixme: too much requests on tasks page
+            let jobs = { results: [] };
+            if ('id' in filter) {
+                jobs = await serverProxy.jobs.get({
+                    filter: JSON.stringify({ and: [{ '==': [{ var: 'task_id' }, taskItem.id] }] }),
+                }, true);
+            }
+            return new Task({ ...taskItem, jobs: jobs.results });
+        }));
+
         tasks.count = tasksData.count;
         return tasks;
     };
@@ -262,11 +266,7 @@ export default function implementAPI(cvat) {
         }
 
         const projectsData = await serverProxy.projects.get(searchParams);
-        const projects = projectsData.map((project) => {
-            project.task_ids = project.tasks;
-            return project;
-        }).map((project) => new Project(project));
-
+        const projects = projectsData.map((project) => new Project(project));
         projects.count = projectsData.count;
 
         return projects;

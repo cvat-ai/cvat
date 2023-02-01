@@ -40,7 +40,7 @@ context('Rotate all images feature.', () => {
             imageRotate('anticlockwise', 270);
         });
 
-        it('Go to the next frame. It wasn\'t rotated.', () => {
+        it("Go to the next frame. It wasn't rotated.", () => {
             cy.get('.cvat-player-next-button').click();
             checkFrameNum(1);
             checkDegRotate(0);

@@ -20,7 +20,42 @@ from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credenti
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.utils import parse_specific_attributes
 
-from drf_spectacular.utils import OpenApiExample, extend_schema_serializer
+from drf_spectacular.utils import OpenApiExample, extend_schema_field, extend_schema_serializer
+
+from cvat.apps.engine.view_utils import build_field_filter_params, get_list_view_name, reverse
+
+@extend_schema_field(serializers.URLField)
+class HyperlinkedModelViewSerializer(serializers.Serializer):
+    key_field = 'pk'
+
+    def __init__(self, view_name=None, *, filter_key=None, **kwargs):
+        if issubclass(view_name, models.models.Model):
+            view_name = get_list_view_name(view_name)
+        else:
+            assert isinstance(view_name, str)
+
+        kwargs['read_only'] = True
+        super().__init__(**kwargs)
+
+        self.view_name = view_name
+        self.filter_key = filter_key
+
+    def get_attribute(self, instance):
+        return instance
+
+    def to_representation(self, instance):
+        request = self.context.get('request')
+        if not request:
+            return None
+
+        return serializers.Hyperlink(
+            reverse(self.view_name, request=request,
+                query_params=build_field_filter_params(
+                    self.filter_key, getattr(instance, self.key_field)
+            )),
+            instance
+        )
+
 
 class BasicUserSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
@@ -192,13 +227,14 @@ class JobReadSerializer(serializers.ModelSerializer):
     mode = serializers.ReadOnlyField(source='segment.task.mode')
     bug_tracker = serializers.CharField(max_length=2000, source='get_bug_tracker',
         allow_null=True, read_only=True)
+    issues = HyperlinkedModelViewSerializer(models.Issue, filter_key='job_id')
 
     class Meta:
         model = models.Job
         fields = ('url', 'id', 'task_id', 'project_id', 'assignee',
             'dimension', 'bug_tracker', 'status', 'stage', 'state', 'mode',
             'start_frame', 'stop_frame', 'data_chunk_size', 'data_compressed_chunk_type',
-            'updated_date',)
+            'updated_date', 'issues')
         read_only_fields = fields
 
 class JobWriteSerializer(serializers.ModelSerializer):
@@ -523,6 +559,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
     dimension = serializers.CharField(allow_blank=True, required=False)
     target_storage = StorageSerializer(required=False, allow_null=True)
     source_storage = StorageSerializer(required=False, allow_null=True)
+    jobs = HyperlinkedModelViewSerializer(models.Job, filter_key='task_id')
 
     class Meta:
         model = models.Task
@@ -530,7 +567,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
             'bug_tracker', 'created_date', 'updated_date', 'overlap', 'segment_size',
             'status', 'data_chunk_size', 'data_compressed_chunk_type',
             'data_original_chunk_type', 'size', 'image_quality', 'data', 'dimension',
-            'subset', 'organization', 'target_storage', 'source_storage',
+            'subset', 'organization', 'target_storage', 'source_storage', 'jobs',
         )
         read_only_fields = fields
         extra_kwargs = {
@@ -757,12 +794,6 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         return attrs
 
 
-class ProjectSearchSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.Project
-        fields = ('id', 'name')
-        read_only_fields = ('name',)
-
 class ProjectReadSerializer(serializers.ModelSerializer):
     owner = BasicUserSerializer(required=False, read_only=True)
     assignee = BasicUserSerializer(allow_null=True, required=False, read_only=True)
@@ -770,6 +801,7 @@ class ProjectReadSerializer(serializers.ModelSerializer):
     dimension = serializers.CharField(max_length=16, required=False, read_only=True, allow_null=True)
     target_storage = StorageSerializer(required=False, allow_null=True, read_only=True)
     source_storage = StorageSerializer(required=False, allow_null=True, read_only=True)
+    tasks = HyperlinkedModelViewSerializer(models.Task, filter_key='project_id')
 
     class Meta:
         model = models.Project
@@ -918,6 +950,13 @@ class FrameMetaSerializer(serializers.Serializer):
     height = serializers.IntegerField()
     name = serializers.CharField(max_length=1024)
     related_files = serializers.IntegerField()
+
+    # for compatibility with version 2.3.0
+    has_related_context = serializers.SerializerMethodField()
+
+    @extend_schema_field(serializers.BooleanField)
+    def get_has_related_context(self, obj: dict) -> bool:
+        return obj['related_files'] != 0
 
 class PluginsSerializer(serializers.Serializer):
     GIT_INTEGRATION = serializers.BooleanField()
@@ -1093,6 +1132,7 @@ class IssueReadSerializer(serializers.ModelSerializer):
     position = serializers.ListField(
         child=serializers.FloatField(), allow_empty=False
     )
+    comments = HyperlinkedModelViewSerializer(models.Comment, filter_key='issue_id')
 
     class Meta:
         model = models.Issue

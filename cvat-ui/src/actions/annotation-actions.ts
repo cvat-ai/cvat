@@ -12,7 +12,7 @@ import { CanvasMode as Canvas3DMode } from 'cvat-canvas3d-wrapper';
 import {
     RectDrawingMethod, CuboidDrawingMethod, Canvas, CanvasMode as Canvas2DMode,
 } from 'cvat-canvas-wrapper';
-import { getCore } from 'cvat-core-wrapper';
+import { getCore, MLModel } from 'cvat-core-wrapper';
 import logger, { LogType } from 'cvat-logger';
 import { getCVATStore } from 'cvat-store';
 
@@ -22,7 +22,6 @@ import {
     ContextMenuType,
     DimensionType,
     FrameSpeed,
-    Model,
     ObjectType,
     OpenCVTool,
     Rotation,
@@ -1507,7 +1506,7 @@ export function pasteShapeAsync(): ThunkAction {
     };
 }
 
-export function interactWithCanvas(activeInteractor: Model | OpenCVTool, activeLabelID: number): AnyAction {
+export function interactWithCanvas(activeInteractor: MLModel | OpenCVTool, activeLabelID: number): AnyAction {
     return {
         type: AnnotationActionTypes.INTERACT_WITH_CANVAS,
         payload: {
