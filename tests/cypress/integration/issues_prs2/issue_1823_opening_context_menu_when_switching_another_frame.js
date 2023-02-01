@@ -43,7 +43,7 @@ context('Cannot read property label of undefined', { browser: ['!chrome', '!fire
     const createRectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         firstX: 250,
         firstY: 350,
         secondX: 350,

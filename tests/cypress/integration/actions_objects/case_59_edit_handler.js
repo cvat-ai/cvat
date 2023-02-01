@@ -11,7 +11,7 @@ context('Edit handler.', () => {
     const createPolygonShape = {
         redraw: false,
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         pointsMap: [
             { x: 450, y: 350 },
             { x: 550, y: 350 },
@@ -22,7 +22,7 @@ context('Edit handler.', () => {
     };
     const createPolylinesShape = {
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         pointsMap: [
             { x: 700, y: 350 },
             { x: 800, y: 350 },
@@ -33,7 +33,7 @@ context('Edit handler.', () => {
     };
     const createPointsShape = {
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         pointsMap: [{ x: 200, y: 400 }],
         complete: true,
         numberOfPoints: null,
@@ -64,14 +64,12 @@ context('Edit handler.', () => {
             cy.get('#cvat_canvas_shape_1')
                 .should('have.class', 'cvat_canvas_shape_activated')
                 .invoke('attr', 'points')
-                .then(($points) => {
-                    const pointsCountBefore = $points.split(' ').filter(function (el) {
-                        return el.length != 0;
-                    }).length;
+                .then(($pointsBefore) => {
+                    const pointsCountBefore = $pointsBefore.split(' ').filter((el) => el.length !== 0).length;
                     cy.get('.cvat-canvas-container')
                         .click(550, 350, { shiftKey: true })
                         .then(() => {
-                            //Click on the second polygon points to start of change
+                            // Click on the second polygon points to start of change
                             cy.get('.cvat_canvas_shape_drawing')
                                 .should('exist')
                                 .and('have.attr', 'data-origin-client-id', '1');
@@ -80,10 +78,8 @@ context('Edit handler.', () => {
                     cy.get('.cvat_canvas_shape_drawing').should('not.exist');
                     cy.get('#cvat_canvas_shape_1')
                         .invoke('attr', 'points')
-                        .then(($points) => {
-                            const pointsCountAfter = $points.split(' ').filter(function (el) {
-                                return el.length != 0;
-                            }).length;
+                        .then(($pointsAfter) => {
+                            const pointsCountAfter = $pointsAfter.split(' ').filter((el) => el.length !== 0).length;
                             expect(pointsCountBefore).not.equal(pointsCountAfter); // expected 3 to not equal 4
                         });
                     // Splitting polygon
@@ -116,10 +112,8 @@ context('Edit handler.', () => {
                         .dblclick(530, 400);
                     cy.get('#cvat_canvas_shape_1')
                         .invoke('attr', 'points')
-                        .then(($points) => {
-                            const pointsCountAfterSplitting = $points.split(' ').filter(function (el) {
-                                return el.length != 0;
-                            }).length;
+                        .then(($pointsAfterSplitting) => {
+                            const pointsCountAfterSplitting = $pointsAfterSplitting.split(' ').filter((el) => el.length !== 0).length;
                             expect(pointsCountAfterSplitting).to.be.equal(5); // expected 3 to equal 3
                         });
                 });
@@ -152,7 +146,8 @@ context('Edit handler.', () => {
                     cy.get('#cvat_canvas_shape_2')
                         .invoke('attr', 'points')
                         .then(($pointsCordsAfter) => {
-                            // expected '10071.4287109375,9788.5712890625 ...' to not equal '10166.6669921875,9883.8095703125 ...'
+                            // expected '10071.4287109375,9788.5712890625 ...'
+                            // to not equal '10166.6669921875,9883.8095703125 ...'
                             expect($pointsCordsBefore).to.not.equal($pointsCordsAfter);
                         });
                 });
@@ -207,9 +202,7 @@ context('Edit handler.', () => {
                 .invoke('attr', 'points')
                 .then(($points) => {
                     expect(
-                        $points.split(' ').filter(function (el) {
-                            return el.length != 0;
-                        }).length,
+                        $points.split(' ').filter((el) => el.length !== 0).length,
                     ).to.be.equal(11);
                 });
             testActivatingShape(750, 500, '#cvat_canvas_shape_2');

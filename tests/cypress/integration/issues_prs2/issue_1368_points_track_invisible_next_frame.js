@@ -10,7 +10,7 @@ context('Points track it is still invisible on next frames', () => {
     const issueId = '1368';
     const createPointsTrack = {
         type: 'Track',
-        labelName: labelName,
+        labelName,
         pointsMap: [{ x: 300, y: 410 }],
         complete: true,
         numberOfPoints: null,
