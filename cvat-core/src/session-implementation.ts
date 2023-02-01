@@ -419,8 +419,12 @@ export function implementTask(Task) {
             }
 
             const data = await serverProxy.tasks.save(this.id, taskData);
+            // Temporary workaround for UI
+            const jobs = await serverProxy.jobs.get({
+                filter: JSON.stringify({ and: [{ '==': [{ var: 'task_id' }, data.id] }] }),
+            }, true);
             this._updateTrigger.reset();
-            return new Task(data);
+            return new Task({ ...data, jobs: jobs.results });
         }
 
         const taskSpec: any = {
