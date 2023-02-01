@@ -24,6 +24,7 @@ from drf_spectacular.utils import OpenApiExample, extend_schema_field, extend_sc
 
 from cvat.apps.engine.view_utils import build_field_filter_params, get_list_view_name, reverse
 
+@extend_schema_field(serializers.URLField)
 class HyperlinkedModelViewSerializer(serializers.Serializer):
     key_field = 'pk'
 
