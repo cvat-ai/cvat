@@ -34,7 +34,7 @@ context('Canvas brightness/contrast/saturation feature', () => {
 
     describe(`Testing case "${caseId}"`, () => {
         it('Check apply of settings', () => {
-            let stringAction = generateString(countActionMoveSlider, 'rightarrow');
+            const stringAction = generateString(countActionMoveSlider, 'rightarrow');
             cy.get('.cvat-canvas-image-setups-content').within(() => {
                 cy.wrap(classNameSliders).each(($el) => {
                     cy.wrap($el)

@@ -13,7 +13,7 @@ context('Save filtered object in AAM.', () => {
     const createCuboidShape2Points = {
         points: 'From rectangle',
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         firstX: 250,
         firstY: 350,
         secondX: 350,
@@ -51,7 +51,7 @@ context('Save filtered object in AAM.', () => {
             });
         });
 
-        it(`Go to AAM and change a label for the shape. Save the changes. UI is not failed.`, () => {
+        it('Go to AAM and change a label for the shape. Save the changes. UI is not failed.', () => {
             cy.changeWorkspace('Attribute annotation');
             cy.changeLabelAAM(secondLabel);
             cy.saveJob();

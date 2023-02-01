@@ -12,6 +12,10 @@
     position: fixed;
     height: 100%;
     width: 100%;
+
+    >div:nth-child(2) {
+        height: 80%;
+    }
 }
 
 .cvat-empty-models-list {
@@ -22,7 +26,6 @@
 }
 
 .cvat-models-list {
-    height: 100%;
     display: flex;
     flex-wrap: wrap;
 }

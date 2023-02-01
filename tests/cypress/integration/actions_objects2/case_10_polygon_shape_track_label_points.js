@@ -12,7 +12,7 @@ context('Actions on polygon.', () => {
     const createPolygonShape = {
         reDraw: false,
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         pointsMap: [
             { x: 200, y: 200 },
             { x: 250, y: 200 },
@@ -22,7 +22,7 @@ context('Actions on polygon.', () => {
     const createPolygonTrack = {
         reDraw: false,
         type: 'Track',
-        labelName: labelName,
+        labelName,
         pointsMap: [
             { x: 300, y: 200 },
             { x: 350, y: 200 },
@@ -32,7 +32,7 @@ context('Actions on polygon.', () => {
     const createPolygonShapePoints = {
         reDraw: false,
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         pointsMap: [
             { x: 400, y: 200 },
             { x: 450, y: 200 },
@@ -45,7 +45,7 @@ context('Actions on polygon.', () => {
     const createPolygonTrackPoints = {
         reDraw: false,
         type: 'Track',
-        labelName: labelName,
+        labelName,
         pointsMap: [
             { x: 500, y: 200 },
             { x: 550, y: 200 },
@@ -101,23 +101,23 @@ context('Actions on polygon.', () => {
         });
 
         it('Set start point.', () => {
-            let notFirtsPointCoords = {
+            const notFirtsPointCoords = {
                 x: 0,
                 y: 0,
             };
-            let firtsPointCoords = {
+            const firtsPointCoords = {
                 x: 0,
                 y: 0,
             };
             cy.get('#cvat_canvas_shape_4')
-                .trigger('mousemove', {scrollBehavior: false})
-                .trigger('mouseover', {scrollBehavior: false})
+                .trigger('mousemove', { scrollBehavior: false })
+                .trigger('mouseover', { scrollBehavior: false })
                 .should('have.class', 'cvat_canvas_shape_activated');
             cy.get('.svg_select_points').not('.cvat_canvas_first_poly_point').first().then((notFirtsPoint) => {
                 notFirtsPointCoords.x = notFirtsPoint.attr('cx');
                 notFirtsPointCoords.y = notFirtsPoint.attr('cy');
-            }).rightclick({scrollBehavior: false});
-            cy.get('.cvat-canvas-point-context-menu').contains('span', 'Set start point').click({scrollBehavior: false});
+            }).rightclick({ scrollBehavior: false });
+            cy.get('.cvat-canvas-point-context-menu').contains('span', 'Set start point').click({ scrollBehavior: false });
             cy.get('.cvat_canvas_first_poly_point').then((firtsPoint) => {
                 firtsPointCoords.x = firtsPoint.attr('cx');
                 firtsPointCoords.y = firtsPoint.attr('cy');
@@ -128,12 +128,12 @@ context('Actions on polygon.', () => {
         it('Change direction.', () => {
             let polyDirectionAttrDataAngle;
             cy.get('#cvat_canvas_shape_4')
-                .trigger('mousemove', {scrollBehavior: false})
-                .trigger('mouseover', {scrollBehavior: false})
+                .trigger('mousemove', { scrollBehavior: false })
+                .trigger('mouseover', { scrollBehavior: false })
                 .should('have.class', 'cvat_canvas_shape_activated');
             cy.get('.cvat_canvas_poly_direction').then((polyDirection) => {
                 polyDirectionAttrDataAngle = polyDirection.attr('data-angle');
-            }).click({scrollBehavior: false})
+            }).click({ scrollBehavior: false });
             cy.get('.cvat_canvas_poly_direction').then((afterChangePolyDirection) => {
                 expect(polyDirectionAttrDataAngle).not.equal(afterChangePolyDirection.attr('data-angle'));
             });
