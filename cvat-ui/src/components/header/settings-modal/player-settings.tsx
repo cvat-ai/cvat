@@ -18,6 +18,7 @@ import { clamp } from 'utils/math';
 import { BackJumpIcon, ForwardJumpIcon } from 'icons';
 import { FrameSpeed } from 'reducers';
 import config from 'config';
+import ChunkDataQualityCheckbox from './data-quality-checkbox';
 
 interface Props {
     frameStep: number;
@@ -228,7 +229,7 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                 <Col span={7}>
                     <Row className='cvat-player-settings-data-quality'>
                         <Col span={24} className='cvat-player-settings-data-quality-checkbox'>
-                            <Checkbox
+                            <ChunkDataQualityCheckbox
                                 className='cvat-text-color'
                                 checked={dataQuality}
                                 onChange={(event: CheckboxChangeEvent): void => {
@@ -236,7 +237,7 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                                 }}
                             >
                                 Prefer original data quality
-                            </Checkbox>
+                            </ChunkDataQualityCheckbox>
                         </Col>
                         <Col span={24}>
                             <Text type='secondary'> Downloads the original images instead of the compressed if possible </Text>

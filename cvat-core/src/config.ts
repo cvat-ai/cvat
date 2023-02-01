@@ -10,6 +10,7 @@ const config = {
     origin: '',
     uploadChunkSize: 100,
     removeUnderlyingMaskPixels: false,
+    chunkDataQuality: 'compressed',
 };
 
 export default config;

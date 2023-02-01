@@ -1463,7 +1463,10 @@ async function getImageContext(jid, frame) {
 }
 
 async function getData(tid, jid, chunk, dataQuality): Promise<ArrayBuffer> {
-    const { backendAPI, proxy } = config;
+    const { backendAPI, proxy, chunkDataQuality } = config;
+
+    console.log(`chunkDataQuality: ${chunkDataQuality}`);
+    console.log(`dataQuality: ${dataQuality}`);
 
     const url = jid === null ? `tasks/${tid}/data` : `jobs/${jid}/data`;
     let response = null;
@@ -1471,7 +1474,8 @@ async function getData(tid, jid, chunk, dataQuality): Promise<ArrayBuffer> {
         response = await workerAxios.get(`${backendAPI}/${url}`, {
             params: {
                 ...enableOrganization(),
-                quality: dataQuality ? 'original' : 'compressed',
+                // quality: dataQuality ? 'original' : 'compressed',
+                quality: chunkDataQuality,
                 type: 'chunk',
                 number: chunk,
             },
