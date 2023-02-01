@@ -6,6 +6,7 @@ import os
 import csv
 from datetime import datetime, timedelta
 from dateutil import parser
+import uuid
 
 import django_rq
 from django.conf import settings
@@ -96,19 +97,19 @@ def export(request, queue_name, logger):
         query_params["job"], query_params["user"])):
         raise serializers.ValidationError("One of 'organization', 'project', 'task', 'job', 'user' parameter must be specified")
 
-
     if action not in (None, 'download'):
         raise serializers.ValidationError(
             "Unexpected action specified for the request")
 
+    query_id = request.query_params.get('query-id', None) or uuid.uuid4()
+    rq_id = f"export:csv-logs-{query_id}-by-{request.user}"
+    response_data = {
+        'query-id': query_id,
+    }
+
     queue = django_rq.get_queue(queue_name)
-    log_id = (
-        f"org.id{query_params['organization']}-project.id{query_params['project']}"
-        f"-task.id{query_params['task']}-job.id{query_params['job']}-user.id{query_params['user']}"
-        f"-from{query_params['from']}-to{query_params['to']}"
-    )
-    rq_id = f"export:csv-logs-{log_id}-by-{request.user}"
     rq_job = queue.fetch_job(rq_id)
+
     if rq_job:
         if rq_job.is_finished:
             file_path = rq_job.return_value
@@ -129,14 +130,16 @@ def export(request, queue_name, logger):
             return Response(exc_info,
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         else:
-            return Response(status=status.HTTP_202_ACCEPTED)
+            return Response(data=response_data, status=status.HTTP_202_ACCEPTED)
 
     ttl = dm.views.PROJECT_CACHE_TTL.total_seconds()
-    output_filename = os.path.join(settings.TMP_FILES_ROOT, f"{log_id}.csv")
+    output_filename = os.path.join(settings.TMP_FILES_ROOT, f"{query_id}.csv")
     queue.enqueue_call(
         func=_create_csv,
         args=(query_params, output_filename, DEFAULT_CACHE_TTL),
         job_id=rq_id,
         meta={},
         result_ttl=ttl, failure_ttl=ttl)
-    return Response(status=status.HTTP_202_ACCEPTED)
+
+
+    return Response(data=response_data, status=status.HTTP_202_ACCEPTED)
