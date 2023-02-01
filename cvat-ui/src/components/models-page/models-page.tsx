@@ -37,7 +37,7 @@ function ModelsPageComponent(): JSX.Element {
 
     useEffect(() => {
         dispatch(getModelProvidersAsync());
-        dispatch(getModelsAsync());
+        dispatch(getModelsAsync(updatedQuery));
     }, []);
 
     const content = totalCount ? (

@@ -1538,7 +1538,7 @@ export function repeatDrawShapeAsync(): ThunkAction {
 
         let activeControl = ActiveControl.CURSOR;
         if (activeInteractor && canvasInstance instanceof Canvas) {
-            if (activeInteractor.type.includes('tracker')) {
+            if (activeInteractor.kind.includes('tracker')) {
                 canvasInstance.interact({
                     enabled: true,
                     shapeType: 'rectangle',
