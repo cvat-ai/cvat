@@ -101,7 +101,7 @@ Each context image has the following elements:
 | 2       | **Move context image**. Hold and move context image to the other place on the screen. <p>![contex_images_3](/images/context_img_03.gif) |
 | 3       | **Name**. Unique context image name                                                                                                     |
 | 4       | **Select context image**. Click to open a horisontal listview of all available context images. <p>Click on one to select.               |
-| 5       | **Close**. Click to clost context image and remove it from context images menu                                                          |
+| 5       | **Close**. Click to remove image from context images menu.                                                         |
 | 6       | **Extend** Hold and pull to extend the image.                                                                                           |
 
 <!--lint enable maximum-line-length-->
