@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from inspect import isclass
 import os
 import re
 import shutil
@@ -29,10 +30,10 @@ class HyperlinkedEndpointSerializer(serializers.Serializer):
     key_field = 'pk'
 
     def __init__(self, view_name=None, *, filter_key=None, **kwargs):
-        if issubclass(view_name, models.models.Model):
+        if isclass(view_name) and issubclass(view_name, models.models.Model):
             view_name = get_list_view_name(view_name)
-        else:
-            assert isinstance(view_name, str)
+        elif not isinstance(view_name, str):
+            raise TypeError(view_name)
 
         kwargs['read_only'] = True
         super().__init__(**kwargs)
@@ -55,6 +56,42 @@ class HyperlinkedEndpointSerializer(serializers.Serializer):
             )),
             instance
         )
+
+
+class CollectionSummarySerializer(serializers.Serializer):
+    count = serializers.ReadOnlyField()
+
+    def __init__(self, model, *, url_filter_key, **kwargs):
+        super().__init__(**kwargs)
+        self._collection_key = self.source
+        self._model = model
+        self._url_filter_key = url_filter_key
+
+    def bind(self, field_name, parent):
+        super().bind(field_name, parent)
+        self._collection_key = self._collection_key or self.source
+        self._model = self._model or type(self.parent)
+
+    def get_fields(self):
+        fields = super().get_fields()
+        fields['url'] = HyperlinkedEndpointSerializer(self._model, filter_key=self._url_filter_key)
+        fields['count'].source = self._collection_key + '.count'
+        return fields
+
+    def get_attribute(self, instance):
+        return instance
+
+
+class LabelsSummarySerializer(CollectionSummarySerializer):
+    def __init__(self, *, model=models.Label, url_filter_key, source='get_labels', **kwargs):
+        super().__init__(model=model, url_filter_key=url_filter_key, source=source, **kwargs)
+
+
+class JobsSummarySerializer(CollectionSummarySerializer):
+    completed = serializers.IntegerField(source='completed_jobs_count')
+
+    def __init__(self, *, model=models.Job, url_filter_key, **kwargs):
+        super().__init__(model=model, url_filter_key=url_filter_key, **kwargs)
 
 
 class BasicUserSerializer(serializers.ModelSerializer):
@@ -227,8 +264,8 @@ class JobReadSerializer(serializers.ModelSerializer):
     mode = serializers.ReadOnlyField(source='segment.task.mode')
     bug_tracker = serializers.CharField(max_length=2000, source='get_bug_tracker',
         allow_null=True, read_only=True)
-    labels = HyperlinkedEndpointSerializer('job-labels')
-    issues = HyperlinkedEndpointSerializer(models.Issue, filter_key='job_id')
+    labels = LabelsSummarySerializer(url_filter_key='job_id')
+    issues = CollectionSummarySerializer(models.Issue, url_filter_key='job_id')
 
     class Meta:
         model = models.Job
@@ -560,8 +597,8 @@ class TaskReadSerializer(serializers.ModelSerializer):
     dimension = serializers.CharField(allow_blank=True, required=False)
     target_storage = StorageSerializer(required=False, allow_null=True)
     source_storage = StorageSerializer(required=False, allow_null=True)
-    labels = HyperlinkedEndpointSerializer('task-labels')
-    jobs = HyperlinkedEndpointSerializer(models.Job, filter_key='task_id')
+    jobs = JobsSummarySerializer(url_filter_key='task_id', source='segment_set')
+    labels = LabelsSummarySerializer(url_filter_key='task_id')
 
     class Meta:
         model = models.Task
@@ -803,8 +840,8 @@ class ProjectReadSerializer(serializers.ModelSerializer):
     dimension = serializers.CharField(max_length=16, required=False, read_only=True, allow_null=True)
     target_storage = StorageSerializer(required=False, allow_null=True, read_only=True)
     source_storage = StorageSerializer(required=False, allow_null=True, read_only=True)
-    labels = HyperlinkedEndpointSerializer('project-labels')
-    tasks = HyperlinkedEndpointSerializer(models.Task, filter_key='project_id')
+    tasks = CollectionSummarySerializer(models.Task, url_filter_key='project_id')
+    labels = LabelsSummarySerializer(url_filter_key='project_id')
 
     class Meta:
         model = models.Project
@@ -1136,12 +1173,12 @@ class IssueReadSerializer(serializers.ModelSerializer):
     position = serializers.ListField(
         child=serializers.FloatField(), allow_empty=False
     )
-    comments = HyperlinkedEndpointSerializer(models.Comment, filter_key='issue_id')
+    comments = CollectionSummarySerializer(models.Comment, url_filter_key='issue_id')
 
     class Meta:
         model = models.Issue
         fields = ('id', 'frame', 'position', 'job', 'owner', 'assignee',
-            'created_date', 'updated_date', 'resolved')
+            'created_date', 'updated_date', 'resolved', 'comments')
         read_only_fields = fields
         extra_kwargs = {
             'created_date': { 'allow_null': True },

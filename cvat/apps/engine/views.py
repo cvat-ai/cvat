@@ -21,6 +21,7 @@ from django.contrib.auth.models import User
 from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseNotFound, HttpResponseBadRequest
 from django.utils import timezone
+import django.db.models as dj_models
 
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
@@ -45,7 +46,7 @@ from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.media_extractors import get_mime
 from cvat.apps.engine.models import (
-    Job, JobCommit, Task, Project, Issue, Data,
+    Job, JobCommit, Label, Task, Project, Issue, Data,
     Comment, StorageMethodChoice, StorageChoice,
     CloudProviderChoice, Location
 )
@@ -53,8 +54,8 @@ from cvat.apps.engine.models import CloudStorage as CloudStorageModel
 from cvat.apps.engine.serializers import (
     AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
     DataMetaReadSerializer, DataMetaWriteSerializer, DataSerializer, ExceptionSerializer,
-    FileInfoSerializer, FrameMetaSerializer, JobReadSerializer, JobWriteSerializer,
-    LabelSerializer, LabeledDataSerializer,
+    FileInfoSerializer, FrameMetaSerializer, JobReadSerializer, JobWriteSerializer, LabelSerializer,
+    LabeledDataSerializer,
     LogEventSerializer, ProjectReadSerializer, ProjectWriteSerializer,
     RqStatusSerializer, TaskReadSerializer, TaskWriteSerializer,
     UserSerializer, PluginsSerializer, IssueReadSerializer,
@@ -63,7 +64,7 @@ from cvat.apps.engine.serializers import (
     ProjectFileSerializer, TaskFileSerializer)
 
 from utils.dataset_manifest import ImageManifestManager
-from cvat.apps.engine.view_utils import make_paginated_response
+from cvat.apps.engine.view_utils import list_action, make_paginated_response
 from cvat.apps.engine.utils import (
     av_scan_paths, process_failed_job, configure_dependent_job, parse_exception_message
 )
@@ -613,20 +614,6 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         return response
 
-    @extend_schema(description="Return a paginated list of labels",
-        responses=LabelSerializer(many=True)) # Duplicate to still get 'list' op. name
-    @action(detail=True, methods=['GET'], serializer_class=LabelSerializer,
-        pagination_class=viewsets.GenericViewSet.pagination_class,
-        # Remove regular list() parameters from the swagger schema.
-        # Unset, they would be taken from the enclosing class, which is wrong.
-        # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
-        filter_fields=None, search_fields=None, ordering_fields=None, simple_filters=None)
-    def labels(self, request, pk):
-        queryset = self.get_object().get_labels().order_by('id')
-        return make_paginated_response(queryset,
-            viewset=self, serializer_type=self.serializer_class, request=request) # from @action
-
-
 class DataChunkGetter:
     def __init__(self, data_type, data_num, data_quality, task_dim):
         possible_data_type_values = ('chunk', 'frame', 'preview', 'context_image')
@@ -740,10 +727,16 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         'data', 'assignee', 'owner',
         'target_storage', 'source_storage'
     ).prefetch_related(
+        'segment_set__job_set',
         'segment_set__job_set__assignee', 'label_set__attributespec_set',
         'project__label_set__attributespec_set',
         'label_set__sublabels__attributespec_set',
         'project__label_set__sublabels__attributespec_set'
+    ).annotate(
+        completed_jobs_count=dj_models.Count(
+            'segment__job',
+            filter=dj_models.Q(segment__job__state=models.StateChoice.COMPLETED.value)
+        )
     ).all()
 
     lookup_fields = {
@@ -1239,9 +1232,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         return Response(serializer.data)
 
     @extend_schema(summary='Returns a paginated list of frame metadata',
-        responses=FrameMetaSerializer(many=True))
-    @action(detail=True, methods=['GET'], serializer_class=FrameMetaSerializer,
-        url_path='data/meta/frames')
+        responses=FrameMetaSerializer(many=True)) # Duplicate to still get 'list' op. name
+    @list_action(serializer_class=FrameMetaSerializer, url_path='data/meta/frames')
     def metadata_frames(self, request, pk):
         self.get_object() #force to call check_object_permissions
         db_task = models.Task.objects.prefetch_related(
@@ -1259,7 +1251,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             'width': item.width,
             'height': item.height,
             'name': item.path,
-            'related_files': item.related_files.count() if hasattr(item, 'related_files') else 0
+            'related_files': item.related_files.count() if hasattr(item, 'related_files') else 0,
         } for item in media]
 
         serializer = FrameMetaSerializer(frame_meta, many=True)
@@ -1329,20 +1321,6 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         return data_getter(request, self._object.data.start_frame,
             self._object.data.stop_frame, self._object.data)
 
-    @extend_schema(description="Return a paginated list of labels",
-        responses=LabelSerializer(many=True)) # Duplicate to still get 'list' op. name
-    @action(detail=True, methods=['GET'], serializer_class=LabelSerializer,
-        pagination_class=viewsets.GenericViewSet.pagination_class,
-        # Remove regular list() parameters from the swagger schema.
-        # Unset, they would be taken from the enclosing class, which is wrong.
-        # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
-        filter_fields=None, search_fields=None, ordering_fields=None, simple_filters=None)
-    def labels(self, request, pk):
-        queryset = self.get_object().get_labels().order_by('id')
-        return make_paginated_response(queryset,
-            viewset=self, serializer_type=self.serializer_class, request=request) # from @action
-
-
 @extend_schema(tags=['jobs'])
 @extend_schema_view(
     retrieve=extend_schema(
@@ -1362,7 +1340,6 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '200': JobReadSerializer, # check JobWriteSerializer.to_representation
         })
 )
-
 class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, PartialUpdateModelMixin, UploadMixin, AnnotationMixin
 ):
@@ -1720,9 +1697,8 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         return Response(serializer.data)
 
     @extend_schema(summary='Returns a paginated list of frame metadata',
-        responses=FrameMetaSerializer(many=True))
-    @action(detail=True, methods=['GET'], serializer_class=FrameMetaSerializer,
-        url_path='data/meta/frames')
+        responses=FrameMetaSerializer(many=True)) # Duplicate to still get 'list' op. name
+    @list_action(serializer_class=FrameMetaSerializer, url_path='data/meta/frames')
     def metadata_frames(self, request, pk):
         self.get_object() #force to call check_object_permissions
         db_job = models.Job.objects.prefetch_related(
@@ -1759,13 +1735,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     @extend_schema(summary='The action returns the list of tracked changes for the job',
         responses=JobCommitSerializer(many=True)) # Duplicate to still get 'list' op. name
-    @action(detail=True, methods=['GET'], serializer_class=JobCommitSerializer,
-        pagination_class=viewsets.GenericViewSet.pagination_class,
-        # These non-root list endpoints do not suppose extra options, just the basic output
-        # Remove regular list() parameters from the swagger schema.
-        # Unset, they would be taken from the enclosing class, which is wrong.
-        # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
-        filter_fields=None, ordering_fields=None, search_fields=None, simple_filters=None)
+    @list_action(serializer_class=JobCommitSerializer)
     def commits(self, request, pk):
         self.get_object() # force call of check_object_permissions()
         return make_paginated_response(JobCommit.objects.filter(job_id=pk).order_by('-id'),
@@ -1788,20 +1758,6 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         return data_getter(request, self._object.segment.start_frame,
            self._object.segment.stop_frame, self._object.segment.task.data)
-
-    @extend_schema(description="Return a paginated list of labels",
-        responses=LabelSerializer(many=True)) # Duplicate to still get 'list' op. name
-    @action(detail=True, methods=['GET'], serializer_class=LabelSerializer,
-        pagination_class=viewsets.GenericViewSet.pagination_class,
-        # Remove regular list() parameters from the swagger schema.
-        # Unset, they would be taken from the enclosing class, which is wrong.
-        # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
-        filter_fields=None, search_fields=None, ordering_fields=None, simple_filters=None)
-    def labels(self, request, pk):
-        queryset = self.get_object().get_labels().order_by('id')
-        return make_paginated_response(queryset,
-            viewset=self, serializer_type=self.serializer_class, request=request) # from @action
-
 
 @extend_schema(tags=['issues'])
 @extend_schema_view(
@@ -1939,6 +1895,64 @@ class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     def perform_create(self, serializer, **kwargs):
         super().perform_create(serializer, owner=self.request.user)
+
+
+@extend_schema(tags=['labels'])
+@extend_schema_view(
+    retrieve=extend_schema(
+        summary='Method returns details of an label',
+        responses={
+            '200': LabelSerializer,
+        }),
+    list=extend_schema(
+        summary='Method returns a paginated list of labels',
+        responses={
+            '200': LabelSerializer(many=True),
+        }),
+    partial_update=extend_schema(
+        summary='Methods does a partial update of chosen fields in an label',
+        request=LabelSerializer(partial=True),
+        responses={
+            '200': LabelSerializer,
+        }),
+    create=extend_schema(
+        summary='Method creates an label',
+        request=LabelSerializer,
+        responses={
+            '201': LabelSerializer,
+        }),
+    destroy=extend_schema(
+        summary='Method deletes an label',
+        responses={
+            '204': OpenApiResponse(description='The label has been deleted'),
+        })
+)
+class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
+    mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
+    PartialUpdateModelMixin
+):
+    queryset = Label.objects.prefetch_related('task', 'project').all()
+
+    iam_organization_field = 'task__organization'
+    search_fields = ('name', 'parent')
+    filter_fields = list(search_fields) + ['id', 'job_id', 'task_id', 'project_id', 'parent', 'type']
+    simple_filters = list(search_fields) + ['job_id', 'task_id', 'project_id', 'parent', 'type']
+    ordering_fields = list(filter_fields)
+    lookup_fields = {
+        'job_id': 'job',
+        'task_id': 'task',
+    }
+    ordering = '-id'
+    serializer_class = LabelSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        if self.action == 'list':
+            perm = LabelPermission.create_scope_list(self.request)
+            queryset = perm.filter(queryset)
+
+        return queryset
+
 
 @extend_schema(tags=['users'])
 @extend_schema_view(
