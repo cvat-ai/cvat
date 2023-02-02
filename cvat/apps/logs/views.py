@@ -125,9 +125,9 @@ class LogsViewSet(viewsets.ViewSet):
             "source": "client"
         }
         event['timestamp'] = str(datetime.datetime.now(datetime.timezone.utc).timestamp())
-        message = JSONRenderer().render({**serializer.data, **additional_info}).decode('UTF-8')
-        jid = serializer.data.get("job_id")
-        tid = serializer.data.get("task_id")
+        message = JSONRenderer().render({**event, **additional_info}).decode('UTF-8')
+        jid = event.get("job_id")
+        tid = event.get("task_id")
         if jid:
             clogger.job[jid].error(message)
         elif tid:

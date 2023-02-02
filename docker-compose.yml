@@ -280,7 +280,7 @@ services:
       - GF_SERVER_ROOT_URL=http://${CVAT_HOST:-localhost}/analytics
       - GF_INSTALL_PLUGINS=https://github.com/grafana/clickhouse-datasource/releases/download/v2.0.7/grafana-clickhouse-datasource-2.0.7.linux_amd64.zip;grafana-clickhouse-datasource
     volumes:
-      - ./components/analytics/grafana/dashboards/cvat-logs.json:/var/lib/grafana/dashboards/cvat-logs.json:ro
+      - ./components/analytics/grafana/dashboards/:/var/lib/grafana/dashboards/:ro
     entrypoint:
       - sh
       - -euc

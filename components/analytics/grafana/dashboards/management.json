@@ -108,7 +108,6 @@
           "builderOptions": {
             "fields": [],
             "filters": [],
-            "limit": null,
             "metrics": [
               {
                 "aggregation": "count",
@@ -336,7 +335,7 @@
   },
   "timepicker": {},
   "timezone": "",
-  "title": "CVAT Statistics",
+  "title": "Management",
   "uid": "w0if6WAVz",
   "version": 1,
   "weekStart": ""

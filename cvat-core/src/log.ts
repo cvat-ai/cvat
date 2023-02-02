@@ -181,12 +181,12 @@ class LogWithExceptionInfo extends Log {
     public dump(): any {
         const body = super.dump();
         const client = detect();
-        body.payload = {
-            ...body.payload,
+        body.payload = JSON.stringify({
+            ...JSON.parse(body.payload),
             system: client.os,
             client: client.name,
             version: client.version,
-        };
+        });
 
         return body;
     }
