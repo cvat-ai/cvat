@@ -89,7 +89,7 @@ When you add context images to the set, small toolbar will appear on the top of 
 
 <!--lint enable maximum-line-length-->
 
-Each context image has the following attributes:
+Each context image has the following elements:
 
 ![contex_images_2](/images/context_img_02.jpg)
 
