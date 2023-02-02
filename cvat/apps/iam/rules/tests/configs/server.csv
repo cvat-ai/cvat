@@ -3,3 +3,4 @@ view,N/A,N/A,N/A,,GET,"/server/about, /server/annotation/formats, /server/plugin
 send:exception,N/A,N/A,N/A,,POST,/server/exception,None,N/A
 send:logs,N/A,N/A,N/A,,POST,/server/logs,None,N/A
 list:content,N/A,N/A,N/A,,GET,/server/share,Worker,N/A
+list:logs,N/A,N/A,N/A,,GET,/server/logs,business,N/A

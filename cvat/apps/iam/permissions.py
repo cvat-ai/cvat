@@ -342,6 +342,7 @@ class ServerPermission(OpenPolicyAgentPermission):
         VIEW = 'view'
         SEND_EXCEPTION = 'send:exception'
         SEND_LOGS = 'send:logs'
+        LIST_LOGS = 'list:logs'
         LIST_CONTENT = 'list:content'
 
     @classmethod
@@ -362,13 +363,14 @@ class ServerPermission(OpenPolicyAgentPermission):
     def get_scopes(request, view, obj):
         Scopes = __class__.Scopes
         return [{
-            'annotation_formats': Scopes.VIEW,
-            'about': Scopes.VIEW,
-            'plugins': Scopes.VIEW,
-            'exception': Scopes.SEND_EXCEPTION,
-            'logs': Scopes.SEND_LOGS,
-            'share': Scopes.LIST_CONTENT,
-        }.get(view.action, None)]
+            ('annotation_formats', 'GET'): Scopes.VIEW,
+            ('about', 'GET'): Scopes.VIEW,
+            ('plugins', 'GET'): Scopes.VIEW,
+            ('exception', 'POST'): Scopes.SEND_EXCEPTION,
+            ('logs', 'POST'): Scopes.SEND_LOGS,
+            ('logs', 'GET'): Scopes.LIST_LOGS,
+            ('share', 'GET'): Scopes.LIST_CONTENT,
+        }.get((view.action, request.method))]
 
     def get_resource(self):
         return None
