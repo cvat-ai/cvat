@@ -493,15 +493,6 @@ class Job(models.Model):
         task = self.segment.task
         project = task.project
         return project.label_set if project else task.label_set
-
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        db_commit = JobCommit(job=self, scope='create',
-            owner=self.segment.task.owner, data={
-                'stage': self.stage, 'state': self.state, 'assignee': self.assignee
-            })
-        db_commit.save()
-
     class Meta:
         default_permissions = ()
 
@@ -611,29 +602,6 @@ class Annotation(models.Model):
     class Meta:
         abstract = True
         default_permissions = ()
-
-class Commit(models.Model):
-    class JSONEncoder(DjangoJSONEncoder):
-        def default(self, o):
-            if isinstance(o, User):
-                data = {'user': {'id': o.id, 'username': o.username}}
-                return data
-            else:
-                return super().default(o)
-
-
-    id = models.BigAutoField(primary_key=True)
-    scope = models.CharField(max_length=32, default="")
-    owner = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
-    timestamp = models.DateTimeField(auto_now=True)
-    data = models.JSONField(default=dict, encoder=JSONEncoder)
-
-    class Meta:
-        abstract = True
-        default_permissions = ()
-
-class JobCommit(Commit):
-    job = models.ForeignKey(Job, on_delete=models.CASCADE, related_name="commits")
 
 class Shape(models.Model):
     type = models.CharField(max_length=16, choices=ShapeType.choices())

@@ -44,7 +44,7 @@ from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.media_extractors import get_mime
 from cvat.apps.engine.models import (
-    Job, JobCommit, Task, Project, Issue, Data,
+    Job, Task, Project, Issue, Data,
     Comment, StorageMethodChoice, StorageChoice,
     CloudProviderChoice, Location
 )
@@ -56,7 +56,7 @@ from cvat.apps.engine.serializers import (
     ProjectReadSerializer, ProjectWriteSerializer, ProjectSearchSerializer,
     RqStatusSerializer, TaskReadSerializer, TaskWriteSerializer, UserSerializer, PluginsSerializer, IssueReadSerializer,
     IssueWriteSerializer, CommentReadSerializer, CommentWriteSerializer, CloudStorageWriteSerializer,
-    CloudStorageReadSerializer, DatasetFileSerializer, JobCommitSerializer,
+    CloudStorageReadSerializer, DatasetFileSerializer,
     ProjectFileSerializer, TaskFileSerializer)
 
 from utils.dataset_manifest import ImageManifestManager
@@ -1675,19 +1675,6 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         serializer = DataMetaReadSerializer(db_data)
         return Response(serializer.data)
-
-    @extend_schema(summary='The action returns the list of tracked changes for the job',
-        responses=JobCommitSerializer(many=True)) # Duplicate to still get 'list' op. name
-    @action(detail=True, methods=['GET'], serializer_class=JobCommitSerializer,
-        pagination_class=viewsets.GenericViewSet.pagination_class,
-        # Remove regular list() parameters from the swagger schema.
-        # Unset, they would be taken from the enclosing class, which is wrong.
-        # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
-        filter_fields=None, search_fields=None, ordering_fields=None)
-    def commits(self, request, pk):
-        self.get_object() # force to call check_object_permissions
-        return make_paginated_response(JobCommit.objects.filter(job_id=pk).order_by('-id'),
-            viewset=self, serializer_type=self.serializer_class) # from @action
 
     @extend_schema(summary='Method returns a preview image for the job',
         responses={

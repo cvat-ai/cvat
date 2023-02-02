@@ -22,7 +22,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='jobcommit',
             name='data',
-            field=models.JSONField(default=dict, encoder=cvat.apps.engine.models.Commit.JSONEncoder),
+            field=models.JSONField(default=dict),
         ),
         migrations.AddField(
             model_name='jobcommit',
