@@ -16,7 +16,7 @@ See:
 
 - [Folder structure](#folder-structure)
 - [Data format](#data-format)
-- [Context image](#context-image)
+- [Context images](#context-images)
 
 ## Folder structure
 
@@ -67,7 +67,7 @@ Example file structure for 2D and 3D tasks:
 For more general inormation about 3D data formats,
 see [3D data formats](/docs/manual/basics/create_an_annotation_task/#data-formats-for-a-3d-task).
 
-## Context image
+## Context images
 
 The maximum amount of context images is twelve.
 
