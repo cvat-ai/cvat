@@ -43,7 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TDB
 
 ### Removed
-- TDB
+- Limit on the maximum number of manifest files that can be added for cloud storage (<https://github.com/opencv/cvat/pull/5660>)
 
 ### Fixed
 - Helm: Empty password for Redis (<https://github.com/opencv/cvat/pull/5520>)
