@@ -25,7 +25,7 @@ from drf_spectacular.utils import OpenApiExample, extend_schema_field, extend_sc
 from cvat.apps.engine.view_utils import build_field_filter_params, get_list_view_name, reverse
 
 @extend_schema_field(serializers.URLField)
-class HyperlinkedModelViewSerializer(serializers.Serializer):
+class HyperlinkedEndpointSerializer(serializers.Serializer):
     key_field = 'pk'
 
     def __init__(self, view_name=None, *, filter_key=None, **kwargs):
@@ -227,14 +227,15 @@ class JobReadSerializer(serializers.ModelSerializer):
     mode = serializers.ReadOnlyField(source='segment.task.mode')
     bug_tracker = serializers.CharField(max_length=2000, source='get_bug_tracker',
         allow_null=True, read_only=True)
-    issues = HyperlinkedModelViewSerializer(models.Issue, filter_key='job_id')
+    labels = HyperlinkedEndpointSerializer('job-labels')
+    issues = HyperlinkedEndpointSerializer(models.Issue, filter_key='job_id')
 
     class Meta:
         model = models.Job
         fields = ('url', 'id', 'task_id', 'project_id', 'assignee',
             'dimension', 'bug_tracker', 'status', 'stage', 'state', 'mode',
             'start_frame', 'stop_frame', 'data_chunk_size', 'data_compressed_chunk_type',
-            'updated_date', 'issues')
+            'updated_date', 'issues', 'labels')
         read_only_fields = fields
 
 class JobWriteSerializer(serializers.ModelSerializer):
@@ -559,7 +560,8 @@ class TaskReadSerializer(serializers.ModelSerializer):
     dimension = serializers.CharField(allow_blank=True, required=False)
     target_storage = StorageSerializer(required=False, allow_null=True)
     source_storage = StorageSerializer(required=False, allow_null=True)
-    jobs = HyperlinkedModelViewSerializer(models.Job, filter_key='task_id')
+    labels = HyperlinkedEndpointSerializer('task-labels')
+    jobs = HyperlinkedEndpointSerializer(models.Job, filter_key='task_id')
 
     class Meta:
         model = models.Task
@@ -567,7 +569,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
             'bug_tracker', 'created_date', 'updated_date', 'overlap', 'segment_size',
             'status', 'data_chunk_size', 'data_compressed_chunk_type',
             'data_original_chunk_type', 'size', 'image_quality', 'data', 'dimension',
-            'subset', 'organization', 'target_storage', 'source_storage', 'jobs',
+            'subset', 'organization', 'target_storage', 'source_storage', 'jobs', 'labels',
         )
         read_only_fields = fields
         extra_kwargs = {
@@ -801,13 +803,15 @@ class ProjectReadSerializer(serializers.ModelSerializer):
     dimension = serializers.CharField(max_length=16, required=False, read_only=True, allow_null=True)
     target_storage = StorageSerializer(required=False, allow_null=True, read_only=True)
     source_storage = StorageSerializer(required=False, allow_null=True, read_only=True)
-    tasks = HyperlinkedModelViewSerializer(models.Task, filter_key='project_id')
+    labels = HyperlinkedEndpointSerializer('project-labels')
+    tasks = HyperlinkedEndpointSerializer(models.Task, filter_key='project_id')
 
     class Meta:
         model = models.Project
         fields = ('url', 'id', 'name', 'owner', 'assignee',
             'bug_tracker', 'task_subsets', 'created_date', 'updated_date', 'status',
             'dimension', 'organization', 'target_storage', 'source_storage',
+            'tasks', 'labels',
         )
         read_only_fields = fields
         extra_kwargs = { 'organization': { 'allow_null': True } }
@@ -1132,7 +1136,7 @@ class IssueReadSerializer(serializers.ModelSerializer):
     position = serializers.ListField(
         child=serializers.FloatField(), allow_empty=False
     )
-    comments = HyperlinkedModelViewSerializer(models.Comment, filter_key='issue_id')
+    comments = HyperlinkedEndpointSerializer(models.Comment, filter_key='issue_id')
 
     class Meta:
         model = models.Issue

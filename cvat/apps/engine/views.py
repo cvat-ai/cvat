@@ -620,7 +620,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         # Remove regular list() parameters from the swagger schema.
         # Unset, they would be taken from the enclosing class, which is wrong.
         # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
-        filter_fields=None, search_fields=None, ordering_fields=None)
+        filter_fields=None, search_fields=None, ordering_fields=None, simple_filters=None)
     def labels(self, request, pk):
         queryset = self.get_object().get_labels().order_by('id')
         return make_paginated_response(queryset,
@@ -1336,7 +1336,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         # Remove regular list() parameters from the swagger schema.
         # Unset, they would be taken from the enclosing class, which is wrong.
         # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
-        filter_fields=None, search_fields=None, ordering_fields=None)
+        filter_fields=None, search_fields=None, ordering_fields=None, simple_filters=None)
     def labels(self, request, pk):
         queryset = self.get_object().get_labels().order_by('id')
         return make_paginated_response(queryset,
@@ -1796,7 +1796,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         # Remove regular list() parameters from the swagger schema.
         # Unset, they would be taken from the enclosing class, which is wrong.
         # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
-        filter_fields=None, search_fields=None, ordering_fields=None)
+        filter_fields=None, search_fields=None, ordering_fields=None, simple_filters=None)
     def labels(self, request, pk):
         queryset = self.get_object().get_labels().order_by('id')
         return make_paginated_response(queryset,
