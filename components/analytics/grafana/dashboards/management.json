@@ -35,6 +35,170 @@
       "fieldConfig": {
         "defaults": {
           "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 25,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "__systemRef": "hideSeriesFrom",
+            "matcher": {
+              "id": "byNames",
+              "options": {
+                "mode": "exclude",
+                "names": [
+                  "User 1"
+                ],
+                "prefix": "All except:",
+                "readOnly": true
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": true
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 6,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "builderOptions": {
+            "fields": [],
+            "filters": [],
+            "groupBy": [
+              "user"
+            ],
+            "limit": null,
+            "metrics": [
+              {
+                "aggregation": "count",
+                "alias": "value",
+                "field": "*"
+              }
+            ],
+            "mode": "trend",
+            "orderBy": [],
+            "table": "logs",
+            "timeField": "timestamp",
+            "timeFieldType": "DateTime64(3, 'Etc/UTC')"
+          },
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PDEE91DDB90597936"
+          },
+          "format": 0,
+          "hide": false,
+          "meta": {
+            "builderOptions": {
+              "fields": [],
+              "filters": [],
+              "groupBy": [
+                "user"
+              ],
+              "limit": null,
+              "metrics": [
+                {
+                  "aggregation": "count",
+                  "alias": "value",
+                  "field": "*"
+                }
+              ],
+              "mode": "trend",
+              "orderBy": [],
+              "table": "logs",
+              "timeField": "timestamp",
+              "timeFieldType": "DateTime64(3, 'Etc/UTC')"
+            }
+          },
+          "queryType": "sql",
+          "rawSql": "SELECT $__timeInterval(timestamp) as time, toString(user), count() as User\r\nFROM logs\r\nWHERE $__timeFilter(timestamp)\r\nGROUP BY time, user\r\nORDER BY time ASC, user ASC",
+          "refId": "A"
+        }
+      ],
+      "title": "User Activity",
+      "transformations": [],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PDEE91DDB90597936"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
             "mode": "continuous-GrYlRd"
           },
           "custom": {
@@ -88,7 +252,7 @@
         "h": 7,
         "w": 24,
         "x": 0,
-        "y": 0
+        "y": 9
       },
       "id": 4,
       "options": {
@@ -108,9 +272,11 @@
           "builderOptions": {
             "fields": [],
             "filters": [],
+            "limit": 100,
             "metrics": [
               {
                 "aggregation": "count",
+                "alias": "Count",
                 "field": "*"
               }
             ],
@@ -126,7 +292,7 @@
           },
           "format": 0,
           "queryType": "builder",
-          "rawSql": "SELECT $__timeInterval(timestamp) as time,  count(*) FROM logs WHERE $__timeFilter(timestamp) GROUP BY time ORDER BY time ASC",
+          "rawSql": "SELECT $__timeInterval(timestamp) as time,  count(*) Count FROM logs WHERE $__timeFilter(timestamp) GROUP BY time ORDER BY time ASC LIMIT 100",
           "refId": "A"
         }
       ],
@@ -170,7 +336,7 @@
         "h": 13,
         "w": 24,
         "x": 0,
-        "y": 7
+        "y": 16
       },
       "id": 2,
       "options": {
@@ -212,6 +378,7 @@
       "type": "table"
     }
   ],
+  "refresh": false,
   "schemaVersion": 37,
   "style": "dark",
   "tags": [],
@@ -330,7 +497,7 @@
     ]
   },
   "time": {
-    "from": "now-24h",
+    "from": "now-7d",
     "to": "now"
   },
   "timepicker": {},
