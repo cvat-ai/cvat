@@ -52,6 +52,8 @@ class LogsViewSet(viewsets.ViewSet):
             OpenApiParameter('action', location=OpenApiParameter.QUERY,
                 description='Used to start downloading process after annotation file had been created',
                 type=OpenApiTypes.STR, required=False, enum=['download']),
+            OpenApiParameter('query-id', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
+                description="ID of query request that need to check or download"),
         ],
         responses={
             '200': OpenApiResponse(description='Download of file started'),

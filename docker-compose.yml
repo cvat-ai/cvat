@@ -213,7 +213,7 @@ services:
       DJANGO_LOG_VIEWER_PORT: 3000
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./components/analytics/kibana_conf.yml:/etc/traefik/rules/kibana_conf.yml:ro
+      - ./components/analytics/grafana_conf.yml:/etc/traefik/rules/grafana_conf.yml:ro
     networks:
       - cvat
 
