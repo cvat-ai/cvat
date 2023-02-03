@@ -23,7 +23,7 @@ EOT
 clickhouse-client --query "CREATE DATABASE IF NOT EXISTS ${CLICKHOUSE_DB}";
 
 echo "
-CREATE TABLE IF NOT EXISTS ${CLICKHOUSE_DB}.logs
+CREATE TABLE IF NOT EXISTS ${CLICKHOUSE_DB}.events
 (
     \`scope\` String NOT NULL,
     \`obj_name\` String NULL,

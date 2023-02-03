@@ -74,7 +74,7 @@ from cvat.apps.iam.permissions import (CloudStoragePermission,
     CommentPermission, IssuePermission, JobPermission, ProjectPermission,
     TaskPermission, UserPermission)
 from cvat.apps.engine.cache import MediaCache
-from cvat.apps.logs.signals import event_signal_annotations_patch
+from cvat.apps.events.signals import event_signal_annotations_patch
 
 @extend_schema(tags=['server'])
 class ServerViewSet(viewsets.ViewSet):

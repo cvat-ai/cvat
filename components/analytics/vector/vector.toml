@@ -1,25 +1,22 @@
-[sources.http-logs]
+[sources.http-events]
 type = "http_server"
 address = "0.0.0.0:80"
 encoding = "json"
 
-[sinks.console]
-type = "console"
-inputs = [ "http-logs" ]
-target = "stdout"
+# Uncomment for debug
+# [sinks.console]
+# type = "console"
+# inputs = [ "http-logs" ]
+# target = "stdout"
 
-  [sinks.console.encoding]
-  codec = "json"
-
-
-
-
+#   [sinks.console.encoding]
+#   codec = "json"
 
 [sinks.clickhouse]
-inputs = [ "http-logs" ]
+inputs = [ "http-events" ]
 type = "clickhouse"
 database = "${CLICKHOUSE_DB}"
-table = "logs"
+table = "events"
 auth.strategy = "basic"
 auth.user = "${CLICKHOUSE_USER}"
 auth.password = "${CLICKHOUSE_PASSWORD}"

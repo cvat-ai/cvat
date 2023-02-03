@@ -17,7 +17,7 @@ from cvat.apps.engine.models import Location
 from cvat.apps.engine.location import StorageType, get_location_configuration
 from cvat.apps.engine.serializers import DataSerializer, LabeledDataSerializer
 from cvat.apps.webhooks.signals import signal_update, signal_create, signal_delete
-from cvat.apps.logs.signals import event_signal_create, event_signal_update, event_signal_delete
+from cvat.apps.events.signals import event_signal_create, event_signal_update, event_signal_delete
 
 class TusFile:
     _tus_cache_timeout = 3600

@@ -24,14 +24,14 @@ DEFAULT_CACHE_TTL = timedelta(hours=1)
 
 def _create_csv(query_params, output_filename, cache_ttl):
     try:
-        clickhouse_settings = settings.CLICKHOUSE['logs']
+        clickhouse_settings = settings.CLICKHOUSE['events']
 
         time_filter = {
             'from': query_params.pop('from'),
             'to': query_params.pop('to'),
         }
 
-        query = "SELECT * FROM logs"
+        query = "SELECT * FROM events"
         conditions = []
         parameters = {}
         for param, value in query_params.items():

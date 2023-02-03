@@ -6,7 +6,7 @@ from django.apps import AppConfig
 
 
 class LogViewerConfig(AppConfig):
-    name = 'cvat.apps.logs'
+    name = 'cvat.apps.events'
 
     def ready(self):
         from . import signals  # pylint: disable=unused-import

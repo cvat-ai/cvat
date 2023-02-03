@@ -261,7 +261,6 @@ services:
       - CLICKHOUSE_DB=cvat
       - CLICKHOUSE_USER=user
       - CLICKHOUSE_PASSWORD=user
-      - VECTOR_LOG=debug
     networks:
       cvat:
         aliases:
@@ -314,8 +313,6 @@ services:
               foldersFromFilesStructure: true
         EOF
         /run.sh
-    ports:
-      - "3001:3000"
     networks:
       cvat:
         aliases:

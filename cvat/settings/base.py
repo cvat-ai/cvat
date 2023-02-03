@@ -140,7 +140,7 @@ INSTALLED_APPS = [
     'cvat.apps.webhooks',
     'cvat.apps.health',
     'cvat.apps.log_viewer',
-    'cvat.apps.logs',
+    'cvat.apps.events',
 ]
 
 SITE_ID = 1
@@ -443,7 +443,7 @@ LOGGING = {
     'disable_existing_loggers': False,
     'formatters': {
         'vector': {
-            '()': 'cvat.apps.logs.formatter.CvatFormatter',
+            '()': 'cvat.apps.events.formatter.CvatFormatter',
         },
         'standard': {
             'format': '[%(asctime)s] %(levelname)s %(name)s: %(message)s'
@@ -708,7 +708,7 @@ if USE_ALLAUTH_SOCIAL_ACCOUNTS:
     }
 
 CLICKHOUSE = {
-    'logs': {
+    'events': {
         'NAME': os.getenv('CLICKHOUSE_DB', 'cvat'),
         'HOST': os.getenv('CLICKHOUSE_HOST', 'clickhouse'),
         'PORT': os.getenv('CLICKHOUSE_PORT', 8123),

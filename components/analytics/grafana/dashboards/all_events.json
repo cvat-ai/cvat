@@ -116,7 +116,7 @@
             ],
             "mode": "trend",
             "orderBy": [],
-            "table": "logs",
+            "table": "events",
             "timeField": "timestamp",
             "timeFieldType": "DateTime64(3, 'Etc/UTC')"
           },
@@ -137,13 +137,13 @@
               ],
               "mode": "trend",
               "orderBy": [],
-              "table": "logs",
+              "table": "events",
               "timeField": "timestamp",
               "timeFieldType": "DateTime64(3, 'Etc/UTC')"
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT $__timeInterval(timestamp) as time, count(*)\r\nFROM logs\r\nWHERE $__timeFilter(timestamp)\r\nAND scope IN (${scopes})\r\nAND source IN (${sources})\r\nAND (-1 IN (${users}) OR user IN (${users}))\r\nAND (-1 IN (${organizations}) OR organization IN (${organizations}))\r\nAND (-1 IN (${projects}) OR project IN (${projects}))\r\nAND (-1 IN (${tasks}) OR task IN (${tasks}))\r\nAND (-1 IN (${jobs}) OR job IN (${jobs}))\r\nGROUP BY time ORDER BY time ASC",
+          "rawSql": "SELECT $__timeInterval(timestamp) as time, count(*)\r\nFROM events\r\nWHERE $__timeFilter(timestamp)\r\nAND scope IN (${scopes})\r\nAND source IN (${sources})\r\nAND (-1 IN (${users}) OR user IN (${users}))\r\nAND (-1 IN (${organizations}) OR organization IN (${organizations}))\r\nAND (-1 IN (${projects}) OR project IN (${projects}))\r\nAND (-1 IN (${tasks}) OR task IN (${tasks}))\r\nAND (-1 IN (${jobs}) OR job IN (${jobs}))\r\nGROUP BY time ORDER BY time ASC",
           "refId": "A"
         }
       ],
@@ -248,7 +248,7 @@
                 "name": "timestamp"
               }
             ],
-            "table": "logs"
+            "table": "events"
           },
           "datasource": {
             "type": "grafana-clickhouse-datasource",
@@ -287,11 +287,11 @@
                   "name": "timestamp"
                 }
               ],
-              "table": "logs"
+              "table": "events"
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT * \r\nFROM logs \r\nWHERE $__timeFilter(timestamp)\r\nAND scope IN (${scopes})\r\nAND source IN (${sources})\r\nAND (-1 IN (${users}) OR user IN (${users}))\r\nAND (-1 IN (${organizations}) OR organization IN (${organizations}))\r\nAND (-1 IN (${projects}) OR project IN (${projects}))\r\nAND (-1 IN (${tasks}) OR task IN (${tasks}))\r\nAND (-1 IN (${jobs}) OR job IN (${jobs}))\r\nORDER BY timestamp ASC",
+          "rawSql": "SELECT * \r\nFROM events \r\nWHERE $__timeFilter(timestamp)\r\nAND scope IN (${scopes})\r\nAND source IN (${sources})\r\nAND (-1 IN (${users}) OR user IN (${users}))\r\nAND (-1 IN (${organizations}) OR organization IN (${organizations}))\r\nAND (-1 IN (${projects}) OR project IN (${projects}))\r\nAND (-1 IN (${tasks}) OR task IN (${tasks}))\r\nAND (-1 IN (${jobs}) OR job IN (${jobs}))\r\nORDER BY timestamp ASC",
           "refId": "A"
         }
       ],
@@ -320,14 +320,14 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "PDEE91DDB90597936"
         },
-        "definition": "SELECT scope\nFROM cvat.logs\nWHERE $__timeFilter(timestamp)",
+        "definition": "SELECT scope\nFROM events\nWHERE $__timeFilter(timestamp)",
         "hide": 0,
         "includeAll": true,
         "label": "Scope",
         "multi": true,
         "name": "scopes",
         "options": [],
-        "query": "SELECT scope\nFROM cvat.logs\nWHERE $__timeFilter(timestamp)",
+        "query": "SELECT scope\nFROM events\nWHERE $__timeFilter(timestamp)",
         "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
@@ -349,14 +349,14 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "PDEE91DDB90597936"
         },
-        "definition": "SELECT source\nFROM cvat.logs\nWHERE $__timeFilter(timestamp)",
+        "definition": "SELECT source\nFROM events\nWHERE $__timeFilter(timestamp)",
         "hide": 0,
         "includeAll": true,
         "label": "Source",
         "multi": true,
         "name": "sources",
         "options": [],
-        "query": "SELECT source\nFROM cvat.logs\nWHERE $__timeFilter(timestamp)",
+        "query": "SELECT source\nFROM events\nWHERE $__timeFilter(timestamp)",
         "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
@@ -378,14 +378,14 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "PDEE91DDB90597936"
         },
-        "definition": "SELECT user\nFROM cvat.logs\nWHERE $__timeFilter(timestamp)\n  AND user IS NOT NULL",
+        "definition": "SELECT user\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND user IS NOT NULL",
         "hide": 0,
         "includeAll": true,
         "label": "User",
         "multi": true,
         "name": "users",
         "options": [],
-        "query": "SELECT user\nFROM cvat.logs\nWHERE $__timeFilter(timestamp)\n  AND user IS NOT NULL",
+        "query": "SELECT user\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND user IS NOT NULL",
         "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
@@ -407,14 +407,14 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "PDEE91DDB90597936"
         },
-        "definition": "SELECT project\nFROM cvat.logs\nWHERE  $__timeFilter(timestamp)\n  AND project IS NOT NULL",
+        "definition": "SELECT project\nFROM events\nWHERE  $__timeFilter(timestamp)\n  AND project IS NOT NULL",
         "hide": 0,
         "includeAll": true,
         "label": "Project",
         "multi": true,
         "name": "projects",
         "options": [],
-        "query": "SELECT project\nFROM cvat.logs\nWHERE  $__timeFilter(timestamp)\n  AND project IS NOT NULL",
+        "query": "SELECT project\nFROM events\nWHERE  $__timeFilter(timestamp)\n  AND project IS NOT NULL",
         "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
@@ -436,14 +436,14 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "PDEE91DDB90597936"
         },
-        "definition": "SELECT task\nFROM cvat.logs\nWHERE $__timeFilter(timestamp) \n  AND task IS NOT NULL",
+        "definition": "SELECT task\nFROM events\nWHERE $__timeFilter(timestamp) \n  AND task IS NOT NULL",
         "hide": 0,
         "includeAll": true,
         "label": "Task",
         "multi": true,
         "name": "tasks",
         "options": [],
-        "query": "SELECT task\nFROM cvat.logs\nWHERE $__timeFilter(timestamp) \n  AND task IS NOT NULL",
+        "query": "SELECT task\nFROM events\nWHERE $__timeFilter(timestamp) \n  AND task IS NOT NULL",
         "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
@@ -465,14 +465,14 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "PDEE91DDB90597936"
         },
-        "definition": "SELECT job\nFROM cvat.logs\nWHERE $__timeFilter(timestamp)\n  AND job IS NOT NULL",
+        "definition": "SELECT job\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND job IS NOT NULL",
         "hide": 0,
         "includeAll": true,
         "label": "Job",
         "multi": true,
         "name": "jobs",
         "options": [],
-        "query": "SELECT job\nFROM cvat.logs\nWHERE $__timeFilter(timestamp)\n  AND job IS NOT NULL",
+        "query": "SELECT job\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND job IS NOT NULL",
         "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
@@ -494,14 +494,14 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "PDEE91DDB90597936"
         },
-        "definition": "SELECT organization\nFROM cvat.logs\nWHERE $__timeFilter(timestamp)\nAND organization IS NOT NULL",
+        "definition": "SELECT organization\nFROM events\nWHERE $__timeFilter(timestamp)\nAND organization IS NOT NULL",
         "hide": 0,
         "includeAll": true,
         "label": "Organization",
         "multi": true,
         "name": "organizations",
         "options": [],
-        "query": "SELECT organization\nFROM cvat.logs\nWHERE $__timeFilter(timestamp)\nAND organization IS NOT NULL",
+        "query": "SELECT organization\nFROM events\nWHERE $__timeFilter(timestamp)\nAND organization IS NOT NULL",
         "refresh": 1,
         "regex": "",
         "skipUrlSync": false,

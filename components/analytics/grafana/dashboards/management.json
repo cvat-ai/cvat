@@ -150,7 +150,7 @@
             ],
             "mode": "trend",
             "orderBy": [],
-            "table": "logs",
+            "table": "events",
             "timeField": "timestamp",
             "timeFieldType": "DateTime64(3, 'Etc/UTC')"
           },
@@ -177,13 +177,13 @@
               ],
               "mode": "trend",
               "orderBy": [],
-              "table": "logs",
+              "table": "events",
               "timeField": "timestamp",
               "timeFieldType": "DateTime64(3, 'Etc/UTC')"
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT $__timeInterval(timestamp) as time, toString(user), count() as User\r\nFROM logs\r\nWHERE $__timeFilter(timestamp)\r\nGROUP BY time, user\r\nORDER BY time ASC, user ASC",
+          "rawSql": "SELECT $__timeInterval(timestamp) as time, toString(user), count() as User\r\nFROM events\r\nWHERE $__timeFilter(timestamp)\r\nGROUP BY time, user\r\nORDER BY time ASC, user ASC",
           "refId": "A"
         }
       ],
@@ -282,7 +282,7 @@
             ],
             "mode": "trend",
             "orderBy": [],
-            "table": "logs",
+            "table": "events",
             "timeField": "timestamp",
             "timeFieldType": "DateTime64(3, 'Etc/UTC')"
           },
@@ -292,7 +292,7 @@
           },
           "format": 0,
           "queryType": "builder",
-          "rawSql": "SELECT $__timeInterval(timestamp) as time,  count(*) Count FROM logs WHERE $__timeFilter(timestamp) GROUP BY time ORDER BY time ASC LIMIT 100",
+          "rawSql": "SELECT $__timeInterval(timestamp) as time,  count(*) Count FROM events WHERE $__timeFilter(timestamp) GROUP BY time ORDER BY time ASC LIMIT 100",
           "refId": "A"
         }
       ],
@@ -370,7 +370,7 @@
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT\r\n  user as User,\r\n  project as Project,\r\n  task as Task,\r\n  job as Job, sum(JSONExtractUInt(payload, 'working_time')) / 1000 / 3600 as \"Working time(h)\",\r\n  count() as Activity\r\nFROM cvat.logs\r\nWHERE JSONHas(payload, 'working_time')\r\n  AND $__timeFilter(timestamp)\r\n  AND user IN (${users})\r\n  AND (-1 IN (${projects}) OR project IN (${projects}))\r\n  AND task IN (${tasks})\r\n  AND job IN (${jobs})\r\n  AND source = 'client'\r\nGROUP BY user, project, task, job",
+          "rawSql": "SELECT\r\n  user as User,\r\n  project as Project,\r\n  task as Task,\r\n  job as Job, sum(JSONExtractUInt(payload, 'working_time')) / 1000 / 3600 as \"Working time(h)\",\r\n  count() as Activity\r\nFROM events\r\nWHERE JSONHas(payload, 'working_time')\r\n  AND $__timeFilter(timestamp)\r\n  AND user IN (${users})\r\n  AND (-1 IN (${projects}) OR project IN (${projects}))\r\n  AND task IN (${tasks})\r\n  AND job IN (${jobs})\r\n  AND source = 'client'\r\nGROUP BY user, project, task, job",
           "refId": "A"
         }
       ],
@@ -398,14 +398,14 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "PDEE91DDB90597936"
         },
-        "definition": "SELECT user\nFROM cvat.logs\nWHERE $__timeFilter(timestamp)\n  AND source = 'client'",
+        "definition": "SELECT user\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND source = 'client'",
         "hide": 0,
         "includeAll": true,
         "label": "User",
         "multi": true,
         "name": "users",
         "options": [],
-        "query": "SELECT user\nFROM cvat.logs\nWHERE $__timeFilter(timestamp)\n  AND source = 'client'",
+        "query": "SELECT user\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND source = 'client'",
         "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
@@ -427,14 +427,14 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "PDEE91DDB90597936"
         },
-        "definition": "SELECT project\nFROM cvat.logs\nWHERE  $__timeFilter(timestamp)\n  AND project IS NOT NULL\n  AND source = 'client'",
+        "definition": "SELECT project\nFROM events\nWHERE  $__timeFilter(timestamp)\n  AND project IS NOT NULL\n  AND source = 'client'",
         "hide": 0,
         "includeAll": true,
         "label": "Project",
         "multi": true,
         "name": "projects",
         "options": [],
-        "query": "SELECT project\nFROM cvat.logs\nWHERE  $__timeFilter(timestamp)\n  AND project IS NOT NULL\n  AND source = 'client'",
+        "query": "SELECT project\nFROM events\nWHERE  $__timeFilter(timestamp)\n  AND project IS NOT NULL\n  AND source = 'client'",
         "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
@@ -451,7 +451,7 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "PDEE91DDB90597936"
         },
-        "definition": "SELECT task\nFROM cvat.logs\nWHERE $__timeFilter(timestamp) \n  AND task IS NOT NULL\n  AND source = 'client'\n  AND (-1 IN (${projects}) OR project IN (${projects}))",
+        "definition": "SELECT task\nFROM events\nWHERE $__timeFilter(timestamp) \n  AND task IS NOT NULL\n  AND source = 'client'\n  AND (-1 IN (${projects}) OR project IN (${projects}))",
         "description": "",
         "hide": 0,
         "includeAll": true,
@@ -459,7 +459,7 @@
         "multi": true,
         "name": "tasks",
         "options": [],
-        "query": "SELECT task\nFROM cvat.logs\nWHERE $__timeFilter(timestamp) \n  AND task IS NOT NULL\n  AND source = 'client'\n  AND (-1 IN (${projects}) OR project IN (${projects}))",
+        "query": "SELECT task\nFROM events\nWHERE $__timeFilter(timestamp) \n  AND task IS NOT NULL\n  AND source = 'client'\n  AND (-1 IN (${projects}) OR project IN (${projects}))",
         "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
@@ -480,14 +480,14 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "PDEE91DDB90597936"
         },
-        "definition": "SELECT job\nFROM cvat.logs\nWHERE $__timeFilter(timestamp)\n  AND job IS NOT NULL\n  AND source = 'client'\n  AND task in (${tasks})",
+        "definition": "SELECT job\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND job IS NOT NULL\n  AND source = 'client'\n  AND task in (${tasks})",
         "hide": 0,
         "includeAll": true,
         "label": "Job",
         "multi": true,
         "name": "jobs",
         "options": [],
-        "query": "SELECT job\nFROM cvat.logs\nWHERE $__timeFilter(timestamp)\n  AND job IS NOT NULL\n  AND source = 'client'\n  AND task in (${tasks})",
+        "query": "SELECT job\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND job IS NOT NULL\n  AND source = 'client'\n  AND task in (${tasks})",
         "refresh": 2,
         "regex": "",
         "skipUrlSync": false,

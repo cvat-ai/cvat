@@ -14,12 +14,13 @@ from drf_spectacular.types import OpenApiTypes
 from rest_framework.renderers import JSONRenderer
 
 
-from cvat.apps.logs.serializers import ClientEventsSerializer, EventSerializer
+from cvat.apps.events.serializers import ClientEventsSerializer, EventSerializer
 from cvat.apps.engine.log import clogger, vlogger
 from .export import export
 
 class EventsViewSet(viewsets.ViewSet):
     serializer_class = None
+    TIME_THRESHOLD = 100 # seconds
 
     @staticmethod
     @extend_schema(summary='Method saves logs from a client on the server',
@@ -77,12 +78,12 @@ class EventsViewSet(viewsets.ViewSet):
                 timestamp = datetime_parser.isoparse(event['timestamp'])
                 if last_timestamp:
                     t_diff = timestamp - last_timestamp
-                    if t_diff.seconds < 100:
+                    if t_diff.seconds < EventsViewSet.TIME_THRESHOLD:
                         payload = event.get('payload', {})
                         if payload:
                             payload = json.loads(payload)
 
-                        payload['working_time'] = t_diff.microseconds / 1000
+                        payload['working_time'] = t_diff.microseconds // 1000
                         event['payload'] = json.dumps(payload)
 
                 last_timestamp = timestamp

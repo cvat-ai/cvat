@@ -177,7 +177,7 @@
               }
             ],
             "mode": "aggregate",
-            "table": "logs"
+            "table": "events"
           },
           "datasource": {
             "type": "grafana-clickhouse-datasource",
@@ -282,11 +282,11 @@
                 }
               ],
               "mode": "aggregate",
-              "table": "logs"
+              "table": "events"
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT\r\n  scope as Scope,\r\n  source as Source,\r\n  avg(duration) as \"Average duration (ms)\",\r\n  min(duration) as \"Min duration (ms)\",\r\n  max(duration) as \"Max duration (ms)\"\r\nFROM cvat.logs\r\nWHERE duration > 0\r\n  AND $__timeFilter(timestamp)\r\nGROUP BY scope, source",
+          "rawSql": "SELECT\r\n  scope as Scope,\r\n  source as Source,\r\n  avg(duration) as \"Average duration (ms)\",\r\n  min(duration) as \"Min duration (ms)\",\r\n  max(duration) as \"Max duration (ms)\"\r\nFROM events\r\nWHERE duration > 0\r\n  AND $__timeFilter(timestamp)\r\nGROUP BY scope, source",
           "refId": "A"
         }
       ],
@@ -359,7 +359,7 @@
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT\r\n  scope as Scope,\r\n  source as Source,\r\n  count() as Count\r\nFROM cvat.logs\r\nWHERE duration > 0\r\n  AND $__timeFilter(timestamp)\r\nGROUP BY scope, source",
+          "rawSql": "SELECT\r\n  scope as Scope,\r\n  source as Source,\r\n  count() as Count\r\nFROM events\r\nWHERE duration > 0\r\n  AND $__timeFilter(timestamp)\r\nGROUP BY scope, source",
           "refId": "A"
         }
       ],
@@ -472,7 +472,7 @@
             ],
             "mode": "trend",
             "orderBy": [],
-            "table": "logs",
+            "table": "events",
             "timeField": "timestamp",
             "timeFieldType": "DateTime64(3, 'Etc/UTC')"
           },
@@ -482,7 +482,7 @@
           },
           "format": 0,
           "queryType": "builder",
-          "rawSql": "SELECT $__timeInterval(timestamp) as time,  count(*) FROM logs WHERE $__timeFilter(timestamp) AND   ( scope = 'send:exception' ) AND ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) GROUP BY time ORDER BY time ASC",
+          "rawSql": "SELECT $__timeInterval(timestamp) as time,  count(*) FROM events WHERE $__timeFilter(timestamp) AND   ( scope = 'send:exception' ) AND ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) GROUP BY time ORDER BY time ASC",
           "refId": "A"
         }
       ],
@@ -633,7 +633,7 @@
             ],
             "mode": "list",
             "orderBy": [],
-            "table": "logs",
+            "table": "events",
             "timeField": "timestamp",
             "timeFieldType": "DateTime64(3, 'Etc/UTC')"
           },
@@ -671,13 +671,13 @@
               ],
               "mode": "list",
               "orderBy": [],
-              "table": "logs",
+              "table": "events",
               "timeField": "timestamp",
               "timeFieldType": "DateTime64(3, 'Etc/UTC')"
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT\r\n  user,\r\n  source,\r\n  project,\r\n  task,\r\n  job,\r\n  JSONExtractString(payload, 'message') as error,\r\n  JSONExtractString(payload, 'stack') as stack\r\nFROM cvat.logs\r\nWHERE\r\n  ( timestamp  >= $__fromTime AND timestamp <= $__toTime )\r\n  AND scope = 'send:exception'",
+          "rawSql": "SELECT\r\n  user,\r\n  source,\r\n  project,\r\n  task,\r\n  job,\r\n  JSONExtractString(payload, 'message') as error,\r\n  JSONExtractString(payload, 'stack') as stack\r\nFROM events\r\nWHERE\r\n  ( timestamp  >= $__fromTime AND timestamp <= $__toTime )\r\n  AND scope = 'send:exception'",
           "refId": "A"
         }
       ],
