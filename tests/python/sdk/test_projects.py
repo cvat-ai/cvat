@@ -168,7 +168,7 @@ class TestProjectUsecases:
         assert tasks[0].project_id == fxt_project_with_shapes.id
 
     def test_can_get_labels(self, fxt_project_with_shapes: Project):
-        expected_labels = {'car', 'person'}
+        expected_labels = {"car", "person"}
 
         received_labels = fxt_project_with_shapes.get_labels()
 

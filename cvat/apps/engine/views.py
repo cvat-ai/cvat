@@ -75,7 +75,7 @@ from cvat.apps.engine.location import get_location_configuration, StorageType
 from . import models, task
 from .log import clogger, slogger
 from cvat.apps.iam.permissions import (CloudStoragePermission,
-    CommentPermission, IssuePermission, JobPermission, ProjectPermission,
+    CommentPermission, IssuePermission, JobPermission, LabelPermission, ProjectPermission,
     TaskPermission, UserPermission)
 from cvat.apps.engine.cache import MediaCache
 
@@ -1915,12 +1915,6 @@ class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         responses={
             '200': LabelSerializer,
         }),
-    create=extend_schema(
-        summary='Method creates an label',
-        request=LabelSerializer,
-        responses={
-            '201': LabelSerializer,
-        }),
     destroy=extend_schema(
         summary='Method deletes an label',
         responses={
@@ -1928,19 +1922,18 @@ class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         })
 )
 class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
-    mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
-    PartialUpdateModelMixin
+    mixins.RetrieveModelMixin, mixins.DestroyModelMixin, PartialUpdateModelMixin
 ):
     queryset = Label.objects.prefetch_related('task', 'project').all()
 
     iam_organization_field = 'task__organization'
     search_fields = ('name', 'parent')
-    filter_fields = list(search_fields) + ['id', 'job_id', 'task_id', 'project_id', 'parent', 'type']
-    simple_filters = list(search_fields) + ['job_id', 'task_id', 'project_id', 'parent', 'type']
+    filter_fields = list(search_fields) + ['id', 'task_id', 'project_id', 'type', 'color', 'parent_id']
+    simple_filters = list(search_fields) + ['task_id', 'project_id', 'type', 'color', 'parent_id']
     ordering_fields = list(filter_fields)
     lookup_fields = {
-        'job_id': 'job',
         'task_id': 'task',
+        'parent': 'parent__name',
     }
     ordering = '-id'
     serializer_class = LabelSerializer

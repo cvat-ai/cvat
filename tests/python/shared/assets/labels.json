@@ -1,0 +1,616 @@
+{
+  "count": 40,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "attributes": [],
+      "color": "#22b16f",
+      "id": 42,
+      "name": "11",
+      "parent_id": null,
+      "project_id": 4,
+      "sublabels": [],
+      "type": "any"
+    },
+    {
+      "attributes": [],
+      "color": "#5c73a8",
+      "id": 41,
+      "name": "4",
+      "parent_id": 37,
+      "project_id": 4,
+      "sublabels": [],
+      "type": "points"
+    },
+    {
+      "attributes": [],
+      "color": "#59a8fe",
+      "id": 40,
+      "name": "3",
+      "parent_id": 37,
+      "project_id": 4,
+      "sublabels": [],
+      "type": "points"
+    },
+    {
+      "attributes": [],
+      "color": "#4925ec",
+      "id": 39,
+      "name": "2",
+      "parent_id": 37,
+      "project_id": 4,
+      "sublabels": [],
+      "type": "points"
+    },
+    {
+      "attributes": [],
+      "color": "#d53957",
+      "id": 38,
+      "name": "1",
+      "parent_id": 37,
+      "project_id": 4,
+      "sublabels": [],
+      "type": "points"
+    },
+    {
+      "attributes": [
+        {
+          "default_value": "1",
+          "id": 4,
+          "input_type": "radio",
+          "mutable": true,
+          "name": "a1",
+          "values": [
+            "1",
+            "23"
+          ]
+        },
+        {
+          "default_value": "0",
+          "id": 5,
+          "input_type": "number",
+          "mutable": false,
+          "name": "a2",
+          "values": [
+            "0",
+            "4",
+            "1"
+          ]
+        }
+      ],
+      "color": "#f3c7ed",
+      "id": 37,
+      "name": "skeleton2_all_disjoint",
+      "parent_id": null,
+      "project_id": 4,
+      "sublabels": [
+        {
+          "attributes": [],
+          "color": "#59a8fe",
+          "has_parent": true,
+          "id": 40,
+          "name": "3",
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#5c73a8",
+          "has_parent": true,
+          "id": 41,
+          "name": "4",
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#d53957",
+          "has_parent": true,
+          "id": 38,
+          "name": "1",
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#4925ec",
+          "has_parent": true,
+          "id": 39,
+          "name": "2",
+          "type": "points"
+        }
+      ],
+      "svg": "<circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"23.16053581237793\" cy=\"21.655517578125\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-id=\"38\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"38.54515075683594\" cy=\"34.197322845458984\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-id=\"39\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"54.933109283447266\" cy=\"35.70234298706055\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"3\" data-node-id=\"3\" data-label-id=\"40\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"54.26421356201172\" cy=\"17.474916458129883\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"4\" data-node-id=\"4\" data-label-id=\"41\"></circle>",
+      "type": "skeleton"
+    },
+    {
+      "attributes": [],
+      "color": "#478144",
+      "id": 36,
+      "name": "5",
+      "parent_id": 31,
+      "project_id": 4,
+      "sublabels": [],
+      "type": "points"
+    },
+    {
+      "attributes": [],
+      "color": "#4a649f",
+      "id": 35,
+      "name": "4",
+      "parent_id": 31,
+      "project_id": 4,
+      "sublabels": [],
+      "type": "points"
+    },
+    {
+      "attributes": [],
+      "color": "#479ffe",
+      "id": 34,
+      "name": "3",
+      "parent_id": 31,
+      "project_id": 4,
+      "sublabels": [],
+      "type": "points"
+    },
+    {
+      "attributes": [],
+      "color": "#350dea",
+      "id": 33,
+      "name": "2",
+      "parent_id": 31,
+      "project_id": 4,
+      "sublabels": [],
+      "type": "points"
+    },
+    {
+      "attributes": [],
+      "color": "#d12345",
+      "id": 32,
+      "name": "1",
+      "parent_id": 31,
+      "project_id": 4,
+      "sublabels": [],
+      "type": "points"
+    },
+    {
+      "attributes": [],
+      "color": "#2b3145",
+      "id": 31,
+      "name": "skeleton1",
+      "parent_id": null,
+      "project_id": 4,
+      "sublabels": [
+        {
+          "attributes": [],
+          "color": "#d12345",
+          "has_parent": true,
+          "id": 32,
+          "name": "1",
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#350dea",
+          "has_parent": true,
+          "id": 33,
+          "name": "2",
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#479ffe",
+          "has_parent": true,
+          "id": 34,
+          "name": "3",
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#4a649f",
+          "has_parent": true,
+          "id": 35,
+          "name": "4",
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#478144",
+          "has_parent": true,
+          "id": 36,
+          "name": "5",
+          "type": "points"
+        }
+      ],
+      "svg": "<line x1=\"39.38127136230469\" y1=\"47.74247360229492\" x2=\"54.26421356201172\" y2=\"22.993310928344727\" stroke=\"black\" data-type=\"edge\" data-node-from=\"4\" stroke-width=\"0.5\" data-node-to=\"2\"></line><line x1=\"38.54515075683594\" y1=\"15.969900131225586\" x2=\"54.26421356201172\" y2=\"22.993310928344727\" stroke=\"black\" data-type=\"edge\" data-node-from=\"1\" stroke-width=\"0.5\" data-node-to=\"2\"></line><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"38.54515075683594\" cy=\"15.969900131225586\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-id=\"32\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"54.26421356201172\" cy=\"22.993310928344727\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-id=\"33\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"57.94314193725586\" cy=\"40.886287689208984\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"3\" data-node-id=\"3\" data-label-id=\"34\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"39.38127136230469\" cy=\"47.74247360229492\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"4\" data-node-id=\"4\" data-label-id=\"35\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"31.354515075683594\" cy=\"34.8662223815918\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"5\" data-node-id=\"5\" data-label-id=\"36\"></circle>",
+      "type": "skeleton"
+    },
+    {
+      "attributes": [],
+      "color": "#c06060",
+      "id": 30,
+      "name": "person",
+      "parent_id": null,
+      "project_id": 8,
+      "sublabels": [],
+      "type": "any"
+    },
+    {
+      "attributes": [],
+      "color": "#2080c0",
+      "id": 29,
+      "name": "car",
+      "parent_id": null,
+      "project_id": 8,
+      "sublabels": [],
+      "type": "any"
+    },
+    {
+      "attributes": [],
+      "color": "#bde94a",
+      "id": 28,
+      "name": "label_0",
+      "parent_id": null,
+      "project_id": 7,
+      "sublabels": [],
+      "type": "any"
+    },
+    {
+      "attributes": [],
+      "color": "#bde94a",
+      "id": 27,
+      "name": "label_0",
+      "parent_id": null,
+      "project_id": 6,
+      "sublabels": [],
+      "type": "any"
+    },
+    {
+      "attributes": [],
+      "color": "#4a649f",
+      "id": 26,
+      "name": "4",
+      "parent_id": 22,
+      "project_id": 5,
+      "sublabels": [],
+      "type": "points"
+    },
+    {
+      "attributes": [
+        {
+          "default_value": "val1",
+          "id": 3,
+          "input_type": "select",
+          "mutable": false,
+          "name": "attr",
+          "values": [
+            "val1",
+            "val2"
+          ]
+        }
+      ],
+      "color": "#59a8fe",
+      "id": 25,
+      "name": "3",
+      "parent_id": 22,
+      "project_id": 5,
+      "sublabels": [],
+      "type": "points"
+    },
+    {
+      "attributes": [],
+      "color": "#4925ec",
+      "id": 24,
+      "name": "2",
+      "parent_id": 22,
+      "project_id": 5,
+      "sublabels": [],
+      "type": "points"
+    },
+    {
+      "attributes": [],
+      "color": "#d53957",
+      "id": 23,
+      "name": "1",
+      "parent_id": 22,
+      "project_id": 5,
+      "sublabels": [],
+      "type": "points"
+    },
+    {
+      "attributes": [
+        {
+          "default_value": "white",
+          "id": 2,
+          "input_type": "select",
+          "mutable": false,
+          "name": "color",
+          "values": [
+            "white",
+            "black"
+          ]
+        }
+      ],
+      "color": "#0c81b5",
+      "id": 22,
+      "name": "s2",
+      "parent_id": null,
+      "project_id": 5,
+      "sublabels": [
+        {
+          "attributes": [],
+          "color": "#d53957",
+          "has_parent": true,
+          "id": 23,
+          "name": "1",
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#4925ec",
+          "has_parent": true,
+          "id": 24,
+          "name": "2",
+          "type": "points"
+        },
+        {
+          "attributes": [
+            {
+              "default_value": "val1",
+              "id": 3,
+              "input_type": "select",
+              "mutable": false,
+              "name": "attr",
+              "values": [
+                "val1",
+                "val2"
+              ]
+            }
+          ],
+          "color": "#59a8fe",
+          "has_parent": true,
+          "id": 25,
+          "name": "3",
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#4a649f",
+          "has_parent": true,
+          "id": 26,
+          "name": "4",
+          "type": "points"
+        }
+      ],
+      "svg": "<line x1=\"65.6380615234375\" y1=\"18.394649505615234\" x2=\"22.327028274536133\" y2=\"54.8494987487793\" stroke=\"black\" data-type=\"edge\" data-node-from=\"3\" stroke-width=\"0.5\" data-node-to=\"2\"></line><line x1=\"77.34375\" y1=\"55.18394470214844\" x2=\"65.6380615234375\" y2=\"18.394649505615234\" stroke=\"black\" data-type=\"edge\" data-node-from=\"4\" stroke-width=\"0.5\" data-node-to=\"3\"></line><line x1=\"4.434051036834717\" y1=\"27.257524490356445\" x2=\"77.34375\" y2=\"55.18394470214844\" stroke=\"black\" data-type=\"edge\" data-node-from=\"1\" stroke-width=\"0.5\" data-node-to=\"4\"></line><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"4.434051036834717\" cy=\"27.257524490356445\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-id=\"23\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"22.327028274536133\" cy=\"54.8494987487793\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-id=\"24\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"65.6380615234375\" cy=\"18.394649505615234\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"3\" data-node-id=\"3\" data-label-id=\"25\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"77.34375\" cy=\"55.18394470214844\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"4\" data-node-id=\"4\" data-label-id=\"26\"></circle>",
+      "type": "skeleton"
+    },
+    {
+      "attributes": [],
+      "color": "#479ffe",
+      "id": 21,
+      "name": "3",
+      "parent_id": 18,
+      "project_id": 5,
+      "sublabels": [],
+      "type": "points"
+    },
+    {
+      "attributes": [],
+      "color": "#350dea",
+      "id": 20,
+      "name": "2",
+      "parent_id": 18,
+      "project_id": 5,
+      "sublabels": [],
+      "type": "points"
+    },
+    {
+      "attributes": [],
+      "color": "#d12345",
+      "id": 19,
+      "name": "1",
+      "parent_id": 18,
+      "project_id": 5,
+      "sublabels": [],
+      "type": "points"
+    },
+    {
+      "attributes": [],
+      "color": "#5c5eba",
+      "id": 18,
+      "name": "s1",
+      "parent_id": null,
+      "project_id": 5,
+      "sublabels": [
+        {
+          "attributes": [],
+          "color": "#d12345",
+          "has_parent": true,
+          "id": 19,
+          "name": "1",
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#350dea",
+          "has_parent": true,
+          "id": 20,
+          "name": "2",
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#479ffe",
+          "has_parent": true,
+          "id": 21,
+          "name": "3",
+          "type": "points"
+        }
+      ],
+      "svg": "<line x1=\"36.37385177612305\" y1=\"50.334449768066406\" x2=\"70.15311431884766\" y2=\"21.237457275390625\" stroke=\"black\" data-type=\"edge\" data-node-from=\"2\" stroke-width=\"0.5\" data-node-to=\"3\"></line><line x1=\"29.517663955688477\" y1=\"15.050167083740234\" x2=\"36.37385177612305\" y2=\"50.334449768066406\" stroke=\"black\" data-type=\"edge\" data-node-from=\"1\" stroke-width=\"0.5\" data-node-to=\"2\"></line><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"29.517663955688477\" cy=\"15.050167083740234\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-id=\"19\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"36.37385177612305\" cy=\"50.334449768066406\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-id=\"20\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"70.15311431884766\" cy=\"21.237457275390625\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"3\" data-node-id=\"3\" data-label-id=\"21\"></circle>",
+      "type": "skeleton"
+    },
+    {
+      "attributes": [],
+      "color": "#406040",
+      "id": 17,
+      "name": "dog",
+      "parent_id": null,
+      "project_id": 4,
+      "sublabels": [],
+      "type": "any"
+    },
+    {
+      "attributes": [],
+      "color": "#6080c0",
+      "id": 16,
+      "name": "cat",
+      "parent_id": null,
+      "project_id": 4,
+      "sublabels": [],
+      "type": "any"
+    },
+    {
+      "attributes": [],
+      "color": "#2080c0",
+      "id": 15,
+      "name": "Car",
+      "parent_id": null,
+      "sublabels": [],
+      "task_id": 12,
+      "type": "any"
+    },
+    {
+      "attributes": [],
+      "color": "#406040",
+      "id": 14,
+      "name": "dog",
+      "parent_id": null,
+      "sublabels": [],
+      "task_id": 8,
+      "type": "any"
+    },
+    {
+      "attributes": [],
+      "color": "#6080c0",
+      "id": 13,
+      "name": "cat",
+      "parent_id": null,
+      "sublabels": [],
+      "task_id": 8,
+      "type": "any"
+    },
+    {
+      "attributes": [],
+      "color": "#406040",
+      "id": 12,
+      "name": "dog",
+      "parent_id": null,
+      "sublabels": [],
+      "task_id": 7,
+      "type": "any"
+    },
+    {
+      "attributes": [],
+      "color": "#6080c0",
+      "id": 11,
+      "name": "cat",
+      "parent_id": null,
+      "sublabels": [],
+      "task_id": 7,
+      "type": "any"
+    },
+    {
+      "attributes": [],
+      "color": "#2080c0",
+      "id": 10,
+      "name": "car",
+      "parent_id": null,
+      "sublabels": [],
+      "task_id": 6,
+      "type": "any"
+    },
+    {
+      "attributes": [],
+      "color": "#2080c0",
+      "id": 9,
+      "name": "car",
+      "parent_id": null,
+      "sublabels": [],
+      "task_id": 5,
+      "type": "any"
+    },
+    {
+      "attributes": [],
+      "color": "#406040",
+      "id": 8,
+      "name": "dog",
+      "parent_id": null,
+      "project_id": 2,
+      "sublabels": [],
+      "type": "any"
+    },
+    {
+      "attributes": [],
+      "color": "#6080c0",
+      "id": 7,
+      "name": "cat",
+      "parent_id": null,
+      "project_id": 2,
+      "sublabels": [],
+      "type": "any"
+    },
+    {
+      "attributes": [],
+      "color": "#c06060",
+      "id": 6,
+      "name": "person",
+      "parent_id": null,
+      "project_id": 1,
+      "sublabels": [],
+      "type": "any"
+    },
+    {
+      "attributes": [
+        {
+          "default_value": "mazda",
+          "id": 1,
+          "input_type": "select",
+          "mutable": false,
+          "name": "model",
+          "values": [
+            "mazda",
+            "volvo",
+            "bmw"
+          ]
+        }
+      ],
+      "color": "#2080c0",
+      "id": 5,
+      "name": "car",
+      "parent_id": null,
+      "project_id": 1,
+      "sublabels": [],
+      "type": "any"
+    },
+    {
+      "attributes": [],
+      "color": "#c06060",
+      "id": 4,
+      "name": "person",
+      "parent_id": null,
+      "sublabels": [],
+      "task_id": 2,
+      "type": "any"
+    },
+    {
+      "attributes": [],
+      "color": "#2080c0",
+      "id": 3,
+      "name": "car",
+      "parent_id": null,
+      "sublabels": [],
+      "task_id": 2,
+      "type": "any"
+    }
+  ]
+}

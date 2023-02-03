@@ -19,7 +19,7 @@ from django.db.models import Q
 from rest_framework.permissions import BasePermission
 
 from cvat.apps.organizations.models import Membership, Organization
-from cvat.apps.engine.models import Project, Task, Job, Issue
+from cvat.apps.engine.models import Label, Project, Task, Job, Issue
 from cvat.apps.iam.exceptions import LimitsReachedException
 from cvat.apps.limit_manager.core.limits import (CapabilityContext, LimitManager,
     Limits, OrgCloudStoragesContext, OrgTasksContext, ProjectWebhooksContext,
@@ -1344,6 +1344,92 @@ class IssuePermission(OpenPolicyAgentPermission):
                 "owner": { "id": self.user_id },
                 "assignee": { "id": self.assignee_id },
             })
+
+        return data
+
+
+class LabelPermission(OpenPolicyAgentPermission):
+    obj: Optional[Label]
+
+    class Scopes(StrEnum):
+        LIST = 'list'
+        DELETE = 'delete'
+        UPDATE = 'update'
+        VIEW = 'view'
+
+    @classmethod
+    def create(cls, request, view, obj):
+        Scopes = __class__.Scopes
+
+        permissions = []
+        if view.basename == 'labels':
+            for scope in cls.get_scopes(request, view, obj):
+                if scope in [Scopes.DELETE, Scopes.UPDATE, Scopes.VIEW]:
+                    obj = cast(Label, obj)
+
+                    # Access rights are the same as in the owning objects
+                    if obj.project:
+                        if scope == Scopes.VIEW:
+                            owning_perm_scope = ProjectPermission.Scopes.VIEW
+                        else:
+                            owning_perm_scope = ProjectPermission.Scopes.UPDATE_DESC
+
+                        owning_perm = ProjectPermission.create_base_perm(
+                            request, view, scope=owning_perm_scope, obj=obj.project,
+                        )
+                    else:
+                        if scope == Scopes.VIEW:
+                            owning_perm_scope = TaskPermission.Scopes.VIEW
+                        else:
+                            owning_perm_scope = TaskPermission.Scopes.UPDATE_DESC
+
+                        owning_perm = TaskPermission.create_base_perm(
+                            request, view, scope=owning_perm_scope, obj=obj.task,
+                        )
+
+                    permissions.append(owning_perm)
+
+                permissions.append(cls.create_base_perm(request, view, scope, obj))
+
+        return permissions
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.url = settings.IAM_OPA_DATA_URL + '/labels/allow'
+
+    @staticmethod
+    def get_scopes(request, view, obj):
+        Scopes = __class__.Scopes
+        return [{
+            'list': Scopes.LIST,
+            'destroy': Scopes.DELETE,
+            'partial_update': Scopes.UPDATE,
+            'retrieve': Scopes.VIEW,
+        }.get(view.action, None)]
+
+    def get_resource(self):
+        data = None
+
+        if self.obj:
+            if self.obj.project:
+                organization = self.obj.project.organization
+            else:
+                organization = self.obj.task.organization
+
+            data = {
+                "id": self.obj.id,
+                'organization': {
+                    "id": getattr(organization, 'id', None)
+                },
+                "task": {
+                    "owner": { "id": getattr(self.obj.task.owner, 'id', None) },
+                    "assignee": { "id": getattr(self.obj.task.assignee, 'id', None) }
+                } if self.obj.project else None,
+                "project": {
+                    "owner": { "id": getattr(self.obj.project.owner, 'id', None) },
+                    "assignee": { "id": getattr(self.obj.project.assignee, 'id', None) }
+                } if self.obj.project else None,
+            }
 
         return data
 

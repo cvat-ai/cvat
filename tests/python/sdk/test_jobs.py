@@ -98,7 +98,7 @@ class TestJobUsecases:
         assert self.stdout.getvalue() == ""
 
     def test_can_get_labels(self, fxt_new_task: Task):
-        expected_labels = {'car', 'person'}
+        expected_labels = {"car", "person"}
 
         received_labels = fxt_new_task.get_jobs()[0].get_labels()
 
@@ -287,9 +287,7 @@ class TestJobUsecases:
                         ],
                     )
                 ],
-                tags=[
-                    models.LabeledImageRequest(frame=0, label_id=labels[0].id)
-                ],
+                tags=[models.LabeledImageRequest(frame=0, label_id=labels[0].id)],
             )
         )
 

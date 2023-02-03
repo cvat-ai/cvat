@@ -59,7 +59,7 @@ class HyperlinkedEndpointSerializer(serializers.Serializer):
 
 
 class CollectionSummarySerializer(serializers.Serializer):
-    count = serializers.ReadOnlyField()
+    count = serializers.IntegerField()
 
     def __init__(self, model, *, url_filter_key, **kwargs):
         super().__init__(**kwargs)
@@ -171,18 +171,34 @@ class SkeletonSerializer(serializers.ModelSerializer):
         fields = ('id', 'svg',)
 
 class LabelSerializer(SublabelSerializer):
-    deleted = serializers.BooleanField(required=False, help_text='Delete label if value is true from proper Task/Project object')
+    deleted = serializers.BooleanField(required=False, write_only=True,
+        help_text='Delete label if value is true from proper Task/Project object')
     sublabels = SublabelSerializer(many=True, required=False)
     svg = serializers.CharField(allow_blank=True, required=False)
 
     class Meta:
         model = models.Label
-        fields = ('id', 'name', 'color', 'attributes', 'deleted', 'type', 'svg', 'sublabels', 'has_parent')
+        fields = (
+            'id', 'name', 'color', 'attributes', 'deleted', 'type', 'svg',
+            'sublabels', 'project_id', 'task_id', 'parent_id'
+        )
+        read_only_fields = ('id', 'type', 'svg', 'project_id', 'task_id')
+        extra_kwargs = {
+            'project_id': { 'required': False, 'allow_null': False },
+            'task_id': { 'required': False, 'allow_null': False },
+        }
 
     def to_representation(self, instance):
         label = super().to_representation(instance)
         if label['type'] == str(models.LabelType.SKELETON):
             label['svg'] = instance.skeleton.svg
+
+        # Clean mutually exclusive fields
+        if not label.get('task_id'):
+            label.pop('task_id', None)
+        if not label.get('project_id'):
+            label.pop('project_id', None)
+
         return label
 
     def validate(self, attrs):
