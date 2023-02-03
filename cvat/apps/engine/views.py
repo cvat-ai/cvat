@@ -8,7 +8,7 @@ import os
 import os.path as osp
 import pytz
 import traceback
-import datetime
+from datetime import datetime
 from distutils.util import strtobool
 from tempfile import mkstemp
 
