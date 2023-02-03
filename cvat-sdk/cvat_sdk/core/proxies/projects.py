@@ -127,7 +127,9 @@ class Project(
     def get_tasks(self) -> List[Task]:
         return [
             Task(self._client, m)
-            for m in get_paginated_collection(self.api.list_tasks_endpoint, id=self.id)
+            for m in get_paginated_collection(
+                self._client.api_client.tasks_api.list_endpoint, project_id=str(self.id)
+            )
         ]
 
     def get_preview(

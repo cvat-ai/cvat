@@ -10,6 +10,7 @@
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "id": 19,
+      "issues": "http://localhost:8080/api/issues?job_id=19",
       "labels": [
         {
           "attributes": [],
@@ -43,11 +44,12 @@
     },
     {
       "assignee": null,
-      "bug_tracker": "",
+      "bug_tracker": "https://bugtracker.localhost/task/12345",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "id": 18,
+      "issues": "http://localhost:8080/api/issues?job_id=18",
       "labels": [
         {
           "attributes": [],
@@ -245,6 +247,7 @@
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "id": 17,
+      "issues": "http://localhost:8080/api/issues?job_id=17",
       "labels": [
         {
           "attributes": [],
@@ -289,6 +292,7 @@
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "id": 16,
+      "issues": "http://localhost:8080/api/issues?job_id=16",
       "labels": [
         {
           "attributes": [],
@@ -327,6 +331,7 @@
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "id": 14,
+      "issues": "http://localhost:8080/api/issues?job_id=14",
       "labels": [
         {
           "attributes": [
@@ -378,6 +383,7 @@
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "id": 13,
+      "issues": "http://localhost:8080/api/issues?job_id=13",
       "labels": [
         {
           "attributes": [
@@ -429,6 +435,7 @@
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "id": 12,
+      "issues": "http://localhost:8080/api/issues?job_id=12",
       "labels": [
         {
           "attributes": [
@@ -486,6 +493,7 @@
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "id": 11,
+      "issues": "http://localhost:8080/api/issues?job_id=11",
       "labels": [
         {
           "attributes": [
@@ -543,6 +551,7 @@
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "id": 10,
+      "issues": "http://localhost:8080/api/issues?job_id=10",
       "labels": [
         {
           "attributes": [],
@@ -581,6 +590,7 @@
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "id": 9,
+      "issues": "http://localhost:8080/api/issues?job_id=9",
       "labels": [
         {
           "attributes": [],
@@ -619,6 +629,7 @@
       "data_compressed_chunk_type": "imageset",
       "dimension": "3d",
       "id": 8,
+      "issues": "http://localhost:8080/api/issues?job_id=8",
       "labels": [
         {
           "attributes": [],
@@ -654,6 +665,7 @@
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "id": 7,
+      "issues": "http://localhost:8080/api/issues?job_id=7",
       "labels": [
         {
           "attributes": [],
@@ -689,6 +701,7 @@
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "id": 2,
+      "issues": "http://localhost:8080/api/issues?job_id=2",
       "labels": [
         {
           "attributes": [],

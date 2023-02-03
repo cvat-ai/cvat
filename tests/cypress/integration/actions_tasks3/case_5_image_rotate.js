@@ -21,7 +21,7 @@ context('Check if the image is rotated', () => {
     }
 
     function scaleFitImage() {
-        let scaleBefore, scaleAfter;
+        let scaleBefore;
         cy.get('#cvat_canvas_background')
             .should('have.attr', 'style')
             .then(($styles) => {
@@ -31,7 +31,7 @@ context('Check if the image is rotated', () => {
         cy.get('#cvat_canvas_background')
             .should('have.attr', 'style')
             .then(($styles) => {
-                scaleAfter = Number($styles.match(/scale\((\d\.\d+)\)/m)[1]);
+                const scaleAfter = Number($styles.match(/scale\((\d\.\d+)\)/m)[1]);
                 cy.expect(scaleBefore).to.be.greaterThan(scaleAfter);
                 cy.get('#cvat_canvas_content').dblclick();
                 cy.get('#cvat_canvas_background').should('have.attr', 'style').and('contain', scaleBefore);

@@ -12,7 +12,7 @@ context('Crop polygon properly.', () => {
     const createPolygonShape = {
         reDraw: false,
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         pointsMap: [
             { x: 200, y: 500 },
             { x: 200, y: 200 },

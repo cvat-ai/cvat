@@ -8,7 +8,9 @@ import shutil
 from abc import ABCMeta, abstractmethod
 from enum import Enum, auto
 from pathlib import Path
-from typing import Callable, Mapping, Type, TypeVar
+from typing import Any, Callable, Dict, List, Mapping, Type, TypeVar, Union, cast
+
+from attrs import define
 
 import cvat_sdk.models as models
 from cvat_sdk.api_client.model_utils import OpenApiModel, to_json
@@ -37,7 +39,21 @@ class UpdatePolicy(Enum):
     """
 
 
-_ModelType = TypeVar("_ModelType", bound=OpenApiModel)
+_CacheObject = Dict[str, Any]
+
+
+class _CacheObjectModel(metaclass=ABCMeta):
+    @abstractmethod
+    def dump(self) -> _CacheObject:
+        ...
+
+    @classmethod
+    @abstractmethod
+    def load(cls, obj: _CacheObject):
+        ...
+
+
+_ModelType = TypeVar("_ModelType", bound=Union[OpenApiModel, _CacheObjectModel])
 
 
 class CacheManager(metaclass=ABCMeta):
@@ -67,14 +83,36 @@ class CacheManager(metaclass=ABCMeta):
     def project_json_path(self, project_id: int) -> Path:
         return self.project_dir(project_id) / "project.json"
 
-    def load_model(self, path: Path, model_type: Type[_ModelType]) -> _ModelType:
+    def _load_object(self, path: Path) -> _CacheObject:
         with open(path, "rb") as f:
-            return model_type._new_from_openapi_data(**json.load(f))
+            return json.load(f)
 
-    def save_model(self, path: Path, model: OpenApiModel) -> None:
+    def _save_object(self, path: Path, obj: _CacheObject) -> None:
         with atomic_writer(path, "w", encoding="UTF-8") as f:
-            json.dump(to_json(model), f, indent=4)
+            json.dump(obj, f, indent=4)
             print(file=f)  # add final newline
+
+    def _deserialize_model(self, obj: _CacheObject, model_type: _ModelType) -> _ModelType:
+        if issubclass(model_type, OpenApiModel):
+            return cast(OpenApiModel, model_type)._new_from_openapi_data(**obj)
+        elif issubclass(model_type, _CacheObjectModel):
+            return cast(_CacheObjectModel, model_type).load(obj)
+        else:
+            raise NotImplementedError("Unexpected model type")
+
+    def _serialize_model(self, model: _ModelType) -> _CacheObject:
+        if isinstance(model, OpenApiModel):
+            return to_json(model)
+        elif isinstance(model, _CacheObjectModel):
+            return model.dump()
+        else:
+            raise NotImplementedError("Unexpected model type")
+
+    def load_model(self, path: Path, model_type: Type[_ModelType]) -> _ModelType:
+        return self._deserialize_model(self._load_object(path), model_type)
+
+    def save_model(self, path: Path, model: _ModelType) -> None:
+        return self._save_object(path, self._serialize_model(model))
 
     @abstractmethod
     def retrieve_task(self, task_id: int) -> Task:
@@ -178,7 +216,7 @@ class _CacheManagerOnline(CacheManager):
         # There are currently no files cached alongside project.json,
         # so we don't need to check if we need to purge them.
 
-        self.save_model(project_json_path, project._model)
+        self.save_model(project_json_path, _OfflineProjectModel.from_entity(project))
 
         return project
 
@@ -207,9 +245,43 @@ class _CacheManagerOffline(CacheManager):
 
     def retrieve_project(self, project_id: int) -> Project:
         self._logger.info(f"Retrieving project {project_id} from cache...")
-        return Project(
-            self._client, self.load_model(self.project_json_path(project_id), models.ProjectRead)
+        cached_model = self.load_model(self.project_json_path(project_id), _OfflineProjectModel)
+        return _OfflineProjectProxy(self._client, cached_model, cache_manager=self)
+
+
+@define
+class _OfflineProjectModel(_CacheObjectModel):
+    api_model: models.IProjectRead
+    task_ids: List[int]
+
+    def dump(self) -> _CacheObject:
+        return {
+            "model": to_json(self.api_model),
+            "tasks": self.task_ids,
+        }
+
+    @classmethod
+    def load(cls, obj: _CacheObject):
+        return cls(
+            api_model=obj["model"],
+            task_ids=obj["tasks"],
         )
+
+    @classmethod
+    def from_entity(cls, entity: Project):
+        return cls(api_model=entity._model, task_ids=[t.id for t in entity.get_tasks()])
+
+
+class _OfflineProjectProxy(Project):
+    def __init__(
+        self, client: Client, cached_model: _OfflineProjectModel, *, cache_manager: CacheManager
+    ) -> None:
+        super().__init__(client, cached_model.api_model)
+        self._offline_model = cached_model
+        self._cache_manager = cache_manager
+
+    def get_tasks(self) -> List[Task]:
+        return [self._cache_manager.retrieve_task(t) for t in self._offline_model.task_ids]
 
 
 _CACHE_MANAGER_CLASSES: Mapping[UpdatePolicy, Type[CacheManager]] = {

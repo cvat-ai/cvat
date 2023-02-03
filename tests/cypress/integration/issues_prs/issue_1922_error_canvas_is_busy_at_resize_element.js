@@ -11,7 +11,7 @@ context('Check error canvas is busy at resize element', () => {
     const createRectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         firstX: 100,
         firstY: 100,
         secondX: 300,
@@ -38,8 +38,7 @@ context('Check error canvas is busy at resize element', () => {
         });
 
         it('Resize element on second frame and go to previous frame at resizing element', () => {
-            const secondX = createRectangleShape2Points.secondX;
-            const secondY = createRectangleShape2Points.secondY;
+            const { secondX, secondY } = createRectangleShape2Points;
             cy.get('.cvat-canvas-container')
                 .trigger('mousemove', secondX - 10, secondY - 10) // activate second shape
                 .trigger('mousedown', secondX, secondY, { button: 0 })

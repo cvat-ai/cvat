@@ -9,11 +9,11 @@ import { taskName, labelName } from '../../support/const_canvas3d';
 context('Canvas 3D functionality. Delete a cuboid.', () => {
     const caseId = '87';
     const cuboidCreationParams = {
-        labelName: labelName,
+        labelName,
     };
 
     before(() => {
-        cy.openTask(taskName)
+        cy.openTask(taskName);
         cy.openJob();
         cy.create3DCuboid(cuboidCreationParams);
     });

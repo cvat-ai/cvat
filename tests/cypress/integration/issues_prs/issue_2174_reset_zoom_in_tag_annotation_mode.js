@@ -21,9 +21,9 @@ context('Reset zoom in tag annotation', () => {
         cy.get('.ant-modal-content').within(() => {
             cy.contains('Player').click();
             cy.get('.cvat-player-settings-reset-zoom-checkbox').within(() => {
-                if (value == 'check') {
+                if (value === 'check') {
                     cy.get('[type="checkbox"]').check();
-                } else if (value == 'uncheck') {
+                } else if (value === 'uncheck') {
                     cy.get('[type="checkbox"]').uncheck();
                 }
             });
