@@ -100,6 +100,7 @@ class TestCreateInvitations:
         else:
             assert False, "Unknown role"
 
+
 class TestInvitationsListFilters(CollectionSimpleFilterTestBase):
     field_lookups = {
         "owner": ["owner", "username"],
