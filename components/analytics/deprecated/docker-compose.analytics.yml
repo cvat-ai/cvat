@@ -2,8 +2,6 @@ services:
   elasticsearch:
     container_name: cvat_elasticsearch
     image: cvat_elasticsearch
-    networks:
-      - cvat
     build:
       context: ./components/analytics/deprecated/elasticsearch
       args:
@@ -15,8 +13,6 @@ services:
   kibana:
     container_name: cvat_kibana
     image: cvat_kibana
-    networks:
-      - cvat
     build:
       context: ./components/analytics/deprecated/kibana
       args:
@@ -30,10 +26,7 @@ services:
     container_name: cvat_kibana_setup
     image: cvat/server:${CVAT_VERSION:-dev}
     volumes: ['./components/analytics/deprecated/kibana:/home/django/kibana:ro']
-    depends_on: ['cvat_server']
     working_dir: '/home/django'
-    networks:
-      - cvat
     entrypoint:
       [
         'bash',
