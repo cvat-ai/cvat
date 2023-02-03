@@ -140,6 +140,7 @@ INSTALLED_APPS = [
     'cvat.apps.opencv',
     'cvat.apps.webhooks',
     'cvat.apps.health',
+    'cvat.apps.events',
 ]
 
 SITE_ID = 1
@@ -204,6 +205,9 @@ REST_AUTH_SERIALIZERS = {
     'LOGIN_SERIALIZER': 'cvat.apps.iam.serializers.LoginSerializerEx',
     'PASSWORD_RESET_SERIALIZER': 'cvat.apps.iam.serializers.PasswordResetSerializerEx',
 }
+
+if strtobool(os.getenv('CVAT_ANALYTICS', '0')):
+    INSTALLED_APPS += ['cvat.apps.log_viewer']
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -502,10 +506,6 @@ LOGGING = {
 }
 
 if os.getenv('DJANGO_LOG_SERVER_HOST'):
-    INSTALLED_APPS += [
-        'cvat.apps.log_viewer',
-        'cvat.apps.events',
-    ]
     LOGGING['loggers']['vector']['handlers'] += ['vector']
 
 DATA_UPLOAD_MAX_MEMORY_SIZE = 100 * 1024 * 1024  # 100 MB

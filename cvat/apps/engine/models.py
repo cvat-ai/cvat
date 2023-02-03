@@ -482,7 +482,7 @@ class Job(models.Model):
         return task.id if task else None
 
     def get_organization_id(self):
-        return self.segment.task.organization
+        return self.segment.task.organization_id
 
     def get_bug_tracker(self):
         task = self.segment.task
