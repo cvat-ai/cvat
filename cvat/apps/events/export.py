@@ -143,13 +143,13 @@ def export(request, queue_name):
         else:
             return Response(data=response_data, status=status.HTTP_202_ACCEPTED)
 
+    ttl = DEFAULT_CACHE_TTL.total_seconds()
     output_filename = os.path.join(settings.TMP_FILES_ROOT, f"{query_id}.csv")
     queue.enqueue_call(
         func=_create_csv,
         args=(query_params, output_filename, DEFAULT_CACHE_TTL),
         job_id=rq_id,
         meta={},
-        result_ttl=DEFAULT_CACHE_TTL, failure_ttl=DEFAULT_CACHE_TTL)
-
+        result_ttl=ttl, failure_ttl=ttl)
 
     return Response(data=response_data, status=status.HTTP_202_ACCEPTED)
