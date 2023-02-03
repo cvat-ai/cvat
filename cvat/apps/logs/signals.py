@@ -13,10 +13,10 @@ from cvat.apps.engine.log import vlogger
 from .event import EventScopeChoice, event_scope, create_event, update_event
 
 
-log_signal_update = Signal()
-log_signal_create = Signal()
-log_signal_delete = Signal()
-log_signal_annotations_patch = Signal()
+event_signal_update = Signal()
+event_signal_create = Signal()
+event_signal_delete = Signal()
+event_signal_annotations_patch = Signal()
 
 def task_id(instance):
     if isinstance(instance, Task):
@@ -42,7 +42,7 @@ def user_id(instance):
 
     return None
 
-@receiver(log_signal_update)
+@receiver(event_signal_update)
 def update(sender, instance=None, old_values=None, **kwargs):
     scope = event_scope("update", sender.basename)
     if scope not in map(lambda a: a[0], EventScopeChoice.choices()):
@@ -84,7 +84,7 @@ def update(sender, instance=None, old_values=None, **kwargs):
 
         vlogger.info(message)
 
-@receiver(log_signal_create)
+@receiver(event_signal_create)
 def resource_created(sender, instance=None, **kwargs):
     name = getattr(sender, 'basename', None)
     if not name:
@@ -126,7 +126,7 @@ def resource_created(sender, instance=None, **kwargs):
 
     vlogger.info(message)
 
-@receiver(log_signal_delete)
+@receiver(event_signal_delete)
 def resource_deleted(sender, instance=None, **kwargs):
     scope = event_scope("delete", sender.basename)
     if scope not in map(lambda a: a[0], EventScopeChoice.choices()):
@@ -152,7 +152,7 @@ def resource_deleted(sender, instance=None, **kwargs):
 
     vlogger.info(message)
 
-@receiver(log_signal_annotations_patch)
+@receiver(event_signal_annotations_patch)
 def annotations_created(sender, instance, annotations, action, **kwargs):
     def filter_shape_data(shape):
         data = {

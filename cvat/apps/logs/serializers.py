@@ -5,7 +5,7 @@
 
 from rest_framework import serializers
 
-class LogEventSerializer(serializers.Serializer):
+class EventSerializer(serializers.Serializer):
     scope = serializers.CharField(required=True)
     obj_name = serializers.CharField(required=False)
     obj_id = serializers.IntegerField(required=False)
@@ -21,11 +21,11 @@ class LogEventSerializer(serializers.Serializer):
     organization = serializers.IntegerField(required=False, allow_null=True)
     payload = serializers.CharField(required=False)
 
-class ClientLogSerializer(serializers.Serializer):
-    events = LogEventSerializer(many=True, default=[])
+class ClientEventsSerializer(serializers.Serializer):
+    events = EventSerializer(many=True, default=[])
     send_timestamp = serializers.DateTimeField()
 
-class LogQuerySerializer(serializers.Serializer):
+class EventQuerySerializer(serializers.Serializer):
     organization = serializers.SerializerMethodField()
     project = serializers.SerializerMethodField()
     task = serializers.SerializerMethodField()

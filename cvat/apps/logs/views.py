@@ -14,20 +14,20 @@ from drf_spectacular.types import OpenApiTypes
 from rest_framework.renderers import JSONRenderer
 
 
-from cvat.apps.logs.serializers import ClientLogSerializer, LogEventSerializer
-from cvat.apps.engine.log import clogger, slogger, vlogger
-from .log_exporter import export
+from cvat.apps.logs.serializers import ClientEventsSerializer, EventSerializer
+from cvat.apps.engine.log import clogger, vlogger
+from .export import export
 
-class LogsViewSet(viewsets.ViewSet):
+class EventsViewSet(viewsets.ViewSet):
     serializer_class = None
 
     @staticmethod
     @extend_schema(summary='Method saves logs from a client on the server',
         methods=['POST'],
         description='Sends logs to the Clickhouse if it is connected',
-        request=ClientLogSerializer(),
+        request=ClientEventsSerializer(),
         responses={
-            '201': ClientLogSerializer(),
+            '201': ClientEventsSerializer(),
         })
     @extend_schema(summary='Method returns csv log file ',
         methods=['GET'],
@@ -61,10 +61,10 @@ class LogsViewSet(viewsets.ViewSet):
             '202': OpenApiResponse(description='Creating a CSV log file has been started'),
         })
     @action(detail=False, methods=['GET', 'POST'])
-    def logs(request):
+    def events(request):
         if request.method == 'POST':
             import json
-            serializer = ClientLogSerializer(data=request.data)
+            serializer = ClientEventsSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
 
             send_time = datetime_parser.isoparse(serializer.data["send_timestamp"])
@@ -105,18 +105,17 @@ class LogsViewSet(viewsets.ViewSet):
             return export(
                 request=request,
                 queue_name=settings.CVAT_QUEUES.EXPORT_DATA.value,
-                logger=slogger,
             )
 
     @staticmethod
     @extend_schema(summary='Method saves an exception from a client on the server',
         description='Sends logs to the ELK if it is connected',
-        request=LogEventSerializer, responses={
-            '201': ClientLogSerializer,
+        request=EventSerializer, responses={
+            '201': ClientEventsSerializer,
         })
-    @action(detail=False, methods=['POST'], serializer_class=LogEventSerializer)
+    @action(detail=False, methods=['POST'], serializer_class=EventSerializer)
     def exception(request):
-        serializer = LogEventSerializer(data=request.data)
+        serializer = EventSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         event = serializer.data

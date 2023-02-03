@@ -12,65 +12,76 @@ import django_rq
 from django.conf import settings
 import clickhouse_connect
 
+
 from rest_framework import serializers, status
 from rest_framework.response import Response
 from django_sendfile import sendfile
 
-import cvat.apps.dataset_manager as dm
-from cvat.apps.dataset_manager.views import clear_export_cache
+from cvat.apps.dataset_manager.views import clear_export_cache, log_exception
+from cvat.apps.engine.log import slogger
+
 DEFAULT_CACHE_TTL = timedelta(hours=1)
 
 def _create_csv(query_params, output_filename, cache_ttl):
-    clickhouse_settings = settings.CLICKHOUSE['logs']
+    try:
+        clickhouse_settings = settings.CLICKHOUSE['logs']
 
-    time_filter = {
-        'from': query_params.pop('from'),
-        'to': query_params.pop('to'),
-    }
+        time_filter = {
+            'from': query_params.pop('from'),
+            'to': query_params.pop('to'),
+        }
 
-    query = "SELECT * FROM cvat.logs"
-    conditions = []
-    parameters = {}
-    for param, value in query_params.items():
-        if value:
-            conditions.append(f"{param} = {{{param}:UInt64}}")
-            parameters[param] = value
+        query = "SELECT * FROM logs"
+        conditions = []
+        parameters = {}
+        for param, value in query_params.items():
+            if value:
+                conditions.append(f"{param} = {{{param}:UInt64}}")
+                parameters[param] = value
 
-    if time_filter['from']:
-        conditions.append(f"timestamp >= {{from:DateTime64}}")
-        parameters['from'] = time_filter['from']
+        if time_filter['from']:
+            conditions.append(f"timestamp >= {{from:DateTime64}}")
+            parameters['from'] = time_filter['from']
 
-    if time_filter['to']:
-        conditions.append(f"timestamp <= {{to:DateTime64}}")
-        parameters['to'] = time_filter['to']
+        if time_filter['to']:
+            conditions.append(f"timestamp <= {{to:DateTime64}}")
+            parameters['to'] = time_filter['to']
 
-    if conditions:
-        query += " WHERE " + " AND ".join(conditions)
+        if conditions:
+            query += " WHERE " + " AND ".join(conditions)
 
-    with clickhouse_connect.get_client(
-        host=clickhouse_settings['HOST'],
-        database=clickhouse_settings['NAME'],
-        port=clickhouse_settings['PORT'],
-        username=clickhouse_settings['USER'],
-        password=clickhouse_settings['PASSWORD'],
-    ) as client:
-        result = client.query(query, parameters=parameters)
+        with clickhouse_connect.get_client(
+            host=clickhouse_settings['HOST'],
+            database=clickhouse_settings['NAME'],
+            port=clickhouse_settings['PORT'],
+            username=clickhouse_settings['USER'],
+            password=clickhouse_settings['PASSWORD'],
+        ) as client:
+            result = client.query(query, parameters=parameters)
 
-    with open(output_filename, 'w', encoding='UTF8') as f:
-        writer = csv.writer(f)
-        writer.writerow(result.column_names)
-        writer.writerows(result.result_rows)
+        with open(output_filename, 'w', encoding='UTF8') as f:
+            writer = csv.writer(f)
+            writer.writerow(result.column_names)
+            writer.writerows(result.result_rows)
 
-    archive_ctime = os.path.getctime(output_filename)
-    scheduler = django_rq.get_scheduler(settings.CVAT_QUEUES.IMPORT_DATA.value)
-    scheduler.enqueue_in(time_delta=cache_ttl,
-        func=clear_export_cache,
-        file_path=output_filename,
-        file_ctime=archive_ctime,
-    )
-    return output_filename
+        archive_ctime = os.path.getctime(output_filename)
+        scheduler = django_rq.get_scheduler(settings.CVAT_QUEUES.IMPORT_DATA.value)
+        cleaning_job = scheduler.enqueue_in(time_delta=cache_ttl,
+            func=clear_export_cache,
+            file_path=output_filename,
+            file_ctime=archive_ctime,
+        )
+        slogger.glob.info(
+            f"The {output_filename} is created "
+            f"and available for downloading for the next {cache_ttl}. "
+            f"Export cache cleaning job is enqueued, id '{cleaning_job.id}'"
+        )
+        return output_filename
+    except Exception:
+        log_exception(slogger.glob)
+        raise
 
-def export(request, queue_name, logger):
+def export(request, queue_name):
     action = request.query_params.get('action', None)
     filename = request.query_params.get('filename', None)
 
@@ -132,14 +143,13 @@ def export(request, queue_name, logger):
         else:
             return Response(data=response_data, status=status.HTTP_202_ACCEPTED)
 
-    ttl = dm.views.PROJECT_CACHE_TTL.total_seconds()
     output_filename = os.path.join(settings.TMP_FILES_ROOT, f"{query_id}.csv")
     queue.enqueue_call(
         func=_create_csv,
         args=(query_params, output_filename, DEFAULT_CACHE_TTL),
         job_id=rq_id,
         meta={},
-        result_ttl=ttl, failure_ttl=ttl)
+        result_ttl=DEFAULT_CACHE_TTL, failure_ttl=DEFAULT_CACHE_TTL)
 
 
     return Response(data=response_data, status=status.HTTP_202_ACCEPTED)

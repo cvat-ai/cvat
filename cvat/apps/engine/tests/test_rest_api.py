@@ -587,7 +587,7 @@ class ServerLogsAPITestCase(APITestCase):
         with ForceLogin(user, self.client):
             #pylint: disable=unused-variable
             with mock.patch("cvat.apps.engine.views.clogger") as clogger:
-                response = self.client.post('/api/server/logs',
+                response = self.client.post('/api/server/events',
                     self.data, format='json')
 
         return response
