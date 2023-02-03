@@ -51,10 +51,10 @@ export function checkExclusiveFields(obj, exclusive, ignore): void {
         exclusive: [],
         other: [],
     };
-    for (const field in Object.keys(obj)) {
-        if (!(field in ignore)) {
-            if (field in exclusive) {
-                if (fields.other.length) {
+    for (const field in obj) {
+        if (!(ignore.includes(field))) {
+            if (exclusive.includes(field)) {
+                if (fields.other.length || fields.exclusive.length) {
                     throw new ArgumentError(`Do not use the filter field "${field}" with others`);
                 }
                 fields.exclusive.push(field);

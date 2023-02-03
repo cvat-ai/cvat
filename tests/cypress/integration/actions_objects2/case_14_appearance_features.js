@@ -15,7 +15,7 @@ context('Appearance features', () => {
     const createRectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         firstX: 100,
         firstY: 350,
         secondX: 200,
@@ -24,7 +24,7 @@ context('Appearance features', () => {
     const createPolygonShape = {
         reDraw: false,
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         pointsMap: [
             { x: 250, y: 350 },
             { x: 300, y: 300 },
@@ -35,7 +35,7 @@ context('Appearance features', () => {
     };
     const createPolylinesShape = {
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         pointsMap: [
             { x: 350, y: 350 },
             { x: 400, y: 300 },
@@ -48,7 +48,7 @@ context('Appearance features', () => {
     const createCuboidShape2Points = {
         points: 'From rectangle',
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         firstX: 450,
         firstY: 350,
         secondX: 550,
@@ -56,7 +56,7 @@ context('Appearance features', () => {
     };
     const createPointsShape = {
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         pointsMap: [{ x: 650, y: 350 }],
         complete: true,
         numberOfPoints: null,
@@ -100,7 +100,7 @@ context('Appearance features', () => {
                         } else {
                             expect(Number(object.attr('fill-opacity'))).to.be.gt(Number(fillOpacity)); // expected 1 to be above 0.03
                         }
-                    })
+                    });
                 });
             });
         });
@@ -163,7 +163,7 @@ context('Appearance features', () => {
                         if (!(text.includes('POLYLINE') || text.includes('POINTS'))) {
                             expect(object.css('fill')).to.be.equal('rgb(224, 224, 224)'); // expected rgb(224, 224, 224) to equal rgb(224, 224, 224)
                         }
-                    })
+                    });
                 });
             });
 

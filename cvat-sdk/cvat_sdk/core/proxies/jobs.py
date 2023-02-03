@@ -163,7 +163,9 @@ class Job(
     def get_issues(self) -> List[Issue]:
         return [
             Issue(self._client, m)
-            for m in get_paginated_collection(self.api.list_issues_endpoint, id=self.id)
+            for m in get_paginated_collection(
+                self._client.api_client.issues_api.list_endpoint, job_id=str(self.id)
+            )
         ]
 
     def get_commits(self) -> List[models.IJobCommit]:

@@ -1,5 +1,5 @@
 # Copyright (C) 2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -16,12 +16,13 @@ from typing import Dict, Optional
 
 import pytest
 from cvat_sdk.api_client import ApiClient, Configuration, models
+from cvat_sdk.api_client.api_client import Endpoint
 from deepdiff import DeepDiff
 from PIL import Image
 
 from shared.utils.config import BASE_URL, USER_PASS, get_method, make_api_client, patch_method
 
-from .utils import export_dataset
+from .utils import CollectionSimpleFilterTestBase, export_dataset
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -130,6 +131,33 @@ class TestGetProjects:
         )
 
         self._test_response_200(user["username"], pid, org_id=user["org"])
+
+
+class TestProjectsListFilters(CollectionSimpleFilterTestBase):
+    field_lookups = {
+        "owner": ["owner", "username"],
+        "assignee": ["assignee", "username"],
+    }
+
+    @pytest.fixture(autouse=True)
+    def setup(self, restore_db_per_class, admin_user, projects):
+        self.user = admin_user
+        self.samples = projects
+
+    def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
+        return api_client.projects_api.list_endpoint
+
+    @pytest.mark.parametrize(
+        "field",
+        (
+            "name",
+            "owner",
+            "assignee",
+            "status",
+        ),
+    )
+    def test_can_use_simple_filter_for_object_list(self, field):
+        return super().test_can_use_simple_filter_for_object_list(field)
 
 
 class TestGetProjectBackup:
@@ -547,12 +575,13 @@ class TestImportExportDatasetProject:
             "name": project["name"],
             "tasks": [
                 {
-                    "id": tid,
-                    "name": (task := tasks[tid])["name"],
+                    "id": task["id"],
+                    "name": task["name"],
                     "size": str(task["size"]),
                     "mode": task["mode"],
                 }
-                for tid in project["tasks"]
+                for task in tasks
+                if task["project_id"] == project["id"]
             ],
         }
 
@@ -578,7 +607,7 @@ class TestImportExportDatasetProject:
 
         self._test_import_project(username, project_id, "CVAT 1.1", import_data)
 
-        response = get_method(username, f"/projects/{project_id}/tasks")
+        response = get_method(username, f"/tasks", project_id=project_id)
         assert response.status_code == HTTPStatus.OK
         tasks = response.json()["results"]
 
@@ -795,9 +824,9 @@ class TestGetProjectPreview:
             project_with_assignee["assignee"]["username"], project_with_assignee["id"]
         )
 
-    def test_project_preview_not_found(self, projects):
+    def test_project_preview_not_found(self, projects, tasks):
         for p in projects:
-            if p["tasks"]:
+            if any(t["project_id"] == p["id"] for t in tasks):
                 continue
             if p["owner"] is not None:
                 project_with_owner = p

@@ -161,7 +161,7 @@ class TestProjectUsecases:
         assert self.stdout.getvalue() == ""
 
     def test_can_get_tasks(self, fxt_project_with_shapes: Project):
-        task_ids = set(fxt_project_with_shapes.tasks)
+        task_ids = set(t.id for t in fxt_project_with_shapes.get_tasks())
 
         tasks = fxt_project_with_shapes.get_tasks()
 

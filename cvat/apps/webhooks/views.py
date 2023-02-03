@@ -1,4 +1,4 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -14,6 +14,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import SAFE_METHODS
 from rest_framework.response import Response
 
+from cvat.apps.engine.view_utils import make_paginated_response
 from cvat.apps.iam.permissions import WebhookPermission
 
 from .event_type import AllEvents, OrganizationEvents, ProjectEvents
@@ -40,17 +41,23 @@ from .signals import signal_ping, signal_redelivery
     update=extend_schema(
         summary="Method updates a webhook by id",
         request=WebhookWriteSerializer,
-        responses={"200": WebhookReadSerializer}, # check WebhookWriteSerializer.to_representation
+        responses={
+            "200": WebhookReadSerializer
+        },  # check WebhookWriteSerializer.to_representation
     ),
     partial_update=extend_schema(
         summary="Methods does a partial update of chosen fields in a webhook",
         request=WebhookWriteSerializer,
-        responses={"200": WebhookReadSerializer}, # check WebhookWriteSerializer.to_representation
+        responses={
+            "200": WebhookReadSerializer
+        },  # check WebhookWriteSerializer.to_representation
     ),
     create=extend_schema(
         request=WebhookWriteSerializer,
         summary="Method creates a webhook",
-        responses={"201": WebhookReadSerializer} # check WebhookWriteSerializer.to_representation
+        responses={
+            "201": WebhookReadSerializer
+        },  # check WebhookWriteSerializer.to_representation
     ),
     destroy=extend_schema(
         summary="Method deletes a webhook",
@@ -58,22 +65,25 @@ from .signals import signal_ping, signal_redelivery
     ),
 )
 class WebhookViewSet(viewsets.ModelViewSet):
-    queryset = Webhook.objects.all()
+    queryset = Webhook.objects.prefetch_related("owner").all()
     ordering = "-id"
     http_method_names = ["get", "post", "delete", "patch", "put"]
 
     search_fields = ("target_url", "owner", "type", "description")
     filter_fields = list(search_fields) + ["id", "project_id", "updated_date"]
-    ordering_fields = filter_fields
+    simple_filters = list(set(search_fields) - {"description"} | {"project_id"})
+    ordering_fields = list(filter_fields)
     lookup_fields = {"owner": "owner__username"}
     iam_organization_field = "organization"
 
     def get_serializer_class(self):
         # Early exit for drf-spectacular compatibility
-        if getattr(self, 'swagger_fake_view', False):
+        if getattr(self, "swagger_fake_view", False):
             return WebhookReadSerializer
 
-        if self.request.path.endswith("redelivery") or self.request.path.endswith("ping"):
+        if self.request.path.endswith("redelivery") or self.request.path.endswith(
+            "ping"
+        ):
             return None
         else:
             if self.request.method in SAFE_METHODS:
@@ -128,29 +138,29 @@ class WebhookViewSet(viewsets.ModelViewSet):
 
     @extend_schema(
         summary="Method return a list of deliveries for a specific webhook",
-        responses={"200": WebhookDeliveryReadSerializer(many=True)},
+        responses=WebhookDeliveryReadSerializer(
+            many=True
+        ),  # Duplicate to still get 'list' op. name
     )
     @action(
-        detail=True, methods=["GET"], serializer_class=WebhookDeliveryReadSerializer
+        detail=True,
+        methods=["GET"],
+        serializer_class=WebhookDeliveryReadSerializer,
+        pagination_class=viewsets.GenericViewSet.pagination_class,
+        # These non-root list endpoints do not suppose extra options, just the basic output
+        # Remove regular list() parameters from the swagger schema.
+        # Unset, they would be taken from the enclosing class, which is wrong.
+        # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
+        filter_fields=None, ordering_fields=None, search_fields=None, simple_filters=None,
     )
     def deliveries(self, request, pk):
-        self.get_object()
+        self.get_object() # force call of check_object_permissions()
         queryset = WebhookDelivery.objects.filter(webhook_id=pk).order_by(
             "-updated_date"
         )
-
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = WebhookDeliveryReadSerializer(
-                page, many=True, context={"request": request}
-            )
-            return self.get_paginated_response(serializer.data)
-
-        serializer = WebhookDeliveryReadSerializer(
-            queryset, many=True, context={"request": request}
-        )
-
-        return Response(serializer.data)
+        return make_paginated_response(
+            queryset, viewset=self, serializer_type=self.serializer_class
+        )  # from @action
 
     @extend_schema(
         summary="Method return a specific delivery for a specific webhook",
@@ -163,22 +173,23 @@ class WebhookViewSet(viewsets.ModelViewSet):
         serializer_class=WebhookDeliveryReadSerializer,
     )
     def retrieve_delivery(self, request, pk, delivery_id):
-        self.get_object()
+        self.get_object() # force call of check_object_permissions()
         queryset = WebhookDelivery.objects.get(webhook_id=pk, id=delivery_id)
         serializer = WebhookDeliveryReadSerializer(
             queryset, context={"request": request}
         )
         return Response(serializer.data)
 
-    @extend_schema(summary="Method redeliver a specific webhook delivery",
+    @extend_schema(
+        summary="Method redeliver a specific webhook delivery",
         request=None,
-        responses={200: None}
+        responses={200: None},
     )
     @action(
         detail=True,
         methods=["POST"],
         url_path=r"deliveries/(?P<delivery_id>\d+)/redelivery",
-        serializer_class=None
+        serializer_class=None,
     )
     def redelivery(self, request, pk, delivery_id):
         delivery = WebhookDelivery.objects.get(webhook_id=pk, id=delivery_id)
@@ -196,7 +207,7 @@ class WebhookViewSet(viewsets.ModelViewSet):
         detail=True, methods=["POST"], serializer_class=WebhookDeliveryReadSerializer
     )
     def ping(self, request, pk):
-        instance = self.get_object()
+        instance = self.get_object() # force call of check_object_permissions()
         serializer = WebhookReadSerializer(instance, context={"request": request})
 
         delivery = signal_ping.send(sender=self, serializer=serializer)[0][1]

@@ -10,7 +10,7 @@ context('After draw correcting line and press the latest drawn point then it clo
     const issueId = '2807';
     const createPolylinesShapePoints = {
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         pointsMap: [
             { x: 400, y: 400 },
             { x: 600, y: 250 },
@@ -18,8 +18,8 @@ context('After draw correcting line and press the latest drawn point then it clo
         ],
         numberOfPoints: 3,
     };
-    let svgJsCircle = [];
-    let svgJsCircleAfterCorrection = [];
+    const svgJsCircle = [];
+    const svgJsCircleAfterCorrection = [];
 
     function getCircleAndWriteToArr(array) {
         cy.get('circle').then((circle) => {
