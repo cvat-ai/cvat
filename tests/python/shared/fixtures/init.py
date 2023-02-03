@@ -21,12 +21,7 @@ CVAT_ROOT_DIR = next(dir.parent for dir in Path(__file__).parents if dir.name ==
 CVAT_DB_DIR = ASSETS_DIR / "cvat_db"
 PREFIX = "test"
 
-CONTAINER_NAME_FILES = [
-    CVAT_ROOT_DIR / dc_file
-    for dc_file in (
-        "docker-compose.tests.yml",
-    )
-]
+CONTAINER_NAME_FILES = [CVAT_ROOT_DIR / dc_file for dc_file in ("docker-compose.tests.yml",)]
 
 # this files contain some configurations that override the default configuration of the main containers
 DC_OVERRIDE_FILES = [

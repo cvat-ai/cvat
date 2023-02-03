@@ -14,7 +14,6 @@ from django.contrib.auth.models import User
 from django.core.files.storage import FileSystemStorage
 from django.db import models
 from django.db.models.fields import FloatField
-from django.core.serializers.json import DjangoJSONEncoder
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
 from cvat.apps.engine.utils import parse_specific_attributes
