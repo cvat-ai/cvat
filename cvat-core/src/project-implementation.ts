@@ -6,7 +6,7 @@
 import { Storage } from './storage';
 
 import serverProxy from './server-proxy';
-import { getPreview } from './frames';
+import { decodePreview } from './frames';
 
 import Project from './project';
 import { exportDataset, importDataset } from './annotations';
@@ -16,7 +16,6 @@ export default function implementProject(projectClass) {
         if (typeof this.id !== 'undefined') {
             const projectData = this._updateTrigger.getUpdated(this, {
                 bugTracker: 'bug_tracker',
-                trainingProject: 'training_project',
                 assignee: 'assignee_id',
             });
             if (projectData.assignee_id) {
@@ -41,10 +40,6 @@ export default function implementProject(projectClass) {
             projectSpec.bug_tracker = this.bugTracker;
         }
 
-        if (this.trainingProject) {
-            projectSpec.training_project = this.trainingProject;
-        }
-
         if (this.targetStorage) {
             projectSpec.target_storage = this.targetStorage.toJSON();
         }
@@ -63,11 +58,9 @@ export default function implementProject(projectClass) {
     };
 
     projectClass.prototype.preview.implementation = async function () {
-        if (!this._internalData.task_ids.length) {
-            return '';
-        }
-        const frameData = await getPreview(this._internalData.task_ids[0]);
-        return frameData;
+        const preview = await serverProxy.projects.getPreview(this.id);
+        const decoded = await decodePreview(preview);
+        return decoded;
     };
 
     projectClass.prototype.annotations.exportDataset.implementation = async function (

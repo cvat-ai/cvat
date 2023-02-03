@@ -1,4 +1,4 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -93,6 +93,9 @@ class WebhookReadSerializer(serializers.ModelSerializer):
             "last_delivery_date",
         )
         read_only_fields = fields
+        extra_kwargs = {
+            "organization": {"allow_null": True},
+        }
 
 
 class WebhookWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
