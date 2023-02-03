@@ -64,7 +64,7 @@ Example file structure for 2D and 3D tasks:
 {{< /tab >}}
 {{< /tabpane >}}
 
-For more general inormation about 3D data formats,
+For more general information about 3D data formats,
 see [3D data formats](/docs/manual/basics/create_an_annotation_task/#data-formats-for-a-3d-task).
 
 ## Context images
