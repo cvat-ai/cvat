@@ -30,7 +30,7 @@ allow {
 }
 
 allow {
-    input.scope == utils.SEND_LOGS
+    input.scope == utils.SEND_EVENTS
 }
 
 allow {
@@ -39,6 +39,6 @@ allow {
 }
 
 allow {
-    input.scope == utils.LIST_LOGS
+    input.scope == utils.LIST_EVENTS
     utils.has_perm(utils.BUSINESS)
 }

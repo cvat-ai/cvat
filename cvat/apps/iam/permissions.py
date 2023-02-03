@@ -341,8 +341,8 @@ class ServerPermission(OpenPolicyAgentPermission):
     class Scopes(StrEnum):
         VIEW = 'view'
         SEND_EXCEPTION = 'send:exception'
-        SEND_LOGS = 'send:logs'
-        LIST_LOGS = 'list:logs'
+        SEND_EVENTS = 'send:events'
+        LIST_EVENTS = 'list:events'
         LIST_CONTENT = 'list:content'
 
     @classmethod
@@ -367,8 +367,8 @@ class ServerPermission(OpenPolicyAgentPermission):
             ('about', 'GET'): Scopes.VIEW,
             ('plugins', 'GET'): Scopes.VIEW,
             ('exception', 'POST'): Scopes.SEND_EXCEPTION,
-            ('logs', 'POST'): Scopes.SEND_LOGS,
-            ('logs', 'GET'): Scopes.LIST_LOGS,
+            ('events', 'POST'): Scopes.SEND_EVENTS,
+            ('events', 'GET'): Scopes.LIST_EVENTS,
             ('share', 'GET'): Scopes.LIST_CONTENT,
         }.get((view.action, request.method))]
 
