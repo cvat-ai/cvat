@@ -257,6 +257,7 @@ Cypress.Commands.add('openTask', (taskName, projectSubsetFieldValue) => {
     cy.contains('strong', new RegExp(`^${taskName}$`))
         .parents('.cvat-tasks-list-item')
         .contains('a', 'Open').click({ force: true });
+    cy.get('.cvat-spinner').should('not.exist');
     cy.get('.cvat-task-details').should('exist');
     if (projectSubsetFieldValue) {
         cy.get('.cvat-project-subset-field').find('input').should('have.attr', 'value', projectSubsetFieldValue);
@@ -282,6 +283,8 @@ Cypress.Commands.add('getJobNum', (jobID) => {
 });
 
 Cypress.Commands.add('openJob', (jobID = 0, removeAnnotations = true, expectedFail = false) => {
+    cy.get('.cvat-task-job-list').should('exist');
+    cy.get('.cvat-task-jobs-table-row').should('exist');
     cy.getJobNum(jobID).then(($job) => {
         cy.get('.cvat-task-jobs-table-row').contains('a', `Job #${$job}`).click();
     });

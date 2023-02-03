@@ -1,18 +1,22 @@
 # Copyright (C) 2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import json
 from copy import deepcopy
 from http import HTTPStatus
+from typing import Any, Dict, List, Tuple
 
 import pytest
 from cvat_sdk import models
 from cvat_sdk.api_client import exceptions
+from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from deepdiff import DeepDiff
 
 from shared.utils.config import make_api_client
+
+from .utils import CollectionSimpleFilterTestBase
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -30,7 +34,11 @@ class TestPostIssues:
             assert response.status == HTTPStatus.CREATED
             response_json = json.loads(response.data)
             assert user == response_json["owner"]["username"]
-            assert data["message"] == response_json["comments"][0]["message"]
+
+            with make_api_client(user) as client:
+                (comments, _) = client.comments_api.list(issue_id=str(response_json["id"]))
+            assert data["message"] == comments.results[0].message
+
             assert (
                 DeepDiff(
                     data,
@@ -123,10 +131,11 @@ class TestPostIssues:
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestPatchIssues:
     def _test_check_response(self, user, issue_id, data, is_allow, **kwargs):
+        request_data, expected_response_data = data
         with make_api_client(user) as client:
             (_, response) = client.issues_api.partial_update(
                 issue_id,
-                patched_issue_write_request=models.PatchedIssueWriteRequest(**data),
+                patched_issue_write_request=models.PatchedIssueWriteRequest(**request_data),
                 **kwargs,
                 _parse_response=False,
                 _check_status=False,
@@ -136,7 +145,7 @@ class TestPatchIssues:
             assert response.status == HTTPStatus.OK
             assert (
                 DeepDiff(
-                    data,
+                    expected_response_data,
                     json.loads(response.data),
                     exclude_regex_paths=r"root\['created_date|updated_date|comments|id|owner'\]",
                 )
@@ -146,15 +155,28 @@ class TestPatchIssues:
             assert response.status == HTTPStatus.FORBIDDEN
 
     @pytest.fixture(scope="class")
-    def request_data(self, issues):
-        def get_data(issue_id):
-            data = deepcopy(issues[issue_id])
-            data["resolved"] = not data["resolved"]
-            data.pop("comments")
-            data.pop("updated_date")
-            data.pop("id")
-            data.pop("owner")
-            return data
+    def request_and_response_data(self, issues, users):
+        def get_data(issue_id, *, username: str = None):
+            request_data = deepcopy(issues[issue_id])
+            request_data["resolved"] = not request_data["resolved"]
+
+            response_data = deepcopy(request_data)
+
+            request_data.pop("comments")
+            request_data.pop("updated_date")
+            request_data.pop("id")
+            request_data.pop("owner")
+
+            if username:
+                assignee = next(u for u in users if u["username"] == username)
+                request_data["assignee"] = assignee["id"]
+                response_data["assignee"] = {
+                    k: assignee[k] for k in ["id", "username", "url", "first_name", "last_name"]
+                }
+            else:
+                request_data["assignee"] = None
+
+            return request_data, response_data
 
         return get_data
 
@@ -183,13 +205,13 @@ class TestPatchIssues:
         find_issue_staff_user,
         find_users,
         issues_by_org,
-        request_data,
+        request_and_response_data,
     ):
         users = find_users(privilege=privilege)
         issues = issues_by_org[org]
         username, issue_id = find_issue_staff_user(issues, users, issue_staff, issue_admin)
 
-        data = request_data(issue_id)
+        data = request_and_response_data(issue_id, username=username)
         self._test_check_response(username, issue_id, data, is_allow)
 
     @pytest.mark.parametrize("org", [2])
@@ -217,13 +239,13 @@ class TestPatchIssues:
         find_issue_staff_user,
         find_users,
         issues_by_org,
-        request_data,
+        request_and_response_data,
     ):
         users = find_users(role=role, org=org)
         issues = issues_by_org[org]
         username, issue_id = find_issue_staff_user(issues, users, issue_staff, issue_admin)
 
-        data = request_data(issue_id)
+        data = request_and_response_data(issue_id, username=username)
         self._test_check_response(username, issue_id, data, is_allow, org_id=org)
 
     @pytest.mark.xfail(
@@ -326,3 +348,65 @@ class TestDeleteIssues:
         username, issue_id = find_issue_staff_user(issues, users, issue_staff, issue_admin)
 
         self._test_check_response(username, issue_id, expect_success, org_id=org)
+
+
+class TestIssuesListFilters(CollectionSimpleFilterTestBase):
+    field_lookups = {
+        "owner": ["owner", "username"],
+        "assignee": ["assignee", "username"],
+        "job_id": ["job"],
+        "frame_id": ["frame"],
+    }
+
+    @pytest.fixture(autouse=True)
+    def setup(self, restore_db_per_class, admin_user, issues):
+        self.user = admin_user
+        self.samples = issues
+
+    def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
+        return api_client.issues_api.list_endpoint
+
+    @pytest.mark.parametrize(
+        "field",
+        ("owner", "assignee", "job_id", "resolved", "frame_id"),
+    )
+    def test_can_use_simple_filter_for_object_list(self, field):
+        return super().test_can_use_simple_filter_for_object_list(field)
+
+
+class TestCommentsListFilters(CollectionSimpleFilterTestBase):
+    field_lookups = {
+        "owner": ["owner", "username"],
+        "issue_id": ["issue"],
+    }
+
+    @pytest.fixture(autouse=True)
+    def setup(self, restore_db_per_class, admin_user, comments, issues):
+        self.user = admin_user
+        self.samples = comments
+        self.sample_issues = issues
+
+    def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
+        return api_client.comments_api.list_endpoint
+
+    def _get_field_samples(self, field: str) -> Tuple[Any, List[Dict[str, Any]]]:
+        if field == "job_id":
+            issue_id, issue_comments = super()._get_field_samples("issue_id")
+            issue = next((s for s in self.sample_issues if s["id"] == issue_id))
+            return issue["job"], issue_comments
+        elif field == "frame_id":
+            frame_id = self._find_valid_field_value(self.sample_issues, ["frame"])
+            issues = [s["id"] for s in self.sample_issues if s["frame"] == frame_id]
+            comments = [
+                s for s in self.samples if self._get_field(s, self._map_field("issue_id")) in issues
+            ]
+            return frame_id, comments
+        else:
+            return super()._get_field_samples(field)
+
+    @pytest.mark.parametrize(
+        "field",
+        ("owner", "issue_id", "job_id", "frame_id"),
+    )
+    def test_can_use_simple_filter_for_object_list(self, field):
+        return super().test_can_use_simple_filter_for_object_list(field)

@@ -19,13 +19,12 @@ export default class Project {
             name: undefined,
             status: undefined,
             assignee: undefined,
+            organization: undefined,
             owner: undefined,
             bug_tracker: undefined,
             created_date: undefined,
             updated_date: undefined,
             task_subsets: undefined,
-            training_project: undefined,
-            task_ids: undefined,
             dimension: undefined,
             source_storage: undefined,
             target_storage: undefined,
@@ -45,10 +44,6 @@ export default class Project {
         if (Array.isArray(initialData.labels)) {
             data.labels = initialData.labels
                 .map((labelData) => new Label(labelData)).filter((label) => !label.hasParent);
-        }
-
-        if (typeof initialData.training_project === 'object') {
-            data.training_project = { ...initialData.training_project };
         }
 
         Object.defineProperties(
@@ -82,6 +77,9 @@ export default class Project {
                 },
                 owner: {
                     get: () => data.owner,
+                },
+                organization: {
+                    get: () => data.organization,
                 },
                 bugTracker: {
                     get: () => data.bug_tracker,
@@ -124,22 +122,6 @@ export default class Project {
                 },
                 subsets: {
                     get: () => [...data.task_subsets],
-                },
-                trainingProject: {
-                    get: () => {
-                        if (typeof data.training_project === 'object') {
-                            return { ...data.training_project };
-                        }
-                        return data.training_project;
-                    },
-                    set: (updatedProject) => {
-                        if (typeof training === 'object') {
-                            data.training_project = { ...updatedProject };
-                        } else {
-                            data.training_project = updatedProject;
-                        }
-                        updateTrigger.update('trainingProject');
-                    },
                 },
                 sourceStorage: {
                     get: () => (

@@ -35,8 +35,6 @@ describe('Feature: get projects', () => {
         expect(result).toHaveLength(1);
         expect(result[0]).toBeInstanceOf(Project);
         expect(result[0].id).toBe(2);
-        // eslint-disable-next-line no-underscore-dangle
-        expect(result[0]._internalData.task_ids).toHaveLength(1);
     });
 
     test('get a project by an unknown id', async () => {

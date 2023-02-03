@@ -1,14 +1,17 @@
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from http import HTTPStatus
 
 import pytest
+from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from deepdiff import DeepDiff
 
 from shared.utils.config import get_method, patch_method
+
+from .utils import CollectionSimpleFilterTestBase
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -42,6 +45,27 @@ class TestGetMemberships:
         non_org1_users = ["user2", "worker3"]
         for user in non_org1_users:
             self._test_cannot_see_memberships(user, org_id=1)
+
+
+class TestMembershipsListFilters(CollectionSimpleFilterTestBase):
+    field_lookups = {
+        "user": ["user", "username"],
+    }
+
+    @pytest.fixture(autouse=True)
+    def setup(self, restore_db_per_class, admin_user, memberships):
+        self.user = admin_user
+        self.samples = memberships
+
+    def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
+        return api_client.memberships_api.list_endpoint
+
+    @pytest.mark.parametrize(
+        "field",
+        ("role", "user"),
+    )
+    def test_can_use_simple_filter_for_object_list(self, field):
+        return super().test_can_use_simple_filter_for_object_list(field)
 
 
 @pytest.mark.usefixtures("restore_db_per_function")

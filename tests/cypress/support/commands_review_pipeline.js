@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -152,6 +153,7 @@ Cypress.Commands.add('createIssueFromControlButton', (createIssueParams) => {
         cy.get('[type="submit"]').click();
     });
     cy.wait('@issues').its('response.statusCode').should('equal', 201);
+    cy.get('.cvat-create-issue-dialog').should('not.exist');
     cy.checkIssueRegion();
 });
 
