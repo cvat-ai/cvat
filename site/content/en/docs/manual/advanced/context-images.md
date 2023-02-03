@@ -58,7 +58,7 @@ Example file structure for 2D and 3D tasks:
     image_2_to_be_annotated.pcd
      related_images/
         image_1_to_be_annotated_pcd/
-           context_image_for_image_1.pcd
+           context_image_for_image_1.jpg
         image_2_to_be_annotated_pcd/
            context_image_for_image_2.pcd
 {{< /tab >}}
