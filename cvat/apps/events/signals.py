@@ -70,7 +70,7 @@ def update(sender, instance=None, old_values=None, **kwargs):
         event = create_event(
             scope=scope,
             obj_name=sender.basename,
-            obj_id=instance.id,
+            obj_id=getattr(instance, 'id', None),
             obj_val=new_value,
             source='server',
             user=uid,
@@ -116,7 +116,7 @@ def resource_created(sender, instance=None, **kwargs):
     event = create_event(
         scope=scope,
         obj_name=name,
-        obj_id=instance.id,
+        obj_id=getattr(instance, 'id', None),
         source='server',
         user=uid,
         payload=payload,
@@ -143,7 +143,7 @@ def resource_deleted(sender, instance=None, **kwargs):
     event = create_event(
         scope=scope,
         obj_name=sender.basename,
-        obj_id=instance.id,
+        obj_id=getattr(instance, 'id', None),
         source='server',
         user=uid,
     )
