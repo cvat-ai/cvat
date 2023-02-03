@@ -24,7 +24,7 @@ To upgrade CVAT, follow these steps:
   If you have included [additional components](/docs/administration/basics/installation/#additional-components),
   include all compose configuration files that are used, e.g.:
   ```shell
-  docker compose -f docker-compose.yml -f components/analytics/docker-compose.analytics.yml down
+  docker compose -f docker-compose.yml -f components/serverless/docker-compose.serverless.yml down
   ```
 
 - Update CVAT source code by any preferable way: clone with git or download zip file from GitHub.
@@ -53,7 +53,7 @@ To upgrade CVAT, follow these steps:
   ```shell
   docker logs cvat_server -f
   ```
-  
+
 ## How to upgrade CVAT from v2.2.0 to v2.3.0.
 
 Step by step commands how to upgrade CVAT from v2.2.0 to v2.3.0.
@@ -75,8 +75,8 @@ docker compose pull
 docker compose up -d cvat_db
 docker exec -i cvat_db psql -q -d postgres < ../cvat.db.dump
 docker compose -f docker compose.yml -f docker compose.dev.yml -f docker compose.https.yml up -d
-```  
-  
+```
+
 ## How to upgrade CVAT from v1.7.0 to v2.2.0.
 
 Step by step commands how to upgrade CVAT from v1.7.0 to v2.2.0.
@@ -96,7 +96,7 @@ docker pull cvat/ui:v${CVAT_VERSION}
 docker tag cvat/ui:v${CVAT_VERSION} openvino/cvat_ui:latest
 docker compose up -d
 ```
-  
+
 ## How to upgrade PostgreSQL database base image
 
 1. It is highly recommended backup all CVAT data before updating, follow the

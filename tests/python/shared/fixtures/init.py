@@ -24,7 +24,6 @@ PREFIX = "test"
 CONTAINER_NAME_FILES = [
     CVAT_ROOT_DIR / dc_file
     for dc_file in (
-        "components/analytics/docker-compose.analytics.tests.yml",
         "docker-compose.tests.yml",
     )
 ]

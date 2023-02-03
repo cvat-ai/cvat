@@ -1,9 +1,11 @@
+name: cvat
+
 services:
   elasticsearch:
     container_name: cvat_elasticsearch
     image: cvat_elasticsearch
     build:
-      context: ./components/analytics/deprecated/elasticsearch
+      context: ./elasticsearch
       args:
         ELK_VERSION: 6.8.23
     volumes:
@@ -14,13 +16,15 @@ services:
     container_name: cvat_kibana
     image: cvat_kibana
     build:
-      context: ./components/analytics/deprecated/kibana
+      context: ./kibana
       args:
         ELK_VERSION: 6.8.23
     depends_on: ['elasticsearch']
     environment:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
     restart: always
+    ports:
+      - '5601:5601'
 
   cvat_kibana_setup:
     container_name: cvat_kibana_setup

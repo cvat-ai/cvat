@@ -13,110 +13,17 @@ description: 'Instructions for deployment and customization of Analytics. This s
 
 ![](/images/image097.jpg)
 
-It is possible to proxy annotation logs from client to ELK. To do that run the following command below:
+It is possible to proxy annotation logs from the UI to the Clickhouse database and use Grafana for visualization.
+This feature is enabled by default and all required containers will be launched when starting CVAT with:
 
-### Build docker image
-
-```bash
-# From project root directory
-docker compose -f docker-compose.yml -f components/analytics/docker-compose.analytics.yml build
+```shell
+docker compose up -d
 ```
 
-### Run docker container
+The previous solution based on ELK stack is currently deprecated and will no longer be supported.
+it is possible to run Elasticsearch and Kibana on previously saved data, but all new events will be stored in Clickhouse:
 
-```bash
-# From project root directory
-docker compose -f docker-compose.yml -f components/analytics/docker-compose.analytics.yml up -d
-```
-
-At the moment it is not possible to save advanced settings. Below values should be specified manually.
-
-## Time picker default
-
-```json
-{
-"from": "now/d",
-"to": "now/d",
-"display": "Today",
-"section": 0
-}
-```
-
-## Time picker quick ranges
-
-```json
-[
-  {
-    "from": "now/d",
-    "to": "now/d",
-    "display": "Today",
-    "section": 0
-  },
-  {
-    "from": "now/w",
-    "to": "now/w",
-    "display": "This week",
-    "section": 0
-  },
-  {
-    "from": "now/M",
-    "to": "now/M",
-    "display": "This month",
-    "section": 0
-  },
-  {
-    "from": "now/y",
-    "to": "now/y",
-    "display": "This year",
-    "section": 0
-  },
-  {
-    "from": "now/d",
-    "to": "now",
-    "display": "Today so far",
-    "section": 2
-  },
-  {
-    "from": "now/w",
-    "to": "now",
-    "display": "Week to date",
-    "section": 2
-  },
-  {
-    "from": "now/M",
-    "to": "now",
-    "display": "Month to date",
-    "section": 2
-  },
-  {
-    "from": "now/y",
-    "to": "now",
-    "display": "Year to date",
-    "section": 2
-  },
-  {
-    "from": "now-1d/d",
-    "to": "now-1d/d",
-    "display": "Yesterday",
-    "section": 1
-  },
-  {
-    "from": "now-1w/w",
-    "to": "now-1w/w",
-    "display": "Previous week",
-    "section": 1
-  },
-  {
-    "from": "now-1m/m",
-    "to": "now-1m/m",
-    "display": "Previous month",
-    "section": 1
-  },
-  {
-    "from": "now-1y/y",
-    "to": "now-1y/y",
-    "display": "Previous year",
-    "section": 1
-  }
-]
+```shell
+docker compose -f components/analytics/deprecated/docker-compose.analytics.yml build
+docker compose -f components/analytics/deprecated/docker-compose.analytics.yml up -d
 ```
