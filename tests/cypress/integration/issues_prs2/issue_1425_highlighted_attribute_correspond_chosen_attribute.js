@@ -12,7 +12,7 @@ context('The highlighted attribute in AAM should correspond to the chosen attrib
     const createRectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         firstX: 250,
         firstY: 350,
         secondX: 350,
@@ -34,7 +34,7 @@ context('The highlighted attribute in AAM should correspond to the chosen attrib
         it('Check if highlighted attribute correspond to the chosen attribute in right panel', () => {
             cy.get('.cvat_canvas_text').within(() => {
                 cy.get('[style="fill: red;"]').then(($textValue) => {
-                    textValue = $textValue.text().split(': ')[1];
+                    [, textValue] = $textValue.text().split(': ');
                 });
             });
             cy.get('.cvat-attribute-annotation-sidebar-attr-editor').within(() => {
@@ -45,7 +45,7 @@ context('The highlighted attribute in AAM should correspond to the chosen attrib
             cy.get('.cvat-attribute-annotation-sidebar-attribute-switcher-right').click();
             cy.get('.cvat_canvas_text').within(() => {
                 cy.get('[style="fill: red;"]').then(($textValue) => {
-                    textValue = $textValue.text().split(': ')[1];
+                    [, textValue] = $textValue.text().split(': ');
                 });
             });
             cy.get('.cvat-attribute-annotation-sidebar-attr-editor').within(() => {

@@ -11,7 +11,7 @@ context('Filter property "shape" work correctly', () => {
     const createRectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         firstX: 250,
         firstY: 350,
         secondX: 350,
@@ -20,7 +20,7 @@ context('Filter property "shape" work correctly', () => {
     const createPolygonShape = {
         reDraw: false,
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         pointsMap: [
             { x: 300, y: 100 },
             { x: 400, y: 400 },

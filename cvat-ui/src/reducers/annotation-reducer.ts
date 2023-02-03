@@ -1078,7 +1078,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
                 canvas: {
                     ...state.canvas,
-                    activeControl: activeInteractor.type.startsWith('opencv') ?
+                    activeControl: activeInteractor.kind.startsWith('opencv') ?
                         ActiveControl.OPENCV_TOOLS :
                         ActiveControl.AI_TOOLS,
                 },

@@ -16,7 +16,7 @@ context('Lock/hide features.', () => {
     const createPolygonShape = {
         reDraw: false,
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         pointsMap: [
             { x: 200, y: 200 },
             { x: 250, y: 200 },
@@ -28,7 +28,7 @@ context('Lock/hide features.', () => {
     const createRectangleTrack2Points = {
         points: 'By 2 Points',
         type: 'Track',
-        labelName: labelName,
+        labelName,
         firstX: 260,
         firstY: 200,
         secondX: 360,
@@ -37,7 +37,7 @@ context('Lock/hide features.', () => {
     const createCuboidShape4Points = {
         points: 'By 4 Points',
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         firstX: 400,
         firstY: 350,
         secondX: 500,
@@ -198,7 +198,8 @@ context('Lock/hide features.', () => {
             cy.get('#cvat_canvas_shape_6')
                 .should('have.attr', 'width')
                 .then(($shapeWidth) => {
-                    expect(Math.floor(shapeWidth)).to.be.lessThan(Math.floor($shapeWidth)); // expected 95 to be below 104
+                    // expected 95 to be below 104
+                    expect(Math.floor(shapeWidth)).to.be.lessThan(Math.floor($shapeWidth));
                 });
         });
         it('Go to polygon. Pinned is set to true by default. Set it to false. Polygon can be moved.', () => {
@@ -254,7 +255,8 @@ context('Lock/hide features.', () => {
                             cy.get('.ant-select-selection-item').click({ force: true });
                         });
                         cy.get('.ant-select-dropdown').last().contains(labelName).click({ force: true });
-                        // Checking that the css parameter "background-color" has become the same as the ".cvat-objects-sidebar-state-item" with "Main task" label.
+                        // Checking that the css parameter "background-color" has become the same as
+                        // the ".cvat-objects-sidebar-state-item" with "Main task" label.
                         cy.get(objectSidebarList[i]).should(
                             'have.css',
                             'background-color',

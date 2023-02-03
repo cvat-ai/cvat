@@ -12,7 +12,7 @@ context('Actions on polygon', () => {
     const createPolygonShapeFirst = {
         reDraw: false,
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         pointsMap: [
             { x: 340, y: 200 },
             { x: 590, y: 200 },
@@ -24,7 +24,7 @@ context('Actions on polygon', () => {
     const createPolygonShapeSecond = {
         reDraw: false,
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         pointsMap: [
             { x: 190, y: 210 },
             { x: 440, y: 210 },

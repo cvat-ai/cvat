@@ -174,7 +174,7 @@
       "dimension": "2d",
       "id": 4,
       "labels": {
-        "count": 14,
+        "count": 2,
         "url": "http://localhost:8080/api/labels?project_id=4"
       },
       "name": "project4",

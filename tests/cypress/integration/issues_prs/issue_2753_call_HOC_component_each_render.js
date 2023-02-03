@@ -15,7 +15,7 @@ context('Call HOC component each render.', () => {
     const createPolygonShapePoints = {
         reDraw: false,
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         pointsMap: [
             { x: 200, y: 200 },
             { x: 250, y: 200 },
@@ -26,7 +26,7 @@ context('Call HOC component each render.', () => {
     };
     const createPolylinesTrackPoints = {
         type: 'Track',
-        labelName: labelName,
+        labelName,
         pointsMap: [
             { x: 300, y: 200 },
             { x: 350, y: 200 },
@@ -38,7 +38,7 @@ context('Call HOC component each render.', () => {
     };
     const createPointsShapePoints = {
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         pointsMap: [
             { x: 400, y: 200 },
             { x: 450, y: 200 },
