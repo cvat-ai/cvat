@@ -8,7 +8,7 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-class LogsViewerAccessViewSet(viewsets.ViewSet):
+class LogViewerAccessViewSet(viewsets.ViewSet):
     serializer_class = None
 
     def list(self, request):

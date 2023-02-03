@@ -140,8 +140,6 @@ INSTALLED_APPS = [
     'cvat.apps.opencv',
     'cvat.apps.webhooks',
     'cvat.apps.health',
-    'cvat.apps.log_viewer',
-    'cvat.apps.events',
 ]
 
 SITE_ID = 1
@@ -504,6 +502,10 @@ LOGGING = {
 }
 
 if os.getenv('DJANGO_LOG_SERVER_HOST'):
+    INSTALLED_APPS += [
+        'cvat.apps.log_viewer',
+        'cvat.apps.events',
+    ]
     LOGGING['loggers']['vector']['handlers'] += ['vector']
 
 DATA_UPLOAD_MAX_MEMORY_SIZE = 100 * 1024 * 1024  # 100 MB
