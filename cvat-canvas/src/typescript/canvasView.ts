@@ -736,15 +736,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             .map((id: number): any => this.drawnStates[id]);
 
         if (deleted.length || updated.length || created.length) {
-            if (deleted.length === Object.keys(this.drawnStates).length) {
-                // Optimized path if we are deleting everything (such as during a frame change)
-                // The normal path is horrifically slow if you have large numbers of objects
-                this.adoptedContent.clear();
-                this.svgShapes = {};
-                this.drawnStates = {};
-            } else {
-                this.deleteObjects(deleted);
-            }
+            this.deleteObjects(deleted);
             this.addObjects(created);
 
             const updatedSkeletons = updated.filter((state: any): boolean => state.shapeType === 'skeleton');
@@ -1941,6 +1933,20 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     private deleteObjects(states: any[]): void {
+        if (states.length === Object.keys(this.drawnStates).length) {
+            // Optimized path if we are deleting everything (such as during a frame change)
+            // The normal path is horrifically slow if you have large numbers of objects
+            this.adoptedContent.clear();
+            this.svgShapes = {};
+            this.drawnStates = {};
+
+            for (const textKey of Object.keys(this.svgTexts)) {
+                this.svgTexts[textKey].remove();
+            }
+            this.svgTexts = {};
+            return;
+        }
+
         for (const state of states) {
             if (state.clientID in this.svgTexts) {
                 this.deleteText(state.clientID);
