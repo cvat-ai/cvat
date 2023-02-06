@@ -5,6 +5,7 @@
 
 from copy import copy, deepcopy
 
+import math
 import numpy as np
 from itertools import chain
 from scipy.optimize import linear_sum_assignment
@@ -15,8 +16,9 @@ from cvat.apps.engine.serializers import LabeledDataSerializer
 
 
 class AnnotationIR:
-    def __init__(self, data=None):
+    def __init__(self, dimension, data=None):
         self.reset()
+        self.dimension = dimension
         if data:
             self.tags = getattr(data, 'tags', []) or data['tags']
             self.shapes = getattr(data, 'shapes', []) or data['shapes']
@@ -81,7 +83,7 @@ class AnnotationIR:
         return False
 
     @classmethod
-    def _slice_track(cls, track_, start, stop):
+    def _slice_track(cls, track_, start, stop, dimension):
         def filter_track_shapes(shapes):
             shapes = [s for s in shapes if cls._is_shape_inside(s, start, stop)]
             drop_count = 0
@@ -98,9 +100,9 @@ class AnnotationIR:
 
         if len(segment_shapes) < len(track['shapes']):
             for element in track.get('elements', []):
-                element = cls._slice_track(element, start, stop)
+                element = cls._slice_track(element, start, stop, dimension)
             interpolated_shapes = TrackManager.get_interpolated_shapes(
-                track, start, stop)
+                track, start, stop, dimension)
             scoped_shapes = filter_track_shapes(interpolated_shapes)
 
             if scoped_shapes:
@@ -122,8 +124,8 @@ class AnnotationIR:
         return track
 
     def slice(self, start, stop):
-        #makes a data copy from specified frame interval
-        splitted_data = AnnotationIR()
+        # makes a data copy from specified frame interval
+        splitted_data = AnnotationIR(self.dimension)
         splitted_data.tags = [deepcopy(t)
             for t in self.tags if self._is_shape_inside(t, start, stop)]
         splitted_data.shapes = [deepcopy(s)
@@ -131,7 +133,7 @@ class AnnotationIR:
         splitted_tracks = []
         for t in self.tracks:
             if self._is_track_inside(t, start, stop):
-                track = self._slice_track(t, start, stop)
+                track = self._slice_track(t, start, stop, self.dimension)
                 if 0 < len(track['shapes']):
                     splitted_tracks.append(track)
         splitted_data.tracks = splitted_tracks
@@ -155,12 +157,12 @@ class AnnotationManager:
         shapes = ShapeManager(self.data.shapes)
         shapes.merge(data.shapes, start_frame, overlap, dimension)
 
-        tracks = TrackManager(self.data.tracks)
+        tracks = TrackManager(self.data.tracks, dimension)
         tracks.merge(data.tracks, start_frame, overlap, dimension)
 
-    def to_shapes(self, end_frame):
+    def to_shapes(self, end_frame, dimension):
         shapes = self.data.shapes
-        tracks = TrackManager(self.data.tracks)
+        tracks = TrackManager(self.data.tracks, dimension)
 
         return shapes + tracks.to_shapes(end_frame)
 
@@ -402,11 +404,15 @@ class ShapeManager(ObjectManager):
         pass
 
 class TrackManager(ObjectManager):
+    def __init__(self, objects, dimension):
+        self._dimension = dimension
+        super().__init__(objects)
+
     def to_shapes(self, end_frame, end_skeleton_frame=None):
         shapes = []
         for idx, track in enumerate(self.objects):
             track_shapes = []
-            for shape in TrackManager.get_interpolated_shapes(track, 0, end_frame):
+            for shape in TrackManager.get_interpolated_shapes(track, 0, end_frame, self._dimension):
                 shape["label_id"] = track["label_id"]
                 shape["group"] = track["group"]
                 shape["track_id"] = idx
@@ -420,7 +426,7 @@ class TrackManager(ObjectManager):
                 track_shapes.append(shape)
 
             if len(track.get("elements", [])):
-                element_tracks = TrackManager(track["elements"])
+                element_tracks = TrackManager(track["elements"], self._dimension)
                 element_shapes = element_tracks.to_shapes(end_frame, end_skeleton_frame=track_shapes[-1]["frame"])
 
                 for i in range(len(element_shapes) // len(track_shapes)):
@@ -455,8 +461,8 @@ class TrackManager(ObjectManager):
             # and stop_frame is the stop frame of current segment
             # end_frame == stop_frame + 1
             end_frame = start_frame + overlap
-            obj0_shapes = TrackManager.get_interpolated_shapes(obj0, start_frame, end_frame)
-            obj1_shapes = TrackManager.get_interpolated_shapes(obj1, start_frame, end_frame)
+            obj0_shapes = TrackManager.get_interpolated_shapes(obj0, start_frame, end_frame, dimension)
+            obj1_shapes = TrackManager.get_interpolated_shapes(obj1, start_frame, end_frame, dimension)
             obj0_shapes_by_frame = {shape["frame"]:shape for shape in obj0_shapes}
             obj1_shapes_by_frame = {shape["frame"]:shape for shape in obj1_shapes}
             assert obj0_shapes_by_frame and obj1_shapes_by_frame
@@ -491,7 +497,7 @@ class TrackManager(ObjectManager):
                 self._modify_unmached_object(element, end_frame)
 
     @staticmethod
-    def get_interpolated_shapes(track, start_frame, end_frame):
+    def get_interpolated_shapes(track, start_frame, end_frame, dimension):
         def copy_shape(source, frame, points=None, rotation=None):
             copied = deepcopy(source)
             copied["keyframe"] = False
@@ -527,6 +533,24 @@ class TrackManager(ObjectManager):
                 shapes.append(copy_shape(shape0, frame, points.tolist(), rotation))
 
             return shapes
+
+        def simple_3d_interpolation(shape0, shape1):
+            result = simple_interpolation(shape0, shape1)
+            angles = (shape0["points"][3:6] + shape1["points"][3:6])
+            distance = shape1["frame"] - shape0["frame"]
+
+            for shape in result:
+                offset = (shape["frame"] - shape0["frame"]) / distance
+                for i, angleBefore in enumerate(angles):
+                    if i < 3:
+                        angleAfter = angles[i + 3]
+                        angleBefore = (angleBefore if angleBefore >= 0 else angleBefore + math.pi * 2) * 180 / math.pi
+                        angleAfter = (angleAfter if angleAfter >= 0 else angleAfter + math.pi * 2) * 180 / math.pi
+                        angle = angleBefore + find_angle_diff(angleAfter, angleBefore) * offset * math.pi / 180
+                        angle = angle if angle <= math.pi else angle - math.pi * 2
+                        shape["points"][i + 3] = angle
+
+            return result
 
         def points_interpolation(shape0, shape1):
             if len(shape0["points"]) == 2 and len(shape1["points"]) == 2:
@@ -770,6 +794,8 @@ class TrackManager(ObjectManager):
                 raise NotImplementedError()
 
             shapes = []
+            if dimension == DimensionType.DIM_3D:
+                shapes = simple_3d_interpolation(shape0, shape1)
             if is_rectangle or is_cuboid or is_ellipse or is_skeleton:
                 shapes = simple_interpolation(shape0, shape1)
             elif is_points:

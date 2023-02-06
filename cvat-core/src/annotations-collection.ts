@@ -76,6 +76,7 @@ export default class Collection {
             groups: this.groups,
             frameMeta: this.frameMeta,
             history: this.history,
+            dimension: data.dimension,
             nextClientID: () => ++this.count,
             groupColors: {},
             getMasksOnFrame: (frame: number) => (this.shapes[frame] as MaskShape[])

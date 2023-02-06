@@ -51,6 +51,7 @@ async function getAnnotationsFromServer(session) {
             history,
             stopFrame,
             frameMeta,
+            dimension: session.dimension,
         });
 
         // eslint-disable-next-line no-unsanitized/method

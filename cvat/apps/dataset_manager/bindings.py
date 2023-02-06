@@ -180,6 +180,7 @@ class CommonData(InstanceLabelData):
     Labels = namedtuple('Label', 'id, name, color, type')
 
     def __init__(self, annotation_ir, db_task, host='', create_callback=None) -> None:
+        self._dimension = annotation_ir.dimension
         self._annotation_ir = annotation_ir
         self._host = host
         self._create_callback = create_callback
@@ -332,7 +333,7 @@ class CommonData(InstanceLabelData):
     def _export_track(self, track, idx):
         track['shapes'] = list(filter(lambda x: not self._is_frame_deleted(x['frame']), track['shapes']))
         tracked_shapes = TrackManager.get_interpolated_shapes(
-            track, 0, len(self))
+            track, 0, len(self), self._annotation_ir.dimension)
         for tracked_shape in tracked_shapes:
             tracked_shape["attributes"] += track["attributes"]
             tracked_shape["track_id"] = idx
@@ -384,7 +385,7 @@ class CommonData(InstanceLabelData):
                     get_frame(idx)
 
         anno_manager = AnnotationManager(self._annotation_ir)
-        for shape in sorted(anno_manager.to_shapes(len(self)),
+        for shape in sorted(anno_manager.to_shapes(len(self), self._annotation_ir.dimension),
                 key=lambda shape: shape.get("z_order", 0)):
             shape_data = ''
             if shape['frame'] not in self._frame_info or self._is_frame_deleted(shape['frame']):
@@ -1013,7 +1014,7 @@ class ProjectData(InstanceLabelData):
     def _export_track(self, track: dict, task_id: int, task_size: int, idx: int):
         track['shapes'] = list(filter(lambda x: (task_id, x['frame']) not in self._deleted_frames, track['shapes']))
         tracked_shapes = TrackManager.get_interpolated_shapes(
-            track, 0, task_size
+            track, 0, task_size, self._annotation_ir.dimension
         )
         for tracked_shape in tracked_shapes:
             tracked_shape["attributes"] += track["attributes"]
@@ -1060,7 +1061,7 @@ class ProjectData(InstanceLabelData):
 
         for task in self._db_tasks.values():
             anno_manager = AnnotationManager(self._annotation_irs[task.id])
-            for shape in sorted(anno_manager.to_shapes(task.data.size),
+            for shape in sorted(anno_manager.to_shapes(task.data.size, self._annotation_ir.dimension),
                     key=lambda shape: shape.get("z_order", 0)):
                 if (task.id, shape['frame']) not in self._frame_info or (task.id, shape['frame']) in self._deleted_frames:
                     continue

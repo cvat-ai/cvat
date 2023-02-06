@@ -440,7 +440,7 @@ class TaskExportTest(_DbTestBase):
         images = self._generate_task_images(3)
         images['frame_filter'] = 'step=2'
         task = self._generate_task(images)
-        task_data = TaskData(AnnotationIR(), Task.objects.get(pk=task['id']))
+        task_data = TaskData(AnnotationIR('2d'), Task.objects.get(pk=task['id']),)
 
         with self.assertRaisesRegex(ValueError, r'Unknown'):
             task_data.rel_frame_id(1) # the task has only 0 and 2 frames
@@ -450,7 +450,7 @@ class TaskExportTest(_DbTestBase):
         images['frame_filter'] = 'step=2'
         images['start_frame'] = 1
         task = self._generate_task(images)
-        task_data = TaskData(AnnotationIR(), Task.objects.get(pk=task['id']))
+        task_data = TaskData(AnnotationIR('2d'), Task.objects.get(pk=task['id']))
 
         self.assertEqual(2, task_data.rel_frame_id(5))
 
@@ -458,7 +458,7 @@ class TaskExportTest(_DbTestBase):
         images = self._generate_task_images(3)
         images['frame_filter'] = 'step=2'
         task = self._generate_task(images)
-        task_data = TaskData(AnnotationIR(), Task.objects.get(pk=task['id']))
+        task_data = TaskData(AnnotationIR('2d'), Task.objects.get(pk=task['id']))
 
         with self.assertRaisesRegex(ValueError, r'Unknown'):
             task_data.abs_frame_id(2) # the task has only 0 and 1 indices
@@ -468,7 +468,7 @@ class TaskExportTest(_DbTestBase):
         images['frame_filter'] = 'step=2'
         images['start_frame'] = 1
         task = self._generate_task(images)
-        task_data = TaskData(AnnotationIR(), Task.objects.get(pk=task['id']))
+        task_data = TaskData(AnnotationIR('2d'), Task.objects.get(pk=task['id']))
 
         self.assertEqual(5, task_data.abs_frame_id(2))
 
@@ -569,7 +569,7 @@ class FrameMatchingTest(_DbTestBase):
 
         images = self._generate_task_images(task_paths)
         task = self._generate_task(images)
-        task_data = TaskData(AnnotationIR(), Task.objects.get(pk=task["id"]))
+        task_data = TaskData(AnnotationIR('2d'), Task.objects.get(pk=task["id"]))
 
         for input_path, expected, root in [
             ('z.jpg', None, ''), # unknown item
@@ -594,7 +594,7 @@ class FrameMatchingTest(_DbTestBase):
             with self.subTest(expected=expected):
                 images = self._generate_task_images(task_paths)
                 task = self._generate_task(images)
-                task_data = TaskData(AnnotationIR(),
+                task_data = TaskData(AnnotationIR('2d'),
                     Task.objects.get(pk=task["id"]))
                 dataset = [
                     datumaro.components.extractor.DatasetItem(
