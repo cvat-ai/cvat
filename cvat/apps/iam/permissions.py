@@ -1362,6 +1362,8 @@ class LabelPermission(OpenPolicyAgentPermission):
                     obj = cast(Label, obj)
 
                     # Access rights are the same as in the owning objects
+                    # Job assignees are not supposed to work with separate labels.
+                    # They should only use the list operation.
                     if obj.project:
                         if scope == Scopes.VIEW:
                             owning_perm_scope = ProjectPermission.Scopes.VIEW

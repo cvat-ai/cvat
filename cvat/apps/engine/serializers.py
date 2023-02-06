@@ -88,7 +88,7 @@ class LabelsSummarySerializer(CollectionSummarySerializer):
 
 
 class JobsSummarySerializer(CollectionSummarySerializer):
-    completed = serializers.IntegerField(source='completed_jobs_count')
+    completed = serializers.IntegerField(source='completed_jobs_count', required=False, default=None)
 
     def __init__(self, *, model=models.Job, url_filter_key, **kwargs):
         super().__init__(model=model, url_filter_key=url_filter_key, **kwargs)

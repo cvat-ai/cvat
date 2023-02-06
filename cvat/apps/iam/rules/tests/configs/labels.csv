@@ -1,0 +1,9 @@
+Scope,Context,Membership
+list,Sandbox,N/A
+list,Organization,Worker
+view,Sandbox,N/A
+view,Organization,Worker
+update,Sandbox,N/A
+update,Organization,Maintainer
+delete,Sandbox,N/A
+delete,Organization,Maintainer
