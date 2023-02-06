@@ -314,6 +314,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                         detail: {
                             state: {
                                 shapeType: 'cuboid',
+                                objectType: initState.objectType,
                                 frame: this.model.data.imageID,
                                 points,
                                 attributes: { ...initState.attributes },
@@ -472,6 +473,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                                     group: initState.group?.id || null,
                                     label: initState.label,
                                     shapeType: initState.shapeType,
+                                    objectType: initState.objectType,
                                 } : {}),
                             },
                             duration: 0,
