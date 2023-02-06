@@ -1,4 +1,5 @@
 # Copyright (C) 2019-2022 Intel Corporation
+# Copyright (C) 2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -11,6 +12,7 @@ import django_rq
 from datumaro.util.os_util import make_file_name
 from datumaro.util import to_snake_case
 from django.utils import timezone
+from django.conf import settings
 
 import cvat.apps.dataset_manager.task as task
 import cvat.apps.dataset_manager.project as project
@@ -71,7 +73,8 @@ def export(dst_format, project_id=None, task_id=None, job_id=None, server_url=No
 
         instance_time = timezone.localtime(db_instance.updated_date).timestamp()
         if isinstance(db_instance, Project):
-            tasks_update = list(map(lambda db_task: timezone.localtime(db_task.updated_date).timestamp(), db_instance.tasks.all()))
+            tasks_update = list(map(lambda db_task: timezone.localtime(
+                db_task.updated_date).timestamp(), db_instance.tasks.all()))
             instance_time = max(tasks_update + [instance_time])
         if not (osp.exists(output_path) and \
                 instance_time <= osp.getmtime(output_path)):
@@ -83,7 +86,7 @@ def export(dst_format, project_id=None, task_id=None, job_id=None, server_url=No
                 os.replace(temp_file, output_path)
 
             archive_ctime = osp.getctime(output_path)
-            scheduler = django_rq.get_scheduler()
+            scheduler = django_rq.get_scheduler(settings.CVAT_QUEUES.EXPORT_DATA.value)
             cleaning_job = scheduler.enqueue_in(time_delta=cache_ttl,
                 func=clear_export_cache,
                 file_path=output_path,
@@ -119,9 +122,9 @@ def export_task_annotations(task_id, dst_format=None, server_url=None):
 def export_project_as_dataset(project_id, dst_format=None, server_url=None):
     return export(dst_format, project_id=project_id, server_url=server_url, save_images=True)
 
-
 def export_project_annotations(project_id, dst_format=None, server_url=None):
     return export(dst_format, project_id=project_id, server_url=server_url, save_images=False)
+
 
 def clear_export_cache(file_path, file_ctime, logger):
     try:

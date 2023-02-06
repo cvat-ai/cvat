@@ -10,12 +10,14 @@ description: 'Instructions on how to run all existence tests.'
 **Initial steps**:
 1. Run CVAT instance:
    ```
-   docker-compose \
+   docker compose \
+             --env-file="tests/python/social_auth/.env" \
              -f docker-compose.yml \
              -f docker-compose.dev.yml \
              -f components/serverless/docker-compose.serverless.yml \
              -f tests/docker-compose.minio.yml \
-             -f tests/docker-compose.file_share.yml up -d
+             -f tests/docker-compose.file_share.yml \
+             -f tests/python/social_auth/docker-compose.yml up -d
    ```
 1. Add test user in CVAT:
    ```
@@ -76,8 +78,8 @@ pytest ./tests/python --rebuild
 
 **Debugging**
 
-Currently, this is only supported in docker-compose deployments, which should be
-enough to fix errors arising in REST API tests.
+Currently, this is only supported in deployments based on Docker Compose,
+which should be enough to fix errors arising in REST API tests.
 
 To debug a server deployed with Docker, you need to do the following:
 
@@ -132,7 +134,7 @@ Extra options:
    ```
 1. Run CVAT instance
    ```
-   docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
    ```
 
 **Running tests**
@@ -162,13 +164,13 @@ python cvat/apps/iam/rules/tests/generate_tests.py \
 - In a Docker container
 ```bash
 docker run --rm -v ${PWD}/cvat/apps/iam/rules:/rules \
-   openpolicyagent/opa:0.34.2-rootless \
+   openpolicyagent/opa:0.45.0-rootless \
    test /rules -v
 ```
 
 - or execute OPA directly
 ```bash
-curl -L -o opa https://openpolicyagent.org/downloads/v0.34.2/opa_linux_amd64_static
+curl -L -o opa https://openpolicyagent.org/downloads/v0.45.0/opa_linux_amd64_static
 chmod +x ./opa
 ./opa test cvat/apps/iam/rules
 ```

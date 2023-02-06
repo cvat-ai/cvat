@@ -150,8 +150,7 @@ COPY --from=build-image /opt/ffmpeg /usr
 
 # These variables are required for supervisord substitutions in files
 # This library allows remote python debugging with VS Code
-ARG CVAT_DEBUG_ENABLED='no'
-ENV CVAT_DEBUG_PORT=''
+ARG CVAT_DEBUG_ENABLED
 RUN if [ "${CVAT_DEBUG_ENABLED}" = 'yes' ]; then \
         python3 -m pip install --no-cache-dir debugpy; \
     fi

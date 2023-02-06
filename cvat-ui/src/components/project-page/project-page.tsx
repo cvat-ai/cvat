@@ -14,7 +14,7 @@ import Button from 'antd/lib/button';
 import Dropdown from 'antd/lib/dropdown';
 import Title from 'antd/lib/typography/Title';
 import Pagination from 'antd/lib/pagination';
-import { MutliPlusIcon } from 'icons';
+import { MultiPlusIcon } from 'icons';
 import { PlusOutlined } from '@ant-design/icons';
 import Empty from 'antd/lib/empty';
 import Input from 'antd/lib/input';
@@ -48,7 +48,7 @@ export default function ProjectPageComponent(): JSX.Element {
     const id = +useParams<ParamType>().id;
     const dispatch = useDispatch();
     const history = useHistory();
-    const projects = useSelector((state: CombinedState) => state.projects.current).map((project) => project.instance);
+    const projects = useSelector((state: CombinedState) => state.projects.current);
     const projectsFetching = useSelector((state: CombinedState) => state.projects.fetching);
     const deletes = useSelector((state: CombinedState) => state.projects.activities.deletes);
     const taskDeletes = useSelector((state: CombinedState) => state.tasks.activities.deletes);
@@ -77,7 +77,7 @@ export default function ProjectPageComponent(): JSX.Element {
     const [project] = projects.filter((_project) => _project.id === id);
     const projectSubsets: Array<string> = [];
     for (const task of tasks) {
-        if (!projectSubsets.includes(task.instance.subset)) projectSubsets.push(task.instance.subset);
+        if (!projectSubsets.includes(task.subset)) projectSubsets.push(task.subset);
     }
 
     useEffect(() => {
@@ -121,18 +121,17 @@ export default function ProjectPageComponent(): JSX.Element {
                 <React.Fragment key={subset}>
                     {subset && <Title level={4}>{subset}</Title>}
                     {tasks
-                        .filter((task) => task.instance.projectId === project.id && task.instance.subset === subset)
+                        .filter((task) => task.projectId === project.id && task.subset === subset)
                         .map((task: Task) => (
                             <TaskItem
-                                key={task.instance.id}
-                                deleted={task.instance.id in taskDeletes ? taskDeletes[task.instance.id] : false}
+                                key={task.id}
+                                deleted={task.id in taskDeletes ? taskDeletes[task.id] : false}
                                 hidden={false}
-                                activeInference={tasksActiveInferences[task.instance.id] || null}
+                                activeInference={tasksActiveInferences[task.id] || null}
                                 cancelAutoAnnotation={() => {
-                                    dispatch(cancelInferenceAsync(task.instance.id));
+                                    dispatch(cancelInferenceAsync(task.id));
                                 }}
-                                previewImage={task.preview}
-                                taskInstance={task.instance}
+                                taskInstance={task}
                             />
                         ))}
                 </React.Fragment>
@@ -242,7 +241,7 @@ export default function ProjectPageComponent(): JSX.Element {
                                         </Button>
                                         <Button
                                             type='primary'
-                                            icon={<span className='anticon'><MutliPlusIcon /></span>}
+                                            icon={<span className='anticon'><MultiPlusIcon /></span>}
                                             className='cvat-create-multi-tasks-button'
                                             onClick={() => history.push(`/tasks/create?projectId=${id}&many=true`)}
                                         >

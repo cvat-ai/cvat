@@ -15,6 +15,7 @@ import django_rq
 import git
 from django.db import transaction
 from django.utils import timezone
+from django.conf import settings
 
 from cvat.apps.dataset_manager.formats.registry import format_for
 from cvat.apps.dataset_manager.task import export_task
@@ -410,7 +411,7 @@ def push(tid, user, scheme, host):
         except git.exc.GitCommandError as ex:
             _have_no_access_exception(ex)
     except Exception as ex:
-        slogger.task[tid].exception('push to remote repository errors occured', exc_info = True)
+        slogger.task[tid].exception('push to remote repository errors occurred', exc_info = True)
         raise ex
 
 
@@ -427,7 +428,7 @@ def get(tid, user):
         response['url']['value'] = '{} [{}]'.format(db_git.url, db_git.path)
         try:
             rq_id = "git.push.{}".format(tid)
-            queue = django_rq.get_queue('default')
+            queue = django_rq.get_queue(settings.CVAT_QUEUES.EXPORT_DATA.value)
             rq_job = queue.fetch_job(rq_id)
             if rq_job is not None and (rq_job.is_queued or rq_job.is_started):
                 db_git.status = GitStatusChoice.SYNCING

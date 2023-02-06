@@ -9,6 +9,9 @@ import pytest
 
 from shared.utils.config import server_get
 
+# https://docs.pytest.org/en/7.1.x/example/markers.html#marking-whole-classes-or-modules
+pytestmark = [pytest.mark.with_external_services]
+
 
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetAnalytics:

@@ -159,8 +159,8 @@ export const importBackupAsync = (instanceType: 'project' | 'task', storage: Sto
     async (dispatch) => {
         dispatch(importActions.importBackup());
         try {
-            const inctanceClass = (instanceType === 'task') ? core.classes.Task : core.classes.Project;
-            const instance = await inctanceClass.restore(storage, file);
+            const instanceClass = (instanceType === 'task') ? core.classes.Task : core.classes.Project;
+            const instance = await instanceClass.restore(storage, file);
             dispatch(importActions.importBackupSuccess(instance.id, instanceType));
         } catch (error) {
             dispatch(importActions.importBackupFailed(instanceType, error));

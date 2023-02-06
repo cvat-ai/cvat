@@ -660,6 +660,30 @@
   }
 },
 {
+  "model": "account.emailaddress",
+  "pk": 1,
+  "fields": {
+    "user": [
+      "admin1"
+    ],
+    "email": "admin1@cvat.org",
+    "verified": true,
+    "primary": true
+  }
+},
+{
+  "model": "account.emailaddress",
+  "pk": 2,
+  "fields": {
+    "user": [
+      "admin2"
+    ],
+    "email": "admin2@cvat.org",
+    "verified": true,
+    "primary": true
+  }
+},
+{
   "model": "organizations.organization",
   "pk": 1,
   "fields": {
@@ -2618,7 +2642,7 @@
       "admin1"
     ],
     "assignee": null,
-    "bug_tracker": "",
+    "bug_tracker": "https://bugtracker.localhost/task/12345",
     "created_date": "2022-09-22T14:22:25.820Z",
     "updated_date": "2022-09-23T11:57:02.300Z",
     "overlap": 0,
@@ -5860,7 +5884,7 @@
     "assignee": null,
     "created_date": "2022-03-16T11:04:39.444Z",
     "updated_date": null,
-    "resolved": false
+    "resolved": true
   }
 },
 {
@@ -5905,7 +5929,9 @@
     "owner": [
       "user1"
     ],
-    "assignee": null,
+    "assignee": [
+      "user1"
+    ],
     "created_date": "2022-03-16T12:40:00.764Z",
     "updated_date": null,
     "resolved": false

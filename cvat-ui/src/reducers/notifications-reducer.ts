@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -80,12 +80,13 @@ const defaultState: NotificationsState = {
             canceling: null,
             metaFetching: null,
             inferenceStatusFetching: null,
+            creating: null,
+            deleting: null,
         },
         annotation: {
             saving: null,
             jobFetching: null,
             frameFetching: null,
-            contextImageFetching: null,
             changingLabelColor: null,
             updating: null,
             creating: null,
@@ -380,8 +381,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         dataset: {
                             message:
                                 'Could not export dataset for the ' +
-                                `<a href="/${instanceType}s/${instance.id}" target="_blank">` +
-                                `${instanceType} ${instance.id}</a>`,
+                                `[${instanceType} ${instance.id}](/${instanceType}s/${instance.id})`,
                             reason: action.payload.error.toString(),
                         },
                     },
@@ -444,10 +444,8 @@ export default function (state = defaultState, action: AnyAction): Notifications
             const { instance, resource } = action.payload;
             const message = resource === 'annotation' ?
                 'Annotations have been loaded to the ' +
-                `<a href="/tasks/${instance.taskId || instance.id}" target="_blank">` +
-                `task ${instance.taskId || instance.id}</a>` :
-                'Dataset has been imported to the ' +
-                `<a href="/projects/${instance.id}" target="_blank">project ${instance.id}</a>`;
+                `[task ${instance.taskId || instance.id}](/tasks/${instance.taskId || instance.id}) ` :
+                `Dataset was imported to the [project ${instance.id}](/projects/${instance.id})`;
             return {
                 ...state,
                 messages: {
@@ -461,11 +459,10 @@ export default function (state = defaultState, action: AnyAction): Notifications
         }
         case ImportActionTypes.IMPORT_DATASET_FAILED: {
             const { instance, resource } = action.payload;
-            const message = resource === 'annotation' ? 'Could not upload annotation for the ' +
-                `<a href="/tasks/${instance.taskId || instance.id}" target="_blank">` :
-                'Could not import dataset to the ' +
-                `<a href="/projects/${instance.id}" target="_blank">` +
-                `project ${instance.id}</a>`;
+            const message = resource === 'annotation' ?
+                'Could not upload annotation for the ' +
+                `[task ${instance.taskId || instance.id}](/tasks/${instance.taskId || instance.id})` :
+                `Could not import dataset to the [project ${instance.id}](/projects/${instance.id})`;
             return {
                 ...state,
                 errors: {
@@ -491,8 +488,8 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     importing: {
                         ...state.messages.importing,
                         backup:
-                            `The ${instanceType} has been restored succesfully.
-                            Click <a href="/${instanceType}s/${instanceId}">here</a> to open`,
+                            `The ${instanceType} has been restored successfully.
+                            Click [here](/${instanceType}s/${instanceId}) to open`,
                     },
                 },
             };
@@ -538,7 +535,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     tasks: {
                         ...state.errors.tasks,
                         updating: {
-                            message: `Could not update <a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
+                            message: `Could not update [task ${taskID}](/tasks/${taskID})`,
                             reason: action.payload.error.toString(),
                             className: 'cvat-notification-notice-update-task-failed',
                         },
@@ -555,9 +552,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     tasks: {
                         ...state.errors.tasks,
                         deleting: {
-                            message:
-                                'Could not delete the ' +
-                                `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
+                            message: `Could not delete the [task ${taskID}](/tasks/${taskID})`,
                             reason: action.payload.error.toString(),
                             className: 'cvat-notification-notice-delete-task-failed',
                         },
@@ -638,9 +633,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     projects: {
                         ...state.errors.projects,
                         updating: {
-                            message:
-                                'Could not update ' +
-                                `<a href="/project/${projectId}" target="_blank">project ${projectId}</a>`,
+                            message: `Could not update [project ${projectId}](/project/${projectId})`,
                             reason: action.payload.error.toString(),
                             className: 'cvat-notification-notice-update-project-failed',
                         },
@@ -657,9 +650,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     projects: {
                         ...state.errors.projects,
                         updating: {
-                            message:
-                                'Could not delete ' +
-                                `<a href="/project/${projectId}" target="_blank">project ${projectId}</a>`,
+                            message: `Could not delete [project ${projectId}](/project/${projectId})`,
                             reason: action.payload.error.toString(),
                             className: 'cvat-notification-notice-delete-project-failed',
                         },
@@ -721,9 +712,8 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.messages,
                         models: {
                             ...state.messages.models,
-                            inferenceDone:
-                                'Automatic annotation finished for the ' +
-                                `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
+                            inferenceDone: 'Automatic annotation accomplished for the ' +
+                                `[task ${taskID}](/tasks/${taskID})`,
                         },
                     },
                 };
@@ -734,7 +724,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
             };
         }
         case ModelsActionTypes.FETCH_META_FAILED: {
-            if (action.payload.error.toString().includes('status code 403')) {
+            if (action.payload.error.code === 403) {
                 return state;
             }
 
@@ -761,9 +751,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     models: {
                         ...state.errors.models,
                         inferenceStatusFetching: {
-                            message:
-                                'Fetching inference status for the ' +
-                                `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
+                            message: `Fetching inference status for the [task ${taskID}](/tasks/${taskID})`,
                             reason: action.payload.error.toString(),
                         },
                     },
@@ -794,9 +782,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     models: {
                         ...state.errors.models,
                         starting: {
-                            message:
-                                'Could not infer model for the ' +
-                                `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
+                            message: `Could not infer model for the [task ${taskID}](/tasks/${taskID})`,
                             reason: action.payload.error.toString(),
                         },
                     },
@@ -812,9 +798,38 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     models: {
                         ...state.errors.models,
                         canceling: {
-                            message:
-                                'Could not cancel model inference for the ' +
-                                `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
+                            message: `Could not cancel model inference for the [task ${taskID}](/tasks/${taskID})`,
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case ModelsActionTypes.CREATE_MODEL_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    models: {
+                        ...state.errors.models,
+                        creating: {
+                            message: 'Could not create model',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case ModelsActionTypes.DELETE_MODEL_FAILED: {
+            const { modelName } = action.payload;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    models: {
+                        ...state.errors.models,
+                        deleting: {
+                            message: `Could not delete model ${modelName}`,
                             reason: action.payload.error.toString(),
                         },
                     },
@@ -847,21 +862,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         frameFetching: {
                             message: `Could not receive frame ${action.payload.number}`,
                             reason: action.payload.error.toString(),
-                        },
-                    },
-                },
-            };
-        }
-        case AnnotationActionTypes.GET_CONTEXT_IMAGE_FAILED: {
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    annotation: {
-                        ...state.errors.annotation,
-                        contextImageFetching: {
-                            message: 'Could not fetch context image from the server',
-                            reason: action.payload.error,
                         },
                     },
                 },
@@ -1021,8 +1021,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.errors.annotation,
                         uploadAnnotations: {
                             message:
-                                'Could not upload annotations for the ' +
-                                `<a href="/tasks/${taskID}/jobs/${jobID}" target="_blank">job ${taskID}</a>`,
+                                `Could not upload annotations for the [job ${jobID}](/tasks/${taskID}/jobs/${jobID})`,
                             reason: error.toString(),
                             className: 'cvat-notification-notice-upload-annotations-fail',
                         },

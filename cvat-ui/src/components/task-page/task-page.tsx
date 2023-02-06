@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -32,9 +33,9 @@ type Props = TaskPageComponentProps & RouteComponentProps<{ id: string }>;
 
 class TaskPageComponent extends React.PureComponent<Props> {
     public componentDidMount(): void {
-        const { task, fetching, getTask } = this.props;
+        const { fetching, getTask } = this.props;
 
-        if (task === null && !fetching) {
+        if (!fetching) {
             getTask();
         }
     }
@@ -81,7 +82,7 @@ class TaskPageComponent extends React.PureComponent<Props> {
                     className='cvat-task-details-wrapper'
                 >
                     <Col md={22} lg={18} xl={16} xxl={14}>
-                        <TopBarComponent taskInstance={(task as Task).instance} />
+                        <TopBarComponent taskInstance={task as Task} />
                         <DetailsContainer task={task as Task} />
                         <JobListContainer task={task as Task} />
                     </Col>

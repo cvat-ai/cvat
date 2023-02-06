@@ -30,10 +30,10 @@ import {
     LinkedinIcon,
 } from 'react-share';
 
-import consts from 'consts';
+import config from 'config';
 
 function renderContent(): JSX.Element {
-    const { GITHUB_URL, GITHUB_IMAGE_URL, DISCORD_URL } = consts;
+    const { GITHUB_URL, GITHUB_IMAGE_URL, DISCORD_URL } = config;
 
     return (
         <>

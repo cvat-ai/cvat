@@ -547,7 +547,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         }, resolve);
     });
 
-    private handleSubmitMutliTasks = (): void => {
+    private handleSubmitMultiTasks = (): void => {
         this.validateBlocks()
             .then(() => {
                 this.addMultiTasks();
@@ -852,7 +852,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         );
     }
 
-    private renderFooterMutliTasks(): JSX.Element {
+    private renderFooterMultiTasks(): JSX.Element {
         const {
             multiTasks: items,
             uploadFileErrorMessage,
@@ -882,7 +882,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                     <Button
                         htmlType='submit'
                         type='primary'
-                        onClick={this.handleSubmitMutliTasks}
+                        onClick={this.handleSubmitMultiTasks}
                         disabled={!!uploadFileErrorMessage}
                     >
                         Submit&nbsp;
@@ -911,7 +911,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                 {this.renderAdvancedBlock()}
 
                 <Col span={24} className='cvat-create-task-content-footer'>
-                    {many ? this.renderFooterMutliTasks() : this.renderFooterSingleTask() }
+                    {many ? this.renderFooterMultiTasks() : this.renderFooterSingleTask() }
                 </Col>
             </Row>
         );

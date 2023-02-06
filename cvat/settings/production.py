@@ -11,9 +11,9 @@ INSTALLED_APPS += [
 ]
 
 NUCLIO['HOST'] = os.getenv('CVAT_NUCLIO_HOST', 'nuclio')
-
 for key in RQ_QUEUES:
     RQ_QUEUES[key]['HOST'] = os.getenv('CVAT_REDIS_HOST', 'cvat_redis')
+    RQ_QUEUES[key]['PASSWORD'] = os.getenv('CVAT_REDIS_PASSWORD', '')
 
 # Django-sendfile:
 # https://github.com/moggers87/django-sendfile2

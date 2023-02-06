@@ -20,6 +20,9 @@ from shared.utils.config import delete_method, get_method, patch_method, post_me
 #  1) trigger some webhook
 #  2) check that webhook is sent by checking value of `response` field for the last delivery of this webhook
 
+# https://docs.pytest.org/en/7.1.x/example/markers.html#marking-whole-classes-or-modules
+pytestmark = [pytest.mark.with_external_services]
+
 
 def target_url():
     env_data = {}

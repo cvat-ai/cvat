@@ -4,16 +4,15 @@
 // SPDX-License-Identifier: MIT
 
 import { Storage } from './storage';
-
-const serverProxy = require('./server-proxy').default;
-const Collection = require('./annotations-collection');
-const AnnotationsSaver = require('./annotations-saver');
-const AnnotationsHistory = require('./annotations-history').default;
-const { checkObjectType } = require('./common');
-const Project = require('./project').default;
-const { Task, Job } = require('./session');
-const { ScriptingError, DataError, ArgumentError } = require('./exceptions');
-const { getDeletedFrames } = require('./frames');
+import serverProxy from './server-proxy';
+import Collection from './annotations-collection';
+import AnnotationsSaver from './annotations-saver';
+import AnnotationsHistory from './annotations-history';
+import { checkObjectType } from './common';
+import Project from './project';
+import { Task, Job } from './session';
+import { ScriptingError, DataError, ArgumentError } from './exceptions';
+import { getDeletedFrames } from './frames';
 
 const jobCache = new WeakMap();
 const taskCache = new WeakMap();

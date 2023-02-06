@@ -5,6 +5,7 @@ import http.client
 
 from django.http import HttpResponseBadRequest, HttpResponse
 from rules.contrib.views import permission_required, objectgetter
+from django.conf import settings
 
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -37,7 +38,7 @@ def _legacy_api_view(allowed_method_names=None):
 @_legacy_api_view()
 def check_process(request, rq_id):
     try:
-        queue = django_rq.get_queue('default')
+        queue = django_rq.get_queue(settings.CVAT_QUEUES.EXPORT_DATA.value)
         rq_job = queue.fetch_job(rq_id)
 
         if rq_job is not None:
@@ -65,7 +66,7 @@ def create(request: Request, tid):
         export_format = body.get("format")
         lfs = body["lfs"]
         rq_id = "git.create.{}".format(tid)
-        queue = django_rq.get_queue("default")
+        queue = django_rq.get_queue(settings.CVAT_QUEUES.EXPORT_DATA.value)
 
         queue.enqueue_call(func = CVATGit.initial_create, args = (tid, path, export_format, lfs, request.user), job_id = rq_id)
         return Response({ "rq_id": rq_id })
@@ -80,7 +81,7 @@ def push_repository(request: Request, tid):
         slogger.task[tid].info("push repository request")
 
         rq_id = "git.push.{}".format(tid)
-        queue = django_rq.get_queue('default')
+        queue = django_rq.get_queue(settings.CVAT_QUEUES.EXPORT_DATA.value)
         queue.enqueue_call(func = CVATGit.push, args = (tid, request.user, request.scheme, request.get_host()), job_id = rq_id)
 
         return Response({ "rq_id": rq_id })

@@ -1,14 +1,14 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import { isBrowser, isNode } from 'browser-or-node';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
 import { ArgumentError } from './exceptions';
 import { CloudStorageCredentialsType, CloudStorageProviderType, CloudStorageStatus } from './enums';
 import User from './user';
+import { decodePreview } from './frames';
 
 function validateNotEmptyString(value: string): void {
     if (typeof value !== 'string') {
@@ -362,17 +362,7 @@ Object.defineProperties(CloudStorage.prototype.getPreview, {
             return new Promise((resolve, reject) => {
                 serverProxy.cloudStorages
                     .getPreview(this.id)
-                    .then((result) => {
-                        if (isNode) {
-                            resolve(global.Buffer.from(result, 'binary').toString('base64'));
-                        } else if (isBrowser) {
-                            const reader = new FileReader();
-                            reader.onload = () => {
-                                resolve(reader.result);
-                            };
-                            reader.readAsDataURL(result);
-                        }
-                    })
+                    .then((result) => decodePreview(result))
                     .catch((error) => {
                         reject(error);
                     });

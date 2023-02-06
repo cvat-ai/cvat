@@ -1,28 +1,38 @@
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from http import HTTPStatus
 
 import pytest
+from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 
 from shared.utils.config import post_method
 
+from .utils import CollectionSimpleFilterTestBase
 
-@pytest.mark.usefixtures("restore_db_per_function")
+
 class TestCreateInvitations:
+    ROLES = ["worker", "supervisor", "maintainer", "owner"]
+
+    @pytest.fixture(autouse=True)
+    def setup(self, restore_db_per_function, organizations, memberships, admin_user):
+        self.org_id = 2
+        self.owner = self.get_member("owner", memberships, self.org_id)
+
     def _test_post_invitation_201(self, user, data, invitee, **kwargs):
         response = post_method(user, "invitations", data, **kwargs)
 
-        assert response.status_code == HTTPStatus.CREATED
+        assert response.status_code == HTTPStatus.CREATED, response.content
         assert data["role"] == response.json()["role"]
         assert invitee["id"] == response.json()["user"]["id"]
         assert kwargs["org_id"] == response.json()["organization"]
 
     def _test_post_invitation_403(self, user, data, **kwargs):
         response = post_method(user, "invitations", data, **kwargs)
-        assert response.status_code == HTTPStatus.FORBIDDEN
+        assert response.status_code == HTTPStatus.FORBIDDEN, response.content
+        assert "You do not have permission" in str(response.content)
 
     @staticmethod
     def get_non_member_users(memberships, users):
@@ -41,46 +51,76 @@ class TestCreateInvitations:
 
         return member
 
-    @pytest.mark.parametrize("org_id", [2])
-    @pytest.mark.parametrize("org_role", ["worker", "supervisor", "maintainer", "owner"])
-    def test_create_invitation(self, organizations, memberships, users, org_id, org_role):
-        member = self.get_member(org_role, memberships, org_id)
-        non_member_users = self.get_non_member_users(memberships, users)
+    @pytest.mark.parametrize("org_role", ROLES)
+    @pytest.mark.parametrize("invitee_role", ROLES)
+    def test_create_invitation(self, organizations, memberships, users, org_role, invitee_role):
+        org_id = self.org_id
+        inviter_user = self.get_member(org_role, memberships, org_id)
+        invitee_user = self.get_non_member_users(memberships, users)[0]
 
         if org_role in ["worker", "supervisor"]:
-            for invitee_role in ["worker", "supervisor", "maintainer", "owner"]:
-                self._test_post_invitation_403(
-                    member["username"],
-                    {"role": invitee_role, "email": non_member_users[0]["email"]},
-                    org_id=org_id,
-                )
-        else:
-            for idx, invitee_role in enumerate(["worker", "supervisor"]):
-                self._test_post_invitation_201(
-                    member["username"],
-                    {"role": invitee_role, "email": non_member_users[idx]["email"]},
-                    non_member_users[idx],
-                    org_id=org_id,
-                )
+            self._test_post_invitation_403(
+                inviter_user["username"],
+                {"role": invitee_role, "email": invitee_user["email"]},
+                org_id=org_id,
+            )
 
-            # only the owner can invite a maintainer
+        elif invitee_role in ["worker", "supervisor"]:
+            self._test_post_invitation_201(
+                inviter_user["username"],
+                {"role": invitee_role, "email": invitee_user["email"]},
+                invitee_user,
+                org_id=org_id,
+            )
+
+        elif invitee_role == "maintainer":
             if org_role == "owner":
+                # only the owner can invite a maintainer
                 self._test_post_invitation_201(
-                    member["username"],
-                    {"role": "maintainer", "email": non_member_users[2]["email"]},
-                    non_member_users[2],
+                    inviter_user["username"],
+                    {"role": invitee_role, "email": invitee_user["email"]},
+                    invitee_user,
                     org_id=org_id,
                 )
             else:
                 self._test_post_invitation_403(
-                    member["username"],
-                    {"role": "maintainer", "email": non_member_users[3]["email"]},
+                    inviter_user["username"],
+                    {"role": invitee_role, "email": invitee_user["email"]},
                     org_id=org_id,
                 )
 
+        elif invitee_role == "owner":
             # nobody can invite an owner
             self._test_post_invitation_403(
-                member["username"],
-                {"role": "owner", "email": non_member_users[4]["email"]},
+                inviter_user["username"],
+                {"role": invitee_role, "email": invitee_user["email"]},
                 org_id=org_id,
             )
+
+        else:
+            assert False, "Unknown role"
+
+
+class TestInvitationsListFilters(CollectionSimpleFilterTestBase):
+    field_lookups = {
+        "owner": ["owner", "username"],
+    }
+
+    @pytest.fixture(autouse=True)
+    def setup(self, restore_db_per_class, admin_user, invitations):
+        self.user = admin_user
+        self.samples = invitations
+
+    def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
+        return api_client.invitations_api.list_endpoint
+
+    @pytest.mark.parametrize(
+        "field",
+        ("owner",),
+    )
+    def test_can_use_simple_filter_for_object_list(self, field):
+        value, gt_objects = self._get_field_samples(field)
+
+        received_items = self._retrieve_collection(**{field: str(value)})
+
+        assert set(p["key"] for p in gt_objects) == set(p.key for p in received_items)
