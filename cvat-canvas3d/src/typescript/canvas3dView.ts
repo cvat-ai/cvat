@@ -899,15 +899,15 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     }
 
     private receiveShapeColor(state: ObjectState | DrawnObjectData): string {
+        const includedInto = (states: ObjectState[]): boolean => states
+            .some((_state: ObjectState): boolean => _state.clientID === state.clientID);
         const { colorBy } = this.model.data.shapeProperties;
 
-        if (this.mode === Mode.GROUP &&
-            this.statesToBeGrouped.some((_state: ObjectState): boolean => _state.clientID === state.clientID)) {
+        if (this.mode === Mode.GROUP && includedInto(this.statesToBeGrouped)) {
             return CONST.GROUPING_COLOR;
         }
 
-        if (this.mode === Mode.MERGE &&
-            this.statesToBeMerged.some((_state: ObjectState): boolean => _state.clientID === state.clientID)) {
+        if (this.mode === Mode.MERGE && includedInto(this.statesToBeMerged)) {
             return CONST.MERGING_COLOR;
         }
 

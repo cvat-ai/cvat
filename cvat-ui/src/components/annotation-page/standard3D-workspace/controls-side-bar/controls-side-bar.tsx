@@ -159,7 +159,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 shortcuts={{
                     SWITCH_GROUP_MODE: {
                         details: keyMap.SWITCH_GROUP_MODE,
-                        displayValue: normalizedKeyMap.SWITCH_GROUP_MODE0,
+                        displayValue: normalizedKeyMap.SWITCH_GROUP_MODE,
                     },
                     RESET_GROUP: {
                         details: keyMap.RESET_GROUP,
