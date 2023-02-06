@@ -498,7 +498,6 @@ async function authorized() {
 }
 
 async function healthCheck(maxRetries, checkPeriod, requestTimeout, progressCallback, attempt = 0) {
-    return true;
     const { backendAPI } = config;
     const url = `${backendAPI}/server/health/?format=json`;
 
