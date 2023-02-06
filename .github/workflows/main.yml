@@ -78,6 +78,7 @@ jobs:
       - name: CVAT server. Build and push
         uses: docker/build-push-action@v4
         with:
+          cache-from: type=local,src=/tmp/cvat_cache_server
           context: .
           file: Dockerfile
           tags: cvat/server
@@ -86,6 +87,7 @@ jobs:
       - name: CVAT UI. Build and push
         uses: docker/build-push-action@v4
         with:
+          cache-from: type=local,src=/tmp/cvat_cache_ui
           context: .
           file: Dockerfile.ui
           tags: cvat/ui
