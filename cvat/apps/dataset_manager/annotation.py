@@ -541,14 +541,13 @@ class TrackManager(ObjectManager):
 
             for shape in result:
                 offset = (shape["frame"] - shape0["frame"]) / distance
-                for i, angleBefore in enumerate(angles):
+                for i, angle0 in enumerate(angles):
                     if i < 3:
-                        angleAfter = angles[i + 3]
-                        angleBefore = (angleBefore if angleBefore >= 0 else angleBefore + math.pi * 2) * 180 / math.pi
-                        angleAfter = (angleAfter if angleAfter >= 0 else angleAfter + math.pi * 2) * 180 / math.pi
-                        angle = angleBefore + find_angle_diff(angleAfter, angleBefore) * offset * math.pi / 180
-                        angle = angle if angle <= math.pi else angle - math.pi * 2
-                        shape["points"][i + 3] = angle
+                        angle1 = angles[i + 3]
+                        angle0 = (angle0 if angle0 >= 0 else angle0 + math.pi * 2) * 180 / math.pi
+                        angle1 = (angle1 if angle1 >= 0 else angle1 + math.pi * 2) * 180 / math.pi
+                        angle = angle0 + find_angle_diff(angle1, angle0) * offset * math.pi / 180
+                        shape["points"][i + 3] = angle if angle <= math.pi else angle - math.pi * 2
 
             return result
 
