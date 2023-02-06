@@ -11,7 +11,7 @@ context('Actions on points.', () => {
     const newLabelName = `New label for case ${caseId}`;
     const createPointsShape = {
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         pointsMap: [
             { x: 200, y: 200 },
             { x: 250, y: 200 },
@@ -20,7 +20,7 @@ context('Actions on points.', () => {
     };
     const createPointsTrack = {
         type: 'Track',
-        labelName: labelName,
+        labelName,
         pointsMap: [
             { x: 300, y: 200 },
             { x: 350, y: 200 },
@@ -29,7 +29,7 @@ context('Actions on points.', () => {
     };
     const createPointsShapePoints = {
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         pointsMap: [
             { x: 400, y: 200 },
             { x: 450, y: 200 },
@@ -41,7 +41,7 @@ context('Actions on points.', () => {
     };
     const createPointsTrackPoints = {
         type: 'Track',
-        labelName: labelName,
+        labelName,
         pointsMap: [
             { x: 500, y: 200 },
             { x: 550, y: 200 },

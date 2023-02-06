@@ -305,7 +305,9 @@ class Task(
     def get_jobs(self) -> List[Job]:
         return [
             Job(self._client, model=m)
-            for m in get_paginated_collection(self.api.list_jobs_endpoint, id=self.id)
+            for m in get_paginated_collection(
+                self._client.api_client.jobs_api.list_endpoint, task_id=str(self.id)
+            )
         ]
 
     def get_meta(self) -> models.IDataMetaRead:

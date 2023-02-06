@@ -1,4 +1,5 @@
 # Copyright (C) 2021-2022 Intel Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -23,13 +24,12 @@ class OrganizationWriteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Organization
-        fields = ['id', 'slug', 'name', 'description', 'created_date',
-            'updated_date', 'contact', 'owner']
+        fields = ['slug', 'name', 'description', 'contact', 'owner']
 
         # TODO: at the moment isn't possible to change the owner. It should
         # be a separate feature. Need to change it together with corresponding
         # Membership. Also such operation should be well protected.
-        read_only_fields = ['created_date', 'updated_date', 'owner']
+        read_only_fields = ['owner']
 
     def create(self, validated_data):
         organization = super().create(validated_data)

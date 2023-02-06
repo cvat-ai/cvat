@@ -12,7 +12,7 @@ context('Actions on Cuboid', () => {
     const createCuboidShape2Points = {
         points: 'From rectangle',
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         firstX: 250,
         firstY: 350,
         secondX: 350,
@@ -21,7 +21,7 @@ context('Actions on Cuboid', () => {
     const createCuboidShape4Points = {
         points: 'By 4 Points',
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         firstX: 400,
         firstY: 350,
         secondX: 500,
@@ -34,7 +34,7 @@ context('Actions on Cuboid', () => {
     const createCuboidTrack2Points = {
         points: 'From rectangle',
         type: 'Track',
-        labelName: labelName,
+        labelName,
         firstX: createCuboidShape2Points.firstX,
         firstY: createCuboidShape2Points.firstY - 150,
         secondX: createCuboidShape2Points.secondX,
@@ -43,7 +43,7 @@ context('Actions on Cuboid', () => {
     const createCuboidTrack4Points = {
         points: 'By 4 Points',
         type: 'Track',
-        labelName: labelName,
+        labelName,
         firstX: createCuboidShape4Points.firstX,
         firstY: createCuboidShape4Points.firstY - 150,
         secondX: createCuboidShape4Points.secondX - 100,

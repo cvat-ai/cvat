@@ -24,6 +24,8 @@ Tracks can be exported/imported to/from Datumaro and Sly Pointcloud formats (<ht
 - YOLO v7 serverless feature added using ONNX backend (<https://github.com/opencv/cvat/pull/5552>)
 - Cypress test for social account authentication (<https://github.com/opencv/cvat/pull/5444>)
 - Dummy github and google authentication servers (<https://github.com/opencv/cvat/pull/5444>)
+- \[Server API\] Simple filters for object collection endpoints
+  (<https://github.com/opencv/cvat/pull/5575>)
 
 ### Changed
 - The Docker Compose files now use the Compose Specification version
@@ -33,17 +35,23 @@ Tracks can be exported/imported to/from Datumaro and Sly Pointcloud formats (<ht
   The corresponding arguments are keyword-only now.
   (<https://github.com/opencv/cvat/pull/5502>)
 - \[Server API\] Added missing pagination or pagination parameters in
-  `/project/{id}/tasks`, `/tasks/{id}/jobs`, `/jobs/{id}/issues`,
-  `/jobs/{id}/commits`, `/issues/{id}/comments`, `/organizations`
+  `/jobs/{id}/commits`, `/organizations`
   (<https://github.com/opencv/cvat/pull/5557>)
 - Windows Installation Instructions adjusted to work around <https://github.com/nuclio/nuclio/issues/1821>
 - The contour detection function for semantic segmentation (<https://github.com/opencv/cvat/pull/4665>)
+- Delete newline character when generating a webhook signature (<https://github.com/opencv/cvat/pull/5622>)
+- DL models UI (<https://github.com/opencv/cvat/pull/5635>)
 
 ### Deprecated
-- TDB
+- TBD
 
 ### Removed
-- TDB
+- \[Server API\] Endpoints with collections are removed in favor of their full variants
+  `/project/{id}/tasks`, `/tasks/{id}/jobs`, `/jobs/{id}/issues`, `/issues/{id}/comments`.
+  Corresponding fields are added or changed to provide a link to the child collection
+  in `/projects/{id}`, `/tasks/{id}`, `/jobs/{id}`, `/issues/{id}`
+  (<https://github.com/opencv/cvat/pull/5575>)
+- Limit on the maximum number of manifest files that can be added for cloud storage (<https://github.com/opencv/cvat/pull/5660>)
 
 ### Fixed
 - Helm: Empty password for Redis (<https://github.com/opencv/cvat/pull/5520>)
@@ -52,6 +60,9 @@ Tracks can be exported/imported to/from Datumaro and Sly Pointcloud formats (<ht
 - Export annotations to Azure container (<https://github.com/opencv/cvat/pull/5596>)
 - Fix the type of the credentials parameter of make_client from the Python SDK
 - Reduced number of noisy information on ortho views for 3D canvas (<https://github.com/opencv/cvat/pull/5608>)
+- Clean up disk space after a project is removed (<https://github.com/opencv/cvat/pull/5632>)
+- \[Server API\] Various errors in the generated schema (<https://github.com/opencv/cvat/pull/5575>)
+- SiamMask and TransT serverless functions (<https://github.com/opencv/cvat/pull/5658>)
 
 ### Security
 - Fixed vulnerability with social authentication (<https://github.com/opencv/cvat/pull/5521>)

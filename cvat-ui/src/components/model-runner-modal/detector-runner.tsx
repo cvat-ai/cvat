@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -14,20 +15,21 @@ import Button from 'antd/lib/button';
 import Switch from 'antd/lib/switch';
 import notification from 'antd/lib/notification';
 
-import { Model, ModelAttribute, StringObject } from 'reducers';
+import { ModelAttribute, StringObject } from 'reducers';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { Label as LabelInterface } from 'components/labels-editor/common';
 import { clamp } from 'utils/math';
 import config from 'config';
+import { MLModel, ModelKind, ModelReturnType } from 'cvat-core-wrapper';
 import { DimensionType } from '../../reducers';
 
 interface Props {
     withCleanup: boolean;
-    models: Model[];
+    models: MLModel[];
     labels: LabelInterface[];
     dimension: DimensionType;
-    runInference(model: Model, body: object): void;
+    runInference(model: MLModel, body: object): void;
 }
 
 interface MappedLabel {
@@ -63,15 +65,20 @@ function DetectorRunner(props: Props): JSX.Element {
     const [attrMatches, setAttrMatch] = useState<Record<string, Match>>({});
 
     const model = models.filter((_model): boolean => _model.id === modelID)[0];
-    const isDetector = model && model.type === 'detector';
-    const isReId = model && model.type === 'reid';
+    const isDetector = model && model.kind === ModelKind.DETECTOR;
+    const isReId = model && model.kind === ModelKind.REID;
+    const isClassifier = model && model.kind === ModelKind.CLASSIFIER;
+    const convertMasksToPolygonsAvailable = isDetector &&
+                    (!model.returnType || model.returnType === ModelReturnType.MASK);
     const buttonEnabled =
-        model && (model.type === 'reid' || (model.type === 'detector' && !!Object.keys(mapping).length));
+        model && (model.kind === ModelKind.REID ||
+            (model.kind === ModelKind.DETECTOR && !!Object.keys(mapping).length) ||
+            (model.kind === ModelKind.CLASSIFIER && !!Object.keys(mapping).length));
+    const canHaveMapping = isDetector || isClassifier;
+    const modelLabels = (canHaveMapping ? model.labels : []).filter((_label: string): boolean => !(_label in mapping));
+    const taskLabels = canHaveMapping ? labels.map((label: any): string => label.name) : [];
 
-    const modelLabels = (isDetector ? model.labels : []).filter((_label: string): boolean => !(_label in mapping));
-    const taskLabels = isDetector ? labels.map((label: any): string => label.name) : [];
-
-    if (model && model.type !== 'reid' && !model.labels.length) {
+    if (model && model.kind === ModelKind.REID && !model.labels.length) {
         notification.warning({
             message: 'The selected model does not include any labels',
         });
@@ -241,7 +248,6 @@ function DetectorRunner(props: Props): JSX.Element {
                                     return acc;
                                 }, {},
                             );
-
                             setMapping(defaultMapping);
                             setMatch({ model: null, task: null });
                             setAttrMatch({});
@@ -249,7 +255,7 @@ function DetectorRunner(props: Props): JSX.Element {
                         }}
                     >
                         {models.map(
-                            (_model: Model): JSX.Element => (
+                            (_model: MLModel): JSX.Element => (
                                 <Select.Option value={_model.id} key={_model.id}>
                                     {_model.name}
                                 </Select.Option>
@@ -258,7 +264,7 @@ function DetectorRunner(props: Props): JSX.Element {
                     </Select>
                 </Col>
             </Row>
-            {isDetector &&
+            {canHaveMapping &&
                 Object.keys(mapping).length ?
                 Object.keys(mapping).map((modelLabel: string) => {
                     const label = labels
@@ -337,7 +343,7 @@ function DetectorRunner(props: Props): JSX.Element {
                         </React.Fragment>
                     );
                 }) : null}
-            {isDetector && !!taskLabels.length && !!modelLabels.length ? (
+            {canHaveMapping && !!taskLabels.length && !!modelLabels.length ? (
                 <>
                     <Row justify='start' align='middle'>
                         <Col span={10}>
@@ -354,7 +360,7 @@ function DetectorRunner(props: Props): JSX.Element {
                     </Row>
                 </>
             ) : null}
-            {isDetector && (
+            {convertMasksToPolygonsAvailable && (
                 <div className='detector-runner-convert-masks-to-polygons-wrapper'>
                     <Switch
                         checked={convertMasksToPolygons}
@@ -423,19 +429,25 @@ function DetectorRunner(props: Props): JSX.Element {
                         disabled={!buttonEnabled}
                         type='primary'
                         onClick={() => {
-                            const detectorRequestBody: DetectorRequestBody = {
-                                mapping,
-                                cleanup,
-                                convMaskToPoly: convertMasksToPolygons,
-                            };
-
-                            runInference(
-                                model,
-                                model.type === 'detector' ? detectorRequestBody : {
+                            let requestBody: object = {};
+                            if (model.kind === ModelKind.DETECTOR) {
+                                requestBody = {
+                                    mapping,
+                                    cleanup,
+                                    convMaskToPoly: convertMasksToPolygons,
+                                };
+                            } else if (model.kind === ModelKind.REID) {
+                                requestBody = {
                                     threshold,
                                     max_distance: distance,
-                                },
-                            );
+                                };
+                            } else if (model.kind === ModelKind.CLASSIFIER) {
+                                requestBody = {
+                                    mapping,
+                                };
+                            }
+
+                            runInference(model, requestBody);
                         }}
                     >
                         Annotate

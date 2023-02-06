@@ -64,24 +64,6 @@ PASSWORD_HASHERS = (
     'django.contrib.auth.hashers.MD5PasswordHasher',
 )
 
-# Most of the unit tests don't suppose user limitations
-# Can be changed where the limits are supposed.
-DEFAULT_LIMITS = {
-    "USER_SANDBOX_TASKS": None,
-    "USER_SANDBOX_PROJECTS": None,
-    "TASKS_IN_USER_SANDBOX_PROJECT": None,
-    "USER_OWNED_ORGS": None,
-    "USER_SANDBOX_CLOUD_STORAGES": None,
-
-    "ORG_TASKS": None,
-    "ORG_PROJECTS": None,
-    "TASKS_IN_ORG_PROJECT": None,
-    "ORG_CLOUD_STORAGES": None,
-    "ORG_COMMON_WEBHOOKS": None,
-
-    "PROJECT_WEBHOOKS": None,
-}
-
 # When you run ./manage.py test, Django looks at the TEST_RUNNER setting to
 # determine what to do. By default, TEST_RUNNER points to
 # 'django.test.runner.DiscoverRunner'. This class defines the default Django

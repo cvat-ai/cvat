@@ -1,5 +1,5 @@
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -7,9 +7,12 @@ from copy import deepcopy
 from http import HTTPStatus
 
 import pytest
+from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from deepdiff import DeepDiff
 
 from shared.utils.config import delete_method, get_method, options_method, patch_method
+
+from .utils import CollectionSimpleFilterTestBase
 
 
 class TestMetadataOrganizations:
@@ -74,6 +77,27 @@ class TestGetOrganizations:
             assert DeepDiff(organizations[self._ORG], response.json()) == {}
         else:
             assert response.status_code == HTTPStatus.NOT_FOUND
+
+
+class TestOrganizationsListFilters(CollectionSimpleFilterTestBase):
+    field_lookups = {
+        "owner": ["owner", "username"],
+    }
+
+    @pytest.fixture(autouse=True)
+    def setup(self, restore_db_per_class, admin_user, organizations):
+        self.user = admin_user
+        self.samples = organizations
+
+    def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
+        return api_client.organizations_api.list_endpoint
+
+    @pytest.mark.parametrize(
+        "field",
+        ("name", "owner", "slug"),
+    )
+    def test_can_use_simple_filter_for_object_list(self, field):
+        return super().test_can_use_simple_filter_for_object_list(field)
 
 
 @pytest.mark.usefixtures("restore_db_per_function")

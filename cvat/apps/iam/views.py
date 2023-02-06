@@ -7,11 +7,10 @@ import os.path as osp
 import functools
 import hashlib
 
-from django.core.exceptions import BadRequest
 from django.utils.functional import SimpleLazyObject
 from django.http import Http404, HttpResponseBadRequest, HttpResponseRedirect
 from rest_framework import views, serializers
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, NotFound
 from rest_framework.permissions import AllowAny
 from rest_framework.decorators import api_view, permission_classes
 from django.conf import settings
@@ -70,10 +69,10 @@ def get_context(request):
         org_header = request.headers.get('X-Organization')
 
         if org_id is not None and (org_slug is not None or org_header is not None):
-            raise BadRequest('You cannot specify "org_id" query parameter with '
+            raise ValidationError('You cannot specify "org_id" query parameter with '
                 '"org" query parameter or "X-Organization" HTTP header at the same time.')
         if org_slug is not None and org_header is not None and org_slug != org_header:
-            raise BadRequest('You cannot specify "org" query parameter and '
+            raise ValidationError('You cannot specify "org" query parameter and '
                 '"X-Organization" HTTP header with different values.')
         org_slug = org_slug if org_slug is not None else org_header
 
@@ -91,7 +90,7 @@ def get_context(request):
         elif org_slug is not None:
             org_filter = { 'organization': None }
     except Organization.DoesNotExist:
-        raise BadRequest(f'{org_slug or org_id} organization does not exist.')
+        raise NotFound(f'{org_slug or org_id} organization does not exist.')
 
     if membership and not membership.is_active:
         membership = None
