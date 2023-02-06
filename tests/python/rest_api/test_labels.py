@@ -71,8 +71,19 @@ class TestGetLabels:
             )
             assert response.status == HTTPStatus.FORBIDDEN
 
+    @staticmethod
+    def _labels_by_source(labels: List[Dict], *, source_key: str) -> Dict[int, List[Dict]]:
+        labels_by_source = {}
+        for label in labels:
+            label_source = label.get(source_key)
+            if label_source:
+                labels_by_source.setdefault(label_source, []).append(label)
+
+        return labels_by_source
+
     @pytest.mark.parametrize("source", ["task", "project"])
     @pytest.mark.parametrize("is_staff", [True, False])
+    @pytest.mark.parametrize("user", ["admin1"])
     def test_admin_get_sandbox_label(
         self,
         labels,
@@ -81,7 +92,7 @@ class TestGetLabels:
         is_task_staff,
         is_project_staff,
         users_by_name,
-        admin_user,
+        user,
         source,
         is_staff,
     ):
@@ -94,17 +105,20 @@ class TestGetLabels:
             is_source_staff = is_project_staff
             label_source_key = "project_id"
 
-        labels_by_source = {label.get(label_source_key): label for label in labels if label.get(label_source_key)}
+        labels_by_source = self._labels_by_source(labels, source_key=label_source_key)
         sources_with_labels = [s for s in sources if labels_by_source.get(s["id"])]
 
-        user_id = users_by_name[admin_user]
-        source_obj = next(filter(lambda s: is_source_staff(user_id, s["id"]) == is_staff, sources_with_labels))
+        user_id = users_by_name[user]["id"]
+        source_obj = next(
+            filter(lambda s: is_source_staff(user_id, s["id"]) == is_staff, sources_with_labels)
+        )
         label = next(label for label in labels if label.get(label_source_key) == source_obj["id"])
 
-        self._test_get_ok(admin_user, label["id"], label)
+        self._test_get_ok(user, label["id"], label)
 
     @pytest.mark.parametrize("source", ["task", "project"])
-    @pytest.mark.parametrize("org_id", [1])
+    @pytest.mark.parametrize("org_id", [2])
+    @pytest.mark.parametrize("user", ["admin2"])
     def test_admin_get_org_label(
         self,
         labels,
@@ -113,7 +127,7 @@ class TestGetLabels:
         is_task_staff,
         is_project_staff,
         users_by_name,
-        admin_user,
+        user,
         source,
         org_id,
     ):
@@ -126,16 +140,16 @@ class TestGetLabels:
             is_source_staff = is_project_staff
             label_source_key = "project_id"
 
-        labels_by_source = {label.get(label_source_key): label for label in labels if label.get(label_source_key)}
         sources = sources[org_id]
+        labels_by_source = self._labels_by_source(labels, source_key=label_source_key)
         sources_with_labels = [s for s in sources if labels_by_source.get(s["id"])]
         source_obj = sources_with_labels[0]
-        label = next(label for label in labels if label.get(label_source_key) == source_obj["id"])
+        label = labels_by_source[source_obj["id"]][0]
 
-        user_id = users_by_name[admin_user]
-        assert is_source_staff(user_id, source_obj["id"])
+        user_id = users_by_name[user]["id"]
+        assert not is_source_staff(user_id, source_obj["id"])
 
-        self._test_get_ok(admin_user, label["id"], label)
+        self._test_get_ok(user, label["id"], label)
 
     @pytest.mark.parametrize("source", ["task", "project"])
     @pytest.mark.parametrize("is_staff", [True, False])
@@ -144,18 +158,21 @@ class TestGetLabels:
     ):
         if source == "task":
             sources = tasks
-            is_source_staff = is_task_staff
             label_source_key = "task_id"
         elif source == "project":
             sources = projects
-            is_source_staff = is_project_staff
             label_source_key = "project_id"
 
-        labels_by_source = {label.get(label_source_key): label for label in labels if label.get(label_source_key)}
-        sources_with_labels = [s for s in sources if labels_by_source.get(s["id"])]
-        source_obj = sources_with_labels[0]
-        label = labels_by_source[source_obj["id"]]
-        user = next(u for u in users if is_source_staff(u["id"], source_obj["id"]) == is_staff)
+        simple_users = {u["id"]: u for u in users if not u["is_superuser"]}
+        simple_users_sources = [
+            s for s in sources if s["owner"]["id"] in simple_users and s["organization"] is None
+        ]
+        labels_by_source = self._labels_by_source(labels, source_key=label_source_key)
+        source_obj = next(s for s in simple_users_sources if labels_by_source.get(s["id"]))
+        label = labels_by_source[source_obj["id"]][0]
+        user = next(
+            u for u in simple_users.values() if (u["id"] == source_obj["owner"]["id"]) == is_staff
+        )
 
         if is_staff:
             self._test_get_ok(user["username"], label["id"], label)
