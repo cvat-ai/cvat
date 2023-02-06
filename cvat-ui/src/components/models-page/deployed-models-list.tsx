@@ -3,17 +3,22 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState } from 'react';
+import React from 'react';
 import moment from 'moment';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { Row, Col } from 'antd/lib/grid';
 import Pagination from 'antd/lib/pagination';
-import { CombinedState } from 'reducers';
+import { CombinedState, ModelsQuery } from 'reducers';
 import { MLModel } from 'cvat-core-wrapper';
 import { ModelProviders } from 'cvat-core/src/enums';
+import { getModelsAsync } from 'actions/models-actions';
 import DeployedModelItem from './deployed-model-item';
 
-const PAGE_SIZE = 12;
+export const PAGE_SIZE = 12;
+
+interface Props {
+    query: ModelsQuery;
+}
 
 function setUpModelsList(models: MLModel[], newPage: number): MLModel[] {
     const builtInModels = models.filter((model: MLModel) => model.provider === ModelProviders.CVAT);
@@ -23,14 +28,17 @@ function setUpModelsList(models: MLModel[], newPage: number): MLModel[] {
     return renderModels.slice((newPage - 1) * PAGE_SIZE, newPage * PAGE_SIZE);
 }
 
-export default function DeployedModelsListComponent(): JSX.Element {
+export default function DeployedModelsListComponent(props: Props): JSX.Element {
     const interactors = useSelector((state: CombinedState) => state.models.interactors);
     const detectors = useSelector((state: CombinedState) => state.models.detectors);
     const trackers = useSelector((state: CombinedState) => state.models.trackers);
     const reid = useSelector((state: CombinedState) => state.models.reid);
     const classifiers = useSelector((state: CombinedState) => state.models.classifiers);
     const totalCount = useSelector((state: CombinedState) => state.models.totalCount);
-    const [page, setPage] = useState(1);
+
+    const dispatch = useDispatch();
+    const { query } = props;
+    const { page } = query;
     const models = [...interactors, ...detectors, ...trackers, ...reid, ...classifiers];
     const items = setUpModelsList(models, page)
         .map((model): JSX.Element => <DeployedModelItem key={model.id} model={model} />);
@@ -46,7 +54,10 @@ export default function DeployedModelsListComponent(): JSX.Element {
                 <Pagination
                     className='cvat-tasks-pagination'
                     onChange={(newPage: number) => {
-                        setPage(newPage);
+                        dispatch(getModelsAsync({
+                            ...query,
+                            page: newPage,
+                        }));
                     }}
                     showSizeChanger={false}
                     total={totalCount}
