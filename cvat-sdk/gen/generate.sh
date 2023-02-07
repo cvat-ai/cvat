@@ -29,7 +29,7 @@ docker run --rm -v "$DST_DIR:/local" -u "$(id -u)":"$(id -g)" \
         -g python \
         -o "/local/"
 
-sed -e "s|{{packageVersion}}|${VERSION}|g" "${TEMPLATE_DIR}/templates/version.py.template" > "${DST_DIR}/${LIB_NAME}/version.py"
+echo "VERSION = \"$VERSION\"" > "${DST_DIR}/${LIB_NAME}/version.py"
 mv "${DST_DIR}/requirements.txt" "${DST_DIR}/requirements/api_client.txt"
 
 # Do custom postprocessing for code files
