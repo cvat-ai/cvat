@@ -23,6 +23,7 @@
 #!docs/README.md
 
 # For safety
+/MANIFEST.in
 /cvat_sdk/__init__.py
 /config
 /gen
