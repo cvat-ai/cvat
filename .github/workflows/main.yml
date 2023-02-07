@@ -67,7 +67,7 @@ jobs:
           key: ${{ runner.os }}-build-ui-${{ needs.search_cache.outputs.sha }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2.4.0
+        uses: docker/setup-buildx-action@v2
         with:
           driver-opts: image=moby/buildkit:v0.10.0
 
@@ -78,7 +78,7 @@ jobs:
           mkdir /tmp/cvat_sdk
 
       - name: CVAT server. Build and push
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v3
         with:
           cache-from: type=local,src=/tmp/cvat_cache_server
           context: .
@@ -87,7 +87,7 @@ jobs:
           outputs: type=docker,dest=/tmp/cvat_server/image.tar
 
       - name: CVAT UI. Build and push
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v3
         with:
           cache-from: type=local,src=/tmp/cvat_cache_ui
           context: .
