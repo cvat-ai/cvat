@@ -501,7 +501,7 @@ into memory using `init_context(context)` function. Read more about the function
 in [Best Practices and Common Pitfalls][nuclio-bkms-doc].
 
 After that we need to accept incoming HTTP requests, run inference,
-reply with detection results. For the process our entry point is resposible
+reply with detection results. For the process our entry point is responsible
 which we specified in our function specification `handler(context, event)`.
 Again in accordance to function specification the entry point should be
 located inside `main.py`.
