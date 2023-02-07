@@ -1014,7 +1014,7 @@ class ProjectData(InstanceLabelData):
     def _export_track(self, track: dict, task_id: int, task_size: int, idx: int):
         track['shapes'] = list(filter(lambda x: (task_id, x['frame']) not in self._deleted_frames, track['shapes']))
         tracked_shapes = TrackManager.get_interpolated_shapes(
-            track, 0, task_size, self._annotation_ir.dimension
+            track, 0, task_size, self._annotation_irs[task_id].dimension
         )
         for tracked_shape in tracked_shapes:
             tracked_shape["attributes"] += track["attributes"]
@@ -1061,7 +1061,7 @@ class ProjectData(InstanceLabelData):
 
         for task in self._db_tasks.values():
             anno_manager = AnnotationManager(self._annotation_irs[task.id])
-            for shape in sorted(anno_manager.to_shapes(task.data.size, self._annotation_ir.dimension),
+            for shape in sorted(anno_manager.to_shapes(task.data.size, self._annotation_irs[task.id].dimension),
                     key=lambda shape: shape.get("z_order", 0)):
                 if (task.id, shape['frame']) not in self._frame_info or (task.id, shape['frame']) in self._deleted_frames:
                     continue
