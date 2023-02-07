@@ -34,12 +34,12 @@ def set_user_groups(groups_str, user):
     corresponding groups if applicable.
 
     Args:
-        groups_str: The user groups represented as comma-separated string.
+        groups_str: The user groups represented as colon-separated string.
         user: The django user object.
     """
     user_groups = []
     if groups_str:
-        groups = groups_str.split(',')
+        groups = groups_str.split(':')
 
         for role in groups:
             role = role.strip()
