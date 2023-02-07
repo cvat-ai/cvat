@@ -325,7 +325,6 @@ Cypress.Commands.add('pressSplitControl', () => {
 
 Cypress.Commands.add('openTaskJob', (taskName, jobID = 0, removeAnnotations = true, expectedFail = false) => {
     cy.openTask(taskName);
-    cy.get('.cvat-spinner').should('not.exist');
     cy.openJob(jobID, removeAnnotations, expectedFail);
 });
 
