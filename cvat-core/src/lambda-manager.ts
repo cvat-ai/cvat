@@ -30,9 +30,11 @@ class LambdaManager {
         this.cachedList = null;
     }
 
-    async list(): Promise<MLModel[]> {
+    async list(): Promise<{ models: MLModel[], count: number }> {
         const lambdaFunctions = await serverProxy.lambda.list();
-        const functions = await serverProxy.functions.list();
+
+        const functionsResult = await serverProxy.functions.list();
+        const { results: functions, count: functionsCount } = functionsResult;
 
         const result = [...lambdaFunctions, ...functions];
         const models = [];
@@ -46,7 +48,7 @@ class LambdaManager {
         }
 
         this.cachedList = models;
-        return models;
+        return { models, count: lambdaFunctions.length + functionsCount };
     }
 
     async run(taskID: number, model: MLModel, args: any) {
