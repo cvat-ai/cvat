@@ -1385,6 +1385,10 @@ class LabelPermission(OpenPolicyAgentPermission):
 
                     # This class doesn't define its own rules for these cases
                     permissions.append(owning_perm)
+                elif scope == Scopes.LIST and isinstance(obj, Job):
+                    permissions.append(JobPermission.create_base_perm(
+                        request, view, scope=JobPermission.Scopes.VIEW, obj=obj,
+                    ))
                 else:
                     permissions.append(cls.create_base_perm(request, view, scope, obj))
 

@@ -17,9 +17,10 @@ from .utils import CollectionSimpleFilterTestBase
 
 class TestLabelsListFilters(CollectionSimpleFilterTestBase):
     @pytest.fixture(autouse=True)
-    def setup(self, restore_db_per_class, admin_user, labels):
+    def setup(self, restore_db_per_class, admin_user, labels, jobs):
         self.user = admin_user
         self.samples = labels
+        self.job_samples = jobs
 
     def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
         return api_client.labels_api.list_endpoint
@@ -37,6 +38,20 @@ class TestLabelsListFilters(CollectionSimpleFilterTestBase):
                 self._map_field("name"),
             )
             return parent_name, gt_objects
+        elif field == "job_id":
+            field_path = ["id"]
+            field_value = self._find_valid_field_value(self.job_samples, field_path)
+            job_sample = next(
+                filter(lambda p: field_value == self._get_field(p, field_path), self.job_samples)
+            )
+
+            task_id = job_sample["task_id"]
+            project_id = job_sample["project_id"]
+            label_samples = filter(
+                lambda p: task_id == p.get("task_id") or project_id == p.get("project_id"),
+                self.samples,
+            )
+            return field_value, label_samples
         else:
             return super()._get_field_samples(field)
 
@@ -153,8 +168,9 @@ class TestGetLabels:
 
     @pytest.mark.parametrize("source", ["task", "project"])
     @pytest.mark.parametrize("is_staff", [True, False])
-    def test_non_admin_get_sandbox_label(
-        self, labels, users, tasks, projects, is_task_staff, is_project_staff, source, is_staff
+    @pytest.mark.parametrize("groups", [["business"], ["user"], ["worker"], []])
+    def test_regular_user_get_sandbox_label(
+        self, labels, users, tasks, projects, source, is_staff, groups
     ):
         if source == "task":
             sources = tasks
@@ -163,12 +179,22 @@ class TestGetLabels:
             sources = projects
             label_source_key = "project_id"
 
-        simple_users = {u["id"]: u for u in users if not u["is_superuser"]}
-        simple_users_sources = [
-            s for s in sources if s["owner"]["id"] in simple_users and s["organization"] is None
+        users = {u["id"]: u for u in users if u["groups"] == groups}
+        regular_users_sources = [
+            s for s in sources if s["owner"]["id"] in users and s["organization"] is None
         ]
         labels_by_source = self._labels_by_source(labels, source_key=label_source_key)
-        source_obj = next(s for s in simple_users_sources if labels_by_source.get(s["id"]))
+        source_obj = next(s for s in regular_users_sources if labels_by_source.get(s["id"]))
+        label = labels_by_source[source_obj["id"]][0]
+        user = next(
+            u for u in users.values() if (u["id"] == source_obj["owner"]["id"]) == is_staff
+        )
+
+        if is_staff:
+            self._test_get_ok(user["username"], label["id"], label)
+        else:
+            self._test_get_denied(user["username"], label["id"])
+
         label = labels_by_source[source_obj["id"]][0]
         user = next(
             u for u in simple_users.values() if (u["id"] == source_obj["owner"]["id"]) == is_staff

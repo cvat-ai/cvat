@@ -1906,6 +1906,10 @@ class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         }),
     list=extend_schema(
         summary='Method returns a paginated list of labels',
+        parameters=[
+            # The parameter is implemented differently from other filters
+            OpenApiParameter('job_id', description='A simple equality filter for job id')
+        ],
         responses={
             '200': LabelSerializer(many=True),
         }),
@@ -1924,25 +1928,52 @@ class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.DestroyModelMixin, PartialUpdateModelMixin
 ):
-    queryset = Label.objects.prefetch_related('task', 'project').all()
+    queryset = Label.objects.prefetch_related(
+        'task',
+        'task__owner',
+        'task__assignee',
+        'task__organization',
+        'project',
+        'project__owner',
+        'project__assignee',
+        'project__organization'
+    ).all()
 
     iam_organization_field = 'task__organization'
     search_fields = ('name', 'parent')
-    filter_fields = list(search_fields) + ['id', 'task_id', 'project_id', 'type', 'color', 'parent_id']
-    simple_filters = list(search_fields) + ['task_id', 'project_id', 'type', 'color', 'parent_id']
+    filter_fields = list(search_fields) + [
+        'id', 'task_id', 'project_id', 'type', 'color', 'parent_id'
+    ]
+    simple_filters = list(set(filter_fields) - {'id'})
     ordering_fields = list(filter_fields)
     lookup_fields = {
         'task_id': 'task',
+        'project_id': 'project',
         'parent': 'parent__name',
     }
-    ordering = '-id'
+    ordering = 'id'
     serializer_class = LabelSerializer
 
     def get_queryset(self):
-        queryset = super().get_queryset()
         if self.action == 'list':
+            if job_id := self.request.GET.get('job_id', None):
+                # NOTE: This filter is too complex to be implemented by other means
+                # It requires the following filter query:
+                # (
+                #  project__task__segment__job__id = job_id
+                #  OR
+                #  task__segment__job__id = job_id
+                # )
+                job = Job.objects.get(id=job_id)
+                self.check_object_permissions(self.request, job)
+                queryset = job.get_labels()
+            else:
+                queryset = super().get_queryset()
+
             perm = LabelPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
+        else:
+            queryset = super().get_queryset()
 
         return queryset
 
