@@ -14,6 +14,7 @@ import { isEmail } from './common';
 import config from './config';
 import DownloadWorker from './download.worker';
 import { ServerError } from './exceptions';
+import { FunctionsResponseBody } from './server-response-types';
 
 type Params = {
     org: number | string,
@@ -1605,17 +1606,20 @@ async function getAnnotations(session, id) {
     return response.data;
 }
 
-async function getFunctions() {
+async function getFunctions(): Promise<FunctionsResponseBody> {
     const { backendAPI } = config;
 
     try {
         const response = await Axios.get(`${backendAPI}/functions`, {
             proxy: config.proxy,
         });
-        return response.data.results;
+        return response.data;
     } catch (errorData) {
         if (errorData.response.status === 404) {
-            return [];
+            return {
+                results: [],
+                count: 0,
+            };
         }
         throw generateError(errorData);
     }
