@@ -74,9 +74,7 @@ jobs:
             --entrypoint /bin/bash -u root cvat/server \
             -c 'python manage.py spectacular --file /transfer/schema.yml'
           pip3 install --user -r cvat-sdk/gen/requirements.txt
-          cd cvat-sdk/
-          gen/generate.sh
-          cd ..
+          ./cvat-sdk/gen/generate.sh
 
           cp -r cvat-sdk/* /tmp/cvat_sdk/
 
