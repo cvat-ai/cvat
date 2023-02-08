@@ -24,7 +24,10 @@ export default function LoginWithSocialAppComponent(): JSX.Element {
         const authParams = search.get('auth_params');
 
         if (provider && code) {
-            cvat.server.loginWithSocialAccount(provider, code, authParams, process, scope)
+            const tokenURL = (location.pathname.includes('login-with-oidc')) ?
+                `${cvat.config.backendAPI}/auth/sso/${provider}/token/` :
+                `${cvat.config.backendAPI}/auth/${provider}/login/token`;
+            cvat.server.loginWithSocialAccount(tokenURL, code, authParams, process, scope)
                 .then(() => window.location.reload())
                 .catch((exception: Error) => {
                     if (exception.message.includes('Unverified email')) {

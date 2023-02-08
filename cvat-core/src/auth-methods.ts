@@ -7,6 +7,8 @@ interface SocialAuthMethodCamelCase {
     publicName: string;
     isEnabled: boolean;
     icon: string;
+    selectionSchema?: string;
+
 }
 
 interface SocialAuthMethodSnakeCase {
@@ -14,6 +16,7 @@ interface SocialAuthMethodSnakeCase {
     is_enabled: boolean;
     icon: string;
     provider?: string;
+    selection_schema?: string;
 }
 
 export class SocialAuthMethod {
@@ -21,6 +24,7 @@ export class SocialAuthMethod {
     public publicName: string;
     public isEnabled: boolean;
     public icon: string;
+    public selectionSchema: string;
 
     constructor(initialData: SocialAuthMethodSnakeCase) {
         const data: SocialAuthMethodCamelCase = {
@@ -28,6 +32,7 @@ export class SocialAuthMethod {
             publicName: initialData.public_name,
             isEnabled: initialData.is_enabled,
             icon: initialData.icon,
+            selectionSchema: initialData.selection_schema,
         };
 
         Object.defineProperties(
@@ -44,6 +49,9 @@ export class SocialAuthMethod {
                 },
                 icon: {
                     get: () => data.icon,
+                },
+                selectionSchema: {
+                    get: () => data.selectionSchema,
                 },
             }),
         );

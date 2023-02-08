@@ -10,6 +10,8 @@ import { Row, Col } from 'antd/lib/grid';
 
 import SigningLayout, { formSizes } from 'components/signing-common/signing-layout';
 import SocialAccountLink from 'components/signing-common/social-account-link';
+import SocialAccountCard from 'components/signing-common/social-account-card';
+
 import LoginForm, { LoginData } from './login-form';
 import { getCore, SocialAuthMethods, SocialAuthMethod } from '../../cvat-core-wrapper';
 
@@ -20,18 +22,61 @@ interface LoginPageComponentProps {
     renderResetPassword: boolean;
     hasEmailVerificationBeenSent: boolean;
     socialAuthMethods: SocialAuthMethods;
+    SSOConfig: any;
     onLogin: (credential: string, password: string) => void;
     loadSocialAuthenticationMethods: () => void;
+    loadSSOConfiguration: () => void;
 }
 
-const renderSocialAuthMethods = (methods: SocialAuthMethods): JSX.Element[] => {
+const renderSocialAuthMethods = (methods: SocialAuthMethods): JSX.Element | JSX.Element[] => {
     const { backendAPI } = cvat.config;
+    const activeMethods = methods.filter((item: SocialAuthMethod) => item.isEnabled);
+
+    if (activeMethods.length > 2) {
+        const numberPerRow = 4;
+        const map: SocialAuthMethod[][] = [];
+
+        activeMethods.forEach((el) => {
+            if (!map.length || map[map.length - 1].length === numberPerRow) {
+                map.push([el]);
+            } else {
+                map[map.length - 1].push(el);
+            }
+        });
+
+        return (
+            <>
+                {map.map((item: SocialAuthMethods, idx): JSX.Element => (
+                    <Row
+                        gutter={[4, 4]}
+                        align='middle'
+                        justify='space-between'
+                        key={idx}
+                        className='cvat-social-authentication-row-with-icons'
+                    >
+                        {item.map((method: SocialAuthMethod) => (
+                            <Col span={6} key={method.provider} style={{ display: 'flex' }}>
+                                <SocialAccountCard
+                                    key={method.provider}
+                                    icon={method.icon || method.publicName}
+                                    href={(method.provider !== 'sso') ? `${backendAPI}/auth/${method.provider}/login` : '/auth/sso/select-identity-provider'}
+                                    className={`cvat-social-authentication-${method.provider}`}
+                                >
+                                    {`Continue with ${method.publicName}`}
+                                </SocialAccountCard>
+                            </Col>
+                        ))}
+                    </Row>
+                ))}
+            </>
+        );
+    }
 
     return methods.map((item: SocialAuthMethod) => ((item.isEnabled) ? (
         <SocialAccountLink
             key={item.provider}
             icon={item.icon}
-            href={`${backendAPI}/auth/${item.provider}/login`}
+            href={(item.provider !== 'sso') ? `${backendAPI}/auth/${item.provider}/login` : '/auth/sso/select-identity-provider/'}
             className={`cvat-social-authentication-${item.provider}`}
         >
             {`Continue with ${item.publicName}`}

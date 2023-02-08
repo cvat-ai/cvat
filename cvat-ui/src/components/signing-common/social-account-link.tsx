@@ -1,12 +1,13 @@
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
+
 import './styles.scss';
 import React from 'react';
 import { Col, Row } from 'antd/lib/grid';
 import Button from 'antd/lib/button/button';
 
-interface SocialAccountLinkProps {
+export interface SocialAccountLinkProps {
     children: string;
     className?: string;
     href: string;

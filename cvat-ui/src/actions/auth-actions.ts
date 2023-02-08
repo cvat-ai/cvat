@@ -39,6 +39,9 @@ export enum AuthActionTypes {
     LOAD_SOCIAL_AUTHENTICATION = 'LOAD_SOCIAL_AUTHENTICATION',
     LOAD_SOCIAL_AUTHENTICATION_SUCCESS = 'LOAD_SOCIAL_AUTHENTICATION_SUCCESS',
     LOAD_SOCIAL_AUTHENTICATION_FAILED = 'LOAD_SOCIAL_AUTHENTICATION_FAILED',
+    SELECT_IDENTITY_PROVIDER = 'SELECT_IDENTITY_PROVIDER',
+    SELECT_IDENTITY_PROVIDER_SUCCESS = 'SELECT_IDENTITY_PROVIDER_SUCCESS',
+    SELECT_IDENTITY_PROVIDER_FAILED = 'SELECT_IDENTITY_PROVIDER_FAILED',
 }
 
 export const authActions = {
@@ -81,6 +84,13 @@ export const authActions = {
     ),
     loadSocialAuthFailed: (error: any) => (
         createAction(AuthActionTypes.LOAD_SOCIAL_AUTHENTICATION_FAILED, { error })
+    ),
+    selectIdP: () => createAction(AuthActionTypes.SELECT_IDENTITY_PROVIDER),
+    selectIdPSuccess: (identityProviderID: string) => (
+        createAction(AuthActionTypes.SELECT_IDENTITY_PROVIDER_SUCCESS, { identityProviderID })
+    ),
+    selectIdPFailed: (error: any) => (
+        createAction(AuthActionTypes.SELECT_IDENTITY_PROVIDER_FAILED, { error })
     ),
 };
 
@@ -217,5 +227,15 @@ export const loadSocialAuthAsync = (): ThunkAction => async (dispatch): Promise<
         dispatch(authActions.loadSocialAuthSuccess(methods));
     } catch (error) {
         dispatch(authActions.loadSocialAuthFailed(error));
+    }
+};
+
+export const selectIdPAsync = (email?: string): ThunkAction => async (dispatch): Promise<void> => {
+    dispatch(authActions.selectIdP());
+    try {
+        const identityProviderID: string = await cvat.server.selectSSOIdentityProvider(email);
+        dispatch(authActions.selectIdPSuccess(identityProviderID));
+    } catch (error) {
+        dispatch(authActions.selectIdPFailed(error));
     }
 };

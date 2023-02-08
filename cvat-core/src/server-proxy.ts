@@ -370,7 +370,7 @@ async function login(credential, password) {
 }
 
 async function loginWithSocialAccount(
-    provider: string,
+    tokenURL: string,
     code: string,
     authParams?: string,
     process?: string,
@@ -385,7 +385,7 @@ async function loginWithSocialAccount(
     };
     let authenticationResponse = null;
     try {
-        authenticationResponse = await Axios.post(`${config.backendAPI}/auth/${provider}/login/token`, data,
+        authenticationResponse = await Axios.post(tokenURL, data,
             {
                 proxy: config.proxy,
             });
@@ -2278,6 +2278,18 @@ async function socialAuthentication(): Promise<any> {
     }
 }
 
+async function selectSSOIdentityProvider(email?: string): Promise<string> {
+    const { backendAPI } = config;
+    try {
+        const response = await Axios.get(`${backendAPI}/auth/sso/select-idp${(email) ? `?email=${email}` : ''}`, {
+            proxy: config.proxy,
+        });
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
 export default Object.freeze({
     server: Object.freeze({
         about,
@@ -2297,6 +2309,7 @@ export default Object.freeze({
         userAgreements,
         installedApps,
         loginWithSocialAccount,
+        selectSSOIdentityProvider,
     }),
 
     projects: Object.freeze({
