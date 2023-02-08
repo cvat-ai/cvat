@@ -462,7 +462,6 @@ RESTRICTIONS = {
     'analytics_visibility': True,
 }
 
-# http://www.grantjenks.com/docs/diskcache/tutorial.html#djangocache
 USE_CACHE = bool(int(os.getenv('USE_CACHE', 1)))
 CACHE_EXPIRE = float(os.getenv('CACHE_EXPIRE', 7 * 24 * 60 * 60))  # week in seconds
 
@@ -472,14 +471,6 @@ CACHES = {
         "LOCATION": REDIS_URL,
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        }
-    },
-    'diskcache': {
-        'BACKEND': 'diskcache.DjangoCache',
-        'LOCATION': CACHE_ROOT,
-        'TIMEOUT': CACHE_EXPIRE,
-        'OPTIONS': {
-            'size_limit': 2 ** 40,  # 1 Tb
         }
     },
 }
