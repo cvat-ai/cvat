@@ -11,7 +11,7 @@ context('Settings "Intelligent polygon cropping".', () => {
     const createPolygonShape = {
         redraw: false,
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         pointsMap: [
             { x: 450, y: 350 },
             { x: 550, y: 350 },
@@ -28,9 +28,7 @@ context('Settings "Intelligent polygon cropping".', () => {
             .invoke('attr', 'points')
             .then(($points) => {
                 expect(
-                    $points.split(' ').filter(function (el) {
-                        return el.length != 0;
-                    }).length,
+                    $points.split(' ').filter((el) => el.length !== 0).length,
                 ).to.be.equal(expectedCount);
             });
     }
@@ -42,16 +40,18 @@ context('Settings "Intelligent polygon cropping".', () => {
     function testCheckedIntelligentPolygonCropping(uncheck) {
         cy.openSettings();
         cy.contains('[role="tab"]', 'Workspace').click();
-        uncheck
-            ? cy
-                  .get('.cvat-workspace-settings-intelligent-polygon-cropping')
-                  .find('[type="checkbox"]')
-                  .uncheck()
-                  .should('not.be.checked')
-            : cy
-                  .get('.cvat-workspace-settings-intelligent-polygon-cropping')
-                  .find('[type="checkbox"]')
-                  .should('be.checked');
+        if (uncheck) {
+            cy
+                .get('.cvat-workspace-settings-intelligent-polygon-cropping')
+                .find('[type="checkbox"]')
+                .uncheck()
+                .should('not.be.checked');
+        } else {
+            cy
+                .get('.cvat-workspace-settings-intelligent-polygon-cropping')
+                .find('[type="checkbox"]')
+                .should('be.checked');
+        }
         cy.closeSettings();
     }
 
@@ -62,7 +62,8 @@ context('Settings "Intelligent polygon cropping".', () => {
 
     describe(`Testing case "${caseId}"`, () => {
         it('Check settings "Intelligent polygon cropping".', () => {
-            testCheckedIntelligentPolygonCropping(); // Check settings "Intelligent polygon cropping". Should be checked by default
+            // Check settings "Intelligent polygon cropping". Should be checked by default
+            testCheckedIntelligentPolygonCropping();
             cy.get('#cvat_canvas_shape_1')
                 .trigger('mousemove', { scrollBehavior: false })
                 .should('have.class', 'cvat_canvas_shape_activated');

@@ -1,4 +1,5 @@
 // Copyright (C) 2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -81,6 +82,7 @@ context('Paste labels from one task to another.', { browser: '!firefox' }, () =>
             });
             cy.wait('@patchTaskLabels').its('response.statusCode').should('equal', 200);
             cy.get('.cvat-modal-confirm-remove-existing-labels').should('not.exist');
+            cy.get('.cvat-spinner').should('not.exist');
             cy.get('.cvat-raw-labels-viewer').then((raw) => {
                 expect(raw.text()).contain('"id":');
             });

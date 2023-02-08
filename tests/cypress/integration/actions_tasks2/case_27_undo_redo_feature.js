@@ -11,7 +11,7 @@ context('Undo/redo feature', () => {
     const firstRectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         firstX: 100,
         firstY: 100,
         secondX: 150,
@@ -20,7 +20,7 @@ context('Undo/redo feature', () => {
     const secondRectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         firstX: 150,
         firstY: 150,
         secondX: 200,
@@ -29,7 +29,7 @@ context('Undo/redo feature', () => {
     const thirdRectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         firstX: 200,
         firstY: 200,
         secondX: 250,
@@ -45,7 +45,7 @@ context('Undo/redo feature', () => {
         cy.get('#cvat-objects-sidebar-state-item-1').should(stateFirstObject);
         cy.get('#cvat-objects-sidebar-state-item-2').should(stateSecondObject);
         cy.get('#cvat-objects-sidebar-state-item-3').should(stateThirdObject);
-    };
+    }
 
     before(() => {
         cy.openTaskJob(taskName);

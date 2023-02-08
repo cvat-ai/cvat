@@ -6,7 +6,7 @@
 
 import { taskName, labelName } from '../../support/const';
 
-context('The points of the previous polygon mustn\'t appear while polygon\'s interpolation.', () => {
+context("The points of the previous polygon mustn't appear while polygon's interpolation.", () => {
     const issueId = '1882';
     const createPolygonTrack = {
         reDraw: false,
@@ -48,7 +48,7 @@ context('The points of the previous polygon mustn\'t appear while polygon\'s int
                 .trigger('mousemove', { force: true })
                 .trigger('keydown', { keyCode: keyCodeN, code: 'KeyN', shiftKey: true })
                 .trigger('keyup', {
-                    force: true, keyCode: keyCodeN, code: 'KeyN', shiftKey: true
+                    force: true, keyCode: keyCodeN, code: 'KeyN', shiftKey: true,
                 });
             cy.createPolygon(reDrawPolygonTrack);
         });

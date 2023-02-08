@@ -1,4 +1,5 @@
 # Copyright (C) 2020-2022 Intel Corporation
+# Copyright (C) 2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -143,7 +144,7 @@ class _DbTestBase(APITestCase):
     def _get_jobs(self, task_id):
         with ForceLogin(self.admin, self.client):
             values = get_paginated_collection(lambda page:
-                self.client.get("/api/tasks/{}/jobs?page={}".format(task_id, page))
+                self.client.get("/api/jobs?task_id={}&page={}".format(task_id, page))
             )
         return values
 

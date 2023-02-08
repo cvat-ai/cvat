@@ -7,12 +7,12 @@ import {
     deleteFrame,
     restoreFrame,
     getRanges,
-    getPreview,
     clear as clearFrames,
     findNotDeletedFrame,
     getContextImage,
     patchMeta,
     getDeletedFrames,
+    decodePreview,
 } from './frames';
 import Issue from './issue';
 import { checkObjectType } from './common';
@@ -146,8 +146,9 @@ export function implementJob(Job) {
             return '';
         }
 
-        const frameData = await getPreview(this.taskId, this.id);
-        return frameData;
+        const preview = await serverProxy.jobs.getPreview(this.id);
+        const decoded = await decodePreview(preview);
+        return decoded;
     };
 
     Job.prototype.frames.contextImage.implementation = async function (frameId) {
@@ -418,8 +419,12 @@ export function implementTask(Task) {
             }
 
             const data = await serverProxy.tasks.save(this.id, taskData);
+            // Temporary workaround for UI
+            const jobs = await serverProxy.jobs.get({
+                filter: JSON.stringify({ and: [{ '==': [{ var: 'task_id' }, data.id] }] }),
+            }, true);
             this._updateTrigger.reset();
-            return new Task(data);
+            return new Task({ ...data, jobs: jobs.results });
         }
 
         const taskSpec: any = {
@@ -481,7 +486,11 @@ export function implementTask(Task) {
         }
 
         const task = await serverProxy.tasks.create(taskSpec, taskDataSpec, onUpdate);
-        return new Task(task);
+        // Temporary workaround for UI
+        const jobs = await serverProxy.jobs.get({
+            filter: JSON.stringify({ and: [{ '==': [{ var: 'task_id' }, task.id] }] }),
+        }, true);
+        return new Task({ ...task, jobs: jobs.results });
     };
 
     Task.prototype.delete.implementation = async function () {
@@ -547,8 +556,9 @@ export function implementTask(Task) {
             return '';
         }
 
-        const frameData = await getPreview(this.id);
-        return frameData;
+        const preview = await serverProxy.tasks.getPreview(this.id);
+        const decoded = await decodePreview(preview);
+        return decoded;
     };
 
     Task.prototype.frames.delete.implementation = async function (frame) {

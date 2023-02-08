@@ -89,6 +89,12 @@ def pytest_addoption(parser):
         help="Platform identifier - 'kube' or 'local'. (default: %(default)s)",
     )
 
+    group._addoption(
+        "--no-run-services",
+        action="store_true",
+        help="Run tests without running containers. (default: %(default)s)",
+    )
+
 
 def _run(command, capture_output=True):
     _command = command.split() if isinstance(command, str) else command
@@ -263,10 +269,6 @@ def start_services(rebuild=False):
         capture_output=False,
     )
 
-    docker_restore_data_volumes()
-    docker_cp(CVAT_DB_DIR / "restore.sql", f"{PREFIX}_cvat_db_1:/tmp/restore.sql")
-    docker_cp(CVAT_DB_DIR / "data.json", f"{PREFIX}_cvat_server_1:/tmp/data.json")
-
 
 def pytest_sessionstart(session: pytest.Session) -> None:
     stop = session.config.getoption("--stop-services")
@@ -274,6 +276,7 @@ def pytest_sessionstart(session: pytest.Session) -> None:
     rebuild = session.config.getoption("--rebuild")
     cleanup = session.config.getoption("--cleanup")
     dumpdb = session.config.getoption("--dumpdb")
+    no_init = session.config.getoption("--no-run-services")
 
     if session.config.getoption("--collect-only"):
         if any((stop, start, rebuild, cleanup, dumpdb)):
@@ -325,7 +328,11 @@ def pytest_sessionstart(session: pytest.Session) -> None:
             )
             pytest.exit("All testing containers are stopped", returncode=0)
 
-        start_services(rebuild)
+        if not no_init:
+            start_services(rebuild)
+        docker_restore_data_volumes()
+        docker_cp(CVAT_DB_DIR / "restore.sql", f"{PREFIX}_cvat_db_1:/tmp/restore.sql")
+        docker_cp(CVAT_DB_DIR / "data.json", f"{PREFIX}_cvat_server_1:/tmp/data.json")
         wait_for_services()
 
         docker_exec_cvat("python manage.py loaddata /tmp/data.json")

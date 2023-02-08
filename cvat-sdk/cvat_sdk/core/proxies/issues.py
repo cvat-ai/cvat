@@ -56,7 +56,9 @@ class Issue(
     def get_comments(self) -> List[Comment]:
         return [
             Comment(self._client, m)
-            for m in get_paginated_collection(self.api.list_comments_endpoint, id=self.id)
+            for m in get_paginated_collection(
+                self._client.api_client.comments_api.list_endpoint, issue_id=str(self.id)
+            )
         ]
 
 

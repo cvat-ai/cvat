@@ -1,5 +1,5 @@
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -27,19 +27,21 @@ from .serializers import (
             '200': OrganizationReadSerializer,
         }),
     list=extend_schema(
-        summary='Method returns a paginated list of organizations according to query parameters',
+        summary='Method returns a paginated list of organizations',
         responses={
             '200': OrganizationReadSerializer(many=True),
         }),
     partial_update=extend_schema(
         summary='Methods does a partial update of chosen fields in an organization',
+        request=OrganizationWriteSerializer(partial=True),
         responses={
-            '200': OrganizationWriteSerializer,
+            '200': OrganizationReadSerializer, # check OrganizationWriteSerializer.to_representation
         }),
     create=extend_schema(
         summary='Method creates an organization',
+        request=OrganizationWriteSerializer,
         responses={
-            '201': OrganizationWriteSerializer,
+            '201': OrganizationReadSerializer, # check OrganizationWriteSerializer.to_representation
         }),
     destroy=extend_schema(
         summary='Method deletes an organization',
@@ -57,8 +59,9 @@ class OrganizationViewSet(viewsets.GenericViewSet,
     queryset = Organization.objects.all()
     search_fields = ('name', 'owner')
     filter_fields = list(search_fields) + ['id', 'slug']
+    simple_filters = list(search_fields) + ['slug']
     lookup_fields = {'owner': 'owner__username'}
-    ordering_fields = filter_fields
+    ordering_fields = list(filter_fields)
     ordering = '-id'
     http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
     iam_organization_field = None
@@ -92,14 +95,15 @@ class OrganizationViewSet(viewsets.GenericViewSet,
             '200': MembershipReadSerializer,
         }),
     list=extend_schema(
-        summary='Method returns a paginated list of memberships according to query parameters',
+        summary='Method returns a paginated list of memberships',
         responses={
             '200': MembershipReadSerializer(many=True),
         }),
     partial_update=extend_schema(
         summary='Methods does a partial update of chosen fields in a membership',
+        request=MembershipWriteSerializer(partial=True),
         responses={
-            '200': MembershipWriteSerializer,
+            '200': MembershipReadSerializer, # check MembershipWriteSerializer.to_representation
         }),
     destroy=extend_schema(
         summary='Method deletes a membership',
@@ -112,10 +116,11 @@ class MembershipViewSet(mixins.RetrieveModelMixin, DestroyModelMixin,
     queryset = Membership.objects.all()
     ordering = '-id'
     http_method_names = ['get', 'patch', 'delete', 'head', 'options']
-    search_fields = ('user_name', 'role')
-    filter_fields = list(search_fields) + ['id', 'user']
-    ordering_fields = filter_fields
-    lookup_fields = {'user': 'user__id', 'user_name': 'user__username'}
+    search_fields = ('user', 'role')
+    filter_fields = list(search_fields) + ['id']
+    simple_filters = list(search_fields)
+    ordering_fields = list(filter_fields)
+    lookup_fields = {'user': 'user__username'}
     iam_organization_field = 'organization'
 
     def get_serializer_class(self):
@@ -137,24 +142,21 @@ class MembershipViewSet(mixins.RetrieveModelMixin, DestroyModelMixin,
             '200': InvitationReadSerializer,
         }),
     list=extend_schema(
-        summary='Method returns a paginated list of invitations according to query parameters',
+        summary='Method returns a paginated list of invitations',
         responses={
             '200': InvitationReadSerializer(many=True),
         }),
-    update=extend_schema(
-        summary='Method updates an invitation by id',
-        responses={
-            '200': InvitationWriteSerializer,
-        }),
     partial_update=extend_schema(
         summary='Methods does a partial update of chosen fields in an invitation',
+        request=InvitationWriteSerializer(partial=True),
         responses={
-            '200': InvitationWriteSerializer,
+            '200': InvitationReadSerializer, # check InvitationWriteSerializer.to_representation
         }),
     create=extend_schema(
         summary='Method creates an invitation',
+        request=InvitationWriteSerializer,
         responses={
-            '201': InvitationWriteSerializer,
+            '201': InvitationReadSerializer, # check InvitationWriteSerializer.to_representation
         }),
     destroy=extend_schema(
         summary='Method deletes an invitation',
@@ -165,7 +167,7 @@ class MembershipViewSet(mixins.RetrieveModelMixin, DestroyModelMixin,
 class InvitationViewSet(viewsets.GenericViewSet,
                    mixins.RetrieveModelMixin,
                    mixins.ListModelMixin,
-                   mixins.UpdateModelMixin,
+                   PartialUpdateModelMixin,
                    CreateModelMixin,
                    DestroyModelMixin,
     ):
@@ -174,7 +176,8 @@ class InvitationViewSet(viewsets.GenericViewSet,
     iam_organization_field = 'membership__organization'
 
     search_fields = ('owner',)
-    filter_fields = search_fields
+    filter_fields = list(search_fields)
+    simple_filters = list(search_fields)
     ordering_fields = list(filter_fields) + ['created_date']
     ordering = '-created_date'
     lookup_fields = {'owner': 'owner__username'}
