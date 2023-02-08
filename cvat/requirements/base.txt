@@ -41,7 +41,7 @@ tensorflow==2.8.0 # Optional requirement of Datumaro.
 # The package is used by pyunpack as a command line tool to support multiple
 # archives. Don't use as a python module because it has GPL license.
 patool==1.12
-diskcache==5.0.2
+# diskcache==5.0.2
 open3d==0.11.2
 boto3==1.17.61
 azure-storage-blob==12.8.1
