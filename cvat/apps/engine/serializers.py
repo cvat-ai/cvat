@@ -175,6 +175,7 @@ class LabelSerializer(SublabelSerializer):
         help_text='Delete label if value is true from proper Task/Project object')
     sublabels = SublabelSerializer(many=True, required=False)
     svg = serializers.CharField(allow_blank=True, required=False)
+    has_parent = serializers.BooleanField(read_only=True, source='has_parent_label', required=False)
 
     class Meta:
         model = models.Label
@@ -182,7 +183,7 @@ class LabelSerializer(SublabelSerializer):
             'id', 'name', 'color', 'attributes', 'deleted', 'type', 'svg',
             'sublabels', 'project_id', 'task_id', 'parent_id', 'has_parent'
         )
-        read_only_fields = ('id', 'type', 'svg', 'project_id', 'task_id', 'has_parent')
+        read_only_fields = ('id', 'type', 'svg', 'project_id', 'task_id')
         extra_kwargs = {
             'project_id': { 'required': False, 'allow_null': False },
             'task_id': { 'required': False, 'allow_null': False },

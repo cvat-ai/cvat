@@ -5,92 +5,248 @@
   "results": [
     {
       "attributes": [],
+      "color": "#2080c0",
+      "has_parent": false,
+      "id": 3,
+      "name": "car",
+      "parent_id": null,
+      "sublabels": [],
+      "task_id": 2,
+      "type": "any"
+    },
+    {
+      "attributes": [],
       "color": "#c06060",
-      "id": 30,
+      "has_parent": false,
+      "id": 4,
       "name": "person",
       "parent_id": null,
-      "project_id": 8,
+      "sublabels": [],
+      "task_id": 2,
+      "type": "any"
+    },
+    {
+      "attributes": [
+        {
+          "default_value": "mazda",
+          "id": 1,
+          "input_type": "select",
+          "mutable": false,
+          "name": "model",
+          "values": [
+            "mazda",
+            "volvo",
+            "bmw"
+          ]
+        }
+      ],
+      "color": "#2080c0",
+      "has_parent": false,
+      "id": 5,
+      "name": "car",
+      "parent_id": null,
+      "project_id": 1,
+      "sublabels": [],
+      "type": "any"
+    },
+    {
+      "attributes": [],
+      "color": "#c06060",
+      "has_parent": false,
+      "id": 6,
+      "name": "person",
+      "parent_id": null,
+      "project_id": 1,
+      "sublabels": [],
+      "type": "any"
+    },
+    {
+      "attributes": [],
+      "color": "#6080c0",
+      "has_parent": false,
+      "id": 7,
+      "name": "cat",
+      "parent_id": null,
+      "project_id": 2,
+      "sublabels": [],
+      "type": "any"
+    },
+    {
+      "attributes": [],
+      "color": "#406040",
+      "has_parent": false,
+      "id": 8,
+      "name": "dog",
+      "parent_id": null,
+      "project_id": 2,
       "sublabels": [],
       "type": "any"
     },
     {
       "attributes": [],
       "color": "#2080c0",
-      "id": 29,
+      "has_parent": false,
+      "id": 9,
       "name": "car",
       "parent_id": null,
-      "project_id": 8,
       "sublabels": [],
+      "task_id": 5,
       "type": "any"
     },
     {
       "attributes": [],
-      "color": "#bde94a",
-      "id": 28,
-      "name": "label_0",
+      "color": "#2080c0",
+      "has_parent": false,
+      "id": 10,
+      "name": "car",
       "parent_id": null,
-      "project_id": 7,
       "sublabels": [],
+      "task_id": 6,
       "type": "any"
     },
     {
       "attributes": [],
-      "color": "#bde94a",
-      "id": 27,
-      "name": "label_0",
+      "color": "#6080c0",
+      "has_parent": false,
+      "id": 11,
+      "name": "cat",
       "parent_id": null,
-      "project_id": 6,
+      "sublabels": [],
+      "task_id": 7,
+      "type": "any"
+    },
+    {
+      "attributes": [],
+      "color": "#406040",
+      "has_parent": false,
+      "id": 12,
+      "name": "dog",
+      "parent_id": null,
+      "sublabels": [],
+      "task_id": 7,
+      "type": "any"
+    },
+    {
+      "attributes": [],
+      "color": "#6080c0",
+      "has_parent": false,
+      "id": 13,
+      "name": "cat",
+      "parent_id": null,
+      "sublabels": [],
+      "task_id": 8,
+      "type": "any"
+    },
+    {
+      "attributes": [],
+      "color": "#406040",
+      "has_parent": false,
+      "id": 14,
+      "name": "dog",
+      "parent_id": null,
+      "sublabels": [],
+      "task_id": 8,
+      "type": "any"
+    },
+    {
+      "attributes": [],
+      "color": "#2080c0",
+      "has_parent": false,
+      "id": 15,
+      "name": "Car",
+      "parent_id": null,
+      "sublabels": [],
+      "task_id": 12,
+      "type": "any"
+    },
+    {
+      "attributes": [],
+      "color": "#6080c0",
+      "has_parent": false,
+      "id": 16,
+      "name": "cat",
+      "parent_id": null,
+      "project_id": 4,
       "sublabels": [],
       "type": "any"
     },
     {
       "attributes": [],
-      "color": "#4a649f",
-      "id": 26,
-      "name": "4",
-      "parent_id": 22,
+      "color": "#406040",
+      "has_parent": false,
+      "id": 17,
+      "name": "dog",
+      "parent_id": null,
+      "project_id": 4,
+      "sublabels": [],
+      "type": "any"
+    },
+    {
+      "attributes": [],
+      "color": "#5c5eba",
+      "has_parent": false,
+      "id": 18,
+      "name": "s1",
+      "parent_id": null,
       "project_id": 5,
-      "sublabels": [],
-      "type": "points"
-    },
-    {
-      "attributes": [
+      "sublabels": [
         {
-          "default_value": "val1",
-          "id": 3,
-          "input_type": "select",
-          "mutable": false,
-          "name": "attr",
-          "values": [
-            "val1",
-            "val2"
-          ]
+          "attributes": [],
+          "color": "#d12345",
+          "has_parent": true,
+          "id": 19,
+          "name": "1",
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#350dea",
+          "has_parent": true,
+          "id": 20,
+          "name": "2",
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#479ffe",
+          "has_parent": true,
+          "id": 21,
+          "name": "3",
+          "type": "points"
         }
       ],
-      "color": "#59a8fe",
-      "id": 25,
-      "name": "3",
-      "parent_id": 22,
-      "project_id": 5,
-      "sublabels": [],
-      "type": "points"
+      "svg": "<line x1=\"36.37385177612305\" y1=\"50.334449768066406\" x2=\"70.15311431884766\" y2=\"21.237457275390625\" stroke=\"black\" data-type=\"edge\" data-node-from=\"2\" stroke-width=\"0.5\" data-node-to=\"3\"></line><line x1=\"29.517663955688477\" y1=\"15.050167083740234\" x2=\"36.37385177612305\" y2=\"50.334449768066406\" stroke=\"black\" data-type=\"edge\" data-node-from=\"1\" stroke-width=\"0.5\" data-node-to=\"2\"></line><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"29.517663955688477\" cy=\"15.050167083740234\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-id=\"19\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"36.37385177612305\" cy=\"50.334449768066406\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-id=\"20\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"70.15311431884766\" cy=\"21.237457275390625\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"3\" data-node-id=\"3\" data-label-id=\"21\"></circle>",
+      "type": "skeleton"
     },
     {
       "attributes": [],
-      "color": "#4925ec",
-      "id": 24,
-      "name": "2",
-      "parent_id": 22,
-      "project_id": 5,
-      "sublabels": [],
-      "type": "points"
-    },
-    {
-      "attributes": [],
-      "color": "#d53957",
-      "id": 23,
+      "color": "#d12345",
+      "has_parent": true,
+      "id": 19,
       "name": "1",
-      "parent_id": 22,
+      "parent_id": 18,
+      "project_id": 5,
+      "sublabels": [],
+      "type": "points"
+    },
+    {
+      "attributes": [],
+      "color": "#350dea",
+      "has_parent": true,
+      "id": 20,
+      "name": "2",
+      "parent_id": 18,
+      "project_id": 5,
+      "sublabels": [],
+      "type": "points"
+    },
+    {
+      "attributes": [],
+      "color": "#479ffe",
+      "has_parent": true,
+      "id": 21,
+      "name": "3",
+      "parent_id": 18,
       "project_id": 5,
       "sublabels": [],
       "type": "points"
@@ -110,6 +266,7 @@
         }
       ],
       "color": "#0c81b5",
+      "has_parent": false,
       "id": 22,
       "name": "s2",
       "parent_id": null,
@@ -165,231 +322,102 @@
     },
     {
       "attributes": [],
-      "color": "#479ffe",
-      "id": 21,
-      "name": "3",
-      "parent_id": 18,
-      "project_id": 5,
-      "sublabels": [],
-      "type": "points"
-    },
-    {
-      "attributes": [],
-      "color": "#350dea",
-      "id": 20,
-      "name": "2",
-      "parent_id": 18,
-      "project_id": 5,
-      "sublabels": [],
-      "type": "points"
-    },
-    {
-      "attributes": [],
-      "color": "#d12345",
-      "id": 19,
+      "color": "#d53957",
+      "has_parent": true,
+      "id": 23,
       "name": "1",
-      "parent_id": 18,
+      "parent_id": 22,
       "project_id": 5,
       "sublabels": [],
       "type": "points"
     },
     {
       "attributes": [],
-      "color": "#5c5eba",
-      "id": 18,
-      "name": "s1",
-      "parent_id": null,
+      "color": "#4925ec",
+      "has_parent": true,
+      "id": 24,
+      "name": "2",
+      "parent_id": 22,
       "project_id": 5,
-      "sublabels": [
-        {
-          "attributes": [],
-          "color": "#d12345",
-          "has_parent": true,
-          "id": 19,
-          "name": "1",
-          "type": "points"
-        },
-        {
-          "attributes": [],
-          "color": "#350dea",
-          "has_parent": true,
-          "id": 20,
-          "name": "2",
-          "type": "points"
-        },
-        {
-          "attributes": [],
-          "color": "#479ffe",
-          "has_parent": true,
-          "id": 21,
-          "name": "3",
-          "type": "points"
-        }
-      ],
-      "svg": "<line x1=\"36.37385177612305\" y1=\"50.334449768066406\" x2=\"70.15311431884766\" y2=\"21.237457275390625\" stroke=\"black\" data-type=\"edge\" data-node-from=\"2\" stroke-width=\"0.5\" data-node-to=\"3\"></line><line x1=\"29.517663955688477\" y1=\"15.050167083740234\" x2=\"36.37385177612305\" y2=\"50.334449768066406\" stroke=\"black\" data-type=\"edge\" data-node-from=\"1\" stroke-width=\"0.5\" data-node-to=\"2\"></line><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"29.517663955688477\" cy=\"15.050167083740234\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-id=\"19\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"36.37385177612305\" cy=\"50.334449768066406\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-id=\"20\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"70.15311431884766\" cy=\"21.237457275390625\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"3\" data-node-id=\"3\" data-label-id=\"21\"></circle>",
-      "type": "skeleton"
-    },
-    {
-      "attributes": [],
-      "color": "#406040",
-      "id": 17,
-      "name": "dog",
-      "parent_id": null,
-      "project_id": 4,
       "sublabels": [],
-      "type": "any"
-    },
-    {
-      "attributes": [],
-      "color": "#6080c0",
-      "id": 16,
-      "name": "cat",
-      "parent_id": null,
-      "project_id": 4,
-      "sublabels": [],
-      "type": "any"
-    },
-    {
-      "attributes": [],
-      "color": "#2080c0",
-      "id": 15,
-      "name": "Car",
-      "parent_id": null,
-      "sublabels": [],
-      "task_id": 12,
-      "type": "any"
-    },
-    {
-      "attributes": [],
-      "color": "#406040",
-      "id": 14,
-      "name": "dog",
-      "parent_id": null,
-      "sublabels": [],
-      "task_id": 8,
-      "type": "any"
-    },
-    {
-      "attributes": [],
-      "color": "#6080c0",
-      "id": 13,
-      "name": "cat",
-      "parent_id": null,
-      "sublabels": [],
-      "task_id": 8,
-      "type": "any"
-    },
-    {
-      "attributes": [],
-      "color": "#406040",
-      "id": 12,
-      "name": "dog",
-      "parent_id": null,
-      "sublabels": [],
-      "task_id": 7,
-      "type": "any"
-    },
-    {
-      "attributes": [],
-      "color": "#6080c0",
-      "id": 11,
-      "name": "cat",
-      "parent_id": null,
-      "sublabels": [],
-      "task_id": 7,
-      "type": "any"
-    },
-    {
-      "attributes": [],
-      "color": "#2080c0",
-      "id": 10,
-      "name": "car",
-      "parent_id": null,
-      "sublabels": [],
-      "task_id": 6,
-      "type": "any"
-    },
-    {
-      "attributes": [],
-      "color": "#2080c0",
-      "id": 9,
-      "name": "car",
-      "parent_id": null,
-      "sublabels": [],
-      "task_id": 5,
-      "type": "any"
-    },
-    {
-      "attributes": [],
-      "color": "#406040",
-      "id": 8,
-      "name": "dog",
-      "parent_id": null,
-      "project_id": 2,
-      "sublabels": [],
-      "type": "any"
-    },
-    {
-      "attributes": [],
-      "color": "#6080c0",
-      "id": 7,
-      "name": "cat",
-      "parent_id": null,
-      "project_id": 2,
-      "sublabels": [],
-      "type": "any"
-    },
-    {
-      "attributes": [],
-      "color": "#c06060",
-      "id": 6,
-      "name": "person",
-      "parent_id": null,
-      "project_id": 1,
-      "sublabels": [],
-      "type": "any"
+      "type": "points"
     },
     {
       "attributes": [
         {
-          "default_value": "mazda",
-          "id": 1,
+          "default_value": "val1",
+          "id": 3,
           "input_type": "select",
           "mutable": false,
-          "name": "model",
+          "name": "attr",
           "values": [
-            "mazda",
-            "volvo",
-            "bmw"
+            "val1",
+            "val2"
           ]
         }
       ],
+      "color": "#59a8fe",
+      "has_parent": true,
+      "id": 25,
+      "name": "3",
+      "parent_id": 22,
+      "project_id": 5,
+      "sublabels": [],
+      "type": "points"
+    },
+    {
+      "attributes": [],
+      "color": "#4a649f",
+      "has_parent": true,
+      "id": 26,
+      "name": "4",
+      "parent_id": 22,
+      "project_id": 5,
+      "sublabels": [],
+      "type": "points"
+    },
+    {
+      "attributes": [],
+      "color": "#bde94a",
+      "has_parent": false,
+      "id": 27,
+      "name": "label_0",
+      "parent_id": null,
+      "project_id": 6,
+      "sublabels": [],
+      "type": "any"
+    },
+    {
+      "attributes": [],
+      "color": "#bde94a",
+      "has_parent": false,
+      "id": 28,
+      "name": "label_0",
+      "parent_id": null,
+      "project_id": 7,
+      "sublabels": [],
+      "type": "any"
+    },
+    {
+      "attributes": [],
       "color": "#2080c0",
-      "id": 5,
+      "has_parent": false,
+      "id": 29,
       "name": "car",
       "parent_id": null,
-      "project_id": 1,
+      "project_id": 8,
       "sublabels": [],
       "type": "any"
     },
     {
       "attributes": [],
       "color": "#c06060",
-      "id": 4,
+      "has_parent": false,
+      "id": 30,
       "name": "person",
       "parent_id": null,
+      "project_id": 8,
       "sublabels": [],
-      "task_id": 2,
-      "type": "any"
-    },
-    {
-      "attributes": [],
-      "color": "#2080c0",
-      "id": 3,
-      "name": "car",
-      "parent_id": null,
-      "sublabels": [],
-      "task_id": 2,
       "type": "any"
     }
   ]

@@ -168,10 +168,7 @@ class TestGetLabels:
 
     @pytest.mark.parametrize("source", ["task", "project"])
     @pytest.mark.parametrize("is_staff", [True, False])
-    @pytest.mark.parametrize("groups", [["business"], ["user"], ["worker"], []])
-    def test_regular_user_get_sandbox_label(
-        self, labels, users, tasks, projects, source, is_staff, groups
-    ):
+    def test_regular_user_get_sandbox_label(self, labels, users, tasks, projects, source, is_staff):
         if source == "task":
             sources = tasks
             label_source_key = "task_id"
@@ -179,16 +176,14 @@ class TestGetLabels:
             sources = projects
             label_source_key = "project_id"
 
-        users = {u["id"]: u for u in users if u["groups"] == groups}
+        users = {u["id"]: u for u in users if not u["is_superuser"]}
         regular_users_sources = [
             s for s in sources if s["owner"]["id"] in users and s["organization"] is None
         ]
         labels_by_source = self._labels_by_source(labels, source_key=label_source_key)
         source_obj = next(s for s in regular_users_sources if labels_by_source.get(s["id"]))
         label = labels_by_source[source_obj["id"]][0]
-        user = next(
-            u for u in users.values() if (u["id"] == source_obj["owner"]["id"]) == is_staff
-        )
+        user = next(u for u in users.values() if (u["id"] == source_obj["owner"]["id"]) == is_staff)
 
         if is_staff:
             self._test_get_ok(user["username"], label["id"], label)
