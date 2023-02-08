@@ -19,7 +19,6 @@ from natsort import os_sorted
 from pyunpack import Archive
 from PIL import Image, ImageFile
 from random import shuffle
-import open3d as o3d
 from cvat.apps.engine.utils import rotate_image
 from cvat.apps.engine.models import DimensionType, SortingMethod
 
@@ -886,6 +885,7 @@ class ValidateDimension:
 
     @staticmethod
     def convert_bin_to_pcd(path, delete_source=True):
+        import open3d as o3d
         list_pcd = []
         with open(path, "rb") as f:
             size_float = 4
