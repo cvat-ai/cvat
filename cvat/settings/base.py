@@ -468,6 +468,13 @@ CACHE_EXPIRE = float(os.getenv('CACHE_EXPIRE', 7 * 24 * 60 * 60))  # week in sec
 
 CACHES = {
     'default': {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": REDIS_URL,
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    },
+    'diskcache': {
         'BACKEND': 'diskcache.DjangoCache',
         'LOCATION': CACHE_ROOT,
         'TIMEOUT': CACHE_EXPIRE,
