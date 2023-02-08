@@ -463,7 +463,7 @@ RESTRICTIONS = {
 }
 
 USE_CACHE = bool(int(os.getenv('USE_CACHE', 1)))
-CACHE_EXPIRE = float(os.getenv('CACHE_EXPIRE', 7 * 24 * 60 * 60))  # week in seconds
+CACHE_EXPIRE = int(os.getenv('CACHE_EXPIRE', 7 * 24 * 60 * 60))  # week in seconds
 
 CACHES = {
     'default': {
