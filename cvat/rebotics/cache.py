@@ -1,4 +1,5 @@
 import redis
+import json
 from django.conf import settings
 
 
@@ -12,8 +13,7 @@ class CacheClient:
 
     def get(self, key, default=None, tag=False):
         data = self._cache.get(key)
-        if data is None:
-            data = {'value': default}
+        data = {'value': default} if data is None else json.loads(data)
         if tag:
             return data['value'], data.get('tag', None)
         return data['value']
@@ -22,7 +22,7 @@ class CacheClient:
         data = {'value': value}
         if tag:
             data['tag'] = tag
-        return self._cache.set(key, data, ex=expire)
+        return self._cache.set(key, json.dumps(data), ex=expire)
 
     def delete(self, key):
         return self._cache.delete(key)
