@@ -1022,6 +1022,7 @@ class PluginsSerializer(serializers.Serializer):
     PREDICT = serializers.BooleanField()
 
 class DataMetaReadSerializer(serializers.ModelSerializer):
+    frames = FrameMetaSerializer(many=True, allow_null=True)
     image_quality = serializers.IntegerField(min_value=0, max_value=100)
     deleted_frames = serializers.ListField(child=serializers.IntegerField(min_value=0))
 
@@ -1034,6 +1035,7 @@ class DataMetaReadSerializer(serializers.ModelSerializer):
             'start_frame',
             'stop_frame',
             'frame_filter',
+            'frames',
             'deleted_frames',
         )
         read_only_fields = fields

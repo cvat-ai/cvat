@@ -133,7 +133,7 @@ class Project(
         ]
 
     def get_labels(self) -> List[models.ILabel]:
-        return get_paginated_collection(self.api.list_labels_endpoint, id=self.id)
+        return get_paginated_collection(self._client.api_client.labels_api.list_endpoint, project_id=str(self.id))
 
     def get_preview(
         self,

@@ -315,10 +315,10 @@ class Task(
         return meta
 
     def get_labels(self) -> List[models.ILabel]:
-        return get_paginated_collection(self.api.list_labels_endpoint, id=self.id)
+        return get_paginated_collection(self._client.api_client.labels_api.list_endpoint, task_id=str(self.id))
 
     def get_frames_info(self) -> List[models.IFrameMeta]:
-        return get_paginated_collection(self.api.list_data_meta_frames_endpoint, id=self.id)
+        return self.get_meta().frames
 
     def remove_frames_by_ids(self, ids: Sequence[int]) -> None:
         self.api.partial_update_data_meta(

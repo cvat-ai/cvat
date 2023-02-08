@@ -1220,27 +1220,15 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def metadata(self, request, pk):
         self.get_object() #force to call check_object_permissions
         db_task = models.Task.objects.prefetch_related(
-            Prefetch('data', queryset=models.Data.objects.select_related('video'))
+            Prefetch('data', queryset=models.Data.objects.select_related('video').prefetch_related(
+                Prefetch('images', queryset=models.Image.objects.prefetch_related('related_files').order_by('frame'))
+            ))
         ).get(pk=pk)
 
         if request.method == 'PATCH':
             serializer = DataMetaWriteSerializer(instance=db_task.data, data=request.data)
             if serializer.is_valid(raise_exception=True):
                 db_task.data = serializer.save()
-
-        serializer = DataMetaReadSerializer(db_task.data)
-        return Response(serializer.data)
-
-    @extend_schema(summary='Returns a paginated list of frame metadata',
-        responses=FrameMetaSerializer(many=True)) # Duplicate to still get 'list' op. name
-    @list_action(serializer_class=FrameMetaSerializer, url_path='data/meta/frames')
-    def metadata_frames(self, request, pk):
-        self.get_object() #force to call check_object_permissions
-        db_task = models.Task.objects.prefetch_related(
-            Prefetch('data', queryset=models.Data.objects.select_related('video').prefetch_related(
-                Prefetch('images', queryset=models.Image.objects.prefetch_related('related_files').order_by('frame'))
-            ))
-        ).get(pk=pk)
 
         if hasattr(db_task.data, 'video'):
             media = [db_task.data.video]
@@ -1251,10 +1239,13 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             'width': item.width,
             'height': item.height,
             'name': item.path,
-            'related_files': item.related_files.count() if hasattr(item, 'related_files') else 0,
+            'related_files': item.related_files.count() if hasattr(item, 'related_files') else 0
         } for item in media]
 
-        serializer = FrameMetaSerializer(frame_meta, many=True)
+        db_data = db_task.data
+        db_data.frames = frame_meta
+
+        serializer = DataMetaReadSerializer(db_data)
         return Response(serializer.data)
 
     @extend_schema(summary='Export task as a dataset in a specific format',
@@ -1660,7 +1651,9 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         db_job = models.Job.objects.prefetch_related(
             'segment',
             'segment__task',
-            Prefetch('segment__task__data', queryset=models.Data.objects.select_related('video'))
+            Prefetch('segment__task__data', queryset=models.Data.objects.select_related('video').prefetch_related(
+                Prefetch('images', queryset=models.Image.objects.prefetch_related('related_files').order_by('frame'))
+            ))
         ).get(pk=pk)
 
         db_data = db_job.segment.task.data
@@ -1684,6 +1677,14 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 if db_job.segment.task.project:
                     db_job.segment.task.project.save()
 
+        if hasattr(db_data, 'video'):
+            media = [db_data.video]
+        else:
+            media = list(db_data.images.filter(
+                frame__gte=data_start_frame,
+                frame__lte=data_stop_frame,
+            ).all())
+
         # Filter data with segment size
         # Should data.size also be cropped by segment size?
         db_data.deleted_frames = filter(
@@ -1693,44 +1694,16 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         db_data.start_frame = data_start_frame
         db_data.stop_frame = data_stop_frame
 
-        serializer = DataMetaReadSerializer(db_data)
-        return Response(serializer.data)
-
-    @extend_schema(summary='Returns a paginated list of frame metadata',
-        responses=FrameMetaSerializer(many=True)) # Duplicate to still get 'list' op. name
-    @list_action(serializer_class=FrameMetaSerializer, url_path='data/meta/frames')
-    def metadata_frames(self, request, pk):
-        self.get_object() #force to call check_object_permissions
-        db_job = models.Job.objects.prefetch_related(
-            'segment',
-            'segment__task',
-            Prefetch('segment__task__data', queryset=models.Data.objects.select_related('video').prefetch_related(
-                Prefetch('images', queryset=models.Image.objects.prefetch_related('related_files').order_by('frame'))
-            ))
-        ).get(pk=pk)
-
-        db_data = db_job.segment.task.data
-        start_frame = db_job.segment.start_frame
-        stop_frame = db_job.segment.stop_frame
-        data_start_frame = db_data.start_frame + start_frame * db_data.get_frame_step()
-        data_stop_frame = db_data.start_frame + stop_frame * db_data.get_frame_step()
-
-        if hasattr(db_data, 'video'):
-            media = [db_data.video]
-        else:
-            media = list(db_data.images.filter(
-                frame__gte=data_start_frame,
-                frame__lte=data_stop_frame,
-            ).all())
-
         frame_meta = [{
             'width': item.width,
             'height': item.height,
             'name': item.path,
-            'related_files': item.related_files.count() if hasattr(item, 'related_files') else 0,
+            'related_files': item.related_files.count() if hasattr(item, 'related_files') else 0
         } for item in media]
 
-        serializer = FrameMetaSerializer(frame_meta, many=True)
+        db_data.frames = frame_meta
+
+        serializer = DataMetaReadSerializer(db_data)
         return Response(serializer.data)
 
     @extend_schema(summary='The action returns the list of tracked changes for the job',
