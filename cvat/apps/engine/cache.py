@@ -82,7 +82,7 @@ class CacheInteraction:
 
     def _save_chunk(self, db_data_id, chunk_number, quality, buff, mime_type):
         self._cache.set('{}_{}_{}'.format(db_data_id, chunk_number, quality), buff,
-                        tag=mime_type, expire=settings.CACHE_EXPIRE)
+                        expire=settings.CACHE_EXPIRE, tag=mime_type)
 
     def _save_s3_chunk(self, db_data: Data, chunk_number, quality, buff, mime_type):
         key = db_data.get_s3_chunk_path(chunk_number, quality)
