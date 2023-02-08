@@ -981,8 +981,8 @@ export function getJobAsync(
             const loadJobEvent = await logger.log(
                 LogType.loadJob,
                 {
-                    task_id: tid,
-                    job_id: jid,
+                    task: tid,
+                    job: jid,
                 },
                 true,
             );

@@ -1,9 +1,11 @@
-# Copyright (C) 2018-2022 Intel Corporation
+# Copyright (C) 2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from dateutil import parser as datetime_parser
 import datetime
+import json
+
 
 from django.conf import settings
 from rest_framework import status, viewsets
@@ -34,7 +36,7 @@ class EventsViewSet(viewsets.ViewSet):
         methods=['GET'],
         description='Recieve logs from the server',
         parameters=[
-            OpenApiParameter('organization', location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False,
+            OpenApiParameter('org', location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False,
                 description="Filter events by organization ID"),
             OpenApiParameter('project', location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False,
                 description="Filter events by project ID"),
@@ -64,9 +66,11 @@ class EventsViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['GET', 'POST'])
     def events(request):
         if request.method == 'POST':
-            import json
             serializer = ClientEventsSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
+
+            org = request.iam_context['organization']
+            org_id = org.id if org else None
 
             send_time = datetime_parser.isoparse(serializer.data["send_timestamp"])
             receive_time = datetime.datetime.now(datetime.timezone.utc)
@@ -89,6 +93,7 @@ class EventsViewSet(viewsets.ViewSet):
                 last_timestamp = timestamp
                 event['timestamp'] = str((timestamp + time_correction).timestamp())
                 event['source'] = 'client'
+                event['organization'] = org_id
                 message = JSONRenderer().render(event).decode('UTF-8')
                 jid = event.get("job")
                 tid = event.get("task")
@@ -119,6 +124,9 @@ class EventsViewSet(viewsets.ViewSet):
         serializer = EventSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
+        org = request.iam_context['organization']
+        org_id = org.id if org else None
+
         event = serializer.data
 
         additional_info = {
@@ -126,8 +134,9 @@ class EventsViewSet(viewsets.ViewSet):
             "scope": "send:exception",
             "source": "client"
         }
-        event['timestamp'] = str(datetime.datetime.now(datetime.timezone.utc).timestamp())
-        message = JSONRenderer().render({**event, **additional_info}).decode('UTF-8')
+        event["timestamp"] = str(datetime.datetime.now(datetime.timezone.utc).timestamp())
+        event["organization"] = org_id
+        message = JSONRenderer().render({**event, **additional_info}).decode("UTF-8")
         jid = event.get("job_id")
         tid = event.get("task_id")
         if jid:

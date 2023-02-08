@@ -83,7 +83,7 @@ export enum LogType {
     exception = 'send:exception',
     sendTaskInfo = 'send:task_info',
 
-    drawObject = 'add:object',
+    drawObject = 'draw:object',
     pasteObject = 'paste:object',
     copyObject = 'copy:object',
     propagateObject = 'propagate:object',

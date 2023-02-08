@@ -86,10 +86,10 @@ def export(request, queue_name):
     filename = request.query_params.get('filename', None)
 
     query_params = {
-        'organization': request.query_params.get('organization', None),
+        'organization': request.query_params.get('org', None),
         'project': request.query_params.get('project', None),
         'task': request.query_params.get('task', None),
-        'job': request.query_params.get('jid', None),
+        'job': request.query_params.get('job', None),
         'user': request.query_params.get('user', None),
         'from': request.query_params.get('from', None),
         'to': request.query_params.get('to', None),
@@ -106,7 +106,7 @@ def export(request, queue_name):
 
     if not any ((query_params["organization"], query_params["project"], query_params["task"],
         query_params["job"], query_params["user"])):
-        raise serializers.ValidationError("One of 'organization', 'project', 'task', 'job', 'user' parameter must be specified")
+        raise serializers.ValidationError("One of 'org', 'project', 'task', 'job', 'user' parameter must be specified")
 
     if action not in (None, 'download'):
         raise serializers.ValidationError(

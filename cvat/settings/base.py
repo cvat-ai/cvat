@@ -476,7 +476,7 @@ LOGGING = {
             'ssl_enable': False,
             'ssl_verify': False,
             'host': os.getenv('DJANGO_LOG_SERVER_HOST', 'localhost'),
-            'port': os.getenv('DJANGO_LOG_SERVER_PORT', 8080),
+            'port': os.getenv('DJANGO_LOG_SERVER_PORT', 8282),
             'version': 1,
             'message_type': 'django',
             'database_path': LOGSTASH_DB,
@@ -715,7 +715,7 @@ if USE_ALLAUTH_SOCIAL_ACCOUNTS:
 CLICKHOUSE = {
     'events': {
         'NAME': os.getenv('CLICKHOUSE_DB', 'cvat'),
-        'HOST': os.getenv('CLICKHOUSE_HOST', 'clickhouse'),
+        'HOST': os.getenv('CLICKHOUSE_HOST', 'localhost'),
         'PORT': os.getenv('CLICKHOUSE_PORT', 8123),
         'USER': os.getenv('CLICKHOUSE_USER', 'user'),
         'PASSWORD': os.getenv('CLICKHOUSE_PASSWORD', 'user'),
