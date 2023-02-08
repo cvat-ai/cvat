@@ -44,6 +44,9 @@ export default function DeployedModelItem(props: Props): JSX.Element {
 
     const created = moment(model.createdDate).fromNow();
     const icon = <ModelProviderIcon providerName={provider} />;
+    const modelDescription = model.provider !== ModelProviders.CVAT ?
+        <Text type='secondary'>{`Added ${created}`}</Text> :
+        <Text type='secondary'>System model</Text>;
     return (
         <>
             <Modal
@@ -63,7 +66,7 @@ export default function DeployedModelItem(props: Props): JSX.Element {
                 {icon ? <div className='cvat-model-item-provider-inner'>{icon}</div> : null}
                 <div className='cvat-model-info-container'>
                     <Title level={3}>{model.name}</Title>
-                    <Text type='secondary'>{`Added ${created}`}</Text>
+                    {modelDescription}
                 </div>
                 <Divider />
                 {
@@ -138,7 +141,7 @@ export default function DeployedModelItem(props: Props): JSX.Element {
                         <div className='cvat-models-item-description'>
                             <Row onClick={onOpenModel} className='cvat-models-item-text-description'>
                                 {model.owner && (<Text strong>{model.owner}</Text>)}
-                                <Text type='secondary'>{` Added ${created}`}</Text>
+                                {modelDescription}
                             </Row>
                             {
                                 model.provider !== ModelProviders.CVAT && (
