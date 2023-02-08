@@ -59,7 +59,7 @@ class HyperlinkedEndpointSerializer(serializers.Serializer):
 
 
 class CollectionSummarySerializer(serializers.Serializer):
-    count = serializers.IntegerField()
+    count = serializers.IntegerField(default=0)
 
     def __init__(self, model, *, url_filter_key, **kwargs):
         super().__init__(**kwargs)
@@ -88,7 +88,7 @@ class LabelsSummarySerializer(CollectionSummarySerializer):
 
 
 class JobsSummarySerializer(CollectionSummarySerializer):
-    completed = serializers.IntegerField(source='completed_jobs_count', required=False, default=None)
+    completed = serializers.IntegerField(source='completed_jobs_count', default=0)
 
     def __init__(self, *, model=models.Job, url_filter_key, **kwargs):
         super().__init__(model=model, url_filter_key=url_filter_key, **kwargs)
@@ -180,9 +180,9 @@ class LabelSerializer(SublabelSerializer):
         model = models.Label
         fields = (
             'id', 'name', 'color', 'attributes', 'deleted', 'type', 'svg',
-            'sublabels', 'project_id', 'task_id', 'parent_id'
+            'sublabels', 'project_id', 'task_id', 'parent_id', 'has_parent'
         )
-        read_only_fields = ('id', 'type', 'svg', 'project_id', 'task_id')
+        read_only_fields = ('id', 'type', 'svg', 'project_id', 'task_id', 'has_parent')
         extra_kwargs = {
             'project_id': { 'required': False, 'allow_null': False },
             'task_id': { 'required': False, 'allow_null': False },
