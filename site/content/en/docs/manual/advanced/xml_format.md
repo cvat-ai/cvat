@@ -120,7 +120,7 @@ In later releases `polygon`, `polyline`, `points`, `skeletons` and `tags` were a
       <attribute name="String: an attribute name">String: the attribute value</attribute>
       ...
     </tag>
-    <skeleton label="String: the associated label" occluded="Number: 0 - False, 1 - True" z_order="Number: z-order of the object">
+    <skeleton label="String: the associated label" z_order="Number: z-order of the object">
       <points label="String: the associated label" occluded="Number: 0 - False, 1 - True" outside="Number: 0 - False, 1 - True" points="x0,y0;x1,y1">
         <attribute name="String: an attribute name">String: the attribute value</attribute>
       </points>
@@ -229,7 +229,7 @@ Example:
     </points>
     <tag label="good_frame" source="manual">
     </tag>
-    <skeleton label="s1" occluded="0" source="manual" z_order="0">
+    <skeleton label="s1" source="manual" z_order="0">
       <points label="1" occluded="0" source="manual" outside="0" points="54.47,94.81">
       </points>
       <points label="2" occluded="0" source="manual" outside="0" points="68.02,162.34">
