@@ -40,8 +40,8 @@ export enum ModelsActionTypes {
 
 export const modelsActions = {
     getModels: (query?: ModelsQuery) => createAction(ModelsActionTypes.GET_MODELS, { query }),
-    getModelsSuccess: (models: MLModel[]) => createAction(ModelsActionTypes.GET_MODELS_SUCCESS, {
-        models,
+    getModelsSuccess: (models: MLModel[], count: number) => createAction(ModelsActionTypes.GET_MODELS_SUCCESS, {
+        models, count,
     }),
     getModelsFailed: (error: any) => createAction(ModelsActionTypes.GET_MODELS_FAILED, {
         error,
@@ -113,14 +113,15 @@ export type ModelsActions = ActionUnion<typeof modelsActions>;
 
 const core = getCore();
 
-export function getModelsAsync(query: ModelsQuery): ThunkAction {
-    return async (dispatch): Promise<void> => {
+export function getModelsAsync(query?: ModelsQuery): ThunkAction {
+    return async (dispatch, getState): Promise<void> => {
         dispatch(modelsActions.getModels(query));
 
-        const filteredQuery = filterNull(query);
+        const filteredQuery = filterNull(query || getState().models.query);
         try {
-            const models = await core.lambda.list(filteredQuery);
-            dispatch(modelsActions.getModelsSuccess(models));
+            const result = await core.lambda.list(filteredQuery);
+            const { models, count } = result;
+            dispatch(modelsActions.getModelsSuccess(models, count));
         } catch (error) {
             dispatch(modelsActions.getModelsFailed(error));
         }

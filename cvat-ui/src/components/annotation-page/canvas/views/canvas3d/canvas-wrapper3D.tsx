@@ -21,8 +21,10 @@ import {
     editShape,
     groupAnnotationsAsync,
     groupObjects,
+    mergeAnnotationsAsync,
     resetCanvas,
     shapeDrawn,
+    splitAnnotationsAsync,
     updateAnnotationsAsync,
     updateCanvasContextMenu,
 } from 'actions/annotation-actions';
@@ -33,7 +35,7 @@ import { CameraAction, Canvas3d, ViewsDOM } from 'cvat-canvas3d-wrapper';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { LogType } from 'cvat-logger';
-import { getCore } from 'cvat-core-wrapper';
+import { getCore, ObjectState, Job } from 'cvat-core-wrapper';
 
 const cvat = getCore();
 
@@ -45,7 +47,7 @@ interface StateToProps {
     colorBy: ColorBy;
     frameFetching: boolean;
     canvasInstance: Canvas3d;
-    jobInstance: any;
+    jobInstance: Job;
     frameData: any;
     annotations: any[];
     contextMenuVisibility: boolean;
@@ -62,9 +64,11 @@ interface DispatchToProps {
     onSetupCanvas(): void;
     onGroupObjects: (enabled: boolean) => void;
     onResetCanvas(): void;
-    onCreateAnnotations(sessionInstance: any, frame: number, states: any[]): void;
-    onUpdateAnnotations(states: any[]): void;
-    onGroupAnnotations(sessionInstance: any, frame: number, states: any[]): void;
+    onCreateAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void;
+    onGroupAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void;
+    onMergeAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void;
+    onSplitAnnotations(sessionInstance: Job, frame: number, state: ObjectState): void;
+    onUpdateAnnotations(states: ObjectState[]): void;
     onActivateObject: (activatedStateID: number | null) => void;
     onShapeDrawn: () => void;
     onEditShape: (enabled: boolean) => void;
@@ -134,14 +138,20 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onGroupObjects(enabled: boolean): void {
             dispatch(groupObjects(enabled));
         },
-        onCreateAnnotations(sessionInstance: any, frame: number, states: any[]): void {
-            dispatch(createAnnotationsAsync(sessionInstance, frame, states));
-        },
         onShapeDrawn(): void {
             dispatch(shapeDrawn());
         },
-        onGroupAnnotations(sessionInstance: any, frame: number, states: any[]): void {
+        onCreateAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void {
+            dispatch(createAnnotationsAsync(sessionInstance, frame, states));
+        },
+        onGroupAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void {
             dispatch(groupAnnotationsAsync(sessionInstance, frame, states));
+        },
+        onMergeAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void {
+            dispatch(mergeAnnotationsAsync(sessionInstance, frame, states));
+        },
+        onSplitAnnotations(sessionInstance: Job, frame: number, state: ObjectState): void {
+            dispatch(splitAnnotationsAsync(sessionInstance, frame, state));
         },
         onActivateObject(activatedStateID: number | null): void {
             if (activatedStateID === null) {
@@ -153,7 +163,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onEditShape(enabled: boolean): void {
             dispatch(editShape(enabled));
         },
-        onUpdateAnnotations(states: any[]): void {
+        onUpdateAnnotations(states: ObjectState[]): void {
             dispatch(updateAnnotationsAsync(states));
         },
         onUpdateContextMenu(
@@ -395,8 +405,6 @@ const Canvas3DWrapperComponent = React.memo((props: Props): ReactElement => {
         colorBy,
         contextMenuVisibility,
         frameData,
-        onResetCanvas,
-        onSetupCanvas,
         annotations,
         frame,
         jobInstance,
@@ -404,8 +412,14 @@ const Canvas3DWrapperComponent = React.memo((props: Props): ReactElement => {
         activatedStateID,
         resetZoom,
         activeObjectType,
+        onResetCanvas,
+        onSetupCanvas,
         onShapeDrawn,
+        onGroupObjects,
         onCreateAnnotations,
+        onMergeAnnotations,
+        onSplitAnnotations,
+        onGroupAnnotations,
     } = props;
     const { canvasInstance } = props as { canvasInstance: Canvas3d };
 
@@ -554,13 +568,20 @@ const Canvas3DWrapperComponent = React.memo((props: Props): ReactElement => {
         );
     };
 
-    const onCanvasObjectsGroupped = (event: any): void => {
-        const { onGroupAnnotations, onGroupObjects } = props;
-
-        onGroupObjects(false);
-
+    const onCanvasObjectsGroupped = (event: CustomEvent<{ states: ObjectState[] }>): void => {
         const { states } = event.detail;
+        onGroupObjects(false);
         onGroupAnnotations(jobInstance, frame, states);
+    };
+
+    const onCanvasObjectsMerged = (event: CustomEvent<{ states: ObjectState[] }>): void => {
+        const { states } = event.detail;
+        onMergeAnnotations(jobInstance, frame, states);
+    };
+
+    const onCanvasTrackSplitted = (event: CustomEvent<{ state: ObjectState }>): void => {
+        const { state } = event.detail;
+        onSplitAnnotations(jobInstance, frame, state);
     };
 
     useEffect(() => {
@@ -575,7 +596,9 @@ const Canvas3DWrapperComponent = React.memo((props: Props): ReactElement => {
         canvasInstanceDOM.perspective.addEventListener('canvas.edited', onCanvasEditDone);
         canvasInstanceDOM.perspective.addEventListener('canvas.contextmenu', onContextMenu);
         canvasInstanceDOM.perspective.addEventListener('click', onCanvasClick);
-        canvasInstanceDOM.perspective.addEventListener('canvas.groupped', onCanvasObjectsGroupped);
+        canvasInstanceDOM.perspective.addEventListener('canvas.groupped', onCanvasObjectsGroupped as EventListener);
+        canvasInstanceDOM.perspective.addEventListener('canvas.merged', onCanvasObjectsMerged as EventListener);
+        canvasInstanceDOM.perspective.addEventListener('canvas.splitted', onCanvasTrackSplitted as EventListener);
 
         return () => {
             canvasInstanceDOM.perspective.removeEventListener('canvas.drawn', onCanvasShapeDrawn);
@@ -583,9 +606,11 @@ const Canvas3DWrapperComponent = React.memo((props: Props): ReactElement => {
             canvasInstanceDOM.perspective.removeEventListener('canvas.edited', onCanvasEditDone);
             canvasInstanceDOM.perspective.removeEventListener('canvas.contextmenu', onContextMenu);
             canvasInstanceDOM.perspective.removeEventListener('click', onCanvasClick);
-            canvasInstanceDOM.perspective.removeEventListener('canvas.groupped', onCanvasObjectsGroupped);
+            canvasInstanceDOM.perspective.removeEventListener('canvas.groupped', onCanvasObjectsGroupped as EventListener);
+            canvasInstanceDOM.perspective.removeEventListener('canvas.merged', onCanvasObjectsMerged as EventListener);
+            canvasInstanceDOM.perspective.removeEventListener('canvas.splitted', onCanvasTrackSplitted as EventListener);
         };
-    }, [frameData, annotations, activeLabelID, contextMenuVisibility]);
+    }, [frameData, annotations, activeLabelID, contextMenuVisibility, activeObjectType]);
 
     return <></>;
 });
