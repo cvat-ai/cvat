@@ -1,24 +1,37 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import jsonLogic from 'json-logic-js';
+import { SerializedData } from 'object-state';
 import { AttributeType, ObjectType, ShapeType } from './enums';
 
 function adjustName(name): string {
     return name.replace(/\./g, '\u2219');
 }
 
+interface ConvertedObjectData {
+    width: number | null;
+    height: number | null;
+    attr: Record<string, Record<string, string>>;
+    label: string;
+    serverID: number;
+    objectID: number;
+    type: ObjectType;
+    shape: ShapeType;
+    occluded: boolean;
+}
+
 export default class AnnotationsFilter {
-    _convertObjects(statesData) {
+    _convertObjects(statesData: SerializedData[]): ConvertedObjectData[] {
         const objects = statesData.map((state) => {
             const labelAttributes = state.label.attributes.reduce((acc, attr) => {
                 acc[attr.id] = attr;
                 return acc;
             }, {});
 
-            let [width, height] = [null, null];
-
+            let [width, height]: (number | null)[] = [null, null];
             if (state.objectType !== ObjectType.TAG) {
                 if (state.shapeType === ShapeType.MASK) {
                     const [xtl, ytl, xbr, ybr] = state.points.slice(-4);
@@ -48,8 +61,7 @@ export default class AnnotationsFilter {
                 }
             }
 
-            const attributes = {};
-            Object.keys(state.attributes).reduce((acc, key) => {
+            const attributes = Object.keys(state.attributes).reduce<Record<string, string>>((acc, key) => {
                 const attr = labelAttributes[key];
                 let value = state.attributes[key];
                 if (attr.inputType === AttributeType.NUMBER) {
@@ -59,7 +71,7 @@ export default class AnnotationsFilter {
                 }
                 acc[adjustName(attr.name)] = value;
                 return acc;
-            }, attributes);
+            }, {});
 
             return {
                 width,
@@ -77,8 +89,8 @@ export default class AnnotationsFilter {
         return objects;
     }
 
-    filter(statesData, filters) {
-        if (!filters.length) return statesData;
+    filter(statesData: SerializedData[], filters: string[]): number[] {
+        if (!filters.length) return statesData.map((stateData): number => stateData.clientID);
         const converted = this._convertObjects(statesData);
         return converted
             .map((state) => state.objectID)

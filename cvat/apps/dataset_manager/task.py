@@ -87,7 +87,7 @@ class JobAnnotation:
         db_segment = self.db_job.segment
         self.start_frame = db_segment.start_frame
         self.stop_frame = db_segment.stop_frame
-        self.ir_data = AnnotationIR()
+        self.ir_data = AnnotationIR(db_segment.task.dimension)
 
         self.db_labels = {db_label.id:db_label
             for db_label in (db_segment.task.project.label_set.all()
@@ -576,7 +576,7 @@ class JobAnnotation:
 
     def import_annotations(self, src_file, importer, **options):
         job_data = JobData(
-            annotation_ir=AnnotationIR(),
+            annotation_ir=AnnotationIR(self.db_job.segment.task.dimension),
             db_job=self.db_job,
             create_callback=self.create,
         )
@@ -597,13 +597,13 @@ class TaskAnnotation:
 
         # Postgres doesn't guarantee an order by default without explicit order_by
         self.db_jobs = models.Job.objects.select_related("segment").filter(segment__task_id=pk).order_by('id')
-        self.ir_data = AnnotationIR()
+        self.ir_data = AnnotationIR(self.db_task.dimension)
 
     def reset(self):
         self.ir_data.reset()
 
     def _patch_data(self, data, action):
-        _data = data if isinstance(data, AnnotationIR) else AnnotationIR(data)
+        _data = data if isinstance(data, AnnotationIR) else AnnotationIR(self.db_task.dimension, data)
         splitted_data = {}
         jobs = {}
         for db_job in self.db_jobs:
@@ -614,18 +614,18 @@ class TaskAnnotation:
             splitted_data[jid] = _data.slice(start, stop)
 
         for jid, job_data in splitted_data.items():
-            _data = AnnotationIR()
+            _data = AnnotationIR(self.db_task.dimension)
             if action is None:
                 _data.data = put_job_data(jid, job_data)
             else:
                 _data.data = patch_job_data(jid, job_data, action)
             if _data.version > self.ir_data.version:
                 self.ir_data.version = _data.version
-            self._merge_data(_data, jobs[jid]["start"], self.db_task.overlap)
+            self._merge_data(_data, jobs[jid]["start"], self.db_task.overlap, self.db_task.dimension)
 
-    def _merge_data(self, data, start_frame, overlap):
+    def _merge_data(self, data, start_frame, overlap, dimension):
         annotation_manager = AnnotationManager(self.ir_data)
-        annotation_manager.merge(data, start_frame, overlap)
+        annotation_manager.merge(data, start_frame, overlap, dimension)
 
     def put(self, data):
         self._patch_data(data, None)
@@ -654,7 +654,8 @@ class TaskAnnotation:
             db_segment = db_job.segment
             start_frame = db_segment.start_frame
             overlap = self.db_task.overlap
-            self._merge_data(annotation.ir_data, start_frame, overlap)
+            dimension = self.db_task.dimension
+            self._merge_data(annotation.ir_data, start_frame, overlap, dimension)
 
     def export(self, dst_file, exporter, host='', **options):
         task_data = TaskData(
@@ -670,7 +671,7 @@ class TaskAnnotation:
 
     def import_annotations(self, src_file, importer, **options):
         task_data = TaskData(
-            annotation_ir=AnnotationIR(),
+            annotation_ir=AnnotationIR(self.db_task.dimension),
             db_task=self.db_task,
             create_callback=self.create,
         )
