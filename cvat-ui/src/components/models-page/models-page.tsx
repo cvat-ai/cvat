@@ -10,11 +10,12 @@ import { useDispatch, useSelector } from 'react-redux';
 import { getModelProvidersAsync, getModelsAsync } from 'actions/models-actions';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import Spin from 'antd/lib/spin';
+import notification from 'antd/lib/notification';
 
-import DeployedModelsList from './deployed-models-list';
+import { CombinedState, Indexable } from 'reducers';
+import DeployedModelsList, { PAGE_SIZE } from './deployed-models-list';
 import EmptyListComponent from './empty-list';
 import FeedbackComponent from '../feedback/feedback';
-import { CombinedState } from '../../reducers';
 import TopBar from './top-bar';
 
 function ModelsPageComponent(): JSX.Element {
@@ -29,19 +30,33 @@ function ModelsPageComponent(): JSX.Element {
     }, []);
 
     const updatedQuery = { ...query };
+    const queryParams = new URLSearchParams(history.location.search);
+    for (const key of Object.keys(updatedQuery)) {
+        (updatedQuery as Indexable)[key] = queryParams.get(key) || null;
+        if (key === 'page') {
+            updatedQuery.page = updatedQuery.page ? +updatedQuery.page : 1;
+        }
+    }
     useEffect(() => {
         history.replace({
             search: updateHistoryFromQuery(query),
         });
     }, [query]);
 
+    const pageOutOfBounds = updatedQuery.page > Math.ceil(totalCount / PAGE_SIZE);
     useEffect(() => {
         dispatch(getModelProvidersAsync());
         dispatch(getModelsAsync(updatedQuery));
+        if (pageOutOfBounds) {
+            notification.error({
+                message: 'Could not fetch models',
+                description: 'Invalid page',
+            });
+        }
     }, []);
 
-    const content = totalCount ? (
-        <DeployedModelsList />
+    const content = (totalCount && !pageOutOfBounds) ? (
+        <DeployedModelsList query={updatedQuery} />
     ) : <EmptyListComponent />;
 
     return (

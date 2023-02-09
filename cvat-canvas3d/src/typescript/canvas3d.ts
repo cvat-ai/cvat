@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -15,6 +15,8 @@ import {
     ShapeProperties,
     GroupData,
     Configuration,
+    SplitData,
+    MergeData,
 } from './canvas3dModel';
 import {
     Canvas3dView, Canvas3dViewImpl, ViewsDOM, CameraAction,
@@ -38,6 +40,8 @@ interface Canvas3d {
     fitCanvas(): void;
     fit(): void;
     group(groupData: GroupData): void;
+    merge(mergeData: MergeData): void;
+    split(splitData: SplitData): void;
     destroy(): void;
 }
 
@@ -78,6 +82,14 @@ class Canvas3dImpl implements Canvas3d {
 
     public group(groupData: GroupData): void {
         this.model.group(groupData);
+    }
+
+    public split(splitData: SplitData): void {
+        this.model.split(splitData);
+    }
+
+    public merge(mergeData: MergeData): void {
+        this.model.merge(mergeData);
     }
 
     public isAbleToChangeFrame(): boolean {

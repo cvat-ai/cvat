@@ -20,7 +20,7 @@ Cypress.Commands.add('compareImagesAndCheckResult', (baseImage, afterImage, noCh
 Cypress.Commands.add('create3DCuboid', (cuboidCreationParams) => {
     cy.interactControlButton('draw-cuboid');
     cy.switchLabel(cuboidCreationParams.labelName, 'draw-cuboid');
-    cy.get('.cvat-draw-cuboid-popover').find('button').click();
+    cy.get('.cvat-draw-cuboid-popover').contains('Shape').click();
     cy.get('.cvat-canvas3d-perspective')
         .trigger('mousemove', cuboidCreationParams.x, cuboidCreationParams.y)
         .dblclick(cuboidCreationParams.x, cuboidCreationParams.y);

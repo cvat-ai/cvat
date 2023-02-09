@@ -6,6 +6,7 @@
 import zipfile
 
 from datumaro.components.dataset import Dataset
+from datumaro.components.extractor import ItemTransform
 
 from cvat.apps.dataset_manager.bindings import GetCVATDataExtractor, \
     import_dm_annotations
@@ -16,13 +17,20 @@ from cvat.apps.engine.models import DimensionType
 
 from .registry import exporter, importer
 
+class RemoveTrackingInformation(ItemTransform):
+    def transform_item(self, item):
+        annotations = list(item.annotations)
+        for anno in annotations:
+            if hasattr(anno, 'attributes') and 'track_id' in anno.attributes:
+                del anno.attributes['track_id']
+        return item.wrap(annotations=annotations)
 
 @exporter(name='Kitti Raw Format', ext='ZIP', version='1.0', dimension=DimensionType.DIM_3D)
 def _export_images(dst_file, temp_dir, task_data, save_images=False):
     dataset = Dataset.from_extractors(GetCVATDataExtractor(
         task_data, include_images=save_images, format_type="kitti_raw",
         dimension=DimensionType.DIM_3D), env=dm_env)
-
+    dataset.transform(RemoveTrackingInformation)
     dataset.export(temp_dir, 'kitti_raw', save_images=save_images, reindex=True)
 
     make_zip_archive(temp_dir, dst_file)
