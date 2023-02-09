@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,8 +9,10 @@ import Webhook from 'cvat-core/src/webhook';
 import MLModel from 'cvat-core/src/ml-model';
 import { ModelProvider } from 'cvat-core/src/lambda-manager';
 import {
-    Label, Attribute, RawAttribute, RawLabel,
+    Label, Attribute,
 } from 'cvat-core/src/labels';
+import { SerializedAttribute, SerializedLabel } from 'cvat-core/src/server-response-types';
+import { Job, Task } from 'cvat-core/src/session';
 import {
     ShapeType, LabelType, ModelKind, ModelProviders, ModelReturnType,
 } from 'cvat-core/src/enums';
@@ -34,6 +36,8 @@ export {
     getCore,
     ObjectState,
     Label,
+    Job,
+    Task,
     Attribute,
     ShapeType,
     LabelType,
@@ -49,8 +53,8 @@ export {
 };
 
 export type {
-    RawAttribute,
-    RawLabel,
+    SerializedAttribute,
+    SerializedLabel,
     StorageData,
     SocialAuthMethods,
     ModelProvider,

@@ -542,6 +542,7 @@ export class Job extends Session {
 export class Task extends Session {
     constructor(initialData) {
         super();
+
         const data = {
             id: undefined,
             name: undefined,
@@ -558,22 +559,24 @@ export class Task extends Session {
             overlap: undefined,
             segment_size: undefined,
             image_quality: undefined,
-            start_frame: undefined,
-            stop_frame: undefined,
             frame_filter: undefined,
             data_chunk_size: undefined,
             data_compressed_chunk_type: undefined,
             data_original_chunk_type: undefined,
-            deleted_frames: undefined,
+            dimension: undefined,
+            source_storage: undefined,
+            target_storage: undefined,
+            organization: undefined,
+            progress: undefined,
+            labels: undefined,
+            jobs: undefined,
+
             use_zip_chunks: undefined,
             use_cache: undefined,
             copy_data: undefined,
-            dimension: undefined,
             cloud_storage_id: undefined,
             sorting_method: undefined,
-            source_storage: undefined,
-            target_storage: undefined,
-            progress: undefined,
+            files: undefined,
         };
 
         const updateTrigger = new FieldUpdateTrigger();
@@ -590,20 +593,11 @@ export class Task extends Session {
         data.labels = [];
         data.jobs = [];
 
-        // FIX ME: progress shoud come from server, not from segments
-        const progress = {
-            completedJobs: 0,
-            totalJobs: 0,
+        data.progress = {
+            completedJobs: initialData?.jobs?.completed || 0,
+            totalJobs: initialData?.jobs?.count || 0,
         };
-        if (Array.isArray(initialData.segments)) {
-            for (const segment of initialData.segments) {
-                for (const job of segment.jobs) {
-                    progress.totalJobs += 1;
-                    if (job.stage === 'acceptance') progress.completedJobs += 1;
-                }
-            }
-        }
-        data.progress = progress;
+
         data.files = Object.freeze({
             server_files: [],
             client_files: [],
@@ -625,6 +619,7 @@ export class Task extends Session {
                     stage: job.stage,
                     start_frame: job.start_frame,
                     stop_frame: job.stop_frame,
+
                     // following fields also returned when doing API request /jobs/<id>
                     // here we know them from task and append to constructor
                     task_id: data.id,
@@ -917,6 +912,9 @@ export class Task extends Session {
                 },
                 sortingMethod: {
                     get: () => data.sorting_method,
+                },
+                organization: {
+                    get: () => data.organization,
                 },
                 sourceStorage: {
                     get: () => (

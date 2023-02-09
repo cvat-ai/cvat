@@ -23,7 +23,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         query: tasks.gettingQuery,
         count: state.tasks.count,
         countInvisible: tasks.hideEmpty ?
-            tasks.current.filter((task: Task): boolean => !task.jobs.length).length :
+            tasks.current.filter((task: Task): boolean => task.size === 0).length :
             0,
         importing: state.import.tasks.backup.importing,
     };

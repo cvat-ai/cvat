@@ -14,6 +14,8 @@ export enum TaskStatus {
     COMPLETED = 'completed',
 }
 
+export type ProjectStatus = TaskStatus;
+
 export enum JobStage {
     ANNOTATION = 'annotation',
     VALIDATION = 'validation',
