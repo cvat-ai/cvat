@@ -4,12 +4,12 @@
 // SPDX-License-Identifier: MIT
 
 import { Storage } from './storage';
-
 import serverProxy from './server-proxy';
 import { decodePreview } from './frames';
-
 import Project from './project';
 import { exportDataset, importDataset } from './annotations';
+import { SerializedLabel } from './server-response-types';
+import { Label } from './labels';
 
 export default function implementProject(projectClass) {
     projectClass.prototype.save.implementation = async function () {
@@ -21,13 +21,28 @@ export default function implementProject(projectClass) {
             if (projectData.assignee_id) {
                 projectData.assignee_id = projectData.assignee_id.id;
             }
-            if (projectData.labels) {
-                projectData.labels = projectData.labels.map((el) => el.toJSON());
-            }
 
-            await serverProxy.projects.save(this.id, projectData);
+            await Promise.all(projectData.labels.map((label: Label): Promise<unknown> => {
+                if (label.deleted) {
+                    return serverProxy.labels.delete(label.id);
+                }
+
+                if (label.patched) {
+                    return serverProxy.labels.update(label.id, label.toJSON());
+                }
+
+                return Promise.resolve();
+            }));
+
+            // leave only new labels to create them via project PATCH request
+            projectData.labels = (projectData.labels || [])
+                .filter((label: SerializedLabel) => !Number.isInteger(label.id)).map((el) => el.toJSON());
+
+            const serializedProject = await serverProxy.projects.save(this.id, projectData);
+            const labels = await serverProxy.labels.get({ project_id: serializedProject.id });
+
             this._updateTrigger.reset();
-            return this;
+            return new Project({ ...serializedProject, labels: labels.results });
         }
 
         // initial creating

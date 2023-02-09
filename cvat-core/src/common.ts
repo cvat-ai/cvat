@@ -92,33 +92,22 @@ export function checkObjectType(name, value, type, instance?): boolean {
 }
 
 export class FieldUpdateTrigger {
-    constructor() {
-        let updatedFlags = {};
+    #updatedFlags: Record<string, boolean> = {};
 
-        Object.defineProperties(
-            this,
-            Object.freeze({
-                reset: {
-                    value: () => {
-                        updatedFlags = {};
-                    },
-                },
-                update: {
-                    value: (name) => {
-                        updatedFlags[name] = true;
-                    },
-                },
-                getUpdated: {
-                    value: (data, propMap = {}) => {
-                        const result = {};
-                        for (const updatedField of Object.keys(updatedFlags)) {
-                            result[propMap[updatedField] || updatedField] = data[updatedField];
-                        }
-                        return result;
-                    },
-                },
-            }),
-        );
+    reset(): void {
+        this.#updatedFlags = {};
+    }
+
+    update(name: string): void {
+        this.#updatedFlags[name] = true;
+    }
+
+    getUpdated(data: Record<string, unknown>, propMap: Record<string, string> = {}): Record<string, unknown> {
+        const result = {};
+        for (const updatedField of Object.keys(this.#updatedFlags)) {
+            result[propMap[updatedField] || updatedField] = data[updatedField];
+        }
+        return result;
     }
 }
 

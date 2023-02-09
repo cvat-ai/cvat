@@ -214,7 +214,7 @@ export default function implementAPI(cvat) {
             ordering: isString,
         });
 
-        checkExclusiveFields(filter, ['id', 'projectId'], ['page']);
+        checkExclusiveFields(filter, ['id'], ['page']);
         const searchParams = {};
         for (const key of Object.keys(filter)) {
             if (['page', 'id', 'sort', 'search', 'filter', 'ordering'].includes(key)) {

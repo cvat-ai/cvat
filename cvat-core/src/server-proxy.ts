@@ -656,11 +656,12 @@ async function getProjects(filter: ProjectsFilter = {}): Promise<SerializedProje
     return response.data.results;
 }
 
-async function saveProject(id: number, projectData: Partial<SerializedProject>): Promise<void> {
+async function saveProject(id: number, projectData: Partial<SerializedProject>): Promise<SerializedProject> {
     const { backendAPI } = config;
 
+    let response = null;
     try {
-        await Axios.patch(`${backendAPI}/projects/${id}`, JSON.stringify(projectData), {
+        response = await Axios.patch(`${backendAPI}/projects/${id}`, JSON.stringify(projectData), {
             headers: {
                 'Content-Type': 'application/json',
             },
@@ -668,6 +669,8 @@ async function saveProject(id: number, projectData: Partial<SerializedProject>):
     } catch (errorData) {
         throw generateError(errorData);
     }
+
+    return response.data;
 }
 
 async function deleteProject(id: number): Promise<void> {
@@ -763,6 +766,27 @@ async function getLabels(filter: {
         ...filter,
         ...enableOrganization(),
     });
+}
+
+async function deleteLabel(id: number): Promise<void> {
+    const { backendAPI } = config;
+    try {
+        await Axios.delete(`${backendAPI}/labels/${id}`, { method: 'DELETE' });
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function updateLabel(id: number, body: SerializedLabel): Promise<SerializedLabel> {
+    const { backendAPI } = config;
+    let response = null;
+    try {
+        response = await Axios.patch(`${backendAPI}/labels/${id}`, body, { method: 'PATCH' });
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+
+    return response.data;
 }
 
 function exportDataset(instanceType: 'projects' | 'jobs' | 'tasks') {
@@ -2476,6 +2500,8 @@ export default Object.freeze({
 
     labels: Object.freeze({
         get: getLabels,
+        delete: deleteLabel,
+        update: updateLabel,
     }),
 
     jobs: Object.freeze({

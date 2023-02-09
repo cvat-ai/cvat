@@ -119,7 +119,6 @@ export interface SerializedLabel {
     svg?: string;
     sublabels?: SerializedLabel[];
     has_parent?: boolean;
-    deleted?: boolean;
     attributes: SerializedAttribute[];
 }
 

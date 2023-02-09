@@ -84,7 +84,9 @@ export default function UserSelector(props: Props): JSX.Element {
             const potentialUsers = users.filter((_user) => _user.username.includes(searchPhrase));
             if (potentialUsers.length === 1) {
                 setSearchPhrase(potentialUsers[0].username);
-                onSelect(potentialUsers[0]);
+                if (value?.id !== potentialUsers[0].id) {
+                    onSelect(potentialUsers[0]);
+                }
             } else {
                 setSearchPhrase(value?.username || '');
             }
