@@ -35,7 +35,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     const id = own.taskID;
 
     return {
-        hidden: state.tasks.hideEmpty && task.progress.totalJobs === 0,
+        hidden: state.tasks.hideEmpty && task.size === 0,
         deleted: id in deletes ? deletes[id] === true : false,
         taskInstance: task,
         activeInference: state.models.inferences[id] || null,

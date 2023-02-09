@@ -233,15 +233,19 @@ export default function implementAPI(cvat) {
 
         const tasksData = await serverProxy.tasks.get(searchParams);
         const tasks = await Promise.all(tasksData.map(async (taskItem) => {
-            // Temporary workaround for UI
-            // Fixme: too much requests on tasks page
-            let jobs = { results: [] };
             if ('id' in filter) {
-                jobs = await serverProxy.jobs.get({
+                // When request task by ID we also need to add labels and jobs to work with them
+                const labels = await serverProxy.labels.get({ task_id: taskItem.id });
+                const jobs = await serverProxy.jobs.get({
                     filter: JSON.stringify({ and: [{ '==': [{ var: 'task_id' }, taskItem.id] }] }),
                 }, true);
+                return new Task({ ...taskItem, jobs: jobs.results, labels: labels.results });
             }
-            return new Task({ ...taskItem, jobs: jobs.results });
+
+            return new Task({
+                ...taskItem,
+                progress: taskItem.jobs,
+            });
         }));
 
         tasks.count = tasksData.count;
@@ -260,15 +264,25 @@ export default function implementAPI(cvat) {
         checkExclusiveFields(filter, ['id'], ['page']);
         const searchParams = {};
         for (const key of Object.keys(filter)) {
-            if (['id', 'page', 'search', 'sort', 'page', 'filter'].includes(key)) {
+            if (['page', 'id', 'sort', 'search', 'filter'].includes(key)) {
                 searchParams[key] = filter[key];
             }
         }
 
         const projectsData = await serverProxy.projects.get(searchParams);
-        const projects = projectsData.map((project) => new Project(project));
-        projects.count = projectsData.count;
+        const projects = await Promise.all(projectsData.map(async (projectItem) => {
+            if ('id' in filter) {
+                // When request a project by ID we also need to add labels to work with them
+                const labels = await serverProxy.labels.get({ project_id: projectItem.id });
+                return new Project({ ...projectItem, labels: labels.results });
+            }
 
+            return new Project({
+                ...projectItem,
+            });
+        }));
+
+        projects.count = projectsData.count;
         return projects;
     };
 

@@ -7,8 +7,11 @@ import FormData from 'form-data';
 import store from 'store';
 import Axios, { AxiosResponse } from 'axios';
 import * as tus from 'tus-js-client';
+import { RawLabel } from 'labels';
 import { Storage } from './storage';
-import { StorageLocation, WebhookSourceType } from './enums';
+import {
+    DimensionType, ProjectStatus, StorageLocation, TaskStatus, WebhookSourceType,
+} from './enums';
 import { isEmail } from './common';
 import config from './config';
 import DownloadWorker from './download.worker';
@@ -67,6 +70,66 @@ function waitFor(frequencyHz, predicate) {
         };
 
         setTimeout(internalWait);
+    });
+}
+
+function fetchAll(url, filter = {}): Promise<any> {
+    const pageSize = 500;
+    const result = {
+        count: 0,
+        results: [],
+    };
+    return new Promise((resolve, reject) => {
+        Axios.get(url, {
+            params: {
+                ...filter,
+                page_size: pageSize,
+                page: 1,
+            },
+            proxy: config.proxy,
+        }).then((initialData) => {
+            const { count, results } = initialData.data;
+            result.results = result.results.concat(results);
+            if (count <= pageSize) {
+                resolve(result);
+                return;
+            }
+
+            const pages = Math.ceil(count / pageSize);
+            const promises = Array(pages).fill(0).map((_: number, i: number) => {
+                if (i) {
+                    return Axios.get(url, {
+                        params: {
+                            ...filter,
+                            page_size: pageSize,
+                            page: i + 1,
+                        },
+                        proxy: config.proxy,
+                    });
+                }
+
+                return Promise.resolve(null);
+            });
+
+            Promise.all(promises).then((responses: AxiosResponse<any, any>[]) => {
+                responses.forEach((resp) => {
+                    if (resp) {
+                        result.results = result.results.concat(resp.data.results);
+                    }
+                });
+
+                // removing possible dublicates
+                const obj = result.results.reduce((acc: Record<string, any>, item: any) => {
+                    acc[item.id] = item;
+                    return acc;
+                }, {});
+
+                result.results = Object.values(obj);
+                result.count = result.results.length;
+
+                resolve(result);
+            }).catch((error) => reject(error));
+        }).catch((error) => reject(error));
     });
 }
 
@@ -573,7 +636,35 @@ async function searchProjectNames(search, limit) {
     return response.data.results;
 }
 
-async function getProjects(filter = {}) {
+interface RawProjectData {
+    assignee: RawUserData | null;
+    id: number;
+    bug_tracker: string;
+    created_date: string;
+    updated_date: string;
+    dimension: DimensionType;
+    name: string;
+    organization: number | null;
+    owner: RawUserData;
+    source_storage: { id: number; location: 'local' | 'cloud'; cloud_storage_id: null };
+    target_storage: { id: number; location: 'local' | 'cloud'; cloud_storage_id: null };
+    url: string;
+    tasks: { count: number; url: string; };
+    task_subsets: string[];
+    status: ProjectStatus;
+}
+
+interface ProjectsFilter {
+    page?: number;
+    id?: number;
+    sort?: string;
+    search?: string;
+    filter?: string;
+}
+
+type TasksFilter = ProjectsFilter & { ordering?: string; }; // TODO: Need to clarify how "ordering" is used
+
+async function getProjects(filter: ProjectsFilter = {}): Promise<RawProjectData[] & { count: number }> {
     const { backendAPI, proxy } = config;
 
     let response = null;
@@ -583,8 +674,10 @@ async function getProjects(filter = {}) {
                 proxy,
             });
             const results = [response.data];
-            results.count = 1;
-            return results;
+            Object.defineProperty(results, 'count', {
+                value: 1,
+            });
+            return results as RawProjectData[] & { count: number };
         }
 
         response = await Axios.get(`${backendAPI}/projects`, {
@@ -645,7 +738,51 @@ async function createProject(projectSpec) {
     }
 }
 
-async function getTasks(filter = {}) {
+interface RawUserData {
+    url: string;
+    id: number;
+    username: string;
+    first_name: string;
+    last_name: string;
+    email?: string;
+    groups?: ('user' | 'business' | 'admin')[];
+    is_staff?: boolean;
+    is_superuser?: boolean;
+    is_active?: boolean;
+    last_login?: string;
+    date_joined?: string;
+}
+
+interface RawTaskData {
+    assignee: RawUserData | null;
+    bug_tracker: string;
+    created_date: string;
+    data: number;
+    data_chunk_size: number | null;
+    data_compressed_chunk_type: 'imageset' | 'video';
+    data_original_chunk_type: 'imageset' | 'video';
+    dimension: DimensionType;
+    id: number;
+    image_quality: number;
+    jobs: { count: 1; completed: 0; url: string; };
+    labels: { count: number; url: string; };
+    mode: 'annotation' | 'interpolation' | '';
+    name: string;
+    organization: number | null;
+    overlap: number | null;
+    owner: RawUserData;
+    project_id: number | null;
+    segment_size: number;
+    size: number;
+    source_storage: { id: number; location: 'local' | 'cloud'; cloud_storage_id: null };
+    target_storage: { id: number; location: 'local' | 'cloud'; cloud_storage_id: null };
+    status: TaskStatus;
+    subset: string;
+    updated_date: string;
+    url: string;
+}
+
+async function getTasks(filter: TasksFilter = {}): Promise<RawTaskData[] & { count: number }> {
     const { backendAPI } = config;
 
     let response = null;
@@ -655,8 +792,10 @@ async function getTasks(filter = {}) {
                 proxy: config.proxy,
             });
             const results = [response.data];
-            results.count = 1;
-            return results;
+            Object.defineProperty(results, 'count', {
+                value: 1,
+            });
+            return results as RawTaskData[] & { count: number };
         }
 
         response = await Axios.get(`${backendAPI}/tasks`, {
@@ -706,6 +845,17 @@ async function deleteTask(id, organizationID = null) {
     } catch (errorData) {
         throw generateError(errorData);
     }
+}
+
+async function getLabels(filter: {
+    task_id?: number,
+    project_id?: number,
+}): Promise<{ results: RawLabel[] }> {
+    const { backendAPI } = config;
+    return fetchAll(`${backendAPI}/labels`, {
+        ...filter,
+        ...enableOrganization(),
+    });
 }
 
 function exportDataset(instanceType) {
@@ -1230,66 +1380,6 @@ async function createTask(taskSpec, taskDataSpec, onUpdate) {
     // to be able to get the task after it was created, pass frozen params
     const createdTask = await getTasks({ id: response.data.id, ...params });
     return createdTask[0];
-}
-
-function fetchAll(url, filter = {}): Promise<any> {
-    const pageSize = 500;
-    const result = {
-        count: 0,
-        results: [],
-    };
-    return new Promise((resolve, reject) => {
-        Axios.get(url, {
-            params: {
-                ...filter,
-                page_size: pageSize,
-                page: 1,
-            },
-            proxy: config.proxy,
-        }).then((initialData) => {
-            const { count, results } = initialData.data;
-            result.results = result.results.concat(results);
-            if (count <= pageSize) {
-                resolve(result);
-                return;
-            }
-
-            const pages = Math.ceil(count / pageSize);
-            const promises = Array(pages).fill(0).map((_: number, i: number) => {
-                if (i) {
-                    return Axios.get(url, {
-                        params: {
-                            ...filter,
-                            page_size: pageSize,
-                            page: i + 1,
-                        },
-                        proxy: config.proxy,
-                    });
-                }
-
-                return Promise.resolve(null);
-            });
-
-            Promise.all(promises).then((responses: AxiosResponse<any, any>[]) => {
-                responses.forEach((resp) => {
-                    if (resp) {
-                        result.results = result.results.concat(resp.data.results);
-                    }
-                });
-
-                // removing possible dublicates
-                const obj = result.results.reduce((acc: Record<string, any>, item: any) => {
-                    acc[item.id] = item;
-                    return acc;
-                }, {});
-
-                result.results = Object.values(obj);
-                result.count = result.results.length;
-
-                resolve(result);
-            }).catch((error) => reject(error));
-        }).catch((error) => reject(error));
-    });
 }
 
 async function getJobs(filter = {}, aggregate = false) {
@@ -2572,6 +2662,10 @@ export default Object.freeze({
         getPreview: getPreview('tasks'),
         backup: backupTask,
         restore: restoreTask,
+    }),
+
+    labels: Object.freeze({
+        get: getLabels,
     }),
 
     jobs: Object.freeze({
