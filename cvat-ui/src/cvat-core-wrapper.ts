@@ -9,8 +9,9 @@ import Webhook from 'cvat-core/src/webhook';
 import MLModel from 'cvat-core/src/ml-model';
 import { ModelProvider } from 'cvat-core/src/lambda-manager';
 import {
-    Label, Attribute, RawAttribute, RawLabel,
+    Label, Attribute,
 } from 'cvat-core/src/labels';
+import { SerializedAttribute, SerializedLabel } from 'cvat-core/src/server-response-types';
 import { Job, Task } from 'cvat-core/src/session';
 import {
     ShapeType, LabelType, ModelKind, ModelProviders, ModelReturnType,
@@ -52,8 +53,8 @@ export {
 };
 
 export type {
-    RawAttribute,
-    RawLabel,
+    SerializedAttribute,
+    SerializedLabel,
     StorageData,
     SocialAuthMethods,
     ModelProvider,

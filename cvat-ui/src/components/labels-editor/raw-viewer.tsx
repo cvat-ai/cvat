@@ -12,7 +12,7 @@ import Modal from 'antd/lib/modal';
 import { Store } from 'antd/lib/form/interface';
 import Paragraph from 'antd/lib/typography/Paragraph';
 
-import { RawLabel, RawAttribute } from 'cvat-core-wrapper';
+import { SerializedLabel, SerializedAttribute } from 'cvat-core-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { validateParsedLabel, idGenerator, LabelOptColor } from './common';
 
@@ -57,7 +57,7 @@ function validateLabels(_: RuleObject, value: string): Promise<void> {
         if (!Array.isArray(parsed)) {
             return Promise.reject(new Error('Field is expected to be a JSON array'));
         }
-        const labelNames = parsed.map((label: RawLabel) => label.name);
+        const labelNames = parsed.map((label: SerializedLabel) => label.name);
         if (new Set(labelNames).size !== labelNames.length) {
             return Promise.reject(new Error('Label names must be unique for the task'));
         }
@@ -88,7 +88,7 @@ function convertLabels(labels: LabelOptColor[]): LabelOptColor[] {
             id: (label.id as number) < 0 ? undefined : label.id,
             svg: label.svg ? label.svg.replaceAll('"', '&quot;') : undefined,
             attributes: label.attributes.map(
-                (attribute: any): RawAttribute => ({
+                (attribute: any): SerializedAttribute => ({
                     ...attribute,
                     id: attribute.id < 0 ? undefined : attribute.id,
                 }),
@@ -118,7 +118,7 @@ export default class RawViewer extends React.PureComponent<Props> {
         const { onSubmit, labels } = this.props;
         const parsed = JSON.parse(
             replaceTrailingCommas(values.labels),
-        ) as RawLabel[];
+        ) as SerializedLabel[];
 
         const labelIDs: number[] = [];
         const attrIDs: number[] = [];
@@ -145,8 +145,8 @@ export default class RawViewer extends React.PureComponent<Props> {
             });
 
         const deletedAttributes = labels
-            .reduce((acc: RawAttribute[], _label) => [...acc, ..._label.attributes], [])
-            .filter((_attr: RawAttribute) => {
+            .reduce((acc: SerializedAttribute[], _label) => [...acc, ..._label.attributes], [])
+            .filter((_attr: SerializedAttribute) => {
                 const attrID = _attr.id as number;
                 return attrID >= 0 && !attrIDs.includes(attrID);
             });
@@ -173,7 +173,7 @@ export default class RawViewer extends React.PureComponent<Props> {
                             <Paragraph>
                                 Following attributes are going to be removed:
                                 <div className='cvat-modal-confirm-content-remove-existing-attributes'>
-                                    {deletedAttributes.map((_attr: RawAttribute) => (
+                                    {deletedAttributes.map((_attr: SerializedAttribute) => (
                                         <Tag key={_attr.id as number}>{_attr.name}</Tag>
                                     ))}
                                 </div>

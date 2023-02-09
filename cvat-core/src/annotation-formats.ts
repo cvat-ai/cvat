@@ -5,9 +5,9 @@
 
 import { DimensionType } from 'enums';
 import {
-    AnnotationExporterResponseBody,
-    AnnotationFormatsResponseBody,
-    AnnotationImporterResponseBody,
+    SerializedAnnotationExporter,
+    SerializedAnnotationFormats,
+    SerializedAnnotationImporter,
 } from 'server-response-types';
 
 export class Loader {
@@ -17,7 +17,7 @@ export class Loader {
     public enabled: boolean;
     public dimension: DimensionType;
 
-    constructor(initialData: AnnotationImporterResponseBody) {
+    constructor(initialData: SerializedAnnotationImporter) {
         const data = {
             name: initialData.name,
             format: initialData.ext,
@@ -53,7 +53,7 @@ export class Dumper {
     public enabled: boolean;
     public dimension: DimensionType;
 
-    constructor(initialData: AnnotationExporterResponseBody) {
+    constructor(initialData: SerializedAnnotationExporter) {
         const data = {
             name: initialData.name,
             format: initialData.ext,
@@ -86,7 +86,7 @@ export class AnnotationFormats {
     public loaders: Loader[];
     public dumpers: Dumper[];
 
-    constructor(initialData: AnnotationFormatsResponseBody) {
+    constructor(initialData: SerializedAnnotationFormats) {
         const data = {
             exporters: initialData.exporters.map((el) => new Dumper(el)),
             importers: initialData.importers.map((el) => new Loader(el)),

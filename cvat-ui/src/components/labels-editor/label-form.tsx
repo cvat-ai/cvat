@@ -14,7 +14,7 @@ import Form, { FormInstance } from 'antd/lib/form';
 import Badge from 'antd/lib/badge';
 import { Store } from 'antd/lib/form/interface';
 
-import { RawAttribute, LabelType } from 'cvat-core-wrapper';
+import { SerializedAttribute, LabelType } from 'cvat-core-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import ColorPicker from 'components/annotation-page/standard-workspace/objects-side-bar/color-picker';
 import { ColorizeIcon } from 'icons';
@@ -131,7 +131,7 @@ export default class LabelForm extends React.Component<Props> {
     };
 
     /* eslint-disable class-methods-use-this */
-    private renderAttributeNameInput(fieldInstance: any, attr: RawAttribute | null): JSX.Element {
+    private renderAttributeNameInput(fieldInstance: any, attr: SerializedAttribute | null): JSX.Element {
         const { key } = fieldInstance;
         const locked = attr ? attr.id as number >= 0 : false;
         const value = attr ? attr.name : '';
@@ -158,7 +158,7 @@ export default class LabelForm extends React.Component<Props> {
         );
     }
 
-    private renderAttributeTypeInput(fieldInstance: any, attr: RawAttribute | null): JSX.Element {
+    private renderAttributeTypeInput(fieldInstance: any, attr: SerializedAttribute | null): JSX.Element {
         const { key } = fieldInstance;
         const locked = attr ? attr.id as number >= 0 : false;
         const type = attr ? attr.input_type.toUpperCase() : AttributeType.SELECT;
@@ -188,7 +188,7 @@ export default class LabelForm extends React.Component<Props> {
         );
     }
 
-    private renderAttributeValuesInput(fieldInstance: any, attr: RawAttribute | null): JSX.Element {
+    private renderAttributeValuesInput(fieldInstance: any, attr: SerializedAttribute | null): JSX.Element {
         const { key } = fieldInstance;
         const locked = attr ? attr.id as number >= 0 : false;
         const existingValues = attr ? attr.values : [];
@@ -259,7 +259,7 @@ export default class LabelForm extends React.Component<Props> {
         );
     }
 
-    private renderNumberRangeInput(fieldInstance: any, attr: RawAttribute | null): JSX.Element {
+    private renderNumberRangeInput(fieldInstance: any, attr: SerializedAttribute | null): JSX.Element {
         const { key } = fieldInstance;
         const locked = attr ? attr.id as number >= 0 : false;
         const value = attr ? attr.values : '';
@@ -313,7 +313,7 @@ export default class LabelForm extends React.Component<Props> {
         );
     }
 
-    private renderDefaultValueInput(fieldInstance: any, attr: RawAttribute | null): JSX.Element {
+    private renderDefaultValueInput(fieldInstance: any, attr: SerializedAttribute | null): JSX.Element {
         const { key } = fieldInstance;
         const value = attr ? attr.values[0] : '';
 
@@ -324,7 +324,7 @@ export default class LabelForm extends React.Component<Props> {
         );
     }
 
-    private renderMutableAttributeInput(fieldInstance: any, attr: RawAttribute | null): JSX.Element {
+    private renderMutableAttributeInput(fieldInstance: any, attr: SerializedAttribute | null): JSX.Element {
         const { key } = fieldInstance;
         const locked = attr ? attr.id as number >= 0 : false;
         const value = attr ? attr.mutable : false;
@@ -345,7 +345,7 @@ export default class LabelForm extends React.Component<Props> {
         );
     }
 
-    private renderDeleteAttributeButton(fieldInstance: any, attr: RawAttribute | null): JSX.Element {
+    private renderDeleteAttributeButton(fieldInstance: any, attr: SerializedAttribute | null): JSX.Element {
         const { key } = fieldInstance;
         const locked = attr ? attr.id as number >= 0 : false;
 
@@ -565,7 +565,7 @@ export default class LabelForm extends React.Component<Props> {
         const { label } = this.props;
         if (this.formRef.current && label && label.attributes.length) {
             const convertedAttributes = label.attributes.map(
-                (attribute: RawAttribute): Store => ({
+                (attribute: SerializedAttribute): Store => ({
                     ...attribute,
                     values:
                         attribute.input_type.toUpperCase() === 'NUMBER' ? attribute.values.join(';') : attribute.values,

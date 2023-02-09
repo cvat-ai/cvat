@@ -2,19 +2,11 @@
 //
 // SPDX-License-Identifier: MIT
 
+import {
+    AttrInputType, LabelType, SerializedAttribute, SerializedLabel,
+} from 'server-response-types';
 import { ShapeType, AttributeType } from './enums';
 import { ArgumentError } from './exceptions';
-
-type AttrInputType = 'select' | 'radio' | 'checkbox' | 'number' | 'text';
-
-export interface RawAttribute {
-    name: string;
-    mutable: boolean;
-    input_type: AttrInputType;
-    default_value: string;
-    values: string[];
-    id?: number;
-}
 
 export class Attribute {
     public id?: number;
@@ -24,7 +16,7 @@ export class Attribute {
     public name: string;
     public values: string[];
 
-    constructor(initialData: RawAttribute) {
+    constructor(initialData: SerializedAttribute) {
         const data = {
             id: undefined,
             default_value: undefined,
@@ -75,8 +67,8 @@ export class Attribute {
         );
     }
 
-    toJSON(): RawAttribute {
-        const object: RawAttribute = {
+    toJSON(): SerializedAttribute {
+        const object: SerializedAttribute = {
             name: this.name,
             mutable: this.mutable,
             input_type: this.inputType,
@@ -92,19 +84,6 @@ export class Attribute {
     }
 }
 
-type LabelType = 'rectangle' | 'polygon' | 'polyline' | 'points' | 'ellipse' | 'cuboid' | 'skeleton' | 'mask' | 'tag' | 'any';
-export interface RawLabel {
-    id?: number;
-    name: string;
-    color?: string;
-    type: LabelType;
-    svg?: string;
-    sublabels?: RawLabel[];
-    has_parent?: boolean;
-    deleted?: boolean;
-    attributes: RawAttribute[];
-}
-
 export class Label {
     public name: string;
     public readonly id?: number;
@@ -118,7 +97,7 @@ export class Label {
     public deleted: boolean;
     public readonly hasParent?: boolean;
 
-    constructor(initialData: RawLabel) {
+    constructor(initialData: SerializedLabel) {
         const data = {
             id: undefined,
             name: undefined,
@@ -210,8 +189,8 @@ export class Label {
         );
     }
 
-    toJSON(): RawLabel {
-        const object: RawLabel = {
+    toJSON(): SerializedLabel {
+        const object: SerializedLabel = {
             name: this.name,
             attributes: [...this.attributes.map((el) => el.toJSON())],
             type: this.type,

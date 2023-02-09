@@ -7,12 +7,12 @@ import FormData from 'form-data';
 import store from 'store';
 import Axios, { AxiosResponse } from 'axios';
 import * as tus from 'tus-js-client';
-import { RawLabel } from 'labels';
-import { AnnotationFormatsResponseBody } from 'server-response-types';
-import { Storage } from './storage';
 import {
-    DimensionType, ProjectStatus, StorageLocation, TaskStatus, WebhookSourceType,
-} from './enums';
+    SerializedLabel, SerializedAnnotationFormats, ProjectsFilter,
+    SerializedProject, SerializedTask, TasksFilter, SerializedUser,
+} from 'server-response-types';
+import { Storage } from './storage';
+import { StorageLocation, WebhookSourceType } from './enums';
 import { isEmail } from './common';
 import config from './config';
 import DownloadWorker from './download.worker';
@@ -29,7 +29,7 @@ type Params = {
     action?: string,
 };
 
-function enableOrganization() {
+function enableOrganization(): { org: string } {
     return { org: config.organizationID || '' };
 }
 
@@ -45,7 +45,7 @@ function configureStorage(storage: Storage, useDefaultLocation = false): Partial
     };
 }
 
-function removeToken() {
+function removeToken(): void {
     Axios.defaults.headers.common.Authorization = '';
     store.remove('token');
 }
@@ -56,7 +56,7 @@ function waitFor(frequencyHz, predicate) {
             reject(new Error(`Predicate must be a function, got ${typeof predicate}`));
         }
 
-        const internalWait = () => {
+        const internalWait = (): void => {
             let result = false;
             try {
                 result = predicate();
@@ -345,7 +345,7 @@ async function exception(exceptionObject) {
     }
 }
 
-async function formats(): Promise<AnnotationFormatsResponseBody> {
+async function formats(): Promise<SerializedAnnotationFormats> {
     const { backendAPI } = config;
 
     let response = null;
@@ -440,7 +440,7 @@ async function loginWithSocialAccount(
     authParams?: string,
     process?: string,
     scope?: string,
-) {
+): Promise<void> {
     removeToken();
     const data = {
         code,
@@ -463,7 +463,7 @@ async function loginWithSocialAccount(
     Axios.defaults.headers.common.Authorization = `Token ${token}`;
 }
 
-async function logout() {
+async function logout(): Promise<void> {
     try {
         await Axios.post(`${config.backendAPI}/auth/logout`, {
             proxy: config.proxy,
@@ -474,7 +474,7 @@ async function logout() {
     }
 }
 
-async function changePassword(oldPassword, newPassword1, newPassword2) {
+async function changePassword(oldPassword: string, newPassword1: string, newPassword2: string): Promise<void> {
     try {
         const data = JSON.stringify({
             old_password: oldPassword,
@@ -492,7 +492,7 @@ async function changePassword(oldPassword, newPassword1, newPassword2) {
     }
 }
 
-async function requestPasswordReset(email) {
+async function requestPasswordReset(email: string): Promise<void> {
     try {
         const data = JSON.stringify({
             email,
@@ -508,7 +508,7 @@ async function requestPasswordReset(email) {
     }
 }
 
-async function resetPassword(newPassword1, newPassword2, uid, _token) {
+async function resetPassword(newPassword1: string, newPassword2: string, uid: string, _token: string): Promise<void> {
     try {
         const data = JSON.stringify({
             new_password1: newPassword1,
@@ -527,7 +527,7 @@ async function resetPassword(newPassword1, newPassword2, uid, _token) {
     }
 }
 
-async function getSelf() {
+async function getSelf(): Promise<SerializedUser> {
     const { backendAPI } = config;
 
     let response = null;
@@ -542,7 +542,7 @@ async function getSelf() {
     return response.data;
 }
 
-async function authorized() {
+async function authorized(): Promise<boolean> {
     try {
         await getSelf();
     } catch (serverError) {
@@ -561,7 +561,13 @@ async function authorized() {
     return true;
 }
 
-async function healthCheck(maxRetries, checkPeriod, requestTimeout, progressCallback, attempt = 0) {
+async function healthCheck(
+    maxRetries: number,
+    checkPeriod: number,
+    requestTimeout: number,
+    progressCallback: (status: string) => void,
+    attempt = 0,
+): Promise<void> {
     const { backendAPI } = config;
     const url = `${backendAPI}/server/health/?format=json`;
 
@@ -603,7 +609,7 @@ async function healthCheck(maxRetries, checkPeriod, requestTimeout, progressCall
         });
 }
 
-async function serverRequest(url, data) {
+async function serverRequest(url: string, data: object): Promise<void> {
     try {
         return (
             await Axios({
@@ -616,7 +622,7 @@ async function serverRequest(url, data) {
     }
 }
 
-async function searchProjectNames(search, limit) {
+async function searchProjectNames(search: string, limit: number): Promise<SerializedProject[] & { count: number }> {
     const { backendAPI, proxy } = config;
 
     let response = null;
@@ -638,35 +644,7 @@ async function searchProjectNames(search, limit) {
     return response.data.results;
 }
 
-interface RawProjectData {
-    assignee: RawUserData | null;
-    id: number;
-    bug_tracker: string;
-    created_date: string;
-    updated_date: string;
-    dimension: DimensionType;
-    name: string;
-    organization: number | null;
-    owner: RawUserData;
-    source_storage: { id: number; location: 'local' | 'cloud'; cloud_storage_id: null };
-    target_storage: { id: number; location: 'local' | 'cloud'; cloud_storage_id: null };
-    url: string;
-    tasks: { count: number; url: string; };
-    task_subsets: string[];
-    status: ProjectStatus;
-}
-
-interface ProjectsFilter {
-    page?: number;
-    id?: number;
-    sort?: string;
-    search?: string;
-    filter?: string;
-}
-
-type TasksFilter = ProjectsFilter & { ordering?: string; }; // TODO: Need to clarify how "ordering" is used
-
-async function getProjects(filter: ProjectsFilter = {}): Promise<RawProjectData[] & { count: number }> {
+async function getProjects(filter: ProjectsFilter = {}): Promise<SerializedProject[] & { count: number }> {
     const { backendAPI, proxy } = config;
 
     let response = null;
@@ -679,7 +657,7 @@ async function getProjects(filter: ProjectsFilter = {}): Promise<RawProjectData[
             Object.defineProperty(results, 'count', {
                 value: 1,
             });
-            return results as RawProjectData[] & { count: number };
+            return results as SerializedProject[] & { count: number };
         }
 
         response = await Axios.get(`${backendAPI}/projects`, {
@@ -697,7 +675,7 @@ async function getProjects(filter: ProjectsFilter = {}): Promise<RawProjectData[
     return response.data.results;
 }
 
-async function saveProject(id, projectData) {
+async function saveProject(id: number, projectData: Partial<SerializedProject>): Promise<void> {
     const { backendAPI } = config;
 
     try {
@@ -712,7 +690,7 @@ async function saveProject(id, projectData) {
     }
 }
 
-async function deleteProject(id) {
+async function deleteProject(id: number): Promise<void> {
     const { backendAPI } = config;
 
     try {
@@ -724,7 +702,7 @@ async function deleteProject(id) {
     }
 }
 
-async function createProject(projectSpec) {
+async function createProject(projectSpec: SerializedProject): Promise<SerializedProject> {
     const { backendAPI } = config;
 
     try {
@@ -740,51 +718,7 @@ async function createProject(projectSpec) {
     }
 }
 
-interface RawUserData {
-    url: string;
-    id: number;
-    username: string;
-    first_name: string;
-    last_name: string;
-    email?: string;
-    groups?: ('user' | 'business' | 'admin')[];
-    is_staff?: boolean;
-    is_superuser?: boolean;
-    is_active?: boolean;
-    last_login?: string;
-    date_joined?: string;
-}
-
-interface RawTaskData {
-    assignee: RawUserData | null;
-    bug_tracker: string;
-    created_date: string;
-    data: number;
-    data_chunk_size: number | null;
-    data_compressed_chunk_type: 'imageset' | 'video';
-    data_original_chunk_type: 'imageset' | 'video';
-    dimension: DimensionType;
-    id: number;
-    image_quality: number;
-    jobs: { count: 1; completed: 0; url: string; };
-    labels: { count: number; url: string; };
-    mode: 'annotation' | 'interpolation' | '';
-    name: string;
-    organization: number | null;
-    overlap: number | null;
-    owner: RawUserData;
-    project_id: number | null;
-    segment_size: number;
-    size: number;
-    source_storage: { id: number; location: 'local' | 'cloud'; cloud_storage_id: null };
-    target_storage: { id: number; location: 'local' | 'cloud'; cloud_storage_id: null };
-    status: TaskStatus;
-    subset: string;
-    updated_date: string;
-    url: string;
-}
-
-async function getTasks(filter: TasksFilter = {}): Promise<RawTaskData[] & { count: number }> {
+async function getTasks(filter: TasksFilter = {}): Promise<SerializedTask[] & { count: number }> {
     const { backendAPI } = config;
 
     let response = null;
@@ -797,7 +731,7 @@ async function getTasks(filter: TasksFilter = {}): Promise<RawTaskData[] & { cou
             Object.defineProperty(results, 'count', {
                 value: 1,
             });
-            return results as RawTaskData[] & { count: number };
+            return results as SerializedTask[] & { count: number };
         }
 
         response = await Axios.get(`${backendAPI}/tasks`, {
@@ -815,7 +749,7 @@ async function getTasks(filter: TasksFilter = {}): Promise<RawTaskData[] & { cou
     return response.data.results;
 }
 
-async function saveTask(id, taskData) {
+async function saveTask(id: number, taskData: SerializedTask): Promise<SerializedTask> {
     const { backendAPI } = config;
 
     let response = null;
@@ -833,7 +767,7 @@ async function saveTask(id, taskData) {
     return response.data;
 }
 
-async function deleteTask(id, organizationID = null) {
+async function deleteTask(id: number, organizationID: string | null = null): Promise<void> {
     const { backendAPI } = config;
 
     try {
@@ -852,7 +786,7 @@ async function deleteTask(id, organizationID = null) {
 async function getLabels(filter: {
     task_id?: number,
     project_id?: number,
-}): Promise<{ results: RawLabel[] }> {
+}): Promise<{ results: SerializedLabel[] }> {
     const { backendAPI } = config;
     return fetchAll(`${backendAPI}/labels`, {
         ...filter,
@@ -860,7 +794,7 @@ async function getLabels(filter: {
     });
 }
 
-function exportDataset(instanceType) {
+function exportDataset(instanceType: 'projects' | 'jobs' | 'tasks') {
     return async function (
         id: number,
         format: string,
