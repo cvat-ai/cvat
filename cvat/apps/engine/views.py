@@ -1880,8 +1880,9 @@ class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     list=extend_schema(
         summary='Method returns a paginated list of labels',
         parameters=[
-            # The parameter is implemented differently from other filters
-            OpenApiParameter('job_id', description='A simple equality filter for job id')
+            # These filters are implemented differently from others
+            OpenApiParameter('job_id', description='A simple equality filter for job id'),
+            OpenApiParameter('task_id', description='A simple equality filter for task id'),
         ],
         responses={
             '200': LabelSerializer(many=True),
@@ -1912,15 +1913,16 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         'project__organization'
     ).all()
 
-    iam_organization_field = 'task__organization'
+    # NOTE: This filter works incorrectly for this view
+    # it requires task__organization OR project__organization check.
+    # Thus, we rely on permission-based filtering
+    iam_organization_field = None
+
     search_fields = ('name', 'parent')
-    filter_fields = list(search_fields) + [
-        'id', 'task_id', 'project_id', 'type', 'color', 'parent_id'
-    ]
+    filter_fields = list(search_fields) + ['id', 'project_id', 'type', 'color', 'parent_id']
     simple_filters = list(set(filter_fields) - {'id'})
     ordering_fields = list(filter_fields)
     lookup_fields = {
-        'task_id': 'task',
         'project_id': 'project',
         'parent': 'parent__name',
     }
@@ -1940,6 +1942,17 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 job = Job.objects.get(id=job_id)
                 self.check_object_permissions(self.request, job)
                 queryset = job.get_labels()
+            elif task_id := self.request.GET.get('task_id', None):
+                # NOTE: This filter is too complex to be implemented by other means
+                # It requires the following filter query:
+                # (
+                #  project__task__id = task_id
+                #  OR
+                #  task_id = task_id
+                # )
+                task = Task.objects.get(id=task_id)
+                self.check_object_permissions(self.request, task)
+                queryset = task.get_labels()
             else:
                 queryset = super().get_queryset()
 

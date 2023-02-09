@@ -1389,6 +1389,10 @@ class LabelPermission(OpenPolicyAgentPermission):
                     permissions.append(JobPermission.create_base_perm(
                         request, view, scope=JobPermission.Scopes.VIEW, obj=obj,
                     ))
+                elif scope == Scopes.LIST and isinstance(obj, Task):
+                    permissions.append(TaskPermission.create_base_perm(
+                        request, view, scope=JobPermission.Scopes.VIEW, obj=obj,
+                    ))
                 else:
                     permissions.append(cls.create_base_perm(request, view, scope, obj))
 
