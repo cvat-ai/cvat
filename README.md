@@ -2,8 +2,6 @@
 
 # Computer Vision Annotation Tool (CVAT)
 
-<a href="https://www.producthunt.com/posts/cvat-computer-vision-annotation-tool?utm_source=badge-featured&utm_medium=badge&utm_souce=badge-cvat&#0045;computer&#0045;vision&#0045;annotation&#0045;tool" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=353415&theme=light" alt="CVAT&#0032;–&#0032;Computer&#0032;Vision&#0032;Annotation&#0032;Tool - The&#0032;open&#0032;data&#0032;annotation&#0032;platform&#0032;for&#0032;AI | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a>
-
 [![CI][ci-img]][ci-url]
 [![Gitter chat][gitter-img]][gitter-url]
 [![Discord][discord-img]][discord-url]
@@ -18,14 +16,11 @@ companies around the world. Our mission is to help developers, companies, and
 organizations around the world to solve real problems using the Data-centric
 AI approach.
 
-CVAT is free and open-source.
+Start using CVAT online: [cvat.ai](https://cvat.ai). You can use it for free, or [subscribe](https://www.cvat.ai/pricing/cloud) to get unlimited data, organizations, autoannotations, and [Roboflow and HuggingFace integration](https://www.cvat.ai/post/integrating-hugging-face-and-roboflow-models).
 
-**A new repo**: CVAT core team moved the active development of the tool
-to this new repository.
-
-Start using CVAT online for free: [cvat.ai](https://cvat.ai).
-Or set it up as a self-hosted solution:
+Or set CVAT up as a self-hosted solution:
 [Self-hosted Installation Guide](https://opencv.github.io/cvat/docs/administration/basics/installation/).
+We provide [Enterprise support](https://www.cvat.ai/pricing/on-prem) for self-hosted installations with premuim features: SSO, LDAP, Roboflow and HuggingFace integrations, and advanced analytics (coming soon). We also do trainings and a dedicated support with 24 hour SLA.
 
 ![CVAT screencast](site/content/en/images/cvat-ai-screencast.gif)
 
