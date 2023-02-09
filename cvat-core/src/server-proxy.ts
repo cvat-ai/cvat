@@ -5,11 +5,12 @@
 
 import FormData from 'form-data';
 import store from 'store';
-import Axios, { AxiosResponse } from 'axios';
+import Axios, { AxiosError, AxiosResponse } from 'axios';
 import * as tus from 'tus-js-client';
 import {
     SerializedLabel, SerializedAnnotationFormats, ProjectsFilter,
     SerializedProject, SerializedTask, TasksFilter, SerializedUser,
+    SerializedAbout, SerializedShare, SerializedException, SerializedUserAgreement, SerializedRegister,
 } from 'server-response-types';
 import { Storage } from './storage';
 import { StorageLocation, WebhookSourceType } from './enums';
@@ -133,7 +134,7 @@ function fetchAll(url, filter = {}): Promise<any> {
     });
 }
 
-async function chunkUpload(file, uploadConfig) {
+async function chunkUpload(file: File, uploadConfig) {
     const params = enableOrganization();
     const {
         endpoint, chunkSize, totalSize, onUpdate, metadata,
@@ -182,7 +183,7 @@ async function chunkUpload(file, uploadConfig) {
     });
 }
 
-function generateError(errorData) {
+function generateError(errorData: AxiosError<{ message?: string }>): ServerError {
     if (errorData.response) {
         if (errorData.response.data?.message) {
             return new ServerError(errorData.response.data?.message, errorData.response.status);
@@ -240,11 +241,11 @@ class WorkerWrappedAxios {
             }
         };
 
-        function getRequestId() {
+        function getRequestId(): number {
             return requestId++;
         }
 
-        async function get(url, requestConfig) {
+        async function get(url: string, requestConfig) {
             return new Promise((resolve, reject) => {
                 const newRequestId = getRequestId();
                 requests[newRequestId] = {
@@ -297,7 +298,7 @@ if (token) {
     Axios.defaults.headers.common.Authorization = `Token ${token}`;
 }
 
-async function about() {
+async function about(): Promise<SerializedAbout> {
     const { backendAPI } = config;
 
     let response = null;
@@ -310,7 +311,7 @@ async function about() {
     return response.data;
 }
 
-async function share(directoryArg) {
+async function share(directoryArg: string): Promise<SerializedShare[]> {
     const { backendAPI } = config;
 
     let response = null;
@@ -325,7 +326,7 @@ async function share(directoryArg) {
     return response.data;
 }
 
-async function exception(exceptionObject) {
+async function exception(exceptionObject: SerializedException): Promise<void> {
     const { backendAPI } = config;
 
     try {
@@ -352,7 +353,7 @@ async function formats(): Promise<SerializedAnnotationFormats> {
     return response.data;
 }
 
-async function userAgreements() {
+async function userAgreements(): Promise<SerializedUserAgreement[]> {
     const { backendAPI } = config;
     let response = null;
     try {
@@ -370,7 +371,14 @@ async function userAgreements() {
     }
 }
 
-async function register(username, firstName, lastName, email, password, confirmations) {
+async function register(
+    username: string,
+    firstName: string,
+    lastName: string,
+    email: string,
+    password: string,
+    confirmations: Record<string, string>,
+): Promise<SerializedRegister> {
     let response = null;
     try {
         const data = JSON.stringify({
@@ -394,7 +402,7 @@ async function register(username, firstName, lastName, email, password, confirma
     return response.data;
 }
 
-async function login(credential, password) {
+async function login(credential: string, password: string): Promise<void> {
     const authenticationData = [
         `${encodeURIComponent(isEmail(credential) ? 'email' : 'username')}=${encodeURIComponent(credential)}`,
         `${encodeURIComponent('password')}=${encodeURIComponent(password)}`,
@@ -689,7 +697,6 @@ async function createProject(projectSpec: SerializedProject): Promise<Serialized
 
 async function getTasks(filter: TasksFilter = {}): Promise<SerializedTask[] & { count: number }> {
     const { backendAPI } = config;
-
     let response = null;
     try {
         if ('id' in filter) {

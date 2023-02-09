@@ -2,7 +2,10 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { DimensionType, ProjectStatus, TaskStatus } from 'enums';
+import {
+    DimensionType, ProjectStatus,
+    ShareFileType, TaskStatus,
+} from 'enums';
 import { SerializedModel } from 'core-types';
 
 export interface SerializedAnnotationImporter {
@@ -118,4 +121,48 @@ export interface SerializedLabel {
     has_parent?: boolean;
     deleted?: boolean;
     attributes: SerializedAttribute[];
+}
+
+export interface SerializedAbout {
+    description: string;
+    name: string;
+    version: string;
+}
+
+export interface SerializedShare {
+    name: string;
+    type: ShareFileType;
+    mime_type: string;
+}
+
+export interface SerializedException {
+    client: string;
+    client_id: string;
+    column: number;
+    filename: string;
+    is_active: boolean;
+    line: number;
+    message: string;
+    name: string;
+    stack: string;
+    system: string;
+    time: string;
+    version: string;
+}
+
+export interface SerializedUserAgreement {
+    name: string;
+    required: boolean;
+    textPrefix: string;
+    url: string;
+    urlDisplayText: string;
+    value: boolean;
+}
+
+export interface SerializedRegister {
+    email: string;
+    email_verification_required: boolean;
+    first_name: string;
+    last_name: string;
+    username: string;
 }
