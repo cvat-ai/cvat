@@ -102,7 +102,7 @@ export class FieldUpdateTrigger {
         this.#updatedFlags[name] = true;
     }
 
-    getUpdated(data: Record<string, unknown>, propMap: Record<string, string> = {}): Record<string, unknown> {
+    getUpdated(data: object, propMap: Record<string, string> = {}): Record<string, unknown> {
         const result = {};
         for (const updatedField of Object.keys(this.#updatedFlags)) {
             result[propMap[updatedField] || updatedField] = data[updatedField];

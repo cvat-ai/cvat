@@ -22,7 +22,7 @@ export default function implementProject(projectClass) {
                 projectData.assignee_id = projectData.assignee_id.id;
             }
 
-            await Promise.all(projectData.labels.map((label: Label): Promise<unknown> => {
+            await Promise.all((projectData.labels || []).map((label: Label): Promise<unknown> => {
                 if (label.deleted) {
                     return serverProxy.labels.delete(label.id);
                 }
