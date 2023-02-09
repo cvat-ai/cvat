@@ -9,7 +9,7 @@ import { checkObjectType, clamp } from './common';
 import { DataError, ArgumentError, ScriptingError } from './exceptions';
 import { Label } from './labels';
 import {
-    colors, Source, ShapeType, ObjectType, HistoryActions,
+    colors, Source, ShapeType, ObjectType, HistoryActions, DimensionType,
 } from './enums';
 import AnnotationHistory from './annotations-history';
 import {
@@ -41,6 +41,7 @@ export interface BasicInjection {
     groupColors: Record<number, string>;
     parentID?: number;
     readOnlyFields?: string[];
+    dimension: DimensionType;
     nextClientID: () => number;
     getMasksOnFrame: (frame: number) => MaskShape[];
 }
@@ -52,11 +53,12 @@ type AnnotationInjection = BasicInjection & {
 
 class Annotation {
     public clientID: number;
-    protected taskLabels: Label[];
+    protected taskLabels: Record<number, Label>;
     protected history: any;
     protected groupColors: Record<number, string>;
     public serverID: number | null;
     protected parentID: number | null;
+    protected dimension: DimensionType;
     public group: number;
     public label: Label;
     public frame: number;
@@ -79,6 +81,7 @@ class Annotation {
         this.clientID = clientID;
         this.serverID = data.id || null;
         this.parentID = injection.parentID || null;
+        this.dimension = injection.dimension;
         this.group = data.group;
         this.label = this.taskLabels[data.label_id];
         this.frame = data.frame;
@@ -2719,14 +2722,48 @@ export class CuboidTrack extends Track {
 
     protected interpolatePosition(leftPosition, rightPosition, offset): InterpolatedPosition {
         const positionOffset = leftPosition.points.map((point, index) => rightPosition.points[index] - point);
-
-        return {
+        const result = {
             points: leftPosition.points.map((point, index) => point + positionOffset[index] * offset),
             rotation: leftPosition.rotation,
             occluded: leftPosition.occluded,
             outside: leftPosition.outside,
             zOrder: leftPosition.zOrder,
         };
+
+        if (this.dimension === DimensionType.DIMENSION_3D) {
+            // for 3D cuboids angle for different axies stored as a part of points array
+            // we need to apply interpolation using the shortest arc for each angle
+
+            const [
+                angleX, angleY, angleZ,
+            ] = leftPosition.points.slice(3, 6).concat(rightPosition.points.slice(3, 6))
+                .map((_angle: number) => {
+                    if (_angle < 0) {
+                        return _angle + Math.PI * 2;
+                    }
+
+                    return _angle;
+                })
+                .map((_angle) => _angle * (180 / Math.PI))
+                .reduce((acc: number[], angleBefore: number, index: number, arr: number[]) => {
+                    if (index < 3) {
+                        const angleAfter = arr[index + 3];
+                        let angle = (angleBefore + findAngleDiff(angleAfter, angleBefore) * offset) * (Math.PI / 180);
+                        if (angle > Math.PI) {
+                            angle -= Math.PI * 2;
+                        }
+                        acc.push(angle);
+                    }
+
+                    return acc;
+                }, []);
+
+            result.points[3] = angleX;
+            result.points[4] = angleY;
+            result.points[5] = angleZ;
+        }
+
+        return result;
     }
 }
 

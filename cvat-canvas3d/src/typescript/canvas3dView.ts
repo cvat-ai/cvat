@@ -17,7 +17,7 @@ import {
     createResizeHelper, removeResizeHelper,
     createCuboidEdges, removeCuboidEdges, CuboidModel, makeCornerPointsMatrix,
 } from './cuboid';
-import { ObjectState } from '.';
+import { ObjectState, ObjectType } from '.';
 
 export interface Canvas3dView {
     html(): ViewsDOM;
@@ -108,6 +108,9 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     private isPerspectiveBeingDragged: boolean;
     private activatedElementID: number | null;
     private isCtrlDown: boolean;
+    private stateToBeSplitted: ObjectState | null;
+    private statesToBeGrouped: ObjectState[];
+    private statesToBeMerged: ObjectState[];
     private sceneBBox: THREE.Box3;
     private drawnObjects: Record<number, {
         data: DrawnObjectData;
@@ -159,6 +162,9 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         this.clock = new THREE.Clock();
         this.speed = CONST.MOVEMENT_FACTOR;
         this.cube = new CuboidModel('line', '#ffffff');
+        this.stateToBeSplitted = null;
+        this.statesToBeGrouped = [];
+        this.statesToBeMerged = [];
         this.isPerspectiveBeingDragged = false;
         this.activatedElementID = null;
         this.drawnObjects = {};
@@ -308,6 +314,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                         detail: {
                             state: {
                                 shapeType: 'cuboid',
+                                objectType: initState.objectType,
                                 frame: this.model.data.imageID,
                                 points,
                                 attributes: { ...initState.attributes },
@@ -359,7 +366,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
         canvasPerspectiveView.addEventListener('click', (e: MouseEvent): void => {
             e.preventDefault();
-            const selectionIsBlocked = ![Mode.GROUP, Mode.IDLE].includes(this.mode) ||
+            const selectionIsBlocked = ![Mode.GROUP, Mode.MERGE, Mode.SPLIT, Mode.IDLE].includes(this.mode) ||
                 !this.views.perspective.rayCaster ||
                 this.isPerspectiveBeingDragged;
 
@@ -369,20 +376,34 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             const intersectionClientID = +(intersects[0]?.object?.name) || null;
             const objectState = Number.isInteger(intersectionClientID) ? this.model.objects
                 .find((state: ObjectState) => state.clientID === intersectionClientID) : null;
-            if (
-                objectState &&
-                this.mode === Mode.GROUP &&
-                this.model.data.groupData.grouped
-            ) {
-                const objectStateIdx = this.model.data.groupData.grouped
+
+            const handleClick = (targetList: ObjectState[]): void => {
+                const objectStateIdx = targetList
                     .findIndex((state: ObjectState) => state.clientID === intersectionClientID);
                 if (objectStateIdx !== -1) {
-                    this.model.data.groupData.grouped.splice(objectStateIdx, 1);
+                    targetList.splice(objectStateIdx, 1);
                 } else {
-                    this.model.data.groupData.grouped.push(objectState);
+                    targetList.push(objectState);
                 }
 
                 this.drawnObjects[intersectionClientID].cuboid.setColor(this.receiveShapeColor(objectState));
+            };
+
+            if (objectState && this.mode === Mode.GROUP) {
+                handleClick(this.statesToBeGrouped);
+            } else if (objectState && this.mode === Mode.MERGE) {
+                const [latest] = this.statesToBeMerged;
+                const drawnStates = Object.keys(this.drawnObjects).map((key: string): number => +key);
+                if (!latest ||
+                    (latest &&
+                        objectState.label.id === latest.label.id &&
+                        objectState.shapeType === latest.shapeType &&
+                        !this.statesToBeMerged.some((state) => drawnStates.includes(state.clientID)))
+                ) {
+                    handleClick(this.statesToBeMerged);
+                }
+            } else if (objectState?.objectType === ObjectType.TRACK && this.mode === Mode.SPLIT) {
+                this.onSplitDone(objectState);
             } else if (this.mode === Mode.IDLE) {
                 const intersectedClientID = intersects[0]?.object?.name || null;
                 if (this.model.data.activeElement.clientID !== intersectedClientID) {
@@ -452,6 +473,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                                     group: initState.group?.id || null,
                                     label: initState.label,
                                     shapeType: initState.shapeType,
+                                    objectType: initState.objectType,
                                 } : {}),
                             },
                             duration: 0,
@@ -826,22 +848,73 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             );
         }
 
-        this.controller.group({
-            enabled: false,
-            grouped: [],
-        });
+        this.mode = Mode.IDLE;
+    }
+
+    private onMergeDone(objects: any[] | null, duration?: number): void {
+        if (objects) {
+            const event: CustomEvent = new CustomEvent('canvas.merged', {
+                bubbles: false,
+                cancelable: true,
+                detail: {
+                    duration,
+                    states: objects,
+                },
+            });
+
+            this.dispatchEvent(event);
+        } else {
+            const event: CustomEvent = new CustomEvent('canvas.canceled', {
+                bubbles: false,
+                cancelable: true,
+            });
+
+            this.dispatchEvent(event);
+        }
 
         this.mode = Mode.IDLE;
     }
 
+    private onSplitDone(object: ObjectState): void {
+        if (object) {
+            const event: CustomEvent = new CustomEvent('canvas.splitted', {
+                bubbles: false,
+                cancelable: true,
+                detail: {
+                    state: object,
+                    frame: object.frame,
+                },
+            });
+
+            this.dispatchEvent(event);
+        } else {
+            const event: CustomEvent = new CustomEvent('canvas.canceled', {
+                bubbles: false,
+                cancelable: true,
+            });
+
+            this.dispatchEvent(event);
+        }
+
+        this.controller.split({ enabled: false });
+        this.mode = Mode.IDLE;
+    }
+
     private receiveShapeColor(state: ObjectState | DrawnObjectData): string {
+        const includedInto = (states: ObjectState[]): boolean => states
+            .some((_state: ObjectState): boolean => _state.clientID === state.clientID);
         const { colorBy } = this.model.data.shapeProperties;
 
-        if (this.mode === Mode.GROUP) {
-            const { grouped } = this.model.data.groupData;
-            if (grouped.some((_state: ObjectState): boolean => _state.clientID === state.clientID)) {
-                return CONST.GROUPING_COLOR;
-            }
+        if (this.mode === Mode.GROUP && includedInto(this.statesToBeGrouped)) {
+            return CONST.GROUPING_COLOR;
+        }
+
+        if (this.mode === Mode.MERGE && includedInto(this.statesToBeMerged)) {
+            return CONST.MERGING_COLOR;
+        }
+
+        if (this.mode === Mode.SPLIT && this.stateToBeSplitted?.clientID === state.clientID) {
+            return CONST.SPLITTING_COLOR;
         }
 
         if (state instanceof ObjectState) {
@@ -1027,8 +1100,18 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     }
 
     public notify(model: Canvas3dModel & Master, reason: UpdateReasons): void {
+        const resetColor = (list: ObjectState[]): void => {
+            list.forEach((state: ObjectState) => {
+                const { clientID } = state;
+                const { cuboid } = this.drawnObjects[clientID] || {};
+                if (cuboid) {
+                    cuboid.setColor(this.receiveShapeColor(state));
+                }
+            });
+        };
+
         if (reason === UpdateReasons.IMAGE_CHANGED) {
-            model.data.groupData.grouped = [];
+            this.statesToBeGrouped = [];
             this.clearScene();
 
             const onPCDLoadFailed = (): void => {
@@ -1182,30 +1265,53 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 }
             }
 
+            if (this.mode === Mode.MERGE) {
+                const { statesToBeMerged } = this;
+                this.statesToBeMerged = [];
+                resetColor(statesToBeMerged);
+                this.model.merge({ enabled: false });
+            }
+
             if (this.mode === Mode.GROUP) {
-                const { grouped } = this.model.groupData;
-                this.model.group({ enabled: false, grouped: [] });
-                grouped.forEach((state: ObjectState) => {
-                    const { clientID } = state;
-                    const { cuboid } = this.drawnObjects[clientID] || {};
-                    if (cuboid) {
-                        cuboid.setColor(this.receiveShapeColor(state));
-                    }
-                });
+                const { statesToBeGrouped } = this;
+                this.statesToBeGrouped = [];
+                resetColor(statesToBeGrouped);
+                this.model.group({ enabled: false });
+            }
+
+            if (this.mode === Mode.SPLIT) {
+                if (this.stateToBeSplitted) {
+                    const state = this.stateToBeSplitted;
+                    this.stateToBeSplitted = null;
+                    this.drawnObjects[state.clientID].cuboid.setColor(this.receiveShapeColor(state));
+                }
+                this.model.split({ enabled: false });
             }
 
             this.mode = Mode.IDLE;
-            model.mode = Mode.IDLE;
-
             this.dispatchEvent(new CustomEvent('canvas.canceled'));
         } else if (reason === UpdateReasons.FITTED_CANVAS) {
             this.dispatchEvent(new CustomEvent('canvas.fit'));
         } else if (reason === UpdateReasons.GROUP) {
-            if (!model.groupData.enabled) {
-                this.onGroupDone(model.data.groupData.grouped);
-            } else {
+            if (!model.groupData.enabled && this.statesToBeGrouped.length) {
+                this.onGroupDone(this.statesToBeGrouped);
+                resetColor(this.statesToBeGrouped);
+            } else if (model.groupData.enabled) {
                 this.deactivateObject();
-                model.data.groupData.grouped = [];
+                this.statesToBeGrouped = [];
+                model.data.activeElement.clientID = null;
+            }
+        } else if (reason === UpdateReasons.SPLIT) {
+            this.deactivateObject();
+            this.stateToBeSplitted = null;
+            model.data.activeElement.clientID = null;
+        } else if (reason === UpdateReasons.MERGE) {
+            if (!model.mergeData.enabled && this.statesToBeMerged.length) {
+                this.onMergeDone(this.statesToBeMerged);
+                resetColor(this.statesToBeMerged);
+            } else if (model.mergeData.enabled) {
+                this.deactivateObject();
+                this.statesToBeMerged = [];
                 model.data.activeElement.clientID = null;
             }
         }
@@ -1475,24 +1581,37 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 const { x, y, z } = intersection.point;
                 object.position.set(x, y, z);
             }
-        } else if (this.mode === Mode.IDLE && !this.isPerspectiveBeingDragged && !this.isCtrlDown) {
+        } else {
             const { renderer } = this.views.perspective.rayCaster;
             const intersects = renderer.intersectObjects(this.getAllVisibleCuboids(), false);
-            if (intersects.length !== 0) {
+            if (intersects.length !== 0 && !this.isPerspectiveBeingDragged) {
                 const clientID = intersects[0].object.name;
-                if (this.model.data.activeElement.clientID !== clientID) {
-                    const object = this.views.perspective.scene.getObjectByName(clientID);
-                    if (object === undefined) return;
-                    this.dispatchEvent(
-                        new CustomEvent('canvas.selected', {
-                            bubbles: false,
-                            cancelable: true,
-                            detail: {
-                                clientID: Number(intersects[0].object.name),
-                            },
-                        }),
-                    );
+                const castedClientID = +clientID;
+
+                if (this.mode === Mode.SPLIT) {
+                    const objectState = Number.isInteger(castedClientID) ? this.model.objects
+                        .find((state: ObjectState) => state.clientID === castedClientID) : null;
+                    this.stateToBeSplitted = objectState;
+                    this.drawnObjects[castedClientID].cuboid.setColor(this.receiveShapeColor(objectState));
+                } else if (this.mode === Mode.IDLE && !this.isCtrlDown) {
+                    if (this.model.data.activeElement.clientID !== clientID) {
+                        const object = this.views.perspective.scene.getObjectByName(clientID);
+                        if (object === undefined) return;
+                        this.dispatchEvent(
+                            new CustomEvent('canvas.selected', {
+                                bubbles: false,
+                                cancelable: true,
+                                detail: {
+                                    clientID: castedClientID,
+                                },
+                            }),
+                        );
+                    }
                 }
+            } else if (this.mode === Mode.SPLIT && this.stateToBeSplitted) {
+                const state = this.stateToBeSplitted;
+                this.stateToBeSplitted = null;
+                this.drawnObjects[state.clientID].cuboid.setColor(this.receiveShapeColor(state));
             }
         }
     };

@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -139,7 +140,7 @@ function StatisticsModalComponent(props: StateToProps & DispatchToProps): JSX.El
     });
 
     const makeShapesTracksTitle = (title: string): JSX.Element => (
-        <CVATTooltip title={is2D && !(title.toLowerCase() === 'mask') ? 'Shapes / Tracks' : 'Shapes'}>
+        <CVATTooltip title='Shapes / Tracks'>
             <Text strong style={{ marginRight: 5 }}>
                 {title}
             </Text>

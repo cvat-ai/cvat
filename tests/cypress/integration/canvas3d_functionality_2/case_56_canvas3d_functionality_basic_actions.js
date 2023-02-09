@@ -137,7 +137,7 @@ context('Canvas 3D functionality. Basic actions.', () => {
             cy.get('.cvat-canvas-controls-sidebar')
                 .find('[role="img"]')
                 .then(($controlButtons) => {
-                    expect($controlButtons.length).to.be.equal(4);
+                    expect($controlButtons.length).to.be.equal(6);
                 });
             cy.get('.cvat-canvas-controls-sidebar')
                 .should('exist')
