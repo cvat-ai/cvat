@@ -124,6 +124,7 @@ services:
     environment:
       CVAT_REDIS_HOST: 'cvat_redis'
       CVAT_POSTGRES_HOST: 'cvat_db'
+      CLICKHOUSE_HOST: clickhouse
       no_proxy: elasticsearch,kibana,logstash,nuclio,opa,${no_proxy:-}
       NUMPROCS: 2
     command: -c supervisord/worker.export.conf

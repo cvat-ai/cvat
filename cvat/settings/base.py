@@ -19,6 +19,7 @@ from enum import Enum
 import os
 import sys
 import fcntl
+import rq
 import shutil
 import subprocess
 import mimetypes
@@ -427,6 +428,9 @@ IAM_OPA_BUNDLE_PATH = os.path.join(STATIC_ROOT, 'opa', 'bundle.tar.gz')
 os.makedirs(Path(IAM_OPA_BUNDLE_PATH).parent, exist_ok=True)
 
 
+# logging is known to be unreliable with RQ when using async transports
+vector_log_handler = 'SynchronousLogstashHandler' if rq.get_current_job() else 'AsynchronousLogstashHandler'
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -454,7 +458,7 @@ LOGGING = {
         },
         'vector': {
             'level': 'INFO',
-            'class': 'logstash_async.handler.AsynchronousLogstashHandler',
+            'class': f'logstash_async.handler.{vector_log_handler}',
             'formatter': 'vector',
             'transport': 'logstash_async.transport.HttpTransport',
             'ssl_enable': False,
