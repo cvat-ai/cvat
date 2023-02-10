@@ -305,6 +305,20 @@ function buildDuplicatedAPI(prototype) {
 export class Session {}
 
 export class Job extends Session {
+    public assignee: User;
+    public stage: JobStage;
+    public state: JobState;
+    public readonly id: number;
+    public readonly startFrame: number;
+    public readonly stopFrame: number;
+    public readonly projectId: number | null;
+    public readonly taskId: number;
+    public readonly dimension: DimensionType;
+    public readonly dataCompressedChunkType: ChunkType;
+    public readonly bugTracker: string | null;
+    public readonly mode: TaskMode;
+    public readonly labels: Label[];
+
     public annotations: {
         get: CallableFunction;
         put: CallableFunction;
@@ -358,7 +372,7 @@ export class Job extends Session {
             stop_frame: undefined,
             project_id: null,
             task_id: undefined,
-            labels: undefined,
+            labels: [],
             dimension: undefined,
             data_compressed_chunk_type: undefined,
             data_chunk_size: undefined,
@@ -391,8 +405,6 @@ export class Job extends Session {
 
                 return new Label(labelData);
             }).filter((label) => !label.hasParent);
-        } else {
-            throw new Error('Job labels must be an array');
         }
 
         Object.defineProperties(
@@ -475,15 +487,6 @@ export class Job extends Session {
                 },
                 dataChunkSize: {
                     get: () => data.data_chunk_size,
-                    set: (chunkSize) => {
-                        if (typeof chunkSize !== 'number' || chunkSize < 1) {
-                            throw new ArgumentError(
-                                `Chunk size value must be a positive number. But value ${chunkSize} has been got.`,
-                            );
-                        }
-
-                        data.data_chunk_size = chunkSize;
-                    },
                 },
                 dataChunkType: {
                     get: () => data.data_compressed_chunk_type,

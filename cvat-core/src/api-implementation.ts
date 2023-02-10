@@ -178,9 +178,12 @@ export default function implementAPI(cvat) {
 
         checkExclusiveFields(query, ['jobID', 'taskID', 'filter', 'search'], ['page', 'sort']);
         if ('jobID' in query) {
-            const job = await serverProxy.jobs.get({ id: query.jobID });
+            const { results } = await serverProxy.jobs.get({ id: query.jobID });
+            const [job] = results;
             if (job) {
-                return [new Job(job)];
+                // When request job by ID we also need to add labels to work with them
+                const labels = await serverProxy.labels.get({ job_id: job.id });
+                return [new Job({ ...job, labels: labels.results })];
             }
 
             return [];

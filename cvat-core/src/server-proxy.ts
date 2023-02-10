@@ -10,7 +10,8 @@ import * as tus from 'tus-js-client';
 import {
     SerializedLabel, SerializedAnnotationFormats, ProjectsFilter,
     SerializedProject, SerializedTask, TasksFilter, SerializedUser,
-    SerializedAbout, SerializedShare, SerializedException, SerializedUserAgreement, SerializedRegister,
+    SerializedAbout, SerializedShare, SerializedException, SerializedUserAgreement,
+    SerializedRegister, JobsFilter, SerializedJob,
 } from 'server-response-types';
 import { Storage } from './storage';
 import { StorageLocation, WebhookSourceType } from './enums';
@@ -700,7 +701,7 @@ async function getTasks(filter: TasksFilter = {}): Promise<SerializedTask[] & { 
     return response.data.results;
 }
 
-async function saveTask(id: number, taskData: SerializedTask): Promise<SerializedTask> {
+async function saveTask(id: number, taskData: Partial<SerializedTask>): Promise<SerializedTask> {
     const { backendAPI } = config;
 
     let response = null;
@@ -733,6 +734,7 @@ async function deleteTask(id: number, organizationID: string | null = null): Pro
 }
 
 async function getLabels(filter: {
+    job_id?: number,
     task_id?: number,
     project_id?: number,
 }): Promise<{ results: SerializedLabel[] }> {
@@ -1269,7 +1271,10 @@ async function createTask(taskSpec, taskDataSpec, onUpdate) {
     return createdTask[0];
 }
 
-async function getJobs(filter = {}, aggregate = false) {
+async function getJobs(
+    filter: JobsFilter = {},
+    aggregate = false,
+): Promise<{ results: SerializedJob[], count: number }> {
     const { backendAPI } = config;
     const id = filter.id || null;
 
@@ -1277,21 +1282,25 @@ async function getJobs(filter = {}, aggregate = false) {
     try {
         if (id !== null) {
             response = await Axios.get(`${backendAPI}/jobs/${id}`);
-        } else {
-            if (aggregate) {
-                return await fetchAll(`${backendAPI}/jobs`, {
-                    ...filter,
-                    ...enableOrganization(),
-                });
-            }
-
-            response = await Axios.get(`${backendAPI}/jobs`, {
-                params: {
-                    ...filter,
-                    page_size: 12,
-                },
+            return ({
+                results: [response.data],
+                count: 1,
             });
         }
+
+        if (aggregate) {
+            return await fetchAll(`${backendAPI}/jobs`, {
+                ...filter,
+                ...enableOrganization(),
+            });
+        }
+
+        response = await Axios.get(`${backendAPI}/jobs`, {
+            params: {
+                ...filter,
+                page_size: 12,
+            },
+        });
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -1397,7 +1406,7 @@ async function updateIssue(issueID, data) {
     return response.data;
 }
 
-async function deleteIssue(issueID) {
+async function deleteIssue(issueID: number): Promise<void> {
     const { backendAPI } = config;
 
     try {
@@ -1407,7 +1416,7 @@ async function deleteIssue(issueID) {
     }
 }
 
-async function saveJob(id, jobData) {
+async function saveJob(id: number, jobData: Partial<SerializedJob>): Promise<SerializedJob> {
     const { backendAPI } = config;
 
     let response = null;
