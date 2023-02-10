@@ -20,10 +20,10 @@ context('Tooltip does not interfere with interaction with elements.', () => {
             cy.contains('Shape').invoke('show').trigger('mouseover', 'top').should('have.class', 'ant-tooltip-open');
         });
         it('The radio element was clicked successfully', () => {
-            /*Before the fix, cypress can't click on the radio element
-            due to its covered with the tooltip. After the fix, cypress
-            successfully clicks on the element, but the tooltip does not
-            disappear visually.*/
+            /* Before the fix, cypress can't click on the radio element
+               due to its covered with the tooltip. After the fix, cypress
+               successfully clicks on the element, but the tooltip does not
+               disappear visually. */
             cy.contains('By 4 Points').click();
         });
     });

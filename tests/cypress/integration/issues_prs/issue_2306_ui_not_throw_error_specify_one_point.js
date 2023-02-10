@@ -10,7 +10,7 @@ context('Draw a point shape, specify one point', () => {
     const issueId = '2306';
     const createPointsShape = {
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         pointsMap: [{ x: 500, y: 200 }],
         numberOfPoints: 1,
     };

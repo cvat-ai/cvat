@@ -21,7 +21,7 @@ import {
     ReloadOutlined,
 } from '@ant-design/icons';
 
-import consts from 'consts';
+import config from 'config';
 import { DimensionType, CombinedState } from 'reducers';
 import CanvasWrapperComponent from 'components/annotation-page/canvas/views/canvas2d/canvas-wrapper';
 import CanvasWrapper3DComponent, {
@@ -72,7 +72,8 @@ const fitLayout = (type: DimensionType, layoutConfig: ItemLayout[]): ItemLayout[
     const relatedViews = layoutConfig
         .filter((item: ItemLayout) => item.viewType === ViewType.RELATED_IMAGE);
     const relatedViewsCols = relatedViews.length > 6 ? 2 : 1;
-    const height = Math.floor(consts.CANVAS_WORKSPACE_ROWS / (relatedViews.length / relatedViewsCols));
+    let height = Math.floor(config.CANVAS_WORKSPACE_ROWS / (relatedViews.length / relatedViewsCols));
+    height = Math.min(height, config.CANVAS_WORKSPACE_DEFAULT_CONTEXT_HEIGHT);
     relatedViews.forEach((view: ItemLayout, i: number) => {
         updatedLayout.push({
             ...view,
@@ -83,7 +84,7 @@ const fitLayout = (type: DimensionType, layoutConfig: ItemLayout[]): ItemLayout[
         });
     });
 
-    let widthAvail = consts.CANVAS_WORKSPACE_COLS;
+    let widthAvail = config.CANVAS_WORKSPACE_COLS;
     if (updatedLayout.length > 0) {
         widthAvail -= updatedLayout[0].w * relatedViewsCols;
     }
@@ -96,7 +97,7 @@ const fitLayout = (type: DimensionType, layoutConfig: ItemLayout[]): ItemLayout[
             x: 0,
             y: 0,
             w: widthAvail,
-            h: consts.CANVAS_WORKSPACE_ROWS,
+            h: config.CANVAS_WORKSPACE_ROWS,
         });
     } else {
         const canvas = layoutConfig
@@ -113,25 +114,25 @@ const fitLayout = (type: DimensionType, layoutConfig: ItemLayout[]): ItemLayout[
             x: 0,
             y: 0,
             w: widthAvail,
-            h: consts.CANVAS_WORKSPACE_ROWS - helpfulCanvasViewHeight,
+            h: config.CANVAS_WORKSPACE_ROWS - helpfulCanvasViewHeight,
         }, {
             ...top,
             x: 0,
-            y: consts.CANVAS_WORKSPACE_ROWS,
+            y: config.CANVAS_WORKSPACE_ROWS,
             w: Math.ceil(widthAvail / 3),
             h: helpfulCanvasViewHeight,
         },
         {
             ...side,
             x: Math.ceil(widthAvail / 3),
-            y: consts.CANVAS_WORKSPACE_ROWS,
+            y: config.CANVAS_WORKSPACE_ROWS,
             w: Math.ceil(widthAvail / 3),
             h: helpfulCanvasViewHeight,
         },
         {
             ...front,
             x: Math.ceil(widthAvail / 3) * 2,
-            y: consts.CANVAS_WORKSPACE_ROWS,
+            y: config.CANVAS_WORKSPACE_ROWS,
             w: Math.floor(widthAvail / 3),
             h: helpfulCanvasViewHeight,
         });
@@ -152,8 +153,8 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
             containerHeight = window.innerHeight - container.getBoundingClientRect().bottom;
             // https://github.com/react-grid-layout/react-grid-layout/issues/628#issuecomment-1228453084
             return Math.floor(
-                (containerHeight - consts.CANVAS_WORKSPACE_MARGIN * (consts.CANVAS_WORKSPACE_ROWS)) /
-                consts.CANVAS_WORKSPACE_ROWS,
+                (containerHeight - config.CANVAS_WORKSPACE_MARGIN * (config.CANVAS_WORKSPACE_ROWS)) /
+                config.CANVAS_WORKSPACE_ROWS,
             );
         }
 
@@ -210,16 +211,20 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
         i: typeof (value.viewIndex) !== 'undefined' ? `${value.viewType}_${value.viewIndex}` : `${value.viewType}`,
     }));
 
+    const singleClassName = 'cvat-canvas-grid-root-single';
+    const className = !relatedFiles && children.length <= 1 ?
+        `cvat-canvas-grid-root ${singleClassName}` : 'cvat-canvas-grid-root';
+
     return (
         <Layout.Content>
             { !!rowHeight && (
                 <ReactGridLayout
-                    cols={consts.CANVAS_WORKSPACE_COLS}
-                    maxRows={consts.CANVAS_WORKSPACE_ROWS}
+                    cols={config.CANVAS_WORKSPACE_COLS}
+                    maxRows={config.CANVAS_WORKSPACE_ROWS}
                     style={{ background: canvasBackgroundColor }}
-                    containerPadding={[consts.CANVAS_WORKSPACE_PADDING, consts.CANVAS_WORKSPACE_PADDING]}
-                    margin={[consts.CANVAS_WORKSPACE_MARGIN, consts.CANVAS_WORKSPACE_MARGIN]}
-                    className='cvat-canvas-grid-root'
+                    containerPadding={[config.CANVAS_WORKSPACE_PADDING, config.CANVAS_WORKSPACE_PADDING]}
+                    margin={[config.CANVAS_WORKSPACE_MARGIN, config.CANVAS_WORKSPACE_MARGIN]}
+                    className={className}
                     rowHeight={rowHeight}
                     layout={layout}
                     onLayoutChange={(updatedLayout: RGL.Layout[]) => {

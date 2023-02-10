@@ -1,5 +1,5 @@
 # Copyright (C) 2018-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -111,23 +111,24 @@ INSTALLED_APPS = [
     'django_rq',
     'compressor',
     'django_sendfile',
+    "dj_rest_auth",
+    'dj_rest_auth.registration',
     'dj_pagination',
+    'django_filters',
     'rest_framework',
     'rest_framework.authtoken',
     'drf_spectacular',
-    'dj_rest_auth',
     'django.contrib.sites',
     'allauth',
     'allauth.account',
     'corsheaders',
     'allauth.socialaccount',
     # social providers
+    'allauth.socialaccount.providers.amazon_cognito',
     'allauth.socialaccount.providers.github',
     'allauth.socialaccount.providers.google',
-    'dj_rest_auth.registration',
     'health_check',
     'health_check.db',
-    'health_check.cache',
     'health_check.contrib.migrations',
     'health_check.contrib.psutil',
     'cvat.apps.iam',
@@ -174,10 +175,12 @@ REST_FRAMEWORK = {
         'cvat.apps.engine.pagination.CustomPagination',
     'PAGE_SIZE': 10,
     'DEFAULT_FILTER_BACKENDS': (
+        'cvat.apps.engine.filters.SimpleFilter',
         'cvat.apps.engine.filters.SearchFilter',
         'cvat.apps.engine.filters.OrderingFilter',
         'cvat.apps.engine.filters.JsonLogicFilter',
-        'cvat.apps.iam.filters.OrganizationFilterBackend'),
+        'cvat.apps.iam.filters.OrganizationFilterBackend',
+    ),
 
     'SEARCH_PARAM': 'search',
     # Disable default handling of the 'format' query parameter by REST framework
@@ -241,6 +244,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+
             ],
         },
     },
@@ -260,22 +264,6 @@ IAM_OPA_DATA_URL = f'{IAM_OPA_HOST}/v1/data'
 LOGIN_URL = 'rest_login'
 LOGIN_REDIRECT_URL = '/'
 
-DEFAULT_LIMITS = {
-    "USER_SANDBOX_TASKS": 10,
-    "USER_SANDBOX_PROJECTS": 3,
-    "TASKS_IN_USER_SANDBOX_PROJECT": 5,
-    "USER_OWNED_ORGS": 1,
-    "USER_SANDBOX_CLOUD_STORAGES": 10,
-
-    "ORG_TASKS": 10,
-    "ORG_PROJECTS": 3,
-    "TASKS_IN_ORG_PROJECT": 5,
-    "ORG_CLOUD_STORAGES": 10,
-    "ORG_COMMON_WEBHOOKS": 20,
-
-    "PROJECT_WEBHOOKS": 10,
-}
-
 # ORG settings
 ORG_INVITATION_CONFIRM = 'No'
 
@@ -288,6 +276,7 @@ AUTHENTICATION_BACKENDS = [
 # https://github.com/pennersr/django-allauth
 ACCOUNT_EMAIL_VERIFICATION = 'none'
 ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
+
 # set UI url to redirect after a successful e-mail confirmation
 #changed from '/auth/login' to '/auth/email-confirmation' for email confirmation message
 ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = '/auth/email-confirmation'
@@ -512,7 +501,10 @@ RESTRICTIONS = {
 
 # http://www.grantjenks.com/docs/diskcache/tutorial.html#djangocache
 CACHES = {
-   'default' : {
+   'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    },
+   'media' : {
        'BACKEND' : 'diskcache.DjangoCache',
        'LOCATION' : CACHE_ROOT,
        'TIMEOUT' : None,
@@ -637,6 +629,7 @@ if USE_ALLAUTH_SOCIAL_ACCOUNTS:
     SOCIALACCOUNT_ADAPTER = 'cvat.apps.iam.adapters.SocialAccountAdapterEx'
     SOCIALACCOUNT_GITHUB_ADAPTER = 'cvat.apps.iam.adapters.GitHubAdapter'
     SOCIALACCOUNT_GOOGLE_ADAPTER = 'cvat.apps.iam.adapters.GoogleAdapter'
+    SOCIALACCOUNT_AMAZON_COGNITO_ADAPTER = 'cvat.apps.iam.adapters.AmazonCognitoOAuth2AdapterEx'
     SOCIALACCOUNT_LOGIN_ON_GET = True
     # It's required to define email in the case when a user has a private hidden email.
     # (e.g in github account set keep my email addresses private)
@@ -646,6 +639,7 @@ if USE_ALLAUTH_SOCIAL_ACCOUNTS:
     # custom variable because by default LOGIN_REDIRECT_URL will be used
     SOCIAL_APP_LOGIN_REDIRECT_URL = f'{CVAT_BASE_URL}/auth/login-with-social-app'
 
+    AMAZON_COGNITO_REDIRECT_URI = f'{CVAT_BASE_URL}/api/auth/amazon-cognito/login/callback/'
     GITHUB_CALLBACK_URL = f'{CVAT_BASE_URL}/api/auth/github/login/callback/'
     GOOGLE_CALLBACK_URL = f'{CVAT_BASE_URL}/api/auth/google/login/callback/'
 
@@ -654,6 +648,13 @@ if USE_ALLAUTH_SOCIAL_ACCOUNTS:
 
     SOCIAL_AUTH_GITHUB_CLIENT_ID = os.getenv('SOCIAL_AUTH_GITHUB_CLIENT_ID')
     SOCIAL_AUTH_GITHUB_CLIENT_SECRET = os.getenv('SOCIAL_AUTH_GITHUB_CLIENT_SECRET')
+
+    SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_ID = os.getenv('SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_ID')
+    SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_SECRET = os.getenv('SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_SECRET')
+    SOCIAL_AUTH_AMAZON_COGNITO_DOMAIN = os.getenv('SOCIAL_AUTH_AMAZON_COGNITO_DOMAIN')
+
+    # Django allauth social account providers
+    # https://django-allauth.readthedocs.io/en/latest/providers.html
     SOCIALACCOUNT_PROVIDERS = {
         'google': {
             'APP': {
@@ -679,4 +680,14 @@ if USE_ALLAUTH_SOCIAL_ACCOUNTS:
             # key with a capital letter will be used
             'PUBLIC_NAME': 'GitHub',
         },
+        'amazon_cognito': {
+            'DOMAIN': SOCIAL_AUTH_AMAZON_COGNITO_DOMAIN,
+            'SCOPE': [ 'profile', 'email', 'openid'],
+            'APP': {
+                'client_id': SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_ID,
+                'secret': SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_SECRET,
+                'key': ''
+            },
+            'PUBLIC_NAME': 'Amazon Cognito',
+        }
     }

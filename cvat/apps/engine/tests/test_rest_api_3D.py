@@ -1,4 +1,5 @@
 # Copyright (C) 2020-2022 Intel Corporation
+# Copyright (C) 2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -23,6 +24,8 @@ from rest_framework.test import APIClient, APITestCase
 from cvat.apps.engine.media_extractors import ValidateDimension
 from cvat.apps.dataset_manager.task import TaskAnnotation
 from datumaro.util.test_utils import TestDir
+
+from cvat.apps.engine.tests.utils import get_paginated_collection
 
 CREATE_ACTION = "create"
 UPDATE_ACTION = "update"
@@ -140,8 +143,10 @@ class _DbTestBase(APITestCase):
 
     def _get_jobs(self, task_id):
         with ForceLogin(self.admin, self.client):
-            response = self.client.get("/api/tasks/{}/jobs".format(task_id))
-        return response.data
+            values = get_paginated_collection(lambda page:
+                self.client.get("/api/jobs?task_id={}&page={}".format(task_id, page))
+            )
+        return values
 
     def _get_request(self, path, user):
         with ForceLogin(user, self.client):

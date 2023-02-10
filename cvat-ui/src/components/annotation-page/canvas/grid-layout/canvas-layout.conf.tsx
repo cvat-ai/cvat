@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: MIT
 
+import config from 'config';
+
 export interface ItemLayout {
     viewType: ViewType;
     offset: number[];
@@ -35,8 +37,8 @@ defaultLayout['2D']['0'] = [{
     offset: [0],
     x: 0,
     y: 0,
-    w: 12,
-    h: 12,
+    w: config.CANVAS_WORKSPACE_COLS,
+    h: config.CANVAS_WORKSPACE_ROWS,
 }];
 
 defaultLayout['2D']['1'] = [
@@ -46,7 +48,7 @@ defaultLayout['2D']['1'] = [
         x: 9,
         y: 0,
         w: 3,
-        h: 4,
+        h: config.CANVAS_WORKSPACE_DEFAULT_CONTEXT_HEIGHT,
         viewIndex: '0',
     },
 ];
@@ -111,7 +113,7 @@ defaultLayout['3D']['1'] = [
         x: 9,
         y: 0,
         w: 3,
-        h: 4,
+        h: config.CANVAS_WORKSPACE_DEFAULT_CONTEXT_HEIGHT,
         viewIndex: '0',
     },
 ];

@@ -14,7 +14,7 @@ import Button from 'antd/lib/button';
 import Dropdown from 'antd/lib/dropdown';
 import Title from 'antd/lib/typography/Title';
 import Pagination from 'antd/lib/pagination';
-import { MutliPlusIcon } from 'icons';
+import { MultiPlusIcon } from 'icons';
 import { PlusOutlined } from '@ant-design/icons';
 import Empty from 'antd/lib/empty';
 import Input from 'antd/lib/input';
@@ -241,7 +241,7 @@ export default function ProjectPageComponent(): JSX.Element {
                                         </Button>
                                         <Button
                                             type='primary'
-                                            icon={<span className='anticon'><MutliPlusIcon /></span>}
+                                            icon={<span className='anticon'><MultiPlusIcon /></span>}
                                             className='cvat-create-multi-tasks-button'
                                             onClick={() => history.push(`/tasks/create?projectId=${id}&many=true`)}
                                         >

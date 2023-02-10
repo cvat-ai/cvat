@@ -1,11 +1,13 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { Dispatch, ActionCreator } from 'redux';
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import { getCore } from 'cvat-core-wrapper';
-import { CloudStoragesQuery, CloudStorage, Indexable } from 'reducers';
+import { CloudStoragesQuery, CloudStorage } from 'reducers';
+import { filterNull } from 'utils/filter-null';
 
 const cvat = getCore();
 
@@ -88,13 +90,13 @@ const cloudStoragesActions = {
     getCloudStorageStatusFailed: (cloudStorageID: number, error: any) => (
         createAction(CloudStorageActionTypes.GET_CLOUD_STORAGE_STATUS_FAILED, { cloudStorageID, error })
     ),
-    getCloudStoragePreiew: (cloudStorageID: number) => (
+    getCloudStoragePreview: (cloudStorageID: number) => (
         createAction(CloudStorageActionTypes.GET_CLOUD_STORAGE_PREVIEW, { cloudStorageID })
     ),
-    getCloudStoragePreiewSuccess: (cloudStorageID: number, preview: string) => (
+    getCloudStoragePreviewSuccess: (cloudStorageID: number, preview: string) => (
         createAction(CloudStorageActionTypes.GET_CLOUD_STORAGE_PREVIEW_SUCCESS, { cloudStorageID, preview })
     ),
-    getCloudStoragePreiewFailed: (cloudStorageID: number, error: any) => (
+    getCloudStoragePreviewFailed: (cloudStorageID: number, error: any) => (
         createAction(CloudStorageActionTypes.GET_CLOUD_STORAGE_PREVIEW_FAILED, { cloudStorageID, error })
     ),
 };
@@ -106,12 +108,7 @@ export function getCloudStoragesAsync(query: Partial<CloudStoragesQuery>): Thunk
         dispatch(cloudStoragesActions.getCloudStorages());
         dispatch(cloudStoragesActions.updateCloudStoragesGettingQuery(query));
 
-        const filteredQuery = { ...query };
-        for (const key in filteredQuery) {
-            if ((filteredQuery as Indexable)[key] === null) {
-                delete (filteredQuery as Indexable)[key];
-            }
-        }
+        const filteredQuery = filterNull(query);
 
         let result = null;
         try {
@@ -199,12 +196,12 @@ export function getCloudStorageStatusAsync(cloudStorage: CloudStorage): ThunkAct
 
 export function getCloudStoragePreviewAsync(cloudStorage: CloudStorage): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        dispatch(cloudStoragesActions.getCloudStoragePreiew(cloudStorage.id));
+        dispatch(cloudStoragesActions.getCloudStoragePreview(cloudStorage.id));
         try {
             const result = await cloudStorage.getPreview();
-            dispatch(cloudStoragesActions.getCloudStoragePreiewSuccess(cloudStorage.id, result));
+            dispatch(cloudStoragesActions.getCloudStoragePreviewSuccess(cloudStorage.id, result));
         } catch (error) {
-            dispatch(cloudStoragesActions.getCloudStoragePreiewFailed(cloudStorage.id, error));
+            dispatch(cloudStoragesActions.getCloudStoragePreviewFailed(cloudStorage.id, error));
         }
     };
 }

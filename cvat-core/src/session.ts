@@ -573,6 +573,7 @@ export class Task extends Session {
             sorting_method: undefined,
             source_storage: undefined,
             target_storage: undefined,
+            progress: undefined,
         };
 
         const updateTrigger = new FieldUpdateTrigger();
@@ -588,6 +589,21 @@ export class Task extends Session {
 
         data.labels = [];
         data.jobs = [];
+
+        // FIX ME: progress shoud come from server, not from segments
+        const progress = {
+            completedJobs: 0,
+            totalJobs: 0,
+        };
+        if (Array.isArray(initialData.segments)) {
+            for (const segment of initialData.segments) {
+                for (const job of segment.jobs) {
+                    progress.totalJobs += 1;
+                    if (job.stage === 'acceptance') progress.completedJobs += 1;
+                }
+            }
+        }
+        data.progress = progress;
         data.files = Object.freeze({
             server_files: [],
             client_files: [],
@@ -599,33 +615,29 @@ export class Task extends Session {
                 .map((labelData) => new Label(labelData)).filter((label) => !label.hasParent);
         }
 
-        if (Array.isArray(initialData.segments)) {
-            for (const segment of initialData.segments) {
-                if (Array.isArray(segment.jobs)) {
-                    for (const job of segment.jobs) {
-                        const jobInstance = new Job({
-                            url: job.url,
-                            id: job.id,
-                            assignee: job.assignee,
-                            state: job.state,
-                            stage: job.stage,
-                            start_frame: segment.start_frame,
-                            stop_frame: segment.stop_frame,
-                            // following fields also returned when doing API request /jobs/<id>
-                            // here we know them from task and append to constructor
-                            task_id: data.id,
-                            project_id: data.project_id,
-                            labels: data.labels,
-                            bug_tracker: data.bug_tracker,
-                            mode: data.mode,
-                            dimension: data.dimension,
-                            data_compressed_chunk_type: data.data_compressed_chunk_type,
-                            data_chunk_size: data.data_chunk_size,
-                        });
+        if (Array.isArray(initialData.jobs)) {
+            for (const job of initialData.jobs) {
+                const jobInstance = new Job({
+                    url: job.url,
+                    id: job.id,
+                    assignee: job.assignee,
+                    state: job.state,
+                    stage: job.stage,
+                    start_frame: job.start_frame,
+                    stop_frame: job.stop_frame,
+                    // following fields also returned when doing API request /jobs/<id>
+                    // here we know them from task and append to constructor
+                    task_id: data.id,
+                    project_id: data.project_id,
+                    labels: data.labels,
+                    bug_tracker: data.bug_tracker,
+                    mode: data.mode,
+                    dimension: data.dimension,
+                    data_compressed_chunk_type: data.data_compressed_chunk_type,
+                    data_chunk_size: data.data_chunk_size,
+                });
 
-                        data.jobs.push(jobInstance);
-                    }
-                }
+                data.jobs.push(jobInstance);
             }
         }
 
@@ -921,6 +933,9 @@ export class Task extends Session {
                             cloudStorageId: data.target_storage?.cloud_storage_id,
                         })
                     ),
+                },
+                progress: {
+                    get: () => data.progress,
                 },
                 _internalData: {
                     get: () => data,

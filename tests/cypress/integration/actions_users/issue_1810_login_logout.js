@@ -103,7 +103,7 @@ context('When clicking on the Logout button, get the user session closed.', () =
                 method: 'GET',
                 url: '/api/auth/social/methods/',
             }).then((response) => {
-                socialAuthMethods = Object.keys(response.body);
+                socialAuthMethods = Object.keys(response.body).filter((item) => response.body[item].is_enabled);
                 expect(socialAuthMethods).length.gt(0);
                 cy.visit('auth/login');
 
