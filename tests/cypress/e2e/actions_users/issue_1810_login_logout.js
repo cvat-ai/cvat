@@ -18,6 +18,9 @@ context('When clicking on the Logout button, get the user session closed.', () =
     }
 
     before(() => {
+        // TMP fix for login tests, need to change login logic with sessions
+        cy.clearAllCookies();
+        cy.clearAllLocalStorage();
         cy.visit('auth/login');
     });
 
@@ -107,7 +110,7 @@ context('When clicking on the Logout button, get the user session closed.', () =
                 expect(socialAuthMethods).length.gt(0);
                 cy.visit('auth/login');
 
-                cy.get('.cvat-social-authentication-icon').should('have.length', socialAuthMethods.length).within((items) => {
+                cy.get('.cvat-social-authentication-icon').should('have.length', socialAuthMethods.length).children((items) => {
                     for (const item of items) {
                         expect(item.children.length).to.be.equal(1); // check that icon was received from the server
                     }
