@@ -33,7 +33,7 @@ function LoginWithSSOComponent(): JSX.Element {
         if (selectedIdP) {
             const ssoAnchor = window.document.getElementById('ssoLoginAnchor');
             if (ssoAnchor) {
-                (ssoAnchor as HTMLAnchorElement).href = `${core.config.backendAPI}/auth/sso/${selectedIdP}/login`;
+                (ssoAnchor as HTMLAnchorElement).href = `${core.config.backendAPI}/auth/sso/${selectedIdP}/login/`;
                 (ssoAnchor as HTMLAnchorElement).click();
             }
         }

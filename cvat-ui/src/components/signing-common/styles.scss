@@ -384,12 +384,12 @@ $social-google-background: #4286f5;
 }
 
 .cvat-social-authentication-link {
-    height: 48px;
+    height: $grid-unit-size * 6;
     display: block !important;
     margin-left: auto;
     margin-right: auto;
-    border: 1px solid rgba(82, 82, 128, 0.09);
-    border-radius: 16px;
+    border: $grid-unit-size * 0.125 solid rgba(82, 82, 128, 0.09);
+    border-radius: $grid-unit-size * 2;
     color: #232333;
     padding-top: 0 !important;
 }

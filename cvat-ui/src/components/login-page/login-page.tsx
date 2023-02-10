@@ -22,7 +22,6 @@ interface LoginPageComponentProps {
     renderResetPassword: boolean;
     hasEmailVerificationBeenSent: boolean;
     socialAuthMethods: SocialAuthMethods;
-    SSOConfig: any;
     onLogin: (credential: string, password: string) => void;
     loadSocialAuthenticationMethods: () => void;
     loadSSOConfiguration: () => void;
@@ -59,7 +58,7 @@ const renderSocialAuthMethods = (methods: SocialAuthMethods): JSX.Element | JSX.
                                 <SocialAccountCard
                                     key={method.provider}
                                     icon={method.icon || method.publicName}
-                                    href={(method.provider !== 'sso') ? `${backendAPI}/auth/${method.provider}/login` : '/auth/sso/select-identity-provider'}
+                                    href={(method.provider !== 'sso') ? `${backendAPI}/auth/${method.provider}/login/` : '/auth/sso/select-identity-provider/'}
                                     className={`cvat-social-authentication-${method.provider}`}
                                 >
                                     {`Continue with ${method.publicName}`}
@@ -76,7 +75,7 @@ const renderSocialAuthMethods = (methods: SocialAuthMethods): JSX.Element | JSX.
         <SocialAccountLink
             key={item.provider}
             icon={item.icon}
-            href={(item.provider !== 'sso') ? `${backendAPI}/auth/${item.provider}/login` : '/auth/sso/select-identity-provider/'}
+            href={(item.provider !== 'sso') ? `${backendAPI}/auth/${item.provider}/login/` : '/auth/sso/select-identity-provider/'}
             className={`cvat-social-authentication-${item.provider}`}
         >
             {`Continue with ${item.publicName}`}
