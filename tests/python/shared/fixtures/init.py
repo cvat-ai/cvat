@@ -29,10 +29,6 @@ CONTAINER_NAME_FILES = [
     )
 ]
 
-# this files contain some configurations that override the default configuration of the main containers
-DC_OVERRIDE_FILES = [
-    CVAT_ROOT_DIR / "tests/python/mock_oauth2/docker-compose.yml",
-]
 
 DC_FILES = (
     [
@@ -45,7 +41,6 @@ DC_FILES = (
         )
     ]
     + CONTAINER_NAME_FILES
-    + DC_OVERRIDE_FILES
 )
 
 
