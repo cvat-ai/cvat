@@ -8,8 +8,8 @@ module.exports = defineConfig({
     defaultCommandTimeout: 25000,
     downloadsFolder: 'cypress/fixtures',
     env: {
-        user: 'kirill',
-        email: 'kirill@gmail.com',
+        user: 'admin',
+        email: 'admin@localhost.company',
         password: '12qwaszx',
     },
     e2e: {
@@ -17,7 +17,7 @@ module.exports = defineConfig({
             return plugins(on, config);
         },
         testIsolation: false,
-        baseUrl: 'http://localhost:3000',
+        baseUrl: 'http://localhost:8080',
         specPattern: [
             'cypress/e2e/auth_page.js',
             'cypress/e2e/skeletons/*.js',
