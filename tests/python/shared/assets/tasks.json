@@ -1,8 +1,55 @@
 {
-  "count": 11,
+  "count": 12,
   "next": null,
   "previous": null,
   "results": [
+    {
+      "assignee": {
+        "first_name": "User",
+        "id": 3,
+        "last_name": "Second",
+        "url": "http://localhost:8080/api/users/3",
+        "username": "user2"
+      },
+      "bug_tracker": "",
+      "created_date": "2023-02-10T14:05:25.947373Z",
+      "data": 16,
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "data_original_chunk_type": "imageset",
+      "dimension": "2d",
+      "id": 17,
+      "image_quality": 70,
+      "jobs": {
+        "completed": 0,
+        "count": 1,
+        "url": "http://localhost:8080/api/jobs?task_id=17"
+      },
+      "labels": {
+        "count": 2,
+        "url": "http://localhost:8080/api/labels?task_id=17"
+      },
+      "mode": "annotation",
+      "name": "task_3_org2",
+      "organization": 2,
+      "overlap": 0,
+      "owner": {
+        "first_name": "Admin",
+        "id": 1,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/1",
+        "username": "admin1"
+      },
+      "project_id": null,
+      "segment_size": 5,
+      "size": 5,
+      "source_storage": null,
+      "status": "annotation",
+      "subset": "",
+      "target_storage": null,
+      "updated_date": "2023-02-10T14:08:05.873330Z",
+      "url": "http://localhost:8080/api/tasks/17"
+    },
     {
       "assignee": null,
       "bug_tracker": "",
@@ -102,7 +149,13 @@
       "url": "http://localhost:8080/api/tasks/14"
     },
     {
-      "assignee": null,
+      "assignee": {
+        "first_name": "User",
+        "id": 4,
+        "last_name": "Third",
+        "url": "http://localhost:8080/api/users/4",
+        "username": "user3"
+      },
       "bug_tracker": "",
       "created_date": "2022-06-08T08:33:06.505000Z",
       "data": 12,
@@ -139,7 +192,7 @@
       "status": "annotation",
       "subset": "",
       "target_storage": null,
-      "updated_date": "2022-12-05T07:47:01.633000Z",
+      "updated_date": "2023-02-10T11:50:18.414000Z",
       "url": "http://localhost:8080/api/tasks/13"
     },
     {

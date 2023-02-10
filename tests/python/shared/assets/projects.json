@@ -1,8 +1,52 @@
 {
-  "count": 8,
+  "count": 9,
   "next": null,
   "previous": null,
   "results": [
+    {
+      "assignee": {
+        "first_name": "Worker",
+        "id": 8,
+        "last_name": "Third",
+        "url": "http://localhost:8080/api/users/8",
+        "username": "worker3"
+      },
+      "bug_tracker": "",
+      "created_date": "2023-02-10T11:42:43.192000Z",
+      "dimension": null,
+      "id": 10,
+      "labels": {
+        "count": 2,
+        "url": "http://localhost:8080/api/labels?project_id=10"
+      },
+      "name": "project 6",
+      "organization": 2,
+      "owner": {
+        "first_name": "User",
+        "id": 4,
+        "last_name": "Third",
+        "url": "http://localhost:8080/api/users/4",
+        "username": "user3"
+      },
+      "source_storage": {
+        "cloud_storage_id": null,
+        "id": 19,
+        "location": "local"
+      },
+      "status": "annotation",
+      "target_storage": {
+        "cloud_storage_id": null,
+        "id": 20,
+        "location": "local"
+      },
+      "task_subsets": [],
+      "tasks": {
+        "count": 0,
+        "url": "http://localhost:8080/api/tasks?project_id=10"
+      },
+      "updated_date": "2023-02-10T11:42:57.733000Z",
+      "url": "http://localhost:8080/api/projects/10"
+    },
     {
       "assignee": null,
       "bug_tracker": "",
@@ -194,7 +238,7 @@
         "count": 1,
         "url": "http://localhost:8080/api/tasks?project_id=4"
       },
-      "updated_date": "2022-12-05T07:47:01.518000Z",
+      "updated_date": "2023-02-10T11:50:18.436000Z",
       "url": "http://localhost:8080/api/projects/4"
     },
     {

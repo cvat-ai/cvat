@@ -84,7 +84,7 @@ filter = [] { # Django Q object to filter list of entries
     organizations.has_perm(organizations.MAINTAINER)
     org := input.auth.organization
     qobject := [
-        {"task_organization": org.id},
+        {"task__organization": org.id},
         {"project__organization": org.id}, "|",
     ]
 } else = qobject {

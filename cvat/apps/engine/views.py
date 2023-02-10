@@ -1931,7 +1931,16 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     def get_queryset(self):
         if self.action == 'list':
-            if job_id := self.request.GET.get('job_id', None):
+            job_id = self.request.GET.get('job_id', None)
+            task_id = self.request.GET.get('task_id', None)
+            project_id = self.request.GET.get('project_id', None)
+            if sum(v is not None for v in [job_id, task_id, project_id]) > 1:
+                raise ValidationError(
+                    "job_id, task_id and project_id parameters cannot be used together",
+                    code=status.HTTP_400_BAD_REQUEST
+                )
+
+            if job_id:
                 # NOTE: This filter is too complex to be implemented by other means
                 # It requires the following filter query:
                 # (
@@ -1942,7 +1951,7 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 job = Job.objects.get(id=job_id)
                 self.check_object_permissions(self.request, job)
                 queryset = job.get_labels()
-            elif task_id := self.request.GET.get('task_id', None):
+            elif task_id:
                 # NOTE: This filter is too complex to be implemented by other means
                 # It requires the following filter query:
                 # (

@@ -1198,6 +1198,25 @@
   }
 },
 {
+  "model": "engine.data",
+  "pk": 16,
+  "fields": {
+    "chunk_size": 72,
+    "size": 5,
+    "image_quality": 70,
+    "start_frame": 0,
+    "stop_frame": 4,
+    "frame_filter": "",
+    "compressed_chunk_type": "imageset",
+    "original_chunk_type": "imageset",
+    "storage_method": "cache",
+    "storage": "local",
+    "cloud_storage": null,
+    "sorting_method": "lexicographical",
+    "deleted_frames": "[]"
+  }
+},
+{
   "model": "engine.video",
   "pk": 1,
   "fields": {
@@ -2241,6 +2260,61 @@
   }
 },
 {
+  "model": "engine.image",
+  "pk": 446,
+  "fields": {
+    "data": 16,
+    "path": "0.png",
+    "frame": 0,
+    "width": 974,
+    "height": 452
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 447,
+  "fields": {
+    "data": 16,
+    "path": "1.png",
+    "frame": 1,
+    "width": 783,
+    "height": 760
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 448,
+  "fields": {
+    "data": 16,
+    "path": "2.png",
+    "frame": 2,
+    "width": 528,
+    "height": 458
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 449,
+  "fields": {
+    "data": 16,
+    "path": "3.png",
+    "frame": 3,
+    "width": 520,
+    "height": 350
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 450,
+  "fields": {
+    "data": 16,
+    "path": "4.png",
+    "frame": 4,
+    "width": 569,
+    "height": 483
+  }
+},
+{
   "model": "engine.project",
   "pk": 1,
   "fields": {
@@ -2311,7 +2385,7 @@
     "assignee": null,
     "bug_tracker": "",
     "created_date": "2022-06-08T08:32:45.521Z",
-    "updated_date": "2022-12-05T07:47:01.518Z",
+    "updated_date": "2023-02-10T11:50:18.436Z",
     "status": "annotation",
     "organization": 2,
     "source_storage": null,
@@ -2392,6 +2466,26 @@
     "organization": null,
     "source_storage": 13,
     "target_storage": 14
+  }
+},
+{
+  "model": "engine.project",
+  "pk": 10,
+  "fields": {
+    "name": "project 6",
+    "owner": [
+      "user3"
+    ],
+    "assignee": [
+      "worker3"
+    ],
+    "bug_tracker": "",
+    "created_date": "2023-02-10T11:42:43.192Z",
+    "updated_date": "2023-02-10T11:42:57.733Z",
+    "status": "annotation",
+    "organization": 2,
+    "source_storage": 19,
+    "target_storage": 20
   }
 },
 {
@@ -2616,10 +2710,12 @@
     "owner": [
       "admin1"
     ],
-    "assignee": null,
+    "assignee": [
+      "user3"
+    ],
     "bug_tracker": "",
     "created_date": "2022-06-08T08:33:06.505Z",
-    "updated_date": "2022-12-05T07:47:01.633Z",
+    "updated_date": "2023-02-10T11:50:18.414Z",
     "overlap": 0,
     "segment_size": 5,
     "status": "annotation",
@@ -2679,6 +2775,33 @@
     "organization": null,
     "source_storage": 15,
     "target_storage": 16
+  }
+},
+{
+  "model": "engine.task",
+  "pk": 17,
+  "fields": {
+    "project": null,
+    "name": "task_3_org2",
+    "mode": "annotation",
+    "owner": [
+      "admin1"
+    ],
+    "assignee": [
+      "user2"
+    ],
+    "bug_tracker": "",
+    "created_date": "2023-02-10T14:05:25.947Z",
+    "updated_date": "2023-02-10T14:08:05.873Z",
+    "overlap": 0,
+    "segment_size": 5,
+    "status": "annotation",
+    "data": 16,
+    "dimension": "2d",
+    "subset": "",
+    "organization": 2,
+    "source_storage": null,
+    "target_storage": null
   }
 },
 {
@@ -3568,6 +3691,15 @@
   }
 },
 {
+  "model": "engine.segment",
+  "pk": 21,
+  "fields": {
+    "task": 17,
+    "start_frame": 0,
+    "stop_frame": 4
+  }
+},
+{
   "model": "engine.job",
   "pk": 2,
   "fields": {
@@ -3731,6 +3863,18 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress"
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 21,
+  "fields": {
+    "segment": 21,
+    "assignee": null,
+    "updated_date": "2023-02-10T14:05:26.022Z",
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "new"
   }
 },
 {
@@ -4070,6 +4214,54 @@
   }
 },
 {
+  "model": "engine.label",
+  "pk": 34,
+  "fields": {
+    "task": null,
+    "project": 10,
+    "name": "cat",
+    "color": "#6080c0",
+    "type": "rectangle",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 35,
+  "fields": {
+    "task": null,
+    "project": 10,
+    "name": "dog",
+    "color": "#406040",
+    "type": "polyline",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 38,
+  "fields": {
+    "task": 17,
+    "project": null,
+    "name": "cat",
+    "color": "#6080c0",
+    "type": "any",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 39,
+  "fields": {
+    "task": 17,
+    "project": null,
+    "name": "dog",
+    "color": "#406040",
+    "type": "any",
+    "parent": null
+  }
+},
+{
   "model": "engine.skeleton",
   "pk": 1,
   "fields": {
@@ -4119,6 +4311,18 @@
     "input_type": "select",
     "default_value": "val1",
     "values": "val1\nval2"
+  }
+},
+{
+  "model": "engine.attributespec",
+  "pk": 5,
+  "fields": {
+    "label": 35,
+    "name": "a1",
+    "mutable": true,
+    "input_type": "checkbox",
+    "default_value": "false",
+    "values": "false"
   }
 },
 {
@@ -5041,6 +5245,57 @@
   }
 },
 {
+  "model": "engine.jobcommit",
+  "pk": 85,
+  "fields": {
+    "scope": "create",
+    "owner": [
+      "admin1"
+    ],
+    "timestamp": "2023-02-10T14:05:25.982Z",
+    "data": {
+      "stage": "annotation",
+      "state": "new",
+      "assignee": null
+    },
+    "job": 21
+  }
+},
+{
+  "model": "engine.jobcommit",
+  "pk": 86,
+  "fields": {
+    "scope": "create",
+    "owner": [
+      "admin1"
+    ],
+    "timestamp": "2023-02-10T14:05:25.998Z",
+    "data": {
+      "stage": "annotation",
+      "state": "new",
+      "assignee": null
+    },
+    "job": 21
+  }
+},
+{
+  "model": "engine.jobcommit",
+  "pk": 87,
+  "fields": {
+    "scope": "create",
+    "owner": [
+      "admin1"
+    ],
+    "timestamp": "2023-02-10T14:05:26.025Z",
+    "data": {
+      "stage": "annotation",
+      "state": "new",
+      "assignee": null
+    },
+    "job": 21
+  }
+},
+{
   "model": "engine.labeledimage",
   "pk": 1,
   "fields": {
@@ -5057,6 +5312,28 @@
   "fields": {
     "job": 17,
     "label": 16,
+    "frame": 3,
+    "group": 0,
+    "source": "manual"
+  }
+},
+{
+  "model": "engine.labeledimage",
+  "pk": 5,
+  "fields": {
+    "job": 21,
+    "label": 39,
+    "frame": 2,
+    "group": 0,
+    "source": "manual"
+  }
+},
+{
+  "model": "engine.labeledimage",
+  "pk": 6,
+  "fields": {
+    "job": 21,
+    "label": 38,
     "frame": 3,
     "group": 0,
     "source": "manual"
@@ -5436,6 +5713,42 @@
     "outside": false,
     "z_order": 0,
     "points": "[479.97322623828586, 408.0053547523421, 942.6238286479238, 513.3868808567604]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 47,
+  "fields": {
+    "job": 21,
+    "label": 38,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[106.361328125, 85.150390625, 240.083984375, 241.263671875]",
+    "rotation": 45.9,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 48,
+  "fields": {
+    "job": 21,
+    "label": 38,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[414.29522752496996, 124.8035516093205, 522.2641509433943, 286.75693673695605]",
     "rotation": 0.0,
     "parent": null
   }
@@ -6235,6 +6548,38 @@
 {
   "model": "engine.storage",
   "pk": 16,
+  "fields": {
+    "location": "local",
+    "cloud_storage_id": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 17,
+  "fields": {
+    "location": "local",
+    "cloud_storage_id": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 18,
+  "fields": {
+    "location": "local",
+    "cloud_storage_id": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 19,
+  "fields": {
+    "location": "local",
+    "cloud_storage_id": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 20,
   "fields": {
     "location": "local",
     "cloud_storage_id": null

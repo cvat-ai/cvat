@@ -315,7 +315,9 @@ class Task(
         return meta
 
     def get_labels(self) -> List[models.ILabel]:
-        return get_paginated_collection(self._client.api_client.labels_api.list_endpoint, task_id=str(self.id))
+        return get_paginated_collection(
+            self._client.api_client.labels_api.list_endpoint, task_id=str(self.id)
+        )
 
     def get_frames_info(self) -> List[models.IFrameMeta]:
         return self.get_meta().frames
