@@ -347,7 +347,7 @@ jobs:
             npx cypress run \
               --headed \
               --browser chrome \
-              --config-file cypress_canvas3d.json \
+              --config-file cypress_canvas3d.config.js \
               --spec 'cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
             mv ./.nyc_output/out.json ./.nyc_output/out_${{ matrix.specs }}.json
           else
