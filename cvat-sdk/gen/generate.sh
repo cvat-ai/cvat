@@ -26,6 +26,7 @@ docker run --rm -v "$DST_DIR:/local" -u "$(id -u)":"$(id -g)" \
         -t "/local/${TEMPLATE_DIR_NAME}/templates/openapi-generator/" \
         -i "/local/schema/schema.yml" \
         --config "/local/${TEMPLATE_DIR_NAME}/generator-config.yml" \
+        -p "packageVersion=$VERSION" \
         -g python \
         -o "/local/"
 
