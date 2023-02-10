@@ -239,7 +239,9 @@ export default function implementAPI(cvat) {
                 const jobs = await serverProxy.jobs.get({
                     filter: JSON.stringify({ and: [{ '==': [{ var: 'task_id' }, taskItem.id] }] }),
                 }, true);
-                return new Task({ ...taskItem, jobs: jobs.results, labels: labels.results });
+                return new Task({
+                    ...taskItem, progress: taskItem.jobs, jobs: jobs.results, labels: labels.results,
+                });
             }
 
             return new Task({

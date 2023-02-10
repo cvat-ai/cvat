@@ -24,6 +24,7 @@ import { getCore, Project, Task } from 'cvat-core-wrapper';
 import { CombinedState, Indexable } from 'reducers';
 import { getProjectTasksAsync } from 'actions/projects-actions';
 import { cancelInferenceAsync } from 'actions/models-actions';
+import CVATLoadingSpinner from 'components/common/loading-spinner';
 import TaskItem from 'components/tasks-page/task-item';
 import MoveTaskModal from 'components/move-task-modal/move-task-modal';
 import ModelRunnerDialog from 'components/model-runner-modal/model-runner-dialog';
@@ -132,7 +133,7 @@ export default function ProjectPageComponent(): JSX.Element {
                 className='cvat-not-found'
                 status='404'
                 title='There was something wrong during getting the project'
-                subTitle='Please, be sure information you tried to get exist and you are eligible to access it'
+                subTitle='Please, be sure, that information you tried to get exist and you are eligible to access it'
             />
         );
     }
@@ -187,7 +188,7 @@ export default function ProjectPageComponent(): JSX.Element {
 
     return (
         <Row justify='center' align='top' className='cvat-project-page'>
-            { updatingProject && <Spin size='large' className='cvat-spinner' /> }
+            { updatingProject ? <CVATLoadingSpinner size='large' /> : null }
             <Col
                 md={22}
                 lg={18}

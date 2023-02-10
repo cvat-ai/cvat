@@ -3,8 +3,9 @@
 // SPDX-License-Identifier: MIT
 
 import {
+    ChunkType,
     DimensionType, ProjectStatus,
-    ShareFileType, TaskStatus,
+    ShareFileType, TaskMode, TaskStatus,
 } from 'enums';
 import { SerializedModel } from 'core-types';
 
@@ -77,14 +78,14 @@ export interface SerializedTask {
     created_date: string;
     data: number;
     data_chunk_size: number | null;
-    data_compressed_chunk_type: 'imageset' | 'video';
-    data_original_chunk_type: 'imageset' | 'video';
+    data_compressed_chunk_type: ChunkType
+    data_original_chunk_type: ChunkType;
     dimension: DimensionType;
     id: number;
     image_quality: number;
     jobs: { count: 1; completed: 0; url: string; };
     labels: { count: number; url: string; };
-    mode: 'annotation' | 'interpolation' | '';
+    mode: TaskMode | '';
     name: string;
     organization: number | null;
     overlap: number | null;

@@ -51,31 +51,6 @@ function removeToken(): void {
     store.remove('token');
 }
 
-function waitFor(frequencyHz: number, predicate: () => boolean): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-        if (typeof predicate !== 'function') {
-            reject(new Error(`Predicate must be a function, got ${typeof predicate}`));
-        }
-
-        const internalWait = (): void => {
-            let result = false;
-            try {
-                result = predicate();
-            } catch (error) {
-                reject(error);
-            }
-
-            if (result) {
-                resolve();
-            } else {
-                setTimeout(internalWait, 1000 / frequencyHz);
-            }
-        };
-
-        setTimeout(internalWait);
-    });
-}
-
 function fetchAll(url, filter = {}): Promise<any> {
     const pageSize = 500;
     const result = {
@@ -1977,104 +1952,6 @@ async function cancelLambdaRequest(requestId) {
     }
 }
 
-function predictorStatus(projectId) {
-    const { backendAPI } = config;
-
-    return new Promise((resolve, reject) => {
-        async function request() {
-            try {
-                const response = await Axios.get(`${backendAPI}/predict/status`, {
-                    params: {
-                        project: projectId,
-                    },
-                });
-                return response.data;
-            } catch (errorData) {
-                throw generateError(errorData);
-            }
-        }
-
-        const timeoutCallback = async () => {
-            let data = null;
-            try {
-                data = await request();
-                if (data.status === 'queued') {
-                    setTimeout(timeoutCallback, 1000);
-                } else if (data.status === 'done') {
-                    resolve(data);
-                } else {
-                    throw new Error(`Unknown status was received "${data.status}"`);
-                }
-            } catch (error) {
-                reject(error);
-            }
-        };
-
-        setTimeout(timeoutCallback);
-    });
-}
-
-function predictAnnotations(taskId, frame) {
-    return new Promise((resolve, reject) => {
-        const { backendAPI } = config;
-
-        async function request() {
-            try {
-                const response = await Axios.get(`${backendAPI}/predict/frame`, {
-                    params: {
-                        task: taskId,
-                        frame,
-                    },
-                });
-                return response.data;
-            } catch (errorData) {
-                throw generateError(errorData);
-            }
-        }
-
-        const timeoutCallback = async () => {
-            let data = null;
-            try {
-                data = await request();
-                if (data.status === 'queued') {
-                    setTimeout(timeoutCallback, 1000);
-                } else if (data.status === 'done') {
-                    predictAnnotations.latestRequest.fetching = false;
-                    resolve(data.annotation);
-                } else {
-                    throw new Error(`Unknown status was received "${data.status}"`);
-                }
-            } catch (error) {
-                predictAnnotations.latestRequest.fetching = false;
-                reject(error);
-            }
-        };
-
-        const closureId = Date.now();
-        predictAnnotations.latestRequest.id = closureId;
-        const predicate = () => !predictAnnotations.latestRequest.fetching ||
-            predictAnnotations.latestRequest.id !== closureId;
-        if (predictAnnotations.latestRequest.fetching) {
-            waitFor(5, predicate).then(() => {
-                if (predictAnnotations.latestRequest.id !== closureId) {
-                    resolve(null);
-                } else {
-                    predictAnnotations.latestRequest.fetching = true;
-                    setTimeout(timeoutCallback);
-                }
-            });
-        } else {
-            predictAnnotations.latestRequest.fetching = true;
-            setTimeout(timeoutCallback);
-        }
-    });
-}
-
-predictAnnotations.latestRequest = {
-    fetching: false,
-    id: null,
-};
-
 async function installedApps() {
     const { backendAPI } = config;
     try {
@@ -2566,11 +2443,6 @@ export default Object.freeze({
 
     comments: Object.freeze({
         create: createComment,
-    }),
-
-    predictor: Object.freeze({
-        status: predictorStatus,
-        predict: predictAnnotations,
     }),
 
     cloudStorages: Object.freeze({

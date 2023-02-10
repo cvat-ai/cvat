@@ -18,6 +18,7 @@ export default function implementProject(projectClass) {
                 bugTracker: 'bug_tracker',
                 assignee: 'assignee_id',
             });
+
             if (projectData.assignee_id) {
                 projectData.assignee_id = projectData.assignee_id.id;
             }
@@ -64,7 +65,8 @@ export default function implementProject(projectClass) {
         }
 
         const project = await serverProxy.projects.create(projectSpec);
-        return new Project(project);
+        const labels = await serverProxy.labels.get({ project_id: project.id });
+        return new Project({ ...project, labels: labels.results });
     };
 
     projectClass.prototype.delete.implementation = async function () {
