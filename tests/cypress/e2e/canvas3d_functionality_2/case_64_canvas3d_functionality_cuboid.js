@@ -11,7 +11,7 @@ context('Canvas 3D functionality. Add cuboid.', () => {
 
     const screenshotsPath = 'cypress/screenshots/canvas3d_functionality_2/case_64_canvas3d_functionality_cuboid.js';
     const cuboidCreationParams = {
-        labelName: labelName,
+        labelName,
     };
 
     before(() => {

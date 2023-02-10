@@ -8,10 +8,10 @@ import { taskName, labelName } from '../../support/const_canvas3d';
 
 context('Canvas 3D functionality. Filters.', () => {
     const caseId = '89';
-    const secondLabel = 'car'
+    const secondLabel = 'car';
     const screenshotsPath = 'cypress/screenshots/canvas3d_functionality/case_89_canvas3d_functionality_filters.js';
     const firstCuboidCreationParams = {
-        labelName: labelName,
+        labelName,
         x: 350,
         y: 250,
     };
@@ -22,7 +22,7 @@ context('Canvas 3D functionality. Filters.', () => {
     };
 
     before(() => {
-        cy.openTask(taskName)
+        cy.openTask(taskName);
         cy.addNewLabel(secondLabel);
         cy.openJob();
         cy.wait(1000); // Waiting for the point cloud to display

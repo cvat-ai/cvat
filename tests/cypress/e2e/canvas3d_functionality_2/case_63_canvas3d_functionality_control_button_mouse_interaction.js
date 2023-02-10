@@ -21,7 +21,7 @@ context('Canvas 3D functionality. Control button. Mouse interaction.', () => {
         cy.customScreenshot('.cvat-canvas3d-perspective', screenshotNameBefore);
         cy.wait(300);
         if (arrow) {
-            cy.get(button).trigger('mouseover').click()
+            cy.get(button).trigger('mouseover').click();
         } else {
             cy.contains('button', new RegExp(`^${button}$`))
                 .trigger('mouseover')
@@ -29,12 +29,12 @@ context('Canvas 3D functionality. Control button. Mouse interaction.', () => {
         }
         cy.contains(expectedTooltipText).should('exist').and('be.visible'); // Check tooltip
         if (arrow) {
-            cy.get(button).should('exist').click()
+            cy.get(button).should('exist').click();
         } else {
             cy.contains('button', new RegExp(`^${button}$`)).click({ force: true });
         }
         if (arrow) {
-            cy.get(button).trigger('mouseout')
+            cy.get(button).trigger('mouseout');
         } else {
             cy.contains('button', new RegExp(`^${button}$`)).trigger('mouseout');
         }

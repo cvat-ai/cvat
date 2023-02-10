@@ -9,11 +9,11 @@ import { taskName, labelName } from '../../support/const_canvas3d';
 context('Canvas 3D functionality. Cuboid context menu.', () => {
     const caseId = '79';
     const cuboidCreationParams = {
-        labelName: labelName,
+        labelName,
     };
 
     before(() => {
-        cy.openTask(taskName)
+        cy.openTask(taskName);
         cy.openJob();
         cy.wait(1000); // Waiting for the point cloud to display
         cy.create3DCuboid(cuboidCreationParams);
