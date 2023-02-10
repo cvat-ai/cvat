@@ -12,7 +12,7 @@ const {
 
 context('Dummy cloud storages.', { browser: '!firefox' }, () => {
     const caseId = '109';
-    const imageFolder = '../integration/actions_tasks3/assets/case_109';
+    const imageFolder = '../e2e/actions_tasks3/assets/case_109';
 
     function testListDummyCloudStorages(dummyCS) {
         cy.intercept('GET', 'api/cloudstorages?**', dummyCS).as('listCS');
@@ -84,8 +84,11 @@ context('Dummy cloud storages.', { browser: '!firefox' }, () => {
         cy.get('.cvat-cloud-storage-form').should('be.visible');
     }
 
-    beforeEach(() => {
+    before(() => {
         cy.visit('auth/login');
+    });
+
+    beforeEach(() => {
         cy.login();
     });
 
