@@ -202,7 +202,23 @@ class LabelSerializer(SublabelSerializer):
 
         return label
 
+    def __init__(self, *args, **kwargs):
+        self._local = kwargs.pop('local', False)
+        """
+        Indicates that the operation is called from the dedicated ViewSet
+        and not from the parent entity, i.e. a project or task.
+        """
+
+        super().__init__(*args, **kwargs)
+
     def validate(self, attrs):
+        if self._local:
+            if attrs.get('deleted'):
+                raise serializers.ValidationError(
+                    'Labels cannot be deleted by updating in this endpoint. '
+                    'Please use the DELETE method instead.'
+                )
+
         if attrs.get('deleted') and attrs.get('id') is None:
             raise serializers.ValidationError('Deleted label must have an ID')
 
@@ -262,6 +278,26 @@ class LabelSerializer(SublabelSerializer):
                 db_attr.values = attr.get('values', db_attr.values)
                 db_attr.save()
         return db_label
+
+    def update(self, instance, validated_data):
+        if not self._local:
+            return super().update(instance, validated_data)
+
+        if instance.project:
+            parent_serializer = ProjectWriteSerializer(
+                instance.project, data={'labels': [validated_data]}, partial=self.partial
+            )
+        else:
+            parent_serializer = TaskWriteSerializer(
+                instance.task, data={'labels': [validated_data]}, partial=self.partial
+            )
+
+        parent_serializer.is_valid(raise_exception=True)
+        parent_serializer.save()
+
+        self.instance = models.Label.objects.get(pk=instance.pk)
+        return self.instance
+
 
 class JobCommitSerializer(serializers.ModelSerializer):
     class Meta:

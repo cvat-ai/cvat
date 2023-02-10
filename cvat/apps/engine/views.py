@@ -1972,6 +1972,10 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         return queryset
 
+    def get_serializer(self, *args, **kwargs):
+        kwargs['local'] = True
+        return super().get_serializer(*args, **kwargs)
+
 
 @extend_schema(tags=['users'])
 @extend_schema_view(
