@@ -348,12 +348,12 @@ jobs:
               --headed \
               --browser chrome \
               --config-file cypress_canvas3d.json \
-              --spec 'cypress/integration/${{ matrix.specs }}/**/*.js,cypress/integration/remove_users_tasks_projects_organizations.js'
+              --spec 'cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
             mv ./.nyc_output/out.json ./.nyc_output/out_${{ matrix.specs }}.json
           else
             npx cypress run \
               --browser chrome \
-              --spec 'cypress/integration/${{ matrix.specs }}/**/*.js,cypress/integration/remove_users_tasks_projects_organizations.js'
+              --spec 'cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
             mv ./.nyc_output/out.json ./.nyc_output/out_${{ matrix.specs }}.json
           fi
 
