@@ -7,19 +7,12 @@ import React from 'react';
 import Button from 'antd/lib/button/button';
 import Tooltip from 'antd/lib/tooltip';
 import { SocialAccountLinkProps } from './social-account-link';
+import AuthenticationProviderIcon from './auth-provider-icon';
 
 function SocialAccountCard(props: SocialAccountLinkProps): JSX.Element {
-    const svgWrapperRef = React.useRef();
     const {
         children, className, href, icon,
     } = props;
-
-    React.useEffect(() => {
-        if (icon) {
-            // eslint-disable-next-line no-unsanitized/property
-            svgWrapperRef.current.innerHTML = icon;
-        }
-    }, [icon, svgWrapperRef.current]);
 
     return (
         <Tooltip title={children}>
@@ -28,10 +21,7 @@ function SocialAccountCard(props: SocialAccountLinkProps): JSX.Element {
                 type='link'
                 className={`cvat-social-authentication-link ${className}-button`}
             >
-                <div
-                    ref={svgWrapperRef as any}
-                    className='cvat-social-authentication-icon'
-                />
+                {(icon) ? <AuthenticationProviderIcon iconData={icon} provider={children} /> : children}
             </Button>
         </Tooltip>
     );

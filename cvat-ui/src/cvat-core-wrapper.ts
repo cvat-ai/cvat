@@ -18,7 +18,7 @@ import {
 import { Storage, StorageData } from 'cvat-core/src/storage';
 import Issue from 'cvat-core/src/issue';
 import Comment from 'cvat-core/src/comment';
-import { SocialAuthMethods, SocialAuthMethod } from 'cvat-core/src/auth-methods';
+import { SocialAuthMethods, SocialAuthMethod, SelectionSchema } from 'cvat-core/src/auth-methods';
 
 const cvat: any = _cvat;
 
@@ -49,6 +49,7 @@ export {
     ModelKind,
     ModelProviders,
     ModelReturnType,
+    SelectionSchema,
 };
 
 export type {

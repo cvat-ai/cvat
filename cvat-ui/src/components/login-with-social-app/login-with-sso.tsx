@@ -10,9 +10,8 @@ import Spin from 'antd/lib/spin';
 import { selectIdPAsync, loadSocialAuthAsync } from 'actions/auth-actions';
 import { CombinedState } from 'reducers';
 import SigningLayout, { formSizes } from 'components/signing-common/signing-layout';
+import { getCore, SocialAuthMethod, SelectionSchema } from 'cvat-core-wrapper';
 import LoginWithSSOForm from './login-with-sso-form';
-
-import { getCore } from '../../cvat-core-wrapper';
 
 const core = getCore();
 
@@ -22,7 +21,7 @@ function LoginWithSSOComponent(): JSX.Element {
     const isIdPSelected = useSelector((state: CombinedState) => state.auth.ssoIDPSelected);
     const selectedIdP = useSelector((state: CombinedState) => state.auth.ssoIDP);
     const [SSOConfiguration] = useSelector((state: CombinedState) => state.auth.socialAuthMethods.filter(
-        (item) => item.provider === 'sso',
+        (item: SocialAuthMethod) => item.provider === 'sso',
     ));
 
     useEffect(() => {
@@ -31,22 +30,18 @@ function LoginWithSSOComponent(): JSX.Element {
 
     useEffect(() => {
         if (selectedIdP) {
-            const ssoAnchor = window.document.getElementById('ssoLoginAnchor');
-            if (ssoAnchor) {
-                (ssoAnchor as HTMLAnchorElement).href = `${core.config.backendAPI}/auth/sso/${selectedIdP}/login/`;
-                (ssoAnchor as HTMLAnchorElement).click();
-            }
+            window.open(`${core.config.backendAPI}/auth/sso/${selectedIdP}/login/`);
         }
     }, [selectedIdP]);
 
     useEffect(() => {
-        if (SSOConfiguration?.selectionSchema === 'lowest_weight') {
+        if (SSOConfiguration?.selectionSchema === SelectionSchema.L_WEIGHT) {
             dispatch(selectIdPAsync());
         }
     }, [SSOConfiguration?.selectionSchema]);
 
     if (
-        (!fetching && !isIdPSelected && SSOConfiguration?.selectionSchema === 'email_address') ||
+        (!fetching && !isIdPSelected && SSOConfiguration?.selectionSchema === SelectionSchema.EMAIL) ||
         (isIdPSelected && !selectedIdP)
     ) {
         return (
@@ -67,13 +62,9 @@ function LoginWithSSOComponent(): JSX.Element {
         );
     }
     return (
-        <>
-            {/* eslint-disable-next-line */}
-            <a id='ssoLoginAnchor' style={{ display: 'none' }} />
-            <div className='cvat-login-page cvat-spinner-container'>
-                <Spin size='large' className='cvat-spinner' />
-            </div>
-        </>
+        <div className='cvat-login-page cvat-spinner-container'>
+            <Spin size='large' className='cvat-spinner' />
+        </div>
     );
 }
 

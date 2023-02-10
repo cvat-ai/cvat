@@ -57,7 +57,7 @@ const renderSocialAuthMethods = (methods: SocialAuthMethods): JSX.Element | JSX.
                             <Col span={6} key={method.provider} style={{ display: 'flex' }}>
                                 <SocialAccountCard
                                     key={method.provider}
-                                    icon={method.icon || method.publicName}
+                                    icon={method.icon}
                                     href={(method.provider !== 'sso') ? `${backendAPI}/auth/${method.provider}/login/` : '/auth/sso/select-identity-provider/'}
                                     className={`cvat-social-authentication-${method.provider}`}
                                 >

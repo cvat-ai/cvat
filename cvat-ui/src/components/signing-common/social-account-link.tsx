@@ -6,6 +6,7 @@ import './styles.scss';
 import React from 'react';
 import { Col, Row } from 'antd/lib/grid';
 import Button from 'antd/lib/button/button';
+import AuthenticationProviderIcon from './auth-provider-icon';
 
 export interface SocialAccountLinkProps {
     children: string;
@@ -15,17 +16,9 @@ export interface SocialAccountLinkProps {
 }
 
 function SocialAccountLink(props: SocialAccountLinkProps): JSX.Element {
-    const svgWrapperRef = React.useRef();
     const {
         children, className, href, icon,
     } = props;
-
-    React.useEffect(() => {
-        if (icon) {
-            // eslint-disable-next-line no-unsanitized/property
-            svgWrapperRef.current.innerHTML = icon;
-        }
-    }, [icon, svgWrapperRef.current]);
 
     return (
         <Row>
@@ -36,10 +29,7 @@ function SocialAccountLink(props: SocialAccountLinkProps): JSX.Element {
                 >
                     <Row align='middle' style={{ width: '100%' }}>
                         <Col>
-                            <div
-                                ref={svgWrapperRef as any}
-                                className='cvat-social-authentication-icon'
-                            />
+                            {(icon) ? <AuthenticationProviderIcon iconData={icon} provider={children} /> : null}
                         </Col>
                         <Col flex='auto'>
                             {children}

@@ -2,13 +2,16 @@
 //
 // SPDX-License-Identifier: MIT
 
+export enum SelectionSchema {
+    EMAIL = 'email_address',
+    L_WEIGHT = 'lowest_weight',
+}
 interface SocialAuthMethodCamelCase {
     provider: string;
     publicName: string;
     isEnabled: boolean;
     icon: string;
-    selectionSchema?: string;
-
+    selectionSchema?: SelectionSchema;
 }
 
 interface SocialAuthMethodSnakeCase {
@@ -16,7 +19,7 @@ interface SocialAuthMethodSnakeCase {
     is_enabled: boolean;
     icon: string;
     provider?: string;
-    selection_schema?: string;
+    selection_schema?: SelectionSchema;
 }
 
 export class SocialAuthMethod {
@@ -24,7 +27,7 @@ export class SocialAuthMethod {
     public publicName: string;
     public isEnabled: boolean;
     public icon: string;
-    public selectionSchema: string;
+    public selectionSchema: SelectionSchema;
 
     constructor(initialData: SocialAuthMethodSnakeCase) {
         const data: SocialAuthMethodCamelCase = {
