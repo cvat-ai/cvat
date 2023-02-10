@@ -178,9 +178,12 @@ export default function implementAPI(cvat) {
 
         checkExclusiveFields(query, ['jobID', 'taskID', 'filter', 'search'], ['page', 'sort']);
         if ('jobID' in query) {
-            const job = await serverProxy.jobs.get({ id: query.jobID });
+            const { results } = await serverProxy.jobs.get({ id: query.jobID });
+            const [job] = results;
             if (job) {
-                return [new Job(job)];
+                // When request job by ID we also need to add labels to work with them
+                const labels = await serverProxy.labels.get({ job_id: job.id });
+                return [new Job({ ...job, labels: labels.results })];
             }
 
             return [];
@@ -214,7 +217,7 @@ export default function implementAPI(cvat) {
             ordering: isString,
         });
 
-        checkExclusiveFields(filter, ['id', 'projectId'], ['page']);
+        checkExclusiveFields(filter, ['id'], ['page']);
         const searchParams = {};
         for (const key of Object.keys(filter)) {
             if (['page', 'id', 'sort', 'search', 'filter', 'ordering'].includes(key)) {
@@ -239,7 +242,9 @@ export default function implementAPI(cvat) {
                 const jobs = await serverProxy.jobs.get({
                     filter: JSON.stringify({ and: [{ '==': [{ var: 'task_id' }, taskItem.id] }] }),
                 }, true);
-                return new Task({ ...taskItem, jobs: jobs.results, labels: labels.results });
+                return new Task({
+                    ...taskItem, progress: taskItem.jobs, jobs: jobs.results, labels: labels.results,
+                });
             }
 
             return new Task({

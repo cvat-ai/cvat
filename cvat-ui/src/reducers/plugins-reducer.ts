@@ -13,7 +13,6 @@ const defaultState: PluginsState = {
         GIT_INTEGRATION: false,
         ANALYTICS: false,
         MODELS: false,
-        PREDICT: false,
     },
 };
 

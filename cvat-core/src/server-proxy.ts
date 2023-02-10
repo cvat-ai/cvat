@@ -10,7 +10,8 @@ import * as tus from 'tus-js-client';
 import {
     SerializedLabel, SerializedAnnotationFormats, ProjectsFilter,
     SerializedProject, SerializedTask, TasksFilter, SerializedUser,
-    SerializedAbout, SerializedShare, SerializedException, SerializedUserAgreement, SerializedRegister,
+    SerializedAbout, SerializedShare, SerializedException, SerializedUserAgreement,
+    SerializedRegister, JobsFilter, SerializedJob,
 } from 'server-response-types';
 import { Storage } from './storage';
 import { StorageLocation, WebhookSourceType } from './enums';
@@ -49,31 +50,6 @@ function configureStorage(storage: Storage, useDefaultLocation = false): Partial
 function removeToken(): void {
     Axios.defaults.headers.common.Authorization = '';
     store.remove('token');
-}
-
-function waitFor(frequencyHz: number, predicate: () => boolean): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-        if (typeof predicate !== 'function') {
-            reject(new Error(`Predicate must be a function, got ${typeof predicate}`));
-        }
-
-        const internalWait = (): void => {
-            let result = false;
-            try {
-                result = predicate();
-            } catch (error) {
-                reject(error);
-            }
-
-            if (result) {
-                resolve();
-            } else {
-                setTimeout(internalWait, 1000 / frequencyHz);
-            }
-        };
-
-        setTimeout(internalWait);
-    });
 }
 
 function fetchAll(url, filter = {}): Promise<any> {
@@ -656,11 +632,12 @@ async function getProjects(filter: ProjectsFilter = {}): Promise<SerializedProje
     return response.data.results;
 }
 
-async function saveProject(id: number, projectData: Partial<SerializedProject>): Promise<void> {
+async function saveProject(id: number, projectData: Partial<SerializedProject>): Promise<SerializedProject> {
     const { backendAPI } = config;
 
+    let response = null;
     try {
-        await Axios.patch(`${backendAPI}/projects/${id}`, JSON.stringify(projectData), {
+        response = await Axios.patch(`${backendAPI}/projects/${id}`, JSON.stringify(projectData), {
             headers: {
                 'Content-Type': 'application/json',
             },
@@ -668,6 +645,8 @@ async function saveProject(id: number, projectData: Partial<SerializedProject>):
     } catch (errorData) {
         throw generateError(errorData);
     }
+
+    return response.data;
 }
 
 async function deleteProject(id: number): Promise<void> {
@@ -722,7 +701,7 @@ async function getTasks(filter: TasksFilter = {}): Promise<SerializedTask[] & { 
     return response.data.results;
 }
 
-async function saveTask(id: number, taskData: SerializedTask): Promise<SerializedTask> {
+async function saveTask(id: number, taskData: Partial<SerializedTask>): Promise<SerializedTask> {
     const { backendAPI } = config;
 
     let response = null;
@@ -755,6 +734,7 @@ async function deleteTask(id: number, organizationID: string | null = null): Pro
 }
 
 async function getLabels(filter: {
+    job_id?: number,
     task_id?: number,
     project_id?: number,
 }): Promise<{ results: SerializedLabel[] }> {
@@ -763,6 +743,27 @@ async function getLabels(filter: {
         ...filter,
         ...enableOrganization(),
     });
+}
+
+async function deleteLabel(id: number): Promise<void> {
+    const { backendAPI } = config;
+    try {
+        await Axios.delete(`${backendAPI}/labels/${id}`, { method: 'DELETE' });
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function updateLabel(id: number, body: SerializedLabel): Promise<SerializedLabel> {
+    const { backendAPI } = config;
+    let response = null;
+    try {
+        response = await Axios.patch(`${backendAPI}/labels/${id}`, body, { method: 'PATCH' });
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+
+    return response.data;
 }
 
 function exportDataset(instanceType: 'projects' | 'jobs' | 'tasks') {
@@ -1270,7 +1271,10 @@ async function createTask(taskSpec, taskDataSpec, onUpdate) {
     return createdTask[0];
 }
 
-async function getJobs(filter = {}, aggregate = false) {
+async function getJobs(
+    filter: JobsFilter = {},
+    aggregate = false,
+): Promise<{ results: SerializedJob[], count: number }> {
     const { backendAPI } = config;
     const id = filter.id || null;
 
@@ -1278,21 +1282,25 @@ async function getJobs(filter = {}, aggregate = false) {
     try {
         if (id !== null) {
             response = await Axios.get(`${backendAPI}/jobs/${id}`);
-        } else {
-            if (aggregate) {
-                return await fetchAll(`${backendAPI}/jobs`, {
-                    ...filter,
-                    ...enableOrganization(),
-                });
-            }
-
-            response = await Axios.get(`${backendAPI}/jobs`, {
-                params: {
-                    ...filter,
-                    page_size: 12,
-                },
+            return ({
+                results: [response.data],
+                count: 1,
             });
         }
+
+        if (aggregate) {
+            return await fetchAll(`${backendAPI}/jobs`, {
+                ...filter,
+                ...enableOrganization(),
+            });
+        }
+
+        response = await Axios.get(`${backendAPI}/jobs`, {
+            params: {
+                ...filter,
+                page_size: 12,
+            },
+        });
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -1398,7 +1406,7 @@ async function updateIssue(issueID, data) {
     return response.data;
 }
 
-async function deleteIssue(issueID) {
+async function deleteIssue(issueID: number): Promise<void> {
     const { backendAPI } = config;
 
     try {
@@ -1408,7 +1416,7 @@ async function deleteIssue(issueID) {
     }
 }
 
-async function saveJob(id, jobData) {
+async function saveJob(id: number, jobData: Partial<SerializedJob>): Promise<SerializedJob> {
     const { backendAPI } = config;
 
     let response = null;
@@ -1953,104 +1961,6 @@ async function cancelLambdaRequest(requestId) {
     }
 }
 
-function predictorStatus(projectId) {
-    const { backendAPI } = config;
-
-    return new Promise((resolve, reject) => {
-        async function request() {
-            try {
-                const response = await Axios.get(`${backendAPI}/predict/status`, {
-                    params: {
-                        project: projectId,
-                    },
-                });
-                return response.data;
-            } catch (errorData) {
-                throw generateError(errorData);
-            }
-        }
-
-        const timeoutCallback = async () => {
-            let data = null;
-            try {
-                data = await request();
-                if (data.status === 'queued') {
-                    setTimeout(timeoutCallback, 1000);
-                } else if (data.status === 'done') {
-                    resolve(data);
-                } else {
-                    throw new Error(`Unknown status was received "${data.status}"`);
-                }
-            } catch (error) {
-                reject(error);
-            }
-        };
-
-        setTimeout(timeoutCallback);
-    });
-}
-
-function predictAnnotations(taskId, frame) {
-    return new Promise((resolve, reject) => {
-        const { backendAPI } = config;
-
-        async function request() {
-            try {
-                const response = await Axios.get(`${backendAPI}/predict/frame`, {
-                    params: {
-                        task: taskId,
-                        frame,
-                    },
-                });
-                return response.data;
-            } catch (errorData) {
-                throw generateError(errorData);
-            }
-        }
-
-        const timeoutCallback = async () => {
-            let data = null;
-            try {
-                data = await request();
-                if (data.status === 'queued') {
-                    setTimeout(timeoutCallback, 1000);
-                } else if (data.status === 'done') {
-                    predictAnnotations.latestRequest.fetching = false;
-                    resolve(data.annotation);
-                } else {
-                    throw new Error(`Unknown status was received "${data.status}"`);
-                }
-            } catch (error) {
-                predictAnnotations.latestRequest.fetching = false;
-                reject(error);
-            }
-        };
-
-        const closureId = Date.now();
-        predictAnnotations.latestRequest.id = closureId;
-        const predicate = () => !predictAnnotations.latestRequest.fetching ||
-            predictAnnotations.latestRequest.id !== closureId;
-        if (predictAnnotations.latestRequest.fetching) {
-            waitFor(5, predicate).then(() => {
-                if (predictAnnotations.latestRequest.id !== closureId) {
-                    resolve(null);
-                } else {
-                    predictAnnotations.latestRequest.fetching = true;
-                    setTimeout(timeoutCallback);
-                }
-            });
-        } else {
-            predictAnnotations.latestRequest.fetching = true;
-            setTimeout(timeoutCallback);
-        }
-    });
-}
-
-predictAnnotations.latestRequest = {
-    fetching: false,
-    id: null,
-};
-
 async function installedApps() {
     const { backendAPI } = config;
     try {
@@ -2476,6 +2386,8 @@ export default Object.freeze({
 
     labels: Object.freeze({
         get: getLabels,
+        delete: deleteLabel,
+        update: updateLabel,
     }),
 
     jobs: Object.freeze({
@@ -2540,11 +2452,6 @@ export default Object.freeze({
 
     comments: Object.freeze({
         create: createComment,
-    }),
-
-    predictor: Object.freeze({
-        status: predictorStatus,
-        predict: predictAnnotations,
     }),
 
     cloudStorages: Object.freeze({

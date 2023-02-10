@@ -13,6 +13,7 @@ import {
 } from 'cvat-core/src/labels';
 import { SerializedAttribute, SerializedLabel } from 'cvat-core/src/server-response-types';
 import { Job, Task } from 'cvat-core/src/session';
+import Project from 'cvat-core/src/project';
 import {
     ShapeType, LabelType, ModelKind, ModelProviders, ModelReturnType,
 } from 'cvat-core/src/enums';
@@ -38,6 +39,7 @@ export {
     Label,
     Job,
     Task,
+    Project,
     Attribute,
     ShapeType,
     LabelType,

@@ -3,8 +3,9 @@
 // SPDX-License-Identifier: MIT
 
 import {
-    DimensionType, ProjectStatus,
-    ShareFileType, TaskStatus,
+    ChunkType,
+    DimensionType, JobStage, JobState, ProjectStatus,
+    ShareFileType, TaskMode, TaskStatus,
 } from 'enums';
 import { SerializedModel } from 'core-types';
 
@@ -70,6 +71,7 @@ export interface SerializedProject {
 }
 
 export type TasksFilter = ProjectsFilter & { ordering?: string; }; // TODO: Need to clarify how "ordering" is used
+export type JobsFilter = ProjectsFilter;
 
 export interface SerializedTask {
     assignee: SerializedUser | null;
@@ -77,14 +79,14 @@ export interface SerializedTask {
     created_date: string;
     data: number;
     data_chunk_size: number | null;
-    data_compressed_chunk_type: 'imageset' | 'video';
-    data_original_chunk_type: 'imageset' | 'video';
+    data_compressed_chunk_type: ChunkType
+    data_original_chunk_type: ChunkType;
     dimension: DimensionType;
     id: number;
     image_quality: number;
     jobs: { count: 1; completed: 0; url: string; };
     labels: { count: number; url: string; };
-    mode: 'annotation' | 'interpolation' | '';
+    mode: TaskMode | '';
     name: string;
     organization: number | null;
     overlap: number | null;
@@ -96,6 +98,26 @@ export interface SerializedTask {
     target_storage: { id: number; location: 'local' | 'cloud'; cloud_storage_id: null };
     status: TaskStatus;
     subset: string;
+    updated_date: string;
+    url: string;
+}
+
+export interface SerializedJob {
+    assignee: SerializedUser | null;
+    bug_tracker: string;
+    data_chunk_size: number | null;
+    data_compressed_chunk_type: ChunkType
+    dimension: DimensionType;
+    id: number;
+    issues: { count: number; url: string };
+    labels: { count: number; url: string };
+    mode: TaskMode;
+    project_id: number | null;
+    stage: JobStage;
+    state: JobState;
+    startFrame: number;
+    stopFrame: number;
+    task_id: number;
     updated_date: string;
     url: string;
 }
@@ -119,7 +141,6 @@ export interface SerializedLabel {
     svg?: string;
     sublabels?: SerializedLabel[];
     has_parent?: boolean;
-    deleted?: boolean;
     attributes: SerializedAttribute[];
 }
 

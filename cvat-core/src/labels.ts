@@ -95,6 +95,7 @@ export class Label {
         svg: string;
     } | null;
     public deleted: boolean;
+    public patched: boolean;
     public readonly hasParent?: boolean;
 
     constructor(initialData: SerializedLabel) {
@@ -106,6 +107,7 @@ export class Label {
             structure: undefined,
             has_parent: false,
             deleted: false,
+            patched: false,
             svg: undefined,
             elements: undefined,
             sublabels: undefined,
@@ -182,6 +184,12 @@ export class Label {
                         data.deleted = value;
                     },
                 },
+                patched: {
+                    get: () => data.patched,
+                    set: (value) => {
+                        data.patched = value;
+                    },
+                },
                 hasParent: {
                     get: () => data.has_parent,
                 },
@@ -202,10 +210,6 @@ export class Label {
 
         if (typeof this.id !== 'undefined') {
             object.id = this.id;
-        }
-
-        if (this.deleted) {
-            object.deleted = this.deleted;
         }
 
         if (this.type) {

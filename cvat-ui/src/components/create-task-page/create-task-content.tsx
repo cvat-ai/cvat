@@ -896,7 +896,6 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
 
     public render(): JSX.Element {
         const { many } = this.props;
-        console.log(temp);
 
         return (
             <Row justify='start' align='middle' className='cvat-create-task-content'>

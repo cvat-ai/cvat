@@ -8,6 +8,11 @@ export enum ShareFileType {
     REG = 'REG',
 }
 
+export enum ChunkType {
+    IMAGESET = 'imageset',
+    VIDEO = 'video',
+}
+
 export enum TaskStatus {
     ANNOTATION = 'annotation',
     VALIDATION = 'validation',
