@@ -132,10 +132,9 @@ function TaskPageComponent(): JSX.Element {
 
     const onJobUpdate = (job: Job): void => {
         setUpdatingTask(true);
-        job.save().then((updatedTask: Task) => {
+        job.save().then(() => {
             if (mounted.current) {
                 receieveTask();
-                setTaskInstance(updatedTask);
             }
         }).catch((error: Error) => {
             notification.error({
