@@ -4,7 +4,7 @@ Django==3.2.17
 django-appconf==1.0.4
 django-auth-ldap==2.2.0
 django-compressor==2.4
-dj-rest-auth[with_social]==2.2.5
+dj-rest-auth[with_social]==2.2.7
 django-rq==2.3.2
 EasyProcess==0.3
 Pillow==9.3.0
