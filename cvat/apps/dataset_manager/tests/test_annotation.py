@@ -9,7 +9,7 @@ from unittest import TestCase
 
 class TrackManagerTest(TestCase):
     def _check_interpolation(self, track):
-        interpolated = TrackManager.get_interpolated_shapes(track, 0, 7)
+        interpolated = TrackManager.get_interpolated_shapes(track, 0, 7, '2d')
 
         self.assertEqual(len(interpolated), 6)
         self.assertTrue(interpolated[0]["keyframe"])
@@ -254,7 +254,7 @@ class TrackManagerTest(TestCase):
             }
         ]
 
-        interpolated_shapes = TrackManager.get_interpolated_shapes(track, 0, 5)
+        interpolated_shapes = TrackManager.get_interpolated_shapes(track, 0, 5, '2d')
         self.assertEqual(expected_shapes, interpolated_shapes)
 
     def test_outside_polygon_interpolation(self):
@@ -314,5 +314,5 @@ class TrackManagerTest(TestCase):
             }
         ]
 
-        interpolated_shapes = TrackManager.get_interpolated_shapes(track, 0, 3)
+        interpolated_shapes = TrackManager.get_interpolated_shapes(track, 0, 3, '2d')
         self.assertEqual(expected_shapes, interpolated_shapes)

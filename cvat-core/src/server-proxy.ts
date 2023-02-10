@@ -7,6 +7,7 @@ import FormData from 'form-data';
 import store from 'store';
 import Axios, { AxiosResponse } from 'axios';
 import * as tus from 'tus-js-client';
+import { AnnotationFormatsResponseBody } from 'server-response-types';
 import { Storage } from './storage';
 import { StorageLocation, WebhookSourceType } from './enums';
 import { isEmail } from './common';
@@ -281,7 +282,7 @@ async function exception(exceptionObject) {
     }
 }
 
-async function formats() {
+async function formats(): Promise<AnnotationFormatsResponseBody> {
     const { backendAPI } = config;
 
     let response = null;
