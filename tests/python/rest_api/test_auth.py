@@ -21,6 +21,7 @@ class TestBasicAuth:
             assert response.status == HTTPStatus.OK
             assert user.username == username
 
+
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestTokenAuth:
     @staticmethod
