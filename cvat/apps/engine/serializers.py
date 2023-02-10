@@ -642,13 +642,13 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 sublabels = label.pop('sublabels', [])
                 svg = label.pop('svg', '')
                 db_label = models.Label.objects.create(task=db_task, parent=parent_label, **label)
-                logger.info(f'Label id:{db_label.id} for spec:{label} with sublabels:{sublabels}, parent_label:{parent_label} was created')
+                logger.info(f'label:create: Label id:{db_label.id} for spec:{label} with sublabels:{sublabels}, parent_label:{parent_label}')
                 create_labels(sublabels, parent_label=db_label)
                 if db_label.type == str(models.LabelType.SKELETON):
                     for db_sublabel in list(db_label.sublabels.all()):
                         svg = svg.replace(f'data-label-name="{db_sublabel.name}"', f'data-label-id="{db_sublabel.id}"')
                     db_skeleton = models.Skeleton.objects.create(root=db_label, svg=svg)
-                    logger.info(f'Skeleton id:{db_skeleton.id} for label_id:{db_label.id} was created')
+                    logger.info(f'label:create Skeleton id:{db_skeleton.id} for label_id:{db_label.id}')
 
                 for attr in attributes:
                     if attr.get('id', None):
@@ -689,7 +689,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                     for db_sublabel in list(db_label.sublabels.all()):
                         svg = svg.replace(f'data-label-name="{db_sublabel.name}"', f'data-label-id="{db_sublabel.id}"')
                     db_skeleton = models.Skeleton.objects.create(root=db_label, svg=svg)
-                    logger.info(f'Skeleton id:{db_skeleton.id} for label_id:{db_label.id} was created')
+                    logger.info(f'Skeleton id:{db_skeleton.id} for label_id:{db_label.id} was updated')
 
         if instance.project_id is None:
             update_labels(labels)
@@ -876,13 +876,13 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
                 sublabels = label.pop('sublabels', [])
                 svg = label.pop('svg', [])
                 db_label = models.Label.objects.create(project=db_project, parent=parent_label, **label)
-                logger.info(f'Label id:{db_label.id} for spec:{label} with sublabels:{sublabels}, parent_label:{parent_label} was created')
+                logger.info(f'label:create Label id:{db_label.id} for spec:{label} with sublabels:{sublabels}, parent_label:{parent_label}')
                 create_labels(sublabels, parent_label=db_label)
                 if db_label.type == str(models.LabelType.SKELETON):
                     for db_sublabel in list(db_label.sublabels.all()):
                         svg = svg.replace(f'data-label-name="{db_sublabel.name}"', f'data-label-id="{db_sublabel.id}"')
                     db_skeleton = models.Skeleton.objects.create(root=db_label, svg=svg)
-                    logger.info(f'Skeleton id:{db_skeleton.id} for label_id:{db_label.id} was created')
+                    logger.info(f'label:create Skeleton id:{db_skeleton.id} for label_id:{db_label.id}')
 
                 for attr in attributes:
                     if attr.get('id', None):
@@ -913,7 +913,7 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
                 sublabels = label.pop('sublabels', [])
                 svg = label.pop('svg', '')
                 db_label = LabelSerializer.update_instance(label, instance, parent_label)
-                logger.info(f'Label id:{db_label.id} for spec:{label} with sublabels:{sublabels}, parent_label:{parent_label} was updated')
+                logger.info(f'label:update Label id:{db_label.id} for spec:{label} with sublabels:{sublabels}, parent_label:{parent_label}')
                 if not label.get('deleted'):
                     update_labels(sublabels, parent_label=db_label)
 
@@ -921,7 +921,7 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
                         for db_sublabel in list(db_label.sublabels.all()):
                             svg = svg.replace(f'data-label-name="{db_sublabel.name}"', f'data-label-id="{db_sublabel.id}"')
                         db_skeleton = models.Skeleton.objects.create(root=db_label, svg=svg)
-                        logger.info(f'Skeleton id:{db_skeleton.id} for label_id:{db_label.id} was created')
+                        logger.info(f'label:update: Skeleton id:{db_skeleton.id} for label_id:{db_label.id}')
 
         update_labels(labels)
 
