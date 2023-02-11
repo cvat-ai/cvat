@@ -88,7 +88,7 @@ class CollectionSimpleFilterTestBase(metaclass=ABCMeta):
 
     def _compare_results(self, gt_objects, received_objects):
         if self.cmp_ignore_keys:
-            ignore_keys = "root['{}']".format("|".join(self.cmp_ignore_keys))
+            ignore_keys = [f"root['{k}']" for k in self.cmp_ignore_keys]
         else:
             ignore_keys = None
 
@@ -107,3 +107,8 @@ class CollectionSimpleFilterTestBase(metaclass=ABCMeta):
         received_items = self._retrieve_collection(**{field: str(value)})
 
         self._compare_results(gt_objects, received_items)
+
+
+def get_attrs(obj: Any, attributes: Sequence[str]) -> Tuple[Any, ...]:
+    """Returns 1 or more object attributes as a tuple"""
+    return (getattr(obj, attr) for attr in attributes)

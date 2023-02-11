@@ -4,17 +4,20 @@
 
 import itertools
 import json
+from copy import deepcopy
 from http import HTTPStatus
-from typing import Any, Dict, List, Tuple
+from types import SimpleNamespace
+from typing import Any, Dict, List, Optional, Tuple
 
 import pytest
-from cvat_sdk import exceptions
+from cvat_sdk import exceptions, models
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from deepdiff import DeepDiff
+from pytest_cases import fixture, parametrize
 
 from shared.utils.config import make_api_client
 
-from .utils import CollectionSimpleFilterTestBase
+from .utils import CollectionSimpleFilterTestBase, get_attrs
 
 
 class TestLabelsListFilters(CollectionSimpleFilterTestBase):
@@ -136,12 +139,11 @@ class TestLabelsListFilters(CollectionSimpleFilterTestBase):
         self._compare_results(labels, retrieved_data)
 
 
-@pytest.mark.usefixtures("restore_db_per_class")
-class TestGetLabels:
-    @pytest.fixture(autouse=True)
-    def setup(
+class _TestLabelsPermissionsBase:
+    @pytest.fixture
+    def _base_setup(
         self,
-        restore_db_per_class,
+        users,
         labels,
         jobs,
         tasks,
@@ -153,6 +155,7 @@ class TestGetLabels:
         projects_by_org,
         memberships,
     ):
+        self.users = users
         self.labels = labels
         self.jobs = jobs
         self.tasks = tasks
@@ -164,26 +167,12 @@ class TestGetLabels:
         self.projects_by_org = projects_by_org
         self.memberships = memberships
 
-    def _test_get_ok(self, user, lid, data, **kwargs):
-        with make_api_client(user) as client:
-            (_, response) = client.labels_api.retrieve(lid, **kwargs)
-            assert response.status == HTTPStatus.OK
-            assert (
-                DeepDiff(
-                    data,
-                    json.loads(response.data),
-                    exclude_paths="root['updated_date']",
-                    ignore_order=True,
-                )
-                == {}
-            )
-
-    def _test_get_denied(self, user, lid, **kwargs):
-        with make_api_client(user) as client:
-            (_, response) = client.labels_api.retrieve(
-                lid, **kwargs, _check_status=False, _parse_response=False
-            )
-            assert response.status == HTTPStatus.FORBIDDEN
+    @pytest.fixture(autouse=True)
+    def setup(self, _base_setup):
+        """
+        This function only calls the _base_setup() fixture.
+        It can be overridden in derived classes.
+        """
 
     @staticmethod
     def _labels_by_source(labels: List[Dict], *, source_key: str) -> Dict[int, List[Dict]]:
@@ -195,25 +184,36 @@ class TestGetLabels:
 
         return labels_by_source
 
-    @pytest.mark.parametrize("source", ["task", "project"])
-    @pytest.mark.parametrize("is_staff", [True, False])
-    @pytest.mark.parametrize("user", ["admin1"])
-    def test_admin_get_sandbox_label(
-        self,
-        user,
-        source,
-        is_staff,
-    ):
+    def _get_source_info(self, source: str, *, org_id: Optional[int] = None):
         if source == "task":
-            sources = self.tasks
+            sources = self.tasks_by_org
             is_source_staff = self.is_task_staff
             label_source_key = "task_id"
         elif source == "project":
-            sources = self.projects
+            sources = self.projects_by_org
             is_source_staff = self.is_project_staff
             label_source_key = "project_id"
         else:
             assert False
+
+        sources = sources[org_id or ""]
+
+        return SimpleNamespace(
+            sources=sources, is_source_staff=is_source_staff, label_source_key=label_source_key
+        )
+
+    source_types = ["task", "project"]
+    org_roles = ["worker", "supervisor", "maintainer", "owner"]
+
+    @fixture
+    @parametrize("source", source_types)
+    @parametrize("user", ["admin1"])
+    @parametrize("is_staff", [True, False])
+    def admin_sandbox_case(self, user, source, is_staff):
+        sources, is_source_staff, label_source_key = get_attrs(
+            self._get_source_info(source),
+            ["sources", "is_source_staff", "label_source_key"],
+        )
 
         labels_by_source = self._labels_by_source(self.labels, source_key=label_source_key)
         sources_with_labels = [s for s in sources if labels_by_source.get(s["id"])]
@@ -226,29 +226,18 @@ class TestGetLabels:
             label for label in self.labels if label.get(label_source_key) == source_obj["id"]
         )
 
-        self._test_get_ok(user, label["id"], label)
+        yield SimpleNamespace(label=label, user=user, source=source, is_staff=is_staff)
 
-    @pytest.mark.parametrize("source", ["task", "project"])
-    @pytest.mark.parametrize("org_id", [2])
-    @pytest.mark.parametrize("user", ["admin2"])
-    def test_admin_get_org_label(
-        self,
-        user,
-        source,
-        org_id,
-    ):
-        if source == "task":
-            sources = self.tasks_by_org
-            is_source_staff = self.is_task_staff
-            label_source_key = "task_id"
-        elif source == "project":
-            sources = self.projects_by_org
-            is_source_staff = self.is_project_staff
-            label_source_key = "project_id"
-        else:
-            assert False
+    @fixture
+    @parametrize("source", source_types)
+    @parametrize("org_id", [2])
+    @parametrize("user", ["admin2"])
+    def admin_org_case(self, user, source, org_id):
+        sources, is_source_staff, label_source_key = get_attrs(
+            self._get_source_info(source, org_id=org_id),
+            ["sources", "is_source_staff", "label_source_key"],
+        )
 
-        sources = sources[org_id]
         labels_by_source = self._labels_by_source(self.labels, source_key=label_source_key)
         sources_with_labels = [s for s in sources if labels_by_source.get(s["id"])]
         source_obj = sources_with_labels[0]
@@ -257,17 +246,16 @@ class TestGetLabels:
         user_id = self.users_by_name[user]["id"]
         assert not is_source_staff(user_id, source_obj["id"])
 
-        self._test_get_ok(user, label["id"], label)
+        yield SimpleNamespace(label=label, user=user, source=source, org_id=org_id)
 
-    @pytest.mark.parametrize("source", ["task", "project"])
-    @pytest.mark.parametrize("is_staff", [True, False])
-    def test_regular_user_get_sandbox_label(self, source, is_staff):
-        if source == "task":
-            sources = self.tasks
-            label_source_key = "task_id"
-        elif source == "project":
-            sources = self.projects
-            label_source_key = "project_id"
+    @fixture
+    @parametrize("source", source_types)
+    @parametrize("is_staff", [True, False])
+    def user_sandbox_case(self, source, is_staff):
+        sources, label_source_key = get_attrs(
+            self._get_source_info(source),
+            ["sources", "label_source_key"],
+        )
 
         users = {u["id"]: u for u in self.users if not u["is_superuser"]}
         regular_users_sources = [
@@ -278,40 +266,18 @@ class TestGetLabels:
         label = labels_by_source[source_obj["id"]][0]
         user = next(u for u in users.values() if (u["id"] == source_obj["owner"]["id"]) == is_staff)
 
-        if is_staff:
-            self._test_get_ok(user["username"], label["id"], label)
-        else:
-            self._test_get_denied(user["username"], label["id"])
+        yield SimpleNamespace(label=label, user=user, is_staff=is_staff)
 
-    @pytest.mark.parametrize("source", ["task", "project"])
-    @pytest.mark.parametrize("org_id", [2])
-    @pytest.mark.parametrize(
-        "role",
-        [
-            "worker",
-            "supervisor",
-            "maintainer",
-            "owner",
-        ],
-    )
-    @pytest.mark.parametrize("is_staff", [True, False])
-    def test_regular_user_get_org_label(
-        self,
-        source,
-        is_staff,
-        role,
-        org_id,
-    ):
-        if source == "task":
-            sources = self.tasks_by_org
-            is_source_staff = self.is_task_staff
-            label_source_key = "task_id"
-        elif source == "project":
-            sources = self.projects_by_org
-            is_source_staff = self.is_project_staff
-            label_source_key = "project_id"
-
-        sources = sources[org_id]
+    @fixture
+    @parametrize("source", source_types)
+    @parametrize("org_id", [2])
+    @parametrize("role", org_roles)
+    @parametrize("is_staff", [True, False])
+    def user_org_case(self, source, is_staff, role, org_id):
+        sources, is_source_staff, label_source_key = get_attrs(
+            self._get_source_info(source, org_id=org_id),
+            ["sources", "is_source_staff", "label_source_key"],
+        )
 
         labels_by_source = self._labels_by_source(self.labels, source_key=label_source_key)
 
@@ -340,9 +306,187 @@ class TestGetLabels:
 
         label = labels_by_source[source_obj["id"]][0]
 
-        kwargs = {"org_id": org_id}
+        yield SimpleNamespace(label=label, user=user, org_id=org_id, is_staff=is_staff)
 
+
+class TestGetLabels(_TestLabelsPermissionsBase):
+    @pytest.fixture(autouse=True)
+    def setup(self, restore_db_per_class, _base_setup):  # pylint: disable=arguments-differ
+        pass
+
+    def _test_get_ok(self, user, lid, data, **kwargs):
+        with make_api_client(user) as client:
+            (_, response) = client.labels_api.retrieve(lid, **kwargs)
+            assert response.status == HTTPStatus.OK
+            assert (
+                DeepDiff(
+                    data,
+                    json.loads(response.data),
+                    exclude_paths="root['updated_date']",
+                    ignore_order=True,
+                )
+                == {}
+            )
+
+    def _test_get_denied(self, user, lid, **kwargs):
+        with make_api_client(user) as client:
+            (_, response) = client.labels_api.retrieve(
+                lid, **kwargs, _check_status=False, _parse_response=False
+            )
+            assert response.status == HTTPStatus.FORBIDDEN
+
+    def test_admin_get_sandbox_label(self, admin_sandbox_case):
+        label, user = get_attrs(admin_sandbox_case, ["label", "user"])
+
+        self._test_get_ok(user, label["id"], label)
+
+    def test_admin_get_org_label(self, admin_org_case):
+        label, user = get_attrs(admin_org_case, ["label", "user"])
+
+        self._test_get_ok(user, label["id"], label)
+
+    def test_regular_user_get_sandbox_label(self, user_sandbox_case):
+        label, user, is_staff = get_attrs(user_sandbox_case, ["label", "user", "is_staff"])
+
+        if is_staff:
+            self._test_get_ok(user["username"], label["id"], label)
+        else:
+            self._test_get_denied(user["username"], label["id"])
+
+    def test_regular_user_get_org_label(self, user_org_case):
+        label, user, org_id, is_staff = get_attrs(
+            user_org_case, ["label", "user", "org_id", "is_staff"]
+        )
+
+        kwargs = {"org_id": org_id}
         if is_staff:
             self._test_get_ok(user["username"], label["id"], label, **kwargs)
         else:
             self._test_get_denied(user["username"], label["id"], **kwargs)
+
+
+class TestPatchLabels(_TestLabelsPermissionsBase):
+    @pytest.fixture(autouse=True)
+    def setup(self, restore_db_per_function, _base_setup):  # pylint: disable=arguments-differ
+        self.ignore_fields = ["updated_date", "attributes.id"]
+
+    def _build_exclude_paths_expr(self):
+        exclude_expr_parts = []
+        for key in self.ignore_fields:
+            if "." in key:
+                key_parts = key.split(".")
+                expr = r"root\['{}'\]".format(key_parts[0])
+                expr += "".join(r"\[.*\]\['{}'\]".format(part) for part in key_parts[1:])
+            else:
+                expr = r"root\['{}'\]".format(key)
+
+            exclude_expr_parts.append(expr)
+
+        return exclude_expr_parts
+
+    def _test_update_ok(self, user, lid, data, *, expected_data=None, **kwargs):
+        with make_api_client(user) as client:
+            (_, response) = client.labels_api.partial_update(
+                lid, patched_label_request=models.PatchedLabelRequest(**deepcopy(data)), **kwargs
+            )
+            assert response.status == HTTPStatus.OK
+            assert (
+                DeepDiff(
+                    expected_data if expected_data is not None else data,
+                    json.loads(response.data),
+                    exclude_regex_paths=self._build_exclude_paths_expr(),
+                    ignore_order=True,
+                )
+                == {}
+            )
+
+    def _test_update_denied(self, user, lid, data, **kwargs):
+        with make_api_client(user) as client:
+            (_, response) = client.labels_api.partial_update(
+                lid,
+                patched_label_request=models.PatchedLabelRequest(**deepcopy(data)),
+                **kwargs,
+                _check_status=False,
+                _parse_response=False,
+            )
+            assert response.status == HTTPStatus.FORBIDDEN
+
+    def _get_patch_data(
+        self, original_data: Dict[str, Any], **overrides
+    ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+        result = deepcopy(original_data)
+        result.update(overrides)
+        if overrides:
+            payload = overrides
+        return result, payload
+
+    @fixture
+    @parametrize(
+        "key, value",
+        list(
+            itertools.chain.from_iterable(
+                itertools.product([k], values)
+                for k, values in {
+                    "attributes": [
+                        [
+                            {
+                                "default_value": "mazda_new",
+                                "input_type": "select",
+                                "mutable": True,
+                                "name": "model_new",
+                                "values": ["mazda_new", "bmw"],
+                            }
+                        ],
+                        [],
+                    ],
+                    "color": ["#2000c0"],
+                    "name": ["car", "modified"],
+                }.items()
+            )
+        ),
+    )
+    def modify_param_case(self, key, value):
+        yield SimpleNamespace(key=key, value=value)
+
+    def test_admin_patch_sandbox_label(self, admin_sandbox_case, modify_param_case):
+        label, user = get_attrs(admin_sandbox_case, ["label", "user"])
+        param, newvalue = get_attrs(modify_param_case, ["key", "value"])
+
+        expected_data, patch_data = self._get_patch_data(label, **{param: newvalue})
+
+        self._test_update_ok(user, label["id"], patch_data, expected_data=expected_data)
+
+    def test_admin_patch_org_label(self, admin_org_case):
+        label, user = get_attrs(admin_org_case, ["label", "user"])
+
+        expected_data, patch_data = self._get_patch_data(label)
+
+        self._test_update_ok(user, label["id"], patch_data, expected_data=expected_data)
+
+    def test_regular_user_patch_sandbox_label(self, user_sandbox_case):
+        label, user, is_staff = get_attrs(user_sandbox_case, ["label", "user", "is_staff"])
+
+        expected_data, patch_data = self._get_patch_data(label)
+
+        if is_staff:
+            self._test_update_ok(
+                user["username"], label["id"], patch_data, expected_data=expected_data
+            )
+        else:
+            self._test_update_denied(user["username"], label["id"], patch_data)
+
+    def test_regular_user_patch_org_label(self, user_org_case):
+        label, user, org_id, is_staff = get_attrs(
+            user_org_case, ["label", "user", "org_id", "is_staff"]
+        )
+
+        kwargs = {"org_id": org_id}
+
+        expected_data, patch_data = self._get_patch_data(label)
+
+        if is_staff:
+            self._test_update_ok(
+                user["username"], label["id"], patch_data, expected_data=expected_data, **kwargs
+            )
+        else:
+            self._test_update_denied(user["username"], label["id"], patch_data, **kwargs)

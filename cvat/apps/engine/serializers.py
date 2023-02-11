@@ -283,18 +283,11 @@ class LabelSerializer(SublabelSerializer):
         if not self._local:
             return super().update(instance, validated_data)
 
-        if instance.project:
-            parent_serializer = ProjectWriteSerializer(
-                instance.project, data={'labels': [validated_data]}, partial=self.partial
-            )
-        else:
-            parent_serializer = TaskWriteSerializer(
-                instance.task, data={'labels': [validated_data]}, partial=self.partial
-            )
-
-        parent_serializer.is_valid(raise_exception=True)
-        parent_serializer.save()
-
+        validated_data['id'] = instance.id
+        self.instance = self.update_instance(validated_data,
+            parent_instance=instance.project or instance.task,
+            parent_label=instance.parent
+        )
         self.instance = models.Label.objects.get(pk=instance.pk)
         return self.instance
 
