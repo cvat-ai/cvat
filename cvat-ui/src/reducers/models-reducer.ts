@@ -42,6 +42,10 @@ export default function (state = defaultState, action: ModelsActions | AuthActio
             return {
                 ...state,
                 fetching: true,
+                query: {
+                    ...state.query,
+                    ...action.payload.query,
+                },
             };
         }
         case ModelsActionTypes.GET_MODELS_SUCCESS: {
@@ -62,7 +66,7 @@ export default function (state = defaultState, action: ModelsActions | AuthActio
                 classifiers: action.payload.models.filter((model: MLModel) => (
                     model.kind === ModelKind.CLASSIFIER
                 )),
-                totalCount: action.payload.models.length,
+                totalCount: action.payload.count,
                 initialized: true,
                 fetching: false,
             };

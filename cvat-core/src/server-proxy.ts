@@ -7,12 +7,14 @@ import FormData from 'form-data';
 import store from 'store';
 import Axios, { AxiosResponse } from 'axios';
 import * as tus from 'tus-js-client';
+import { AnnotationFormatsResponseBody } from 'server-response-types';
 import { Storage } from './storage';
 import { StorageLocation, WebhookSourceType } from './enums';
 import { isEmail } from './common';
 import config from './config';
 import DownloadWorker from './download.worker';
 import { ServerError } from './exceptions';
+import { FunctionsResponseBody } from './server-response-types';
 
 type Params = {
     org: number | string,
@@ -280,7 +282,7 @@ async function exception(exceptionObject) {
     }
 }
 
-async function formats() {
+async function formats(): Promise<AnnotationFormatsResponseBody> {
     const { backendAPI } = config;
 
     let response = null;
@@ -1619,17 +1621,20 @@ async function getAnnotations(session, id) {
     return response.data;
 }
 
-async function getFunctions() {
+async function getFunctions(): Promise<FunctionsResponseBody> {
     const { backendAPI } = config;
 
     try {
         const response = await Axios.get(`${backendAPI}/functions`, {
             proxy: config.proxy,
         });
-        return response.data.results;
+        return response.data;
     } catch (errorData) {
         if (errorData.response.status === 404) {
-            return [];
+            return {
+                results: [],
+                count: 0,
+            };
         }
         throw generateError(errorData);
     }

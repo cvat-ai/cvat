@@ -5,7 +5,11 @@ on:
       - 'develop'
 
 jobs:
+  get-sha:
+    uses: ./.github/workflows/search-cache.yml
+
   Caching_CVAT:
+    needs: search_cache
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       REPO: ${{ github.repository }}
@@ -13,34 +17,13 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Getting SHA with cache from the default branch
-        id: get-sha
-        run: |
-          DEFAULT_BRANCH=$(gh api /repos/$REPO | jq -r '.default_branch')
-          for sha in $(gh api "/repos/$REPO/commits?per_page=100&sha=${DEFAULT_BRANCH}" | jq -r '.[].sha');
-          do
-            RUN_status=$(gh api /repos/${REPO}/actions/workflows/cache.yml/runs | \
-              jq -r ".workflow_runs[]? | select((.head_sha == \"${sha}\") and (.conclusion == \"success\")) | .status")
-
-            if [[ ${RUN_status} == "completed" ]]; then
-              SHA=$sha
-              break
-            fi
-          done
-
-          echo Default branch is ${DEFAULT_BRANCH}
-          echo Workflow will try to get cache from commit: ${SHA}
-
-          echo "default_branch=${DEFAULT_BRANCH}" >> $GITHUB_OUTPUT
-          echo "sha=${SHA}" >> $GITHUB_OUTPUT
-
       - uses: actions/cache@v3
         id: server-cache-action
         with:
           path: /tmp/cvat_cache_server
           key: ${{ runner.os }}-build-server-${{ github.sha }}
           restore-keys: |
-            ${{ runner.os }}-build-server-${{ steps.get-sha.outputs.sha }}
+            ${{ runner.os }}-build-server-${{ needs.get-sha.outputs.sha }}
             ${{ runner.os }}-build-server-
 
       - uses: actions/cache@v3
@@ -49,7 +32,7 @@ jobs:
           path: /tmp/cvat_cache_ui
           key: ${{ runner.os }}-build-ui-${{ github.sha }}
           restore-keys: |
-            ${{ runner.os }}-build-ui-${{ steps.get-sha.outputs.sha }}
+            ${{ runner.os }}-build-ui-${{ needs.get-sha.outputs.sha }}
             ${{ runner.os }}-build-ui-
 
       - uses: actions/cache@v3
@@ -58,7 +41,7 @@ jobs:
           path: /tmp/cvat_cache_elasticsearch
           key: ${{ runner.os }}-build-elasticsearch-${{ github.sha }}
           restore-keys: |
-            ${{ runner.os }}-build-elasticsearch-${{ steps.get-sha.outputs.sha }}
+            ${{ runner.os }}-build-elasticsearch-${{ needs.get-sha.outputs.sha }}
             ${{ runner.os }}-build-elasticsearch-
 
       - uses: actions/cache@v3
@@ -67,7 +50,7 @@ jobs:
           path: /tmp/cvat_cache_logstash
           key: ${{ runner.os }}-build-logstash-${{ github.sha }}
           restore-keys: |
-            ${{ runner.os }}-build-logstash-${{ steps.get-sha.outputs.sha }}
+            ${{ runner.os }}-build-logstash-${{ needs.get-sha.outputs.sha }}
             ${{ runner.os }}-build-logstash-
 
       - name: Set up Docker Buildx

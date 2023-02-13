@@ -41,6 +41,9 @@ Cypress.Commands.add('logout', (username = Cypress.env('user')) => {
     cy.visit('/auth/login');
     cy.url().should('not.include', '?next=');
     cy.contains('Sign in').should('exist');
+    // TMP fix for multi-user tests, need to change login logic with sessions
+    cy.clearAllCookies();
+    cy.clearAllLocalStorage();
 });
 
 Cypress.Commands.add('userRegistration', (firstName, lastName, userName, emailAddr, password) => {
@@ -206,7 +209,7 @@ Cypress.Commands.add(
                             cy.get(`.ant-select-item-option[title="${projectName}"]`).click();
                         });
                 }
-                cy.get('.cvat-project-search-field').within(() => {
+                cy.get('.cvat-project-search-field').first().within(() => {
                     cy.get('[type="search"]').should('have.value', projectName);
                 });
                 cy.get('.cvat-project-subset-field').type(projectSubsetFieldValue);
@@ -532,6 +535,7 @@ Cypress.Commands.add('changeLabelAAM', (labelName) => {
             });
             cy.get('.ant-select-dropdown')
                 .not('.ant-select-dropdown-hidden')
+                .first()
                 .within(() => {
                     cy.get(`.ant-select-item-option[title="${labelName}"]`).click();
                 });
@@ -576,6 +580,7 @@ Cypress.Commands.add('updateAttributes', (multiAttrParams) => {
         });
         cy.get('.ant-select-dropdown')
             .not('.ant-select-dropdown-hidden')
+            .first()
             .within(() => {
                 cy.get(`.ant-select-item-option[title="${multiAttrParams.typeAttribute}"]`).click();
             });
@@ -598,6 +603,7 @@ Cypress.Commands.add('updateAttributes', (multiAttrParams) => {
             });
             cy.get('.ant-select-dropdown')
                 .not('.ant-select-dropdown-hidden')
+                .first()
                 .within(() => {
                     cy.get(`.ant-select-item-option[title="${multiAttrParams.additionalValue}"]`).click();
                 });
@@ -793,6 +799,7 @@ Cypress.Commands.add('changeColorViaBadge', (labelColor) => {
     cy.get('.cvat-label-color-picker')
         .not('.ant-popover-hidden')
         .should('be.visible')
+        .first()
         .within(() => {
             cy.contains('hex').prev().clear().type(labelColor);
             cy.contains('button', 'Ok').click();
@@ -821,6 +828,7 @@ Cypress.Commands.add('deleteLabel', (labelName) => {
     cy.intercept('PATCH', /\/api\/(tasks|projects)\/.*/).as('deleteLabel');
     cy.get('.cvat-modal-delete-label')
         .should('be.visible')
+        .first()
         .within(() => {
             cy.contains('[type="button"]', 'OK').click();
         });
@@ -1046,7 +1054,8 @@ Cypress.Commands.add('renameTask', (oldName, newName) => {
     cy.get('.cvat-task-details-task-name').within(() => {
         cy.get('[aria-label="edit"]').click();
     });
-    cy.contains('.cvat-text-color', oldName).clear().type(`${newName}{Enter}`);
+    cy.contains('.cvat-text-color', oldName).type(`{selectall}{backspace}${newName}{Enter}`);
+    cy.get('.cvat-spinner').should('not.exist');
     cy.contains('.cvat-task-details-task-name', newName).should('exist');
 });
 
