@@ -2527,8 +2527,9 @@ async function socialAuthentication(): Promise<any> {
     try {
         const response = await Axios.get(`${backendAPI}/auth/social/methods`, {
             proxy: config.proxy,
+            validateStatus: (status) => status === 200 || status === 404,
         });
-        return response.data;
+        return (response.status === 200) ? response.data : {};
     } catch (errorData) {
         throw generateError(errorData);
     }
