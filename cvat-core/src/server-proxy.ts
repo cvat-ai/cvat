@@ -2525,7 +2525,7 @@ async function receiveWebhookEvents(type: WebhookSourceType): Promise<string[]> 
 async function socialAuthentication(): Promise<any> {
     const { backendAPI } = config;
     try {
-        const response = await Axios.get(`${backendAPI}/auth/social/methods`, {
+        const response = await Axios.get(`${backendAPI}/auth/social`, {
             proxy: config.proxy,
         });
         return response.data;
