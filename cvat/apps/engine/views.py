@@ -1903,6 +1903,8 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.DestroyModelMixin, PartialUpdateModelMixin
 ):
     queryset = Label.objects.prefetch_related(
+        'attributespec_set',
+        'sublabels__attributespec_set',
         'task',
         'task__owner',
         'task__assignee',

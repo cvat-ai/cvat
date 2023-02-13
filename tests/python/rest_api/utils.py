@@ -112,3 +112,18 @@ class CollectionSimpleFilterTestBase(metaclass=ABCMeta):
 def get_attrs(obj: Any, attributes: Sequence[str]) -> Tuple[Any, ...]:
     """Returns 1 or more object attributes as a tuple"""
     return (getattr(obj, attr) for attr in attributes)
+
+
+def build_exclude_paths_expr(ignore_fields: Iterator[str]) -> List[str]:
+    exclude_expr_parts = []
+    for key in ignore_fields:
+        if "." in key:
+            key_parts = key.split(".")
+            expr = r"root\['{}'\]".format(key_parts[0])
+            expr += "".join(r"\[.*\]\['{}'\]".format(part) for part in key_parts[1:])
+        else:
+            expr = r"root\['{}'\]".format(key)
+
+        exclude_expr_parts.append(expr)
+
+    return exclude_expr_parts

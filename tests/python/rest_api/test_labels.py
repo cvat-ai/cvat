@@ -17,7 +17,7 @@ from pytest_cases import fixture, parametrize
 
 from shared.utils.config import make_api_client
 
-from .utils import CollectionSimpleFilterTestBase, get_attrs
+from .utils import CollectionSimpleFilterTestBase, build_exclude_paths_expr, get_attrs
 
 
 class TestLabelsListFilters(CollectionSimpleFilterTestBase):
@@ -369,23 +369,14 @@ class TestGetLabels(_TestLabelsPermissionsBase):
 class TestPatchLabels(_TestLabelsPermissionsBase):
     @pytest.fixture(autouse=True)
     def setup(self, restore_db_per_function, _base_setup):  # pylint: disable=arguments-differ
-        self.ignore_fields = ["updated_date", "attributes.id"]
+        self.ignore_fields = ["updated_date"]
 
-    def _build_exclude_paths_expr(self):
-        exclude_expr_parts = []
-        for key in self.ignore_fields:
-            if "." in key:
-                key_parts = key.split(".")
-                expr = r"root\['{}'\]".format(key_parts[0])
-                expr += "".join(r"\[.*\]\['{}'\]".format(part) for part in key_parts[1:])
-            else:
-                expr = r"root\['{}'\]".format(key)
+    def _build_exclude_paths_expr(self, ignore_fields=None):
+        if ignore_fields is None:
+            ignore_fields = self.ignore_fields
+        return build_exclude_paths_expr(ignore_fields)
 
-            exclude_expr_parts.append(expr)
-
-        return exclude_expr_parts
-
-    def _test_update_ok(self, user, lid, data, *, expected_data=None, **kwargs):
+    def _test_update_ok(self, user, lid, data, *, expected_data=None, ignore_fields=None, **kwargs):
         with make_api_client(user) as client:
             (_, response) = client.labels_api.partial_update(
                 lid, patched_label_request=models.PatchedLabelRequest(**deepcopy(data)), **kwargs
@@ -395,7 +386,7 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
                 DeepDiff(
                     expected_data if expected_data is not None else data,
                     json.loads(response.data),
-                    exclude_regex_paths=self._build_exclude_paths_expr(),
+                    exclude_regex_paths=self._build_exclude_paths_expr(ignore_fields),
                     ignore_order=True,
                 )
                 == {}
@@ -417,13 +408,31 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
     ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         result = deepcopy(original_data)
         result.update(overrides)
-        if overrides:
-            payload = overrides
-        return result, payload
 
-    @fixture
+        ignore_fields = self.ignore_fields.copy()
+        if overrides:
+            payload = deepcopy(overrides)
+
+            if overrides.get("attributes"):
+                payload["attributes"] = (original_data.get("attributes") or []) + overrides[
+                    "attributes"
+                ]
+                result["attributes"] = deepcopy(payload["attributes"])
+                ignore_fields.append("attributes.id")
+
+            # Changing skeletons is not supported
+            if overrides.get("type") == "skeleton":
+                result["type"] = original_data["type"]
+
+            if "name" in overrides:
+                ignore_fields.append("color")
+        else:
+            payload = deepcopy(original_data)
+
+        return result, payload, ignore_fields
+
     @parametrize(
-        "key, value",
+        "param, newvalue",
         list(
             itertools.chain.from_iterable(
                 itertools.product([k], values)
@@ -438,36 +447,60 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
                                 "values": ["mazda_new", "bmw"],
                             }
                         ],
-                        [],
                     ],
                     "color": ["#2000c0"],
-                    "name": ["car", "modified"],
+                    "name": ["modified"],
+                    "type": [
+                        "bbox",
+                        "ellipse",
+                        "polygon",
+                        "polyline",
+                        "points",
+                        "cuboid",
+                        "cuboid_3d",
+                        "skeleton",
+                        "tag",
+                        "any",
+                    ],
                 }.items()
             )
         ),
     )
-    def modify_param_case(self, key, value):
-        yield SimpleNamespace(key=key, value=value)
+    @parametrize("source", _TestLabelsPermissionsBase.source_types)
+    def test_can_patch_label_field(self, source, admin_user, param, newvalue):
+        user = admin_user
+        label = next(
+            iter(
+                self._labels_by_source(
+                    self.labels, source_key=self._get_source_info(source).label_source_key
+                ).values()
+            )
+        )[0]
 
-    def test_admin_patch_sandbox_label(self, admin_sandbox_case, modify_param_case):
+        expected_data, patch_data, ignore_fields = self._get_patch_data(label, **{param: newvalue})
+
+        self._test_update_ok(
+            user, label["id"], patch_data, expected_data=expected_data, ignore_fields=ignore_fields
+        )
+
+    def test_admin_patch_sandbox_label(self, admin_sandbox_case):
         label, user = get_attrs(admin_sandbox_case, ["label", "user"])
-        param, newvalue = get_attrs(modify_param_case, ["key", "value"])
 
-        expected_data, patch_data = self._get_patch_data(label, **{param: newvalue})
+        expected_data, patch_data, *_ = self._get_patch_data(label)
 
         self._test_update_ok(user, label["id"], patch_data, expected_data=expected_data)
 
     def test_admin_patch_org_label(self, admin_org_case):
         label, user = get_attrs(admin_org_case, ["label", "user"])
 
-        expected_data, patch_data = self._get_patch_data(label)
+        expected_data, patch_data, *_ = self._get_patch_data(label)
 
         self._test_update_ok(user, label["id"], patch_data, expected_data=expected_data)
 
     def test_regular_user_patch_sandbox_label(self, user_sandbox_case):
         label, user, is_staff = get_attrs(user_sandbox_case, ["label", "user", "is_staff"])
 
-        expected_data, patch_data = self._get_patch_data(label)
+        expected_data, patch_data, *_ = self._get_patch_data(label)
 
         if is_staff:
             self._test_update_ok(
@@ -483,7 +516,7 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
 
         kwargs = {"org_id": org_id}
 
-        expected_data, patch_data = self._get_patch_data(label)
+        expected_data, patch_data, *_ = self._get_patch_data(label)
 
         if is_staff:
             self._test_update_ok(
