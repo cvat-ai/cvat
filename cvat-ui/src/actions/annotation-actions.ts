@@ -26,7 +26,6 @@ import {
     OpenCVTool,
     Rotation,
     ShapeType,
-    Task,
     Workspace,
 } from 'reducers';
 import { updateJobAsync } from './tasks-actions';
@@ -903,7 +902,7 @@ export function getJobAsync(
             );
 
             // Check if the task was already downloaded to the state
-            const job = await cvat.jobs.get({ jobID: jid });
+            const [job] = await cvat.jobs.get({ jobID: jid });
             // opening correct first frame according to setup
             let frameNumber;
             if (initialFrame === null && !showDeletedFrames) {
