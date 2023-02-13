@@ -903,18 +903,7 @@ export function getJobAsync(
             );
 
             // Check if the task was already downloaded to the state
-            let job: any | null = null;
-            const [task] = state.tasks.current
-                .filter((_task: Task) => _task.id === tid);
-            if (task) {
-                [job] = task.jobs.filter((_job: any) => _job.id === jid);
-                if (!job) {
-                    throw new Error(`Task ${tid} doesn't contain the job ${jid}`);
-                }
-            } else {
-                [job] = await cvat.jobs.get({ jobID: jid });
-            }
-
+            const job = await cvat.jobs.get({ jobID: jid });
             // opening correct first frame according to setup
             let frameNumber;
             if (initialFrame === null && !showDeletedFrames) {
