@@ -12,8 +12,9 @@ import SigningLayout, { formSizes } from 'components/signing-common/signing-layo
 import SocialAccountLink from 'components/signing-common/social-account-link';
 import SocialAccountCard from 'components/signing-common/social-account-card';
 
+import { getCore, SocialAuthMethods, SocialAuthMethod } from 'cvat-core-wrapper';
+import config from 'config';
 import LoginForm, { LoginData } from './login-form';
-import { getCore, SocialAuthMethods, SocialAuthMethod } from '../../cvat-core-wrapper';
 
 const cvat = getCore();
 
@@ -58,7 +59,7 @@ const renderSocialAuthMethods = (methods: SocialAuthMethods): JSX.Element | JSX.
                                 <SocialAccountCard
                                     key={method.provider}
                                     icon={method.icon}
-                                    href={(method.provider !== 'sso') ? `${backendAPI}/auth/${method.provider}/login/` : '/auth/sso/select-identity-provider/'}
+                                    href={(method.provider !== config.SSO_PROVIDER_KEY) ? `${backendAPI}/auth/social/${method.provider}/login/` : '/auth/sso/select-identity-provider/'}
                                     className={`cvat-social-authentication-${method.provider}`}
                                 >
                                     {`Continue with ${method.publicName}`}
@@ -75,7 +76,7 @@ const renderSocialAuthMethods = (methods: SocialAuthMethods): JSX.Element | JSX.
         <SocialAccountLink
             key={item.provider}
             icon={item.icon}
-            href={(item.provider !== 'sso') ? `${backendAPI}/auth/${item.provider}/login/` : '/auth/sso/select-identity-provider/'}
+            href={(item.provider !== config.SSO_PROVIDER_KEY) ? `${backendAPI}/auth/social/${item.provider}/login/` : '/auth/sso/select-identity-provider/'}
             className={`cvat-social-authentication-${item.provider}`}
         >
             {`Continue with ${item.publicName}`}

@@ -25,8 +25,8 @@ export default function LoginWithSocialAppComponent(): JSX.Element {
 
         if (provider && code) {
             const tokenURL = (location.pathname.includes('login-with-oidc')) ?
-                `${cvat.config.backendAPI}/auth/sso/${provider}/token/` :
-                `${cvat.config.backendAPI}/auth/${provider}/login/token`;
+                `${cvat.config.backendAPI}/auth/sso/${provider}/login/token/` :
+                `${cvat.config.backendAPI}/auth/social/${provider}/login/token/`;
             cvat.server.loginWithSocialAccount(tokenURL, code, authParams, process, scope)
                 .then(() => window.location.reload())
                 .catch((exception: Error) => {

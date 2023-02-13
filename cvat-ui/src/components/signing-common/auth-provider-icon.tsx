@@ -12,6 +12,7 @@ export default function AuthenticationProviderIcon({ iconData, provider }: {
         <img
             src={`data:image/svg+xml;utf8,${encodeURIComponent(iconData)}`}
             alt={provider}
+            className='cvat-social-authentication-icon'
         />
     );
 }

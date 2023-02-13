@@ -30,7 +30,7 @@ function LoginWithSSOComponent(): JSX.Element {
 
     useEffect(() => {
         if (selectedIdP) {
-            window.open(`${core.config.backendAPI}/auth/sso/${selectedIdP}/login/`);
+            window.open(`${core.config.backendAPI}/auth/sso/${selectedIdP}/login/`, '_self');
         }
     }, [selectedIdP]);
 
