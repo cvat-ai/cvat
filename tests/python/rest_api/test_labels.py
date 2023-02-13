@@ -55,7 +55,8 @@ class TestLabelsListFilters(CollectionSimpleFilterTestBase):
             task_id = job_sample["task_id"]
             project_id = job_sample["project_id"]
             label_samples = filter(
-                lambda p: task_id == p.get("task_id") or project_id == p.get("project_id"),
+                lambda p: (task_id and task_id == p.get("task_id"))
+                or (project_id and project_id == p.get("project_id")),
                 self.samples,
             )
             return field_value, label_samples
