@@ -122,6 +122,7 @@ INSTALLED_APPS = [
     'allauth',
     'allauth.account',
     'corsheaders',
+    'allauth.socialaccount',
     'health_check',
     'health_check.db',
     'health_check.contrib.migrations',
