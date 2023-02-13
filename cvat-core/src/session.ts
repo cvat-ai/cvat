@@ -597,6 +597,8 @@ export class Task extends Session {
     public readonly progress: { count: number; completed: number };
     public readonly jobs: Job[];
 
+    public readonly startFrame: number;
+    public readonly stopFrame: number;
     public readonly frameFilter: string;
     public readonly useZipChunks: boolean;
     public readonly useCache: boolean;
@@ -676,6 +678,8 @@ export class Task extends Session {
             labels: undefined,
             jobs: undefined,
 
+            start_frame: undefined,
+            stop_frame: undefined,
             frame_filter: undefined,
             use_zip_chunks: undefined,
             use_cache: undefined,
@@ -952,6 +956,12 @@ export class Task extends Session {
                 },
                 frameFilter: {
                     get: () => data.frame_filter,
+                },
+                startFrame: {
+                    get: () => data.start_frame,
+                },
+                stopFrame: {
+                    get: () => data.stop_frame,
                 },
                 dataChunkSize: {
                     get: () => data.data_chunk_size,

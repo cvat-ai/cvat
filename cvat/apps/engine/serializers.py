@@ -239,15 +239,7 @@ class LabelSerializer(SublabelSerializer):
         parent_instance: Union[models.Project, models.Task],
         parent_label: Optional[models.Label] = None
     ) -> Optional[models.Label]:
-        parent_info = {}
-        if isinstance(parent_instance, models.Project):
-            parent_info['project'] = parent_instance
-            logger = slogger.project[parent_instance.id]
-        elif isinstance(parent_instance, models.Task):
-            parent_info['task'] = parent_instance
-            logger = slogger.task[parent_instance.id]
-        else:
-            raise TypeError(f"Unexpected parent instance type {type(parent_instance).__name__}")
+        parent_info, logger = cls._get_parent_info(parent_instance)
 
         attributes = validated_data.pop('attributespec_set', [])
 
@@ -329,13 +321,7 @@ class LabelSerializer(SublabelSerializer):
         parent_instance: Union[models.Project, models.Task],
         parent_label: Optional[models.Label] = None
     ):
-        parent_info = {}
-        if isinstance(parent_instance, models.Project):
-            parent_info['project'] = parent_instance
-        elif isinstance(parent_instance, models.Task):
-            parent_info['task'] = parent_instance
-        else:
-            raise TypeError(f"Unexpected parent instance type {type(parent_instance).__name__}")
+        parent_info, logger = cls._get_parent_info(parent_instance)
 
         label_colors = list()
 
@@ -352,6 +338,10 @@ class LabelSerializer(SublabelSerializer):
             sublabels = label.pop('sublabels', [])
             svg = label.pop('svg', '')
             db_label = models.Label.objects.create(**label, **parent_info, parent=parent_label)
+            logger.info(
+                f'label:create Label id:{db_label.id} for spec:{label} '
+                f'with sublabels:{sublabels}, parent_label:{parent_label}'
+            )
 
             cls.create_labels(sublabels, parent_instance=parent_instance, parent_label=db_label)
 
@@ -361,7 +351,8 @@ class LabelSerializer(SublabelSerializer):
                         f'data-label-name="{db_sublabel.name}"',
                         f'data-label-id="{db_sublabel.id}"'
                     )
-                models.Skeleton.objects.create(root=db_label, svg=svg)
+                db_skeleton = models.Skeleton.objects.create(root=db_label, svg=svg)
+                logger.info(f'label:create Skeleton id:{db_skeleton.id} for label_id:{db_label.id}')
 
             for attr in attributes:
                 if attr.get('id', None):
@@ -376,12 +367,24 @@ class LabelSerializer(SublabelSerializer):
         parent_instance: Union[models.Project, models.Task],
         parent_label: Optional[models.Label] = None
     ):
+        _, logger = cls._get_parent_info(parent_instance)
+
         for label in labels:
             sublabels = label.pop('sublabels', [])
             svg = label.pop('svg', '')
             db_label = cls.update_label(label,
                 parent_instance=parent_instance, parent_label=parent_label
             )
+            if db_label:
+                logger.info(
+                    f'label:update Label id:{db_label.id} for spec:{label} '
+                    f'with sublabels:{sublabels}, parent_label:{parent_label}'
+                )
+            else:
+                logger.info(
+                    f'label:delete label:{label} with '
+                    f'sublabels:{sublabels}, parent_label:{parent_label}'
+                )
 
             if not label.get('deleted'):
                 cls.update_labels(sublabels, parent_instance=parent_instance, parent_label=db_label)
@@ -392,7 +395,24 @@ class LabelSerializer(SublabelSerializer):
                             f'data-label-name="{db_sublabel.name}"',
                             f'data-label-id="{db_sublabel.id}"'
                         )
-                    models.Skeleton.objects.create(root=db_label, svg=svg)
+                    db_skeleton = models.Skeleton.objects.create(root=db_label, svg=svg)
+                    logger.info(
+                        f'label:update Skeleton id:{db_skeleton.id} for label_id:{db_label.id}'
+                    )
+
+    @classmethod
+    def _get_parent_info(cls, parent_instance: Union[models.Project, models.Task]):
+        parent_info = {}
+        if isinstance(parent_instance, models.Project):
+            parent_info['project'] = parent_instance
+            logger = slogger.project[parent_instance.id]
+        elif isinstance(parent_instance, models.Task):
+            parent_info['task'] = parent_instance
+            logger = slogger.task[parent_instance.id]
+        else:
+            raise TypeError(f"Unexpected parent instance type {type(parent_instance).__name__}")
+
+        return parent_info, logger
 
     def update(self, instance, validated_data):
         if not self._local:
@@ -849,6 +869,8 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
         os.makedirs(db_task.get_task_logs_dirname())
         os.makedirs(db_task.get_task_artifacts_dirname())
+        logger = slogger.task[db_task.id]
+        create_labels(labels)
 
         db_task.save()
         return db_task
@@ -1042,6 +1064,9 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
         if os.path.isdir(project_path):
             shutil.rmtree(project_path)
         os.makedirs(db_project.get_project_logs_dirname())
+
+        logger = slogger.project[db_project.id]
+        create_labels(labels)
 
         return db_project
 

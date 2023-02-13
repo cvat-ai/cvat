@@ -12,6 +12,7 @@ Cypress.Commands.add('assignTaskToUser', (user) => {
         } else {
             cy.get('.cvat-user-search-field').find('input').clear().type('{Enter}');
         }
+        cy.get('.cvat-spinner').should('not.exist');
     });
 });
 
