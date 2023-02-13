@@ -12,7 +12,7 @@
         "username": "user2"
       },
       "bug_tracker": "",
-      "created_date": "2023-02-10T14:05:25.947373Z",
+      "created_date": "2023-02-10T14:05:25.947000Z",
       "data": 16,
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
@@ -47,7 +47,7 @@
       "status": "annotation",
       "subset": "",
       "target_storage": null,
-      "updated_date": "2023-02-10T14:08:05.873330Z",
+      "updated_date": "2023-02-10T14:08:05.873000Z",
       "url": "http://localhost:8080/api/tasks/17"
     },
     {

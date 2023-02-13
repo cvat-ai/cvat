@@ -175,13 +175,7 @@ def ownership(func):
 def is_project_staff(projects, assignee_id, org_staff):
     @ownership
     def check(user_id, pid):
-        org_id = projects[pid].get("organization")
-        return (
-            user_id == projects[pid]["owner"]["id"]
-            or user_id == assignee_id(projects[pid])
-            or org_id is not None
-            and user_id in org_staff(org_id)
-        )
+        return user_id == projects[pid]["owner"]["id"] or user_id == assignee_id(projects[pid])
 
     return check
 
@@ -190,13 +184,10 @@ def is_project_staff(projects, assignee_id, org_staff):
 def is_task_staff(tasks, is_project_staff, assignee_id, org_staff):
     @ownership
     def check(user_id, tid):
-        org_id = tasks[tid].get("organization")
         return (
             user_id == tasks[tid]["owner"]["id"]
             or user_id == assignee_id(tasks[tid])
             or is_project_staff(user_id, tasks[tid]["project_id"])
-            or org_id is not None
-            and user_id in org_staff(org_id)
         )
 
     return check

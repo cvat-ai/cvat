@@ -155,6 +155,7 @@ class _TestLabelsPermissionsBase:
         tasks_by_org,
         projects_by_org,
         memberships,
+        org_staff,
     ):
         self.users = users
         self.labels = labels
@@ -167,6 +168,7 @@ class _TestLabelsPermissionsBase:
         self.tasks_by_org = tasks_by_org
         self.projects_by_org = projects_by_org
         self.memberships = memberships
+        self.org_staff = org_staff
 
     @pytest.fixture(autouse=True)
     def setup(self, _base_setup):
@@ -272,9 +274,10 @@ class _TestLabelsPermissionsBase:
     @fixture
     @parametrize("source", source_types)
     @parametrize("org_id", [2])
-    @parametrize("role", org_roles)
-    @parametrize("is_staff", [True, False])
-    def user_org_case(self, source, is_staff, role, org_id):
+    @parametrize(
+        "role, src_staff", list(itertools.product(org_roles, [True, False])) + [(None, False)]
+    )
+    def user_org_case(self, source, src_staff, role, org_id):
         sources, is_source_staff, label_source_key = get_attrs(
             self._get_source_info(source, org_id=org_id),
             ["sources", "is_source_staff", "label_source_key"],
@@ -296,8 +299,10 @@ class _TestLabelsPermissionsBase:
                 (
                     u
                     for u in users.values()
-                    if is_source_staff(u["id"], source_obj["id"]) == is_staff
-                    and (not is_staff or u in staff_by_role[role])
+                    if is_source_staff(u["id"], source_obj["id"]) == src_staff
+                    or not role
+                    or u["id"] in self.org_staff(org_id)
+                    if not role or u in staff_by_role[role]
                 ),
                 None,
             )
@@ -307,7 +312,12 @@ class _TestLabelsPermissionsBase:
 
         label = labels_by_source[source_obj["id"]][0]
 
-        yield SimpleNamespace(label=label, user=user, org_id=org_id, is_staff=is_staff)
+        yield SimpleNamespace(
+            label=label,
+            user=user,
+            org_id=org_id,
+            is_staff=src_staff or user["id"] in self.org_staff(org_id),
+        )
 
 
 class TestGetLabels(_TestLabelsPermissionsBase):
@@ -524,3 +534,74 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
             )
         else:
             self._test_update_denied(user["username"], label["id"], patch_data, **kwargs)
+
+
+class TestDeleteLabels(_TestLabelsPermissionsBase):
+    @pytest.fixture(autouse=True)
+    def setup(self, restore_db_per_function, _base_setup):  # pylint: disable=arguments-differ
+        pass
+
+    def _test_delete_ok(self, user, lid, **kwargs):
+        with make_api_client(user) as client:
+            (_, response) = client.labels_api.destroy(lid, **kwargs)
+            assert response.status == HTTPStatus.NO_CONTENT
+
+    def _test_delete_denied(self, user, lid, **kwargs):
+        with make_api_client(user) as client:
+            (_, response) = client.labels_api.partial_update(
+                lid,
+                **kwargs,
+                _check_status=False,
+                _parse_response=False,
+            )
+            assert response.status == HTTPStatus.FORBIDDEN
+
+    @parametrize("source", _TestLabelsPermissionsBase.source_types)
+    def test_can_delete_label(self, admin_user, source):
+        user = admin_user
+        label = next(
+            iter(
+                self._labels_by_source(
+                    self.labels, source_key=self._get_source_info(source).label_source_key
+                ).values()
+            )
+        )[0]
+
+        with make_api_client(user) as client:
+            (_, response) = client.labels_api.destroy(label["id"])
+            assert response.status == HTTPStatus.NO_CONTENT
+
+            (_, response) = client.labels_api.retrieve(
+                label["id"], _check_status=False, _parse_response=False
+            )
+            assert response.status == HTTPStatus.NOT_FOUND
+
+    def test_admin_delete_sandbox_label(self, admin_sandbox_case):
+        label, user = get_attrs(admin_sandbox_case, ["label", "user"])
+
+        self._test_delete_ok(user, label["id"])
+
+    def test_admin_delete_org_label(self, admin_org_case):
+        label, user = get_attrs(admin_org_case, ["label", "user"])
+
+        self._test_delete_ok(user, label["id"])
+
+    def test_regular_user_delete_sandbox_label(self, user_sandbox_case):
+        label, user, is_staff = get_attrs(user_sandbox_case, ["label", "user", "is_staff"])
+
+        if is_staff:
+            self._test_delete_ok(user["username"], label["id"])
+        else:
+            self._test_delete_denied(user["username"], label["id"])
+
+    def test_regular_user_delete_org_label(self, user_org_case):
+        label, user, org_id, is_staff = get_attrs(
+            user_org_case, ["label", "user", "org_id", "is_staff"]
+        )
+
+        kwargs = {"org_id": org_id}
+
+        if is_staff:
+            self._test_delete_ok(user["username"], label["id"], **kwargs)
+        else:
+            self._test_delete_denied(user["username"], label["id"], **kwargs)
