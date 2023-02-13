@@ -457,6 +457,8 @@ export function implementTask(Task) {
             use_zip_chunks: this.useZipChunks,
             use_cache: this.useCache,
             sorting_method: this.sortingMethod,
+            ...(typeof this.startFrame !== 'undefined' ? { start_frame: this.startFrame } : {}),
+            ...(typeof this.stopFrame !== 'undefined' ? { stop_frame: this.stopFrame } : {}),
             ...(typeof this.frameFilter !== 'undefined' ? { frame_filter: this.frameFilter } : {}),
             ...(typeof this.dataChunkSize !== 'undefined' ? { chunk_size: this.dataChunkSize } : {}),
             ...(typeof this.copyData !== 'undefined' ? { copy_data: this.copyData } : {}),

@@ -165,25 +165,25 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
             description.bug_tracker = data.advanced.bugTracker;
         }
         if (data.advanced.segmentSize) {
-            description.segment_size = data.advanced.segmentSize;
+            description.segment_size = +data.advanced.segmentSize;
         }
         if (data.advanced.overlapSize) {
             description.overlap = data.advanced.overlapSize;
         }
         if (data.advanced.startFrame) {
-            description.start_frame = data.advanced.startFrame;
+            description.start_frame = +data.advanced.startFrame;
         }
         if (data.advanced.stopFrame) {
-            description.stop_frame = data.advanced.stopFrame;
+            description.stop_frame = +data.advanced.stopFrame;
         }
         if (data.advanced.frameFilter) {
             description.frame_filter = data.advanced.frameFilter;
         }
         if (data.advanced.imageQuality) {
-            description.image_quality = data.advanced.imageQuality;
+            description.image_quality = +data.advanced.imageQuality;
         }
         if (data.advanced.dataChunkSize) {
-            description.data_chunk_size = data.advanced.dataChunkSize;
+            description.data_chunk_size = +data.advanced.dataChunkSize;
         }
         if (data.advanced.copyData) {
             description.copy_data = data.advanced.copyData;

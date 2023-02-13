@@ -17,8 +17,7 @@ import ModelRunnerModal from 'components/model-runner-modal/model-runner-dialog'
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import MoveTaskModal from 'components/move-task-modal/move-task-modal';
 import { useSelector } from 'react-redux';
-import { CombinedState, Indexable } from 'reducers';
-import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
+import { CombinedState } from 'reducers';
 import TopBarComponent from './top-bar';
 import DetailsComponent from './details';
 
@@ -33,17 +32,7 @@ function TaskPageComponent(): JSX.Element {
     const [updatingTask, setUpdatingTask] = useState(false);
     const mounted = useRef(false);
 
-    const tasksQuery = useSelector((state: CombinedState) => state.tasks.gettingQuery);
     const deletes = useSelector((state: CombinedState) => state.tasks.activities.deletes);
-
-    const queryParams = new URLSearchParams(history.location.search);
-    const updatedQuery = { ...tasksQuery };
-    for (const key of Object.keys(updatedQuery)) {
-        (updatedQuery as Indexable)[key] = queryParams.get(key) || null;
-        if (key === 'page') {
-            updatedQuery.page = updatedQuery.page ? +updatedQuery.page : 1;
-        }
-    }
 
     const receieveTask = (): void => {
         if (Number.isInteger(id)) {
@@ -80,12 +69,6 @@ function TaskPageComponent(): JSX.Element {
             mounted.current = false;
         };
     }, []);
-
-    useEffect(() => {
-        history.replace({
-            search: updateHistoryFromQuery(tasksQuery),
-        });
-    }, [tasksQuery]);
 
     useEffect(() => {
         if (taskInstance && id in deletes && deletes[id]) {
