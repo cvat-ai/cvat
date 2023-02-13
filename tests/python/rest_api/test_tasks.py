@@ -14,6 +14,7 @@ from itertools import chain
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from time import sleep
+from typing import List
 
 import pytest
 from cvat_sdk import Client, Config
@@ -908,21 +909,21 @@ class TestPostTaskData:
         )
 
         with make_api_client(self._USERNAME) as api_client:
-            (task, _) = api_client.tasks_api.retrieve(id=task_id)
+            jobs: List[models.JobRead] = get_paginated_collection(
+                api_client.jobs_api.list_endpoint, task_id=str(task_id), sort="id"
+            )
             (task_meta, _) = api_client.tasks_api.retrieve_data_meta(id=task_id)
 
             assert [f.name for f in task_meta.frames] == list(
                 chain.from_iterable(expected_segments)
             )
 
-            assert len(task.segments) == len(expected_segments)
-
             start_frame = 0
-            for i, segment in enumerate(task.segments):
+            for i, job in enumerate(jobs):
                 expected_size = len(expected_segments[i])
                 stop_frame = start_frame + expected_size - 1
-                assert segment.start_frame == start_frame
-                assert segment.stop_frame == stop_frame
+                assert job.start_frame == start_frame
+                assert job.stop_frame == stop_frame
 
                 start_frame = stop_frame + 1
 
