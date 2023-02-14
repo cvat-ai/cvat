@@ -12,11 +12,12 @@ from http import HTTPStatus
 from io import BytesIO
 from itertools import product
 from time import sleep
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 import pytest
 from cvat_sdk.api_client import ApiClient, Configuration, models
 from cvat_sdk.api_client.api_client import Endpoint
+from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
 from PIL import Image
 
@@ -621,42 +622,68 @@ class TestImportExportDatasetProject:
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestPatchProjectLabel:
-    def test_admin_can_delete_label(self, projects):
-        project = deepcopy(list(projects)[1])
-        labels = project["labels"][0]
-        labels.update({"deleted": True})
-        response = patch_method("admin1", f'/projects/{project["id"]}', {"labels": [labels]})
-        assert response.status_code == HTTPStatus.OK
-        assert len(response.json()["labels"]) == len(project["labels"]) - 1
+    def _get_project_labels(self, pid, user, **kwargs) -> List[models.Label]:
+        kwargs.setdefault("return_json", True)
+        with make_api_client(user) as api_client:
+            return get_paginated_collection(
+                api_client.labels_api.list_endpoint, project_id=str(pid), **kwargs
+            )
 
-    def test_admin_can_delete_skeleton_label(self, projects):
-        project = deepcopy(projects[5])
-        labels = project["labels"][0]
-        labels.update({"deleted": True})
-        response = patch_method("admin1", f'/projects/{project["id"]}', {"labels": [labels]})
-        assert response.status_code == HTTPStatus.OK
-        assert len(response.json()["labels"]) == len(project["labels"]) - 4
+    def test_admin_can_delete_label(self, projects, labels, admin_user):
+        project = [p for p in projects if p["labels"]["count"] > 0][0]
+        label = deepcopy([l for l in labels if l.get("project_id") == project["id"]][0])
+        label.update({"deleted": True})
 
-    def test_admin_can_rename_label(self, projects):
-        project = deepcopy(list(projects)[0])
-        labels = project["labels"][0]
-        labels.update({"name": "new name"})
-        response = patch_method("admin1", f'/projects/{project["id"]}', {"labels": [labels]})
+        response = patch_method(admin_user, f'/projects/{project["id"]}', {"labels": [label]})
         assert response.status_code == HTTPStatus.OK
-        assert DeepDiff(response.json()["labels"], project["labels"], ignore_order=True) == {}
+        assert response.json()["labels"]["count"] == project["labels"]["count"] - 1
 
-    def test_admin_can_add_label(self, projects):
+    def test_admin_can_delete_skeleton_label(self, projects, labels, admin_user):
+        project = list(projects)[5]
+        project_labels = deepcopy([l for l in labels if l.get("project_id") == project["id"]])
+        removed_label = project_labels.pop()
+        removed_label.update({"deleted": True})
+
+        response = patch_method(
+            admin_user, f'/projects/{project["id"]}', {"labels": [removed_label]}
+        )
+        assert response.status_code == HTTPStatus.OK
+        assert response.json()["labels"]["count"] == project["labels"]["count"] - 1
+
+        resulting_labels = self._get_project_labels(project["id"], admin_user)
+        assert DeepDiff(resulting_labels, project_labels, ignore_order=True) == {}
+
+    def test_admin_can_rename_label(self, projects, labels, admin_user):
+        project = [p for p in projects if p["labels"]["count"] > 0][0]
+        project_labels = deepcopy([l for l in labels if l.get("project_id") == project["id"]])
+        project_labels[0].update({"name": "new name"})
+
+        response = patch_method(
+            admin_user, f'/projects/{project["id"]}', {"labels": [project_labels[0]]}
+        )
+        assert response.status_code == HTTPStatus.OK
+
+        resulting_labels = self._get_project_labels(project["id"], admin_user)
+        assert DeepDiff(resulting_labels, project_labels, ignore_order=True) == {}
+
+    def test_admin_can_add_label(self, projects, admin_user):
         project = list(projects)[0]
-        labels = {"name": "new name"}
-        response = patch_method("admin1", f'/projects/{project["id"]}', {"labels": [labels]})
-        assert response.status_code == HTTPStatus.OK
-        assert len(response.json()["labels"]) == len(project["labels"]) + 1
+        new_label = {"name": "new name"}
 
-    # Org maintainer can add label even he is not in [project:owner, project:assignee]
-    def test_org_maintainer_can_add_label(
-        self, find_users, projects, is_project_staff, is_org_member
+        response = patch_method(admin_user, f'/projects/{project["id"]}', {"labels": [new_label]})
+        assert response.status_code == HTTPStatus.OK
+        assert response.json()["labels"]["count"] == project["labels"]["count"] + 1
+
+    @pytest.mark.parametrize("role", ["maintainer", "owner"])
+    def test_non_project_staff_privileged_org_members_can_add_label(
+        self,
+        find_users,
+        projects,
+        is_project_staff,
+        is_org_member,
+        role,
     ):
-        users = find_users(role="maintainer", exclude_privilege="admin")
+        users = find_users(role=role, exclude_privilege="admin")
 
         user, project = next(
             (user, project)
@@ -666,21 +693,26 @@ class TestPatchProjectLabel:
             and is_org_member(user["id"], project["organization"])
         )
 
-        labels = {"name": "new name"}
+        new_label = {"name": "new name"}
         response = patch_method(
             user["username"],
             f'/projects/{project["id"]}',
-            {"labels": [labels]},
+            {"labels": [new_label]},
             org_id=project["organization"],
         )
         assert response.status_code == HTTPStatus.OK
-        assert len(response.json()["labels"]) == len(project["labels"]) + 1
+        assert response.json()["labels"]["count"] == project["labels"]["count"] + 1
 
-    # Org supervisor cannot add label
-    def test_org_supervisor_can_add_label(
-        self, find_users, projects, is_project_staff, is_org_member
+    @pytest.mark.parametrize("role", ["supervisor", "worker"])
+    def test_non_project_staff_org_members_cannot_add_label(
+        self,
+        find_users,
+        projects,
+        is_project_staff,
+        is_org_member,
+        role,
     ):
-        users = find_users(role="supervisor", exclude_privilege="admin")
+        users = find_users(role=role, exclude_privilege="admin")
 
         user, project = next(
             (user, project)
@@ -690,41 +722,21 @@ class TestPatchProjectLabel:
             and is_org_member(user["id"], project["organization"])
         )
 
-        labels = {"name": "new name"}
+        new_label = {"name": "new name"}
         response = patch_method(
             user["username"],
             f'/projects/{project["id"]}',
-            {"labels": [labels]},
+            {"labels": [new_label]},
             org_id=project["organization"],
         )
         assert response.status_code == HTTPStatus.FORBIDDEN
 
-    # Org worker cannot add label
-    def test_org_worker_cannot_add_label(
-        self, find_users, projects, is_project_staff, is_org_member
+    # TODO: add supervisor too, but this leads to a test-side problem with DB restoring
+    @pytest.mark.parametrize("role", ["worker"])
+    def test_project_staff_org_members_can_add_label(
+        self, find_users, projects, is_project_staff, is_org_member, role
     ):
-        users = find_users(role="worker", exclude_privilege="admin")
-
-        user, project = next(
-            (user, project)
-            for user, project in product(users, projects)
-            if not is_project_staff(user["id"], project["id"])
-            and project["organization"]
-            and is_org_member(user["id"], project["organization"])
-        )
-
-        labels = {"name": "new name"}
-        response = patch_method(
-            user["username"],
-            f'/projects/{project["id"]}',
-            {"labels": [labels]},
-            org_id=project["organization"],
-        )
-        assert response.status_code == HTTPStatus.FORBIDDEN
-
-    # Org worker that in [project:owner, project:assignee] can add label
-    def test_org_worker_can_add_label(self, find_users, projects, is_project_staff, is_org_member):
-        users = find_users(role="worker", exclude_privilege="admin")
+        users = find_users(role=role, exclude_privilege="admin")
 
         user, project = next(
             (user, project)
@@ -734,37 +746,15 @@ class TestPatchProjectLabel:
             and is_org_member(user["id"], project["organization"])
         )
 
-        labels = {"name": "new name"}
+        new_label = {"name": "new name"}
         response = patch_method(
             user["username"],
             f'/projects/{project["id"]}',
-            {"labels": [labels]},
+            {"labels": [new_label]},
             org_id=project["organization"],
         )
         assert response.status_code == HTTPStatus.OK
-        assert len(response.json()["labels"]) == len(project["labels"]) + 1
-
-    # Org owner can add label even he is not in [project:owner, project:assignee]
-    def test_org_owner_can_add_label(self, find_users, projects, is_project_staff, is_org_member):
-        users = find_users(role="owner", exclude_privilege="admin")
-
-        user, project = next(
-            (user, project)
-            for user, project in product(users, projects)
-            if not is_project_staff(user["id"], project["id"])
-            and project["organization"]
-            and is_org_member(user["id"], project["organization"])
-        )
-
-        labels = {"name": "new name"}
-        response = patch_method(
-            user["username"],
-            f'/projects/{project["id"]}',
-            {"labels": [labels]},
-            org_id=project["organization"],
-        )
-        assert response.status_code == HTTPStatus.OK
-        assert len(response.json()["labels"]) == len(project["labels"]) + 1
+        assert response.json()["labels"]["count"] == project["labels"]["count"] + 1
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
