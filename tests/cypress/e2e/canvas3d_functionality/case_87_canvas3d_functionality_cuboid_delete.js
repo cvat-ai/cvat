@@ -9,7 +9,10 @@ import { taskName, labelName } from '../../support/const_canvas3d';
 context('Canvas 3D functionality. Delete a cuboid.', () => {
     const caseId = '87';
     const cuboidCreationParams = {
+        objetType: 'Shape',
         labelName,
+        x: 480,
+        y: 160,
     };
 
     before(() => {

@@ -12,7 +12,12 @@ import { taskName, labelName } from '../../support/const_canvas3d';
 context('Canvas 3D functionality. "Move the image" button interaction.', () => {
     const caseId = '86';
     const screenshotsPath = 'cypress/screenshots/canvas3d_functionality/case_86_canvas3d_functionality_move_image_button.js';
-    const cuboidCreationParams = { labelName };
+    const cuboidCreationParams = {
+        objectType: 'Shape',
+        labelName,
+        x: 480,
+        y: 160,
+    };
 
     before(() => {
         cy.openTask(taskName);
