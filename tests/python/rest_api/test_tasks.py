@@ -609,12 +609,13 @@ class TestPostTaskData:
             self._USERNAME, spec, task_data, content_type="multipart/form-data"
         )
 
-        response = get_method(self._USERNAME, f"tasks/{task_id}")
+        response = get_method(self._USERNAME, "labels", task_id=f"{task_id}")
         label_ids = {}
-        for label in response.json()["labels"]:
+        for label in response.json()["results"]:
             label_ids.setdefault(label["type"], []).append(label["id"])
 
-        job_id = response.json()["segments"][0]["jobs"][0]["id"]
+        response = get_method(self._USERNAME, "jobs", task_id=f"{task_id}")
+        job_id = response.json()["results"][0]["id"]
         patch_data = {
             "shapes": [
                 {
