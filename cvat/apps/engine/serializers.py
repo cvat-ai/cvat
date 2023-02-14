@@ -861,16 +861,14 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             **storages,
             **validated_data)
 
-        LabelSerializer.create_labels(labels, parent_instance=db_task)
-
         task_path = db_task.get_dirname()
         if os.path.isdir(task_path):
             shutil.rmtree(task_path)
 
         os.makedirs(db_task.get_task_logs_dirname())
         os.makedirs(db_task.get_task_artifacts_dirname())
-        logger = slogger.task[db_task.id]
-        create_labels(labels)
+
+        LabelSerializer.create_labels(labels, parent_instance=db_task)
 
         db_task.save()
         return db_task
@@ -1058,15 +1056,12 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
             **storages,
             **validated_data)
 
-        LabelSerializer.create_labels(labels, parent_instance=db_project)
-
         project_path = db_project.get_dirname()
         if os.path.isdir(project_path):
             shutil.rmtree(project_path)
         os.makedirs(db_project.get_project_logs_dirname())
 
-        logger = slogger.project[db_project.id]
-        create_labels(labels)
+        LabelSerializer.create_labels(labels, parent_instance=db_project)
 
         return db_project
 
