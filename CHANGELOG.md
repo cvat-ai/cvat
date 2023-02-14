@@ -63,6 +63,7 @@ Tracks can be exported/imported to/from Datumaro and Sly Pointcloud formats (<ht
 - Clean up disk space after a project is removed (<https://github.com/opencv/cvat/pull/5632>)
 - \[Server API\] Various errors in the generated schema (<https://github.com/opencv/cvat/pull/5575>)
 - SiamMask and TransT serverless functions (<https://github.com/opencv/cvat/pull/5658>)
+- An invalid project/org handling in webhooks (<https://github.com/opencv/cvat/pull/5707>)
 
 ### Security
 - Fixed vulnerability with social authentication (<https://github.com/opencv/cvat/pull/5521>)
