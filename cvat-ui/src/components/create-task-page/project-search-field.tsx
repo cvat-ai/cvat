@@ -80,6 +80,10 @@ export default function ProjectSearchField(props: Props): JSX.Element {
         }
     }, [value]);
 
+    useEffect(() => {
+        setProjects([]);
+    }, [filter]);
+
     return (
         <Autocomplete
             value={searchPhrase}

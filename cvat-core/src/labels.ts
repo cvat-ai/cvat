@@ -148,6 +148,9 @@ export class Label {
                             throw new ArgumentError(`Name must be a string, but ${typeof name} was given`);
                         }
                         data.name = name;
+                        if (Number.isInteger(data.id)) {
+                            data.patched = true;
+                        }
                     },
                 },
                 color: {
@@ -155,6 +158,9 @@ export class Label {
                     set: (color) => {
                         if (typeof color === 'string' && color.match(/^#[0-9a-f]{6}$|^$/)) {
                             data.color = color;
+                            if (Number.isInteger(data.id)) {
+                                data.patched = true;
+                            }
                         } else {
                             throw new ArgumentError('Trying to set wrong color format');
                         }
