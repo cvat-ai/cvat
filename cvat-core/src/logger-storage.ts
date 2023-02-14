@@ -5,7 +5,7 @@
 
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
-import logFactory, { Log } from './log';
+import logFactory, { EventLogger } from './log';
 import { LogType } from './enums';
 import { ArgumentError } from './exceptions';
 
@@ -16,14 +16,14 @@ function sleep(ms): Promise<void> {
 }
 
 interface IgnoreRule {
-    lastLog: Log | null;
+    lastLog: EventLogger | null;
     timeThreshold?: number;
-    ignore: (previousLog: Log, currentPayload: any) => boolean;
+    ignore: (previousLog: EventLogger, currentPayload: any) => boolean;
 }
 
 class LoggerStorage {
     public clientID: string;
-    public collection: Array<Log>;
+    public collection: Array<EventLogger>;
     public ignoreRules: Record<LogType.zoomImage | LogType.changeAttribute, IgnoreRule>;
     public isActiveChecker: (() => boolean) | null;
     public saving: boolean;
@@ -37,13 +37,13 @@ class LoggerStorage {
             [LogType.zoomImage]: {
                 lastLog: null,
                 timeThreshold: 1000,
-                ignore(previousLog: Log) {
+                ignore(previousLog: EventLogger) {
                     return (Date.now() - previousLog.time.getTime()) < this.timeThreshold;
                 },
             },
             [LogType.changeAttribute]: {
                 lastLog: null,
-                ignore(previousLog: Log, currentPayload: any) {
+                ignore(previousLog: EventLogger, currentPayload: any) {
                     return (
                         currentPayload.object_id === previousLog.payload.object_id &&
                         currentPayload.id === previousLog.payload.id
@@ -63,7 +63,7 @@ class LoggerStorage {
         return result;
     }
 
-    public async log(logType: LogType, payload = {}, wait = false): Promise<Log> {
+    public async log(logType: LogType, payload = {}, wait = false): Promise<EventLogger> {
         const result = await PluginRegistry.apiWrapper.call(this, LoggerStorage.prototype.log, logType, payload, wait);
         return result;
     }

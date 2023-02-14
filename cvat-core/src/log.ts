@@ -8,7 +8,7 @@ import PluginRegistry from './plugins';
 import { LogType } from './enums';
 import { ArgumentError } from './exceptions';
 
-export class Log {
+export class EventLogger {
     public readonly id: number;
     public readonly scope: LogType;
     public readonly time: Date;
@@ -78,12 +78,12 @@ export class Log {
     // Log duration will be computed based on the latest call
     // All payloads will be shallowly combined (all top level properties will exist)
     public async close(payload = {}): Promise<void> {
-        const result = await PluginRegistry.apiWrapper.call(this, Log.prototype.close, payload);
+        const result = await PluginRegistry.apiWrapper.call(this, EventLogger.prototype.close, payload);
         return result;
     }
 }
 
-Object.defineProperties(Log.prototype.close, {
+Object.defineProperties(EventLogger.prototype.close, {
     implementation: {
         writable: false,
         enumerable: false,
@@ -97,7 +97,7 @@ Object.defineProperties(Log.prototype.close, {
     },
 });
 
-class LogWithCount extends Log {
+class LogWithCount extends EventLogger {
     public validatePayload(): void {
         super.validatePayload.call(this);
         if (!Number.isInteger(this.payload.count) || this.payload.count < 1) {
@@ -107,7 +107,7 @@ class LogWithCount extends Log {
     }
 }
 
-class LogWithObjectsInfo extends Log {
+class LogWithObjectsInfo extends EventLogger {
     public validatePayload(): void {
         const generateError = (name: string, range: string): void => {
             const message = `The field "${name}" is required for "${this.scope}" log. ${range}`;
@@ -148,7 +148,7 @@ class LogWithObjectsInfo extends Log {
     }
 }
 
-class LogWithExceptionInfo extends Log {
+class LogWithExceptionInfo extends EventLogger {
     public validatePayload(): void {
         super.validatePayload.call(this);
 
@@ -192,7 +192,7 @@ class LogWithExceptionInfo extends Log {
     }
 }
 
-export default function logFactory(logType: LogType, payload: any): Log {
+export default function logFactory(logType: LogType, payload: any): EventLogger {
     const logsWithCount = [
         LogType.deleteObject,
         LogType.mergeObjects,
@@ -212,5 +212,5 @@ export default function logFactory(logType: LogType, payload: any): Log {
         return new LogWithExceptionInfo(logType, payload);
     }
 
-    return new Log(logType, payload);
+    return new EventLogger(logType, payload);
 }
