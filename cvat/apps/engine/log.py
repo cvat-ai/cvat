@@ -110,56 +110,12 @@ class JobLoggerStorage(IndexedLogManager):
         job = _get_job(jid)
         return slogger.task[job.segment.task.id]
 
-class CloudSourceLoggerStorage(IndexedLogManager):
-    def _create_logger(self, sid):
-        cloud_storage = _get_storage(sid)
-
-        logger = logging.getLogger('cvat.server.cloud_storage_{}'.format(sid))
-        server_file = logging.FileHandler(filename=cloud_storage.get_log_path())
-        formatter = logging.Formatter(LOGGING['formatters']['standard']['format'])
-        server_file.setFormatter(formatter)
-        logger.addHandler(server_file)
-
-        return logger
-
-class ProjectClientLoggerStorage(IndexedLogManager):
-    def _create_logger(self, pid):
-        project = _get_project(pid)
-        logger = logging.getLogger('cvat.client.project_{}'.format(pid))
-        client_file = logging.FileHandler(filename=project.get_client_log_path())
-        logger.addHandler(client_file)
-
-        return logger
-
-class TaskClientLoggerStorage(IndexedLogManager):
-    def _create_logger(self, tid):
-        task = _get_task(tid)
-        logger = logging.getLogger('cvat.client.task_{}'.format(tid))
-        client_file = logging.FileHandler(filename=task.get_client_log_path())
-        logger.addHandler(client_file)
-
-        return logger
-
-class JobClientLoggerStorage(IndexedLogManager):
-    def _create_logger(self, jid):
-        job = _get_job(jid)
-        return clogger.task[job.segment.task.id]
-
 @define(slots=False)
 class _AggregateLogManager(LogManager):
     def close(self):
         for logger in vars(self).values(): # vars is incompatible with slots
             if hasattr(logger, 'close'):
                 logger.close()
-
-@define(slots=False)
-class ClientLogManager(_AggregateLogManager):
-    project = field(factory=ProjectClientLoggerStorage)
-    task = field(factory=TaskClientLoggerStorage)
-    job = field(factory=JobClientLoggerStorage)
-    glob = field(factory=lambda: logging.getLogger('cvat.client'))
-
-clogger = ClientLogManager()
 
 @define(slots=False)
 class ServerLogManager(_AggregateLogManager):
@@ -176,7 +132,6 @@ vlogger = logging.getLogger('vector')
 def close_all():
     """Closes all opened loggers"""
 
-    clogger.close()
     slogger.close()
 
     for logger in _opened_loggers.values():

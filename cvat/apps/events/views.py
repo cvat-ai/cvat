@@ -95,15 +95,6 @@ class EventsViewSet(viewsets.ViewSet):
                 event['source'] = 'client'
                 event['organization'] = org_id
                 message = JSONRenderer().render(event).decode('UTF-8')
-                jid = event.get("job")
-                tid = event.get("task")
-                if jid:
-                    clogger.job[jid].info(message)
-                elif tid:
-                    clogger.task[tid].info(message)
-                else:
-                    clogger.glob.info(message)
-
                 vlogger.info(message)
 
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -137,15 +128,6 @@ class EventsViewSet(viewsets.ViewSet):
         event["timestamp"] = str(datetime.datetime.now(datetime.timezone.utc).timestamp())
         event["organization"] = org_id
         message = JSONRenderer().render({**event, **additional_info}).decode("UTF-8")
-        jid = event.get("job_id")
-        tid = event.get("task_id")
-        if jid:
-            clogger.job[jid].error(message)
-        elif tid:
-            clogger.task[tid].error(message)
-        else:
-            clogger.glob.error(message)
-
         vlogger.info(message)
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
