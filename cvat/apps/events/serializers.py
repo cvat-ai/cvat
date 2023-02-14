@@ -23,7 +23,7 @@ class EventSerializer(serializers.Serializer):
 
 class ClientEventsSerializer(serializers.Serializer):
     events = EventSerializer(many=True, default=[])
-    send_timestamp = serializers.DateTimeField()
+    timestamp = serializers.DateTimeField()
 
 class EventQuerySerializer(serializers.Serializer):
     organization = serializers.SerializerMethodField()

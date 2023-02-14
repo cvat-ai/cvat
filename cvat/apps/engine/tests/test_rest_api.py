@@ -591,7 +591,7 @@ class ServerLogsAPITestCase(APITestCase):
                 "timestamp": "2019-02-24T12:34:56.000000Z",
                 "scope": "test:scope2",
             }],
-            "send_timestamp": "2019-02-24T12:34:58.000000Z",
+            "timestamp": "2019-02-24T12:34:58.000000Z",
         }
 
 

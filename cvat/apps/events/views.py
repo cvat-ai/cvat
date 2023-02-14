@@ -72,7 +72,7 @@ class EventsViewSet(viewsets.ViewSet):
             org = request.iam_context['organization']
             org_id = org.id if org else None
 
-            send_time = datetime_parser.isoparse(serializer.data["send_timestamp"])
+            send_time = datetime_parser.isoparse(serializer.data["timestamp"])
             receive_time = datetime.datetime.now(datetime.timezone.utc)
             time_correction = receive_time - send_time
             last_timestamp = None

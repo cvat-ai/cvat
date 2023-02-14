@@ -8,7 +8,7 @@ import { CombinedState } from 'reducers';
 import { getCore, Storage } from 'cvat-core-wrapper';
 import { LogType } from 'cvat-logger';
 import { getProjectsAsync } from './projects-actions';
-import { jobInfoGenerator, receiveAnnotationsParameters, AnnotationActionTypes } from './annotation-actions';
+import { receiveAnnotationsParameters, AnnotationActionTypes } from './annotation-actions';
 
 const core = getCore();
 
@@ -112,9 +112,7 @@ export const importDatasetAsync = (
                 const frame = state.annotation.player.frame.number;
                 await instance.annotations.upload(format, useDefaultSettings, sourceStorage, file, { convMaskToPoly });
 
-                await instance.logger.log(LogType.uploadAnnotations, {
-                    ...(await jobInfoGenerator(instance)),
-                });
+                await instance.logger.log(LogType.uploadAnnotations);
 
                 await instance.annotations.clear(true);
                 await instance.actions.clear();

@@ -502,7 +502,7 @@
           "custom": {
             "align": "auto",
             "displayMode": "auto",
-            "inspect": false,
+            "inspect": true,
             "minWidth": 80
           },
           "mappings": [],

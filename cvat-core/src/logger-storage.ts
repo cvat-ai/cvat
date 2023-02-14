@@ -164,8 +164,6 @@ Object.defineProperties(LoggerStorage.prototype.save, {
             }
 
             const collectionToSend = [...this.collection];
-            const lastLog = this.collection[this.collection.length - 1];
-
             const logPayload: any = {
                 client_id: this.clientID,
             };
@@ -174,17 +172,12 @@ Object.defineProperties(LoggerStorage.prototype.save, {
                 logPayload.is_active = this.isActiveChecker();
             }
 
-            if (lastLog && lastLog.scope === LogType.sendTaskInfo) {
-                logPayload.job_id = lastLog.payload.job_id;
-                logPayload.task_id = lastLog.payload.task_id;
-            }
-
             try {
                 this.saving = true;
                 const sendTimestamp = new Date();
-                await serverProxy.logs.save({
+                await serverProxy.events.save({
                     events: collectionToSend.map((log) => log.dump()),
-                    send_timestamp: sendTimestamp.toISOString(),
+                    timestamp: sendTimestamp.toISOString(),
                 });
                 for (const rule of Object.values<IgnoreRule>(this.ignoreRules)) {
                     rule.lastLog = null;

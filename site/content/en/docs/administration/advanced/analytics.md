@@ -13,7 +13,7 @@ description: 'Instructions for deployment and customization of Analytics. This s
 
 ![](/images/image097.jpg)
 
-It is possible to proxy annotation logs from the UI to the Clickhouse database and use Grafana for visualization.
+It is possible to proxy annotation events from the UI to the Clickhouse database and use Grafana for visualization.
 This feature is enabled by default and all required containers will be launched when starting CVAT with:
 
 ```shell

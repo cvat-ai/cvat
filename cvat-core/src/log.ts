@@ -107,47 +107,6 @@ class LogWithCount extends EventLogger {
     }
 }
 
-class LogWithObjectsInfo extends EventLogger {
-    public validatePayload(): void {
-        const generateError = (name: string, range: string): void => {
-            const message = `The field "${name}" is required for "${this.scope}" log. ${range}`;
-            throw new ArgumentError(message);
-        };
-
-        if (!Number.isInteger(this.payload['track count']) || this.payload['track count'] < 0) {
-            generateError('track count', 'It must be an integer not less than 0');
-        }
-
-        if (!Number.isInteger(this.payload['tag count']) || this.payload['tag count'] < 0) {
-            generateError('tag count', 'It must be an integer not less than 0');
-        }
-
-        if (!Number.isInteger(this.payload['object count']) || this.payload['object count'] < 0) {
-            generateError('object count', 'It must be an integer not less than 0');
-        }
-
-        if (!Number.isInteger(this.payload['frame count']) || this.payload['frame count'] < 1) {
-            generateError('frame count', 'It must be an integer not less than 1');
-        }
-
-        if (!Number.isInteger(this.payload['box count']) || this.payload['box count'] < 0) {
-            generateError('box count', 'It must be an integer not less than 0');
-        }
-
-        if (!Number.isInteger(this.payload['polygon count']) || this.payload['polygon count'] < 0) {
-            generateError('polygon count', 'It must be an integer not less than 0');
-        }
-
-        if (!Number.isInteger(this.payload['polyline count']) || this.payload['polyline count'] < 0) {
-            generateError('polyline count', 'It must be an integer not less than 0');
-        }
-
-        if (!Number.isInteger(this.payload['points count']) || this.payload['points count'] < 0) {
-            generateError('points count', 'It must be an integer not less than 0');
-        }
-    }
-}
-
 class LogWithExceptionInfo extends EventLogger {
     public validatePayload(): void {
         super.validatePayload.call(this);
@@ -203,9 +162,6 @@ export default function logFactory(logType: LogType, payload: any): EventLogger 
 
     if (logsWithCount.includes(logType)) {
         return new LogWithCount(logType, payload);
-    }
-    if ([LogType.sendTaskInfo, LogType.loadJob, LogType.uploadAnnotations].includes(logType)) {
-        return new LogWithObjectsInfo(logType, payload);
     }
 
     if (logType === LogType.exception) {

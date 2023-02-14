@@ -239,7 +239,7 @@ services:
       - --set=bundles.cvat.polling.min_delay_seconds=5
       - --set=bundles.cvat.polling.max_delay_seconds=15
 
-  clickhouse:
+  cvat_clickhouse:
     container_name: cvat_clickhouse
     image: clickhouse/clickhouse-server:22.3-alpine
     restart: always
@@ -253,14 +253,14 @@ services:
           - clickhouse
     volumes:
       - ./components/analytics/clickhouse/init.sh:/docker-entrypoint-initdb.d/init.sh:ro
-      - cvat_log_db:/var/lib/clickhouse/
+      - cvat_events_db:/var/lib/clickhouse/
 
-  vector:
+  cvat_vector:
     container_name: cvat_vector
     image: timberio/vector:0.26.0-alpine
     restart: always
     depends_on:
-      - clickhouse
+      - cvat_clickhouse
     environment:
       - CLICKHOUSE_DB=cvat
       - CLICKHOUSE_USER=user
@@ -272,7 +272,7 @@ services:
     volumes:
       - ./components/analytics/vector/vector.toml:/etc/vector/vector.toml:ro
 
-  grafana:
+  cvat_grafana:
     image: grafana/grafana-oss:9.3.6
     container_name: cvat_grafana
     environment:
@@ -280,9 +280,11 @@ services:
       - GF_AUTH_BASIC_ENABLED=false
       - GF_AUTH_ANONYMOUS_ENABLED=true
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
       - GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=grafana-clickhouse-datasource
       - GF_SERVER_ROOT_URL=http://${CVAT_HOST:-localhost}/analytics
       - GF_INSTALL_PLUGINS=https://github.com/grafana/clickhouse-datasource/releases/download/v2.0.7/grafana-clickhouse-datasource-2.0.7.linux_amd64.zip;grafana-clickhouse-datasource
+      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/var/lib/grafana/dashboards/all_events.json
     volumes:
       - ./components/analytics/grafana/dashboards/:/var/lib/grafana/dashboards/:ro
     entrypoint:
@@ -328,7 +330,7 @@ volumes:
   cvat_data:
   cvat_keys:
   cvat_logs:
-  cvat_log_db:
+  cvat_events_db:
 
 networks:
   cvat:
