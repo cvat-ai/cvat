@@ -6,6 +6,7 @@ import './styles.scss';
 import React from 'react';
 import { Col, Row } from 'antd/lib/grid';
 import Button from 'antd/lib/button/button';
+import { LoginOutlined } from '@ant-design/icons';
 import AuthenticationProviderIcon from './auth-provider-icon';
 
 export interface SocialAccountLinkProps {
@@ -29,7 +30,9 @@ function SocialAccountLink(props: SocialAccountLinkProps): JSX.Element {
                 >
                     <Row align='middle' style={{ width: '100%' }}>
                         <Col>
-                            {(icon) ? <AuthenticationProviderIcon iconData={icon} provider={children} /> : null}
+                            {(icon) ?
+                                <AuthenticationProviderIcon iconData={icon} provider={children} /> :
+                                <LoginOutlined className='cvat-social-authentication-icon' />}
                         </Col>
                         <Col flex='auto'>
                             {children}

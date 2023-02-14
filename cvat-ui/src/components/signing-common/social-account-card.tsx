@@ -6,6 +6,7 @@ import './styles.scss';
 import React from 'react';
 import Button from 'antd/lib/button/button';
 import Tooltip from 'antd/lib/tooltip';
+import { LoginOutlined } from '@ant-design/icons';
 import { SocialAccountLinkProps } from './social-account-link';
 import AuthenticationProviderIcon from './auth-provider-icon';
 
@@ -21,7 +22,9 @@ function SocialAccountCard(props: SocialAccountLinkProps): JSX.Element {
                 type='link'
                 className={`cvat-social-authentication-link ${className}-button`}
             >
-                {(icon) ? <AuthenticationProviderIcon iconData={icon} provider={children} /> : children}
+                {(icon) ?
+                    <AuthenticationProviderIcon iconData={icon} provider={children} /> :
+                    <LoginOutlined className='cvat-social-authentication-icon' />}
             </Button>
         </Tooltip>
     );

@@ -391,11 +391,29 @@ $social-google-background: #4286f5;
     border: $grid-unit-size * 0.125 solid rgba(82, 82, 128, 0.09);
     border-radius: $grid-unit-size * 2;
     color: #232333;
-    padding-top: 0 !important;
+}
+
+.cvat-social-authentication-github-button {
+    filter: invert(1);
+}
+
+.cvat-social-authentication-icon {
+    height: $grid-unit-size * 4;
+    width: $grid-unit-size * 4;
 }
 
 .cvat-social-authentication-row-with-icons {
     width: 70%;
     margin: auto !important;
     margin-top: $grid-unit-size !important;
+}
+
+.ant-btn.ant-btn-link.cvat-social-authentication-link {
+    padding-top: $grid-unit-size !important;
+    padding-bottom: $grid-unit-size !important;
+}
+
+.cvat-social-authentication-icon > svg {
+    height: $grid-unit-size * 3;
+    width: $grid-unit-size * 3;
 }
