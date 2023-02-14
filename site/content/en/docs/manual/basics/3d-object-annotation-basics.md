@@ -22,9 +22,9 @@ To move in 3D space you can use several methods:
   ![](/images/image216_carla_town3.jpg)
 
 You can move around by pressing the corresponding buttons:
-- To rotate the camera use: `Shift+arrrowup`/`Shift+arrrowdown`/`Shift+arrrowleft`/`Shift+arrrowright`.
-- To move left/right use: `Allt+J`/`Alt+L`.
-- To move up/down use: `Alt-U`/`Alt+O`.
+- To rotate the camera use: `Shift+Up Arrow`/`Shift+Down Arrow`/`Shift+Left Arrow`/`Shift+Right Arrow`.
+- To move left/right use: `Alt+J`/`Alt+L`.
+- To move up/down use: `Alt+U`/`Alt+O`.
 - To zoom in/out use: `Alt+K`/`Alt+I`.
 
 ### Creating a cuboid

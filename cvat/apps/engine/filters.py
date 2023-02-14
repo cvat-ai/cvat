@@ -45,7 +45,7 @@ class SearchFilter(filters.SearchFilter):
 
         search_fields = getattr(view, 'search_fields', [])
         full_description = self.search_description + \
-            f' Avaliable search_fields: {search_fields}'
+            f' Available search_fields: {search_fields}'
 
         return [
             coreapi.Field(
@@ -62,7 +62,7 @@ class SearchFilter(filters.SearchFilter):
     def get_schema_operation_parameters(self, view):
         search_fields = getattr(view, 'search_fields', [])
         full_description = self.search_description + \
-            f' Avaliable search_fields: {search_fields}'
+            f' Available search_fields: {search_fields}'
 
         return [{
             'name': self.search_param,
@@ -100,7 +100,7 @@ class OrderingFilter(filters.OrderingFilter):
 
         ordering_fields = getattr(view, 'ordering_fields', [])
         full_description = self.ordering_description + \
-            f' Avaliable ordering_fields: {ordering_fields}'
+            f' Available ordering_fields: {ordering_fields}'
 
         return [
             coreapi.Field(
@@ -117,7 +117,7 @@ class OrderingFilter(filters.OrderingFilter):
     def get_schema_operation_parameters(self, view):
         ordering_fields = getattr(view, 'ordering_fields', [])
         full_description = self.ordering_description + \
-            f' Avaliable ordering_fields: {ordering_fields}'
+            f' Available ordering_fields: {ordering_fields}'
 
         return [{
             'name': self.ordering_param,
@@ -206,7 +206,7 @@ class JsonLogicFilter(filters.BaseFilterBackend):
 
         filter_fields = getattr(view, 'filter_fields', [])
         full_description = self.filter_description + \
-            f' Avaliable filter_fields: {filter_fields}'
+            f' Available filter_fields: {filter_fields}'
 
         return [
             coreapi.Field(
@@ -223,7 +223,7 @@ class JsonLogicFilter(filters.BaseFilterBackend):
     def get_schema_operation_parameters(self, view):
         filter_fields = getattr(view, 'filter_fields', [])
         full_description = self.filter_description + \
-            f' Avaliable filter_fields: {filter_fields}'
+            f' Available filter_fields: {filter_fields}'
         return [
             {
                 'name': self.filter_param,
