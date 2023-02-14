@@ -93,6 +93,8 @@ def _deploy_app(environment, application, version, ecr_template, s3_template, s3
             prefix + "repo": ecr_repo,
         })
 
+        click.echo(str(ecs_notification))
+
     if notify_ecs in (NOTIFY_YES, NOTIFY_ONLY):
         click.echo('Sending notification to ECS...')
 
@@ -131,7 +133,7 @@ def deploy_app(version, environment, application,
     _login_to_ecr(
         ecr_template=ecr_template,
         profile=ecr_profile,
-        region=aws_region
+        region=aws_region,
     )
 
     _deploy_app(environment=environment,

@@ -41,7 +41,6 @@ tensorflow==2.8.1 # Optional requirement of Datumaro. Use tensorflow-macos==2.8.
 # The package is used by pyunpack as a command line tool to support multiple
 # archives. Don't use as a python module because it has GPL license.
 patool==1.12
-diskcache==5.0.2
 boto3==1.17.61
 azure-storage-blob==12.13.0
 google-cloud-storage==1.42.0
