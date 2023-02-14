@@ -106,6 +106,8 @@ export enum LogType {
 
     pressShortcut = 'press:shortcut',
     debugInfo = 'send:debug_info',
+
+    clickElement = 'click:element',
 }
 
 export enum HistoryActions {
