@@ -68,10 +68,10 @@ Many UI elements have shortcut hints. Put your pointer to a required element to 
 | `Shift+Tab`                | Go to the previous annotated object in current frame                                                     |
 | `<number>`                 | Assign a corresponding value to the current attribute                                                    |
 |                            | _Standard 3d mode_                                                                                       |
-| `Shift+arrrowup`           | Increases camera roll angle                                                                              |
-| `Shift+arrrowdown`         | Decreases camera roll angle                                                                              |
-| `Shift+arrrowleft`         | Decreases camera pitch angle                                                                             |
-| `Shift+arrrowright`        | Increases camera pitch angle                                                                             |
+| `Shift+Up Arrow`           | Increases camera roll angle                                                                              |
+| `Shift+Down Arrow`         | Decreases camera roll angle                                                                              |
+| `Shift+Left Arrow`         | Decreases camera pitch angle                                                                             |
+| `Shift+Right Arrow`        | Increases camera pitch angle                                                                             |
 | `Alt+O`                    | Move the camera up                                                                                       |
 | `Alt+U`                    | Move the camera down                                                                                     |
 | `Alt+J`                    | Move the camera left                                                                                     |
