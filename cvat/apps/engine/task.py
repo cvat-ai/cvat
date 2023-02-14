@@ -31,7 +31,6 @@ from cvat.apps.engine import models
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.media_extractors import (MEDIA_TYPES, Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter,
     ValidateDimension, ZipChunkWriter, ZipCompressedChunkWriter, get_mime, sort)
-from cvat.apps.events.signals import event_signal_create
 from cvat.apps.engine.utils import av_scan_paths
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager, is_manifest
 from utils.dataset_manifest.core import VideoManifestValidator
@@ -163,7 +162,6 @@ def _save_task_to_db(db_task: models.Task, *, job_file_mapping: Optional[JobFile
 
         db_job = models.Job(segment=db_segment)
         db_job.save()
-        event_signal_create.send(models.Job, instance=db_job)
 
         job_path = db_job.get_dirname()
         if os.path.isdir(job_path):

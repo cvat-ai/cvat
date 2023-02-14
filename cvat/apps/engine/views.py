@@ -73,7 +73,7 @@ from cvat.apps.iam.permissions import (CloudStoragePermission,
     CommentPermission, IssuePermission, JobPermission, ProjectPermission,
     TaskPermission, UserPermission)
 from cvat.apps.engine.cache import MediaCache
-from cvat.apps.events.signals import event_signal_annotations_patch
+from cvat.apps.events.signals import annotations_created
 
 @extend_schema(tags=['server'])
 class ServerViewSet(viewsets.ViewSet):
@@ -1488,9 +1488,9 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             if serializer.is_valid(raise_exception=True):
                 try:
                     data = dm.task.patch_job_data(pk, serializer.data, action)
-                    event_signal_annotations_patch.send(self, instance=self._object, annotations=data, action=action)
                 except (AttributeError, IntegrityError) as e:
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
+                annotations_created(instance=self._object, annotations=data, action=action)
                 return Response(data)
 
 

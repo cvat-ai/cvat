@@ -2,21 +2,40 @@
 #
 # SPDX-License-Identifier: MIT
 
-from django.dispatch import Signal, receiver
-
+from django.dispatch import receiver
+from django.db.models.signals import pre_save, post_save, post_delete
+from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.renderers import JSONRenderer
+from crum import get_current_user, get_current_request
 
-from cvat.apps.engine.models import Task, Job
+from cvat.apps.engine.models import (
+    Organization,
+    Project,
+    Task,
+    Job,
+    User,
+    CloudStorage,
+    Issue,
+    Comment,
+    Label,
+)
+from cvat.apps.engine.serializers import (
+    ProjectReadSerializer,
+    TaskReadSerializer,
+    JobReadSerializer,
+    BasicUserSerializer,
+    CloudStorageReadSerializer,
+    IssueReadSerializer,
+    CommentReadSerializer,
+    LabelSerializer,
+)
+from cvat.apps.engine.models import ShapeType
+from cvat.apps.organizations.serializers import OrganizationReadSerializer
 from cvat.apps.webhooks.signals import project_id, organization_id
 from cvat.apps.engine.log import vlogger
 
-from .event import EventScopeChoice, event_scope, create_event, update_event
+from .event import EventScopeChoice, event_scope, create_event
 
-
-event_signal_update = Signal()
-event_signal_create = Signal()
-event_signal_delete = Signal()
-event_signal_annotations_patch = Signal()
 
 def task_id(instance):
     if isinstance(instance, Task):
@@ -37,60 +56,125 @@ def job_id(instance):
     return None
 
 def user_id(instance):
+    if isinstance(instance, User):
+        return getattr(instance, "id", None)
+
     if isinstance(instance, Job):
         return instance.segment.task.owner_id
 
-    return None
+    current_user = get_current_user()
+    return getattr(current_user, "id", None)
 
-@receiver(event_signal_update)
-def update(sender, instance=None, old_values=None, **kwargs):
-    scope = event_scope("update", sender.basename)
-    if scope not in map(lambda a: a[0], EventScopeChoice.choices()):
-        return
+def _get_instance_diff(old_data, data):
+    ingone_related_fields = (
+        "labels",
+    )
+    diff = {}
+    for prop, value in data.items():
+        if prop in ingone_related_fields:
+            continue
+        old_value = old_data.get(prop)
+        if old_value != value:
+            diff[prop] = {
+                "old_value": old_value,
+                "new_value": value,
+            }
 
-    pid = project_id(instance)
-    oid = organization_id(instance)
-    tid = task_id(instance)
-    jid = job_id(instance)
-    uid = sender.request.user.id
-    if not any((oid, pid, tid, jid, uid)):
-        return
+    return diff
 
-    serializer = sender.get_serializer_class()(
-        instance=instance, context={"request": sender.request}
+def _cleanup_fields(obj):
+    fields=(
+        "slug",
+        "id",
+        "name",
+        "username",
+        "display_name",
+        "message",
+        "organization",
+        "project",
+        "task",
+        "tasks",
+        "job",
+        "jobs",
+        "comments",
+        "url",
+    )
+    subfields=(
+        "url",
     )
 
-    data = serializer.data
+    data = {}
+    for k, v in obj.items():
+        if k in fields:
+            continue
+        if isinstance(v, dict):
+            data[k] = {kk: vv for kk, vv in v.items() if kk not in subfields}
+        else:
+            data[k] = v
+    return data
 
-    for prop, old_value in old_values.items():
-        new_value = data[prop] if prop in data else getattr(instance, prop, None)
-        new_value = JSONRenderer().render(new_value).decode('UTF-8')
-        scope = event_scope("update", prop)
+def _get_object_value(instance):
+    if isinstance(instance, Organization) or \
+        isinstance(instance, Project) or \
+        isinstance(instance, Task) or \
+        isinstance(instance, Job):
+        return getattr(instance, "name", None)
 
-        event = create_event(
-            scope=scope,
-            obj_name=sender.basename,
-            obj_id=getattr(instance, 'id', None),
-            obj_val=new_value,
-            source='server',
-            user=uid,
-            payload={
-                "old_value": old_value,
-                "new_value": new_value,
-            }
-        )
-        event = update_event(event, pid=pid, tid=tid, jid=jid, oid=oid)
-        message = JSONRenderer().render(event).decode('UTF-8')
+    if isinstance(instance, User):
+        return getattr(instance, "username", None)
 
-        vlogger.info(message)
+    if isinstance(instance, CloudStorage):
+        return getattr(instance, "display_name", None)
 
-@receiver(event_signal_create)
-def resource_created(sender, instance=None, **kwargs):
-    name = getattr(sender, 'basename', None)
-    if not name:
-        name = instance.__class__.__name__.lower()
+    if isinstance(instance, Comment):
+        return getattr(instance, "message", None)
 
-    scope = event_scope("create", name)
+    return None
+
+def _get_serializer(instance):
+    context = {
+        "request": get_current_request()
+    }
+
+    if isinstance(instance, Organization):
+        return OrganizationReadSerializer(instance=instance, context=context)
+    if isinstance(instance, Project):
+        return ProjectReadSerializer(instance=instance, context=context)
+    if isinstance(instance, Task):
+        return TaskReadSerializer(instance=instance, context=context)
+    if isinstance(instance, Job):
+        return JobReadSerializer(instance=instance, context=context)
+    if isinstance(instance, User):
+        return BasicUserSerializer(instance=instance, context=context)
+    if isinstance(instance, CloudStorage):
+        return CloudStorageReadSerializer(instance=instance, context=context)
+    if isinstance(instance, Issue):
+        return IssueReadSerializer(instance=instance, context=context)
+    if isinstance(instance, Comment):
+        return CommentReadSerializer(instance=instance, context=context)
+    if isinstance(instance, Label):
+        return LabelSerializer(instance=instance, context=context)
+
+    return None
+
+@receiver(pre_save, sender=Organization)
+@receiver(pre_save, sender=Project)
+@receiver(pre_save, sender=Task)
+@receiver(pre_save, sender=Job)
+@receiver(pre_save, sender=User)
+@receiver(pre_save, sender=CloudStorage)
+@receiver(pre_save, sender=Issue)
+@receiver(pre_save, sender=Comment)
+@receiver(pre_save, sender=Label)
+def resource_update(sender, instance, **kwargs):
+    resource_name = instance.__class__.__name__.lower()
+
+    try:
+        old_instance = sender.objects.get(id=instance.id)
+    except ObjectDoesNotExist:
+        return
+
+    scope = event_scope("update", resource_name)
     if scope not in map(lambda a: a[0], EventScopeChoice.choices()):
         return
 
@@ -99,36 +183,49 @@ def resource_created(sender, instance=None, **kwargs):
     tid = task_id(instance)
     jid = job_id(instance)
     uid = user_id(instance)
-    if not uid:
-        uid = sender.request.user.id
-
     if not any((oid, pid, tid, jid, uid)):
         return
 
-    try:
-        serializer = sender.get_serializer_class()(
-            instance=instance, context={"request": sender.request}
+    old_serializer = _get_serializer(instance=old_instance)
+    serializer = _get_serializer(instance=instance)
+    diff = _get_instance_diff(old_data=old_serializer.data, data=serializer.data)
+    for prop, change in diff.items():
+        change = _cleanup_fields(change)
+        event = create_event(
+            scope=scope,
+            obj_name=prop,
+            obj_id=getattr(instance, f'{prop}_id', None),
+            obj_val=change["new_value"],
+            source='server',
+            organization=oid,
+            project=pid,
+            task=tid,
+            job=jid,
+            user=uid,
+            payload={
+                "old_value": change["old_value"],
+            },
         )
-        payload=serializer.data
-    except Exception:
-        payload = {}
 
-    event = create_event(
-        scope=scope,
-        obj_name=name,
-        obj_id=getattr(instance, 'id', None),
-        source='server',
-        user=uid,
-        payload=payload,
-    )
-    event = update_event(event, pid=pid, tid=tid, jid=jid, oid=oid)
-    message = JSONRenderer().render(event).decode('UTF-8')
+        message = JSONRenderer().render(event).decode('UTF-8')
+        vlogger.info(message)
 
-    vlogger.info(message)
+@receiver(post_save, sender=Organization)
+@receiver(post_save, sender=Project)
+@receiver(post_save, sender=Task)
+@receiver(post_save, sender=Job)
+@receiver(post_save, sender=User)
+@receiver(post_save, sender=CloudStorage)
+@receiver(post_save, sender=Issue)
+@receiver(post_save, sender=Comment)
+@receiver(post_save, sender=Label)
+def resource_create(sender, instance, created, **kwargs):
+    if not created:
+        return
 
-@receiver(event_signal_delete)
-def resource_deleted(sender, instance=None, **kwargs):
-    scope = event_scope("delete", sender.basename)
+    resource_name = instance.__class__.__name__.lower()
+
+    scope = event_scope("create", resource_name)
     if scope not in map(lambda a: a[0], EventScopeChoice.choices()):
         return
 
@@ -136,33 +233,75 @@ def resource_deleted(sender, instance=None, **kwargs):
     oid = organization_id(instance)
     tid = task_id(instance)
     jid = job_id(instance)
-    uid = sender.request.user.id
+    uid = user_id(instance)
+    if not any((oid, pid, tid, jid, uid)):
+        return
+
+    serializer = _get_serializer(instance=instance)
+    payload = serializer.data
+
+    payload = _cleanup_fields(obj=payload)
+    event = create_event(
+        scope=scope,
+        obj_id=getattr(instance, 'id', None),
+        obj_value=_get_object_value(instance),
+        source='server',
+        organization=oid,
+        project=pid,
+        task=tid,
+        job=jid,
+        user=uid,
+        payload=payload,
+    )
+    message = JSONRenderer().render(event).decode('UTF-8')
+
+    vlogger.info(message)
+
+@receiver(post_delete, sender=Organization)
+@receiver(post_delete, sender=Project)
+@receiver(post_delete, sender=Task)
+@receiver(post_delete, sender=Job)
+@receiver(post_delete, sender=User)
+@receiver(post_delete, sender=CloudStorage)
+@receiver(post_delete, sender=Issue)
+@receiver(post_delete, sender=Comment)
+@receiver(post_delete, sender=Label)
+def resource_delete(sender, instance, **kwargs):
+    resource_name = instance.__class__.__name__.lower()
+    scope = event_scope("delete", resource_name)
+    if scope not in map(lambda a: a[0], EventScopeChoice.choices()):
+        return
+
+    pid = project_id(instance)
+    oid = organization_id(instance)
+    tid = task_id(instance)
+    jid = job_id(instance)
+    uid = user_id(instance)
     if not any((oid, pid, tid, jid, uid)):
         return
 
     event = create_event(
         scope=scope,
-        obj_name=sender.basename,
         obj_id=getattr(instance, 'id', None),
+        obj_val=_get_object_value(instance),
         source='server',
+        organization=oid,
+        project=pid,
+        task=tid,
+        job=jid,
         user=uid,
     )
-    event = update_event(event, pid=pid, tid=tid, jid=jid, oid=oid)
     message = JSONRenderer().render(event).decode('UTF-8')
 
     vlogger.info(message)
 
-@receiver(event_signal_annotations_patch)
-def annotations_created(sender, instance, annotations, action, **kwargs):
+def annotations_created(instance, annotations, action, **kwargs):
     def filter_shape_data(shape):
         data = {
             "id": shape["id"],
             "frame": shape["frame"],
             "attributes": shape["attributes"],
         }
-        shape_type = shape.get("type", None)
-        if shape_type:
-            data["type"] = shape_type
 
         label_id = shape.get("label_id", None)
         if label_id:
@@ -170,44 +309,75 @@ def annotations_created(sender, instance, annotations, action, **kwargs):
 
         return data
 
-    scope = event_scope(action, "annotations")
-    if scope not in map(lambda a: a[0], EventScopeChoice.choices()):
-        return
-
     pid = project_id(instance)
     oid = organization_id(instance)
     tid = task_id(instance)
     jid = job_id(instance)
-    uid = sender.request.user.id
+    uid = user_id(instance)
     if not any((oid, pid, tid, jid, uid)):
         return
 
-    payload = {}
-    for shape_type, shapes in annotations.items():
-        if shape_type == "version":
-            payload[shape_type] = shapes
-        else:
-            payload[shape_type] = []
-            for shape in shapes:
-                if shape_type == "tracks":
-                    track = filter_shape_data(shape)
-                    track["shapes"] = []
-                    for track_shape in shape["shapes"]:
-                        track["shapes"].append(filter_shape_data(track_shape))
-                    payload[shape_type].append(track)
-                else:
-                    payload[shape_type].append(filter_shape_data(shape))
+    tags = [filter_shape_data(tag) for tag in annotations.get("tags", [])]
+    if tags:
+        event = create_event(
+            scope=event_scope(action, "tags"),
+            source='server',
+            count=len(tags),
+            organization=oid,
+            project=pid,
+            task=tid,
+            job=jid,
+            user=uid,
+            payload=tags,
+        )
+        message = JSONRenderer().render(event).decode('UTF-8')
+        vlogger.info(message)
 
-    event = create_event(
-        scope=scope,
-        obj_name=sender.basename,
-        obj_id=instance.id,
-        obj_val=str(len(annotations["tags"]) + len(annotations["shapes"]) + len(annotations["tracks"])),
-        source='server',
-        user=uid,
-        payload=payload,
-    )
-    event = update_event(event, pid=pid, tid=tid, jid=jid, oid=oid)
-    message = JSONRenderer().render(event).decode('UTF-8')
+    shapes_by_type = {shape_type[0]: [] for shape_type in ShapeType.choices()}
+    for shape in annotations.get("shapes", []):
+        shapes_by_type[shape["type"]].append(filter_shape_data(shape))
 
-    vlogger.info(message)
+    scope = event_scope(action, "shape")
+    for shape_type, shapes in shapes_by_type.items():
+        if shapes:
+            event = create_event(
+                scope=scope,
+                obj_name=shape_type,
+                source='server',
+                count=len(shapes),
+                organization=oid,
+                project=pid,
+                task=tid,
+                job=jid,
+                user=uid,
+                payload=shapes,
+            )
+            message = JSONRenderer().render(event).decode('UTF-8')
+            vlogger.info(message)
+
+    tracks_by_type = {shape_type[0]: [] for shape_type in ShapeType.choices()}
+    for track in annotations.get("tracks", []):
+        track_shapes = track.pop("shapes")
+        track = filter_shape_data(track)
+        track["shapes"] = []
+        for track_shape in track_shapes:
+            track["shapes"].append(filter_shape_data(track_shape))
+        tracks_by_type[track_shapes[0]["type"]].append(track)
+
+    scope = event_scope(action, "track")
+    for track_type, tracks in tracks_by_type.items():
+        if tracks:
+            event = create_event(
+                scope=scope,
+                obj_name=track_type,
+                source='server',
+                count=len(tracks),
+                organization=oid,
+                project=pid,
+                task=tid,
+                job=jid,
+                user=uid,
+                payload=tracks,
+            )
+            message = JSONRenderer().render(event).decode('UTF-8')
+            vlogger.info(message)

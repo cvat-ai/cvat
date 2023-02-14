@@ -13,15 +13,14 @@ class EventScopes:
     RESOURCES = {
         "project": ["create", "update", "delete"],
         "task": ["create", "update", "delete"],
-        "job": ["create", "update"],
+        "job": ["create", "update", "delete"],
         "organization": ["create", "update", "delete"],
-        # "user": ["create", "update", "delete"],
+        "user": ["create", "update", "delete"],
         "cloudstorage": ["create", "update", "delete"],
         "issue": ["create", "update", "delete"],
         "comment": ["create", "update", "delete"],
-        "invitation": ["create", "delete"],
-        "membership": ["update", "delete"],
         "annotations": ["create", "update", "delete"],
+        "label": ["create", "update", "delete"],
     }
 
     @classmethod
@@ -32,7 +31,7 @@ class EventScopes:
             for action in cls.RESOURCES.get(resource, [])
         ]
 
-def create_event(scope, source, **kwargs):
+def create_event(scope, source, organization=None, project=None, task=None, job=None, user=None, **kwargs):
     payload = kwargs.pop('payload', None)
 
     data = {
@@ -43,18 +42,6 @@ def create_event(scope, source, **kwargs):
     }
     if payload:
         data["payload"] = JSONRenderer().render(payload).decode('UTF-8')
-
-    return data
-
-def update_event(data, pid=None, tid=None, jid=None, oid=None):
-    if pid:
-        data["project"] = pid
-    if oid:
-        data["organization"] = oid
-    if tid:
-        data["task"] = tid
-    if jid:
-        data["job"] = jid
 
     return data
 
