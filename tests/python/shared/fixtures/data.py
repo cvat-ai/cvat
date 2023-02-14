@@ -172,7 +172,7 @@ def ownership(func):
 
 
 @pytest.fixture(scope="session")
-def is_project_staff(projects, assignee_id, org_staff):
+def is_project_staff(projects, assignee_id):
     @ownership
     def check(user_id, pid):
         return user_id == projects[pid]["owner"]["id"] or user_id == assignee_id(projects[pid])
@@ -181,7 +181,7 @@ def is_project_staff(projects, assignee_id, org_staff):
 
 
 @pytest.fixture(scope="session")
-def is_task_staff(tasks, is_project_staff, assignee_id, org_staff):
+def is_task_staff(tasks, is_project_staff, assignee_id):
     @ownership
     def check(user_id, tid):
         return (
