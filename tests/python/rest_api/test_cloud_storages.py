@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: MIT
 
 import io
-import json
 from copy import deepcopy
 from http import HTTPStatus
 from typing import List
