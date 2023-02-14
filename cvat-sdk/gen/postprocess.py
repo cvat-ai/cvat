@@ -161,6 +161,8 @@ def main(args=None):
         processor.process_dir(args.input_path, file_ext=args.file_ext)
     elif osp.isfile(args.input_path):
         processor.process_file(args.input_path)
+    else:
+        return f"error: input {args.input_path} is neither a file nor a directory"
 
     return 0
 

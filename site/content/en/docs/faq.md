@@ -49,7 +49,7 @@ You should free up disk space or change the threshold, to do so check: [Elastics
 
 ## How to change default CVAT hostname or port
 
-To change the hostname, simply set the `CVAT_HOST` environemnt variable
+To change the hostname, simply set the `CVAT_HOST` environment variable
 
 ```bash
 export CVAT_HOST=<YOUR_HOSTNAME_OR_IP>
