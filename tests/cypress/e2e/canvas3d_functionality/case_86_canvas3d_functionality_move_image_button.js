@@ -33,8 +33,11 @@ context('Canvas 3D functionality. "Move the image" button interaction.', () => {
     describe(`Testing case "${caseId}"`, () => {
         it('Click to "Move the image" button. The cuboid on the top/side/front view should be hidden.', () => {
             cy.get('.cvat-move-control').click();
-            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 300, 200); // Interacting with the canvas before interacting with the cuboid.
-            cy.get('.cvat-canvas3d-perspective').trigger('mousemove');
+            cy.get('.cvat-canvas3d-perspective canvas').trigger('mousedown', { button: 0 });
+            cy.get('.cvat-canvas3d-perspective canvas').trigger('pointerdown', { buttons: 1 });
+            cy.get('.cvat-canvas3d-perspective canvas').trigger('pointermove', { buttons: 1, clientX: 100, clientY: 100 }); // Interacting with the canvas before interacting with the cuboid.
+            cy.get('.cvat-canvas3d-perspective canvas').trigger('pointerup', { buttons: 1 });
+            cy.get('.cvat-canvas3d-perspective canvas').trigger('mouseup', { button: 0 });
             cy.get('#cvat-objects-sidebar-state-item-1').should('not.have.class', 'cvat-objects-sidebar-state-active-item');
             cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_move_the_image_clicked');
             ['topview', 'sideview', 'frontview'].forEach((view) => {
