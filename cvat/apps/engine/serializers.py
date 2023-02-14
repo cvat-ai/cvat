@@ -687,12 +687,13 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                     logger.info(f'label:update Label id:{db_label.id} for spec:{label} with sublabels:{sublabels}, parent_label:{parent_label}')
                 else:
                     logger.info(f'label:delete label:{label} with sublabels:{sublabels}, parent_label:{parent_label}')
-                update_labels(sublabels, parent_label=db_label)
-                if label.get('id') is None and db_label.type == str(models.LabelType.SKELETON):
-                    for db_sublabel in list(db_label.sublabels.all()):
-                        svg = svg.replace(f'data-label-name="{db_sublabel.name}"', f'data-label-id="{db_sublabel.id}"')
-                    db_skeleton = models.Skeleton.objects.create(root=db_label, svg=svg)
-                    logger.info(f'label:update Skeleton id:{db_skeleton.id} for label_id:{db_label.id}')
+                if not label.get('deleted'):
+                    update_labels(sublabels, parent_label=db_label)
+                    if label.get('id') is None and db_label.type == str(models.LabelType.SKELETON):
+                        for db_sublabel in list(db_label.sublabels.all()):
+                            svg = svg.replace(f'data-label-name="{db_sublabel.name}"', f'data-label-id="{db_sublabel.id}"')
+                        db_skeleton = models.Skeleton.objects.create(root=db_label, svg=svg)
+                        logger.info(f'label:update Skeleton id:{db_skeleton.id} for label_id:{db_label.id}')
 
         if instance.project_id is None:
             update_labels(labels)
