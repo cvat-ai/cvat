@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -24,7 +24,7 @@ import LabelMapperItem, { LabelMapperItemValue } from './label-mapper-item';
 
 const core = getCore();
 
-export default function MoveTaskModal({
+function MoveTaskModal({
     onUpdateTask,
 }: {
     onUpdateTask?: (task: Task) => Promise<void>,
@@ -64,6 +64,10 @@ export default function MoveTaskModal({
         setProjectId(null);
     }, [initValues]);
 
+    const projectsFilter = useCallback((_project: { id: number }) => (
+        _project.id !== taskInstance?.projectId
+    ), [taskInstance]);
+
     const submitMove = async (): Promise<void> => {
         if (!taskInstance) {
             throw new Error('Task to move is not specified');
@@ -81,17 +85,16 @@ export default function MoveTaskModal({
             return;
         }
 
-        taskInstance.labels = Object.values(labelMap).map((map) => ({
-            label_id: map.labelId,
-            new_label_name: map.newLabelName,
-            clear_attributes: map.clearAttributes,
-        })).map((mapper) => {
-            const [label] = taskInstance.labels.filter((_label: any) => mapper.label_id === _label.id);
-            label.name = mapper.new_label_name as string;
+        taskInstance.projectId = projectId;
+        taskInstance.labels = Object.values(labelMap).map((mapper) => ({
+            id: mapper.labelId,
+            name: mapper.newLabelName,
+        })).map(({ id, name }) => {
+            const [label] = taskInstance.labels.filter((_label: Label) => _label.id === id);
+            (label as Label).name = name as string;
             return label;
         });
 
-        taskInstance.projectId = projectId;
         setIsUpdating(true);
         if (onUpdateTask) {
             onUpdateTask(taskInstance).finally(() => {
@@ -114,11 +117,12 @@ export default function MoveTaskModal({
     };
 
     useEffect(() => {
-        setTaskFetching(true);
         if (visible && Number.isInteger(taskId)) {
+            setTaskFetching(true);
             core.tasks.get({ id: taskId })
                 .then(([task]: Task[]) => {
                     if (mounted.current) {
+                        setLabelMap({});
                         setTaskInstance(task);
                     }
                 })
@@ -131,14 +135,14 @@ export default function MoveTaskModal({
                     }
                 });
         }
-    }, [visible]);
+    }, [visible, taskId]);
 
     useEffect(() => {
         if (projectId && taskInstance) {
-            core.projects.get({ id: projectId }).then((_project: any) => {
-                if (projectId) {
-                    setProject(_project[0]);
-                    const { labels } = _project[0];
+            core.projects.get({ id: projectId }).then(([_project]: any) => {
+                if (_project) {
+                    setProject(_project);
+                    const { labels } = _project;
                     const labelValues: { [key: string]: LabelMapperItemValue } = {};
                     Object.entries(labelMap).forEach(([id, label]) => {
                         const taskLabelName = taskInstance
@@ -193,7 +197,7 @@ export default function MoveTaskModal({
                     <ProjectSearch
                         value={projectId}
                         onSelect={setProjectId}
-                        filter={(_project) => _project.id !== taskInstance?.projectId}
+                        filter={projectsFilter}
                     />
                 </Col>
             </Row>
@@ -218,3 +222,5 @@ export default function MoveTaskModal({
         </Modal>
     );
 }
+
+export default React.memo(MoveTaskModal);
