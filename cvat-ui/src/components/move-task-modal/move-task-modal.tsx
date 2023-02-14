@@ -109,6 +109,7 @@ function MoveTaskModal({
                 }
             }).catch((error: Error) => notification.error({
                 message: 'Could not update the task',
+                className: 'cvat-notification-notice-update-task-failed',
                 description: error.toString(),
             }));
         }

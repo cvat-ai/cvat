@@ -139,7 +139,7 @@ export default function ProjectPageComponent(): JSX.Element {
     }
 
     const subsets = Array.from(
-        new Set<string>(tasks.map((task: Task) => task.subset).filter((subset: string) => !!subset)),
+        new Set<string>(tasks.map((task: Task) => task.subset)),
     );
     const content = tasksCount ? (
         <>
