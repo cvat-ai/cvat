@@ -102,7 +102,7 @@ docker compose up -d
 1. It is highly recommended backup all CVAT data before updating, follow the
    [backup guide](/docs/administration/advanced/backup_guide/) and backup CVAT database volume.
 
-1. Run previosly used CVAT version as usual
+1. Run previously used CVAT version as usual
 
 1. Backup current database with `pg_dumpall` tool:
    ```shell
