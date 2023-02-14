@@ -792,7 +792,7 @@ class TestGetProjectPreview:
             for user, project in product(users, projects)
             if not is_project_staff(user["id"], project["organization"])
             and user["id"] not in org_staff(project["organization"])
-            and project["tasks"]
+            and project["tasks"]["count"] > 0
         )
         self._test_response_200(user["username"], project["id"])
 
@@ -871,7 +871,7 @@ class TestGetProjectPreview:
                 for project in projects
                 if project["organization"] == user["org"]
                 and not is_project_staff(user["id"], project["id"])
-                and project["tasks"]
+                and project["tasks"]["count"] > 0
             )
         )
 
