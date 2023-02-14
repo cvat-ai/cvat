@@ -40,7 +40,7 @@
           "custom": {
             "align": "auto",
             "displayMode": "auto",
-            "inspect": false
+            "inspect": true
           },
           "mappings": [],
           "thresholds": {
@@ -306,7 +306,7 @@
           "custom": {
             "align": "auto",
             "displayMode": "auto",
-            "inspect": false
+            "inspect": true
           },
           "mappings": [],
           "thresholds": {

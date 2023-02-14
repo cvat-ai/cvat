@@ -5,7 +5,7 @@
 from django.apps import AppConfig
 
 
-class LogViewerConfig(AppConfig):
+class EventsConfig(AppConfig):
     name = 'cvat.apps.events'
 
     def ready(self):

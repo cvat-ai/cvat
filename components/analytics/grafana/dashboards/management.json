@@ -313,7 +313,7 @@
             "align": "auto",
             "displayMode": "auto",
             "filterable": false,
-            "inspect": false
+            "inspect": true
           },
           "mappings": [],
           "thresholds": {

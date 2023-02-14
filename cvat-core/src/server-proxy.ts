@@ -267,21 +267,6 @@ async function share(directoryArg) {
     return response.data;
 }
 
-async function exception(exceptionObject) {
-    const { backendAPI } = config;
-
-    try {
-        await Axios.post(`${backendAPI}/server/exception`, JSON.stringify(exceptionObject), {
-            proxy: config.proxy,
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
-}
-
 async function formats(): Promise<AnnotationFormatsResponseBody> {
     const { backendAPI } = config;
 
@@ -2539,7 +2524,6 @@ export default Object.freeze({
         about,
         share,
         formats,
-        exception,
         login,
         logout,
         socialAuthentication,

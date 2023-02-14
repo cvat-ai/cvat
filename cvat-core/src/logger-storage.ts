@@ -136,8 +136,9 @@ Object.defineProperties(LoggerStorage.prototype.log, {
             };
 
             if (log.scope === LogType.exception) {
-                serverProxy.server.exception(log.dump()).catch(() => {
-                    pushEvent();
+                await serverProxy.events.save({
+                    events: [log.dump()],
+                    timestamp: new Date().toISOString(),
                 });
 
                 return log;
@@ -174,10 +175,9 @@ Object.defineProperties(LoggerStorage.prototype.save, {
 
             try {
                 this.saving = true;
-                const sendTimestamp = new Date();
                 await serverProxy.events.save({
                     events: collectionToSend.map((log) => log.dump()),
-                    timestamp: sendTimestamp.toISOString(),
+                    timestamp: new Date().toISOString(),
                 });
                 for (const rule of Object.values<IgnoreRule>(this.ignoreRules)) {
                     rule.lastLog = null;

@@ -2,10 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from dateutil import parser as datetime_parser
 import datetime
-import json
-
 
 from django.conf import settings
 from rest_framework import status, viewsets
@@ -17,12 +14,11 @@ from rest_framework.renderers import JSONRenderer
 
 
 from cvat.apps.events.serializers import ClientEventsSerializer, EventSerializer
-from cvat.apps.engine.log import clogger, vlogger
+from cvat.apps.engine.log import vlogger
 from .export import export
 
 class EventsViewSet(viewsets.ViewSet):
     serializer_class = None
-    TIME_THRESHOLD = 100 # seconds
 
     @staticmethod
     @extend_schema(summary='Method saves logs from a client on the server',
@@ -66,34 +62,10 @@ class EventsViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['GET', 'POST'])
     def events(request):
         if request.method == 'POST':
-            serializer = ClientEventsSerializer(data=request.data)
+            serializer = ClientEventsSerializer(data=request.data, context={"request": request})
             serializer.is_valid(raise_exception=True)
 
-            org = request.iam_context['organization']
-            org_id = org.id if org else None
-
-            send_time = datetime_parser.isoparse(serializer.data["timestamp"])
-            receive_time = datetime.datetime.now(datetime.timezone.utc)
-            time_correction = receive_time - send_time
-            last_timestamp = None
-
             for event in serializer.data["events"]:
-                event['user'] = request.user.id
-                timestamp = datetime_parser.isoparse(event['timestamp'])
-                if last_timestamp:
-                    t_diff = timestamp - last_timestamp
-                    if t_diff.seconds < EventsViewSet.TIME_THRESHOLD:
-                        payload = event.get('payload', {})
-                        if payload:
-                            payload = json.loads(payload)
-
-                        payload['working_time'] = t_diff.microseconds // 1000
-                        event['payload'] = json.dumps(payload)
-
-                last_timestamp = timestamp
-                event['timestamp'] = str((timestamp + time_correction).timestamp())
-                event['source'] = 'client'
-                event['organization'] = org_id
                 message = JSONRenderer().render(event).decode('UTF-8')
                 vlogger.info(message)
 
@@ -103,31 +75,3 @@ class EventsViewSet(viewsets.ViewSet):
                 request=request,
                 queue_name=settings.CVAT_QUEUES.EXPORT_DATA.value,
             )
-
-    @staticmethod
-    @extend_schema(summary='Method saves an exception from a client on the server',
-        description='Sends logs to the ELK if it is connected',
-        request=EventSerializer, responses={
-            '201': ClientEventsSerializer,
-        })
-    @action(detail=False, methods=['POST'], serializer_class=EventSerializer)
-    def exception(request):
-        serializer = EventSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        org = request.iam_context['organization']
-        org_id = org.id if org else None
-
-        event = serializer.data
-
-        additional_info = {
-            "user": request.user.id,
-            "scope": "send:exception",
-            "source": "client"
-        }
-        event["timestamp"] = str(datetime.datetime.now(datetime.timezone.utc).timestamp())
-        event["organization"] = org_id
-        message = JSONRenderer().render({**event, **additional_info}).decode("UTF-8")
-        vlogger.info(message)
-
-        return Response(serializer.data, status=status.HTTP_201_CREATED)

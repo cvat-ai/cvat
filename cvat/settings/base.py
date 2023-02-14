@@ -437,7 +437,7 @@ LOGGING = {
     'disable_existing_loggers': False,
     'formatters': {
         'vector': {
-            '()': 'cvat.apps.events.formatter.CvatFormatter',
+            'format': '%(message)s',
         },
         'standard': {
             'format': '[%(asctime)s] %(levelname)s %(name)s: %(message)s'

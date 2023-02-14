@@ -163,7 +163,7 @@
           "custom": {
             "align": "auto",
             "displayMode": "auto",
-            "inspect": false
+            "inspect": true
           },
           "mappings": [],
           "thresholds": {
@@ -291,7 +291,7 @@
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT * \r\nFROM events \r\nWHERE $__timeFilter(timestamp)\r\nAND scope IN (${scopes})\r\nAND source IN (${sources})\r\nAND (-1 IN (${users}) OR user IN (${users}))\r\nAND (-1 IN (${organizations}) OR organization IN (${organizations}))\r\nAND (-1 IN (${projects}) OR project IN (${projects}))\r\nAND (-1 IN (${tasks}) OR task IN (${tasks}))\r\nAND (-1 IN (${jobs}) OR job IN (${jobs}))\r\nORDER BY timestamp ASC",
+          "rawSql": "SELECT * \r\nFROM events \r\nWHERE $__timeFilter(timestamp)\r\nAND scope IN (${scopes})\r\nAND source IN (${sources})\r\nAND (-1 IN (${users}) OR user IN (${users}))\r\nAND (-1 IN (${organizations}) OR organization IN (${organizations}))\r\nAND (-1 IN (${projects}) OR project IN (${projects}))\r\nAND (-1 IN (${tasks}) OR task IN (${tasks}))\r\nAND (-1 IN (${jobs}) OR job IN (${jobs}))\r\nORDER BY timestamp DESC",
           "refId": "A"
         }
       ],

@@ -110,6 +110,18 @@ class JobLoggerStorage(IndexedLogManager):
         job = _get_job(jid)
         return slogger.task[job.segment.task.id]
 
+class CloudSourceLoggerStorage(IndexedLogManager):
+    def _create_logger(self, sid):
+        cloud_storage = _get_storage(sid)
+
+        logger = logging.getLogger('cvat.server.cloud_storage_{}'.format(sid))
+        server_file = logging.FileHandler(filename=cloud_storage.get_log_path())
+        formatter = logging.Formatter(LOGGING['formatters']['standard']['format'])
+        server_file.setFormatter(formatter)
+        logger.addHandler(server_file)
+
+        return logger
+
 @define(slots=False)
 class _AggregateLogManager(LogManager):
     def close(self):
