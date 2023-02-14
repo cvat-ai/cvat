@@ -47,6 +47,7 @@ services:
       - "8080:8080"
     networks:
       - reb_cvat
+      - reboticsadmin_default
 
   cvat_opa:
     container_name: reb_cvat_opa
@@ -81,3 +82,5 @@ volumes:
 
 networks:
   reb_cvat:
+  reboticsadmin_default:
+    external: true
