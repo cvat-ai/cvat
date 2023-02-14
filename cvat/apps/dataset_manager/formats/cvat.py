@@ -742,6 +742,11 @@ def dump_as_cvat_annotation(dumper, annotations):
                         ("outside", str(int(shape.outside)))
                     ]))
 
+                if shape.type != 'skeleton':
+                    dump_data.update(OrderedDict([
+                        ("occluded", str(int(shape.occluded)))
+                    ]))
+
                 if shape.type == "rectangle":
                     dump_data.update(OrderedDict([
                         ("xtl", "{:.2f}".format(shape.points[0])),
@@ -795,7 +800,6 @@ def dump_as_cvat_annotation(dumper, annotations):
                     ]))
                 elif shape.type != 'skeleton':
                     dump_data.update(OrderedDict([
-                        ("occluded", str(int(shape.occluded))),
                         ("points", ';'.join((
                             ','.join((
                                 "{:.2f}".format(x),
