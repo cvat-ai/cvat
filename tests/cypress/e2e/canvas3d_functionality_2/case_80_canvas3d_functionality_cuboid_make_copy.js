@@ -10,6 +10,7 @@ context('Canvas 3D functionality. Make a copy.', () => {
     const caseId = '80';
     const secondLabel = 'car';
     const cuboidCreationParams = {
+        objectType: 'Shape',
         labelName,
         x: 480,
         y: 160,

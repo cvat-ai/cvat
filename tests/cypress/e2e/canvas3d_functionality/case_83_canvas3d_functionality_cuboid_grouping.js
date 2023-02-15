@@ -13,21 +13,25 @@ context('Canvas 3D functionality. Grouping.', () => {
     const caseId = '83';
     const screenshotsPath = 'cypress/screenshots/canvas3d_functionality/case_83_canvas3d_functionality_cuboid_grouping.js';
     const firstCuboidCreationParams = {
+        objectType: 'Shape',
         labelName,
         x: 400,
         y: 200,
     };
     const secondCuboidCreationParams = {
+        objectType: 'Shape',
         labelName,
         x: 400,
         y: 280,
     };
     const thirdCuboidCreationParams = {
+        objectType: 'Shape',
         labelName,
         x: 500,
         y: 280,
     };
     const fourthCuboidCreationParams = {
+        objectType: 'Shape',
         labelName,
         x: 500,
         y: 200,
