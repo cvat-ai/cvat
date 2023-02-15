@@ -25,8 +25,14 @@ from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from deepdiff import DeepDiff
 from PIL import Image
 from shared.fixtures.init import get_server_image_tag
-from shared.utils.config import (BASE_URL, USER_PASS, get_method,
-                                 make_api_client, patch_method, post_method)
+from shared.utils.config import (
+    BASE_URL,
+    USER_PASS,
+    get_method,
+    make_api_client,
+    patch_method,
+    post_method,
+)
 from shared.utils.helpers import generate_image_files
 
 from .utils import CollectionSimpleFilterTestBase, export_dataset
