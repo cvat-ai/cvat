@@ -335,8 +335,6 @@ class ServerPermission(OpenPolicyAgentPermission):
     class Scopes(StrEnum):
         VIEW = 'view'
         SEND_EXCEPTION = 'send:exception'
-        SEND_EVENTS = 'send:events'
-        LIST_EVENTS = 'list:events'
         LIST_CONTENT = 'list:content'
 
     @classmethod
@@ -361,9 +359,49 @@ class ServerPermission(OpenPolicyAgentPermission):
             ('about', 'GET'): Scopes.VIEW,
             ('plugins', 'GET'): Scopes.VIEW,
             ('exception', 'POST'): Scopes.SEND_EXCEPTION,
+            ('share', 'GET'): Scopes.LIST_CONTENT,
+        }.get((view.action, request.method))]
+
+    def get_resource(self):
+        return None
+
+class EventsPermission(OpenPolicyAgentPermission):
+    class Scopes(StrEnum):
+        SEND_EVENTS = 'send:events'
+        LIST_EVENTS = 'list:events'
+
+    @classmethod
+    def create(cls, request, view, obj):
+        permissions = []
+        if view.basename == 'events':
+            for scope in cls.get_scopes(request, view, obj):
+                self = cls.create_base_perm(request, view, scope, obj)
+                permissions.append(self)
+
+        return permissions
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.url = settings.IAM_OPA_DATA_URL + '/events/allow'
+
+    def filter(self, query_params):
+        url = self.url.replace('/allow', '/filter')
+        r = requests.post(url, json=self.payload)
+        filter_params = query_params.copy()
+        for query in r.json()['result']:
+            for attr, value in query.items():
+                if attr in filter_params and filter_params[attr] != value:
+                    filter_params[attr] = filter_params[attr], value
+                else:
+                    filter_params[attr] = value
+        return filter_params
+
+    @staticmethod
+    def get_scopes(request, view, obj):
+        Scopes = __class__.Scopes
+        return [{
             ('events', 'POST'): Scopes.SEND_EVENTS,
             ('events', 'GET'): Scopes.LIST_EVENTS,
-            ('share', 'GET'): Scopes.LIST_CONTENT,
         }.get((view.action, request.method))]
 
     def get_resource(self):

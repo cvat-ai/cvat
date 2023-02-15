@@ -16,6 +16,7 @@ from drf_spectacular.types import OpenApiTypes
 from rest_framework.renderers import JSONRenderer
 
 
+from cvat.apps.iam.permissions import EventsPermission
 from cvat.apps.events.serializers import ClientEventsSerializer, EventSerializer
 from cvat.apps.engine.log import clogger, vlogger
 from .export import export
@@ -108,8 +109,11 @@ class EventsViewSet(viewsets.ViewSet):
 
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         elif request.method == 'GET':
+            perm = EventsPermission.create_scope_list(request)
+            filter_query = perm.filter(request.query_params)
             return export(
                 request=request,
+                filter_query=filter_query,
                 queue_name=settings.CVAT_QUEUES.EXPORT_DATA.value,
             )
 
