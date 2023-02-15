@@ -3,28 +3,28 @@
 #
 # SPDX-License-Identifier: MIT
 
+from copy import copy
 import os
 import re
 import shutil
-import textwrap
-from tempfile import NamedTemporaryFile
-from typing import OrderedDict
 
-from django.contrib.auth.models import Group, User
+from tempfile import NamedTemporaryFile
+import textwrap
+from typing import Any, Dict, Iterable, Optional, OrderedDict, Union
+
+from rest_framework import serializers, exceptions
+from django.contrib.auth.models import User, Group
 from django.db import transaction
-from drf_spectacular.utils import (OpenApiExample, extend_schema_field,
-                                   extend_schema_serializer)
-from rest_framework import exceptions, serializers
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine import models
-from cvat.apps.engine.cloud_provider import (Credentials, Status,
-                                             get_cloud_storage_instance)
+from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials, Status
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.utils import parse_specific_attributes
-from cvat.apps.engine.view_utils import (build_field_filter_params,
-                                         get_list_view_name, reverse)
 
+from drf_spectacular.utils import OpenApiExample, extend_schema_field, extend_schema_serializer
+
+from cvat.apps.engine.view_utils import build_field_filter_params, get_list_view_name, reverse
 
 @extend_schema_field(serializers.URLField)
 class HyperlinkedModelViewSerializer(serializers.Serializer):
@@ -150,52 +150,94 @@ class LabelSerializer(SublabelSerializer):
             label['svg'] = instance.skeleton.svg
         return label
 
+    def __init__(self, *args, **kwargs):
+        self._local = kwargs.pop('local', False)
+        """
+        Indicates that the operation is called from the dedicated ViewSet
+        and not from the parent entity, i.e. a project or task.
+        """
+
+        super().__init__(*args, **kwargs)
+
     def validate(self, attrs):
+        if self._local:
+            if attrs.get('deleted'):
+                raise serializers.ValidationError(
+                    'Labels cannot be deleted by updating in this endpoint. '
+                    'Please use the DELETE method instead.'
+                )
+
         if attrs.get('deleted') and attrs.get('id') is None:
             raise serializers.ValidationError('Deleted label must have an ID')
 
         return attrs
 
-    @staticmethod
-    def update_instance(validated_data, parent_instance, parent_label=None):
+    @classmethod
+    def update_label(
+        cls,
+        validated_data: Dict[str, Any],
+        *,
+        parent_instance: Union[models.Project, models.Task],
+        parent_label: Optional[models.Label] = None
+    ) -> Optional[models.Label]:
+        parent_info, logger = cls._get_parent_info(parent_instance)
+
         attributes = validated_data.pop('attributespec_set', [])
-        instance = dict()
-        if isinstance(parent_instance, models.Project):
-            instance['project'] = parent_instance
-            logger = slogger.project[parent_instance.id]
-        else:
-            instance['task'] = parent_instance
-            logger = slogger.task[parent_instance.id]
-        if not validated_data.get('id') is None:
+
+        if validated_data.get('id') is not None:
             try:
-                db_label = models.Label.objects.get(id=validated_data['id'],
-                    **instance)
-            except models.Label.DoesNotExist:
-                raise exceptions.NotFound(detail='Not found label with id #{} to change'.format(validated_data['id']))
-            db_label.name = validated_data.get('name', db_label.name)
-            updated_type = validated_data.get('type', db_label.type)
-            if 'skeleton' not in [db_label.type, updated_type]:
-                # do not permit to change types from/to "skeleton"
+                db_label = models.Label.objects.get(id=validated_data['id'], **parent_info)
+            except models.Label.DoesNotExist as exc:
+                raise exceptions.NotFound(
+                    detail='Not found label with id #{} to change'.format(validated_data['id'])
+                ) from exc
+
+            updated_type = validated_data.get('type') or db_label.type
+            if str(models.LabelType.SKELETON) in [db_label.type, updated_type]:
+                # do not permit changing types from/to skeleton
+                logger.warning("Label id {} ({}): an attempt to change label type from {} to {}. "
+                    "Changing from or to '{}' is not allowed, the type won't be changed.".format(
+                    db_label.id,
+                    db_label.name,
+                    db_label.type,
+                    updated_type,
+                    str(models.LabelType.SKELETON),
+                ))
+            else:
                 db_label.type = updated_type
-            logger.info("{}({}) label was updated".format(db_label.name, db_label.id))
+
+            db_label.name = validated_data.get('name') or db_label.name
+
+            logger.info("Label id {} ({}) was updated".format(db_label.id, db_label.name))
         else:
-            db_label = models.Label.objects.create(name=validated_data.get('name'), type=validated_data.get('type'),
-                parent=parent_label, **instance)
+            db_label = models.Label.objects.create(
+                name=validated_data.get('name'),
+                type=validated_data.get('type'),
+                parent=parent_label,
+                **parent_info
+            )
             logger.info("New {} label was created".format(db_label.name))
+
         if validated_data.get('deleted'):
+            assert validated_data['id'] # must be checked in the validate()
             db_label.delete()
-            return
+            return None
+
         if not validated_data.get('color', None):
-            label_colors = [l.color for l in
-                instance[tuple(instance.keys())[0]].label_set.exclude(id=db_label.id).order_by('id')
+            other_label_colors = [
+                label.color for label in
+                parent_instance.label_set.exclude(id=db_label.id).order_by('id')
             ]
-            db_label.color = get_label_color(db_label.name, label_colors)
+            db_label.color = get_label_color(db_label.name, other_label_colors)
         else:
             db_label.color = validated_data.get('color', db_label.color)
+
         db_label.save()
+
         for attr in attributes:
             (db_attr, created) = models.AttributeSpec.objects.get_or_create(
-                label=db_label, name=attr['name'], defaults=attr)
+                label=db_label, name=attr['name'], defaults=attr
+            )
             if created:
                 logger.info("New {} attribute for {} label was created"
                     .format(db_attr.name, db_label.name))
@@ -209,7 +251,137 @@ class LabelSerializer(SublabelSerializer):
                 db_attr.input_type = attr.get('input_type', db_attr.input_type)
                 db_attr.values = attr.get('values', db_attr.values)
                 db_attr.save()
+
         return db_label
+
+    @classmethod
+    @transaction.atomic
+    def create_labels(cls,
+        labels: Iterable[Dict[str, Any]],
+        *,
+        parent_instance: Union[models.Project, models.Task],
+        parent_label: Optional[models.Label] = None
+    ):
+        parent_info, logger = cls._get_parent_info(parent_instance)
+
+        label_colors = list()
+
+        for label in labels:
+            attributes = label.pop('attributespec_set')
+
+            if label.get('id', None):
+                del label['id']
+
+            if not label.get('color', None):
+                label['color'] = get_label_color(label['name'], label_colors)
+            label_colors.append(label['color'])
+
+            sublabels = label.pop('sublabels', [])
+            svg = label.pop('svg', '')
+            db_label = models.Label.objects.create(**label, **parent_info, parent=parent_label)
+            logger.info(
+                f'label:create Label id:{db_label.id} for spec:{label} '
+                f'with sublabels:{sublabels}, parent_label:{parent_label}'
+            )
+
+            cls.create_labels(sublabels, parent_instance=parent_instance, parent_label=db_label)
+
+            if db_label.type == str(models.LabelType.SKELETON):
+                for db_sublabel in list(db_label.sublabels.all()):
+                    svg = svg.replace(
+                        f'data-label-name="{db_sublabel.name}"',
+                        f'data-label-id="{db_sublabel.id}"'
+                    )
+                db_skeleton = models.Skeleton.objects.create(root=db_label, svg=svg)
+                logger.info(f'label:create Skeleton id:{db_skeleton.id} for label_id:{db_label.id}')
+
+            for attr in attributes:
+                if attr.get('id', None):
+                    del attr['id']
+                models.AttributeSpec.objects.create(label=db_label, **attr)
+
+    @classmethod
+    @transaction.atomic
+    def update_labels(cls,
+        labels: Iterable[Dict[str, Any]],
+        *,
+        parent_instance: Union[models.Project, models.Task],
+        parent_label: Optional[models.Label] = None
+    ):
+        _, logger = cls._get_parent_info(parent_instance)
+
+        for label in labels:
+            sublabels = label.pop('sublabels', [])
+            svg = label.pop('svg', '')
+            db_label = cls.update_label(label,
+                parent_instance=parent_instance, parent_label=parent_label
+            )
+            if db_label:
+                logger.info(
+                    f'label:update Label id:{db_label.id} for spec:{label} '
+                    f'with sublabels:{sublabels}, parent_label:{parent_label}'
+                )
+            else:
+                logger.info(
+                    f'label:delete label:{label} with '
+                    f'sublabels:{sublabels}, parent_label:{parent_label}'
+                )
+
+            if not label.get('deleted'):
+                cls.update_labels(sublabels, parent_instance=parent_instance, parent_label=db_label)
+
+                if label.get('id') is None and db_label.type == str(models.LabelType.SKELETON):
+                    for db_sublabel in list(db_label.sublabels.all()):
+                        svg = svg.replace(
+                            f'data-label-name="{db_sublabel.name}"',
+                            f'data-label-id="{db_sublabel.id}"'
+                        )
+                    db_skeleton = models.Skeleton.objects.create(root=db_label, svg=svg)
+                    logger.info(
+                        f'label:update Skeleton id:{db_skeleton.id} for label_id:{db_label.id}'
+                    )
+
+    @classmethod
+    def _get_parent_info(cls, parent_instance: Union[models.Project, models.Task]):
+        parent_info = {}
+        if isinstance(parent_instance, models.Project):
+            parent_info['project'] = parent_instance
+            logger = slogger.project[parent_instance.id]
+        elif isinstance(parent_instance, models.Task):
+            parent_info['task'] = parent_instance
+            logger = slogger.task[parent_instance.id]
+        else:
+            raise TypeError(f"Unexpected parent instance type {type(parent_instance).__name__}")
+
+        return parent_info, logger
+
+    def update(self, instance, validated_data):
+        if not self._local:
+            return super().update(instance, validated_data)
+
+        # Here we reuse the parent entity logic to make sure everything is done
+        # like these entities expect. Initial data (unprocessed) is used to
+        # avoid introducing premature changes.
+        data = copy(self.initial_data)
+        data['id'] = instance.id
+        data.setdefault('name', instance.name)
+        parent_query = { 'labels': [data] }
+
+        if isinstance(instance.project, models.Project):
+            parent_serializer = ProjectWriteSerializer(
+                instance=instance.project, data=parent_query, partial=True,
+            )
+        elif isinstance(instance.task, models.Task):
+            parent_serializer = TaskWriteSerializer(
+                instance=instance.task, data=parent_query, partial=True,
+            )
+
+        parent_serializer.is_valid(raise_exception=True)
+        parent_serializer.save()
+
+        self.instance = models.Label.objects.get(pk=instance.pk)
+        return self.instance
+
 
 class JobCommitSerializer(serializers.ModelSerializer):
     class Meta:
@@ -602,7 +774,6 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         return serializer.data
 
     # pylint: disable=no-self-use
-    @transaction.atomic
     def create(self, validated_data):
         project_id = validated_data.get("project_id")
         if not (validated_data.get("label_set") or project_id):
@@ -639,13 +810,12 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         os.makedirs(db_task.get_task_logs_dirname())
         os.makedirs(db_task.get_task_artifacts_dirname())
 
-        _create_labels(labels, db_task=db_task)
+        LabelSerializer.create_labels(labels, parent_instance=db_task)
 
         db_task.save()
         return db_task
 
     # pylint: disable=no-self-use
-    @transaction.atomic
     def update(self, instance, validated_data):
         instance.name = validated_data.get('name', instance.name)
         instance.owner_id = validated_data.get('owner_id', instance.owner_id)
@@ -656,8 +826,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         labels = validated_data.get('label_set', [])
 
         if instance.project_id is None:
-            logger = slogger.task[instance.id]
-            _update_labels(labels, instance, logger)
+            LabelSerializer.update_labels(labels, parent_instance=instance)
 
         validated_project_id = validated_data.get('project_id')
         if validated_project_id is not None and validated_project_id != instance.project_id:
@@ -815,7 +984,6 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
         return serializer.data
 
     # pylint: disable=no-self-use
-    @transaction.atomic
     def create(self, validated_data):
         labels = validated_data.pop('label_set')
 
@@ -834,12 +1002,11 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
             shutil.rmtree(project_path)
         os.makedirs(db_project.get_project_logs_dirname())
 
-        _create_labels(labels, db_project=db_project)
+        LabelSerializer.create_labels(labels, parent_instance=db_project)
 
         return db_project
 
     # pylint: disable=no-self-use
-    @transaction.atomic
     def update(self, instance, validated_data):
         instance.name = validated_data.get('name', instance.name)
         instance.owner_id = validated_data.get('owner_id', instance.owner_id)
@@ -847,8 +1014,7 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
         instance.bug_tracker = validated_data.get('bug_tracker', instance.bug_tracker)
         labels = validated_data.get('label_set', [])
 
-        logger = slogger.project[instance.id]
-        _update_labels(labels, instance, logger)
+        LabelSerializer.update_labels(labels, parent_instance=instance)
 
         # update source and target storages
         _update_related_storages(instance, validated_data)
@@ -1463,55 +1629,3 @@ def _validate_existence_of_cloud_storage(cloud_storage_id):
         _ = models.CloudStorage.objects.get(id=cloud_storage_id)
     except models.CloudStorage.DoesNotExist:
         raise serializers.ValidationError(f'The specified cloud storage {cloud_storage_id} does not exist.')
-
-def _create_labels(labels, parent_label=None, db_task=None, db_project=None):
-    label_colors = list()
-    for label in labels:
-        attributes = label.pop('attributespec_set')
-        if label.get('id', None):
-            del label['id']
-        if not label.get('color', None):
-            label['color'] = get_label_color(label['name'], label_colors)
-        label_colors.append(label['color'])
-
-        sublabels = label.pop('sublabels', [])
-        svg = label.pop('svg', '')
-
-        if db_task is not None:
-            db_label = models.Label.objects.create(task=db_task, parent=parent_label, **label)
-            logger = slogger.task[db_task.id]
-        elif db_project is not None:
-            db_label = models.Label.objects.create(project=db_project, parent=parent_label, **label)
-            logger = slogger.project[db_project.id]
-
-        logger.info(f'label:create: Label id:{db_label.id} for spec:{label} with sublabels:{sublabels}, parent_label:{parent_label}')
-        _create_labels(sublabels, parent_label=db_label, db_task=db_task, db_project=db_project)
-        if db_label.type == str(models.LabelType.SKELETON):
-            for db_sublabel in list(db_label.sublabels.all()):
-                svg = svg.replace(f'data-label-name="{db_sublabel.name}"', f'data-label-id="{db_sublabel.id}"')
-            db_skeleton = models.Skeleton.objects.create(root=db_label, svg=svg)
-            logger.info(f'label:create Skeleton id:{db_skeleton.id} for label_id:{db_label.id}')
-
-        for attr in attributes:
-            if attr.get('id', None):
-                del attr['id']
-            models.AttributeSpec.objects.create(label=db_label, **attr)
-
-def _update_labels(labels, instance, logger, parent_label=None):
-    for label in labels:
-        sublabels = label.pop('sublabels', [])
-        svg = label.pop('svg', '')
-        db_label = LabelSerializer.update_instance(label, instance, parent_label)
-        if db_label:
-            logger.info(f'label:update Label id:{db_label.id} for spec:{label} with sublabels:{sublabels}, parent_label:{parent_label}')
-        else:
-            logger.info(f'label:delete label:{label} with sublabels:{sublabels}, parent_label:{parent_label}')
-
-        if not label.get('deleted'):
-            _update_labels(sublabels, instance, logger, parent_label=db_label)
-
-            if label.get('id') is None and db_label.type == str(models.LabelType.SKELETON):
-                for db_sublabel in list(db_label.sublabels.all()):
-                    svg = svg.replace(f'data-label-name="{db_sublabel.name}"', f'data-label-id="{db_sublabel.id}"')
-                db_skeleton = models.Skeleton.objects.create(root=db_label, svg=svg)
-                logger.info(f'label:update Skeleton id:{db_skeleton.id} for label_id:{db_label.id}')
