@@ -96,6 +96,7 @@ class ServerProxy {
                 return true;
             });
 
+            result.count = result.length;
             return result;
         }
 
@@ -107,12 +108,21 @@ class ServerProxy {
                     Object.prototype.hasOwnProperty.call(object, prop)
                 ) {
                     if (prop === 'labels') {
-                        object[prop] = projectData[prop].filter((label) => !label.deleted);
+                        const labels = projectsDummyLabelsData[id];
+                        // only add new labels here
+                        const maxId = Math.max(0, ...labels.map((label) => label.id));
+                        const newLabels = [...labels, ...projectData.labels.map((label, index) => (
+                            { ...label, id: maxId + index + 1 }
+                        ))];
+
+                        projectsDummyLabelsData[object.id] = newLabels;
                     } else {
                         object[prop] = projectData[prop];
                     }
                 }
             }
+
+            return (await getProjects({ id }))[0];
         }
 
         async function createProject(projectData) {
@@ -159,6 +169,7 @@ class ServerProxy {
                 return true;
             });
 
+            result.count = result.length;
             return result;
         }
 
@@ -170,7 +181,18 @@ class ServerProxy {
                     Object.prototype.hasOwnProperty.call(object, prop)
                 ) {
                     if (prop === 'labels') {
-                        object[prop] = taskData[prop].filter((label) => !label.deleted);
+                        const labels = (projectsDummyLabelsData[object.project_id] || tasksDummyLabelsData[object.id])
+                        // only add new labels here
+                        const maxId = Math.max(0, ...labels.map((label) => label.id));
+                        const newLabels = [...labels, ...taskData.labels.map((label, index) => (
+                            { ...label, id: maxId + index + 1 }
+                        ))];
+
+                        if (Number.isInteger(object.project_id)) {
+                            projectsDummyLabelsData[object.project_id] = newLabels;
+                        } else {
+                            tasksDummyLabelsData[object.id] = newLabels;
+                        }
                     } else {
                         object[prop] = taskData[prop];
                     }
@@ -221,12 +243,17 @@ class ServerProxy {
         async function getLabels(filter) {
             const { task_id, job_id, project_id } = filter;
             if (Number.isInteger(task_id)) {
+                const object = tasksDummyData.results.find((task) => task.id === task_id);
+                if (Number.isInteger(object.project_id)) {
+                    return await getLabels({ project_id: object.project_id });
+                }
+
                 const results = tasksDummyLabelsData[task_id] || [];
                 return { results, count: results.length };
             }
 
             if (Number.isInteger(project_id)) {
-                const results =  projectsDummyData[project_id] || [];
+                const results =  projectsDummyLabelsData[project_id] || [];
                 return { results, count: results.length };
             }
 
@@ -247,8 +274,16 @@ class ServerProxy {
             return { results: [], count: 0 };
         }
 
-        async function deleteLabel() {
-            return;
+        async function deleteLabel(id) {
+            const containers = [tasksDummyLabelsData, projectsDummyLabelsData];
+            for (const container of containers) {
+                for (const instanceID in container) {
+                    const index = container[instanceID].findIndex((label) => label.id === id);
+                    if (index !== -1) {
+                        container[instanceID].splice(index, 1);
+                    }
+                }
+            }
         }
 
         async function updateLabel(body) {
@@ -319,7 +354,7 @@ class ServerProxy {
                 }
             }
 
-            return getJobs({ id });
+            return (await getJobs({ id })).results[0];
         }
 
         async function getUsers() {

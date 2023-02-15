@@ -93,9 +93,7 @@ describe('Feature: get a list of jobs', () => {
 
 describe('Feature: save job', () => {
     test('save stage and state of a job', async () => {
-        const result = await window.cvat.jobs.get({
-            jobID: 1,
-        });
+        const result = await window.cvat.jobs.get({ jobID: 1 });
 
         result[0].stage = 'validation';
         result[0].state = 'new';
