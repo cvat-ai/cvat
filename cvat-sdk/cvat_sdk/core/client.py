@@ -10,7 +10,7 @@ import urllib.parse
 from contextlib import suppress
 from pathlib import Path
 from time import sleep
-from typing import Any, Dict, Optional, Sequence, Tuple
+from typing import Any, Dict, Optional, Sequence, Tuple, TypeVar
 
 import attrs
 import packaging.version as pv
@@ -30,6 +30,8 @@ from cvat_sdk.core.proxies.users import UsersRepo
 from cvat_sdk.version import VERSION
 
 _DEFAULT_CACHE_DIR = platformdirs.user_cache_path("cvat-sdk", "CVAT.ai")
+
+_RepoType = TypeVar("_RepoType", bound=Repo)
 
 
 @attrs.define
@@ -244,45 +246,36 @@ class Client:
         (about, _) = self.api_client.server_api.retrieve_about()
         return pv.Version(about.version)
 
-    def _get_repo(self, key: str) -> Repo:
-        _repo_map = {
-            "tasks": TasksRepo,
-            "projects": ProjectsRepo,
-            "jobs": JobsRepo,
-            "users": UsersRepo,
-            "issues": IssuesRepo,
-            "comments": CommentsRepo,
-        }
-
-        repo = self._repos.get(key, None)
+    def _get_repo(self, repo_type: _RepoType) -> _RepoType:
+        repo = self._repos.get(repo_type, None)
         if repo is None:
-            repo = _repo_map[key](self)
-            self._repos[key] = repo
+            repo = repo_type(self)
+            self._repos[repo_type] = repo
         return repo
 
     @property
     def tasks(self) -> TasksRepo:
-        return self._get_repo("tasks")
+        return self._get_repo(TasksRepo)
 
     @property
     def projects(self) -> ProjectsRepo:
-        return self._get_repo("projects")
+        return self._get_repo(ProjectsRepo)
 
     @property
     def jobs(self) -> JobsRepo:
-        return self._get_repo("jobs")
+        return self._get_repo(JobsRepo)
 
     @property
     def users(self) -> UsersRepo:
-        return self._get_repo("users")
+        return self._get_repo(UsersRepo)
 
     @property
     def issues(self) -> IssuesRepo:
-        return self._get_repo("issues")
+        return self._get_repo(IssuesRepo)
 
     @property
     def comments(self) -> CommentsRepo:
-        return self._get_repo("comments")
+        return self._get_repo(CommentsRepo)
 
 
 class CVAT_API_V2:
