@@ -16,6 +16,7 @@ from tempfile import TemporaryDirectory
 from time import sleep
 
 import pytest
+import shared.utils.s3 as s3
 from cvat_sdk import Client, Config
 from cvat_sdk.api_client import apis, models
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
@@ -23,10 +24,9 @@ from cvat_sdk.core.helpers import get_paginated_collection
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from deepdiff import DeepDiff
 from PIL import Image
-
-import shared.utils.s3 as s3
 from shared.fixtures.init import get_server_image_tag
-from shared.utils.config import BASE_URL, USER_PASS, get_method, make_api_client, patch_method
+from shared.utils.config import (BASE_URL, USER_PASS, get_method,
+                                 make_api_client, patch_method, post_method)
 from shared.utils.helpers import generate_image_files
 
 from .utils import CollectionSimpleFilterTestBase, export_dataset
@@ -925,6 +925,22 @@ class TestPostTaskData:
                 assert segment.stop_frame == stop_frame
 
                 start_frame = stop_frame + 1
+
+    def test_cannot_create_task_with_two_same_labels(self, tasks):
+        task_spec = {
+            "name": "test cannot create task with two same labels",
+            "labels": [{"name": "car"}, {"name": "car"}],
+        }
+        response = post_method(self._USERNAME, "/tasks", task_spec)
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+
+        tasks = list(tasks)
+        with make_api_client(self._USERNAME) as api_client:
+            results = get_paginated_collection(
+                api_client.tasks_api.list_endpoint,
+                return_json=True,
+            )
+            assert DeepDiff(tasks, results, ignore_order=True) == {}
 
 
 @pytest.mark.usefixtures("restore_db_per_function")

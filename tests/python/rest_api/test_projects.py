@@ -17,10 +17,11 @@ from typing import Dict, Optional
 import pytest
 from cvat_sdk.api_client import ApiClient, Configuration, models
 from cvat_sdk.api_client.api_client import Endpoint
+from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
 from PIL import Image
-
-from shared.utils.config import BASE_URL, USER_PASS, get_method, make_api_client, patch_method
+from shared.utils.config import (BASE_URL, USER_PASS, get_method,
+                                 make_api_client, patch_method, post_method)
 
 from .utils import CollectionSimpleFilterTestBase, export_dataset
 
@@ -388,6 +389,22 @@ class TestPostProjects:
                 )
 
         return org
+
+    def test_cannot_create_project_with_two_same_labels(self, projects, admin_user):
+        project_spec = {
+            "name": "test cannot create project with two same labels",
+            "labels": [{"name": "car"}, {"name": "car"}],
+        }
+        response = post_method(admin_user, "/projects", project_spec)
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+
+        projects = list(projects)
+        with make_api_client(admin_user) as api_client:
+            results = get_paginated_collection(
+                api_client.projects_api.list_endpoint,
+                return_json=True,
+            )
+            assert DeepDiff(projects, results, ignore_order=True) == {}
 
 
 def _check_cvat_for_video_project_annotations_meta(content, values_to_be_checked):
