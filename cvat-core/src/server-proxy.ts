@@ -2537,7 +2537,7 @@ async function socialAuthentication(): Promise<any> {
 async function selectSSOIdentityProvider(email?: string): Promise<string> {
     const { backendAPI } = config;
     try {
-        const response = await Axios.get(`${backendAPI}/auth/sso/select-idp/${(email) ? `?email=${email}` : ''}`, {
+        const response = await Axios.get(`${backendAPI}/auth/oidc/select-idp/${(email) ? `?email=${email}` : ''}`, {
             proxy: config.proxy,
         });
         return response.data;

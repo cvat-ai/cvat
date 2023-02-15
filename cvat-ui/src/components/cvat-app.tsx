@@ -504,7 +504,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                         />
                         <Route
                             exact
-                            path='/auth/sso/select-identity-provider/'
+                            path='/auth/oidc/select-identity-provider/'
                             component={LoginWithSSOComponent}
                         />
                         <Route exact path='/auth/password/reset' component={ResetPasswordPageComponent} />
