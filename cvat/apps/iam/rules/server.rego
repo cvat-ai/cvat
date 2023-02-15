@@ -2,7 +2,7 @@ package server
 import data.utils
 
 # input: {
-#     "scope": <"send:logs"|"send:exception"|"view"|"list:content"|"list:logs"> or null,
+#     "scope": <"send:exception"|"view"|"list:content"> or null,
 #     "auth": {
 #         "user": {
 #             "id": <num>,
@@ -30,15 +30,6 @@ allow {
 }
 
 allow {
-    input.scope == utils.SEND_EVENTS
-}
-
-allow {
     input.scope == utils.LIST_CONTENT
     utils.has_perm(utils.WORKER)
-}
-
-allow {
-    input.scope == utils.LIST_EVENTS
-    utils.has_perm(utils.BUSINESS)
 }
