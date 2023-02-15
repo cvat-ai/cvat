@@ -34,12 +34,12 @@ allow {
 allow {
     input.scope == utils.LIST_EVENTS
     utils.is_sandbox
-    utils.has_perm(utils.USER)
+    utils.has_perm(utils.WORKER)
 }
 
 allow {
     input.scope == utils.LIST_EVENTS
-    utils.has_perm(utils.USER)
+    utils.has_perm(utils.WORKER)
     organizations.has_perm(organizations.WORKER)
 }
 
