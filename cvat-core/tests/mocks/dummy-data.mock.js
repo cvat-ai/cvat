@@ -828,13 +828,29 @@ const tasksDummyLabelsData = {
     ],
 }
 
+function initJobFromTaskProject(job_id, task_id, proj_id = null) {
+    const task = tasksDummyData.results.find((task) => task.id === task_id);
+    const project = Number.isInteger(proj_id) ? projectsDummyData.results.find((proj) => proj.id === proj_id) : undefined;
+    return {
+        url: `http://localhost:7000/api/jobs/${job_id}`,
+        updated_date: '2023-02-14T15:06:53.627413Z',
+        project_id: proj_id,
+        task_id: task_id,
+        bug_tracker: project?.bug_tracker || task.bug_tracker || null,
+        mode: task.mode,
+        dimension: task.dimension,
+        data_chunk_size: task.data_chunk_size,
+        data_compressed_chunk_type: task.data_compressed_chunk_type,
+        labels: { count: project ? project.labels.count : task.labels.count, url: `http://localhost:7000/api/labels?job_id=${job_id}` }
+    }
+}
+
 const jobsDummyData = {
     count: 2,
     next: null,
     previous: null,
     results: [
         {
-            url: 'http://localhost:7000/api/jobs/112',
             id: 112,
             assignee: null,
             status: 'annotation',
@@ -846,7 +862,6 @@ const jobsDummyData = {
             project_id: null,
         },
         {
-            url: 'http://localhost:7000/api/jobs/100',
             id: 100,
             assignee: null,
             status: 'annotation',
@@ -858,7 +873,6 @@ const jobsDummyData = {
             project_id: null,
         },
         {
-            url: 'http://localhost:7000/api/jobs/40',
             id: 40,
             assignee: null,
             status: 'annotation',
@@ -870,7 +884,6 @@ const jobsDummyData = {
             project_id: null,
         },
         {
-            url: 'http://localhost:7000/api/jobs/20',
             id: 111,
             assignee: null,
             status: 'annotation',
@@ -882,7 +895,6 @@ const jobsDummyData = {
             project_id: null,
         },
         {
-            url: 'http://localhost:7000/api/jobs/19',
             id: 110,
             assignee: null,
             status: 'annotation',
@@ -894,7 +906,6 @@ const jobsDummyData = {
             project_id: null,
         },
         {
-            url: 'http://localhost:7000/api/jobs/18',
             id: 109,
             assignee: null,
             status: 'annotation',
@@ -906,7 +917,6 @@ const jobsDummyData = {
             project_id: null,
         },
         {
-            url: 'http://localhost:7000/api/jobs/17',
             id: 108,
             assignee: null,
             status: 'annotation',
@@ -918,7 +928,6 @@ const jobsDummyData = {
             project_id: null,
         },
         {
-            url: 'http://localhost:7000/api/jobs/16',
             id: 107,
             assignee: null,
             status: 'annotation',
@@ -930,7 +939,6 @@ const jobsDummyData = {
             project_id: null,
         },
         {
-            url: 'http://localhost:7000/api/jobs/15',
             id: 106,
             assignee: null,
             status: 'annotation',
@@ -942,7 +950,6 @@ const jobsDummyData = {
             project_id: null,
         },
         {
-            url: 'http://localhost:7000/api/jobs/14',
             id: 105,
             assignee: null,
             status: 'annotation',
@@ -954,7 +961,6 @@ const jobsDummyData = {
             project_id: null,
         },
         {
-            url: 'http://localhost:7000/api/jobs/13',
             id: 104,
             assignee: null,
             status: 'annotation',
@@ -966,7 +972,6 @@ const jobsDummyData = {
             project_id: null,
         },
         {
-            url: 'http://localhost:7000/api/jobs/12',
             id: 103,
             assignee: null,
             status: 'annotation',
@@ -978,7 +983,6 @@ const jobsDummyData = {
             project_id: null,
         },
         {
-            url: 'http://localhost:7000/api/jobs/11',
             id: 102,
             assignee: null,
             status: 'annotation',
@@ -990,7 +994,6 @@ const jobsDummyData = {
             project_id: null,
         },
         {
-            url: 'http://localhost:7000/api/jobs/10',
             id: 101,
             assignee: null,
             status: 'annotation',
@@ -1002,7 +1005,6 @@ const jobsDummyData = {
             project_id: null,
         },
         {
-            url: 'http://localhost:7000/api/jobs/9',
             id: 9,
             assignee: null,
             status: 'completed',
@@ -1014,7 +1016,6 @@ const jobsDummyData = {
             project_id: null,
         },
         {
-            url: 'http://localhost:7000/api/jobs/8',
             id: 8,
             assignee: null,
             status: 'completed',
@@ -1026,7 +1027,6 @@ const jobsDummyData = {
             project_id: null,
         },
         {
-            url: 'http://localhost:7000/api/jobs/7',
             id: 7,
             assignee: null,
             status: 'completed',
@@ -1038,7 +1038,6 @@ const jobsDummyData = {
             project_id: null,
         },
         {
-            url: 'http://localhost:7000/api/jobs/6',
             id: 6,
             assignee: null,
             status: 'completed',
@@ -1050,7 +1049,6 @@ const jobsDummyData = {
             project_id: null,
         },
         {
-            url: 'http://localhost:7000/api/jobs/5',
             id: 5,
             assignee: null,
             status: 'completed',
@@ -1062,7 +1060,6 @@ const jobsDummyData = {
             project_id: null,
         },
         {
-            url: 'http://localhost:7000/api/jobs/4',
             id: 4,
             assignee: null,
             status: 'annotation',
@@ -1074,7 +1071,6 @@ const jobsDummyData = {
             project_id: null,
         },
         {
-            url: 'http://localhost:7000/api/jobs/3',
             id: 3,
             assignee: null,
             status: 'annotation',
@@ -1086,7 +1082,6 @@ const jobsDummyData = {
             project_id: null,
         },
         {
-            url: 'http://localhost:7000/api/jobs/2',
             id: 2,
             assignee: null,
             status: 'annotation',
@@ -1098,7 +1093,6 @@ const jobsDummyData = {
             project_id: 2,
         },
         {
-            url: 'http://localhost:7000/api/jobs/1',
             id: 1,
             assignee: null,
             status: 'annotation',
@@ -1110,7 +1104,7 @@ const jobsDummyData = {
             project_id: null,
         },
     ]
-}
+};
 
 const projectsDummyData = {
     count: 2,
@@ -1432,6 +1426,8 @@ const tasksDummyData = {
         },
     ],
 };
+
+jobsDummyData.results = jobsDummyData.results.map((job) => ({ ...job, ...initJobFromTaskProject(job.id, job.task_id, job.project_id) }));
 
 const taskAnnotationsDummyData = {
     112: {

@@ -221,17 +221,19 @@ class ServerProxy {
         async function getLabels(filter) {
             const { task_id, job_id, project_id } = filter;
             if (Number.isInteger(task_id)) {
-                return tasksDummyLabelsData[task_id] || [];
+                const results = tasksDummyLabelsData[task_id] || [];
+                return { results, count: results.length };
             }
 
             if (Number.isInteger(project_id)) {
-                return projectsDummyData[project_id] || [];
+                const results =  projectsDummyData[project_id] || [];
+                return { results, count: results.length };
             }
 
             if (Number.isInteger(job_id)) {
-                const job = jobsDummyData.results[job_id];
+                const job = jobsDummyData.results.find((job) => job.id === job_id);
                 const project = job && Number.isInteger(job.project_id) ? projectsDummyData.results[job.project_id] : undefined;
-                const task = job ? tasksDummyData.results[job.task_id] : undefined;
+                const task = job ? tasksDummyData.results.find((task) => task.id === job.task_id) : undefined;
 
                 if (project) {
                     return await getLabels({ project_id: project.id });
