@@ -18,7 +18,6 @@ context('When clicking on the Logout button, get the user session closed.', () =
     }
 
     before(() => {
-        // TMP fix for login tests, need to change login logic with sessions
         cy.clearAllCookies();
         cy.clearAllLocalStorage();
         cy.visit('auth/login');
