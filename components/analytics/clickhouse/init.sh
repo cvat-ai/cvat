@@ -33,11 +33,11 @@ CREATE TABLE IF NOT EXISTS ${CLICKHOUSE_DB}.events
     \`timestamp\` DateTime64(3, 'Etc/UTC') NOT NULL,
     \`count\` UInt16 NULL,
     \`duration\` UInt32 DEFAULT toUInt32(0),
-    \`project\` UInt64 NULL,
-    \`task\` UInt64 NULL,
-    \`job\` UInt64 NULL,
-    \`user\` UInt64 NULL,
-    \`organization\` UInt64 NULL,
+    \`project_id\` UInt64 NULL,
+    \`task_id\` UInt64 NULL,
+    \`job_id\` UInt64 NULL,
+    \`user_id\` UInt64 NULL,
+    \`org_id\` UInt64 NULL,
     \`payload\` String NULL
 )
 ENGINE = MergeTree

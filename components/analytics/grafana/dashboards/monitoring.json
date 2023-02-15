@@ -105,7 +105,7 @@
               {
                 "condition": "AND",
                 "filterType": "custom",
-                "key": "user",
+                "key": "user_id",
                 "operator": "IN",
                 "type": "",
                 "value": [
@@ -121,7 +121,7 @@
                 "value": [
                   "projects",
                   "OR",
-                  "project",
+                  "project_id",
                   "IN",
                   "projects"
                 ]
@@ -129,7 +129,7 @@
               {
                 "condition": "AND",
                 "filterType": "custom",
-                "key": "task",
+                "key": "task_id",
                 "operator": "IN",
                 "type": "",
                 "value": [
@@ -139,7 +139,7 @@
               {
                 "condition": "AND",
                 "filterType": "custom",
-                "key": "job",
+                "key": "job_id",
                 "operator": "IN",
                 "type": "",
                 "value": [
@@ -158,10 +158,10 @@
               }
             ],
             "groupBy": [
-              "user",
-              "project",
-              "task",
-              "job"
+              "user_id",
+              "project_id",
+              "task_id",
+              "job_id"
             ],
             "limit": 100,
             "metrics": [
@@ -210,7 +210,7 @@
                 {
                   "condition": "AND",
                   "filterType": "custom",
-                  "key": "user",
+                  "key": "user_id",
                   "operator": "IN",
                   "type": "",
                   "value": [
@@ -226,7 +226,7 @@
                   "value": [
                     "projects",
                     "OR",
-                    "project",
+                    "project_id",
                     "IN",
                     "projects"
                   ]
@@ -234,7 +234,7 @@
                 {
                   "condition": "AND",
                   "filterType": "custom",
-                  "key": "task",
+                  "key": "task_id",
                   "operator": "IN",
                   "type": "",
                   "value": [
@@ -244,7 +244,7 @@
                 {
                   "condition": "AND",
                   "filterType": "custom",
-                  "key": "job",
+                  "key": "job_id",
                   "operator": "IN",
                   "type": "",
                   "value": [
@@ -263,10 +263,10 @@
                 }
               ],
               "groupBy": [
-                "user",
-                "project",
-                "task",
-                "job"
+                "user_id",
+                "project_id",
+                "task_id",
+                "job_id"
               ],
               "limit": 100,
               "metrics": [
@@ -524,7 +524,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "user"
+              "options": "user_id"
             },
             "properties": [
               {
@@ -548,7 +548,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "project"
+              "options": "project_id"
             },
             "properties": [
               {
@@ -560,7 +560,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "task"
+              "options": "task_id"
             },
             "properties": [
               {
@@ -572,7 +572,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "job"
+              "options": "job_id"
             },
             "properties": [
               {
@@ -607,10 +607,10 @@
         {
           "builderOptions": {
             "fields": [
-              "user",
-              "project",
-              "task",
-              "job",
+              "user_id",
+              "project_id",
+              "task_id",
+              "job_id",
               "payload"
             ],
             "filters": [
@@ -645,10 +645,10 @@
           "meta": {
             "builderOptions": {
               "fields": [
-                "user",
-                "project",
-                "task",
-                "job",
+                "user_id",
+                "project_id",
+                "task_id",
+                "job_id",
                 "payload"
               ],
               "filters": [
@@ -677,7 +677,7 @@
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT\r\n  user,\r\n  source,\r\n  project,\r\n  task,\r\n  job,\r\n  JSONExtractString(payload, 'message') as error,\r\n  JSONExtractString(payload, 'stack') as stack\r\nFROM events\r\nWHERE\r\n  ( timestamp  >= $__fromTime AND timestamp <= $__toTime )\r\n  AND scope = 'send:exception'",
+          "rawSql": "SELECT\r\n  user_id,\r\n  source,\r\n  project_id,\r\n  task_id,\r\n  job_id,\r\n  JSONExtractString(payload, 'message') as error,\r\n  JSONExtractString(payload, 'stack') as stack\r\nFROM events\r\nWHERE\r\n  ( timestamp  >= $__fromTime AND timestamp <= $__toTime )\r\n  AND scope = 'send:exception'",
           "refId": "A"
         }
       ],

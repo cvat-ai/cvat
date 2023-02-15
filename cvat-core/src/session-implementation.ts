@@ -348,9 +348,9 @@ export function implementJob(Job) {
             logType,
             {
                 ...payload,
-                project: this.projectId,
-                task: this.taskId,
-                job: this.id,
+                project_id: this.projectId,
+                task_id: this.taskId,
+                job_id: this.id,
             },
             wait,
         );

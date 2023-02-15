@@ -4,13 +4,13 @@ address = "0.0.0.0:80"
 encoding = "json"
 
 # Uncomment for debug
-# [sinks.console]
-# type = "console"
-# inputs = [ "http-events" ]
-# target = "stdout"
+[sinks.console]
+type = "console"
+inputs = [ "http-events" ]
+target = "stdout"
 
-# [sinks.console.encoding]
-# codec = "json"
+[sinks.console.encoding]
+codec = "json"
 
 [sinks.clickhouse]
 inputs = [ "http-events" ]
@@ -23,4 +23,4 @@ auth.password = "${CLICKHOUSE_PASSWORD}"
 endpoint = "http://clickhouse:8123"
 batch.timeout_secs = 10
 request.concurrency = "adaptive"
-encoding.only_fields = ["scope", "obj_name", "obj_id", "obj_val", "source", "timestamp", "count",  "duration", "project", "task", "job", "user", "organization", "payload"]
+encoding.only_fields = ["scope", "obj_name", "obj_id", "obj_val", "source", "timestamp", "count",  "duration_id", "project_id", "task_id", "job_id", "user_id", "org_id", "payload"]

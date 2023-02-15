@@ -4,7 +4,7 @@
 
 import os
 import csv
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from dateutil import parser
 import uuid
 
@@ -34,18 +34,31 @@ def _create_csv(query_params, output_filename, cache_ttl):
         query = "SELECT * FROM events"
         conditions = []
         parameters = {}
+
+        try:
+            if time_filter['from']:
+                conditions.append(f"timestamp >= {{from:DateTime64}}")
+                parameters['from'] = time_filter['from']
+
+            if time_filter['to']:
+                conditions.append(f"timestamp <= {{to:DateTime64}}")
+                parameters['to'] = time_filter['to']
+        except parser.ParserError:
+            raise serializers.ValidationError(
+                f"Cannot parse datetimes {time_filter['from']} or {time_filter['to']}"
+            )
+
+        # Set the default time interval to last 30 days
+        if not parameters:
+            parameters['to'] = datetime.now(timezone.utc)
+            conditions.append(f"timestamp <= {{to:DateTime64}}")
+            parameters['from'] = parameters['to'] - timedelta(days=30)
+            conditions.append(f"timestamp >= {{from:DateTime64}}")
+
         for param, value in query_params.items():
             if value:
                 conditions.append(f"{param} = {{{param}:UInt64}}")
                 parameters[param] = value
-
-        if time_filter['from']:
-            conditions.append(f"timestamp >= {{from:DateTime64}}")
-            parameters['from'] = time_filter['from']
-
-        if time_filter['to']:
-            conditions.append(f"timestamp <= {{to:DateTime64}}")
-            parameters['to'] = time_filter['to']
 
         if conditions:
             query += " WHERE " + " AND ".join(conditions)
@@ -103,10 +116,6 @@ def export(request, queue_name):
 
     if query_params['from'] and query_params['to'] and query_params['from'] > query_params['to']:
         raise serializers.ValidationError("'from' must be before than 'to'")
-
-    if not any ((query_params["organization"], query_params["project"], query_params["task"],
-        query_params["job"], query_params["user"])):
-        raise serializers.ValidationError("One of 'org', 'project', 'task', 'job', 'user' parameter must be specified")
 
     if action not in (None, 'download'):
         raise serializers.ValidationError(

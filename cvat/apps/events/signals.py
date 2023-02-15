@@ -18,7 +18,7 @@ from cvat.apps.engine.models import (
     Label,
 )
 
-from .handlers import _update, _create, _delete
+from .handlers import handle_update, handle_create, handle_delete
 from .event import EventScopeChoice, event_scope
 
 @receiver(pre_save, sender=Organization)
@@ -42,7 +42,7 @@ def resource_update(sender, instance, **kwargs):
     if scope not in map(lambda a: a[0], EventScopeChoice.choices()):
         return
 
-    _update(scope=scope, instance=instance, old_instance=old_instance, **kwargs)
+    handle_update(scope=scope, instance=instance, old_instance=old_instance, **kwargs)
 
 @receiver(post_save, sender=Organization)
 @receiver(post_save, sender=Project)
@@ -63,7 +63,7 @@ def resource_create(sender, instance, created, **kwargs):
     if scope not in map(lambda a: a[0], EventScopeChoice.choices()):
         return
 
-    _create(scope=scope, instance=instance, **kwargs)
+    handle_create(scope=scope, instance=instance, **kwargs)
 
 @receiver(post_delete, sender=Organization)
 @receiver(post_delete, sender=Project)
@@ -80,4 +80,4 @@ def resource_delete(sender, instance, **kwargs):
     if scope not in map(lambda a: a[0], EventScopeChoice.choices()):
         return
 
-    _delete(scope=scope, instance=instance, **kwargs)
+    handle_delete(scope=scope, instance=instance, **kwargs)

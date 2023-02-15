@@ -138,7 +138,7 @@
             "fields": [],
             "filters": [],
             "groupBy": [
-              "user"
+              "user_id"
             ],
             "limit": null,
             "metrics": [
@@ -165,7 +165,7 @@
               "fields": [],
               "filters": [],
               "groupBy": [
-                "user"
+                "user_id"
               ],
               "limit": null,
               "metrics": [
@@ -183,7 +183,7 @@
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT $__timeInterval(timestamp) as time, toString(user), count() as User\r\nFROM events\r\nWHERE $__timeFilter(timestamp)\r\nGROUP BY time, user\r\nORDER BY time ASC, user ASC",
+          "rawSql": "SELECT $__timeInterval(timestamp) as time, toString(user_id), count() as User\r\nFROM events\r\nWHERE $__timeFilter(timestamp)\r\nGROUP BY time, user_id\r\nORDER BY time ASC, user_id ASC",
           "refId": "A"
         }
       ],
@@ -370,7 +370,7 @@
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT\r\n  user as User,\r\n  project as Project,\r\n  task as Task,\r\n  job as Job, sum(JSONExtractUInt(payload, 'working_time')) / 1000 / 3600 as \"Working time(h)\",\r\n  count() as Activity\r\nFROM events\r\nWHERE JSONHas(payload, 'working_time')\r\n  AND $__timeFilter(timestamp)\r\n  AND user IN (${users})\r\n  AND (-1 IN (${projects}) OR project IN (${projects}))\r\n  AND task IN (${tasks})\r\n  AND job IN (${jobs})\r\n  AND source = 'client'\r\nGROUP BY user, project, task, job",
+          "rawSql": "SELECT\r\n  user_id as User,\r\n  project_id as Project,\r\n  task_id as Task,\r\n  job_id as Job, sum(JSONExtractUInt(payload, 'working_time')) / 1000 / 3600 as \"Working time(h)\",\r\n  count() as Activity\r\nFROM events\r\nWHERE JSONHas(payload, 'working_time')\r\n  AND $__timeFilter(timestamp)\r\n  AND user_id IN (${users})\r\n  AND (-1 IN (${projects}) OR project_id IN (${projects}))\r\n  AND task_id IN (${tasks})\r\n  AND job_id IN (${jobs})\r\n  AND source = 'client'\r\nGROUP BY user_id, project_id, task_id, job_id",
           "refId": "A"
         }
       ],
@@ -398,14 +398,14 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "PDEE91DDB90597936"
         },
-        "definition": "SELECT user\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND source = 'client'",
+        "definition": "SELECT user_id\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND source = 'client'",
         "hide": 0,
         "includeAll": true,
         "label": "User",
         "multi": true,
         "name": "users",
         "options": [],
-        "query": "SELECT user\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND source = 'client'",
+        "query": "SELECT user_id\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND source = 'client'",
         "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
@@ -427,14 +427,14 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "PDEE91DDB90597936"
         },
-        "definition": "SELECT project\nFROM events\nWHERE  $__timeFilter(timestamp)\n  AND project IS NOT NULL\n  AND source = 'client'",
+        "definition": "SELECT project_id\nFROM events\nWHERE  $__timeFilter(timestamp)\n  AND project_id IS NOT NULL\n  AND source = 'client'",
         "hide": 0,
         "includeAll": true,
         "label": "Project",
         "multi": true,
         "name": "projects",
         "options": [],
-        "query": "SELECT project\nFROM events\nWHERE  $__timeFilter(timestamp)\n  AND project IS NOT NULL\n  AND source = 'client'",
+        "query": "SELECT project_id\nFROM events\nWHERE  $__timeFilter(timestamp)\n  AND project_id IS NOT NULL\n  AND source = 'client'",
         "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
@@ -451,7 +451,7 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "PDEE91DDB90597936"
         },
-        "definition": "SELECT task\nFROM events\nWHERE $__timeFilter(timestamp) \n  AND task IS NOT NULL\n  AND source = 'client'\n  AND (-1 IN (${projects}) OR project IN (${projects}))",
+        "definition": "SELECT task_id\nFROM events\nWHERE $__timeFilter(timestamp) \n  AND task_id IS NOT NULL\n  AND source = 'client'\n  AND (-1 IN (${projects}) OR project_id IN (${projects}))",
         "description": "",
         "hide": 0,
         "includeAll": true,
@@ -459,7 +459,7 @@
         "multi": true,
         "name": "tasks",
         "options": [],
-        "query": "SELECT task\nFROM events\nWHERE $__timeFilter(timestamp) \n  AND task IS NOT NULL\n  AND source = 'client'\n  AND (-1 IN (${projects}) OR project IN (${projects}))",
+        "query": "SELECT task_id\nFROM events\nWHERE $__timeFilter(timestamp) \n  AND task_id IS NOT NULL\n  AND source = 'client'\n  AND (-1 IN (${projects}) OR project_id IN (${projects}))",
         "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
@@ -480,14 +480,14 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "PDEE91DDB90597936"
         },
-        "definition": "SELECT job\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND job IS NOT NULL\n  AND source = 'client'\n  AND task in (${tasks})",
+        "definition": "SELECT job_id\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND job_id IS NOT NULL\n  AND source = 'client'\n  AND task_id in (${tasks})",
         "hide": 0,
         "includeAll": true,
         "label": "Job",
         "multi": true,
         "name": "jobs",
         "options": [],
-        "query": "SELECT job\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND job IS NOT NULL\n  AND source = 'client'\n  AND task in (${tasks})",
+        "query": "SELECT job_id\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND job_id IS NOT NULL\n  AND source = 'client'\n  AND task_id in (${tasks})",
         "refresh": 2,
         "regex": "",
         "skipUrlSync": false,

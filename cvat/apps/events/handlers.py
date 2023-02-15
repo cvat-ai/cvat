@@ -111,11 +111,12 @@ def _cleanup_fields(obj):
             data[k] = v
     return data
 
-def _get_object_value(instance):
+def _get_object_name(instance):
     if isinstance(instance, Organization) or \
         isinstance(instance, Project) or \
         isinstance(instance, Task) or \
-        isinstance(instance, Job):
+        isinstance(instance, Job) or \
+        isinstance(instance, Label):
         return getattr(instance, "name", None)
 
     if isinstance(instance, User):
@@ -155,7 +156,7 @@ def _get_serializer(instance):
 
     return None
 
-def _create(scope, instance, **kwargs):
+def handle_create(scope, instance, **kwargs):
     pid = project_id(instance)
     oid = organization_id(instance)
     tid = task_id(instance)
@@ -169,20 +170,20 @@ def _create(scope, instance, **kwargs):
     event = create_event(
         scope=scope,
         obj_id=getattr(instance, 'id', None),
-        obj_value=_get_object_value(instance),
+        obj_name=_get_object_name(instance),
         source='server',
-        organization=oid,
-        project=pid,
-        task=tid,
-        job=jid,
-        user=uid,
+        org_id=oid,
+        project_id=pid,
+        task_id=tid,
+        job_id=jid,
+        user_id=uid,
         payload=payload,
     )
     message = JSONRenderer().render(event).decode('UTF-8')
 
     vlogger.info(message)
 
-def _update(scope, instance, old_instance, **kwargs):
+def handle_update(scope, instance, old_instance, **kwargs):
     pid = project_id(instance)
     oid = organization_id(instance)
     tid = task_id(instance)
@@ -198,13 +199,13 @@ def _update(scope, instance, old_instance, **kwargs):
             scope=scope,
             obj_name=prop,
             obj_id=getattr(instance, f'{prop}_id', None),
-            obj_val=change["new_value"],
+            obj_val=str(change["new_value"]),
             source='server',
-            organization=oid,
-            project=pid,
-            task=tid,
-            job=jid,
-            user=uid,
+            org_id=oid,
+            project_id=pid,
+            task_id=tid,
+            job_id=jid,
+            user_id=uid,
             payload={
                 "old_value": change["old_value"],
             },
@@ -213,7 +214,7 @@ def _update(scope, instance, old_instance, **kwargs):
         message = JSONRenderer().render(event).decode('UTF-8')
         vlogger.info(message)
 
-def _delete(scope, instance, **kwargs):
+def handle_delete(scope, instance, **kwargs):
     pid = project_id(instance)
     oid = organization_id(instance)
     tid = task_id(instance)
@@ -225,19 +226,19 @@ def _delete(scope, instance, **kwargs):
     event = create_event(
         scope=scope,
         obj_id=getattr(instance, 'id', None),
-        obj_val=_get_object_value(instance),
+        obj_name=_get_object_name(instance),
         source='server',
-        organization=oid,
-        project=pid,
-        task=tid,
-        job=jid,
-        user=uid,
+        org_id=oid,
+        project_id=pid,
+        task_id=tid,
+        job_id=jid,
+        user_id=uid,
     )
     message = JSONRenderer().render(event).decode('UTF-8')
 
     vlogger.info(message)
 
-def create_annotations_patch_event(instance, annotations, action, **kwargs):
+def handle_annotations_patch(instance, annotations, action, **kwargs):
     def filter_shape_data(shape):
         data = {
             "id": shape["id"],
@@ -263,11 +264,11 @@ def create_annotations_patch_event(instance, annotations, action, **kwargs):
             scope=event_scope(action, "tags"),
             source='server',
             count=len(tags),
-            organization=oid,
-            project=pid,
-            task=tid,
-            job=jid,
-            user=uid,
+            org_id=oid,
+            project_id=pid,
+            task_id=tid,
+            job_id=jid,
+            user_id=uid,
             payload=tags,
         )
         message = JSONRenderer().render(event).decode('UTF-8')
@@ -285,11 +286,11 @@ def create_annotations_patch_event(instance, annotations, action, **kwargs):
                 obj_name=shape_type,
                 source='server',
                 count=len(shapes),
-                organization=oid,
-                project=pid,
-                task=tid,
-                job=jid,
-                user=uid,
+                org_id=oid,
+                project_id=pid,
+                task_id=tid,
+                job_id=jid,
+                user_id=uid,
                 payload=shapes,
             )
             message = JSONRenderer().render(event).decode('UTF-8')
@@ -312,11 +313,11 @@ def create_annotations_patch_event(instance, annotations, action, **kwargs):
                 obj_name=track_type,
                 source='server',
                 count=len(tracks),
-                organization=oid,
-                project=pid,
-                task=tid,
-                job=jid,
-                user=uid,
+                org_id=oid,
+                project_id=pid,
+                task_id=tid,
+                job_id=jid,
+                user_id=uid,
                 payload=tracks,
             )
             message = JSONRenderer().render(event).decode('UTF-8')

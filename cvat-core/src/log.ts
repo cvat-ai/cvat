@@ -55,10 +55,10 @@ export class EventLogger {
             'obj_val',
             'count',
             'duration',
-            'project',
-            'task',
-            'job',
-            'user',
+            'project_id',
+            'task_id',
+            'job_id',
+            'user_id',
             'organization',
         ]) {
             if (field in payload) {
