@@ -24,7 +24,8 @@ context('Canvas 3D functionality. Cuboid context menu.', () => {
 
     describe(`Testing case "${caseId}"`, () => {
         it('Right click on the cuboid. Context menu should exist.', () => {
-            cy.get('.cvat-canvas3d-perspective').rightclick();
+            cy.get('.cvat-canvas3d-perspective canvas').trigger('mousemove', 340, 310);
+            cy.get('.cvat-canvas3d-perspective').rightclick(340, 310);
             cy.get('.cvat-canvas-context-menu').should('exist');
         });
 

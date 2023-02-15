@@ -24,14 +24,15 @@ context('Canvas 3D functionality. "Move the image" button interaction.', () => {
         cy.openJob();
         cy.wait(1000); // Waiting for the point cloud to display
         cy.create3DCuboid(cuboidCreationParams);
-        cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_after_add_cuboid');
-        ['topview', 'sideview', 'frontview'].forEach((view) => {
-            cy.customScreenshot(`.cvat-canvas3d-${view}`, `canvas3d_${view}_after_add_cuboid`);
-        });
     });
 
     describe(`Testing case "${caseId}"`, () => {
         it('Click to "Move the image" button. The cuboid on the top/side/front view should be hidden.', () => {
+            cy.get('.cvat-canvas3d-perspective canvas').trigger('mousemove', 340, 310);
+            cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_after_add_cuboid');
+            ['topview', 'sideview', 'frontview'].forEach((view) => {
+                cy.customScreenshot(`.cvat-canvas3d-${view}`, `canvas3d_${view}_after_add_cuboid`);
+            });
             cy.get('.cvat-move-control').click();
             cy.get('.cvat-canvas3d-perspective canvas').trigger('mousedown', { button: 0 });
             cy.get('.cvat-canvas3d-perspective canvas').trigger('pointerdown', { buttons: 1 });
@@ -62,7 +63,7 @@ context('Canvas 3D functionality. "Move the image" button interaction.', () => {
         it('Cancel "Move the image" activity. "Cursor" button should be active.', () => {
             cy.get('body').type('{Esc}');
             cy.get('.cvat-active-canvas-control').should('exist');
-            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 300, 200); // Interacting with the canvas before interacting with the cuboid.
+            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 340, 310); // Interacting with the canvas before interacting with the cuboid.
             cy.get('.cvat-canvas3d-perspective').trigger('mousemove');
             cy.get('#cvat-objects-sidebar-state-item-1').should('have.class', 'cvat-objects-sidebar-state-active-item');
         });
