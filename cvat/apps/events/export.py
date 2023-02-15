@@ -121,10 +121,10 @@ def export(request, filter_query, queue_name):
         raise serializers.ValidationError(
             "Unexpected action specified for the request")
 
-    query_id = request.query_params.get('query-id', None) or uuid.uuid4()
+    query_id = request.query_params.get('query_id', None) or uuid.uuid4()
     rq_id = f"export:csv-logs-{query_id}-by-{request.user}"
     response_data = {
-        'query-id': query_id,
+        'query_id': query_id,
     }
 
     queue = django_rq.get_queue(queue_name)
