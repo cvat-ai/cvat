@@ -10,7 +10,10 @@ context('Canvas 3D functionality. Interaction with cuboid via sidebar.', () => {
     const caseId = '78';
     const screenshotsPath = 'cypress/screenshots/canvas3d_functionality_2/case_78_canvas3d_functionality_cuboid_label.js';
     const cuboidCreationParams = {
+        objectType: 'Shape',
         labelName,
+        x: 480,
+        y: 160,
     };
     const secondLabel = 'car';
     const secondLabelAdditionalAttrs = false;
