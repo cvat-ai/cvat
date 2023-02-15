@@ -933,9 +933,9 @@ class TestPostTaskData:
 
                 start_frame = stop_frame + 1
 
-    def test_cannot_create_task_with_same_skeletons(self):
+    def test_cannot_create_task_with_same_skeleton_sublabels(self):
         task_spec = {
-            "name": "test cannot create task with same skeletons",
+            "name": "test cannot create task with same skeleton sublabels",
             "labels": [
                 {"name": "s1", "type": "skeleton", "sublabels": [{"name": "1"}, {"name": "1"}]}
             ],

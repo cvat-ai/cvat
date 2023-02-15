@@ -396,9 +396,9 @@ class TestPostProjects:
 
         return org
 
-    def test_cannot_create_project_with_same_labels(self, admin_user):
+    def test_cannot_create_project_with_same_skeleton_sublabels(self, admin_user):
         project_spec = {
-            "name": "test cannot create project with same skeletons",
+            "name": "test cannot create project with same skeleton sublabels",
             "labels": [
                 {"name": "s1", "type": "skeleton", "sublabels": [{"name": "1"}, {"name": "1"}]}
             ],
