@@ -5,7 +5,9 @@
 
 const {
     tasksDummyData,
+    tasksDummyLabelsData,
     projectsDummyData,
+    projectsDummyLabelsData,
     aboutDummyData,
     formatsDummyData,
     shareDummyData,
@@ -216,7 +218,51 @@ class ServerProxy {
             }
         }
 
+        async function getLabels(filter) {
+            const { task_id, job_id, project_id } = filter;
+            if (Number.isInteger(task_id)) {
+                return tasksDummyLabelsData[task_id] || [];
+            }
+
+            if (Number.isInteger(project_id)) {
+                return projectsDummyData[project_id] || [];
+            }
+
+            if (Number.isInteger(job_id)) {
+                const job = jobsDummyData.results[job_id];
+                const project = job && Number.isInteger(job.project_id) ? projectsDummyData.results[job.project_id] : undefined;
+                const task = job ? tasksDummyData.results[job.task_id] : undefined;
+
+                if (project) {
+                    return await getLabels({ project_id: project.id });
+                }
+
+                if (task) {
+                    return await getLabels({ task_id: task.id });
+                }
+            }
+
+            return { results: [], count: 0 };
+        }
+
+        async function deleteLabel() {
+            return;
+        }
+
+        async function updateLabel(body) {
+            return body;
+        }
+
         async function getJobs(filter = {}) {
+            if (Number.isInteger(filter.id)) {
+                // A specific object is requested
+                const results = jobsDummyData.results.filter((job) => job.id === filter.id);
+                return {
+                    results: results,
+                    count: results.length,
+                }
+            }
+
             function makeJsonFilter(jsonExpr) {
                 if (!jsonExpr) {
                     return (job) => true;
@@ -246,11 +292,6 @@ class ServerProxy {
                 job.bug_tracker = task.bug_tracker;
                 job.mode = task.mode;
                 job.labels = task.labels;
-            }
-
-            if (id !== null) {
-                // A specific object is requested
-                return jobs.filter((job) => job.id === id)[0] || null;
             }
 
             return (
@@ -519,6 +560,15 @@ class ServerProxy {
                         create: createTask,
                         delete: deleteTask,
                         getPreview: getPreview,
+                    }),
+                    writable: false,
+                },
+
+                labels: {
+                    value: Object.freeze({
+                        get: getLabels,
+                        delete: deleteLabel,
+                        update: updateLabel,
                     }),
                     writable: false,
                 },
