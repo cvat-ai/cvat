@@ -15,7 +15,7 @@ import requests
 from attrs import define, field
 from django.conf import settings
 from django.db.models import Q
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, PermissionDenied
 from rest_framework.permissions import BasePermission
 
 from cvat.apps.engine.models import Issue, Job, Project, Task
@@ -390,8 +390,8 @@ class EventsPermission(OpenPolicyAgentPermission):
         filter_params = query_params.copy()
         for query in r.json()['result']:
             for attr, value in query.items():
-                if attr in filter_params and filter_params[attr] != value:
-                    filter_params[attr] = filter_params[attr], value
+                if filter_params.get(attr) != value:
+                    raise PermissionDenied(f"You don't have permission to view events with {attr}={filter_params.get(attr)}")
                 else:
                     filter_params[attr] = value
         return filter_params
