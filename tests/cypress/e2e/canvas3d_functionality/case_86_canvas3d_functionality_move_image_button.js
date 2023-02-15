@@ -63,8 +63,7 @@ context('Canvas 3D functionality. "Move the image" button interaction.', () => {
         it('Cancel "Move the image" activity. "Cursor" button should be active.', () => {
             cy.get('body').type('{Esc}');
             cy.get('.cvat-active-canvas-control').should('exist');
-            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 340, 310); // Interacting with the canvas before interacting with the cuboid.
-            cy.get('.cvat-canvas3d-perspective').trigger('mousemove');
+            cy.get('.cvat-canvas3d-perspective canvas').trigger('mousemove', 346, 372); // Interacting with the canvas before interacting with the cuboid.
             cy.get('#cvat-objects-sidebar-state-item-1').should('have.class', 'cvat-objects-sidebar-state-active-item');
         });
     });
