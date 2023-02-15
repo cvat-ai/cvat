@@ -94,18 +94,18 @@ def _create_csv(query_params, output_filename, cache_ttl):
         log_exception(slogger.glob)
         raise
 
-def export(request, queue_name):
+def export(request, filter_query, queue_name):
     action = request.query_params.get('action', None)
     filename = request.query_params.get('filename', None)
 
     query_params = {
-        'organization': request.query_params.get('org', None),
-        'project': request.query_params.get('project', None),
-        'task': request.query_params.get('task', None),
-        'job': request.query_params.get('job', None),
-        'user': request.query_params.get('user', None),
-        'from': request.query_params.get('from', None),
-        'to': request.query_params.get('to', None),
+        'organization': filter_query.get('org_id', None),
+        'project': filter_query.get('project_id', None),
+        'task': filter_query.get('task_id', None),
+        'job': filter_query.get('job_id', None),
+        'user': filter_query.get('user_id', None),
+        'from': filter_query.get('from', None),
+        'to': filter_query.get('to', None),
     }
 
     if query_params['from']:

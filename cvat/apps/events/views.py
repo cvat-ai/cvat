@@ -10,6 +10,7 @@ from drf_spectacular.types import OpenApiTypes
 from rest_framework.renderers import JSONRenderer
 
 
+from cvat.apps.iam.permissions import EventsPermission
 from cvat.apps.events.serializers import ClientEventsSerializer
 from cvat.apps.engine.log import vlogger
 from .export import export
@@ -66,7 +67,10 @@ class EventsViewSet(viewsets.ViewSet):
             '202': OpenApiResponse(description='Creating a CSV log file has been started'),
         })
     def list(self, request):
+        perm = EventsPermission.create_scope_list(request)
+        filter_query = perm.filter(request.query_params)
         return export(
             request=request,
+            filter_query=filter_query,
             queue_name=settings.CVAT_QUEUES.EXPORT_DATA.value,
         )

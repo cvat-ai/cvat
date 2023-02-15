@@ -1,5 +1,5 @@
 # Copyright (C) 2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -15,7 +15,7 @@ import requests
 from attrs import define, field
 from django.conf import settings
 from django.db.models import Q
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, PermissionDenied
 from rest_framework.permissions import BasePermission
 
 from cvat.apps.engine.models import Issue, Job, Project, Task
@@ -354,11 +354,11 @@ class ServerPermission(OpenPolicyAgentPermission):
     def get_scopes(request, view, obj):
         Scopes = __class__.Scopes
         return [{
-            'annotation_formats': Scopes.VIEW,
-            'about': Scopes.VIEW,
-            'plugins': Scopes.VIEW,
-            'share': Scopes.LIST_CONTENT,
-        }.get(view.action, None)]
+            ('annotation_formats', 'GET'): Scopes.VIEW,
+            ('about', 'GET'): Scopes.VIEW,
+            ('plugins', 'GET'): Scopes.VIEW,
+            ('share', 'GET'): Scopes.LIST_CONTENT,
+        }.get((view.action, request.method))]
 
     def get_resource(self):
         return None
@@ -382,13 +382,25 @@ class EventsPermission(OpenPolicyAgentPermission):
         super().__init__(**kwargs)
         self.url = settings.IAM_OPA_DATA_URL + '/events/allow'
 
+    def filter(self, query_params):
+        url = self.url.replace('/allow', '/filter')
+        r = requests.post(url, json=self.payload)
+        filter_params = query_params.copy()
+        for query in r.json()['result']:
+            for attr, value in query.items():
+                if filter_params.get(attr, value) != value:
+                    raise PermissionDenied(f"You don't have permission to view events with {attr}={filter_params.get(attr)}")
+                else:
+                    filter_params[attr] = value
+        return filter_params
+
     @staticmethod
     def get_scopes(request, view, obj):
         Scopes = __class__.Scopes
         return [{
-            'create': Scopes.SEND_EVENTS,
-            'list': Scopes.DUMP_EVENTS,
-        }.get(view.action, None)]
+            ('events', 'POST'): Scopes.SEND_EVENTS,
+            ('events', 'GET'): Scopes.DUMP_EVENTS,
+        }.get((view.action, request.method))]
 
     def get_resource(self):
         return None

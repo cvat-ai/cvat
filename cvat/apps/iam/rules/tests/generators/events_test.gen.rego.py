@@ -1,4 +1,4 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -9,6 +9,8 @@ import random
 import sys
 from itertools import product
 
+random.seed(42)
+
 NAME = "events"
 
 
@@ -18,10 +20,9 @@ def read_rules(name):
         reader = csv.DictReader(f)
         for row in reader:
             row = {k.lower(): v.lower().replace("n/a", "na") for k, v in row.items()}
-            row["limit"] = row["limit"].replace("none", "None")
             found = False
             for col, val in row.items():
-                if col in ["limit", "method", "url"]:
+                if col in ["method", "url", "resource"]:
                     continue
                 complex_val = [v.strip() for v in val.split(",")]
                 if len(complex_val) > 1:
@@ -38,11 +39,25 @@ def read_rules(name):
 
 simple_rules = read_rules(NAME)
 
-SCOPES = {rule["scope"] for rule in simple_rules}
+SCOPES = list({rule["scope"] for rule in simple_rules})
 CONTEXTS = ["sandbox", "organization"]
 OWNERSHIPS = ["none"]
 GROUPS = ["admin", "business", "user", "worker", "none"]
 ORG_ROLES = ["owner", "maintainer", "supervisor", "worker", None]
+SAME_ORG = [True, False]
+
+
+def RESOURCES(scope):
+    return [None]
+
+
+def is_same_org(org1, org2):
+    if org1 is not None and org2 is not None:
+        return org1["id"] == org2["id"]
+    elif org1 is None and org2 is None:
+        return True
+    else:
+        return False
 
 
 def eval_rule(scope, context, ownership, privilege, membership, data):
@@ -60,12 +75,10 @@ def eval_rule(scope, context, ownership, privilege, membership, data):
         )
     )
     rules = list(filter(lambda r: GROUPS.index(privilege) <= GROUPS.index(r["privilege"]), rules))
-    rules = list(filter(lambda r: not r["limit"] or eval(r["limit"]), rules))
-
     return bool(rules)
 
 
-def get_data(scope, context, ownership, privilege, membership):
+def get_data(scope, context, ownership, privilege, membership, resource, same_org):
     data = {
         "scope": scope,
         "auth": {
@@ -78,6 +91,7 @@ def get_data(scope, context, ownership, privilege, membership):
             if context == "organization"
             else None,
         },
+        "resource": resource,
     }
 
     user_id = data["auth"]["user"]["id"]
@@ -99,21 +113,26 @@ def _get_name(prefix, **kwargs):
             if v:
                 name += _get_name(prefix, **v)
         else:
-            name += f'{prefix}_{str(v).upper().replace(":", "_")}'
+            name += "".join(
+                map(
+                    lambda c: c if c.isalnum() else {"@": "_IN_"}.get(c, "_"),
+                    f"{prefix}_{str(v).upper()}",
+                )
+            )
 
     return name
 
 
-def get_name(scope, context, ownership, privilege, membership):
+def get_name(scope, context, ownership, privilege, membership, resource, same_org):
     return _get_name("test", **locals())
 
 
-def is_valid(scope, context, ownership, privilege, membership):
+def is_valid(scope, context, ownership, privilege, membership, resource, same_org):
     if context == "sandbox" and membership:
         return False
     if scope == "list" and ownership != "None":
         return False
-    if context == "organization" and membership is None:
+    if context == "sandbox" and same_org is False:
         return False
 
     return True
@@ -122,22 +141,30 @@ def is_valid(scope, context, ownership, privilege, membership):
 def gen_test_rego(name):
     with open(f"{name}_test.gen.rego", "wt") as f:
         f.write(f"package {name}\n\n")
-        for scope, context, ownership, privilege, membership in product(
-            SCOPES, CONTEXTS, OWNERSHIPS, GROUPS, ORG_ROLES
+        print("scopes", SCOPES)
+        for scope, context, ownership, privilege, membership, same_org in product(
+            SCOPES, CONTEXTS, OWNERSHIPS, GROUPS, ORG_ROLES, SAME_ORG
         ):
-            if not is_valid(scope, context, ownership, privilege, membership):
-                continue
+            for resource in RESOURCES(scope):
+                if not is_valid(
+                    scope, context, ownership, privilege, membership, resource, same_org
+                ):
+                    continue
 
-            data = get_data(scope, context, ownership, privilege, membership)
-            test_name = get_name(scope, context, ownership, privilege, membership)
-            result = eval_rule(scope, context, ownership, privilege, membership, data)
-            f.write(
-                "{test_name} {{\n    {allow} with input as {data}\n}}\n\n".format(
-                    test_name=test_name,
-                    allow="allow" if result else "not allow",
-                    data=json.dumps(data),
+                data = get_data(
+                    scope, context, ownership, privilege, membership, resource, same_org
                 )
-            )
+                test_name = get_name(
+                    scope, context, ownership, privilege, membership, resource, same_org
+                )
+                result = eval_rule(scope, context, ownership, privilege, membership, data)
+                f.write(
+                    "{test_name} {{\n    {allow} with input as {data}\n}}\n\n".format(
+                        test_name=test_name,
+                        allow="allow" if result else "not allow",
+                        data=json.dumps(data),
+                    )
+                )
 
         # Write the script which is used to generate the file
         with open(sys.argv[0]) as this_file:
