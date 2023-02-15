@@ -11,7 +11,10 @@ context('Canvas 3D functionality. Add cuboid.', () => {
 
     const screenshotsPath = 'cypress/screenshots/canvas3d_functionality_2/case_64_canvas3d_functionality_cuboid.js';
     const cuboidCreationParams = {
+        objectType: 'Shape',
         labelName,
+        x: 480,
+        y: 160,
     };
 
     before(() => {
@@ -26,6 +29,7 @@ context('Canvas 3D functionality. Add cuboid.', () => {
     describe(`Testing case "${caseId}"`, () => {
         it('Add cuboid.', () => {
             cy.create3DCuboid(cuboidCreationParams);
+            cy.get('#cvat-objects-sidebar-state-item-1').trigger('mouseover').should('have.class', 'cvat-objects-sidebar-state-active-item');
             cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_after_add_cuboid'); // The cuboid displayed
             cy.compareImagesAndCheckResult(
                 `${screenshotsPath}/canvas3d_perspective_before_all.png`,
