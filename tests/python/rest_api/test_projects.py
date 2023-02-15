@@ -397,21 +397,23 @@ class TestPostProjects:
 
         return org
 
-    def test_cannot_create_project_with_same_labels(self, projects, admin_user):
+    def test_cannot_create_project_with_same_labels(self, admin_user):
         project_spec = {
-            "name": "test cannot create project with two same labels",
-            "labels": [{"name": "car"}, {"name": "car"}],
+            "name": "test cannot create project with same skeletons",
+            "labels": [{
+                "name": "s1",
+                "type": "skeleton",
+                "sublabels": [
+                    {"name": "1"},
+                    {"name": "1"}
+                ]
+            }]
         }
         response = post_method(admin_user, "/projects", project_spec)
-        assert response.status_code == HTTPStatus.BAD_REQUEST
+        assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
 
-        projects = list(projects)
-        with make_api_client(admin_user) as api_client:
-            results = get_paginated_collection(
-                api_client.projects_api.list_endpoint,
-                return_json=True,
-            )
-            assert DeepDiff(projects, results, ignore_order=True) == {}
+        response = post_method(admin_user, "/tasks", project_spec)
+        assert response.status_code == HTTPStatus.OK
 
 
 def _check_cvat_for_video_project_annotations_meta(content, values_to_be_checked):

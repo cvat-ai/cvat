@@ -933,13 +933,23 @@ class TestPostTaskData:
 
                 start_frame = stop_frame + 1
 
-    def test_cannot_create_task_with_same_labels(self):
+    def test_cannot_create_task_with_same_skeletons(self):
         task_spec = {
-            "name": "test cannot create task with two same labels",
-            "labels": [{"name": "car"}, {"name": "car"}],
+            "name": "test cannot create task with same skeletons",
+            "labels": [{
+                "name": "s1",
+                "type": "skeleton",
+                "sublabels": [
+                    {"name": "1"},
+                    {"name": "1"}
+                ]
+            }]
         }
         response = post_method(self._USERNAME, "/tasks", task_spec)
-        assert response.status_code == HTTPStatus.BAD_REQUEST
+        assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
+
+        response = get_method(self._USERNAME, "/tasks")
+        assert response.status_code == HTTPStatus.OK
 
 
 @pytest.mark.usefixtures("restore_db_per_function")

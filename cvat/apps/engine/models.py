@@ -521,7 +521,8 @@ class Label(models.Model):
 
     class Meta:
         default_permissions = ()
-        unique_together = ('task', 'project', 'name', 'parent')
+        unique_together = (('task', 'name', 'parent'),
+                           ('project', 'name', 'parent'))
 
 class Skeleton(models.Model):
     root = models.OneToOneField(Label, on_delete=models.CASCADE)
