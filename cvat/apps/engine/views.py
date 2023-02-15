@@ -1964,11 +1964,16 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 task = Task.objects.get(id=task_id)
                 self.check_object_permissions(self.request, task)
                 queryset = task.get_labels()
+            elif project_id:
+                # NOTE: this check is to make behavior consistent with other source filters
+                project = Project.objects.get(id=project_id)
+                self.check_object_permissions(self.request, project)
+                queryset = project.get_labels()
             else:
+                # In other cases permissions are checked already
                 queryset = super().get_queryset()
-
-            perm = LabelPermission.create_scope_list(self.request)
-            queryset = perm.filter(queryset)
+                perm = LabelPermission.create_scope_list(self.request)
+                queryset = perm.filter(queryset)
         else:
             queryset = super().get_queryset()
 

@@ -12,12 +12,195 @@ from typing import Any, Dict, List, Optional, Tuple
 import pytest
 from cvat_sdk import exceptions, models
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
+from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
 from pytest_cases import fixture, parametrize
 
 from shared.utils.config import make_api_client
 
 from .utils import CollectionSimpleFilterTestBase, build_exclude_paths_expr, get_attrs
+
+
+class _TestLabelsPermissionsBase:
+    @pytest.fixture
+    def _base_setup(
+        self,
+        users,
+        labels,
+        jobs,
+        tasks,
+        projects,
+        is_task_staff,
+        is_project_staff,
+        users_by_name,
+        tasks_by_org,
+        projects_by_org,
+        memberships,
+        org_staff,
+    ):
+        self.users = users
+        self.labels = labels
+        self.jobs = jobs
+        self.tasks = tasks
+        self.projects = projects
+        self.is_task_staff = is_task_staff
+        self.is_project_staff = is_project_staff
+        self.users_by_name = users_by_name
+        self.tasks_by_org = tasks_by_org
+        self.projects_by_org = projects_by_org
+        self.memberships = memberships
+        self.org_staff = org_staff
+
+    @pytest.fixture(autouse=True)
+    def setup(self, _base_setup):
+        """
+        This function only calls the _base_setup() fixture.
+        It can be overridden in derived classes.
+        """
+
+    @staticmethod
+    def _labels_by_source(labels: List[Dict], *, source_key: str) -> Dict[int, List[Dict]]:
+        labels_by_source = {}
+        for label in labels:
+            label_source = label.get(source_key)
+            if label_source:
+                labels_by_source.setdefault(label_source, []).append(label)
+
+        return labels_by_source
+
+    def _get_source_info(self, source: str, *, org_id: Optional[int] = None):
+        if source == "task":
+            sources = self.tasks_by_org
+            is_source_staff = self.is_task_staff
+            label_source_key = "task_id"
+        elif source == "project":
+            sources = self.projects_by_org
+            is_source_staff = self.is_project_staff
+            label_source_key = "project_id"
+        else:
+            assert False
+
+        sources = sources[org_id or ""]
+
+        return SimpleNamespace(
+            sources=sources, is_source_staff=is_source_staff, label_source_key=label_source_key
+        )
+
+    source_types = ["task", "project"]
+    org_roles = ["worker", "supervisor", "maintainer", "owner"]
+
+    @fixture
+    @parametrize("source", source_types)
+    @parametrize("user", ["admin1"])
+    @parametrize("is_staff", [True, False])
+    def admin_sandbox_case(self, user, source, is_staff):
+        sources, is_source_staff, label_source_key = get_attrs(
+            self._get_source_info(source),
+            ["sources", "is_source_staff", "label_source_key"],
+        )
+
+        labels_by_source = self._labels_by_source(self.labels, source_key=label_source_key)
+        sources_with_labels = [s for s in sources if labels_by_source.get(s["id"])]
+
+        user_id = self.users_by_name[user]["id"]
+        source_obj = next(
+            filter(lambda s: is_source_staff(user_id, s["id"]) == is_staff, sources_with_labels)
+        )
+        label = labels_by_source[source_obj["id"]][0]
+
+        yield SimpleNamespace(label=label, user=user, source=source, is_staff=is_staff)
+
+    @fixture
+    @parametrize("source", source_types)
+    @parametrize("org_id", [2])
+    @parametrize("user", ["admin2"])
+    @parametrize("is_staff", [False])
+    def admin_org_case(self, user, source, org_id, is_staff):
+        sources, is_source_staff, label_source_key = get_attrs(
+            self._get_source_info(source, org_id=org_id),
+            ["sources", "is_source_staff", "label_source_key"],
+        )
+
+        labels_by_source = self._labels_by_source(self.labels, source_key=label_source_key)
+        sources_with_labels = [s for s in sources if labels_by_source.get(s["id"])]
+
+        user_id = self.users_by_name[user]["id"]
+        source_obj = next(
+            filter(lambda s: is_source_staff(user_id, s["id"]) == is_staff, sources_with_labels)
+        )
+        label = labels_by_source[source_obj["id"]][0]
+
+        yield SimpleNamespace(
+            label=label, user=user, source=source, org_id=org_id, is_staff=is_staff
+        )
+
+    @fixture
+    @parametrize("source", source_types)
+    @parametrize("is_staff", [True, False])
+    def user_sandbox_case(self, source, is_staff):
+        sources, label_source_key = get_attrs(
+            self._get_source_info(source),
+            ["sources", "label_source_key"],
+        )
+
+        users = {u["id"]: u for u in self.users if not u["is_superuser"]}
+        regular_users_sources = [
+            s for s in sources if s["owner"]["id"] in users and s["organization"] is None
+        ]
+        labels_by_source = self._labels_by_source(self.labels, source_key=label_source_key)
+        source_obj = next(s for s in regular_users_sources if labels_by_source.get(s["id"]))
+        label = labels_by_source[source_obj["id"]][0]
+        user = next(u for u in users.values() if (u["id"] == source_obj["owner"]["id"]) == is_staff)
+
+        yield SimpleNamespace(label=label, user=user, is_staff=is_staff)
+
+    @fixture
+    @parametrize("source", source_types)
+    @parametrize("org_id", [2])
+    @parametrize(
+        "role, src_staff", list(itertools.product(org_roles, [True, False])) + [(None, False)]
+    )
+    def user_org_case(self, source, src_staff, role, org_id):
+        sources, is_source_staff, label_source_key = get_attrs(
+            self._get_source_info(source, org_id=org_id),
+            ["sources", "is_source_staff", "label_source_key"],
+        )
+
+        labels_by_source = self._labels_by_source(self.labels, source_key=label_source_key)
+
+        users = {u["id"]: u for u in self.users_by_name.values() if not u["is_superuser"]}
+
+        staff_by_role = {}
+        for m in self.memberships:
+            if m["organization"] == org_id:
+                staff_by_role.setdefault(m["role"], []).append(
+                    self.users_by_name[m["user"]["username"]]
+                )
+
+        for source_obj in (s for s in sources if labels_by_source.get(s["id"])):
+            user = next(
+                (
+                    u
+                    for u in users.values()
+                    if is_source_staff(u["id"], source_obj["id"]) == src_staff
+                    or not role
+                    or u["id"] in self.org_staff(org_id)
+                    if not role or u in staff_by_role[role]
+                ),
+                None,
+            )
+            if user:
+                break
+        assert user
+
+        label = labels_by_source[source_obj["id"]][0]
+
+        yield SimpleNamespace(
+            label=label,
+            user=user,
+            org_id=org_id,
+            is_staff=src_staff or user["id"] in self.org_staff(org_id),
+        )
 
 
 class TestLabelsListFilters(CollectionSimpleFilterTestBase):
@@ -140,184 +323,118 @@ class TestLabelsListFilters(CollectionSimpleFilterTestBase):
         self._compare_results(labels, retrieved_data)
 
 
-class _TestLabelsPermissionsBase:
-    @pytest.fixture
-    def _base_setup(
+@pytest.mark.usefixtures("restore_db_per_class")
+class TestListLabels(_TestLabelsPermissionsBase):
+    def _test_list_ok(self, user, data, **kwargs):
+        with make_api_client(user) as client:
+            results = get_paginated_collection(
+                client.labels_api.list_endpoint, **kwargs, return_json=True
+            )
+            assert (
+                DeepDiff(
+                    data,
+                    results,
+                    exclude_paths="root['updated_date']",
+                    ignore_order=True,
+                )
+                == {}
+            )
+
+    def _test_list_denied(self, user, **kwargs):
+        with make_api_client(user) as client:
+            (_, response) = client.labels_api.list(
+                **kwargs, _parse_response=False, _check_status=False
+            )
+            assert response.status == HTTPStatus.FORBIDDEN
+
+    @pytest.mark.parametrize("org_id", [2])
+    @pytest.mark.parametrize("source_type", ["job", "task", "project"])
+    @pytest.mark.parametrize("role", ["worker", "supervisor"])
+    @pytest.mark.parametrize("staff", [True, False])
+    def test_staff_can_list_labels_in_org(
         self,
-        users,
+        org_id,
+        source_type,
+        role,
+        staff,
         labels,
         jobs,
         tasks,
         projects,
-        is_task_staff,
+        users,
         is_project_staff,
-        users_by_name,
-        tasks_by_org,
-        projects_by_org,
+        is_task_staff,
+        is_job_staff,
         memberships,
-        org_staff,
+        users_by_name,
     ):
-        self.users = users
-        self.labels = labels
-        self.jobs = jobs
-        self.tasks = tasks
-        self.projects = projects
-        self.is_task_staff = is_task_staff
-        self.is_project_staff = is_project_staff
-        self.users_by_name = users_by_name
-        self.tasks_by_org = tasks_by_org
-        self.projects_by_org = projects_by_org
-        self.memberships = memberships
-        self.org_staff = org_staff
-
-    @pytest.fixture(autouse=True)
-    def setup(self, _base_setup):
-        """
-        This function only calls the _base_setup() fixture.
-        It can be overridden in derived classes.
-        """
-
-    @staticmethod
-    def _labels_by_source(labels: List[Dict], *, source_key: str) -> Dict[int, List[Dict]]:
-        labels_by_source = {}
-        for label in labels:
-            label_source = label.get(source_key)
-            if label_source:
-                labels_by_source.setdefault(label_source, []).append(label)
-
-        return labels_by_source
-
-    def _get_source_info(self, source: str, *, org_id: Optional[int] = None):
-        if source == "task":
-            sources = self.tasks_by_org
-            is_source_staff = self.is_task_staff
-            label_source_key = "task_id"
-        elif source == "project":
-            sources = self.projects_by_org
-            is_source_staff = self.is_project_staff
-            label_source_key = "project_id"
+        labels_by_project = self._labels_by_source(labels, source_key="project_id")
+        labels_by_task = self._labels_by_source(labels, source_key="task_id")
+        if source_type == "project":
+            sources = [
+                p for p in projects if p["labels"]["count"] > 0 and p["organization"] == org_id
+            ]
+            labels_by_source = labels_by_project
+            is_staff = is_project_staff
+        elif source_type == "task":
+            sources = [t for t in tasks if t["labels"]["count"] > 0 and t["organization"] == org_id]
+            labels_by_source = {
+                task["id"]: (
+                    labels_by_task.get(task["id"]) or labels_by_project.get(task.get("project_id"))
+                )
+                for task in sources
+            }
+            is_staff = is_task_staff
+        elif source_type == "job":
+            sources = [
+                j
+                for j in jobs
+                if j["labels"]["count"] > 0
+                if next(t for t in tasks if t["id"] == j["task_id"])["organization"] == org_id
+            ]
+            labels_by_source = {
+                job["id"]: (
+                    labels_by_task.get(job["task_id"]) or labels_by_project.get(job["project_id"])
+                )
+                for job in sources
+            }
+            is_staff = is_job_staff
         else:
             assert False
 
-        sources = sources[org_id or ""]
-
-        return SimpleNamespace(
-            sources=sources, is_source_staff=is_source_staff, label_source_key=label_source_key
-        )
-
-    source_types = ["task", "project"]
-    org_roles = ["worker", "supervisor", "maintainer", "owner"]
-
-    @fixture
-    @parametrize("source", source_types)
-    @parametrize("user", ["admin1"])
-    @parametrize("is_staff", [True, False])
-    def admin_sandbox_case(self, user, source, is_staff):
-        sources, is_source_staff, label_source_key = get_attrs(
-            self._get_source_info(source),
-            ["sources", "is_source_staff", "label_source_key"],
-        )
-
-        labels_by_source = self._labels_by_source(self.labels, source_key=label_source_key)
-        sources_with_labels = [s for s in sources if labels_by_source.get(s["id"])]
-
-        user_id = self.users_by_name[user]["id"]
-        source_obj = next(
-            filter(lambda s: is_source_staff(user_id, s["id"]) == is_staff, sources_with_labels)
-        )
-        label = next(
-            label for label in self.labels if label.get(label_source_key) == source_obj["id"]
-        )
-
-        yield SimpleNamespace(label=label, user=user, source=source, is_staff=is_staff)
-
-    @fixture
-    @parametrize("source", source_types)
-    @parametrize("org_id", [2])
-    @parametrize("user", ["admin2"])
-    def admin_org_case(self, user, source, org_id):
-        sources, is_source_staff, label_source_key = get_attrs(
-            self._get_source_info(source, org_id=org_id),
-            ["sources", "is_source_staff", "label_source_key"],
-        )
-
-        labels_by_source = self._labels_by_source(self.labels, source_key=label_source_key)
-        sources_with_labels = [s for s in sources if labels_by_source.get(s["id"])]
-        source_obj = sources_with_labels[0]
-        label = labels_by_source[source_obj["id"]][0]
-
-        user_id = self.users_by_name[user]["id"]
-        assert not is_source_staff(user_id, source_obj["id"])
-
-        yield SimpleNamespace(label=label, user=user, source=source, org_id=org_id)
-
-    @fixture
-    @parametrize("source", source_types)
-    @parametrize("is_staff", [True, False])
-    def user_sandbox_case(self, source, is_staff):
-        sources, label_source_key = get_attrs(
-            self._get_source_info(source),
-            ["sources", "label_source_key"],
-        )
-
-        users = {u["id"]: u for u in self.users if not u["is_superuser"]}
-        regular_users_sources = [
-            s for s in sources if s["owner"]["id"] in users and s["organization"] is None
-        ]
-        labels_by_source = self._labels_by_source(self.labels, source_key=label_source_key)
-        source_obj = next(s for s in regular_users_sources if labels_by_source.get(s["id"]))
-        label = labels_by_source[source_obj["id"]][0]
-        user = next(u for u in users.values() if (u["id"] == source_obj["owner"]["id"]) == is_staff)
-
-        yield SimpleNamespace(label=label, user=user, is_staff=is_staff)
-
-    @fixture
-    @parametrize("source", source_types)
-    @parametrize("org_id", [2])
-    @parametrize(
-        "role, src_staff", list(itertools.product(org_roles, [True, False])) + [(None, False)]
-    )
-    def user_org_case(self, source, src_staff, role, org_id):
-        sources, is_source_staff, label_source_key = get_attrs(
-            self._get_source_info(source, org_id=org_id),
-            ["sources", "is_source_staff", "label_source_key"],
-        )
-
-        labels_by_source = self._labels_by_source(self.labels, source_key=label_source_key)
-
-        users = {u["id"]: u for u in self.users_by_name.values() if not u["is_superuser"]}
-
         staff_by_role = {}
-        for m in self.memberships:
+        for m in memberships:
             if m["organization"] == org_id:
-                staff_by_role.setdefault(m["role"], []).append(
-                    self.users_by_name[m["user"]["username"]]
-                )
+                staff_by_role.setdefault(m["role"], []).append(users_by_name[m["user"]["username"]])
 
-        for source_obj in (s for s in sources if labels_by_source.get(s["id"])):
+        for source in sources:
             user = next(
                 (
                     u
-                    for u in users.values()
-                    if is_source_staff(u["id"], source_obj["id"]) == src_staff
-                    or not role
-                    or u["id"] in self.org_staff(org_id)
-                    if not role or u in staff_by_role[role]
+                    for u in users
+                    if not u["is_superuser"]
+                    if is_staff(u["id"], source["id"]) == staff
+                    if u in staff_by_role[role]
                 ),
                 None,
             )
             if user:
                 break
+
+        assert source
         assert user
 
-        label = labels_by_source[source_obj["id"]][0]
+        labels = labels_by_source[source["id"]]
 
-        yield SimpleNamespace(
-            label=label,
-            user=user,
-            org_id=org_id,
-            is_staff=src_staff or user["id"] in self.org_staff(org_id),
-        )
+        kwargs = {}
+        if org_id:
+            kwargs["org_id"] = org_id
+            kwargs[f"{source_type}_id"] = str(source["id"])
+
+        if staff:
+            self._test_list_ok(user["username"], labels, **kwargs)
+        else:
+            self._test_list_denied(user["username"], **kwargs)
 
 
 class TestGetLabels(_TestLabelsPermissionsBase):

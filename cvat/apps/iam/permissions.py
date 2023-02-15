@@ -1383,7 +1383,7 @@ class LabelPermission(OpenPolicyAgentPermission):
                             request, view, scope=owning_perm_scope, obj=obj.task,
                         )
 
-                    # This class doesn't define its own rules for these cases
+                    # This component doesn't define its own rules for these cases
                     permissions.append(owning_perm)
                 elif scope == Scopes.LIST and isinstance(obj, Job):
                     permissions.append(JobPermission.create_base_perm(
@@ -1391,7 +1391,11 @@ class LabelPermission(OpenPolicyAgentPermission):
                     ))
                 elif scope == Scopes.LIST and isinstance(obj, Task):
                     permissions.append(TaskPermission.create_base_perm(
-                        request, view, scope=JobPermission.Scopes.VIEW, obj=obj,
+                        request, view, scope=TaskPermission.Scopes.VIEW, obj=obj,
+                    ))
+                elif scope == Scopes.LIST and isinstance(obj, Project):
+                    permissions.append(ProjectPermission.create_base_perm(
+                        request, view, scope=ProjectPermission.Scopes.VIEW, obj=obj,
                     ))
                 else:
                     permissions.append(cls.create_base_perm(request, view, scope, obj))
