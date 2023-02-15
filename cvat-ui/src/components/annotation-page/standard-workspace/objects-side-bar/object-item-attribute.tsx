@@ -124,6 +124,14 @@ function ItemAttributeComponent(props: Props): JSX.Element {
     }
 
     if (attrInputType === 'number') {
+        const id = String(Math.floor(Math.random() * 999999));
+
+        // eslint-disable-next-line no-inner-declarations,@typescript-eslint/explicit-function-return-type
+        function selectAllNumbers() {
+            const input = document.getElementById(id) as HTMLInputElement;
+            input.focus();
+            input.select();
+        }
         const [min, max, step] = attrValues.map((value: string): number => +value);
         return (
             <>
@@ -132,6 +140,8 @@ function ItemAttributeComponent(props: Props): JSX.Element {
                 </Col>
                 <Col span={16}>
                     <InputNumber
+                        id={id}
+                        onClick={() => selectAllNumbers()}
                         disabled={readonly}
                         size='small'
                         onChange={(value: number | undefined | string): void => {
@@ -176,6 +186,7 @@ function ItemAttributeComponent(props: Props): JSX.Element {
             </Col>
             <Col span={16}>
                 <Input
+                    onClick={() => { ref.current?.select(); }}
                     ref={ref}
                     size='small'
                     disabled={readonly}
