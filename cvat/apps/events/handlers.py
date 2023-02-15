@@ -139,26 +139,29 @@ def _get_serializer(instance):
         "request": get_current_request()
     }
 
+    serializer = None
     if isinstance(instance, Organization):
-        return OrganizationReadSerializer(instance=instance, context=context)
+        serializer = OrganizationReadSerializer(instance=instance, context=context)
     if isinstance(instance, Project):
-        return ProjectReadSerializer(instance=instance, context=context)
+        serializer = ProjectReadSerializer(instance=instance, context=context)
     if isinstance(instance, Task):
-        return TaskReadSerializer(instance=instance, context=context)
+        serializer = TaskReadSerializer(instance=instance, context=context)
     if isinstance(instance, Job):
-        return JobReadSerializer(instance=instance, context=context)
+        serializer = JobReadSerializer(instance=instance, context=context)
     if isinstance(instance, User):
-        return BasicUserSerializer(instance=instance, context=context)
+        serializer = BasicUserSerializer(instance=instance, context=context)
     if isinstance(instance, CloudStorage):
-        return CloudStorageReadSerializer(instance=instance, context=context)
+        serializer = CloudStorageReadSerializer(instance=instance, context=context)
     if isinstance(instance, Issue):
-        return IssueReadSerializer(instance=instance, context=context)
+        serializer = IssueReadSerializer(instance=instance, context=context)
     if isinstance(instance, Comment):
-        return CommentReadSerializer(instance=instance, context=context)
+        serializer = CommentReadSerializer(instance=instance, context=context)
     if isinstance(instance, Label):
-        return LabelSerializer(instance=instance, context=context)
+        serializer = LabelSerializer(instance=instance, context=context)
 
-    return None
+    if serializer :
+        serializer.fields.pop("url", None)
+    return serializer
 
 def handle_create(scope, instance, **kwargs):
     pid = project_id(instance)
@@ -168,7 +171,10 @@ def handle_create(scope, instance, **kwargs):
     uid = user_id(instance)
 
     serializer = _get_serializer(instance=instance)
-    payload = serializer.data
+    try:
+        payload = serializer.data
+    except Exception:
+        payload = {}
 
     payload = _cleanup_fields(obj=payload)
     event = create_event(
