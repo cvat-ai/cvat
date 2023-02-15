@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from copy import deepcopy
 
 from rest_framework.renderers import JSONRenderer
 from crum import get_current_user, get_current_request
@@ -97,6 +98,7 @@ def _cleanup_fields(obj):
         "comments",
         "url",
         "issues",
+        "attributes",
     )
     subfields=(
         "url",
@@ -240,6 +242,7 @@ def handle_delete(scope, instance, **kwargs):
     vlogger.info(message)
 
 def handle_annotations_patch(instance, annotations, action, **kwargs):
+    _annotations = deepcopy(annotations)
     def filter_shape_data(shape):
         data = {
             "id": shape["id"],
@@ -259,7 +262,7 @@ def handle_annotations_patch(instance, annotations, action, **kwargs):
     jid = job_id(instance)
     uid = user_id(instance)
 
-    tags = [filter_shape_data(tag) for tag in annotations.get("tags", [])]
+    tags = [filter_shape_data(tag) for tag in _annotations.get("tags", [])]
     if tags:
         event = create_event(
             scope=event_scope(action, "tags"),
@@ -276,7 +279,7 @@ def handle_annotations_patch(instance, annotations, action, **kwargs):
         vlogger.info(message)
 
     shapes_by_type = {shape_type[0]: [] for shape_type in ShapeType.choices()}
-    for shape in annotations.get("shapes", []):
+    for shape in _annotations.get("shapes", []):
         shapes_by_type[shape["type"]].append(filter_shape_data(shape))
 
     scope = event_scope(action, "shapes")
@@ -298,7 +301,7 @@ def handle_annotations_patch(instance, annotations, action, **kwargs):
             vlogger.info(message)
 
     tracks_by_type = {shape_type[0]: [] for shape_type in ShapeType.choices()}
-    for track in annotations.get("tracks", []):
+    for track in _annotations.get("tracks", []):
         track_shapes = track.pop("shapes")
         track = filter_shape_data(track)
         track["shapes"] = []
