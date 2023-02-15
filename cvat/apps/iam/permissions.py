@@ -398,8 +398,8 @@ class EventsPermission(OpenPolicyAgentPermission):
     def get_scopes(request, view, obj):
         Scopes = __class__.Scopes
         return [{
-            ('events', 'POST'): Scopes.SEND_EVENTS,
-            ('events', 'GET'): Scopes.DUMP_EVENTS,
+            ('create', 'POST'): Scopes.SEND_EVENTS,
+            ('list', 'GET'): Scopes.DUMP_EVENTS,
         }.get((view.action, request.method))]
 
     def get_resource(self):
