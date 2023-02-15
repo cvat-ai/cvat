@@ -406,7 +406,7 @@ class TestPostProjects:
         response = post_method(admin_user, "/projects", project_spec)
         assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
 
-        response = post_method(admin_user, "/tasks", project_spec)
+        response = get_method(admin_user, "/projects")
         assert response.status_code == HTTPStatus.OK
 
 
