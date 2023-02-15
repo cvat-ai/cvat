@@ -12,7 +12,7 @@ from tempfile import NamedTemporaryFile
 from typing import Any, Dict, Iterable, Optional, OrderedDict, Union
 
 from django.contrib.auth.models import Group, User
-from django.db import IntegrityError, transaction
+from django.db import transaction
 from drf_spectacular.utils import (OpenApiExample, extend_schema_field,
                                    extend_schema_serializer)
 from rest_framework import exceptions, serializers
