@@ -397,7 +397,7 @@ class TestPostProjects:
 
         return org
 
-    def test_cannot_create_project_with_two_same_labels(self, projects, admin_user):
+    def test_cannot_create_project_with_same_labels(self, projects, admin_user):
         project_spec = {
             "name": "test cannot create project with two same labels",
             "labels": [{"name": "car"}, {"name": "car"}],

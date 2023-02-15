@@ -933,7 +933,7 @@ class TestPostTaskData:
 
                 start_frame = stop_frame + 1
 
-    def test_cannot_create_task_with_two_same_labels(self):
+    def test_cannot_create_task_with_same_labels(self):
         task_spec = {
             "name": "test cannot create task with two same labels",
             "labels": [{"name": "car"}, {"name": "car"}],
