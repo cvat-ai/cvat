@@ -936,14 +936,9 @@ class TestPostTaskData:
     def test_cannot_create_task_with_same_skeletons(self):
         task_spec = {
             "name": "test cannot create task with same skeletons",
-            "labels": [{
-                "name": "s1",
-                "type": "skeleton",
-                "sublabels": [
-                    {"name": "1"},
-                    {"name": "1"}
-                ]
-            }]
+            "labels": [
+                {"name": "s1", "type": "skeleton", "sublabels": [{"name": "1"}, {"name": "1"}]}
+            ],
         }
         response = post_method(self._USERNAME, "/tasks", task_spec)
         assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR

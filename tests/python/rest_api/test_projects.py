@@ -400,14 +400,9 @@ class TestPostProjects:
     def test_cannot_create_project_with_same_labels(self, admin_user):
         project_spec = {
             "name": "test cannot create project with same skeletons",
-            "labels": [{
-                "name": "s1",
-                "type": "skeleton",
-                "sublabels": [
-                    {"name": "1"},
-                    {"name": "1"}
-                ]
-            }]
+            "labels": [
+                {"name": "s1", "type": "skeleton", "sublabels": [{"name": "1"}, {"name": "1"}]}
+            ],
         }
         response = post_method(admin_user, "/projects", project_spec)
         assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
