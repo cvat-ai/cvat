@@ -390,7 +390,7 @@ class EventsPermission(OpenPolicyAgentPermission):
         filter_params = query_params.copy()
         for query in r.json()['result']:
             for attr, value in query.items():
-                if filter_params.get(attr) != value:
+                if filter_params.get(attr, value) != value:
                     raise PermissionDenied(f"You don't have permission to view events with {attr}={filter_params.get(attr)}")
                 else:
                     filter_params[attr] = value
