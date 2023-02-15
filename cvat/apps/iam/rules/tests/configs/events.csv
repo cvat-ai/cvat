@@ -1,0 +1,3 @@
+Scope,Resource,Context,Ownership,Limit,Method,URL,Privilege,Membership
+send:events,N/A,N/A,N/A,,POST,/events,None,N/A
+dump:events,N/A,N/A,N/A,,GET,/events,business,N/A

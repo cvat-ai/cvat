@@ -1873,7 +1873,7 @@ async function saveEvents(events) {
     const { backendAPI } = config;
 
     try {
-        await Axios.post(`${backendAPI}/server/events`, JSON.stringify(events), {
+        await Axios.post(`${backendAPI}/events`, JSON.stringify(events), {
             proxy: config.proxy,
             headers: {
                 'Content-Type': 'application/json',

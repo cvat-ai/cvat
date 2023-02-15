@@ -334,9 +334,6 @@ class MembershipPermission(OpenPolicyAgentPermission):
 class ServerPermission(OpenPolicyAgentPermission):
     class Scopes(StrEnum):
         VIEW = 'view'
-        SEND_EXCEPTION = 'send:exception'
-        SEND_EVENTS = 'send:events'
-        LIST_EVENTS = 'list:events'
         LIST_CONTENT = 'list:content'
 
     @classmethod
@@ -357,14 +354,41 @@ class ServerPermission(OpenPolicyAgentPermission):
     def get_scopes(request, view, obj):
         Scopes = __class__.Scopes
         return [{
-            ('annotation_formats', 'GET'): Scopes.VIEW,
-            ('about', 'GET'): Scopes.VIEW,
-            ('plugins', 'GET'): Scopes.VIEW,
-            ('exception', 'POST'): Scopes.SEND_EXCEPTION,
-            ('events', 'POST'): Scopes.SEND_EVENTS,
-            ('events', 'GET'): Scopes.LIST_EVENTS,
-            ('share', 'GET'): Scopes.LIST_CONTENT,
-        }.get((view.action, request.method))]
+            'annotation_formats': Scopes.VIEW,
+            'about': Scopes.VIEW,
+            'plugins': Scopes.VIEW,
+            'share': Scopes.LIST_CONTENT,
+        }.get(view.action, None)]
+
+    def get_resource(self):
+        return None
+
+class EventsPermission(OpenPolicyAgentPermission):
+    class Scopes(StrEnum):
+        SEND_EVENTS = 'send:events'
+        DUMP_EVENTS = 'dump:events'
+
+    @classmethod
+    def create(cls, request, view, obj):
+        permissions = []
+        if view.basename == 'events':
+            for scope in cls.get_scopes(request, view, obj):
+                self = cls.create_base_perm(request, view, scope, obj)
+                permissions.append(self)
+
+        return permissions
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.url = settings.IAM_OPA_DATA_URL + '/events/allow'
+
+    @staticmethod
+    def get_scopes(request, view, obj):
+        Scopes = __class__.Scopes
+        return [{
+            'create': Scopes.SEND_EVENTS,
+            'list': Scopes.DUMP_EVENTS,
+        }.get(view.action, None)]
 
     def get_resource(self):
         return None

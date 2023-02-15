@@ -160,6 +160,10 @@ Object.defineProperties(LoggerStorage.prototype.save, {
         writable: false,
         enumerable: false,
         value: async function implementation() {
+            if (!this.collection) {
+                return;
+            }
+
             while (this.saving) {
                 await sleep(100);
             }

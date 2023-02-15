@@ -2,25 +2,21 @@
 #
 # SPDX-License-Identifier: MIT
 
-import datetime
-
 from django.conf import settings
 from rest_framework import status, viewsets
-from rest_framework.decorators import action
 from rest_framework.response import Response
 from drf_spectacular.utils import OpenApiResponse, OpenApiParameter, extend_schema
 from drf_spectacular.types import OpenApiTypes
 from rest_framework.renderers import JSONRenderer
 
 
-from cvat.apps.events.serializers import ClientEventsSerializer, EventSerializer
+from cvat.apps.events.serializers import ClientEventsSerializer
 from cvat.apps.engine.log import vlogger
 from .export import export
 
 class EventsViewSet(viewsets.ViewSet):
     serializer_class = None
 
-    @staticmethod
     @extend_schema(summary='Method saves logs from a client on the server',
         methods=['POST'],
         description='Sends logs to the Clickhouse if it is connected',
@@ -28,6 +24,16 @@ class EventsViewSet(viewsets.ViewSet):
         responses={
             '201': ClientEventsSerializer(),
         })
+    def create(self, request):
+        serializer = ClientEventsSerializer(data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+
+        for event in serializer.data["events"]:
+            message = JSONRenderer().render(event).decode('UTF-8')
+            vlogger.info(message)
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
     @extend_schema(summary='Method returns csv log file ',
         methods=['GET'],
         description='Recieve logs from the server',
@@ -59,19 +65,8 @@ class EventsViewSet(viewsets.ViewSet):
             '201': OpenApiResponse(description='CSV log file is ready for downloading'),
             '202': OpenApiResponse(description='Creating a CSV log file has been started'),
         })
-    @action(detail=False, methods=['GET', 'POST'])
-    def events(request):
-        if request.method == 'POST':
-            serializer = ClientEventsSerializer(data=request.data, context={"request": request})
-            serializer.is_valid(raise_exception=True)
-
-            for event in serializer.data["events"]:
-                message = JSONRenderer().render(event).decode('UTF-8')
-                vlogger.info(message)
-
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        elif request.method == 'GET':
-            return export(
-                request=request,
-                queue_name=settings.CVAT_QUEUES.EXPORT_DATA.value,
-            )
+    def list(self, request):
+        return export(
+            request=request,
+            queue_name=settings.CVAT_QUEUES.EXPORT_DATA.value,
+        )
