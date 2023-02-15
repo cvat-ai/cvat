@@ -192,6 +192,16 @@ class LogWithExceptionInfo extends Log {
     }
 }
 
+class LogWithControlsInfo extends Log {
+    public dump(): any {
+        this.payload = {
+            obj_val: this.payload?.text,
+            obj_name: this.payload?.classes,
+        };
+        return super.dump();
+    }
+}
+
 export default function logFactory(logType: LogType, payload: any): Log {
     const logsWithCount = [
         LogType.deleteObject,
@@ -210,6 +220,10 @@ export default function logFactory(logType: LogType, payload: any): Log {
 
     if (logType === LogType.exception) {
         return new LogWithExceptionInfo(logType, payload);
+    }
+
+    if (logType === LogType.clickElement) {
+        return new LogWithControlsInfo(logType, payload);
     }
 
     return new Log(logType, payload);

@@ -4,8 +4,10 @@
 
 import { getCore } from 'cvat-core-wrapper';
 import { LogType } from 'cvat-logger';
+import config from 'config';
 
 const core = getCore();
+const { CONTROLS_LOGS_INTERVAL } = config;
 
 const classFilter = ['ant-btn'];
 const parentClassFilter = ['ant-btn'];
@@ -35,10 +37,7 @@ class ControlsLogger {
                 logData.classes = parentElement?.className;
             }
 
-            core.logger.log(LogType.clickElement, {
-                obj_val: logData.text,
-                obj_name: logData.classes,
-            }, false);
+            core.logger.log(LogType.clickElement, logData, false);
         }
     }
 
@@ -46,7 +45,7 @@ class ControlsLogger {
         if (this.savingInterval) return;
         this.savingInterval = setInterval(() => {
             core.logger.save();
-        }, 5000);
+        }, CONTROLS_LOGS_INTERVAL);
     }
 
     private nodeCorrespondes(node: HTMLElement, filter: string[]): boolean {

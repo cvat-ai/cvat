@@ -131,7 +131,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
         // Logger configuration
         const userActivityCallback: (() => void)[] = [];
-        window.addEventListener('click', (event) => {
+        window.addEventListener('click', (event: MouseEvent) => {
             userActivityCallback.forEach((handler) => handler());
             ControlsLogger.log(event);
         });
