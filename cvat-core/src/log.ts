@@ -151,6 +151,16 @@ class LogWithExceptionInfo extends EventLogger {
     }
 }
 
+class LogWithControlsInfo extends EventLogger {
+    public dump(): any {
+        this.payload = {
+            obj_val: this.payload?.text,
+            obj_name: this.payload?.classes,
+        };
+        return super.dump();
+    }
+}
+
 export default function logFactory(logType: LogType, payload: any): EventLogger {
     const logsWithCount = [
         LogType.deleteObject,
@@ -166,6 +176,10 @@ export default function logFactory(logType: LogType, payload: any): EventLogger 
 
     if (logType === LogType.exception) {
         return new LogWithExceptionInfo(logType, payload);
+    }
+
+    if (logType === LogType.clickElement) {
+        return new LogWithControlsInfo(logType, payload);
     }
 
     return new EventLogger(logType, payload);
