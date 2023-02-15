@@ -35,25 +35,13 @@ def _create_csv(query_params, output_filename, cache_ttl):
         conditions = []
         parameters = {}
 
-        try:
-            if time_filter['from']:
-                conditions.append(f"timestamp >= {{from:DateTime64}}")
-                parameters['from'] = time_filter['from']
-
-            if time_filter['to']:
-                conditions.append(f"timestamp <= {{to:DateTime64}}")
-                parameters['to'] = time_filter['to']
-        except parser.ParserError:
-            raise serializers.ValidationError(
-                f"Cannot parse datetimes {time_filter['from']} or {time_filter['to']}"
-            )
-
-        # Set the default time interval to last 30 days
-        if not parameters:
-            parameters['to'] = datetime.now(timezone.utc)
-            conditions.append(f"timestamp <= {{to:DateTime64}}")
-            parameters['from'] = parameters['to'] - timedelta(days=30)
+        if time_filter['from']:
             conditions.append(f"timestamp >= {{from:DateTime64}}")
+            parameters['from'] = time_filter['from']
+
+        if time_filter['to']:
+            conditions.append(f"timestamp <= {{to:DateTime64}}")
+            parameters['to'] = time_filter['to']
 
         for param, value in query_params.items():
             if value:
@@ -99,23 +87,37 @@ def export(request, filter_query, queue_name):
     filename = request.query_params.get('filename', None)
 
     query_params = {
-        'organization': filter_query.get('org_id', None),
-        'project': filter_query.get('project_id', None),
-        'task': filter_query.get('task_id', None),
-        'job': filter_query.get('job_id', None),
-        'user': filter_query.get('user_id', None),
+        'org_id': filter_query.get('org_id', None),
+        'project_id': filter_query.get('project_id', None),
+        'task_id': filter_query.get('task_id', None),
+        'job_id': filter_query.get('job_id', None),
+        'user_id': filter_query.get('user_id', None),
         'from': filter_query.get('from', None),
         'to': filter_query.get('to', None),
     }
 
-    if query_params['from']:
-        query_params['from'] = parser.parse(query_params['from']).timestamp()
-
-    if query_params['to']:
-        query_params['to'] = parser.parse(query_params['to']).timestamp()
+    try:
+        if query_params['from']:
+            query_params['from'] = parser.parse(query_params['from']).timestamp()
+    except parser.ParserError:
+        raise serializers.ValidationError(
+            f"Cannot parse 'from' datetime parameter: {query_params['from']}"
+        )
+    try:
+        if query_params['to']:
+            query_params['to'] = parser.parse(query_params['to']).timestamp()
+    except parser.ParserError:
+        raise serializers.ValidationError(
+            f"Cannot parse 'to' datetime parameter: {query_params['to']}"
+        )
 
     if query_params['from'] and query_params['to'] and query_params['from'] > query_params['to']:
         raise serializers.ValidationError("'from' must be before than 'to'")
+
+    # Set the default time interval to last 30 days
+    if not query_params["from"] and not query_params["to"]:
+        query_params["to"] = datetime.now(timezone.utc)
+        query_params["from"] = query_params["to"] - timedelta(days=30)
 
     if action not in (None, 'download'):
         raise serializers.ValidationError(

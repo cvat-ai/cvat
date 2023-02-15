@@ -91,6 +91,7 @@ def _cleanup_fields(obj):
         "message",
         "organization",
         "project",
+        "size",
         "task",
         "tasks",
         "job",

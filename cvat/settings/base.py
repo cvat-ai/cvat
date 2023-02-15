@@ -475,10 +475,6 @@ LOGGING = {
             'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
         },
 
-        'cvat.client': {
-            'handlers': [],
-            'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
-        },
         'django': {
             'handlers': ['console', 'server_file'],
             'level': 'INFO',
