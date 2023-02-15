@@ -31,8 +31,14 @@ class EventScopes:
             for action in cls.RESOURCES.get(resource, [])
         ]
 
-def create_event(scope, source, organization=None, project=None, task=None, job=None, user=None, **kwargs):
-    payload = kwargs.pop('payload', None)
+def create_event(scope,
+    source,
+    username=None,
+    **kwargs):
+    payload = kwargs.pop('payload', {})
+
+    if username:
+        payload["username"] = username
 
     data = {
         "scope": scope,

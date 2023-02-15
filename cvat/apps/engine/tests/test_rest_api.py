@@ -523,6 +523,7 @@ class ServerExceptionAPITestCase(APITestCase):
     def setUpTestData(cls):
         create_db_users(cls)
         cls.data = {
+            "events": [{
             "scope": "exception",
             "timestamp": "2019-01-29T12:34:56.000000Z",
             "payload": json.dumps({
@@ -538,7 +539,8 @@ class ServerExceptionAPITestCase(APITestCase):
                 "line": 1,
                 "column": 1,
                 "stack": "",
-            })
+            })}],
+            "timestamp": "2019-01-29T12:34:57.000000Z",
         }
 
 
@@ -546,7 +548,7 @@ class ServerExceptionAPITestCase(APITestCase):
         with ForceLogin(user, self.client):
             #pylint: disable=unused-variable
             with mock.patch("cvat.apps.events.views.vlogger") as vlogger:
-                response = self.client.post('/api/server/exception',
+                response = self.client.post('/api/events',
                     self.data, format='json')
 
         return response

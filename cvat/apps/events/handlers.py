@@ -64,6 +64,10 @@ def user_id(instance):
     current_user = get_current_user()
     return getattr(current_user, "id", None)
 
+def get_username():
+    current_user = get_current_user()
+    return getattr(current_user, "username", None)
+
 def _get_instance_diff(old_data, data):
     ingone_related_fields = (
         "labels",
@@ -187,6 +191,7 @@ def handle_create(scope, instance, **kwargs):
         task_id=tid,
         job_id=jid,
         user_id=uid,
+        username=get_username(),
         payload=payload,
     )
     message = JSONRenderer().render(event).decode('UTF-8')
@@ -203,6 +208,7 @@ def handle_update(scope, instance, old_instance, **kwargs):
     old_serializer = _get_serializer(instance=old_instance)
     serializer = _get_serializer(instance=instance)
     diff = _get_instance_diff(old_data=old_serializer.data, data=serializer.data)
+
     for prop, change in diff.items():
         change = _cleanup_fields(change)
         event = create_event(
@@ -216,7 +222,8 @@ def handle_update(scope, instance, old_instance, **kwargs):
             task_id=tid,
             job_id=jid,
             user_id=uid,
-            payload={
+            username=get_username(),
+            payload= {
                 "old_value": change["old_value"],
             },
         )
@@ -243,6 +250,7 @@ def handle_delete(scope, instance, **kwargs):
         task_id=tid,
         job_id=jid,
         user_id=uid,
+        username=get_username(),
     )
     message = JSONRenderer().render(event).decode('UTF-8')
 

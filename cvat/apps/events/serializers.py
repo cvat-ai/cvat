@@ -49,6 +49,7 @@ class ClientEventsSerializer(serializers.Serializer):
                         payload = json.loads(payload)
 
                     payload['working_time'] = t_diff.microseconds // 1000
+                    payload['username'] = request.user.username
                     event['payload'] = json.dumps(payload)
 
             last_timestamp = timestamp
