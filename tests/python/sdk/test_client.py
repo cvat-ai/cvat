@@ -9,7 +9,8 @@ from typing import Tuple
 
 import packaging.version as pv
 import pytest
-from cvat_sdk import Client
+from cvat_sdk import Client, models
+from cvat_sdk.api_client.exceptions import NotFoundException
 from cvat_sdk.core.client import Config, make_client
 from cvat_sdk.core.exceptions import IncompatibleVersionException, InvalidHostException
 from cvat_sdk.exceptions import ApiException
@@ -166,3 +167,37 @@ def test_can_control_ssl_verification_with_config(verify: bool):
     client = Client(BASE_URL, config=config)
 
     assert client.api_client.configuration.verify_ssl == verify
+
+
+def test_organization_contexts(admin_user: str):
+    with make_client(BASE_URL, credentials=(admin_user, USER_PASS)) as client:
+        assert client.current_organization is None
+
+        org = client.organizations.create(models.OrganizationWriteRequest(slug="testorg"))
+
+        # create a project in the personal workspace
+        client.current_organization = ""
+        personal_project = client.projects.create(models.ProjectWriteRequest(name="Personal"))
+        assert personal_project.organization is None
+
+        # create a project in the organization
+        client.current_organization = org.slug
+        org_project = client.projects.create(models.ProjectWriteRequest(name="Org"))
+        assert org_project.organization == org.id
+
+        # both projects should be visible with no context
+        client.current_organization = None
+        client.projects.retrieve(personal_project.id)
+        client.projects.retrieve(org_project.id)
+
+        # only the personal project should be visible in the personal workspace
+        client.current_organization = ""
+        client.projects.retrieve(personal_project.id)
+        with pytest.raises(NotFoundException):
+            client.projects.retrieve(org_project.id)
+
+        # only the organizational project should be visible in the organization
+        client.current_organization = org.slug
+        client.projects.retrieve(org_project.id)
+        with pytest.raises(NotFoundException):
+            client.projects.retrieve(personal_project.id)

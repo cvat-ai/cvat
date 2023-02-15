@@ -98,6 +98,28 @@ class Client:
         self._repos: Dict[str, Repo] = {}
         """A cache for created Repository instances"""
 
+    _ORG_SLUG_HEADER = "X-Organization"
+
+    @property
+    def current_organization(self) -> Optional[str]:
+        """
+        If this is set to a slug for an organization,
+        all requests will be made in the context of that organization.
+
+        If it's set to an empty string, requests will be made in the context
+        of the user's personal workspace.
+
+        If set to None (the default), no organization context will be used.
+        """
+        return self.api_client.default_headers.get(self._ORG_SLUG_HEADER)
+
+    @current_organization.setter
+    def current_organization(self, org_slug: Optional[str]):
+        if org_slug is None:
+            self.api_client.default_headers.pop(self._ORG_SLUG_HEADER, None)
+        else:
+            self.api_client.default_headers[self._ORG_SLUG_HEADER] = org_slug
+
     ALLOWED_SCHEMAS = ("https", "http")
 
     @classmethod
