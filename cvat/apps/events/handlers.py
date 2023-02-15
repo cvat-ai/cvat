@@ -96,6 +96,7 @@ def _cleanup_fields(obj):
         "jobs",
         "comments",
         "url",
+        "issues",
     )
     subfields=(
         "url",
