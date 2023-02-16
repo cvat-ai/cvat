@@ -16,7 +16,7 @@ services:
         aliases:
           - postgres
     ports:
-      - 5432:5432
+      - 5438:5432
 
   cvat_redis:
     container_name: reb_cvat_redis
@@ -44,10 +44,11 @@ services:
     volumes:
       - reb_cvat_data:/home/django/data
     ports:
-      - "8080:8080"
+      - "8006:8080"
     networks:
       - reb_cvat
       - reboticsadmin_default
+      - rebotics-management-django_default
 
   cvat_opa:
     container_name: reb_cvat_opa
@@ -63,7 +64,7 @@ services:
     image: minio/minio:latest
     restart: unless-stopped
     entrypoint: sh
-    command: -c 'mkdir -p /data/demo-bucket && minio server /data --address 0.0.0.0:9007'
+    command: -c 'mkdir -p /data/demo-bucket && minio server /data --address 0.0.0.0:9000'
     environment:
       MINIO_ROOT_USER: 'minio_admin'
       MINIO_ROOT_PASSWORD: 'minio_admin'
@@ -74,7 +75,7 @@ services:
         aliases:
           - minio
     ports:
-      - 9007:9007
+      - 9006:9000
 
 volumes:
   reb_cvat_db:
@@ -83,4 +84,6 @@ volumes:
 networks:
   reb_cvat:
   reboticsadmin_default:
+    external: true
+  rebotics-management-django_default:
     external: true
