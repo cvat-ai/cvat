@@ -12,45 +12,47 @@ const { CONTROLS_LOGS_INTERVAL } = config;
 const classFilter = ['ant-btn'];
 const parentClassFilter = ['ant-btn'];
 
-class ControlsLogger {
-    private savingInterval: any;
+class EventRecorder {
+    #savingInterval: number | null;
+    public constructor() {
+        this.#savingInterval = null;
+    }
 
     public log(event: MouseEvent): void {
         const { target } = event;
-        if (!target) return;
+        if (!target) {
+            return;
+        }
 
-        const element = (target as HTMLElement);
-        const { parentElement } = element;
+        let element = (target as HTMLElement);
+        let toRecord = this.isEventToBeRecorded(element, classFilter);
 
-        const parentCorrespondes = parentElement ? this.nodeCorrespondes(parentElement, parentClassFilter) : false;
-        const elementCorrespondes = this.nodeCorrespondes(element, classFilter);
+        const logData = {
+            text: element.innerText,
+            classes: element.className,
+        };
 
-        if (parentCorrespondes || elementCorrespondes) {
-            const logData: Record<string, string | null> = {
-                text: null,
-                classes: null,
-            };
-            logData.text = element?.innerText;
-            logData.classes = element?.className;
+        if (!toRecord && element.parentElement) {
+            element = element.parentElement;
+            toRecord = this.isEventToBeRecorded(element, parentClassFilter);
+            logData.classes = element.className;
+        }
 
-            if (parentElement && parentCorrespondes) {
-                logData.classes = parentElement?.className;
-            }
-
+        if (toRecord) {
             core.logger.log(LogType.clickElement, logData, false);
         }
     }
 
     public initSave(): void {
-        if (this.savingInterval) return;
-        this.savingInterval = setInterval(() => {
+        if (this.#savingInterval) return;
+        this.#savingInterval = setInterval(() => {
             core.logger.save();
-        }, CONTROLS_LOGS_INTERVAL);
+        }, CONTROLS_LOGS_INTERVAL) as unknown as number;
     }
 
-    private nodeCorrespondes(node: HTMLElement, filter: string[]): boolean {
+    private isEventToBeRecorded(node: HTMLElement, filter: string[]): boolean {
         return filter.some((cssClass: string) => node.classList.contains(cssClass));
     }
 }
 
-export default new ControlsLogger();
+export default new EventRecorder();
