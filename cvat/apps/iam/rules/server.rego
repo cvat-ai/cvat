@@ -26,10 +26,6 @@ allow {
 }
 
 allow {
-    input.scope == utils.SEND_EXCEPTION
-}
-
-allow {
     input.scope == utils.LIST_CONTENT
     utils.has_perm(utils.WORKER)
 }
