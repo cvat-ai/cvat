@@ -6,11 +6,14 @@ cvat:
         name: cvat-backend-data
         subPath: share
     worker:
-      default:
+      import:
         additionalVolumeMounts:
         - mountPath: /home/django/share
           name: cvat-backend-data
           subPath: share
+    # Images are already present in the node
+    imagePullPolicy: Never
+
 traefik:
   service:
     externalIPs:

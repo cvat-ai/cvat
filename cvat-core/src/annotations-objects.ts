@@ -9,7 +9,7 @@ import { checkObjectType, clamp } from './common';
 import { DataError, ArgumentError, ScriptingError } from './exceptions';
 import { Label } from './labels';
 import {
-    colors, Source, ShapeType, ObjectType, HistoryActions,
+    colors, Source, ShapeType, ObjectType, HistoryActions, DimensionType,
 } from './enums';
 import AnnotationHistory from './annotations-history';
 import {
@@ -31,8 +31,8 @@ function copyShape(state: TrackedShape, data: Partial<TrackedShape> = {}): Track
     };
 }
 
-interface AnnotationInjection {
-    labels: Label[];
+export interface BasicInjection {
+    labels: Record<number, Label>;
     groups: { max: number };
     frameMeta: {
         deleted_frames: Record<number, boolean>;
@@ -41,27 +41,34 @@ interface AnnotationInjection {
     groupColors: Record<number, string>;
     parentID?: number;
     readOnlyFields?: string[];
+    dimension: DimensionType;
     nextClientID: () => number;
     getMasksOnFrame: (frame: number) => MaskShape[];
 }
 
+type AnnotationInjection = BasicInjection & {
+    parentID?: number;
+    readOnlyFields?: string[];
+};
+
 class Annotation {
     public clientID: number;
-    protected taskLabels: Label[];
+    protected taskLabels: Record<number, Label>;
     protected history: any;
     protected groupColors: Record<number, string>;
-    protected serverID: number | null;
+    public serverID: number | null;
     protected parentID: number | null;
-    protected group: number;
+    protected dimension: DimensionType;
+    public group: number;
     public label: Label;
-    protected frame: number;
+    public frame: number;
     private _removed: boolean;
     public lock: boolean;
     protected readOnlyFields: string[];
     protected color: string;
     protected source: Source;
     public updated: number;
-    protected attributes: Record<number, string>;
+    public attributes: Record<number, string>;
     protected groupObject: {
         color: string;
         readonly id: number;
@@ -74,6 +81,7 @@ class Annotation {
         this.clientID = clientID;
         this.serverID = data.id || null;
         this.parentID = injection.parentID || null;
+        this.dimension = injection.dimension;
         this.group = data.group;
         this.label = this.taskLabels[data.label_id];
         this.frame = data.frame;
@@ -366,7 +374,7 @@ class Drawn extends Annotation {
     protected descriptions: string[];
     public hidden: boolean;
     protected pinned: boolean;
-    protected shapeType: ShapeType;
+    public shapeType: ShapeType;
 
     constructor(data, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
@@ -472,7 +480,7 @@ class Drawn extends Annotation {
     }
 }
 
-interface RawShapeData {
+export interface RawShapeData {
     id?: number;
     clientID?: number;
     label_id: number;
@@ -501,8 +509,8 @@ export class Shape extends Drawn {
     public points: number[];
     public occluded: boolean;
     public outside: boolean;
-    protected rotation: number;
-    protected zOrder: number;
+    public rotation: number;
+    public zOrder: number;
 
     constructor(data: RawShapeData, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
@@ -787,7 +795,7 @@ export class Shape extends Drawn {
     }
 }
 
-interface RawTrackData {
+export interface RawTrackData {
     id?: number;
     clientID?: number;
     label_id: number;
@@ -1415,7 +1423,7 @@ export class Track extends Drawn {
     }
 }
 
-interface RawTagData {
+export interface RawTagData {
     id?: number;
     clientID?: number;
     label_id: number;
@@ -1867,7 +1875,7 @@ export class CuboidShape extends Shape {
 }
 
 export class SkeletonShape extends Shape {
-    private elements: Shape[];
+    public elements: Shape[];
 
     constructor(data: RawShapeData, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
@@ -2186,7 +2194,7 @@ export class MaskShape extends Shape {
         return [];
     }
 
-    protected removeUnderlyingPixels(frame: number): void {
+    public removeUnderlyingPixels(frame: number): void {
         if (frame !== this.frame) {
             throw new ArgumentError(
                 `Wrong "frame" attribute: is not equal to the shape frame (${frame} vs ${this.frame})`,
@@ -2714,19 +2722,53 @@ export class CuboidTrack extends Track {
 
     protected interpolatePosition(leftPosition, rightPosition, offset): InterpolatedPosition {
         const positionOffset = leftPosition.points.map((point, index) => rightPosition.points[index] - point);
-
-        return {
+        const result = {
             points: leftPosition.points.map((point, index) => point + positionOffset[index] * offset),
             rotation: leftPosition.rotation,
             occluded: leftPosition.occluded,
             outside: leftPosition.outside,
             zOrder: leftPosition.zOrder,
         };
+
+        if (this.dimension === DimensionType.DIMENSION_3D) {
+            // for 3D cuboids angle for different axies stored as a part of points array
+            // we need to apply interpolation using the shortest arc for each angle
+
+            const [
+                angleX, angleY, angleZ,
+            ] = leftPosition.points.slice(3, 6).concat(rightPosition.points.slice(3, 6))
+                .map((_angle: number) => {
+                    if (_angle < 0) {
+                        return _angle + Math.PI * 2;
+                    }
+
+                    return _angle;
+                })
+                .map((_angle) => _angle * (180 / Math.PI))
+                .reduce((acc: number[], angleBefore: number, index: number, arr: number[]) => {
+                    if (index < 3) {
+                        const angleAfter = arr[index + 3];
+                        let angle = (angleBefore + findAngleDiff(angleAfter, angleBefore) * offset) * (Math.PI / 180);
+                        if (angle > Math.PI) {
+                            angle -= Math.PI * 2;
+                        }
+                        acc.push(angle);
+                    }
+
+                    return acc;
+                }, []);
+
+            result.points[3] = angleX;
+            result.points[4] = angleY;
+            result.points[5] = angleZ;
+        }
+
+        return result;
     }
 }
 
 export class SkeletonTrack extends Track {
-    private elements: Track[];
+    public elements: Track[];
 
     constructor(data: RawTrackData, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
@@ -2972,7 +3014,7 @@ export class SkeletonTrack extends Track {
             );
 
             if (errors.length) {
-                throw new Error(`Several errors occured during saving skeleton:\n ${errors.join(';\n')}`);
+                throw new Error(`Several errors occurred during saving skeleton:\n ${errors.join(';\n')}`);
             }
         };
 
@@ -3069,7 +3111,7 @@ Object.defineProperty(EllipseTrack, 'distance', { value: EllipseShape.distance }
 Object.defineProperty(CuboidTrack, 'distance', { value: CuboidShape.distance });
 Object.defineProperty(SkeletonTrack, 'distance', { value: SkeletonShape.distance });
 
-export function shapeFactory(data: RawShapeData, clientID: number, injection: AnnotationInjection): Annotation {
+export function shapeFactory(data: RawShapeData, clientID: number, injection: AnnotationInjection): Shape {
     const { type } = data;
     const color = colors[clientID % colors.length];
 
@@ -3106,7 +3148,7 @@ export function shapeFactory(data: RawShapeData, clientID: number, injection: An
     return shapeModel;
 }
 
-export function trackFactory(trackData: RawTrackData, clientID: number, injection: AnnotationInjection): Annotation {
+export function trackFactory(trackData: RawTrackData, clientID: number, injection: AnnotationInjection): Track {
     if (trackData.shapes.length) {
         const { type } = trackData.shapes[0];
         const color = colors[clientID % colors.length];

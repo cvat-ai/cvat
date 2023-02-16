@@ -1,4 +1,4 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -18,6 +18,7 @@ from PIL import Image
 from cvat_sdk.api_client import apis, exceptions, models
 from cvat_sdk.core import git
 from cvat_sdk.core.downloading import Downloader
+from cvat_sdk.core.helpers import get_paginated_collection
 from cvat_sdk.core.progress import ProgressReporter
 from cvat_sdk.core.proxies.annotations import AnnotationCrudMixin
 from cvat_sdk.core.proxies.jobs import Job
@@ -65,9 +66,9 @@ class Task(
 
     def upload_data(
         self,
-        resource_type: ResourceType,
         resources: Sequence[StrPath],
         *,
+        resource_type: ResourceType = ResourceType.LOCAL,
         pbar: Optional[ProgressReporter] = None,
         params: Optional[Dict[str, Any]] = None,
         wait_for_completion: bool = True,
@@ -92,6 +93,9 @@ class Task(
                     "stop_frame",
                     "use_cache",
                     "use_zip_chunks",
+                    "job_file_mapping",
+                    "filename_pattern",
+                    "cloud_storage_id",
                 ],
             )
         )
@@ -126,13 +130,12 @@ class Task(
                 status_check_period = self._client.config.status_check_period
 
             self._client.logger.info("Awaiting for task %s creation...", self.id)
-            status: models.RqStatus = None
-            while status != models.RqStatusStateEnum.allowed_values[("value",)]["FINISHED"]:
+            while True:
                 sleep(status_check_period)
                 (status, response) = self.api.retrieve_status(self.id)
 
                 self._client.logger.info(
-                    "Task %s creation status=%s, message=%s",
+                    "Task %s creation status: %s (message=%s)",
                     self.id,
                     status.state.value,
                     status.message,
@@ -140,13 +143,18 @@ class Task(
 
                 if (
                     status.state.value
+                    == models.RqStatusStateEnum.allowed_values[("value",)]["FINISHED"]
+                ):
+                    break
+                elif (
+                    status.state.value
                     == models.RqStatusStateEnum.allowed_values[("value",)]["FAILED"]
                 ):
                     raise exceptions.ApiException(
                         status=status.state.value, reason=status.message, http_resp=response
                     )
 
-                status = status.state.value
+            self.fetch()
 
     def import_annotations(
         self,
@@ -295,7 +303,12 @@ class Task(
         self._client.logger.info(f"Backup for task {self.id} has been downloaded to {filename}")
 
     def get_jobs(self) -> List[Job]:
-        return [Job(self._client, m) for m in self.api.list_jobs(id=self.id)[0]]
+        return [
+            Job(self._client, model=m)
+            for m in get_paginated_collection(
+                self._client.api_client.jobs_api.list_endpoint, task_id=str(self.id)
+            )
+        ]
 
     def get_meta(self) -> models.IDataMetaRead:
         (meta, _) = self.api.retrieve_data_meta(self.id)
@@ -323,7 +336,7 @@ class TasksRepo(
     def create_from_data(
         self,
         spec: models.ITaskWriteRequest,
-        resources: Sequence[str],
+        resources: Sequence[StrPath],
         *,
         resource_type: ResourceType = ResourceType.LOCAL,
         data_params: Optional[Dict[str, Any]] = None,

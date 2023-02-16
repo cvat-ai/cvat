@@ -1,0 +1,23 @@
+services:
+  mock_oauth2:
+    image: ghcr.io/navikt/mock-oauth2-server:0.5.3
+    environment:
+      JSON_CONFIG_PATH: "/devel/config.json"
+      SERVER_PORT: 9999
+    ports:
+      - 9999:9999
+    volumes:
+      - ./tests/python/mock_oauth2:/devel
+    networks:
+      - cvat
+
+  cvat_server:
+    environment:
+      USE_ALLAUTH_SOCIAL_ACCOUNTS: "True"
+      SOCIAL_AUTH_AMAZON_COGNITO_DOMAIN: "http://mock_oauth2:9999"
+      SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_ID: "test-client"
+      DJANGO_SETTINGS_MODULE: mock_oauth2.settings
+    volumes:
+      - ./tests/python/mock_oauth2:/home/django/mock_oauth2:ro
+    depends_on:
+      - mock_oauth2

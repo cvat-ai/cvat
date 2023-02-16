@@ -1,11 +1,10 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from __future__ import annotations
 
 import os
-from contextlib import ExitStack
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple
 
@@ -345,22 +344,21 @@ class DataUploader(Uploader):
         self._tus_start_upload(url, fields=upload_info)
 
         for group, group_size in bulk_file_groups:
-            with ExitStack() as es:
-                files = {}
-                for i, filename in enumerate(group):
-                    files[f"client_files[{i}]"] = (
-                        os.fspath(filename),
-                        es.enter_context(open(filename, "rb")).read(),
-                    )
-                response = self._client.api_client.rest_client.POST(
-                    url,
-                    post_params=dict(**kwargs, **files),
-                    headers={
-                        "Content-Type": "multipart/form-data",
-                        "Upload-Multiple": "",
-                        **self._client.api_client.get_common_headers(),
-                    },
+            files = {}
+            for i, filename in enumerate(group):
+                files[f"client_files[{i}]"] = (
+                    os.fspath(filename),
+                    filename.read_bytes(),
                 )
+            response = self._client.api_client.rest_client.POST(
+                url,
+                post_params={"image_quality": kwargs["image_quality"], **files},
+                headers={
+                    "Content-Type": "multipart/form-data",
+                    "Upload-Multiple": "",
+                    **self._client.api_client.get_common_headers(),
+                },
+            )
             expect_status(200, response)
 
             if pbar is not None:
@@ -382,12 +380,13 @@ class DataUploader(Uploader):
     ) -> Tuple[List[Tuple[List[Path], int]], List[Path], int]:
         bulk_files: Dict[str, int] = {}
         separate_files: Dict[str, int] = {}
+        max_request_size = self.max_request_size
 
         # sort by size
         for filename in filenames:
             filename = filename.resolve()
             file_size = filename.stat().st_size
-            if self.max_request_size < file_size:
+            if max_request_size < file_size:
                 separate_files[filename] = file_size
             else:
                 bulk_files[filename] = file_size
@@ -399,7 +398,7 @@ class DataUploader(Uploader):
         current_group_size: int = 0
         current_group: List[str] = []
         for filename, file_size in bulk_files.items():
-            if self.max_request_size < current_group_size + file_size:
+            if max_request_size < current_group_size + file_size:
                 bulk_file_groups.append((current_group, current_group_size))
                 current_group_size = 0
                 current_group = []

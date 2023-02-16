@@ -1,4 +1,4 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -34,7 +34,12 @@ def get_paginated_collection(
         else:
             results.extend(page_contents.results)
 
-        if not page_contents.next:
+        if (
+            page_contents is not None
+            and not page_contents.next
+            or page_contents is None
+            and not json.loads(response.data).get("next")
+        ):
             break
         page += 1
 

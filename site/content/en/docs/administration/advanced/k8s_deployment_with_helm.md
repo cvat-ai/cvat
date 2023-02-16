@@ -115,8 +115,8 @@ Before starting, ensure that the following prerequisites are met:
      minikube addons enable registry
      minikube addons enable registry-aliases
      ```
-     Before Docker container images can be pushed to your newly created unsecure registry,
-     you need to add its address (`$(minikube ip):5000`) to the list of unsecure registries to
+     Before Docker container images can be pushed to your newly created insecure registry,
+     you need to add its address (`$(minikube ip):5000`) to the list of insecure registries to
      instruct Docker to accept working against it:
      follow the instructions in the [Docker documentation](https://docs.docker.com/registry/insecure/#deploy-a-plain-http-registry)
 
@@ -127,7 +127,7 @@ Before starting, ensure that the following prerequisites are met:
    ```shell
    nuctl --namespace <your cvat namespace> create project cvat
    ```
-1. Finaly deploy the fuction, i.e.:
+1. Finally deploy the function, i.e.:
    - using minikube registry:
      ```shell
      nuctl deploy --project-name cvat --path serverless/tensorflow/faster_rcnn_inception_v2_coco/nuclio --registry $(minikube ip):5000 --run-registry registry.minikube
@@ -149,7 +149,7 @@ Before starting, ensure that the following prerequisites are met:
 
    - Let's build custom elasticsearch, logstash and kibana images with the following command
      ```shell
-     docker-compose -f docker-compose.yml  -f components/analytics/docker-compose.analytics.yml build
+     docker compose -f docker-compose.yml  -f components/analytics/docker-compose.analytics.yml build
      ```
 
    - Tag images:
@@ -226,16 +226,92 @@ See <https://helm.sh/>
    ```
 ### How to understand what diff will be inflicted by 'helm upgrade'?
 You can use <https://github.com/databus23/helm-diff#install> for that
-### I want to use my own postgresql/redis with your chart.
-Just set `postgresql.enabled` or `redis.enabled` to `false`, as described below.
-Then - put your instance params to "external" field
+### I want to use my own postgresql with your chart.
+Just set `postgresql.enabled` to `false` in the override file, then put the parameters of your database
+instance in the `external` field.
+You may also need to configure `username`, `database` and `password` fields
+to connect to your own database:
+```yml
+postgresql:
+  enabled: false
+  external:
+    host: postgresql.default.svc.cluster.local
+    port: 5432
+  auth:
+    username: cvat
+    database: cvat
+  secret:
+    password: cvat_postgresql
+```
+In example above corresponding secret will be created automatically, but if you want to use existing secret change `secret.create` to `false` and set `name` of existing secret:
+```yml
+postgresql:
+  enabled: false
+  external:
+    host: postgresql.default.svc.cluster.local
+    port: 5432
+  secret:
+    create: false
+    name: "my-postgresql-secret"
+```
+The secret must contain the `database`, `username` and `password`
+keys to access to the database
+like:
+```yml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: "my-postgresql-secret"
+  namespace: default
+type: generic
+stringData:
+  database: cvat
+  username: cvat
+  password: secretpassword
+```
+
+### I want to use my own redis with your chart.
+Just set `redis.enabled` to `false` in the override file, then put the parameters of your Redis
+instance in the `external` field.
+You may also need to configure `password` field to connect to your own Redis:
+```yml
+redis:
+  enabled: false
+  external:
+    host: redis.hostname.local
+  secret:
+    password: cvat_redis
+```
+In the above example the corresponding secret will be created automatically, but if you want to use an existing secret
+change `secret.create` to `false` and set `name` of the existing secret:
+```yml
+redis:
+  enabled: false
+  external:
+    host: redis.hostname.local
+  secret:
+    create: false
+    name: "my-redis-secret"
+```
+The secret must contain the `redis-password` key like:
+```yml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: "my-redis-secret"
+  namespace: default
+type: generic
+stringData:
+  redis-password: secretpassword
+```
+
 ### I want to override some settings in values.yaml.
 Just create file `values.override.yaml` and place your changes here, using same structure as in `values.yaml`.
 Then reference it in helm update/install command using `-f` flag
 ### Why you used external charts to provide redis and postgres?
 Because they definitely know what they do better then we are, so we are getting more quality and less support
 ### How to use custom domain name with k8s deployment:
-The default value `cvat.local` may be overriden with `--set ingress.hosts[0].host` option like this:
+The default value `cvat.local` may be overridden with `--set ingress.hosts[0].host` option like this:
 ```shell
 helm upgrade -n default cvat -i --create-namespace helm-chart -f helm-chart/values.yaml -f helm-chart/values.override.yaml --set ingress.hosts[0].host=YOUR_FQDN
 ```

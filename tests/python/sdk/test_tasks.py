@@ -58,7 +58,6 @@ class TestTaskUsecases:
                 "name": "test_task",
                 "labels": [{"name": "car"}, {"name": "person"}],
             },
-            resource_type=ResourceType.LOCAL,
             resources=[fxt_image_file],
             data_params={"image_quality": 80},
         )
@@ -199,6 +198,7 @@ class TestTaskUsecases:
         assert capture.match("No media data found")
         assert self.stdout.getvalue() == ""
 
+    @pytest.mark.with_external_services
     def test_can_create_task_with_git_repo(self, fxt_image_file: Path):
         pbar_out = io.StringIO()
         pbar = make_pbar(file=pbar_out)
@@ -231,6 +231,38 @@ class TestTaskUsecases:
         assert response_json["url"]["value"] == repository_url
         assert response_json["format"] == "CVAT for images 1.1"
         assert response_json["lfs"] is False
+
+    def test_can_upload_data_to_empty_task(self):
+        pbar_out = io.StringIO()
+        pbar = make_pbar(file=pbar_out)
+
+        task = self.client.tasks.create(
+            {
+                "name": f"test task",
+                "labels": [{"name": "car"}],
+            }
+        )
+
+        data_params = {
+            "image_quality": 75,
+        }
+
+        task_files = generate_image_files(7)
+        for i, f in enumerate(task_files):
+            fname = self.tmp_path / f.name
+            fname.write_bytes(f.getvalue())
+            task_files[i] = fname
+
+        task.upload_data(
+            resources=task_files,
+            resource_type=ResourceType.LOCAL,
+            params=data_params,
+            pbar=pbar,
+        )
+
+        assert task.size == 7
+        assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
+        assert self.stdout.getvalue() == ""
 
     def test_can_retrieve_task(self, fxt_new_task: Task):
         task_id = fxt_new_task.id
@@ -309,15 +341,17 @@ class TestTaskUsecases:
 
     def test_can_download_preview(self, fxt_new_task: Task):
         frame_encoded = fxt_new_task.get_preview()
+        (width, height) = Image.open(frame_encoded).size
 
-        assert Image.open(frame_encoded).size != 0
+        assert width > 0 and height > 0
         assert self.stdout.getvalue() == ""
 
     @pytest.mark.parametrize("quality", ("compressed", "original"))
     def test_can_download_frame(self, fxt_new_task: Task, quality: str):
         frame_encoded = fxt_new_task.get_frame(0, quality=quality)
+        (width, height) = Image.open(frame_encoded).size
 
-        assert Image.open(frame_encoded).size != 0
+        assert width > 0 and height > 0
         assert self.stdout.getvalue() == ""
 
     @pytest.mark.parametrize("quality", ("compressed", "original"))

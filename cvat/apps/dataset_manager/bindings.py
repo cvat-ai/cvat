@@ -1,6 +1,6 @@
 
 # Copyright (C) 2019-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -180,6 +180,7 @@ class CommonData(InstanceLabelData):
     Labels = namedtuple('Label', 'id, name, color, type')
 
     def __init__(self, annotation_ir, db_task, host='', create_callback=None) -> None:
+        self._dimension = annotation_ir.dimension
         self._annotation_ir = annotation_ir
         self._host = host
         self._create_callback = create_callback
@@ -332,7 +333,7 @@ class CommonData(InstanceLabelData):
     def _export_track(self, track, idx):
         track['shapes'] = list(filter(lambda x: not self._is_frame_deleted(x['frame']), track['shapes']))
         tracked_shapes = TrackManager.get_interpolated_shapes(
-            track, 0, len(self))
+            track, 0, len(self), self._annotation_ir.dimension)
         for tracked_shape in tracked_shapes:
             tracked_shape["attributes"] += track["attributes"]
             tracked_shape["track_id"] = idx
@@ -384,9 +385,9 @@ class CommonData(InstanceLabelData):
                     get_frame(idx)
 
         anno_manager = AnnotationManager(self._annotation_ir)
-        shape_data = ''
-        for shape in sorted(anno_manager.to_shapes(len(self)),
+        for shape in sorted(anno_manager.to_shapes(len(self), self._annotation_ir.dimension),
                 key=lambda shape: shape.get("z_order", 0)):
+            shape_data = ''
             if shape['frame'] not in self._frame_info or self._is_frame_deleted(shape['frame']):
                 # After interpolation there can be a finishing frame
                 # outside of the task boundaries. Filter it out to avoid errors.
@@ -1013,7 +1014,7 @@ class ProjectData(InstanceLabelData):
     def _export_track(self, track: dict, task_id: int, task_size: int, idx: int):
         track['shapes'] = list(filter(lambda x: (task_id, x['frame']) not in self._deleted_frames, track['shapes']))
         tracked_shapes = TrackManager.get_interpolated_shapes(
-            track, 0, task_size
+            track, 0, task_size, self._annotation_irs[task_id].dimension
         )
         for tracked_shape in tracked_shapes:
             tracked_shape["attributes"] += track["attributes"]
@@ -1060,7 +1061,7 @@ class ProjectData(InstanceLabelData):
 
         for task in self._db_tasks.values():
             anno_manager = AnnotationManager(self._annotation_irs[task.id])
-            for shape in sorted(anno_manager.to_shapes(task.data.size),
+            for shape in sorted(anno_manager.to_shapes(task.data.size, self._annotation_irs[task.id].dimension),
                     key=lambda shape: shape.get("z_order", 0)):
                 if (task.id, shape['frame']) not in self._frame_info or (task.id, shape['frame']) in self._deleted_frames:
                     continue
@@ -1534,11 +1535,7 @@ def convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label, format_name
             attributes=anno_attr, group=anno_group)
         item_anno.append(anno)
 
-    shapes = []
-    if hasattr(cvat_frame_anno, 'shapes'):
-        for shape in cvat_frame_anno.shapes:
-            shapes.append({"id": shape.id, "label_id": shape.label_id})
-
+    num_of_tracks = reduce(lambda a, x: a + (1 if getattr(x, 'track_id', None) is not None else 0), cvat_frame_anno.labeled_shapes, 0)
     for index, shape_obj in enumerate(cvat_frame_anno.labeled_shapes):
         anno_group = shape_obj.group or 0
         anno_label = map_label(shape_obj.label)
@@ -1592,10 +1589,9 @@ def convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label, format_name
                 z_order=shape_obj.z_order)
         elif shape_obj.type == ShapeType.CUBOID:
             if dimension == DimensionType.DIM_3D:
-                if format_name == "sly_pointcloud":
-                    anno_id = shapes[index]["id"]
-                else:
-                    anno_id = index
+                anno_id = getattr(shape_obj, 'track_id', None)
+                if anno_id is None:
+                    anno_id = num_of_tracks + index
                 position, rotation, scale = anno_points[0:3], anno_points[3:6], anno_points[6:9]
                 anno = dm.Cuboid3d(
                     id=anno_id, position=position, rotation=rotation, scale=scale,
@@ -1759,7 +1755,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                         if ann.attributes.get('source', '').lower() in {'auto', 'manual'} else 'manual'
 
                     shape_type = shapes[ann.type]
-                    if track_id is None or dm_dataset.format != 'cvat' :
+                    if track_id is None or 'keyframe' not in ann.attributes or dm_dataset.format not in ['cvat', 'datumaro', 'sly_pointcloud']:
                         elements = []
                         if ann.type == dm.AnnotationType.skeleton:
                             for element in ann.elements:
@@ -1827,7 +1823,8 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                         if ann.type == dm.AnnotationType.skeleton:
                             for element in ann.elements:
                                 element_keyframe = dm.util.cast(element.attributes.get('keyframe', None), bool) is True
-                                element_outside = dm.util.cast(element.attributes.pop('outside', None), bool) is True
+                                element_occluded = element.visibility[0] == dm.Points.Visibility.hidden
+                                element_outside = element.visibility[0] == dm.Points.Visibility.absent
                                 if not element_keyframe and not element_outside:
                                     continue
 
@@ -1842,7 +1839,6 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                                     instance_data.Attribute(name=n, value=str(v))
                                     for n, v in element.attributes.items()
                                 ]
-                                element_occluded = dm.util.cast(element.attributes.pop('occluded', None), bool) is True
                                 element_source = element.attributes.pop('source').lower() \
                                     if element.attributes.get('source', '').lower() in {'auto', 'manual'} else 'manual'
                                 tracks[track_id]['elements'][element.label].shapes.append(instance_data.TrackedShape(

@@ -344,6 +344,7 @@ class Task(models.Model):
     updated_date = models.DateTimeField(auto_now=True)
     overlap = models.PositiveIntegerField(null=True)
     # Zero means that there are no limits (default)
+    # Note that the files can be split into jobs in a custom way in this case
     segment_size = models.PositiveIntegerField(default=0)
     status = models.CharField(max_length=32, choices=StatusChoice.choices(),
                               default=StatusChoice.ANNOTATION)
@@ -467,6 +468,9 @@ class Job(models.Model):
 
     def get_dirname(self):
         return os.path.join(settings.JOBS_ROOT, str(self.id))
+
+    def get_tmp_dirname(self):
+        return os.path.join(self.get_dirname(), 'tmp')
 
     @extend_schema_field(OpenApiTypes.INT)
     def get_project_id(self):

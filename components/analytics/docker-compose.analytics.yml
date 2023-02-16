@@ -1,4 +1,3 @@
-version: '3.3'
 services:
   elasticsearch:
     container_name: cvat_elasticsearch

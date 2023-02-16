@@ -1,5 +1,5 @@
 # Copyright (C) 2018-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -15,6 +15,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/2.0/ref/settings/
 """
 
+from enum import Enum
 import os
 import sys
 import fcntl
@@ -110,23 +111,24 @@ INSTALLED_APPS = [
     'django_rq',
     'compressor',
     'django_sendfile',
+    "dj_rest_auth",
+    'dj_rest_auth.registration',
     'dj_pagination',
+    'django_filters',
     'rest_framework',
     'rest_framework.authtoken',
     'drf_spectacular',
-    'dj_rest_auth',
     'django.contrib.sites',
     'allauth',
     'allauth.account',
     'corsheaders',
     'allauth.socialaccount',
     # social providers
+    'allauth.socialaccount.providers.amazon_cognito',
     'allauth.socialaccount.providers.github',
     'allauth.socialaccount.providers.google',
-    'dj_rest_auth.registration',
     'health_check',
     'health_check.db',
-    'health_check.cache',
     'health_check.contrib.migrations',
     'health_check.contrib.psutil',
     'cvat.apps.iam',
@@ -173,10 +175,12 @@ REST_FRAMEWORK = {
         'cvat.apps.engine.pagination.CustomPagination',
     'PAGE_SIZE': 10,
     'DEFAULT_FILTER_BACKENDS': (
+        'cvat.apps.engine.filters.SimpleFilter',
         'cvat.apps.engine.filters.SearchFilter',
         'cvat.apps.engine.filters.OrderingFilter',
         'cvat.apps.engine.filters.JsonLogicFilter',
-        'cvat.apps.iam.filters.OrganizationFilterBackend'),
+        'cvat.apps.iam.filters.OrganizationFilterBackend',
+    ),
 
     'SEARCH_PARAM': 'search',
     # Disable default handling of the 'format' query parameter by REST framework
@@ -190,6 +194,7 @@ REST_FRAMEWORK = {
     'DEFAULT_METADATA_CLASS': 'rest_framework.metadata.SimpleMetadata',
     'DEFAULT_SCHEMA_CLASS': 'cvat.apps.iam.schema.CustomAutoSchema',
 }
+
 
 REST_AUTH_REGISTER_SERIALIZERS = {
     'REGISTER_SERIALIZER': 'cvat.apps.iam.serializers.RegisterSerializerEx',
@@ -239,6 +244,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+
             ],
         },
     },
@@ -248,6 +254,7 @@ WSGI_APPLICATION = 'cvat.wsgi.application'
 
 # IAM settings
 IAM_TYPE = 'BASIC'
+IAM_BASE_EXCEPTION = None # a class which will be used by IAM to report errors
 IAM_DEFAULT_ROLES = ['user']
 IAM_ADMIN_ROLE = 'admin'
 # Index in the list below corresponds to the priority (0 has highest priority)
@@ -269,6 +276,7 @@ AUTHENTICATION_BACKENDS = [
 # https://github.com/pennersr/django-allauth
 ACCOUNT_EMAIL_VERIFICATION = 'none'
 ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
+
 # set UI url to redirect after a successful e-mail confirmation
 #changed from '/auth/login' to '/auth/email-confirmation' for email confirmation message
 ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = '/auth/email-confirmation'
@@ -280,20 +288,32 @@ OLD_PASSWORD_FIELD_ENABLED = True
 # Django-RQ
 # https://github.com/rq/django-rq
 
+class CVAT_QUEUES(Enum):
+    IMPORT_DATA = 'import'
+    EXPORT_DATA = 'export'
+    AUTO_ANNOTATION = 'annotation'
+    WEBHOOKS = 'webhooks'
+
 RQ_QUEUES = {
-    'default': {
+    CVAT_QUEUES.IMPORT_DATA.value: {
         'HOST': 'localhost',
         'PORT': 6379,
         'DB': 0,
         'DEFAULT_TIMEOUT': '4h'
     },
-    'low': {
+    CVAT_QUEUES.EXPORT_DATA.value: {
+        'HOST': 'localhost',
+        'PORT': 6379,
+        'DB': 0,
+        'DEFAULT_TIMEOUT': '4h'
+    },
+    CVAT_QUEUES.AUTO_ANNOTATION.value: {
         'HOST': 'localhost',
         'PORT': 6379,
         'DB': 0,
         'DEFAULT_TIMEOUT': '24h'
     },
-    'webhooks': {
+    CVAT_QUEUES.WEBHOOKS.value: {
         'HOST': 'localhost',
         'PORT': 6379,
         'DB': 0,
@@ -481,10 +501,14 @@ RESTRICTIONS = {
 
 # http://www.grantjenks.com/docs/diskcache/tutorial.html#djangocache
 CACHES = {
-   'default' : {
+   'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    },
+   'media' : {
        'BACKEND' : 'diskcache.DjangoCache',
        'LOCATION' : CACHE_ROOT,
        'TIMEOUT' : None,
+       'SHARDS': 32,
        'OPTIONS' : {
             'size_limit' : 2 ** 40, # 1 Tb
        }
@@ -577,6 +601,8 @@ SPECTACULAR_SETTINGS = {
         'JobStage': 'cvat.apps.engine.models.StageChoice',
         'StorageType': 'cvat.apps.engine.models.StorageChoice',
         'SortingMethod': 'cvat.apps.engine.models.SortingMethod',
+        'WebhookType': 'cvat.apps.webhooks.models.WebhookTypeChoice',
+        'WebhookContentType': 'cvat.apps.webhooks.models.WebhookContentTypeChoice',
     },
 
     # Coercion of {pk} to {id} is controlled by SCHEMA_COERCE_PATH_PK. Additionally,
@@ -596,8 +622,14 @@ ACCOUNT_ADAPTER = 'cvat.apps.iam.adapters.DefaultAccountAdapterEx'
 ACCOUNT_USERNAME_MIN_LENGTH = 5
 ACCOUNT_LOGOUT_ON_PASSWORD_CHANGE = True
 
+CVAT_HOST = os.getenv('CVAT_HOST', 'localhost')
+CVAT_BASE_URL = os.getenv('CVAT_BASE_URL', f'http://{CVAT_HOST}:8080').rstrip('/')
+
 if USE_ALLAUTH_SOCIAL_ACCOUNTS:
     SOCIALACCOUNT_ADAPTER = 'cvat.apps.iam.adapters.SocialAccountAdapterEx'
+    SOCIALACCOUNT_GITHUB_ADAPTER = 'cvat.apps.iam.adapters.GitHubAdapter'
+    SOCIALACCOUNT_GOOGLE_ADAPTER = 'cvat.apps.iam.adapters.GoogleAdapter'
+    SOCIALACCOUNT_AMAZON_COGNITO_ADAPTER = 'cvat.apps.iam.adapters.AmazonCognitoOAuth2AdapterEx'
     SOCIALACCOUNT_LOGIN_ON_GET = True
     # It's required to define email in the case when a user has a private hidden email.
     # (e.g in github account set keep my email addresses private)
@@ -605,10 +637,11 @@ if USE_ALLAUTH_SOCIAL_ACCOUNTS:
     SOCIALACCOUNT_QUERY_EMAIL = True
     SOCIALACCOUNT_CALLBACK_CANCELLED_URL = '/auth/login'
     # custom variable because by default LOGIN_REDIRECT_URL will be used
-    SOCIAL_APP_LOGIN_REDIRECT_URL = 'http://localhost:8080/auth/login-with-social-app'
+    SOCIAL_APP_LOGIN_REDIRECT_URL = f'{CVAT_BASE_URL}/auth/login-with-social-app'
 
-    GITHUB_CALLBACK_URL = 'http://localhost:8080/api/auth/github/login/callback/'
-    GOOGLE_CALLBACK_URL = 'http://localhost:8080/api/auth/google/login/callback/'
+    AMAZON_COGNITO_REDIRECT_URI = f'{CVAT_BASE_URL}/api/auth/amazon-cognito/login/callback/'
+    GITHUB_CALLBACK_URL = f'{CVAT_BASE_URL}/api/auth/github/login/callback/'
+    GOOGLE_CALLBACK_URL = f'{CVAT_BASE_URL}/api/auth/google/login/callback/'
 
     SOCIAL_AUTH_GOOGLE_CLIENT_ID = os.getenv('SOCIAL_AUTH_GOOGLE_CLIENT_ID')
     SOCIAL_AUTH_GOOGLE_CLIENT_SECRET = os.getenv('SOCIAL_AUTH_GOOGLE_CLIENT_SECRET')
@@ -616,6 +649,12 @@ if USE_ALLAUTH_SOCIAL_ACCOUNTS:
     SOCIAL_AUTH_GITHUB_CLIENT_ID = os.getenv('SOCIAL_AUTH_GITHUB_CLIENT_ID')
     SOCIAL_AUTH_GITHUB_CLIENT_SECRET = os.getenv('SOCIAL_AUTH_GITHUB_CLIENT_SECRET')
 
+    SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_ID = os.getenv('SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_ID')
+    SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_SECRET = os.getenv('SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_SECRET')
+    SOCIAL_AUTH_AMAZON_COGNITO_DOMAIN = os.getenv('SOCIAL_AUTH_AMAZON_COGNITO_DOMAIN')
+
+    # Django allauth social account providers
+    # https://django-allauth.readthedocs.io/en/latest/providers.html
     SOCIALACCOUNT_PROVIDERS = {
         'google': {
             'APP': {
@@ -626,7 +665,7 @@ if USE_ALLAUTH_SOCIAL_ACCOUNTS:
             'SCOPE': [ 'profile', 'email', 'openid'],
             'AUTH_PARAMS': {
                 'access_type': 'online',
-            }
+            },
         },
         'github': {
             'APP': {
@@ -635,5 +674,20 @@ if USE_ALLAUTH_SOCIAL_ACCOUNTS:
                 'key': ''
             },
             'SCOPE': [ 'read:user', 'user:email' ],
+            # NOTE: Custom field. This is necessary for the user interface
+            # to render possible social account authentication option.
+            # If this field is not specified, then the option with the provider
+            # key with a capital letter will be used
+            'PUBLIC_NAME': 'GitHub',
         },
+        'amazon_cognito': {
+            'DOMAIN': SOCIAL_AUTH_AMAZON_COGNITO_DOMAIN,
+            'SCOPE': [ 'profile', 'email', 'openid'],
+            'APP': {
+                'client_id': SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_ID,
+                'secret': SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_SECRET,
+                'key': ''
+            },
+            'PUBLIC_NAME': 'Amazon Cognito',
+        }
     }

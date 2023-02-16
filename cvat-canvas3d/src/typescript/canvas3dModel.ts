@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -18,7 +18,14 @@ export interface ActiveElement {
 
 export interface GroupData {
     enabled: boolean;
-    grouped: ObjectState[];
+}
+
+export interface MergeData {
+    enabled: boolean;
+}
+
+export interface SplitData {
+    enabled: boolean;
 }
 
 export interface Configuration {
@@ -80,6 +87,8 @@ export enum UpdateReasons {
     DRAG_CANVAS = 'drag_canvas',
     SHAPE_ACTIVATED = 'shape_activated',
     GROUP = 'group',
+    MERGE = 'merge',
+    SPLIT = 'split',
     FITTED_CANVAS = 'fitted_canvas',
     CONFIG_UPDATED = 'config_updated',
     SHAPES_CONFIG_UPDATED = 'shapes_config_updated',
@@ -91,6 +100,8 @@ export enum Mode {
     EDIT = 'edit',
     DRAG_CANVAS = 'drag_canvas',
     GROUP = 'group',
+    MERGE = 'merge',
+    SPLIT = 'split',
 }
 
 export interface Canvas3dDataModel {
@@ -106,6 +117,8 @@ export interface Canvas3dDataModel {
     objects: ObjectState[];
     shapeProperties: ShapeProperties;
     groupData: GroupData;
+    mergeData: MergeData;
+    splitData: SplitData;
     configuration: Configuration;
     isFrameUpdating: boolean;
     nextSetupRequest: {
@@ -119,6 +132,7 @@ export interface Canvas3dModel {
     data: Canvas3dDataModel;
     readonly imageIsDeleted: boolean;
     readonly groupData: GroupData;
+    readonly mergeData: MergeData;
     readonly configuration: Configuration;
     readonly objects: ObjectState[];
     setup(frameData: any, objectStates: ObjectState[]): void;
@@ -131,6 +145,8 @@ export interface Canvas3dModel {
     configure(configuration: Configuration): void;
     fit(): void;
     group(groupData: GroupData): void;
+    split(splitData: SplitData): void;
+    merge(mergeData: MergeData): void;
     destroy(): void;
     updateCanvasObjects(): void;
     unlockFrameUpdating(): void;
@@ -166,7 +182,12 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
             mode: Mode.IDLE,
             groupData: {
                 enabled: false,
-                grouped: [],
+            },
+            mergeData: {
+                enabled: false,
+            },
+            splitData: {
+                enabled: false,
             },
             shapeProperties: {
                 opacity: 40,
@@ -238,7 +259,10 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
             })
             .catch((exception: any): void => {
                 this.data.isFrameUpdating = false;
-                throw exception;
+                // don't notify when the frame is no longer needed
+                if (typeof exception !== 'number' || exception === this.data.imageID) {
+                    throw exception;
+                }
             });
     }
 
@@ -340,8 +364,28 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
             return;
         }
         this.data.mode = groupData.enabled ? Mode.GROUP : Mode.IDLE;
-        this.data.groupData = { ...this.data.groupData, ...groupData };
+        this.data.groupData = { ...groupData };
         this.notify(UpdateReasons.GROUP);
+    }
+
+    public split(splitData: SplitData): void {
+        if (![Mode.IDLE, Mode.SPLIT].includes(this.data.mode)) {
+            throw Error(`Canvas is busy. Action: ${this.data.mode}`);
+        }
+
+        this.data.mode = splitData.enabled ? Mode.SPLIT : Mode.IDLE;
+        this.data.splitData = { ...splitData };
+        this.notify(UpdateReasons.SPLIT);
+    }
+
+    public merge(mergeData: MergeData): void {
+        if (![Mode.IDLE, Mode.MERGE].includes(this.data.mode)) {
+            throw Error(`Canvas is busy. Action: ${this.data.mode}`);
+        }
+
+        this.data.mode = mergeData.enabled ? Mode.MERGE : Mode.IDLE;
+        this.data.mergeData = { ...mergeData };
+        this.notify(UpdateReasons.MERGE);
     }
 
     public configure(configuration: Configuration): void {
@@ -386,6 +430,10 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
 
     public get groupData(): GroupData {
         return { ...this.data.groupData };
+    }
+
+    public get mergeData(): MergeData {
+        return { ...this.data.mergeData };
     }
 
     public get imageIsDeleted(): boolean {

@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -194,52 +194,11 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                     canvasInstance.draw({ enabled: false });
                 }
             },
-            SWITCH_MERGE_MODE: (event: KeyboardEvent | undefined) => {
-                preventDefault(event);
-                const merging = activeControl === ActiveControl.MERGE;
-                if (!merging) {
-                    canvasInstance.cancel();
-                }
-                canvasInstance.merge({ enabled: !merging });
-                mergeObjects(!merging);
-            },
-            SWITCH_SPLIT_MODE: (event: KeyboardEvent | undefined) => {
-                preventDefault(event);
-                const splitting = activeControl === ActiveControl.SPLIT;
-                if (!splitting) {
-                    canvasInstance.cancel();
-                }
-                canvasInstance.split({ enabled: !splitting });
-                splitTrack(!splitting);
-            },
-            SWITCH_GROUP_MODE: (event: KeyboardEvent | undefined) => {
-                preventDefault(event);
-                const grouping = activeControl === ActiveControl.GROUP;
-                if (!grouping) {
-                    canvasInstance.cancel();
-                }
-                canvasInstance.group({ enabled: !grouping });
-                groupObjects(!grouping);
-            },
-            RESET_GROUP: (event: KeyboardEvent | undefined) => {
-                preventDefault(event);
-                const grouping = activeControl === ActiveControl.GROUP;
-                if (!grouping) {
-                    return;
-                }
-                resetGroup();
-                canvasInstance.group({ enabled: false });
-                groupObjects(false);
-            },
         };
         subKeyMap = {
             ...subKeyMap,
             PASTE_SHAPE: keyMap.PASTE_SHAPE,
             SWITCH_DRAW_MODE: keyMap.SWITCH_DRAW_MODE,
-            SWITCH_MERGE_MODE: keyMap.SWITCH_MERGE_MODE,
-            SWITCH_SPLIT_MODE: keyMap.SWITCH_SPLIT_MODE,
-            SWITCH_GROUP_MODE: keyMap.SWITCH_GROUP_MODE,
-            RESET_GROUP: keyMap.RESET_GROUP,
         };
     }
 
@@ -349,26 +308,45 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             <hr />
 
             <ObservedMergeControl
-                switchMergeShortcut={normalizedKeyMap.SWITCH_MERGE_MODE}
+                mergeObjects={mergeObjects}
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
-                mergeObjects={mergeObjects}
                 disabled={controlsDisabled}
+                shortcuts={{
+                    SWITCH_MERGE_MODE: {
+                        details: keyMap.SWITCH_MERGE_MODE,
+                        displayValue: normalizedKeyMap.SWITCH_MERGE_MODE,
+                    },
+                }}
             />
             <ObservedGroupControl
-                switchGroupShortcut={normalizedKeyMap.SWITCH_GROUP_MODE}
-                resetGroupShortcut={normalizedKeyMap.RESET_GROUP}
+                groupObjects={groupObjects}
+                resetGroup={resetGroup}
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
-                groupObjects={groupObjects}
                 disabled={controlsDisabled}
+                shortcuts={{
+                    SWITCH_GROUP_MODE: {
+                        details: keyMap.SWITCH_GROUP_MODE,
+                        displayValue: normalizedKeyMap.SWITCH_GROUP_MODE,
+                    },
+                    RESET_GROUP: {
+                        details: keyMap.RESET_GROUP,
+                        displayValue: normalizedKeyMap.RESET_GROUP,
+                    },
+                }}
             />
             <ObservedSplitControl
-                canvasInstance={canvasInstance}
-                switchSplitShortcut={normalizedKeyMap.SWITCH_SPLIT_MODE}
-                activeControl={activeControl}
                 splitTrack={splitTrack}
+                canvasInstance={canvasInstance}
+                activeControl={activeControl}
                 disabled={controlsDisabled}
+                shortcuts={{
+                    SWITCH_SPLIT_MODE: {
+                        details: keyMap.SWITCH_SPLIT_MODE,
+                        displayValue: normalizedKeyMap.SWITCH_SPLIT_MODE,
+                    },
+                }}
             />
 
             <ExtraControlsControl />

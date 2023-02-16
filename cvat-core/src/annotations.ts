@@ -1,19 +1,18 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { Storage } from './storage';
-
-const serverProxy = require('./server-proxy').default;
-const Collection = require('./annotations-collection');
-const AnnotationsSaver = require('./annotations-saver');
-const AnnotationsHistory = require('./annotations-history').default;
-const { checkObjectType } = require('./common');
-const Project = require('./project').default;
-const { Task, Job } = require('./session');
-const { ScriptingError, DataError, ArgumentError } = require('./exceptions');
-const { getDeletedFrames } = require('./frames');
+import serverProxy from './server-proxy';
+import Collection from './annotations-collection';
+import AnnotationsSaver from './annotations-saver';
+import AnnotationsHistory from './annotations-history';
+import { checkObjectType } from './common';
+import Project from './project';
+import { Task, Job } from './session';
+import { ScriptingError, DataError, ArgumentError } from './exceptions';
+import { getDeletedFrames } from './frames';
 
 const jobCache = new WeakMap();
 const taskCache = new WeakMap();
@@ -50,9 +49,9 @@ async function getAnnotationsFromServer(session) {
         const collection = new Collection({
             labels: session.labels || session.task.labels,
             history,
-            startFrame,
             stopFrame,
             frameMeta,
+            dimension: session.dimension,
         });
 
         // eslint-disable-next-line no-unsanitized/method

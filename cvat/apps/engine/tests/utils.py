@@ -1,18 +1,23 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from contextlib import contextmanager
 from io import BytesIO
+from typing import Callable, Iterator, TypeVar
+import itertools
 import logging
 import os
 import shutil
 
 from django.conf import settings
+from django.http.response import HttpResponse
 from PIL import Image
 from rest_framework.test import APIClient, APITestCase
 import av
 import numpy as np
+
+T = TypeVar('T')
 
 
 @contextmanager
@@ -102,3 +107,17 @@ def generate_video_file(filename, width=1920, height=1080, duration=1, fps=25, c
     f.seek(0)
 
     return [(width, height)] * total_frames, f
+
+def get_paginated_collection(
+    request_chunk_callback: Callable[[int], HttpResponse]
+) -> Iterator[T]:
+    values = []
+
+    for page in itertools.count(start=1):
+        response = request_chunk_callback(page)
+        data = response.json()
+        values.extend(data["results"])
+        if not data.get('next'):
+            break
+
+    return values

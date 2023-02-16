@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -15,6 +16,7 @@ const {
     cloudStoragesDummyData,
     webhooksDummyData,
     webhooksEventsDummyData,
+    jobsDummyData,
 } = require('./dummy-data.mock');
 
 function QueryStringToJSON(query, ignoreList = []) {
@@ -215,48 +217,54 @@ class ServerProxy {
         }
 
         async function getJobs(filter = {}) {
+            function makeJsonFilter(jsonExpr) {
+                if (!jsonExpr) {
+                    return (job) => true;
+                }
+
+                // This function only covers test cases. Extend it if needed.
+                function escapeRegExp(string) {
+                    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                }
+                let pattern = JSON.stringify({
+                    and: [{ '==': [{ var: 'task_id' }, '<id>'] }]
+                });
+                pattern = escapeRegExp(pattern).replace('"<id>"', '(\\d+)');
+                const matches = jsonExpr.match(pattern);
+                const task_id = Number.parseInt(matches[1]);
+                return (job) => job.task_id === task_id;
+            };
+
             const id = filter.id || null;
-            const jobs = tasksDummyData.results
-                .reduce((acc, task) => {
-                    for (const segment of task.segments) {
-                        for (const job of segment.jobs) {
-                            const copy = JSON.parse(JSON.stringify(job));
-                            copy.start_frame = segment.start_frame;
-                            copy.stop_frame = segment.stop_frame;
-                            copy.task_id = task.id;
-                            copy.dimension = task.dimension;
-                            copy.data_compressed_chunk_type = task.data_compressed_chunk_type;
-                            copy.data_chunk_size = task.data_chunk_size;
-                            copy.bug_tracker = task.bug_tracker;
-                            copy.mode = task.mode;
-                            copy.labels = task.labels;
+            const jobs = jobsDummyData.results.filter(makeJsonFilter(filter.filter || null));
 
-                            acc.push(copy);
-                        }
-                    }
+            for (const job of jobs) {
+                const task = tasksDummyData.results.find((task) => task.id === job.task_id);
+                job.dimension = task.dimension;
+                job.data_compressed_chunk_type = task.data_compressed_chunk_type;
+                job.data_chunk_size = task.data_chunk_size;
+                job.bug_tracker = task.bug_tracker;
+                job.mode = task.mode;
+                job.labels = task.labels;
+            }
 
-                    return acc;
-                }, [])
-                .filter((job) => job.id === id);
+            if (id !== null) {
+                // A specific object is requested
+                return jobs.filter((job) => job.id === id)[0] || null;
+            }
 
             return (
-                jobs[0] || {
+                jobs ? {
+                    results: jobs,
+                    count: jobs.length,
+                } : {
                     detail: 'Not found.',
                 }
             );
         }
 
         async function saveJob(id, jobData) {
-            const object = tasksDummyData.results
-                .reduce((acc, task) => {
-                    for (const segment of task.segments) {
-                        for (const job of segment.jobs) {
-                            acc.push(job);
-                        }
-                    }
-
-                    return acc;
-                }, [])
+            const object = jobsDummyData.results
                 .filter((job) => job.id === id)[0];
 
             for (const prop in jobData) {
@@ -510,6 +518,7 @@ class ServerProxy {
                         save: saveTask,
                         create: createTask,
                         delete: deleteTask,
+                        getPreview: getPreview,
                     }),
                     writable: false,
                 },
@@ -518,6 +527,7 @@ class ServerProxy {
                     value: Object.freeze({
                         get: getJobs,
                         save: saveJob,
+                        getPreview: getPreview,
                     }),
                     writable: false,
                 },

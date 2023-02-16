@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -56,7 +57,6 @@ interface StateToProps {
     playing: boolean;
     saving: boolean;
     canvasIsReady: boolean;
-    savingStatuses: string[];
     undoAction?: string;
     redoAction?: string;
     autoSave: boolean;
@@ -106,7 +106,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 },
             },
             annotations: {
-                saving: { uploading: saving, statuses: savingStatuses, forceExit },
+                saving: { uploading: saving, forceExit },
                 history,
             },
             job: { instance: jobInstance },
@@ -135,7 +135,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         playing,
         canvasIsReady,
         saving,
-        savingStatuses,
         frameNumber,
         frameFilename,
         jobInstance,
@@ -607,7 +606,6 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
         const {
             playing,
             saving,
-            savingStatuses,
             jobInstance,
             jobInstance: { startFrame, stopFrame },
             frameNumber,
@@ -751,7 +749,6 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
                     workspace={workspace}
                     playing={playing}
                     saving={saving}
-                    savingStatuses={savingStatuses}
                     startFrame={startFrame}
                     stopFrame={stopFrame}
                     frameNumber={frameNumber}
@@ -764,7 +761,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
                     undoShortcut={normalizedKeyMap.UNDO}
                     redoShortcut={normalizedKeyMap.REDO}
                     drawShortcut={normalizedKeyMap.SWITCH_DRAW_MODE}
-                    // this shortcut is handled in interactionHandler.ts separatelly
+                    // this shortcut is handled in interactionHandler.ts separately
                     switchToolsBlockerShortcut={normalizedKeyMap.SWITCH_TOOLS_BLOCKER_STATE}
                     playPauseShortcut={normalizedKeyMap.PLAY_PAUSE}
                     deleteFrameShortcut={normalizedKeyMap.DELETE_FRAME}

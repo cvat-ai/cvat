@@ -20,6 +20,10 @@ FILENAME_TEMPLATE = "cvat/{}/{}.zip"
 FORMAT = "COCO 1.0"
 
 
+# https://docs.pytest.org/en/7.1.x/example/markers.html#marking-whole-classes-or-modules
+pytestmark = [pytest.mark.with_external_services]
+
+
 def _make_custom_resource_params(obj: str, resource: str, cloud_storage_id: int) -> Dict[str, Any]:
     params = {
         "filename": FILENAME_TEMPLATE.format(obj, resource),

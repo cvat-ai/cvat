@@ -6,28 +6,24 @@ weight: 32
 
 ## Introduction
 
-Computers have now become our partners. They help us to solve routine problems,
-fix mistakes, find information, etc. It is a natural idea to use their
-compute power to annotate datasets. There are multiple DL models for
-classification, object detection, semantic segmentation which can do
-data annotation for us. And it is relatively simple to integrate your
-own ML/DL solution into CVAT.
+Leveraging the power of computers to solve daily routine problems,
+fix mistakes, and find information has become second nature. It is therefore
+natural to use computing power in annotating datasets. There are multiple
+publicly available DL models for classification, object detection, and semantic
+segmentation which can be used for data annotation. Whilst some of these publicly
+available DL models can be found on CVAT, it is relatively simple to integrate your
+privately trained ML/DL model into CVAT.
 
-But the world is not perfect and we don't have a silver bullet which can
-solve all our problems. Usually, available DL models are trained on public
-datasets which cannot cover all specific cases. Very often you want to
-detect objects which cannot be recognized by these models. Our annotation
-requirements can be so strict that automatically
-annotated objects cannot be accepted as is, and it is easier to annotate them
-from scratch. You always need to keep in mind all these mentioned limitations.
-Even if you have a DL solution which can
-_perfectly_ annotate 50% of your data, it means that manual work will only be
-reduced in half.
+With the imperfection of the world, alongside the unavailability of a silver bullet
+that can solve all our problems; publicly available DL models cannot be used when we
+want to detect niche or specific objects on which these publicly available models were not trained.
+As annotation requirements can be sometimes strict, automatically annotated objects cannot be accepted
+as it is, and it is easier to annotate them from scratch. With these limitations in mind, a DL solution
+that can _perfectly_ annotate 50% of your data equates to reducing manual annotation by half.
 
-When we know that DL models can help us to annotate data faster, the next
-question is how to use them? In CVAT all such DL models are implemented
-as serverless functions for the [Nuclio][nuclio-homepage] serverless platform.
-And there are multiple implemented functions which can be
+Since we know DL models can help us to annotate faster, how then do we use them?
+In CVAT all such DL models are implemented as serverless functions using the [Nuclio][nuclio-homepage]
+serverless platform. There are multiple implemented functions that can be
 found in the [serverless][cvat-builtin-serverless] directory such as _Mask RCNN,
 Faster RCNN, SiamMask, Inside Outside Guidance, Deep Extreme Cut_, etc.
 Follow [the installation guide][cvat-auto-annotation-guide] to build and deploy
@@ -59,17 +55,17 @@ the tutorial.
 
 In the tutorial it is assumed that you already have the cloned
 [CVAT GitHub repo][cvat-github].
-To build CVAT with serverless support you need to run `docker-compose` command
+To build CVAT with serverless support you need to run `docker compose` command
 with specific configuration files. In the case it is `docker-compose.serverless.yml`.
 It has necessary instructions how to build and deploy Nuclio platform as a
 docker container and enable corresponding support in CVAT.
 
 ```bash
-docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f components/serverless/docker-compose.serverless.yml up -d --build
+docker compose -f docker-compose.yml -f docker-compose.dev.yml -f components/serverless/docker-compose.serverless.yml up -d --build
 ```
 
 ```bash
-docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f components/serverless/docker-compose.serverless.yml ps
+docker compose -f docker-compose.yml -f docker-compose.dev.yml -f components/serverless/docker-compose.serverless.yml ps
 ```
 ```
    Name                 Command                  State                            Ports
@@ -505,7 +501,7 @@ into memory using `init_context(context)` function. Read more about the function
 in [Best Practices and Common Pitfalls][nuclio-bkms-doc].
 
 After that we need to accept incoming HTTP requests, run inference,
-reply with detection results. For the process our entry point is resposible
+reply with detection results. For the process our entry point is responsible
 which we specified in our function specification `handler(context, event)`.
 Again in accordance to function specification the entry point should be
 located inside `main.py`.

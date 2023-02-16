@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -12,7 +12,7 @@ import { CanvasMode as Canvas3DMode } from 'cvat-canvas3d-wrapper';
 import {
     RectDrawingMethod, CuboidDrawingMethod, Canvas, CanvasMode as Canvas2DMode,
 } from 'cvat-canvas-wrapper';
-import { getCore } from 'cvat-core-wrapper';
+import { getCore, MLModel } from 'cvat-core-wrapper';
 import logger, { LogType } from 'cvat-logger';
 import { getCVATStore } from 'cvat-store';
 
@@ -22,7 +22,6 @@ import {
     ContextMenuType,
     DimensionType,
     FrameSpeed,
-    Model,
     ObjectType,
     OpenCVTool,
     Rotation,
@@ -125,7 +124,6 @@ export enum AnnotationActionTypes {
     SAVE_ANNOTATIONS = 'SAVE_ANNOTATIONS',
     SAVE_ANNOTATIONS_SUCCESS = 'SAVE_ANNOTATIONS_SUCCESS',
     SAVE_ANNOTATIONS_FAILED = 'SAVE_ANNOTATIONS_FAILED',
-    SAVE_UPDATE_ANNOTATIONS_STATUS = 'SAVE_UPDATE_ANNOTATIONS_STATUS',
     SWITCH_PLAY = 'SWITCH_PLAY',
     CONFIRM_CANVAS_READY = 'CONFIRM_CANVAS_READY',
     DRAG_CANVAS = 'DRAG_CANVAS',
@@ -196,10 +194,6 @@ export enum AnnotationActionTypes {
     GET_PREDICTIONS = 'GET_PREDICTIONS',
     GET_PREDICTIONS_FAILED = 'GET_PREDICTIONS_FAILED',
     GET_PREDICTIONS_SUCCESS = 'GET_PREDICTIONS_SUCCESS',
-    HIDE_SHOW_CONTEXT_IMAGE = 'HIDE_SHOW_CONTEXT_IMAGE',
-    GET_CONTEXT_IMAGE = 'GET_CONTEXT_IMAGE',
-    GET_CONTEXT_IMAGE_SUCCESS = 'GET_CONTEXT_IMAGE_SUCCESS',
-    GET_CONTEXT_IMAGE_FAILED = 'GET_CONTEXT_IMAGE_FAILED',
     SWITCH_NAVIGATION_BLOCKED = 'SWITCH_NAVIGATION_BLOCKED',
     DELETE_FRAME = 'DELETE_FRAME',
     DELETE_FRAME_SUCCESS = 'DELETE_FRAME_SUCCESS',
@@ -700,7 +694,7 @@ export function changeFrameAsync(
                         number: currentState.annotation.player.frame.number,
                         data: currentState.annotation.player.frame.data,
                         filename: currentState.annotation.player.frame.filename,
-                        hasRelatedContext: currentState.annotation.player.frame.hasRelatedContext,
+                        relatedFiles: currentState.annotation.player.frame.relatedFiles,
                         delay: currentState.annotation.player.frame.delay,
                         changeTime: currentState.annotation.player.frame.changeTime,
                         states: currentState.annotation.annotations.states,
@@ -767,7 +761,7 @@ export function changeFrameAsync(
                     number: toFrame,
                     data,
                     filename: data.filename,
-                    hasRelatedContext: data.hasRelatedContext,
+                    relatedFiles: data.relatedFiles,
                     states,
                     minZ,
                     maxZ,
@@ -1046,7 +1040,7 @@ export function getJobAsync(
                     states,
                     frameNumber,
                     frameFilename: frameData.filename,
-                    frameHasRelatedContext: frameData.hasRelatedContext,
+                    relatedFiles: frameData.relatedFiles,
                     frameData,
                     colors,
                     filters,
@@ -1113,19 +1107,8 @@ export function saveAnnotationsAsync(sessionInstance: any, afterSave?: () => voi
         try {
             const saveJobEvent = await sessionInstance.logger.log(LogType.saveJob, {}, true);
 
-            dispatch({
-                type: AnnotationActionTypes.SAVE_UPDATE_ANNOTATIONS_STATUS,
-                payload: { status: 'Saving frames' },
-            });
             await sessionInstance.frames.save();
-            await sessionInstance.annotations.save((status: string) => {
-                dispatch({
-                    type: AnnotationActionTypes.SAVE_UPDATE_ANNOTATIONS_STATUS,
-                    payload: {
-                        status,
-                    },
-                });
-            });
+            await sessionInstance.annotations.save();
             await saveJobEvent.close();
             await sessionInstance.logger.log(LogType.sendTaskInfo, await jobInfoGenerator(sessionInstance));
             dispatch(saveLogsAsync());
@@ -1523,7 +1506,7 @@ export function pasteShapeAsync(): ThunkAction {
     };
 }
 
-export function interactWithCanvas(activeInteractor: Model | OpenCVTool, activeLabelID: number): AnyAction {
+export function interactWithCanvas(activeInteractor: MLModel | OpenCVTool, activeLabelID: number): AnyAction {
     return {
         type: AnnotationActionTypes.INTERACT_WITH_CANVAS,
         payload: {
@@ -1555,7 +1538,7 @@ export function repeatDrawShapeAsync(): ThunkAction {
 
         let activeControl = ActiveControl.CURSOR;
         if (activeInteractor && canvasInstance instanceof Canvas) {
-            if (activeInteractor.type.includes('tracker')) {
+            if (activeInteractor.kind.includes('tracker')) {
                 canvasInstance.interact({
                     enabled: true,
                     shapeType: 'rectangle',
@@ -1665,40 +1648,6 @@ export function switchPredictor(predictorEnabled: boolean): AnyAction {
         payload: {
             enabled: predictorEnabled,
         },
-    };
-}
-export function hideShowContextImage(hidden: boolean): AnyAction {
-    return {
-        type: AnnotationActionTypes.HIDE_SHOW_CONTEXT_IMAGE,
-        payload: {
-            hidden,
-        },
-    };
-}
-
-export function getContextImageAsync(): ThunkAction {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        const state: CombinedState = getStore().getState();
-        const { instance: job } = state.annotation.job;
-        const { number: frameNumber } = state.annotation.player.frame;
-
-        try {
-            dispatch({
-                type: AnnotationActionTypes.GET_CONTEXT_IMAGE,
-                payload: {},
-            });
-
-            const contextImageData = await job.frames.contextImage(frameNumber);
-            dispatch({
-                type: AnnotationActionTypes.GET_CONTEXT_IMAGE_SUCCESS,
-                payload: { contextImageData },
-            });
-        } catch (error) {
-            dispatch({
-                type: AnnotationActionTypes.GET_CONTEXT_IMAGE_FAILED,
-                payload: { error },
-            });
-        }
     };
 }
 

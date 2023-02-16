@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -17,7 +17,7 @@ import {
     createResizeHelper, removeResizeHelper,
     createCuboidEdges, removeCuboidEdges, CuboidModel, makeCornerPointsMatrix,
 } from './cuboid';
-import { ObjectState } from '.';
+import { ObjectState, ObjectType } from '.';
 
 export interface Canvas3dView {
     html(): ViewsDOM;
@@ -107,6 +107,11 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     private cube: CuboidModel;
     private isPerspectiveBeingDragged: boolean;
     private activatedElementID: number | null;
+    private isCtrlDown: boolean;
+    private stateToBeSplitted: ObjectState | null;
+    private statesToBeGrouped: ObjectState[];
+    private statesToBeMerged: ObjectState[];
+    private sceneBBox: THREE.Box3;
     private drawnObjects: Record<number, {
         data: DrawnObjectData;
         cuboid: CuboidModel;
@@ -157,10 +162,14 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         this.clock = new THREE.Clock();
         this.speed = CONST.MOVEMENT_FACTOR;
         this.cube = new CuboidModel('line', '#ffffff');
+        this.stateToBeSplitted = null;
+        this.statesToBeGrouped = [];
+        this.statesToBeMerged = [];
         this.isPerspectiveBeingDragged = false;
         this.activatedElementID = null;
         this.drawnObjects = {};
         this.model = model;
+        this.sceneBBox = new THREE.Box3();
         this.cameraSettings = {
             perspective: {
                 position: [-15, 0, 8],
@@ -184,6 +193,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             },
         };
 
+        this.isCtrlDown = false;
         this.action = {
             scan: null,
             frameCoordinates: {
@@ -263,6 +273,51 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         const canvasSideView = this.views.side.renderer.domElement;
         const canvasFrontView = this.views.front.renderer.domElement;
 
+        [
+            [canvasPerspectiveView, this.views.perspective.scene],
+            [canvasTopView, this.views.top.scene],
+            [canvasSideView, this.views.side.scene],
+            [canvasFrontView, this.views.front.scene],
+        ].forEach(([view, scene]) => {
+            Object.defineProperty(view, 'scene', {
+                value: scene,
+                enumerable: false,
+                configurable: false,
+                writable: false,
+            });
+
+            Object.defineProperty(view, 'getDrawnObjects', {
+                value: () => Object.values(this.drawnObjects).map((object) => {
+                    const { clientID } = object.data;
+                    return {
+                        ...object,
+                        state: this.model.objects.find((_state: ObjectState) => _state.clientID === clientID),
+                    };
+                }),
+                enumerable: false,
+                configurable: false,
+                writable: false,
+            });
+
+            Object.defineProperty(view, 'updatePosition', {
+                value: (state: ObjectState, points: number[]) => {
+                    this.dispatchEvent(
+                        new CustomEvent('canvas.edited', {
+                            bubbles: false,
+                            cancelable: true,
+                            detail: {
+                                state,
+                                points: [...points],
+                            },
+                        }),
+                    );
+                },
+                enumerable: false,
+                configurable: false,
+                writable: false,
+            });
+        });
+
         canvasPerspectiveView.addEventListener('contextmenu', (e: MouseEvent): void => {
             if (this.model.data.activeElement.clientID !== null) {
                 this.dispatchEvent(
@@ -290,6 +345,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                         detail: {
                             state: {
                                 shapeType: 'cuboid',
+                                objectType: initState.objectType,
                                 frame: this.model.data.imageID,
                                 points,
                                 attributes: { ...initState.attributes },
@@ -330,6 +386,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
         canvasPerspectiveView.addEventListener('mousemove', (event: MouseEvent): void => {
             event.preventDefault();
+            this.isCtrlDown = event.ctrlKey;
             if (this.mode === Mode.DRAG_CANVAS) return;
             const canvas = this.views.perspective.renderer.domElement;
             const rect = canvas.getBoundingClientRect();
@@ -340,7 +397,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
         canvasPerspectiveView.addEventListener('click', (e: MouseEvent): void => {
             e.preventDefault();
-            const selectionIsBlocked = ![Mode.GROUP, Mode.IDLE].includes(this.mode) ||
+            const selectionIsBlocked = ![Mode.GROUP, Mode.MERGE, Mode.SPLIT, Mode.IDLE].includes(this.mode) ||
                 !this.views.perspective.rayCaster ||
                 this.isPerspectiveBeingDragged;
 
@@ -350,20 +407,34 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             const intersectionClientID = +(intersects[0]?.object?.name) || null;
             const objectState = Number.isInteger(intersectionClientID) ? this.model.objects
                 .find((state: ObjectState) => state.clientID === intersectionClientID) : null;
-            if (
-                objectState &&
-                this.mode === Mode.GROUP &&
-                this.model.data.groupData.grouped
-            ) {
-                const objectStateIdx = this.model.data.groupData.grouped
+
+            const handleClick = (targetList: ObjectState[]): void => {
+                const objectStateIdx = targetList
                     .findIndex((state: ObjectState) => state.clientID === intersectionClientID);
                 if (objectStateIdx !== -1) {
-                    this.model.data.groupData.grouped.splice(objectStateIdx, 1);
+                    targetList.splice(objectStateIdx, 1);
                 } else {
-                    this.model.data.groupData.grouped.push(objectState);
+                    targetList.push(objectState);
                 }
 
                 this.drawnObjects[intersectionClientID].cuboid.setColor(this.receiveShapeColor(objectState));
+            };
+
+            if (objectState && this.mode === Mode.GROUP) {
+                handleClick(this.statesToBeGrouped);
+            } else if (objectState && this.mode === Mode.MERGE) {
+                const [latest] = this.statesToBeMerged;
+                const drawnStates = Object.keys(this.drawnObjects).map((key: string): number => +key);
+                if (!latest ||
+                    (latest &&
+                        objectState.label.id === latest.label.id &&
+                        objectState.shapeType === latest.shapeType &&
+                        !this.statesToBeMerged.some((state) => drawnStates.includes(state.clientID)))
+                ) {
+                    handleClick(this.statesToBeMerged);
+                }
+            } else if (objectState?.objectType === ObjectType.TRACK && this.mode === Mode.SPLIT) {
+                this.onSplitDone(objectState);
             } else if (this.mode === Mode.IDLE) {
                 const intersectedClientID = intersects[0]?.object?.name || null;
                 if (this.model.data.activeElement.clientID !== intersectedClientID) {
@@ -389,6 +460,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 if (!intersects.length) {
                     const { x, y, z } = this.action.frameCoordinates;
                     this.positionAllViews(x, y, z, true);
+                    this.updateCameraFrustrumPlane();
                 }
                 return;
             }
@@ -432,6 +504,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                                     group: initState.group?.id || null,
                                     label: initState.label,
                                     shapeType: initState.shapeType,
+                                    objectType: initState.objectType,
                                 } : {}),
                             },
                             duration: 0,
@@ -538,47 +611,110 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             .map(({ cuboid }) => cuboid[view]).filter((mesh: THREE.Mesh) => mesh.visible);
     }
 
+    private updateCameraFrustrumPlane(viewType?: ViewType): void {
+        const setCameraFrustrumPlane = (
+            camera: THREE.OrthographicCamera,
+            center: THREE.Vector3, dimensions: THREE.Vector3,
+            view: ViewType,
+        ): void => {
+            const [width, length] = dimensions.toArray();
+            const [cx, cy, cz] = center.toArray();
+            const distanceUpToCamera = Math.sqrt(
+                (camera.position.x - cx) ** 2 +
+                (camera.position.y - cy) ** 2 +
+                (camera.position.z - cz) ** 2,
+            );
+
+            const MARGIN = 0.1;
+            if (view === ViewType.FRONT) {
+                const objectOffset = Math.min(1 - ((width / 2) / distanceUpToCamera));
+                camera.near = distanceUpToCamera * objectOffset - MARGIN;
+                camera.far = camera.near + width + MARGIN * 2;
+            } else if (view === ViewType.SIDE) {
+                const objectOffset = Math.min(1, 1 - ((length / 2) / distanceUpToCamera));
+                camera.near = distanceUpToCamera * objectOffset - MARGIN;
+                camera.far = camera.near + length + MARGIN * 2;
+            } else if (view === ViewType.TOP) {
+                camera.near = 0;
+                camera.far = 1000;
+            }
+        };
+
+        const { selectedCuboid } = this;
+        const sceneCenter = this.sceneBBox.getCenter(new THREE.Vector3());
+        const sceneDimensions = this.sceneBBox.max.clone().sub(this.sceneBBox.min);
+
+        let center = sceneCenter;
+        let dimensions = sceneDimensions;
+
+        if (selectedCuboid) {
+            center = selectedCuboid.perspective.position.clone();
+            dimensions = selectedCuboid.perspective.scale.clone();
+        }
+
+        if (viewType !== ViewType.FRONT) {
+            setCameraFrustrumPlane(
+                this.views.front.camera as THREE.OrthographicCamera, center, dimensions, ViewType.FRONT,
+            );
+        }
+
+        if (viewType !== ViewType.TOP) {
+            setCameraFrustrumPlane(
+                this.views.top.camera as THREE.OrthographicCamera, center, dimensions, ViewType.TOP,
+            );
+        }
+
+        if (viewType !== ViewType.SIDE) {
+            setCameraFrustrumPlane(
+                this.views.side.camera as THREE.OrthographicCamera, center, dimensions, ViewType.SIDE,
+            );
+        }
+    }
+
     private setDefaultZoom(): void {
-        if (this.model.data.activeElement === null) {
-            Object.keys(this.views).forEach((view: string): void => {
+        if (this.model.data.activeElement.clientID === null) {
+            this.updateCameraFrustrumPlane();
+            Object.keys(this.views).forEach((view: ViewType): void => {
                 const viewType = this.views[view as keyof Views];
                 if (view !== ViewType.PERSPECTIVE) {
-                    viewType.camera.zoom = CONST.FOV_DEFAULT;
+                    const { camera } = viewType;
+                    camera.zoom = CONST.FOV_DEFAULT;
                     viewType.camera.updateProjectionMatrix();
                 }
             });
         } else {
-            const canvasTop = this.views.top.renderer.domElement;
+            const { top, front, side } = this.views;
+            const { renderer: { domElement: canvasTop }, camera: cameraTop } = top;
             const bboxtop = new THREE.Box3().setFromObject(this.selectedCuboid.top);
             const x1 = Math.min(
                 canvasTop.offsetWidth / (bboxtop.max.x - bboxtop.min.x),
                 canvasTop.offsetHeight / (bboxtop.max.y - bboxtop.min.y),
             ) * 0.4;
-            this.views.top.camera.zoom = x1 / 100;
-            this.views.top.camera.updateProjectionMatrix();
-            this.views.top.camera.updateMatrix();
+            cameraTop.zoom = x1 / 50;
+            cameraTop.updateProjectionMatrix();
+            cameraTop.updateMatrix();
             this.updateHelperPointsSize(ViewType.TOP);
 
-            const canvasFront = this.views.top.renderer.domElement;
+            const { renderer: { domElement: canvasFront }, camera: cameraFront } = front;
             const bboxfront = new THREE.Box3().setFromObject(this.selectedCuboid.front);
             const x2 = Math.min(
                 canvasFront.offsetWidth / (bboxfront.max.y - bboxfront.min.y),
                 canvasFront.offsetHeight / (bboxfront.max.z - bboxfront.min.z),
             ) * 0.4;
-            this.views.front.camera.zoom = x2 / 100;
-            this.views.front.camera.updateProjectionMatrix();
-            this.views.front.camera.updateMatrix();
+            cameraFront.zoom = x2 / 50;
+            cameraFront.updateProjectionMatrix();
+            cameraFront.updateMatrix();
             this.updateHelperPointsSize(ViewType.FRONT);
 
-            const canvasSide = this.views.side.renderer.domElement;
+            const { renderer: { domElement: canvasSide }, camera: cameraSide } = side;
             const bboxside = new THREE.Box3().setFromObject(this.selectedCuboid.side);
             const x3 = Math.min(
                 canvasSide.offsetWidth / (bboxside.max.x - bboxside.min.x),
                 canvasSide.offsetHeight / (bboxside.max.z - bboxside.min.z),
             ) * 0.4;
-            this.views.side.camera.zoom = x3 / 100;
-            this.views.side.camera.updateProjectionMatrix();
-            this.views.side.camera.updateMatrix();
+            cameraSide.zoom = x3 / 50;
+            cameraSide.updateProjectionMatrix();
+            cameraSide.updateMatrix();
             this.updateHelperPointsSize(ViewType.SIDE);
         }
     }
@@ -743,22 +879,73 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             );
         }
 
-        this.controller.group({
-            enabled: false,
-            grouped: [],
-        });
+        this.mode = Mode.IDLE;
+    }
+
+    private onMergeDone(objects: any[] | null, duration?: number): void {
+        if (objects) {
+            const event: CustomEvent = new CustomEvent('canvas.merged', {
+                bubbles: false,
+                cancelable: true,
+                detail: {
+                    duration,
+                    states: objects,
+                },
+            });
+
+            this.dispatchEvent(event);
+        } else {
+            const event: CustomEvent = new CustomEvent('canvas.canceled', {
+                bubbles: false,
+                cancelable: true,
+            });
+
+            this.dispatchEvent(event);
+        }
 
         this.mode = Mode.IDLE;
     }
 
+    private onSplitDone(object: ObjectState): void {
+        if (object) {
+            const event: CustomEvent = new CustomEvent('canvas.splitted', {
+                bubbles: false,
+                cancelable: true,
+                detail: {
+                    state: object,
+                    frame: object.frame,
+                },
+            });
+
+            this.dispatchEvent(event);
+        } else {
+            const event: CustomEvent = new CustomEvent('canvas.canceled', {
+                bubbles: false,
+                cancelable: true,
+            });
+
+            this.dispatchEvent(event);
+        }
+
+        this.controller.split({ enabled: false });
+        this.mode = Mode.IDLE;
+    }
+
     private receiveShapeColor(state: ObjectState | DrawnObjectData): string {
+        const includedInto = (states: ObjectState[]): boolean => states
+            .some((_state: ObjectState): boolean => _state.clientID === state.clientID);
         const { colorBy } = this.model.data.shapeProperties;
 
-        if (this.mode === Mode.GROUP) {
-            const { grouped } = this.model.data.groupData;
-            if (grouped.some((_state: ObjectState): boolean => _state.clientID === state.clientID)) {
-                return CONST.GROUPING_COLOR;
-            }
+        if (this.mode === Mode.GROUP && includedInto(this.statesToBeGrouped)) {
+            return CONST.GROUPING_COLOR;
+        }
+
+        if (this.mode === Mode.MERGE && includedInto(this.statesToBeMerged)) {
+            return CONST.MERGING_COLOR;
+        }
+
+        if (this.mode === Mode.SPLIT && this.stateToBeSplitted?.clientID === state.clientID) {
+            return CONST.SPLITTING_COLOR;
         }
 
         if (state instanceof ObjectState) {
@@ -841,8 +1028,10 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
             this.activatedElementID = +clientID;
             this.rotatePlane(null, null);
-            this.detachCamera(null);
-            this.setDefaultZoom();
+            this.detachCamera();
+            this.updateCameraFrustrumPlane();
+            [ViewType.TOP, ViewType.SIDE, ViewType.FRONT]
+                .forEach((type) => this.updateHelperPointsSize(type));
         }
     }
 
@@ -942,8 +1131,18 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     }
 
     public notify(model: Canvas3dModel & Master, reason: UpdateReasons): void {
+        const resetColor = (list: ObjectState[]): void => {
+            list.forEach((state: ObjectState) => {
+                const { clientID } = state;
+                const { cuboid } = this.drawnObjects[clientID] || {};
+                if (cuboid) {
+                    cuboid.setColor(this.receiveShapeColor(state));
+                }
+            });
+        };
+
         if (reason === UpdateReasons.IMAGE_CHANGED) {
-            model.data.groupData.grouped = [];
+            this.statesToBeGrouped = [];
             this.clearScene();
 
             const onPCDLoadFailed = (): void => {
@@ -1030,6 +1229,9 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         } else if (reason === UpdateReasons.SHAPE_ACTIVATED) {
             this.deactivateObject();
             this.activateObject();
+            if (this.activatedElementID) {
+                this.setDefaultZoom();
+            }
         } else if (reason === UpdateReasons.DRAW) {
             const data: DrawData = this.controller.drawData;
             if (Number.isInteger(data.redraw)) {
@@ -1094,30 +1296,53 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 }
             }
 
+            if (this.mode === Mode.MERGE) {
+                const { statesToBeMerged } = this;
+                this.statesToBeMerged = [];
+                resetColor(statesToBeMerged);
+                this.model.merge({ enabled: false });
+            }
+
             if (this.mode === Mode.GROUP) {
-                const { grouped } = this.model.groupData;
-                this.model.group({ enabled: false, grouped: [] });
-                grouped.forEach((state: ObjectState) => {
-                    const { clientID } = state;
-                    const { cuboid } = this.drawnObjects[clientID] || {};
-                    if (cuboid) {
-                        cuboid.setColor(this.receiveShapeColor(state));
-                    }
-                });
+                const { statesToBeGrouped } = this;
+                this.statesToBeGrouped = [];
+                resetColor(statesToBeGrouped);
+                this.model.group({ enabled: false });
+            }
+
+            if (this.mode === Mode.SPLIT) {
+                if (this.stateToBeSplitted) {
+                    const state = this.stateToBeSplitted;
+                    this.stateToBeSplitted = null;
+                    this.drawnObjects[state.clientID].cuboid.setColor(this.receiveShapeColor(state));
+                }
+                this.model.split({ enabled: false });
             }
 
             this.mode = Mode.IDLE;
-            model.mode = Mode.IDLE;
-
             this.dispatchEvent(new CustomEvent('canvas.canceled'));
         } else if (reason === UpdateReasons.FITTED_CANVAS) {
             this.dispatchEvent(new CustomEvent('canvas.fit'));
         } else if (reason === UpdateReasons.GROUP) {
-            if (!model.groupData.enabled) {
-                this.onGroupDone(model.data.groupData.grouped);
-            } else {
+            if (!model.groupData.enabled && this.statesToBeGrouped.length) {
+                this.onGroupDone(this.statesToBeGrouped);
+                resetColor(this.statesToBeGrouped);
+            } else if (model.groupData.enabled) {
                 this.deactivateObject();
-                model.data.groupData.grouped = [];
+                this.statesToBeGrouped = [];
+                model.data.activeElement.clientID = null;
+            }
+        } else if (reason === UpdateReasons.SPLIT) {
+            this.deactivateObject();
+            this.stateToBeSplitted = null;
+            model.data.activeElement.clientID = null;
+        } else if (reason === UpdateReasons.MERGE) {
+            if (!model.mergeData.enabled && this.statesToBeMerged.length) {
+                this.onMergeDone(this.statesToBeMerged);
+                resetColor(this.statesToBeMerged);
+            } else if (model.mergeData.enabled) {
+                this.deactivateObject();
+                this.statesToBeMerged = [];
                 model.data.activeElement.clientID = null;
             }
         }
@@ -1247,6 +1472,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             );
         }
 
+        this.sceneBBox = new THREE.Box3().setFromObject(points);
         this.views.perspective.scene.add(points.clone());
         this.views.perspective.scene.add(new THREE.AxesHelper(5));
         // Setup TopView
@@ -1348,7 +1574,10 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         }
     }
 
-    private static resizeRendererToDisplaySize(viewName: string, view: RenderView): void {
+    private static resizeRendererToDisplaySize(
+        viewName: string,
+        view: RenderView,
+    ): void {
         const { camera, renderer } = view;
         const canvas = renderer.domElement;
         if (!canvas.parentElement) return;
@@ -1368,8 +1597,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                     camera.top = viewSize / 2 + topViewFactor;
                     camera.bottom = -viewSize / 2 - topViewFactor;
                 }
-                camera.near = -50;
-                camera.far = 50;
             }
             view.renderer.setSize(width, height);
             view.camera.updateProjectionMatrix();
@@ -1385,24 +1612,37 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 const { x, y, z } = intersection.point;
                 object.position.set(x, y, z);
             }
-        } else if (this.mode === Mode.IDLE && !this.isPerspectiveBeingDragged) {
+        } else {
             const { renderer } = this.views.perspective.rayCaster;
             const intersects = renderer.intersectObjects(this.getAllVisibleCuboids(), false);
-            if (intersects.length !== 0) {
+            if (intersects.length !== 0 && !this.isPerspectiveBeingDragged) {
                 const clientID = intersects[0].object.name;
-                if (this.model.data.activeElement.clientID !== clientID) {
-                    const object = this.views.perspective.scene.getObjectByName(clientID);
-                    if (object === undefined) return;
-                    this.dispatchEvent(
-                        new CustomEvent('canvas.selected', {
-                            bubbles: false,
-                            cancelable: true,
-                            detail: {
-                                clientID: Number(intersects[0].object.name),
-                            },
-                        }),
-                    );
+                const castedClientID = +clientID;
+
+                if (this.mode === Mode.SPLIT) {
+                    const objectState = Number.isInteger(castedClientID) ? this.model.objects
+                        .find((state: ObjectState) => state.clientID === castedClientID) : null;
+                    this.stateToBeSplitted = objectState;
+                    this.drawnObjects[castedClientID].cuboid.setColor(this.receiveShapeColor(objectState));
+                } else if (this.mode === Mode.IDLE && !this.isCtrlDown) {
+                    if (this.model.data.activeElement.clientID !== clientID) {
+                        const object = this.views.perspective.scene.getObjectByName(clientID);
+                        if (object === undefined) return;
+                        this.dispatchEvent(
+                            new CustomEvent('canvas.selected', {
+                                bubbles: false,
+                                cancelable: true,
+                                detail: {
+                                    clientID: castedClientID,
+                                },
+                            }),
+                        );
+                    }
                 }
+            } else if (this.mode === Mode.SPLIT && this.stateToBeSplitted) {
+                const state = this.stateToBeSplitted;
+                this.stateToBeSplitted = null;
+                this.drawnObjects[state.clientID].cuboid.setColor(this.receiveShapeColor(state));
             }
         }
     };
@@ -1411,6 +1651,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         Object.keys(this.views).forEach((view: string): void => {
             const viewType = this.views[view as keyof Views];
             if (!(viewType.controls && viewType.camera && viewType.rayCaster)) return;
+
+            const { clientID } = this.model.data.activeElement;
             Canvas3dViewImpl.resizeRendererToDisplaySize(view, viewType);
             if (viewType.controls.enabled) {
                 viewType.controls.update(this.clock.getDelta());
@@ -1421,7 +1663,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             if (view === ViewType.PERSPECTIVE && viewType.scene.children.length !== 0) {
                 this.renderRayCaster(viewType);
             }
-            const { clientID } = this.model.data.activeElement;
             if (clientID !== null && view !== ViewType.PERSPECTIVE) {
                 viewType.rayCaster.renderer.setFromCamera(viewType.rayCaster.mouseVector, viewType.camera);
                 // First Scan
@@ -1447,7 +1688,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
         if (this.action.detachCam && this.action.detachCamRef === this.model.data.activeElement.clientID) {
             try {
-                this.detachCamera(null);
+                this.detachCamera();
             } finally {
                 this.action.detachCam = false;
             }
@@ -1455,23 +1696,28 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     }
 
     private adjustPerspectiveCameras(): void {
+        const { camera: cameraTop } = this.views.top;
+        const { camera: cameraSide } = this.views.side;
+        const { camera: cameraFront } = this.views.front;
+        const { selectedCuboid } = this;
+
         const coordinatesTop = this.selectedCuboid.getReferenceCoordinates(ViewType.TOP);
         const sphericalTop = new THREE.Spherical();
         sphericalTop.setFromVector3(coordinatesTop);
-        this.views.top.camera.position.setFromSpherical(sphericalTop);
-        this.views.top.camera.updateProjectionMatrix();
+        cameraTop.position.setFromSpherical(sphericalTop);
+        cameraTop.updateProjectionMatrix();
 
-        const coordinatesSide = this.selectedCuboid.getReferenceCoordinates(ViewType.SIDE);
+        const coordinatesSide = selectedCuboid.getReferenceCoordinates(ViewType.SIDE);
         const sphericalSide = new THREE.Spherical();
         sphericalSide.setFromVector3(coordinatesSide);
-        this.views.side.camera.position.setFromSpherical(sphericalSide);
-        this.views.side.camera.updateProjectionMatrix();
+        cameraSide.position.setFromSpherical(sphericalSide);
+        cameraSide.updateProjectionMatrix();
 
-        const coordinatesFront = this.selectedCuboid.getReferenceCoordinates(ViewType.FRONT);
+        const coordinatesFront = selectedCuboid.getReferenceCoordinates(ViewType.FRONT);
         const sphericalFront = new THREE.Spherical();
         sphericalFront.setFromVector3(coordinatesFront);
-        this.views.front.camera.position.setFromSpherical(sphericalFront);
-        this.views.front.camera.updateProjectionMatrix();
+        cameraFront.position.setFromSpherical(sphericalFront);
+        cameraFront.updateProjectionMatrix();
     }
 
     private renderTranslateAction(view: ViewType, viewType: any): void {
@@ -1490,6 +1736,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             const coordinates = intersects[0].point;
             this.action.translation.coordinates = coordinates;
             this.moveObject(coordinates);
+            this.detachCamera(view);
+            this.updateCameraFrustrumPlane(view);
         }
     }
 
@@ -1511,23 +1759,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
         this.updateResizeHelperPos();
         this.updateRotationHelperPos();
-    }
-
-    private setSelectedChildScale(x: number, y: number, z: number): void {
-        const cuboid = this.selectedCuboid;
-        if (cuboid) {
-            BOTTOM_VIEWS.forEach((view: ViewType): void => {
-                cuboid[view].children.forEach((element: any): void => {
-                    if (element.name !== CONST.CUBOID_EDGE_NAME) {
-                        element.scale.set(
-                            x == null ? element.scale.x : x,
-                            y == null ? element.scale.y : y,
-                            z == null ? element.scale.z : z,
-                        );
-                    }
-                });
-            });
-        }
     }
 
     private renderResizeAction(view: ViewType, viewType: any): void {
@@ -1613,6 +1844,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         this.moveObject(newPosition);
         cuboid.setScale(scale.x, scale.y, scale.z);
         this.adjustPerspectiveCameras();
+        this.updateCameraFrustrumPlane(view);
 
         this.action.resize.previousPosition = currentPointCoordOnPlane;
     }
@@ -1669,7 +1901,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         }
     }
 
-    private detachCamera(view: ViewType): void {
+    private detachCamera(view?: ViewType): void {
         const coordTop = this.selectedCuboid.getReferenceCoordinates(ViewType.TOP);
         const sphericaltop = new THREE.Spherical();
         sphericaltop.setFromVector3(coordTop);
@@ -1683,42 +1915,36 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         sphericalfront.setFromVector3(coordFront);
 
         const { side: objectSideView, front: objectFrontView, top: objectTopView } = this.selectedCuboid;
+        const sideWorld = objectSideView.getWorldPosition(new THREE.Vector3());
+        const frontWorld = objectFrontView.getWorldPosition(new THREE.Vector3());
+        const topWorld = objectTopView.getWorldPosition(new THREE.Vector3());
+
         const { camera: sideCamera } = this.views.side;
         const { camera: frontCamera } = this.views.front;
         const { camera: topCamera } = this.views.top;
 
+        const camFrontRotate = objectFrontView
+            .getObjectByName('camRefRot')
+            .getWorldQuaternion(new THREE.Quaternion());
         switch (view) {
             case ViewType.TOP: {
-                const camRotationSide = objectSideView
-                    .getObjectByName('cameraSide')
-                    .getWorldQuaternion(new THREE.Quaternion());
-                objectSideView.remove(sideCamera);
                 sideCamera.position.setFromSpherical(sphericalside);
                 sideCamera.lookAt(objectSideView.position.x, objectSideView.position.y, objectSideView.position.z);
-                sideCamera.setRotationFromQuaternion(camRotationSide);
+                sideCamera.rotation.z = this.views.side.scene.getObjectByName(Planes.SIDE).rotation.z;
                 sideCamera.scale.set(1, 1, 1);
 
-                const camRotationFront = objectFrontView
-                    .getObjectByName('cameraFront')
-                    .getWorldQuaternion(new THREE.Quaternion());
-                objectFrontView.remove(frontCamera);
                 frontCamera.position.setFromSpherical(sphericalfront);
                 frontCamera.lookAt(objectFrontView.position.x, objectFrontView.position.y, objectFrontView.position.z);
-                frontCamera.setRotationFromQuaternion(camRotationFront);
+                frontCamera.setRotationFromQuaternion(camFrontRotate);
                 frontCamera.scale.set(1, 1, 1);
                 break;
             }
             case ViewType.SIDE: {
-                const camRotationFront = objectFrontView
-                    .getObjectByName('cameraFront')
-                    .getWorldQuaternion(new THREE.Quaternion());
-                objectFrontView.remove(frontCamera);
                 frontCamera.position.setFromSpherical(sphericalfront);
                 frontCamera.lookAt(objectFrontView.position.x, objectFrontView.position.y, objectFrontView.position.z);
-                frontCamera.setRotationFromQuaternion(camRotationFront);
+                frontCamera.setRotationFromQuaternion(camFrontRotate);
                 frontCamera.scale.set(1, 1, 1);
 
-                objectTopView.remove(topCamera);
                 topCamera.position.setFromSpherical(sphericaltop);
                 topCamera.lookAt(objectTopView.position.x, objectTopView.position.y, objectTopView.position.z);
                 topCamera.setRotationFromEuler(objectTopView.rotation);
@@ -1726,23 +1952,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 break;
             }
             case ViewType.FRONT: {
-                const camRotationSide = objectSideView
-                    .getObjectByName('cameraSide')
-                    .getWorldQuaternion(new THREE.Quaternion());
-                objectSideView.remove(sideCamera);
-                sideCamera.position.setFromSpherical(sphericalside);
-                sideCamera.lookAt(objectSideView.position.x, objectSideView.position.y, objectSideView.position.z);
-                sideCamera.setRotationFromQuaternion(camRotationSide);
-                sideCamera.scale.set(1, 1, 1);
-
-                objectTopView.remove(topCamera);
-                topCamera.position.setFromSpherical(sphericaltop);
-                topCamera.lookAt(objectTopView.position.x, objectTopView.position.y, objectTopView.position.z);
-                topCamera.setRotationFromEuler(objectTopView.rotation);
-                topCamera.scale.set(1, 1, 1);
-                break;
-            }
-            default: {
                 sideCamera.position.setFromSpherical(sphericalside);
                 sideCamera.lookAt(objectSideView.position.x, objectSideView.position.y, objectSideView.position.z);
                 sideCamera.rotation.z = this.views.side.scene.getObjectByName(Planes.SIDE).rotation.z;
@@ -1752,12 +1961,21 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 topCamera.lookAt(objectTopView.position.x, objectTopView.position.y, objectTopView.position.z);
                 topCamera.setRotationFromEuler(objectTopView.rotation);
                 topCamera.scale.set(1, 1, 1);
+                break;
+            }
+            default: {
+                sideCamera.position.setFromSpherical(sphericalside);
+                sideCamera.lookAt(sideWorld.x, sideWorld.y, sideWorld.z);
+                sideCamera.rotation.z = this.views.side.scene.getObjectByName(Planes.SIDE).rotation.z;
+                sideCamera.scale.set(1, 1, 1);
 
-                const camFrontRotate = objectFrontView
-                    .getObjectByName('camRefRot')
-                    .getWorldQuaternion(new THREE.Quaternion());
+                topCamera.position.setFromSpherical(sphericaltop);
+                topCamera.lookAt(topWorld.x, topWorld.y, topWorld.z);
+                topCamera.setRotationFromEuler(objectTopView.rotation);
+                topCamera.scale.set(1, 1, 1);
+
                 frontCamera.position.setFromSpherical(sphericalfront);
-                frontCamera.lookAt(objectFrontView.position.x, objectFrontView.position.y, objectFrontView.position.z);
+                frontCamera.lookAt(frontWorld.x, frontWorld.y, frontWorld.z);
                 frontCamera.setRotationFromQuaternion(camFrontRotate);
                 frontCamera.scale.set(1, 1, 1);
             }
@@ -1848,7 +2066,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
         this.updateResizeHelperPos();
         this.updateRotationHelperPos();
-        this.detachCamera(null);
+        this.detachCamera();
+        this.updateCameraFrustrumPlane();
         this.action.rotation.screenInit.x = this.action.rotation.screenMove.x;
         this.action.rotation.screenInit.y = this.action.rotation.screenMove.y;
     }

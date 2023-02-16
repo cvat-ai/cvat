@@ -19,16 +19,16 @@ To upgrade CVAT, follow these steps:
 
 - Go to the previously cloned CVAT directory and stop all CVAT containers with:
   ```shell
-  docker-compose down
+  docker compose down
   ```
   If you have included [additional components](/docs/administration/basics/installation/#additional-components),
   include all compose configuration files that are used, e.g.:
   ```shell
-  docker-compose -f docker-compose.yml -f components/analytics/docker-compose.analytics.yml down
+  docker compose -f docker-compose.yml -f components/analytics/docker-compose.analytics.yml down
   ```
 
 - Update CVAT source code by any preferable way: clone with git or download zip file from GitHub.
-  Note that you need to download the entire source code, not just the `docker-compose` configuration file.
+  Note that you need to download the entire source code, not just the Docker Compose configuration file.
   Check the
   [installation guide](/docs/administration/basics/installation/#how-to-get-cvat-source-code) for details.
 
@@ -44,7 +44,7 @@ To upgrade CVAT, follow these steps:
 
 - Start CVAT with:
   ```shell
-  docker-compose up -d
+  docker compose up -d
   ```
   When CVAT starts, it will upgrade its DB in accordance with the latest schema.
   It can take time especially if you have a lot of data.
@@ -53,31 +53,56 @@ To upgrade CVAT, follow these steps:
   ```shell
   docker logs cvat_server -f
   ```
+  
+## How to upgrade CVAT from v2.2.0 to v2.3.0.
 
-## How to udgrade CVAT from v1.7.0 to v2.1.0.
+Step by step commands how to upgrade CVAT from v2.2.0 to v2.3.0.
+Let's assume that you have CVAT v2.2.0 working.
+```shell
+docker exec -it cvat_db pg_dumpall > cvat.db.dump
+cd cvat
+docker compose down
+docker volume rm cvat_cvat_db
+export CVAT_VERSION="2.3.0"
+cd ..
+mv cvat cvat_220
+wget https://github.com/opencv/cvat/archive/refs/tags/v${CVAT_VERSION}.zip
+unzip v${CVAT_VERSION}.zip && mv cvat_${CVAT_VERSION} cvat
+cd cvat
+export CVAT_HOST=cvat.example.com
+export ACME_EMAIL=example@example.com
+docker compose pull
+docker compose up -d cvat_db
+docker exec -i cvat_db psql -q -d postgres < ../cvat.db.dump
+docker compose -f docker compose.yml -f docker compose.dev.yml -f docker compose.https.yml up -d
+```  
+  
+## How to upgrade CVAT from v1.7.0 to v2.2.0.
 
-Step by step commands how to udgrade CVAT from v1.7.0 to v2.1.0.
+Step by step commands how to upgrade CVAT from v1.7.0 to v2.2.0.
 Let's assume that you have CVAT v1.7.0 working.
 ```shell
+export CVAT_VERSION="2.2.0"
 cd cvat
-docker-compose down
+docker compose down
 cd ..
-mv cvat cvat_old
-wget https://github.com/opencv/cvat/archive/refs/tags/v2.1.0.zip
-unzip v2.1.0.zip && mv cvat-2.1.0 cvat
+mv cvat cvat_170
+wget https://github.com/opencv/cvat/archive/refs/tags/v${CVAT_VERSION}.zip
+unzip v${CVAT_VERSION}.zip && mv cvat_${CVAT_VERSION} cvat
 cd cvat
-docker pull cvat/server:v2.1.0
-docker tag cvat/server:v2.1.0 openvino/cvat_server:latest
-docker pull cvat/ui:v2.1.0
-docker tag cvat/ui:v2.1.0 openvino/cvat_ui:latest
-docker-compose up -d
+docker pull cvat/server:v${CVAT_VERSION}
+docker tag cvat/server:v${CVAT_VERSION} openvino/cvat_server:latest
+docker pull cvat/ui:v${CVAT_VERSION}
+docker tag cvat/ui:v${CVAT_VERSION} openvino/cvat_ui:latest
+docker compose up -d
 ```
+  
 ## How to upgrade PostgreSQL database base image
 
 1. It is highly recommended backup all CVAT data before updating, follow the
    [backup guide](/docs/administration/advanced/backup_guide/) and backup CVAT database volume.
 
-1. Run previosly used CVAT version as usual
+1. Run previously used CVAT version as usual
 
 1. Backup current database with `pg_dumpall` tool:
    ```shell
@@ -86,7 +111,7 @@ docker-compose up -d
 
 1. Stop CVAT:
    ```shell
-   docker-compose down
+   docker compose down
    ```
 
 1. Delete current PostrgeSQL’s volume, that's why it's important to have a backup:
@@ -100,7 +125,7 @@ docker-compose up -d
 
 1. Start database container only:
    ```shell
-   docker-compose up -d cvat_db
+   docker compose up -d cvat_db
    ```
 
 1. Import PostgreSQL dump into new DB container:
@@ -110,5 +135,5 @@ docker-compose up -d
 
 1. Start CVAT:
    ```shell
-   docker-compose up -d
+   docker compose up -d
    ```

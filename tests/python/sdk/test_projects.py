@@ -13,6 +13,7 @@ from cvat_sdk.api_client import exceptions
 from cvat_sdk.core.proxies.projects import Project
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from cvat_sdk.core.utils import filter_dict
+from PIL import Image
 
 from .util import make_pbar
 
@@ -160,7 +161,7 @@ class TestProjectUsecases:
         assert self.stdout.getvalue() == ""
 
     def test_can_get_tasks(self, fxt_project_with_shapes: Project):
-        task_ids = set(fxt_project_with_shapes.tasks)
+        task_ids = set(t.id for t in fxt_project_with_shapes.get_tasks())
 
         tasks = fxt_project_with_shapes.get_tasks()
 
@@ -186,4 +187,11 @@ class TestProjectUsecases:
 
         assert restored_project.get_tasks()[0].size == 1
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
+        assert self.stdout.getvalue() == ""
+
+    def test_can_download_preview(self, fxt_project_with_shapes: Project):
+        frame_encoded = fxt_project_with_shapes.get_preview()
+        (width, height) = Image.open(frame_encoded).size
+
+        assert width > 0 and height > 0
         assert self.stdout.getvalue() == ""

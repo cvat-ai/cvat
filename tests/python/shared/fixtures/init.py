@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import logging
+import os
 import re
 from http import HTTPStatus
 from pathlib import Path
@@ -28,15 +29,24 @@ CONTAINER_NAME_FILES = [
     )
 ]
 
-DC_FILES = [
-    CVAT_ROOT_DIR / dc_file
-    for dc_file in (
-        "docker-compose.dev.yml",
-        "tests/docker-compose.file_share.yml",
-        "tests/docker-compose.minio.yml",
-        "tests/docker-compose.test_servers.yml",
-    )
-] + CONTAINER_NAME_FILES
+# this files contain some configurations that override the default configuration of the main containers
+DC_OVERRIDE_FILES = [
+    CVAT_ROOT_DIR / "tests/python/mock_oauth2/docker-compose.yml",
+]
+
+DC_FILES = (
+    [
+        CVAT_ROOT_DIR / dc_file
+        for dc_file in (
+            "docker-compose.dev.yml",
+            "tests/docker-compose.file_share.yml",
+            "tests/docker-compose.minio.yml",
+            "tests/docker-compose.test_servers.yml",
+        )
+    ]
+    + CONTAINER_NAME_FILES
+    + DC_OVERRIDE_FILES
+)
 
 
 def pytest_addoption(parser):
@@ -77,6 +87,12 @@ def pytest_addoption(parser):
         default="local",
         choices=("kube", "local"),
         help="Platform identifier - 'kube' or 'local'. (default: %(default)s)",
+    )
+
+    group._addoption(
+        "--no-run-services",
+        action="store_true",
+        help="Run tests without running containers. (default: %(default)s)",
     )
 
 
@@ -225,6 +241,10 @@ def kube_restore_data_volumes():
     kube_exec_cvat("tar --strip 3 -xjf /tmp/cvat_data.tar.bz2 -C /home/django/data/")
 
 
+def get_server_image_tag():
+    return f"cvat/server:{os.environ.get('CVAT_VERSION', 'dev')}"
+
+
 def start_services(rebuild=False):
     if any([cn in ["cvat_server", "cvat_db"] for cn in running_containers()]):
         pytest.exit(
@@ -234,7 +254,8 @@ def start_services(rebuild=False):
 
     _run(
         [
-            "docker-compose",
+            "docker",
+            "compose",
             f"--project-name={PREFIX}",
             # use compatibility mode to have fixed names for containers (with underscores)
             # https://github.com/docker/compose#about-update-and-backward-compatibility
@@ -248,17 +269,23 @@ def start_services(rebuild=False):
         capture_output=False,
     )
 
-    docker_restore_data_volumes()
-    docker_cp(CVAT_DB_DIR / "restore.sql", f"{PREFIX}_cvat_db_1:/tmp/restore.sql")
-    docker_cp(CVAT_DB_DIR / "data.json", f"{PREFIX}_cvat_server_1:/tmp/data.json")
 
-
-def pytest_sessionstart(session):
+def pytest_sessionstart(session: pytest.Session) -> None:
     stop = session.config.getoption("--stop-services")
     start = session.config.getoption("--start-services")
     rebuild = session.config.getoption("--rebuild")
     cleanup = session.config.getoption("--cleanup")
     dumpdb = session.config.getoption("--dumpdb")
+    no_init = session.config.getoption("--no-run-services")
+
+    if session.config.getoption("--collect-only"):
+        if any((stop, start, rebuild, cleanup, dumpdb)):
+            raise Exception(
+                """--collect-only is not compatible with any of the other options:
+                --stop-services --start-services --rebuild --cleanup --dumpdb"""
+            )
+        return  # don't need to start the services to collect tests
+
     platform = session.config.getoption("--platform")
 
     if platform == "kube" and any((stop, start, rebuild, cleanup, dumpdb)):
@@ -286,7 +313,8 @@ def pytest_sessionstart(session):
         if stop:
             _run(
                 [
-                    "docker-compose",
+                    "docker",
+                    "compose",
                     f"--project-name={PREFIX}",
                     # use compatibility mode to have fixed names for containers (with underscores)
                     # https://github.com/docker/compose#about-update-and-backward-compatibility
@@ -300,7 +328,11 @@ def pytest_sessionstart(session):
             )
             pytest.exit("All testing containers are stopped", returncode=0)
 
-        start_services(rebuild)
+        if not no_init:
+            start_services(rebuild)
+        docker_restore_data_volumes()
+        docker_cp(CVAT_DB_DIR / "restore.sql", f"{PREFIX}_cvat_db_1:/tmp/restore.sql")
+        docker_cp(CVAT_DB_DIR / "data.json", f"{PREFIX}_cvat_server_1:/tmp/data.json")
         wait_for_services()
 
         docker_exec_cvat("python manage.py loaddata /tmp/data.json")
@@ -331,7 +363,10 @@ def pytest_sessionstart(session):
         )
 
 
-def pytest_sessionfinish(session, exitstatus):
+def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
+    if session.config.getoption("--collect-only"):
+        return
+
     platform = session.config.getoption("--platform")
 
     if platform == "local":

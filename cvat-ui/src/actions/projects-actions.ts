@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,11 +7,12 @@ import { Dispatch, ActionCreator } from 'redux';
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import {
-    ProjectsQuery, TasksQuery, CombinedState, Indexable,
+    ProjectsQuery, TasksQuery, CombinedState,
 } from 'reducers';
 import { getTasksAsync } from 'actions/tasks-actions';
 import { getCVATStore } from 'cvat-store';
 import { getCore } from 'cvat-core-wrapper';
+import { filterNull } from 'utils/filter-null';
 
 const cvat = getCore();
 
@@ -61,13 +62,13 @@ const projectActions = {
     deleteProjectFailed: (projectId: number, error: any) => (
         createAction(ProjectsActionTypes.DELETE_PROJECT_FAILED, { projectId, error })
     ),
-    getProjectPreiew: (projectID: number) => (
+    getProjectPreview: (projectID: number) => (
         createAction(ProjectsActionTypes.GET_PROJECT_PREVIEW, { projectID })
     ),
-    getProjectPreiewSuccess: (projectID: number, preview: string) => (
+    getProjectPreviewSuccess: (projectID: number, preview: string) => (
         createAction(ProjectsActionTypes.GET_PROJECT_PREVIEW_SUCCESS, { projectID, preview })
     ),
-    getProjectPreiewFailed: (projectID: number, error: any) => (
+    getProjectPreviewFailed: (projectID: number, error: any) => (
         createAction(ProjectsActionTypes.GET_PROJECT_PREVIEW_FAILED, { projectID, error })
     ),
 };
@@ -99,17 +100,10 @@ export function getProjectsAsync(
         dispatch(projectActions.updateProjectsGettingQuery(query, tasksQuery));
 
         // Clear query object from null fields
-        const filteredQuery: Partial<ProjectsQuery> = {
+        const filteredQuery: Partial<ProjectsQuery> = filterNull({
             page: 1,
             ...query,
-        };
-
-        for (const key of Object.keys(filteredQuery)) {
-            const value = (filteredQuery as Indexable)[key];
-            if (value === null || typeof value === 'undefined') {
-                delete (filteredQuery as Indexable)[key];
-            }
-        }
+        });
 
         let result = null;
         try {
@@ -123,7 +117,7 @@ export function getProjectsAsync(
 
         dispatch(projectActions.getProjectsSuccess(array, result.count));
 
-        // Appropriate tasks fetching proccess needs with retrieving only a single project
+        // Appropriate tasks fetching process needs with retrieving only a single project
         if (Object.keys(filteredQuery).includes('id') && typeof filteredQuery.id === 'number') {
             dispatch(getProjectTasksAsync({
                 ...tasksQuery,
@@ -184,11 +178,11 @@ export function deleteProjectAsync(projectInstance: any): ThunkAction {
 }
 
 export const getProjectsPreviewAsync = (project: any): ThunkAction => async (dispatch) => {
-    dispatch(projectActions.getProjectPreiew(project.id));
+    dispatch(projectActions.getProjectPreview(project.id));
     try {
         const result = await project.preview();
-        dispatch(projectActions.getProjectPreiewSuccess(project.id, result));
+        dispatch(projectActions.getProjectPreviewSuccess(project.id, result));
     } catch (error) {
-        dispatch(projectActions.getProjectPreiewFailed(project.id, error));
+        dispatch(projectActions.getProjectPreviewFailed(project.id, error));
     }
 };
