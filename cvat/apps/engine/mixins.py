@@ -167,19 +167,19 @@ class UploadMixin:
         elif start_upload:
             return self.upload_started(request)
         elif tus_request:
-            return self.init_file_upload(request)
+            return self.init_tus_upload(request)
         elif bulk_file_upload:
             return self.append_files(request)
         else: # backward compatibility case - no upload headers were found
             return self.upload_finished(request)
 
-    def init_file_upload(self, request):
+    def init_tus_upload(self, request):
         if request.method == 'OPTIONS':
             return self._tus_response(status=status.HTTP_204)
         else:
             metadata = self._get_metadata(request)
             filename = metadata.get('filename', '')
-            if not self.validate_uploaded_file_name(filename):
+            if not self.is_valid_uploaded_file_name(filename):
                 return self._tus_response(status=status.HTTP_400_BAD_REQUEST,
                     data="File name {} is not allowed".format(filename))
 
@@ -236,7 +236,7 @@ class UploadMixin:
                                       extra_headers={'Upload-Offset': tus_file.offset,
                                                      'Upload-Filename': tus_file.filename})
 
-    def validate_uploaded_file_name(self, filename: str) -> bool:
+    def is_valid_uploaded_file_name(self, filename: str) -> bool:
         """
         Checks the file name to be valid.
         Returns True if the filename is valid, otherwise returns False.
@@ -265,7 +265,7 @@ class UploadMixin:
             upload_dir = self.get_upload_dir()
             for client_file in client_files:
                 filename = client_file['file'].name
-                if not self.validate_uploaded_file_name(filename):
+                if not self.is_valid_uploaded_file_name(filename):
                     return Response(status=status.HTTP_400_BAD_REQUEST,
                         data=f"File name {filename} is not allowed", content_type="text/plain")
 

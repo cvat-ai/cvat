@@ -338,7 +338,7 @@ class DataUploader(Uploader):
 
         upload_info = None
         if str(kwargs.get("sorting_method")).lower() == "predefined":
-            # need to request file ordering, because we reorder files to send more efficiently
+            # Request file ordering, because we reorder files to send more efficiently by default
             upload_info = {"files": [p.name for p in resources]}
 
         self._tus_start_upload(url, fields=upload_info)

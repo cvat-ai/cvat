@@ -865,9 +865,9 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         ]
 
     # UploadMixin method
-    def validate_uploaded_file_name(self, filename: str) -> bool:
+    def is_valid_uploaded_file_name(self, filename: str) -> bool:
         return (
-            super().validate_uploaded_file_name(filename) and
+            super().is_valid_uploaded_file_name(filename) and
             osp.basename(filename) not in self._get_tus_metafile_names()
         )
 
@@ -952,8 +952,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         return [uploaded_file_names[fn] for fn in expected_files]
 
     # UploadMixin method
-    def init_file_upload(self, request):
-        response = super().init_file_upload(request)
+    def init_tus_upload(self, request):
+        response = super().init_tus_upload(request)
 
         if self._is_data_uploading() and response.status_code == status.HTTP_201_CREATED:
             metafile = osp.join(self.get_upload_dir(), self._TUS_INPUT_ORDERING_METAFILE_NAME)

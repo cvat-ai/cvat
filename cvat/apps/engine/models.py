@@ -411,7 +411,7 @@ class ClientFile(models.Model):
     class Meta:
         default_permissions = ()
         unique_together = ("data", "file")
-        # note that Django will sort the files by filenames automatically
+        ordering = 'id'
 
 # For server files on the mounted share
 class ServerFile(models.Model):
@@ -420,6 +420,8 @@ class ServerFile(models.Model):
 
     class Meta:
         default_permissions = ()
+        unique_together = ("data", "file")
+        ordering = 'id'
 
 # For URLs
 class RemoteFile(models.Model):
@@ -428,6 +430,8 @@ class RemoteFile(models.Model):
 
     class Meta:
         default_permissions = ()
+        unique_together = ("data", "file")
+        ordering = 'id'
 
 
 class RelatedFile(models.Model):
@@ -439,6 +443,7 @@ class RelatedFile(models.Model):
     class Meta:
         default_permissions = ()
         unique_together = ("data", "path")
+        ordering = 'id'
 
 class Segment(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE)
