@@ -24,6 +24,7 @@ from cvat_sdk.core.helpers import expect_status
 from cvat_sdk.core.proxies.issues import CommentsRepo, IssuesRepo
 from cvat_sdk.core.proxies.jobs import JobsRepo
 from cvat_sdk.core.proxies.model_proxy import Repo
+from cvat_sdk.core.proxies.organizations import OrganizationsRepo
 from cvat_sdk.core.proxies.projects import ProjectsRepo
 from cvat_sdk.core.proxies.tasks import TasksRepo
 from cvat_sdk.core.proxies.users import UsersRepo
@@ -268,6 +269,10 @@ class Client:
     @property
     def users(self) -> UsersRepo:
         return self._get_repo(UsersRepo)
+
+    @property
+    def organizations(self) -> OrganizationsRepo:
+        return self._get_repo(OrganizationsRepo)
 
     @property
     def issues(self) -> IssuesRepo:
