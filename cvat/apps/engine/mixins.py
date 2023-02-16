@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 import os
-import os.path as osp
+import os.path
 import base64
 import uuid
 
@@ -24,7 +24,7 @@ class TusFile:
     def __init__(self, file_id, upload_dir):
         self.file_id = file_id
         self.upload_dir = upload_dir
-        self.file_path = osp.join(self.upload_dir, self.file_id)
+        self.file_path = os.path.join(self.upload_dir, self.file_id)
         self.filename = cache.get("tus-uploads/{}/filename".format(file_id))
         self.file_size = int(cache.get("tus-uploads/{}/file_size".format(file_id)))
         self.metadata = cache.get("tus-uploads/{}/metadata".format(file_id))
@@ -32,7 +32,7 @@ class TusFile:
 
     def init_file(self):
         os.makedirs(self.upload_dir, exist_ok=True)
-        file_path = osp.join(self.upload_dir, self.file_id)
+        file_path = os.path.join(self.upload_dir, self.file_id)
         with open(file_path, 'wb') as file:
             file.seek(self.file_size - 1)
             file.write(b'\0')
@@ -47,15 +47,15 @@ class TusFile:
         return self.offset == self.file_size
 
     def rename(self):
-        file_id_path = osp.join(self.upload_dir, self.file_id)
-        file_path = osp.join(self.upload_dir, self.filename)
-        file_exists = osp.lexists(osp.join(self.upload_dir, self.filename))
+        file_id_path = os.path.join(self.upload_dir, self.file_id)
+        file_path = os.path.join(self.upload_dir, self.filename)
+        file_exists = os.path.lexists(os.path.join(self.upload_dir, self.filename))
         if file_exists:
-            original_file_name, extension = osp.splitext(self.filename)
+            original_file_name, extension = os.path.splitext(self.filename)
             file_amount = 1
-            while osp.lexists(osp.join(self.upload_dir, self.filename)):
+            while os.path.lexists(os.path.join(self.upload_dir, self.filename)):
                 self.filename = "{}_{}{}".format(original_file_name, file_amount, extension)
-                file_path = osp.join(self.upload_dir, self.filename)
+                file_path = os.path.join(self.upload_dir, self.filename)
                 file_amount += 1
         os.rename(file_id_path, file_path)
 
@@ -188,7 +188,7 @@ class UploadMixin:
             if message_id:
                 metadata["message_id"] = base64.b64decode(message_id)
 
-            file_exists = osp.lexists(osp.join(self.get_upload_dir(), filename))
+            file_exists = os.path.lexists(os.path.join(self.get_upload_dir(), filename))
             if file_exists:
                 return self._tus_response(status=status.HTTP_409_CONFLICT,
                     data="File with same name already exists")
@@ -208,7 +208,7 @@ class UploadMixin:
                 extra_headers={'Location': '{}{}'.format(location, tus_file.file_id),
                                'Upload-Filename': tus_file.filename})
 
-    def append_file_chunk(self, request, file_id):
+    def append_tus_chunk(self, request, file_id):
         if request.method == 'HEAD':
             tus_file = TusFile.get_tusfile(str(file_id), self.get_upload_dir())
             if tus_file:
@@ -243,8 +243,8 @@ class UploadMixin:
         """
 
         upload_dir = self.get_upload_dir()
-        file_path = osp.join(upload_dir, filename)
-        return osp.commonprefix((osp.realpath(file_path), upload_dir)) == upload_dir
+        file_path = os.path.join(upload_dir, filename)
+        return os.path.commonprefix((os.path.realpath(file_path), upload_dir)) == upload_dir
 
     def get_upload_dir(self) -> str:
         return self._object.data.get_upload_dirname()
@@ -269,7 +269,7 @@ class UploadMixin:
                     return Response(status=status.HTTP_400_BAD_REQUEST,
                         data=f"File name {filename} is not allowed", content_type="text/plain")
 
-                with open(osp.join(upload_dir, filename), 'ab+') as destination:
+                with open(os.path.join(upload_dir, filename), 'ab+') as destination:
                     destination.write(client_file['file'].read())
         return Response(status=status.HTTP_200_OK)
 

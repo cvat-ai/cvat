@@ -424,7 +424,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=True, methods=['HEAD', 'PATCH'], url_path='dataset/'+UploadMixin.file_id_regex)
     def append_dataset_chunk(self, request, pk, file_id):
         self._object = self.get_object()
-        return self.append_file_chunk(request, file_id)
+        return self.append_tus_chunk(request, file_id)
 
     def get_upload_dir(self):
         if 'dataset' in self.action:
@@ -571,7 +571,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=False, methods=['HEAD', 'PATCH'], url_path='backup/'+UploadMixin.file_id_regex,
         serializer_class=None)
     def append_backup_chunk(self, request, file_id):
-        return self.append_file_chunk(request, file_id)
+        return self.append_tus_chunk(request, file_id)
 
     @extend_schema(summary='Method returns a preview image for the project',
         responses={
@@ -764,10 +764,6 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         return queryset
 
-    def get_object(self) -> Task:
-        # Adds return type annotation
-        return super().get_object()
-
     @extend_schema(summary='Method recreates a task from an attached task backup file',
         parameters=[
             OpenApiParameter('location', description='Where to import the backup file from',
@@ -799,7 +795,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     )
     @action(detail=False, methods=['HEAD', 'PATCH'], url_path='backup/'+UploadMixin.file_id_regex)
     def append_backup_chunk(self, request, file_id):
-        return self.append_file_chunk(request, file_id)
+        return self.append_tus_chunk(request, file_id)
 
     @extend_schema(summary='Method backup a specified task',
         parameters=[
@@ -859,16 +855,13 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return backup.get_backup_dirname()
         return ""
 
-    def _get_tus_input_ordering_metafile_name(self) -> str:
-        return "__tus_input_order__"
-
-    def _get_tus_custom_ordering_metafile_name(self) -> str:
-        return "__tus_custom_order__"
+    _TUS_INPUT_ORDERING_METAFILE_NAME = "__tus_input_order__"
+    _TUS_CUSTOM_ORDERING_METAFILE_NAME = "__tus_custom_order__"
 
     def _get_tus_metafile_names(self) -> List[str]:
         return [
-            self._get_tus_input_ordering_metafile_name(),
-            self._get_tus_custom_ordering_metafile_name(),
+            self._TUS_INPUT_ORDERING_METAFILE_NAME,
+            self._TUS_CUSTOM_ORDERING_METAFILE_NAME,
         ]
 
     # UploadMixin method
@@ -906,7 +899,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         else:
             # Don't do anything in the opposite case, because
             # file uploading can be restarted. In such case we'll
-            # just reuse the first position of this file
+            # just reuse the first occurrence in this file
             pass
 
     class _InvalidMetafileError(Exception):
@@ -963,7 +956,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         response = super().init_file_upload(request)
 
         if self._is_data_uploading() and response.status_code == status.HTTP_201_CREATED:
-            metafile = osp.join(self.get_upload_dir(), self._get_tus_input_ordering_metafile_name())
+            metafile = osp.join(self.get_upload_dir(), self._TUS_INPUT_ORDERING_METAFILE_NAME)
             if osp.isfile(metafile):
                 self._maybe_append_tus_upload_metafile_entry(metafile, response['Upload-Filename'])
 
@@ -973,7 +966,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def append_files(self, request):
         client_files = self._get_request_client_files(request)
         if self._is_data_uploading() and client_files:
-            metafile = osp.join(self.get_upload_dir(), self._get_tus_input_ordering_metafile_name())
+            metafile = osp.join(self.get_upload_dir(), self._TUS_INPUT_ORDERING_METAFILE_NAME)
             if osp.isfile(metafile):
                 file_list = self._read_tus_upload_meta_file(metafile)
 
@@ -985,13 +978,13 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     def _init_tus_input_ordering(self):
         with open(
-            osp.join(self.get_upload_dir(), self._get_tus_input_ordering_metafile_name()), 'w'
+            osp.join(self.get_upload_dir(), self._TUS_INPUT_ORDERING_METAFILE_NAME), 'w'
         ):
             pass # just create the file
 
     def _init_tus_custom_ordering(self, file_list: List[str]):
         with open(
-            osp.join(self.get_upload_dir(), self._get_tus_custom_ordering_metafile_name()), 'w'
+            osp.join(self.get_upload_dir(), self._TUS_CUSTOM_ORDERING_METAFILE_NAME), 'w'
         ) as f:
             for filename in file_list:
                 print(self._prepare_upload_metafile_entry(filename), file=f)
@@ -1240,7 +1233,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=True, methods=['HEAD', 'PATCH'], url_path='data/'+UploadMixin.file_id_regex)
     def append_data_chunk(self, request, pk, file_id):
         self._object = self.get_object()
-        return self.append_file_chunk(request, file_id)
+        return self.append_tus_chunk(request, file_id)
 
     @extend_schema(methods=['GET'], summary='Method allows to download task annotations',
         parameters=[
@@ -1403,7 +1396,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=True, methods=['HEAD', 'PATCH'], url_path='annotations/'+UploadMixin.file_id_regex)
     def append_annotations_chunk(self, request, pk, file_id):
         self._object = self.get_object()
-        return self.append_file_chunk(request, file_id)
+        return self.append_tus_chunk(request, file_id)
 
     @extend_schema(
         summary='When task is being created the method returns information about a status of the creation process',
@@ -1806,7 +1799,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=True, methods=['HEAD', 'PATCH'], url_path='annotations/'+UploadMixin.file_id_regex)
     def append_annotations_chunk(self, request, pk, file_id):
         self._object = self.get_object()
-        return self.append_file_chunk(request, file_id)
+        return self.append_tus_chunk(request, file_id)
 
 
     @extend_schema(summary='Export job as a dataset in a specific format',
