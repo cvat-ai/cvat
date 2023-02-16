@@ -4,13 +4,13 @@ address = "0.0.0.0:80"
 encoding = "json"
 
 # Uncomment for debug
-[sinks.console]
-type = "console"
-inputs = [ "http-events" ]
-target = "stdout"
+# [sinks.console]
+# type = "console"
+# inputs = [ "http-events" ]
+# target = "stdout"
 
-[sinks.console.encoding]
-codec = "json"
+# [sinks.console.encoding]
+# codec = "json"
 
 [sinks.clickhouse]
 inputs = [ "http-events" ]

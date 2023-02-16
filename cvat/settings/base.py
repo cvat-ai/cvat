@@ -483,7 +483,8 @@ LOGGING = {
         'vector': {
             'handlers': [],
             'level': 'INFO',
-            'propagate': True
+            # set True for debug
+            'propagate': False
         }
     },
 }

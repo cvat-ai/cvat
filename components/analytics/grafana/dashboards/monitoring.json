@@ -37,6 +37,203 @@
           "color": {
             "mode": "thresholds"
           },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 3,
+        "x": 0,
+        "y": 0
+      },
+      "id": 12,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "builderOptions": {
+            "fields": [],
+            "filters": [],
+            "limit": 100,
+            "metrics": [
+              {
+                "aggregation": "count",
+                "field": ""
+              }
+            ],
+            "mode": "aggregate",
+            "orderBy": [],
+            "table": "events"
+          },
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PDEE91DDB90597936"
+          },
+          "format": 1,
+          "meta": {
+            "builderOptions": {
+              "fields": [],
+              "filters": [],
+              "limit": 100,
+              "metrics": [
+                {
+                  "aggregation": "count",
+                  "field": ""
+                }
+              ],
+              "mode": "aggregate",
+              "orderBy": [],
+              "table": "events"
+            }
+          },
+          "queryType": "sql",
+          "rawSql": "SELECT\r\n    uniqExact(user_id) as \"Active users (now)\"\r\nFROM\r\n    cvat.events\r\nWHERE\r\n    user_id IS NOT NULL AND\r\n    timestamp >= now() - INTERVAL 10 MINUTE",
+          "refId": "A"
+        }
+      ],
+      "title": "Active users (now)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PDEE91DDB90597936"
+      },
+      "description": "Show active users calculated by 15 minutes time interval",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 21,
+        "x": 3,
+        "y": 0
+      },
+      "id": 10,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PDEE91DDB90597936"
+          },
+          "format": 1,
+          "meta": {
+            "builderOptions": {
+              "fields": [],
+              "limit": 100,
+              "mode": "list"
+            }
+          },
+          "queryType": "sql",
+          "rawSql": "SELECT\r\n    time,\r\n    uniqExact(user_id) Users\r\nFROM\r\n(\r\n    SELECT\r\n      user_id,\r\n      toStartOfInterval(timestamp, INTERVAL 15 minute) as time\r\n    FROM cvat.events\r\n    WHERE\r\n      user_id IS NOT NULL\r\n    GROUP BY\r\n      user_id,\r\n      time\r\n    ORDER BY time ASC WITH FILL STEP toIntervalMinute(15)\r\n)\r\nGROUP BY time\r\nORDER BY time",
+          "refId": "A"
+        }
+      ],
+      "title": "Active users",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PDEE91DDB90597936"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
           "custom": {
             "align": "auto",
             "displayMode": "auto",
@@ -63,7 +260,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 0
+        "y": 7
       },
       "id": 2,
       "options": {
@@ -329,7 +526,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 0
+        "y": 7
       },
       "id": 4,
       "options": {
@@ -359,7 +556,7 @@
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT\r\n  scope as Scope,\r\n  source as Source,\r\n  count() as Count\r\nFROM events\r\nWHERE duration > 0\r\n  AND $__timeFilter(timestamp)\r\nGROUP BY scope, source",
+          "rawSql": "SELECT\r\n  scope as Scope,\r\n  source as Source,\r\n  count() as Count\r\nFROM events\r\nWHERE $__timeFilter(timestamp)\r\nGROUP BY scope, source",
           "refId": "A"
         }
       ],
@@ -427,7 +624,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 8
+        "y": 15
       },
       "id": 6,
       "options": {
@@ -587,7 +784,7 @@
         "h": 17,
         "w": 24,
         "x": 0,
-        "y": 16
+        "y": 23
       },
       "id": 8,
       "options": {
@@ -685,6 +882,7 @@
       "type": "table"
     }
   ],
+  "refresh": false,
   "schemaVersion": 37,
   "style": "dark",
   "tags": [],
@@ -692,13 +890,13 @@
     "list": []
   },
   "time": {
-    "from": "now-6h",
+    "from": "now-2d",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "Monitoring",
   "uid": "WvDvWK04k",
-  "version": 1,
+  "version": 2,
   "weekStart": ""
 }
