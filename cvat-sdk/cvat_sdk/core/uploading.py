@@ -387,7 +387,7 @@ class DataUploader(Uploader):
         for filename in filenames:
             filename = filename.resolve()
             file_size = filename.stat().st_size
-            if MAX_REQUEST_SIZE < file_size:
+            if self.max_request_size < file_size:
                 separate_files[filename] = file_size
             else:
                 bulk_files[filename] = file_size
@@ -399,7 +399,7 @@ class DataUploader(Uploader):
         current_group_size: int = 0
         current_group: List[str] = []
         for filename, file_size in bulk_files.items():
-            if MAX_REQUEST_SIZE < current_group_size + file_size:
+            if self.max_request_size < current_group_size + file_size:
                 bulk_file_groups.append((current_group, current_group_size))
                 current_group_size = 0
                 current_group = []

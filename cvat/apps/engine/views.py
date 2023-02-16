@@ -992,7 +992,9 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def _sort_uploaded_files(self, uploaded_files: List[Dict[str, Any]]) -> List[str]:
         """
         Restores file ordering for the "predefined" file sorting method of the task creation.
-        Without this, the file order is defined by os.listdir(), which returns files unordered.
+        Without this, the file order is defined by os.listdir() or by DB, which can return
+        files unordered.
+
         Read more: https://github.com/opencv/cvat/issues/5061
         """
 
@@ -1150,14 +1152,12 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             data['use_cache'] = serializer.validated_data['use_cache']
             data['copy_data'] = serializer.validated_data['copy_data']
 
-            if data['client_files']:
-                # Django will sort client_files by filename automatically, which conflicts
-                # with the "predefined" sorting method. We need to restore the upload file
-                # order. This is not needed for other *_files fields, because they are
-                # not being sorted.
+            if data['sorting_method'] == models.SortingMethod.PREDEFINED and data['client_files']:
+                # DB can sort client_files records automatically, which conflicts
+                # with the "predefined" sorting method. We need to restore the file order.
+                # https://github.com/opencv/cvat/pull/5083#discussion_r1038032715
                 try:
-                    if data['sorting_method'] == models.SortingMethod.PREDEFINED:
-                        data['client_files'] = self._sort_uploaded_files(data['client_files'])
+                    data['client_files'] = self._sort_uploaded_files(data['client_files'])
                 except self._InvalidMetafileError as e:
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
 
@@ -1170,11 +1170,13 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             if db_data.cloud_storage:
                 self._object.data.storage = StorageChoice.CLOUD_STORAGE
                 self._object.data.save(update_fields=['storage'])
+            if 'stop_frame' not in serializer.validated_data:
                 # if the value of stop_frame is 0, then inside the function we cannot know
                 # the value specified by the user or it's default value from the database
-            if 'stop_frame' not in serializer.validated_data:
                 data['stop_frame'] = None
+
             task.create(self._object.id, data)
+
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
         elif self.action == 'import_backup':
             filename = request.query_params.get("filename", "")
