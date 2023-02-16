@@ -72,7 +72,7 @@ as if obtained from a `TaskVisionDataset` instance created for that task.
 The full sequence of samples is built by concatenating the sequences of samples
 from all included tasks in an unspecified order
 that is guaranteed to be consistent between executions.
-For details on what tasks are included, see the "Task filtering" section.
+For details on what tasks are included, see [Task filtering](#task-filtering).
 
 ### Construction
 
@@ -90,20 +90,20 @@ Video data is currently not supported.
 The constructors of these classes also support several keyword-only parameters:
 
 - `transforms`, `transform`, `target_transform`:
-    see the "Transform support" section.
+    see [Transform support](#transform-support).
 
 - `label_name_to_index`:
-    see the "Label index assignment" section.
+    see [Label index assignment](#label-index-assignment).
 
 - `task_filter`, `include_subsets` (`ProjectVisionDataset` only):
-    see the "Task filtering" section.
+    see [Task filtering](#task-filtering).
 
 - `update_policy`:
-    see the "Caching" section.
+    see [Caching](#caching).
 
 During construction,
 the dataset objects either populate or validate the local data cache
-(see the "Caching" section for details).
+(see [Caching](#caching) for details).
 Any necessary requests to the CVAT server are performed at this time.
 After construction, the objects make no more network requests.
 
@@ -124,7 +124,7 @@ The target object contains the following attributes:
 - `target.annotations.shapes` (`list[cvat_sdk.models.LabeledShape]`):
     shape annotations associated with the current frame.
 - `target.label_id_to_index` (`Mapping[int, int]`):
-    see the "Label index assignment" section.
+    see [Label index assignment](#label-index-assignment).
 
 Note that track annotations are currently inaccessible.
 
@@ -156,7 +156,7 @@ as either `transform` or `target_transform`.
 
 The `cvat_sdk.pytorch` module contains some target transform classes
 that are intended for common use cases.
-See the "Transforms" section.
+See [Transforms](#transforms).
 
 ### Label index assignment
 
