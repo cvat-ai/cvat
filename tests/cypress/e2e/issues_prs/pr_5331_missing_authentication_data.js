@@ -1,10 +1,10 @@
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
 
-context('Check behavior in case of missing authentication data', () => {
+context('Check behavior in case of missing authentification data', () => {
     const prId = '5331';
 
     before(() => {
