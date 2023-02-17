@@ -25,12 +25,14 @@ class RetailerAuthentication(authentication.BaseAuthentication):
 
         try:
             auth_url = settings.ADMIN_URL.rstrip('/') + '/' + 'retailers/auth/'
+            logger.info(f'Authenticating retailer at {auth_url}')
 
             res = requests.post(auth_url, headers={
                 'x-retailer-secret-key': secret_key,
                 'x-retailer-codename': retailer_codename
             })
-        except requests.exceptions.RequestException:
+        except requests.exceptions.RequestException as e:
+            logger.exception(e, exc_info=True)
             raise exceptions.AuthenticationFailed('Admin server is not available. Try again later')
 
         try:
@@ -54,4 +56,5 @@ class RetailerAuthentication(authentication.BaseAuthentication):
 
             return user, None
         except (KeyError, AssertionError) as e:
+            logger.exception(e, exc_info=True)
             raise exceptions.AuthenticationFailed('Admin did not validate your retailer. {}'.format(e))
