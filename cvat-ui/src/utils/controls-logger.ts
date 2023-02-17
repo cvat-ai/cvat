@@ -16,6 +16,7 @@ class EventRecorder {
     #savingInterval: number | null;
     public constructor() {
         this.#savingInterval = null;
+        core.logger.log(LogType.loadTool, { location: window.location.pathname + window.location.search });
     }
 
     public log(event: MouseEvent): void {
@@ -52,7 +53,11 @@ class EventRecorder {
     }
 
     private filterClassName(cls: string): string {
-        return cls.split(' ').filter((_cls: string) => _cls.startsWith('cvat')).join(' ');
+        if (typeof cls === 'string') {
+            return cls.split(' ').filter((_cls: string) => _cls.startsWith('cvat')).join(' ');
+        }
+
+        return '';
     }
 
     private isEventToBeRecorded(node: HTMLElement, filter: string[]): boolean {
