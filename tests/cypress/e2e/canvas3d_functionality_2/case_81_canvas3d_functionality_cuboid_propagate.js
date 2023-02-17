@@ -9,7 +9,10 @@ import { taskName, labelName } from '../../support/const_canvas3d';
 context('Canvas 3D functionality. Cuboid propagate.', () => {
     const caseId = '81';
     const cuboidCreationParams = {
+        objectType: 'Shape',
         labelName,
+        x: 480,
+        y: 160,
     };
 
     before(() => {
