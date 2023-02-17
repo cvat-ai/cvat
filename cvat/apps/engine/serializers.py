@@ -60,7 +60,11 @@ class HyperlinkedEndpointSerializer(serializers.Serializer):
         )
 
 
-class CollectionSummarySerializer(serializers.Serializer):
+class _CollectionSummarySerializer(serializers.Serializer):
+    # This class isn't recommended for direct use in public serializers
+    # because it produces too generic description in the schema.
+    # Consider creating a dedicated inherited class instead.
+
     count = serializers.IntegerField(default=0)
 
     def __init__(self, model, *, url_filter_key, **kwargs):
@@ -84,16 +88,28 @@ class CollectionSummarySerializer(serializers.Serializer):
         return instance
 
 
-class LabelsSummarySerializer(CollectionSummarySerializer):
+class LabelsSummarySerializer(_CollectionSummarySerializer):
     def __init__(self, *, model=models.Label, url_filter_key, source='get_labels', **kwargs):
         super().__init__(model=model, url_filter_key=url_filter_key, source=source, **kwargs)
 
 
-class JobsSummarySerializer(CollectionSummarySerializer):
+class JobsSummarySerializer(_CollectionSummarySerializer):
     completed = serializers.IntegerField(source='completed_jobs_count', default=0)
 
     def __init__(self, *, model=models.Job, url_filter_key, **kwargs):
         super().__init__(model=model, url_filter_key=url_filter_key, **kwargs)
+
+
+class TasksSummarySerializer(_CollectionSummarySerializer):
+    pass
+
+
+class CommentsSummarySerializer(_CollectionSummarySerializer):
+    pass
+
+
+class IssuesSummarySerializer(_CollectionSummarySerializer):
+    pass
 
 
 class BasicUserSerializer(serializers.ModelSerializer):
@@ -461,7 +477,7 @@ class JobReadSerializer(serializers.ModelSerializer):
     bug_tracker = serializers.CharField(max_length=2000, source='get_bug_tracker',
         allow_null=True, read_only=True)
     labels = LabelsSummarySerializer(url_filter_key='job_id')
-    issues = CollectionSummarySerializer(models.Issue, url_filter_key='job_id')
+    issues = IssuesSummarySerializer(models.Issue, url_filter_key='job_id')
 
     class Meta:
         model = models.Job
@@ -1002,7 +1018,7 @@ class ProjectReadSerializer(serializers.ModelSerializer):
     dimension = serializers.CharField(max_length=16, required=False, read_only=True, allow_null=True)
     target_storage = StorageSerializer(required=False, allow_null=True, read_only=True)
     source_storage = StorageSerializer(required=False, allow_null=True, read_only=True)
-    tasks = CollectionSummarySerializer(models.Task, url_filter_key='project_id')
+    tasks = TasksSummarySerializer(models.Task, url_filter_key='project_id')
     labels = LabelsSummarySerializer(url_filter_key='project_id')
 
     class Meta:
@@ -1300,7 +1316,7 @@ class IssueReadSerializer(serializers.ModelSerializer):
     position = serializers.ListField(
         child=serializers.FloatField(), allow_empty=False
     )
-    comments = CollectionSummarySerializer(models.Comment, url_filter_key='issue_id')
+    comments = CommentsSummarySerializer(models.Comment, url_filter_key='issue_id')
 
     class Meta:
         model = models.Issue
