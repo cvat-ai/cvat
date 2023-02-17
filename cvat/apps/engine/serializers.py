@@ -236,12 +236,11 @@ class LabelSerializer(SublabelSerializer):
         super().__init__(*args, **kwargs)
 
     def validate(self, attrs):
-        if self._local:
-            if attrs.get('deleted'):
-                raise serializers.ValidationError(
-                    'Labels cannot be deleted by updating in this endpoint. '
-                    'Please use the DELETE method instead.'
-                )
+        if self._local and attrs.get('deleted'):
+            raise serializers.ValidationError(
+                'Labels cannot be deleted by updating in this endpoint. '
+                'Please use the DELETE method instead.'
+            )
 
         if attrs.get('deleted') and attrs.get('id') is None:
             raise serializers.ValidationError('Deleted label must have an ID')
