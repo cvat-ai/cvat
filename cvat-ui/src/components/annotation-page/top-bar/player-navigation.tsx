@@ -129,7 +129,7 @@ function PlayerNavigation(props: Props): JSX.Element {
                                 setFrameInputValue(Math.floor(clamp(+value, startFrame, stopFrame)));
                             }
                         }}
-                        onClick={()=> inputFrameRef.current?.select()}
+                        onFocus={() => inputFrameRef.current?.select()}
                         onBlur={() => {
                             onInputChange(frameInputValue);
                         }}
