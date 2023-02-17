@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from copy import deepcopy
+from datetime import datetime, timezone
 
 from rest_framework.renderers import JSONRenderer
 from crum import get_current_user, get_current_request
@@ -236,10 +237,12 @@ def handle_update(scope, instance, old_instance, **kwargs):
     serializer = _get_serializer(instance=instance)
     diff = _get_instance_diff(old_data=old_serializer.data, data=serializer.data)
 
+    timestamp = str(datetime.now(timezone.utc).timestamp())
     for prop, change in diff.items():
         change = _cleanup_fields(change)
         event = create_event(
             scope=scope,
+            timestamp=timestamp,
             obj_name=prop,
             obj_id=getattr(instance, f'{prop}_id', None),
             obj_val=str(change["new_value"]),

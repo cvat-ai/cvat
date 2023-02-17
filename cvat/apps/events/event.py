@@ -35,10 +35,11 @@ def create_event(scope,
     source,
     **kwargs):
     payload = kwargs.pop('payload', {})
+    timestamp = kwargs.pop('timestamp', str(datetime.now(timezone.utc).timestamp()))
 
     data = {
         "scope": scope,
-        "timestamp": str(datetime.now(timezone.utc).timestamp()),
+        "timestamp": timestamp,
         "source": source,
         **kwargs,
     }
