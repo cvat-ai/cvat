@@ -524,7 +524,7 @@ class ServerExceptionAPITestCase(APITestCase):
         create_db_users(cls)
         cls.data = {
             "events": [{
-            "scope": "exception",
+            "scope": "send:exception",
             "timestamp": "2019-01-29T12:34:56.000000Z",
             "payload": json.dumps({
                 "system": "Linux",

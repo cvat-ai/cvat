@@ -808,8 +808,8 @@ export function implementTask(Task) {
             logType,
             {
                 ...payload,
-                project: this.projectId,
-                task: this.id,
+                project_id: this.projectId,
+                task_id: this.id,
             },
             wait,
         );
