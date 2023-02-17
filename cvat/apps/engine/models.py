@@ -504,7 +504,7 @@ class ServerFile(models.Model):
 # For URLs
 class RemoteFile(models.Model):
     data = models.ForeignKey(Data, on_delete=models.CASCADE, null=True, related_name='remote_files')
-    file = models.CharField(max_length=1024)
+    file = models.CharField(max_length=2048)
     meta = models.JSONField(null=True, blank=True)
 
     class Meta:
