@@ -101,7 +101,7 @@ class Client:
     _ORG_SLUG_HEADER = "X-Organization"
 
     @property
-    def current_organization(self) -> Optional[str]:
+    def organization_slug(self) -> Optional[str]:
         """
         If this is set to a slug for an organization,
         all requests will be made in the context of that organization.
@@ -113,8 +113,8 @@ class Client:
         """
         return self.api_client.default_headers.get(self._ORG_SLUG_HEADER)
 
-    @current_organization.setter
-    def current_organization(self, org_slug: Optional[str]):
+    @organization_slug.setter
+    def organization_slug(self, org_slug: Optional[str]):
         if org_slug is None:
             self.api_client.default_headers.pop(self._ORG_SLUG_HEADER, None)
         else:

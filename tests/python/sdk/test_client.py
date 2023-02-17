@@ -171,33 +171,33 @@ def test_can_control_ssl_verification_with_config(verify: bool):
 
 def test_organization_contexts(admin_user: str):
     with make_client(BASE_URL, credentials=(admin_user, USER_PASS)) as client:
-        assert client.current_organization is None
+        assert client.organization_slug is None
 
         org = client.organizations.create(models.OrganizationWriteRequest(slug="testorg"))
 
         # create a project in the personal workspace
-        client.current_organization = ""
+        client.organization_slug = ""
         personal_project = client.projects.create(models.ProjectWriteRequest(name="Personal"))
         assert personal_project.organization is None
 
         # create a project in the organization
-        client.current_organization = org.slug
+        client.organization_slug = org.slug
         org_project = client.projects.create(models.ProjectWriteRequest(name="Org"))
         assert org_project.organization == org.id
 
         # both projects should be visible with no context
-        client.current_organization = None
+        client.organization_slug = None
         client.projects.retrieve(personal_project.id)
         client.projects.retrieve(org_project.id)
 
         # only the personal project should be visible in the personal workspace
-        client.current_organization = ""
+        client.organization_slug = ""
         client.projects.retrieve(personal_project.id)
         with pytest.raises(NotFoundException):
             client.projects.retrieve(org_project.id)
 
         # only the organizational project should be visible in the organization
-        client.current_organization = org.slug
+        client.organization_slug = org.slug
         client.projects.retrieve(org_project.id)
         with pytest.raises(NotFoundException):
             client.projects.retrieve(personal_project.id)

@@ -148,21 +148,21 @@ rights. This affects the set of available APIs, objects and actions. For example
 can only see and modify their tasks and jobs, while an admin user can see all the tasks etc.
 
 Operations are also affected by the current organization context,
-which can be set with the `current_organization` property of `Client` instances.
+which can be set with the `organization_slug` property of `Client` instances.
 The organization context affects which entities are visible,
 and where new entities are created.
 
-Set `current_organization` to an organization's slug (short name)
+Set `organization_slug` to an organization's slug (short name)
 to make subsequent operations work in the context of that organization:
 
 ```python
-client.current_organization = 'myorg'
+client.organization_slug = 'myorg'
 
 # create a task in the organization
 task = client.tasks.create_from_data(...)
 ```
 
-You can also set `current_organization` to an empty string
+You can also set `organization_slug` to an empty string
 to work in the context of the user's personal workspace.
 By default, it is set to `None`,
 which means that both personal and organizational entities are visible,
