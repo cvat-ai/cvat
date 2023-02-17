@@ -195,7 +195,8 @@ class SkeletonSerializer(serializers.ModelSerializer):
         fields = ('id', 'svg',)
 
 class LabelSerializer(SublabelSerializer):
-    deleted = serializers.BooleanField(required=False, write_only=True, help_text='Delete label')
+    deleted = serializers.BooleanField(required=False, write_only=True,
+        help_text='Delete the label. Only applicable in the PATCH methods of a project or a task.')
     sublabels = SublabelSerializer(many=True, required=False)
     svg = serializers.CharField(allow_blank=True, required=False)
     has_parent = serializers.BooleanField(read_only=True, source='has_parent_label', required=False)
