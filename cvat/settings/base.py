@@ -620,6 +620,9 @@ ADMIN_URL = os.getenv(
     'http://localhost:8002' if ENVIRONMENT == 'local' else 'https://{}-admin.rebotics.net'.format(ENVIRONMENT),
 )
 
+if not ADMIN_URL.startswith('http'):
+    schema = os.getenv('ADMIN_URL_SCHEMA', 'https')
+    ADMIN_URL = '{}://{}'.format(schema, ADMIN_URL.lstrip(':').lstrip('/'))
 
 # Media storage settings
 # not the default, because it's used only for some file fields.
