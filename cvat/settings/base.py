@@ -386,10 +386,10 @@ os.makedirs(STATIC_ROOT, exist_ok=True)
 
 # Make sure to update other config files when upading these directories
 DATA_ROOT = os.path.join(BASE_DIR, 'data')
-LOGSTASH_DB = os.path.join(DATA_ROOT,'logstash.db')
+EVENTS_LOCAL_DB = os.path.join(DATA_ROOT,'events.db')
 os.makedirs(DATA_ROOT, exist_ok=True)
-if not os.path.exists(LOGSTASH_DB):
-    open(LOGSTASH_DB, 'w').close()
+if not os.path.exists(EVENTS_LOCAL_DB):
+    open(EVENTS_LOCAL_DB, 'w').close()
 
 MEDIA_DATA_ROOT = os.path.join(DATA_ROOT, 'data')
 os.makedirs(MEDIA_DATA_ROOT, exist_ok=True)
@@ -466,7 +466,7 @@ LOGGING = {
             'port': os.getenv('DJANGO_LOG_SERVER_PORT', 8282),
             'version': 1,
             'message_type': 'django',
-            'database_path': LOGSTASH_DB,
+            'database_path': EVENTS_LOCAL_DB,
         }
     },
     'loggers': {

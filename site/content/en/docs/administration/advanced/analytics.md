@@ -21,10 +21,4 @@ docker compose up -d
 ```
 
 The previous solution based on ELK stack is currently deprecated and will no longer be supported.
-it is possible to run Elasticsearch and Kibana on previously saved data, but all new events will
-be stored in Clickhouse:
 
-```shell
-docker compose -f components/analytics/deprecated/docker-compose.analytics.yml build
-docker compose -f components/analytics/deprecated/docker-compose.analytics.yml up -d
-```
