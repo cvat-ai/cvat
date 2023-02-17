@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -61,16 +61,7 @@ context('Group features', () => {
     const trackSidebarItemArray = ['#cvat-objects-sidebar-state-item-3', '#cvat-objects-sidebar-state-item-4'];
 
     before(() => {
-        cy.clearLocalStorageSnapshot();
         cy.openTaskJob(taskName);
-    });
-
-    beforeEach(() => {
-        cy.restoreLocalStorage();
-    });
-
-    afterEach(() => {
-        cy.saveLocalStorage();
     });
 
     function testGroupObjects(objectsArray, cancelGrouping) {

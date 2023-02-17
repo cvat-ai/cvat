@@ -47,11 +47,6 @@ function configureStorage(storage: Storage, useDefaultLocation = false): Partial
     };
 }
 
-function removeToken(): void {
-    Axios.defaults.headers.common.Authorization = '';
-    store.remove('token');
-}
-
 function fetchAll(url, filter = {}): Promise<any> {
     const pageSize = 500;
     const result = {
@@ -274,6 +269,27 @@ if (token) {
     Axios.defaults.headers.common.Authorization = `Token ${token}`;
 }
 
+function setAuthData(response: AxiosResponse): void {
+    if (response.headers['set-cookie']) {
+        // Browser itself setup cookie and header is none
+        // In NodeJS we need do it manually
+        const cookies = response.headers['set-cookie'].join(';');
+        Axios.defaults.headers.common.Cookie = cookies;
+    }
+
+    if (response.data.key) {
+        token = response.data.key;
+        store.set('token', token);
+        Axios.defaults.headers.common.Authorization = `Token ${token}`;
+    }
+}
+
+function removeAuthData(): void {
+    Axios.defaults.headers.common.Authorization = '';
+    store.remove('token');
+    token = null;
+}
+
 async function about(): Promise<SerializedAbout> {
     const { backendAPI } = config;
 
@@ -371,6 +387,7 @@ async function register(
                 'Content-Type': 'application/json',
             },
         });
+        setAuthData(response);
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -386,7 +403,7 @@ async function login(credential: string, password: string): Promise<void> {
         .join('&')
         .replace(/%20/g, '+');
 
-    removeToken();
+    removeAuthData();
     let authenticationResponse = null;
     try {
         authenticationResponse = await Axios.post(`${config.backendAPI}/auth/login`, authenticationData);
@@ -394,16 +411,7 @@ async function login(credential: string, password: string): Promise<void> {
         throw generateError(errorData);
     }
 
-    if (authenticationResponse.headers['set-cookie']) {
-        // Browser itself setup cookie and header is none
-        // In NodeJS we need do it manually
-        const cookies = authenticationResponse.headers['set-cookie'].join(';');
-        Axios.defaults.headers.common.Cookie = cookies;
-    }
-
-    token = authenticationResponse.data.key;
-    store.set('token', token);
-    Axios.defaults.headers.common.Authorization = `Token ${token}`;
+    setAuthData(authenticationResponse);
 }
 
 async function loginWithSocialAccount(
@@ -413,7 +421,7 @@ async function loginWithSocialAccount(
     process?: string,
     scope?: string,
 ): Promise<void> {
-    removeToken();
+    removeAuthData();
     const data = {
         code,
         ...(process ? { process } : {}),
@@ -427,15 +435,13 @@ async function loginWithSocialAccount(
         throw generateError(errorData);
     }
 
-    token = authenticationResponse.data.key;
-    store.set('token', token);
-    Axios.defaults.headers.common.Authorization = `Token ${token}`;
+    setAuthData(authenticationResponse);
 }
 
 async function logout(): Promise<void> {
     try {
         await Axios.post(`${config.backendAPI}/auth/logout`);
-        removeToken();
+        removeAuthData();
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -506,13 +512,16 @@ async function getSelf(): Promise<SerializedUser> {
 
 async function authorized(): Promise<boolean> {
     try {
+        // In CVAT app we use two types of authentication
+        // At first we check if authentication token is present
+        // Request in getSelf will provide correct authentication cookies
+        if (!store.get('token')) {
+            removeAuthData();
+            return false;
+        }
         await getSelf();
     } catch (serverError) {
         if (serverError.code === 401) {
-            // In CVAT app we use two types of authentication,
-            // So here we are forcing user have both credential types
-            // First request will fail if session is expired, then we check
-            // for precense of token
             await logout();
             return false;
         }
