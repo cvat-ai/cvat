@@ -21,7 +21,10 @@ class EventSerializer(serializers.Serializer):
     task_id = serializers.IntegerField(required=False, allow_null=True)
     job_id = serializers.IntegerField(required=False, allow_null=True)
     user_id = serializers.IntegerField(required=False, allow_null=True)
+    user_name = serializers.CharField(required=False, allow_null=True)
+    user_email = serializers.CharField(required=False, allow_null=True)
     org_id = serializers.IntegerField(required=False, allow_null=True)
+    org_slug = serializers.CharField(required=False, allow_null=True)
     payload = serializers.CharField(required=False, allow_null=True)
 
 class ClientEventsSerializer(serializers.Serializer):
@@ -32,7 +35,8 @@ class ClientEventsSerializer(serializers.Serializer):
     def to_internal_value(self, data):
         request = self.context.get("request")
         org = request.iam_context['organization']
-        org_id = org.id if org else None
+        org_id = getattr(org, "id", None)
+        org_slug = getattr(org, "slug", None)
 
         send_time = datetime_parser.isoparse(data["timestamp"])
         receive_time = datetime.datetime.now(datetime.timezone.utc)
@@ -56,6 +60,9 @@ class ClientEventsSerializer(serializers.Serializer):
             event['timestamp'] = str((timestamp + time_correction).timestamp())
             event['source'] = 'client'
             event['org_id'] = org_id
+            event['org_slug'] = org_slug
             event['user_id'] = request.user.id
+            event['user_name'] = request.user.username
+            event['user_email'] = request.user.email
 
         return data

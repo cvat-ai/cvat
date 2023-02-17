@@ -483,6 +483,9 @@ class Job(models.Model):
     def get_organization_id(self):
         return self.segment.task.organization_id
 
+    def get_organization_slug(self):
+        return self.segment.task.organization.slug
+
     def get_bug_tracker(self):
         task = self.segment.task
         project = task.project
@@ -662,6 +665,10 @@ class Issue(models.Model):
     def get_organization_id(self):
         return self.job.get_organization_id()
 
+    def get_organization_slug(self):
+        return self.job.get_organization_slug()
+
+
 class Comment(models.Model):
     issue = models.ForeignKey(Issue, related_name='comments', on_delete=models.CASCADE)
     owner = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
@@ -674,6 +681,9 @@ class Comment(models.Model):
 
     def get_organization_id(self):
         return self.issue.get_organization_id()
+
+    def get_organization_slug(self):
+        return self.issue.get_organization_slug()
 
 class CloudProviderChoice(str, Enum):
     AWS_S3 = 'AWS_S3_BUCKET'

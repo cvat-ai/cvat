@@ -54,19 +54,38 @@ def job_id(instance):
 
     return None
 
-def user_id(instance):
+def _get_current_user(instance):
     if isinstance(instance, User):
-        return getattr(instance, "id", None)
+        return instance
 
     if isinstance(instance, Job):
-        return instance.segment.task.owner_id
+        return instance.segment.task.owner
 
-    current_user = get_current_user()
+    return get_current_user()
+
+def user_id(instance):
+    current_user = _get_current_user(instance)
     return getattr(current_user, "id", None)
 
-def get_username():
-    current_user = get_current_user()
+def user_name(instance):
+    current_user = _get_current_user(instance)
     return getattr(current_user, "username", None)
+
+def user_email(instance):
+    current_user = _get_current_user(instance)
+    return getattr(current_user, "email", None)
+
+def organization_slug(instance):
+    if isinstance(instance, Organization):
+        return instance.slug
+
+    try:
+        org = getattr(instance, "organization", None)
+        if org is None:
+            return instance.get_organization_slug()
+        return org.slug
+    except Exception:
+        return None
 
 def _get_instance_diff(old_data, data):
     ingone_related_fields = (
@@ -168,11 +187,14 @@ def _get_serializer(instance):
     return serializer
 
 def handle_create(scope, instance, **kwargs):
-    pid = project_id(instance)
     oid = organization_id(instance)
+    oslug = organization_slug(instance)
+    pid = project_id(instance)
     tid = task_id(instance)
     jid = job_id(instance)
     uid = user_id(instance)
+    uname = user_name(instance)
+    uemail = user_email(instance)
 
     serializer = _get_serializer(instance=instance)
     try:
@@ -187,11 +209,13 @@ def handle_create(scope, instance, **kwargs):
         obj_name=_get_object_name(instance),
         source='server',
         org_id=oid,
+        org_slug=oslug,
         project_id=pid,
         task_id=tid,
         job_id=jid,
         user_id=uid,
-        username=get_username(),
+        user_name=uname,
+        user_email=uemail,
         payload=payload,
     )
     message = JSONRenderer().render(event).decode('UTF-8')
@@ -199,11 +223,14 @@ def handle_create(scope, instance, **kwargs):
     vlogger.info(message)
 
 def handle_update(scope, instance, old_instance, **kwargs):
-    pid = project_id(instance)
     oid = organization_id(instance)
+    oslug = organization_slug(instance)
+    pid = project_id(instance)
     tid = task_id(instance)
     jid = job_id(instance)
     uid = user_id(instance)
+    uname = user_name(instance)
+    uemail = user_email(instance)
 
     old_serializer = _get_serializer(instance=old_instance)
     serializer = _get_serializer(instance=instance)
@@ -218,11 +245,13 @@ def handle_update(scope, instance, old_instance, **kwargs):
             obj_val=str(change["new_value"]),
             source='server',
             org_id=oid,
+            org_slug=oslug,
             project_id=pid,
             task_id=tid,
             job_id=jid,
             user_id=uid,
-            username=get_username(),
+            user_name=uname,
+            user_email=uemail,
             payload= {
                 "old_value": change["old_value"],
             },
@@ -232,13 +261,14 @@ def handle_update(scope, instance, old_instance, **kwargs):
         vlogger.info(message)
 
 def handle_delete(scope, instance, **kwargs):
-    pid = project_id(instance)
     oid = organization_id(instance)
+    oslug = organization_slug(instance)
+    pid = project_id(instance)
     tid = task_id(instance)
     jid = job_id(instance)
     uid = user_id(instance)
-    if not any((oid, pid, tid, jid, uid)):
-        return
+    uname = user_name(instance)
+    uemail = user_email(instance)
 
     event = create_event(
         scope=scope,
@@ -246,11 +276,13 @@ def handle_delete(scope, instance, **kwargs):
         obj_name=_get_object_name(instance),
         source='server',
         org_id=oid,
+        org_slug=oslug,
         project_id=pid,
         task_id=tid,
         job_id=jid,
         user_id=uid,
-        username=get_username(),
+        user_name=uname,
+        user_email=uemail,
     )
     message = JSONRenderer().render(event).decode('UTF-8')
 

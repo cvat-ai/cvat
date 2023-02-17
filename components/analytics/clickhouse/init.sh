@@ -37,7 +37,10 @@ CREATE TABLE IF NOT EXISTS ${CLICKHOUSE_DB}.events
     \`task_id\` UInt64 NULL,
     \`job_id\` UInt64 NULL,
     \`user_id\` UInt64 NULL,
+    \`user_name\` String NULL,
+    \`user_email\` String NULL,
     \`org_id\` UInt64 NULL,
+    \`org_slug\` String NULL,
     \`payload\` String NULL
 )
 ENGINE = MergeTree

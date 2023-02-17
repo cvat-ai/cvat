@@ -33,12 +33,8 @@ class EventScopes:
 
 def create_event(scope,
     source,
-    username=None,
     **kwargs):
     payload = kwargs.pop('payload', {})
-
-    if username:
-        payload["username"] = username
 
     data = {
         "scope": scope,
