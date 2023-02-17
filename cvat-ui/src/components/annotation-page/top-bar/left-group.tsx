@@ -71,12 +71,12 @@ function LeftGroup(props: Props): JSX.Element {
     return (
         <>
             <Modal className='cvat-saving-job-modal' title='Saving changes on the server' visible={saving} footer={[]} closable={false}>
-                <Text>CVAT is working to save annotations, please wait </Text>
+                <Text>CVAT is saving your annotations, please wait </Text>
                 <LoadingOutlined />
             </Modal>
             <Col className='cvat-annotation-header-left-group'>
                 <Dropdown overlay={<AnnotationMenuContainer />}>
-                    <Button type='link' className='cvat-annotation-header-button'>
+                    <Button type='link' className='cvat-annotation-header-menu-button cvat-annotation-header-button'>
                         <Icon component={MainMenuIcon} />
                         Menu
                     </Button>
@@ -85,7 +85,8 @@ function LeftGroup(props: Props): JSX.Element {
                     <Button
                         onClick={saving ? undefined : onSaveAnnotation}
                         type='link'
-                        className={saving ? 'cvat-annotation-disabled-header-button' : 'cvat-annotation-header-button'}
+                        disabled={saving}
+                        className={saving ? 'cvat-annotation-disabled-header-button' : 'cvat-annotation-header-save-button cvat-annotation-header-button'}
                     >
                         <Icon component={SaveIcon} />
                         {saving ? 'Saving...' : 'Save'}
@@ -95,7 +96,7 @@ function LeftGroup(props: Props): JSX.Element {
                     <Button
                         style={{ pointerEvents: undoAction ? 'initial' : 'none', opacity: undoAction ? 1 : 0.5 }}
                         type='link'
-                        className='cvat-annotation-header-button'
+                        className='cvat-annotation-header-undo-button cvat-annotation-header-button'
                         onClick={onUndoClick}
                     >
                         <Icon component={UndoIcon} />
@@ -106,7 +107,7 @@ function LeftGroup(props: Props): JSX.Element {
                     <Button
                         style={{ pointerEvents: redoAction ? 'initial' : 'none', opacity: redoAction ? 1 : 0.5 }}
                         type='link'
-                        className='cvat-annotation-header-button'
+                        className='cvat-annotation-header-redo-button cvat-annotation-header-button'
                         onClick={onRedoClick}
                     >
                         <Icon component={RedoIcon} />
@@ -115,7 +116,7 @@ function LeftGroup(props: Props): JSX.Element {
                 </CVATTooltip>
                 {includesDoneButton ? (
                     <CVATTooltip overlay={`Press "${drawShortcut}" to finish`}>
-                        <Button type='link' className='cvat-annotation-header-button' onClick={onFinishDraw}>
+                        <Button type='link' className='cvat-annotation-header-done-button cvat-annotation-header-button' onClick={onFinishDraw}>
                             <CheckCircleOutlined />
                             Done
                         </Button>
@@ -125,7 +126,7 @@ function LeftGroup(props: Props): JSX.Element {
                     <CVATTooltip overlay={`Press "${switchToolsBlockerShortcut}" to postpone running the algorithm `}>
                         <Button
                             type='link'
-                            className={`cvat-annotation-header-button ${
+                            className={`cvat-annotation-header-block-tool-button cvat-annotation-header-button ${
                                 toolsBlockerState.algorithmsLocked ? 'cvat-button-active' : ''
                             }`}
                             onClick={shouldEnableToolsBlockerOnClick ? onSwitchToolsBlockerState : undefined}

@@ -29,13 +29,14 @@ class EventRecorder {
 
         const logData = {
             text: element.innerText,
-            classes: element.className,
+            classes: this.filterClassName(element.className),
+            location: window.location.pathname + window.location.search,
         };
 
         if (!toRecord && element.parentElement) {
             element = element.parentElement;
             toRecord = this.isEventToBeRecorded(element, parentClassFilter);
-            logData.classes = element.className;
+            logData.classes = this.filterClassName(element.className);
         }
 
         if (toRecord) {
@@ -48,6 +49,10 @@ class EventRecorder {
         this.#savingInterval = setInterval(() => {
             core.logger.save();
         }, CONTROLS_LOGS_INTERVAL) as unknown as number;
+    }
+
+    private filterClassName(cls: string): string {
+        return cls.split(' ').filter((_cls: string) => _cls.startsWith('cvat')).join(' ');
     }
 
     private isEventToBeRecorded(node: HTMLElement, filter: string[]): boolean {
