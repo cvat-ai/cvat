@@ -153,8 +153,17 @@ The organization context affects which entities are visible,
 and where new entities are created.
 
 Set `current_organization` to an organization's slug (short name)
-to make subsequent operations work in the context of that organization.
-Set it to an empty string to work in the context of the user's personal workspace.
+to make subsequent operations work in the context of that organization:
+
+```python
+client.current_organization = 'myorg'
+
+# create a task in the organization
+task = client.tasks.create_from_data(...)
+```
+
+You can also set `current_organization` to an empty string
+to work in the context of the user's personal workspace.
 By default, it is set to `None`,
 which means that both personal and organizational entities are visible,
 while new entities are created in the personal workspace.
