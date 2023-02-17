@@ -718,7 +718,7 @@ export function changeFrameAsync(
                 return;
             }
 
-            const data = await job.frames.get(toFrame, fillBuffer, frameStep, state.settings.player.dataQuality);
+            const data = await job.frames.get(toFrame, fillBuffer, frameStep, state.settings.player.loadOriginalData);
             const states = await job.annotations.get(toFrame, showAllInterpolationTracks, filters);
 
             if (!isAbleToChangeFrame() || statisticsVisible || propagateVisible) {
@@ -968,10 +968,13 @@ export function getJobAsync(
             const {
                 settings: {
                     workspace: { showAllInterpolationTracks },
-                    player: { showDeletedFrames },
+                    player: { showDeletedFrames, loadOriginalData },
                 },
             } = state;
 
+            const core = getCore();
+            console.log(core);
+            getCore().config.chunkDataQuality = loadOriginalData ? 'original' : 'compressed';
             dispatch({
                 type: AnnotationActionTypes.GET_JOB,
                 payload: {
@@ -1011,7 +1014,7 @@ export function getJobAsync(
                 frameNumber = Math.max(Math.min(job.stopFrame, initialFrame || 0), job.startFrame);
             }
 
-            const frameData = await job.frames.get(frameNumber, null, null, state.settings.player.dataQuality);
+            const frameData = await job.frames.get(frameNumber, null, null, state.settings.player.loadOriginalData);
             // call first getting of frame data before rendering interface
             // to load and decode first chunk
             try {

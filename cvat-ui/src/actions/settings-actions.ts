@@ -6,6 +6,7 @@ import { AnyAction } from 'redux';
 import {
     GridColor, ColorBy, SettingsState, ToolsBlockerState,
 } from 'reducers';
+import { getCore } from 'cvat-core-wrapper';
 
 export enum SettingsActionTypes {
     SWITCH_ROTATE_ALL = 'SWITCH_ROTATE_ALL',
@@ -372,11 +373,12 @@ export function switchShowingTagsOnFrame(showTagsOnFrame: boolean): AnyAction {
     };
 }
 
-export function switchDataQuality(dataQuality: boolean): AnyAction {
+export function switchDataQuality(loadOriginalData: boolean): AnyAction {
+    getCore().config.chunkDataQuality = loadOriginalData ? 'original' : 'compressed';
     return {
         type: SettingsActionTypes.SWITCH_DATA_QUALITY,
         payload: {
-            dataQuality,
+            loadOriginalData,
         },
     };
 }

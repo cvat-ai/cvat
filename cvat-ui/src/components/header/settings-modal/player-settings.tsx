@@ -18,7 +18,6 @@ import { clamp } from 'utils/math';
 import { BackJumpIcon, ForwardJumpIcon } from 'icons';
 import { FrameSpeed } from 'reducers';
 import config from 'config';
-import ChunkDataQualityCheckbox from './data-quality-checkbox';
 
 interface Props {
     frameStep: number;
@@ -27,7 +26,7 @@ interface Props {
     rotateAll: boolean;
     smoothImage: boolean;
     showDeletedFrames: boolean;
-    dataQuality: boolean;
+    loadOriginalData: boolean;
     canvasBackgroundColor: string;
     onChangeFrameStep(step: number): void;
     onChangeFrameSpeed(speed: FrameSpeed): void;
@@ -47,7 +46,7 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
         rotateAll,
         smoothImage,
         showDeletedFrames,
-        dataQuality,
+        loadOriginalData,
         canvasBackgroundColor,
         onChangeFrameStep,
         onChangeFrameSpeed,
@@ -229,15 +228,15 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                 <Col span={7}>
                     <Row className='cvat-player-settings-data-quality'>
                         <Col span={24} className='cvat-player-settings-data-quality-checkbox'>
-                            <ChunkDataQualityCheckbox
+                            <Checkbox
                                 className='cvat-text-color'
-                                checked={dataQuality}
+                                checked={loadOriginalData}
                                 onChange={(event: CheckboxChangeEvent): void => {
                                     onSwitchDataQuality(event.target.checked);
                                 }}
                             >
                                 Prefer original data quality
-                            </ChunkDataQualityCheckbox>
+                            </Checkbox>
                         </Col>
                         <Col span={24}>
                             <Text type='secondary'> Downloads the original images instead of the compressed if possible </Text>

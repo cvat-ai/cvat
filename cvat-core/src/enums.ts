@@ -8,6 +8,11 @@ export enum ShareFileType {
     REG = 'REG',
 }
 
+export enum ChunkDataQuality {
+    COMPRESSED = 'compressed',
+    ORIGINAL = 'original',
+}
+
 export enum TaskStatus {
     ANNOTATION = 'annotation',
     VALIDATION = 'validation',

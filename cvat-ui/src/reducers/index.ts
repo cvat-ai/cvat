@@ -764,7 +764,7 @@ export enum ColorBy {
 
 export interface PlayerSettingsState {
     canvasBackgroundColor: string;
-    dataQuality: boolean;
+    loadOriginalData: boolean;
     frameStep: number;
     frameSpeed: FrameSpeed;
     resetZoom: boolean;

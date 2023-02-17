@@ -173,14 +173,13 @@ function buildDuplicatedAPI(prototype) {
         }),
         frames: Object.freeze({
             value: {
-                async get(frame, isPlaying = false, step = 1, dataQuality = false) {
+                async get(frame, isPlaying = false, step = 1) {
                     const result = await PluginRegistry.apiWrapper.call(
                         this,
                         prototype.frames.get,
                         frame,
                         isPlaying,
                         step,
-                        dataQuality,
                     );
                     return result;
                 },

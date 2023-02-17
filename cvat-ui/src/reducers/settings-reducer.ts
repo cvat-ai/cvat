@@ -44,7 +44,7 @@ const defaultState: SettingsState = {
     },
     player: {
         canvasBackgroundColor: '#ffffff',
-        dataQuality: false,
+        loadOriginalData: false,
         frameStep: 10,
         frameSpeed: FrameSpeed.Usual,
         resetZoom: false,
@@ -389,7 +389,7 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 ...state,
                 player: {
                     ...state.player,
-                    dataQuality: action.payload.dataQuality,
+                    loadOriginalData: action.payload.loadOriginalData,
                 },
             };
         }

@@ -235,6 +235,12 @@ function build() {
             set removeUnderlyingMaskPixels(value: boolean) {
                 config.removeUnderlyingMaskPixels = value;
             },
+            get chunkDataQuality(): enums.ChunkDataQuality {
+                return config.chunkDataQuality as enums.ChunkDataQuality;
+            },
+            set chunkDataQuality(value: enums.ChunkDataQuality) {
+                config.chunkDataQuality = value;
+            },
         },
         client: {
             version: `${pjson.version}`,
