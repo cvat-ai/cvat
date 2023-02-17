@@ -9,8 +9,8 @@ export const labelName = `Base label for ${projectName}`;
 export const attrName = `Attr for ${labelName}`;
 export const textDefaultValue = 'Some default value for type Text';
 export const multiAttrParams = {
-    additionalAttrName: `Attr 2`,
-    additionalValue: `Attr value 2`,
+    additionalAttrName: 'Attr 2',
+    additionalValue: 'Attr value 2',
     typeAttribute: 'Text',
 };
 
@@ -19,7 +19,7 @@ it('Prepare to testing', () => {
     cy.login();
     cy.goToProjectsList();
     cy.get('.cvat-projects-page').should('exist');
-    let listItems = [];
+    const listItems = [];
     cy.document().then((doc) => {
         const collection = Array.from(doc.querySelectorAll('.cvat-projects-project-item-title'));
         for (let i = 0; i < collection.length; i++) {

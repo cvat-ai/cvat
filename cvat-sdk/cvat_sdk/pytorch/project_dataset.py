@@ -79,7 +79,7 @@ class ProjectVisionDataset(torchvision.datasets.VisionDataset):
         )
 
         self._logger.info("Fetching project tasks...")
-        tasks = [cache_manager.retrieve_task(task_id) for task_id in project.tasks]
+        tasks = project.get_tasks()
 
         if task_filter is not None:
             tasks = list(filter(task_filter, tasks))

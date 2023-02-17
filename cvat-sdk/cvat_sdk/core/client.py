@@ -12,9 +12,9 @@ from pathlib import Path
 from time import sleep
 from typing import Any, Dict, Optional, Sequence, Tuple
 
-import appdirs
 import attrs
 import packaging.version as pv
+import platformdirs
 import urllib3
 import urllib3.exceptions
 
@@ -29,7 +29,7 @@ from cvat_sdk.core.proxies.tasks import TasksRepo
 from cvat_sdk.core.proxies.users import UsersRepo
 from cvat_sdk.version import VERSION
 
-_DEFAULT_CACHE_DIR = Path(appdirs.user_cache_dir("cvat-sdk", "CVAT.ai"))
+_DEFAULT_CACHE_DIR = platformdirs.user_cache_path("cvat-sdk", "CVAT.ai")
 
 
 @attrs.define

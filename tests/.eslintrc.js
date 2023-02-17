@@ -23,5 +23,6 @@ module.exports = {
         ...Object.fromEntries(Object.entries(globalConfig.rules).filter(([key]) => {
             return !key.startsWith('@typescript-eslint')
         })),
+        "cypress/no-unnecessary-waiting": "off",
     },
 };

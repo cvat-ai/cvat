@@ -1,16 +1,21 @@
 # Copyright (C) 2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import io
 from http import HTTPStatus
+from typing import List
 
 import pytest
+from cvat_sdk.api_client import ApiClient, models
+from cvat_sdk.api_client.api_client import Endpoint
 from deepdiff import DeepDiff
 from PIL import Image
 
 from shared.utils.config import get_method, patch_method, post_method
+
+from .utils import CollectionSimpleFilterTestBase
 
 # https://docs.pytest.org/en/7.1.x/example/markers.html#marking-whole-classes-or-modules
 pytestmark = [pytest.mark.with_external_services]
@@ -43,7 +48,7 @@ class TestGetCloudStorage:
             ("user", True, True),
         ],
     )
-    def test_sandbox_user_get_coud_storage(
+    def test_sandbox_user_get_cloud_storage(
         self, storage_id, group, is_owner, is_allow, users, cloud_storages
     ):
         org = ""
@@ -75,7 +80,7 @@ class TestGetCloudStorage:
             ("worker", False, False),
         ],
     )
-    def test_org_user_get_coud_storage(
+    def test_org_user_get_cloud_storage(
         self, org_id, storage_id, role, is_owner, is_allow, find_users, cloud_storages
     ):
         cloud_storage = cloud_storages[storage_id]
@@ -95,6 +100,35 @@ class TestGetCloudStorage:
             self._test_can_see(username, storage_id, cloud_storage, org_id=org_id)
         else:
             self._test_cannot_see(username, storage_id, org_id=org_id)
+
+
+class TestCloudStoragesListFilters(CollectionSimpleFilterTestBase):
+    field_lookups = {
+        "owner": ["owner", "username"],
+        "name": ["display_name"],
+    }
+
+    @pytest.fixture(autouse=True)
+    def setup(self, restore_db_per_class, admin_user, cloud_storages):
+        self.user = admin_user
+        self.samples = cloud_storages
+
+    def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
+        return api_client.cloudstorages_api.list_endpoint
+
+    def _retrieve_collection(self, **kwargs) -> List:
+        # TODO: fix invalid serializer schema for manifests
+        results = super()._retrieve_collection(_parse_response=False, return_json=True, **kwargs)
+        for r in results:
+            r["manifests"] = [{"filename": m} for m in r["manifests"]]
+        return [models.CloudStorageRead._from_openapi_data(**r) for r in results]
+
+    @pytest.mark.parametrize(
+        "field",
+        ("provider_type", "name", "resource", "credentials_type", "owner"),
+    )
+    def test_can_use_simple_filter_for_object_list(self, field):
+        return super().test_can_use_simple_filter_for_object_list(field)
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -163,7 +197,7 @@ class TestPostCloudStorage:
             ("supervisor", False),
         ],
     )
-    def test_org_user_create_coud_storage(self, org_id, role, is_allow, find_users):
+    def test_org_user_create_cloud_storage(self, org_id, role, is_allow, find_users):
         username = find_users(role=role, org=org_id)[0]["username"]
 
         if is_allow:

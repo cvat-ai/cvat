@@ -46,11 +46,11 @@ To enable authentication, do the following:
    docker compose -f docker-compose.yml -f docker-compose.override.yml up -d
    ```
 
-## Enable authentication with a Github account
+## Enable authentication with a GitHub account
 
-There are 2 basic steps to enable Github account authentication.
+There are 2 basic steps to enable GitHub account authentication.
 
-1. Open Github settings page.
+1. Open GitHub settings page.
 2. On the left menu, click **<> Developer settings** > **OAuth Apps** > **Register new application**.
    <br>For more information, see [Creating an OAuth App](https://docs.github.com/en/developers/apps/building-oauth-apps/creating-an-oauth-app)
 3. Fill in the name field, set the homepage URL (for example: `https://localhost:8080`),
@@ -75,7 +75,7 @@ There are 2 basic steps to enable Github account authentication.
    docker compose -f docker-compose.yml -f docker-compose.override.yml up -d
    ```
 
-> **Note:** You can also configure [Github App](https://docs.github.com/en/developers/apps/building-github-apps/creating-a-github-app),
+> **Note:** You can also configure [GitHub App](https://docs.github.com/en/developers/apps/building-github-apps/creating-a-github-app),
 > but don't forget to add required permissions.
 > <br>In the **Permission** > **Account permissions** > **Email addresses** must be set to **read-only**.
 

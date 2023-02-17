@@ -73,7 +73,7 @@ label to any particular shape tool.
 For example, you added:
 
 - Label `sun` with the **Label shape** type `ellipse`
-- Lable `car` with the **Label shape** type `any`
+- Label `car` with the **Label shape** type `any`
 
 As a result:
 
@@ -138,7 +138,7 @@ To add an attribute, do the following:
 2. In the **Name** field enter the name of the attribute.
 3. From the drop-down, select way to display the attribute in the **Objects menu**:
 
-   - `Select` enables a drop-down list, from which you can select an attibute. <br>If in
+   - `Select` enables a drop-down list, from which you can select an attribute. <br>If in
      the **Attribute value** field you add `__undefined__`,
      the drop-down list will have a blank value.<br>
      This is useful for cases where the attribute of the object cannot be clarified:

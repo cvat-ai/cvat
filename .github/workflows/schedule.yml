@@ -40,35 +40,7 @@ jobs:
 
   search_cache:
     needs: check_updates
-    if:
-      needs.check_updates.outputs.last_commit_time > needs.check_updates.outputs.last_night_time
-    runs-on: ubuntu-latest
-    outputs:
-      sha: ${{ steps.get-sha.outputs.sha}}
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      REPO: ${{ github.repository }}
-    steps:
-      - name: Getting SHA with cache from the default branch
-        id: get-sha
-        run: |
-          DEFAULT_BRANCH=$(gh api /repos/$REPO | jq -r '.default_branch')
-          for sha in $(gh api "/repos/$REPO/commits?per_page=100&sha=$DEFAULT_BRANCH" | jq -r '.[].sha');
-          do
-            RUN_status=$(gh api /repos/${REPO}/actions/workflows/cache.yml/runs | \
-              jq -r ".workflow_runs[]? | select((.head_sha == \"${sha}\") and (.conclusion == \"success\")) | .status")
-
-            if [[ ${RUN_status} == "completed" ]]; then
-              SHA=$sha
-              break
-            fi
-          done
-
-          echo Default branch is ${DEFAULT_BRANCH}
-          echo Workflow will try to get cache from commit: ${SHA}
-
-          echo "default_branch=${DEFAULT_BRANCH}" >> $GITHUB_OUTPUT
-          echo "sha=${SHA}" >> $GITHUB_OUTPUT
+    uses: ./.github/workflows/search-cache.yml
 
   build:
     needs: search_cache
@@ -231,9 +203,7 @@ jobs:
             --entrypoint /bin/bash -u root cvat/server \
             -c 'python manage.py spectacular --file /transfer/schema.yml'
           pip3 install --user -r cvat-sdk/gen/requirements.txt
-          cd cvat-sdk/
-          gen/generate.sh
-          cd ..
+          ./cvat-sdk/gen/generate.sh
 
           pip3 install --user 'cvat-sdk/[pytorch]'
           pip3 install --user cvat-cli/
@@ -375,13 +345,13 @@ jobs:
             npx cypress run \
               --headed \
               --browser chrome \
-              --config-file cypress_canvas3d.json \
-              --spec 'cypress/integration/${{ matrix.specs }}/**/*.js,cypress/integration/remove_users_tasks_projects_organizations.js'
+              --config-file cypress_canvas3d.config.js \
+              --spec 'cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
             mv ./.nyc_output/out.json ./.nyc_output/out_${{ matrix.specs }}.json
           else
             npx cypress run \
               --browser chrome \
-              --spec 'cypress/integration/${{ matrix.specs }}/**/*.js,cypress/integration/remove_users_tasks_projects_organizations.js'
+              --spec 'cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
             mv ./.nyc_output/out.json ./.nyc_output/out_${{ matrix.specs }}.json
           fi
 

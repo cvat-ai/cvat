@@ -1,5 +1,5 @@
 # Copyright (C) 2018-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -114,6 +114,7 @@ INSTALLED_APPS = [
     "dj_rest_auth",
     'dj_rest_auth.registration',
     'dj_pagination',
+    'django_filters',
     'rest_framework',
     'rest_framework.authtoken',
     'drf_spectacular',
@@ -174,10 +175,12 @@ REST_FRAMEWORK = {
         'cvat.apps.engine.pagination.CustomPagination',
     'PAGE_SIZE': 10,
     'DEFAULT_FILTER_BACKENDS': (
+        'cvat.apps.engine.filters.SimpleFilter',
         'cvat.apps.engine.filters.SearchFilter',
         'cvat.apps.engine.filters.OrderingFilter',
         'cvat.apps.engine.filters.JsonLogicFilter',
-        'cvat.apps.iam.filters.OrganizationFilterBackend'),
+        'cvat.apps.iam.filters.OrganizationFilterBackend',
+    ),
 
     'SEARCH_PARAM': 'search',
     # Disable default handling of the 'format' query parameter by REST framework
@@ -260,22 +263,6 @@ IAM_OPA_HOST = 'http://opa:8181'
 IAM_OPA_DATA_URL = f'{IAM_OPA_HOST}/v1/data'
 LOGIN_URL = 'rest_login'
 LOGIN_REDIRECT_URL = '/'
-
-DEFAULT_LIMITS = {
-    "USER_SANDBOX_TASKS": 10,
-    "USER_SANDBOX_PROJECTS": 3,
-    "TASKS_IN_USER_SANDBOX_PROJECT": 5,
-    "USER_OWNED_ORGS": 1,
-    "USER_SANDBOX_CLOUD_STORAGES": 10,
-
-    "ORG_TASKS": 10,
-    "ORG_PROJECTS": 3,
-    "TASKS_IN_ORG_PROJECT": 5,
-    "ORG_CLOUD_STORAGES": 10,
-    "ORG_COMMON_WEBHOOKS": 20,
-
-    "PROJECT_WEBHOOKS": 10,
-}
 
 # ORG settings
 ORG_INVITATION_CONFIRM = 'No'

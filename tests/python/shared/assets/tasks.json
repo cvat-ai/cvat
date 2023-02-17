@@ -14,6 +14,7 @@
       "dimension": "2d",
       "id": 15,
       "image_quality": 70,
+      "jobs": "http://localhost:8080/api/jobs?task_id=15",
       "labels": [
         {
           "attributes": [],
@@ -81,7 +82,7 @@
     },
     {
       "assignee": null,
-      "bug_tracker": "",
+      "bug_tracker": "https://bugtracker.localhost/task/12345",
       "created_date": "2022-09-22T14:22:25.820000Z",
       "data": 13,
       "data_chunk_size": 72,
@@ -90,6 +91,7 @@
       "dimension": "2d",
       "id": 14,
       "image_quality": 70,
+      "jobs": "http://localhost:8080/api/jobs?task_id=14",
       "labels": [
         {
           "attributes": [],
@@ -325,6 +327,7 @@
       "dimension": "2d",
       "id": 13,
       "image_quality": 70,
+      "jobs": "http://localhost:8080/api/jobs?task_id=13",
       "labels": [
         {
           "attributes": [],
@@ -388,6 +391,7 @@
       "created_date": "2022-03-14T13:24:05.852000Z",
       "dimension": "2d",
       "id": 12,
+      "jobs": "http://localhost:8080/api/jobs?task_id=12",
       "labels": [
         {
           "attributes": [],
@@ -437,6 +441,7 @@
       "dimension": "2d",
       "id": 11,
       "image_quality": 70,
+      "jobs": "http://localhost:8080/api/jobs?task_id=11",
       "labels": [
         {
           "attributes": [],
@@ -525,6 +530,7 @@
       "dimension": "2d",
       "id": 9,
       "image_quality": 70,
+      "jobs": "http://localhost:8080/api/jobs?task_id=9",
       "labels": [
         {
           "attributes": [
@@ -660,6 +666,7 @@
       "dimension": "2d",
       "id": 8,
       "image_quality": 70,
+      "jobs": "http://localhost:8080/api/jobs?task_id=8",
       "labels": [
         {
           "attributes": [],
@@ -740,6 +747,7 @@
       "dimension": "2d",
       "id": 7,
       "image_quality": 70,
+      "jobs": "http://localhost:8080/api/jobs?task_id=7",
       "labels": [
         {
           "attributes": [],
@@ -808,6 +816,7 @@
       "dimension": "3d",
       "id": 6,
       "image_quality": 70,
+      "jobs": "http://localhost:8080/api/jobs?task_id=6",
       "labels": [
         {
           "attributes": [],
@@ -873,6 +882,7 @@
       "dimension": "2d",
       "id": 5,
       "image_quality": 70,
+      "jobs": "http://localhost:8080/api/jobs?task_id=5",
       "labels": [
         {
           "attributes": [],
@@ -944,6 +954,7 @@
       "dimension": "2d",
       "id": 2,
       "image_quality": 70,
+      "jobs": "http://localhost:8080/api/jobs?task_id=2",
       "labels": [
         {
           "attributes": [],
