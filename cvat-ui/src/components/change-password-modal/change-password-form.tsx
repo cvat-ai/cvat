@@ -82,7 +82,7 @@ function ChangePasswordFormComponent({ fetching, onSubmit }: Props): JSX.Element
                 <Button
                     type='primary'
                     htmlType='submit'
-                    className='change-password-form-button'
+                    className='cvat-change-password-form-button'
                     loading={fetching}
                     disabled={fetching}
                 >

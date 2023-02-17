@@ -141,7 +141,7 @@ function RightGroup(props: Props): JSX.Element {
             )}
             <Button
                 type='link'
-                className='cvat-annotation-header-button'
+                className='cvat-annotation-header-fullscreen-button cvat-annotation-header-button'
                 onClick={(): void => {
                     if (window.document.fullscreenEnabled) {
                         if (window.document.fullscreenElement) {
@@ -155,13 +155,19 @@ function RightGroup(props: Props): JSX.Element {
                 <Icon component={FullscreenIcon} />
                 Fullscreen
             </Button>
-            <Button type='link' className='cvat-annotation-header-button' onClick={showStatistics}>
+            <Button
+                type='link'
+                className='cvat-annotation-header-info-button cvat-annotation-header-button'
+                onClick={showStatistics}
+            >
                 <Icon component={InfoIcon} />
                 Info
             </Button>
             <Button
                 type='link'
-                className={`cvat-annotation-header-button ${filters.length ? 'filters-armed' : ''}`}
+                className={`cvat-annotation-header-filters-button cvat-annotation-header-button ${filters.length ?
+                    'filters-armed' : ''
+                }`}
                 onClick={showFilters}
             >
                 <Icon component={FilterIcon} />

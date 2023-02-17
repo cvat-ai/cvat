@@ -25,14 +25,15 @@
     padding: $grid-unit-size;
     bottom: 0;
     right: 0;
+
+    > div {
+        text-align: center;
+    }
 }
 
-.cvat-canvas3d-perspective-arrow-directions-icons-up {
-    margin-left: $grid-unit-size * 5.25;
-}
-
-.cvat-canvas3d-perspective-arrow-directions-icons-bottom {
-    margin: $grid-unit-size * 0.5;
+.cvat-canvas3d-perspective-arrow-directions-icons-right,
+.cvat-canvas3d-perspective-arrow-directions-icons-left {
+    margin: $grid-unit-size;
 }
 
 .cvat-canvas3d-perspective-arrow-directions-icons-color {

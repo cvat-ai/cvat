@@ -43,7 +43,10 @@ function PopoverContent(props: LabelKeySelectorPopoverContentProps): JSX.Element
                         return (
                             <Col key={i} span={8}>
                                 <CVATTooltip title={labelName}>
-                                    <Button onClick={() => updateLabelShortcutKey(i, labelID)}>
+                                    <Button
+                                        className='cvat-label-item-shortcut-button'
+                                        onClick={() => updateLabelShortcutKey(i, labelID)}
+                                    >
                                         <Text>{`${i}:`}</Text>
                                         <Text type='secondary'>{labelName}</Text>
                                     </Button>
