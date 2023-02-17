@@ -63,7 +63,7 @@ docker exec -it cvat_db pg_dumpall > cvat.db.dump
 cd cvat
 docker compose down
 docker volume rm cvat_cvat_db
-export CVAT_VERSION="2.3.0"
+export CVAT_VERSION="v2.3.0"
 cd ..
 mv cvat cvat_220
 wget https://github.com/opencv/cvat/archive/refs/tags/v${CVAT_VERSION}.zip
@@ -82,7 +82,7 @@ docker compose -f docker compose.yml -f docker compose.dev.yml -f docker compose
 Step by step commands how to upgrade CVAT from v1.7.0 to v2.2.0.
 Let's assume that you have CVAT v1.7.0 working.
 ```shell
-export CVAT_VERSION="2.2.0"
+export CVAT_VERSION="v2.2.0"
 cd cvat
 docker compose down
 cd ..
