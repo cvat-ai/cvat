@@ -298,12 +298,12 @@ export default function CreateProjectContent(): JSX.Element {
             <Col span={24}>
                 <Row justify='end' gutter={5}>
                     <Col>
-                        <Button type='primary' onClick={onSubmitAndOpen}>
+                        <Button className='cvat-submit-open-project-button' type='primary' onClick={onSubmitAndOpen}>
                             Submit & Open
                         </Button>
                     </Col>
                     <Col>
-                        <Button type='primary' onClick={onSubmitAndContinue}>
+                        <Button className='cvat-submit-continue-project-button' type='primary' onClick={onSubmitAndContinue}>
                             Submit & Continue
                         </Button>
                     </Col>

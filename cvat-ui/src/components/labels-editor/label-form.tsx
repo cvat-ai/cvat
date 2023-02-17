@@ -503,6 +503,7 @@ export default class LabelForm extends React.Component<Props> {
         return (
             <CVATTooltip title={tooltipTitle}>
                 <Button
+                    className='cvat-submit-new-label-button'
                     style={{ width: '150px' }}
                     type='primary'
                     htmlType='submit'
@@ -519,6 +520,7 @@ export default class LabelForm extends React.Component<Props> {
         return (
             <CVATTooltip title='Do not save the label and return'>
                 <Button
+                    className='cvat-cancel-new-label-button'
                     type='primary'
                     danger
                     style={{ width: '150px' }}
