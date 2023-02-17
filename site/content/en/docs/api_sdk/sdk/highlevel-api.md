@@ -168,6 +168,15 @@ By default, it is set to `None`,
 which means that both personal and organizational entities are visible,
 while new entities are created in the personal workspace.
 
+To temporarily set the organization slug, use the `organization_context` function:
+
+```python
+with client.organization_context('myorg'):
+    task = client.tasks.create_from_data(...)
+
+# the slug is now reset to its previous value
+```
+
 ## Entities and Repositories
 
 _Entities_ represent objects on the server. They provide read access to object fields

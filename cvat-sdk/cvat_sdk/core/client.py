@@ -7,10 +7,10 @@ from __future__ import annotations
 
 import logging
 import urllib.parse
-from contextlib import suppress
+from contextlib import contextmanager, suppress
 from pathlib import Path
 from time import sleep
-from typing import Any, Dict, Optional, Sequence, Tuple, TypeVar
+from typing import Any, Dict, Iterator, Optional, Sequence, Tuple, TypeVar
 
 import attrs
 import packaging.version as pv
@@ -119,6 +119,15 @@ class Client:
             self.api_client.default_headers.pop(self._ORG_SLUG_HEADER, None)
         else:
             self.api_client.default_headers[self._ORG_SLUG_HEADER] = org_slug
+
+    @contextmanager
+    def organization_context(self, slug: str) -> Iterator[None]:
+        prev_slug = self.organization_slug
+        self.organization_slug = slug
+        try:
+            yield
+        finally:
+            self.organization_slug = prev_slug
 
     ALLOWED_SCHEMAS = ("https", "http")
 

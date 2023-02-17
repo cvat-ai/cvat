@@ -201,3 +201,14 @@ def test_organization_contexts(admin_user: str):
         client.projects.retrieve(org_project.id)
         with pytest.raises(NotFoundException):
             client.projects.retrieve(personal_project.id)
+
+
+def test_organization_context_manager():
+    client = Client(BASE_URL)
+
+    client.organization_slug = "abc"
+
+    with client.organization_context("def"):
+        assert client.organization_slug == "def"
+
+    assert client.organization_slug == "abc"
