@@ -66,7 +66,7 @@ def _create_csv(query_params, output_filename, cache_ttl):
             writer.writerows(result.result_rows)
 
         archive_ctime = os.path.getctime(output_filename)
-        scheduler = django_rq.get_scheduler(settings.CVAT_QUEUES.IMPORT_DATA.value)
+        scheduler = django_rq.get_scheduler(settings.CVAT_QUEUES.EXPORT_DATA.value)
         cleaning_job = scheduler.enqueue_in(time_delta=cache_ttl,
             func=clear_export_cache,
             file_path=output_filename,
