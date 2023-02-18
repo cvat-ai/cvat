@@ -283,21 +283,6 @@ async function share(directoryArg) {
     return response.data;
 }
 
-async function exception(exceptionObject) {
-    const { backendAPI } = config;
-
-    try {
-        await Axios.post(`${backendAPI}/server/exception`, JSON.stringify(exceptionObject), {
-            proxy: config.proxy,
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
-}
-
 async function formats(): Promise<AnnotationFormatsResponseBody> {
     const { backendAPI } = config;
 
@@ -1893,11 +1878,11 @@ async function createFunction(functionData: any) {
     }
 }
 
-async function saveLogs(logs) {
+async function saveEvents(events) {
     const { backendAPI } = config;
 
     try {
-        await Axios.post(`${backendAPI}/server/logs`, JSON.stringify(logs), {
+        await Axios.post(`${backendAPI}/events`, JSON.stringify(events), {
             proxy: config.proxy,
             headers: {
                 'Content-Type': 'application/json',
@@ -2548,7 +2533,6 @@ export default Object.freeze({
         about,
         share,
         formats,
-        exception,
         login,
         logout,
         socialAuthentication,
@@ -2615,8 +2599,8 @@ export default Object.freeze({
         uploadAnnotations,
     }),
 
-    logs: Object.freeze({
-        save: saveLogs,
+    events: Object.freeze({
+        save: saveEvents,
     }),
 
     lambda: Object.freeze({

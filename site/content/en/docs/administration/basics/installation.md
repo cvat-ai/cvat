@@ -414,15 +414,7 @@ if you want to keep the dashboard in production you should read Traefik's
 
 ### Additional components
 
-- [Analytics: management and monitoring of data annotation team](/docs/administration/advanced/analytics/)
-
-```shell
-# Build and run containers with Analytics component support:
-docker compose -f docker-compose.yml \
-  -f components/analytics/docker-compose.analytics.yml up -d --build
-```
-
-### Semi-automatic and automatic annotation
+#### Semi-automatic and automatic annotation
 
 Please follow this [guide](/docs/administration/advanced/installation_automatic_annotation/).
 

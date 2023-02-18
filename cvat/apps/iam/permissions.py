@@ -1,5 +1,5 @@
 # Copyright (C) 2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -15,7 +15,7 @@ import requests
 from attrs import define, field
 from django.conf import settings
 from django.db.models import Q
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, PermissionDenied
 from rest_framework.permissions import BasePermission
 
 from cvat.apps.engine.models import Issue, Job, Project, Task
@@ -334,8 +334,6 @@ class MembershipPermission(OpenPolicyAgentPermission):
 class ServerPermission(OpenPolicyAgentPermission):
     class Scopes(StrEnum):
         VIEW = 'view'
-        SEND_EXCEPTION = 'send:exception'
-        SEND_LOGS = 'send:logs'
         LIST_CONTENT = 'list:content'
 
     @classmethod
@@ -356,13 +354,53 @@ class ServerPermission(OpenPolicyAgentPermission):
     def get_scopes(request, view, obj):
         Scopes = __class__.Scopes
         return [{
-            'annotation_formats': Scopes.VIEW,
-            'about': Scopes.VIEW,
-            'plugins': Scopes.VIEW,
-            'exception': Scopes.SEND_EXCEPTION,
-            'logs': Scopes.SEND_LOGS,
-            'share': Scopes.LIST_CONTENT,
-        }.get(view.action, None)]
+            ('annotation_formats', 'GET'): Scopes.VIEW,
+            ('about', 'GET'): Scopes.VIEW,
+            ('plugins', 'GET'): Scopes.VIEW,
+            ('share', 'GET'): Scopes.LIST_CONTENT,
+        }.get((view.action, request.method))]
+
+    def get_resource(self):
+        return None
+
+class EventsPermission(OpenPolicyAgentPermission):
+    class Scopes(StrEnum):
+        SEND_EVENTS = 'send:events'
+        DUMP_EVENTS = 'dump:events'
+
+    @classmethod
+    def create(cls, request, view, obj):
+        permissions = []
+        if view.basename == 'events':
+            for scope in cls.get_scopes(request, view, obj):
+                self = cls.create_base_perm(request, view, scope, obj)
+                permissions.append(self)
+
+        return permissions
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.url = settings.IAM_OPA_DATA_URL + '/events/allow'
+
+    def filter(self, query_params):
+        url = self.url.replace('/allow', '/filter')
+        r = requests.post(url, json=self.payload)
+        filter_params = query_params.copy()
+        for query in r.json()['result']:
+            for attr, value in query.items():
+                if filter_params.get(attr, value) != value:
+                    raise PermissionDenied(f"You don't have permission to view events with {attr}={filter_params.get(attr)}")
+                else:
+                    filter_params[attr] = value
+        return filter_params
+
+    @staticmethod
+    def get_scopes(request, view, obj):
+        Scopes = __class__.Scopes
+        return [{
+            ('create', 'POST'): Scopes.SEND_EVENTS,
+            ('list', 'GET'): Scopes.DUMP_EVENTS,
+        }.get((view.action, request.method))]
 
     def get_resource(self):
         return None
