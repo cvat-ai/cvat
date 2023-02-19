@@ -3,3 +3,4 @@ opencv-python-headless>=4.4.0.42
 Pillow==9.3.0
 tqdm>=4.58.0
 natsort>=8.0.0
+numpy>=1.22.2 # not directly required, pinned by Snyk to avoid a vulnerability
