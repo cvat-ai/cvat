@@ -43,7 +43,7 @@ function ModelsPageComponent(): JSX.Element {
         });
     }, [query]);
 
-    const pageOutOfBounds = updatedQuery.page > Math.ceil(totalCount / PAGE_SIZE);
+    const pageOutOfBounds = totalCount && updatedQuery.page > Math.ceil(totalCount / PAGE_SIZE);
     useEffect(() => {
         dispatch(getModelProvidersAsync());
         dispatch(getModelsAsync(updatedQuery));

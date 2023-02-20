@@ -482,7 +482,7 @@ async function authorized() {
         await getSelf();
     } catch (serverError) {
         if (serverError.code === 401) {
-            await logout();
+            removeAuthData();
             return false;
         }
 
