@@ -158,21 +158,6 @@ export interface SerializedShare {
     mime_type: string;
 }
 
-export interface SerializedException {
-    client: string;
-    client_id: string;
-    column: number;
-    filename: string;
-    is_active: boolean;
-    line: number;
-    message: string;
-    name: string;
-    stack: string;
-    system: string;
-    time: string;
-    version: string;
-}
-
 export interface SerializedUserAgreement {
     name: string;
     required: boolean;
