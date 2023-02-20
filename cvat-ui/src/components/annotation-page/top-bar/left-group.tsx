@@ -85,8 +85,8 @@ function LeftGroup(props: Props): JSX.Element {
                     <Button
                         onClick={saving ? undefined : onSaveAnnotation}
                         type='link'
-                        disabled={saving}
-                        className={saving ? 'cvat-annotation-disabled-header-button' : 'cvat-annotation-header-save-button cvat-annotation-header-button'}
+                        className={saving ? 'cvat-annotation-header-save-button cvat-annotation-disabled-header-button' :
+                            'cvat-annotation-header-save-button cvat-annotation-header-button'}
                     >
                         <Icon component={SaveIcon} />
                         {saving ? 'Saving...' : 'Save'}
