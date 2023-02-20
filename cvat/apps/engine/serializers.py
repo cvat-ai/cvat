@@ -341,12 +341,6 @@ class LabelSerializer(SublabelSerializer):
         return parent_info, logger
 
 
-class JobCommitSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.JobCommit
-        fields = ('id', 'owner', 'data', 'timestamp', 'scope')
-
-
 class JobReadSerializer(serializers.ModelSerializer):
     task_id = serializers.ReadOnlyField(source="segment.task.id")
     project_id = serializers.ReadOnlyField(source="get_project_id", allow_null=True)
