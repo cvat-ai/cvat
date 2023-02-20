@@ -73,7 +73,7 @@ from cvat.apps.iam.permissions import (CloudStoragePermission,
     CommentPermission, IssuePermission, JobPermission, ProjectPermission,
     TaskPermission, UserPermission)
 from cvat.apps.engine.cache import MediaCache
-from cvat.apps.events.handlers import handle_annotations_patch
+from cvat.apps.events.handlers import handle_annotations_patch, handle_rq_exception
 
 @extend_schema(tags=['server'])
 class ServerViewSet(viewsets.ViewSet):
@@ -2083,14 +2083,16 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             msg = str(ex)
             return HttpResponseBadRequest(msg)
 
-def rq_handler(job, exc_type, exc_value, tb):
-    job.exc_info = "".join(
+def rq_exception_handler(rq_job, exc_type, exc_value, tb):
+    rq_job.exc_info = "".join(
         traceback.format_exception_only(exc_type, exc_value))
-    job.save()
-    if "tasks" in job.id.split("/"):
-        return task.rq_handler(job, exc_type, exc_value, tb)
-
-    return True
+    rq_job.save()
+    return handle_rq_exception(
+        rq_job_id=rq_job.id,
+        exc_type=exc_type,
+        exc_value=exc_value,
+        tb=tb,
+    )
 
 def _download_file_from_bucket(db_storage, filename, key):
     storage = db_storage_to_storage_instance(db_storage)

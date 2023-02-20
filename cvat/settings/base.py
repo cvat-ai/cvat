@@ -332,7 +332,7 @@ NUCLIO = {
 }
 
 RQ_SHOW_ADMIN_LINK = True
-RQ_EXCEPTION_HANDLERS = ['cvat.apps.engine.views.rq_handler']
+RQ_EXCEPTION_HANDLERS = ['cvat.apps.engine.views.rq_exception_handler']
 
 
 # JavaScript and CSS compression

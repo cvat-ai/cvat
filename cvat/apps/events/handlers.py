@@ -4,6 +4,8 @@
 
 from copy import deepcopy
 from datetime import datetime, timezone
+import traceback
+import re
 
 from rest_framework.renderers import JSONRenderer
 from crum import get_current_user, get_current_request
@@ -306,11 +308,14 @@ def handle_annotations_patch(instance, annotations, action, **kwargs):
 
         return data
 
-    pid = project_id(instance)
     oid = organization_id(instance)
+    oslug = organization_slug(instance)
+    pid = project_id(instance)
     tid = task_id(instance)
     jid = job_id(instance)
     uid = user_id(instance)
+    uname = user_name(instance)
+    uemail = user_email(instance)
 
     tags = [filter_shape_data(tag) for tag in _annotations.get("tags", [])]
     if tags:
@@ -319,10 +324,13 @@ def handle_annotations_patch(instance, annotations, action, **kwargs):
             source='server',
             count=len(tags),
             org_id=oid,
+            org_slug=oslug,
             project_id=pid,
             task_id=tid,
             job_id=jid,
             user_id=uid,
+            user_name=uname,
+            user_email=uemail,
             payload=tags,
         )
         message = JSONRenderer().render(event).decode('UTF-8')
@@ -341,10 +349,13 @@ def handle_annotations_patch(instance, annotations, action, **kwargs):
                 source='server',
                 count=len(shapes),
                 org_id=oid,
+                org_slug=oslug,
                 project_id=pid,
                 task_id=tid,
                 job_id=jid,
                 user_id=uid,
+                user_name=uname,
+                user_email=uemail,
                 payload=shapes,
             )
             message = JSONRenderer().render(event).decode('UTF-8')
@@ -368,11 +379,71 @@ def handle_annotations_patch(instance, annotations, action, **kwargs):
                 source='server',
                 count=len(tracks),
                 org_id=oid,
+                org_slug=oslug,
                 project_id=pid,
                 task_id=tid,
                 job_id=jid,
                 user_id=uid,
+                user_name=uname,
+                user_email=uemail,
                 payload=tracks,
             )
             message = JSONRenderer().render(event).decode('UTF-8')
             vlogger.info(message)
+
+def handle_rq_exception(rq_job_id, exc_type, exc_value, tb):
+    def _get_object_id(object_name):
+        try:
+            m = re.search(fr"{object_name}\.id(\d+)-", rq_job_id)
+            if m:
+                return int(m.group(1))
+        except Exception:
+            return None
+
+    def _get_username():
+        try:
+            m = re.search(r'-by-(\w+)', rq_job_id)
+            if m:
+                return m.group(1)
+        except Exception:
+            return None
+
+    def _get_user_id_email_by_username(username):
+        if not username:
+            return None, None
+        try:
+            user = User.objects.filter(username=username)
+            if user.count() != 1:
+                return None, None
+            user = user.first()
+            return user.id, user.email
+        except Exception:
+            return None, None
+
+    pid = _get_object_id("project")
+    tid = _get_object_id("task")
+    jid = _get_object_id("job")
+    uname = _get_username()
+    uid, uemail = _get_user_id_email_by_username(uname)
+
+    payload = {
+        "traceback": ''.join(traceback.format_exception(exc_type, exc_value, tb))
+    }
+
+    event = create_event(
+        scope="send:exception",
+        source='server',
+        count=1,
+        obj_value=traceback.format_exception_only(exc_type, exc_value)[0],
+        project_id=pid,
+        task_id=tid,
+        job_id=jid,
+        user_id=uid,
+        user_name=uname,
+        user_email=uemail,
+        payload=payload,
+    )
+    message = JSONRenderer().render(event).decode('UTF-8')
+    vlogger.info(message)
+
+    return False
