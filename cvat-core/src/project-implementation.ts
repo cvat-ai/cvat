@@ -38,11 +38,19 @@ export default function implementProject(projectClass) {
             // leave only new labels to create them via project PATCH request
             projectData.labels = (projectData.labels || [])
                 .filter((label: SerializedLabel) => !Number.isInteger(label.id)).map((el) => el.toJSON());
-
-            const serializedProject = await serverProxy.projects.save(this.id, projectData);
-            const labels = await serverProxy.labels.get({ project_id: serializedProject.id });
+            if (!projectData.labels.length) {
+                delete projectData.labels;
+            }
 
             this._updateTrigger.reset();
+            let serializedProject = null;
+            if (Object.keys(projectData).length) {
+                serializedProject = await serverProxy.projects.save(this.id, projectData);
+            } else {
+                [serializedProject] = (await serverProxy.projects.get({ id: this.id }));
+            }
+
+            const labels = await serverProxy.labels.get({ project_id: serializedProject.id });
             return new Project({ ...serializedProject, labels: labels.results });
         }
 

@@ -404,14 +404,21 @@ export function implementTask(Task) {
             // leave only new labels to create them via project PATCH request
             taskData.labels = (taskData.labels || [])
                 .filter((label: SerializedLabel) => !Number.isInteger(label.id)).map((el) => el.toJSON());
-
-            const serializedTask = await serverProxy.tasks.save(this.id, taskData);
-            const labels = await serverProxy.labels.get({ task_id: serializedTask.id });
-            const jobs = await serverProxy.jobs.get({
-                filter: JSON.stringify({ and: [{ '==': [{ var: 'task_id' }, serializedTask.id] }] }),
-            }, true);
+            if (!taskData.labels.length) {
+                delete taskData.labels;
+            }
 
             this._updateTrigger.reset();
+
+            let serializedTask = null;
+            if (Object.keys(taskData).length) {
+                serializedTask = await serverProxy.tasks.save(this.id, taskData);
+            } else {
+                [serializedTask] = (await serverProxy.tasks.get({ id: this.id }));
+            }
+            const labels = await serverProxy.labels.get({ task_id: this.id });
+            const jobs = await serverProxy.jobs.get({ task_id: this.id }, true);
+
             return new Task({
                 ...serializedTask,
                 progress: serializedTask.jobs,
