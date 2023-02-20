@@ -211,6 +211,7 @@ class LabelSerializer(SublabelSerializer):
         extra_kwargs = {
             'project_id': { 'required': False, 'allow_null': False },
             'task_id': { 'required': False, 'allow_null': False },
+            'parent_id': { 'required': False, },
         }
 
     def to_representation(self, instance):
@@ -237,6 +238,7 @@ class LabelSerializer(SublabelSerializer):
 
     def validate(self, attrs):
         if self._local and attrs.get('deleted'):
+            # NOTE: Navigate clients to the right method
             raise serializers.ValidationError(
                 'Labels cannot be deleted by updating in this endpoint. '
                 'Please use the DELETE method instead.'

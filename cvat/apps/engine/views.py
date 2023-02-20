@@ -1883,18 +1883,21 @@ class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             # These filters are implemented differently from others
             OpenApiParameter('job_id', description='A simple equality filter for job id'),
             OpenApiParameter('task_id', description='A simple equality filter for task id'),
+            OpenApiParameter('project_id', description='A simple equality filter for project id'),
         ],
         responses={
             '200': LabelSerializer(many=True),
         }),
     partial_update=extend_schema(
-        summary='Methods does a partial update of chosen fields in an label',
+        summary='Methods does a partial update of chosen fields in an label'
+        'To modify a sublabel, please use the PATCH method of the parent label',
         request=LabelSerializer(partial=True),
         responses={
             '200': LabelSerializer,
         }),
     destroy=extend_schema(
-        summary='Method deletes an label',
+        summary='Method deletes a label. '
+        'To delete a sublabel, please use the PATCH method of the parent label',
         responses={
             '204': OpenApiResponse(description='The label has been deleted'),
         })
