@@ -25,7 +25,7 @@ context('Register user, change password, login with new password', () => {
             cy.get('#oldPassword').type(myPassword);
             cy.get('#newPassword1').type(myNewPassword);
             cy.get('#newPassword2').type(myNewPassword);
-            cy.get('.change-password-form-button').click();
+            cy.get('.cvat-change-password-form-button').click();
         });
     }
 
