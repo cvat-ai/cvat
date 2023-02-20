@@ -72,7 +72,7 @@ export interface SerializedProject {
 
 export type TasksFilter = ProjectsFilter & { ordering?: string; }; // TODO: Need to clarify how "ordering" is used
 export type JobsFilter = ProjectsFilter & {
-    task_id: number;
+    task_id?: number;
 };
 
 export interface SerializedTask {

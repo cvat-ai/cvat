@@ -901,9 +901,8 @@ export function getJobAsync(
                 true,
             );
 
-            // Check if the task was already downloaded to the state
             const [job] = await cvat.jobs.get({ jobID: jid });
-            // opening correct first frame according to setup
+            // navigate to correct first frame according to setup
             let frameNumber;
             if (initialFrame === null && !showDeletedFrames) {
                 frameNumber = (await job.frames.search(

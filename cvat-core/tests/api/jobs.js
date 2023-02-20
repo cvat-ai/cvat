@@ -20,7 +20,7 @@ const { Job } = require('../../src/session');
 describe('Feature: get a list of jobs', () => {
     test('get jobs by a task id', async () => {
         const result = await window.cvat.jobs.get({
-            taskID: 3,
+            filter: JSON.stringify({ and: [{ '==': [{ var: 'task_id' }, 3] }] }),
         });
         expect(Array.isArray(result)).toBeTruthy();
         expect(result).toHaveLength(2);
@@ -34,7 +34,7 @@ describe('Feature: get a list of jobs', () => {
 
     test('get jobs by an unknown task id', async () => {
         const result = await window.cvat.jobs.get({
-            taskID: 50,
+            filter: JSON.stringify({ and: [{ '==': [{ var: 'task_id' }, 50] }] }),
         });
         expect(Array.isArray(result)).toBeTruthy();
         expect(result).toHaveLength(0);
