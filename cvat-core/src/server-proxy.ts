@@ -10,7 +10,7 @@ import * as tus from 'tus-js-client';
 import {
     SerializedLabel, SerializedAnnotationFormats, ProjectsFilter,
     SerializedProject, SerializedTask, TasksFilter, SerializedUser,
-    SerializedAbout, SerializedShare, SerializedException, SerializedUserAgreement,
+    SerializedAbout, SerializedShare, SerializedUserAgreement,
     SerializedRegister, JobsFilter, SerializedJob,
 } from 'server-response-types';
 import { Storage } from './storage';
