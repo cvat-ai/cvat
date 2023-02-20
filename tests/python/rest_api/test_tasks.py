@@ -10,7 +10,7 @@ import subprocess
 from copy import deepcopy
 from functools import partial
 from http import HTTPStatus
-from itertools import chain
+from itertools import chain, product
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from time import sleep
@@ -611,8 +611,9 @@ class TestPostTaskData:
 
         response = get_method(self._USERNAME, "labels", task_id=f"{task_id}")
         label_ids = {}
-        for label in response.json()["results"]:
-            label_ids.setdefault(label["type"], []).append(label["id"])
+        for root_label in response.json()["results"]:
+            for label in [root_label] + root_label["sublabels"]:
+                label_ids.setdefault(label["type"], []).append(label["id"])
 
         response = get_method(self._USERNAME, "jobs", task_id=f"{task_id}")
         job_id = response.json()["results"][0]["id"]
@@ -927,6 +928,165 @@ class TestPostTaskData:
                 assert job.stop_frame == stop_frame
 
                 start_frame = stop_frame + 1
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+class TestPatchTaskLabel:
+    def _get_task_labels(self, pid, user, **kwargs) -> List[models.Label]:
+        kwargs.setdefault("return_json", True)
+        with make_api_client(user) as api_client:
+            return get_paginated_collection(
+                api_client.labels_api.list_endpoint, task_id=str(pid), **kwargs
+            )
+
+    def test_can_delete_label(self, tasks, labels, admin_user):
+        task = [t for t in tasks if t["labels"]["count"] > 0][0]
+        label = deepcopy([l for l in labels if l.get("task_id") == task["id"]][0])
+        label_payload = {"id": label["id"], "deleted": True}
+
+        response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [label_payload]})
+        assert response.status_code == HTTPStatus.OK, response.content
+        assert response.json()["labels"]["count"] == task["labels"]["count"] - 1
+
+    def test_can_delete_skeleton_label(self, tasks, labels, admin_user):
+        task = next(
+            t
+            for t in tasks
+            if any(
+                label
+                for label in labels
+                if label.get("task_id") == t["id"]
+                if label["type"] == "skeleton"
+            )
+        )
+        task_labels = deepcopy([l for l in labels if l.get("task_id") == task["id"]])
+        label = next(l for l in task_labels if l["type"] == "skeleton")
+        task_labels.remove(label)
+        label_payload = {"id": label["id"], "deleted": True}
+
+        response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [label_payload]})
+        assert response.status_code == HTTPStatus.OK
+        assert response.json()["labels"]["count"] == task["labels"]["count"] - 1
+
+        resulting_labels = self._get_task_labels(task["id"], admin_user)
+        assert DeepDiff(resulting_labels, task_labels, ignore_order=True) == {}
+
+    def test_can_rename_label(self, tasks, labels, admin_user):
+        task = [t for t in tasks if t["labels"]["count"] > 0][0]
+        task_labels = deepcopy([l for l in labels if l.get("task_id") == task["id"]])
+        task_labels[0].update({"name": "new name"})
+
+        response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [task_labels[0]]})
+        assert response.status_code == HTTPStatus.OK
+
+        resulting_labels = self._get_task_labels(task["id"], admin_user)
+        assert DeepDiff(resulting_labels, task_labels, ignore_order=True) == {}
+
+    def test_cannot_add_foreign_label(self, tasks, labels, admin_user):
+        task = list(tasks)[0]
+        new_label = deepcopy(
+            [
+                l
+                for l in labels
+                if l.get("task_id") != task["id"]
+                if not l.get("project_id") or l.get("project_id") != task.get("project_id")
+            ][0]
+        )
+
+        response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [new_label]})
+        assert response.status_code == HTTPStatus.NOT_FOUND
+        assert f"Not found label with id #{new_label['id']} to change" in response.text
+
+    def test_admin_can_add_label(self, tasks, admin_user):
+        task = list(tasks)[0]
+        new_label = {"name": "new name"}
+
+        response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [new_label]})
+        assert response.status_code == HTTPStatus.OK
+        assert response.json()["labels"]["count"] == task["labels"]["count"] + 1
+
+    @pytest.mark.parametrize("role", ["maintainer", "owner"])
+    def test_non_task_staff_privileged_org_members_can_add_label(
+        self,
+        find_users,
+        tasks,
+        is_task_staff,
+        is_org_member,
+        role,
+    ):
+        users = find_users(role=role, exclude_privilege="admin")
+
+        user, task = next(
+            (user, task)
+            for user, task in product(users, tasks)
+            if not is_task_staff(user["id"], task["id"])
+            and task["organization"]
+            and is_org_member(user["id"], task["organization"])
+        )
+
+        new_label = {"name": "new name"}
+        response = patch_method(
+            user["username"],
+            f'/tasks/{task["id"]}',
+            {"labels": [new_label]},
+            org_id=task["organization"],
+        )
+        assert response.status_code == HTTPStatus.OK
+        assert response.json()["labels"]["count"] == task["labels"]["count"] + 1
+
+    @pytest.mark.parametrize("role", ["supervisor", "worker"])
+    def test_non_task_staff_org_members_cannot_add_label(
+        self,
+        find_users,
+        tasks,
+        is_task_staff,
+        is_org_member,
+        role,
+    ):
+        users = find_users(role=role, exclude_privilege="admin")
+
+        user, task = next(
+            (user, task)
+            for user, task in product(users, tasks)
+            if not is_task_staff(user["id"], task["id"])
+            and task["organization"]
+            and is_org_member(user["id"], task["organization"])
+        )
+
+        new_label = {"name": "new name"}
+        response = patch_method(
+            user["username"],
+            f'/tasks/{task["id"]}',
+            {"labels": [new_label]},
+            org_id=task["organization"],
+        )
+        assert response.status_code == HTTPStatus.FORBIDDEN
+
+    # TODO: add supervisor too, but this leads to a test-side problem with DB restoring
+    @pytest.mark.parametrize("role", ["worker"])
+    def test_task_staff_org_members_can_add_label(
+        self, find_users, tasks, is_task_staff, is_org_member, labels, role
+    ):
+        users = find_users(role=role, exclude_privilege="admin")
+
+        user, task = next(
+            (user, task)
+            for user, task in product(users, tasks)
+            if is_task_staff(user["id"], task["id"])
+            and task["organization"]
+            and is_org_member(user["id"], task["organization"])
+            and any(label.get("task_id") == task["id"] for label in labels)
+        )
+
+        new_label = {"name": "new name"}
+        response = patch_method(
+            user["username"],
+            f'/tasks/{task["id"]}',
+            {"labels": [new_label]},
+            org_id=task["organization"],
+        )
+        assert response.status_code == HTTPStatus.OK
+        assert response.json()["labels"]["count"] == task["labels"]["count"] + 1
 
 
 @pytest.mark.usefixtures("restore_db_per_function")

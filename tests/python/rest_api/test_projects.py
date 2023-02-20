@@ -678,6 +678,14 @@ class TestPatchProjectLabel:
         resulting_labels = self._get_project_labels(project["id"], admin_user)
         assert DeepDiff(resulting_labels, project_labels, ignore_order=True) == {}
 
+    def test_cannot_add_foreign_label(self, projects, labels, admin_user):
+        project = list(projects)[0]
+        new_label = deepcopy([l for l in labels if l.get("project_id") != project["id"]][0])
+
+        response = patch_method(admin_user, f'/projects/{project["id"]}', {"labels": [new_label]})
+        assert response.status_code == HTTPStatus.NOT_FOUND
+        assert f"Not found label with id #{new_label['id']} to change" in response.text
+
     def test_admin_can_add_label(self, projects, admin_user):
         project = list(projects)[0]
         new_label = {"name": "new name"}
@@ -746,7 +754,7 @@ class TestPatchProjectLabel:
     # TODO: add supervisor too, but this leads to a test-side problem with DB restoring
     @pytest.mark.parametrize("role", ["worker"])
     def test_project_staff_org_members_can_add_label(
-        self, find_users, projects, is_project_staff, is_org_member, role
+        self, find_users, projects, is_project_staff, is_org_member, labels, role
     ):
         users = find_users(role=role, exclude_privilege="admin")
 
@@ -756,6 +764,7 @@ class TestPatchProjectLabel:
             if is_project_staff(user["id"], project["id"])
             and project["organization"]
             and is_org_member(user["id"], project["organization"])
+            and any(label.get("project_id") == project["id"] for label in labels)
         )
 
         new_label = {"name": "new name"}
