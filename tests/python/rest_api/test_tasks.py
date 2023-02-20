@@ -941,7 +941,7 @@ class TestPostTaskData:
             ],
         }
         response = post_method(self._USERNAME, "/tasks", task_spec)
-        assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
+        assert response.status_code == HTTPStatus.BAD_REQUEST
 
         response = get_method(self._USERNAME, "/tasks")
         assert response.status_code == HTTPStatus.OK

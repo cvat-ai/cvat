@@ -404,7 +404,7 @@ class TestPostProjects:
             ],
         }
         response = post_method(admin_user, "/projects", project_spec)
-        assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
+        assert response.status_code == HTTPStatus.BAD_REQUEST
 
         response = get_method(admin_user, "/projects")
         assert response.status_code == HTTPStatus.OK
