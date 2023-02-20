@@ -1,10 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright (C) 2021-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
-from json2html import *
+from json2html import json2html
 import sys
 import os
 import json
