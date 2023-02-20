@@ -318,8 +318,15 @@ class ServerProxy {
                 return (job) => job.task_id === task_id;
             };
 
-            const id = filter.id || null;
-            const jobs = jobsDummyData.results.filter(makeJsonFilter(filter.filter || null));
+            let jobs = [];
+            if (Number.isInteger(filter.id)) {
+                jobs = jobsDummyData.results.filter((job) => job.id === filter.id);
+            } else if (Number.isInteger(filter.task_id)) {
+                jobs = jobsDummyData.results.filter((job) => job.task_id === filter.task_id);
+            } else {
+                jobs = jobsDummyData.results.filter(makeJsonFilter(filter.filter || null));
+            }
+
 
             for (const job of jobs) {
                 const task = tasksDummyData.results.find((task) => task.id === job.task_id);
