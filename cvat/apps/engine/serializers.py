@@ -878,7 +878,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 raise serializers.ValidationError('All label names must be unique for the project')
 
             for label in value:
-                self.validate_labels(label["sublabels"])
+                self.validate_labels(label.get("sublabels"))
 
         return value
 
@@ -976,7 +976,7 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError('All label names must be unique for the project')
 
             for label in value:
-                self.validate_labels(label["sublabels"])
+                self.validate_labels(label.get("sublabels"))
 
         return value
 
