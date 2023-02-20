@@ -629,23 +629,35 @@ class TestPatchProjectLabel:
                 api_client.labels_api.list_endpoint, project_id=str(pid), **kwargs
             )
 
-    def test_admin_can_delete_label(self, projects, labels, admin_user):
+    def test_can_delete_label(self, projects, labels, admin_user):
         project = [p for p in projects if p["labels"]["count"] > 0][0]
         label = deepcopy([l for l in labels if l.get("project_id") == project["id"]][0])
-        label.update({"deleted": True})
-
-        response = patch_method(admin_user, f'/projects/{project["id"]}', {"labels": [label]})
-        assert response.status_code == HTTPStatus.OK
-        assert response.json()["labels"]["count"] == project["labels"]["count"] - 1
-
-    def test_admin_can_delete_skeleton_label(self, projects, labels, admin_user):
-        project = list(projects)[5]
-        project_labels = deepcopy([l for l in labels if l.get("project_id") == project["id"]])
-        removed_label = project_labels.pop()
-        removed_label.update({"deleted": True})
+        label_payload = {"id": label["id"], "deleted": True}
 
         response = patch_method(
-            admin_user, f'/projects/{project["id"]}', {"labels": [removed_label]}
+            admin_user, f'/projects/{project["id"]}', {"labels": [label_payload]}
+        )
+        assert response.status_code == HTTPStatus.OK, response.content
+        assert response.json()["labels"]["count"] == project["labels"]["count"] - 1
+
+    def test_can_delete_skeleton_label(self, projects, labels, admin_user):
+        project = next(
+            p
+            for p in projects
+            if any(
+                label
+                for label in labels
+                if label.get("project_id") == p["id"]
+                if label["type"] == "skeleton"
+            )
+        )
+        project_labels = deepcopy([l for l in labels if l.get("project_id") == project["id"]])
+        label = next(l for l in project_labels if l["type"] == "skeleton")
+        project_labels.remove(label)
+        label_payload = {"id": label["id"], "deleted": True}
+
+        response = patch_method(
+            admin_user, f'/projects/{project["id"]}', {"labels": [label_payload]}
         )
         assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == project["labels"]["count"] - 1
@@ -653,7 +665,7 @@ class TestPatchProjectLabel:
         resulting_labels = self._get_project_labels(project["id"], admin_user)
         assert DeepDiff(resulting_labels, project_labels, ignore_order=True) == {}
 
-    def test_admin_can_rename_label(self, projects, labels, admin_user):
+    def test_can_rename_label(self, projects, labels, admin_user):
         project = [p for p in projects if p["labels"]["count"] > 0][0]
         project_labels = deepcopy([l for l in labels if l.get("project_id") == project["id"]])
         project_labels[0].update({"name": "new name"})

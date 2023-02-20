@@ -1006,7 +1006,12 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                     raise serializers.ValidationError('All task or project label names must be mapped to the target project')
         else:
             if 'label_set' in attrs.keys():
-                label_names = [label['name'] for label in attrs.get('label_set')]
+                # FIXME: doesn't work for renaming just a single label
+                label_names = [
+                    label['name']
+                    for label in attrs.get('label_set')
+                    if not label.get('deleted')
+                ]
                 if len(label_names) != len(set(label_names)):
                     raise serializers.ValidationError('All label names must be unique for the task')
 
@@ -1102,7 +1107,12 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
 
     def validate_labels(self, value):
         if value:
-            label_names = [label['name'] for label in value]
+            # FIXME: doesn't work for renaming just a single label
+            label_names = [
+                label['name']
+                for label in value
+                if not label.get('deleted')
+            ]
             if len(label_names) != len(set(label_names)):
                 raise serializers.ValidationError('All label names must be unique for the project')
         return value
