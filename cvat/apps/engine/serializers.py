@@ -151,23 +151,7 @@ class LabelSerializer(SublabelSerializer):
             label['svg'] = instance.skeleton.svg
         return label
 
-    def __init__(self, *args, **kwargs):
-        self._local = kwargs.pop('local', False)
-        """
-        Indicates that the operation is called from the dedicated ViewSet
-        and not from the parent entity, i.e. a project or task.
-        """
-
-        super().__init__(*args, **kwargs)
-
     def validate(self, attrs):
-        if self._local:
-            if attrs.get('deleted'):
-                raise serializers.ValidationError(
-                    'Labels cannot be deleted by updating in this endpoint. '
-                    'Please use the DELETE method instead.'
-                )
-
         if attrs.get('deleted') and attrs.get('id') is None:
             raise serializers.ValidationError('Deleted label must have an ID')
 
@@ -355,33 +339,6 @@ class LabelSerializer(SublabelSerializer):
             raise TypeError(f"Unexpected parent instance type {type(parent_instance).__name__}")
 
         return parent_info, logger
-
-    def update(self, instance, validated_data):
-        if not self._local:
-            return super().update(instance, validated_data)
-
-        # Here we reuse the parent entity logic to make sure everything is done
-        # like these entities expect. Initial data (unprocessed) is used to
-        # avoid introducing premature changes.
-        data = copy(self.initial_data)
-        data['id'] = instance.id
-        data.setdefault('name', instance.name)
-        parent_query = { 'labels': [data] }
-
-        if isinstance(instance.project, models.Project):
-            parent_serializer = ProjectWriteSerializer(
-                instance=instance.project, data=parent_query, partial=True,
-            )
-        elif isinstance(instance.task, models.Task):
-            parent_serializer = TaskWriteSerializer(
-                instance=instance.task, data=parent_query, partial=True,
-            )
-
-        parent_serializer.is_valid(raise_exception=True)
-        parent_serializer.save()
-
-        self.instance = models.Label.objects.get(pk=instance.pk)
-        return self.instance
 
 
 class JobCommitSerializer(serializers.ModelSerializer):
