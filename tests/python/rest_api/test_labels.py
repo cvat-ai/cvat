@@ -672,9 +672,12 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
         )
 
         with make_api_client(user) as client:
-            (_, response) = client.labels_api.partial_update(label["id"],
+            (_, response) = client.labels_api.partial_update(
+                label["id"],
                 patched_label_request=models.PatchedLabelRequest(**label),
-                _parse_response=False, _check_status=False)
+                _parse_response=False,
+                _check_status=False,
+            )
 
         assert response.status == HTTPStatus.BAD_REQUEST
         assert "Sublabels cannot be modified this way." in response.data.decode()
