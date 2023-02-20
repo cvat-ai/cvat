@@ -14,7 +14,7 @@ from cvat_sdk import exceptions, models
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
-from pytest_cases import fixture, parametrize
+from pytest_cases import fixture, fixture_ref, parametrize
 
 from shared.utils.config import make_api_client
 
@@ -567,8 +567,9 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
                 )
                 == {}
             )
+        return response
 
-    def _test_update_denied(self, user, lid, data, **kwargs):
+    def _test_update_denied(self, user, lid, data, expected_status=HTTPStatus.FORBIDDEN, **kwargs):
         with make_api_client(user) as client:
             (_, response) = client.labels_api.partial_update(
                 lid,
@@ -577,7 +578,8 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
                 _check_status=False,
                 _parse_response=False,
             )
-            assert response.status == HTTPStatus.FORBIDDEN
+            assert response.status == expected_status
+        return response
 
     def _get_patch_data(
         self, original_data: Dict[str, Any], **overrides
@@ -681,6 +683,22 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
 
         assert response.status == HTTPStatus.BAD_REQUEST
         assert "Sublabels cannot be modified this way." in response.data.decode()
+
+    @parametrize("user", [fixture_ref("admin_user")])
+    @parametrize("source_type", _TestLabelsPermissionsBase.source_types)
+    def test_cannot_rename_label_to_duplicate_name(self, source_type, user):
+        source_info = self._get_source_info(source_type)
+        labels_by_source = self._labels_by_source(
+            self.labels, source_key=source_info.label_source_key
+        )
+        labels = next(ls for ls in labels_by_source.values() if len(ls) >= 2)
+
+        payload = {"name": labels[1]["name"]}
+
+        response = self._test_update_denied(
+            user, lid=labels[0]["id"], data=payload, expected_status=HTTPStatus.BAD_REQUEST
+        )
+        assert f"Label '{payload['name']}' already exists" in response.data.decode()
 
     def test_admin_patch_sandbox_label(self, admin_sandbox_case):
         label, user = get_attrs(admin_sandbox_case, ["label", "user"])

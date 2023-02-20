@@ -309,7 +309,10 @@ class LabelSerializer(SublabelSerializer):
         else:
             db_label.color = validated_data.get('color', db_label.color)
 
-        db_label.save()
+        try:
+            db_label.save()
+        except models.InvalidLabel as exc:
+            raise exceptions.ValidationError(str(exc)) from exc
 
         for attr in attributes:
             (db_attr, created) = models.AttributeSpec.objects.get_or_create(
@@ -1087,7 +1090,6 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
-
     def validate_labels(self, value):
         if value:
             # FIXME: doesn't work for renaming just a single label
@@ -1099,6 +1101,7 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
             if len(label_names) != len(set(label_names)):
                 raise serializers.ValidationError('All label names must be unique for the project')
         return value
+
 class AboutSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=128)
     description = serializers.CharField(max_length=2048)

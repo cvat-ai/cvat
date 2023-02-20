@@ -982,6 +982,17 @@ class TestPatchTaskLabel:
         resulting_labels = self._get_task_labels(task["id"], admin_user)
         assert DeepDiff(resulting_labels, task_labels, ignore_order=True) == {}
 
+    def test_cannot_rename_label_to_duplicate_name(self, tasks, labels, admin_user):
+        task = [t for t in tasks if t["labels"]["count"] > 1][0]
+        task_labels = deepcopy([l for l in labels if l.get("task_id") == task["id"]])
+        task_labels[0].update({"name": task_labels[1]["name"]})
+
+        label_payload = {"id": task_labels[0]["id"], "name": task_labels[0]["name"]}
+
+        response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [label_payload]})
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+        assert f"Label '{task_labels[0]['name']}' already exists" in response.text
+
     def test_cannot_add_foreign_label(self, tasks, labels, admin_user):
         task = list(tasks)[0]
         new_label = deepcopy(

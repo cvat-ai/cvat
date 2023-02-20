@@ -678,6 +678,19 @@ class TestPatchProjectLabel:
         resulting_labels = self._get_project_labels(project["id"], admin_user)
         assert DeepDiff(resulting_labels, project_labels, ignore_order=True) == {}
 
+    def test_cannot_rename_label_to_duplicate_name(self, projects, labels, admin_user):
+        project = [p for p in projects if p["labels"]["count"] > 1][0]
+        project_labels = deepcopy([l for l in labels if l.get("project_id") == project["id"]])
+        project_labels[0].update({"name": project_labels[1]["name"]})
+
+        label_payload = {"id": project_labels[0]["id"], "name": project_labels[0]["name"]}
+
+        response = patch_method(
+            admin_user, f'/projects/{project["id"]}', {"labels": [label_payload]}
+        )
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+        assert f"Label '{project_labels[0]['name']}' already exists" in response.text
+
     def test_cannot_add_foreign_label(self, projects, labels, admin_user):
         project = list(projects)[0]
         new_label = deepcopy([l for l in labels if l.get("project_id") != project["id"]][0])
