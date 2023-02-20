@@ -248,7 +248,7 @@ class TestLabelsListFilters(CollectionSimpleFilterTestBase):
 
     @pytest.mark.parametrize(
         "field",
-        ("name", "parent", "job_id", "task_id", "project_id", "type", "color", "parent_id"),
+        ("name", "job_id", "task_id", "project_id", "type", "color"),
     )
     def test_can_use_simple_filter_for_object_list(self, field):
         return super().test_can_use_simple_filter_for_object_list(field)
@@ -426,15 +426,64 @@ class TestListLabels(_TestLabelsPermissionsBase):
 
         labels = labels_by_source[source["id"]]
 
-        kwargs = {}
-        if org_id:
-            kwargs["org_id"] = org_id
-            kwargs[f"{source_type}_id"] = str(source["id"])
+        kwargs = {
+            "org_id": org_id,
+            f"{source_type}_id": str(source["id"]),
+        }
 
         if staff:
             self._test_list_ok(user["username"], labels, **kwargs)
         else:
             self._test_list_denied(user["username"], **kwargs)
+
+    @pytest.mark.parametrize("org_id", [2])
+    @pytest.mark.parametrize("source_type", ["job", "task", "project"])
+    def test_only_1st_level_labels_included(
+        self, projects, tasks, jobs, labels, admin_user, source_type, org_id
+    ):
+        labels_by_project = self._labels_by_source(labels, source_key="project_id")
+        labels_by_task = self._labels_by_source(labels, source_key="task_id")
+        if source_type == "project":
+            sources = [
+                p for p in projects if p["labels"]["count"] > 0 and p["organization"] == org_id
+            ]
+            labels_by_source = labels_by_project
+        elif source_type == "task":
+            sources = [t for t in tasks if t["labels"]["count"] > 0 and t["organization"] == org_id]
+            labels_by_source = {
+                task["id"]: (
+                    labels_by_task.get(task["id"]) or labels_by_project.get(task.get("project_id"))
+                )
+                for task in sources
+            }
+        elif source_type == "job":
+            sources = [
+                j
+                for j in jobs
+                if j["labels"]["count"] > 0
+                if next(t for t in tasks if t["id"] == j["task_id"])["organization"] == org_id
+            ]
+            labels_by_source = {
+                job["id"]: (
+                    labels_by_task.get(job["task_id"]) or labels_by_project.get(job["project_id"])
+                )
+                for job in sources
+            }
+        else:
+            assert False
+
+        source = next(
+            s for s in sources if any(label["sublabels"] for label in labels_by_source[s["id"]])
+        )
+        source_labels = labels_by_source[source["id"]]
+        assert not any(label["has_parent"] for label in source_labels)
+
+        kwargs = {
+            "org_id": org_id,
+            f"{source_type}_id": str(source["id"]),
+        }
+
+        self._test_list_ok(admin_user, source_labels, **kwargs)
 
 
 class TestGetLabels(_TestLabelsPermissionsBase):

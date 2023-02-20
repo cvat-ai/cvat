@@ -15,7 +15,7 @@
         "url": "http://localhost:8080/api/issues?job_id=21"
       },
       "labels": {
-        "count": 2,
+        "count": 3,
         "url": "http://localhost:8080/api/labels?job_id=21"
       },
       "mode": "annotation",
@@ -67,7 +67,7 @@
         "url": "http://localhost:8080/api/issues?job_id=18"
       },
       "labels": {
-        "count": 9,
+        "count": 2,
         "url": "http://localhost:8080/api/labels?job_id=18"
       },
       "mode": "annotation",

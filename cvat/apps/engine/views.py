@@ -1921,11 +1921,10 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     iam_organization_field = None
 
     search_fields = ('name', 'parent')
-    filter_fields = list(search_fields) + ['id', 'project_id', 'type', 'color', 'parent_id']
+    filter_fields = list(search_fields) + ['id', 'type', 'color', 'parent_id']
     simple_filters = list(set(filter_fields) - {'id'})
     ordering_fields = list(filter_fields)
     lookup_fields = {
-        'project_id': 'project',
         'parent': 'parent__name',
     }
     ordering = 'id'
@@ -1974,6 +1973,9 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 queryset = super().get_queryset()
                 perm = LabelPermission.create_scope_list(self.request)
                 queryset = perm.filter(queryset)
+
+            # Include only 1st level labels in list responses
+            queryset = queryset.filter(parent__isnull=True)
         else:
             queryset = super().get_queryset()
 

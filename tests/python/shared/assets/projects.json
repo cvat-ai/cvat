@@ -180,7 +180,7 @@
       "dimension": "2d",
       "id": 5,
       "labels": {
-        "count": 9,
+        "count": 2,
         "url": "http://localhost:8080/api/labels?project_id=5"
       },
       "name": "project5",
