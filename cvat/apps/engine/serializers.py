@@ -7,7 +7,6 @@ import os
 import re
 import shutil
 import textwrap
-from copy import copy
 from tempfile import NamedTemporaryFile
 from typing import Any, Dict, Iterable, Optional, OrderedDict, Union
 
