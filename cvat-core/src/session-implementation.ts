@@ -352,7 +352,16 @@ export function implementJob(Job) {
     };
 
     Job.prototype.logger.log.implementation = async function (logType, payload, wait) {
-        const result = await loggerStorage.log(logType, { ...payload, task_id: this.taskId, job_id: this.id }, wait);
+        const result = await loggerStorage.log(
+            logType,
+            {
+                ...payload,
+                project_id: this.projectId,
+                task_id: this.taskId,
+                job_id: this.id,
+            },
+            wait,
+        );
         return result;
     };
 
@@ -789,7 +798,15 @@ export function implementTask(Task) {
     };
 
     Task.prototype.logger.log.implementation = async function (logType, payload, wait) {
-        const result = await loggerStorage.log(logType, { ...payload, task_id: this.id }, wait);
+        const result = await loggerStorage.log(
+            logType,
+            {
+                ...payload,
+                project_id: this.projectId,
+                task_id: this.id,
+            },
+            wait,
+        );
         return result;
     };
 

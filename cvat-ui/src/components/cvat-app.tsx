@@ -69,6 +69,7 @@ import showPlatformNotification, {
 } from 'utils/platform-checker';
 import '../styles.scss';
 import appConfig from 'config';
+import EventRecorder from 'utils/controls-logger';
 import EmailConfirmationPage from './email-confirmation-pages/email-confirmed';
 import EmailVerificationSentPage from './email-confirmation-pages/email-verification-sent';
 import IncorrectEmailConfirmationPage from './email-confirmation-pages/incorrect-email-confirmation';
@@ -130,10 +131,12 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
         // Logger configuration
         const userActivityCallback: (() => void)[] = [];
-        window.addEventListener('click', () => {
+        window.addEventListener('click', (event: MouseEvent) => {
             userActivityCallback.forEach((handler) => handler());
+            EventRecorder.log(event);
         });
         core.logger.configure(() => window.document.hasFocus, userActivityCallback);
+        EventRecorder.initSave();
 
         customWaViewHit(location.pathname, location.search, location.hash);
         history.listen((_location) => {

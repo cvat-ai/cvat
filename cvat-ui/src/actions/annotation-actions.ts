@@ -983,7 +983,6 @@ export function saveAnnotationsAsync(sessionInstance: any, afterSave?: () => voi
             await sessionInstance.frames.save();
             await sessionInstance.annotations.save();
             await saveJobEvent.close();
-            await sessionInstance.logger.log(LogType.sendTaskInfo, await jobInfoGenerator(sessionInstance));
             dispatch(saveLogsAsync());
 
             const { frame } = receiveAnnotationsParameters();

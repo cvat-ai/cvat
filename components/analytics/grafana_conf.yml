@@ -1,20 +1,20 @@
 http:
   routers:
-    kibana:
+    grafana:
       entryPoints:
       - web
       middlewares:
       - analytics-auth
       - strip-prefix
-      service: kibana
+      service: grafana
       rule: Host(`{{ env "CVAT_HOST" }}`) && PathPrefix(`/analytics`)
-    kibana_https:
+    grafana_https:
       entryPoints:
       - websecure
       middlewares:
       - analytics-auth
       - strip-prefix
-      service: kibana
+      service: grafana
       tls: {}
       rule: Host(`{{ env "CVAT_HOST" }}`) && PathPrefix(`/analytics`)
 
@@ -32,7 +32,7 @@ http:
         - /analytics
 
   services:
-    kibana:
+    grafana:
       loadBalancer:
         servers:
         - url: http://{{ env "DJANGO_LOG_VIEWER_HOST" }}:{{ env "DJANGO_LOG_VIEWER_PORT" }}

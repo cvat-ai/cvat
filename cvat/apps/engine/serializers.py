@@ -460,12 +460,6 @@ class LabelSerializer(SublabelSerializer):
         return self.instance
 
 
-class JobCommitSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.JobCommit
-        fields = ('id', 'owner', 'data', 'timestamp', 'scope')
-
-
 class JobReadSerializer(serializers.ModelSerializer):
     task_id = serializers.ReadOnlyField(source="segment.task.id")
     project_id = serializers.ReadOnlyField(source="get_project_id", allow_null=True)
@@ -497,14 +491,6 @@ class JobWriteSerializer(serializers.ModelSerializer):
         serializer = JobReadSerializer(instance, context=self.context)
         return serializer.data
 
-    def create(self, validated_data):
-        instance = super().create(validated_data)
-        db_commit = models.JobCommit(job=instance, scope='create',
-            owner=self.context['request'].user, data=validated_data)
-        db_commit.save()
-
-        return instance
-
     def update(self, instance, validated_data):
         state = validated_data.get('state')
         stage = validated_data.get('stage')
@@ -525,9 +511,6 @@ class JobWriteSerializer(serializers.ModelSerializer):
             validated_data['assignee'] = User.objects.get(id=assignee)
 
         instance = super().update(instance, validated_data)
-        db_commit = models.JobCommit(job=instance, scope='update',
-            owner=self.context['request'].user, data=validated_data)
-        db_commit.save()
 
         return instance
 
@@ -1116,24 +1099,6 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
             if len(label_names) != len(set(label_names)):
                 raise serializers.ValidationError('All label names must be unique for the project')
         return value
-
-class ExceptionSerializer(serializers.Serializer):
-    system = serializers.CharField(max_length=255)
-    client = serializers.CharField(max_length=255)
-    time = serializers.DateTimeField()
-
-    job_id = serializers.IntegerField(required=False)
-    task_id = serializers.IntegerField(required=False)
-    proj_id = serializers.IntegerField(required=False)
-    client_id = serializers.IntegerField()
-
-    message = serializers.CharField(max_length=4096)
-    filename = serializers.URLField()
-    line = serializers.IntegerField()
-    column = serializers.IntegerField()
-    stack = serializers.CharField(max_length=8192,
-        style={'base_template': 'textarea.html'}, allow_blank=True)
-
 class AboutSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=128)
     description = serializers.CharField(max_length=2048)
@@ -1269,18 +1234,6 @@ class FileInfoSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=1024)
     type = serializers.ChoiceField(choices=["REG", "DIR"])
     mime_type = serializers.CharField(max_length=255)
-
-class LogEventSerializer(serializers.Serializer):
-    job_id = serializers.IntegerField(required=False)
-    task_id = serializers.IntegerField(required=False)
-    proj_id = serializers.IntegerField(required=False)
-    client_id = serializers.IntegerField()
-
-    name = serializers.CharField(max_length=64)
-    time = serializers.DateTimeField()
-    message = serializers.CharField(max_length=4096, required=False)
-    payload = serializers.DictField(required=False)
-    is_active = serializers.BooleanField()
 
 class AnnotationFileSerializer(serializers.Serializer):
     annotation_file = serializers.FileField()
