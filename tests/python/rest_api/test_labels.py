@@ -659,6 +659,26 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
             user, label["id"], patch_data, expected_data=expected_data, ignore_fields=ignore_fields
         )
 
+    @parametrize("source", _TestLabelsPermissionsBase.source_types)
+    def test_cannot_patch_sublabel_directly(self, admin_user, source):
+        user = admin_user
+        label = next(
+            sublabel
+            for source_labels in self._labels_by_source(
+                self.labels, source_key=self._get_source_info(source).label_source_key
+            ).values()
+            for label in source_labels
+            for sublabel in label["sublabels"]
+        )
+
+        with make_api_client(user) as client:
+            (_, response) = client.labels_api.partial_update(label["id"],
+                patched_label_request=models.PatchedLabelRequest(**label),
+                _parse_response=False, _check_status=False)
+
+        assert response.status == HTTPStatus.BAD_REQUEST
+        assert "Sublabels cannot be modified this way." in response.data.decode()
+
     def test_admin_patch_sandbox_label(self, admin_sandbox_case):
         label, user = get_attrs(admin_sandbox_case, ["label", "user"])
 
@@ -741,6 +761,24 @@ class TestDeleteLabels(_TestLabelsPermissionsBase):
                 label["id"], _check_status=False, _parse_response=False
             )
             assert response.status == HTTPStatus.NOT_FOUND
+
+    @parametrize("source", _TestLabelsPermissionsBase.source_types)
+    def test_cannot_delete_sublabel_directly(self, admin_user, source):
+        user = admin_user
+        label = next(
+            sublabel
+            for source_labels in self._labels_by_source(
+                self.labels, source_key=self._get_source_info(source).label_source_key
+            ).values()
+            for label in source_labels
+            for sublabel in label["sublabels"]
+        )
+
+        with make_api_client(user) as client:
+            (_, response) = client.labels_api.destroy(label["id"], _check_status=False)
+
+        assert response.status == HTTPStatus.BAD_REQUEST
+        assert "Sublabels cannot be deleted this way." in response.data.decode()
 
     def test_admin_delete_sandbox_label(self, admin_sandbox_case):
         label, user = get_attrs(admin_sandbox_case, ["label", "user"])

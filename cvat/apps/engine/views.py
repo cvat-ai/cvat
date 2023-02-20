@@ -1988,6 +1988,26 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         kwargs['local'] = True
         return super().get_serializer(*args, **kwargs)
 
+    def perform_update(self, serializer):
+        if serializer.instance.parent is not None:
+            # NOTE: this can be relaxed when skeleton updates are implemented properly
+            raise ValidationError(
+                "Sublabels cannot be modified this way. "
+                "Please send a PATCH request with updated parent label data instead.",
+                code=status.HTTP_400_BAD_REQUEST)
+
+        return super().perform_update(serializer)
+
+    def perform_destroy(self, instance):
+        if instance.parent is not None:
+            # NOTE: this can be relaxed when skeleton updates are implemented properly
+            raise ValidationError(
+                "Sublabels cannot be deleted this way. "
+                "Please send a PATCH request with updated parent label data instead.",
+                code=status.HTTP_400_BAD_REQUEST)
+
+        return super().perform_destroy(instance)
+
 
 @extend_schema(tags=['users'])
 @extend_schema_view(
