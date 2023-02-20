@@ -61,9 +61,6 @@ class ExtractBoundingBoxes:
     * Only the following shape types are supported: rectangle, polygon, polyline,
       points, ellipse.
     * Rotated shapes are not supported.
-
-    Unsupported shapes will cause a `UnsupportedDatasetError` exception to be
-    raised unless they are filtered out by `include_shape_types`.
     """
 
     include_shape_types: FrozenSet[str] = attrs.field(

@@ -33,7 +33,6 @@ from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import APIException, NotFound, ValidationError, PermissionDenied
 from rest_framework.permissions import SAFE_METHODS
-from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from django_sendfile import sendfile
 
@@ -45,23 +44,22 @@ from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.media_extractors import get_mime
 from cvat.apps.engine.models import (
-    Job, JobCommit, Task, Project, Issue, Data,
+    Job, Task, Project, Issue, Data,
     Comment, StorageMethodChoice, StorageChoice,
     CloudProviderChoice, Location
 )
 from cvat.apps.engine.models import CloudStorage as CloudStorageModel
 from cvat.apps.engine.serializers import (
     AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
-    DataMetaReadSerializer, DataMetaWriteSerializer, DataSerializer, ExceptionSerializer,
+    DataMetaReadSerializer, DataMetaWriteSerializer, DataSerializer,
     FileInfoSerializer, JobReadSerializer, JobWriteSerializer, LabeledDataSerializer,
-    LogEventSerializer, ProjectReadSerializer, ProjectWriteSerializer,
+    ProjectReadSerializer, ProjectWriteSerializer,
     RqStatusSerializer, TaskReadSerializer, TaskWriteSerializer, UserSerializer, PluginsSerializer, IssueReadSerializer,
     IssueWriteSerializer, CommentReadSerializer, CommentWriteSerializer, CloudStorageWriteSerializer,
-    CloudStorageReadSerializer, DatasetFileSerializer, JobCommitSerializer,
+    CloudStorageReadSerializer, DatasetFileSerializer,
     ProjectFileSerializer, TaskFileSerializer)
 
 from utils.dataset_manifest import ImageManifestManager
-from cvat.apps.engine.view_utils import make_paginated_response
 from cvat.apps.engine.utils import (
     av_scan_paths, process_failed_job, configure_dependent_job, parse_exception_message
 )
@@ -70,12 +68,12 @@ from cvat.apps.engine.mixins import PartialUpdateModelMixin, UploadMixin, Annota
 from cvat.apps.engine.location import get_location_configuration, StorageType
 
 from . import models, task
-from .log import clogger, slogger
+from .log import slogger
 from cvat.apps.iam.permissions import (CloudStoragePermission,
     CommentPermission, IssuePermission, JobPermission, ProjectPermission,
     TaskPermission, UserPermission)
 from cvat.apps.engine.cache import MediaCache
-
+from cvat.apps.events.handlers import handle_annotations_patch
 
 @extend_schema(tags=['server'])
 class ServerViewSet(viewsets.ViewSet):
@@ -111,56 +109,6 @@ class ServerViewSet(viewsets.ViewSet):
         serializer = AboutSerializer(data=about)
         if serializer.is_valid(raise_exception=True):
             return Response(data=serializer.data)
-
-    @staticmethod
-    @extend_schema(summary='Method saves an exception from a client on the server',
-        description='Sends logs to the ELK if it is connected',
-        request=ExceptionSerializer, responses={
-            '201': ExceptionSerializer,
-        })
-    @action(detail=False, methods=['POST'], serializer_class=ExceptionSerializer)
-    def exception(request):
-        serializer = ExceptionSerializer(data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            additional_info = {
-                "username": request.user.username,
-                "name": "Send exception",
-            }
-            message = JSONRenderer().render({**serializer.data, **additional_info}).decode('UTF-8')
-            jid = serializer.data.get("job_id")
-            tid = serializer.data.get("task_id")
-            if jid:
-                clogger.job[jid].error(message)
-            elif tid:
-                clogger.task[tid].error(message)
-            else:
-                clogger.glob.error(message)
-
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-    @staticmethod
-    @extend_schema(summary='Method saves logs from a client on the server',
-        description='Sends logs to the ELK if it is connected',
-        request=LogEventSerializer(many=True),
-        responses={
-            '201': LogEventSerializer(many=True),
-        })
-    @action(detail=False, methods=['POST'], serializer_class=LogEventSerializer)
-    def logs(request):
-        serializer = LogEventSerializer(many=True, data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            user = { "username": request.user.username }
-            for event in serializer.data:
-                message = JSONRenderer().render({**event, **user}).decode('UTF-8')
-                jid = event.get("job_id")
-                tid = event.get("task_id")
-                if jid:
-                    clogger.job[jid].info(message)
-                elif tid:
-                    clogger.task[tid].info(message)
-                else:
-                    clogger.glob.info(message)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @staticmethod
     @extend_schema(
@@ -1542,6 +1490,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                     data = dm.task.patch_job_data(pk, serializer.data, action)
                 except (AttributeError, IntegrityError) as e:
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
+                handle_annotations_patch(instance=self._object, annotations=data, action=action)
                 return Response(data)
 
 
@@ -1697,20 +1646,6 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         serializer = DataMetaReadSerializer(db_data)
         return Response(serializer.data)
-
-    @extend_schema(summary='The action returns the list of tracked changes for the job',
-        responses=JobCommitSerializer(many=True)) # Duplicate to still get 'list' op. name
-    @action(detail=True, methods=['GET'], serializer_class=JobCommitSerializer,
-        pagination_class=viewsets.GenericViewSet.pagination_class,
-        # These non-root list endpoints do not suppose extra options, just the basic output
-        # Remove regular list() parameters from the swagger schema.
-        # Unset, they would be taken from the enclosing class, which is wrong.
-        # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
-        filter_fields=None, ordering_fields=None, search_fields=None, simple_filters=None)
-    def commits(self, request, pk):
-        self.get_object() # force call of check_object_permissions()
-        return make_paginated_response(JobCommit.objects.filter(job_id=pk).order_by('-id'),
-            viewset=self, serializer_type=self.serializer_class) # from @action
 
     @extend_schema(summary='Method returns a preview image for the job',
         responses={

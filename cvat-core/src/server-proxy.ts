@@ -42,11 +42,6 @@ function configureStorage(storage: Storage, useDefaultLocation = false): Partial
     };
 }
 
-function removeToken() {
-    Axios.defaults.headers.common.Authorization = '';
-    store.remove('token');
-}
-
 function waitFor(frequencyHz, predicate) {
     return new Promise<void>((resolve, reject) => {
         if (typeof predicate !== 'function') {
@@ -236,6 +231,27 @@ if (token) {
     Axios.defaults.headers.common.Authorization = `Token ${token}`;
 }
 
+function setAuthData(response) {
+    if (response.headers['set-cookie']) {
+        // Browser itself setup cookie and header is none
+        // In NodeJS we need do it manually
+        const cookies = response.headers['set-cookie'].join(';');
+        Axios.defaults.headers.common.Cookie = cookies;
+    }
+
+    if (response.data.key) {
+        token = response.data.key;
+        store.set('token', token);
+        Axios.defaults.headers.common.Authorization = `Token ${token}`;
+    }
+}
+
+function removeAuthData() {
+    Axios.defaults.headers.common.Authorization = '';
+    store.remove('token');
+    token = null;
+}
+
 async function about() {
     const { backendAPI } = config;
 
@@ -265,21 +281,6 @@ async function share(directoryArg) {
     }
 
     return response.data;
-}
-
-async function exception(exceptionObject) {
-    const { backendAPI } = config;
-
-    try {
-        await Axios.post(`${backendAPI}/server/exception`, JSON.stringify(exceptionObject), {
-            proxy: config.proxy,
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
 }
 
 async function formats(): Promise<AnnotationFormatsResponseBody> {
@@ -334,6 +335,7 @@ async function register(username, firstName, lastName, email, password, confirma
                 'Content-Type': 'application/json',
             },
         });
+        setAuthData(response);
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -349,7 +351,7 @@ async function login(credential, password) {
         .join('&')
         .replace(/%20/g, '+');
 
-    removeToken();
+    removeAuthData();
     let authenticationResponse = null;
     try {
         authenticationResponse = await Axios.post(`${config.backendAPI}/auth/login`, authenticationData, {
@@ -359,16 +361,7 @@ async function login(credential, password) {
         throw generateError(errorData);
     }
 
-    if (authenticationResponse.headers['set-cookie']) {
-        // Browser itself setup cookie and header is none
-        // In NodeJS we need do it manually
-        const cookies = authenticationResponse.headers['set-cookie'].join(';');
-        Axios.defaults.headers.common.Cookie = cookies;
-    }
-
-    token = authenticationResponse.data.key;
-    store.set('token', token);
-    Axios.defaults.headers.common.Authorization = `Token ${token}`;
+    setAuthData(authenticationResponse);
 }
 
 async function loginWithSocialAccount(
@@ -378,7 +371,7 @@ async function loginWithSocialAccount(
     process?: string,
     scope?: string,
 ) {
-    removeToken();
+    removeAuthData();
     const data = {
         code,
         ...(process ? { process } : {}),
@@ -395,9 +388,7 @@ async function loginWithSocialAccount(
         throw generateError(errorData);
     }
 
-    token = authenticationResponse.data.key;
-    store.set('token', token);
-    Axios.defaults.headers.common.Authorization = `Token ${token}`;
+    setAuthData(authenticationResponse);
 }
 
 async function logout() {
@@ -405,7 +396,7 @@ async function logout() {
         await Axios.post(`${config.backendAPI}/auth/logout`, {
             proxy: config.proxy,
         });
-        removeToken();
+        removeAuthData();
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -481,13 +472,16 @@ async function getSelf() {
 
 async function authorized() {
     try {
+        // In CVAT app we use two types of authentication
+        // At first we check if authentication token is present
+        // Request in getSelf will provide correct authentication cookies
+        if (!store.get('token')) {
+            removeAuthData();
+            return false;
+        }
         await getSelf();
     } catch (serverError) {
         if (serverError.code === 401) {
-            // In CVAT app we use two types of authentication,
-            // So here we are forcing user have both credential types
-            // First request will fail if session is expired, then we check
-            // for precense of token
             await logout();
             return false;
         }
@@ -1884,11 +1878,11 @@ async function createFunction(functionData: any) {
     }
 }
 
-async function saveLogs(logs) {
+async function saveEvents(events) {
     const { backendAPI } = config;
 
     try {
-        await Axios.post(`${backendAPI}/server/logs`, JSON.stringify(logs), {
+        await Axios.post(`${backendAPI}/events`, JSON.stringify(events), {
             proxy: config.proxy,
             headers: {
                 'Content-Type': 'application/json',
@@ -2539,7 +2533,6 @@ export default Object.freeze({
         about,
         share,
         formats,
-        exception,
         login,
         logout,
         socialAuthentication,
@@ -2606,8 +2599,8 @@ export default Object.freeze({
         uploadAnnotations,
     }),
 
-    logs: Object.freeze({
-        save: saveLogs,
+    events: Object.freeze({
+        save: saveEvents,
     }),
 
     lambda: Object.freeze({

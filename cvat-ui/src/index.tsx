@@ -154,9 +154,9 @@ window.addEventListener('error', (errorEvent: ErrorEvent) => {
         const re = RegExp(/\/tasks\/[0-9]+\/jobs\/[0-9]+$/);
         const { instance: job } = state.annotation.job;
         if (re.test(pathname) && job) {
-            job.logger.log(LogType.sendException, logPayload);
+            job.logger.log(LogType.exception, logPayload);
         } else {
-            logger.log(LogType.sendException, logPayload);
+            logger.log(LogType.exception, logPayload);
         }
     }
 });

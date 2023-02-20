@@ -1,4 +1,5 @@
 // Copyright (C) 2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -112,6 +113,10 @@ context('New organization pipeline.', () => {
             );
             if (user.name !== firstUserName) cy.logout(user.name);
         }
+    });
+
+    beforeEach(() => {
+        cy.clearLocalStorage('currentOrganization');
     });
 
     after(() => {

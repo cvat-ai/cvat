@@ -41,9 +41,6 @@ Cypress.Commands.add('logout', (username = Cypress.env('user')) => {
     cy.visit('/auth/login');
     cy.url().should('not.include', '?next=');
     cy.contains('Sign in').should('exist');
-    // TMP fix for multi-user tests, need to change login logic with sessions
-    cy.clearAllCookies();
-    cy.clearAllLocalStorage();
 });
 
 Cypress.Commands.add('userRegistration', (firstName, lastName, userName, emailAddr, password) => {
