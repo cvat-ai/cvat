@@ -194,6 +194,7 @@ REST_FRAMEWORK = {
     },
     'DEFAULT_METADATA_CLASS': 'rest_framework.metadata.SimpleMetadata',
     'DEFAULT_SCHEMA_CLASS': 'cvat.apps.iam.schema.CustomAutoSchema',
+    'EXCEPTION_HANDLER': 'cvat.apps.engine.views.viewset_exception_handler',
 }
 
 

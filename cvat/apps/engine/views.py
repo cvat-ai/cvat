@@ -34,6 +34,7 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import APIException, NotFound, ValidationError, PermissionDenied
 from rest_framework.permissions import SAFE_METHODS
 from rest_framework.response import Response
+from rest_framework.views import exception_handler
 from django_sendfile import sendfile
 
 import cvat.apps.dataset_manager as dm
@@ -73,7 +74,7 @@ from cvat.apps.iam.permissions import (CloudStoragePermission,
     CommentPermission, IssuePermission, JobPermission, ProjectPermission,
     TaskPermission, UserPermission)
 from cvat.apps.engine.cache import MediaCache
-from cvat.apps.events.handlers import handle_annotations_patch, handle_rq_exception
+from cvat.apps.events.handlers import handle_annotations_patch, handle_rq_exception, handle_view_exception
 
 @extend_schema(tags=['server'])
 class ServerViewSet(viewsets.ViewSet):
@@ -2087,12 +2088,22 @@ def rq_exception_handler(rq_job, exc_type, exc_value, tb):
     rq_job.exc_info = "".join(
         traceback.format_exception_only(exc_type, exc_value))
     rq_job.save()
+
     return handle_rq_exception(
         rq_job_id=rq_job.id,
         exc_type=exc_type,
         exc_value=exc_value,
         tb=tb,
     )
+
+def viewset_exception_handler(exc, context):
+    handle_view_exception(
+        exc=exc,
+        context=context,
+    )
+
+    response = exception_handler(exc, context)
+    return response
 
 def _download_file_from_bucket(db_storage, filename, key):
     storage = db_storage_to_storage_instance(db_storage)

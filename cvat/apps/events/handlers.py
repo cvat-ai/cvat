@@ -447,3 +447,32 @@ def handle_rq_exception(rq_job_id, exc_type, exc_value, tb):
     vlogger.info(message)
 
     return False
+
+def handle_view_exception(exc, context):
+    request = context["request"]
+    view = context["view"]
+
+    payload = {
+        "basename": view.basename,
+        "action": view.action,
+        "request": {
+            "url": request.get_full_path(),
+            "query_params": request.query_params,
+            "content_type": request.content_type,
+            "method": request.method,
+        },
+        "traceback": ''.join(traceback.format_exception(exc))
+    }
+
+    event = create_event(
+        scope="send:exception",
+        source='server',
+        count=1,
+        obj_value=traceback.format_exception_only(exc)[0],
+        user_id=request.user.id,
+        user_name=request.user.username,
+        user_email=request.user.email,
+        payload=payload,
+    )
+    message = JSONRenderer().render(event).decode('UTF-8')
+    vlogger.info(message)
