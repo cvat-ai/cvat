@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from json2html import *
+from json2html import json2html
 import sys
 import os
 import json
