@@ -738,7 +738,7 @@
             "properties": [
               {
                 "id": "custom.width",
-                "value": 62
+                "value": 68
               }
             ]
           },
@@ -762,7 +762,7 @@
             "properties": [
               {
                 "id": "custom.width",
-                "value": 41
+                "value": 75
               }
             ]
           },
@@ -774,7 +774,43 @@
             "properties": [
               {
                 "id": "custom.width",
-                "value": 27
+                "value": 55
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "user_name"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 115
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "timestamp"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 153
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "error"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 452
               }
             ]
           }
@@ -874,7 +910,7 @@
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT\r\n  user_id,\r\n  source,\r\n  project_id,\r\n  task_id,\r\n  job_id,\r\n  JSONExtractString(payload, 'message') as error,\r\n  JSONExtractString(payload, 'stack') as stack\r\nFROM events\r\nWHERE\r\n  ( timestamp  >= $__fromTime AND timestamp <= $__toTime )\r\n  AND scope = 'send:exception'",
+          "rawSql": "SELECT\r\n  user_id,\r\n  user_name,\r\n  source,\r\n  project_id,\r\n  task_id,\r\n  job_id,\r\n  JSONExtractString(payload, 'message') as error,\r\n  JSONExtractString(payload, 'stack') as stack,\r\n  payload\r\nFROM events\r\nWHERE\r\n  ( timestamp  >= $__fromTime AND timestamp <= $__toTime )\r\n  AND scope = 'send:exception'\r\nORDER BY timestamp DESC",
           "refId": "A"
         }
       ],
@@ -882,7 +918,7 @@
       "type": "table"
     }
   ],
-  "refresh": false,
+  "refresh": "",
   "schemaVersion": 37,
   "style": "dark",
   "tags": [],
@@ -897,6 +933,6 @@
   "timezone": "",
   "title": "Monitoring",
   "uid": "WvDvWK04k",
-  "version": 2,
+  "version": 1,
   "weekStart": ""
 }
