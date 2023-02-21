@@ -1814,7 +1814,7 @@ class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 @extend_schema(tags=['labels'])
 @extend_schema_view(
     retrieve=extend_schema(
-        summary='Method returns details of an label',
+        summary='Method returns details of a label',
         responses={
             '200': LabelSerializer,
         }),
@@ -1830,7 +1830,7 @@ class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '200': LabelSerializer(many=True),
         }),
     partial_update=extend_schema(
-        summary='Methods does a partial update of chosen fields in an label'
+        summary='Method does a partial update of chosen fields in a label'
         'To modify a sublabel, please use the PATCH method of the parent label',
         request=LabelSerializer(partial=True),
         responses={

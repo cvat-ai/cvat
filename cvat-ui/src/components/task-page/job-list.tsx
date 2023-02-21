@@ -138,6 +138,7 @@ function JobListComponent(props: Props): JSX.Element {
             render: (id: number): JSX.Element => (
                 <div>
                     <Button
+                        className='cvat-open-job-button'
                         type='link'
                         onClick={(e: React.MouseEvent): void => {
                             e.preventDefault();
@@ -279,6 +280,7 @@ function JobListComponent(props: Props): JSX.Element {
                     <Text className='cvat-text-color cvat-jobs-header'> Jobs </Text>
                     <CVATTooltip trigger='click' title='Copied to clipboard!'>
                         <Button
+                            className='cvat-copy-job-details-button'
                             type='link'
                             onClick={(): void => {
                                 let serialized = '';
