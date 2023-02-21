@@ -264,6 +264,7 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
                     {constructorMode === ConstructorMode.UPDATE && labelForUpdate !== null && (
                         <ConstructorUpdater
                             label={labelForUpdate}
+                            labelNames={labels.map((l) => l.name)}
                             onUpdate={this.handleUpdate}
                             onCancel={this.handlerCancel}
                         />

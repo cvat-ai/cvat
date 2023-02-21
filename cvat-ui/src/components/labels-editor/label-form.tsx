@@ -34,7 +34,7 @@ export enum AttributeType {
 
 interface Props {
     label: LabelOptColor | null;
-    labelNames?: string[];
+    labelNames: string[];
     onSubmit: (label: LabelOptColor) => void;
     onSkeletonSubmit?: () => SkeletonConfiguration | null;
     resetSkeleton?: () => void;
