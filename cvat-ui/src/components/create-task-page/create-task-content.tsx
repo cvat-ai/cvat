@@ -839,12 +839,22 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         return (
             <Row justify='end' gutter={5}>
                 <Col>
-                    <Button type='primary' onClick={this.handleSubmitAndOpen} disabled={!!uploadFileErrorMessage}>
+                    <Button
+                        className='cvat-submit-open-task-button'
+                        type='primary'
+                        onClick={this.handleSubmitAndOpen}
+                        disabled={!!uploadFileErrorMessage}
+                    >
                         Submit & Open
                     </Button>
                 </Col>
                 <Col>
-                    <Button type='primary' onClick={this.handleSubmitAndContinue} disabled={!!uploadFileErrorMessage}>
+                    <Button
+                        className='cvat-submit-open-task-button'
+                        type='primary'
+                        onClick={this.handleSubmitAndContinue}
+                        disabled={!!uploadFileErrorMessage}
+                    >
                         Submit & Continue
                     </Button>
                 </Col>
@@ -880,6 +890,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             <Row justify='end' gutter={5}>
                 <Col>
                     <Button
+                        className='cvat-submit-multiple-tasks-button'
                         htmlType='submit'
                         type='primary'
                         onClick={this.handleSubmitMultiTasks}

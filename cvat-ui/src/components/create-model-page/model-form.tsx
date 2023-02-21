@@ -144,12 +144,21 @@ function ModelForm(props: Props): JSX.Element {
             <Col span={24} className='cvat-create-models-actions'>
                 <Row justify='end'>
                     <Col>
-                        <Button onClick={() => history.goBack()}>
+                        <Button
+                            className='cvat-cancel-model-create-button'
+                            onClick={() => history.goBack()}
+                        >
                             Cancel
                         </Button>
                     </Col>
                     <Col offset={1}>
-                        <Button type='primary' onClick={handleSubmit} loading={fetching} disabled={currentUrlEmpty}>
+                        <Button
+                            className='cvat-submit-model-button'
+                            type='primary'
+                            onClick={handleSubmit}
+                            loading={fetching}
+                            disabled={currentUrlEmpty}
+                        >
                             Submit
                         </Button>
                     </Col>

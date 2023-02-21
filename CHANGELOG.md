@@ -26,6 +26,9 @@ Tracks can be exported/imported to/from Datumaro and Sly Pointcloud formats (<ht
 - Dummy github and google authentication servers (<https://github.com/opencv/cvat/pull/5444>)
 - \[Server API\] Simple filters for object collection endpoints
   (<https://github.com/opencv/cvat/pull/5575>)
+- Analytics based on Clickhouse, Vector and Grafana instead of the ELK stack (<https://github.com/opencv/cvat/pull/5646>)
+- \[SDK\] High-level API for working with organizations
+  (<https://github.com/opencv/cvat/pull/5718>)
 
 ### Changed
 - The Docker Compose files now use the Compose Specification version
