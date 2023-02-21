@@ -426,15 +426,17 @@ def handle_rq_exception(rq_job_id, exc_type, exc_value, tb):
     uname = _get_username()
     uid, uemail = _get_user_id_email_by_username(uname)
 
+    tb_strings = traceback.format_exception(exc_type, exc_value, tb)
+
     payload = {
-        "traceback": ''.join(traceback.format_exception(exc_type, exc_value, tb))
+        "message": tb_strings[-1],
+        "stack": ''.join(tb_strings)
     }
 
     event = create_event(
         scope="send:exception",
         source='server',
         count=1,
-        obj_value=traceback.format_exception_only(exc_type, exc_value)[0],
         project_id=pid,
         task_id=tid,
         job_id=jid,
@@ -452,6 +454,8 @@ def handle_view_exception(exc, context):
     request = context["request"]
     view = context["view"]
 
+    tb_strings = traceback.format_exception(type(exc), exc, exc.__traceback__)
+
     payload = {
         "basename": view.basename,
         "action": view.action,
@@ -461,14 +465,14 @@ def handle_view_exception(exc, context):
             "content_type": request.content_type,
             "method": request.method,
         },
-        "traceback": ''.join(traceback.format_exception(exc))
+        "message": tb_strings[-1],
+        "stack": ''.join(tb_strings),
     }
 
     event = create_event(
         scope="send:exception",
         source='server',
         count=1,
-        obj_value=traceback.format_exception_only(exc)[0],
         user_id=request.user.id,
         user_name=request.user.username,
         user_email=request.user.email,
