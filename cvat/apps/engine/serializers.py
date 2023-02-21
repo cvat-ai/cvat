@@ -8,33 +8,24 @@ from inspect import isclass
 import os
 import re
 import shutil
-import textwrap
-<<<<<<< HEAD
-from tempfile import NamedTemporaryFile
-from typing import Any, Dict, Iterable, Optional, OrderedDict, Union
 
-from django.contrib.auth.models import Group, User
-from django.db import transaction
-from drf_spectacular.utils import (OpenApiExample, extend_schema_field,
-                                   extend_schema_serializer)
-from rest_framework import exceptions, serializers
-=======
+from tempfile import NamedTemporaryFile
+import textwrap
 from typing import Any, Dict, Iterable, Optional, OrderedDict, Union
 
 from rest_framework import serializers, exceptions
 from django.contrib.auth.models import User, Group
 from django.db import transaction
->>>>>>> develop
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine import models
-from cvat.apps.engine.cloud_provider import (Credentials, Status,
-                                             get_cloud_storage_instance)
+from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials, Status
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.utils import parse_specific_attributes
-from cvat.apps.engine.view_utils import (build_field_filter_params,
-                                         get_list_view_name, reverse)
 
+from drf_spectacular.utils import OpenApiExample, extend_schema_field, extend_schema_serializer
+
+from cvat.apps.engine.view_utils import build_field_filter_params, get_list_view_name, reverse
 
 @extend_schema_field(serializers.URLField)
 class HyperlinkedEndpointSerializer(serializers.Serializer):

@@ -400,9 +400,7 @@ class TestPostProjects:
     def test_cannot_create_project_with_same_labels(self, admin_user):
         project_spec = {
             "name": "test cannot create project with same labels",
-            "labels": [
-                {"name": "l1"}, {"name": "l1"}
-            ],
+            "labels": [{"name": "l1"}, {"name": "l1"}],
         }
         response = post_method(admin_user, "/projects", project_spec)
         assert response.status_code == HTTPStatus.BAD_REQUEST
