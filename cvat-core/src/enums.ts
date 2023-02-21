@@ -83,6 +83,8 @@ export enum Source {
 }
 
 export enum LogType {
+    loadTool = 'load:cvat',
+
     loadJob = 'load:job',
     saveJob = 'save:job',
     restoreJob = 'restore:job',

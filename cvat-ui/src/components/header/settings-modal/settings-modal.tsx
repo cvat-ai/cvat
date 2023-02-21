@@ -78,11 +78,11 @@ const SettingsModal = (props: SettingsModalProps): JSX.Element => {
             footer={(
                 <>
                     <Tooltip title='Will save settings from this page and appearance settings on standard workspace page in browser'>
-                        <Button type='primary' onClick={onSaveSettings}>
+                        <Button className='cvat-save-settings-button' type='primary' onClick={onSaveSettings}>
                             Save
                         </Button>
                     </Tooltip>
-                    <Button type='default' onClick={onClose}>
+                    <Button className='cvat-close-settings-button' type='default' onClick={onClose}>
                         Close
                     </Button>
                 </>

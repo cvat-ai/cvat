@@ -233,7 +233,12 @@ export default class RawViewer extends React.PureComponent<Props> {
                 <Row justify='start' align='middle'>
                     <Col>
                         <CVATTooltip title='Save labels'>
-                            <Button style={{ width: '150px' }} type='primary' htmlType='submit'>
+                            <Button
+                                className='cvat-submit-raw-labels-conf-button'
+                                style={{ width: '150px' }}
+                                type='primary'
+                                htmlType='submit'
+                            >
                                 Done
                             </Button>
                         </CVATTooltip>
@@ -241,6 +246,7 @@ export default class RawViewer extends React.PureComponent<Props> {
                     <Col offset={1}>
                         <CVATTooltip title='Reset all changes'>
                             <Button
+                                className='cvat-reset-raw-labels-conf-button'
                                 type='primary'
                                 danger
                                 style={{ width: '150px' }}
