@@ -21,6 +21,7 @@ if __name__ == "__main__":
         "comment",
         "issue",
         "webhook",
+        "label",
     ]:
         response = get_method("admin1", f"{obj}s", page_size="all")
         with open(ASSETS_DIR / f"{obj}s.json", "w") as f:

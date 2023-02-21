@@ -118,18 +118,6 @@ const defaultState: AnnotationState = {
     sidebarCollapsed: false,
     appearanceCollapsed: false,
     filtersPanelVisible: false,
-    predictor: {
-        enabled: false,
-        error: null,
-        message: '',
-        projectScore: 0,
-        fetching: false,
-        annotatedFrames: [],
-        timeRemaining: 0,
-        progress: 0,
-        annotationAmount: 0,
-        mediaAmount: 0,
-    },
     workspace: Workspace.STANDARD,
 };
 
@@ -1110,47 +1098,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     ...state.annotations,
                     activatedStateID: null,
                     activatedAttributeID: null,
-                },
-            };
-        }
-        case AnnotationActionTypes.UPDATE_PREDICTOR_STATE: {
-            const { payload } = action;
-            return {
-                ...state,
-                predictor: {
-                    ...state.predictor,
-                    ...payload,
-                },
-            };
-        }
-        case AnnotationActionTypes.GET_PREDICTIONS: {
-            return {
-                ...state,
-                predictor: {
-                    ...state.predictor,
-                    fetching: true,
-                },
-            };
-        }
-        case AnnotationActionTypes.GET_PREDICTIONS_SUCCESS: {
-            const { frame } = action.payload;
-            const annotatedFrames = [...state.predictor.annotatedFrames, frame];
-
-            return {
-                ...state,
-                predictor: {
-                    ...state.predictor,
-                    fetching: false,
-                    annotatedFrames,
-                },
-            };
-        }
-        case AnnotationActionTypes.GET_PREDICTIONS_FAILED: {
-            return {
-                ...state,
-                predictor: {
-                    ...state.predictor,
-                    fetching: false,
                 },
             };
         }

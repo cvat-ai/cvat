@@ -1,15 +1,15 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { Storage } from './storage';
-
 import serverProxy from './server-proxy';
 import { decodePreview } from './frames';
-
 import Project from './project';
 import { exportDataset, importDataset } from './annotations';
+import { SerializedLabel } from './server-response-types';
+import { Label } from './labels';
 
 export default function implementProject(projectClass) {
     projectClass.prototype.save.implementation = async function () {
@@ -18,16 +18,40 @@ export default function implementProject(projectClass) {
                 bugTracker: 'bug_tracker',
                 assignee: 'assignee_id',
             });
+
             if (projectData.assignee_id) {
                 projectData.assignee_id = projectData.assignee_id.id;
             }
-            if (projectData.labels) {
-                projectData.labels = projectData.labels.map((el) => el.toJSON());
+
+            await Promise.all((projectData.labels || []).map((label: Label): Promise<unknown> => {
+                if (label.deleted) {
+                    return serverProxy.labels.delete(label.id);
+                }
+
+                if (label.patched) {
+                    return serverProxy.labels.update(label.id, label.toJSON());
+                }
+
+                return Promise.resolve();
+            }));
+
+            // leave only new labels to create them via project PATCH request
+            projectData.labels = (projectData.labels || [])
+                .filter((label: SerializedLabel) => !Number.isInteger(label.id)).map((el) => el.toJSON());
+            if (!projectData.labels.length) {
+                delete projectData.labels;
             }
 
-            await serverProxy.projects.save(this.id, projectData);
             this._updateTrigger.reset();
-            return this;
+            let serializedProject = null;
+            if (Object.keys(projectData).length) {
+                serializedProject = await serverProxy.projects.save(this.id, projectData);
+            } else {
+                [serializedProject] = (await serverProxy.projects.get({ id: this.id }));
+            }
+
+            const labels = await serverProxy.labels.get({ project_id: serializedProject.id });
+            return new Project({ ...serializedProject, labels: labels.results });
         }
 
         // initial creating
@@ -49,7 +73,8 @@ export default function implementProject(projectClass) {
         }
 
         const project = await serverProxy.projects.create(projectSpec);
-        return new Project(project);
+        const labels = await serverProxy.labels.get({ project_id: project.id });
+        return new Project({ ...project, labels: labels.results });
     };
 
     projectClass.prototype.delete.implementation = async function () {

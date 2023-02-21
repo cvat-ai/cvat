@@ -161,6 +161,13 @@ class _DbTestBase(APITestCase):
             assert response.status_code == status.HTTP_202_ACCEPTED, response.status_code
 
             response = self.client.get("/api/tasks/%s" % tid)
+
+            if 200 <= response.status_code < 400:
+                labels_response = list(get_paginated_collection(
+                    lambda page: self.client.get("/api/labels?task_id=%s&page=%s" % (tid, page))
+                ))
+                response.data["labels"] = labels_response
+
             task = response.data
 
         return task

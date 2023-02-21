@@ -136,10 +136,8 @@ class TestWebhookProjectEvents:
         assert deliveries["count"] == 1
 
         assert payload["event"] == events[0]
-        assert len(payload["before_update"]["labels"]) == 0
-        assert len(payload["project"]["labels"]) == 1
-        assert payload["project"]["labels"][0]["name"] == patch_data["labels"][0]["name"]
-        assert payload["project"]["labels"][0]["color"] == patch_data["labels"][0]["color"]
+        assert payload["before_update"]["labels"]["count"] == 0
+        assert payload["project"]["labels"]["count"] == 1
 
     def test_webhook_create_and_delete_project(self, organizations):
         org_id = list(organizations)[0]["id"]
@@ -343,9 +341,9 @@ class TestWebhookTaskEvents:
 
         assert deliveries["count"] == 1
         assert (
-            len(payload["before_update"]["labels"])
-            == len(tasks[task_id]["labels"])
-            == len(payload["task"]["labels"]) - 1
+            payload["before_update"]["labels"]["count"]
+            == tasks[task_id]["labels"]["count"]
+            == payload["task"]["labels"]["count"] - 1
         )
 
     def test_webhook_create_and_delete_task(self, organizations):

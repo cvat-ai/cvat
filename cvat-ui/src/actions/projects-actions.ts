@@ -24,9 +24,6 @@ export enum ProjectsActionTypes {
     CREATE_PROJECT = 'CREATE_PROJECT',
     CREATE_PROJECT_SUCCESS = 'CREATE_PROJECT_SUCCESS',
     CREATE_PROJECT_FAILED = 'CREATE_PROJECT_FAILED',
-    UPDATE_PROJECT = 'UPDATE_PROJECT',
-    UPDATE_PROJECT_SUCCESS = 'UPDATE_PROJECT_SUCCESS',
-    UPDATE_PROJECT_FAILED = 'UPDATE_PROJECT_FAILED',
     DELETE_PROJECT = 'DELETE_PROJECT',
     DELETE_PROJECT_SUCCESS = 'DELETE_PROJECT_SUCCESS',
     DELETE_PROJECT_FAILED = 'DELETE_PROJECT_FAILED',
@@ -50,11 +47,6 @@ const projectActions = {
         createAction(ProjectsActionTypes.CREATE_PROJECT_SUCCESS, { projectId })
     ),
     createProjectFailed: (error: any) => createAction(ProjectsActionTypes.CREATE_PROJECT_FAILED, { error }),
-    updateProject: () => createAction(ProjectsActionTypes.UPDATE_PROJECT),
-    updateProjectSuccess: (project: any) => createAction(ProjectsActionTypes.UPDATE_PROJECT_SUCCESS, { project }),
-    updateProjectFailed: (project: any, error: any) => (
-        createAction(ProjectsActionTypes.UPDATE_PROJECT_FAILED, { project, error })
-    ),
     deleteProject: (projectId: number) => createAction(ProjectsActionTypes.DELETE_PROJECT, { projectId }),
     deleteProjectSuccess: (projectId: number) => (
         createAction(ProjectsActionTypes.DELETE_PROJECT_SUCCESS, { projectId })
@@ -139,28 +131,6 @@ export function createProjectAsync(data: any): ThunkAction {
         } catch (error) {
             dispatch(projectActions.createProjectFailed(error));
             throw error;
-        }
-    };
-}
-
-export function updateProjectAsync(projectInstance: any): ThunkAction {
-    return async (dispatch, getState): Promise<void> => {
-        try {
-            const state = getState();
-            dispatch(projectActions.updateProject());
-            await projectInstance.save();
-            const [project] = await cvat.projects.get({ id: projectInstance.id });
-            dispatch(projectActions.updateProjectSuccess(project));
-            dispatch(getProjectTasksAsync(state.projects.tasksGettingQuery));
-        } catch (error) {
-            let project = null;
-            try {
-                [project] = await cvat.projects.get({ id: projectInstance.id });
-            } catch (fetchError) {
-                dispatch(projectActions.updateProjectFailed(projectInstance, error));
-                return;
-            }
-            dispatch(projectActions.updateProjectFailed(project, error));
         }
     };
 }
