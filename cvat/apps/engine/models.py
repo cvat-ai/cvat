@@ -514,8 +514,28 @@ class Label(models.Model):
 
     class Meta:
         default_permissions = ()
-        unique_together = (('task', 'name', 'parent'),
-                           ('project', 'name', 'parent'))
+        constraints = [
+            models.UniqueConstraint(
+                name='project_name_unique',
+                fields=('project', 'name'),
+                condition=models.Q(task__isnull=True, parent__isnull=True)
+            ),
+            models.UniqueConstraint(
+                name='task_name_unique',
+                fields=('task', 'name'),
+                condition=models.Q(project__isnull=True, parent__isnull=True)
+            ),
+            models.UniqueConstraint(
+                name='project_name_parent_unique',
+                fields=('project', 'name', 'parent'),
+                condition=models.Q(task__isnull=True)
+            ),
+            models.UniqueConstraint(
+                name='task_name_parent_unique',
+                fields=('task', 'name', 'parent'),
+                condition=models.Q(project__isnull=True)
+            )
+        ]
 
 class Skeleton(models.Model):
     root = models.OneToOneField(Label, on_delete=models.CASCADE)
