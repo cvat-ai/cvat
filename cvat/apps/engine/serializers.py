@@ -3,10 +3,13 @@
 #
 # SPDX-License-Identifier: MIT
 
+from copy import copy
+from inspect import isclass
 import os
 import re
 import shutil
 import textwrap
+<<<<<<< HEAD
 from tempfile import NamedTemporaryFile
 from typing import Any, Dict, Iterable, Optional, OrderedDict, Union
 
@@ -15,6 +18,13 @@ from django.db import transaction
 from drf_spectacular.utils import (OpenApiExample, extend_schema_field,
                                    extend_schema_serializer)
 from rest_framework import exceptions, serializers
+=======
+from typing import Any, Dict, Iterable, Optional, OrderedDict, Union
+
+from rest_framework import serializers, exceptions
+from django.contrib.auth.models import User, Group
+from django.db import transaction
+>>>>>>> develop
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine import models
@@ -27,14 +37,14 @@ from cvat.apps.engine.view_utils import (build_field_filter_params,
 
 
 @extend_schema_field(serializers.URLField)
-class HyperlinkedModelViewSerializer(serializers.Serializer):
+class HyperlinkedEndpointSerializer(serializers.Serializer):
     key_field = 'pk'
 
     def __init__(self, view_name=None, *, filter_key=None, **kwargs):
-        if issubclass(view_name, models.models.Model):
+        if isclass(view_name) and issubclass(view_name, models.models.Model):
             view_name = get_list_view_name(view_name)
-        else:
-            assert isinstance(view_name, str)
+        elif not isinstance(view_name, str):
+            raise TypeError(view_name)
 
         kwargs['read_only'] = True
         super().__init__(**kwargs)
@@ -57,6 +67,58 @@ class HyperlinkedModelViewSerializer(serializers.Serializer):
             )),
             instance
         )
+
+
+class _CollectionSummarySerializer(serializers.Serializer):
+    # This class isn't recommended for direct use in public serializers
+    # because it produces too generic description in the schema.
+    # Consider creating a dedicated inherited class instead.
+
+    count = serializers.IntegerField(default=0)
+
+    def __init__(self, model, *, url_filter_key, **kwargs):
+        super().__init__(**kwargs)
+        self._collection_key = self.source
+        self._model = model
+        self._url_filter_key = url_filter_key
+
+    def bind(self, field_name, parent):
+        super().bind(field_name, parent)
+        self._collection_key = self._collection_key or self.source
+        self._model = self._model or type(self.parent)
+
+    def get_fields(self):
+        fields = super().get_fields()
+        fields['url'] = HyperlinkedEndpointSerializer(self._model, filter_key=self._url_filter_key)
+        fields['count'].source = self._collection_key + '.count'
+        return fields
+
+    def get_attribute(self, instance):
+        return instance
+
+
+class LabelsSummarySerializer(_CollectionSummarySerializer):
+    def __init__(self, *, model=models.Label, url_filter_key, source='get_labels', **kwargs):
+        super().__init__(model=model, url_filter_key=url_filter_key, source=source, **kwargs)
+
+
+class JobsSummarySerializer(_CollectionSummarySerializer):
+    completed = serializers.IntegerField(source='completed_jobs_count', default=0)
+
+    def __init__(self, *, model=models.Job, url_filter_key, **kwargs):
+        super().__init__(model=model, url_filter_key=url_filter_key, **kwargs)
+
+
+class TasksSummarySerializer(_CollectionSummarySerializer):
+    pass
+
+
+class CommentsSummarySerializer(_CollectionSummarySerializer):
+    pass
+
+
+class IssuesSummarySerializer(_CollectionSummarySerializer):
+    pass
 
 
 class BasicUserSerializer(serializers.ModelSerializer):
@@ -117,9 +179,15 @@ class AttributeSerializer(serializers.ModelSerializer):
 
 class SublabelSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
-    attributes = AttributeSerializer(many=True, source='attributespec_set', default=[])
-    color = serializers.CharField(allow_blank=True, required=False)
-    type = serializers.CharField(allow_blank=True, required=False)
+    attributes = AttributeSerializer(many=True, source='attributespec_set', default=[],
+        help_text="The list of attributes. "
+        "If you want to remove an attribute, you need to recreate the label "
+        "and specify the remaining attributes.")
+    color = serializers.CharField(allow_blank=True, required=False,
+        help_text="The hex value for the RGB color. "
+        "Will be generated automatically, unless specified explicitly.")
+    type = serializers.CharField(allow_blank=True, required=False,
+        help_text="Associated annotation type for this label")
     has_parent = serializers.BooleanField(source='has_parent_label', required=False)
 
     class Meta:
@@ -136,21 +204,55 @@ class SkeletonSerializer(serializers.ModelSerializer):
         fields = ('id', 'svg',)
 
 class LabelSerializer(SublabelSerializer):
-    deleted = serializers.BooleanField(required=False, help_text='Delete label if value is true from proper Task/Project object')
+    deleted = serializers.BooleanField(required=False, write_only=True,
+        help_text='Delete the label. Only applicable in the PATCH methods of a project or a task.')
     sublabels = SublabelSerializer(many=True, required=False)
     svg = serializers.CharField(allow_blank=True, required=False)
+    has_parent = serializers.BooleanField(read_only=True, source='has_parent_label', required=False)
 
     class Meta:
         model = models.Label
-        fields = ('id', 'name', 'color', 'attributes', 'deleted', 'type', 'svg', 'sublabels', 'has_parent')
+        fields = (
+            'id', 'name', 'color', 'attributes', 'deleted', 'type', 'svg',
+            'sublabels', 'project_id', 'task_id', 'parent_id', 'has_parent'
+        )
+        read_only_fields = ('id', 'svg', 'project_id', 'task_id')
+        extra_kwargs = {
+            'project_id': { 'required': False, 'allow_null': False },
+            'task_id': { 'required': False, 'allow_null': False },
+            'parent_id': { 'required': False, },
+        }
 
     def to_representation(self, instance):
         label = super().to_representation(instance)
         if label['type'] == str(models.LabelType.SKELETON):
             label['svg'] = instance.skeleton.svg
+
+        # Clean mutually exclusive fields
+        if not label.get('task_id'):
+            label.pop('task_id', None)
+        if not label.get('project_id'):
+            label.pop('project_id', None)
+
         return label
 
+    def __init__(self, *args, **kwargs):
+        self._local = kwargs.pop('local', False)
+        """
+        Indicates that the operation is called from the dedicated ViewSet
+        and not from the parent entity, i.e. a project or task.
+        """
+
+        super().__init__(*args, **kwargs)
+
     def validate(self, attrs):
+        if self._local and attrs.get('deleted'):
+            # NOTE: Navigate clients to the right method
+            raise serializers.ValidationError(
+                'Labels cannot be deleted by updating in this endpoint. '
+                'Please use the DELETE method instead.'
+            )
+
         if attrs.get('deleted') and attrs.get('id') is None:
             raise serializers.ValidationError('Deleted label must have an ID')
 
@@ -216,7 +318,10 @@ class LabelSerializer(SublabelSerializer):
         else:
             db_label.color = validated_data.get('color', db_label.color)
 
-        db_label.save()
+        try:
+            db_label.save()
+        except models.InvalidLabel as exc:
+            raise exceptions.ValidationError(str(exc)) from exc
 
         for attr in attributes:
             (db_attr, created) = models.AttributeSpec.objects.get_or_create(
@@ -339,6 +444,33 @@ class LabelSerializer(SublabelSerializer):
 
         return parent_info, logger
 
+    def update(self, instance, validated_data):
+        if not self._local:
+            return super().update(instance, validated_data)
+
+        # Here we reuse the parent entity logic to make sure everything is done
+        # like these entities expect. Initial data (unprocessed) is used to
+        # avoid introducing premature changes.
+        data = copy(self.initial_data)
+        data['id'] = instance.id
+        data.setdefault('name', instance.name)
+        parent_query = { 'labels': [data] }
+
+        if isinstance(instance.project, models.Project):
+            parent_serializer = ProjectWriteSerializer(
+                instance=instance.project, data=parent_query, partial=True,
+            )
+        elif isinstance(instance.task, models.Task):
+            parent_serializer = TaskWriteSerializer(
+                instance=instance.task, data=parent_query, partial=True,
+            )
+
+        parent_serializer.is_valid(raise_exception=True)
+        parent_serializer.save()
+
+        self.instance = models.Label.objects.get(pk=instance.pk)
+        return self.instance
+
 
 class JobReadSerializer(serializers.ModelSerializer):
     task_id = serializers.ReadOnlyField(source="segment.task.id")
@@ -347,20 +479,20 @@ class JobReadSerializer(serializers.ModelSerializer):
     stop_frame = serializers.ReadOnlyField(source="segment.stop_frame")
     assignee = BasicUserSerializer(allow_null=True, read_only=True)
     dimension = serializers.CharField(max_length=2, source='segment.task.dimension', read_only=True)
-    labels = LabelSerializer(many=True, source='get_labels', read_only=True)
     data_chunk_size = serializers.ReadOnlyField(source='segment.task.data.chunk_size')
     data_compressed_chunk_type = serializers.ReadOnlyField(source='segment.task.data.compressed_chunk_type')
     mode = serializers.ReadOnlyField(source='segment.task.mode')
     bug_tracker = serializers.CharField(max_length=2000, source='get_bug_tracker',
         allow_null=True, read_only=True)
-    issues = HyperlinkedModelViewSerializer(models.Issue, filter_key='job_id')
+    labels = LabelsSummarySerializer(url_filter_key='job_id')
+    issues = IssuesSummarySerializer(models.Issue, url_filter_key='job_id')
 
     class Meta:
         model = models.Job
         fields = ('url', 'id', 'task_id', 'project_id', 'assignee',
-            'dimension', 'labels', 'bug_tracker', 'status', 'stage', 'state', 'mode',
+            'dimension', 'bug_tracker', 'status', 'stage', 'state', 'mode',
             'start_frame', 'stop_frame', 'data_chunk_size', 'data_compressed_chunk_type',
-            'updated_date', 'issues')
+            'updated_date', 'issues', 'labels')
         read_only_fields = fields
 
 class JobWriteSerializer(serializers.ModelSerializer):
@@ -662,8 +794,6 @@ class StorageSerializer(serializers.ModelSerializer):
         fields = ('id', 'location', 'cloud_storage_id')
 
 class TaskReadSerializer(serializers.ModelSerializer):
-    labels = LabelSerializer(many=True, source='get_labels')
-    segments = SegmentSerializer(many=True, source='segment_set', read_only=True)
     data_chunk_size = serializers.ReadOnlyField(source='data.chunk_size', required=False)
     data_compressed_chunk_type = serializers.ReadOnlyField(source='data.compressed_chunk_type', required=False)
     data_original_chunk_type = serializers.ReadOnlyField(source='data.original_chunk_type', required=False)
@@ -676,15 +806,16 @@ class TaskReadSerializer(serializers.ModelSerializer):
     dimension = serializers.CharField(allow_blank=True, required=False)
     target_storage = StorageSerializer(required=False, allow_null=True)
     source_storage = StorageSerializer(required=False, allow_null=True)
-    jobs = HyperlinkedModelViewSerializer(models.Job, filter_key='task_id')
+    jobs = JobsSummarySerializer(url_filter_key='task_id', source='segment_set')
+    labels = LabelsSummarySerializer(url_filter_key='task_id')
 
     class Meta:
         model = models.Task
         fields = ('url', 'id', 'name', 'project_id', 'mode', 'owner', 'assignee',
             'bug_tracker', 'created_date', 'updated_date', 'overlap', 'segment_size',
-            'status', 'labels', 'segments', 'data_chunk_size', 'data_compressed_chunk_type',
+            'status', 'data_chunk_size', 'data_compressed_chunk_type',
             'data_original_chunk_type', 'size', 'image_quality', 'data', 'dimension',
-            'subset', 'organization', 'target_storage', 'source_storage', 'jobs',
+            'subset', 'organization', 'target_storage', 'source_storage', 'jobs', 'labels',
         )
         read_only_fields = fields
         extra_kwargs = {
@@ -868,14 +999,29 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             for label, sublabels in new_sublabel_names.items():
                 if sublabels != target_project_sublabel_names.get(label):
                     raise serializers.ValidationError('All task or project label names must be mapped to the target project')
+        else:
+            if 'label_set' in attrs.keys():
+                # FIXME: doesn't work for renaming just a single label
+                label_names = [
+                    label['name']
+                    for label in attrs.get('label_set')
+                    if not label.get('deleted')
+                ]
+                if len(label_names) != len(set(label_names)):
+                    raise serializers.ValidationError('All label names must be unique for the task')
 
         return attrs
 
     def validate_labels(self, value):
         if value:
-            label_names = [label['name'] for label in value]
+            # FIXME: doesn't work for renaming just a single label
+            label_names = [
+                label['name']
+                for label in value
+                if not label.get('deleted')
+            ]
             if len(label_names) != len(set(label_names)):
-                raise serializers.ValidationError('All label names must be unique for the project')
+                raise serializers.ValidationError('All label names must be unique for the task')
 
             for label in value:
                 self.validate_labels(label.get("sublabels"))
@@ -884,20 +1030,21 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
 
 class ProjectReadSerializer(serializers.ModelSerializer):
-    labels = LabelSerializer(many=True, source='label_set', partial=True, default=[], read_only=True)
     owner = BasicUserSerializer(required=False, read_only=True)
     assignee = BasicUserSerializer(allow_null=True, required=False, read_only=True)
     task_subsets = serializers.ListField(child=serializers.CharField(), required=False, read_only=True)
     dimension = serializers.CharField(max_length=16, required=False, read_only=True, allow_null=True)
     target_storage = StorageSerializer(required=False, allow_null=True, read_only=True)
     source_storage = StorageSerializer(required=False, allow_null=True, read_only=True)
-    tasks = HyperlinkedModelViewSerializer(models.Task, filter_key='project_id')
+    tasks = TasksSummarySerializer(models.Task, url_filter_key='project_id')
+    labels = LabelsSummarySerializer(url_filter_key='project_id')
 
     class Meta:
         model = models.Project
-        fields = ('url', 'id', 'name', 'labels', 'tasks', 'owner', 'assignee', 'tasks',
+        fields = ('url', 'id', 'name', 'owner', 'assignee',
             'bug_tracker', 'task_subsets', 'created_date', 'updated_date', 'status',
             'dimension', 'organization', 'target_storage', 'source_storage',
+            'tasks', 'labels',
         )
         read_only_fields = fields
         extra_kwargs = { 'organization': { 'allow_null': True } }
@@ -968,10 +1115,14 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
-
     def validate_labels(self, value):
         if value:
-            label_names = [label['name'] for label in value]
+            # FIXME: doesn't work for renaming just a single label
+            label_names = [
+                label['name']
+                for label in value
+                if not label.get('deleted')
+            ]
             if len(label_names) != len(set(label_names)):
                 raise serializers.ValidationError('All label names must be unique for the project')
 
@@ -1162,12 +1313,12 @@ class IssueReadSerializer(serializers.ModelSerializer):
     position = serializers.ListField(
         child=serializers.FloatField(), allow_empty=False
     )
-    comments = HyperlinkedModelViewSerializer(models.Comment, filter_key='issue_id')
+    comments = CommentsSummarySerializer(models.Comment, url_filter_key='issue_id')
 
     class Meta:
         model = models.Issue
         fields = ('id', 'frame', 'position', 'job', 'owner', 'assignee',
-            'created_date', 'updated_date', 'comments', 'resolved')
+            'created_date', 'updated_date', 'resolved', 'comments')
         read_only_fields = fields
         extra_kwargs = {
             'created_date': { 'allow_null': True },

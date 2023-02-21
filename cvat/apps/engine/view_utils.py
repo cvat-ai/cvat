@@ -10,6 +10,7 @@ from django.db.models.query import QuerySet
 from django.http.request import HttpRequest
 from django.http.response import HttpResponse
 from django.utils.http import urlencode
+from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.reverse import reverse as _reverse
 from rest_framework.serializers import Serializer
@@ -84,3 +85,21 @@ def get_list_view_name(model):
     return '%(model_name)s-list' % {
         'model_name': model._meta.object_name.lower()
     }
+
+def list_action(serializer_class: Type[Serializer], **kwargs):
+    params = dict(
+        detail=True,
+        methods=["GET"],
+        serializer_class=serializer_class,
+
+        # Restore the default pagination
+        pagination_class=GenericViewSet.pagination_class,
+
+        # Remove the regular list() parameters from the swagger schema.
+        # Unset, they would be taken from the enclosing class, which is wrong.
+        # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
+        filter_fields=None, search_fields=None, ordering_fields=None, simple_filters=None
+    )
+    params.update(kwargs)
+
+    return action(**params)

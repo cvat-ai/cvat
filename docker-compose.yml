@@ -319,7 +319,7 @@ services:
               path:  /var/lib/grafana/dashboards
               foldersFromFilesStructure: true
         EOF
-        /run.sh
+        exec /run.sh
     networks:
       cvat:
         aliases:

@@ -1,5 +1,5 @@
 # Copyright (C) 2018-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -306,6 +306,9 @@ class Project(models.Model):
     target_storage = models.ForeignKey('Storage', null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name='+')
 
+    def get_labels(self):
+        return self.label_set.filter(parent__isnull=True)
+
     def get_dirname(self):
         return os.path.join(settings.PROJECTS_ROOT, str(self.id))
 
@@ -363,7 +366,7 @@ class Task(models.Model):
 
     def get_labels(self):
         project = self.project
-        return project.label_set if project else self.label_set
+        return project.get_labels() if project else self.label_set.filter(parent__isnull=True)
 
     def get_dirname(self):
         return os.path.join(settings.TASKS_ROOT, str(self.id))
@@ -494,9 +497,14 @@ class Job(models.Model):
     def get_labels(self):
         task = self.segment.task
         project = task.project
-        return project.label_set if project else task.label_set
+        return project.get_labels() if project else task.get_labels()
+
     class Meta:
         default_permissions = ()
+
+
+class InvalidLabel(ValueError):
+    pass
 
 class Label(models.Model):
     task = models.ForeignKey(Task, null=True, blank=True, on_delete=models.CASCADE)
@@ -511,6 +519,25 @@ class Label(models.Model):
 
     def has_parent_label(self):
         return bool(self.parent)
+
+    def _check_save_constraints(self) -> None:
+        # NOTE: constraints don't work for some reason
+        # https://github.com/opencv/cvat/pull/5700#discussion_r1112276036
+        # This method is not 100% reliable because of possible race conditions
+        # but it should work in relevant cases.
+
+        parent_entity = self.project or self.task
+
+        # Check for possible labels name duplicates in case of saving the new label
+        existing_labels: models.QuerySet = parent_entity.get_labels()
+        if self.id:
+            existing_labels = existing_labels.exclude(id=self.id)
+        if existing_labels.filter(name=self.name).count():
+            raise InvalidLabel(f"Label '{self.name}' already exists")
+
+    def save(self, *args, **kwargs) -> None:
+        self._check_save_constraints()
+        return super().save(*args, **kwargs)
 
     class Meta:
         default_permissions = ()
