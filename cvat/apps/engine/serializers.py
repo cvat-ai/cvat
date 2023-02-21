@@ -186,13 +186,6 @@ class SublabelSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'color', 'attributes', 'type', 'has_parent', )
         read_only_fields = ('parent',)
 
-class SkeletonSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField(required=False)
-    svg = serializers.CharField(allow_blank=True, required=False)
-
-    class Meta:
-        model = models.Skeleton
-        fields = ('id', 'svg',)
 
 class LabelSerializer(SublabelSerializer):
     deleted = serializers.BooleanField(required=False, write_only=True,
@@ -250,6 +243,7 @@ class LabelSerializer(SublabelSerializer):
         return attrs
 
     @classmethod
+    @transaction.atomic
     def update_label(
         cls,
         validated_data: Dict[str, Any],
@@ -368,9 +362,8 @@ class LabelSerializer(SublabelSerializer):
 
             if db_label.type == str(models.LabelType.SKELETON):
                 for db_sublabel in list(db_label.sublabels.all()):
-                    svg = svg.replace(
-                        f'data-label-name="{db_sublabel.name}"',
-                        f'data-label-id="{db_sublabel.id}"'
+                    svg = models.Skeleton.embed_label_name_to_svg(
+                        svg, label_id=db_sublabel.id, label_name=db_sublabel.name
                     )
                 db_skeleton = models.Skeleton.objects.create(root=db_label, svg=svg)
                 logger.info(f'label:create Skeleton id:{db_skeleton.id} for label_id:{db_label.id}')
@@ -412,11 +405,11 @@ class LabelSerializer(SublabelSerializer):
 
                 if label.get('id') is None and db_label.type == str(models.LabelType.SKELETON):
                     for db_sublabel in list(db_label.sublabels.all()):
-                        svg = svg.replace(
-                            f'data-label-name="{db_sublabel.name}"',
-                            f'data-label-id="{db_sublabel.id}"'
+                        svg = models.Skeleton.embed_label_name_to_svg(
+                            svg, label_id=db_sublabel.id, label_name=db_sublabel.name
                         )
                     db_skeleton = models.Skeleton.objects.create(root=db_label, svg=svg)
+
                     logger.info(
                         f'label:update Skeleton id:{db_skeleton.id} for label_id:{db_label.id}'
                     )

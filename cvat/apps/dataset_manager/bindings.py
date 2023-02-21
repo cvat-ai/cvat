@@ -23,7 +23,7 @@ from django.utils import timezone
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine.frame_provider import FrameProvider
-from cvat.apps.engine.models import AttributeSpec, AttributeType, DimensionType
+from cvat.apps.engine.models import AttributeSpec, AttributeType, DimensionType, Skeleton
 from cvat.apps.engine.models import Image as Img
 from cvat.apps.engine.models import Label, LabelType, Project, ShapeType, Task
 
@@ -273,7 +273,9 @@ class CommonData(InstanceLabelData):
             if db_label.type == str(LabelType.SKELETON):
                 label["svg"] = db_label.skeleton.svg
                 for db_sublabel in list(db_label.sublabels.all()):
-                    label["svg"] = label["svg"].replace(f'data-label-id="{db_sublabel.id}"', f'data-label-name="{db_sublabel.name}"')
+                    label["svg"] = Skeleton.embed_label_name_to_svg(
+                        label["svg"], label_id=db_sublabel.id, label_name=db_sublabel.name
+                    )
 
             labels.append(('label', label))
         return labels
@@ -960,7 +962,9 @@ class ProjectData(InstanceLabelData):
                 if db_label.type == str(LabelType.SKELETON):
                     label["svg"] = db_label.skeleton.svg
                     for db_sublabel in list(db_label.sublabels.all()):
-                        label["svg"] = label["svg"].replace(f'data-label-id="{db_sublabel.id}"', f'data-label-name="{db_sublabel.name}"')
+                        label["svg"] = Skeleton.embed_label_name_to_svg(
+                            label["svg"], label_id=db_sublabel.id, label_name=db_sublabel.name
+                        )
 
                 labels.append(('label', label))
 

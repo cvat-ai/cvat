@@ -36,7 +36,7 @@ from cvat.apps.engine.serializers import (AttributeSerializer, DataSerializer, L
     ProjectReadSerializer, ProjectFileSerializer, TaskFileSerializer)
 from cvat.apps.engine.utils import av_scan_paths, process_failed_job, configure_dependent_job
 from cvat.apps.engine.models import (
-    StorageChoice, StorageMethodChoice, DataChoice, Task, Project, Location,
+    Skeleton, StorageChoice, StorageMethodChoice, DataChoice, Task, Project, Location,
     CloudStorage as CloudStorageModel)
 from cvat.apps.engine.task import JobFileMapping, _create_thread
 from cvat.apps.dataset_manager.views import TASK_CACHE_TTL, PROJECT_CACHE_TTL, get_export_cache_dir, clear_export_cache, log_exception
@@ -460,7 +460,9 @@ class _ImporterBase():
 
             if db_label.type == str(models.LabelType.SKELETON):
                 for db_sublabel in list(db_label.sublabels.all()):
-                    svg = svg.replace(f'data-label-name="{db_sublabel.name}"', f'data-label-id="{db_sublabel.id}"')
+                    svg = Skeleton.embed_label_name_to_svg(
+                        svg, label_id=db_sublabel.id, label_name=db_sublabel.name
+                    )
                 models.Skeleton.objects.create(root=db_label, svg=svg)
 
             for attribute in attributes:

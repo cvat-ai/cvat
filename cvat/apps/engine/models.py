@@ -551,6 +551,10 @@ class Skeleton(models.Model):
         default_permissions = ()
         unique_together = ('root',)
 
+    @classmethod
+    def embed_label_name_to_svg(cls, svg: str, label_id: int, label_name: str) -> str:
+        return svg.replace(f'data-label-name="{label_name}"', f'data-label-id="{label_id}"')
+
 class AttributeType(str, Enum):
     CHECKBOX = 'checkbox'
     RADIO = 'radio'
