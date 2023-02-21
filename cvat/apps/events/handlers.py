@@ -457,8 +457,8 @@ def handle_view_exception(exc, context):
     tb_strings = traceback.format_exception(type(exc), exc, exc.__traceback__)
 
     payload = {
-        "basename": view.basename,
-        "action": view.action,
+        "basename": getattr(view, "basename", None),
+        "action": getattr(view, "action", None),
         "request": {
             "url": request.get_full_path(),
             "query_params": request.query_params,
@@ -473,9 +473,9 @@ def handle_view_exception(exc, context):
         scope="send:exception",
         source='server',
         count=1,
-        user_id=request.user.id,
-        user_name=request.user.username,
-        user_email=request.user.email,
+        user_id=getattr(request.user, "id", None),
+        user_name=getattr(request.user, "user", None),
+        user_email=getattr(request.user, "email", None),
         payload=payload,
     )
     message = JSONRenderer().render(event).decode('UTF-8')
