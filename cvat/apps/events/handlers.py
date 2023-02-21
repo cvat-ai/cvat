@@ -5,9 +5,9 @@
 from copy import deepcopy
 from datetime import datetime, timezone
 import traceback
-import re
 
 from rest_framework.renderers import JSONRenderer
+from rest_framework.views import exception_handler
 from crum import get_current_user, get_current_request
 
 from cvat.apps.engine.models import (
@@ -391,40 +391,17 @@ def handle_annotations_patch(instance, annotations, action, **kwargs):
             message = JSONRenderer().render(event).decode('UTF-8')
             vlogger.info(message)
 
-def handle_rq_exception(rq_job_id, exc_type, exc_value, tb):
-    def _get_object_id(object_name):
-        try:
-            m = re.search(fr"{object_name}\.id(\d+)-", rq_job_id)
-            if m:
-                return int(m.group(1))
-        except Exception:
-            return None
-
-    def _get_username():
-        try:
-            m = re.search(r'-by-(\w+)', rq_job_id)
-            if m:
-                return m.group(1)
-        except Exception:
-            return None
-
-    def _get_user_id_email_by_username(username):
-        if not username:
-            return None, None
-        try:
-            user = User.objects.filter(username=username)
-            if user.count() != 1:
-                return None, None
-            user = user.first()
-            return user.id, user.email
-        except Exception:
-            return None, None
-
-    pid = _get_object_id("project")
-    tid = _get_object_id("task")
-    jid = _get_object_id("job")
-    uname = _get_username()
-    uid, uemail = _get_user_id_email_by_username(uname)
+def handle_rq_exception(rq_job, exc_type, exc_value, tb):
+    oid = rq_job.meta.get("org_id", None)
+    oslug = rq_job.meta.get("org_slug", None)
+    pid = rq_job.meta.get("project_id", None)
+    tid = rq_job.meta.get("task_id", None)
+    jid = rq_job.meta.get("job_id", None)
+    user_info = rq_job.meta.get("user", None)
+    if user_info:
+        uid = user_info.get("id", None)
+        uname = user_info.get("name", None)
+        uemail = user_info.get("email", None)
 
     tb_strings = traceback.format_exception(exc_type, exc_value, tb)
 
@@ -437,6 +414,8 @@ def handle_rq_exception(rq_job_id, exc_type, exc_value, tb):
         scope="send:exception",
         source='server',
         count=1,
+        org_id=oid,
+        org_slug=oslug,
         project_id=pid,
         task_id=tid,
         job_id=jid,
@@ -450,7 +429,7 @@ def handle_rq_exception(rq_job_id, exc_type, exc_value, tb):
 
     return False
 
-def handle_view_exception(exc, context):
+def handle_viewset_exception(exc, context):
     request = context["request"]
     view = context["view"]
 
@@ -474,9 +453,12 @@ def handle_view_exception(exc, context):
         source='server',
         count=1,
         user_id=getattr(request.user, "id", None),
-        user_name=getattr(request.user, "user", None),
+        user_name=getattr(request.user, "username", None),
         user_email=getattr(request.user, "email", None),
         payload=payload,
     )
     message = JSONRenderer().render(event).decode('UTF-8')
     vlogger.info(message)
+
+    response = exception_handler(exc, context)
+    return response

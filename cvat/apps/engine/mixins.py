@@ -245,7 +245,7 @@ class UploadMixin:
         raise NotImplementedError('You need to implement upload_finished in UploadMixin')
 
 class AnnotationMixin:
-    def export_annotations(self, request, pk, db_obj, export_func, callback, get_data=None):
+    def export_annotations(self, request, db_obj, export_func, callback, get_data=None):
         format_name = request.query_params.get("format", "")
         action = request.query_params.get("action", "").lower()
         filename = request.query_params.get("filename", "")
@@ -260,7 +260,7 @@ class AnnotationMixin:
         )
 
         object_name = self._object.__class__.__name__.lower()
-        rq_id = f"export:annotations-for-{object_name}.id{pk}-in-{format_name.replace(' ', '_')}-format"
+        rq_id = f"export:annotations-for-{object_name}.id{db_obj.pk}-in-{format_name.replace(' ', '_')}-format"
 
         if format_name:
             return export_func(db_instance=self._object,
@@ -276,12 +276,12 @@ class AnnotationMixin:
         if not get_data:
             return Response("Format is not specified",status=status.HTTP_400_BAD_REQUEST)
 
-        data = get_data(pk)
+        data = get_data(db_obj.pk)
         serializer = LabeledDataSerializer(data=data)
         if serializer.is_valid(raise_exception=True):
             return Response(serializer.data)
 
-    def import_annotations(self, request, pk, db_obj, import_func, rq_func, rq_id):
+    def import_annotations(self, request, db_obj, import_func, rq_func, rq_id):
         is_tus_request = request.headers.get('Upload-Length', None) is not None or \
             request.method == 'OPTIONS'
         if is_tus_request:
@@ -305,7 +305,7 @@ class AnnotationMixin:
                 request=request,
                 rq_id=rq_id,
                 rq_func=rq_func,
-                pk=pk,
+                db_obj=db_obj,
                 format_name=format_name,
                 location_conf=location_conf,
                 filename=file_name,

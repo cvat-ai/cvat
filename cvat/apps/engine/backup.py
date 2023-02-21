@@ -34,7 +34,7 @@ from cvat.apps.engine.log import slogger
 from cvat.apps.engine.serializers import (AttributeSerializer, DataSerializer,
     LabeledDataSerializer, SegmentSerializer, SimpleJobSerializer, TaskReadSerializer,
     ProjectReadSerializer, ProjectFileSerializer, TaskFileSerializer)
-from cvat.apps.engine.utils import av_scan_paths, process_failed_job, configure_dependent_job
+from cvat.apps.engine.utils import av_scan_paths, process_failed_job, configure_dependent_job, get_rq_job_meta
 from cvat.apps.engine.models import (
     StorageChoice, StorageMethodChoice, DataChoice, Task, Project, Location,
     CloudStorage as CloudStorageModel)
@@ -874,7 +874,10 @@ def export(db_instance, request, queue_name):
         func=_create_backup,
         args=(db_instance, Exporter, '{}_backup.zip'.format(obj_type), logger, cache_ttl),
         job_id=rq_id,
-        meta={ 'request_time': timezone.localtime() },
+        meta={
+            'request_time': timezone.localtime(),
+            **get_rq_job_meta(request=request, db_obj=db_instance),
+        },
         result_ttl=ttl, failure_ttl=ttl)
     return Response(status=status.HTTP_202_ACCEPTED)
 
@@ -927,6 +930,7 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
             meta={
                 'tmp_file': filename,
                 'tmp_file_descriptor': fd,
+                **get_rq_job_meta(request=request, db_obj=None)
             },
             depends_on=dependent_job
         )

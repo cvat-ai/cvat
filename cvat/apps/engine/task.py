@@ -30,7 +30,7 @@ from cvat.apps.engine import models
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.media_extractors import (MEDIA_TYPES, Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter,
     ValidateDimension, ZipChunkWriter, ZipCompressedChunkWriter, get_mime, sort)
-from cvat.apps.engine.utils import av_scan_paths
+from cvat.apps.engine.utils import av_scan_paths, get_rq_job_meta
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager, is_manifest
 from utils.dataset_manifest.core import VideoManifestValidator
 from utils.dataset_manifest.utils import detect_related_images
@@ -38,11 +38,15 @@ from .cloud_provider import db_storage_to_storage_instance
 
 ############################# Low Level server API
 
-def create(tid, data, username):
+def create(db_task, data, request):
     """Schedule the task"""
     q = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
-    q.enqueue_call(func=_create_thread, args=(tid, data),
-        job_id=f"create:task.id{tid}-by-{username}")
+    q.enqueue_call(
+        func=_create_thread,
+        args=(db_task.pk, data),
+        job_id=f"create:task.id{db_task.pk}-by-{request.user.username}",
+        meta=get_rq_job_meta(request=request, db_obj=db_task),
+    )
 
 ############################# Internal implementation for server API
 
