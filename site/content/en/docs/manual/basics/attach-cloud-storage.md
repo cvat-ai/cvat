@@ -129,7 +129,7 @@ Fill in the following fields:
 | CVAT                   | Google Cloud                                                                                                                                                                                                                                                                                                     |
 | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Display name**       | Create a display name                                                                                                                                                                                                                                                                                            |
-| **Description**        | (Optional) Add description of storage                                                                                                                                                                                                                                                                            |
+| **Description**        | (Optional) Add description of storage.                                                                                                                                                                                                                                                                            |
 | **Provider**           | From drop-down list select **Google Cloud Storage**.                                                                                                                                                                                                                                                             |
 | **Bucket name**        | Name of the [Bucket](https://cloud.google.com/storage/docs/creating-buckets). You can find it on the [storage browser page](https://console.cloud.google.com/storage/browser).                                                                                                                                   |
 | **Authorization type** | Depends on the bucket setup: <br><li>**Authorized access**: Click on the **Key file** field and upload key file from computer. <br><li> **Anonymous access**: for anonymous access. Public access to the bucket must be enabled.                                                                                 |
@@ -181,7 +181,7 @@ To create bucket, do the following:
 9. On the **Networking** tab, fill in the following fields:
 
    - If you want to change public access, enable **Public access from all networks**.
-   - Click **Next>Data protection**
+   - Click **Next>Data protection**.
 
      > You do not need to change anything in other tabs until you need some specific setup.
 
@@ -200,7 +200,7 @@ To create container, do the following:
 ![](/images/azure_blob_container_tutorial7.jpg)
 
 3. Enter the name of the container.
-4. (Optional)In the **Public access level** drop-down, select type of the access.
+4. (Optional) In the **Public access level** drop-down, select type of the access.
    <br>**Note:** this field will inactive if you disabled **Allow enabling public access on containers**.
 5. Click **Create**.
 
