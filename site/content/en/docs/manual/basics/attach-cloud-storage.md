@@ -38,6 +38,8 @@ See:
 
 ### Create a bucket
 
+To create bucket, do the following:
+
 1. Create [Google account](https://support.google.com/accounts/answer/27441?hl=en) and log into it.
 2. On the [Google Cloud](https://cloud.google.com/) page, click **Start Free**, then enter the required
    data and accept the terms of service.
@@ -144,6 +146,8 @@ After filling in all the fields, click **Submit**.
 
 ### Create a bucket
 
+To create bucket, do the following:
+
 1. Create an [Microsoft Azure](https://azure.microsoft.com/en-us/free/) account and log into it.
 2. Go to [Azure portal](https://portal.azure.com/#home), hover over the resource
    , and in the pop-up window click **Create**.
@@ -189,6 +193,8 @@ After filling in all the fields, click **Submit**.
 
 ### Create a container
 
+To create container, do the following:
+
 1. Go to the containers section and on the top menu click **+Container**
 
 ![](/images/azure_blob_container_tutorial7.jpg)
@@ -199,6 +205,8 @@ After filling in all the fields, click **Submit**.
 5. Click **Create**.
 
 ### Upload data
+
+You need to upload data for annotation and the `manifest.json` file.
 
 1. Prepare data.
    For more information,
@@ -270,6 +278,8 @@ After filling in all the fields, click **Submit**.
 
 ### Create a bucket
 
+To create bucket, do the following:
+
 1. Create an [AWS account](https://portal.aws.amazon.com/billing/signup#/start).
 2. Go to [console AWS-S3](https://s3.console.aws.amazon.com/s3/home), and click **Create bucket**.
 
@@ -283,6 +293,9 @@ After filling in all the fields, click **Submit**.
 A new bucket will appear on the list of buckets.
 
 ### Upload data
+
+
+You need to upload data for annotation and the `manifest.json` file.
 
 1. Prepare data.
    For more information,
