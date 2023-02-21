@@ -933,6 +933,19 @@ class TestPostTaskData:
 
                 start_frame = stop_frame + 1
 
+    def test_cannot_create_task_with_same_labels(self):
+        task_spec = {
+            "name": "test cannot create task with same labels",
+            "labels": [
+                {"name": "l1"}, {"name": "l1"}
+            ],
+        }
+        response = post_method(self._USERNAME, "/tasks", task_spec)
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+
+        response = get_method(self._USERNAME, "/tasks")
+        assert response.status_code == HTTPStatus.OK
+
     def test_cannot_create_task_with_same_skeleton_sublabels(self):
         task_spec = {
             "name": "test cannot create task with same skeleton sublabels",

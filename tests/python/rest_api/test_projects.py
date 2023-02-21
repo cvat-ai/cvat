@@ -396,6 +396,19 @@ class TestPostProjects:
 
         return org
 
+    def test_cannot_create_project_with_same_labels(self, admin_user):
+        project_spec = {
+            "name": "test cannot create project with same labels",
+            "labels": [
+                {"name": "l1"}, {"name": "l1"}
+            ],
+        }
+        response = post_method(admin_user, "/projects", project_spec)
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+
+        response = get_method(admin_user, "/projects")
+        assert response.status_code == HTTPStatus.OK
+
     def test_cannot_create_project_with_same_skeleton_sublabels(self, admin_user):
         project_spec = {
             "name": "test cannot create project with same skeleton sublabels",
