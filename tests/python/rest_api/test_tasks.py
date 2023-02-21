@@ -28,7 +28,7 @@ from PIL import Image
 import shared.utils.s3 as s3
 from shared.fixtures.init import get_server_image_tag
 from shared.utils.config import BASE_URL, USER_PASS, get_method, make_api_client, patch_method
-from shared.utils.helpers import generate_image_files
+from shared.utils.helpers import generate_image_files, make_skeleton_label_payload
 
 from .utils import CollectionSimpleFilterTestBase, export_dataset
 
@@ -945,8 +945,17 @@ class TestPatchTaskLabel:
         label_payload = {"id": label["id"], "deleted": True}
 
         response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [label_payload]})
-        assert response.status_code == HTTPStatus.OK, response.content
+        assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == task["labels"]["count"] - 1
+
+    def test_can_add_skeleton_label(self, tasks, admin_user):
+        task = next(iter(tasks))
+
+        label_payload = make_skeleton_label_payload(name="test_skeleton_label")
+
+        response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [label_payload]})
+        assert response.status_code == HTTPStatus.OK
+        assert response.json()["labels"]["count"] == task["labels"]["count"] + 1
 
     def test_can_delete_skeleton_label(self, tasks, labels, admin_user):
         task = next(

@@ -22,6 +22,7 @@ from deepdiff import DeepDiff
 from PIL import Image
 
 from shared.utils.config import BASE_URL, USER_PASS, get_method, make_api_client, patch_method
+from shared.utils.helpers import make_skeleton_label_payload
 
 from .utils import CollectionSimpleFilterTestBase, export_dataset
 
@@ -637,8 +638,19 @@ class TestPatchProjectLabel:
         response = patch_method(
             admin_user, f'/projects/{project["id"]}', {"labels": [label_payload]}
         )
-        assert response.status_code == HTTPStatus.OK, response.content
+        assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == project["labels"]["count"] - 1
+
+    def test_can_add_skeleton_label(self, projects, admin_user):
+        project = next(iter(projects))
+
+        label_payload = make_skeleton_label_payload(name="test_skeleton_label")
+
+        response = patch_method(
+            admin_user, f'/projects/{project["id"]}', {"labels": [label_payload]}
+        )
+        assert response.status_code == HTTPStatus.OK
+        assert response.json()["labels"]["count"] == project["labels"]["count"] + 1
 
     def test_can_delete_skeleton_label(self, projects, labels, admin_user):
         project = next(
