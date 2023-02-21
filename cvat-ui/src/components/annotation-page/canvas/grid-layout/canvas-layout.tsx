@@ -72,7 +72,8 @@ const fitLayout = (type: DimensionType, layoutConfig: ItemLayout[]): ItemLayout[
     const relatedViews = layoutConfig
         .filter((item: ItemLayout) => item.viewType === ViewType.RELATED_IMAGE);
     const relatedViewsCols = relatedViews.length > 6 ? 2 : 1;
-    const height = Math.floor(config.CANVAS_WORKSPACE_ROWS / (relatedViews.length / relatedViewsCols));
+    let height = Math.floor(config.CANVAS_WORKSPACE_ROWS / (relatedViews.length / relatedViewsCols));
+    height = Math.min(height, config.CANVAS_WORKSPACE_DEFAULT_CONTEXT_HEIGHT);
     relatedViews.forEach((view: ItemLayout, i: number) => {
         updatedLayout.push({
             ...view,
@@ -210,6 +211,10 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
         i: typeof (value.viewIndex) !== 'undefined' ? `${value.viewType}_${value.viewIndex}` : `${value.viewType}`,
     }));
 
+    const singleClassName = 'cvat-canvas-grid-root-single';
+    const className = !relatedFiles && children.length <= 1 ?
+        `cvat-canvas-grid-root ${singleClassName}` : 'cvat-canvas-grid-root';
+
     return (
         <Layout.Content>
             { !!rowHeight && (
@@ -219,7 +224,7 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
                     style={{ background: canvasBackgroundColor }}
                     containerPadding={[config.CANVAS_WORKSPACE_PADDING, config.CANVAS_WORKSPACE_PADDING]}
                     margin={[config.CANVAS_WORKSPACE_MARGIN, config.CANVAS_WORKSPACE_MARGIN]}
-                    className='cvat-canvas-grid-root'
+                    className={className}
                     rowHeight={rowHeight}
                     layout={layout}
                     onLayoutChange={(updatedLayout: RGL.Layout[]) => {

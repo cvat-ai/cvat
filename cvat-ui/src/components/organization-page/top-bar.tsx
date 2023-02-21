@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -69,6 +69,39 @@ function OrganizationTopBar(props: Props): JSX.Element {
         };
     });
 
+    const onRemove = (): void => {
+        const modal = Modal.confirm({
+            onOk: () => {
+                dispatch(removeOrganizationAsync(organizationInstance));
+            },
+            content: (
+                <div className='cvat-remove-organization-submit'>
+                    <Text type='warning'>
+                        To remove the organization,
+                        enter its short name below
+                    </Text>
+                    <Input
+                        onChange={
+                            (event: React.ChangeEvent<HTMLInputElement>) => {
+                                modal.update({
+                                    okButtonProps: {
+                                        disabled: event.target.value !== organizationInstance.slug,
+                                        danger: true,
+                                    },
+                                });
+                            }
+                        }
+                    />
+                </div>
+            ),
+            okButtonProps: {
+                disabled: true,
+                danger: true,
+            },
+            okText: 'Remove',
+        });
+    };
+
     let organizationName = name;
     let organizationDescription = description;
     let organizationContacts = contact;
@@ -105,37 +138,7 @@ function OrganizationTopBar(props: Props): JSX.Element {
                                         {owner && userID === owner.id ? (
                                             <Menu.Item
                                                 key={MenuActions.REMOVE_ORGANIZATION}
-                                                onClick={() => {
-                                                    const modal = Modal.confirm({
-                                                        onOk: () => {
-                                                            dispatch(removeOrganizationAsync(organizationInstance));
-                                                        },
-                                                        content: (
-                                                            <div className='cvat-remove-organization-submit'>
-                                                                <Text type='warning'>
-                                                                    To remove the organization,
-                                                                    enter its short name below
-                                                                </Text>
-                                                                <Input
-                                                                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-                                                                        modal.update({
-                                                                            okButtonProps: {
-                                                                                disabled:
-                                                                    event.target.value !== organizationInstance.slug,
-                                                                                danger: true,
-                                                                            },
-                                                                        });
-                                                                    }}
-                                                                />
-                                                            </div>
-                                                        ),
-                                                        okButtonProps: {
-                                                            disabled: true,
-                                                            danger: true,
-                                                        },
-                                                        okText: 'Remove',
-                                                    });
-                                                }}
+                                                onClick={onRemove}
                                             >
                                                 Remove organization
                                             </Menu.Item>
@@ -184,6 +187,7 @@ function OrganizationTopBar(props: Props): JSX.Element {
                                     }}
                                 />
                                 <Button
+                                    className='cvat-submit-new-org-description-button'
                                     size='small'
                                     type='primary'
                                     onClick={() => {
@@ -270,6 +274,7 @@ function OrganizationTopBar(props: Props): JSX.Element {
                     <Space align='end'>
                         {!(owner && userID === owner.id) ? (
                             <Button
+                                className='cvat-leave-org-button'
                                 type='primary'
                                 danger
                                 onClick={() => {
@@ -296,6 +301,7 @@ function OrganizationTopBar(props: Props): JSX.Element {
                             </Button>
                         ) : null}
                         <Button
+                            className='cvat-invite-org-members-button'
                             type='primary'
                             onClick={() => setVisibleInviteModal(true)}
                             icon={<PlusCircleOutlined />}
@@ -376,7 +382,7 @@ function OrganizationTopBar(props: Props): JSX.Element {
                                     </Row>
                                 ))}
                                 <Form.Item>
-                                    <Button icon={<PlusCircleOutlined />} onClick={() => add()}>
+                                    <Button className='cvat-invite-more-org-members-button' icon={<PlusCircleOutlined />} onClick={() => add()}>
                                         Invite more
                                     </Button>
                                 </Form.Item>

@@ -1,34 +1,62 @@
 {
-  "count": 8,
+  "count": 9,
   "next": null,
   "previous": null,
   "results": [
+    {
+      "assignee": {
+        "first_name": "Worker",
+        "id": 8,
+        "last_name": "Third",
+        "url": "http://localhost:8080/api/users/8",
+        "username": "worker3"
+      },
+      "bug_tracker": "",
+      "created_date": "2023-02-10T11:42:43.192000Z",
+      "dimension": null,
+      "id": 10,
+      "labels": {
+        "count": 2,
+        "url": "http://localhost:8080/api/labels?project_id=10"
+      },
+      "name": "project 6",
+      "organization": 2,
+      "owner": {
+        "first_name": "User",
+        "id": 4,
+        "last_name": "Third",
+        "url": "http://localhost:8080/api/users/4",
+        "username": "user3"
+      },
+      "source_storage": {
+        "cloud_storage_id": null,
+        "id": 19,
+        "location": "local"
+      },
+      "status": "annotation",
+      "target_storage": {
+        "cloud_storage_id": null,
+        "id": 20,
+        "location": "local"
+      },
+      "task_subsets": [],
+      "tasks": {
+        "count": 0,
+        "url": "http://localhost:8080/api/tasks?project_id=10"
+      },
+      "updated_date": "2023-02-10T11:42:57.733000Z",
+      "url": "http://localhost:8080/api/projects/10"
+    },
     {
       "assignee": null,
       "bug_tracker": "",
       "created_date": "2022-12-01T12:52:42.454000Z",
       "dimension": "2d",
       "id": 8,
-      "labels": [
-        {
-          "attributes": [],
-          "color": "#2080c0",
-          "has_parent": false,
-          "id": 29,
-          "name": "car",
-          "sublabels": [],
-          "type": "any"
-        },
-        {
-          "attributes": [],
-          "color": "#c06060",
-          "has_parent": false,
-          "id": 30,
-          "name": "person",
-          "sublabels": [],
-          "type": "any"
-        }
-      ],
+      "labels": {
+        "count": 2,
+        "url": "http://localhost:8080/api/labels?project_id=8"
+      },
       "name": "project with video data",
       "organization": null,
       "owner": {
@@ -50,9 +78,10 @@
         "location": "local"
       },
       "task_subsets": [],
-      "tasks": [
-        15
-      ],
+      "tasks": {
+        "count": 1,
+        "url": "http://localhost:8080/api/tasks?project_id=8"
+      },
       "updated_date": "2022-12-01T12:53:34.917000Z",
       "url": "http://localhost:8080/api/projects/8"
     },
@@ -68,17 +97,10 @@
       "created_date": "2022-09-28T12:26:25.296000Z",
       "dimension": null,
       "id": 7,
-      "labels": [
-        {
-          "attributes": [],
-          "color": "#bde94a",
-          "has_parent": false,
-          "id": 28,
-          "name": "label_0",
-          "sublabels": [],
-          "type": "any"
-        }
-      ],
+      "labels": {
+        "count": 1,
+        "url": "http://localhost:8080/api/labels?project_id=7"
+      },
       "name": "admin1_project",
       "organization": null,
       "owner": {
@@ -100,7 +122,10 @@
         "location": "local"
       },
       "task_subsets": [],
-      "tasks": [],
+      "tasks": {
+        "count": 0,
+        "url": "http://localhost:8080/api/tasks?project_id=7"
+      },
       "updated_date": "2022-09-28T12:26:29.285000Z",
       "url": "http://localhost:8080/api/projects/7"
     },
@@ -116,17 +141,10 @@
       "created_date": "2022-09-28T12:15:50.768000Z",
       "dimension": null,
       "id": 6,
-      "labels": [
-        {
-          "attributes": [],
-          "color": "#bde94a",
-          "has_parent": false,
-          "id": 27,
-          "name": "label_0",
-          "sublabels": [],
-          "type": "any"
-        }
-      ],
+      "labels": {
+        "count": 1,
+        "url": "http://localhost:8080/api/labels?project_id=6"
+      },
       "name": "user1_project",
       "organization": null,
       "owner": {
@@ -148,7 +166,10 @@
         "location": "local"
       },
       "task_subsets": [],
-      "tasks": [],
+      "tasks": {
+        "count": 0,
+        "url": "http://localhost:8080/api/tasks?project_id=6"
+      },
       "updated_date": "2022-09-28T12:25:54.563000Z",
       "url": "http://localhost:8080/api/projects/6"
     },
@@ -158,185 +179,10 @@
       "created_date": "2022-09-22T14:21:53.791000Z",
       "dimension": "2d",
       "id": 5,
-      "labels": [
-        {
-          "attributes": [],
-          "color": "#5c5eba",
-          "has_parent": false,
-          "id": 18,
-          "name": "s1",
-          "sublabels": [
-            {
-              "attributes": [],
-              "color": "#d12345",
-              "has_parent": true,
-              "id": 19,
-              "name": "1",
-              "type": "points"
-            },
-            {
-              "attributes": [],
-              "color": "#350dea",
-              "has_parent": true,
-              "id": 20,
-              "name": "2",
-              "type": "points"
-            },
-            {
-              "attributes": [],
-              "color": "#479ffe",
-              "has_parent": true,
-              "id": 21,
-              "name": "3",
-              "type": "points"
-            }
-          ],
-          "svg": "<line x1=\"36.37385177612305\" y1=\"50.334449768066406\" x2=\"70.15311431884766\" y2=\"21.237457275390625\" stroke=\"black\" data-type=\"edge\" data-node-from=\"2\" stroke-width=\"0.5\" data-node-to=\"3\"></line><line x1=\"29.517663955688477\" y1=\"15.050167083740234\" x2=\"36.37385177612305\" y2=\"50.334449768066406\" stroke=\"black\" data-type=\"edge\" data-node-from=\"1\" stroke-width=\"0.5\" data-node-to=\"2\"></line><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"29.517663955688477\" cy=\"15.050167083740234\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-id=\"19\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"36.37385177612305\" cy=\"50.334449768066406\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-id=\"20\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"70.15311431884766\" cy=\"21.237457275390625\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"3\" data-node-id=\"3\" data-label-id=\"21\"></circle>",
-          "type": "skeleton"
-        },
-        {
-          "attributes": [],
-          "color": "#d12345",
-          "has_parent": true,
-          "id": 19,
-          "name": "1",
-          "sublabels": [],
-          "type": "points"
-        },
-        {
-          "attributes": [],
-          "color": "#350dea",
-          "has_parent": true,
-          "id": 20,
-          "name": "2",
-          "sublabels": [],
-          "type": "points"
-        },
-        {
-          "attributes": [],
-          "color": "#479ffe",
-          "has_parent": true,
-          "id": 21,
-          "name": "3",
-          "sublabels": [],
-          "type": "points"
-        },
-        {
-          "attributes": [
-            {
-              "default_value": "white",
-              "id": 2,
-              "input_type": "select",
-              "mutable": false,
-              "name": "color",
-              "values": [
-                "white",
-                "black"
-              ]
-            }
-          ],
-          "color": "#0c81b5",
-          "has_parent": false,
-          "id": 22,
-          "name": "s2",
-          "sublabels": [
-            {
-              "attributes": [],
-              "color": "#d53957",
-              "has_parent": true,
-              "id": 23,
-              "name": "1",
-              "type": "points"
-            },
-            {
-              "attributes": [],
-              "color": "#4925ec",
-              "has_parent": true,
-              "id": 24,
-              "name": "2",
-              "type": "points"
-            },
-            {
-              "attributes": [
-                {
-                  "default_value": "val1",
-                  "id": 3,
-                  "input_type": "select",
-                  "mutable": false,
-                  "name": "attr",
-                  "values": [
-                    "val1",
-                    "val2"
-                  ]
-                }
-              ],
-              "color": "#59a8fe",
-              "has_parent": true,
-              "id": 25,
-              "name": "3",
-              "type": "points"
-            },
-            {
-              "attributes": [],
-              "color": "#4a649f",
-              "has_parent": true,
-              "id": 26,
-              "name": "4",
-              "type": "points"
-            }
-          ],
-          "svg": "<line x1=\"65.6380615234375\" y1=\"18.394649505615234\" x2=\"22.327028274536133\" y2=\"54.8494987487793\" stroke=\"black\" data-type=\"edge\" data-node-from=\"3\" stroke-width=\"0.5\" data-node-to=\"2\"></line><line x1=\"77.34375\" y1=\"55.18394470214844\" x2=\"65.6380615234375\" y2=\"18.394649505615234\" stroke=\"black\" data-type=\"edge\" data-node-from=\"4\" stroke-width=\"0.5\" data-node-to=\"3\"></line><line x1=\"4.434051036834717\" y1=\"27.257524490356445\" x2=\"77.34375\" y2=\"55.18394470214844\" stroke=\"black\" data-type=\"edge\" data-node-from=\"1\" stroke-width=\"0.5\" data-node-to=\"4\"></line><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"4.434051036834717\" cy=\"27.257524490356445\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-id=\"23\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"22.327028274536133\" cy=\"54.8494987487793\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-id=\"24\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"65.6380615234375\" cy=\"18.394649505615234\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"3\" data-node-id=\"3\" data-label-id=\"25\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"77.34375\" cy=\"55.18394470214844\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"4\" data-node-id=\"4\" data-label-id=\"26\"></circle>",
-          "type": "skeleton"
-        },
-        {
-          "attributes": [],
-          "color": "#d53957",
-          "has_parent": true,
-          "id": 23,
-          "name": "1",
-          "sublabels": [],
-          "type": "points"
-        },
-        {
-          "attributes": [],
-          "color": "#4925ec",
-          "has_parent": true,
-          "id": 24,
-          "name": "2",
-          "sublabels": [],
-          "type": "points"
-        },
-        {
-          "attributes": [
-            {
-              "default_value": "val1",
-              "id": 3,
-              "input_type": "select",
-              "mutable": false,
-              "name": "attr",
-              "values": [
-                "val1",
-                "val2"
-              ]
-            }
-          ],
-          "color": "#59a8fe",
-          "has_parent": true,
-          "id": 25,
-          "name": "3",
-          "sublabels": [],
-          "type": "points"
-        },
-        {
-          "attributes": [],
-          "color": "#4a649f",
-          "has_parent": true,
-          "id": 26,
-          "name": "4",
-          "sublabels": [],
-          "type": "points"
-        }
-      ],
+      "labels": {
+        "count": 2,
+        "url": "http://localhost:8080/api/labels?project_id=5"
+      },
       "name": "project5",
       "organization": 2,
       "owner": {
@@ -358,9 +204,10 @@
         "location": "local"
       },
       "task_subsets": [],
-      "tasks": [
-        14
-      ],
+      "tasks": {
+        "count": 1,
+        "url": "http://localhost:8080/api/tasks?project_id=5"
+      },
       "updated_date": "2022-09-28T12:26:49.493000Z",
       "url": "http://localhost:8080/api/projects/5"
     },
@@ -370,26 +217,10 @@
       "created_date": "2022-06-08T08:32:45.521000Z",
       "dimension": "2d",
       "id": 4,
-      "labels": [
-        {
-          "attributes": [],
-          "color": "#6080c0",
-          "has_parent": false,
-          "id": 16,
-          "name": "cat",
-          "sublabels": [],
-          "type": "any"
-        },
-        {
-          "attributes": [],
-          "color": "#406040",
-          "has_parent": false,
-          "id": 17,
-          "name": "dog",
-          "sublabels": [],
-          "type": "any"
-        }
-      ],
+      "labels": {
+        "count": 2,
+        "url": "http://localhost:8080/api/labels?project_id=4"
+      },
       "name": "project4",
       "organization": 2,
       "owner": {
@@ -403,10 +234,11 @@
       "status": "annotation",
       "target_storage": null,
       "task_subsets": [],
-      "tasks": [
-        13
-      ],
-      "updated_date": "2022-12-05T07:47:01.518000Z",
+      "tasks": {
+        "count": 1,
+        "url": "http://localhost:8080/api/tasks?project_id=4"
+      },
+      "updated_date": "2023-02-10T11:50:18.436000Z",
       "url": "http://localhost:8080/api/projects/4"
     },
     {
@@ -421,7 +253,10 @@
       "created_date": "2022-03-28T13:05:24.659000Z",
       "dimension": null,
       "id": 3,
-      "labels": [],
+      "labels": {
+        "count": 0,
+        "url": "http://localhost:8080/api/labels?project_id=3"
+      },
       "name": "project 3",
       "organization": 2,
       "owner": {
@@ -435,7 +270,10 @@
       "status": "annotation",
       "target_storage": null,
       "task_subsets": [],
-      "tasks": [],
+      "tasks": {
+        "count": 0,
+        "url": "http://localhost:8080/api/tasks?project_id=3"
+      },
       "updated_date": "2022-03-28T13:06:09.283000Z",
       "url": "http://localhost:8080/api/projects/3"
     },
@@ -451,26 +289,10 @@
       "created_date": "2021-12-14T19:52:37.278000Z",
       "dimension": "2d",
       "id": 2,
-      "labels": [
-        {
-          "attributes": [],
-          "color": "#6080c0",
-          "has_parent": false,
-          "id": 7,
-          "name": "cat",
-          "sublabels": [],
-          "type": "any"
-        },
-        {
-          "attributes": [],
-          "color": "#406040",
-          "has_parent": false,
-          "id": 8,
-          "name": "dog",
-          "sublabels": [],
-          "type": "any"
-        }
-      ],
+      "labels": {
+        "count": 2,
+        "url": "http://localhost:8080/api/labels?project_id=2"
+      },
       "name": "project2",
       "organization": 2,
       "owner": {
@@ -494,9 +316,10 @@
       "task_subsets": [
         "Train"
       ],
-      "tasks": [
-        11
-      ],
+      "tasks": {
+        "count": 1,
+        "url": "http://localhost:8080/api/tasks?project_id=2"
+      },
       "updated_date": "2022-06-30T08:56:45.601000Z",
       "url": "http://localhost:8080/api/projects/2"
     },
@@ -512,39 +335,10 @@
       "created_date": "2021-12-14T19:46:37.969000Z",
       "dimension": "2d",
       "id": 1,
-      "labels": [
-        {
-          "attributes": [
-            {
-              "default_value": "mazda",
-              "id": 1,
-              "input_type": "select",
-              "mutable": false,
-              "name": "model",
-              "values": [
-                "mazda",
-                "volvo",
-                "bmw"
-              ]
-            }
-          ],
-          "color": "#2080c0",
-          "has_parent": false,
-          "id": 5,
-          "name": "car",
-          "sublabels": [],
-          "type": "any"
-        },
-        {
-          "attributes": [],
-          "color": "#c06060",
-          "has_parent": false,
-          "id": 6,
-          "name": "person",
-          "sublabels": [],
-          "type": "any"
-        }
-      ],
+      "labels": {
+        "count": 2,
+        "url": "http://localhost:8080/api/labels?project_id=1"
+      },
       "name": "project1",
       "organization": null,
       "owner": {
@@ -558,9 +352,10 @@
       "status": "annotation",
       "target_storage": null,
       "task_subsets": [],
-      "tasks": [
-        9
-      ],
+      "tasks": {
+        "count": 1,
+        "url": "http://localhost:8080/api/tasks?project_id=1"
+      },
       "updated_date": "2022-11-03T13:57:25.895000Z",
       "url": "http://localhost:8080/api/projects/1"
     }

@@ -104,12 +104,22 @@ function CanvasPointContextMenu(props: Props): React.ReactPortal | null {
         ReactDOM.createPortal(
             <div className='cvat-canvas-point-context-menu' style={{ top, left }}>
                 <CVATTooltip title='Delete point [Alt + dblclick]'>
-                    <Button type='link' icon={<DeleteOutlined />} onClick={onPointDelete}>
+                    <Button
+                        type='link'
+                        icon={<DeleteOutlined />}
+                        onClick={onPointDelete}
+                        className='cvat-canvas-point-context-menu-delete'
+                    >
                         Delete point
                     </Button>
                 </CVATTooltip>
                 {contextMenuFor && contextMenuFor.shapeType === 'polygon' && (
-                    <Button type='link' icon={<EnvironmentOutlined />} onClick={onSetStartPoint}>
+                    <Button
+                        type='link'
+                        icon={<EnvironmentOutlined />}
+                        onClick={onSetStartPoint}
+                        className='cvat-canvas-point-context-menu-set-start'
+                    >
                         Set start point
                     </Button>
                 )}

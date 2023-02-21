@@ -21,23 +21,26 @@ CVAT_ROOT_DIR = next(dir.parent for dir in Path(__file__).parents if dir.name ==
 CVAT_DB_DIR = ASSETS_DIR / "cvat_db"
 PREFIX = "test"
 
-CONTAINER_NAME_FILES = [
-    CVAT_ROOT_DIR / dc_file
-    for dc_file in (
-        "components/analytics/docker-compose.analytics.tests.yml",
-        "docker-compose.tests.yml",
-    )
+CONTAINER_NAME_FILES = [CVAT_ROOT_DIR / dc_file for dc_file in ("docker-compose.tests.yml",)]
+
+# this files contain some configurations that override the default configuration of the main containers
+DC_OVERRIDE_FILES = [
+    CVAT_ROOT_DIR / "tests/python/mock_oauth2/docker-compose.yml",
 ]
 
-DC_FILES = [
-    CVAT_ROOT_DIR / dc_file
-    for dc_file in (
-        "docker-compose.dev.yml",
-        "tests/docker-compose.file_share.yml",
-        "tests/docker-compose.minio.yml",
-        "tests/docker-compose.test_servers.yml",
-    )
-] + CONTAINER_NAME_FILES
+DC_FILES = (
+    [
+        CVAT_ROOT_DIR / dc_file
+        for dc_file in (
+            "docker-compose.dev.yml",
+            "tests/docker-compose.file_share.yml",
+            "tests/docker-compose.minio.yml",
+            "tests/docker-compose.test_servers.yml",
+        )
+    ]
+    + CONTAINER_NAME_FILES
+    + DC_OVERRIDE_FILES
+)
 
 
 def pytest_addoption(parser):
@@ -78,6 +81,12 @@ def pytest_addoption(parser):
         default="local",
         choices=("kube", "local"),
         help="Platform identifier - 'kube' or 'local'. (default: %(default)s)",
+    )
+
+    group._addoption(
+        "--no-run-services",
+        action="store_true",
+        help="Run tests without running containers. (default: %(default)s)",
     )
 
 
@@ -254,10 +263,6 @@ def start_services(rebuild=False):
         capture_output=False,
     )
 
-    docker_restore_data_volumes()
-    docker_cp(CVAT_DB_DIR / "restore.sql", f"{PREFIX}_cvat_db_1:/tmp/restore.sql")
-    docker_cp(CVAT_DB_DIR / "data.json", f"{PREFIX}_cvat_server_1:/tmp/data.json")
-
 
 def pytest_sessionstart(session: pytest.Session) -> None:
     stop = session.config.getoption("--stop-services")
@@ -265,6 +270,7 @@ def pytest_sessionstart(session: pytest.Session) -> None:
     rebuild = session.config.getoption("--rebuild")
     cleanup = session.config.getoption("--cleanup")
     dumpdb = session.config.getoption("--dumpdb")
+    no_init = session.config.getoption("--no-run-services")
 
     if session.config.getoption("--collect-only"):
         if any((stop, start, rebuild, cleanup, dumpdb)):
@@ -316,7 +322,11 @@ def pytest_sessionstart(session: pytest.Session) -> None:
             )
             pytest.exit("All testing containers are stopped", returncode=0)
 
-        start_services(rebuild)
+        if not no_init:
+            start_services(rebuild)
+        docker_restore_data_volumes()
+        docker_cp(CVAT_DB_DIR / "restore.sql", f"{PREFIX}_cvat_db_1:/tmp/restore.sql")
+        docker_cp(CVAT_DB_DIR / "data.json", f"{PREFIX}_cvat_server_1:/tmp/data.json")
         wait_for_services()
 
         docker_exec_cvat("python manage.py loaddata /tmp/data.json")

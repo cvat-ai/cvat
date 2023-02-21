@@ -1,5 +1,5 @@
 # Copyright (C) 2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -10,14 +10,16 @@ import subprocess
 from copy import deepcopy
 from functools import partial
 from http import HTTPStatus
-from itertools import chain
+from itertools import chain, product
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from time import sleep
+from typing import List
 
 import pytest
 from cvat_sdk import Client, Config
 from cvat_sdk.api_client import apis, models
+from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from cvat_sdk.core.helpers import get_paginated_collection
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from deepdiff import DeepDiff
@@ -28,7 +30,7 @@ from shared.fixtures.init import get_server_image_tag
 from shared.utils.config import BASE_URL, USER_PASS, get_method, make_api_client, patch_method
 from shared.utils.helpers import generate_image_files
 
-from .utils import export_dataset
+from .utils import CollectionSimpleFilterTestBase, export_dataset
 
 
 def get_cloud_storage_content(username, cloud_storage_id, manifest):
@@ -44,19 +46,12 @@ class TestGetTasks:
     def _test_task_list_200(self, user, project_id, data, exclude_paths="", **kwargs):
         with make_api_client(user) as api_client:
             results = get_paginated_collection(
-                api_client.projects_api.list_tasks_endpoint,
+                api_client.tasks_api.list_endpoint,
                 return_json=True,
-                id=project_id,
+                project_id=str(project_id),
                 **kwargs,
             )
             assert DeepDiff(data, results, ignore_order=True, exclude_paths=exclude_paths) == {}
-
-    def _test_task_list_403(self, user, project_id, **kwargs):
-        with make_api_client(user) as api_client:
-            (_, response) = api_client.projects_api.list_tasks(
-                project_id, **kwargs, _parse_response=False, _check_status=False
-            )
-            assert response.status == HTTPStatus.FORBIDDEN
 
     def _test_users_to_see_task_list(
         self, project_id, tasks, users, is_staff, is_allow, is_project_staff, **kwargs
@@ -68,10 +63,12 @@ class TestGetTasks:
         assert len(users)
 
         for user in users:
-            if is_allow:
-                self._test_task_list_200(user["username"], project_id, tasks, **kwargs)
-            else:
-                self._test_task_list_403(user["username"], project_id, **kwargs)
+            if not is_allow:
+                # Users outside project or org should not know if one exists.
+                # Thus, no error should be produced on a list request.
+                tasks = []
+
+            self._test_task_list_200(user["username"], project_id, tasks, **kwargs)
 
     def _test_assigned_users_to_see_task_data(self, tasks, users, is_task_staff, **kwargs):
         for task in tasks:
@@ -152,6 +149,39 @@ class TestGetTasks:
         assert len(tasks)
 
         self._test_assigned_users_to_see_task_data(tasks, users, is_task_staff, org=org["slug"])
+
+
+class TestListTasksFilters(CollectionSimpleFilterTestBase):
+    field_lookups = {
+        "owner": ["owner", "username"],
+        "assignee": ["assignee", "username"],
+        "tracker_link": ["bug_tracker"],
+    }
+
+    @pytest.fixture(autouse=True)
+    def setup(self, restore_db_per_class, admin_user, tasks):
+        self.user = admin_user
+        self.samples = tasks
+
+    def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
+        return api_client.tasks_api.list_endpoint
+
+    @pytest.mark.parametrize(
+        "field",
+        (
+            "name",
+            "owner",
+            "status",
+            "assignee",
+            "subset",
+            "mode",
+            "dimension",
+            "project_id",
+            "tracker_link",
+        ),
+    )
+    def test_can_use_simple_filter_for_object_list(self, field):
+        return super().test_can_use_simple_filter_for_object_list(field)
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -579,12 +609,14 @@ class TestPostTaskData:
             self._USERNAME, spec, task_data, content_type="multipart/form-data"
         )
 
-        response = get_method(self._USERNAME, f"tasks/{task_id}")
+        response = get_method(self._USERNAME, "labels", task_id=f"{task_id}")
         label_ids = {}
-        for label in response.json()["labels"]:
-            label_ids.setdefault(label["type"], []).append(label["id"])
+        for root_label in response.json()["results"]:
+            for label in [root_label] + root_label["sublabels"]:
+                label_ids.setdefault(label["type"], []).append(label["id"])
 
-        job_id = response.json()["segments"][0]["jobs"][0]["id"]
+        response = get_method(self._USERNAME, "jobs", task_id=f"{task_id}")
+        job_id = response.json()["results"][0]["id"]
         patch_data = {
             "shapes": [
                 {
@@ -879,23 +911,193 @@ class TestPostTaskData:
         )
 
         with make_api_client(self._USERNAME) as api_client:
-            (task, _) = api_client.tasks_api.retrieve(id=task_id)
+            jobs: List[models.JobRead] = get_paginated_collection(
+                api_client.jobs_api.list_endpoint, task_id=str(task_id), sort="id"
+            )
             (task_meta, _) = api_client.tasks_api.retrieve_data_meta(id=task_id)
 
             assert [f.name for f in task_meta.frames] == list(
                 chain.from_iterable(expected_segments)
             )
 
-            assert len(task.segments) == len(expected_segments)
-
             start_frame = 0
-            for i, segment in enumerate(task.segments):
+            for i, job in enumerate(jobs):
                 expected_size = len(expected_segments[i])
                 stop_frame = start_frame + expected_size - 1
-                assert segment.start_frame == start_frame
-                assert segment.stop_frame == stop_frame
+                assert job.start_frame == start_frame
+                assert job.stop_frame == stop_frame
 
                 start_frame = stop_frame + 1
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+class TestPatchTaskLabel:
+    def _get_task_labels(self, pid, user, **kwargs) -> List[models.Label]:
+        kwargs.setdefault("return_json", True)
+        with make_api_client(user) as api_client:
+            return get_paginated_collection(
+                api_client.labels_api.list_endpoint, task_id=str(pid), **kwargs
+            )
+
+    def test_can_delete_label(self, tasks, labels, admin_user):
+        task = [t for t in tasks if t["labels"]["count"] > 0][0]
+        label = deepcopy([l for l in labels if l.get("task_id") == task["id"]][0])
+        label_payload = {"id": label["id"], "deleted": True}
+
+        response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [label_payload]})
+        assert response.status_code == HTTPStatus.OK, response.content
+        assert response.json()["labels"]["count"] == task["labels"]["count"] - 1
+
+    def test_can_delete_skeleton_label(self, tasks, labels, admin_user):
+        task = next(
+            t
+            for t in tasks
+            if any(
+                label
+                for label in labels
+                if label.get("task_id") == t["id"]
+                if label["type"] == "skeleton"
+            )
+        )
+        task_labels = deepcopy([l for l in labels if l.get("task_id") == task["id"]])
+        label = next(l for l in task_labels if l["type"] == "skeleton")
+        task_labels.remove(label)
+        label_payload = {"id": label["id"], "deleted": True}
+
+        response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [label_payload]})
+        assert response.status_code == HTTPStatus.OK
+        assert response.json()["labels"]["count"] == task["labels"]["count"] - 1
+
+        resulting_labels = self._get_task_labels(task["id"], admin_user)
+        assert DeepDiff(resulting_labels, task_labels, ignore_order=True) == {}
+
+    def test_can_rename_label(self, tasks, labels, admin_user):
+        task = [t for t in tasks if t["labels"]["count"] > 0][0]
+        task_labels = deepcopy([l for l in labels if l.get("task_id") == task["id"]])
+        task_labels[0].update({"name": "new name"})
+
+        response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [task_labels[0]]})
+        assert response.status_code == HTTPStatus.OK
+
+        resulting_labels = self._get_task_labels(task["id"], admin_user)
+        assert DeepDiff(resulting_labels, task_labels, ignore_order=True) == {}
+
+    def test_cannot_rename_label_to_duplicate_name(self, tasks, labels, admin_user):
+        task = [t for t in tasks if t["labels"]["count"] > 1][0]
+        task_labels = deepcopy([l for l in labels if l.get("task_id") == task["id"]])
+        task_labels[0].update({"name": task_labels[1]["name"]})
+
+        label_payload = {"id": task_labels[0]["id"], "name": task_labels[0]["name"]}
+
+        response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [label_payload]})
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+        assert f"Label '{task_labels[0]['name']}' already exists" in response.text
+
+    def test_cannot_add_foreign_label(self, tasks, labels, admin_user):
+        task = list(tasks)[0]
+        new_label = deepcopy(
+            [
+                l
+                for l in labels
+                if l.get("task_id") != task["id"]
+                if not l.get("project_id") or l.get("project_id") != task.get("project_id")
+            ][0]
+        )
+
+        response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [new_label]})
+        assert response.status_code == HTTPStatus.NOT_FOUND
+        assert f"Not found label with id #{new_label['id']} to change" in response.text
+
+    def test_admin_can_add_label(self, tasks, admin_user):
+        task = list(tasks)[0]
+        new_label = {"name": "new name"}
+
+        response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [new_label]})
+        assert response.status_code == HTTPStatus.OK
+        assert response.json()["labels"]["count"] == task["labels"]["count"] + 1
+
+    @pytest.mark.parametrize("role", ["maintainer", "owner"])
+    def test_non_task_staff_privileged_org_members_can_add_label(
+        self,
+        find_users,
+        tasks,
+        is_task_staff,
+        is_org_member,
+        role,
+    ):
+        users = find_users(role=role, exclude_privilege="admin")
+
+        user, task = next(
+            (user, task)
+            for user, task in product(users, tasks)
+            if not is_task_staff(user["id"], task["id"])
+            and task["organization"]
+            and is_org_member(user["id"], task["organization"])
+        )
+
+        new_label = {"name": "new name"}
+        response = patch_method(
+            user["username"],
+            f'/tasks/{task["id"]}',
+            {"labels": [new_label]},
+            org_id=task["organization"],
+        )
+        assert response.status_code == HTTPStatus.OK
+        assert response.json()["labels"]["count"] == task["labels"]["count"] + 1
+
+    @pytest.mark.parametrize("role", ["supervisor", "worker"])
+    def test_non_task_staff_org_members_cannot_add_label(
+        self,
+        find_users,
+        tasks,
+        is_task_staff,
+        is_org_member,
+        role,
+    ):
+        users = find_users(role=role, exclude_privilege="admin")
+
+        user, task = next(
+            (user, task)
+            for user, task in product(users, tasks)
+            if not is_task_staff(user["id"], task["id"])
+            and task["organization"]
+            and is_org_member(user["id"], task["organization"])
+        )
+
+        new_label = {"name": "new name"}
+        response = patch_method(
+            user["username"],
+            f'/tasks/{task["id"]}',
+            {"labels": [new_label]},
+            org_id=task["organization"],
+        )
+        assert response.status_code == HTTPStatus.FORBIDDEN
+
+    # TODO: add supervisor too, but this leads to a test-side problem with DB restoring
+    @pytest.mark.parametrize("role", ["worker"])
+    def test_task_staff_org_members_can_add_label(
+        self, find_users, tasks, is_task_staff, is_org_member, labels, role
+    ):
+        users = find_users(role=role, exclude_privilege="admin")
+
+        user, task = next(
+            (user, task)
+            for user, task in product(users, tasks)
+            if is_task_staff(user["id"], task["id"])
+            and task["organization"]
+            and is_org_member(user["id"], task["organization"])
+            and any(label.get("task_id") == task["id"] for label in labels)
+        )
+
+        new_label = {"name": "new name"}
+        response = patch_method(
+            user["username"],
+            f'/tasks/{task["id"]}',
+            {"labels": [new_label]},
+            org_id=task["organization"],
+        )
+        assert response.status_code == HTTPStatus.OK
+        assert response.json()["labels"]["count"] == task["labels"]["count"] + 1
 
 
 @pytest.mark.usefixtures("restore_db_per_function")

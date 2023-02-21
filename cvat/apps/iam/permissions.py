@@ -1,31 +1,25 @@
 # Copyright (C) 2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from __future__ import annotations
+
+import operator
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
-from enum import Enum, auto
-import operator
-from typing import Any, List, Optional, Sequence, Tuple, cast
-
-from attrs import define, field
-from rest_framework.exceptions import ValidationError, PermissionDenied
+from enum import Enum
+from typing import Any, List, Optional, Sequence, cast
 
 import requests
+from attrs import define, field
 from django.conf import settings
 from django.db.models import Q
+from rest_framework.exceptions import ValidationError, PermissionDenied
 from rest_framework.permissions import BasePermission
 
 from cvat.apps.organizations.models import Membership, Organization
-from cvat.apps.engine.models import Project, Task, Job, Issue
-from cvat.apps.iam.exceptions import LimitsReachedException
-from cvat.apps.limit_manager.core.limits import (CapabilityContext, LimitManager,
-    Limits, OrgCloudStoragesContext, OrgTasksContext, ProjectWebhooksContext,
-    OrgCommonWebhooksContext,
-    TasksInOrgProjectContext, TasksInUserSandboxProjectContext, UserOrgsContext,
-    UserSandboxCloudStoragesContext, UserSandboxTasksContext)
+from cvat.apps.engine.models import Label, Project, Task, Job, Issue
 from cvat.apps.webhooks.models import WebhookTypeChoice
 
 
@@ -340,8 +334,6 @@ class MembershipPermission(OpenPolicyAgentPermission):
 class ServerPermission(OpenPolicyAgentPermission):
     class Scopes(StrEnum):
         VIEW = 'view'
-        SEND_EXCEPTION = 'send:exception'
-        SEND_LOGS = 'send:logs'
         LIST_CONTENT = 'list:content'
 
     @classmethod
@@ -362,13 +354,53 @@ class ServerPermission(OpenPolicyAgentPermission):
     def get_scopes(request, view, obj):
         Scopes = __class__.Scopes
         return [{
-            'annotation_formats': Scopes.VIEW,
-            'about': Scopes.VIEW,
-            'plugins': Scopes.VIEW,
-            'exception': Scopes.SEND_EXCEPTION,
-            'logs': Scopes.SEND_LOGS,
-            'share': Scopes.LIST_CONTENT,
-        }.get(view.action, None)]
+            ('annotation_formats', 'GET'): Scopes.VIEW,
+            ('about', 'GET'): Scopes.VIEW,
+            ('plugins', 'GET'): Scopes.VIEW,
+            ('share', 'GET'): Scopes.LIST_CONTENT,
+        }.get((view.action, request.method))]
+
+    def get_resource(self):
+        return None
+
+class EventsPermission(OpenPolicyAgentPermission):
+    class Scopes(StrEnum):
+        SEND_EVENTS = 'send:events'
+        DUMP_EVENTS = 'dump:events'
+
+    @classmethod
+    def create(cls, request, view, obj):
+        permissions = []
+        if view.basename == 'events':
+            for scope in cls.get_scopes(request, view, obj):
+                self = cls.create_base_perm(request, view, scope, obj)
+                permissions.append(self)
+
+        return permissions
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.url = settings.IAM_OPA_DATA_URL + '/events/allow'
+
+    def filter(self, query_params):
+        url = self.url.replace('/allow', '/filter')
+        r = requests.post(url, json=self.payload)
+        filter_params = query_params.copy()
+        for query in r.json()['result']:
+            for attr, value in query.items():
+                if filter_params.get(attr, value) != value:
+                    raise PermissionDenied(f"You don't have permission to view events with {attr}={filter_params.get(attr)}")
+                else:
+                    filter_params[attr] = value
+        return filter_params
+
+    @staticmethod
+    def get_scopes(request, view, obj):
+        Scopes = __class__.Scopes
+        return [{
+            ('create', 'POST'): Scopes.SEND_EVENTS,
+            ('list', 'GET'): Scopes.DUMP_EVENTS,
+        }.get((view.action, request.method))]
 
     def get_resource(self):
         return None
@@ -1348,232 +1380,111 @@ class IssuePermission(OpenPolicyAgentPermission):
         return data
 
 
-class LimitPermission(OpenPolicyAgentPermission):
+class LabelPermission(OpenPolicyAgentPermission):
+    obj: Optional[Label]
+
+    class Scopes(StrEnum):
+        LIST = 'list'
+        DELETE = 'delete'
+        UPDATE = 'update'
+        VIEW = 'view'
+
     @classmethod
     def create(cls, request, view, obj):
-        return [] # There are no basic (unconditional) permissions
+        Scopes = __class__.Scopes
 
-    @classmethod
-    def create_from_scopes(cls, request, view, obj, scopes: List[OpenPolicyAgentPermission]):
-        scope_to_caps = [
-            (scope_handler, cls._prepare_capability_params(scope_handler))
-            for scope_handler in scopes
-        ]
-        return [
-            cls.create_base_perm(request, view, str(scope_handler.scope), obj,
-                scope_handler=scope_handler, capabilities=capabilities,
-            )
-            for scope_handler, capabilities in scope_to_caps
-            if capabilities
-        ]
+        permissions = []
+        if view.basename == 'label':
+            for scope in cls.get_scopes(request, view, obj):
+                if scope in [Scopes.DELETE, Scopes.UPDATE, Scopes.VIEW]:
+                    obj = cast(Label, obj)
+
+                    # Access rights are the same as in the owning objects
+                    # Job assignees are not supposed to work with separate labels.
+                    # They should only use the list operation.
+                    if obj.project:
+                        if scope == Scopes.VIEW:
+                            owning_perm_scope = ProjectPermission.Scopes.VIEW
+                        else:
+                            owning_perm_scope = ProjectPermission.Scopes.UPDATE_DESC
+
+                        owning_perm = ProjectPermission.create_base_perm(
+                            request, view, scope=owning_perm_scope, obj=obj.project,
+                        )
+                    else:
+                        if scope == Scopes.VIEW:
+                            owning_perm_scope = TaskPermission.Scopes.VIEW
+                        else:
+                            owning_perm_scope = TaskPermission.Scopes.UPDATE_DESC
+
+                        owning_perm = TaskPermission.create_base_perm(
+                            request, view, scope=owning_perm_scope, obj=obj.task,
+                        )
+
+                    # This component doesn't define its own rules for these cases
+                    permissions.append(owning_perm)
+                elif scope == Scopes.LIST and isinstance(obj, Job):
+                    permissions.append(JobPermission.create_base_perm(
+                        request, view, scope=JobPermission.Scopes.VIEW, obj=obj,
+                    ))
+                elif scope == Scopes.LIST and isinstance(obj, Task):
+                    permissions.append(TaskPermission.create_base_perm(
+                        request, view, scope=TaskPermission.Scopes.VIEW, obj=obj,
+                    ))
+                elif scope == Scopes.LIST and isinstance(obj, Project):
+                    permissions.append(ProjectPermission.create_base_perm(
+                        request, view, scope=ProjectPermission.Scopes.VIEW, obj=obj,
+                    ))
+                else:
+                    permissions.append(cls.create_base_perm(request, view, scope, obj))
+
+        return permissions
 
     def __init__(self, **kwargs):
-        self.url = settings.IAM_OPA_DATA_URL + '/limits/result'
-        self.scope_handler: OpenPolicyAgentPermission = kwargs.pop('scope_handler')
-        self.capabilities: Tuple[Limits, CapabilityContext] = kwargs.pop('capabilities')
         super().__init__(**kwargs)
+        self.url = settings.IAM_OPA_DATA_URL + '/labels/allow'
 
-    @classmethod
-    def get_scopes(cls, request, view, obj):
-        scopes = [
-            (scope_handler, cls._prepare_capability_params(scope_handler))
-            for ctx in OpenPolicyAgentPermission.__subclasses__()
-            if not issubclass(ctx, cls)
-            for scope_handler in ctx.create(request, view, obj)
-        ]
-        return [
-            (scope, capabilities)
-            for scope, capabilities in scopes
-            if capabilities
-        ]
+    @staticmethod
+    def get_scopes(request, view, obj):
+        Scopes = __class__.Scopes
+        return [{
+            'list': Scopes.LIST,
+            'destroy': Scopes.DELETE,
+            'partial_update': Scopes.UPDATE,
+            'retrieve': Scopes.VIEW,
+        }.get(view.action, None)]
 
     def get_resource(self):
-        data = {}
-        limit_manager = LimitManager()
+        data = None
 
-        def _get_capability_status(
-            capability: Limits, context: Optional[CapabilityContext]
-        ) -> dict:
-            status = limit_manager.get_status(limit=capability, context=context)
-            return { 'used': status.used, 'max': status.max }
-
-        for capability, context in self.capabilities:
-            data[self._get_capability_name(capability)] = _get_capability_status(
-                capability=capability, context=context,
-            )
-
-        return { 'limits': data }
-
-    @classmethod
-    def _get_capability_name(cls, capability: Limits) -> str:
-        return capability.name
-
-    @classmethod
-    def _prepare_capability_params(cls, scope: OpenPolicyAgentPermission
-    ) -> List[Tuple[Limits, CapabilityContext]]:
-        scope_id = (type(scope), scope.scope)
-        results = []
-
-        if scope_id in [
-            (TaskPermission, TaskPermission.Scopes.CREATE),
-            (TaskPermission, TaskPermission.Scopes.IMPORT_BACKUP),
-        ]:
-            if getattr(scope, 'org_id') is not None:
-                results.append((
-                    Limits.ORG_TASKS,
-                    OrgTasksContext(org_id=scope.org_id)
-                ))
+        if self.obj:
+            if self.obj.project:
+                organization = self.obj.project.organization
             else:
-                results.append((
-                    Limits.USER_SANDBOX_TASKS,
-                    UserSandboxTasksContext(user_id=scope.user_id)
-                ))
+                organization = self.obj.task.organization
 
-        elif scope_id == (TaskPermission, TaskPermission.Scopes.CREATE_IN_PROJECT):
-            project = Project.objects.get(id=scope.project_id)
+            data = {
+                "id": self.obj.id,
+                'organization': {
+                    "id": getattr(organization, 'id', None)
+                },
+                "task": {
+                    "owner": { "id": getattr(self.obj.task.owner, 'id', None) },
+                    "assignee": { "id": getattr(self.obj.task.assignee, 'id', None) }
+                } if self.obj.task else None,
+                "project": {
+                    "owner": { "id": getattr(self.obj.project.owner, 'id', None) },
+                    "assignee": { "id": getattr(self.obj.project.assignee, 'id', None) }
+                } if self.obj.project else None,
+            }
 
-            if getattr(project, 'organization') is not None:
-                results.append((
-                    Limits.TASKS_IN_ORG_PROJECT,
-                    TasksInOrgProjectContext(
-                        org_id=project.organization.id,
-                        project_id=project.id,
-                    )
-                ))
-                results.append((
-                    Limits.ORG_TASKS,
-                    OrgTasksContext(org_id=project.organization.id)
-                ))
-            else:
-                results.append((
-                    Limits.TASKS_IN_USER_SANDBOX_PROJECT,
-                    TasksInUserSandboxProjectContext(
-                        user_id=project.owner.id,
-                        project_id=project.id
-                    )
-                ))
-                results.append((
-                    Limits.USER_SANDBOX_TASKS,
-                    UserSandboxTasksContext(user_id=project.owner.id)
-                ))
-
-        elif scope_id == (TaskPermission, TaskPermission.Scopes.UPDATE_PROJECT):
-            task = cast(Task, scope.obj)
-            project = Project.objects.get(id=scope.project_id)
-
-            class OwnerType(Enum):
-                org = auto()
-                user = auto()
-
-            if getattr(task, 'organization', None):
-                old_owner = (OwnerType.org, task.organization.id)
-            else:
-                old_owner = (OwnerType.user, task.owner.id)
-
-            if getattr(project, 'organization', None) is not None:
-                results.append((
-                    Limits.TASKS_IN_ORG_PROJECT,
-                    TasksInOrgProjectContext(
-                        org_id=project.organization.id,
-                        project_id=project.id,
-                    )
-                ))
-
-                if old_owner != (OwnerType.org, project.organization.id):
-                    results.append((
-                        Limits.ORG_TASKS,
-                        OrgTasksContext(org_id=project.organization.id)
-                    ))
-            else:
-                results.append((
-                    Limits.TASKS_IN_USER_SANDBOX_PROJECT,
-                    TasksInUserSandboxProjectContext(
-                        user_id=project.owner.id,
-                        project_id=project.id
-                    )
-                ))
-
-                if old_owner != (OwnerType.user, project.owner.id):
-                    results.append((
-                        Limits.USER_SANDBOX_TASKS,
-                        UserSandboxTasksContext(user_id=project.owner.id)
-                    ))
-
-        elif scope_id == (TaskPermission, TaskPermission.Scopes.UPDATE_OWNER):
-            task = cast(Task, scope.obj)
-
-            class OwnerType(Enum):
-                org = auto()
-                user = auto()
-
-            if getattr(task, 'organization', None) is not None:
-                old_owner = (OwnerType.org, task.organization.id)
-            else:
-                old_owner = (OwnerType.user, task.owner.id)
-
-            new_owner = getattr(scope, 'owner_id', None)
-            if new_owner is not None and old_owner != (OwnerType.user, new_owner):
-                results.append((
-                    Limits.USER_SANDBOX_TASKS,
-                    UserSandboxTasksContext(user_id=new_owner)
-                ))
-
-        elif scope_id in [
-            (ProjectPermission, ProjectPermission.Scopes.CREATE),
-            (ProjectPermission, ProjectPermission.Scopes.IMPORT_BACKUP),
-        ]:
-            if getattr(scope, 'org_id') is not None:
-                results.append((
-                    Limits.ORG_PROJECTS,
-                    OrgTasksContext(org_id=scope.org_id)
-                ))
-            else:
-                results.append((
-                    Limits.USER_SANDBOX_PROJECTS,
-                    UserSandboxTasksContext(user_id=scope.user_id)
-                ))
-
-        elif scope_id == (CloudStoragePermission, CloudStoragePermission.Scopes.CREATE):
-            if getattr(scope, 'org_id') is not None:
-                results.append((
-                    Limits.ORG_CLOUD_STORAGES,
-                    OrgCloudStoragesContext(org_id=scope.org_id)
-                ))
-            else:
-                results.append((
-                    Limits.USER_SANDBOX_CLOUD_STORAGES,
-                    UserSandboxCloudStoragesContext(user_id=scope.user_id)
-                ))
-
-        elif scope_id == (OrganizationPermission, OrganizationPermission.Scopes.CREATE):
-            results.append((
-                Limits.USER_OWNED_ORGS,
-                UserOrgsContext(user_id=scope.user_id)
-            ))
-
-        elif scope_id == (WebhookPermission, WebhookPermission.Scopes.CREATE_IN_ORG):
-            results.append((
-                Limits.ORG_COMMON_WEBHOOKS,
-                OrgCommonWebhooksContext(org_id=scope.org_id)
-            ))
-
-        elif scope_id == (WebhookPermission, WebhookPermission.Scopes.CREATE_IN_PROJECT):
-            results.append((
-                Limits.PROJECT_WEBHOOKS,
-                ProjectWebhooksContext(project_id=scope.project_id)
-            ))
-
-        return results
+        return data
 
 
 class PolicyEnforcer(BasePermission):
     # pylint: disable=no-self-use
     def check_permission(self, request, view, obj):
-        # Some permissions are only needed to be checked if the action
-        # is permitted in general. To achieve this, we split checks
-        # into 2 groups, and check one after another.
-        basic_permissions: List[OpenPolicyAgentPermission] = []
-        conditional_permissions: List[OpenPolicyAgentPermission] = []
+        permissions: List[OpenPolicyAgentPermission] = []
 
         # DRF can send OPTIONS request. Internally it will try to get
         # information about serializers for PUT and POST requests (clone
@@ -1582,33 +1493,14 @@ class PolicyEnforcer(BasePermission):
         # the condition below is enough.
         if not self.is_metadata_request(request, view):
             for perm in OpenPolicyAgentPermission.__subclasses__():
-                basic_permissions.extend(perm.create(request, view, obj))
+                permissions.extend(perm.create(request, view, obj))
 
-            conditional_permissions.extend(LimitPermission.create_from_scopes(
-                request, view, obj, basic_permissions
-            ))
-
-        self._iam_context = request.iam_context
-
-        allow = self._check_permissions(basic_permissions)
-        if allow and conditional_permissions:
-            allow = self._check_permissions(conditional_permissions)
-        return allow
-
-    def _check_permissions(self, permissions: List[OpenPolicyAgentPermission]) -> bool:
         allow = True
-        reasons = []
         for perm in permissions:
             result = perm.check_access()
             allow &= result.allow
-            reasons.extend(result.reasons)
 
-        if allow:
-            return True
-        elif reasons:
-            raise LimitsReachedException(reasons, self._iam_context)
-        else:
-            raise PermissionDenied("not authorized")
+        return allow
 
     def has_permission(self, request, view):
         if not view.detail:

@@ -5,7 +5,9 @@
 
 import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
-import { Webhook, SocialAuthMethods } from 'cvat-core-wrapper';
+import {
+    Webhook, SocialAuthMethods, MLModel, ModelProvider,
+} from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap } from 'utils/mousetrap-react';
 import { OpenCVTracker } from 'utils/opencv-wrapper/opencv-interfaces';
@@ -99,7 +101,6 @@ export interface JobsState {
 export interface TasksState {
     initialized: boolean;
     fetching: boolean;
-    updating: boolean;
     hideEmpty: boolean;
     moveTask: {
         modalVisible: boolean;
@@ -114,9 +115,6 @@ export interface TasksState {
     activities: {
         deletes: {
             [tid: number]: boolean; // deleted (deleting if in dictionary)
-        };
-        jobUpdates: {
-            [jid: number]: boolean,
         };
     };
 }
@@ -262,7 +260,6 @@ export enum SupportedPlugins {
     GIT_INTEGRATION = 'GIT_INTEGRATION',
     ANALYTICS = 'ANALYTICS',
     MODELS = 'MODELS',
-    PREDICT = 'PREDICT',
 }
 
 export type PluginsList = {
@@ -324,23 +321,12 @@ export interface ModelAttribute {
     input_type: 'select' | 'number' | 'checkbox' | 'radio' | 'text';
 }
 
-export interface Model {
-    id: string;
-    name: string;
-    labels: string[];
-    version: number;
-    attributes: Record<string, ModelAttribute[]>;
-    framework: string;
-    description: string;
-    type: string;
-    onChangeToolsBlockerState: (event: string) => void;
-    tip: {
-        message: string;
-        gif: string;
-    };
-    params: {
-        canvas: Record<string, number | boolean>;
-    };
+export interface ModelsQuery {
+    page: number;
+    id: number | null;
+    search: string | null;
+    filter: string | null;
+    sort: string | null;
 }
 
 export type OpenCVTool = IntelligentScissors | OpenCVTracker;
@@ -375,21 +361,32 @@ export interface ActiveInference {
     progress: number;
     error: string;
     id: string;
+    functionID: string | number;
 }
 
 export interface ModelsState {
     initialized: boolean;
     fetching: boolean;
     creatingStatus: string;
-    interactors: Model[];
-    detectors: Model[];
-    trackers: Model[];
-    reid: Model[];
+    interactors: MLModel[];
+    detectors: MLModel[];
+    trackers: MLModel[];
+    reid: MLModel[];
+    classifiers: MLModel[];
+    totalCount: number;
     inferences: {
         [index: number]: ActiveInference;
     };
     modelRunnerIsVisible: boolean;
     modelRunnerTask: any;
+    query: ModelsQuery;
+    providers: {
+        fetching: boolean;
+        list: ModelProvider[];
+    }
+    previews: {
+        [index: string]: Preview;
+    };
 }
 
 export interface ErrorState {
@@ -452,6 +449,8 @@ export interface NotificationsState {
             canceling: null | ErrorState;
             metaFetching: null | ErrorState;
             inferenceStatusFetching: null | ErrorState;
+            creating: null | ErrorState;
+            deleting: null | ErrorState;
         };
         annotation: {
             saving: null | ErrorState;
@@ -491,9 +490,6 @@ export interface NotificationsState {
             commentingIssue: null | ErrorState;
             submittingReview: null | ErrorState;
             deletingIssue: null | ErrorState;
-        };
-        predictor: {
-            prediction: null | ErrorState;
         };
         exporting: {
             dataset: null | ErrorState;
@@ -616,19 +612,6 @@ export enum Rotation {
     CLOCKWISE90,
 }
 
-export interface PredictorState {
-    timeRemaining: number;
-    progress: number;
-    projectScore: number;
-    message: string;
-    error: Error | null;
-    enabled: boolean;
-    fetching: boolean;
-    annotationAmount: number;
-    mediaAmount: number;
-    annotatedFrames: number[];
-}
-
 export interface AnnotationState {
     activities: {
         loads: {
@@ -679,7 +662,7 @@ export interface AnnotationState {
         frameAngles: number[];
     };
     drawing: {
-        activeInteractor?: Model | OpenCVTool;
+        activeInteractor?: MLModel | OpenCVTool;
         activeShapeType: ShapeType;
         activeRectDrawingMethod?: RectDrawingMethod;
         activeCuboidDrawingMethod?: CuboidDrawingMethod;
@@ -728,7 +711,6 @@ export interface AnnotationState {
     sidebarCollapsed: boolean;
     appearanceCollapsed: boolean;
     workspace: Workspace;
-    predictor: PredictorState;
 }
 
 export enum Workspace {

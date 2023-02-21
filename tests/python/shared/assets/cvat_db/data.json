@@ -660,6 +660,30 @@
   }
 },
 {
+  "model": "account.emailaddress",
+  "pk": 1,
+  "fields": {
+    "user": [
+      "admin1"
+    ],
+    "email": "admin1@cvat.org",
+    "verified": true,
+    "primary": true
+  }
+},
+{
+  "model": "account.emailaddress",
+  "pk": 2,
+  "fields": {
+    "user": [
+      "admin2"
+    ],
+    "email": "admin2@cvat.org",
+    "verified": true,
+    "primary": true
+  }
+},
+{
   "model": "organizations.organization",
   "pk": 1,
   "fields": {
@@ -1166,6 +1190,25 @@
     "frame_filter": "",
     "compressed_chunk_type": "imageset",
     "original_chunk_type": "video",
+    "storage_method": "cache",
+    "storage": "local",
+    "cloud_storage": null,
+    "sorting_method": "lexicographical",
+    "deleted_frames": "[]"
+  }
+},
+{
+  "model": "engine.data",
+  "pk": 16,
+  "fields": {
+    "chunk_size": 72,
+    "size": 5,
+    "image_quality": 70,
+    "start_frame": 0,
+    "stop_frame": 4,
+    "frame_filter": "",
+    "compressed_chunk_type": "imageset",
+    "original_chunk_type": "imageset",
     "storage_method": "cache",
     "storage": "local",
     "cloud_storage": null,
@@ -2217,6 +2260,61 @@
   }
 },
 {
+  "model": "engine.image",
+  "pk": 446,
+  "fields": {
+    "data": 16,
+    "path": "0.png",
+    "frame": 0,
+    "width": 974,
+    "height": 452
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 447,
+  "fields": {
+    "data": 16,
+    "path": "1.png",
+    "frame": 1,
+    "width": 783,
+    "height": 760
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 448,
+  "fields": {
+    "data": 16,
+    "path": "2.png",
+    "frame": 2,
+    "width": 528,
+    "height": 458
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 449,
+  "fields": {
+    "data": 16,
+    "path": "3.png",
+    "frame": 3,
+    "width": 520,
+    "height": 350
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 450,
+  "fields": {
+    "data": 16,
+    "path": "4.png",
+    "frame": 4,
+    "width": 569,
+    "height": 483
+  }
+},
+{
   "model": "engine.project",
   "pk": 1,
   "fields": {
@@ -2287,7 +2385,7 @@
     "assignee": null,
     "bug_tracker": "",
     "created_date": "2022-06-08T08:32:45.521Z",
-    "updated_date": "2022-12-05T07:47:01.518Z",
+    "updated_date": "2023-02-10T11:50:18.436Z",
     "status": "annotation",
     "organization": 2,
     "source_storage": null,
@@ -2368,6 +2466,26 @@
     "organization": null,
     "source_storage": 13,
     "target_storage": 14
+  }
+},
+{
+  "model": "engine.project",
+  "pk": 10,
+  "fields": {
+    "name": "project 6",
+    "owner": [
+      "user3"
+    ],
+    "assignee": [
+      "worker3"
+    ],
+    "bug_tracker": "",
+    "created_date": "2023-02-10T11:42:43.192Z",
+    "updated_date": "2023-02-10T11:42:57.733Z",
+    "status": "annotation",
+    "organization": 2,
+    "source_storage": 19,
+    "target_storage": 20
   }
 },
 {
@@ -2592,10 +2710,12 @@
     "owner": [
       "admin1"
     ],
-    "assignee": null,
+    "assignee": [
+      "user3"
+    ],
     "bug_tracker": "",
     "created_date": "2022-06-08T08:33:06.505Z",
-    "updated_date": "2022-12-05T07:47:01.633Z",
+    "updated_date": "2023-02-10T11:50:18.414Z",
     "overlap": 0,
     "segment_size": 5,
     "status": "annotation",
@@ -2618,7 +2738,7 @@
       "admin1"
     ],
     "assignee": null,
-    "bug_tracker": "",
+    "bug_tracker": "https://bugtracker.localhost/task/12345",
     "created_date": "2022-09-22T14:22:25.820Z",
     "updated_date": "2022-09-23T11:57:02.300Z",
     "overlap": 0,
@@ -2655,6 +2775,33 @@
     "organization": null,
     "source_storage": 15,
     "target_storage": 16
+  }
+},
+{
+  "model": "engine.task",
+  "pk": 17,
+  "fields": {
+    "project": null,
+    "name": "task_3_org2",
+    "mode": "annotation",
+    "owner": [
+      "admin1"
+    ],
+    "assignee": [
+      "user2"
+    ],
+    "bug_tracker": "",
+    "created_date": "2023-02-10T14:05:25.947Z",
+    "updated_date": "2023-02-10T14:08:05.873Z",
+    "overlap": 0,
+    "segment_size": 5,
+    "status": "annotation",
+    "data": 16,
+    "dimension": "2d",
+    "subset": "",
+    "organization": 2,
+    "source_storage": null,
+    "target_storage": null
   }
 },
 {
@@ -3544,6 +3691,15 @@
   }
 },
 {
+  "model": "engine.segment",
+  "pk": 21,
+  "fields": {
+    "task": 17,
+    "start_frame": 0,
+    "stop_frame": 4
+  }
+},
+{
   "model": "engine.job",
   "pk": 2,
   "fields": {
@@ -3707,6 +3863,18 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress"
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 21,
+  "fields": {
+    "segment": 21,
+    "assignee": null,
+    "updated_date": "2023-02-10T14:05:26.022Z",
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "new"
   }
 },
 {
@@ -4046,6 +4214,126 @@
   }
 },
 {
+  "model": "engine.label",
+  "pk": 34,
+  "fields": {
+    "task": null,
+    "project": 10,
+    "name": "cat",
+    "color": "#6080c0",
+    "type": "rectangle",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 35,
+  "fields": {
+    "task": null,
+    "project": 10,
+    "name": "dog",
+    "color": "#406040",
+    "type": "polyline",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 38,
+  "fields": {
+    "task": 17,
+    "project": null,
+    "name": "cat",
+    "color": "#6080c0",
+    "type": "any",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 39,
+  "fields": {
+    "task": 17,
+    "project": null,
+    "name": "dog",
+    "color": "#406040",
+    "type": "any",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 40,
+  "fields": {
+    "task": 17,
+    "project": null,
+    "name": "skele1",
+    "color": "#4602af",
+    "type": "skeleton",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 41,
+  "fields": {
+    "task": 17,
+    "project": null,
+    "name": "1",
+    "color": "#d12345",
+    "type": "points",
+    "parent": 40
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 42,
+  "fields": {
+    "task": 17,
+    "project": null,
+    "name": "2",
+    "color": "#350dea",
+    "type": "points",
+    "parent": 40
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 43,
+  "fields": {
+    "task": 17,
+    "project": null,
+    "name": "3",
+    "color": "#479ffe",
+    "type": "points",
+    "parent": 40
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 44,
+  "fields": {
+    "task": 17,
+    "project": null,
+    "name": "4",
+    "color": "#4a649f",
+    "type": "points",
+    "parent": 40
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 45,
+  "fields": {
+    "task": 17,
+    "project": null,
+    "name": "5",
+    "color": "#478144",
+    "type": "points",
+    "parent": 40
+  }
+},
+{
   "model": "engine.skeleton",
   "pk": 1,
   "fields": {
@@ -4059,6 +4347,14 @@
   "fields": {
     "root": 22,
     "svg": "<line x1=\"65.6380615234375\" y1=\"18.394649505615234\" x2=\"22.327028274536133\" y2=\"54.8494987487793\" stroke=\"black\" data-type=\"edge\" data-node-from=\"3\" stroke-width=\"0.5\" data-node-to=\"2\"></line><line x1=\"77.34375\" y1=\"55.18394470214844\" x2=\"65.6380615234375\" y2=\"18.394649505615234\" stroke=\"black\" data-type=\"edge\" data-node-from=\"4\" stroke-width=\"0.5\" data-node-to=\"3\"></line><line x1=\"4.434051036834717\" y1=\"27.257524490356445\" x2=\"77.34375\" y2=\"55.18394470214844\" stroke=\"black\" data-type=\"edge\" data-node-from=\"1\" stroke-width=\"0.5\" data-node-to=\"4\"></line><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"4.434051036834717\" cy=\"27.257524490356445\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-id=\"23\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"22.327028274536133\" cy=\"54.8494987487793\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-id=\"24\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"65.6380615234375\" cy=\"18.394649505615234\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"3\" data-node-id=\"3\" data-label-id=\"25\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"77.34375\" cy=\"55.18394470214844\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"4\" data-node-id=\"4\" data-label-id=\"26\"></circle>"
+  }
+},
+{
+  "model": "engine.skeleton",
+  "pk": 3,
+  "fields": {
+    "root": 40,
+    "svg": "<line x1=\"33.80753707885742\" y1=\"62.16216278076172\" x2=\"57.11834716796875\" y2=\"47.635135650634766\" stroke=\"black\" data-type=\"edge\" data-node-from=\"4\" stroke-width=\"0.5\" data-node-to=\"3\"></line><line x1=\"23.334564208984375\" y1=\"48.47972869873047\" x2=\"33.80753707885742\" y2=\"62.16216278076172\" stroke=\"black\" data-type=\"edge\" data-node-from=\"5\" stroke-width=\"0.5\" data-node-to=\"4\"></line><line x1=\"24.34807777404785\" y1=\"25.675676345825195\" x2=\"51.54402542114258\" y2=\"27.533782958984375\" stroke=\"black\" data-type=\"edge\" data-node-from=\"1\" stroke-width=\"0.5\" data-node-to=\"2\"></line><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"24.34807777404785\" cy=\"25.675676345825195\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-id=\"41\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"51.54402542114258\" cy=\"27.533782958984375\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-id=\"42\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"57.11834716796875\" cy=\"47.635135650634766\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"3\" data-node-id=\"3\" data-label-id=\"43\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"33.80753707885742\" cy=\"62.16216278076172\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"4\" data-node-id=\"4\" data-label-id=\"44\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"23.334564208984375\" cy=\"48.47972869873047\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"5\" data-node-id=\"5\" data-label-id=\"45\"></circle>"
   }
 },
 {
@@ -4098,922 +4394,27 @@
   }
 },
 {
-  "model": "engine.jobcommit",
-  "pk": 1,
+  "model": "engine.attributespec",
+  "pk": 5,
   "fields": {
-    "scope": "",
-    "owner": null,
-    "timestamp": "2021-12-22T07:14:15.237Z",
-    "data": {},
-    "job": 2
+    "label": 35,
+    "name": "a1",
+    "mutable": true,
+    "input_type": "checkbox",
+    "default_value": "false",
+    "values": "false"
   }
 },
 {
-  "model": "engine.jobcommit",
-  "pk": 2,
+  "model": "engine.attributespec",
+  "pk": 6,
   "fields": {
-    "scope": "",
-    "owner": null,
-    "timestamp": "2021-12-22T07:14:15.268Z",
-    "data": {},
-    "job": 2
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 3,
-  "fields": {
-    "scope": "",
-    "owner": null,
-    "timestamp": "2021-12-22T07:14:15.298Z",
-    "data": {},
-    "job": 2
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 16,
-  "fields": {
-    "scope": "",
-    "owner": null,
-    "timestamp": "2022-02-21T10:32:04.068Z",
-    "data": {},
-    "job": 9
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 17,
-  "fields": {
-    "scope": "",
-    "owner": null,
-    "timestamp": "2022-02-21T10:32:04.169Z",
-    "data": {},
-    "job": 9
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 18,
-  "fields": {
-    "scope": "",
-    "owner": null,
-    "timestamp": "2022-02-21T10:32:04.256Z",
-    "data": {},
-    "job": 9
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 25,
-  "fields": {
-    "scope": "",
-    "owner": null,
-    "timestamp": "2022-02-21T10:40:21.267Z",
-    "data": {},
-    "job": 7
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 26,
-  "fields": {
-    "scope": "",
-    "owner": null,
-    "timestamp": "2022-02-21T10:40:21.354Z",
-    "data": {},
-    "job": 7
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 27,
-  "fields": {
-    "scope": "",
-    "owner": null,
-    "timestamp": "2022-02-21T10:40:21.435Z",
-    "data": {},
-    "job": 7
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 28,
-  "fields": {
-    "scope": "create",
-    "owner": [
-      "user1"
-    ],
-    "timestamp": "2022-03-05T08:30:49.330Z",
-    "data": {
-      "stage": "annotation",
-      "state": "new",
-      "assignee": null
-    },
-    "job": 10
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 29,
-  "fields": {
-    "scope": "create",
-    "owner": [
-      "user1"
-    ],
-    "timestamp": "2022-03-05T08:32:06.104Z",
-    "data": {
-      "stage": "annotation",
-      "state": "new",
-      "assignee": {
-        "user": {
-          "id": 1,
-          "username": "admin1"
-        }
-      }
-    },
-    "job": 10
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 30,
-  "fields": {
-    "scope": "update",
-    "owner": [
-      "admin1"
-    ],
-    "timestamp": "2022-03-05T08:32:06.111Z",
-    "data": {
-      "assignee": {
-        "user": {
-          "id": 1,
-          "username": "admin1"
-        }
-      }
-    },
-    "job": 10
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 31,
-  "fields": {
-    "scope": "create",
-    "owner": [
-      "user1"
-    ],
-    "timestamp": "2022-03-05T08:32:06.133Z",
-    "data": {
-      "stage": "annotation",
-      "state": "new",
-      "assignee": {
-        "user": {
-          "id": 1,
-          "username": "admin1"
-        }
-      }
-    },
-    "job": 10
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 32,
-  "fields": {
-    "scope": "update",
-    "owner": [
-      "admin1"
-    ],
-    "timestamp": "2022-03-05T08:32:06.141Z",
-    "data": {
-      "assignee": {
-        "user": {
-          "id": 1,
-          "username": "admin1"
-        }
-      }
-    },
-    "job": 10
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 33,
-  "fields": {
-    "scope": "create",
-    "owner": [
-      "user1"
-    ],
-    "timestamp": "2022-03-05T08:52:34.922Z",
-    "data": {
-      "stage": "annotation",
-      "state": "new",
-      "assignee": {
-        "user": {
-          "id": 1,
-          "username": "admin1"
-        }
-      }
-    },
-    "job": 10
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 34,
-  "fields": {
-    "scope": "create",
-    "owner": [
-      "user1"
-    ],
-    "timestamp": "2022-03-05T08:52:35.283Z",
-    "data": {
-      "stage": "annotation",
-      "state": "in progress",
-      "assignee": {
-        "user": {
-          "id": 1,
-          "username": "admin1"
-        }
-      }
-    },
-    "job": 10
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 35,
-  "fields": {
-    "scope": "update",
-    "owner": [
-      "user1"
-    ],
-    "timestamp": "2022-03-05T08:52:35.288Z",
-    "data": {
-      "state": "in progress"
-    },
-    "job": 10
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 36,
-  "fields": {
-    "scope": "create",
-    "owner": [
-      "business1"
-    ],
-    "timestamp": "2022-03-05T09:33:11.291Z",
-    "data": {
-      "stage": "annotation",
-      "state": "new",
-      "assignee": null
-    },
-    "job": 11
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 37,
-  "fields": {
-    "scope": "create",
-    "owner": [
-      "business1"
-    ],
-    "timestamp": "2022-03-05T09:33:11.301Z",
-    "data": {
-      "stage": "annotation",
-      "state": "new",
-      "assignee": null
-    },
-    "job": 12
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 38,
-  "fields": {
-    "scope": "create",
-    "owner": [
-      "business1"
-    ],
-    "timestamp": "2022-03-05T09:33:11.308Z",
-    "data": {
-      "stage": "annotation",
-      "state": "new",
-      "assignee": null
-    },
-    "job": 13
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 39,
-  "fields": {
-    "scope": "create",
-    "owner": [
-      "business1"
-    ],
-    "timestamp": "2022-03-05T09:33:11.315Z",
-    "data": {
-      "stage": "annotation",
-      "state": "new",
-      "assignee": null
-    },
-    "job": 14
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 40,
-  "fields": {
-    "scope": "create",
-    "owner": [
-      "business1"
-    ],
-    "timestamp": "2022-03-05T09:34:22.149Z",
-    "data": {
-      "stage": "annotation",
-      "state": "new",
-      "assignee": null
-    },
-    "job": 11
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 41,
-  "fields": {
-    "scope": "create",
-    "owner": [
-      "business1"
-    ],
-    "timestamp": "2022-03-05T09:34:22.501Z",
-    "data": {
-      "stage": "annotation",
-      "state": "in progress",
-      "assignee": null
-    },
-    "job": 11
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 42,
-  "fields": {
-    "scope": "update",
-    "owner": [
-      "business1"
-    ],
-    "timestamp": "2022-03-05T09:34:22.507Z",
-    "data": {
-      "state": "in progress"
-    },
-    "job": 11
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 43,
-  "fields": {
-    "scope": "create",
-    "owner": [
-      "business1"
-    ],
-    "timestamp": "2022-03-05T09:36:18.526Z",
-    "data": {
-      "stage": "validation",
-      "state": "new",
-      "assignee": null
-    },
-    "job": 12
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 44,
-  "fields": {
-    "scope": "update",
-    "owner": [
-      "admin1"
-    ],
-    "timestamp": "2022-03-05T09:36:18.533Z",
-    "data": {
-      "stage": "validation",
-      "state": "new",
-      "status": "validation"
-    },
-    "job": 12
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 45,
-  "fields": {
-    "scope": "create",
-    "owner": [
-      "business1"
-    ],
-    "timestamp": "2022-03-05T09:36:21.656Z",
-    "data": {
-      "stage": "acceptance",
-      "state": "new",
-      "assignee": null
-    },
-    "job": 13
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 46,
-  "fields": {
-    "scope": "update",
-    "owner": [
-      "admin1"
-    ],
-    "timestamp": "2022-03-05T09:36:21.662Z",
-    "data": {
-      "stage": "acceptance",
-      "state": "new",
-      "status": "validation"
-    },
-    "job": 13
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 55,
-  "fields": {
-    "scope": "create",
-    "owner": [
-      "business1"
-    ],
-    "timestamp": "2022-03-05T10:32:19.701Z",
-    "data": {
-      "stage": "annotation",
-      "state": "new",
-      "assignee": null
-    },
-    "job": 16
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 56,
-  "fields": {
-    "scope": "create",
-    "owner": [
-      "business1"
-    ],
-    "timestamp": "2022-03-05T10:32:26.246Z",
-    "data": {
-      "stage": "annotation",
-      "state": "new",
-      "assignee": {
-        "user": {
-          "id": 7,
-          "username": "worker2"
-        }
-      }
-    },
-    "job": 16
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 57,
-  "fields": {
-    "scope": "update",
-    "owner": [
-      "business1"
-    ],
-    "timestamp": "2022-03-05T10:32:26.260Z",
-    "data": {
-      "assignee": {
-        "user": {
-          "id": 7,
-          "username": "worker2"
-        }
-      }
-    },
-    "job": 16
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 58,
-  "fields": {
-    "scope": "create",
-    "owner": [
-      "business1"
-    ],
-    "timestamp": "2022-03-05T10:32:26.300Z",
-    "data": {
-      "stage": "annotation",
-      "state": "new",
-      "assignee": {
-        "user": {
-          "id": 7,
-          "username": "worker2"
-        }
-      }
-    },
-    "job": 16
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 59,
-  "fields": {
-    "scope": "update",
-    "owner": [
-      "business1"
-    ],
-    "timestamp": "2022-03-05T10:32:26.328Z",
-    "data": {
-      "assignee": {
-        "user": {
-          "id": 7,
-          "username": "worker2"
-        }
-      }
-    },
-    "job": 16
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 60,
-  "fields": {
-    "scope": "create",
-    "owner": [
-      "business1"
-    ],
-    "timestamp": "2022-03-05T10:32:35.577Z",
-    "data": {
-      "stage": "annotation",
-      "state": "new",
-      "assignee": {
-        "user": {
-          "id": 7,
-          "username": "worker2"
-        }
-      }
-    },
-    "job": 16
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 61,
-  "fields": {
-    "scope": "create",
-    "owner": [
-      "business1"
-    ],
-    "timestamp": "2022-03-05T10:32:35.938Z",
-    "data": {
-      "stage": "annotation",
-      "state": "in progress",
-      "assignee": {
-        "user": {
-          "id": 7,
-          "username": "worker2"
-        }
-      }
-    },
-    "job": 16
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 62,
-  "fields": {
-    "scope": "update",
-    "owner": [
-      "business1"
-    ],
-    "timestamp": "2022-03-05T10:32:35.943Z",
-    "data": {
-      "state": "in progress"
-    },
-    "job": 16
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 63,
-  "fields": {
-    "scope": "create",
-    "owner": [
-      "admin1"
-    ],
-    "timestamp": "2022-06-08T08:33:06.712Z",
-    "data": {
-      "stage": "annotation",
-      "state": "new",
-      "assignee": null
-    },
-    "job": 17
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 64,
-  "fields": {
-    "scope": "create",
-    "owner": [
-      "admin1"
-    ],
-    "timestamp": "2022-06-08T08:33:20.812Z",
-    "data": {
-      "stage": "annotation",
-      "state": "new",
-      "assignee": null
-    },
-    "job": 17
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 65,
-  "fields": {
-    "scope": "create",
-    "owner": [
-      "admin1"
-    ],
-    "timestamp": "2022-06-08T08:33:20.979Z",
-    "data": {
-      "stage": "annotation",
-      "state": "in progress",
-      "assignee": null
-    },
-    "job": 17
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 66,
-  "fields": {
-    "scope": "update",
-    "owner": [
-      "admin1"
-    ],
-    "timestamp": "2022-06-08T08:33:20.980Z",
-    "data": {
-      "state": "in progress"
-    },
-    "job": 17
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 67,
-  "fields": {
-    "scope": "create",
-    "owner": [
-      "admin1"
-    ],
-    "timestamp": "2022-09-22T14:22:26.222Z",
-    "data": {
-      "stage": "annotation",
-      "state": "new",
-      "assignee": null
-    },
-    "job": 18
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 68,
-  "fields": {
-    "scope": "create",
-    "owner": [
-      "admin1"
-    ],
-    "timestamp": "2022-09-23T11:56:30.270Z",
-    "data": {
-      "stage": "annotation",
-      "state": "new",
-      "assignee": null
-    },
-    "job": 18
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 69,
-  "fields": {
-    "scope": "create",
-    "owner": [
-      "admin1"
-    ],
-    "timestamp": "2022-09-23T11:56:30.533Z",
-    "data": {
-      "stage": "annotation",
-      "state": "in progress",
-      "assignee": null
-    },
-    "job": 18
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 70,
-  "fields": {
-    "scope": "update",
-    "owner": [
-      "admin1"
-    ],
-    "timestamp": "2022-09-23T11:56:30.535Z",
-    "data": {
-      "state": "in progress"
-    },
-    "job": 18
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 71,
-  "fields": {
-    "scope": "create",
-    "owner": [
-      "admin1"
-    ],
-    "timestamp": "2022-09-23T11:56:45.344Z",
-    "data": {
-      "stage": "annotation",
-      "state": "in progress",
-      "assignee": null
-    },
-    "job": 18
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 72,
-  "fields": {
-    "scope": "create",
-    "owner": [
-      "admin1"
-    ],
-    "timestamp": "2022-09-23T11:57:02.307Z",
-    "data": {
-      "stage": "annotation",
-      "state": "in progress",
-      "assignee": null
-    },
-    "job": 18
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 73,
-  "fields": {
-    "scope": "create",
-    "owner": [
-      "admin1"
-    ],
-    "timestamp": "2022-10-17T17:09:36.573Z",
-    "data": {
-      "stage": "annotation",
-      "state": "in progress",
-      "assignee": null
-    },
-    "job": 17
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 74,
-  "fields": {
-    "scope": "create",
-    "owner": [
-      "business1"
-    ],
-    "timestamp": "2022-11-03T13:57:26.015Z",
-    "data": {
-      "stage": "annotation",
-      "state": "new",
-      "assignee": null
-    },
-    "job": 14
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 75,
-  "fields": {
-    "scope": "create",
-    "owner": [
-      "business1"
-    ],
-    "timestamp": "2022-11-03T13:57:26.351Z",
-    "data": {
-      "stage": "annotation",
-      "state": "in progress",
-      "assignee": null
-    },
-    "job": 14
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 76,
-  "fields": {
-    "scope": "update",
-    "owner": [
-      "admin1"
-    ],
-    "timestamp": "2022-11-03T13:57:26.356Z",
-    "data": {
-      "state": "in progress"
-    },
-    "job": 14
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 77,
-  "fields": {
-    "scope": "create",
-    "owner": [
-      "admin1"
-    ],
-    "timestamp": "2022-12-01T12:53:11.352Z",
-    "data": {
-      "stage": "annotation",
-      "state": "new",
-      "assignee": null
-    },
-    "job": 19
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 78,
-  "fields": {
-    "scope": "create",
-    "owner": [
-      "admin1"
-    ],
-    "timestamp": "2022-12-01T12:53:35.036Z",
-    "data": {
-      "stage": "annotation",
-      "state": "new",
-      "assignee": null
-    },
-    "job": 19
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 79,
-  "fields": {
-    "scope": "create",
-    "owner": [
-      "admin1"
-    ],
-    "timestamp": "2022-12-01T12:53:35.360Z",
-    "data": {
-      "stage": "annotation",
-      "state": "in progress",
-      "assignee": null
-    },
-    "job": 19
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 80,
-  "fields": {
-    "scope": "update",
-    "owner": [
-      "admin1"
-    ],
-    "timestamp": "2022-12-01T12:53:35.363Z",
-    "data": {
-      "state": "in progress"
-    },
-    "job": 19
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 81,
-  "fields": {
-    "scope": "create",
-    "owner": [
-      "admin1"
-    ],
-    "timestamp": "2022-12-05T07:47:01.635Z",
-    "data": {
-      "stage": "annotation",
-      "state": "in progress",
-      "assignee": null
-    },
-    "job": 17
+    "label": 40,
+    "name": "attr",
+    "mutable": true,
+    "input_type": "checkbox",
+    "default_value": "false",
+    "values": "false"
   }
 },
 {
@@ -5033,6 +4434,28 @@
   "fields": {
     "job": 17,
     "label": 16,
+    "frame": 3,
+    "group": 0,
+    "source": "manual"
+  }
+},
+{
+  "model": "engine.labeledimage",
+  "pk": 5,
+  "fields": {
+    "job": 21,
+    "label": 39,
+    "frame": 2,
+    "group": 0,
+    "source": "manual"
+  }
+},
+{
+  "model": "engine.labeledimage",
+  "pk": 6,
+  "fields": {
+    "job": 21,
+    "label": 38,
     "frame": 3,
     "group": 0,
     "source": "manual"
@@ -5412,6 +4835,42 @@
     "outside": false,
     "z_order": 0,
     "points": "[479.97322623828586, 408.0053547523421, 942.6238286479238, 513.3868808567604]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 47,
+  "fields": {
+    "job": 21,
+    "label": 38,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[106.361328125, 85.150390625, 240.083984375, 241.263671875]",
+    "rotation": 45.9,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 48,
+  "fields": {
+    "job": 21,
+    "label": 38,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[414.29522752496996, 124.8035516093205, 522.2641509433943, 286.75693673695605]",
     "rotation": 0.0,
     "parent": null
   }
@@ -5860,7 +5319,7 @@
     "assignee": null,
     "created_date": "2022-03-16T11:04:39.444Z",
     "updated_date": null,
-    "resolved": false
+    "resolved": true
   }
 },
 {
@@ -5905,7 +5364,9 @@
     "owner": [
       "user1"
     ],
-    "assignee": null,
+    "assignee": [
+      "user1"
+    ],
     "created_date": "2022-03-16T12:40:00.764Z",
     "updated_date": null,
     "resolved": false
@@ -6209,6 +5670,38 @@
 {
   "model": "engine.storage",
   "pk": 16,
+  "fields": {
+    "location": "local",
+    "cloud_storage_id": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 17,
+  "fields": {
+    "location": "local",
+    "cloud_storage_id": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 18,
+  "fields": {
+    "location": "local",
+    "cloud_storage_id": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 19,
+  "fields": {
+    "location": "local",
+    "cloud_storage_id": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 20,
   "fields": {
     "location": "local",
     "cloud_storage_id": null

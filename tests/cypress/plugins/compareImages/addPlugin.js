@@ -2,9 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-// eslint-disable-next-line no-undef
-exports.compareImages = compareImages;
-
 const Jimp = require('jimp');
 
 async function compareImages(args) {
@@ -14,3 +11,5 @@ async function compareImages(args) {
 
     return diff.percent;
 }
+
+exports.compareImages = compareImages;

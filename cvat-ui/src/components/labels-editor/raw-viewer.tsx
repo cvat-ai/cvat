@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -12,11 +13,11 @@ import Modal from 'antd/lib/modal';
 import { Store } from 'antd/lib/form/interface';
 import Paragraph from 'antd/lib/typography/Paragraph';
 
-import { RawLabel, RawAttribute } from 'cvat-core-wrapper';
+import { SerializedLabel, SerializedAttribute } from 'cvat-core-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { validateParsedLabel, idGenerator, LabelOptColor } from './common';
 
-function replaceTraillingCommas(value: string): string {
+function replaceTrailingCommas(value: string): string {
     return value.replace(/,{1}[\s]*}/g, '}');
 }
 
@@ -53,11 +54,11 @@ function transformSkeletonSVG(value: string): string {
 
 function validateLabels(_: RuleObject, value: string): Promise<void> {
     try {
-        const parsed = JSON.parse(replaceTraillingCommas(value));
+        const parsed = JSON.parse(replaceTrailingCommas(value));
         if (!Array.isArray(parsed)) {
             return Promise.reject(new Error('Field is expected to be a JSON array'));
         }
-        const labelNames = parsed.map((label: RawLabel) => label.name);
+        const labelNames = parsed.map((label: SerializedLabel) => label.name);
         if (new Set(labelNames).size !== labelNames.length) {
             return Promise.reject(new Error('Label names must be unique for the task'));
         }
@@ -88,7 +89,7 @@ function convertLabels(labels: LabelOptColor[]): LabelOptColor[] {
             id: (label.id as number) < 0 ? undefined : label.id,
             svg: label.svg ? label.svg.replaceAll('"', '&quot;') : undefined,
             attributes: label.attributes.map(
-                (attribute: any): RawAttribute => ({
+                (attribute: any): SerializedAttribute => ({
                     ...attribute,
                     id: attribute.id < 0 ? undefined : attribute.id,
                 }),
@@ -117,8 +118,8 @@ export default class RawViewer extends React.PureComponent<Props> {
     private handleSubmit = (values: Store): void => {
         const { onSubmit, labels } = this.props;
         const parsed = JSON.parse(
-            replaceTraillingCommas(values.labels),
-        ) as RawLabel[];
+            replaceTrailingCommas(values.labels),
+        ) as SerializedLabel[];
 
         const labelIDs: number[] = [];
         const attrIDs: number[] = [];
@@ -145,8 +146,8 @@ export default class RawViewer extends React.PureComponent<Props> {
             });
 
         const deletedAttributes = labels
-            .reduce((acc: RawAttribute[], _label) => [...acc, ..._label.attributes], [])
-            .filter((_attr: RawAttribute) => {
+            .reduce((acc: SerializedAttribute[], _label) => [...acc, ..._label.attributes], [])
+            .filter((_attr: SerializedAttribute) => {
                 const attrID = _attr.id as number;
                 return attrID >= 0 && !attrIDs.includes(attrID);
             });
@@ -173,7 +174,7 @@ export default class RawViewer extends React.PureComponent<Props> {
                             <Paragraph>
                                 Following attributes are going to be removed:
                                 <div className='cvat-modal-confirm-content-remove-existing-attributes'>
-                                    {deletedAttributes.map((_attr: RawAttribute) => (
+                                    {deletedAttributes.map((_attr: SerializedAttribute) => (
                                         <Tag key={_attr.id as number}>{_attr.name}</Tag>
                                     ))}
                                 </div>
@@ -232,7 +233,12 @@ export default class RawViewer extends React.PureComponent<Props> {
                 <Row justify='start' align='middle'>
                     <Col>
                         <CVATTooltip title='Save labels'>
-                            <Button style={{ width: '150px' }} type='primary' htmlType='submit'>
+                            <Button
+                                className='cvat-submit-raw-labels-conf-button'
+                                style={{ width: '150px' }}
+                                type='primary'
+                                htmlType='submit'
+                            >
                                 Done
                             </Button>
                         </CVATTooltip>
@@ -240,6 +246,7 @@ export default class RawViewer extends React.PureComponent<Props> {
                     <Col offset={1}>
                         <CVATTooltip title='Reset all changes'>
                             <Button
+                                className='cvat-reset-raw-labels-conf-button'
                                 type='primary'
                                 danger
                                 style={{ width: '150px' }}

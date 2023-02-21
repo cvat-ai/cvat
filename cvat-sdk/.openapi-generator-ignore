@@ -23,6 +23,7 @@
 #!docs/README.md
 
 # For safety
+/MANIFEST.in
 /cvat_sdk/__init__.py
 /config
 /gen
@@ -31,6 +32,7 @@
 /types.py
 
 # Don't generate these files
+/README.md
 /git_push.sh
 /setup.cfg
 /test-requirements.txt

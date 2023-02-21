@@ -1,5 +1,5 @@
 # Copyright (C) 2018-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -14,7 +14,6 @@ from django.contrib.auth.models import User
 from django.core.files.storage import FileSystemStorage
 from django.db import models
 from django.db.models.fields import FloatField
-from django.core.serializers.json import DjangoJSONEncoder
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
 from cvat.apps.engine.utils import parse_specific_attributes
@@ -307,6 +306,9 @@ class Project(models.Model):
     target_storage = models.ForeignKey('Storage', null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name='+')
 
+    def get_labels(self):
+        return self.label_set.filter(parent__isnull=True)
+
     def get_dirname(self):
         return os.path.join(settings.PROJECTS_ROOT, str(self.id))
 
@@ -364,7 +366,7 @@ class Task(models.Model):
 
     def get_labels(self):
         project = self.project
-        return project.label_set if project else self.label_set
+        return project.get_labels() if project else self.label_set.filter(parent__isnull=True)
 
     def get_dirname(self):
         return os.path.join(settings.TASKS_ROOT, str(self.id))
@@ -468,6 +470,9 @@ class Job(models.Model):
     def get_dirname(self):
         return os.path.join(settings.JOBS_ROOT, str(self.id))
 
+    def get_tmp_dirname(self):
+        return os.path.join(self.get_dirname(), 'tmp')
+
     @extend_schema_field(OpenApiTypes.INT)
     def get_project_id(self):
         project = self.segment.task.project
@@ -479,7 +484,10 @@ class Job(models.Model):
         return task.id if task else None
 
     def get_organization_id(self):
-        return self.segment.task.organization
+        return self.segment.task.organization_id
+
+    def get_organization_slug(self):
+        return self.segment.task.organization.slug
 
     def get_bug_tracker(self):
         task = self.segment.task
@@ -489,18 +497,14 @@ class Job(models.Model):
     def get_labels(self):
         task = self.segment.task
         project = task.project
-        return project.label_set if project else task.label_set
-
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        db_commit = JobCommit(job=self, scope='create',
-            owner=self.segment.task.owner, data={
-                'stage': self.stage, 'state': self.state, 'assignee': self.assignee
-            })
-        db_commit.save()
+        return project.get_labels() if project else task.get_labels()
 
     class Meta:
         default_permissions = ()
+
+
+class InvalidLabel(ValueError):
+    pass
 
 class Label(models.Model):
     task = models.ForeignKey(Task, null=True, blank=True, on_delete=models.CASCADE)
@@ -515,6 +519,25 @@ class Label(models.Model):
 
     def has_parent_label(self):
         return bool(self.parent)
+
+    def _check_save_constraints(self) -> None:
+        # NOTE: constraints don't work for some reason
+        # https://github.com/opencv/cvat/pull/5700#discussion_r1112276036
+        # This method is not 100% reliable because of possible race conditions
+        # but it should work in relevant cases.
+
+        parent_entity = self.project or self.task
+
+        # Check for possible labels name duplicates in case of saving the new label
+        existing_labels: models.QuerySet = parent_entity.get_labels()
+        if self.id:
+            existing_labels = existing_labels.exclude(id=self.id)
+        if existing_labels.filter(name=self.name).count():
+            raise InvalidLabel(f"Label '{self.name}' already exists")
+
+    def save(self, *args, **kwargs) -> None:
+        self._check_save_constraints()
+        return super().save(*args, **kwargs)
 
     class Meta:
         default_permissions = ()
@@ -609,29 +632,6 @@ class Annotation(models.Model):
         abstract = True
         default_permissions = ()
 
-class Commit(models.Model):
-    class JSONEncoder(DjangoJSONEncoder):
-        def default(self, o):
-            if isinstance(o, User):
-                data = {'user': {'id': o.id, 'username': o.username}}
-                return data
-            else:
-                return super().default(o)
-
-
-    id = models.BigAutoField(primary_key=True)
-    scope = models.CharField(max_length=32, default="")
-    owner = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
-    timestamp = models.DateTimeField(auto_now=True)
-    data = models.JSONField(default=dict, encoder=JSONEncoder)
-
-    class Meta:
-        abstract = True
-        default_permissions = ()
-
-class JobCommit(Commit):
-    job = models.ForeignKey(Job, on_delete=models.CASCADE, related_name="commits")
-
 class Shape(models.Model):
     type = models.CharField(max_length=16, choices=ShapeType.choices())
     occluded = models.BooleanField(default=False)
@@ -692,6 +692,10 @@ class Issue(models.Model):
     def get_organization_id(self):
         return self.job.get_organization_id()
 
+    def get_organization_slug(self):
+        return self.job.get_organization_slug()
+
+
 class Comment(models.Model):
     issue = models.ForeignKey(Issue, related_name='comments', on_delete=models.CASCADE)
     owner = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
@@ -704,6 +708,9 @@ class Comment(models.Model):
 
     def get_organization_id(self):
         return self.issue.get_organization_id()
+
+    def get_organization_slug(self):
+        return self.issue.get_organization_slug()
 
 class CloudProviderChoice(str, Enum):
     AWS_S3 = 'AWS_S3_BUCKET'

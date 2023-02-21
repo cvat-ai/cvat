@@ -1,4 +1,5 @@
 # Copyright (C) 2020-2022 Intel Corporation
+# Copyright (C) 2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -18,6 +19,7 @@ from io import BytesIO
 from unittest import mock
 import logging
 import copy
+import json
 
 import av
 import numpy as np
@@ -35,6 +37,7 @@ from cvat.apps.engine.models import (AttributeSpec, AttributeType, Data, Job,
     Project, Segment, StageChoice, StatusChoice, Task, Label, StorageMethodChoice,
     StorageChoice, DimensionType, SortingMethod)
 from cvat.apps.engine.media_extractors import ValidateDimension, sort
+from cvat.apps.engine.tests.utils import get_paginated_collection
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 
 #supress av warnings
@@ -520,25 +523,32 @@ class ServerExceptionAPITestCase(APITestCase):
     def setUpTestData(cls):
         create_db_users(cls)
         cls.data = {
-            "system": "Linux",
-            "client": "rest_framework.APIClient",
-            "time": "2019-01-29T12:34:56.000000Z",
-            "task_id": 1,
-            "job_id": 1,
-            "proj_id": 2,
-            "client_id": 12321235123,
-            "message": "just test message",
-            "filename": "http://localhost/my_file.js",
-            "line": 1,
-            "column": 1,
-            "stack": ""
+            "events": [{
+            "scope": "send:exception",
+            "timestamp": "2019-01-29T12:34:56.000000Z",
+            "payload": json.dumps({
+                "system": "Linux",
+                "client": "rest_framework.APIClient",
+
+                "task_id": 1,
+                "job_id": 1,
+                "proj_id": 2,
+                "client_id": 12321235123,
+                "message": "just test message",
+                "filename": "http://localhost/my_file.js",
+                "line": 1,
+                "column": 1,
+                "stack": "",
+            })}],
+            "timestamp": "2019-01-29T12:34:57.000000Z",
         }
+
 
     def _run_api_v2_server_exception(self, user):
         with ForceLogin(user, self.client):
             #pylint: disable=unused-variable
-            with mock.patch("cvat.apps.engine.views.clogger") as clogger:
-                response = self.client.post('/api/server/exception',
+            with mock.patch("cvat.apps.events.views.vlogger") as vlogger:
+                response = self.client.post('/api/events',
                     self.data, format='json')
 
         return response
@@ -563,30 +573,35 @@ class ServerLogsAPITestCase(APITestCase):
     @classmethod
     def setUpTestData(cls):
         create_db_users(cls)
-        cls.data = [
-        {
-            "time": "2019-01-29T12:34:56.000000Z",
-            "task_id": 1,
-            "job_id": 1,
-            "proj_id": 2,
-            "client_id": 12321235123,
-            "message": "just test message",
-            "name": "add point",
-            "is_active": True,
-            "payload": {"count": 1}
-        },
-        {
-            "time": "2019-02-24T12:34:56.000000Z",
-            "client_id": 12321235123,
-            "name": "add point",
-            "is_active": True,
-        }]
+        cls.data = {
+            "events": [{
+                "scope": "test:scope1",
+                "timestamp": "2019-01-29T12:34:56.000000Z",
+                "task": 1,
+                "job": 1,
+                "proj": 2,
+                "organization": 2,
+                "count": 1,
+                "payload": json.dumps({
+                    "client_id": 12321235123,
+                    "message": "just test message",
+                    "name": "add point",
+                    "is_active": True,
+                }),
+            },
+            {
+                "timestamp": "2019-02-24T12:34:56.000000Z",
+                "scope": "test:scope2",
+            }],
+            "timestamp": "2019-02-24T12:34:58.000000Z",
+        }
+
 
     def _run_api_v2_server_logs(self, user):
         with ForceLogin(user, self.client):
             #pylint: disable=unused-variable
-            with mock.patch("cvat.apps.engine.views.clogger") as clogger:
-                response = self.client.post('/api/server/logs',
+            with mock.patch("cvat.apps.events.views.vlogger") as vlogger:
+                response = self.client.post('/api/events',
                     self.data, format='json')
 
         return response
@@ -953,6 +968,14 @@ class ProjectCreateAPITestCase(APITestCase):
         with ForceLogin(user, self.client):
             response = self.client.post('/api/projects', data=data, format="json")
 
+            if 200 <= response.status_code < 400:
+                labels_response = list(get_paginated_collection(
+                    lambda page: self.client.get(
+                        "/api/labels?project_id=%s&page=%s" % (response.data["id"], page)
+                    )
+                ))
+                response.data["labels"] = labels_response
+
         return response
 
     def _check_response(self, response, user, data):
@@ -1047,6 +1070,12 @@ class ProjectPartialUpdateAPITestCase(APITestCase):
         with ForceLogin(user, self.client):
             response = self.client.patch('/api/projects/{}'.format(pid),
                 data=data, format="json")
+
+            if 200 <= response.status_code < 400:
+                labels_response = list(get_paginated_collection(
+                    lambda page: self.client.get("/api/labels?project_id=%s&page=%s" % (pid, page))
+                ))
+                response.data["labels"] = labels_response
 
         return response
 
@@ -1182,6 +1211,12 @@ class ProjectUpdateLabelsAPITestCase(UpdateLabelsAPITestCase):
             response = self.client.patch('/api/projects/{}'.format(pid),
                 data=data, format="json")
 
+            if 200 <= response.status_code < 400:
+                labels_response = list(get_paginated_collection(
+                    lambda page: self.client.get("/api/labels?project_id=%s&page=%s" % (pid, page))
+                ))
+                response.data["labels"] = labels_response
+
         return response
 
     def test_api_v2_projects_create_label(self):
@@ -1223,7 +1258,7 @@ class ProjectListOfTasksAPITestCase(APITestCase):
 
     def _run_api_v2_projects_id_tasks(self, user, pid):
         with ForceLogin(user, self.client):
-            response = self.client.get('/api/projects/{}/tasks'.format(pid))
+            response = self.client.get('/api/tasks?project_id={}'.format(pid))
 
         return response
 
@@ -1246,7 +1281,8 @@ class ProjectListOfTasksAPITestCase(APITestCase):
     def test_api_v2_projects_id_tasks_somebody(self):
         project = self.projects[1]
         response = self._run_api_v2_projects_id_tasks(self.somebody, project.id)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual([], response.data['results'])
 
     def test_api_v2_projects_id_tasks_no_auth(self):
         project = self.projects[1]
@@ -1916,6 +1952,14 @@ class TaskGetAPITestCase(APITestCase):
         with ForceLogin(user, self.client):
             response = self.client.get('/api/tasks/{}'.format(tid))
 
+            if 200 <= response.status_code < 400:
+                labels_response = list(get_paginated_collection(
+                    lambda page: self.client.get(
+                        "/api/labels?task_id=%s&page=%s" % (tid, page)
+                    )
+                ))
+                response.data["labels"] = labels_response
+
         return response
 
     def _check_response(self, response, db_task):
@@ -2093,6 +2137,12 @@ class TaskPartialUpdateAPITestCase(APITestCase):
             response = self.client.patch('/api/tasks/{}'.format(tid),
                 data=data, format="json")
 
+            if 200 <= response.status_code < 400:
+                labels_response = list(get_paginated_collection(
+                    lambda page: self.client.get("/api/labels?task_id=%s&page=%s" % (tid, page))
+                ))
+                response.data["labels"] = labels_response
+
         return response
 
     def _check_api_v2_tasks_id(self, user, data):
@@ -2269,6 +2319,12 @@ class TaskUpdateLabelsAPITestCase(UpdateLabelsAPITestCase):
         with ForceLogin(user, self.client):
             response = self.client.patch('/api/tasks/{}'.format(tid),
                 data=data, format="json")
+
+            if 200 <= response.status_code < 400:
+                labels_response = list(get_paginated_collection(
+                    lambda page: self.client.get("/api/labels?task_id=%s&page=%s" % (tid, page))
+                ))
+                response.data["labels"] = labels_response
 
         return response
 
@@ -2505,6 +2561,14 @@ class TaskCreateAPITestCase(APITestCase):
     def _run_api_v2_tasks(self, user, data):
         with ForceLogin(user, self.client):
             response = self.client.post('/api/tasks', data=data, format="json")
+
+            if 200 <= response.status_code < 400:
+                labels_response = list(get_paginated_collection(
+                    lambda page: self.client.get(
+                        "/api/labels?task_id=%s&page=%s" % (response.data["id"], page)
+                    )
+                ))
+                response.data["labels"] = labels_response
 
         return response
 
@@ -2973,6 +3037,7 @@ class TaskImportExportAPITestCase(APITestCase):
                             "data",
                             "source_storage",
                             "target_storage",
+                            "jobs",
                         ),
                     )
 
@@ -4225,8 +4290,17 @@ class JobAnnotationAPITestCase(APITestCase):
             response = self.client.get("/api/tasks/{}".format(tid))
             task = response.data
 
-            response = self.client.get("/api/tasks/{}/jobs".format(tid))
-            jobs = response.data
+            if 200 <= response.status_code < 400:
+                labels_response = list(get_paginated_collection(
+                    lambda page: self.client.get(
+                        "/api/labels?task_id=%s&page=%s" % (response.data["id"], page)
+                    )
+                ))
+                response.data["labels"] = labels_response
+
+            jobs = get_paginated_collection(lambda page:
+                self.client.get("/api/jobs?task_id={}&page={}".format(tid, page))
+            )
 
         return (task, jobs)
 

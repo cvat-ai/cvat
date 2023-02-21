@@ -11,10 +11,10 @@ BASE_DIR = _temp_dir.name
 DATA_ROOT = os.path.join(BASE_DIR, 'data')
 os.makedirs(DATA_ROOT, exist_ok=True)
 
-LOGSTASH_DB = os.path.join(DATA_ROOT,'logstash.db')
+EVENTS_LOCAL_DB = os.path.join(DATA_ROOT,'logstash.db')
 os.makedirs(DATA_ROOT, exist_ok=True)
-if not os.path.exists(LOGSTASH_DB):
-    open(LOGSTASH_DB, 'w').close()
+if not os.path.exists(EVENTS_LOCAL_DB):
+    open(EVENTS_LOCAL_DB, 'w').close()
 
 MEDIA_DATA_ROOT = os.path.join(DATA_ROOT, 'data')
 os.makedirs(MEDIA_DATA_ROOT, exist_ok=True)
@@ -63,24 +63,6 @@ LOGGING["handlers"]["server_file"] = LOGGING["handlers"]["console"]
 PASSWORD_HASHERS = (
     'django.contrib.auth.hashers.MD5PasswordHasher',
 )
-
-# Most of the unit tests don't suppose user limitations
-# Can be changed where the limits are supposed.
-DEFAULT_LIMITS = {
-    "USER_SANDBOX_TASKS": None,
-    "USER_SANDBOX_PROJECTS": None,
-    "TASKS_IN_USER_SANDBOX_PROJECT": None,
-    "USER_OWNED_ORGS": None,
-    "USER_SANDBOX_CLOUD_STORAGES": None,
-
-    "ORG_TASKS": None,
-    "ORG_PROJECTS": None,
-    "TASKS_IN_ORG_PROJECT": None,
-    "ORG_CLOUD_STORAGES": None,
-    "ORG_COMMON_WEBHOOKS": None,
-
-    "PROJECT_WEBHOOKS": None,
-}
 
 # When you run ./manage.py test, Django looks at the TEST_RUNNER setting to
 # determine what to do. By default, TEST_RUNNER points to

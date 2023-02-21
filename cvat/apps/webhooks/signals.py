@@ -36,7 +36,7 @@ def send_webhook(webhook, payload, delivery):
             "sha256="
             + hmac.new(
                 webhook.secret.encode("utf-8"),
-                (json.dumps(payload) + "\n").encode("utf-8"),
+                json.dumps(payload).encode("utf-8"),
                 digestmod=hashlib.sha256,
             ).hexdigest()
         )
@@ -98,7 +98,6 @@ def select_webhooks(project_id, org_id, event):
             is_active=True,
             events__contains=event,
             type=WebhookTypeChoice.PROJECT,
-            organization=org_id,
             project=project_id,
         )
         selected_webhooks += list(webhooks)

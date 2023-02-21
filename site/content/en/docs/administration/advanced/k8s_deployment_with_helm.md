@@ -115,8 +115,8 @@ Before starting, ensure that the following prerequisites are met:
      minikube addons enable registry
      minikube addons enable registry-aliases
      ```
-     Before Docker container images can be pushed to your newly created unsecure registry,
-     you need to add its address (`$(minikube ip):5000`) to the list of unsecure registries to
+     Before Docker container images can be pushed to your newly created insecure registry,
+     you need to add its address (`$(minikube ip):5000`) to the list of insecure registries to
      instruct Docker to accept working against it:
      follow the instructions in the [Docker documentation](https://docs.docker.com/registry/insecure/#deploy-a-plain-http-registry)
 
@@ -127,7 +127,7 @@ Before starting, ensure that the following prerequisites are met:
    ```shell
    nuctl --namespace <your cvat namespace> create project cvat
    ```
-1. Finaly deploy the fuction, i.e.:
+1. Finally deploy the function, i.e.:
    - using minikube registry:
      ```shell
      nuctl deploy --project-name cvat --path serverless/tensorflow/faster_rcnn_inception_v2_coco/nuclio --registry $(minikube ip):5000 --run-registry registry.minikube
@@ -311,7 +311,7 @@ Then reference it in helm update/install command using `-f` flag
 ### Why you used external charts to provide redis and postgres?
 Because they definitely know what they do better then we are, so we are getting more quality and less support
 ### How to use custom domain name with k8s deployment:
-The default value `cvat.local` may be overriden with `--set ingress.hosts[0].host` option like this:
+The default value `cvat.local` may be overridden with `--set ingress.hosts[0].host` option like this:
 ```shell
 helm upgrade -n default cvat -i --create-namespace helm-chart -f helm-chart/values.yaml -f helm-chart/values.override.yaml --set ingress.hosts[0].host=YOUR_FQDN
 ```

@@ -43,7 +43,7 @@ def users():
 @pytest.fixture(scope="session")
 def organizations():
     with open(ASSETS_DIR / "organizations.json") as f:
-        return Container(json.load(f))
+        return Container(json.load(f)["results"])
 
 
 @pytest.fixture(scope="session")
@@ -103,6 +103,12 @@ def comments():
 @pytest.fixture(scope="session")
 def webhooks():
     with open(ASSETS_DIR / "webhooks.json") as f:
+        return Container(json.load(f)["results"])
+
+
+@pytest.fixture(scope="session")
+def labels():
+    with open(ASSETS_DIR / "labels.json") as f:
         return Container(json.load(f)["results"])
 
 

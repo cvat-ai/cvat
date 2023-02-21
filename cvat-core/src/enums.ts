@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier = MIT
 
@@ -8,11 +8,18 @@ export enum ShareFileType {
     REG = 'REG',
 }
 
+export enum ChunkType {
+    IMAGESET = 'imageset',
+    VIDEO = 'video',
+}
+
 export enum TaskStatus {
     ANNOTATION = 'annotation',
     VALIDATION = 'validation',
     COMPLETED = 'completed',
 }
+
+export type ProjectStatus = TaskStatus;
 
 export enum JobStage {
     ANNOTATION = 'annotation',
@@ -76,37 +83,40 @@ export enum Source {
 }
 
 export enum LogType {
-    loadJob = 'Load job',
-    saveJob = 'Save job',
-    restoreJob = 'Restore job',
-    uploadAnnotations = 'Upload annotations',
-    sendUserActivity = 'Send user activity',
-    sendException = 'Send exception',
-    sendTaskInfo = 'Send task info',
+    loadTool = 'load:cvat',
 
-    drawObject = 'Draw object',
-    pasteObject = 'Paste object',
-    copyObject = 'Copy object',
-    propagateObject = 'Propagate object',
-    dragObject = 'Drag object',
-    resizeObject = 'Resize object',
-    deleteObject = 'Delete object',
-    lockObject = 'Lock object',
-    mergeObjects = 'Merge objects',
-    changeAttribute = 'Change attribute',
-    changeLabel = 'Change label',
+    loadJob = 'load:job',
+    saveJob = 'save:job',
+    restoreJob = 'restore:job',
+    uploadAnnotations = 'upload:annotations',
+    exception = 'send:exception',
+    sendTaskInfo = 'send:task_info',
 
-    changeFrame = 'Change frame',
-    moveImage = 'Move image',
-    zoomImage = 'Zoom image',
-    fitImage = 'Fit image',
-    rotateImage = 'Rotate image',
+    drawObject = 'draw:object',
+    pasteObject = 'paste:object',
+    copyObject = 'copy:object',
+    propagateObject = 'propagate:object',
+    dragObject = 'drag:object',
+    resizeObject = 'resize:object',
+    deleteObject = 'delete:object',
+    lockObject = 'lock:object',
+    mergeObjects = 'merge:objects',
+    changeAttribute = 'change:attribute',
+    changeLabel = 'change:label',
 
-    undoAction = 'Undo action',
-    redoAction = 'Redo action',
+    changeFrame = 'change:frame',
+    moveImage = 'move:image',
+    zoomImage = 'zoom:image',
+    fitImage = 'fit:image',
+    rotateImage = 'rotate:image',
 
-    pressShortcut = 'Press shortcut',
-    debugInfo = 'Debug info',
+    undoAction = 'action:undo',
+    redoAction = 'action:redo',
+
+    pressShortcut = 'press:shortcut',
+    debugInfo = 'send:debug_info',
+
+    clickElement = 'click:element',
 }
 
 export enum HistoryActions {
@@ -132,10 +142,23 @@ export enum HistoryActions {
     RESTORED_FRAME = 'Restored frame',
 }
 
-export enum ModelType {
+export enum ModelKind {
     DETECTOR = 'detector',
     INTERACTOR = 'interactor',
     TRACKER = 'tracker',
+    CLASSIFIER = 'classifier',
+    REID = 'reid',
+}
+
+export enum ModelProviders {
+    CVAT = 'cvat',
+}
+
+export enum ModelReturnType {
+    RECTANGLE = 'rectangle',
+    TAG = 'tag',
+    POLYGON = 'polygon',
+    MASK = 'mask',
 }
 
 export const colors = [

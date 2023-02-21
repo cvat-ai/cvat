@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -33,13 +33,13 @@ import ExportDatasetModal from 'components/export-dataset/export-dataset-modal';
 import ExportBackupModal from 'components/export-backup/export-backup-modal';
 import ImportDatasetModal from 'components/import-dataset/import-dataset-modal';
 import ImportBackupModal from 'components/import-backup/import-backup-modal';
-import ModelsPageContainer from 'containers/models-page/models-page';
 
 import JobsPageComponent from 'components/jobs-page/jobs-page';
+import ModelsPageComponent from 'components/models-page/models-page';
 
 import TasksPageContainer from 'containers/tasks-page/tasks-page';
 import CreateTaskPageContainer from 'containers/create-task-page/create-task-page';
-import TaskPageContainer from 'containers/task-page/task-page';
+import TaskPageComponent from 'components/task-page/task-page';
 
 import ProjectsPageComponent from 'components/projects-page/projects-page';
 import CreateProjectPageComponent from 'components/create-project-page/create-project-page';
@@ -61,7 +61,7 @@ import AnnotationPageContainer from 'containers/annotation-page/annotation-page'
 import { getCore } from 'cvat-core-wrapper';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { NotificationsState } from 'reducers';
-import { customWaViewHit } from 'utils/enviroment';
+import { customWaViewHit } from 'utils/environment';
 import showPlatformNotification, {
     platformInfo,
     stopNotifications,
@@ -69,9 +69,11 @@ import showPlatformNotification, {
 } from 'utils/platform-checker';
 import '../styles.scss';
 import appConfig from 'config';
+import EventRecorder from 'utils/controls-logger';
 import EmailConfirmationPage from './email-confirmation-pages/email-confirmed';
 import EmailVerificationSentPage from './email-confirmation-pages/email-verification-sent';
 import IncorrectEmailConfirmationPage from './email-confirmation-pages/incorrect-email-confirmation';
+import CreateModelPage from './create-model-page/create-model-page';
 
 interface CVATAppProps {
     loadFormats: () => void;
@@ -129,10 +131,12 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
         // Logger configuration
         const userActivityCallback: (() => void)[] = [];
-        window.addEventListener('click', () => {
+        window.addEventListener('click', (event: MouseEvent) => {
             userActivityCallback.forEach((handler) => handler());
+            EventRecorder.log(event);
         });
         core.logger.configure(() => window.document.hasFocus, userActivityCallback);
+        EventRecorder.initSave();
 
         customWaViewHit(location.pathname, location.search, location.hash);
         history.listen((_location) => {
@@ -330,7 +334,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                     <ReactMarkdown>{title}</ReactMarkdown>
                 ),
                 duration: null,
-                description: error.length > 200 ? 'Open the Browser Console to get details' : <ReactMarkdown>{error}</ReactMarkdown>,
+                description: error.length > 300 ? 'Open the Browser Console to get details' : <ReactMarkdown>{error}</ReactMarkdown>,
             });
 
             // eslint-disable-next-line no-console
@@ -425,7 +429,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                             <Route exact path='/projects/:id/webhooks' component={WebhooksPage} />
                                             <Route exact path='/tasks' component={TasksPageContainer} />
                                             <Route exact path='/tasks/create' component={CreateTaskPageContainer} />
-                                            <Route exact path='/tasks/:id' component={TaskPageContainer} />
+                                            <Route exact path='/tasks/:id' component={TaskPageComponent} />
                                             <Route exact path='/tasks/:tid/jobs/:jid' component={AnnotationPageContainer} />
                                             <Route exact path='/jobs' component={JobsPageComponent} />
                                             <Route exact path='/cloudstorages' component={CloudStoragesPageComponent} />
@@ -449,7 +453,14 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                             <Route exact path='/webhooks/update/:id' component={UpdateWebhookPage} />
                                             <Route exact path='/organization' component={OrganizationPage} />
                                             {isModelPluginActive && (
-                                                <Route exact path='/models' component={ModelsPageContainer} />
+                                                <Route
+                                                    path='/models'
+                                                >
+                                                    <Switch>
+                                                        <Route exact path='/models' component={ModelsPageComponent} />
+                                                        <Route exact path='/models/create' component={CreateModelPage} />
+                                                    </Switch>
+                                                </Route>
                                             )}
                                             <Redirect
                                                 push

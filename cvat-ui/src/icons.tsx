@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -64,6 +64,7 @@ import SVGClearIcon from './assets/clear-icon.svg';
 import SVGShowPasswordIcon from './assets/show-password.svg';
 import SVGPlusIcon from './assets/plus-icon.svg';
 import SVGCheckIcon from './assets/check-icon.svg';
+import SVGUpgradeIcon from './assets/upgrade-icon.svg';
 
 export const CVATLogo = React.memo((): JSX.Element => <SVGCVATLogo />);
 export const CVATMinimalisticLogo = React.memo((): JSX.Element => <SVGCVATMinimalisticLogo />);
@@ -118,9 +119,10 @@ export const BrushIcon = React.memo((): JSX.Element => <SVGBrushIcon />);
 export const EraserIcon = React.memo((): JSX.Element => <SVGEraserIcon />);
 export const PolygonPlusIcon = React.memo((): JSX.Element => <SVGPolygonPlusIcon />);
 export const PolygonMinusIcon = React.memo((): JSX.Element => <SVGPolygonMinusIcon />);
-export const MutliPlusIcon = React.memo((): JSX.Element => <SVGMultiPlusIcon />);
+export const MultiPlusIcon = React.memo((): JSX.Element => <SVGMultiPlusIcon />);
 export const BackArrowIcon = React.memo((): JSX.Element => <SVGBackArrowIcon />);
 export const ClearIcon = React.memo((): JSX.Element => <SVGClearIcon />);
 export const ShowPasswordIcon = React.memo((): JSX.Element => <SVGShowPasswordIcon />);
 export const PlusIcon = React.memo((): JSX.Element => <SVGPlusIcon />);
 export const CheckIcon = React.memo((): JSX.Element => <SVGCheckIcon />);
+export const UpgradeIcon = React.memo((): JSX.Element => <SVGUpgradeIcon />);

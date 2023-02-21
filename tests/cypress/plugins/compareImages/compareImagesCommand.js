@@ -2,9 +2,10 @@
 //
 // SPDX-License-Identifier: MIT
 
-Cypress.Commands.add('compareImages', function (imgBase, imgAfterChanges) {
-    return cy.task('compareImages', {
-        imgBase: imgBase,
-        imgAfterChanges: imgAfterChanges,
-    });
-});
+Cypress.Commands.add(
+    'compareImages',
+    (imgBase, imgAfterChanges) => cy.task('compareImages', {
+        imgBase,
+        imgAfterChanges,
+    }),
+);
