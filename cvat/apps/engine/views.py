@@ -1934,7 +1934,19 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             # NOTE: this can be relaxed when skeleton updates are implemented properly
             raise ValidationError(
                 "Sublabels cannot be modified this way. "
-                "Please send a PATCH request with updated parent label data instead.",
+                "Please send a PATCH request to the parent task or project "
+                "with updated parent label data instead.",
+                code=status.HTTP_400_BAD_REQUEST)
+
+        if (
+            serializer.instance.type == str(models.LabelType.SKELETON) and
+            (serializer.validated_data.get('svg') or serializer.validated_data.get('sublabels'))
+        ):
+            # NOTE: this can be relaxed when skeleton updates are implemented properly
+            raise ValidationError(
+                "Sublabels cannot be modified this way. "
+                "Please send a PATCH request to the parent task or project "
+                "with updated label data instead.",
                 code=status.HTTP_400_BAD_REQUEST)
 
         return super().perform_update(serializer)
@@ -1944,7 +1956,8 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             # NOTE: this can be relaxed when skeleton updates are implemented properly
             raise ValidationError(
                 "Sublabels cannot be deleted this way. "
-                "Please send a PATCH request with updated parent label data instead.",
+                "Please send a PATCH request to the parent task or project "
+                "with updated parent label data instead.",
                 code=status.HTTP_400_BAD_REQUEST)
 
         return super().perform_destroy(instance)

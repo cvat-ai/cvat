@@ -13,10 +13,12 @@ import pytest
 from cvat_sdk import exceptions, models
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from cvat_sdk.core.helpers import get_paginated_collection
+from cvat_sdk.core.utils import filter_dict
 from deepdiff import DeepDiff
 from pytest_cases import fixture, fixture_ref, parametrize
 
 from shared.utils.config import make_api_client
+from shared.utils.helpers import make_skeleton_label_payload
 
 from .utils import CollectionSimpleFilterTestBase, build_exclude_paths_expr, get_attrs
 
@@ -660,6 +662,19 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
         self._test_update_ok(
             user, label["id"], patch_data, expected_data=expected_data, ignore_fields=ignore_fields
         )
+
+    @parametrize("user", [fixture_ref("admin_user")])
+    def test_cannot_patch_skeleton(self, user):
+        label = next(l for l in self.labels if l["type"] == "skeleton")
+        label_payload = make_skeleton_label_payload(name="test_skeleton_updating")
+        label_payload.update(
+            filter_dict(label, keep=["id", "task_id", "project_id", "parent_id", "has_parent"])
+        )
+
+        response = self._test_update_denied(
+            user, label["id"], label_payload, expected_status=HTTPStatus.BAD_REQUEST
+        )
+        assert "Sublabels cannot be modified this way." in response.data.decode()
 
     @parametrize("source", _TestLabelsPermissionsBase.source_types)
     def test_cannot_patch_sublabel_directly(self, admin_user, source):
