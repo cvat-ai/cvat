@@ -287,7 +287,7 @@ To create bucket, do the following:
 
 3. Specify the name and region of the bucket. You can also
    copy the settings of another bucket by clicking on the **Choose bucket** button.
-4. Enable **Block all public access**. For access, you will use **Access ID** and secret **Access key**.
+4. Enable **Block all public access**. For access, you will use **access key ID** and **secret access key**.
 5. Click **Create bucket**.
 
 A new bucket will appear on the list of buckets.
