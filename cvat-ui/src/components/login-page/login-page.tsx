@@ -25,7 +25,6 @@ interface LoginPageComponentProps {
     socialAuthMethods: SocialAuthMethods;
     onLogin: (credential: string, password: string) => void;
     loadSocialAuthenticationMethods: () => void;
-    loadSSOConfiguration: () => void;
 }
 
 const renderSocialAuthMethods = (methods: SocialAuthMethods): JSX.Element | JSX.Element[] => {
