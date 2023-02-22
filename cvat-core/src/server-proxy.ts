@@ -63,6 +63,8 @@ function fetchAll(url, filter = {}): Promise<any> {
         }).then((initialData) => {
             const { count, results } = initialData.data;
             result.results = result.results.concat(results);
+            result.count = result.results.length;
+
             if (count <= pageSize) {
                 resolve(result);
                 return;
@@ -1573,8 +1575,8 @@ async function getFunctions(): Promise<FunctionsResponseBody> {
     const { backendAPI } = config;
 
     try {
-        const response = await Axios.get(`${backendAPI}/functions`);
-        return response.data;
+        const response = await fetchAll(`${backendAPI}/functions`);
+        return response;
     } catch (errorData) {
         if (errorData.response.status === 404) {
             return {
