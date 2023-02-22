@@ -11,6 +11,8 @@ import { selectIdPAsync, loadSocialAuthAsync } from 'actions/auth-actions';
 import { CombinedState } from 'reducers';
 import SigningLayout, { formSizes } from 'components/signing-common/signing-layout';
 import { getCore, SocialAuthMethod, SelectionSchema } from 'cvat-core-wrapper';
+import config from 'config';
+
 import LoginWithSSOForm from './login-with-sso-form';
 
 const core = getCore();
@@ -21,7 +23,7 @@ function LoginWithSSOComponent(): JSX.Element {
     const isIdPSelected = useSelector((state: CombinedState) => state.auth.ssoIDPSelected);
     const selectedIdP = useSelector((state: CombinedState) => state.auth.ssoIDP);
     const [SSOConfiguration] = useSelector((state: CombinedState) => state.auth.socialAuthMethods.filter(
-        (item: SocialAuthMethod) => item.provider === 'sso',
+        (item: SocialAuthMethod) => item.provider === config.SSO_PROVIDER_KEY,
     ));
 
     useEffect(() => {
