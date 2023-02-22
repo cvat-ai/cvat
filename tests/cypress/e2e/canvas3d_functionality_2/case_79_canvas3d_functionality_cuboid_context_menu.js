@@ -9,7 +9,10 @@ import { taskName, labelName } from '../../support/const_canvas3d';
 context('Canvas 3D functionality. Cuboid context menu.', () => {
     const caseId = '79';
     const cuboidCreationParams = {
+        objectType: 'Shape',
         labelName,
+        x: 480,
+        y: 160,
     };
 
     before(() => {
@@ -21,7 +24,8 @@ context('Canvas 3D functionality. Cuboid context menu.', () => {
 
     describe(`Testing case "${caseId}"`, () => {
         it('Right click on the cuboid. Context menu should exist.', () => {
-            cy.get('.cvat-canvas3d-perspective').rightclick();
+            cy.get('.cvat-canvas3d-perspective canvas').trigger('mousemove', 340, 310);
+            cy.get('.cvat-canvas3d-perspective').rightclick(340, 310);
             cy.get('.cvat-canvas-context-menu').should('exist');
         });
 

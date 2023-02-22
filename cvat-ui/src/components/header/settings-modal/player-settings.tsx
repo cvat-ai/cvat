@@ -142,7 +142,12 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                         overlayClassName='canvas-background-color-picker-popover'
                         trigger='click'
                     >
-                        <Button type='default'>Select canvas background color</Button>
+                        <Button
+                            className='cvat-select-canvas-background-color-button'
+                            type='default'
+                        >
+                            Select canvas background color
+                        </Button>
                     </Popover>
                 </Col>
             </Row>

@@ -285,6 +285,37 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 configurable: false,
                 writable: false,
             });
+
+            Object.defineProperty(view, 'getDrawnObjects', {
+                value: () => Object.values(this.drawnObjects).map((object) => {
+                    const { clientID } = object.data;
+                    return {
+                        ...object,
+                        state: this.model.objects.find((_state: ObjectState) => _state.clientID === clientID),
+                    };
+                }),
+                enumerable: false,
+                configurable: false,
+                writable: false,
+            });
+
+            Object.defineProperty(view, 'updatePosition', {
+                value: (state: ObjectState, points: number[]) => {
+                    this.dispatchEvent(
+                        new CustomEvent('canvas.edited', {
+                            bubbles: false,
+                            cancelable: true,
+                            detail: {
+                                state,
+                                points: [...points],
+                            },
+                        }),
+                    );
+                },
+                enumerable: false,
+                configurable: false,
+                writable: false,
+            });
         });
 
         canvasPerspectiveView.addEventListener('contextmenu', (e: MouseEvent): void => {

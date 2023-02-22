@@ -79,9 +79,7 @@ jobs:
             --entrypoint /bin/bash -u root cvat/server \
             -c 'python manage.py spectacular --file /transfer/schema.yml'
           pip3 install --user -r cvat-sdk/gen/requirements.txt
-          cd cvat-sdk/
-          gen/generate.sh
-          cd ..
+          ./cvat-sdk/gen/generate.sh
 
           cp -r cvat-sdk/* /tmp/cvat_sdk/
 
@@ -331,7 +329,6 @@ jobs:
           path: ${{ github.workspace }}/tests/cypress/screenshots
 
   generate_github_pages:
-    if: github.ref == 'refs/heads/develop'
     needs: [rest_api_testing, unit_testing, e2e_testing]
     runs-on: ubuntu-latest
     steps:
@@ -381,6 +378,7 @@ jobs:
           HUGO_ENV: production
 
       - name: Deploy
+        if: github.ref == 'refs/heads/develop'
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}

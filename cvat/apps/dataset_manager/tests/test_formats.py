@@ -26,6 +26,7 @@ from cvat.apps.dataset_manager.bindings import (CvatTaskOrJobDataExtractor,
 from cvat.apps.dataset_manager.task import TaskAnnotation
 from cvat.apps.dataset_manager.util import make_zip_archive
 from cvat.apps.engine.models import Task
+from cvat.apps.engine.tests.utils import get_paginated_collection
 
 
 def generate_image_file(filename, size=(100, 100)):
@@ -95,6 +96,13 @@ class _DbTestBase(APITestCase):
             assert response.status_code == status.HTTP_202_ACCEPTED, response.status_code
 
             response = self.client.get("/api/tasks/%s" % tid)
+
+            if 200 <= response.status_code < 400:
+                labels_response = list(get_paginated_collection(
+                    lambda page: self.client.get("/api/labels?task_id=%s&page=%s" % (tid, page))
+                ))
+                response.data["labels"] = labels_response
+
             task = response.data
 
         return task
@@ -472,11 +480,18 @@ class TaskExportTest(_DbTestBase):
 
         self.assertEqual(5, task_data.abs_frame_id(2))
 
+    def _get_task_jobs(self, tid):
+        with ForceLogin(self.user, self.client):
+            return get_paginated_collection(lambda page: self.client.get(
+                '/api/jobs?task_id=%s&page=%s' % (tid, page), format="json"
+            ))
+
     def test_frames_outside_are_not_generated(self):
         # https://github.com/openvinotoolkit/cvat/issues/2827
         images = self._generate_task_images(10)
         images['start_frame'] = 0
         task = self._generate_task(images, overlap=3, segment_size=6)
+        jobs = sorted(self._get_task_jobs(task["id"]), key=lambda v: v["id"])
         annotations = {
             "version": 0,
             "tags": [],
@@ -501,8 +516,7 @@ class TaskExportTest(_DbTestBase):
                 },
             ]
         }
-        self._put_api_v2_job_id_annotations(
-            task["segments"][2]["jobs"][0]["id"], annotations)
+        self._put_api_v2_job_id_annotations(jobs[2]["id"], annotations)
 
         task_ann = TaskAnnotation(task["id"])
         task_ann.init_from_db()

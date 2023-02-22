@@ -10,7 +10,7 @@
 
 import PluginRegistry from './plugins';
 import loggerStorage from './logger-storage';
-import { Log } from './log';
+import { EventLogger } from './log';
 import ObjectState from './object-state';
 import Statistics from './statistics';
 import Comment from './comment';
@@ -287,7 +287,7 @@ function build() {
             Project: implementProject(Project),
             Task: implementTask(Task),
             Job: implementJob(Job),
-            Log,
+            EventLogger,
             Attribute,
             Label,
             Statistics,

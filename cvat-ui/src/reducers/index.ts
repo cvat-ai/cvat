@@ -104,7 +104,6 @@ export interface JobsState {
 export interface TasksState {
     initialized: boolean;
     fetching: boolean;
-    updating: boolean;
     hideEmpty: boolean;
     moveTask: {
         modalVisible: boolean;
@@ -119,9 +118,6 @@ export interface TasksState {
     activities: {
         deletes: {
             [tid: number]: boolean; // deleted (deleting if in dictionary)
-        };
-        jobUpdates: {
-            [jid: number]: boolean,
         };
     };
 }
@@ -267,7 +263,6 @@ export enum SupportedPlugins {
     GIT_INTEGRATION = 'GIT_INTEGRATION',
     ANALYTICS = 'ANALYTICS',
     MODELS = 'MODELS',
-    PREDICT = 'PREDICT',
 }
 
 export type PluginsList = {
@@ -500,9 +495,6 @@ export interface NotificationsState {
             submittingReview: null | ErrorState;
             deletingIssue: null | ErrorState;
         };
-        predictor: {
-            prediction: null | ErrorState;
-        };
         exporting: {
             dataset: null | ErrorState;
             annotation: null | ErrorState;
@@ -624,19 +616,6 @@ export enum Rotation {
     CLOCKWISE90,
 }
 
-export interface PredictorState {
-    timeRemaining: number;
-    progress: number;
-    projectScore: number;
-    message: string;
-    error: Error | null;
-    enabled: boolean;
-    fetching: boolean;
-    annotationAmount: number;
-    mediaAmount: number;
-    annotatedFrames: number[];
-}
-
 export interface AnnotationState {
     activities: {
         loads: {
@@ -736,7 +715,6 @@ export interface AnnotationState {
     sidebarCollapsed: boolean;
     appearanceCollapsed: boolean;
     workspace: Workspace;
-    predictor: PredictorState;
 }
 
 export enum Workspace {

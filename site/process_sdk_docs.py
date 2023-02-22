@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright (C) 2022 CVAT.ai Corporation
 #
@@ -84,19 +84,6 @@ class Processor:
             with open(p, "w") as f:
                 f.write(contents)
 
-    def _extract_apis_summary(self, readme_path: str) -> str:
-        with open(readme_path) as f:
-            readme_contents = f.read()
-
-        apis_summary = re.search(
-            r"## Available API Endpoints(.*)## Available Models",
-            readme_contents,
-            flags=re.DOTALL,
-        )[1]
-        assert len(apis_summary) > 0
-
-        return apis_summary
-
     def _move_api_summary(self):
         """
         Moves API summary section from README to apis/_index
@@ -104,9 +91,8 @@ class Processor:
 
         SUMMARY_REPLACE_TOKEN = "{{REPLACEME:apis_summary}}"  # nosec
 
-        apis_summary = self._extract_apis_summary(
-            osp.join(self._input_dir, "README.md")
-        )
+        with open(osp.join(self._input_dir, "api_summary.md")) as f:
+            apis_summary = f.read()
 
         apis_index_filename = osp.join(
             osp.relpath(self._sdk_reference_dir, self._content_dir), "apis/_index.md"

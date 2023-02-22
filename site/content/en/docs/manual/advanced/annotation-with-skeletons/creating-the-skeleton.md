@@ -25,7 +25,7 @@ It is a mode where you can add new skeleton points clicking the drawing area.
 - DRAW AN EDGE BETWEEN TWO POINTS - in this mode you can add an edge,
 clicking any two points, which are not joined yet.
 - REMOVE A DRAWN SKELETON POINTS - in this mode clicking a point will remove the point and all attached edges.
-You can also remove an edge only, it will be highligted as red on hover.
+You can also remove an edge only, it will be highlighted as red on hover.
 - DOWNLOAD DRAWN TEMPLATE AS AN .SVG - you can download setup configuration to use it in future
 - UPLOAD A TEMPLATE FROM AN .SVG FILE - you can upload previously downloaded configuration
 

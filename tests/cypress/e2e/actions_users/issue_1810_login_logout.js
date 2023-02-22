@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -18,7 +18,6 @@ context('When clicking on the Logout button, get the user session closed.', () =
     }
 
     before(() => {
-        // TMP fix for login tests, need to change login logic with sessions
         cy.clearAllCookies();
         cy.clearAllLocalStorage();
         cy.visit('auth/login');
