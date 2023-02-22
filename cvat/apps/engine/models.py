@@ -12,12 +12,15 @@ from typing import Optional
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.files.storage import FileSystemStorage
-from django.db import models
+from django.db import IntegrityError, models
 from django.db.models.fields import FloatField
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
+from rest_framework import exceptions
+
 from cvat.apps.engine.utils import parse_specific_attributes
 from cvat.apps.organizations.models import Organization
+
 
 class SafeCharField(models.CharField):
     def get_prep_value(self, value):
@@ -502,10 +505,6 @@ class Job(models.Model):
     class Meta:
         default_permissions = ()
 
-
-class InvalidLabel(ValueError):
-    pass
-
 class Label(models.Model):
     task = models.ForeignKey(Task, null=True, blank=True, on_delete=models.CASCADE)
     project = models.ForeignKey(Project, null=True, blank=True, on_delete=models.CASCADE)
@@ -519,6 +518,24 @@ class Label(models.Model):
 
     def has_parent_label(self):
         return bool(self.parent)
+
+    def save(self, force_insert=False, force_update=False, using=None,
+             update_fields=None):
+        try:
+            super().save(force_insert, force_update, using, update_fields)
+        except ValueError as exc:
+            raise exceptions.ValidationError(str(exc)) from exc
+        except IntegrityError:
+            raise exceptions.ValidationError("All label names must be unique")
+
+    @classmethod
+    def create(cls, **kwargs):
+        try:
+            return cls.objects.create(**kwargs)
+        except ValueError as exc:
+            raise exceptions.ValidationError(str(exc)) from exc
+        except IntegrityError:
+            raise exceptions.ValidationError("All label names must be unique")
 
     class Meta:
         default_permissions = ()

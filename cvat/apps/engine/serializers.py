@@ -15,7 +15,7 @@ from typing import Any, Dict, Iterable, Optional, OrderedDict, Union
 
 from rest_framework import serializers, exceptions
 from django.contrib.auth.models import User, Group
-from django.db import IntegrityError, transaction
+from django.db import transaction
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine import models
@@ -287,15 +287,12 @@ class LabelSerializer(SublabelSerializer):
 
             logger.info("Label id {} ({}) was updated".format(db_label.id, db_label.name))
         else:
-            try:
-                db_label = models.Label.objects.create(
-                    name=validated_data.get('name'),
-                    type=validated_data.get('type'),
-                    parent=parent_label,
-                    **parent_info
-                )
-            except IntegrityError as exc:
-                raise exceptions.ValidationError(str(exc)) from exc
+            db_label = models.Label.create(
+                name=validated_data.get('name'),
+                type=validated_data.get('type'),
+                parent=parent_label,
+                **parent_info
+            )
             logger.info("New {} label was created".format(db_label.name))
 
         if validated_data.get('deleted'):
@@ -312,10 +309,7 @@ class LabelSerializer(SublabelSerializer):
         else:
             db_label.color = validated_data.get('color', db_label.color)
 
-        try:
-            db_label.save()
-        except models.InvalidLabel as exc:
-            raise exceptions.ValidationError(str(exc)) from exc
+        db_label.save()
 
         for attr in attributes:
             (db_attr, created) = models.AttributeSpec.objects.get_or_create(
@@ -361,10 +355,7 @@ class LabelSerializer(SublabelSerializer):
 
             sublabels = label.pop('sublabels', [])
             svg = label.pop('svg', '')
-            try:
-                db_label = models.Label.objects.create(**label, **parent_info, parent=parent_label)
-            except IntegrityError as exc:
-                raise exceptions.ValidationError(str(exc)) from exc
+            db_label = models.Label.create(**label, **parent_info, parent=parent_label)
             logger.info(
                 f'label:create Label id:{db_label.id} for spec:{label} '
                 f'with sublabels:{sublabels}, parent_label:{parent_label}'
