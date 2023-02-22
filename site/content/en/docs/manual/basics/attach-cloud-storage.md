@@ -56,7 +56,7 @@ You will be forwarded to the bucket.
 
 ### Upload data
 
-You need to upload data for annotation and the `manifest.json` file.
+You need to upload data for annotation and the `manifest.jsonl` file.
 
 1. Prepare data.
    For more information,
