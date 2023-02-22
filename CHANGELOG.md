@@ -44,6 +44,10 @@ Tracks can be exported/imported to/from Datumaro and Sly Pointcloud formats (<ht
 - The contour detection function for semantic segmentation (<https://github.com/opencv/cvat/pull/4665>)
 - Delete newline character when generating a webhook signature (<https://github.com/opencv/cvat/pull/5622>)
 - DL models UI (<https://github.com/opencv/cvat/pull/5635>)
+- \[Server API\], \[SDK\] Arbitrary-sized collections in endpoints:
+  `/api/projects/{id}.tasks`, `/api/tasks/{id}.segments`, `/api/jobs/{id}.issues`,
+  `/api/issues/{id}.comments`, `/api/projects | tasks | jobs/{id}.labels`
+  (<https://github.com/opencv/cvat/pull/5662>)
 
 ### Deprecated
 - TBD
@@ -66,7 +70,8 @@ Tracks can be exported/imported to/from Datumaro and Sly Pointcloud formats (<ht
 - Clean up disk space after a project is removed (<https://github.com/opencv/cvat/pull/5632>)
 - \[Server API\] Various errors in the generated schema (<https://github.com/opencv/cvat/pull/5575>)
 - SiamMask and TransT serverless functions (<https://github.com/opencv/cvat/pull/5658>)
-- Сreating a project with the same labels and re-deleting of skeleton sublabels (<https://github.com/opencv/cvat/pull/5700>)
+- Сreating a project or task with the same labels (<https://github.com/opencv/cvat/pull/5700>)
+- \[Server API\] Ability to rename label to an existing name (<https://github.com/opencv/cvat/pull/5662>)
 
 ### Security
 - Fixed vulnerability with social authentication (<https://github.com/opencv/cvat/pull/5521>)
