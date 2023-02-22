@@ -2335,10 +2335,12 @@ async function socialAuthentication(): Promise<any> {
     }
 }
 
-async function selectSSOIdentityProvider(email?: string): Promise<string> {
+async function selectSSOIdentityProvider(email?: string, iss?: string): Promise<string> {
     const { backendAPI } = config;
     try {
-        const response = await Axios.get(`${backendAPI}/auth/oidc/select-idp/${(email) ? `?email=${email}` : ''}`);
+        const response = await Axios.get(
+            `${backendAPI}/auth/oidc/select-idp/${(email) ? `?email=${email}` : `${(iss) ? `?iss=${iss}` : ''}`}`,
+        );
         return response.data;
     } catch (errorData) {
         throw generateError(errorData);

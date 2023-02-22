@@ -91,8 +91,8 @@ export default function implementAPI(cvat) {
         return Object.entries(result).map(([provider, value]) => new SocialAuthMethod({ ...value, provider }));
     };
 
-    cvat.server.selectSSOIdentityProvider.implementation = async (email?: string):Promise<string> => {
-        const result: string = await serverProxy.server.selectSSOIdentityProvider(email);
+    cvat.server.selectSSOIdentityProvider.implementation = async (email?: string, iss?: string):Promise<string> => {
+        const result: string = await serverProxy.server.selectSSOIdentityProvider(email, iss);
         return result;
     };
 

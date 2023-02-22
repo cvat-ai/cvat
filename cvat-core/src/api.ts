@@ -81,8 +81,12 @@ function build() {
                 const result = await PluginRegistry.apiWrapper(cvat.server.socialAuthentication);
                 return result;
             },
-            async selectSSOIdentityProvider(email?: string) {
-                const result: string = await PluginRegistry.apiWrapper(cvat.server.selectSSOIdentityProvider, email);
+            async selectSSOIdentityProvider(email?: string, iss?: string) {
+                const result: string = await PluginRegistry.apiWrapper(
+                    cvat.server.selectSSOIdentityProvider,
+                    email,
+                    iss,
+                );
                 return result;
             },
             async changePassword(oldPassword, newPassword1, newPassword2) {

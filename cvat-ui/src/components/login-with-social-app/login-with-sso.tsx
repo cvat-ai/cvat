@@ -4,6 +4,7 @@
 
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useLocation } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import Spin from 'antd/lib/spin';
 
@@ -26,8 +27,17 @@ function LoginWithSSOComponent(): JSX.Element {
         (item: SocialAuthMethod) => item.provider === config.SSO_PROVIDER_KEY,
     ));
 
+    const location = useLocation();
+    const search = new URLSearchParams(location.search);
+
     useEffect(() => {
-        dispatch(loadSocialAuthAsync());
+        const iss = search.get('iss');
+
+        if (!iss) {
+            dispatch(loadSocialAuthAsync());
+        } else {
+            dispatch(selectIdPAsync(undefined, iss));
+        }
     }, []);
 
     useEffect(() => {

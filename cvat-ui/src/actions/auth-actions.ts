@@ -230,10 +230,10 @@ export const loadSocialAuthAsync = (): ThunkAction => async (dispatch): Promise<
     }
 };
 
-export const selectIdPAsync = (email?: string): ThunkAction => async (dispatch): Promise<void> => {
+export const selectIdPAsync = (email?: string, iss?: string): ThunkAction => async (dispatch): Promise<void> => {
     dispatch(authActions.selectIdP());
     try {
-        const identityProviderID: string = await cvat.server.selectSSOIdentityProvider(email);
+        const identityProviderID: string = await cvat.server.selectSSOIdentityProvider(email, iss);
         dispatch(authActions.selectIdPSuccess(identityProviderID));
     } catch (error) {
         dispatch(authActions.selectIdPFailed(error));
