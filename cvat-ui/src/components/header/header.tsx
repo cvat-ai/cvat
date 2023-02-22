@@ -399,7 +399,9 @@ function HeaderContainer(props: Props): JSX.Element {
     const getButtonClassName = (value: string): string => {
         // eslint-disable-next-line security/detect-non-literal-regexp
         const regex = new RegExp(`${value}$`);
-        return location.pathname.match(regex) ? 'cvat-header-button cvat-active-header-button' : 'cvat-header-button';
+        const baseClass = `cvat-header-${value}-button cvat-header-button`;
+        return location.pathname.match(regex) ?
+            `${baseClass} cvat-active-header-button` : baseClass;
     };
 
     return (
@@ -470,14 +472,14 @@ function HeaderContainer(props: Props): JSX.Element {
                 ) : null}
                 {isAnalyticsPluginActive ? (
                     <Button
-                        className='cvat-header-button'
+                        className={getButtonClassName('analytics')}
                         type='link'
-                        href={`${tool.server.host}/analytics/app/kibana`}
+                        href={`${tool.server.host}/analytics`}
                         onClick={(event: React.MouseEvent): void => {
                             event.preventDefault();
                             // false positive
                             // eslint-disable-next-line
-                            window.open(`${tool.server.host}/analytics/app/kibana`, '_blank');
+                            window.open(`${tool.server.host}/analytics`, '_blank');
                         }}
                     >
                         Analytics
@@ -489,7 +491,7 @@ function HeaderContainer(props: Props): JSX.Element {
                     <Button
                         icon={<GithubOutlined />}
                         size='large'
-                        className='cvat-header-button'
+                        className='cvat-open-repository-button cvat-header-button'
                         type='link'
                         href={GITHUB_URL}
                         onClick={(event: React.MouseEvent): void => {
@@ -504,7 +506,7 @@ function HeaderContainer(props: Props): JSX.Element {
                     <Button
                         icon={<QuestionCircleOutlined />}
                         size='large'
-                        className='cvat-header-button'
+                        className='cvat-open-guide-button cvat-header-button'
                         type='link'
                         href={GUIDE_URL}
                         onClick={(event: React.MouseEvent): void => {

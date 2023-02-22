@@ -136,6 +136,7 @@ INSTALLED_APPS = [
     'cvat.apps.opencv',
     'cvat.apps.webhooks',
     'cvat.apps.health',
+    'cvat.apps.events',
 ]
 
 SITE_ID = 1
@@ -213,6 +214,7 @@ MIDDLEWARE = [
     # FIXME
     # 'corsheaders.middleware.CorsPostCsrfMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'crum.CurrentRequestUserMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'dj_pagination.middleware.PaginationMiddleware',
@@ -380,10 +382,10 @@ os.makedirs(STATIC_ROOT, exist_ok=True)
 
 # Make sure to update other config files when upading these directories
 DATA_ROOT = os.path.join(BASE_DIR, 'data')
-LOGSTASH_DB = os.path.join(DATA_ROOT,'logstash.db')
+EVENTS_LOCAL_DB = os.path.join(DATA_ROOT,'events.db')
 os.makedirs(DATA_ROOT, exist_ok=True)
-if not os.path.exists(LOGSTASH_DB):
-    open(LOGSTASH_DB, 'w').close()
+if not os.path.exists(EVENTS_LOCAL_DB):
+    open(EVENTS_LOCAL_DB, 'w').close()
 
 MEDIA_DATA_ROOT = os.path.join(DATA_ROOT, 'data')
 os.makedirs(MEDIA_DATA_ROOT, exist_ok=True)
@@ -421,14 +423,15 @@ os.makedirs(TMP_FILES_ROOT, exist_ok=True)
 IAM_OPA_BUNDLE_PATH = os.path.join(STATIC_ROOT, 'opa', 'bundle.tar.gz')
 os.makedirs(Path(IAM_OPA_BUNDLE_PATH).parent, exist_ok=True)
 
+# logging is known to be unreliable with RQ when using async transports
+vector_log_handler = os.getenv('VECTOR_EVENT_HANDLER', 'AsynchronousLogstashHandler')
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
-        'logstash': {
-            '()': 'logstash_async.formatter.DjangoLogstashFormatter',
-            'message_type': 'python-logstash',
-            'fqdn': False, # Fully qualified domain name. Default value: false.
+        'vector': {
+            'format': '%(message)s',
         },
         'standard': {
             'format': '[%(asctime)s] %(levelname)s %(name)s: %(message)s'
@@ -448,18 +451,18 @@ LOGGING = {
             'maxBytes': 1024*1024*50, # 50 MB
             'backupCount': 5,
         },
-        'logstash': {
+        'vector': {
             'level': 'INFO',
-            'class': 'logstash_async.handler.AsynchronousLogstashHandler',
-            'formatter': 'logstash',
+            'class': f'logstash_async.handler.{vector_log_handler}',
+            'formatter': 'vector',
             'transport': 'logstash_async.transport.HttpTransport',
             'ssl_enable': False,
             'ssl_verify': False,
             'host': os.getenv('DJANGO_LOG_SERVER_HOST', 'localhost'),
-            'port': os.getenv('DJANGO_LOG_SERVER_PORT', 8080),
+            'port': os.getenv('DJANGO_LOG_SERVER_PORT', 8282),
             'version': 1,
             'message_type': 'django',
-            'database_path': LOGSTASH_DB,
+            'database_path': EVENTS_LOCAL_DB,
         }
     },
     'loggers': {
@@ -468,21 +471,22 @@ LOGGING = {
             'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
         },
 
-        'cvat.client': {
-            'handlers': [],
-            'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
-        },
         'django': {
             'handlers': ['console', 'server_file'],
             'level': 'INFO',
             'propagate': True
+        },
+        'vector': {
+            'handlers': [],
+            'level': 'INFO',
+            # set True for debug
+            'propagate': False
         }
     },
 }
 
 if os.getenv('DJANGO_LOG_SERVER_HOST'):
-    LOGGING['loggers']['cvat.server']['handlers'] += ['logstash']
-    LOGGING['loggers']['cvat.client']['handlers'] += ['logstash']
+    LOGGING['loggers']['vector']['handlers'] += ['vector']
 
 DATA_UPLOAD_MAX_MEMORY_SIZE = 100 * 1024 * 1024  # 100 MB
 DATA_UPLOAD_MAX_NUMBER_FIELDS = None   # this django check disabled
@@ -617,3 +621,13 @@ ACCOUNT_ADAPTER = 'cvat.apps.iam.adapters.DefaultAccountAdapterEx'
 
 CVAT_HOST = os.getenv('CVAT_HOST', 'localhost')
 CVAT_BASE_URL = os.getenv('CVAT_BASE_URL', f'http://{CVAT_HOST}:8080').rstrip('/')
+
+CLICKHOUSE = {
+    'events': {
+        'NAME': os.getenv('CLICKHOUSE_DB', 'cvat'),
+        'HOST': os.getenv('CLICKHOUSE_HOST', 'localhost'),
+        'PORT': os.getenv('CLICKHOUSE_PORT', 8123),
+        'USER': os.getenv('CLICKHOUSE_USER', 'user'),
+        'PASSWORD': os.getenv('CLICKHOUSE_PASSWORD', 'user'),
+    }
+}

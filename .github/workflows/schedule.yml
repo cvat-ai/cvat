@@ -129,18 +129,6 @@ jobs:
           path: /tmp/cvat_cache_ui
           key: ${{ runner.os }}-build-ui-${{ needs.search_cache.outputs.sha }}
 
-      - name: Getting CVAT Logstash cache from the default branch
-        uses: actions/cache@v3
-        with:
-          path: /tmp/cvat_cache_logstash
-          key: ${{ runner.os }}-build-logstash-${{ needs.search_cache.outputs.sha }}
-
-      - name: Getting CVAT Elasticsearch cache from the default branch
-        uses: actions/cache@v3
-        with:
-          path: /tmp/cvat_cache_elasticsearch
-          key: ${{ runner.os }}-build-elasticsearch-${{ needs.search_cache.outputs.sha }}
-
       - name: Building CVAT UI image
         uses: docker/build-push-action@v2
         with:
@@ -148,26 +136,6 @@ jobs:
           file: ./Dockerfile.ui
           cache-from: type=local,src=/tmp/cvat_cache_ui
           tags: cvat/ui:latest
-          load: true
-
-      - name: Building CVAT Logstash image
-        uses: docker/build-push-action@v2
-        with:
-          context: ./components/analytics/logstash/
-          file: ./components/analytics/logstash/Dockerfile
-          cache-from: type=local,src=/tmp/cvat_cache_logstash
-          build-args: ELK_VERSION=6.8.23
-          tags: cvat_logstash
-          load: true
-
-      - name: Building CVAT Elasticsearch image
-        uses: docker/build-push-action@v2
-        with:
-          context: ./components/analytics/elasticsearch/
-          file: ./components/analytics/elasticsearch/Dockerfile
-          cache-from: type=local,src=/tmp/cvat_cache_elasticsearch
-          build-args: ELK_VERSION=6.8.23
-          tags: cvat_elasticsearch
           load: true
 
       - name: CVAT server. Extract metadata (tags, labels) for Docker
@@ -203,9 +171,7 @@ jobs:
             --entrypoint /bin/bash -u root cvat/server \
             -c 'python manage.py spectacular --file /transfer/schema.yml'
           pip3 install --user -r cvat-sdk/gen/requirements.txt
-          cd cvat-sdk/
-          gen/generate.sh
-          cd ..
+          ./cvat-sdk/gen/generate.sh
 
           pip3 install --user 'cvat-sdk/[pytorch]'
           pip3 install --user cvat-cli/

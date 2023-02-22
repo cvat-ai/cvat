@@ -12,6 +12,7 @@ import { taskName, labelName } from '../../support/const_canvas3d';
 context('Canvas 3D functionality. Opacity. Outlined borders.', () => {
     const caseId = '82';
     const cuboidCreationParams = {
+        objectType: 'Shape',
         labelName,
         x: 500,
         y: 250,

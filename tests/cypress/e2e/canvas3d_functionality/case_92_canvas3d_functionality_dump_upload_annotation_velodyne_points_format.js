@@ -10,7 +10,10 @@ import { taskName, labelName } from '../../support/const_canvas3d';
 context('Canvas 3D functionality. Dump/upload annotation. "Velodyne Points" format.', () => {
     const caseId = '92';
     const cuboidCreationParams = {
+        objectType: 'Shape',
         labelName,
+        x: 480,
+        y: 160,
     };
     const dumpTypeVC = 'Kitti Raw Format';
     let annotationVCArchiveName = '';

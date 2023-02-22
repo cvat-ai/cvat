@@ -77,9 +77,7 @@ jobs:
             --entrypoint /bin/bash -u root cvat/server \
             -c 'python manage.py spectacular --file /transfer/schema.yml'
           pip3 install --user -r cvat-sdk/gen/requirements.txt
-          cd cvat-sdk/
-          gen/generate.sh
-          cd ..
+          ./cvat-sdk/gen/generate.sh
 
           cp -r cvat-sdk/* /tmp/cvat_sdk/
 
@@ -115,38 +113,6 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@master
-
-      - name: Getting CVAT Elasticsearch cache from the default branch
-        uses: actions/cache@v3
-        with:
-          path: /tmp/cvat_cache_elasticsearch
-          key: ${{ runner.os }}-build-elasticsearch-${{ needs.search_cache.outputs.sha }}
-
-      - name: Getting CVAT Logstash cache from the default branch
-        uses: actions/cache@v3
-        with:
-          path: /tmp/cvat_cache_logstash
-          key: ${{ runner.os }}-build-logstash-${{ needs.search_cache.outputs.sha }}
-
-      - name: Building CVAT Elasticsearch
-        uses: docker/build-push-action@v2
-        with:
-          context: ./components/analytics/elasticsearch/
-          file: ./components/analytics/elasticsearch/Dockerfile
-          cache-from: type=local,src=/tmp/cvat_cache_elasticsearch
-          tags: cvat_elasticsearch:latest
-          load: true
-          build-args: ELK_VERSION=6.8.23
-
-      - name: Building CVAT Logstash
-        uses: docker/build-push-action@v2
-        with:
-          context: ./components/analytics/logstash/
-          file: ./components/analytics/logstash/Dockerfile
-          cache-from: type=local,src=/tmp/cvat_cache_logstash
-          tags: cvat_logstash:latest
-          load: true
-          build-args: ELK_VERSION=6.8.23
 
       - name: Download CVAT server image
         uses: actions/download-artifact@v3

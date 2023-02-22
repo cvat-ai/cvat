@@ -187,6 +187,7 @@ function OrganizationTopBar(props: Props): JSX.Element {
                                     }}
                                 />
                                 <Button
+                                    className='cvat-submit-new-org-description-button'
                                     size='small'
                                     type='primary'
                                     onClick={() => {
@@ -273,6 +274,7 @@ function OrganizationTopBar(props: Props): JSX.Element {
                     <Space align='end'>
                         {!(owner && userID === owner.id) ? (
                             <Button
+                                className='cvat-leave-org-button'
                                 type='primary'
                                 danger
                                 onClick={() => {
@@ -299,6 +301,7 @@ function OrganizationTopBar(props: Props): JSX.Element {
                             </Button>
                         ) : null}
                         <Button
+                            className='cvat-invite-org-members-button'
                             type='primary'
                             onClick={() => setVisibleInviteModal(true)}
                             icon={<PlusCircleOutlined />}
@@ -379,7 +382,7 @@ function OrganizationTopBar(props: Props): JSX.Element {
                                     </Row>
                                 ))}
                                 <Form.Item>
-                                    <Button icon={<PlusCircleOutlined />} onClick={() => add()}>
+                                    <Button className='cvat-invite-more-org-members-button' icon={<PlusCircleOutlined />} onClick={() => add()}>
                                         Invite more
                                     </Button>
                                 </Form.Item>

@@ -21,6 +21,7 @@ from django.contrib.auth.models import User
 from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseNotFound, HttpResponseBadRequest
 from django.utils import timezone
+import django.db.models as dj_models
 
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
@@ -33,7 +34,6 @@ from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import APIException, NotFound, ValidationError, PermissionDenied
 from rest_framework.permissions import SAFE_METHODS
-from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from django_sendfile import sendfile
 
@@ -45,23 +45,24 @@ from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.media_extractors import get_mime
 from cvat.apps.engine.models import (
-    Job, JobCommit, Task, Project, Issue, Data,
+    Job, Label, Task, Project, Issue, Data,
     Comment, StorageMethodChoice, StorageChoice,
     CloudProviderChoice, Location
 )
 from cvat.apps.engine.models import CloudStorage as CloudStorageModel
 from cvat.apps.engine.serializers import (
     AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
-    DataMetaReadSerializer, DataMetaWriteSerializer, DataSerializer, ExceptionSerializer,
-    FileInfoSerializer, JobReadSerializer, JobWriteSerializer, LabeledDataSerializer,
-    LogEventSerializer, ProjectReadSerializer, ProjectWriteSerializer,
-    RqStatusSerializer, TaskReadSerializer, TaskWriteSerializer, UserSerializer, PluginsSerializer, IssueReadSerializer,
+    DataMetaReadSerializer, DataMetaWriteSerializer, DataSerializer,
+    FileInfoSerializer, JobReadSerializer, JobWriteSerializer, LabelSerializer,
+    LabeledDataSerializer,
+    ProjectReadSerializer, ProjectWriteSerializer,
+    RqStatusSerializer, TaskReadSerializer, TaskWriteSerializer,
+    UserSerializer, PluginsSerializer, IssueReadSerializer,
     IssueWriteSerializer, CommentReadSerializer, CommentWriteSerializer, CloudStorageWriteSerializer,
-    CloudStorageReadSerializer, DatasetFileSerializer, JobCommitSerializer,
+    CloudStorageReadSerializer, DatasetFileSerializer,
     ProjectFileSerializer, TaskFileSerializer)
 
 from utils.dataset_manifest import ImageManifestManager
-from cvat.apps.engine.view_utils import make_paginated_response
 from cvat.apps.engine.utils import (
     av_scan_paths, process_failed_job, configure_dependent_job, parse_exception_message
 )
@@ -70,12 +71,12 @@ from cvat.apps.engine.mixins import PartialUpdateModelMixin, UploadMixin, Annota
 from cvat.apps.engine.location import get_location_configuration, StorageType
 
 from . import models, task
-from .log import clogger, slogger
+from .log import slogger
 from cvat.apps.iam.permissions import (CloudStoragePermission,
-    CommentPermission, IssuePermission, JobPermission, ProjectPermission,
+    CommentPermission, IssuePermission, JobPermission, LabelPermission, ProjectPermission,
     TaskPermission, UserPermission)
 from cvat.apps.engine.cache import MediaCache
-
+from cvat.apps.events.handlers import handle_annotations_patch
 
 @extend_schema(tags=['server'])
 class ServerViewSet(viewsets.ViewSet):
@@ -111,56 +112,6 @@ class ServerViewSet(viewsets.ViewSet):
         serializer = AboutSerializer(data=about)
         if serializer.is_valid(raise_exception=True):
             return Response(data=serializer.data)
-
-    @staticmethod
-    @extend_schema(summary='Method saves an exception from a client on the server',
-        description='Sends logs to the ELK if it is connected',
-        request=ExceptionSerializer, responses={
-            '201': ExceptionSerializer,
-        })
-    @action(detail=False, methods=['POST'], serializer_class=ExceptionSerializer)
-    def exception(request):
-        serializer = ExceptionSerializer(data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            additional_info = {
-                "username": request.user.username,
-                "name": "Send exception",
-            }
-            message = JSONRenderer().render({**serializer.data, **additional_info}).decode('UTF-8')
-            jid = serializer.data.get("job_id")
-            tid = serializer.data.get("task_id")
-            if jid:
-                clogger.job[jid].error(message)
-            elif tid:
-                clogger.task[tid].error(message)
-            else:
-                clogger.glob.error(message)
-
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-    @staticmethod
-    @extend_schema(summary='Method saves logs from a client on the server',
-        description='Sends logs to the ELK if it is connected',
-        request=LogEventSerializer(many=True),
-        responses={
-            '201': LogEventSerializer(many=True),
-        })
-    @action(detail=False, methods=['POST'], serializer_class=LogEventSerializer)
-    def logs(request):
-        serializer = LogEventSerializer(many=True, data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            user = { "username": request.user.username }
-            for event in serializer.data:
-                message = JSONRenderer().render({**event, **user}).decode('UTF-8')
-                jid = event.get("job_id")
-                tid = event.get("task_id")
-                if jid:
-                    clogger.job[jid].info(message)
-                elif tid:
-                    clogger.task[tid].info(message)
-                else:
-                    clogger.glob.info(message)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @staticmethod
     @extend_schema(
@@ -724,10 +675,16 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         'data', 'assignee', 'owner',
         'target_storage', 'source_storage'
     ).prefetch_related(
+        'segment_set__job_set',
         'segment_set__job_set__assignee', 'label_set__attributespec_set',
         'project__label_set__attributespec_set',
         'label_set__sublabels__attributespec_set',
         'project__label_set__sublabels__attributespec_set'
+    ).annotate(
+        completed_jobs_count=dj_models.Count(
+            'segment__job',
+            filter=dj_models.Q(segment__job__state=models.StateChoice.COMPLETED.value)
+        )
     ).all()
 
     lookup_fields = {
@@ -1322,7 +1279,6 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '200': JobReadSerializer, # check JobWriteSerializer.to_representation
         })
 )
-
 class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, PartialUpdateModelMixin, UploadMixin, AnnotationMixin
 ):
@@ -1542,6 +1498,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                     data = dm.task.patch_job_data(pk, serializer.data, action)
                 except (AttributeError, IntegrityError) as e:
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
+                handle_annotations_patch(instance=self._object, annotations=data, action=action)
                 return Response(data)
 
 
@@ -1698,20 +1655,6 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         serializer = DataMetaReadSerializer(db_data)
         return Response(serializer.data)
 
-    @extend_schema(summary='The action returns the list of tracked changes for the job',
-        responses=JobCommitSerializer(many=True)) # Duplicate to still get 'list' op. name
-    @action(detail=True, methods=['GET'], serializer_class=JobCommitSerializer,
-        pagination_class=viewsets.GenericViewSet.pagination_class,
-        # These non-root list endpoints do not suppose extra options, just the basic output
-        # Remove regular list() parameters from the swagger schema.
-        # Unset, they would be taken from the enclosing class, which is wrong.
-        # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
-        filter_fields=None, ordering_fields=None, search_fields=None, simple_filters=None)
-    def commits(self, request, pk):
-        self.get_object() # force call of check_object_permissions()
-        return make_paginated_response(JobCommit.objects.filter(job_id=pk).order_by('-id'),
-            viewset=self, serializer_type=self.serializer_class) # from @action
-
     @extend_schema(summary='Method returns a preview image for the job',
         responses={
             '200': OpenApiResponse(description='Job image preview'),
@@ -1866,6 +1809,146 @@ class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     def perform_create(self, serializer, **kwargs):
         super().perform_create(serializer, owner=self.request.user)
+
+
+@extend_schema(tags=['labels'])
+@extend_schema_view(
+    retrieve=extend_schema(
+        summary='Method returns details of a label',
+        responses={
+            '200': LabelSerializer,
+        }),
+    list=extend_schema(
+        summary='Method returns a paginated list of labels',
+        parameters=[
+            # These filters are implemented differently from others
+            OpenApiParameter('job_id', description='A simple equality filter for job id'),
+            OpenApiParameter('task_id', description='A simple equality filter for task id'),
+            OpenApiParameter('project_id', description='A simple equality filter for project id'),
+        ],
+        responses={
+            '200': LabelSerializer(many=True),
+        }),
+    partial_update=extend_schema(
+        summary='Methods does a partial update of chosen fields in a label'
+        'To modify a sublabel, please use the PATCH method of the parent label',
+        request=LabelSerializer(partial=True),
+        responses={
+            '200': LabelSerializer,
+        }),
+    destroy=extend_schema(
+        summary='Method deletes a label. '
+        'To delete a sublabel, please use the PATCH method of the parent label',
+        responses={
+            '204': OpenApiResponse(description='The label has been deleted'),
+        })
+)
+class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
+    mixins.RetrieveModelMixin, mixins.DestroyModelMixin, PartialUpdateModelMixin
+):
+    queryset = Label.objects.prefetch_related(
+        'attributespec_set',
+        'sublabels__attributespec_set',
+        'task',
+        'task__owner',
+        'task__assignee',
+        'task__organization',
+        'project',
+        'project__owner',
+        'project__assignee',
+        'project__organization'
+    ).all()
+
+    # NOTE: This filter works incorrectly for this view
+    # it requires task__organization OR project__organization check.
+    # Thus, we rely on permission-based filtering
+    iam_organization_field = None
+
+    search_fields = ('name', 'parent')
+    filter_fields = list(search_fields) + ['id', 'type', 'color', 'parent_id']
+    simple_filters = list(set(filter_fields) - {'id'})
+    ordering_fields = list(filter_fields)
+    lookup_fields = {
+        'parent': 'parent__name',
+    }
+    ordering = 'id'
+    serializer_class = LabelSerializer
+
+    def get_queryset(self):
+        if self.action == 'list':
+            job_id = self.request.GET.get('job_id', None)
+            task_id = self.request.GET.get('task_id', None)
+            project_id = self.request.GET.get('project_id', None)
+            if sum(v is not None for v in [job_id, task_id, project_id]) > 1:
+                raise ValidationError(
+                    "job_id, task_id and project_id parameters cannot be used together",
+                    code=status.HTTP_400_BAD_REQUEST
+                )
+
+            if job_id:
+                # NOTE: This filter is too complex to be implemented by other means
+                # It requires the following filter query:
+                # (
+                #  project__task__segment__job__id = job_id
+                #  OR
+                #  task__segment__job__id = job_id
+                # )
+                job = Job.objects.get(id=job_id)
+                self.check_object_permissions(self.request, job)
+                queryset = job.get_labels()
+            elif task_id:
+                # NOTE: This filter is too complex to be implemented by other means
+                # It requires the following filter query:
+                # (
+                #  project__task__id = task_id
+                #  OR
+                #  task_id = task_id
+                # )
+                task = Task.objects.get(id=task_id)
+                self.check_object_permissions(self.request, task)
+                queryset = task.get_labels()
+            elif project_id:
+                # NOTE: this check is to make behavior consistent with other source filters
+                project = Project.objects.get(id=project_id)
+                self.check_object_permissions(self.request, project)
+                queryset = project.get_labels()
+            else:
+                # In other cases permissions are checked already
+                queryset = super().get_queryset()
+                perm = LabelPermission.create_scope_list(self.request)
+                queryset = perm.filter(queryset)
+
+            # Include only 1st level labels in list responses
+            queryset = queryset.filter(parent__isnull=True)
+        else:
+            queryset = super().get_queryset()
+
+        return queryset
+
+    def get_serializer(self, *args, **kwargs):
+        kwargs['local'] = True
+        return super().get_serializer(*args, **kwargs)
+
+    def perform_update(self, serializer):
+        if serializer.instance.parent is not None:
+            # NOTE: this can be relaxed when skeleton updates are implemented properly
+            raise ValidationError(
+                "Sublabels cannot be modified this way. "
+                "Please send a PATCH request with updated parent label data instead.",
+                code=status.HTTP_400_BAD_REQUEST)
+
+        return super().perform_update(serializer)
+
+    def perform_destroy(self, instance):
+        if instance.parent is not None:
+            # NOTE: this can be relaxed when skeleton updates are implemented properly
+            raise ValidationError(
+                "Sublabels cannot be deleted this way. "
+                "Please send a PATCH request with updated parent label data instead.",
+                code=status.HTTP_400_BAD_REQUEST)
+
+        return super().perform_destroy(instance)
+
 
 @extend_schema(tags=['users'])
 @extend_schema_view(

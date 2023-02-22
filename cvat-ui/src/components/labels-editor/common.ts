@@ -1,20 +1,21 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import { RawLabel, RawAttribute } from 'cvat-core-wrapper';
+import { SerializedLabel, SerializedAttribute } from 'cvat-core-wrapper';
 
 export interface SkeletonConfiguration {
     type: 'skeleton';
     svg: string;
-    sublabels: RawLabel[];
+    sublabels: SerializedLabel[];
 }
 
-export type LabelOptColor = RawLabel;
+export type LabelOptColor = SerializedLabel;
 
 let id = 0;
 
-function validateParsedAttribute(attr: RawAttribute): void {
+function validateParsedAttribute(attr: SerializedAttribute): void {
     if (typeof attr.name !== 'string') {
         throw new Error(`Type of attribute name must be a string. Got value ${attr.name}`);
     }
@@ -48,7 +49,7 @@ function validateParsedAttribute(attr: RawAttribute): void {
     }
 }
 
-export function validateParsedLabel(label: RawLabel): void {
+export function validateParsedLabel(label: SerializedLabel): void {
     if (typeof label.name !== 'string') {
         throw new Error(`Type of label name must be a string. Got value ${label.name}`);
     }
