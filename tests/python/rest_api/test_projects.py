@@ -720,7 +720,7 @@ class TestPatchProjectLabel:
             admin_user, f'/projects/{project["id"]}', {"labels": [label_payload]}
         )
         assert response.status_code == HTTPStatus.BAD_REQUEST
-        assert f"Label '{project_labels[0]['name']}' already exists" in response.text
+        assert "All label names must be unique" in response.text
 
     def test_cannot_add_foreign_label(self, projects, labels, admin_user):
         project = list(projects)[0]

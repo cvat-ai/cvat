@@ -1022,7 +1022,7 @@ class TestPatchTaskLabel:
 
         response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [label_payload]})
         assert response.status_code == HTTPStatus.BAD_REQUEST
-        assert f"Label '{task_labels[0]['name']}' already exists" in response.text
+        assert "All label names must be unique" in response.text
 
     def test_cannot_add_foreign_label(self, tasks, labels, admin_user):
         task = list(tasks)[0]
