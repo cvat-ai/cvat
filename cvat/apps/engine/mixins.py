@@ -260,7 +260,7 @@ class AnnotationMixin:
         )
 
         object_name = self._object.__class__.__name__.lower()
-        rq_id = f"export:annotations-for-{object_name}.id{db_obj.pk}-in-{format_name.replace(' ', '_')}-format"
+        rq_id = f"export:annotations-for-{object_name}.id{self._object.pk}-in-{format_name.replace(' ', '_')}-format"
 
         if format_name:
             return export_func(db_instance=self._object,
@@ -276,7 +276,7 @@ class AnnotationMixin:
         if not get_data:
             return Response("Format is not specified",status=status.HTTP_400_BAD_REQUEST)
 
-        data = get_data(db_obj.pk)
+        data = get_data(self._object.pk)
         serializer = LabeledDataSerializer(data=data)
         if serializer.is_valid(raise_exception=True):
             return Response(serializer.data)
@@ -305,7 +305,7 @@ class AnnotationMixin:
                 request=request,
                 rq_id=rq_id,
                 rq_func=rq_func,
-                db_obj=db_obj,
+                db_obj=self._object,
                 format_name=format_name,
                 location_conf=location_conf,
                 filename=file_name,
