@@ -1,3 +1,5 @@
+import os
+
 from django.db import migrations
 from cvat.apps.engine.log import get_migration_logger
 

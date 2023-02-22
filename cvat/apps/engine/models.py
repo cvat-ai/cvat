@@ -16,7 +16,6 @@ from django.db import IntegrityError, models
 from django.db.models.fields import FloatField
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
-from rest_framework import exceptions
 
 from cvat.apps.engine.utils import parse_specific_attributes
 from cvat.apps.organizations.models import Organization
