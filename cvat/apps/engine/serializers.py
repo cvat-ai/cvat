@@ -843,6 +843,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         return serializer.data
 
     # pylint: disable=no-self-use
+    @transaction.atomic
     def create(self, validated_data):
         project_id = validated_data.get("project_id")
         if not (validated_data.get("label_set") or project_id):
@@ -885,6 +886,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         return db_task
 
     # pylint: disable=no-self-use
+    @transaction.atomic
     def update(self, instance, validated_data):
         instance.name = validated_data.get('name', instance.name)
         instance.owner_id = validated_data.get('owner_id', instance.owner_id)
@@ -1048,6 +1050,7 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
         return serializer.data
 
     # pylint: disable=no-self-use
+    @transaction.atomic
     def create(self, validated_data):
         labels = validated_data.pop('label_set')
 
@@ -1071,6 +1074,7 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
         return db_project
 
     # pylint: disable=no-self-use
+    @transaction.atomic
     def update(self, instance, validated_data):
         instance.name = validated_data.get('name', instance.name)
         instance.owner_id = validated_data.get('owner_id', instance.owner_id)
