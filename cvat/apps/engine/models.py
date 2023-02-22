@@ -522,10 +522,9 @@ class Label(models.Model):
     def has_parent_label(self):
         return bool(self.parent)
 
-    def save(self, force_insert=False, force_update=False, using=None,
-             update_fields=None):
+    def save(self, *args, **kwargs):
         try:
-            super().save(force_insert, force_update, using, update_fields)
+            super().save(*args, **kwargs)
         except IntegrityError:
             raise InvalidLabel("All label names must be unique")
 
