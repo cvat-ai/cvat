@@ -250,6 +250,7 @@ class LabelSerializer(SublabelSerializer):
         return attrs
 
     @classmethod
+    @transaction.atomic
     def update_label(
         cls,
         validated_data: Dict[str, Any],
@@ -287,12 +288,15 @@ class LabelSerializer(SublabelSerializer):
 
             logger.info("Label id {} ({}) was updated".format(db_label.id, db_label.name))
         else:
-            db_label = models.Label.create(
-                name=validated_data.get('name'),
-                type=validated_data.get('type'),
-                parent=parent_label,
-                **parent_info
-            )
+            try:
+                db_label = models.Label.create(
+                    name=validated_data.get('name'),
+                    type=validated_data.get('type'),
+                    parent=parent_label,
+                    **parent_info
+                )
+            except models.InvalidLabel as exc:
+                raise exceptions.ValidationError(str(exc)) from exc
             logger.info("New {} label was created".format(db_label.name))
 
         if validated_data.get('deleted'):
@@ -309,7 +313,10 @@ class LabelSerializer(SublabelSerializer):
         else:
             db_label.color = validated_data.get('color', db_label.color)
 
-        db_label.save()
+        try:
+            db_label.save()
+        except models.InvalidLabel as exc:
+            raise exceptions.ValidationError(str(exc)) from exc
 
         for attr in attributes:
             (db_attr, created) = models.AttributeSpec.objects.get_or_create(
@@ -355,7 +362,10 @@ class LabelSerializer(SublabelSerializer):
 
             sublabels = label.pop('sublabels', [])
             svg = label.pop('svg', '')
-            db_label = models.Label.create(**label, **parent_info, parent=parent_label)
+            try:
+                db_label = models.Label.create(**label, **parent_info, parent=parent_label)
+            except models.InvalidLabel as exc:
+                raise exceptions.ValidationError(str(exc)) from exc
             logger.info(
                 f'label:create Label id:{db_label.id} for spec:{label} '
                 f'with sublabels:{sublabels}, parent_label:{parent_label}'

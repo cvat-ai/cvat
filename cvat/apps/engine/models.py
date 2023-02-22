@@ -505,6 +505,9 @@ class Job(models.Model):
     class Meta:
         default_permissions = ()
 
+class InvalidLabel(ValueError):
+    pass
+
 class Label(models.Model):
     task = models.ForeignKey(Task, null=True, blank=True, on_delete=models.CASCADE)
     project = models.ForeignKey(Project, null=True, blank=True, on_delete=models.CASCADE)
@@ -523,19 +526,15 @@ class Label(models.Model):
              update_fields=None):
         try:
             super().save(force_insert, force_update, using, update_fields)
-        except ValueError as exc:
-            raise exceptions.ValidationError(str(exc)) from exc
         except IntegrityError:
-            raise exceptions.ValidationError("All label names must be unique")
+            raise InvalidLabel("All label names must be unique")
 
     @classmethod
     def create(cls, **kwargs):
         try:
             return cls.objects.create(**kwargs)
-        except ValueError as exc:
-            raise exceptions.ValidationError(str(exc)) from exc
         except IntegrityError:
-            raise exceptions.ValidationError("All label names must be unique")
+            raise InvalidLabel("All label names must be unique")
 
     class Meta:
         default_permissions = ()
