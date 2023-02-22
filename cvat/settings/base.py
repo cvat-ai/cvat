@@ -613,7 +613,8 @@ SPECTACULAR_SETTINGS = {
     'SCHEMA_PATH_PREFIX_TRIM': False,
 }
 
-# the same in UI
+# set similar UI restrictions
+# https://github.com/opencv/cvat/blob/bad1dc2799afbb22222faaecc7336d999f4cc3fe/cvat-ui/src/utils/validation-patterns.ts#L26
 ACCOUNT_USERNAME_MIN_LENGTH = 5
 ACCOUNT_LOGOUT_ON_PASSWORD_CHANGE = True
 
