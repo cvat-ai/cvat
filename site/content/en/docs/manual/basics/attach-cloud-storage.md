@@ -295,7 +295,7 @@ A new bucket will appear on the list of buckets.
 ### Upload data
 
 
-You need to upload data for annotation and the `manifest.json` file.
+You need to upload data for annotation and the `manifest.jsonl` file.
 
 1. Prepare data.
    For more information,
