@@ -31,7 +31,7 @@ See:
   - [Upload data](#upload-data-2)
   - [SAS token](#sas-token)
   - [Personal use](#personal-use)
-  - [Attach Azure storage](#attach-azure-storage)
+  - [Attach Azure Blob Container](#attach-azure-blob-container)
 - [AWS S3](#aws-s3-1)
   - [Create a bucket](#create-a-bucket-3)
   - [Upload data](#upload-data-3)
@@ -41,7 +41,6 @@ See:
   - [Attach AWS S3 storage](#attach-aws-s3-storage-1)
   - [AWS manifest file](#aws-manifest-file-1)
 - [Prepare the dataset](#prepare-the-dataset)
-
 
 ## AWS S3
 
@@ -62,7 +61,6 @@ To create bucket, do the following:
 A new bucket will appear on the list of buckets.
 
 ### Upload data
-
 
 You need to upload data for annotation and the `manifest.json` file.
 
@@ -178,7 +176,6 @@ aws s3 cp <yourfolder>/manifest.jsonl <s3://bucket-name>
 
 ![](/images/aws-s3_tutorial_5.jpg)
 
-
 ## Google Cloud
 
 ### Create a bucket
@@ -256,7 +253,7 @@ To configure anonymous access:
 
 ![](/images/google_cloud_storage_tutorial4.jpg)
 
-Now you can attach new cloud storage into CVAT.
+Now you can attach new Azure Blob container into CVAT.
 
 ### Attach Google Cloud storage
 
@@ -271,17 +268,17 @@ Fill in the following fields:
 
 <!--lint disable maximum-line-length-->
 
-| CVAT                   | Google Cloud                                                                                                                                                                                                                                                                                                     |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Display name**       | Preferred display name for your storage                                                                                                                                                                                                                                                                                            |
-| **Description**        | (Optional) Add description of storage.                                                                                                                                                                                                                                                                            |
-| **Provider**           | From drop-down list select **Google Cloud Storage**.                                                                                                                                                                                                                                                             |
-| **Bucket name**        | Name of the bucket. You can find it on the [storage browser page](https://console.cloud.google.com/storage/browser).                                                                                                                                   |
-| **Authorization type** | Depends on the bucket setup: <br><li>**Authorized access**: Click on the **Key file** field and upload key file from computer. <br> **Advanced**: For self-hosted solution, if the key file was not attached, then environment variable `GOOGLE_APPLICATION_CREDENTIALS`  that was specified for an environment will be used. For more information, see [Authenticate to Cloud services using client libraries](https://cloud.google.com/docs/authentication/client-libraries#setting_the_environment_variable).<br><li> **Anonymous access**: for anonymous access. Public access to the bucket must be enabled.                                                                                 |
-| **Prefix**             | (Optional) Used to filter data from the bucket.                                                                                                                                                                                                                                                                  |
-| **Project ID**         | [Project ID](#authorized-access). <br>For more information, see [projects page](https://cloud.google.com/resource-manager/docs/creating-managing-projects) and [cloud resource manager page](https://console.cloud.google.com/cloud-resource-manager). <br>**Note:** Project name does not match the project ID. |
-| **Location**           | (Optional) Choose a region from the list or add a new one. For more information, see [**Available locations**](https://cloud.google.com/storage/docs/locations#available-locations).                                                                                                                             |
-| **Manifests**          | Click **+ Add manifest** and enter the name of the manifest file with an extension. For example: `manifest.jsonl`.                                                                                                                                                                                                |
+| CVAT                   | Google Cloud                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Display name**       | Preferred display name for your storage.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| **Description**        | (Optional) Add description of storage.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| **Provider**           | From drop-down list select **Google Cloud Storage**.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| **Bucket name**        | Name of the bucket. You can find it on the [storage browser page](https://console.cloud.google.com/storage/browser).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| **Authorization type** | Depends on the bucket setup: <br><li>**Authorized access**: Click on the **Key file** field and upload key file from computer. <br> **Advanced**: For self-hosted solution, if the key file was not attached, then environment variable `GOOGLE_APPLICATION_CREDENTIALS` that was specified for an environment will be used. For more information, see [Authenticate to Cloud services using client libraries](https://cloud.google.com/docs/authentication/client-libraries#setting_the_environment_variable).<br><li> **Anonymous access**: for anonymous access. Public access to the bucket must be enabled. |
+| **Prefix**             | (Optional) Used to filter data from the bucket.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| **Project ID**         | [Project ID](#authorized-access). <br>For more information, see [projects page](https://cloud.google.com/resource-manager/docs/creating-managing-projects) and [cloud resource manager page](https://console.cloud.google.com/cloud-resource-manager). <br>**Note:** Project name does not match the project ID.                                                                                                                                                                                                                                                                                                 |
+| **Location**           | (Optional) Choose a region from the list or add a new one. For more information, see [**Available locations**](https://cloud.google.com/storage/docs/locations#available-locations).                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| **Manifests**          | Click **+ Add manifest** and enter the name of the manifest file with an extension. For example: `manifest.jsonl`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 
 <!--lint enable maximum-line-length-->
 
@@ -374,7 +371,7 @@ To configure the SAS token:
 3. Change the following fields:
    - **Allowed services**: Enable **Blob** . Disable all other fields.
    - **Allowed resource types**: Enable **Container** and **Object**. Disable all other fields.
-   - **Allowed permissions**: Enable **Read** and **List**. Disable all other fields.
+   - **Allowed permissions**: Enable **Read**, **Write**, and **List**. Disable all other fields.
    - **Start and expiry date**: Set up start and expiry dates.
    - **Allowed protocols**: Select **HTTPS and HTTP**
    - Leave all other fields with default parameters.
@@ -408,7 +405,7 @@ Fill in the following fields:
 
 | CVAT                   | Azure                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Display name**       | Create a display name.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| **Display name**       | Preferred display name for your storage.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | **Description**        | (Optional) Add description of storage.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | **Provider**           | From drop-down list select **Azure Blob Container**.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | **Container name`**    | Name of the cloud storage container.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
@@ -438,7 +435,6 @@ To create bucket, do the following:
 A new bucket will appear on the list of buckets.
 
 ### Upload data
-
 
 You need to upload data for annotation and the `manifest.json` file.
 
@@ -485,7 +481,7 @@ see [Creating an IAM user in your AWS account](https://docs.aws.amazon.com/IAM/l
 
 On how to grant public access to the
 bucket, see
-[Configuring block public access settings for your S3 buckets](https://docs.aws.amazon.com/AmazonS3/latest/userguide/WebsiteAccessPermissionsReqd.html)
+[Setting permissions for website access](https://docs.aws.amazon.com/AmazonS3/latest/userguide/WebsiteAccessPermissionsReqd.html)
 
 ### Attach AWS S3 storage
 
@@ -501,13 +497,13 @@ Fill in the following fields:
 
 | CVAT                   | AWS S3                                                                                                                                                                                                                                              |
 | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Display name**       | Create a display name.                                                                                                                                                                                                                              |
-| **Description**        | (Optional) Add description of storage.                                                                                                                                                                                                              |
+| **Display name**       | Preferred display name for your storage.                                                                                                                                                                                                            |
+| **Description**        | (Optional) Add description of Azure.                                                                                                                                                                                                                |
 | **Provider**           | From drop-down list select **AWS S3**.                                                                                                                                                                                                              |
 | **Bucket name**        | Name of the [Bucket](https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingBucket).                                                                                                                                                            |
 | **Authorization type** | Depends on the bucket setup: <br><li>**Key id and secret access key pair**: available on [IAM](https://console.aws.amazon.com/iamv2/home?#/users). <br><li>**Anonymous access**: for anonymous access. Public access to the bucket must be enabled. |
 | **Region**             | (Optional) Choose a region from the list or add a new one. For more information, see [**Available locations**](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html#concepts-available-regions).               |
-| **Manifests**          | Click **+ Add manifest** and enter the name of the manifest file with an extension. For example: `manifest.json`.                                                                                                                                   |
+| **Manifests**          | Click **+ Add manifest** and enter the name of the manifest file with an extension. For example: `manifest.jsonl`.                                                                                                                                  |
 
 <!--lint enable maximum-line-length-->
 
