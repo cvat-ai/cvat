@@ -10,29 +10,166 @@ and [Google cloud](#using-google-cloud-storage) storages to store image datasets
 
 See:
 
-- [Google Cloud](#google-cloud)
+- [AWS S3](#aws-s3)
   - [Create a bucket](#create-a-bucket)
   - [Upload data](#upload-data)
   - [Access permissions](#access-permissions)
     - [Authorized access](#authorized-access)
     - [Anonymous access](#anonymous-access)
-  - [Attach Google Cloud storage](#attach-google-cloud-storage)
-- [Microsoft Azure](#microsoft-azure)
+  - [Attach AWS S3 storage](#attach-aws-s3-storage)
+  - [AWS manifest file](#aws-manifest-file)
+- [Google Cloud](#google-cloud)
   - [Create a bucket](#create-a-bucket-1)
-  - [Create a container](#create-a-container)
   - [Upload data](#upload-data-1)
-  - [SAS token](#sas-token)
-  - [Personal use](#personal-use)
-  - [Attach Azure storage](#attach-azure-storage)
-- [AWS S3](#aws-s3)
-  - [Create a bucket](#create-a-bucket-2)
-  - [Upload data](#upload-data-2)
   - [Access permissions](#access-permissions-1)
     - [Authorized access](#authorized-access-1)
     - [Anonymous access](#anonymous-access-1)
-  - [Attach AWS S3 storage](#attach-aws-s3-storage)
-  - [AWS manifest file](#aws-manifest-file)
+  - [Attach Google Cloud storage](#attach-google-cloud-storage)
+- [Microsoft Azure](#microsoft-azure)
+  - [Create a bucket](#create-a-bucket-2)
+  - [Create a container](#create-a-container)
+  - [Upload data](#upload-data-2)
+  - [SAS token](#sas-token)
+  - [Personal use](#personal-use)
+  - [Attach Azure storage](#attach-azure-storage)
 - [Prepare the dataset](#prepare-the-dataset)
+
+
+## AWS S3
+
+### Create a bucket
+
+To create bucket, do the following:
+
+1. Create an [AWS account](https://portal.aws.amazon.com/billing/signup#/start).
+2. Go to [console AWS-S3](https://s3.console.aws.amazon.com/s3/home), and click **Create bucket**.
+
+   ![](/images/aws-s3_tutorial_1.jpg)
+
+3. Specify the name and region of the bucket. You can also
+   copy the settings of another bucket by clicking on the **Choose bucket** button.
+4. Enable **Block all public access**. For access, you will use **access key ID** and **secret access key**.
+5. Click **Create bucket**.
+
+A new bucket will appear on the list of buckets.
+
+### Upload data
+
+
+You need to upload data for annotation and the `manifest.json` file.
+
+1. Prepare data.
+   For more information,
+   see [prepare the dataset](#prepare-the-dataset).
+2. Open the bucket and click **Upload**.
+
+   ![](/images/aws-s3_tutorial_5.jpg)
+
+3. Drag the manifest file and image folder on the page and click **Upload**:
+
+![](/images/aws-s3_tutorial_1.gif)
+
+### Access permissions
+
+#### Authorized access
+
+To add access permissions, do the following:
+
+1. Go to [IAM](https://console.aws.amazon.com/iamv2/home#/users) and click **Add users**.
+2. Set **User name** and enable **Access key - programmatic access**.
+
+   ![](/images/aws-s3_tutorial_2.jpg)
+
+3. Click **Next: Permissions**.
+4. Click **Create group**, enter the group name.
+5. Use search to find and select:
+
+   - For read-only access: **AmazonS3ReadOnlyAccess**.
+   - For full access: **AmazonS3FullAccess**.
+
+   ![](/images/aws-s3_tutorial_3.jpg)
+
+6. (Optional) Add tags for the user and go to the next page.
+7. Save **Access key ID** and **Secret access key**.
+
+![](/images/aws-s3_tutorial_4.jpg)
+
+For more information,
+see [Creating an IAM user in your AWS account](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users_create.html)
+
+#### Anonymous access
+
+On how to grant public access to the
+bucket, see
+[Configuring block public access settings for your S3 buckets](https://docs.aws.amazon.com/AmazonS3/latest/userguide/configuring-block-public-access-bucket.html)
+
+### Attach AWS S3 storage
+
+To attach storage, do the following:
+
+1. Log into CVAT and in the separate tab
+   open your bucket page.
+2. In the CVAT, on the top menu select **Cloud storages** > on the opened page click **+**.
+
+Fill in the following fields:
+
+<!--lint disable maximum-line-length-->
+
+| CVAT                   | AWS S3                                                                                                                                                                                                                                              |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Display name**       | Create a display name.                                                                                                                                                                                                                              |
+| **Description**        | (Optional) Add description of storage.                                                                                                                                                                                                              |
+| **Provider**           | From drop-down list select **AWS S3**.                                                                                                                                                                                                              |
+| **Bucket name**        | Name of the [Bucket](https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingBucket).                                                                                                                                                            |
+| **Authorization type** | Depends on the bucket setup: <br><li>**Key id and secret access key pair**: available on [IAM](https://console.aws.amazon.com/iamv2/home?#/users). <br><li>**Anonymous access**: for anonymous access. Public access to the bucket must be enabled. |
+| **Region**             | (Optional) Choose a region from the list or add a new one. For more information, see [**Available locations**](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html#concepts-available-regions).               |
+| **Manifests**          | Click **+ Add manifest** and enter the name of the manifest file with an extension. For example: `manifest.json`.                                                                                                                                   |
+
+<!--lint enable maximum-line-length-->
+
+After filling in all the fields, click **Submit**.
+
+### AWS manifest file
+
+To prepare the manifest file, do the following:
+
+1. Go to [**AWS cli**](https://aws.amazon.com/cli/) and run
+   [script for prepare manifest file](https://github.com/cvat-ai/cvat/tree/develop/utils/dataset_manifest).
+2. Perform the installation, following the [**aws-shell manual**](https://github.com/awslabs/aws-shell),
+   <br>You can configure credentials by running `aws configure`.
+   <br>You will need to enter `Access Key ID` and `Secret Access Key` as well as the region.
+
+```bash
+aws configure
+Access Key ID: <your Access Key ID>
+Secret Access Key: <your Secret Access Key>
+```
+
+3. Copy the content of the bucket to a folder on your computer:
+
+```bash
+aws s3 cp <s3://bucket-name> <yourfolder> --recursive
+```
+
+4. After copying the files, you can create a manifest file as described in [preapair manifest file section](/docs/manual/advanced/dataset_manifest/):
+
+```bash
+python <cvat repository>/utils/dataset_manifest/create.py --output-dir <yourfolder> <yourfolder>
+```
+
+5. When the manifest file is ready, upload it to aws s3 bucket:
+
+- For read and write permissions when you created the user, run:
+
+```bash
+aws s3 cp <yourfolder>/manifest.jsonl <s3://bucket-name>
+```
+
+- For read-only permissions, use the download through the browser, click upload,
+  drag the manifest file to the page and click upload.
+
+![](/images/aws-s3_tutorial_5.jpg)
+
 
 ## Google Cloud
 
@@ -131,7 +268,7 @@ Fill in the following fields:
 | **Display name**       | Create a display name                                                                                                                                                                                                                                                                                            |
 | **Description**        | (Optional) Add description of storage.                                                                                                                                                                                                                                                                            |
 | **Provider**           | From drop-down list select **Google Cloud Storage**.                                                                                                                                                                                                                                                             |
-| **Bucket name**        | Name of the [Bucket](https://cloud.google.com/storage/docs/creating-buckets). You can find it on the [storage browser page](https://console.cloud.google.com/storage/browser).                                                                                                                                   |
+| **Bucket name**        | Name of the bucket. You can find it on the [storage browser page](https://console.cloud.google.com/storage/browser).                                                                                                                                   |
 | **Authorization type** | Depends on the bucket setup: <br><li>**Authorized access**: Click on the **Key file** field and upload key file from computer. <br><li> **Anonymous access**: for anonymous access. Public access to the bucket must be enabled.                                                                                 |
 | **Prefix**             | (Optional) Used to filter data from the bucket.                                                                                                                                                                                                                                                                  |
 | **Project ID**         | [Project ID](#authorized-access). <br>For more information, see [projects page](https://cloud.google.com/resource-manager/docs/creating-managing-projects) and [cloud resource manager page](https://console.cloud.google.com/cloud-resource-manager). <br>**Note:** Project name does not match the project ID. |
@@ -274,140 +411,6 @@ Fill in the following fields:
 
 After filling in all the fields, click **Submit**.
 
-## AWS S3
-
-### Create a bucket
-
-To create bucket, do the following:
-
-1. Create an [AWS account](https://portal.aws.amazon.com/billing/signup#/start).
-2. Go to [console AWS-S3](https://s3.console.aws.amazon.com/s3/home), and click **Create bucket**.
-
-   ![](/images/aws-s3_tutorial_1.jpg)
-
-3. Specify the name and region of the bucket. You can also
-   copy the settings of another bucket by clicking on the **Choose bucket** button.
-4. Enable **Block all public access**. For access, you will use **access key ID** and **secret access key**.
-5. Click **Create bucket**.
-
-A new bucket will appear on the list of buckets.
-
-### Upload data
-
-
-You need to upload data for annotation and the `manifest.json` file.
-
-1. Prepare data.
-   For more information,
-   see [prepare the dataset](#prepare-the-dataset).
-2. Open the bucket and click **Upload**.
-
-   ![](/images/aws-s3_tutorial_5.jpg)
-
-3. Drag the manifest file and image folder on the page and click **Upload**:
-
-![](/images/aws-s3_tutorial_1.gif)
-
-### Access permissions
-
-#### Authorized access
-
-To add access permissions, do the following:
-
-1. Go to [IAM](https://console.aws.amazon.com/iamv2/home#/users) and click **Add users**.
-2. Set **User name** and enable **Access key - programmatic access**.
-
-   ![](/images/aws-s3_tutorial_2.jpg)
-
-3. Click **Next: Permissions**.
-4. Click **Create group**, enter the group name.
-5. Use search to find and select:
-
-   - For read-only access: **AmazonS3ReadOnlyAccess**.
-   - For full access: **AmazonS3FullAccess**.
-
-   ![](/images/aws-s3_tutorial_3.jpg)
-
-6. (Optional) Add tags for the user and go to the next page.
-7. Save **Access key ID** and **Secret access key**.
-
-![](/images/aws-s3_tutorial_4.jpg)
-
-For more information,
-see [Creating an IAM user in your AWS account](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users_create.html)
-
-#### Anonymous access
-
-On how to grant public access to the
-bucket, see
-[Configuring block public access settings for your S3 buckets](https://docs.aws.amazon.com/AmazonS3/latest/userguide/configuring-block-public-access-bucket.html)
-
-### Attach AWS S3 storage
-
-To attach storage, do the following:
-
-1. Log into CVAT and in the separate tab
-   open your bucket page.
-2. In the CVAT, on the top menu select **Cloud storages** > on the opened page click **+**.
-
-Fill in the following fields:
-
-<!--lint disable maximum-line-length-->
-
-| CVAT                   | AWS S3                                                                                                                                                                                                                                              |
-| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Display name**       | Create a display name.                                                                                                                                                                                                                              |
-| **Description**        | (Optional) Add description of storage.                                                                                                                                                                                                              |
-| **Provider**           | From drop-down list select **AWS S3**.                                                                                                                                                                                                              |
-| **Bucket name**        | Name of the [Bucket](https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingBucket).                                                                                                                                                            |
-| **Authorization type** | Depends on the bucket setup: <br><li>**Key id and secret access key pair**: available on [IAM](https://console.aws.amazon.com/iamv2/home?#/users). <br><li>**Anonymous access**: for anonymous access. Public access to the bucket must be enabled. |
-| **Region**             | (Optional) Choose a region from the list or add a new one. For more information, see [**Available locations**](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html#concepts-available-regions).               |
-| **Manifests**          | Click **+ Add manifest** and enter the name of the manifest file with an extension. For example: `manifest.json`.                                                                                                                                   |
-
-<!--lint enable maximum-line-length-->
-
-After filling in all the fields, click **Submit**.
-
-### AWS manifest file
-
-To prepare the manifest file, do the following:
-
-1. Go to [**AWS cli**](https://aws.amazon.com/cli/) and run
-   [script for prepare manifest file](https://github.com/cvat-ai/cvat/tree/develop/utils/dataset_manifest).
-2. Perform the installation, following the [**aws-shell manual**](https://github.com/awslabs/aws-shell),
-   <br>You can configure credentials by running `aws configure`.
-   <br>You will need to enter `Access Key ID` and `Secret Access Key` as well as the region.
-
-```bash
-aws configure
-Access Key ID: <your Access Key ID>
-Secret Access Key: <your Secret Access Key>
-```
-
-3. Copy the content of the bucket to a folder on your computer:
-
-```bash
-aws s3 cp <s3://bucket-name> <yourfolder> --recursive
-```
-
-4. After copying the files, you can create a manifest file as described in [preapair manifest file section](/docs/manual/advanced/dataset_manifest/):
-
-```bash
-python <cvat repository>/utils/dataset_manifest/create.py --output-dir <yourfolder> <yourfolder>
-```
-
-5. When the manifest file is ready, upload it to aws s3 bucket:
-
-- For read and write permissions when you created the user, run:
-
-```bash
-aws s3 cp <yourfolder>/manifest.jsonl <s3://bucket-name>
-```
-
-- For read-only permissions, use the download through the browser, click upload,
-  drag the manifest file to the page and click upload.
-
-![](/images/aws-s3_tutorial_5.jpg)
 
 ## Prepare the dataset
 
