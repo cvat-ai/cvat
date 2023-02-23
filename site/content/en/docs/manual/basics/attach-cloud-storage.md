@@ -186,6 +186,8 @@ To create bucket, do the following:
      `Uniform` (default).
    - **How to protect data**: `None`
 
+![GB](/images/google_bucket.png)
+
 You will be forwarded to the bucket.
 
 ### Upload data
