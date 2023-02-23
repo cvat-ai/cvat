@@ -12,12 +12,22 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const Dotenv = require('dotenv-webpack');
 const CopyPlugin = require('copy-webpack-plugin');
 
-
 module.exports = (env) => {
-    console.log()
     const defaultAppConfig = path.join(__dirname, 'src/config.tsx');
+    const defaultPlugins = [];
     const appConfigFile = process.env.UI_APP_CONFIG ? process.env.UI_APP_CONFIG : defaultAppConfig;
+    const pluginsList = process.env.PLUGINS_LIST ? process.env.PLUGINS_LIST.split(',') : defaultPlugins;
     console.log('Application config file is: ', appConfigFile);
+    console.log('List of plugins: ', pluginsList);
+
+    const transformedPlugins = pluginsList
+        .filter((plugin) => !!plugin).reduce((acc, _path, index) => ({
+            ...acc,
+            [`${path.basename(path.dirname(_path))}`]: {
+                dependOn: 'cvat-ui',
+                import: _path,
+            },
+        }), {});
 
     return {
         target: 'web',
@@ -25,6 +35,7 @@ module.exports = (env) => {
         devtool: 'source-map',
         entry: {
             'cvat-ui': './src/index.tsx',
+            ...transformedPlugins,
         },
         output: {
             path: path.resolve(__dirname, 'dist'),
