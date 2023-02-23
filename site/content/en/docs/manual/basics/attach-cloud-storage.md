@@ -389,7 +389,7 @@ from your storage account in the CVAT **SAS Token** field.
 
 To get the **Access Key**:
 
-1. In the Azure, go to the **Security + networking** > **Access Keys**
+1. In the Azure Portal, go to the **Security + networking** > **Access Keys**
 2. Click **Show** and copy the key.
 
 ![](/images/azure_blob_container_tutorial8.jpg)
