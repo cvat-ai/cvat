@@ -69,7 +69,6 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
     // TODO useState -> useReducer
     const [instanceType, setInstanceType] = useState('');
     const [file, setFile] = useState<File | null>(null);
-    const [formIsValid, setFormIsValid] = useState(false);
     const [selectedLoader, setSelectedLoader] = useState<any>(null);
     const [useDefaultSettings, setUseDefaultSettings] = useState(true);
     const [defaultStorageLocation, setDefaultStorageLocation] = useState(StorageLocation.LOCAL);
@@ -145,39 +144,53 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
     }, [defaultStorageLocation, defaultStorageCloudId]);
 
     const uploadLocalFile = (): JSX.Element => (
-        <Upload.Dragger
-            listType='text'
-            fileList={file ? [file] : ([] as any[])}
-            accept='.zip,.json,.xml'
-            beforeUpload={(_file: RcFile): boolean => {
-                if (!selectedLoader) {
-                    message.warn('Please select a format first', 3);
-                } else if (isDataset() && !['application/zip', 'application/x-zip-compressed'].includes(_file.type)) {
-                    message.error('Only ZIP archive is supported for import a dataset');
-                } else if (isAnnotation() &&
-                            !selectedLoader.format.toLowerCase().split(', ').includes(_file.name.split('.')[_file.name.split('.').length - 1])) {
-                    message.error(
-                        `For ${selectedLoader.name} format only files with ` +
-                            `${selectedLoader.format.toLowerCase()} extension can be used`,
-                    );
-                } else {
-                    setFile(_file);
-                    setUploadParams({
-                        ...uploadParams,
-                        file: _file,
-                    } as UploadParams);
+        <Form.Item
+            getValueFromEvent={(e) => {
+                if (Array.isArray(e)) {
+                    return e;
                 }
-                return false;
+                return e?.fileList[0];
             }}
-            onRemove={() => {
-                setFile(null);
-            }}
+            name='dragger'
+            rules={[{ required: true, message: 'The file is required' }]}
         >
-            <p className='ant-upload-drag-icon'>
-                <InboxOutlined />
-            </p>
-            <p className='ant-upload-text'>Click or drag file to this area</p>
-        </Upload.Dragger>
+            <Upload.Dragger
+                listType='text'
+                fileList={file ? [file] : ([] as any[])}
+                accept='.zip,.json,.xml'
+                beforeUpload={(_file: RcFile): boolean => {
+                    if (!selectedLoader) {
+                        message.warn('Please select a format first', 3);
+                    } else if (isDataset() && !['application/zip', 'application/x-zip-compressed'].includes(_file.type)) {
+                        message.error('Only ZIP archive is supported for import a dataset');
+                    } else if (isAnnotation() &&
+                                !selectedLoader.format.toLowerCase().split(', ').includes(_file.name.split('.')[_file.name.split('.').length - 1])) {
+                        message.error(
+                            `For ${selectedLoader.name} format only files with ` +
+                                `${selectedLoader.format.toLowerCase()} extension can be used`,
+                        );
+                    } else {
+                        setFile(_file);
+                        setUploadParams({
+                            ...uploadParams,
+                            file: _file,
+                        } as UploadParams);
+                    }
+                    return false;
+                }}
+                onRemove={() => {
+                    form.setFieldsValue(
+                        form.getFieldsValue(true, (field) => !field.name.includes('dragger')),
+                    );
+                    setFile(null);
+                }}
+            >
+                <p className='ant-upload-drag-icon'>
+                    <InboxOutlined />
+                </p>
+                <p className='ant-upload-text'>Click or drag file to this area</p>
+            </Upload.Dragger>
+        </Form.Item>
     );
 
     const validateFileName = (_: RuleObject, value: string): Promise<void> => {
@@ -232,7 +245,6 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
         setUseDefaultSettings(true);
         setSelectedSourceStorageLocation(StorageLocation.LOCAL);
         form.resetFields();
-        setFormIsValid(false);
         setFile(null);
         dispatch(importActions.closeImportDatasetModal(instance));
     }, [form, instance]);
@@ -313,9 +325,6 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                 visible={!!instance}
                 onCancel={closeModal}
                 onOk={() => form.submit()}
-                okButtonProps={{
-                    disabled: !formIsValid || (loadFromLocal && file === null),
-                }}
                 className='cvat-modal-import-dataset'
                 destroyOnClose
             >
@@ -325,11 +334,6 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                     initialValues={{
                         ...initialValues,
                         convMaskToPoly: uploadParams.convMaskToPoly,
-                    }}
-                    onChange={() => {
-                        form.validateFields()
-                            .then(() => setFormIsValid(true))
-                            .catch(() => setFormIsValid(false));
                     }}
                     onFinish={handleImport}
                     layout='vertical'
@@ -429,7 +433,6 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                             locationName={['sourceStorage', 'location']}
                             selectCloudStorageName={['sourceStorage', 'cloudStorageId']}
                             onChangeStorage={(value: StorageData) => {
-                                setFormIsValid(false);
                                 setUploadParams({
                                     ...uploadParams,
                                     sourceStorage: new Storage({

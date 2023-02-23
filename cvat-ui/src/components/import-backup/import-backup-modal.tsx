@@ -33,7 +33,6 @@ const initialValues: FormValues = {
 
 function ImportBackupModal(): JSX.Element {
     const [form] = Form.useForm();
-    const [formIsValid, setFormIsValid] = useState(false);
     const [file, setFile] = useState<File | null>(null);
     const instanceType = useSelector((state: CombinedState) => state.import.instanceType);
     const modalVisible = useSelector((state: CombinedState) => {
@@ -48,26 +47,38 @@ function ImportBackupModal(): JSX.Element {
     });
 
     const uploadLocalFile = (): JSX.Element => (
-        <Upload.Dragger
-            listType='text'
-            fileList={file ? [file] : ([] as any[])}
-            beforeUpload={(_file: RcFile): boolean => {
-                if (!['application/zip', 'application/x-zip-compressed'].includes(_file.type)) {
-                    message.error('Only ZIP archive is supported');
-                } else {
-                    setFile(_file);
+        <Form.Item
+            getValueFromEvent={(e) => {
+                if (Array.isArray(e)) {
+                    return e;
                 }
-                return false;
+                return e?.fileList[0];
             }}
-            onRemove={() => {
-                setFile(null);
-            }}
+            name='dragger'
+            rules={[{ required: true, message: 'The file is required' }]}
         >
-            <p className='ant-upload-drag-icon'>
-                <InboxOutlined />
-            </p>
-            <p className='ant-upload-text'>Click or drag file to this area</p>
-        </Upload.Dragger>
+            <Upload.Dragger
+                listType='text'
+                fileList={file ? [file] : ([] as any[])}
+                beforeUpload={(_file: RcFile): boolean => {
+                    if (!['application/zip', 'application/x-zip-compressed'].includes(_file.type)) {
+                        message.error('Only ZIP archive is supported');
+                    } else {
+                        setFile(_file);
+                    }
+                    return false;
+                }}
+                onRemove={() => {
+                    form.setFieldsValue(form.getFieldsValue(true, (field) => !field.name.includes('dragger')));
+                    setFile(null);
+                }}
+            >
+                <p className='ant-upload-drag-icon'>
+                    <InboxOutlined />
+                </p>
+                <p className='ant-upload-text'>Click or drag file to this area</p>
+            </Upload.Dragger>
+        </Form.Item>
     );
 
     const validateFileName = (_: RuleObject, value: string): Promise<void> => {
@@ -98,7 +109,6 @@ function ImportBackupModal(): JSX.Element {
         setSelectedSourceStorage({
             location: StorageLocation.LOCAL,
         });
-        setFormIsValid(false);
         setFile(null);
         dispatch(importActions.closeImportBackupModal(instanceType as 'project' | 'task'));
         form.resetFields();
@@ -139,22 +149,12 @@ function ImportBackupModal(): JSX.Element {
                 visible={modalVisible}
                 onCancel={closeModal}
                 onOk={() => form.submit()}
-                okButtonProps={{
-                    disabled: !formIsValid || (
-                        selectedSourceStorage?.location === StorageLocation.LOCAL && file === null
-                    ),
-                }}
                 className='cvat-modal-import-backup'
             >
                 <Form
                     name={`Create ${instanceType} from backup file`}
                     form={form}
                     onFinish={handleImport}
-                    onChange={() => {
-                        form.validateFields()
-                            .then(() => setFormIsValid(true))
-                            .catch(() => setFormIsValid(false));
-                    }}
                     layout='vertical'
                     initialValues={initialValues}
                 >
@@ -164,7 +164,6 @@ function ImportBackupModal(): JSX.Element {
                         locationValue={selectedSourceStorage.location}
                         onChangeStorage={(value: StorageData) => setSelectedSourceStorage(new Storage(value))}
                         onChangeLocationValue={(value: StorageLocation) => {
-                            setFormIsValid(false);
                             setSelectedSourceStorage({
                                 location: value,
                             });
