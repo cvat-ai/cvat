@@ -179,9 +179,6 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                     return false;
                 }}
                 onRemove={() => {
-                    form.setFieldsValue(
-                        form.getFieldsValue(true, (field) => !field.name.includes('dragger')),
-                    );
                     setFile(null);
                 }}
             >
