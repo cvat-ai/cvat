@@ -2328,8 +2328,10 @@ async function receiveWebhookEvents(type: WebhookSourceType): Promise<string[]> 
 async function socialAuthentication(): Promise<any> {
     const { backendAPI } = config;
     try {
-        const response = await Axios.get(`${backendAPI}/auth/social`);
-        return response.data;
+        const response = await Axios.get(`${backendAPI}/auth/social`, {
+            validateStatus: (status) => status === 200 || status === 404,
+        });
+        return (response.status === 200) ? response.data : {};
     } catch (errorData) {
         throw generateError(errorData);
     }

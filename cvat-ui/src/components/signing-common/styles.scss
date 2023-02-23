@@ -43,8 +43,8 @@ $social-google-background: #4286f5;
     padding: $grid-unit-size*2 0 0 0;
     width: 100%;
 
-    svg {
-        transform: none;
+    .cvat-logo-icon {
+        fill: white;
     }
 }
 
