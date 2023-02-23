@@ -33,6 +33,7 @@ const initialValues: FormValues = {
 
 function ImportBackupModal(): JSX.Element {
     const [form] = Form.useForm();
+    const [formIsValid, setFormIsValid] = useState(false);
     const [file, setFile] = useState<File | null>(null);
     const instanceType = useSelector((state: CombinedState) => state.import.instanceType);
     const modalVisible = useSelector((state: CombinedState) => {
@@ -97,6 +98,7 @@ function ImportBackupModal(): JSX.Element {
         setSelectedSourceStorage({
             location: StorageLocation.LOCAL,
         });
+        setFormIsValid(false);
         setFile(null);
         dispatch(importActions.closeImportBackupModal(instanceType as 'project' | 'task'));
         form.resetFields();
@@ -137,13 +139,22 @@ function ImportBackupModal(): JSX.Element {
                 visible={modalVisible}
                 onCancel={closeModal}
                 onOk={() => form.submit()}
-                okButtonProps={{ disabled: selectedSourceStorage?.location === StorageLocation.LOCAL && file === null }}
+                okButtonProps={{
+                    disabled: !formIsValid || (
+                        selectedSourceStorage?.location === StorageLocation.LOCAL && file === null
+                    ),
+                }}
                 className='cvat-modal-import-backup'
             >
                 <Form
                     name={`Create ${instanceType} from backup file`}
                     form={form}
                     onFinish={handleImport}
+                    onChange={() => {
+                        form.validateFields()
+                            .then(() => setFormIsValid(true))
+                            .catch(() => setFormIsValid(false));
+                    }}
                     layout='vertical'
                     initialValues={initialValues}
                 >
@@ -153,6 +164,7 @@ function ImportBackupModal(): JSX.Element {
                         locationValue={selectedSourceStorage.location}
                         onChangeStorage={(value: StorageData) => setSelectedSourceStorage(new Storage(value))}
                         onChangeLocationValue={(value: StorageLocation) => {
+                            setFormIsValid(false);
                             setSelectedSourceStorage({
                                 location: value,
                             });

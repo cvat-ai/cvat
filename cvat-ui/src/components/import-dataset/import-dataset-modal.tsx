@@ -69,6 +69,7 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
     // TODO useState -> useReducer
     const [instanceType, setInstanceType] = useState('');
     const [file, setFile] = useState<File | null>(null);
+    const [formIsValid, setFormIsValid] = useState(false);
     const [selectedLoader, setSelectedLoader] = useState<any>(null);
     const [useDefaultSettings, setUseDefaultSettings] = useState(true);
     const [defaultStorageLocation, setDefaultStorageLocation] = useState(StorageLocation.LOCAL);
@@ -231,6 +232,7 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
         setUseDefaultSettings(true);
         setSelectedSourceStorageLocation(StorageLocation.LOCAL);
         form.resetFields();
+        setFormIsValid(false);
         setFile(null);
         dispatch(importActions.closeImportDatasetModal(instance));
     }, [form, instance]);
@@ -269,14 +271,7 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
     };
 
     const handleImport = useCallback(
-        (values: FormValues): void => {
-            if (uploadParams.file === null && !values.fileName) {
-                Notification.error({
-                    message: `No ${uploadParams.resource} file specified`,
-                });
-                return;
-            }
-
+        (): void => {
             if (isAnnotation()) {
                 confirmUpload();
             } else {
@@ -291,6 +286,7 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
         defaultStorageLocation === StorageLocation.LOCAL ||
         defaultStorageLocation === null
     )) || (!useDefaultSettings && selectedSourceStorageLocation === StorageLocation.LOCAL);
+
     return (
         <>
             <Modal
@@ -318,7 +314,7 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                 onCancel={closeModal}
                 onOk={() => form.submit()}
                 okButtonProps={{
-                    disabled: loadFromLocal && file === null,
+                    disabled: !formIsValid || (loadFromLocal && file === null),
                 }}
                 className='cvat-modal-import-dataset'
                 destroyOnClose
@@ -329,6 +325,11 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                     initialValues={{
                         ...initialValues,
                         convMaskToPoly: uploadParams.convMaskToPoly,
+                    }}
+                    onChange={() => {
+                        form.validateFields()
+                            .then(() => setFormIsValid(true))
+                            .catch(() => setFormIsValid(false));
                     }}
                     onFinish={handleImport}
                     layout='vertical'
@@ -428,6 +429,7 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                             locationName={['sourceStorage', 'location']}
                             selectCloudStorageName={['sourceStorage', 'cloudStorageId']}
                             onChangeStorage={(value: StorageData) => {
+                                setFormIsValid(false);
                                 setUploadParams({
                                     ...uploadParams,
                                     sourceStorage: new Storage({
