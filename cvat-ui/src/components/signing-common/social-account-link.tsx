@@ -7,6 +7,7 @@ import React from 'react';
 import { Col, Row } from 'antd/lib/grid';
 import Button from 'antd/lib/button/button';
 import { LoginOutlined } from '@ant-design/icons';
+import Tooltip from 'antd/lib/tooltip';
 import AuthenticationProviderIcon from './auth-provider-icon';
 
 export interface SocialAccountLinkProps {
@@ -14,14 +15,15 @@ export interface SocialAccountLinkProps {
     className?: string;
     href: string;
     icon: string;
+    useSmallIcon: boolean;
 }
 
 function SocialAccountLink(props: SocialAccountLinkProps): JSX.Element {
     const {
-        children, className, href, icon,
+        children, className, href, icon, useSmallIcon,
     } = props;
 
-    return (
+    const socialAccountLink: JSX.Element = (!useSmallIcon) ? (
         <Row>
             <Col flex='auto'>
                 <Button
@@ -41,7 +43,25 @@ function SocialAccountLink(props: SocialAccountLinkProps): JSX.Element {
                 </Button>
             </Col>
         </Row>
+    ) : (
+        <Tooltip title={children}>
+            <Button
+                href={href}
+                type='link'
+                className={`cvat-social-authentication-link ${className}-button`}
+            >
+                {(icon) ?
+                    <AuthenticationProviderIcon iconData={icon} provider={children} /> :
+                    <LoginOutlined className='cvat-social-authentication-icon' />}
+            </Button>
+        </Tooltip>
     );
+
+    return socialAccountLink;
 }
+
+SocialAccountLink.defaultProps = {
+    useSmallIcon: false,
+};
 
 export default React.memo(SocialAccountLink);

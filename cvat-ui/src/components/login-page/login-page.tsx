@@ -10,7 +10,6 @@ import { Row, Col } from 'antd/lib/grid';
 
 import SigningLayout, { formSizes } from 'components/signing-common/signing-layout';
 import SocialAccountLink from 'components/signing-common/social-account-link';
-import SocialAccountCard from 'components/signing-common/social-account-card';
 
 import { getCore, SocialAuthMethods, SocialAuthMethod } from 'cvat-core-wrapper';
 import config from 'config';
@@ -55,14 +54,15 @@ const renderSocialAuthMethods = (methods: SocialAuthMethods): JSX.Element | JSX.
                     >
                         {item.map((method: SocialAuthMethod) => (
                             <Col span={6} key={method.provider} style={{ display: 'flex' }}>
-                                <SocialAccountCard
+                                <SocialAccountLink
                                     key={method.provider}
                                     icon={method.icon}
                                     href={(method.provider !== config.SSO_PROVIDER_KEY) ? `${backendAPI}/auth/social/${method.provider}/login/` : '/auth/oidc/select-identity-provider/'}
                                     className={`cvat-social-authentication-${method.provider}`}
+                                    useSmallIcon
                                 >
                                     {`Continue with ${method.publicName}`}
-                                </SocialAccountCard>
+                                </SocialAccountLink>
                             </Col>
                         ))}
                     </Row>
