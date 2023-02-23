@@ -277,7 +277,7 @@ Fill in the following fields:
 | **Description**        | (Optional) Add description of storage.                                                                                                                                                                                                                                                                            |
 | **Provider**           | From drop-down list select **Google Cloud Storage**.                                                                                                                                                                                                                                                             |
 | **Bucket name**        | Name of the bucket. You can find it on the [storage browser page](https://console.cloud.google.com/storage/browser).                                                                                                                                   |
-| **Authorization type** | Depends on the bucket setup: <br><li>**Authorized access**: Click on the **Key file** field and upload key file from computer. <br><li> **Anonymous access**: for anonymous access. Public access to the bucket must be enabled.                                                                                 |
+| **Authorization type** | Depends on the bucket setup: <br><li>**Authorized access**: Click on the **Key file** field and upload key file from computer. <br> **Advanced**: For self-hosted solution, if the key file was not attached, then environment variable `GOOGLE_APPLICATION_CREDENTIALS`  that was specified for an environment will be used. For more information, see [Authenticate to Cloud services using client libraries](https://cloud.google.com/docs/authentication/client-libraries#setting_the_environment_variable).<br><li> **Anonymous access**: for anonymous access. Public access to the bucket must be enabled.                                                                                 |
 | **Prefix**             | (Optional) Used to filter data from the bucket.                                                                                                                                                                                                                                                                  |
 | **Project ID**         | [Project ID](#authorized-access). <br>For more information, see [projects page](https://cloud.google.com/resource-manager/docs/creating-managing-projects) and [cloud resource manager page](https://console.cloud.google.com/cloud-resource-manager). <br>**Note:** Project name does not match the project ID. |
 | **Location**           | (Optional) Choose a region from the list or add a new one. For more information, see [**Available locations**](https://cloud.google.com/storage/docs/locations#available-locations).                                                                                                                             |
@@ -300,7 +300,7 @@ To create bucket, do the following:
    ![](/images/azure_blob_container_tutorial1.jpg)
 
 3. Enter a name for the group and click **Review + create**, check the entered data and click **Create**.
-4. Go to the [resource groups page](https://portal.azure.com/#blade/HubsExtension/Browse),
+4. Go to the [resource groups page](https://portal.azure.com/#view/HubsExtension/BrowseResourceGroups),
    navigate to the group that you created and click **Create resources**.
 5. On the marketplace page, use search to find **Storage account**.
 
@@ -485,7 +485,7 @@ see [Creating an IAM user in your AWS account](https://docs.aws.amazon.com/IAM/l
 
 On how to grant public access to the
 bucket, see
-[Configuring block public access settings for your S3 buckets](https://docs.aws.amazon.com/AmazonS3/latest/userguide/configuring-block-public-access-bucket.html)
+[Configuring block public access settings for your S3 buckets](https://docs.aws.amazon.com/AmazonS3/latest/userguide/WebsiteAccessPermissionsReqd.html)
 
 ### Attach AWS S3 storage
 
