@@ -136,7 +136,7 @@ Fill in the following fields:
 | **Prefix**             | (Optional) Used to filter data from the bucket.                                                                                                                                                                                                                                                                  |
 | **Project ID**         | [Project ID](#authorized-access). <br>For more information, see [projects page](https://cloud.google.com/resource-manager/docs/creating-managing-projects) and [cloud resource manager page](https://console.cloud.google.com/cloud-resource-manager). <br>**Note:** Project name does not match the project ID. |
 | **Location**           | (Optional) Choose a region from the list or add a new one. For more information, see [**Available locations**](https://cloud.google.com/storage/docs/locations#available-locations).                                                                                                                             |
-| **Manifests**          | Click **+ Add manifest** and enter the name of the manifest file with an extension. For example: `manifest.json`.                                                                                                                                                                                                |
+| **Manifests**          | Click **+ Add manifest** and enter the name of the manifest file with an extension. For example: `manifest.jsonl`.                                                                                                                                                                                                |
 
 <!--lint enable maximum-line-length-->
 
