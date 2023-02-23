@@ -907,11 +907,10 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                         raise serializers.ValidationError(f'Target project does not have label with name "{old_label.name}"')
 
                     for old_attr in old_label.attributespec_set.all():
-                        try:
-                            new_attr = new_label.attributespec_set.filter(name=old_attr.name).first()
-                        except ValueError:
-                            raise serializers.ValidationError(f'Target project does not have ' /
-                                '"{old_label.name}" label attribute with name "{old_attr.name}"')
+                        new_attr = new_label.attributespec_set.filter(name=old_attr.name).first()
+                        if new_attr is None:
+                            raise serializers.ValidationError('Target project does not have ' \
+                                f'"{old_label.name}" label with "{old_attr.name}" attribute')
 
                         for (model, model_name) in (
                             (models.LabeledTrackAttributeVal, 'track'),
