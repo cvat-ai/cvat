@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('engine', '0064_delete_wrong_labels'),
+        ('engine', '0064_delete_or_rename_wrong_labels'),
     ]
 
     operations = [
