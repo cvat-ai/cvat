@@ -363,6 +363,7 @@ Object.defineProperties(CloudStorage.prototype.getPreview, {
                 serverProxy.cloudStorages
                     .getPreview(this.id)
                     .then((result) => decodePreview(result))
+                    .then((decoded) => resolve(decoded))
                     .catch((error) => {
                         reject(error);
                     });
