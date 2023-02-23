@@ -626,7 +626,7 @@ class TestPatchProjectLabel:
         kwargs.setdefault("return_json", True)
         with make_api_client(user) as api_client:
             return get_paginated_collection(
-                api_client.labels_api.list_endpoint, project_id=str(pid), **kwargs
+                api_client.labels_api.list_endpoint, project_id=pid, **kwargs
             )
 
     def test_can_delete_label(self, projects, labels, admin_user):

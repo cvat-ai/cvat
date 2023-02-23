@@ -7,8 +7,10 @@ from typing import Any, Dict, Iterator, Optional
 from functools import reduce
 import operator
 import json
+import warnings
 
 from django_filters import FilterSet
+from django_filters import filters as djf
 from django_filters.filterset import BaseFilterSet
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q
@@ -283,7 +285,7 @@ class SimpleFilter(DjangoFilterBackend):
 
     def get_filterset_class(self, view, queryset=None):
         lookup_fields = self.get_lookup_fields(view)
-        if not lookup_fields or not queryset:
+        if not lookup_fields or queryset is None:
             return None
 
         MetaBase = getattr(self.filterset_base, 'Meta', object)
@@ -306,33 +308,38 @@ class SimpleFilter(DjangoFilterBackend):
 
         return get_lookup_fields(view, fields=simple_filters)
 
-    def get_schema_fields(self, view):
-        assert coreapi is not None, 'coreapi must be installed to use `get_schema_fields()`'
-        assert coreschema is not None, 'coreschema must be installed to use `get_schema_fields()`'
-
-        lookup_fields = self.get_lookup_fields(view)
-
-        return [
-            coreapi.Field(
-                name=field_name,
-                location='query',
-                schema={
-                    'type': 'string',
-                }
-            ) for field_name in lookup_fields
-        ]
-
     def get_schema_operation_parameters(self, view):
-        lookup_fields = self.get_lookup_fields(view)
+        try:
+            queryset = view.get_queryset()
+        except Exception:
+            queryset = None
+            warnings.warn(
+                "{} is not compatible with schema generation".format(view.__class__)
+            )
+
+        filterset_class = self.get_filterset_class(view, queryset)
+
+        if not filterset_class:
+            return []
 
         parameters = []
-        for field_name in lookup_fields:
-            parameters.append({
+        for field_name, field in filterset_class.base_filters.items():
+            if isinstance(field, djf.BooleanFilter):
+                parameter_schema = { 'type': 'boolean' }
+            elif isinstance(field, (djf.NumberFilter, djf.ModelChoiceFilter)):
+                parameter_schema = { 'type': 'integer' }
+            else:
+                parameter_schema = { 'type': 'string' }
+
+            parameter = {
                 'name': field_name,
                 'in': 'query',
-                'description': force_str(self.filter_desc.format_map({'field_name': field_name})),
-                'schema': {
-                    'type': 'string',
-                },
-            })
+                'description': force_str(self.filter_desc.format_map({
+                    'field_name': field.label if field.label is not None else field_name
+                })),
+                'schema': parameter_schema,
+            }
+            if field.extra and 'choices' in field.extra:
+                parameter['schema']['enum'] = [c[0] for c in field.extra['choices']]
+            parameters.append(parameter)
         return parameters

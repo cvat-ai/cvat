@@ -243,6 +243,10 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     def get_queryset(self):
         queryset = super().get_queryset()
+
+        if getattr(self, 'swagger_fake_view', False):
+            return queryset
+
         if self.action == 'list':
             perm = ProjectPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
@@ -711,6 +715,10 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     def get_queryset(self):
         queryset = super().get_queryset()
+
+        if getattr(self, 'swagger_fake_view', False):
+            return queryset
+
         if self.action == 'list':
             perm = TaskPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
@@ -1308,6 +1316,9 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def get_queryset(self):
         queryset = super().get_queryset()
 
+        if getattr(self, 'swagger_fake_view', False):
+            return queryset
+
         if self.action == 'list':
             perm = JobPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
@@ -1727,6 +1738,10 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     def get_queryset(self):
         queryset = super().get_queryset()
+
+        if getattr(self, 'swagger_fake_view', False):
+            return queryset
+
         if self.action == 'list':
             perm = IssuePermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
@@ -1795,6 +1810,10 @@ class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     def get_queryset(self):
         queryset = super().get_queryset()
+
+        if getattr(self, 'swagger_fake_view', False):
+            return queryset
+
         if self.action == 'list':
             perm = CommentPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
@@ -1822,9 +1841,12 @@ class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         summary='Method returns a paginated list of labels',
         parameters=[
             # These filters are implemented differently from others
-            OpenApiParameter('job_id', description='A simple equality filter for job id'),
-            OpenApiParameter('task_id', description='A simple equality filter for task id'),
-            OpenApiParameter('project_id', description='A simple equality filter for project id'),
+            OpenApiParameter('job_id', type=OpenApiTypes.INT,
+                description='A simple equality filter for job id'),
+            OpenApiParameter('task_id', type=OpenApiTypes.INT,
+                description='A simple equality filter for task id'),
+            OpenApiParameter('project_id', type=OpenApiTypes.INT,
+                description='A simple equality filter for project id'),
         ],
         responses={
             '200': LabelSerializer(many=True),
@@ -1875,6 +1897,9 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     serializer_class = LabelSerializer
 
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return super().get_queryset()
+
         if self.action == 'list':
             job_id = self.request.GET.get('job_id', None)
             task_id = self.request.GET.get('task_id', None)
@@ -1995,6 +2020,10 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     def get_queryset(self):
         queryset = super().get_queryset()
+
+        if getattr(self, 'swagger_fake_view', False):
+            return queryset
+
         if self.action == 'list':
             perm = UserPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
@@ -2086,6 +2115,10 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     def get_queryset(self):
         queryset = super().get_queryset()
+
+        if getattr(self, 'swagger_fake_view', False):
+            return queryset
+
         if self.action == 'list':
             perm = CloudStoragePermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
