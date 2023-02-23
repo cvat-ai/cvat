@@ -386,6 +386,12 @@ class Task(models.Model):
     def get_tmp_dirname(self):
         return os.path.join(self.get_dirname(), "tmp")
 
+    def get_completed_jobs_count(self) -> Optional[int]:
+        return getattr(self, 'completed_jobs_count', None)
+
+    def get_validation_jobs_count(self) -> Optional[int]:
+        return getattr(self, 'validation_jobs_count', None)
+
     def __str__(self):
         return self.name
 

@@ -684,7 +684,11 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         completed_jobs_count=dj_models.Count(
             'segment__job',
             filter=dj_models.Q(segment__job__state=models.StateChoice.COMPLETED.value)
-        )
+        ),
+        validation_jobs_count=dj_models.Count(
+            'segment__job',
+            filter=dj_models.Q(segment__job__stage=models.StageChoice.VALIDATION.value)
+        ),
     ).all()
 
     lookup_fields = {
