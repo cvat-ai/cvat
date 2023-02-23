@@ -22,6 +22,7 @@ from cvat.apps.engine import models
 from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials, Status
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.utils import parse_specific_attributes
+from cvat.apps.dataset_manager.util import bulk_create
 
 from drf_spectacular.utils import OpenApiExample, extend_schema_field, extend_schema_serializer
 
@@ -904,11 +905,32 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                             new_label = project.label_set.filter(name=old_label.name).first()
                     except ValueError:
                         raise serializers.ValidationError(f'Target project does not have label with name "{old_label.name}"')
+
+                    for old_attr in old_label.attributespec_set.all():
+                        try:
+                            new_attr = new_label.attributespec_set.filter(name=old_attr.name).first()
+                        except ValueError:
+                            raise serializers.ValidationError(f'Target project does not have ' /
+                                '"{old_label.name}" label attribute with name "{old_attr.name}"')
+
+                        for (model, model_name) in (
+                            (models.LabeledTrackAttributeVal, 'track'),
+                            (models.LabeledShapeAttributeVal, 'shape'),
+                            (models.LabeledImageAttributeVal, 'image')
+                        ):
+                            model.objects.filter(**{
+                                f'{model_name}__job__segment__task': instance,
+                                f'{model_name}__label': old_label,
+                                'spec': old_attr
+                            }).update(spec=new_attr)
+
                     old_label.attributespec_set.all().delete()
+
                     for model in (models.LabeledTrack, models.LabeledShape, models.LabeledImage):
                         model.objects.filter(job__segment__task=instance, label=old_label).update(
                             label=new_label
                         )
+
                 instance.label_set.all().delete()
             else:
                 for old_label in instance.project.label_set.all():
