@@ -84,7 +84,7 @@ function ImportBackupModal(): JSX.Element {
         <Form.Item
             label={<Text strong>File name</Text>}
             name='fileName'
-            rules={[{ validator: validateFileName }]}
+            rules={[{ validator: validateFileName }, { required: true, message: 'Please, specify a name' }]}
         >
             <Input
                 placeholder='Backup file name'
@@ -131,15 +131,13 @@ function ImportBackupModal(): JSX.Element {
             <Modal
                 title={(
                     <Text strong>
-                        Create
-                        {instanceType}
-                        {' '}
-                        from backup
+                        {`Create ${instanceType} from backup`}
                     </Text>
                 )}
                 visible={modalVisible}
                 onCancel={closeModal}
                 onOk={() => form.submit()}
+                okButtonProps={{ disabled: selectedSourceStorage?.location === StorageLocation.LOCAL && file === null }}
                 className='cvat-modal-import-backup'
             >
                 <Form

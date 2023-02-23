@@ -90,7 +90,6 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
     }, [instanceT]);
 
     const isDataset = useCallback((): boolean => resource === 'dataset', [resource]);
-
     const isAnnotation = useCallback((): boolean => resource === 'annotation', [resource]);
 
     useEffect(() => {
@@ -212,19 +211,17 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
             name='fileName'
             hasFeedback
             dependencies={['selectedFormat']}
-            rules={[{ validator: validateFileName }]}
+            rules={[{ validator: validateFileName }, { required: true, message: 'Please, specify a name' }]}
             required
         >
             <Input
                 placeholder='Dataset file name'
                 className='cvat-modal-import-filename-input'
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                    if (e.target.value) {
-                        setUploadParams({
-                            ...uploadParams,
-                            fileName: e.target.value,
-                        } as UploadParams);
-                    }
+                    setUploadParams({
+                        ...uploadParams,
+                        fileName: e.target.value || '',
+                    } as UploadParams);
                 }}
             />
         </Form.Item>
@@ -290,6 +287,10 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
         [instance, uploadParams],
     );
 
+    const loadFromLocal = (useDefaultSettings && (
+        defaultStorageLocation === StorageLocation.LOCAL ||
+        defaultStorageLocation === null
+    )) || (!useDefaultSettings && selectedSourceStorageLocation === StorageLocation.LOCAL);
     return (
         <>
             <Modal
@@ -316,6 +317,9 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                 visible={!!instance}
                 onCancel={closeModal}
                 onOk={() => form.submit()}
+                okButtonProps={{
+                    disabled: loadFromLocal && file === null,
+                }}
                 className='cvat-modal-import-dataset'
                 destroyOnClose
             >
@@ -419,18 +423,6 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                             <QuestionCircleOutlined />
                         </CVATTooltip>
                     </Space>
-
-                    {
-                        useDefaultSettings && (
-                            defaultStorageLocation === StorageLocation.LOCAL ||
-                            defaultStorageLocation === null
-                        ) && uploadLocalFile()
-                    }
-                    {
-                        useDefaultSettings &&
-                        defaultStorageLocation === StorageLocation.CLOUD_STORAGE &&
-                        renderCustomName()
-                    }
                     {!useDefaultSettings && (
                         <StorageField
                             locationName={['sourceStorage', 'location']}
@@ -448,16 +440,8 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                             onChangeLocationValue={(value: StorageLocation) => setSelectedSourceStorageLocation(value)}
                         />
                     )}
-                    {
-                        !useDefaultSettings &&
-                        selectedSourceStorageLocation === StorageLocation.CLOUD_STORAGE &&
-                        renderCustomName()
-                    }
-                    {
-                        !useDefaultSettings &&
-                        selectedSourceStorageLocation === StorageLocation.LOCAL &&
-                        uploadLocalFile()
-                    }
+                    { !loadFromLocal && renderCustomName() }
+                    { loadFromLocal && uploadLocalFile() }
                 </Form>
             </Modal>
             <ImportDatasetStatusModal />
