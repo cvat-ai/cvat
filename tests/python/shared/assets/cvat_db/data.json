@@ -36,7 +36,7 @@
   "pk": 1,
   "fields": {
     "password": "pbkdf2_sha256$260000$DevmxlmLwciP1P6sZs2Qag$U9DFtjTWx96Sk95qY6UXVcvpdQEP2LcoFBftk5D2RKY=",
-    "last_login": "2022-12-05T07:46:24.795Z",
+    "last_login": "2023-02-23T11:40:03.664Z",
     "is_superuser": true,
     "username": "admin1",
     "first_name": "Admin",
@@ -509,6 +509,14 @@
   "fields": {
     "session_data": ".eJxVjEsOwjAMBe-SNYrq_BxYsucMlWO7tIAaqWlXiLujSl3A9s3Me5uetnXst6ZLP4m5GABz-h0L8VPnnciD5nu1XOd1mYrdFXvQZm9V9HU93L-Dkdq41550gJRLCCmJyoBdJmKMmaEEjpwDqmh0wuhc8Q68cmJA7M4OMJjPFyYSODI:1nUkTH:BLJ2UbMcN1AmDEbuOLS5T_O-vbrAzEW_K8oRkQZYt4M",
     "expire_date": "2022-03-31T07:22:55.934Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "fk2k8w6dib5j6dzf205xsynwr6g335ia",
+  "fields": {
+    "session_data": ".eJxVjDsOwyAQBe9CHSHAfFOm9xnQ7oKDkwgkY1dR7h5bcpG0b2bem0XY1hK3npc4J3Zlkl1-NwR65nqA9IB6b5xaXZcZ-aHwk3Y-tpRft9P9OyjQy14rp6wmQAt2kIoGkZPPhoC8DtrBYIQPToppV5JxJoXJE1L26EBpBMU-X-HyOFs:1pV9xD:lMzlfK2bjWqM7_MdEml56vaMjY9Qbl8NtviHtcr2f7E",
+    "expire_date": "2023-03-09T11:40:03.672Z"
   }
 },
 {
@@ -1206,6 +1214,25 @@
     "image_quality": 70,
     "start_frame": 0,
     "stop_frame": 4,
+    "frame_filter": "",
+    "compressed_chunk_type": "imageset",
+    "original_chunk_type": "imageset",
+    "storage_method": "cache",
+    "storage": "local",
+    "cloud_storage": null,
+    "sorting_method": "lexicographical",
+    "deleted_frames": "[]"
+  }
+},
+{
+  "model": "engine.data",
+  "pk": 17,
+  "fields": {
+    "chunk_size": 72,
+    "size": 3,
+    "image_quality": 70,
+    "start_frame": 0,
+    "stop_frame": 2,
     "frame_filter": "",
     "compressed_chunk_type": "imageset",
     "original_chunk_type": "imageset",
@@ -2315,6 +2342,39 @@
   }
 },
 {
+  "model": "engine.image",
+  "pk": 451,
+  "fields": {
+    "data": 17,
+    "path": "0.png",
+    "frame": 0,
+    "width": 974,
+    "height": 452
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 452,
+  "fields": {
+    "data": 17,
+    "path": "1.png",
+    "frame": 1,
+    "width": 783,
+    "height": 760
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 453,
+  "fields": {
+    "data": 17,
+    "path": "2.png",
+    "frame": 2,
+    "width": 528,
+    "height": 458
+  }
+},
+{
   "model": "engine.project",
   "pk": 1,
   "fields": {
@@ -2486,6 +2546,24 @@
     "organization": 2,
     "source_storage": 19,
     "target_storage": 20
+  }
+},
+{
+  "model": "engine.project",
+  "pk": 11,
+  "fields": {
+    "name": "project with attributes",
+    "owner": [
+      "admin1"
+    ],
+    "assignee": null,
+    "bug_tracker": "",
+    "created_date": "2023-02-23T11:58:51.697Z",
+    "updated_date": "2023-02-23T11:58:51.697Z",
+    "status": "annotation",
+    "organization": null,
+    "source_storage": 23,
+    "target_storage": 24
   }
 },
 {
@@ -2802,6 +2880,31 @@
     "organization": 2,
     "source_storage": null,
     "target_storage": null
+  }
+},
+{
+  "model": "engine.task",
+  "pk": 18,
+  "fields": {
+    "project": null,
+    "name": "task with attributes",
+    "mode": "annotation",
+    "owner": [
+      "admin1"
+    ],
+    "assignee": null,
+    "bug_tracker": "",
+    "created_date": "2023-02-23T11:57:15.355Z",
+    "updated_date": "2023-02-23T11:58:10.592Z",
+    "overlap": 0,
+    "segment_size": 3,
+    "status": "annotation",
+    "data": 17,
+    "dimension": "2d",
+    "subset": "",
+    "organization": null,
+    "source_storage": 21,
+    "target_storage": 22
   }
 },
 {
@@ -3565,6 +3668,30 @@
   }
 },
 {
+  "model": "engine.clientfile",
+  "pk": 443,
+  "fields": {
+    "data": 17,
+    "file": "/home/django/data/data/17/raw/0.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 444,
+  "fields": {
+    "data": 17,
+    "file": "/home/django/data/data/17/raw/1.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 445,
+  "fields": {
+    "data": 17,
+    "file": "/home/django/data/data/17/raw/2.png"
+  }
+},
+{
   "model": "engine.relatedfile",
   "pk": 1,
   "fields": {
@@ -3697,6 +3824,15 @@
     "task": 17,
     "start_frame": 0,
     "stop_frame": 4
+  }
+},
+{
+  "model": "engine.segment",
+  "pk": 22,
+  "fields": {
+    "task": 18,
+    "start_frame": 0,
+    "stop_frame": 2
   }
 },
 {
@@ -3875,6 +4011,18 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "new"
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 22,
+  "fields": {
+    "segment": 22,
+    "assignee": null,
+    "updated_date": "2023-02-23T11:58:10.821Z",
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "in progress"
   }
 },
 {
@@ -4334,6 +4482,30 @@
   }
 },
 {
+  "model": "engine.label",
+  "pk": 46,
+  "fields": {
+    "task": 18,
+    "project": null,
+    "name": "cat",
+    "color": "#6080c0",
+    "type": "any",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 47,
+  "fields": {
+    "task": null,
+    "project": 11,
+    "name": "cat",
+    "color": "#6080c0",
+    "type": "any",
+    "parent": null
+  }
+},
+{
   "model": "engine.skeleton",
   "pk": 1,
   "fields": {
@@ -4415,6 +4587,30 @@
     "input_type": "checkbox",
     "default_value": "false",
     "values": "false"
+  }
+},
+{
+  "model": "engine.attributespec",
+  "pk": 7,
+  "fields": {
+    "label": 46,
+    "name": "attr1",
+    "mutable": false,
+    "input_type": "text",
+    "default_value": "default",
+    "values": "default"
+  }
+},
+{
+  "model": "engine.attributespec",
+  "pk": 8,
+  "fields": {
+    "label": 47,
+    "name": "attr1",
+    "mutable": false,
+    "input_type": "text",
+    "default_value": "default",
+    "values": "default"
   }
 },
 {
@@ -4876,6 +5072,24 @@
   }
 },
 {
+  "model": "engine.labeledshape",
+  "pk": 49,
+  "fields": {
+    "job": 22,
+    "label": 46,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[124.1510451786944, 60.509372892787724, 334.31962238705637, 260.826298044507]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
   "model": "engine.labeledshapeattributeval",
   "pk": 1,
   "fields": {
@@ -4900,6 +5114,15 @@
     "spec": 1,
     "value": "mazda",
     "shape": 42
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 4,
+  "fields": {
+    "spec": 7,
+    "value": "non-default",
+    "shape": 49
   }
 },
 {
@@ -4963,6 +5186,18 @@
   }
 },
 {
+  "model": "engine.labeledtrack",
+  "pk": 6,
+  "fields": {
+    "job": 22,
+    "label": 46,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "parent": null
+  }
+},
+{
   "model": "engine.labeledtrackattributeval",
   "pk": 3,
   "fields": {
@@ -4978,6 +5213,15 @@
     "spec": 3,
     "value": "val1",
     "track": 4
+  }
+},
+{
+  "model": "engine.labeledtrackattributeval",
+  "pk": 5,
+  "fields": {
+    "spec": 7,
+    "value": "non-default",
+    "track": 6
   }
 },
 {
@@ -5104,6 +5348,20 @@
     "rotation": 0.0,
     "track": 5,
     "frame": 3
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 10,
+  "fields": {
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[403.9379635873247, 87.43722184760918, 731.6695886716134, 307.45745111261203]",
+    "rotation": 0.0,
+    "track": 6,
+    "frame": 0
   }
 },
 {
@@ -5702,6 +5960,38 @@
 {
   "model": "engine.storage",
   "pk": 20,
+  "fields": {
+    "location": "local",
+    "cloud_storage_id": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 21,
+  "fields": {
+    "location": "local",
+    "cloud_storage_id": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 22,
+  "fields": {
+    "location": "local",
+    "cloud_storage_id": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 23,
+  "fields": {
+    "location": "local",
+    "cloud_storage_id": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 24,
   "fields": {
     "location": "local",
     "cloud_storage_id": null

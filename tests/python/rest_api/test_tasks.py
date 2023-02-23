@@ -1306,3 +1306,34 @@ class TestUnequalJobs:
         for old_job, new_job in zip(old_jobs, new_jobs):
             assert old_job.start_frame == new_job.start_frame
             assert old_job.stop_frame == new_job.stop_frame
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+class TestPatchTask:
+    @pytest.mark.parametrize("task_id, project_id, user", [(18, 11, "admin1")])
+    def test_move_task_to_project_with_attributes(self, task_id, project_id, user):
+        response = get_method(user, f"tasks/{task_id}/annotations")
+        assert response.status_code == HTTPStatus.OK
+        annotations = response.json()
+
+        response = patch_method(user, f"tasks/{task_id}", {"project_id": project_id})
+        assert response.status_code == HTTPStatus.OK
+
+        response = get_method(user, f"tasks/{task_id}")
+        assert response.status_code == HTTPStatus.OK
+        assert response.json().get("project_id") == project_id
+
+        response = get_method(user, f"tasks/{task_id}/annotations")
+        assert response.status_code == HTTPStatus.OK
+        assert (
+            DeepDiff(
+                annotations,
+                response.json(),
+                ignore_order=True,
+                exclude_regex_paths=[
+                    r"root\['\w+'\]\[\d+\]\['label_id'\]",
+                    r"root\['\w+'\]\[\d+\]\['attributes'\]\[\d+\]\['spec_id'\]",
+                ],
+            )
+            == {}
+        )

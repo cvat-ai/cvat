@@ -1,5 +1,5 @@
 {
-  "count": 26,
+  "count": 28,
   "next": null,
   "previous": null,
   "results": [
@@ -449,6 +449,50 @@
       "svg": "<line x1=\"33.80753707885742\" y1=\"62.16216278076172\" x2=\"57.11834716796875\" y2=\"47.635135650634766\" stroke=\"black\" data-type=\"edge\" data-node-from=\"4\" stroke-width=\"0.5\" data-node-to=\"3\"></line><line x1=\"23.334564208984375\" y1=\"48.47972869873047\" x2=\"33.80753707885742\" y2=\"62.16216278076172\" stroke=\"black\" data-type=\"edge\" data-node-from=\"5\" stroke-width=\"0.5\" data-node-to=\"4\"></line><line x1=\"24.34807777404785\" y1=\"25.675676345825195\" x2=\"51.54402542114258\" y2=\"27.533782958984375\" stroke=\"black\" data-type=\"edge\" data-node-from=\"1\" stroke-width=\"0.5\" data-node-to=\"2\"></line><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"24.34807777404785\" cy=\"25.675676345825195\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-id=\"41\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"51.54402542114258\" cy=\"27.533782958984375\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-id=\"42\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"57.11834716796875\" cy=\"47.635135650634766\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"3\" data-node-id=\"3\" data-label-id=\"43\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"33.80753707885742\" cy=\"62.16216278076172\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"4\" data-node-id=\"4\" data-label-id=\"44\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"23.334564208984375\" cy=\"48.47972869873047\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"5\" data-node-id=\"5\" data-label-id=\"45\"></circle>",
       "task_id": 17,
       "type": "skeleton"
+    },
+    {
+      "attributes": [
+        {
+          "default_value": "default",
+          "id": 7,
+          "input_type": "text",
+          "mutable": false,
+          "name": "attr1",
+          "values": [
+            "default"
+          ]
+        }
+      ],
+      "color": "#6080c0",
+      "has_parent": false,
+      "id": 46,
+      "name": "cat",
+      "parent_id": null,
+      "sublabels": [],
+      "task_id": 18,
+      "type": "any"
+    },
+    {
+      "attributes": [
+        {
+          "default_value": "default",
+          "id": 8,
+          "input_type": "text",
+          "mutable": false,
+          "name": "attr1",
+          "values": [
+            "default"
+          ]
+        }
+      ],
+      "color": "#6080c0",
+      "has_parent": false,
+      "id": 47,
+      "name": "cat",
+      "parent_id": null,
+      "project_id": 11,
+      "sublabels": [],
+      "type": "any"
     }
   ]
 }
