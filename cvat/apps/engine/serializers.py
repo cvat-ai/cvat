@@ -250,6 +250,7 @@ class LabelSerializer(SublabelSerializer):
         return attrs
 
     @classmethod
+    @transaction.atomic
     def update_label(
         cls,
         validated_data: Dict[str, Any],
@@ -287,12 +288,15 @@ class LabelSerializer(SublabelSerializer):
 
             logger.info("Label id {} ({}) was updated".format(db_label.id, db_label.name))
         else:
-            db_label = models.Label.objects.create(
-                name=validated_data.get('name'),
-                type=validated_data.get('type'),
-                parent=parent_label,
-                **parent_info
-            )
+            try:
+                db_label = models.Label.create(
+                    name=validated_data.get('name'),
+                    type=validated_data.get('type'),
+                    parent=parent_label,
+                    **parent_info
+                )
+            except models.InvalidLabel as exc:
+                raise exceptions.ValidationError(str(exc)) from exc
             logger.info("New {} label was created".format(db_label.name))
 
         if validated_data.get('deleted'):
@@ -358,7 +362,10 @@ class LabelSerializer(SublabelSerializer):
 
             sublabels = label.pop('sublabels', [])
             svg = label.pop('svg', '')
-            db_label = models.Label.objects.create(**label, **parent_info, parent=parent_label)
+            try:
+                db_label = models.Label.create(**label, **parent_info, parent=parent_label)
+            except models.InvalidLabel as exc:
+                raise exceptions.ValidationError(str(exc)) from exc
             logger.info(
                 f'label:create Label id:{db_label.id} for spec:{label} '
                 f'with sublabels:{sublabels}, parent_label:{parent_label}'
@@ -836,6 +843,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         return serializer.data
 
     # pylint: disable=no-self-use
+    @transaction.atomic
     def create(self, validated_data):
         project_id = validated_data.get("project_id")
         if not (validated_data.get("label_set") or project_id):
@@ -878,6 +886,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         return db_task
 
     # pylint: disable=no-self-use
+    @transaction.atomic
     def update(self, instance, validated_data):
         instance.name = validated_data.get('name', instance.name)
         instance.owner_id = validated_data.get('owner_id', instance.owner_id)
@@ -1010,19 +1019,8 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             for label, sublabels in new_sublabel_names.items():
                 if sublabels != target_project_sublabel_names.get(label):
                     raise serializers.ValidationError('All task or project label names must be mapped to the target project')
-        else:
-            if 'label_set' in attrs.keys():
-                # FIXME: doesn't work for renaming just a single label
-                label_names = [
-                    label['name']
-                    for label in attrs.get('label_set')
-                    if not label.get('deleted')
-                ]
-                if len(label_names) != len(set(label_names)):
-                    raise serializers.ValidationError('All label names must be unique for the task')
 
         return attrs
-
 
 class ProjectReadSerializer(serializers.ModelSerializer):
     owner = BasicUserSerializer(required=False, read_only=True)
@@ -1072,6 +1070,7 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
         return serializer.data
 
     # pylint: disable=no-self-use
+    @transaction.atomic
     def create(self, validated_data):
         labels = validated_data.pop('label_set')
 
@@ -1095,6 +1094,7 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
         return db_project
 
     # pylint: disable=no-self-use
+    @transaction.atomic
     def update(self, instance, validated_data):
         instance.name = validated_data.get('name', instance.name)
         instance.owner_id = validated_data.get('owner_id', instance.owner_id)
@@ -1109,18 +1109,6 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
 
         instance.save()
         return instance
-
-    def validate_labels(self, value):
-        if value:
-            # FIXME: doesn't work for renaming just a single label
-            label_names = [
-                label['name']
-                for label in value
-                if not label.get('deleted')
-            ]
-            if len(label_names) != len(set(label_names)):
-                raise serializers.ValidationError('All label names must be unique for the project')
-        return value
 
 class AboutSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=128)

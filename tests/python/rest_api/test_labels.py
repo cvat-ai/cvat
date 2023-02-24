@@ -698,7 +698,7 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
         response = self._test_update_denied(
             user, lid=labels[0]["id"], data=payload, expected_status=HTTPStatus.BAD_REQUEST
         )
-        assert f"Label '{payload['name']}' already exists" in response.data.decode()
+        assert "All label names must be unique" in response.data.decode()
 
     def test_admin_patch_sandbox_label(self, admin_sandbox_case):
         label, user = get_attrs(admin_sandbox_case, ["label", "user"])
