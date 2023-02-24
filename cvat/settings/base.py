@@ -438,12 +438,12 @@ LOGGING = {
         'cvat.server': {
             'handlers': ['console'],
             'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
-            'propagate': True
+            'propagate': False
         },
         'cvat.client': {
             'handlers': [],
             'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
-            'propagate': True
+            'propagate': False
         },
         'django': {
             'handlers': ['console'],
