@@ -71,6 +71,7 @@ Tracks can be exported/imported to/from Datumaro and Sly Pointcloud formats (<ht
 - Submit button is locked while file is not selected when importing a dataset (<https://github.com/opencv/cvat/pull/5757>)
 - \[Server API\] Various errors in the generated schema (<https://github.com/opencv/cvat/pull/5575>)
 - SiamMask and TransT serverless functions (<https://github.com/opencv/cvat/pull/5658>)
+- Сreating a project or task with the same labels (<https://github.com/opencv/cvat/pull/5700>)
 - \[Server API\] Ability to rename label to an existing name (<https://github.com/opencv/cvat/pull/5662>)
 
 ### Security
