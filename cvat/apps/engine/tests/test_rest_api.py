@@ -956,6 +956,28 @@ class ProjectDeleteAPITestCase(APITestCase):
     def test_api_v2_projects_id_no_auth(self):
         self._check_api_v2_projects_id(None)
 
+    def test_api_v2_projects_delete_project_data_after_delete_project(self):
+        tasks = {}
+        for project in self.projects:
+            tasks[project.name] = create_dummy_db_tasks(self.__class__, project)
+
+            project_dir = project.get_dirname()
+            self.assertTrue(os.path.exists(project_dir))
+
+            for task in tasks[project.name]:
+                task_dir = task.get_dirname()
+                self.assertTrue(os.path.exists(task_dir))
+
+        self._check_api_v2_projects_id(self.admin)
+
+        for project in self.projects:
+            project_dir = project.get_dirname()
+            self.assertFalse(os.path.exists(project_dir))
+
+            for task in tasks[project.name]:
+                task_dir = task.get_dirname()
+                self.assertFalse(os.path.exists(task_dir))
+
 class ProjectCreateAPITestCase(APITestCase):
     def setUp(self):
         self.client = APIClient()
