@@ -309,37 +309,36 @@ class SimpleFilter(DjangoFilterBackend):
         return get_lookup_fields(view, fields=simple_filters)
 
     def get_schema_operation_parameters(self, view):
-        try:
-            queryset = view.get_queryset()
-        except Exception:
-            queryset = None
-            warnings.warn(
-                "{} is not compatible with schema generation".format(view.__class__)
-            )
+        queryset = view.get_queryset()
 
         filterset_class = self.get_filterset_class(view, queryset)
-
         if not filterset_class:
             return []
 
         parameters = []
-        for field_name, field in filterset_class.base_filters.items():
-            if isinstance(field, djf.BooleanFilter):
+        for field_name, filter_ in filterset_class.base_filters.items():
+            if isinstance(filter_, djf.BooleanFilter):
                 parameter_schema = { 'type': 'boolean' }
-            elif isinstance(field, (djf.NumberFilter, djf.ModelChoiceFilter)):
+            elif isinstance(filter_, (djf.NumberFilter, djf.ModelChoiceFilter)):
                 parameter_schema = { 'type': 'integer' }
-            else:
+            elif isinstance(filter_, (djf.CharFilter, djf.ChoiceFilter)):
+                # Choices use their labels as filter values
                 parameter_schema = { 'type': 'string' }
+            else:
+                raise Exception("Filter field '{}' type '{}' is not supported".format(
+                    '.'.join([view.basename, view.action, field_name]),
+                    filter_
+                ))
 
             parameter = {
                 'name': field_name,
                 'in': 'query',
                 'description': force_str(self.filter_desc.format_map({
-                    'field_name': field.label if field.label is not None else field_name
+                    'field_name': filter_.label if filter_.label is not None else field_name
                 })),
                 'schema': parameter_schema,
             }
-            if field.extra and 'choices' in field.extra:
-                parameter['schema']['enum'] = [c[0] for c in field.extra['choices']]
+            if filter_.extra and 'choices' in filter_.extra:
+                parameter['schema']['enum'] = [c[0] for c in filter_.extra['choices']]
             parameters.append(parameter)
         return parameters
