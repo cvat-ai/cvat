@@ -114,7 +114,7 @@
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT\r\n    uniqExact(user_id) as \"Active users (now)\"\r\nFROM\r\n    cvat.events\r\nWHERE\r\n    user_id IS NOT NULL AND\r\n    timestamp >= now() - INTERVAL 10 MINUTE",
+          "rawSql": "SELECT\r\n    uniqExact(user_id) as \"Active users (now)\"\r\nFROM\r\n    cvat.events\r\nWHERE\r\n    user_id IS NOT NULL AND\r\n    timestamp >= now() - INTERVAL 15 MINUTE",
           "refId": "A"
         }
       ],

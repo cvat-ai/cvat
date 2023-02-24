@@ -8,6 +8,7 @@ import traceback
 
 from rest_framework.renderers import JSONRenderer
 from rest_framework.views import exception_handler
+from rest_framework import status
 from crum import get_current_user, get_current_request
 
 from cvat.apps.engine.models import (
@@ -430,6 +431,13 @@ def handle_rq_exception(rq_job, exc_type, exc_value, tb):
     return False
 
 def handle_viewset_exception(exc, context):
+    response = exception_handler(exc, context)
+
+    # the standard DRF exception handler only handle APIException, Http404 and PermissionDenied
+    # exceptions types, any other will cause a 500 error
+    status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+    if response is not None:
+        status_code = response.status_code
     request = context["request"]
     view = context["view"]
 
@@ -446,6 +454,7 @@ def handle_viewset_exception(exc, context):
         },
         "message": tb_strings[-1],
         "stack": ''.join(tb_strings),
+        "status_code": status_code,
     }
 
     event = create_event(
@@ -460,5 +469,5 @@ def handle_viewset_exception(exc, context):
     message = JSONRenderer().render(event).decode('UTF-8')
     vlogger.info(message)
 
-    response = exception_handler(exc, context)
+
     return response
