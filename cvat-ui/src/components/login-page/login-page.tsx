@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corp
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,6 +7,7 @@ import React, { useEffect } from 'react';
 import { RouteComponentProps, useHistory } from 'react-router';
 import { withRouter } from 'react-router-dom';
 import { Row, Col } from 'antd/lib/grid';
+import Text from 'antd/lib/typography/Text';
 
 import SigningLayout, { formSizes } from 'components/signing-common/signing-layout';
 import SocialAccountLink from 'components/signing-common/social-account-link';
@@ -26,61 +27,32 @@ interface LoginPageComponentProps {
     loadSocialAuthenticationMethods: () => void;
 }
 
-const renderSocialAuthMethods = (methods: SocialAuthMethods): JSX.Element | JSX.Element[] => {
+const renderSocialAuthMethods = (methods: SocialAuthMethods): JSX.Element | null => {
     const { backendAPI } = cvat.config;
     const activeMethods = methods.filter((item: SocialAuthMethod) => item.isEnabled);
 
-    if (activeMethods.length > 2) {
-        const numberPerRow = 4;
-        const map: SocialAuthMethod[][] = [];
-
-        activeMethods.forEach((el) => {
-            if (!map.length || map[map.length - 1].length === numberPerRow) {
-                map.push([el]);
-            } else {
-                map[map.length - 1].push(el);
-            }
-        });
-
-        return (
-            <>
-                {map.map((item: SocialAuthMethods, idx): JSX.Element => (
-                    <Row
-                        gutter={[4, 4]}
-                        align='middle'
-                        justify='space-between'
-                        key={idx}
-                        className='cvat-social-authentication-row-with-icons'
-                    >
-                        {item.map((method: SocialAuthMethod) => (
-                            <Col span={6} key={method.provider} style={{ display: 'flex' }}>
-                                <SocialAccountLink
-                                    key={method.provider}
-                                    icon={method.icon}
-                                    href={(method.provider !== config.SSO_PROVIDER_KEY) ? `${backendAPI}/auth/social/${method.provider}/login/` : '/auth/oidc/select-identity-provider/'}
-                                    className={`cvat-social-authentication-${method.provider}`}
-                                    useSmallIcon
-                                >
-                                    {`Continue with ${method.publicName}`}
-                                </SocialAccountLink>
-                            </Col>
-                        ))}
-                    </Row>
-                ))}
-            </>
-        );
+    if (!activeMethods.length) {
+        return null;
     }
 
-    return methods.map((item: SocialAuthMethod) => ((item.isEnabled) ? (
-        <SocialAccountLink
-            key={item.provider}
-            icon={item.icon}
-            href={(item.provider !== config.SSO_PROVIDER_KEY) ? `${backendAPI}/auth/social/${item.provider}/login/` : '/auth/oidc/select-identity-provider/'}
-            className={`cvat-social-authentication-${item.provider}`}
-        >
-            {`Continue with ${item.publicName}`}
-        </SocialAccountLink>
-    ) : <></>));
+    return (
+        <>
+            <hr className='cvat-social-authentication-hr' />
+            <Text type='secondary'>Or</Text>
+            <div className='cvat-social-authentication-row-with-icons'>
+                {activeMethods.map((method: SocialAuthMethod) => (
+                    <SocialAccountLink
+                        key={method.provider}
+                        icon={method.icon}
+                        href={(method.provider !== config.SSO_PROVIDER_KEY) ? `${backendAPI}/auth/social/${method.provider}/login/` : '/auth/oidc/select-identity-provider/'}
+                        className={`cvat-social-authentication-${method.provider}`}
+                    >
+                        {`Continue with ${method.publicName}`}
+                    </SocialAccountLink>
+                ))}
+            </div>
+        </>
+    );
 };
 
 function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps): JSX.Element {
