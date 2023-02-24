@@ -42,12 +42,12 @@ function MessageForm(props: FormProps): JSX.Element {
             </Form.Item>
             <Row justify='space-between'>
                 <Col>
-                    <Button onClick={cancel} type='ghost'>
+                    <Button onClick={cancel} type='ghost' className='cvat-create-issue-dialog-cancel-button'>
                         Cancel
                     </Button>
                 </Col>
                 <Col>
-                    <Button type='primary' htmlType='submit'>
+                    <Button type='primary' htmlType='submit' className='cvat-create-issue-dialog-submit-button'>
                         Submit
                     </Button>
                 </Col>

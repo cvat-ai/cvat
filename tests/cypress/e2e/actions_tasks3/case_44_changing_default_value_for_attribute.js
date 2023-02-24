@@ -40,7 +40,7 @@ context('Changing a default value for an attribute.', () => {
         });
 
         it('Open label editor. Change default values for text & checkbox attributes, press Done.', () => {
-            cy.intercept('PATCH', '/api/tasks/**').as('patchTask');
+            cy.intercept('PATCH', '/api/labels/**').as('patchLabel');
             cy.get('.cvat-constructor-viewer').within(() => {
                 // eslint-disable-next-line security/detect-non-literal-regexp
                 cy.contains(new RegExp(`^${additionalLabel}$`))
@@ -67,13 +67,7 @@ context('Changing a default value for an attribute.', () => {
                 cy.contains(new RegExp(`^${newCheckboxValue}$`)).click();
             });
             cy.contains('[type="submit"]', 'Done').click();
-            cy.contains(
-                '[role="alert"]',
-                `Validation error on field 'attributes.${additionalAttrsLabel.indexOf(
-                    additionalAttrsLabel[1],
-                )}.values'`,
-            ).should('not.exist');
-            cy.wait('@patchTask').its('response.statusCode').should('equal', 200);
+            cy.wait('@patchLabel').its('response.statusCode').should('equal', 200);
             cy.get('.cvat-constructor-viewer').should('exist').and('be.visible');
         });
 

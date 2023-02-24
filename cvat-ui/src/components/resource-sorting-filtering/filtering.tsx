@@ -240,7 +240,11 @@ export default function ResourceFilterHOC(
                                 </div>
                             )}
                         >
-                            <Button type='default' onClick={() => onPredefinedVisibleChange(!predefinedVisible)}>
+                            <Button
+                                className='cvat-quick-filters-button'
+                                type='default'
+                                onClick={() => onPredefinedVisibleChange(!predefinedVisible)}
+                            >
                                 Quick filters
                                 { appliedFilter.predefined ?
                                     <FilterFilled /> :
@@ -294,6 +298,7 @@ export default function ResourceFilterHOC(
                                     )}
                                 >
                                     <Button
+                                        className='cvat-recent-filters-button'
                                         size='small'
                                         type='text'
                                         onClick={
@@ -316,6 +321,7 @@ export default function ResourceFilterHOC(
                             />
                             <Space className='cvat-resource-page-filters-space'>
                                 <Button
+                                    className='cvat-reset-filters-button'
                                     disabled={!QbUtils.queryString(state, config)}
                                     size='small'
                                     onClick={() => {
@@ -330,6 +336,7 @@ export default function ResourceFilterHOC(
                                     Reset
                                 </Button>
                                 <Button
+                                    className='cvat-apply-filters-button'
                                     size='small'
                                     type='primary'
                                     onClick={() => {
@@ -351,7 +358,7 @@ export default function ResourceFilterHOC(
                         </div>
                     )}
                 >
-                    <Button type='default' onClick={() => onBuilderVisibleChange(!builderVisible)}>
+                    <Button className='cvat-switch-filters-constructor-button' type='default' onClick={() => onBuilderVisibleChange(!builderVisible)}>
                         Filter
                         { appliedFilter.built || appliedFilter.recent ?
                             <FilterFilled /> :
@@ -359,6 +366,7 @@ export default function ResourceFilterHOC(
                     </Button>
                 </Dropdown>
                 <Button
+                    className='cvat-clear-filters-button'
                     disabled={!(appliedFilter.built || appliedFilter.predefined || appliedFilter.recent) || disabled}
                     size='small'
                     type='link'

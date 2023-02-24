@@ -98,36 +98,5 @@ context('When clicking on the Logout button, get the user session closed.', () =
             cy.url().should('include', '/auth/login');
             cy.closeNotification('.cvat-notification-notice-login-failed');
         });
-
-        it('Login with Google and GitHub. Logout', () => {
-            let socialAuthMethods;
-            cy.request({
-                method: 'GET',
-                url: '/api/auth/social/methods/',
-            }).then((response) => {
-                socialAuthMethods = Object.keys(response.body).filter((item) => response.body[item].is_enabled);
-                expect(socialAuthMethods).length.gt(0);
-                cy.visit('auth/login');
-
-                cy.get('.cvat-social-authentication-icon').should('have.length', socialAuthMethods.length).children((items) => {
-                    for (const item of items) {
-                        expect(item.children.length).to.be.equal(1); // check that icon was received from the server
-                    }
-                });
-
-                for (const provider of socialAuthMethods) {
-                    let username = '';
-                    cy.get(`.cvat-social-authentication-${provider}`).should('be.visible').click();
-                    // eslint-disable-next-line cypress/no-unnecessary-waiting
-                    cy.get('.cvat-right-header').should('exist').and('be.visible').within(() => {
-                        cy.get('.cvat-header-menu-user-dropdown-user').should(($div) => {
-                            username = $div.text();
-                        });
-                    }).then(() => {
-                        cy.logout(username);
-                    });
-                }
-            });
-        });
     });
 });

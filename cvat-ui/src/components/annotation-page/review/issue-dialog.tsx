@@ -106,11 +106,11 @@ export default function IssueDialog(props: Props): JSX.Element {
     );
 
     const resolveButton = resolved ? (
-        <Button loading={isFetching} type='primary' onClick={reopen}>
+        <Button loading={isFetching} className='cvat-issue-dialog-reopen-button' type='primary' onClick={reopen}>
             Reopen
         </Button>
     ) : (
-        <Button loading={isFetching} type='primary' onClick={resolve}>
+        <Button loading={isFetching} className='cvat-issue-dialog-resolve-button' type='primary' onClick={resolve}>
             Resolve
         </Button>
     );
@@ -151,13 +151,14 @@ export default function IssueDialog(props: Props): JSX.Element {
             </Row>
             <Row className='cvat-issue-dialog-footer' justify='space-between'>
                 <Col>
-                    <Button type='link' danger onClick={onDeleteIssue}>
+                    <Button type='link' className='cvat-issue-dialog-remove-button' danger onClick={onDeleteIssue}>
                         Remove
                     </Button>
                 </Col>
                 <Col>
                     {currentText.length ? (
                         <Button
+                            className='cvat-issue-dialog-comment-button'
                             loading={isFetching}
                             type='primary'
                             disabled={!currentText.length}
