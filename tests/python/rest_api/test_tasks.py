@@ -27,7 +27,14 @@ from PIL import Image
 
 import shared.utils.s3 as s3
 from shared.fixtures.init import get_server_image_tag
-from shared.utils.config import BASE_URL, USER_PASS, get_method, make_api_client, patch_method
+from shared.utils.config import (
+    BASE_URL,
+    USER_PASS,
+    get_method,
+    make_api_client,
+    patch_method,
+    post_method,
+)
 from shared.utils.helpers import generate_image_files
 
 from .utils import CollectionSimpleFilterTestBase, export_dataset
@@ -929,6 +936,30 @@ class TestPostTaskData:
 
                 start_frame = stop_frame + 1
 
+    def test_cannot_create_task_with_same_labels(self):
+        task_spec = {
+            "name": "test cannot create task with same labels",
+            "labels": [{"name": "l1"}, {"name": "l1"}],
+        }
+        response = post_method(self._USERNAME, "/tasks", task_spec)
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+
+        response = get_method(self._USERNAME, "/tasks")
+        assert response.status_code == HTTPStatus.OK
+
+    def test_cannot_create_task_with_same_skeleton_sublabels(self):
+        task_spec = {
+            "name": "test cannot create task with same skeleton sublabels",
+            "labels": [
+                {"name": "s1", "type": "skeleton", "sublabels": [{"name": "1"}, {"name": "1"}]}
+            ],
+        }
+        response = post_method(self._USERNAME, "/tasks", task_spec)
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+
+        response = get_method(self._USERNAME, "/tasks")
+        assert response.status_code == HTTPStatus.OK
+
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestPatchTaskLabel:
@@ -991,7 +1022,7 @@ class TestPatchTaskLabel:
 
         response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [label_payload]})
         assert response.status_code == HTTPStatus.BAD_REQUEST
-        assert f"Label '{task_labels[0]['name']}' already exists" in response.text
+        assert "All label names must be unique" in response.text
 
     def test_cannot_add_foreign_label(self, tasks, labels, admin_user):
         task = list(tasks)[0]
