@@ -7,7 +7,6 @@ from typing import Any, Dict, Iterator, Optional
 from functools import reduce
 import operator
 import json
-import warnings
 
 from django_filters import FilterSet
 from django_filters import filters as djf
