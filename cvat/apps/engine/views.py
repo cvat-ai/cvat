@@ -21,7 +21,6 @@ from django.contrib.auth.models import User
 from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseNotFound, HttpResponseBadRequest
 from django.utils import timezone
-import django.db.models as dj_models
 
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
