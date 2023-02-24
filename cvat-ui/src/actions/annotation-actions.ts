@@ -892,6 +892,10 @@ export function getJobAsync(
                 },
             });
 
+            if (!Number.isInteger(tid) || !Number.isInteger(jid)) {
+                throw new Error('Requested resource id is not valid');
+            }
+
             const loadJobEvent = await logger.log(
                 LogType.loadJob,
                 {
