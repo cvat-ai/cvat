@@ -70,6 +70,7 @@ Tracks can be exported/imported to/from Datumaro and Sly Pointcloud formats (<ht
 - Clean up disk space after a project is removed (<https://github.com/opencv/cvat/pull/5632>)
 - Submit button is locked while file is not selected when importing a dataset (<https://github.com/opencv/cvat/pull/5757>)
 - \[Server API\] Various errors in the generated schema (<https://github.com/opencv/cvat/pull/5575>)
+- Fixed freezing browser when request a job by NaN id (<https://github.com/opencv/cvat/pull/5763>)
 - SiamMask and TransT serverless functions (<https://github.com/opencv/cvat/pull/5658>)
 - \[Server API\] Ability to rename label to an existing name (<https://github.com/opencv/cvat/pull/5662>)
 
