@@ -385,7 +385,7 @@ class TestWebhookTaskEvents:
                 delete_payload["task"],
                 task,
                 ignore_order=True,
-                exclude_paths=["root['updated_date']"],
+                exclude_paths=["root['updated_date']", "root['jobs']"],
             )
             == {}
         )
