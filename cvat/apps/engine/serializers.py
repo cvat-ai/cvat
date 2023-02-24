@@ -22,7 +22,6 @@ from cvat.apps.engine import models
 from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials, Status
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.utils import parse_specific_attributes
-from cvat.apps.dataset_manager.util import bulk_create
 
 from drf_spectacular.utils import OpenApiExample, extend_schema_field, extend_schema_serializer
 
