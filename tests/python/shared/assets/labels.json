@@ -1,5 +1,5 @@
 {
-  "count": 28,
+  "count": 29,
   "next": null,
   "previous": null,
   "results": [
@@ -457,7 +457,7 @@
           "id": 7,
           "input_type": "text",
           "mutable": false,
-          "name": "attr1",
+          "name": "attr",
           "values": [
             "default"
           ]
@@ -479,7 +479,7 @@
           "id": 8,
           "input_type": "text",
           "mutable": false,
-          "name": "attr1",
+          "name": "attr",
           "values": [
             "default"
           ]
@@ -491,6 +491,28 @@
       "name": "cat",
       "parent_id": null,
       "project_id": 11,
+      "sublabels": [],
+      "type": "any"
+    },
+    {
+      "attributes": [
+        {
+          "default_value": "default",
+          "id": 9,
+          "input_type": "text",
+          "mutable": false,
+          "name": "attr",
+          "values": [
+            "default"
+          ]
+        }
+      ],
+      "color": "#6080c0",
+      "has_parent": false,
+      "id": 48,
+      "name": "cat",
+      "parent_id": null,
+      "project_id": 12,
       "sublabels": [],
       "type": "any"
     }

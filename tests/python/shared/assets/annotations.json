@@ -832,7 +832,7 @@
           "attributes": [
             {
               "spec_id": 7,
-              "value": "non-default"
+              "value": "default non"
             }
           ],
           "elements": [],
@@ -843,10 +843,10 @@
           "occluded": false,
           "outside": false,
           "points": [
-            124.1510451786944,
-            60.509372892787724,
-            334.31962238705637,
-            260.826298044507
+            302.1375590020252,
+            62.4797033041159,
+            566.1618341200301,
+            273.9618341200294
           ],
           "rotation": 0.0,
           "source": "manual",
@@ -855,40 +855,39 @@
         }
       ],
       "tags": [],
-      "tracks": [
+      "tracks": [],
+      "version": 0
+    },
+    "23": {
+      "shapes": [
         {
           "attributes": [
             {
-              "spec_id": 7,
-              "value": "non-default"
+              "spec_id": 8,
+              "value": "default non"
             }
           ],
+          "elements": [],
           "frame": 0,
           "group": 0,
-          "id": 6,
-          "label_id": 46,
-          "shapes": [
-            {
-              "attributes": [],
-              "elements": [],
-              "frame": 0,
-              "id": 10,
-              "occluded": false,
-              "outside": false,
-              "points": [
-                403.9379635873247,
-                87.43722184760918,
-                731.6695886716134,
-                307.45745111261203
-              ],
-              "rotation": 0.0,
-              "type": "rectangle",
-              "z_order": 0
-            }
+          "id": 50,
+          "label_id": 47,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            61.6048951048997,
+            116.65734265734682,
+            196.36013986014405,
+            262.0944055944092
           ],
-          "source": "manual"
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 0
         }
       ],
+      "tags": [],
+      "tracks": [],
       "version": 0
     }
   },
@@ -1706,7 +1705,7 @@
           "attributes": [
             {
               "spec_id": 7,
-              "value": "non-default"
+              "value": "default non"
             }
           ],
           "elements": [],
@@ -1717,10 +1716,10 @@
           "occluded": false,
           "outside": false,
           "points": [
-            124.1510451786944,
-            60.509372892787724,
-            334.31962238705637,
-            260.826298044507
+            302.1375590020252,
+            62.4797033041159,
+            566.1618341200301,
+            273.9618341200294
           ],
           "rotation": 0.0,
           "source": "manual",
@@ -1729,39 +1728,39 @@
         }
       ],
       "tags": [],
-      "tracks": [
+      "tracks": [],
+      "version": 0
+    },
+    "19": {
+      "shapes": [
         {
           "attributes": [
             {
-              "spec_id": 7,
-              "value": "non-default"
+              "spec_id": 8,
+              "value": "default non"
             }
           ],
+          "elements": [],
           "frame": 0,
           "group": 0,
-          "id": 6,
-          "label_id": 46,
-          "shapes": [
-            {
-              "attributes": [],
-              "frame": 0,
-              "id": 10,
-              "occluded": false,
-              "outside": false,
-              "points": [
-                403.9379635873247,
-                87.43722184760918,
-                731.6695886716134,
-                307.45745111261203
-              ],
-              "rotation": 0.0,
-              "type": "rectangle",
-              "z_order": 0
-            }
+          "id": 50,
+          "label_id": 47,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            61.6048951048997,
+            116.65734265734682,
+            196.36013986014405,
+            262.0944055944092
           ],
-          "source": "manual"
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 0
         }
       ],
+      "tags": [],
+      "tracks": [],
       "version": 0
     }
   }

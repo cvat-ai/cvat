@@ -310,7 +310,7 @@
       "is_active": true,
       "is_staff": true,
       "is_superuser": true,
-      "last_login": "2023-02-23T11:40:03.664000Z",
+      "last_login": "2023-02-24T16:40:15.776000Z",
       "last_name": "First",
       "url": "http://localhost:8080/api/users/1",
       "username": "admin1"
