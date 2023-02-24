@@ -951,15 +951,25 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                             new_label = project.label_set.filter(name=old_label.name).first()
                     except ValueError:
                         raise serializers.ValidationError(f'Target project does not have label with name "{old_label.name}"')
-                    for (model, attr, attr_name) in (
-                        (models.LabeledTrack, models.LabeledTrackAttributeVal, 'track'),
-                        (models.LabeledShape, models.LabeledShapeAttributeVal, 'shape'),
-                        (models.LabeledImage, models.LabeledImageAttributeVal, 'image')
-                    ):
-                        attr.objects.filter(**{
-                            f'{attr_name}__job__segment__task': instance,
-                            f'{attr_name}__label': old_label
-                        }).delete()
+
+                    for old_attr in old_label.attributespec_set.all():
+                        new_attr = new_label.attributespec_set.filter(name=old_attr.name).first()
+                        if new_attr is None:
+                            raise serializers.ValidationError('Target project does not have ' \
+                                f'"{old_label.name}" label with "{old_attr.name}" attribute')
+
+                        for (model, model_name) in (
+                            (models.LabeledTrackAttributeVal, 'track'),
+                            (models.LabeledShapeAttributeVal, 'shape'),
+                            (models.LabeledImageAttributeVal, 'image')
+                        ):
+                            model.objects.filter(**{
+                                f'{model_name}__job__segment__task': instance,
+                                f'{model_name}__label': old_label,
+                                'spec': old_attr
+                            }).update(spec=new_attr)
+
+                    for model in (models.LabeledTrack, models.LabeledShape, models.LabeledImage):
                         model.objects.filter(job__segment__task=instance, label=old_label).update(
                             label=new_label
                         )
