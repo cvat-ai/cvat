@@ -5,6 +5,7 @@
 
 import os
 import base64
+from unittest import mock
 import uuid
 
 from django.conf import settings
@@ -347,6 +348,10 @@ class PartialUpdateModelMixin:
     Almost the same as UpdateModelMixin, but has no public PUT / update() method.
     """
 
+    def _update(self, request, *args, **kwargs):
+        # This method must not be named "update" not to be matched with the PUT method
+        return mixins.UpdateModelMixin.update(self, request, *args, **kwargs)
+
     def perform_update(self, serializer):
         instance = serializer.instance
         data = serializer.to_representation(instance)
@@ -363,8 +368,9 @@ class PartialUpdateModelMixin:
         signal_update.send(self, instance=serializer.instance, old_values=old_values)
 
     def partial_update(self, request, *args, **kwargs):
-        kwargs['partial'] = True
-        return mixins.UpdateModelMixin.update(self, request=request, *args, **kwargs)
+        with mock.patch.object(self, 'update', new=self._update, create=True):
+            return mixins.UpdateModelMixin.partial_update(self, request=request, *args, **kwargs)
+
 
 class DestroyModelMixin(mixins.DestroyModelMixin):
     def perform_destroy(self, instance):

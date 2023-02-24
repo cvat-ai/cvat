@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -11,7 +12,7 @@ import {
     EditOutlined, BuildOutlined, ExclamationCircleOutlined,
 } from '@ant-design/icons';
 
-import { RawLabel, RawAttribute } from 'cvat-core-wrapper';
+import { SerializedLabel, SerializedAttribute } from 'cvat-core-wrapper';
 import RawViewer from './raw-viewer';
 import ConstructorViewer from './constructor-viewer';
 import ConstructorCreator from './constructor-creator';
@@ -25,7 +26,7 @@ enum ConstructorMode {
 }
 
 interface LabelsEditorProps {
-    labels: RawLabel[];
+    labels: SerializedLabel[];
     onSubmit: (labels: LabelOptColor[]) => void;
 }
 
@@ -56,7 +57,7 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
     }
 
     public componentDidUpdate(prevProps: LabelsEditorProps): void {
-        function transformLabel(label: RawLabel): LabelOptColor {
+        function transformLabel(label: SerializedLabel): LabelOptColor {
             return {
                 name: label.name,
                 id: label.id || idGenerator(),
@@ -65,7 +66,7 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
                 sublabels: label.sublabels,
                 svg: label.svg,
                 attributes: label.attributes.map(
-                    (attr: RawAttribute): RawAttribute => ({
+                    (attr: SerializedAttribute): SerializedAttribute => ({
                         id: attr.id || idGenerator(),
                         name: attr.name,
                         input_type: attr.input_type,
@@ -182,10 +183,10 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
                 id: label.id as number < 0 ? undefined : label.id,
                 color: label.color,
                 type: label.type || 'any',
-                attributes: label.attributes.map((attr: RawAttribute): RawAttribute => ({
+                attributes: label.attributes.map((attr: SerializedAttribute): SerializedAttribute => ({
                     name: attr.name,
                     id: attr.id as number < 0 ? undefined : attr.id,
-                    input_type: attr.input_type.toLowerCase() as RawAttribute['input_type'],
+                    input_type: attr.input_type.toLowerCase() as SerializedAttribute['input_type'],
                     default_value: attr.values[0],
                     mutable: attr.mutable,
                     values: [...attr.values],
@@ -263,6 +264,7 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
                     {constructorMode === ConstructorMode.UPDATE && labelForUpdate !== null && (
                         <ConstructorUpdater
                             label={labelForUpdate}
+                            labelNames={labels.map((l) => l.name)}
                             onUpdate={this.handleUpdate}
                             onCancel={this.handlerCancel}
                         />

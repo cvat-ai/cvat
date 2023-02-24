@@ -8,6 +8,9 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from drf_spectacular.utils import extend_schema
+
+@extend_schema(exclude=True)
 class LogViewerAccessViewSet(viewsets.ViewSet):
     serializer_class = None
 

@@ -171,6 +171,7 @@ export default function ImageSetupsContent(): JSX.Element {
                     <Row className='cvat-image-setups-reset-color-settings' justify='space-around'>
                         <Col>
                             <Button
+                                className='cvat-image-setups-reset-color-settings-button'
                                 onClick={() => {
                                     const defaultValue = 100;
                                     dispatch(changeBrightnessLevel(defaultValue));
