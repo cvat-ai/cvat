@@ -680,16 +680,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         'project__label_set__attributespec_set',
         'label_set__sublabels__attributespec_set',
         'project__label_set__sublabels__attributespec_set'
-    ).annotate(
-        completed_jobs_count=dj_models.Count(
-            'segment__job',
-            filter=dj_models.Q(segment__job__state=models.StateChoice.COMPLETED.value)
-        ),
-        validation_jobs_count=dj_models.Count(
-            'segment__job',
-            filter=dj_models.Q(segment__job__stage=models.StageChoice.VALIDATION.value)
-        ),
-    ).all()
+    ).with_job_summary().all()
 
     lookup_fields = {
         'project_name': 'project__name',

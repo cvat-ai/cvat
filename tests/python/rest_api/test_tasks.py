@@ -150,6 +150,38 @@ class TestGetTasks:
 
         self._test_assigned_users_to_see_task_data(tasks, users, is_task_staff, org=org["slug"])
 
+    @pytest.mark.usefixtures("restore_db_per_function")
+    def test_can_get_job_validation_summary(self, admin_user, tasks, jobs):
+        task = next(t for t in tasks if t["jobs"]["count"] > 0 if t["jobs"]["validation"] == 0)
+        job = next(j for j in jobs if j["task_id"] == task["id"])
+
+        with make_api_client(admin_user) as api_client:
+            api_client.jobs_api.partial_update(
+                job["id"],
+                patched_job_write_request=models.PatchedJobWriteRequest(stage="validation"),
+            )
+
+            (server_task, _) = api_client.tasks_api.retrieve(task["id"])
+
+        assert server_task.jobs.validation == 1
+
+    @pytest.mark.usefixtures("restore_db_per_function")
+    def test_can_get_job_completed_summary(self, admin_user, tasks, jobs):
+        task = next(t for t in tasks if t["jobs"]["count"] > 0 if t["jobs"]["completed"] == 0)
+        job = next(j for j in jobs if j["task_id"] == task["id"])
+
+        with make_api_client(admin_user) as api_client:
+            api_client.jobs_api.partial_update(
+                job["id"],
+                patched_job_write_request=models.PatchedJobWriteRequest(
+                    state="completed", stage="acceptance"
+                ),
+            )
+
+            (server_task, _) = api_client.tasks_api.retrieve(task["id"])
+
+        assert server_task.jobs.completed == 1
+
 
 class TestListTasksFilters(CollectionSimpleFilterTestBase):
     field_lookups = {

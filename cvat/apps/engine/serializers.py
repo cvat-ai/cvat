@@ -94,10 +94,8 @@ class LabelsSummarySerializer(_CollectionSummarySerializer):
 
 
 class JobsSummarySerializer(_CollectionSummarySerializer):
-    completed = serializers.IntegerField(source='get_completed_jobs_count',
-        default=None, allow_null=True)
-    validation = serializers.IntegerField(source='get_validation_jobs_count',
-        default=None, allow_null=True)
+    completed = serializers.IntegerField(source='completed_jobs_count', allow_null=True)
+    validation = serializers.IntegerField(source='validation_jobs_count', allow_null=True)
 
     def __init__(self, *, model=models.Job, url_filter_key, **kwargs):
         super().__init__(model=model, url_filter_key=url_filter_key, **kwargs)

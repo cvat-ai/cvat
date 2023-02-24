@@ -23,7 +23,8 @@
       "jobs": {
         "completed": 0,
         "count": 1,
-        "url": "http://localhost:8080/api/jobs?task_id=17"
+        "url": "http://localhost:8080/api/jobs?task_id=17",
+        "validation": 0
       },
       "labels": {
         "count": 3,
@@ -64,7 +65,8 @@
       "jobs": {
         "completed": 0,
         "count": 1,
-        "url": "http://localhost:8080/api/jobs?task_id=15"
+        "url": "http://localhost:8080/api/jobs?task_id=15",
+        "validation": 0
       },
       "labels": {
         "count": 2,
@@ -113,7 +115,8 @@
       "jobs": {
         "completed": 0,
         "count": 1,
-        "url": "http://localhost:8080/api/jobs?task_id=14"
+        "url": "http://localhost:8080/api/jobs?task_id=14",
+        "validation": 0
       },
       "labels": {
         "count": 2,
@@ -168,7 +171,8 @@
       "jobs": {
         "completed": 0,
         "count": 1,
-        "url": "http://localhost:8080/api/jobs?task_id=13"
+        "url": "http://localhost:8080/api/jobs?task_id=13",
+        "validation": 0
       },
       "labels": {
         "count": 2,
@@ -204,7 +208,8 @@
       "jobs": {
         "completed": 0,
         "count": 0,
-        "url": "http://localhost:8080/api/jobs?task_id=12"
+        "url": "http://localhost:8080/api/jobs?task_id=12",
+        "validation": 0
       },
       "labels": {
         "count": 1,
@@ -250,7 +255,8 @@
       "jobs": {
         "completed": 0,
         "count": 1,
-        "url": "http://localhost:8080/api/jobs?task_id=11"
+        "url": "http://localhost:8080/api/jobs?task_id=11",
+        "validation": 0
       },
       "labels": {
         "count": 2,
@@ -305,7 +311,8 @@
       "jobs": {
         "completed": 0,
         "count": 4,
-        "url": "http://localhost:8080/api/jobs?task_id=9"
+        "url": "http://localhost:8080/api/jobs?task_id=9",
+        "validation": 1
       },
       "labels": {
         "count": 2,
@@ -352,7 +359,8 @@
       "jobs": {
         "completed": 0,
         "count": 1,
-        "url": "http://localhost:8080/api/jobs?task_id=8"
+        "url": "http://localhost:8080/api/jobs?task_id=8",
+        "validation": 0
       },
       "labels": {
         "count": 2,
@@ -399,7 +407,8 @@
       "jobs": {
         "completed": 0,
         "count": 1,
-        "url": "http://localhost:8080/api/jobs?task_id=7"
+        "url": "http://localhost:8080/api/jobs?task_id=7",
+        "validation": 0
       },
       "labels": {
         "count": 2,
@@ -440,7 +449,8 @@
       "jobs": {
         "completed": 0,
         "count": 1,
-        "url": "http://localhost:8080/api/jobs?task_id=6"
+        "url": "http://localhost:8080/api/jobs?task_id=6",
+        "validation": 0
       },
       "labels": {
         "count": 1,
@@ -487,7 +497,8 @@
       "jobs": {
         "completed": 0,
         "count": 1,
-        "url": "http://localhost:8080/api/jobs?task_id=5"
+        "url": "http://localhost:8080/api/jobs?task_id=5",
+        "validation": 0
       },
       "labels": {
         "count": 1,
@@ -534,7 +545,8 @@
       "jobs": {
         "completed": 0,
         "count": 1,
-        "url": "http://localhost:8080/api/jobs?task_id=2"
+        "url": "http://localhost:8080/api/jobs?task_id=2",
+        "validation": 0
       },
       "labels": {
         "count": 2,
