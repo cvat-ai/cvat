@@ -1370,7 +1370,7 @@ class TestPatchTask:
         )
 
     @pytest.mark.parametrize("task_id, project_id, user", [(19, 12, "admin1")])
-    def test_move_task_from_one_project_to_other_with_attributes(self, task_id, project_id, user):
+    def test_move_task_from_one_project_to_another_with_attributes(self, task_id, project_id, user):
         response = get_method(user, f"tasks/{task_id}/annotations")
         assert response.status_code == HTTPStatus.OK
         annotations = response.json()
