@@ -203,7 +203,7 @@ def create(data: dict, retailer: User):
     project, _ = Project.objects.get_or_create(
         owner=retailer,
         organization=organization,
-        name=f'Import from: {retailer_name}',
+        name=f'Import from {retailer_name}',
     )
 
     images = data.pop('images')

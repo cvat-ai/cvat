@@ -17,7 +17,7 @@ def move_retailer_import(apps, schema_migration):
         organization = Organization.objects.get(slug=settings.IMPORT_WORKSPACE)
 
         project.organization = organization
-        project.name = f'Import from: {project.owner.username}'
+        project.name = f'Import from {project.owner.username}'
         project.save()
 
         project.tasks.all().update(organization=organization)
