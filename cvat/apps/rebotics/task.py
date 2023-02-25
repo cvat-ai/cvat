@@ -198,11 +198,12 @@ def _create_thread(task_id, cvat_data):
 
 def create(data: dict, retailer: User):
     organization = data.pop('workspace')
+    retailer_name = data.get('retailer_codename', retailer.username)
 
     project, _ = Project.objects.get_or_create(
         owner=retailer,
         organization=organization,
-        name=f'Import from {retailer.username.capitalize()}',
+        name=f'Import from: {retailer_name}',
     )
 
     images = data.pop('images')
