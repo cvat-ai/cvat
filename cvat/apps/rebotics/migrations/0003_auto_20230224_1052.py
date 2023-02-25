@@ -10,24 +10,21 @@ logger = logging.getLogger(__name__)
 
 def move_retailer_import(apps, schema_migration):
     Project = apps.get_model('engine', 'Project')
-    Task = apps.get_model('engine', 'Task')
     Organization = apps.get_model('organizations', 'Organization')
 
-    projects = Project.objects.filter(name='Retailer import')
-    orgs = Organization.objects.filter(name=settings.IMPORT_WORKSPACE)
-
-    if projects and orgs:
-        project = projects[0]
-        organization = orgs[0]
+    try:
+        project = Project.objects.get(name='Retailer import')
+        organization = Organization.objects.get(slug=settings.IMPORT_WORKSPACE)
 
         project.organization = organization
+        project.name = f'Import from {project.owner.username.capitalize()}'
         project.save()
 
-        tasks = Task.objects.filter(project=project)
-        tasks.update(organization=organization)
-
-    else:
-        logger.warning('Either project or workspace not found. Migration not performed.')
+        project.tasks.all().update(organization=organization)
+    except Project.DoesNotExist:
+        logger.warning('Project "Retailer import" does not exist. Skipping migration.')
+    except Organization.DoesNotExist:
+        logger.warning(f'Organization "{settings.IMPORT_WORKSPACE}" does not exist. Skipping migration.')
 
 
 class Migration(migrations.Migration):
