@@ -1,5 +1,8 @@
+from django.conf import settings
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 
+from cvat.apps.organizations.models import Organization
 from cvat.apps.engine.serializers import RqStatusSerializer
 
 
@@ -42,9 +45,16 @@ class _ImportImageSerializer(_BaseImportSerializer):
 class ImportSerializer(_BaseImportSerializer):
     image_quality = serializers.IntegerField(min_value=0, max_value=100, default=70)
     segment_size = serializers.IntegerField(min_value=0, default=0)
+    workspace = serializers.CharField(max_length=16, default=settings.IMPORT_WORKSPACE,
+                                      help_text='Organization short name. Case sensitive.')
     export_by = serializers.CharField(allow_null=True, default=None)
     retailer_codename = serializers.CharField(allow_null=True, default=None)
     images = serializers.ListSerializer(child=_ImportImageSerializer())
+
+    def validate_workspace(self, value):
+        if Organization.objects.filter(slug=value).exists():
+            return value
+        raise ValidationError(f'Workspace "{value}" does not exist!')
 
 
 class _ImportResponseImageSerializer(_BaseImportSerializer):

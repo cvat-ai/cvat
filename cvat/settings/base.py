@@ -438,12 +438,12 @@ LOGGING = {
         'cvat.server': {
             'handlers': ['console'],
             'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
-            'propagate': True
+            'propagate': False
         },
         'cvat.client': {
             'handlers': [],
             'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
-            'propagate': True
+            'propagate': False
         },
         'django': {
             'handlers': ['console'],
@@ -669,3 +669,5 @@ USE_CACHE_S3 = True
 
 S3_DATA_ROOT = 'data'
 S3_CACHE_ROOT = 'cache'
+
+IMPORT_WORKSPACE = os.getenv('IMPORT_WORKSPACE', 'RetechLabs')

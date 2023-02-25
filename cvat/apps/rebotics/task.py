@@ -13,6 +13,7 @@ from cvat.apps.engine.models import Project, Task, Data, Job, RemoteFile, \
     S3File, Label, LabeledShape, AttributeSpec, LabeledShapeAttributeVal, \
     ModeChoice, ShapeType, SourceType, AttributeType, StorageMethodChoice, \
     SortingMethod
+from cvat.apps.organizations.models import Organization
 from cvat.apps.engine.views import TaskViewSet
 from cvat.apps.engine.media_extractors import sort
 from cvat.rebotics.s3_client import s3_client
@@ -196,11 +197,21 @@ def _create_thread(task_id, cvat_data):
 
 
 def create(data: dict, retailer: User):
-    project, _ = Project.objects.get_or_create(owner=retailer, name='Retailer import')
+    workspace = data.pop('workspace')
+    retailer_name = data.get('retailer_codename', retailer.username)
+    organization = Organization.objects.get(slug=workspace)
+
+    project, _ = Project.objects.get_or_create(
+        owner=retailer,
+        organization=organization,
+        name=f'Import from {retailer_name}',
+    )
+
     images = data.pop('images')
     image_quality = data.pop('image_quality')
     segment_size = data.pop('segment_size')
     size = len(images)
+
     db_data = Data.objects.create(
         image_quality=image_quality,
         storage_method=StorageMethodChoice.CACHE,
@@ -209,11 +220,13 @@ def create(data: dict, retailer: User):
         sorting_method=SortingMethod.LEXICOGRAPHICAL,
     )
     os.makedirs(db_data.get_upload_dirname(), exist_ok=True)
+
     task = Task.objects.create(
         project=project,
         data=db_data,
         name=now().strftime('Import %Y-%m-%d %H:%M:%S %Z'),
         owner=retailer,
+        organization=organization,
         mode=ModeChoice.ANNOTATION,
         segment_size=segment_size,
         meta=data,
