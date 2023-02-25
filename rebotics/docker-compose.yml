@@ -64,7 +64,7 @@ services:
     image: minio/minio:latest
     restart: unless-stopped
     entrypoint: sh
-    command: -c 'mkdir -p /data/demo-bucket && minio server /data --address 0.0.0.0:9000'
+    command: -c 'mkdir -p /data/demo-bucket && minio server /data --address 0.0.0.0:9006'
     environment:
       MINIO_ROOT_USER: 'minio_admin'
       MINIO_ROOT_PASSWORD: 'minio_admin'
@@ -75,7 +75,7 @@ services:
         aliases:
           - minio
     ports:
-      - 9006:9000
+      - 9006:9006
 
 volumes:
   reb_cvat_db:
