@@ -197,8 +197,9 @@ def _create_thread(task_id, cvat_data):
 
 
 def create(data: dict, retailer: User):
-    organization = data.pop('workspace')
+    workspace = data.pop('workspace')
     retailer_name = data.get('retailer_codename', retailer.username)
+    organization = Organization.objects.get(slug=workspace)
 
     project, _ = Project.objects.get_or_create(
         owner=retailer,

@@ -52,10 +52,9 @@ class ImportSerializer(_BaseImportSerializer):
     images = serializers.ListSerializer(child=_ImportImageSerializer())
 
     def validate_workspace(self, value):
-        try:
-            return Organization.objects.get(slug=value)
-        except Organization.DoesNotExist:
-            raise ValidationError(f'Workspace "{value}" does not exist!')
+        if Organization.objects.filter(slug=value).exists():
+            return value
+        raise ValidationError(f'Workspace "{value}" does not exist!')
 
 
 class _ImportResponseImageSerializer(_BaseImportSerializer):
