@@ -190,6 +190,7 @@ REST_FRAMEWORK = {
     },
     'DEFAULT_METADATA_CLASS': 'rest_framework.metadata.SimpleMetadata',
     'DEFAULT_SCHEMA_CLASS': 'cvat.apps.iam.schema.CustomAutoSchema',
+    'EXCEPTION_HANDLER': 'cvat.apps.events.handlers.handle_viewset_exception',
 }
 
 
@@ -328,7 +329,10 @@ NUCLIO = {
 }
 
 RQ_SHOW_ADMIN_LINK = True
-RQ_EXCEPTION_HANDLERS = ['cvat.apps.engine.views.rq_handler']
+RQ_EXCEPTION_HANDLERS = [
+    'cvat.apps.engine.views.rq_exception_handler',
+    'cvat.apps.events.handlers.handle_rq_exception',
+]
 
 
 # JavaScript and CSS compression
