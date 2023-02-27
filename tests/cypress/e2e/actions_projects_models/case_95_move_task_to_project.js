@@ -15,9 +15,9 @@ context('Move a task to a project.', { browser: '!firefox' }, () => {
         attrName: 'Kind',
         attrValue: 'Oak',
         nameSecond: `Case ${caseID} second`,
-        labelSecond: 'Car',
-        attrNameSecons: 'Color',
-        attrValueSecond: 'Red',
+        labelSecond: 'Tree',
+        attrNameSecond: 'Kind',
+        attrValueSecond: 'Oak',
         name3d: `Case ${caseID} 3D`,
         label3d: 'Bus',
         attrName3d: 'Type',
@@ -29,9 +29,6 @@ context('Move a task to a project.', { browser: '!firefox' }, () => {
         label: 'Tree',
         attrName: 'Kind',
         attrVaue: 'Oak',
-        labelSecond: 'Car',
-        attrNameSecons: 'Color',
-        attrValueSecond: 'Red',
     };
 
     const imagesCount = 1;
@@ -80,7 +77,7 @@ context('Move a task to a project.', { browser: '!firefox' }, () => {
             cy.movingTask(task.name, project.name, task.label, project.label);
             // Check issue 3403
             cy.goToTaskList();
-            cy.movingTask(task.nameSecond, project.name, task.labelSecond, project.labelSecond);
+            cy.movingTask(task.nameSecond, project.name, task.labelSecond, project.label);
             cy.goToProjectsList();
             cy.openProject(project.name);
             cy.get('.cvat-tasks-list-item').should('exist').and('have.length', 2);
