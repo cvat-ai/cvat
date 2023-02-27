@@ -340,26 +340,3 @@ $social-google-background: #4286f5;
         height: $grid-unit-size*76;
     }
 }
-
-.cvat-social-authentication-button {
-    @extend .cvat-credentials-action-button;
-
-    .anticon {
-        margin-top: $grid-unit-size*0.5;
-    }
-
-    letter-spacing: 1px;
-    padding: 0 $grid-unit-size*4 !important;
-    margin-bottom: $grid-unit-size;
-    display: flex;
-}
-
-.cvat-social-authentication-google {
-    background: $social-google-background;
-
-    &:hover,
-    &:focus {
-        background: $social-google-background;
-        color: $action-button-color-3;
-    }
-}

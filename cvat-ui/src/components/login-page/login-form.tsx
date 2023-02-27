@@ -16,6 +16,8 @@ import Title from 'antd/lib/typography/Title';
 import Text from 'antd/lib/typography/Text';
 import { Link } from 'react-router-dom';
 import CVATSigningInput, { CVATInputType } from 'components/signing-common/cvat-signing-input';
+import { CombinedState } from 'reducers';
+import { useSelector } from 'react-redux';
 
 export interface LoginData {
     credential: string;
@@ -25,16 +27,22 @@ export interface LoginData {
 interface Props {
     renderResetPassword: boolean;
     fetching: boolean;
-    socialAuthentication: JSX.Element | null;
     onSubmit(loginData: LoginData): void;
 }
 
 function LoginFormComponent(props: Props): JSX.Element {
     const {
-        fetching, onSubmit, renderResetPassword, socialAuthentication,
+        fetching, onSubmit, renderResetPassword,
     } = props;
+    const pluginComponents = useSelector((state: CombinedState) => state.plugins.components.loginPage.loginForm);
     const [form] = Form.useForm();
     const [credential, setCredential] = useState('');
+
+    const pluginsToRender = pluginComponents
+        .filter((pluginComponent) => pluginComponent.data.shouldBeRendered(props, { credential }))
+        .map(({ component: Component }, id) => (
+            <Component key={id} />
+        ));
 
     const forgotPasswordLink = (
         <Col className='cvat-credentials-link'>
@@ -47,6 +55,7 @@ function LoginFormComponent(props: Props): JSX.Element {
             </Text>
         </Col>
     );
+
     return (
         <div className='cvat-login-form-wrapper'>
             <Row justify='space-between' className='cvat-credentials-navigation'>
@@ -135,7 +144,7 @@ function LoginFormComponent(props: Props): JSX.Element {
                     )
                 }
                 {
-                    credential || !socialAuthentication ? (
+                    !!credential && (
                         <Form.Item>
                             <Button
                                 className='cvat-credentials-action-button'
@@ -146,8 +155,9 @@ function LoginFormComponent(props: Props): JSX.Element {
                                 Next
                             </Button>
                         </Form.Item>
-                    ) : socialAuthentication
+                    )
                 }
+                { pluginsToRender }
             </Form>
         </div>
     );

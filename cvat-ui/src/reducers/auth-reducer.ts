@@ -16,9 +16,6 @@ const defaultState: AuthState = {
     showChangePasswordDialog: false,
     allowResetPassword: false,
     hasEmailVerificationBeenSent: false,
-    socialAuthFetching: false,
-    socialAuthInitialized: false,
-    socialAuthMethods: [],
 };
 
 export default function (state = defaultState, action: AuthActions | BoundariesActions): AuthState {
@@ -157,29 +154,6 @@ export default function (state = defaultState, action: AuthActions | BoundariesA
                 allowChangePassword: false,
                 allowResetPassword: false,
             };
-        case AuthActionTypes.LOAD_SOCIAL_AUTHENTICATION: {
-            return {
-                ...state,
-                socialAuthFetching: true,
-                socialAuthInitialized: false,
-            };
-        }
-        case AuthActionTypes.LOAD_SOCIAL_AUTHENTICATION_SUCCESS: {
-            const { methods } = action.payload;
-            return {
-                ...state,
-                socialAuthFetching: false,
-                socialAuthInitialized: true,
-                socialAuthMethods: methods,
-            };
-        }
-        case AuthActionTypes.LOAD_SOCIAL_AUTHENTICATION_FAILED: {
-            return {
-                ...state,
-                socialAuthFetching: false,
-                socialAuthInitialized: true,
-            };
-        }
         case BoundariesActionTypes.RESET_AFTER_ERROR: {
             return { ...defaultState };
         }

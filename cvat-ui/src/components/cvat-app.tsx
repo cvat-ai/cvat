@@ -20,7 +20,6 @@ import 'antd/dist/antd.css';
 import LogoutComponent from 'components/logout-component';
 import LoginPageContainer from 'containers/login-page/login-page';
 import LoginWithTokenComponent from 'components/login-with-token/login-with-token';
-import LoginWithSocialAppComponent from 'components/login-with-social-app/login-with-social-app';
 import RegisterPageContainer from 'containers/register-page/register-page';
 import ResetPasswordPageConfirmComponent from 'components/reset-password-confirm-page/reset-password-confirm-page';
 import ResetPasswordPageComponent from 'components/reset-password-page/reset-password-page';
@@ -60,7 +59,7 @@ import UpdateWebhookPage from 'components/setup-webhook-pages/update-webhook-pag
 import AnnotationPageContainer from 'containers/annotation-page/annotation-page';
 import { getCore } from 'cvat-core-wrapper';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
-import { NotificationsState } from 'reducers';
+import { NotificationsState, PluginsState } from 'reducers';
 import { customWaViewHit } from 'utils/environment';
 import showPlatformNotification, {
     platformInfo,
@@ -108,6 +107,7 @@ interface CVATAppProps {
     notifications: NotificationsState;
     user: any;
     isModelPluginActive: boolean;
+    pluginComponents: PluginsState['components'];
 }
 
 interface CVATAppState {
@@ -124,6 +124,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             backendIsHealthy: false,
         };
     }
+
     public componentDidMount(): void {
         const core = getCore();
         const { history, location } = this.props;
@@ -135,6 +136,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             userActivityCallback.forEach((handler) => handler());
             EventRecorder.log(event);
         });
+
         core.logger.configure(() => window.document.hasFocus, userActivityCallback);
         EventRecorder.initSave();
 
@@ -372,6 +374,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             authActionsInitialized,
             switchShortcutsDialog,
             switchSettingsDialog,
+            pluginComponents,
             user,
             keyMap,
             location,
@@ -410,6 +413,10 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                 switchSettingsDialog();
             },
         };
+
+        const routesToRender = pluginComponents.router
+            .filter(({ data: { shouldBeRendered } }) => shouldBeRendered(this.props, this.state))
+            .map(({ component: Component }, index) => <Component key={index} />);
 
         if (readyForRender) {
             if (user && user.isVerified) {
@@ -452,6 +459,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                             <Route exact path='/webhooks/create' component={CreateWebhookPage} />
                                             <Route exact path='/webhooks/update/:id' component={UpdateWebhookPage} />
                                             <Route exact path='/organization' component={OrganizationPage} />
+                                            { routesToRender }
                                             {isModelPluginActive && (
                                                 <Route
                                                     path='/models'
@@ -494,11 +502,11 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                             path='/auth/login-with-token/:token'
                             component={LoginWithTokenComponent}
                         />
-                        <Route
+                        {/* <Route
                             exact
                             path='/auth/login-with-social-app/'
                             component={LoginWithSocialAppComponent}
-                        />
+                        /> */}
                         <Route exact path='/auth/password/reset' component={ResetPasswordPageComponent} />
                         <Route
                             exact
@@ -507,7 +515,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                         />
 
                         <Route exact path='/auth/email-confirmation' component={EmailConfirmationPage} />
-
+                        { routesToRender }
                         <Redirect
                             to={location.pathname.length > 1 ? `/auth/login?next=${location.pathname}` : '/auth/login'}
                         />
