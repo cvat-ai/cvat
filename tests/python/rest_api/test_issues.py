@@ -36,7 +36,7 @@ class TestPostIssues:
             assert user == response_json["owner"]["username"]
 
             with make_api_client(user) as client:
-                (comments, _) = client.comments_api.list(issue_id=str(response_json["id"]))
+                (comments, _) = client.comments_api.list(issue_id=response_json["id"])
             assert data["message"] == comments.results[0].message
 
             assert (

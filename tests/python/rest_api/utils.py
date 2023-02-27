@@ -9,6 +9,7 @@ from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from cvat_sdk.core.helpers import get_paginated_collection
+from deepdiff import DeepDiff
 from urllib3 import HTTPResponse
 
 from shared.utils.config import make_api_client
@@ -39,12 +40,14 @@ class CollectionSimpleFilterTestBase(metaclass=ABCMeta):
     user: str
     samples: List[Dict[str, Any]]
     field_lookups: Dict[str, FieldPath] = None
+    cmp_ignore_keys: List[str] = ["updated_date"]
 
     @abstractmethod
     def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
         ...
 
     def _retrieve_collection(self, **kwargs) -> List:
+        kwargs["return_json"] = True
         with make_api_client(self.user) as api_client:
             return get_paginated_collection(self._get_endpoint(api_client), **kwargs)
 
@@ -83,9 +86,44 @@ class CollectionSimpleFilterTestBase(metaclass=ABCMeta):
 
         return field_value, gt_objects
 
+    def _compare_results(self, gt_objects, received_objects):
+        if self.cmp_ignore_keys:
+            ignore_keys = [f"root['{k}']" for k in self.cmp_ignore_keys]
+        else:
+            ignore_keys = None
+
+        diff = DeepDiff(
+            list(gt_objects),
+            received_objects,
+            exclude_paths=ignore_keys,
+            ignore_order=True,
+        )
+
+        assert diff == {}, diff
+
     def test_can_use_simple_filter_for_object_list(self, field):
         value, gt_objects = self._get_field_samples(field)
 
-        received_items = self._retrieve_collection(**{field: str(value)})
+        received_items = self._retrieve_collection(**{field: value})
 
-        assert set(p["id"] for p in gt_objects) == set(p.id for p in received_items)
+        self._compare_results(gt_objects, received_items)
+
+
+def get_attrs(obj: Any, attributes: Sequence[str]) -> Tuple[Any, ...]:
+    """Returns 1 or more object attributes as a tuple"""
+    return (getattr(obj, attr) for attr in attributes)
+
+
+def build_exclude_paths_expr(ignore_fields: Iterator[str]) -> List[str]:
+    exclude_expr_parts = []
+    for key in ignore_fields:
+        if "." in key:
+            key_parts = key.split(".")
+            expr = r"root\['{}'\]".format(key_parts[0])
+            expr += "".join(r"\[.*\]\['{}'\]".format(part) for part in key_parts[1:])
+        else:
+            expr = r"root\['{}'\]".format(key)
+
+        exclude_expr_parts.append(expr)
+
+    return exclude_expr_parts

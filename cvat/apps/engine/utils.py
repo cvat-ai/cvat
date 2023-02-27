@@ -146,3 +146,27 @@ def configure_dependent_job(queue, rq_id, rq_func, db_storage, filename, key):
             job_id=rq_job_id_download_file
         )
     return rq_job_download_file
+
+def get_rq_job_meta(request, db_obj):
+    # to prevent circular import
+    from cvat.apps.webhooks.signals import project_id, organization_id
+    from cvat.apps.events.handlers import task_id, job_id, organization_slug
+
+    oid = organization_id(db_obj)
+    oslug = organization_slug(db_obj)
+    pid = project_id(db_obj)
+    tid = task_id(db_obj)
+    jid = job_id(db_obj)
+
+    return {
+        'user': {
+            'id': getattr(request.user, "id", None),
+            'name': getattr(request.user, "username", None),
+            'email': getattr(request.user, "email", None),
+        },
+        'org_id': oid,
+        'org_slug': oslug,
+        'project_id': pid,
+        'task_id': tid,
+        'job_id': jid,
+    }

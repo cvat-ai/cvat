@@ -2,6 +2,11 @@
 #
 # SPDX-License-Identifier: MIT
 
+from rest_framework import serializers
+
+from cvat.apps.engine.models import Project
+from cvat.apps.engine.serializers import BasicUserSerializer, WriteOnceMixin
+
 from .event_type import EventTypeChoice, ProjectEvents, OrganizationEvents
 from .models import (
     Webhook,
@@ -9,8 +14,6 @@ from .models import (
     WebhookTypeChoice,
     WebhookDelivery,
 )
-from rest_framework import serializers
-from cvat.apps.engine.serializers import BasicUserSerializer, WriteOnceMixin
 
 
 class EventTypeValidator:
@@ -126,6 +129,9 @@ class WebhookWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         validators = [EventTypeValidator()]
 
     def create(self, validated_data):
+        if (project_id := validated_data.get('project_id')) is not None:
+            validated_data['organization'] = Project.objects.get(pk=project_id).organization
+
         db_webhook = Webhook.objects.create(**validated_data)
         return db_webhook
 

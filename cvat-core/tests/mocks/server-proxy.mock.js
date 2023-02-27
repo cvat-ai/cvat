@@ -5,7 +5,9 @@
 
 const {
     tasksDummyData,
+    tasksDummyLabelsData,
     projectsDummyData,
+    projectsDummyLabelsData,
     aboutDummyData,
     formatsDummyData,
     shareDummyData,
@@ -94,6 +96,7 @@ class ServerProxy {
                 return true;
             });
 
+            result.count = result.length;
             return result;
         }
 
@@ -105,12 +108,21 @@ class ServerProxy {
                     Object.prototype.hasOwnProperty.call(object, prop)
                 ) {
                     if (prop === 'labels') {
-                        object[prop] = projectData[prop].filter((label) => !label.deleted);
+                        const labels = projectsDummyLabelsData[id];
+                        // only add new labels here
+                        const maxId = Math.max(0, ...labels.map((label) => label.id));
+                        const newLabels = [...labels, ...projectData.labels.map((label, index) => (
+                            { ...label, id: maxId + index + 1 }
+                        ))];
+
+                        projectsDummyLabelsData[object.id] = newLabels;
                     } else {
                         object[prop] = projectData[prop];
                     }
                 }
             }
+
+            return (await getProjects({ id }))[0];
         }
 
         async function createProject(projectData) {
@@ -157,6 +169,7 @@ class ServerProxy {
                 return true;
             });
 
+            result.count = result.length;
             return result;
         }
 
@@ -168,7 +181,18 @@ class ServerProxy {
                     Object.prototype.hasOwnProperty.call(object, prop)
                 ) {
                     if (prop === 'labels') {
-                        object[prop] = taskData[prop].filter((label) => !label.deleted);
+                        const labels = (projectsDummyLabelsData[object.project_id] || tasksDummyLabelsData[object.id])
+                        // only add new labels here
+                        const maxId = Math.max(0, ...labels.map((label) => label.id));
+                        const newLabels = [...labels, ...taskData.labels.map((label, index) => (
+                            { ...label, id: maxId + index + 1 }
+                        ))];
+
+                        if (Number.isInteger(object.project_id)) {
+                            projectsDummyLabelsData[object.project_id] = newLabels;
+                        } else {
+                            tasksDummyLabelsData[object.id] = newLabels;
+                        }
                     } else {
                         object[prop] = taskData[prop];
                     }
@@ -216,7 +240,66 @@ class ServerProxy {
             }
         }
 
+        async function getLabels(filter) {
+            const { task_id, job_id, project_id } = filter;
+            if (Number.isInteger(task_id)) {
+                const object = tasksDummyData.results.find((task) => task.id === task_id);
+                if (Number.isInteger(object.project_id)) {
+                    return await getLabels({ project_id: object.project_id });
+                }
+
+                const results = tasksDummyLabelsData[task_id] || [];
+                return { results, count: results.length };
+            }
+
+            if (Number.isInteger(project_id)) {
+                const results =  projectsDummyLabelsData[project_id] || [];
+                return { results, count: results.length };
+            }
+
+            if (Number.isInteger(job_id)) {
+                const job = jobsDummyData.results.find((job) => job.id === job_id);
+                const project = job && Number.isInteger(job.project_id) ? projectsDummyData.results[job.project_id] : undefined;
+                const task = job ? tasksDummyData.results.find((task) => task.id === job.task_id) : undefined;
+
+                if (project) {
+                    return await getLabels({ project_id: project.id });
+                }
+
+                if (task) {
+                    return await getLabels({ task_id: task.id });
+                }
+            }
+
+            return { results: [], count: 0 };
+        }
+
+        async function deleteLabel(id) {
+            const containers = [tasksDummyLabelsData, projectsDummyLabelsData];
+            for (const container of containers) {
+                for (const instanceID in container) {
+                    const index = container[instanceID].findIndex((label) => label.id === id);
+                    if (index !== -1) {
+                        container[instanceID].splice(index, 1);
+                    }
+                }
+            }
+        }
+
+        async function updateLabel(body) {
+            return body;
+        }
+
         async function getJobs(filter = {}) {
+            if (Number.isInteger(filter.id)) {
+                // A specific object is requested
+                const results = jobsDummyData.results.filter((job) => job.id === filter.id);
+                return {
+                    results: results,
+                    count: results.length,
+                }
+            }
+
             function makeJsonFilter(jsonExpr) {
                 if (!jsonExpr) {
                     return (job) => true;
@@ -235,8 +318,15 @@ class ServerProxy {
                 return (job) => job.task_id === task_id;
             };
 
-            const id = filter.id || null;
-            const jobs = jobsDummyData.results.filter(makeJsonFilter(filter.filter || null));
+            let jobs = [];
+            if (Number.isInteger(filter.id)) {
+                jobs = jobsDummyData.results.filter((job) => job.id === filter.id);
+            } else if (Number.isInteger(filter.task_id)) {
+                jobs = jobsDummyData.results.filter((job) => job.task_id === filter.task_id);
+            } else {
+                jobs = jobsDummyData.results.filter(makeJsonFilter(filter.filter || null));
+            }
+
 
             for (const job of jobs) {
                 const task = tasksDummyData.results.find((task) => task.id === job.task_id);
@@ -246,11 +336,6 @@ class ServerProxy {
                 job.bug_tracker = task.bug_tracker;
                 job.mode = task.mode;
                 job.labels = task.labels;
-            }
-
-            if (id !== null) {
-                // A specific object is requested
-                return jobs.filter((job) => job.id === id)[0] || null;
             }
 
             return (
@@ -276,7 +361,7 @@ class ServerProxy {
                 }
             }
 
-            return getJobs({ id });
+            return (await getJobs({ id })).results[0];
         }
 
         async function getUsers() {
@@ -519,6 +604,15 @@ class ServerProxy {
                         create: createTask,
                         delete: deleteTask,
                         getPreview: getPreview,
+                    }),
+                    writable: false,
+                },
+
+                labels: {
+                    value: Object.freeze({
+                        get: getLabels,
+                        delete: deleteLabel,
+                        update: updateLabel,
                     }),
                     writable: false,
                 },

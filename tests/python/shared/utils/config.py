@@ -20,13 +20,10 @@ MINIO_KEY = "minio_access_key"
 MINIO_SECRET_KEY = "minio_secret_key"  # nosec
 MINIO_ENDPOINT_URL = "http://localhost:9000"
 
-
 # Azure Blob Container settings
 AZURE_CONTAINER = os.getenv("AZURE_CONTAINER")
 AZURE_TOKEN = os.getenv("AZURE_TOKEN")
 AZURE_ACCOUNT_NAME = os.getenv("AZURE_ACCOUNT_NAME")
-
-IS_AMAZON_COGNITO_AUTH_ENABLED = True
 
 
 def _to_query_params(**kwargs):

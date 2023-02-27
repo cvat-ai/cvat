@@ -638,6 +638,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                     <Col>
                         <CVATTooltip title='Intelligent scissors' className='cvat-opencv-drawing-tool'>
                             <Button
+                                className='cvat-opencv-scissors-tool-button'
                                 onClick={() => {
                                     this.setState({ mode: 'interaction' });
                                     this.activeTool = openCVWrapper.segmentation
@@ -665,7 +666,10 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                 <Col>
                     <CVATTooltip title='Histogram equalization' className='cvat-opencv-image-tool'>
                         <Button
-                            className={this.imageModifier('histogram') ? 'cvat-opencv-image-tool-active' : ''}
+                            className={
+                                this.imageModifier('histogram') ?
+                                    'cvat-opencv-histogram-tool-button cvat-opencv-image-tool-active' : 'cvat-opencv-histogram-tool-button'
+                            }
                             onClick={(e: React.MouseEvent<HTMLElement>) => {
                                 const modifier = this.imageModifier('histogram');
                                 if (!modifier) {

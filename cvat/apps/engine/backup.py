@@ -31,10 +31,10 @@ from distutils.util import strtobool
 import cvat.apps.dataset_manager as dm
 from cvat.apps.engine import models
 from cvat.apps.engine.log import slogger
-from cvat.apps.engine.serializers import (AttributeSerializer, DataSerializer,
+from cvat.apps.engine.serializers import (AttributeSerializer, DataSerializer, LabelSerializer,
     LabeledDataSerializer, SegmentSerializer, SimpleJobSerializer, TaskReadSerializer,
     ProjectReadSerializer, ProjectFileSerializer, TaskFileSerializer)
-from cvat.apps.engine.utils import av_scan_paths, process_failed_job, configure_dependent_job
+from cvat.apps.engine.utils import av_scan_paths, process_failed_job, configure_dependent_job, get_rq_job_meta
 from cvat.apps.engine.models import (
     StorageChoice, StorageMethodChoice, DataChoice, Task, Project, Location,
     CloudStorage as CloudStorageModel)
@@ -312,11 +312,13 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
     def _write_manifest(self, zip_object, target_dir=None):
         def serialize_task():
             task_serializer = TaskReadSerializer(self._db_task)
-            for field in ('url', 'owner', 'assignee', 'segments'):
+            for field in ('url', 'owner', 'assignee'):
                 task_serializer.fields.pop(field)
 
+            task_labels = LabelSerializer(self._db_task.get_labels(), many=True)
+
             task = self._prepare_task_meta(task_serializer.data)
-            task['labels'] = [self._prepare_label_meta(l) for l in task['labels'] if not l['has_parent']]
+            task['labels'] = [self._prepare_label_meta(l) for l in task_labels.data if not l['has_parent']]
             for label in task['labels']:
                 label['attributes'] = [self._prepare_attribute_meta(a) for a in label['attributes']]
 
@@ -662,11 +664,13 @@ class ProjectExporter(_ExporterBase, _ProjectBackupBase):
     def _write_manifest(self, zip_object):
         def serialize_project():
             project_serializer = ProjectReadSerializer(self._db_project)
-            for field in ('assignee', 'owner', 'tasks', 'url'):
+            for field in ('assignee', 'owner', 'url'):
                 project_serializer.fields.pop(field)
 
+            project_labels = LabelSerializer(self._db_project.get_labels(), many=True).data
+
             project = self._prepare_project_meta(project_serializer.data)
-            project['labels'] = [self._prepare_label_meta(l) for l in project['labels'] if not l['has_parent']]
+            project['labels'] = [self._prepare_label_meta(l) for l in project_labels if not l['has_parent']]
             for label in project['labels']:
                 label['attributes'] = [self._prepare_attribute_meta(a) for a in label['attributes']]
 
@@ -874,7 +878,10 @@ def export(db_instance, request, queue_name):
         func=_create_backup,
         args=(db_instance, Exporter, '{}_backup.zip'.format(obj_type), logger, cache_ttl),
         job_id=rq_id,
-        meta={ 'request_time': timezone.localtime() },
+        meta={
+            'request_time': timezone.localtime(),
+            **get_rq_job_meta(request=request, db_obj=db_instance),
+        },
         result_ttl=ttl, failure_ttl=ttl)
     return Response(status=status.HTTP_202_ACCEPTED)
 
@@ -927,6 +934,7 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
             meta={
                 'tmp_file': filename,
                 'tmp_file_descriptor': fd,
+                **get_rq_job_meta(request=request, db_obj=None)
             },
             depends_on=dependent_job
         )
