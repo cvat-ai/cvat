@@ -888,6 +888,24 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     # pylint: disable=no-self-use
     @transaction.atomic
     def update(self, instance, validated_data):
+        def _update_label_attributes(old_label, new_label):
+            for old_attr in old_label.attributespec_set.all():
+                new_attr = new_label.attributespec_set.filter(name=old_attr.name).first()
+                if new_attr is None:
+                    raise serializers.ValidationError('Target project does not have ' \
+                        f'"{old_label.name}" label with "{old_attr.name}" attribute')
+
+                for (model, model_name) in (
+                    (models.LabeledTrackAttributeVal, 'track'),
+                    (models.LabeledShapeAttributeVal, 'shape'),
+                    (models.LabeledImageAttributeVal, 'image')
+                ):
+                    model.objects.filter(**{
+                        f'{model_name}__job__segment__task': instance,
+                        f'{model_name}__label': old_label,
+                        'spec': old_attr
+                    }).update(spec=new_attr)
+
         instance.name = validated_data.get('name', instance.name)
         instance.owner_id = validated_data.get('owner_id', instance.owner_id)
         instance.assignee_id = validated_data.get('assignee_id', instance.assignee_id)
@@ -914,30 +932,13 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                     except ValueError:
                         raise serializers.ValidationError(f'Target project does not have label with name "{old_label.name}"')
 
-                    for old_attr in old_label.attributespec_set.all():
-                        new_attr = new_label.attributespec_set.filter(name=old_attr.name).first()
-                        if new_attr is None:
-                            raise serializers.ValidationError('Target project does not have ' \
-                                f'"{old_label.name}" label with "{old_attr.name}" attribute')
-
-                        for (model, model_name) in (
-                            (models.LabeledTrackAttributeVal, 'track'),
-                            (models.LabeledShapeAttributeVal, 'shape'),
-                            (models.LabeledImageAttributeVal, 'image')
-                        ):
-                            model.objects.filter(**{
-                                f'{model_name}__job__segment__task': instance,
-                                f'{model_name}__label': old_label,
-                                'spec': old_attr
-                            }).update(spec=new_attr)
-
+                    _update_label_attributes(old_label, new_label)
                     old_label.attributespec_set.all().delete()
 
                     for model in (models.LabeledTrack, models.LabeledShape, models.LabeledImage):
                         model.objects.filter(job__segment__task=instance, label=old_label).update(
                             label=new_label
                         )
-
                 instance.label_set.all().delete()
             else:
                 for old_label in instance.project.label_set.all():
@@ -952,22 +953,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                     except ValueError:
                         raise serializers.ValidationError(f'Target project does not have label with name "{old_label.name}"')
 
-                    for old_attr in old_label.attributespec_set.all():
-                        new_attr = new_label.attributespec_set.filter(name=old_attr.name).first()
-                        if new_attr is None:
-                            raise serializers.ValidationError('Target project does not have ' \
-                                f'"{old_label.name}" label with "{old_attr.name}" attribute')
-
-                        for (model, model_name) in (
-                            (models.LabeledTrackAttributeVal, 'track'),
-                            (models.LabeledShapeAttributeVal, 'shape'),
-                            (models.LabeledImageAttributeVal, 'image')
-                        ):
-                            model.objects.filter(**{
-                                f'{model_name}__job__segment__task': instance,
-                                f'{model_name}__label': old_label,
-                                'spec': old_attr
-                            }).update(spec=new_attr)
+                    _update_label_attributes(old_label, new_label)
 
                     for model in (models.LabeledTrack, models.LabeledShape, models.LabeledImage):
                         model.objects.filter(job__segment__task=instance, label=old_label).update(

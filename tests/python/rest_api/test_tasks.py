@@ -971,7 +971,8 @@ class TestPatchTaskLabel:
             )
 
     def test_can_delete_label(self, tasks, labels, admin_user):
-        task = [t for t in tasks if t["labels"]["count"] > 0][0]
+        task = [t for t in tasks if t["project_id"] is None and \
+                t["labels"]["count"] > 0][0]
         label = deepcopy([l for l in labels if l.get("task_id") == task["id"]][0])
         label_payload = {"id": label["id"], "deleted": True}
 
@@ -1003,7 +1004,8 @@ class TestPatchTaskLabel:
         assert DeepDiff(resulting_labels, task_labels, ignore_order=True) == {}
 
     def test_can_rename_label(self, tasks, labels, admin_user):
-        task = [t for t in tasks if t["labels"]["count"] > 0][0]
+        task = [t for t in tasks if t["project_id"] is None and \
+                t["labels"]["count"] > 0][0]
         task_labels = deepcopy([l for l in labels if l.get("task_id") == task["id"]])
         task_labels[0].update({"name": "new name"})
 
@@ -1025,7 +1027,7 @@ class TestPatchTaskLabel:
         assert "All label names must be unique" in response.text
 
     def test_cannot_add_foreign_label(self, tasks, labels, admin_user):
-        task = list(tasks)[0]
+        task = [t for t in tasks if t["project_id"] is None][0]
         new_label = deepcopy(
             [
                 l
@@ -1040,7 +1042,7 @@ class TestPatchTaskLabel:
         assert f"Not found label with id #{new_label['id']} to change" in response.text
 
     def test_admin_can_add_label(self, tasks, admin_user):
-        task = list(tasks)[0]
+        task = [t for t in tasks if t["project_id"] is None][0]
         new_label = {"name": "new name"}
 
         response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [new_label]})
