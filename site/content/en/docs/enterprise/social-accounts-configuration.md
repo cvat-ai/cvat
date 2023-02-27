@@ -115,22 +115,23 @@ To enable authentication, do the following:
    1. Create `docker-compose.override.yml` with the following code:
 
 <!--lint disable maximum-line-length-->
-   ```yaml
-   services:
-     cvat_server:
-       environment:
-         SOCIAL_AUTH_AMAZON_COGNITO_DOMAIN: 'https://<domain-prefix>.auth.us-east-1.amazoncognito.com'
-         SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_ID: '<YOUR_AMAZON_COGNITO_CLIENT_ID>'
-         SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_SECRET: '<YOUR_AMAZON_COGNITO_CLIENT_SECRET>'
-   ```
+
+```yaml
+services:
+  cvat_server:
+    environment:
+      SOCIAL_AUTH_AMAZON_COGNITO_DOMAIN: 'https://<domain-prefix>.auth.us-east-1.amazoncognito.com'
+      SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_ID: '<YOUR_AMAZON_COGNITO_CLIENT_ID>'
+      SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_SECRET: '<YOUR_AMAZON_COGNITO_CLIENT_SECRET>'
+```
 
 <!--lint enable maximum-line-length-->
 
-   2. In a terminal, run the following command:
+2.  In a terminal, run the following command:
 
-   ```bash
-   docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.override.yml up -d --build
-   ```
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.override.yml up -d --build
+```
 
 ## Social Auth with Django
 
