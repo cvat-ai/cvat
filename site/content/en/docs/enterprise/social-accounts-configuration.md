@@ -10,9 +10,12 @@ description: 'Social accounts authentication for Self-Hosted solution'
 You can now easily set up authentication with popular social services, which opens doors to
 such benefits as:
 
-- Convenience: you can use the existing social service credentials to sign in to CVAT.
-- Time-saving: with just two clicks, you can sign in without the hassle of typing in сredentials, saving time and effort.
-- Security: social auth service providers have high-level security measures in place to protect your accounts.
+- Convenience: you can use the existing
+  social service credentials to sign in to CVAT.
+- Time-saving: with just two clicks, you can
+  sign in without the hassle of typing in сredentials, saving time and effort.
+- Security: social auth service providers have
+  high-level security measures in place to protect your accounts.
 
 Currently, we offer three options:
 
@@ -127,7 +130,7 @@ services:
 
 <!--lint enable maximum-line-length-->
 
-2.  In a terminal, run the following command:
+2. In a terminal, run the following command:
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.override.yml up -d --build
