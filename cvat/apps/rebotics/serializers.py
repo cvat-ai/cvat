@@ -15,7 +15,7 @@ class _BaseImportSerializer(serializers.Serializer):
         raise NotImplementedError('Updating export data is not allowed')
 
 
-class _BaseAnnotationSerializer(_BaseImportSerializer):
+class _ImportAnnotationSerializer(_BaseImportSerializer):
     lowerx = serializers.FloatField()
     lowery = serializers.FloatField()
     upperx = serializers.FloatField()
@@ -23,13 +23,17 @@ class _BaseAnnotationSerializer(_BaseImportSerializer):
     label = serializers.CharField(max_length=128)
     points = serializers.CharField(max_length=255, allow_null=True, default=None)
     type = serializers.CharField(max_length=255, allow_null=True, default=None)
-
-
-class _ImportAnnotationSerializer(_BaseAnnotationSerializer):
     upc = serializers.CharField(max_length=128)
 
 
-class _ImportPriceTagSerializer(_BaseAnnotationSerializer):
+class _ImportPriceTagSerializer(_BaseImportSerializer):
+    lowerx = serializers.FloatField(allow_null=True, default=None)
+    lowery = serializers.FloatField(allow_null=True, default=None)
+    upperx = serializers.FloatField(allow_null=True, default=None)
+    uppery = serializers.FloatField(allow_null=True, default=None)
+    label = serializers.CharField(max_length=128)
+    points = serializers.CharField(max_length=255, allow_null=True, default=None)
+    type = serializers.CharField(max_length=255, allow_null=True, default=None)
     upc = serializers.CharField(max_length=128, allow_blank=True, allow_null=True, default=None)
 
 
@@ -45,14 +49,14 @@ class _ImportImageSerializer(_BaseImportSerializer):
 class ImportSerializer(_BaseImportSerializer):
     image_quality = serializers.IntegerField(min_value=0, max_value=100, default=70)
     segment_size = serializers.IntegerField(min_value=0, default=0)
-    workspace = serializers.CharField(max_length=16, default=settings.IMPORT_WORKSPACE,
+    workspace = serializers.CharField(max_length=16, allow_null=True, default=settings.IMPORT_WORKSPACE,
                                       help_text='Organization short name. Case sensitive.')
     export_by = serializers.CharField(allow_null=True, default=None)
     retailer_codename = serializers.CharField(allow_null=True, default=None)
     images = serializers.ListSerializer(child=_ImportImageSerializer())
 
     def validate_workspace(self, value):
-        if Organization.objects.filter(slug=value).exists():
+        if value is None or Organization.objects.filter(slug=value).exists():
             return value
         raise ValidationError(f'Workspace "{value}" does not exist!')
 

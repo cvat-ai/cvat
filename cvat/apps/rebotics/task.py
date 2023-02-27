@@ -16,7 +16,9 @@ from cvat.apps.engine.models import Project, Task, Data, Job, RemoteFile, \
 from cvat.apps.organizations.models import Organization
 from cvat.apps.engine.views import TaskViewSet
 from cvat.apps.engine.media_extractors import sort
+from cvat.apps.engine.log import slogger
 from cvat.rebotics.s3_client import s3_client
+
 from utils.dataset_manifest import S3ManifestManager
 
 User = get_user_model()
@@ -42,7 +44,7 @@ def _fix_coordinates(item, width, height):
 def _rand_color():
     choices = '0123456789ABCDEF'
     color = '#'
-    for i in range(6):
+    for _ in range(6):
         color += random.choice(choices)
     return color
 
@@ -128,6 +130,12 @@ class ShapesImporter:
         else:
             self.vals.append(None)
 
+    def _import_price_tag(self, item: dict, frame: int, group: int, image_size: tuple) -> None:
+        if any(item[key] is None for key in ('lowerx', 'upperx', 'lowery', 'uppery')):
+            slogger.glob.warning(f'Phantom price tag skipped.')
+        else:
+            self._import_item(item, frame, group, image_size)
+
     def _save(self) -> None:
         LabeledShape.objects.bulk_create(self.shapes)
         save_vals = []
@@ -181,7 +189,7 @@ class ShapesImporter:
             for item in file.meta['items']:
                 self._import_item(item, frame, 0, image_size)
             for item in file.meta['price_tags']:
-                self._import_item(item, frame, 1, image_size)
+                self._import_price_tag(item, frame, 1, image_size)
 
         self._save()
         self._clean_meta()
@@ -197,14 +205,20 @@ def _create_thread(task_id, cvat_data):
 
 
 def create(data: dict, retailer: User):
-    workspace = data.pop('workspace')
-    retailer_name = data.get('retailer_codename', retailer.username)
-    organization = Organization.objects.get(slug=workspace)
+    retailer_name = data.get('retailer_codename', None)
+    if retailer_name is None:
+        retailer_name = retailer.username
+
+    workspace = data.pop('workspace', None)
+    if workspace is None:
+        organization = None
+    else:
+        organization = Organization.objects.get(slug=workspace)
 
     project, _ = Project.objects.get_or_create(
         owner=retailer,
         organization=organization,
-        name=f'Import from {retailer_name}',
+        name=f'Import from: {retailer_name}',
     )
 
     images = data.pop('images')
