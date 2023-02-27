@@ -77,10 +77,6 @@ function build() {
                 const result = await PluginRegistry.apiWrapper(cvat.server.logout);
                 return result;
             },
-            async socialAuthentication() {
-                const result = await PluginRegistry.apiWrapper(cvat.server.socialAuthentication);
-                return result;
-            },
             async changePassword(oldPassword, newPassword1, newPassword2) {
                 const result = await PluginRegistry.apiWrapper(
                     cvat.server.changePassword,
@@ -124,18 +120,6 @@ function build() {
             },
             async installedApps() {
                 const result = await PluginRegistry.apiWrapper(cvat.server.installedApps);
-                return result;
-            },
-            async loginWithSocialAccount(
-                provider: string,
-                code: string,
-                authParams?: string,
-                process?: string,
-                scope?: string,
-            ) {
-                const result = await PluginRegistry.apiWrapper(
-                    cvat.server.loginWithSocialAccount, provider, code, authParams, process, scope,
-                );
                 return result;
             },
         },
