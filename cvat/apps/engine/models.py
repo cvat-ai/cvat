@@ -711,6 +711,12 @@ class Issue(models.Model):
     def get_organization_slug(self):
         return self.job.get_organization_slug()
 
+    def get_task_id(self):
+        return self.job.get_task_id()
+
+    def get_job_id(self):
+        return self.job_id
+
 
 class Comment(models.Model):
     issue = models.ForeignKey(Issue, related_name='comments', on_delete=models.CASCADE)
@@ -727,6 +733,12 @@ class Comment(models.Model):
 
     def get_organization_slug(self):
         return self.issue.get_organization_slug()
+
+    def get_task_id(self):
+        return self.issue.get_task_id()
+
+    def get_job_id(self):
+        return self.issue.get_job_id()
 
 class CloudProviderChoice(str, Enum):
     AWS_S3 = 'AWS_S3_BUCKET'
