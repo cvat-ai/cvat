@@ -104,7 +104,7 @@ class CollectionSimpleFilterTestBase(metaclass=ABCMeta):
     def test_can_use_simple_filter_for_object_list(self, field):
         value, gt_objects = self._get_field_samples(field)
 
-        received_items = self._retrieve_collection(**{field: str(value)})
+        received_items = self._retrieve_collection(**{field: value})
 
         self._compare_results(gt_objects, received_items)
 

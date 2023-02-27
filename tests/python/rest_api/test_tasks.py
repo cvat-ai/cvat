@@ -55,7 +55,7 @@ class TestGetTasks:
             results = get_paginated_collection(
                 api_client.tasks_api.list_endpoint,
                 return_json=True,
-                project_id=str(project_id),
+                project_id=project_id,
                 **kwargs,
             )
             assert DeepDiff(data, results, ignore_order=True, exclude_paths=exclude_paths) == {}
@@ -919,7 +919,7 @@ class TestPostTaskData:
 
         with make_api_client(self._USERNAME) as api_client:
             jobs: List[models.JobRead] = get_paginated_collection(
-                api_client.jobs_api.list_endpoint, task_id=str(task_id), sort="id"
+                api_client.jobs_api.list_endpoint, task_id=task_id, sort="id"
             )
             (task_meta, _) = api_client.tasks_api.retrieve_data_meta(id=task_id)
 
@@ -967,7 +967,7 @@ class TestPatchTaskLabel:
         kwargs.setdefault("return_json", True)
         with make_api_client(user) as api_client:
             return get_paginated_collection(
-                api_client.labels_api.list_endpoint, task_id=str(pid), **kwargs
+                api_client.labels_api.list_endpoint, task_id=pid, **kwargs
             )
 
     def test_can_delete_label(self, tasks, labels, admin_user):
