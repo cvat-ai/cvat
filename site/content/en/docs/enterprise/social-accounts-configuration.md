@@ -114,6 +114,7 @@ To enable authentication, do the following:
 
    1. Create `docker-compose.override.yml` with the following code:
 
+<!--lint disable maximum-line-length-->
    ```yaml
    services:
      cvat_server:
@@ -122,6 +123,8 @@ To enable authentication, do the following:
          SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_ID: '<YOUR_AMAZON_COGNITO_CLIENT_ID>'
          SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_SECRET: '<YOUR_AMAZON_COGNITO_CLIENT_SECRET>'
    ```
+
+<!--lint enable maximum-line-length-->
 
    2. In a terminal, run the following command:
 
