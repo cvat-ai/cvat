@@ -56,7 +56,13 @@ def job_id(instance):
     if isinstance(instance, Job):
         return instance.id
 
-    return None
+    try:
+        jid = getattr(instance, "job_id", None)
+        if jid is None:
+            return instance.get_job_id()
+        return jid
+    except Exception:
+        return None
 
 def _get_current_user(instance):
     if isinstance(instance, User):
