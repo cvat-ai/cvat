@@ -11,13 +11,11 @@ description: 'Instructions on how to run all existence tests.'
 1. Run CVAT instance:
    ```
    docker compose \
-             --env-file="tests/python/social_auth/.env" \
              -f docker-compose.yml \
              -f docker-compose.dev.yml \
              -f components/serverless/docker-compose.serverless.yml \
              -f tests/docker-compose.minio.yml \
-             -f tests/docker-compose.file_share.yml \
-             -f tests/python/social_auth/docker-compose.yml up -d
+             -f tests/docker-compose.file_share.yml -d
    ```
 1. Add test user in CVAT:
    ```
