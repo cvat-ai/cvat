@@ -2,8 +2,32 @@
 title: 'Social auth configuration'
 linkTitle: 'Social auth configuration'
 weight: 3
-description: 'Social accounts configuration guide.'
+description: 'Social accounts authentication for Self-Hosted solution'
 ---
+
+> **Note:** This is a paid feature available for [Enterprise clients](https://www.cvat.ai/pricing/on-prem).
+
+You can now easily set up authentication with popular social services, which opens doors to
+such benefits as:
+
+- Convenience: you can use the existing social service credentials to sign in to CVAT.
+- Time-saving: with just two clicks, you can sign in without the hassle of typing in сredentials, saving time and effort.
+- Security: social auth service providers have high-level security measures in place to protect your accounts.
+
+Currently, we offer three options:
+
+- Authentication with Github.
+- Authentication with Google.
+- Authentication with Amazon Cognito.
+
+With more to come soon. Stay tuned!
+
+See:
+
+- [Enable authentication with a Google account](#enable-authentication-with-a-google-account)
+- [Enable authentication with a GitHub account](#enable-authentication-with-a-github-account)
+- [Enable authentication with an Amazon Cognito](#enable-authentication-with-an-amazon-cognito)
+- [Social Auth with Django](#social-auth-with-django)
 
 ## Enable authentication with a Google account
 
@@ -16,7 +40,7 @@ To enable authentication, do the following:
    **User type** (**Internal** or **External**), and click **Create**.
 4. On the **OAuth consent screen** fill all required fields, and click **Save and Continue**.
 5. On the **Scopes** screen, click **Add or remove scopes** and
-   select `auth/userinfo.email`, `auth/userinfo.profile`, and `openid` .
+   select `auth/userinfo.email`, `auth/userinfo.profile`, and `openid`.
    Click **Update**, and **Save and Continue**.
    <br>For more information, see [Configure Auth Consent](https://developers.google.com/workspace/guides/configure-oauth-consent).
 6. On the left menu, click **Credentials**, on the top
@@ -43,14 +67,14 @@ To enable authentication, do the following:
    2. In a terminal, run the following command:
 
    ```bash
-   docker compose -f docker-compose.yml -f docker-compose.override.yml up -d
+   docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.override.yml up -d --build
    ```
 
 ## Enable authentication with a GitHub account
 
 There are 2 basic steps to enable GitHub account authentication.
 
-1. Open GitHub settings page.
+1. Open the GitHub settings page.
 2. On the left menu, click **<> Developer settings** > **OAuth Apps** > **Register new application**.
    <br>For more information, see [Creating an OAuth App](https://docs.github.com/en/developers/apps/building-oauth-apps/creating-an-oauth-app)
 3. Fill in the name field, set the homepage URL (for example: `https://localhost:8080`),
@@ -72,12 +96,40 @@ There are 2 basic steps to enable GitHub account authentication.
    2. In a terminal, run the following command:
 
    ```bash
-   docker compose -f docker-compose.yml -f docker-compose.override.yml up -d
+   docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.override.yml up -d --build
    ```
 
 > **Note:** You can also configure [GitHub App](https://docs.github.com/en/developers/apps/building-github-apps/creating-a-github-app),
 > but don't forget to add required permissions.
 > <br>In the **Permission** > **Account permissions** > **Email addresses** must be set to **read-only**.
+
+## Enable authentication with an Amazon Cognito
+
+To enable authentication, do the following:
+
+1. Create a user pool. For more information,
+   see [Amazon Cognito user pools](https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-identity-pools.html)
+
+2. Set environment variables in CVAT:
+
+   1. Create `docker-compose.override.yml` with the following code:
+
+   ```yaml
+   services:
+     cvat_server:
+       environment:
+         SOCIAL_AUTH_AMAZON_COGNITO_DOMAIN: 'https://<domain-prefix>.auth.us-east-1.amazoncognito.com'
+         SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_ID: '<YOUR_AMAZON_COGNITO_CLIENT_ID>'
+         SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_SECRET: '<YOUR_AMAZON_COGNITO_CLIENT_SECRET>'
+   ```
+
+   2. In a terminal, run the following command:
+
+   ```bash
+   docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.override.yml up -d --build
+   ```
+
+## Social Auth with Django
 
 You can also configure OAuth with other services,
 see [Social Auth with Django services](https://django-allauth.readthedocs.io/en/latest/providers.html)
