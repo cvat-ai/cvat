@@ -4,6 +4,12 @@ Django==3.2.18
 django-appconf==1.0.4
 django-auth-ldap==2.2.0
 django-compressor==2.4
+# dj-rest-auth[with_social] includes django-allauth but with version range: >=0.40.0,<0.53.0
+# This does not suit us in the case when one of the previous allauth version was installed.
+# Despite direct indication allauth in requirements we should keep 'with_social' for dj-rest-auth
+# to avoid possible further versions conflicts (we use registration functionality)
+# https://dj-rest-auth.readthedocs.io/en/latest/installation.html#registration-optional
+django-allauth>=0.52.0
 dj-rest-auth[with_social]==2.2.7
 django-rq==2.3.2
 EasyProcess==0.3
