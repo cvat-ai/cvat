@@ -29,6 +29,7 @@ Tracks can be exported/imported to/from Datumaro and Sly Pointcloud formats (<ht
 - Analytics based on Clickhouse, Vector and Grafana instead of the ELK stack (<https://github.com/opencv/cvat/pull/5646>)
 - \[SDK\] High-level API for working with organizations
   (<https://github.com/opencv/cvat/pull/5718>)
+- Tests for import/export task annotations to Azure Blob container (<https://github.com/opencv/cvat/pull/5782>)
 
 ### Changed
 - The Docker Compose files now use the Compose Specification version
