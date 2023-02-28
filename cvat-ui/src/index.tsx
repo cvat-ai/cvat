@@ -125,8 +125,6 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         }),
     });
 
-    window.document.dispatchEvent(new Event('cvat.ready'));
-
     return {
         loadFormats: (): void => dispatch(getFormatsAsync()),
         verifyAuthorized: (): void => dispatch(authorizedAsync()),
