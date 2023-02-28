@@ -327,7 +327,7 @@ class _AzureResourceTest(_CloudStorageResourceTest):
         "account_name": AZURE_ACCOUNT_NAME,
         "description": "Some description",
         "manifests": [
-            "manifest.jsonl",
+            "empty_manifest.jsonl",
         ],
     }
 

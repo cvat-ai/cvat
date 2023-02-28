@@ -137,6 +137,10 @@ jobs:
           docker image ls -a
 
       - name: Running REST API and SDK tests
+        env:
+          AZURE_CONTAINER: "some"
+          AZURE_TOKEN: "some"
+          AZURE_ACCOUNT_NAME: "some"
         run: |
           pip3 install --user '/tmp/cvat_sdk/[pytorch]'
           pip3 install --user cvat-cli/
