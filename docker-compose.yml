@@ -254,6 +254,7 @@ services:
       - CLICKHOUSE_DB=cvat
       - CLICKHOUSE_USER=user
       - CLICKHOUSE_PASSWORD=user
+      - CLICKHOUSE_HOST=clickhouse
     networks:
       cvat:
         aliases:

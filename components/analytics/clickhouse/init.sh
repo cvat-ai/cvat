@@ -20,7 +20,8 @@ cat <<EOT > /etc/clickhouse-server/users.d/user.xml
 </yandex>
 EOT
 
-clickhouse-client --query "CREATE DATABASE IF NOT EXISTS ${CLICKHOUSE_DB}";
+max_retries=5
+until $(clickhouse-client --query "CREATE DATABASE IF NOT EXISTS ${CLICKHOUSE_DB};") && [ $max_retries -gt 0 ] ; do echo "waiting for DB" && (( max_retries-- )) && sleep 3; done
 
 echo "
 CREATE TABLE IF NOT EXISTS ${CLICKHOUSE_DB}.events
