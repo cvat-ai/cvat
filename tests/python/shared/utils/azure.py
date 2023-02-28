@@ -2,10 +2,10 @@
 #
 # SPDX-License-Identifier: MIT
 
-from azure.storage.blob import BlobServiceClient
 from azure.core.exceptions import HttpResponseError
+from azure.storage.blob import BlobServiceClient
 
-from shared.utils.config import AZURE_TOKEN, AZURE_ACCOUNT_NAME
+from shared.utils.config import AZURE_ACCOUNT_NAME, AZURE_TOKEN
 
 
 class AzureBlobContainerClient:

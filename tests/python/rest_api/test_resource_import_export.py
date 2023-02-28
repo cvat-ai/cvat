@@ -5,17 +5,23 @@
 
 import functools
 import json
+from abc import ABC, abstractstaticmethod
 from contextlib import ExitStack
 from http import HTTPStatus
 from typing import Any, Dict, TypeVar
 
 import pytest
 
-from abc import ABC, abstractstaticmethod
-from shared.utils.config import get_method, post_method, make_api_client
-from shared.utils.s3 import make_client as make_s3_client
 from shared.utils.azure import make_client as make_azure_blob_container_client
-from shared.utils.config import AZURE_CONTAINER, AZURE_TOKEN, AZURE_ACCOUNT_NAME
+from shared.utils.config import (
+    AZURE_ACCOUNT_NAME,
+    AZURE_CONTAINER,
+    AZURE_TOKEN,
+    get_method,
+    make_api_client,
+    post_method,
+)
+from shared.utils.s3 import make_client as make_s3_client
 
 T = TypeVar("T")
 
@@ -66,8 +72,8 @@ class _CloudStorageResourceTest(ABC):
         pass
 
     @pytest.fixture(autouse=True)
-    def setup(self):
-        self.user = "admin2"
+    def setup(self, admin_user: str):
+        self.user = admin_user
         self.client = self._make_client()
         self.exit_stack = ExitStack()
         with self.exit_stack:
@@ -110,7 +116,11 @@ class _CloudStorageResourceTest(ABC):
             response = post_method(user, url, data=None, **kwargs)
             status = response.status_code
 
-        annotations = get_method(user, url).json()
+        response = get_method(user, url)
+
+        assert response.status_code != HTTPStatus.OK
+        annotations = response.json()
+
         assert len(annotations["shapes"])
 
     def _import_backup_from_cloud_storage(self, obj_id, obj, *, user, **kwargs):
