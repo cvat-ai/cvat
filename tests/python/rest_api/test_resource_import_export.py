@@ -277,7 +277,6 @@ class TestImportResourceFromS3(_S3ResourceTest):
             resource, is_default=False, obj=obj, cloud_storage_id=cloud_storage_id
         )
         self._export_resource(cloud_storage, obj_id, obj, resource, **export_kwargs)
-
         self._import_resource(cloud_storage, resource, obj_id, obj, **kwargs)
 
     @pytest.mark.parametrize(
@@ -317,7 +316,6 @@ class TestImportResourceFromS3(_S3ResourceTest):
 
 
 class _AzureResourceTest(_CloudStorageResourceTest):
-
     SPEC = {
         "provider_type": "AZURE_CONTAINER",
         "resource": AZURE_CONTAINER,
