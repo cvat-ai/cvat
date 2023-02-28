@@ -19,6 +19,7 @@ cat <<EOT > /etc/clickhouse-server/users.d/user.xml
   </users>
 </yandex>
 EOT
+sleep 3
 
 clickhouse-client --query "CREATE DATABASE IF NOT EXISTS ${CLICKHOUSE_DB}";
 
