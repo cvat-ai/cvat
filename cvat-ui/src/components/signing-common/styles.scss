@@ -382,8 +382,10 @@ $social-google-background: #4286f5;
 }
 
 .cvat-social-authentication-row-with-icons {
-    margin-top: $grid-unit-size * 3;
     height: $grid-unit-size * 35;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
 
     img {
         width: $grid-unit-size * 5;

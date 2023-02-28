@@ -7,7 +7,6 @@ import React, { useEffect } from 'react';
 import { RouteComponentProps, useHistory } from 'react-router';
 import { withRouter } from 'react-router-dom';
 import { Row, Col } from 'antd/lib/grid';
-import Text from 'antd/lib/typography/Text';
 
 import SigningLayout, { formSizes } from 'components/signing-common/signing-layout';
 import SocialAccountLink from 'components/signing-common/social-account-link';
@@ -36,22 +35,18 @@ const renderSocialAuthMethods = (methods: SocialAuthMethods): JSX.Element | null
     }
 
     return (
-        <>
-            <hr className='cvat-social-authentication-hr' />
-            <Text type='secondary'>Or</Text>
-            <div className='cvat-social-authentication-row-with-icons'>
-                {activeMethods.map((method: SocialAuthMethod) => (
-                    <SocialAccountLink
-                        key={method.provider}
-                        icon={method.icon}
-                        href={(method.provider !== config.SSO_PROVIDER_KEY) ? `${backendAPI}/auth/social/${method.provider}/login/` : '/auth/oidc/select-identity-provider/'}
-                        className={`cvat-social-authentication-${method.provider}`}
-                    >
-                        {`Continue with ${method.publicName}`}
-                    </SocialAccountLink>
-                ))}
-            </div>
-        </>
+        <div className='cvat-social-authentication-row-with-icons'>
+            {activeMethods.map((method: SocialAuthMethod) => (
+                <SocialAccountLink
+                    key={method.provider}
+                    icon={method.icon}
+                    href={(method.provider !== config.SSO_PROVIDER_KEY) ? `${backendAPI}/auth/social/${method.provider}/login/` : '/auth/oidc/select-identity-provider/'}
+                    className={`cvat-social-authentication-${method.provider}`}
+                >
+                    {`Continue with ${method.publicName}`}
+                </SocialAccountLink>
+            ))}
+        </div>
     );
 };
 
