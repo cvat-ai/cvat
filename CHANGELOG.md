@@ -41,6 +41,7 @@ Tracks can be exported/imported to/from Datumaro and Sly Pointcloud formats (<ht
 - The contour detection function for semantic segmentation (<https://github.com/opencv/cvat/pull/4665>)
 - Delete newline character when generating a webhook signature (<https://github.com/opencv/cvat/pull/5622>)
 - DL models UI (<https://github.com/opencv/cvat/pull/5635>)
+- Hide notifications on login/logout/register (<https://github.com/opencv/cvat/pull/5788>)
 
 ### Deprecated
 - TBD
