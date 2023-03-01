@@ -5,7 +5,10 @@
   "results": [
     {
       "assignee": null,
-      "comments": "http://localhost:8080/api/comments?issue_id=5",
+      "comments": {
+        "count": 1,
+        "url": "http://localhost:8080/api/comments?issue_id=5"
+      },
       "created_date": "2022-03-16T12:49:29.369000Z",
       "frame": 0,
       "id": 5,
@@ -34,7 +37,10 @@
         "url": "http://localhost:8080/api/users/2",
         "username": "user1"
       },
-      "comments": "http://localhost:8080/api/comments?issue_id=4",
+      "comments": {
+        "count": 1,
+        "url": "http://localhost:8080/api/comments?issue_id=4"
+      },
       "created_date": "2022-03-16T12:40:00.764000Z",
       "frame": 5,
       "id": 4,
@@ -57,7 +63,10 @@
     },
     {
       "assignee": null,
-      "comments": "http://localhost:8080/api/comments?issue_id=3",
+      "comments": {
+        "count": 1,
+        "url": "http://localhost:8080/api/comments?issue_id=3"
+      },
       "created_date": "2022-03-16T11:08:18.367000Z",
       "frame": 5,
       "id": 3,
@@ -80,7 +89,10 @@
     },
     {
       "assignee": null,
-      "comments": "http://localhost:8080/api/comments?issue_id=2",
+      "comments": {
+        "count": 1,
+        "url": "http://localhost:8080/api/comments?issue_id=2"
+      },
       "created_date": "2022-03-16T11:07:22.170000Z",
       "frame": 0,
       "id": 2,
@@ -103,7 +115,10 @@
     },
     {
       "assignee": null,
-      "comments": "http://localhost:8080/api/comments?issue_id=1",
+      "comments": {
+        "count": 2,
+        "url": "http://localhost:8080/api/comments?issue_id=1"
+      },
       "created_date": "2022-03-16T11:04:39.444000Z",
       "frame": 0,
       "id": 1,

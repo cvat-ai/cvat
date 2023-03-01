@@ -7,9 +7,7 @@ import React from 'react';
 import Input from 'antd/lib/input';
 import { Col, Row } from 'antd/lib/grid';
 
-import {
-    ActiveControl, PredictorState, ToolsBlockerState, Workspace,
-} from 'reducers';
+import { ActiveControl, ToolsBlockerState, Workspace } from 'reducers';
 import LeftGroup from './left-group';
 import PlayerButtons from './player-buttons';
 import PlayerNavigation from './player-navigation';
@@ -41,12 +39,9 @@ interface Props {
     prevButtonType: string;
     nextButtonType: string;
     focusFrameInputShortcut: string;
-    predictor: PredictorState;
-    isTrainingActive: boolean;
     activeControl: ActiveControl;
     toolsBlockerState: ToolsBlockerState;
     changeWorkspace(workspace: Workspace): void;
-    switchPredictor(predictorEnabled: boolean): void;
     showStatistics(): void;
     showFilters(): void;
     onSwitchPlay(): void;
@@ -98,12 +93,10 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         backwardShortcut,
         prevButtonType,
         nextButtonType,
-        predictor,
         focusFrameInputShortcut,
         activeControl,
         toolsBlockerState,
         showStatistics,
-        switchPredictor,
         showFilters,
         changeWorkspace,
         onSwitchPlay,
@@ -127,7 +120,6 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         onRestoreFrame,
         switchNavigationBlocked,
         jobInstance,
-        isTrainingActive,
     } = props;
 
     return (
@@ -191,13 +183,10 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                 </Row>
             </Col>
             <RightGroup
-                predictor={predictor}
                 workspace={workspace}
-                switchPredictor={switchPredictor}
                 jobInstance={jobInstance}
                 changeWorkspace={changeWorkspace}
                 showStatistics={showStatistics}
-                isTrainingActive={isTrainingActive}
                 showFilters={showFilters}
             />
         </Row>

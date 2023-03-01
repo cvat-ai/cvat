@@ -47,26 +47,37 @@ function ImportBackupModal(): JSX.Element {
     });
 
     const uploadLocalFile = (): JSX.Element => (
-        <Upload.Dragger
-            listType='text'
-            fileList={file ? [file] : ([] as any[])}
-            beforeUpload={(_file: RcFile): boolean => {
-                if (!['application/zip', 'application/x-zip-compressed'].includes(_file.type)) {
-                    message.error('Only ZIP archive is supported');
-                } else {
-                    setFile(_file);
+        <Form.Item
+            getValueFromEvent={(e) => {
+                if (Array.isArray(e)) {
+                    return e;
                 }
-                return false;
+                return e?.fileList[0];
             }}
-            onRemove={() => {
-                setFile(null);
-            }}
+            name='dragger'
+            rules={[{ required: true, message: 'The file is required' }]}
         >
-            <p className='ant-upload-drag-icon'>
-                <InboxOutlined />
-            </p>
-            <p className='ant-upload-text'>Click or drag file to this area</p>
-        </Upload.Dragger>
+            <Upload.Dragger
+                listType='text'
+                fileList={file ? [file] : ([] as any[])}
+                beforeUpload={(_file: RcFile): boolean => {
+                    if (!['application/zip', 'application/x-zip-compressed'].includes(_file.type)) {
+                        message.error('Only ZIP archive is supported');
+                    } else {
+                        setFile(_file);
+                    }
+                    return false;
+                }}
+                onRemove={() => {
+                    setFile(null);
+                }}
+            >
+                <p className='ant-upload-drag-icon'>
+                    <InboxOutlined />
+                </p>
+                <p className='ant-upload-text'>Click or drag file to this area</p>
+            </Upload.Dragger>
+        </Form.Item>
     );
 
     const validateFileName = (_: RuleObject, value: string): Promise<void> => {
@@ -84,7 +95,7 @@ function ImportBackupModal(): JSX.Element {
         <Form.Item
             label={<Text strong>File name</Text>}
             name='fileName'
-            rules={[{ validator: validateFileName }]}
+            rules={[{ validator: validateFileName }, { required: true, message: 'Please, specify a name' }]}
         >
             <Input
                 placeholder='Backup file name'
@@ -131,10 +142,7 @@ function ImportBackupModal(): JSX.Element {
             <Modal
                 title={(
                     <Text strong>
-                        Create
-                        {instanceType}
-                        {' '}
-                        from backup
+                        {`Create ${instanceType} from backup`}
                     </Text>
                 )}
                 visible={modalVisible}

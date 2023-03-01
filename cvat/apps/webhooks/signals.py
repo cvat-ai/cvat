@@ -98,7 +98,6 @@ def select_webhooks(project_id, org_id, event):
             is_active=True,
             events__contains=event,
             type=WebhookTypeChoice.PROJECT,
-            organization=org_id,
             project=project_id,
         )
         selected_webhooks += list(webhooks)

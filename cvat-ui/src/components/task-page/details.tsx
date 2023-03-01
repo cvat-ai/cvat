@@ -1,9 +1,11 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
+import { connect } from 'react-redux';
+
 import { Row, Col } from 'antd/lib/grid';
 import Tag from 'antd/lib/tag';
 import { CheckCircleOutlined, ExclamationCircleOutlined, LoadingOutlined } from '@ant-design/icons';
@@ -15,32 +17,64 @@ import moment from 'moment';
 import Paragraph from 'antd/lib/typography/Paragraph';
 import Select from 'antd/lib/select';
 import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
-import { getCore } from 'cvat-core-wrapper';
-import { getReposData, syncRepos, changeRepo } from 'utils/git-utils';
-import { ActiveInference } from 'reducers';
-import AutomaticAnnotationProgress from 'components/tasks-page/automatic-annotation-progress';
-import Preview from 'components/common/preview';
 import Descriptions from 'antd/lib/descriptions';
 import Space from 'antd/lib/space';
+
+import { getCore, Task } from 'cvat-core-wrapper';
+import { getReposData, syncRepos, changeRepo } from 'utils/git-utils';
+import AutomaticAnnotationProgress from 'components/tasks-page/automatic-annotation-progress';
+import Preview from 'components/common/preview';
+import { cancelInferenceAsync } from 'actions/models-actions';
+import { CombinedState, ActiveInference } from 'reducers';
 import UserSelector, { User } from './user-selector';
 import BugTrackerEditor from './bug-tracker-editor';
 import LabelsEditorComponent from '../labels-editor/labels-editor';
 import ProjectSubsetField from '../create-task-page/project-subset-field';
 
-const { Option } = Select;
+interface OwnProps {
+    task: Task;
+    onUpdateTask: (task: Task) => Promise<void>;
+}
 
-const core = getCore();
-
-interface Props {
-    taskInstance: any;
-    installedGit: boolean; // change to git repos url
+interface StateToProps {
     activeInference: ActiveInference | null;
+    installedGit: boolean;
     projectSubsets: string[];
-    cancelAutoAnnotation(): void;
-    onTaskUpdate: (taskInstance: any) => void;
     dumpers: any[];
     user: any;
 }
+
+interface DispatchToProps {
+    cancelAutoAnnotation(): void;
+}
+
+function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps & OwnProps {
+    const { list } = state.plugins;
+    const [taskProject] = state.projects.current.filter((project) => project.id === own.task.projectId);
+
+    return {
+        ...own,
+        dumpers: state.formats.annotationFormats.dumpers,
+        user: state.auth.user,
+        installedGit: list.GIT_INTEGRATION,
+        activeInference: state.models.inferences[own.task.id] || null,
+        projectSubsets: taskProject ?
+            ([
+                ...new Set(taskProject.subsets),
+            ] as string[]) :
+            [],
+    };
+}
+
+function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {
+    return {
+        cancelAutoAnnotation(): void {
+            dispatch(cancelInferenceAsync(own.task.id));
+        },
+    };
+}
+
+const core = getCore();
 
 interface State {
     name: string;
@@ -52,14 +86,14 @@ interface State {
     updatingRepository: boolean;
 }
 
-export default class DetailsComponent extends React.PureComponent<Props, State> {
+type Props = DispatchToProps & StateToProps & OwnProps;
+
+class DetailsComponent extends React.PureComponent<Props, State> {
     private mounted: boolean;
 
     constructor(props: Props) {
         super(props);
-
-        const { taskInstance } = props;
-
+        const { task: taskInstance } = props;
         this.mounted = false;
         this.state = {
             name: taskInstance.name,
@@ -73,7 +107,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
     }
 
     public componentDidMount(): void {
-        const { taskInstance } = this.props;
+        const { task: taskInstance } = this.props;
         this.mounted = true;
 
         getReposData(taskInstance.id)
@@ -108,7 +142,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
     }
 
     public componentDidUpdate(prevProps: Props): void {
-        const { taskInstance } = this.props;
+        const { task: taskInstance } = this.props;
 
         if (prevProps !== this.props) {
             this.setState({
@@ -122,7 +156,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
     }
 
     private onChangeRepoValue = (value: string): void => {
-        const { taskInstance } = this.props;
+        const { task: taskInstance } = this.props;
         const { repository } = this.state;
         const old = repository;
         this.setState({ repository: value, updatingRepository: true });
@@ -138,7 +172,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
     };
 
     private onChangeLFSValue = (event: CheckboxChangeEvent): void => {
-        const { taskInstance } = this.props;
+        const { task: taskInstance } = this.props;
         const { lfs } = this.state;
         const old = lfs;
         this.setState({ lfs: event.target.checked, updatingRepository: true });
@@ -154,7 +188,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
     };
 
     private onChangeFormatValue = (value: string): void => {
-        const { taskInstance } = this.props;
+        const { task: taskInstance } = this.props;
         const { format } = this.state;
         const old = format;
         this.setState({ format: value, updatingRepository: true });
@@ -171,7 +205,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
 
     private renderTaskName(): JSX.Element {
         const { name } = this.state;
-        const { taskInstance, onTaskUpdate } = this.props;
+        const { task: taskInstance, onUpdateTask } = this.props;
 
         return (
             <Title
@@ -183,7 +217,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
                         });
 
                         taskInstance.name = value;
-                        onTaskUpdate(taskInstance);
+                        onUpdateTask(taskInstance);
                     },
                 }}
                 className='cvat-text-color'
@@ -194,7 +228,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
     }
 
     private renderParameters(): JSX.Element {
-        const { taskInstance } = this.props;
+        const { task: taskInstance } = this.props;
         const { overlap, segmentSize, imageQuality } = taskInstance;
 
         return (
@@ -207,7 +241,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
     }
 
     private renderDescription(): JSX.Element {
-        const { taskInstance, onTaskUpdate } = this.props;
+        const { task: taskInstance, onUpdateTask } = this.props;
         const owner = taskInstance.owner ? taskInstance.owner.username : null;
         const assignee = taskInstance.assignee ? taskInstance.assignee : null;
         const created = moment(taskInstance.createdDate).format('MMMM Do YYYY');
@@ -217,7 +251,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
                 onSelect={(value: User | null): void => {
                     if (taskInstance?.assignee?.id === value?.id) return;
                     taskInstance.assignee = value;
-                    onTaskUpdate(taskInstance);
+                    onUpdateTask(taskInstance);
                 }}
             />
         );
@@ -238,7 +272,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
     }
 
     private renderDatasetRepository(): JSX.Element | boolean {
-        const { taskInstance, dumpers } = this.props;
+        const { task: taskInstance, dumpers } = this.props;
         const {
             repository, repositoryStatus, format, lfs, updatingRepository,
         } = this.state;
@@ -312,7 +346,12 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
                             <Select disabled={updatingRepository} onChange={this.onChangeFormatValue} className='cvat-repository-format-select' value={format}>
                                 {
                                     dumpers.map((dumper: any) => (
-                                        <Option key={dumper.name} value={dumper.name}>{dumper.name}</Option>
+                                        <Select.Option
+                                            key={dumper.name}
+                                            value={dumper.name}
+                                        >
+                                            {dumper.name}
+                                        </Select.Option>
                                     ))
                                 }
                             </Select>
@@ -328,7 +367,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
     }
 
     private renderLabelsEditor(): JSX.Element {
-        const { taskInstance, onTaskUpdate } = this.props;
+        const { task: taskInstance, onUpdateTask } = this.props;
 
         return (
             <Row>
@@ -337,7 +376,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
                         labels={taskInstance.labels.map((label: any): string => label.toJSON())}
                         onSubmit={(labels: any[]): void => {
                             taskInstance.labels = labels.map((labelData): any => new core.classes.Label(labelData));
-                            onTaskUpdate(taskInstance);
+                            onUpdateTask(taskInstance);
                         }}
                     />
                 </Col>
@@ -347,7 +386,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
 
     private renderSubsetField(): JSX.Element {
         const { subset } = this.state;
-        const { taskInstance, projectSubsets, onTaskUpdate } = this.props;
+        const { task: taskInstance, projectSubsets, onUpdateTask } = this.props;
 
         return (
             <Row>
@@ -366,7 +405,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
 
                             if (taskInstance.subset !== value) {
                                 taskInstance.subset = value;
-                                onTaskUpdate(taskInstance);
+                                onUpdateTask(taskInstance);
                             }
                         }}
                     />
@@ -377,7 +416,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
 
     public render(): JSX.Element {
         const {
-            activeInference, cancelAutoAnnotation, taskInstance, onTaskUpdate,
+            activeInference, cancelAutoAnnotation, task: taskInstance, onUpdateTask,
         } = this.props;
 
         return (
@@ -409,7 +448,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
                                     instance={taskInstance}
                                     onChange={(bugTracker) => {
                                         taskInstance.bugTracker = bugTracker;
-                                        onTaskUpdate(taskInstance);
+                                        onUpdateTask(taskInstance);
                                     }}
                                 />
                             </Col>
@@ -429,3 +468,5 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
         );
     }
 }
+
+export default connect(mapStateToProps, mapDispatchToProps)(DetailsComponent);

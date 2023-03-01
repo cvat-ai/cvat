@@ -36,20 +36,12 @@ spec:
             {{- if semverCompare ">=1.19-0" $version }}
             backend:
               service:
-                {{- if $.Values.analytics.external.useExternal }}
-                name: {{ $.Values.analytics.ingress.service.name }}
-                {{- else }}
                 name: {{ $.Release.Name }}-{{ $.Values.analytics.ingress.service.name }}
-                {{- end }}
                 port:
                   number: {{ $.Values.analytics.ingress.service.port }}
             {{- else }}
             backend:
-              {{- if $.Values.analytics.external.useExternal }}
-              serviceName: {{ $.Values.analytics.ingress.service.name }}
-              {{- else }}
               serviceName:  {{ $.Release.Name }}-{{ $.Values.analytics.ingress.service.name }}
-              {{- end }}
               servicePort: {{ $.Values.analytics.ingress.service.port }}
             {{- end }}
   {{- end }}

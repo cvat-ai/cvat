@@ -302,7 +302,10 @@ Cypress.Commands.add('movingTask', (taskName, projectName, labelMappingFrom, lab
     if (labelMappingFrom !== labelMappingTo) {
         cy.get('.cvat-move-task-label-mapper-item').within(() => {
             cy.contains(labelMappingFrom).should('exist');
-            cy.get('.cvat-move-task-label-mapper-item-select').should('be.visible').click();
+            cy.get('.cvat-move-task-label-mapper-item-select')
+                .should('be.visible')
+                .and('not.have.class', 'ant-select-disabled')
+                .click();
         });
         cy.get('.ant-select-dropdown')
             .last()

@@ -298,7 +298,7 @@ function SetupWebhookContent(props: Props): JSX.Element {
             <Col span={24}>
                 <Row justify='end'>
                     <Col>
-                        <Button type='primary' onClick={handleSubmit}>
+                        <Button className='cvat-submit-webhook-button' type='primary' onClick={handleSubmit}>
                             Submit
                         </Button>
                     </Col>

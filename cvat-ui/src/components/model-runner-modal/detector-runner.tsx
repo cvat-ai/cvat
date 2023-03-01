@@ -426,6 +426,7 @@ function DetectorRunner(props: Props): JSX.Element {
             <Row align='middle' justify='end'>
                 <Col>
                     <Button
+                        className='cvat-inference-run-button'
                         disabled={!buttonEnabled}
                         type='primary'
                         onClick={() => {

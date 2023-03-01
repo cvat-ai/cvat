@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 import io
+from copy import deepcopy
 from http import HTTPStatus
 from typing import List
 
@@ -118,10 +119,17 @@ class TestCloudStoragesListFilters(CollectionSimpleFilterTestBase):
 
     def _retrieve_collection(self, **kwargs) -> List:
         # TODO: fix invalid serializer schema for manifests
-        results = super()._retrieve_collection(_parse_response=False, return_json=True, **kwargs)
-        for r in results:
+        results = super()._retrieve_collection(_parse_response=False, **kwargs)
+
+        # validate results
+        fixed_results = deepcopy(results)
+        for r in fixed_results:
             r["manifests"] = [{"filename": m} for m in r["manifests"]]
-        return [models.CloudStorageRead._from_openapi_data(**r) for r in results]
+        assert not results or [
+            models.CloudStorageRead._from_openapi_data(**r) for r in fixed_results
+        ]
+
+        return results
 
     @pytest.mark.parametrize(
         "field",
