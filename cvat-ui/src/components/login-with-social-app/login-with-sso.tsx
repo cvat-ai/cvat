@@ -47,13 +47,13 @@ function LoginWithSSOComponent(): JSX.Element {
     }, [selectedIdP]);
 
     useEffect(() => {
-        if (SSOConfiguration?.selectionSchema === SelectionSchema.L_WEIGHT) {
+        if (SSOConfiguration?.selectionSchema === SelectionSchema.LOWEST_WEIGHT) {
             dispatch(selectIdPAsync());
         }
     }, [SSOConfiguration?.selectionSchema]);
 
     if (
-        (!fetching && !isIdPSelected && SSOConfiguration?.selectionSchema === SelectionSchema.EMAIL) ||
+        (!fetching && !isIdPSelected && SSOConfiguration?.selectionSchema === SelectionSchema.EMAIL_ADDRESS) ||
         (isIdPSelected && !selectedIdP)
     ) {
         return (

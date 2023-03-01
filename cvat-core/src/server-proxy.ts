@@ -2341,7 +2341,9 @@ async function selectSSOIdentityProvider(email?: string, iss?: string): Promise<
     const { backendAPI } = config;
     try {
         const response = await Axios.get(
-            `${backendAPI}/auth/oidc/select-idp/${(email) ? `?email=${email}` : `${(iss) ? `?iss=${iss}` : ''}`}`,
+            `${backendAPI}/auth/oidc/select-idp/`, {
+                params: { ...(email ? { email } : {}), ...(iss ? { iss } : {}) },
+            },
         );
         return response.data;
     } catch (errorData) {

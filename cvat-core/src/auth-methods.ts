@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 export enum SelectionSchema {
-    EMAIL = 'email_address',
-    L_WEIGHT = 'lowest_weight',
+    EMAIL_ADDRESS = 'email_address',
+    LOWEST_WEIGHT = 'lowest_weight',
 }
 interface SocialAuthMethodCamelCase {
     provider: string;
