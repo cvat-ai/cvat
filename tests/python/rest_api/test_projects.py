@@ -650,12 +650,13 @@ class TestImportExportDatasetProject:
 
         assert task1_rotation == task2_rotation
 
-    @pytest.mark.parametrize("format_name", ["COCO Keypoints 1.0"])
-    def test_can_export_dataset_with_skeleton_labels_with_spaces(self, format_name):
+    def test_can_export_dataset_with_skeleton_labels_with_spaces(self):
+        # https://github.com/opencv/cvat/issues/5257
+        # https://github.com/opencv/cvat/issues/5600
         username = "admin1"
         project_id = 11
 
-        self._test_export_project(username, project_id, format_name)
+        self._test_export_project(username, project_id, "COCO Keypoints 1.0")
 
 
 @pytest.mark.usefixtures("restore_db_per_function")

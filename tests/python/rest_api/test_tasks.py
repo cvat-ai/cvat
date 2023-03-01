@@ -1063,8 +1063,7 @@ class TestPatchTaskLabel:
             for user, task in product(users, tasks)
             if not is_task_staff(user["id"], task["id"])
             and task["organization"]
-            and is_org_member(user["id"], task["organization"]
-            and task["project_id"] is None)
+            and is_org_member(user["id"], task["organization"] and task["project_id"] is None)
         )
 
         new_label = {"name": "new name"}
