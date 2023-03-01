@@ -468,7 +468,7 @@ function HeaderContainer(props: Props): JSX.Element {
                         Models
                     </Button>
                 ) : null}
-                {isAnalyticsPluginActive ? (
+                {isAnalyticsPluginActive && user.isSuperuser ? (
                     <Button
                         className='cvat-header-button'
                         type='link'
