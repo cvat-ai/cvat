@@ -32,9 +32,9 @@ class AttributeSpecInline(admin.TabularInline):
 
 class LabelInline(admin.TabularInline):
     model = Label
-    show_change_link = True
     extra = 0
     max_num = None
+    fields = ('name', 'color')
 
 class LabelAdmin(admin.ModelAdmin):
     # Don't show on admin index page
