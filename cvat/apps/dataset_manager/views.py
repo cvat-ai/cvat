@@ -37,7 +37,7 @@ def get_export_cache_dir(db_instance):
     else:
         raise FileNotFoundError('{} dir {} does not exist'.format(db_instance.__class__.__name__, base_dir))
 
-DEFAULT_CACHE_TTL = timedelta(hours=10)
+DEFAULT_CACHE_TTL = timedelta(hours=4)
 TASK_CACHE_TTL = DEFAULT_CACHE_TTL
 PROJECT_CACHE_TTL = DEFAULT_CACHE_TTL / 3
 JOB_CACHE_TTL = DEFAULT_CACHE_TTL
