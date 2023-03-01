@@ -1,8 +1,34 @@
 {
-  "count": 14,
+  "count": 15,
   "next": null,
   "previous": null,
   "results": [
+    {
+      "assignee": null,
+      "bug_tracker": "",
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "dimension": "2d",
+      "id": 22,
+      "issues": {
+        "count": 0,
+        "url": "http://localhost:8080/api/issues?job_id=22"
+      },
+      "labels": {
+        "count": 1,
+        "url": "http://localhost:8080/api/labels?job_id=22"
+      },
+      "mode": "annotation",
+      "project_id": 11,
+      "stage": "annotation",
+      "start_frame": 0,
+      "state": "in progress",
+      "status": "annotation",
+      "stop_frame": 1,
+      "task_id": 18,
+      "updated_date": "2023-03-01T15:36:38.114000Z",
+      "url": "http://localhost:8080/api/jobs/22"
+    },
     {
       "assignee": null,
       "bug_tracker": null,
