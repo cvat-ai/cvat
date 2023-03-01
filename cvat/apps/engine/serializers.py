@@ -890,7 +890,9 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     def update(self, instance, validated_data):
         def _update_label_attributes(old_label, new_label):
             for old_attr in old_label.attributespec_set.all():
-                new_attr = new_label.attributespec_set.filter(name=old_attr.name).first()
+                new_attr = new_label.attributespec_set.filter(name=old_attr.name,
+                                                              values=old_attr.values,
+                                                              input_type=old_attr.input_type).first()
                 if new_attr is None:
                     raise serializers.ValidationError('Target project does not have ' \
                         f'"{old_label.name}" label with "{old_attr.name}" attribute')
