@@ -205,84 +205,87 @@ def _create_thread(task_id, cvat_data):
 
 
 def create(data: dict, retailer: User):
-    retailer_name = data.get('retailer_codename', None)
-    if retailer_name is None:
-        retailer_name = retailer.username
-
-    workspace = data.pop('workspace', None)
-    if workspace is None:
-        organization = None
-    else:
-        organization = Organization.objects.get(slug=workspace)
-
-    project, _ = Project.objects.get_or_create(
-        owner=retailer,
-        organization=organization,
-        name=f'Import from: {retailer_name}',
-    )
-
-    images = data.pop('images')
-    image_quality = data.pop('image_quality')
-    segment_size = data.pop('segment_size')
+    images = [i for i in data.pop('images') if i['image'] is not None]
     size = len(images)
 
-    db_data = Data.objects.create(
-        image_quality=image_quality,
-        storage_method=StorageMethodChoice.CACHE,
-        size=size,
-        stop_frame=size - 1,
-        sorting_method=SortingMethod.LEXICOGRAPHICAL,
-    )
-    os.makedirs(db_data.get_upload_dirname(), exist_ok=True)
+    if size > 0:
+        retailer_name = data.get('retailer_codename', None)
+        if retailer_name is None:
+            retailer_name = retailer.username
 
-    task = Task.objects.create(
-        project=project,
-        data=db_data,
-        name=now().strftime('Import %Y-%m-%d %H:%M:%S %Z'),
-        owner=retailer,
-        organization=organization,
-        mode=ModeChoice.ANNOTATION,
-        segment_size=segment_size,
-        meta=data,
-    )
+        workspace = data.pop('workspace', None)
+        if workspace is None:
+            organization = None
+        else:
+            organization = Organization.objects.get(slug=workspace)
 
-    remote_files = []
-    for image_data in images:
-        url = image_data.pop('image')
-        image_data['name'] = _get_file_name(url)
-        remote_files.append(RemoteFile(
+        project, _ = Project.objects.get_or_create(
+            owner=retailer,
+            organization=organization,
+            name=f'Import from: {retailer_name}',
+        )
+
+        image_quality = data.pop('image_quality')
+        segment_size = data.pop('segment_size')
+
+        db_data = Data.objects.create(
+            image_quality=image_quality,
+            storage_method=StorageMethodChoice.CACHE,
+            size=size,
+            stop_frame=size - 1,
+            sorting_method=SortingMethod.LEXICOGRAPHICAL,
+        )
+        os.makedirs(db_data.get_upload_dirname(), exist_ok=True)
+
+        task = Task.objects.create(
+            project=project,
             data=db_data,
-            file=url,
-            meta=image_data,
-        ))
-    RemoteFile.objects.bulk_create(remote_files)
+            name=now().strftime('Import %Y-%m-%d %H:%M:%S %Z'),
+            owner=retailer,
+            organization=organization,
+            mode=ModeChoice.ANNOTATION,
+            segment_size=segment_size,
+            meta=data,
+        )
 
-    # as for API call from UI.
-    cvat_data = {
-        'chunk_size': db_data.chunk_size,
-        'size': db_data.size,
-        'image_quality': db_data.image_quality,
-        'start_frame': db_data.start_frame,
-        'stop_frame': db_data.stop_frame,
-        'frame_filter': db_data.frame_filter,
-        'compressed_chunk_type': db_data.compressed_chunk_type,
-        'original_chunk_type': db_data.original_chunk_type,
-        'client_files': [],
-        'server_files': [],
-        'remote_files': [db_file.file for db_file in remote_files],
-        'use_zip_chunks': True,
-        'use_cache': True,
-        'copy_data': False,
-        'storage_method': db_data.storage_method,
-        'storage': db_data.storage,
-        'sorting_method': db_data.sorting_method,
-    }
+        remote_files = []
+        for image_data in images:
+            url = image_data.pop('image')
+            image_data['name'] = _get_file_name(url)
+            remote_files.append(RemoteFile(
+                data=db_data,
+                file=url,
+                meta=image_data,
+            ))
+        RemoteFile.objects.bulk_create(remote_files)
 
-    q = django_rq.get_queue('default')
-    q.enqueue_call(_create_thread, args=(task.pk, cvat_data),
-                   job_id="/api/tasks/{}".format(task.pk))
+        # as for API call from UI.
+        cvat_data = {
+            'chunk_size': db_data.chunk_size,
+            'size': db_data.size,
+            'image_quality': db_data.image_quality,
+            'start_frame': db_data.start_frame,
+            'stop_frame': db_data.stop_frame,
+            'frame_filter': db_data.frame_filter,
+            'compressed_chunk_type': db_data.compressed_chunk_type,
+            'original_chunk_type': db_data.original_chunk_type,
+            'client_files': [],
+            'server_files': [],
+            'remote_files': [db_file.file for db_file in remote_files],
+            'use_zip_chunks': True,
+            'use_cache': True,
+            'copy_data': False,
+            'storage_method': db_data.storage_method,
+            'storage': db_data.storage,
+            'sorting_method': db_data.sorting_method,
+        }
 
-    return task.pk
+        q = django_rq.get_queue('default')
+        q.enqueue_call(_create_thread, args=(task.pk, cvat_data),
+                       job_id="/api/tasks/{}".format(task.pk))
+
+        return task.pk
+    return None
 
 
 def _delete_task(task_id):
