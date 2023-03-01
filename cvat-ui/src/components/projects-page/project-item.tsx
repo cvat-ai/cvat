@@ -87,7 +87,7 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
                         </div>
                         <div>
                             <Dropdown overlay={<ProjectActionsMenuComponent projectInstance={instance} />}>
-                                <Button type='link' size='large' icon={<MoreOutlined />} />
+                                <Button className='cvat-project-details-button' type='link' size='large' icon={<MoreOutlined />} />
                             </Dropdown>
                         </div>
                     </div>

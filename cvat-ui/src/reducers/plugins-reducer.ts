@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -13,7 +14,6 @@ const defaultState: PluginsState = {
         GIT_INTEGRATION: false,
         ANALYTICS: false,
         MODELS: false,
-        PREDICT: false,
     },
 };
 

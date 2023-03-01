@@ -19,8 +19,6 @@ import {
     searchAnnotationsAsync,
     searchEmptyFrameAsync,
     setForceExitAnnotationFlag as setForceExitAnnotationFlagAction,
-    switchPredictor as switchPredictorAction,
-    getPredictionsAsync,
     showFilters as showFiltersAction,
     showStatistics as showStatisticsAction,
     switchPlay,
@@ -36,7 +34,6 @@ import {
     CombinedState,
     FrameSpeed,
     Workspace,
-    PredictorState,
     DimensionType,
     ActiveControl,
     ToolsBlockerState,
@@ -68,9 +65,7 @@ interface StateToProps {
     normalizedKeyMap: Record<string, string>;
     canvasInstance: Canvas | Canvas3d;
     forceExit: boolean;
-    predictor: PredictorState;
     activeControl: ActiveControl;
-    isTrainingActive: boolean;
 }
 
 interface DispatchToProps {
@@ -85,7 +80,6 @@ interface DispatchToProps {
     searchEmptyFrame(sessionInstance: any, frameFrom: number, frameTo: number): void;
     setForceExitAnnotationFlag(forceExit: boolean): void;
     changeWorkspace(workspace: Workspace): void;
-    switchPredictor(predictorEnabled: boolean): void;
     onSwitchToolsBlockerState(toolsBlockerState: ToolsBlockerState): void;
     deleteFrame(frame: number): void;
     restoreFrame(frame: number): void;
@@ -112,7 +106,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
             job: { instance: jobInstance },
             canvas: { ready: canvasIsReady, instance: canvasInstance, activeControl },
             workspace,
-            predictor,
         },
         settings: {
             player: { frameSpeed, frameStep, showDeletedFrames },
@@ -123,7 +116,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
             },
         },
         shortcuts: { keyMap, normalizedKeyMap },
-        plugins: { list },
     } = state;
 
     return {
@@ -149,9 +141,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         normalizedKeyMap,
         canvasInstance,
         forceExit,
-        predictor,
         activeControl,
-        isTrainingActive: list.PREDICT,
     };
 }
 
@@ -190,12 +180,6 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         setForceExitAnnotationFlag(forceExit: boolean): void {
             dispatch(setForceExitAnnotationFlagAction(forceExit));
-        },
-        switchPredictor(predictorEnabled: boolean): void {
-            dispatch(switchPredictorAction(predictorEnabled));
-            if (predictorEnabled) {
-                dispatch(getPredictionsAsync());
-            }
         },
         onSwitchToolsBlockerState(toolsBlockerState: ToolsBlockerState): void {
             dispatch(switchToolsBlockerState(toolsBlockerState));
@@ -617,12 +601,9 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
             canvasIsReady,
             keyMap,
             normalizedKeyMap,
-            predictor,
-            isTrainingActive,
             activeControl,
             searchAnnotations,
             changeWorkspace,
-            switchPredictor,
             switchNavigationBlocked,
             toolsBlockerState,
         } = this.props;
@@ -743,9 +724,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
                     onDeleteFrame={this.onDeleteFrame}
                     onRestoreFrame={this.onRestoreFrame}
                     changeWorkspace={changeWorkspace}
-                    switchPredictor={switchPredictor}
                     switchNavigationBlocked={switchNavigationBlocked}
-                    predictor={predictor}
                     workspace={workspace}
                     playing={playing}
                     saving={saving}
@@ -778,7 +757,6 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
                     onSwitchToolsBlockerState={this.onSwitchToolsBlockerState}
                     toolsBlockerState={toolsBlockerState}
                     jobInstance={jobInstance}
-                    isTrainingActive={isTrainingActive}
                     activeControl={activeControl}
                 />
             </>

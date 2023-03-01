@@ -69,6 +69,7 @@ function TasksPageComponent(props: Props): JSX.Element {
                 <>
                     <Text>Some tasks are temporary hidden because they are not fully created yet</Text>
                     <Button
+                        className='cvat-show-all-tasks-button'
                         type='link'
                         onClick={(): void => {
                             dispatch(hideEmptyTasks(false));

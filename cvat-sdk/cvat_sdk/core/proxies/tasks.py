@@ -306,13 +306,18 @@ class Task(
         return [
             Job(self._client, model=m)
             for m in get_paginated_collection(
-                self._client.api_client.jobs_api.list_endpoint, task_id=str(self.id)
+                self._client.api_client.jobs_api.list_endpoint, task_id=self.id
             )
         ]
 
     def get_meta(self) -> models.IDataMetaRead:
         (meta, _) = self.api.retrieve_data_meta(self.id)
         return meta
+
+    def get_labels(self) -> List[models.ILabel]:
+        return get_paginated_collection(
+            self._client.api_client.labels_api.list_endpoint, task_id=self.id
+        )
 
     def get_frames_info(self) -> List[models.IFrameMeta]:
         return self.get_meta().frames

@@ -151,7 +151,7 @@ class _CacheManagerOnline(CacheManager):
         task_json_path = self.task_json_path(task.id)
 
         try:
-            saved_task = self.load_model(task_json_path, models.TaskRead)
+            saved_task = self.load_model(task_json_path, _OfflineTaskModel)
         except Exception:
             self._logger.info(f"Task {task.id} is not yet cached or the cache is corrupted")
 
@@ -166,7 +166,7 @@ class _CacheManagerOnline(CacheManager):
                 shutil.rmtree(task_dir)
 
         task_dir.mkdir(exist_ok=True, parents=True)
-        self.save_model(task_json_path, task._model)
+        self.save_model(task_json_path, _OfflineTaskModel.from_entity(task))
 
     def ensure_task_model(
         self,
@@ -224,7 +224,8 @@ class _CacheManagerOnline(CacheManager):
 class _CacheManagerOffline(CacheManager):
     def retrieve_task(self, task_id: int) -> Task:
         self._logger.info(f"Retrieving task {task_id} from cache...")
-        return Task(self._client, self.load_model(self.task_json_path(task_id), models.TaskRead))
+        cached_model = self.load_model(self.task_json_path(task_id), _OfflineTaskModel)
+        return _OfflineTaskProxy(self._client, cached_model, cache_manager=self)
 
     def ensure_task_model(
         self,
@@ -250,26 +251,71 @@ class _CacheManagerOffline(CacheManager):
 
 
 @define
-class _OfflineProjectModel(_CacheObjectModel):
-    api_model: models.IProjectRead
-    task_ids: List[int]
+class _OfflineTaskModel(_CacheObjectModel):
+    api_model: models.ITaskRead
+    labels: List[models.ILabel]
 
     def dump(self) -> _CacheObject:
         return {
             "model": to_json(self.api_model),
-            "tasks": self.task_ids,
+            "labels": to_json(self.labels),
         }
 
     @classmethod
     def load(cls, obj: _CacheObject):
         return cls(
-            api_model=obj["model"],
+            api_model=models.TaskRead._from_openapi_data(**obj["model"]),
+            labels=[models.Label._from_openapi_data(**label) for label in obj["labels"]],
+        )
+
+    @classmethod
+    def from_entity(cls, entity: Task):
+        return cls(
+            api_model=entity._model,
+            labels=entity.get_labels(),
+        )
+
+
+class _OfflineTaskProxy(Task):
+    def __init__(
+        self, client: Client, cached_model: _OfflineTaskModel, *, cache_manager: CacheManager
+    ) -> None:
+        super().__init__(client, cached_model.api_model)
+        self._offline_model = cached_model
+        self._cache_manager = cache_manager
+
+    def get_labels(self) -> List[models.ILabel]:
+        return self._offline_model.labels
+
+
+@define
+class _OfflineProjectModel(_CacheObjectModel):
+    api_model: models.IProjectRead
+    task_ids: List[int]
+    labels: List[models.ILabel]
+
+    def dump(self) -> _CacheObject:
+        return {
+            "model": to_json(self.api_model),
+            "tasks": self.task_ids,
+            "labels": to_json(self.labels),
+        }
+
+    @classmethod
+    def load(cls, obj: _CacheObject):
+        return cls(
+            api_model=models.ProjectRead._from_openapi_data(**obj["model"]),
             task_ids=obj["tasks"],
+            labels=[models.Label._from_openapi_data(**label) for label in obj["labels"]],
         )
 
     @classmethod
     def from_entity(cls, entity: Project):
-        return cls(api_model=entity._model, task_ids=[t.id for t in entity.get_tasks()])
+        return cls(
+            api_model=entity._model,
+            task_ids=[t.id for t in entity.get_tasks()],
+            labels=entity.get_labels(),
+        )
 
 
 class _OfflineProjectProxy(Project):
@@ -282,6 +328,9 @@ class _OfflineProjectProxy(Project):
 
     def get_tasks(self) -> List[Task]:
         return [self._cache_manager.retrieve_task(t) for t in self._offline_model.task_ids]
+
+    def get_labels(self) -> List[models.ILabel]:
+        return self._offline_model.labels
 
 
 _CACHE_MANAGER_CLASSES: Mapping[UpdatePolicy, Type[CacheManager]] = {

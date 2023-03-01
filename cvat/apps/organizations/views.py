@@ -68,6 +68,10 @@ class OrganizationViewSet(viewsets.GenericViewSet,
 
     def get_queryset(self):
         queryset = super().get_queryset()
+
+        if getattr(self, 'swagger_fake_view', False):
+            return queryset
+
         permission = OrganizationPermission.create_scope_list(self.request)
         return permission.filter(queryset)
 
@@ -131,6 +135,10 @@ class MembershipViewSet(mixins.RetrieveModelMixin, DestroyModelMixin,
 
     def get_queryset(self):
         queryset = super().get_queryset()
+
+        if getattr(self, 'swagger_fake_view', False):
+            return queryset
+
         permission = MembershipPermission.create_scope_list(self.request)
         return permission.filter(queryset)
 
@@ -190,6 +198,10 @@ class InvitationViewSet(viewsets.GenericViewSet,
 
     def get_queryset(self):
         queryset = super().get_queryset()
+
+        if getattr(self, 'swagger_fake_view', False):
+            return queryset
+
         permission = InvitationPermission.create_scope_list(self.request)
         return permission.filter(queryset)
 
