@@ -39,7 +39,7 @@ class _ImportPriceTagSerializer(_BaseImportSerializer):
 
 class _ImportImageSerializer(_BaseImportSerializer):
     items = serializers.ListSerializer(child=_ImportAnnotationSerializer())
-    image = serializers.URLField()
+    image = serializers.URLField(allow_null=True, default=None)
     planogram_title = serializers.CharField(allow_null=True, default=None)
     processing_action_id = serializers.IntegerField(allow_null=True, default=None)
     price_tags = serializers.ListSerializer(child=_ImportPriceTagSerializer(),
@@ -67,7 +67,7 @@ class _ImportResponseImageSerializer(_BaseImportSerializer):
 
 
 class ImportResponseSerializer(_BaseImportSerializer):
-    task_id = serializers.IntegerField()
+    task_id = serializers.IntegerField(allow_null=True, default=None)
     preview = serializers.URLField(allow_null=True, default=None)
     images = serializers.ListSerializer(child=_ImportResponseImageSerializer(),
                                         allow_null=True, default=None)
