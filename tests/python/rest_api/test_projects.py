@@ -650,6 +650,13 @@ class TestImportExportDatasetProject:
 
         assert task1_rotation == task2_rotation
 
+    @pytest.mark.parametrize("format_name", ["COCO Keypoints 1.0"])
+    def test_can_export_dataset_with_skeleton_labels_with_spaces(self, format_name):
+        username = "admin1"
+        project_id = 11
+
+        self._test_export_project(username, project_id, format_name)
+
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestPatchProjectLabel:
@@ -820,14 +827,6 @@ class TestPatchProjectLabel:
         )
         assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == project["labels"]["count"] + 1
-
-
-    @pytest.mark.parametrize("format_name", ["COCO Keypoints 1.0"])
-    def test_can_export_dataset_with_skeleton_labels_with_spaces(self, format_name):
-        username = "admin1"
-        project_id = 11
-
-        self._test_export_project(username, project_id, format_name)
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
