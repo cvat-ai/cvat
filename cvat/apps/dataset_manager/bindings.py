@@ -1223,7 +1223,7 @@ class CVATDataExtractorMixin:
             if label['type'] == str(LabelType.SKELETON):
                 labels_from = list(map(int, re.findall(r'data-node-from="(\d+)"', label['svg'])))
                 labels_to = list(map(int, re.findall(r'data-node-to="(\d+)"', label['svg'])))
-                sublabels = re.findall(r'data-label-name="(\w+)"', label['svg'])
+                sublabels = [max(s) for s in re.findall(r'data-label-name="((\w+( +\w+)*))"', label['svg'])]
                 joints = zip(labels_from, labels_to)
 
                 point_categories.add(label_id, sublabels, joints)
