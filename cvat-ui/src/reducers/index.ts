@@ -401,6 +401,7 @@ export interface ErrorState {
 }
 
 export interface NotificationsState {
+    resetNotifications: boolean;
     errors: {
         auth: {
             authorized: null | ErrorState;

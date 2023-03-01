@@ -27,6 +27,7 @@ import { WebhooksActionsTypes } from 'actions/webhooks-actions';
 import { NotificationsState } from '.';
 
 const defaultState: NotificationsState = {
+    resetNotifications: false,
     errors: {
         auth: {
             authorized: null,
@@ -270,6 +271,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
 
             return {
                 ...state,
+                resetNotifications: true,
             };
         }
         case AuthActionTypes.CHANGE_PASSWORD_SUCCESS: {
@@ -1270,6 +1272,9 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
+        case NotificationsActionType.RESET_NOTIFICATIONS: {
+            return { ...defaultState };
+        }
         case AnnotationActionTypes.GET_DATA_FAILED: {
             return {
                 ...state,
@@ -1691,8 +1696,14 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
-        case BoundariesActionTypes.RESET_AFTER_ERROR:
+        case AuthActionTypes.LOGIN_SUCCESS:
         case AuthActionTypes.LOGOUT_SUCCESS: {
+            return {
+                ...defaultState,
+                resetNotifications: true,
+            };
+        }
+        case BoundariesActionTypes.RESET_AFTER_ERROR: {
             return { ...defaultState };
         }
         default: {

@@ -22,7 +22,7 @@ import createCVATStore, { getCVATStore } from 'cvat-store';
 import { KeyMap } from 'utils/mousetrap-react';
 import createRootReducer from 'reducers/root-reducer';
 import { getOrganizationsAsync } from 'actions/organization-actions';
-import { resetErrors, resetMessages } from './actions/notification-actions';
+import { resetErrors, resetMessages, resetNotifications } from './actions/notification-actions';
 import { CombinedState, NotificationsState } from './reducers';
 
 createCVATStore(createRootReducer);
@@ -61,6 +61,7 @@ interface DispatchToProps {
     initPlugins: () => void;
     resetErrors: () => void;
     resetMessages: () => void;
+    resetNotifications: () => void;
     switchShortcutsDialog: () => void;
     loadUserAgreements: () => void;
     switchSettingsDialog: () => void;
@@ -114,6 +115,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         loadAbout: (): void => dispatch(getAboutAsync()),
         resetErrors: (): void => dispatch(resetErrors()),
         resetMessages: (): void => dispatch(resetMessages()),
+        resetNotifications: (): void => dispatch(resetNotifications()),
         switchShortcutsDialog: (): void => dispatch(shortcutsActions.switchShortcutsDialog()),
         switchSettingsDialog: (): void => dispatch(switchSettingsDialog()),
         loadAuthActions: (): void => dispatch(loadAuthActionsAsync()),

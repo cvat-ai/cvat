@@ -83,6 +83,7 @@ interface CVATAppProps {
     initModels: () => void;
     resetErrors: () => void;
     resetMessages: () => void;
+    resetNotifications: () => void;
     switchShortcutsDialog: () => void;
     switchSettingsDialog: () => void;
     loadAuthActions: () => void;
@@ -251,8 +252,14 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             return;
         }
 
-        this.showErrors();
-        this.showMessages();
+        const { notifications } = this.props;
+        const { resetNotifications } = notifications;
+        if (resetNotifications) {
+            this.resetNotifications();
+        } else {
+            this.showErrors();
+            this.showMessages();
+        }
 
         if (!userInitialized && !userFetching) {
             verifyAuthorized();
@@ -354,6 +361,13 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         if (shown) {
             resetErrors();
         }
+    }
+
+    private resetNotifications(): void {
+        const { resetNotifications } = this.props;
+
+        notification.destroy();
+        resetNotifications();
     }
 
     // Where you go depends on your URL
