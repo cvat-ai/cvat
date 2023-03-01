@@ -48,6 +48,7 @@ Tracks can be exported/imported to/from Datumaro and Sly Pointcloud formats (<ht
   `/api/projects/{id}.tasks`, `/api/tasks/{id}.segments`, `/api/jobs/{id}.issues`,
   `/api/issues/{id}.comments`, `/api/projects | tasks | jobs/{id}.labels`
   (<https://github.com/opencv/cvat/pull/5662>)
+- Hide analytics link from non-admin users (<https://github.com/opencv/cvat/pull/5789>)
 
 ### Deprecated
 - TBD
