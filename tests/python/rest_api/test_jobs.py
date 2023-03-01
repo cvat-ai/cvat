@@ -369,7 +369,7 @@ class TestPatchJobAnnotations:
         users = find_users(role=role, org=org)
         jobs = jobs_by_org[org]
         filtered_jobs = filter_jobs_with_shapes(jobs)
-        username, jid = find_job_staff_user(filtered_jobs, users, job_staff, [18])
+        username, jid = find_job_staff_user(filtered_jobs, users, job_staff, [18, 22])
 
         data = request_data(jid)
         self._check_respone(username, jid, expect_success, data, org=org)
@@ -393,7 +393,7 @@ class TestPatchJobAnnotations:
         users = find_users(privilege=privilege, exclude_org=org)
         jobs = jobs_by_org[org]
         filtered_jobs = filter_jobs_with_shapes(jobs)
-        username, jid = find_job_staff_user(filtered_jobs, users, False, [18])
+        username, jid = find_job_staff_user(filtered_jobs, users, False, [18, 22])
 
         data = request_data(jid)
         self._check_respone(username, jid, expect_success, data, org=org)
