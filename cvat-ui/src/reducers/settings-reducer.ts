@@ -9,9 +9,9 @@ import { AuthActionTypes } from 'actions/auth-actions';
 import { SettingsActionTypes } from 'actions/settings-actions';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
 import {
-    SettingsState, GridColor, FrameSpeed, ColorBy, DimensionType,
+    SettingsState, GridColor, FrameSpeed, ColorBy,
 } from 'reducers';
-import { ObjectState, ShapeType } from 'cvat-core-wrapper';
+import { ObjectState, ShapeType, DimensionType } from 'cvat-core-wrapper';
 
 const defaultState: SettingsState = {
     shapes: {
@@ -416,7 +416,7 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 },
                 shapes: {
                     ...defaultState.shapes,
-                    ...(job.dimension === DimensionType.DIM_3D ?
+                    ...(job.dimension === DimensionType.DIMENSION_3D ?
                         {
                             opacity: 40,
                             selectedOpacity: 60,
