@@ -11,11 +11,11 @@ import Radio, { RadioChangeEvent } from 'antd/lib/radio';
 import Text from 'antd/lib/typography/Text';
 import { RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 
-import { DimensionType, ShapeType } from 'reducers';
+import { ShapeType } from 'reducers';
 import { clamp } from 'utils/math';
 import LabelSelector from 'components/label-selector/label-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { Label } from 'cvat-core-wrapper';
+import { Label, DimensionType } from 'cvat-core-wrapper';
 
 interface Props {
     shapeType: ShapeType;
@@ -54,7 +54,7 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
         jobInstance,
     } = props;
 
-    const is2D = jobInstance.dimension === DimensionType.DIM_2D;
+    const is2D = jobInstance.dimension === DimensionType.DIMENSION_2D;
     return (
         <div className='cvat-draw-shape-popover-content'>
             <Row justify='start'>

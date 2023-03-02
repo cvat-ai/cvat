@@ -114,7 +114,7 @@
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT\r\n    uniqExact(user_id) as \"Active users (now)\"\r\nFROM\r\n    cvat.events\r\nWHERE\r\n    user_id IS NOT NULL AND\r\n    timestamp >= now() - INTERVAL 10 MINUTE",
+          "rawSql": "SELECT\r\n    uniqExact(user_id) as \"Active users (now)\"\r\nFROM\r\n    cvat.events\r\nWHERE\r\n    user_id IS NOT NULL AND\r\n    timestamp >= now() - INTERVAL 15 MINUTE",
           "refId": "A"
         }
       ],
@@ -661,6 +661,7 @@
                 "value": "TODAY"
               }
             ],
+            "limit": 100,
             "metrics": [
               {
                 "aggregation": "count",
@@ -678,8 +679,43 @@
             "uid": "PDEE91DDB90597936"
           },
           "format": 0,
-          "queryType": "builder",
-          "rawSql": "SELECT $__timeInterval(timestamp) as time,  count(*) FROM events WHERE $__timeFilter(timestamp) AND   ( scope = 'send:exception' ) AND ( timestamp  >= $__fromTime AND timestamp <= $__toTime ) GROUP BY time ORDER BY time ASC",
+          "meta": {
+            "builderOptions": {
+              "fields": [],
+              "filters": [
+                {
+                  "condition": "AND",
+                  "filterType": "custom",
+                  "key": "scope",
+                  "operator": "=",
+                  "type": "String",
+                  "value": "send:exception"
+                },
+                {
+                  "condition": "AND",
+                  "filterType": "custom",
+                  "key": "timestamp",
+                  "operator": "WITH IN DASHBOARD TIME RANGE",
+                  "type": "DateTime64(3, 'Etc/UTC')",
+                  "value": "TODAY"
+                }
+              ],
+              "limit": 100,
+              "metrics": [
+                {
+                  "aggregation": "count",
+                  "field": "*"
+                }
+              ],
+              "mode": "trend",
+              "orderBy": [],
+              "table": "events",
+              "timeField": "timestamp",
+              "timeFieldType": "DateTime64(3, 'Etc/UTC')"
+            }
+          },
+          "queryType": "sql",
+          "rawSql": "SELECT\r\n  $__timeInterval(timestamp) as time,\r\n  count(*)\r\nFROM events\r\nWHERE\r\n  $__timeFilter(timestamp)\r\n  AND ( scope = 'send:exception' )\r\n  AND ( timestamp  >= $__fromTime AND timestamp <= $__toTime )\r\n  AND source IN (${sources})\r\n  AND (-1 IN (${users}) OR user_id IN (${users}))\r\n  AND (-1 IN (${organizations}) OR org_id IN (${organizations}))\r\n  AND (-1 IN (${projects}) OR project_id IN (${projects}))\r\n  AND (-1 IN (${tasks}) OR task_id IN (${tasks}))\r\n  AND (-1 IN (${jobs}) OR job_id IN (${jobs}))\r\nGROUP BY time\r\nORDER BY time",
           "refId": "A"
         }
       ],
@@ -699,6 +735,7 @@
           "custom": {
             "align": "auto",
             "displayMode": "auto",
+            "filterable": true,
             "inspect": true,
             "minWidth": 80
           },
@@ -738,7 +775,7 @@
             "properties": [
               {
                 "id": "custom.width",
-                "value": 62
+                "value": 68
               }
             ]
           },
@@ -762,7 +799,7 @@
             "properties": [
               {
                 "id": "custom.width",
-                "value": 41
+                "value": 75
               }
             ]
           },
@@ -774,7 +811,43 @@
             "properties": [
               {
                 "id": "custom.width",
-                "value": 27
+                "value": 55
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "user_name"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 115
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "timestamp"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 153
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "error"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 452
               }
             ]
           }
@@ -874,7 +947,7 @@
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT\r\n  user_id,\r\n  source,\r\n  project_id,\r\n  task_id,\r\n  job_id,\r\n  JSONExtractString(payload, 'message') as error,\r\n  JSONExtractString(payload, 'stack') as stack\r\nFROM events\r\nWHERE\r\n  ( timestamp  >= $__fromTime AND timestamp <= $__toTime )\r\n  AND scope = 'send:exception'",
+          "rawSql": "SELECT\r\n  timestamp,\r\n  user_id,\r\n  user_name,\r\n  source,\r\n  project_id,\r\n  task_id,\r\n  job_id,\r\n  JSONExtractString(payload, 'message') as error,\r\n  JSONExtractString(payload, 'stack') as stack,\r\n  payload\r\nFROM events\r\nWHERE\r\n  ( timestamp  >= $__fromTime AND timestamp <= $__toTime )\r\n  AND scope = 'send:exception'\r\n  AND source IN (${sources})\r\n  AND (-1 IN (${users}) OR user_id IN (${users}))\r\n  AND (-1 IN (${organizations}) OR org_id IN (${organizations}))\r\n  AND (-1 IN (${projects}) OR project_id IN (${projects}))\r\n  AND (-1 IN (${tasks}) OR task_id IN (${tasks}))\r\n  AND (-1 IN (${jobs}) OR job_id IN (${jobs}))\r\n  AND ('-1' IN (${errors}) OR error IN (${errors}))\r\nORDER BY timestamp DESC",
           "refId": "A"
         }
       ],
@@ -882,12 +955,211 @@
       "type": "table"
     }
   ],
-  "refresh": false,
+  "refresh": "",
   "schemaVersion": 37,
   "style": "dark",
   "tags": [],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "current": {
+          "selected": false,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "PDEE91DDB90597936"
+        },
+        "definition": "SELECT source\nFROM events\nWHERE $__timeFilter(timestamp)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Source",
+        "multi": true,
+        "name": "sources",
+        "options": [],
+        "query": "SELECT source\nFROM events\nWHERE $__timeFilter(timestamp)",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "allValue": "-1",
+        "current": {
+          "selected": false,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "PDEE91DDB90597936"
+        },
+        "definition": "SELECT user_id\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND user_id IS NOT NULL",
+        "hide": 0,
+        "includeAll": true,
+        "label": "User",
+        "multi": true,
+        "name": "users",
+        "options": [],
+        "query": "SELECT user_id\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND user_id IS NOT NULL",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "allValue": "-1",
+        "current": {
+          "selected": false,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "PDEE91DDB90597936"
+        },
+        "definition": "SELECT project_id\nFROM events\nWHERE  $__timeFilter(timestamp)\n  AND project_id IS NOT NULL",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Project",
+        "multi": true,
+        "name": "projects",
+        "options": [],
+        "query": "SELECT project_id\nFROM events\nWHERE  $__timeFilter(timestamp)\n  AND project_id IS NOT NULL",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "allValue": "-1",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "PDEE91DDB90597936"
+        },
+        "definition": "SELECT task_id\nFROM events\nWHERE $__timeFilter(timestamp) \n  AND task_id IS NOT NULL",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Task",
+        "multi": true,
+        "name": "tasks",
+        "options": [],
+        "query": "SELECT task_id\nFROM events\nWHERE $__timeFilter(timestamp) \n  AND task_id IS NOT NULL",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "allValue": "-1",
+        "current": {
+          "selected": false,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "PDEE91DDB90597936"
+        },
+        "definition": "SELECT job_id\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND job_id IS NOT NULL",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Job",
+        "multi": true,
+        "name": "jobs",
+        "options": [],
+        "query": "SELECT job_id\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND job_id IS NOT NULL",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "allValue": "-1",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "PDEE91DDB90597936"
+        },
+        "definition": "SELECT org_id\nFROM events\nWHERE $__timeFilter(timestamp)\nAND org_id IS NOT NULL",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Organization",
+        "multi": true,
+        "name": "organizations",
+        "options": [],
+        "query": "SELECT org_id\nFROM events\nWHERE $__timeFilter(timestamp)\nAND org_id IS NOT NULL",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "allValue": "'-1'",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "definition": "SELECT\n  JSONExtractString(payload, 'message')\n  FROM cvat.events\nWHERE $__timeFilter(timestamp)\n  AND JSONHas(payload, 'message')\n  AND scope='send:exception'",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Error message",
+        "multi": true,
+        "name": "errors",
+        "options": [],
+        "query": "SELECT\n  JSONExtractString(payload, 'message')\n  FROM cvat.events\nWHERE $__timeFilter(timestamp)\n  AND JSONHas(payload, 'message')\n  AND scope='send:exception'",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      }
+    ]
   },
   "time": {
     "from": "now-2d",

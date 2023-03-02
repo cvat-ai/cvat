@@ -504,7 +504,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                         />
                         {/* <Route
                             exact
-                            path='/auth/login-with-social-app/'
+                            path={['/auth/login-with-social-app/', '/auth/login-with-oidc/']}
                             component={LoginWithSocialAppComponent}
                         /> */}
                         <Route exact path='/auth/password/reset' component={ResetPasswordPageComponent} />

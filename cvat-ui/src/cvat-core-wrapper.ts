@@ -15,7 +15,7 @@ import { SerializedAttribute, SerializedLabel } from 'cvat-core/src/server-respo
 import { Job, Task } from 'cvat-core/src/session';
 import Project from 'cvat-core/src/project';
 import {
-    ShapeType, LabelType, ModelKind, ModelProviders, ModelReturnType,
+    ShapeType, LabelType, ModelKind, ModelProviders, ModelReturnType, DimensionType,
 } from 'cvat-core/src/enums';
 import { Storage, StorageData } from 'cvat-core/src/storage';
 import Issue from 'cvat-core/src/issue';
@@ -50,6 +50,7 @@ export {
     ModelKind,
     ModelProviders,
     ModelReturnType,
+    DimensionType,
 };
 
 export type {

@@ -4,8 +4,11 @@
 
 from copy import deepcopy
 from datetime import datetime, timezone
+import traceback
 
 from rest_framework.renderers import JSONRenderer
+from rest_framework.views import exception_handler
+from rest_framework import status
 from crum import get_current_user, get_current_request
 
 from cvat.apps.engine.models import (
@@ -53,7 +56,13 @@ def job_id(instance):
     if isinstance(instance, Job):
         return instance.id
 
-    return None
+    try:
+        jid = getattr(instance, "job_id", None)
+        if jid is None:
+            return instance.get_job_id()
+        return jid
+    except Exception:
+        return None
 
 def _get_current_user(instance):
     if isinstance(instance, User):
@@ -306,11 +315,14 @@ def handle_annotations_patch(instance, annotations, action, **kwargs):
 
         return data
 
-    pid = project_id(instance)
     oid = organization_id(instance)
+    oslug = organization_slug(instance)
+    pid = project_id(instance)
     tid = task_id(instance)
     jid = job_id(instance)
     uid = user_id(instance)
+    uname = user_name(instance)
+    uemail = user_email(instance)
 
     tags = [filter_shape_data(tag) for tag in _annotations.get("tags", [])]
     if tags:
@@ -319,10 +331,13 @@ def handle_annotations_patch(instance, annotations, action, **kwargs):
             source='server',
             count=len(tags),
             org_id=oid,
+            org_slug=oslug,
             project_id=pid,
             task_id=tid,
             job_id=jid,
             user_id=uid,
+            user_name=uname,
+            user_email=uemail,
             payload=tags,
         )
         message = JSONRenderer().render(event).decode('UTF-8')
@@ -341,10 +356,13 @@ def handle_annotations_patch(instance, annotations, action, **kwargs):
                 source='server',
                 count=len(shapes),
                 org_id=oid,
+                org_slug=oslug,
                 project_id=pid,
                 task_id=tid,
                 job_id=jid,
                 user_id=uid,
+                user_name=uname,
+                user_email=uemail,
                 payload=shapes,
             )
             message = JSONRenderer().render(event).decode('UTF-8')
@@ -368,11 +386,94 @@ def handle_annotations_patch(instance, annotations, action, **kwargs):
                 source='server',
                 count=len(tracks),
                 org_id=oid,
+                org_slug=oslug,
                 project_id=pid,
                 task_id=tid,
                 job_id=jid,
                 user_id=uid,
+                user_name=uname,
+                user_email=uemail,
                 payload=tracks,
             )
             message = JSONRenderer().render(event).decode('UTF-8')
             vlogger.info(message)
+
+def handle_rq_exception(rq_job, exc_type, exc_value, tb):
+    oid = rq_job.meta.get("org_id", None)
+    oslug = rq_job.meta.get("org_slug", None)
+    pid = rq_job.meta.get("project_id", None)
+    tid = rq_job.meta.get("task_id", None)
+    jid = rq_job.meta.get("job_id", None)
+    user_info = rq_job.meta.get("user", None)
+    if user_info:
+        uid = user_info.get("id", None)
+        uname = user_info.get("name", None)
+        uemail = user_info.get("email", None)
+
+    tb_strings = traceback.format_exception(exc_type, exc_value, tb)
+
+    payload = {
+        "message": tb_strings[-1],
+        "stack": ''.join(tb_strings)
+    }
+
+    event = create_event(
+        scope="send:exception",
+        source='server',
+        count=1,
+        org_id=oid,
+        org_slug=oslug,
+        project_id=pid,
+        task_id=tid,
+        job_id=jid,
+        user_id=uid,
+        user_name=uname,
+        user_email=uemail,
+        payload=payload,
+    )
+    message = JSONRenderer().render(event).decode('UTF-8')
+    vlogger.info(message)
+
+    return False
+
+def handle_viewset_exception(exc, context):
+    response = exception_handler(exc, context)
+
+    # the standard DRF exception handler only handle APIException, Http404 and PermissionDenied
+    # exceptions types, any other will cause a 500 error
+    status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+    if response is not None:
+        status_code = response.status_code
+    request = context["request"]
+    view = context["view"]
+
+    tb_strings = traceback.format_exception(type(exc), exc, exc.__traceback__)
+
+    payload = {
+        "basename": getattr(view, "basename", None),
+        "action": getattr(view, "action", None),
+        "request": {
+            "url": request.get_full_path(),
+            "query_params": request.query_params,
+            "content_type": request.content_type,
+            "method": request.method,
+        },
+        "message": tb_strings[-1],
+        "stack": ''.join(tb_strings),
+        "status_code": status_code,
+    }
+
+    event = create_event(
+        scope="send:exception",
+        source='server',
+        count=1,
+        user_id=getattr(request.user, "id", None),
+        user_name=getattr(request.user, "username", None),
+        user_email=getattr(request.user, "email", None),
+        payload=payload,
+    )
+    message = JSONRenderer().render(event).decode('UTF-8')
+    vlogger.info(message)
+
+
+    return response

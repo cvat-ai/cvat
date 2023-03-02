@@ -7,9 +7,10 @@ import React from 'react';
 import Icon from '@ant-design/icons';
 
 import { GroupIcon } from 'icons';
+import { DimensionType } from 'cvat-core-wrapper';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
-import { ActiveControl, DimensionType } from 'reducers';
+import { ActiveControl } from 'reducers';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import GlobalHotKeys, { KeyMapItem } from 'utils/mousetrap-react';
 
@@ -63,7 +64,7 @@ function GroupControl(props: Props): JSX.Element {
 
     const title = [
         `Group shapes${
-            jobInstance && jobInstance.dimension === DimensionType.DIM_3D ? '' : '/tracks'
+            jobInstance && jobInstance.dimension === DimensionType.DIMENSION_3D ? '' : '/tracks'
         } ${shortcuts.SWITCH_GROUP_MODE.displayValue}. `,
         `Select and press ${shortcuts.RESET_GROUP.displayValue} to reset a group.`,
     ].join(' ');
