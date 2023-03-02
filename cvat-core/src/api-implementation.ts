@@ -117,6 +117,16 @@ export default function implementAPI(cvat) {
         return result;
     };
 
+    cvat.server.setAuthData.implementation = async (response) => {
+        const result = await serverProxy.server.setAuthData(response);
+        return result;
+    };
+
+    cvat.server.removeAuthData.implementation = async () => {
+        const result = await serverProxy.server.removeAuthData();
+        return result;
+    };
+
     cvat.server.installedApps.implementation = async () => {
         const result = await serverProxy.server.installedApps();
         return result;

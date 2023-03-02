@@ -543,14 +543,13 @@ async function healthCheck(
         });
 }
 
-async function serverRequest(url: string, data: object): Promise<void> {
+async function serverRequest(url: string, data: object): Promise<any> {
     try {
-        return (
-            await Axios({
-                url,
-                ...data,
-            })
-        ).data;
+        const res = await Axios({
+            url,
+            ...data,
+        });
+        return res;
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -2306,6 +2305,8 @@ async function receiveWebhookEvents(type: WebhookSourceType): Promise<string[]> 
 
 export default Object.freeze({
     server: Object.freeze({
+        setAuthData,
+        removeAuthData,
         about,
         share,
         formats,

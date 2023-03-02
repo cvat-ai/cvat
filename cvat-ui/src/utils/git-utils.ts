@@ -143,9 +143,9 @@ export function registerGitPlugin(): void {
 }
 
 export async function getReposData(tid: number): Promise<ReposData | null> {
-    const response = await core.server.request(`${baseURL}/git/repository/get/${tid}`, {
+    const response = (await core.server.request(`${baseURL}/git/repository/get/${tid}`, {
         method: 'GET',
-    });
+    })).data;
 
     if (!response.url.value) {
         return null;
@@ -171,9 +171,9 @@ export function syncRepos(tid: number): Promise<void> {
             .then((syncResponse: any): void => {
                 async function checkSync(): Promise<void> {
                     const id = syncResponse.rq_id;
-                    const response = await core.server.request(`${baseURL}/git/repository/check/${id}`, {
+                    const response = (await core.server.request(`${baseURL}/git/repository/check/${id}`, {
                         method: 'GET',
-                    });
+                    })).data;
 
                     if (['queued', 'started'].includes(response.status)) {
                         setTimeout(checkSync, 1000);
