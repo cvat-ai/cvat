@@ -21,7 +21,6 @@ auth.strategy = "basic"
 auth.user = "${CLICKHOUSE_USER}"
 auth.password = "${CLICKHOUSE_PASSWORD}"
 endpoint = "http://${CLICKHOUSE_HOST}:8123"
-batch.timeout_secs = 10
 request.concurrency = "adaptive"
 encoding.only_fields = [
     "scope",
