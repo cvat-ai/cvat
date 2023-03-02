@@ -22,7 +22,8 @@ import {
 } from '@ant-design/icons';
 
 import config from 'config';
-import { DimensionType, CombinedState } from 'reducers';
+import { DimensionType } from 'cvat-core-wrapper';
+import { CombinedState } from 'reducers';
 import CanvasWrapperComponent from 'components/annotation-page/canvas/views/canvas2d/canvas-wrapper';
 import CanvasWrapper3DComponent, {
     PerspectiveViewComponent,
@@ -89,7 +90,7 @@ const fitLayout = (type: DimensionType, layoutConfig: ItemLayout[]): ItemLayout[
         widthAvail -= updatedLayout[0].w * relatedViewsCols;
     }
 
-    if (type === DimensionType.DIM_2D) {
+    if (type === DimensionType.DIMENSION_2D) {
         const canvas = layoutConfig
             .find((item: ItemLayout) => item.viewType === ViewType.CANVAS) as ItemLayout;
         updatedLayout.push({
@@ -298,7 +299,7 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
                     }) }
                 </ReactGridLayout>
             )}
-            { type === DimensionType.DIM_3D && <CanvasWrapper3DComponent /> }
+            { type === DimensionType.DIMENSION_3D && <CanvasWrapper3DComponent /> }
             <div className='cvat-grid-layout-common-setups'>
                 <CVATTooltip title='Fit views'>
                     <PicCenterOutlined
@@ -360,7 +361,7 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
 }
 
 CanvasLayout.defaultProps = {
-    type: DimensionType.DIM_2D,
+    type: DimensionType.DIMENSION_2D,
 };
 
 CanvasLayout.PropType = {

@@ -2068,6 +2068,7 @@ async function createOrganization(data) {
     let response = null;
     try {
         response = await Axios.post(`${backendAPI}/organizations`, JSON.stringify(data), {
+            params: { org: '' },
             headers: {
                 'Content-Type': 'application/json',
             },
