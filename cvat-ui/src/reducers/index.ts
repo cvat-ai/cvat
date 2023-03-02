@@ -29,6 +29,9 @@ export interface AuthState {
     socialAuthFetching: boolean;
     socialAuthInitialized: boolean;
     socialAuthMethods: SocialAuthMethods;
+    ssoIDPSelectFetching: boolean;
+    ssoIDPSelected: boolean;
+    ssoIDP: string | null;
 }
 
 export interface ProjectsQuery {
@@ -406,6 +409,7 @@ export interface NotificationsState {
             requestPasswordReset: null | ErrorState;
             resetPassword: null | ErrorState;
             loadAuthActions: null | ErrorState;
+            sso: null | ErrorState;
         };
         projects: {
             fetching: null | ErrorState;

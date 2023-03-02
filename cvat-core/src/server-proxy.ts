@@ -403,7 +403,7 @@ async function login(credential: string, password: string): Promise<void> {
 }
 
 async function loginWithSocialAccount(
-    provider: string,
+    tokenURL: string,
     code: string,
     authParams?: string,
     process?: string,
@@ -418,7 +418,7 @@ async function loginWithSocialAccount(
     };
     let authenticationResponse = null;
     try {
-        authenticationResponse = await Axios.post(`${config.backendAPI}/auth/${provider}/login/token`, data);
+        authenticationResponse = await Axios.post(tokenURL, data);
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -2330,10 +2330,24 @@ async function receiveWebhookEvents(type: WebhookSourceType): Promise<string[]> 
 async function socialAuthentication(): Promise<any> {
     const { backendAPI } = config;
     try {
-        const response = await Axios.get(`${backendAPI}/auth/social/methods`, {
+        const response = await Axios.get(`${backendAPI}/auth/social`, {
             validateStatus: (status) => status === 200 || status === 404,
         });
         return (response.status === 200) ? response.data : {};
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function selectSSOIdentityProvider(email?: string, iss?: string): Promise<string> {
+    const { backendAPI } = config;
+    try {
+        const response = await Axios.get(
+            `${backendAPI}/auth/oidc/select-idp/`, {
+                params: { ...(email ? { email } : {}), ...(iss ? { iss } : {}) },
+            },
+        );
+        return response.data;
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -2357,6 +2371,7 @@ export default Object.freeze({
         userAgreements,
         installedApps,
         loginWithSocialAccount,
+        selectSSOIdentityProvider,
     }),
 
     projects: Object.freeze({
