@@ -137,54 +137,8 @@ Before starting, ensure that the following prerequisites are met:
      nuctl deploy --project-name cvat --path serverless/tensorflow/faster_rcnn_inception_v2_coco/nuclio --registry docker.io/your_username
      ```
 
-### (Optional) Enable Analytics
-
-1. Set `analytics.enabled: true` in your `values.override.yaml`
-1. Run `helm dependency update` in `helm-chart` directory
-1. Since custom images are required here, you will need to create them yourself
-   and push them to your preferred docker registry.
-   You might also need to log into your registry account (docker login)
-   on the installation machine before running the push command.
-   How to set up local registry when using Minikube see [previous section](#how_to_enable_auto_annotation_feature)
-
-   - Let's build custom elasticsearch, logstash and kibana images with the following command
-     ```shell
-     docker compose -f docker-compose.yml  -f components/analytics/docker-compose.analytics.yml build
-     ```
-
-   - Tag images:
-     ```shell
-     docker tag cvat_kibana:latest <your registry>/cvat_kibana:latest
-     docker tag cvat_elasticsearch:latest <your registry>/cvat_elasticsearch:latest
-     docker tag cvat_logstash:latest <your registry>/cvat_logstash:latest
-     ```
-
-   - Push to registry
-     ```shell
-     docker push <your registry>/cvat_kibana:latest
-     docker push <your registry>/cvat_elasticsearch:latest
-     docker push <your registry>/cvat_logstash:latest
-     ```
-
-   - Add corresponding settings into `values.override.yaml`, i.e. for minikube registry:
-     ```yaml
-      logstash:
-        image: "registry.minikube/cvat_logstash"
-        imageTag: "latest"
-
-      elasticsearch:
-        image: "registry.minikube/cvat_elasticsearch"
-        imageTag: "latest"
-
-      kibana:
-        image: "registry.minikube/cvat_kibana"
-        imageTag: "latest"
-     ```
-
-   - Deploy
-     ```shell
-     helm upgrade <release_name> --namespace <desired namespace>  --install ./helm-chart -f ./helm-chart/values.yaml  -f values.override.yaml
-     ```
+### Analytics
+Analytics is enabled by default, to disable set `analytics.enabled: true` in your `values.override.yaml`
 
 ## Deployment
 Make sure you are using correct kubernetes context. You can check it with `kubectl config current-context`.
@@ -343,12 +297,17 @@ cvat:
           persistentVolumeClaim:
             claimName: my-claim-name
     worker:
-      default:
+      export:
         additionalVolumes:
           - name: cvat-backend-data
             persistentVolumeClaim:
               claimName: my-claim-name
-      low:
+      import:
+        additionalVolumes:
+          - name: cvat-backend-data
+            persistentVolumeClaim:
+              claimName: my-claim-name
+      annotation:
         additionalVolumes:
           - name: cvat-backend-data
             persistentVolumeClaim:
