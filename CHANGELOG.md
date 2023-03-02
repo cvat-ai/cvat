@@ -76,6 +76,8 @@ Tracks can be exported/imported to/from Datumaro and Sly Pointcloud formats (<ht
 - Сreating a project or task with the same labels (<https://github.com/opencv/cvat/pull/5700>)
 - \[Server API\] Ability to rename label to an existing name (<https://github.com/opencv/cvat/pull/5662>)
 - Missing CVAT_BASE_URL in docker-compose.yml (<https://github.com/opencv/cvat/pull/5792>)
+- Logging out in one browser no longer logs you out in all other browsers/computers
+  (<https://github.com/opencv/cvat/pull/5803>)
 
 ### Security
 - Fixed vulnerability with social authentication (<https://github.com/opencv/cvat/pull/5521>)
