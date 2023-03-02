@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import FormData from 'form-data';
+import Cookies from 'js-cookie';
 import store from 'store';
 import Axios, { AxiosError, AxiosResponse } from 'axios';
 import * as tus from 'tus-js-client';
@@ -108,22 +109,24 @@ function fetchAll(url, filter = {}): Promise<any> {
 }
 
 async function chunkUpload(file: File, uploadConfig) {
+    const { backendAPI, origin } = config;
     const params = enableOrganization();
     const {
         endpoint, chunkSize, totalSize, onUpdate, metadata,
     } = uploadConfig;
     const { totalSentSize } = uploadConfig;
     const uploadResult = { totalSentSize };
+
     return new Promise((resolve, reject) => {
         const upload = new tus.Upload(file, {
-            endpoint,
+            endpoint: `${origin}${backendAPI}/${endpoint}`,
             metadata: {
                 filename: file.name,
                 filetype: file.type,
                 ...metadata,
             },
             headers: {
-                Authorization: Axios.defaults.headers.common.Authorization,
+                [Axios.defaults.xsrfHeaderName]: Cookies.get(Axios.defaults.xsrfCookieName),
             },
             chunkSize,
             retryDelays: null,
@@ -266,10 +269,10 @@ Axios.interceptors.request.use((reqConfig) => {
     return reqConfig;
 });
 
-let token = store.get('token');
-if (token) {
-    Axios.defaults.headers.common.Authorization = `Token ${token}`;
-}
+// Previously, we used to store an additional authentication token in local storage.
+// Now we don't, and if the user still has one stored, we'll remove it to prevent
+// unnecessary credential exposure.
+store.remove('token');
 
 function setAuthData(response: AxiosResponse): void {
     if (response.headers['set-cookie']) {
@@ -278,18 +281,6 @@ function setAuthData(response: AxiosResponse): void {
         const cookies = response.headers['set-cookie'].join(';');
         Axios.defaults.headers.common.Cookie = cookies;
     }
-
-    if (response.data.key) {
-        token = response.data.key;
-        store.set('token', token);
-        Axios.defaults.headers.common.Authorization = `Token ${token}`;
-    }
-}
-
-function removeAuthData(): void {
-    Axios.defaults.headers.common.Authorization = '';
-    store.remove('token');
-    token = null;
 }
 
 async function about(): Promise<SerializedAbout> {
@@ -391,7 +382,6 @@ async function login(credential: string, password: string): Promise<void> {
         .join('&')
         .replace(/%20/g, '+');
 
-    removeAuthData();
     let authenticationResponse = null;
     try {
         authenticationResponse = await Axios.post(`${config.backendAPI}/auth/login`, authenticationData);
@@ -409,7 +399,6 @@ async function loginWithSocialAccount(
     process?: string,
     scope?: string,
 ): Promise<void> {
-    removeAuthData();
     const data = {
         code,
         ...(process ? { process } : {}),
@@ -429,7 +418,6 @@ async function loginWithSocialAccount(
 async function logout(): Promise<void> {
     try {
         await Axios.post(`${config.backendAPI}/auth/logout`);
-        removeAuthData();
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -500,17 +488,9 @@ async function getSelf(): Promise<SerializedUser> {
 
 async function authorized(): Promise<boolean> {
     try {
-        // In CVAT app we use two types of authentication
-        // At first we check if authentication token is present
-        // Request in getSelf will provide correct authentication cookies
-        if (!store.get('token')) {
-            removeAuthData();
-            return false;
-        }
         await getSelf();
     } catch (serverError) {
         if (serverError.code === 401) {
-            removeAuthData();
             return false;
         }
 
@@ -819,7 +799,7 @@ async function importDataset(
         updateStatusCallback: (s: string, n: number) => void,
     },
 ): Promise<void> {
-    const { backendAPI, origin } = config;
+    const { backendAPI } = config;
     const params: Params & { conv_mask_to_poly: boolean } = {
         ...enableOrganization(),
         ...configureStorage(sourceStorage, useDefaultLocation),
@@ -868,7 +848,7 @@ async function importDataset(
     } else {
         const uploadConfig = {
             chunkSize: config.uploadChunkSize * 1024 * 1024,
-            endpoint: `${origin}${backendAPI}/projects/${id}/dataset/`,
+            endpoint: `projects/${id}/dataset/`,
             totalSentSize: 0,
             totalSize: (file as File).size,
             onUpdate: (percentage) => {
@@ -978,7 +958,7 @@ async function restoreTask(storage: Storage, file: File | string) {
     } else {
         const uploadConfig = {
             chunkSize: config.uploadChunkSize * 1024 * 1024,
-            endpoint: `${origin}${backendAPI}/tasks/backup/`,
+            endpoint: 'tasks/backup/',
             totalSentSize: 0,
             totalSize: (file as File).size,
         };
@@ -1085,7 +1065,7 @@ async function restoreProject(storage: Storage, file: File | string) {
     } else {
         const uploadConfig = {
             chunkSize: config.uploadChunkSize * 1024 * 1024,
-            endpoint: `${origin}${backendAPI}/projects/backup/`,
+            endpoint: 'projects/backup/',
             totalSentSize: 0,
             totalSize: (file as File).size,
         };
@@ -1105,7 +1085,7 @@ async function restoreProject(storage: Storage, file: File | string) {
 }
 
 async function createTask(taskSpec, taskDataSpec, onUpdate) {
-    const { backendAPI, origin } = config;
+    const { backendAPI } = config;
     // keep current default params to 'freeze" them during this request
     const params = enableOrganization();
 
@@ -1228,7 +1208,7 @@ async function createTask(taskSpec, taskDataSpec, onUpdate) {
                 headers: { 'Upload-Start': true },
             });
         const uploadConfig = {
-            endpoint: `${origin}${backendAPI}/tasks/${response.data.id}/data/`,
+            endpoint: `tasks/${response.data.id}/data/`,
             onUpdate: (percentage) => {
                 onUpdate('The data are being uploaded to the server', percentage);
             },
@@ -1688,7 +1668,7 @@ async function uploadAnnotations(
     file: File | string,
     options: { convMaskToPoly: boolean },
 ): Promise<void> {
-    const { backendAPI, origin } = config;
+    const { backendAPI } = config;
     const params: Params & { conv_mask_to_poly: boolean } = {
         ...enableOrganization(),
         ...configureStorage(sourceStorage, useDefaultLocation),
@@ -1736,7 +1716,7 @@ async function uploadAnnotations(
         const chunkSize = config.uploadChunkSize * 1024 * 1024;
         const uploadConfig = {
             chunkSize,
-            endpoint: `${origin}${backendAPI}/${session}s/${id}/annotations/`,
+            endpoint: `${session}s/${id}/annotations/`,
         };
 
         try {
