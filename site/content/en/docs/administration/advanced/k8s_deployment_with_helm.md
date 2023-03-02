@@ -16,7 +16,7 @@ description: 'Instructions for deploying CVAT on a Kubernetes cluster.'
 - [Configuration](#configuration)
   - [Postgresql password?](#postgresql-password)
   - [(Optional) Enable Auto annotation feature](#optional-enable-auto-annotation-feature)
-  - [(Optional) Enable Analytics](#optional-enable-analytics)
+  - [Analytics](#analytics)
 - [Deployment](#deployment)
   - [With overrides:](#with-overrides)
   - [Without overrides:](#without-overrides)
@@ -138,7 +138,7 @@ Before starting, ensure that the following prerequisites are met:
      ```
 
 ### Analytics
-Analytics is enabled by default, to disable set `analytics.enabled: true` in your `values.override.yaml`
+Analytics is enabled by default, to disable set `analytics.enabled: false` in your `values.override.yaml`
 
 ## Deployment
 Make sure you are using correct kubernetes context. You can check it with `kubectl config current-context`.
