@@ -85,7 +85,6 @@ interface CVATAppProps {
     initModels: () => void;
     resetErrors: () => void;
     resetMessages: () => void;
-    resetNotifications: () => void;
     switchShortcutsDialog: () => void;
     switchSettingsDialog: () => void;
     loadAuthActions: () => void;
@@ -129,6 +128,10 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
     public componentDidMount(): void {
         const core = getCore();
         const { history, location } = this.props;
+        const {
+            HEALTH_CHECK_RETRIES, HEALTH_CHECK_PERIOD, HEALTH_CHECK_REQUEST_TIMEOUT, SERVER_UNAVAILABLE_COMPONENT,
+            RESET_NOTIFICATIONS_PATHS,
+        } = appConfig;
         // configure({ ignoreRepeatedEventsWhenKeyHeldDown: false });
 
         // Logger configuration
@@ -141,13 +144,20 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         EventRecorder.initSave();
 
         customWaViewHit(location.pathname, location.search, location.hash);
-        history.listen((_location) => {
-            customWaViewHit(_location.pathname, _location.search, _location.hash);
+        history.listen((newLocation) => {
+            customWaViewHit(newLocation.pathname, newLocation.search, newLocation.hash);
+            const { location: prevLocation } = this.props;
+            const shouldResetNotifications = RESET_NOTIFICATIONS_PATHS.from.some(
+                (pathname) => prevLocation.pathname === pathname,
+            );
+            const pathExcluded = shouldResetNotifications && RESET_NOTIFICATIONS_PATHS.exclude.some(
+                (pathname) => newLocation.pathname.includes(pathname),
+            );
+            if (shouldResetNotifications && !pathExcluded) {
+                this.resetNotifications();
+            }
         });
 
-        const {
-            HEALTH_CHECK_RETRIES, HEALTH_CHECK_PERIOD, HEALTH_CHECK_REQUEST_TIMEOUT, SERVER_UNAVAILABLE_COMPONENT,
-        } = appConfig;
         core.server.healthCheck(
             HEALTH_CHECK_RETRIES,
             HEALTH_CHECK_PERIOD,
@@ -256,15 +266,8 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             return;
         }
 
-        const { notifications } = this.props;
-        const { resetNotifications } = notifications;
-        if (resetNotifications) {
-            this.resetNotifications();
-        } else {
-            this.showErrors();
-            this.showMessages();
-        }
-
+        this.showErrors();
+        this.showMessages();
         if (!userInitialized && !userFetching) {
             verifyAuthorized();
             return;
@@ -368,10 +371,11 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
     }
 
     private resetNotifications(): void {
-        const { resetNotifications } = this.props;
+        const { resetErrors, resetMessages } = this.props;
 
         notification.destroy();
-        resetNotifications();
+        resetErrors();
+        resetMessages();
     }
 
     // Where you go depends on your URL
