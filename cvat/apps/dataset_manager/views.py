@@ -31,11 +31,7 @@ def log_exception(logger=None, exc_info=True):
 
 def get_export_cache_dir(db_instance):
     base_dir = osp.abspath(db_instance.get_dirname())
-
-    if osp.isdir(base_dir):
-        return osp.join(base_dir, 'export_cache')
-    else:
-        raise FileNotFoundError('{} dir {} does not exist'.format(db_instance.__class__.__name__, base_dir))
+    return osp.join(base_dir, 'export_cache')
 
 DEFAULT_CACHE_TTL = timedelta(hours=4)
 TASK_CACHE_TTL = DEFAULT_CACHE_TTL
