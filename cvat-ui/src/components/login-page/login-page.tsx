@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corp
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,8 +10,10 @@ import { Row, Col } from 'antd/lib/grid';
 
 import SigningLayout, { formSizes } from 'components/signing-common/signing-layout';
 import SocialAccountLink from 'components/signing-common/social-account-link';
+
+import { getCore, SocialAuthMethods, SocialAuthMethod } from 'cvat-core-wrapper';
+import config from 'config';
 import LoginForm, { LoginData } from './login-form';
-import { getCore, SocialAuthMethods, SocialAuthMethod } from '../../cvat-core-wrapper';
 
 const cvat = getCore();
 
@@ -24,19 +26,28 @@ interface LoginPageComponentProps {
     loadSocialAuthenticationMethods: () => void;
 }
 
-const renderSocialAuthMethods = (methods: SocialAuthMethods): JSX.Element[] => {
+const renderSocialAuthMethods = (methods: SocialAuthMethods): JSX.Element | null => {
     const { backendAPI } = cvat.config;
+    const activeMethods = methods.filter((item: SocialAuthMethod) => item.isEnabled);
 
-    return methods.map((item: SocialAuthMethod) => ((item.isEnabled) ? (
-        <SocialAccountLink
-            key={item.provider}
-            icon={item.icon}
-            href={`${backendAPI}/auth/${item.provider}/login`}
-            className={`cvat-social-authentication-${item.provider}`}
-        >
-            {`Continue with ${item.publicName}`}
-        </SocialAccountLink>
-    ) : <></>));
+    if (!activeMethods.length) {
+        return null;
+    }
+
+    return (
+        <div className='cvat-social-authentication-row-with-icons'>
+            {activeMethods.map((method: SocialAuthMethod) => (
+                <SocialAccountLink
+                    key={method.provider}
+                    icon={method.icon}
+                    href={(method.provider !== config.SSO_PROVIDER_KEY) ? `${backendAPI}/auth/social/${method.provider}/login/` : '/auth/oidc/select-identity-provider/'}
+                    className={`cvat-social-authentication-${method.provider}`}
+                >
+                    {`Continue with ${method.publicName}`}
+                </SocialAccountLink>
+            ))}
+        </div>
+    );
 };
 
 function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps): JSX.Element {

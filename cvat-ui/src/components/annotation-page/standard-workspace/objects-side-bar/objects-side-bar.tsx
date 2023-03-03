@@ -12,7 +12,8 @@ import Text from 'antd/lib/typography/Text';
 import Tabs from 'antd/lib/tabs';
 import Layout from 'antd/lib/layout';
 
-import { CombinedState, DimensionType } from 'reducers';
+import { CombinedState } from 'reducers';
+import { DimensionType } from 'cvat-core-wrapper';
 import LabelsList from 'components/annotation-page/standard-workspace/objects-side-bar/labels-list';
 import { collapseSidebar as collapseSidebarAction } from 'actions/annotation-actions';
 import AppearanceBlock from 'components/annotation-page/appearance-block';
@@ -74,7 +75,7 @@ function ObjectsSideBar(props: StateToProps & DispatchToProps & OwnProps): JSX.E
         collapseSidebar();
     };
 
-    const is2D = jobInstance ? jobInstance.dimension === DimensionType.DIM_2D : true;
+    const is2D = jobInstance ? jobInstance.dimension === DimensionType.DIMENSION_2D : true;
     return (
         <Layout.Sider
             className='cvat-objects-sidebar'

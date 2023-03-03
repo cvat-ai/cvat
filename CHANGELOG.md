@@ -48,6 +48,7 @@ Tracks can be exported/imported to/from Datumaro and Sly Pointcloud formats (<ht
   `/api/projects/{id}.tasks`, `/api/tasks/{id}.segments`, `/api/jobs/{id}.issues`,
   `/api/issues/{id}.comments`, `/api/projects | tasks | jobs/{id}.labels`
   (<https://github.com/opencv/cvat/pull/5662>)
+- Hide analytics link from non-admin users (<https://github.com/opencv/cvat/pull/5789>)
 - Hide notifications on login/logout/register (<https://github.com/opencv/cvat/pull/5788>)
 
 ### Deprecated
@@ -75,6 +76,7 @@ Tracks can be exported/imported to/from Datumaro and Sly Pointcloud formats (<ht
 - SiamMask and TransT serverless functions (<https://github.com/opencv/cvat/pull/5658>)
 - Сreating a project or task with the same labels (<https://github.com/opencv/cvat/pull/5700>)
 - \[Server API\] Ability to rename label to an existing name (<https://github.com/opencv/cvat/pull/5662>)
+- Missing CVAT_BASE_URL in docker-compose.yml (<https://github.com/opencv/cvat/pull/5792>)
 
 ### Security
 - Fixed vulnerability with social authentication (<https://github.com/opencv/cvat/pull/5521>)

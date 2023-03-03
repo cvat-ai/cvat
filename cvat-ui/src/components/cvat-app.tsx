@@ -20,6 +20,7 @@ import 'antd/dist/antd.css';
 import LogoutComponent from 'components/logout-component';
 import LoginPageContainer from 'containers/login-page/login-page';
 import LoginWithTokenComponent from 'components/login-with-token/login-with-token';
+import LoginWithSSOComponent from 'components/login-with-social-app/login-with-sso';
 import LoginWithSocialAppComponent from 'components/login-with-social-app/login-with-social-app';
 import RegisterPageContainer from 'containers/register-page/register-page';
 import ResetPasswordPageConfirmComponent from 'components/reset-password-confirm-page/reset-password-confirm-page';
@@ -510,8 +511,13 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                         />
                         <Route
                             exact
-                            path='/auth/login-with-social-app/'
+                            path={['/auth/login-with-social-app/', '/auth/login-with-oidc/']}
                             component={LoginWithSocialAppComponent}
+                        />
+                        <Route
+                            exact
+                            path='/auth/oidc/select-identity-provider/'
+                            component={LoginWithSSOComponent}
                         />
                         <Route exact path='/auth/password/reset' component={ResetPasswordPageComponent} />
                         <Route
