@@ -268,6 +268,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
         this.showErrors();
         this.showMessages();
+
         if (!userInitialized && !userFetching) {
             verifyAuthorized();
             return;
