@@ -81,17 +81,23 @@ def pytest_addoption(parser):
         help="Run tests without running containers. (default: %(default)s)",
     )
 
+    group._addoption(
+        "--dropdb",
+        action="store_true",
+        help="Drop db after running tests. (default: %(default)s)",
+    )
 
-def _run(command, capture_output=True):
+
+def _run(command, capture_output=True, cwd=None):
     _command = command.split() if isinstance(command, str) else command
 
     try:
         stdout, stderr = "", ""
         if capture_output:
-            proc = run(_command, check=True, stdout=PIPE, stderr=PIPE)  # nosec
+            proc = run(_command, check=True, stdout=PIPE, stderr=PIPE, cwd=cwd)  # nosec
             stdout, stderr = proc.stdout.decode(), proc.stderr.decode()
         else:
-            proc = run(_command, check=True)  # nosec
+            proc = run(_command, check=True, cwd=cwd)  # nosec
         return stdout, stderr
     except CalledProcessError as exc:
         stderr = exc.stderr.decode() if capture_output else "see above"
@@ -175,8 +181,8 @@ def dump_db():
             pytest.exit("Database dump failed.\n")
 
 
-def create_compose_files():
-    for filename in CONTAINER_NAME_FILES:
+def create_compose_files(container_name_files):
+    for filename in container_name_files:
         with open(filename.with_name(filename.name.replace(".tests", "")), "r") as dcf, open(
             filename, "w"
         ) as ndcf:
@@ -185,8 +191,8 @@ def create_compose_files():
             )
 
 
-def delete_compose_files():
-    for filename in CONTAINER_NAME_FILES:
+def delete_compose_files(container_name_files):
+    for filename in container_name_files:
         filename.unlink(missing_ok=True)
 
 
@@ -231,7 +237,7 @@ def get_server_image_tag():
     return f"cvat/server:{os.environ.get('CVAT_VERSION', 'dev')}"
 
 
-def start_services(rebuild=False):
+def start_services(dc_files, rebuild=False, cwd_build=None, cwd_up=None, use_env_file=True):
     if any([cn in ["cvat_server", "cvat_db"] for cn in running_containers()]):
         pytest.exit(
             "It's looks like you already have running cvat containers. Stop them and try again. "
@@ -242,15 +248,42 @@ def start_services(rebuild=False):
         [
             "docker",
             "compose",
+            *(f"--file={f}" for f in dc_files),
+            "build",
+        ],
+        capture_output=False, cwd=cwd_build
+    )
+
+    _run(
+        [
+            "docker",
+            "compose",
             f"--project-name={PREFIX}",
             # use compatibility mode to have fixed names for containers (with underscores)
             # https://github.com/docker/compose#about-update-and-backward-compatibility
             "--compatibility",
-            f"--env-file={CVAT_ROOT_DIR / 'tests/python/webhook_receiver/.env'}",
-            *(f"--file={f}" for f in DC_FILES),
+            *[f"--env-file={CVAT_ROOT_DIR / 'tests/python/webhook_receiver/.env'}"] * use_env_file,
+            *(f"--file={f}" for f in dc_files),
             "up",
             "-d",
             *["--build"] * rebuild,
+        ],
+        capture_output=False, cwd=cwd_up
+    )
+
+def stop_services(dc_files, use_env_file=True):
+    run(
+        [
+            "docker",
+            "compose",
+            f"--project-name={PREFIX}",
+            # use compatibility mode to have fixed names for containers (with underscores)
+            # https://github.com/docker/compose#about-update-and-backward-compatibility
+            "--compatibility",
+            *[f"--env-file={CVAT_ROOT_DIR / 'tests/python/webhook_receiver/.env'}"] * use_env_file,
+            *(f"--file={f}" for f in dc_files),
+            "down",
+            "-v",
         ],
         capture_output=False,
     )
@@ -289,33 +322,19 @@ def pytest_sessionstart(session: pytest.Session) -> None:
             pytest.exit("data.json has been updated", returncode=0)
 
         if cleanup:
-            delete_compose_files()
+            delete_compose_files(CONTAINER_NAME_FILES)
             pytest.exit("All generated test files have been deleted", returncode=0)
 
         if not all([f.exists() for f in CONTAINER_NAME_FILES]) or rebuild:
-            delete_compose_files()
-            create_compose_files()
+            delete_compose_files(CONTAINER_NAME_FILES)
+            create_compose_files(CONTAINER_NAME_FILES)
 
         if stop:
-            _run(
-                [
-                    "docker",
-                    "compose",
-                    f"--project-name={PREFIX}",
-                    # use compatibility mode to have fixed names for containers (with underscores)
-                    # https://github.com/docker/compose#about-update-and-backward-compatibility
-                    "--compatibility",
-                    f"--env-file={CVAT_ROOT_DIR / 'tests/python/webhook_receiver/.env'}",
-                    *(f"--file={f}" for f in DC_FILES),
-                    "down",
-                    "-v",
-                ],
-                capture_output=False,
-            )
+            stop_services(DC_FILES)
             pytest.exit("All testing containers are stopped", returncode=0)
 
         if not no_init:
-            start_services(rebuild)
+            start_services(DC_FILES, rebuild)
         docker_restore_data_volumes()
         docker_cp(CVAT_DB_DIR / "restore.sql", f"{PREFIX}_cvat_db_1:/tmp/restore.sql")
         docker_cp(CVAT_DB_DIR / "data.json", f"{PREFIX}_cvat_server_1:/tmp/data.json")
@@ -359,6 +378,10 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
         docker_restore_db()
         docker_exec_cvat_db("dropdb test_db")
 
+        drop_db = session.config.getoption("--dropdb")
+        if drop_db:
+            docker_exec_cvat_db("dropdb --if-exists cvat")
+
 
 @pytest.fixture(scope="function")
 def restore_db_per_function(request):
@@ -388,3 +411,4 @@ def restore_cvat_data(request):
         docker_restore_data_volumes()
     else:
         kube_restore_data_volumes()
+
