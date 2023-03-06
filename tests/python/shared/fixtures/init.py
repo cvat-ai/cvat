@@ -22,7 +22,7 @@ CVAT_DB_DIR = ASSETS_DIR / "cvat_db"
 PREFIX = "test"
 
 CONTAINER_NAME_FILES = [CVAT_ROOT_DIR / dc_file for dc_file in ("docker-compose.tests.yml",)]
-
+ENV_FILE = CVAT_ROOT_DIR / 'tests/python/webhook_receiver/.env'
 
 DC_FILES = [
     CVAT_ROOT_DIR / dc_file
@@ -82,9 +82,9 @@ def pytest_addoption(parser):
     )
 
     group._addoption(
-        "--dropdb",
+        "--recreate-db",
         action="store_true",
-        help="Drop db after running tests. (default: %(default)s)",
+        help="Recreate db after running tests. (default: %(default)s)",
     )
 
 
@@ -237,7 +237,7 @@ def get_server_image_tag():
     return f"cvat/server:{os.environ.get('CVAT_VERSION', 'dev')}"
 
 
-def start_services(dc_files, rebuild=False, cwd_build=None, cwd_up=None, use_env_file=True):
+def start_services(dc_files, rebuild=False, cwd_build=None, cwd_up=None, env_file=ENV_FILE):
     if any([cn in ["cvat_server", "cvat_db"] for cn in running_containers()]):
         pytest.exit(
             "It's looks like you already have running cvat containers. Stop them and try again. "
@@ -248,6 +248,11 @@ def start_services(dc_files, rebuild=False, cwd_build=None, cwd_up=None, use_env
         [
             "docker",
             "compose",
+            f"--project-name={PREFIX}",
+            # use compatibility mode to have fixed names for containers (with underscores)
+            # https://github.com/docker/compose#about-update-and-backward-compatibility
+            "--compatibility",
+            f"--env-file={env_file}",
             *(f"--file={f}" for f in dc_files),
             "build",
         ],
@@ -262,7 +267,7 @@ def start_services(dc_files, rebuild=False, cwd_build=None, cwd_up=None, use_env
             # use compatibility mode to have fixed names for containers (with underscores)
             # https://github.com/docker/compose#about-update-and-backward-compatibility
             "--compatibility",
-            *[f"--env-file={CVAT_ROOT_DIR / 'tests/python/webhook_receiver/.env'}"] * use_env_file,
+            f"--env-file={env_file}",
             *(f"--file={f}" for f in dc_files),
             "up",
             "-d",
@@ -271,7 +276,7 @@ def start_services(dc_files, rebuild=False, cwd_build=None, cwd_up=None, use_env
         capture_output=False, cwd=cwd_up
     )
 
-def stop_services(dc_files, use_env_file=True):
+def stop_services(dc_files, env_file=ENV_FILE):
     run(
         [
             "docker",
@@ -280,7 +285,7 @@ def stop_services(dc_files, use_env_file=True):
             # use compatibility mode to have fixed names for containers (with underscores)
             # https://github.com/docker/compose#about-update-and-backward-compatibility
             "--compatibility",
-            *[f"--env-file={CVAT_ROOT_DIR / 'tests/python/webhook_receiver/.env'}"] * use_env_file,
+            f"--env-file={env_file}",
             *(f"--file={f}" for f in dc_files),
             "down",
             "-v",
@@ -378,9 +383,11 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
         docker_restore_db()
         docker_exec_cvat_db("dropdb test_db")
 
-        drop_db = session.config.getoption("--dropdb")
-        if drop_db:
+        recreate_db = session.config.getoption("--recreate-db")
+        if recreate_db:
             docker_exec_cvat_db("dropdb --if-exists cvat")
+            docker_exec_cvat_db("createdb cvat")
+            docker_exec_cvat("python manage.py migrate")
 
 
 @pytest.fixture(scope="function")
