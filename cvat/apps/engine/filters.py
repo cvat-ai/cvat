@@ -308,7 +308,7 @@ class SimpleFilter(DjangoFilterBackend):
         return get_lookup_fields(view, fields=simple_filters)
 
     def get_schema_operation_parameters(self, view):
-        queryset = view.get_queryset()
+        queryset = view.queryset
 
         filterset_class = self.get_filterset_class(view, queryset)
         if not filterset_class:
