@@ -91,6 +91,11 @@ export default function implementAPI(cvat) {
         return Object.entries(result).map(([provider, value]) => new SocialAuthMethod({ ...value, provider }));
     };
 
+    cvat.server.selectSSOIdentityProvider.implementation = async (email?: string, iss?: string):Promise<string> => {
+        const result: string = await serverProxy.server.selectSSOIdentityProvider(email, iss);
+        return result;
+    };
+
     cvat.server.changePassword.implementation = async (oldPassword, newPassword1, newPassword2) => {
         await serverProxy.server.changePassword(oldPassword, newPassword1, newPassword2);
     };
@@ -129,13 +134,13 @@ export default function implementAPI(cvat) {
     };
 
     cvat.server.loginWithSocialAccount.implementation = async (
-        provider: string,
+        tokenURL: string,
         code: string,
         authParams?: string,
         process?: string,
         scope?: string,
     ) => {
-        const result = await serverProxy.server.loginWithSocialAccount(provider, code, authParams, process, scope);
+        const result = await serverProxy.server.loginWithSocialAccount(tokenURL, code, authParams, process, scope);
         return result;
     };
 

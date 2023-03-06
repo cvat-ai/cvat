@@ -11,9 +11,8 @@ import Button from 'antd/lib/button';
 import { useSelector } from 'react-redux';
 
 import { FilterIcon, FullscreenIcon, InfoIcon } from 'icons';
-import {
-    CombinedState, DimensionType, Workspace,
-} from 'reducers';
+import { DimensionType } from 'cvat-core-wrapper';
+import { CombinedState, Workspace } from 'reducers';
 
 interface Props {
     workspace: Workspace;
@@ -78,7 +77,7 @@ function RightGroup(props: Props): JSX.Element {
                     value={workspace}
                 >
                     {Object.values(Workspace).map((ws) => {
-                        if (jobInstance.dimension === DimensionType.DIM_3D) {
+                        if (jobInstance.dimension === DimensionType.DIMENSION_3D) {
                             if (ws === Workspace.STANDARD) {
                                 return null;
                             }

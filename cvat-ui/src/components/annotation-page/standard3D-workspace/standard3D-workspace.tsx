@@ -6,7 +6,7 @@
 import React from 'react';
 import Layout from 'antd/lib/layout';
 
-import { DimensionType } from 'reducers';
+import { DimensionType } from 'cvat-core-wrapper';
 import ControlsSideBarContainer from 'containers/annotation-page/standard3D-workspace/controls-side-bar/controls-side-bar';
 import ObjectSideBarComponent from 'components/annotation-page/standard-workspace/objects-side-bar/objects-side-bar';
 import ObjectsListContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/objects-list';
@@ -20,7 +20,7 @@ export default function StandardWorkspace3DComponent(): JSX.Element {
     return (
         <Layout hasSider className='cvat-standard-workspace'>
             <ControlsSideBarContainer />
-            <CanvasLayout type={DimensionType.DIM_3D} />
+            <CanvasLayout type={DimensionType.DIMENSION_3D} />
             <ObjectSideBarComponent objectsList={<ObjectsListContainer />} />
             <PropagateConfirmComponent />
             <CanvasContextMenuContainer />
