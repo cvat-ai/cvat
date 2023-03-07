@@ -268,7 +268,7 @@ class TestLabelsListFilters(CollectionSimpleFilterTestBase):
             else:
                 assert False
 
-            kwargs[key] = str(v)
+            kwargs[key] = v
 
         with pytest.raises(exceptions.ApiException) as capture:
             self._retrieve_collection(**kwargs)
@@ -307,12 +307,12 @@ class TestLabelsListFilters(CollectionSimpleFilterTestBase):
             dst_obj = next(
                 t for t in self.task_samples if t.get(f"{src}_id") == src_with_labels["id"]
             )
-            kwargs["task_id"] = str(dst_obj["id"])
+            kwargs["task_id"] = dst_obj["id"]
         elif dst == "job":
             dst_obj = next(
                 j for j in self.job_samples if j.get(f"{src}_id") == src_with_labels["id"]
             )
-            kwargs["job_id"] = str(dst_obj["id"])
+            kwargs["job_id"] = dst_obj["id"]
         else:
             assert False
 
@@ -428,7 +428,7 @@ class TestListLabels(_TestLabelsPermissionsBase):
 
         kwargs = {
             "org_id": org_id,
-            f"{source_type}_id": str(source["id"]),
+            f"{source_type}_id": source["id"],
         }
 
         if staff:
@@ -480,7 +480,7 @@ class TestListLabels(_TestLabelsPermissionsBase):
 
         kwargs = {
             "org_id": org_id,
-            f"{source_type}_id": str(source["id"]),
+            f"{source_type}_id": source["id"],
         }
 
         self._test_list_ok(admin_user, source_labels, **kwargs)
@@ -698,7 +698,7 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
         response = self._test_update_denied(
             user, lid=labels[0]["id"], data=payload, expected_status=HTTPStatus.BAD_REQUEST
         )
-        assert f"Label '{payload['name']}' already exists" in response.data.decode()
+        assert "All label names must be unique" in response.data.decode()
 
     def test_admin_patch_sandbox_label(self, admin_sandbox_case):
         label, user = get_attrs(admin_sandbox_case, ["label", "user"])

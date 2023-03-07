@@ -123,10 +123,6 @@ INSTALLED_APPS = [
     'allauth.account',
     'corsheaders',
     'allauth.socialaccount',
-    # social providers
-    'allauth.socialaccount.providers.amazon_cognito',
-    'allauth.socialaccount.providers.github',
-    'allauth.socialaccount.providers.google',
     'health_check',
     'health_check.db',
     'health_check.contrib.migrations',
@@ -194,6 +190,7 @@ REST_FRAMEWORK = {
     },
     'DEFAULT_METADATA_CLASS': 'rest_framework.metadata.SimpleMetadata',
     'DEFAULT_SCHEMA_CLASS': 'cvat.apps.iam.schema.CustomAutoSchema',
+    'EXCEPTION_HANDLER': 'cvat.apps.events.handlers.handle_viewset_exception',
 }
 
 
@@ -332,7 +329,10 @@ NUCLIO = {
 }
 
 RQ_SHOW_ADMIN_LINK = True
-RQ_EXCEPTION_HANDLERS = ['cvat.apps.engine.views.rq_handler']
+RQ_EXCEPTION_HANDLERS = [
+    'cvat.apps.engine.views.rq_exception_handler',
+    'cvat.apps.events.handlers.handle_rq_exception',
+]
 
 
 # JavaScript and CSS compression
@@ -494,6 +494,7 @@ if os.getenv('DJANGO_LOG_SERVER_HOST'):
 
 DATA_UPLOAD_MAX_MEMORY_SIZE = 100 * 1024 * 1024  # 100 MB
 DATA_UPLOAD_MAX_NUMBER_FIELDS = None   # this django check disabled
+DATA_UPLOAD_MAX_NUMBER_FILES = None
 LOCAL_LOAD_MAX_FILES_COUNT = 500
 LOCAL_LOAD_MAX_FILES_SIZE = 512 * 1024 * 1024  # 512 MB
 
@@ -617,84 +618,15 @@ SPECTACULAR_SETTINGS = {
     'SCHEMA_PATH_PREFIX_TRIM': False,
 }
 
-# allauth configuration
-USE_ALLAUTH_SOCIAL_ACCOUNTS = strtobool(os.getenv('USE_ALLAUTH_SOCIAL_ACCOUNTS') or 'False')
-
-ACCOUNT_ADAPTER = 'cvat.apps.iam.adapters.DefaultAccountAdapterEx'
-
-# the same in UI
+# set similar UI restrictions
+# https://github.com/opencv/cvat/blob/bad1dc2799afbb22222faaecc7336d999f4cc3fe/cvat-ui/src/utils/validation-patterns.ts#L26
 ACCOUNT_USERNAME_MIN_LENGTH = 5
 ACCOUNT_LOGOUT_ON_PASSWORD_CHANGE = True
 
+ACCOUNT_ADAPTER = 'cvat.apps.iam.adapters.DefaultAccountAdapterEx'
+
 CVAT_HOST = os.getenv('CVAT_HOST', 'localhost')
 CVAT_BASE_URL = os.getenv('CVAT_BASE_URL', f'http://{CVAT_HOST}:8080').rstrip('/')
-
-if USE_ALLAUTH_SOCIAL_ACCOUNTS:
-    SOCIALACCOUNT_ADAPTER = 'cvat.apps.iam.adapters.SocialAccountAdapterEx'
-    SOCIALACCOUNT_GITHUB_ADAPTER = 'cvat.apps.iam.adapters.GitHubAdapter'
-    SOCIALACCOUNT_GOOGLE_ADAPTER = 'cvat.apps.iam.adapters.GoogleAdapter'
-    SOCIALACCOUNT_AMAZON_COGNITO_ADAPTER = 'cvat.apps.iam.adapters.AmazonCognitoOAuth2AdapterEx'
-    SOCIALACCOUNT_LOGIN_ON_GET = True
-    # It's required to define email in the case when a user has a private hidden email.
-    # (e.g in github account set keep my email addresses private)
-    # default = ACCOUNT_EMAIL_REQUIRED
-    SOCIALACCOUNT_QUERY_EMAIL = True
-    SOCIALACCOUNT_CALLBACK_CANCELLED_URL = '/auth/login'
-    # custom variable because by default LOGIN_REDIRECT_URL will be used
-    SOCIAL_APP_LOGIN_REDIRECT_URL = f'{CVAT_BASE_URL}/auth/login-with-social-app'
-
-    AMAZON_COGNITO_REDIRECT_URI = f'{CVAT_BASE_URL}/api/auth/amazon-cognito/login/callback/'
-    GITHUB_CALLBACK_URL = f'{CVAT_BASE_URL}/api/auth/github/login/callback/'
-    GOOGLE_CALLBACK_URL = f'{CVAT_BASE_URL}/api/auth/google/login/callback/'
-
-    SOCIAL_AUTH_GOOGLE_CLIENT_ID = os.getenv('SOCIAL_AUTH_GOOGLE_CLIENT_ID')
-    SOCIAL_AUTH_GOOGLE_CLIENT_SECRET = os.getenv('SOCIAL_AUTH_GOOGLE_CLIENT_SECRET')
-
-    SOCIAL_AUTH_GITHUB_CLIENT_ID = os.getenv('SOCIAL_AUTH_GITHUB_CLIENT_ID')
-    SOCIAL_AUTH_GITHUB_CLIENT_SECRET = os.getenv('SOCIAL_AUTH_GITHUB_CLIENT_SECRET')
-
-    SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_ID = os.getenv('SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_ID')
-    SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_SECRET = os.getenv('SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_SECRET')
-    SOCIAL_AUTH_AMAZON_COGNITO_DOMAIN = os.getenv('SOCIAL_AUTH_AMAZON_COGNITO_DOMAIN')
-
-    # Django allauth social account providers
-    # https://django-allauth.readthedocs.io/en/latest/providers.html
-    SOCIALACCOUNT_PROVIDERS = {
-        'google': {
-            'APP': {
-                'client_id': SOCIAL_AUTH_GOOGLE_CLIENT_ID,
-                'secret': SOCIAL_AUTH_GOOGLE_CLIENT_SECRET,
-                'key': ''
-            },
-            'SCOPE': [ 'profile', 'email', 'openid'],
-            'AUTH_PARAMS': {
-                'access_type': 'online',
-            },
-        },
-        'github': {
-            'APP': {
-                'client_id': SOCIAL_AUTH_GITHUB_CLIENT_ID,
-                'secret': SOCIAL_AUTH_GITHUB_CLIENT_SECRET,
-                'key': ''
-            },
-            'SCOPE': [ 'read:user', 'user:email' ],
-            # NOTE: Custom field. This is necessary for the user interface
-            # to render possible social account authentication option.
-            # If this field is not specified, then the option with the provider
-            # key with a capital letter will be used
-            'PUBLIC_NAME': 'GitHub',
-        },
-        'amazon_cognito': {
-            'DOMAIN': SOCIAL_AUTH_AMAZON_COGNITO_DOMAIN,
-            'SCOPE': [ 'profile', 'email', 'openid'],
-            'APP': {
-                'client_id': SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_ID,
-                'secret': SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_SECRET,
-                'key': ''
-            },
-            'PUBLIC_NAME': 'Amazon Cognito',
-        }
-    }
 
 CLICKHOUSE = {
     'events': {

@@ -9,13 +9,13 @@ import { AuthActionTypes } from 'actions/auth-actions';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
+import { DimensionType } from 'cvat-core-wrapper';
 import { clamp } from 'utils/math';
 
 import {
     ActiveControl,
     AnnotationState,
     ContextMenuType,
-    DimensionType,
     JobStage,
     ObjectType,
     ShapeType,
@@ -157,7 +157,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             let activeShapeType = defaultLabel && defaultLabel.type !== 'any' ?
                 defaultLabel.type : ShapeType.RECTANGLE;
 
-            if (job.dimension === DimensionType.DIM_3D) {
+            if (job.dimension === DimensionType.DIMENSION_3D) {
                 workspaceSelected = Workspace.STANDARD3D;
                 activeShapeType = ShapeType.CUBOID;
             }
@@ -209,7 +209,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
                 canvas: {
                     ...state.canvas,
-                    instance: job.dimension === DimensionType.DIM_2D ? new Canvas() : new Canvas3d(),
+                    instance: job.dimension === DimensionType.DIMENSION_2D ? new Canvas() : new Canvas3d(),
                 },
                 colors,
                 workspace: isReview ? Workspace.REVIEW_WORKSPACE : workspaceSelected,

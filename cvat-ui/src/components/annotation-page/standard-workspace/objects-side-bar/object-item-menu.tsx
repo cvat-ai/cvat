@@ -14,9 +14,9 @@ import {
     BackgroundIcon, ForegroundIcon, ResetPerspectiveIcon, ColorizeIcon,
 } from 'icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import {
-    ObjectType, ShapeType, ColorBy, DimensionType,
-} from 'reducers';
+import { ObjectType, ShapeType, ColorBy } from 'reducers';
+import { DimensionType } from 'cvat-core-wrapper';
+
 import ColorPicker from './color-picker';
 
 interface Props {
@@ -267,7 +267,7 @@ export default function ItemMenu(props: Props): JSX.Element {
         EDIT_MASK = 'edit_mask',
     }
 
-    const is2D = jobInstance.dimension === DimensionType.DIM_2D;
+    const is2D = jobInstance.dimension === DimensionType.DIMENSION_2D;
 
     return (
         <Menu className='cvat-object-item-menu' selectable={false}>
