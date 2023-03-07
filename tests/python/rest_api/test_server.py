@@ -7,7 +7,7 @@ from http import HTTPStatus
 
 import pytest
 
-from shared.utils.config import make_api_client
+from shared.utils.config import make_api_client, get_method
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -36,3 +36,10 @@ class TestGetSchema:
 
             assert response.status == HTTPStatus.OK
             assert data
+
+
+@pytest.mark.usefixtures("restore_db_per_class")
+class TestGetSwaggerDocs:
+    def test_can_get_swagger_docs(self):
+        response = get_method("admin1", "/swagger")
+        assert response.status_code == HTTPStatus.OK
