@@ -14,50 +14,6 @@ from urllib3 import HTTPResponse
 
 from shared.utils.config import make_api_client
 
-SKELETON_DATA = {
-    "name": "skeleton 01",
-    "color": "#5c5eba",
-    "attributes": [
-        {
-            "name": "color",
-            "mutable": False,
-            "input_type": "select",
-            "default_value": "white",
-            "values": ["white", "black"],
-        }
-    ],
-    "type": "skeleton",
-    "sublabels": [
-        {
-            "name": "1",
-            "color": "#d53957",
-            "attributes": [
-                {
-                    "id": 23,
-                    "name": "attr",
-                    "mutable": False,
-                    "input_type": "select",
-                    "default_value": "val1",
-                    "values": ["val1", "val2"],
-                }
-            ],
-            "type": "points",
-        },
-        {"name": "2", "color": "#4925ec", "attributes": [], "type": "points"},
-        {"name": "3", "color": "#59a8fe", "attributes": [], "type": "points"},
-    ],
-    "svg": '<line x1="36.329429626464844" y1="45.98662185668945" x2="59.07190704345703" y2="23.076923370361328" '
-    'stroke="black" data-type="edge" data-node-from="2" stroke-width="0.5" data-node-to="3"></line>'
-    '<line x1="22.61705780029297" y1="25.75250816345215" x2="36.329429626464844" y2="45.98662185668945" '
-    'stroke="black" data-type="edge" data-node-from="1" stroke-width="0.5" data-node-to="2"></line>'
-    '<circle r="1.5" stroke="black" fill="#b3b3b3" cx="22.61705780029297" cy="25.75250816345215" '
-    'stroke-width="0.1" data-type="element node" data-element-id="1" data-node-id="1" data-label-name="1">'
-    '</circle><circle r="1.5" stroke="black" fill="#b3b3b3" cx="36.329429626464844" cy="45.98662185668945" '
-    'stroke-width="0.1" data-type="element node" data-element-id="2" data-node-id="2" data-label-name="2"></circle>'
-    '<circle r="1.5" stroke="black" fill="#b3b3b3" cx="59.07190704345703" cy="23.076923370361328" '
-    'stroke-width="0.1" data-type="element node" data-element-id="3" data-node-id="3" data-label-name="3"></circle>',
-}
-
 
 def export_dataset(
     endpoint: Endpoint, *, max_retries: int = 20, interval: float = 0.1, **kwargs

@@ -37,8 +37,52 @@ from shared.utils.config import (
 )
 from shared.utils.helpers import generate_image_files
 
-from .utils import SKELETON_DATA, CollectionSimpleFilterTestBase, export_dataset
+from .utils import CollectionSimpleFilterTestBase, export_dataset
 
+
+SKELETON_DATA = [{
+    "name": "skeleton 01",
+    "color": "#5c5eba",
+    "attributes": [
+        {
+            "name": "color",
+            "mutable": False,
+            "input_type": "select",
+            "default_value": "white",
+            "values": ["white", "black"],
+        }
+    ],
+    "type": "skeleton",
+    "sublabels": [
+        {
+            "name": "1",
+            "color": "#d53957",
+            "attributes": [
+                {
+                    "id": 23,
+                    "name": "attr",
+                    "mutable": False,
+                    "input_type": "select",
+                    "default_value": "val1",
+                    "values": ["val1", "val2"],
+                }
+            ],
+            "type": "points",
+        },
+        {"name": "2", "color": "#4925ec", "attributes": [], "type": "points"},
+        {"name": "3", "color": "#59a8fe", "attributes": [], "type": "points"},
+    ],
+    "svg": '<line x1="36.329429626464844" y1="45.98662185668945" x2="59.07190704345703" y2="23.076923370361328" '
+    'stroke="black" data-type="edge" data-node-from="2" stroke-width="0.5" data-node-to="3"></line>'
+    '<line x1="22.61705780029297" y1="25.75250816345215" x2="36.329429626464844" y2="45.98662185668945" '
+    'stroke="black" data-type="edge" data-node-from="1" stroke-width="0.5" data-node-to="2"></line>'
+    '<circle r="1.5" stroke="black" fill="#b3b3b3" cx="22.61705780029297" cy="25.75250816345215" '
+    'stroke-width="0.1" data-type="element node" data-element-id="1" data-node-id="1" data-label-name="1">'
+    '</circle><circle r="1.5" stroke="black" fill="#b3b3b3" cx="36.329429626464844" cy="45.98662185668945" '
+    'stroke-width="0.1" data-type="element node" data-element-id="2" data-node-id="2" data-label-name="2"></circle>'
+    '<circle r="1.5" stroke="black" fill="#b3b3b3" cx="59.07190704345703" cy="23.076923370361328" '
+    'stroke-width="0.1" data-type="element node" data-element-id="3" data-node-id="3" data-label-name="3"></circle>',
+}]
 
 def get_cloud_storage_content(username, cloud_storage_id, manifest):
     with make_api_client(username) as api_client:
@@ -263,7 +307,51 @@ class TestPostTasks:
 
         spec = {
             "name": f"test admin1 to create a task with skeleton",
-            "labels": [SKELETON_DATA],
+            "labels": [
+                {
+                    "name": "s1",
+                    "color": "#5c5eba",
+                    "attributes": [
+                        {
+                            "name": "color",
+                            "mutable": False,
+                            "input_type": "select",
+                            "default_value": "white",
+                            "values": ["white", "black"],
+                        }
+                    ],
+                    "type": "skeleton",
+                    "sublabels": [
+                        {
+                            "name": "1",
+                            "color": "#d53957",
+                            "attributes": [
+                                {
+                                    "id": 23,
+                                    "name": "attr",
+                                    "mutable": False,
+                                    "input_type": "select",
+                                    "default_value": "val1",
+                                    "values": ["val1", "val2"],
+                                }
+                            ],
+                            "type": "points",
+                        },
+                        {"name": "2", "color": "#4925ec", "attributes": [], "type": "points"},
+                        {"name": "3", "color": "#59a8fe", "attributes": [], "type": "points"},
+                    ],
+                    "svg": '<line x1="36.329429626464844" y1="45.98662185668945" x2="59.07190704345703" y2="23.076923370361328" '
+                    'stroke="black" data-type="edge" data-node-from="2" stroke-width="0.5" data-node-to="3"></line>'
+                    '<line x1="22.61705780029297" y1="25.75250816345215" x2="36.329429626464844" y2="45.98662185668945" '
+                    'stroke="black" data-type="edge" data-node-from="1" stroke-width="0.5" data-node-to="2"></line>'
+                    '<circle r="1.5" stroke="black" fill="#b3b3b3" cx="22.61705780029297" cy="25.75250816345215" '
+                    'stroke-width="0.1" data-type="element node" data-element-id="1" data-node-id="1" data-label-name="1">'
+                    '</circle><circle r="1.5" stroke="black" fill="#b3b3b3" cx="36.329429626464844" cy="45.98662185668945" '
+                    'stroke-width="0.1" data-type="element node" data-element-id="2" data-node-id="2" data-label-name="2"></circle>'
+                    '<circle r="1.5" stroke="black" fill="#b3b3b3" cx="59.07190704345703" cy="23.076923370361328" '
+                    'stroke-width="0.1" data-type="element node" data-element-id="3" data-node-id="3" data-label-name="3"></circle>',
+                }
+            ],
         }
 
         self._test_create_task_201(username, spec)
@@ -995,15 +1083,14 @@ class TestPatchTaskLabel:
         assert response.status_code == HTTPStatus.NOT_FOUND
         assert f"Not found label with id #{new_label['id']} to change" in response.text
 
-    @pytest.mark.parametrize("label", [{"name": "new name"}, SKELETON_DATA])
-    def test_admin_can_add_label(self, tasks, admin_user, label):
+    def test_admin_can_add_label(self, tasks, admin_user):
         task = list(tasks)[0]
+        new_label = {"name": "new name"}
 
-        response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [label]})
+        response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [new_label]})
         assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == task["labels"]["count"] + 1
 
-    @pytest.mark.parametrize("label", [{"name": "new name"}, SKELETON_DATA])
     @pytest.mark.parametrize("role", ["maintainer", "owner"])
     def test_non_task_staff_privileged_org_members_can_add_label(
         self,
@@ -1011,7 +1098,6 @@ class TestPatchTaskLabel:
         tasks,
         is_task_staff,
         is_org_member,
-        label,
         role,
     ):
         users = find_users(role=role, exclude_privilege="admin")
@@ -1024,16 +1110,16 @@ class TestPatchTaskLabel:
             and is_org_member(user["id"], task["organization"])
         )
 
+        new_label = {"name": "new name"}
         response = patch_method(
             user["username"],
             f'/tasks/{task["id"]}',
-            {"labels": [label]},
+            {"labels": [new_label]},
             org_id=task["organization"],
         )
         assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == task["labels"]["count"] + 1
 
-    @pytest.mark.parametrize("label", [{"name": "new name"}, SKELETON_DATA])
     @pytest.mark.parametrize("role", ["supervisor", "worker"])
     def test_non_task_staff_org_members_cannot_add_label(
         self,
@@ -1041,7 +1127,6 @@ class TestPatchTaskLabel:
         tasks,
         is_task_staff,
         is_org_member,
-        label,
         role,
     ):
         users = find_users(role=role, exclude_privilege="admin")
@@ -1054,19 +1139,19 @@ class TestPatchTaskLabel:
             and is_org_member(user["id"], task["organization"])
         )
 
+        new_label = {"name": "new name"}
         response = patch_method(
             user["username"],
             f'/tasks/{task["id"]}',
-            {"labels": [label]},
+            {"labels": [new_label]},
             org_id=task["organization"],
         )
         assert response.status_code == HTTPStatus.FORBIDDEN
 
     # TODO: add supervisor too, but this leads to a test-side problem with DB restoring
-    @pytest.mark.parametrize("label", [{"name": "new name"}, SKELETON_DATA])
     @pytest.mark.parametrize("role", ["worker"])
     def test_task_staff_org_members_can_add_label(
-        self, find_users, tasks, is_task_staff, is_org_member, labels, label, role
+        self, find_users, tasks, is_task_staff, is_org_member, labels, role
     ):
         users = find_users(role=role, exclude_privilege="admin")
 
@@ -1079,15 +1164,33 @@ class TestPatchTaskLabel:
             and any(label.get("task_id") == task["id"] for label in labels)
         )
 
+        new_label = {"name": "new name"}
         response = patch_method(
             user["username"],
             f'/tasks/{task["id"]}',
-            {"labels": [label]},
+            {"labels": [new_label]},
             org_id=task["organization"],
         )
         assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == task["labels"]["count"] + 1
 
+    def test_admin_can_add_skeleton(self, tasks, admin_user):
+        task = list(tasks)[0]
+        new_skeleton = {
+            "name": "skeleton1",
+            "type": "skeleton",
+            "sublabels": [{
+                "name": "1",
+                "type": "points",
+            }],
+            "svg": "<circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"48.794559478759766\" " \
+                   "cy=\"36.98698806762695\" stroke-width=\"0.1\" data-type=\"element node\" " \
+                   "data-element-id=\"1\" data-node-id=\"1\" data-label-name=\"597501\"></circle>"
+        }
+
+        response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [new_skeleton]})
+        assert response.status_code == HTTPStatus.OK
+        assert response.json()["labels"]["count"] == task["labels"]["count"] + 1
 
 @pytest.mark.usefixtures("restore_db_per_function")
 @pytest.mark.usefixtures("restore_cvat_data")

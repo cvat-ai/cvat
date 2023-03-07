@@ -30,7 +30,7 @@ from shared.utils.config import (
     post_method,
 )
 
-from .utils import SKELETON_DATA, CollectionSimpleFilterTestBase, export_dataset
+from .utils import CollectionSimpleFilterTestBase, export_dataset
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -730,15 +730,14 @@ class TestPatchProjectLabel:
         assert response.status_code == HTTPStatus.NOT_FOUND
         assert f"Not found label with id #{new_label['id']} to change" in response.text
 
-    @pytest.mark.parametrize("label", [{"name": "new name"}, SKELETON_DATA])
-    def test_admin_can_add_label(self, projects, admin_user, label):
+    def test_admin_can_add_label(self, projects, admin_user):
         project = list(projects)[0]
+        new_label = {"name": "new name"}
 
-        response = patch_method(admin_user, f'/projects/{project["id"]}', {"labels": [label]})
+        response = patch_method(admin_user, f'/projects/{project["id"]}', {"labels": [new_label]})
         assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == project["labels"]["count"] + 1
 
-    @pytest.mark.parametrize("label", [{"name": "new name"}, SKELETON_DATA])
     @pytest.mark.parametrize("role", ["maintainer", "owner"])
     def test_non_project_staff_privileged_org_members_can_add_label(
         self,
@@ -746,7 +745,6 @@ class TestPatchProjectLabel:
         projects,
         is_project_staff,
         is_org_member,
-        label,
         role,
     ):
         users = find_users(role=role, exclude_privilege="admin")
@@ -759,16 +757,16 @@ class TestPatchProjectLabel:
             and is_org_member(user["id"], project["organization"])
         )
 
+        new_label = {"name": "new name"}
         response = patch_method(
             user["username"],
             f'/projects/{project["id"]}',
-            {"labels": [label]},
+            {"labels": [new_label]},
             org_id=project["organization"],
         )
         assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == project["labels"]["count"] + 1
 
-    @pytest.mark.parametrize("label", [{"name": "new name"}, SKELETON_DATA])
     @pytest.mark.parametrize("role", ["supervisor", "worker"])
     def test_non_project_staff_org_members_cannot_add_label(
         self,
@@ -776,7 +774,6 @@ class TestPatchProjectLabel:
         projects,
         is_project_staff,
         is_org_member,
-        label,
         role,
     ):
         users = find_users(role=role, exclude_privilege="admin")
@@ -789,19 +786,19 @@ class TestPatchProjectLabel:
             and is_org_member(user["id"], project["organization"])
         )
 
+        new_label = {"name": "new name"}
         response = patch_method(
             user["username"],
             f'/projects/{project["id"]}',
-            {"labels": [label]},
+            {"labels": [new_label]},
             org_id=project["organization"],
         )
         assert response.status_code == HTTPStatus.FORBIDDEN
 
     # TODO: add supervisor too, but this leads to a test-side problem with DB restoring
-    @pytest.mark.parametrize("label", [{"name": "new name"}, SKELETON_DATA])
     @pytest.mark.parametrize("role", ["worker"])
     def test_project_staff_org_members_can_add_label(
-        self, find_users, projects, is_project_staff, is_org_member, labels, label, role
+        self, find_users, projects, is_project_staff, is_org_member, labels, role
     ):
         users = find_users(role=role, exclude_privilege="admin")
 
@@ -814,15 +811,33 @@ class TestPatchProjectLabel:
             and any(label.get("project_id") == project["id"] for label in labels)
         )
 
+        new_label = {"name": "new name"}
         response = patch_method(
             user["username"],
             f'/projects/{project["id"]}',
-            {"labels": [label]},
+            {"labels": [new_label]},
             org_id=project["organization"],
         )
         assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == project["labels"]["count"] + 1
 
+    def test_admin_can_add_skeleton(self, projects, admin_user):
+        project = list(projects)[0]
+        new_skeleton = {
+            "name": "skeleton1",
+            "type": "skeleton",
+            "sublabels": [{
+                "name": "1",
+                "type": "points",
+            }],
+            "svg": "<circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"48.794559478759766\" " \
+                   "cy=\"36.98698806762695\" stroke-width=\"0.1\" data-type=\"element node\" " \
+                   "data-element-id=\"1\" data-node-id=\"1\" data-label-name=\"597501\"></circle>"
+        }
+
+        response = patch_method(admin_user, f'/projects/{project["id"]}', {"labels": [new_skeleton]})
+        assert response.status_code == HTTPStatus.OK
+        assert response.json()["labels"]["count"] == project["labels"]["count"] + 1
 
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetProjectPreview:
