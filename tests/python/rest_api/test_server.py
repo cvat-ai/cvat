@@ -6,8 +6,7 @@
 from http import HTTPStatus
 
 import pytest
-
-from shared.utils.config import make_api_client, get_method
+from shared.utils.config import get_method, make_api_client
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
