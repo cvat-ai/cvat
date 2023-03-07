@@ -15,7 +15,7 @@ from urllib3 import HTTPResponse
 from shared.utils.config import make_api_client
 
 SKELETON_DATA = {
-    "name": "s1",
+    "name": "skeleton 01",
     "color": "#5c5eba",
     "attributes": [
         {
