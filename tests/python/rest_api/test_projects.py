@@ -30,7 +30,7 @@ from shared.utils.config import (
     post_method,
 )
 
-from .utils import CollectionSimpleFilterTestBase, export_dataset, SKELETON_DATA
+from .utils import SKELETON_DATA, CollectionSimpleFilterTestBase, export_dataset
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
