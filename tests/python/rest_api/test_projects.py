@@ -826,18 +826,23 @@ class TestPatchProjectLabel:
         new_skeleton = {
             "name": "skeleton1",
             "type": "skeleton",
-            "sublabels": [{
-                "name": "1",
-                "type": "points",
-            }],
-            "svg": "<circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"48.794559478759766\" " \
-                   "cy=\"36.98698806762695\" stroke-width=\"0.1\" data-type=\"element node\" " \
-                   "data-element-id=\"1\" data-node-id=\"1\" data-label-name=\"597501\"></circle>"
+            "sublabels": [
+                {
+                    "name": "1",
+                    "type": "points",
+                }
+            ],
+            "svg": '<circle r="1.5" stroke="black" fill="#b3b3b3" cx="48.794559478759766" '
+            'cy="36.98698806762695" stroke-width="0.1" data-type="element node" '
+            'data-element-id="1" data-node-id="1" data-label-name="597501"></circle>',
         }
 
-        response = patch_method(admin_user, f'/projects/{project["id"]}', {"labels": [new_skeleton]})
+        response = patch_method(
+            admin_user, f'/projects/{project["id"]}', {"labels": [new_skeleton]}
+        )
         assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == project["labels"]["count"] + 1
+
 
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetProjectPreview:
