@@ -77,6 +77,10 @@ function build() {
                 const result = await PluginRegistry.apiWrapper(cvat.server.logout);
                 return result;
             },
+            async hasLimits(userId, orgId) {
+                const result = await PluginRegistry.apiWrapper(cvat.server.hasLimits, userId, orgId);
+                return result;
+            },
             async socialAuthentication() {
                 const result = await PluginRegistry.apiWrapper(cvat.server.socialAuthentication);
                 return result;
