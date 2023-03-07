@@ -95,7 +95,9 @@ class TestCredentialsManagement:
         with ApiClient(Configuration(host=BASE_URL)) as api_client:
             (user, response) = api_client.auth_api.create_register(
                 models.RegisterSerializerExRequest(
-                    username=username, password1=USER_PASS, password2=USER_PASS, email=email
+                    username=username, password1=USER_PASS, password2=USER_PASS, email=email,
+                    confirmations=[{"name": "cvat_ai_terms_of_use", "value": True},
+                                   {"name": "privacy_policy", "value": True}]
                 )
             )
             assert response.status == HTTPStatus.CREATED
