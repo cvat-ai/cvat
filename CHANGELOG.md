@@ -181,6 +181,7 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
   (<https://github.com/opencv/cvat/issues/4365>)
 - Queries via the low-level API using the `multipart/form-data` Content-Type with string fields
   (<https://github.com/opencv/cvat/pull/5479>)
+- Skeletons cannot be added to a task or project (<https://github.com/opencv/cvat/pull/5813>)
 
 ### Security
 - `Project.import_dataset` not waiting for completion correctly
