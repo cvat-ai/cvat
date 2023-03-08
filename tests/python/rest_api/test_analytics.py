@@ -97,7 +97,7 @@ class TestGetAuditEvents:
         ]
         # Wait some time to events be processed by Vector and Clickhouse
         # This will be improved when request tracking UUID is implemented.
-        sleep(5)
+        sleep(8)
 
     @staticmethod
     def _export_events(endpoint, *, max_retries: int = 20, interval: float = 0.1, **kwargs):
