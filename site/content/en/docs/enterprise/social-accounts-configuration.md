@@ -121,11 +121,11 @@ To enable authentication, do the following:
    ```yaml
    ---
    social_account:
-   enabled: true
-   amazon_cognito:
-     client_id: <some_client_id>
-     client_secret: <some_client_secret>
-     domain: https://<domain-prefix>.auth.us-east-1.amazoncognito.com
+     enabled: true
+     amazon_cognito:
+       client_id: <some_client_id>
+       client_secret: <some_client_secret>
+       domain: https://<domain-prefix>.auth.us-east-1.amazoncognito.com
    ```
 
    2. Set `AUTH_CONFIG_PATH="<path_to_auth_config>` environment variable.
