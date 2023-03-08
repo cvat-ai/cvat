@@ -16,7 +16,8 @@ module.exports = (env) => {
     const defaultAppConfig = path.join(__dirname, 'src/config.tsx');
     const defaultPlugins = [];
     const appConfigFile = process.env.UI_APP_CONFIG ? process.env.UI_APP_CONFIG : defaultAppConfig;
-    const pluginsList = process.env.PLUGINS_LIST ? process.env.PLUGINS_LIST.split(':') : defaultPlugins;
+    const pluginsList = process.env.PLUGINS_LIST ? process.env.PLUGINS_LIST.split(':')
+        .map((s) => s.trim()).filter((s) => !!s) : defaultPlugins;
     console.log('Application config file is: ', appConfigFile);
     console.log('List of plugins: ', pluginsList);
 
@@ -67,12 +68,13 @@ module.exports = (env) => {
         },
         resolve: {
             extensions: ['.tsx', '.ts', '.jsx', '.js', '.json'],
-
             fallback: {
                 fs: false,
             },
             alias: {
                 config$: appConfigFile,
+                root: path.resolve(__dirname, 'src'),
+                modules: path.resolve(__dirname, '..', 'node_modules'),
             },
             modules: [path.resolve(__dirname, 'src'), 'node_modules'],
         },
