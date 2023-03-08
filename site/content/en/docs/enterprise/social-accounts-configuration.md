@@ -89,7 +89,7 @@ There are 2 basic steps to enable GitHub account authentication.
    ---
    social_account:
    enabled: true
-   <github>:
+   github:
      client_id: <some_client_id>
      client_secret: <some_client_secret>
    ```
