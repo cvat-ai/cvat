@@ -16,7 +16,7 @@ from dateutil import parser as datetime_parser
 from shared.utils.config import make_api_client, server_get
 from shared.utils.helpers import generate_image_files
 
-from .utils import test_create_task
+from .utils import _test_create_task
 
 # https://docs.pytest.org/en/7.1.x/example/markers.html#marking-whole-classes-or-modules
 pytestmark = [pytest.mark.with_external_services]
@@ -91,10 +91,10 @@ class TestGetAuditEvents:
             "client_files": generate_image_files(3),
         }
         self.task_ids = [
-            test_create_task(
+            _test_create_task(
                 self._USERNAME, task_spec, task_data, content_type="multipart/form-data"
             ),
-            test_create_task(
+            _test_create_task(
                 self._USERNAME, task_spec, task_data, content_type="multipart/form-data"
             ),
         ]

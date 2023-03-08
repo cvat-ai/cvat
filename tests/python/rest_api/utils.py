@@ -140,7 +140,7 @@ def wait_until_task_is_created(api: apis.TasksApi, task_id: int) -> models.RqSta
     raise Exception("Cannot create task")
 
 
-def test_create_task(username, spec, data, content_type, **kwargs):
+def _test_create_task(username, spec, data, content_type, **kwargs):
     with make_api_client(username) as api_client:
         (task, response) = api_client.tasks_api.create(spec, **kwargs)
         assert response.status == HTTPStatus.CREATED
