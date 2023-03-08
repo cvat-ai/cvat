@@ -416,7 +416,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
         const routesToRender = pluginComponents.router
             .filter(({ data: { shouldBeRendered } }) => shouldBeRendered(this.props, this.state))
-            .map(({ component: Component }, index) => <Component key={index} />);
+            .map(({ component: Component }) => Component());
 
         if (readyForRender) {
             if (user && user.isVerified) {
