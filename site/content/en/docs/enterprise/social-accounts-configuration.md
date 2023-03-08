@@ -88,10 +88,10 @@ There are 2 basic steps to enable GitHub account authentication.
    ```yaml
    ---
    social_account:
-   enabled: true
-   github:
-     client_id: <some_client_id>
-     client_secret: <some_client_secret>
+     enabled: true
+     github:
+       client_id: <some_client_id>
+       client_secret: <some_client_secret>
    ```
 
    2. Set `AUTH_CONFIG_PATH="<path_to_auth_config>` environment variable.
