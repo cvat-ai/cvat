@@ -50,7 +50,7 @@ To enable authentication, do the following:
 7. From the **Application Type** select **Web application** and
    configure: **Application name**, **Authorized JavaScript origins**, **Authorized redirect URIs**.
    <br> For example, if you plan to deploy CVAT instance on `https://localhost:8080`, add `https://localhost:8080`
-   to authorized JS origins and `http://localhost:8080/api/auth/social/goolge/login/callback` to redirect URIs.
+   to authorized JS origins and `https://localhost:8080/api/auth/social/goolge/login/callback/` to redirect URIs.
 8. Create conпiguration file in CVAT:
 
    1. Create the `auth_config.yml` file with the following content:
