@@ -58,10 +58,10 @@ To enable authentication, do the following:
    ```yaml
    ---
    social_account:
-   enabled: true
-   google:
-     client_id: <some_client_id>
-     client_secret: <some_client_secret>
+     enabled: true
+     google:
+       client_id: <some_client_id>
+       client_secret: <some_client_secret>
    ```
 
    2. Set `AUTH_CONFIG_PATH="<path_to_auth_config>` environment variable.
