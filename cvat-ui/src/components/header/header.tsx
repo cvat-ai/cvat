@@ -470,7 +470,7 @@ function HeaderContainer(props: Props): JSX.Element {
                         Models
                     </Button>
                 ) : null}
-                {isAnalyticsPluginActive ? (
+                {isAnalyticsPluginActive && user.isSuperuser ? (
                     <Button
                         className={getButtonClassName('analytics')}
                         type='link'

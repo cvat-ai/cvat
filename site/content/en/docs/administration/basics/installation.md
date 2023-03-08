@@ -15,7 +15,7 @@ description: 'A CVAT installation guide for different operating systems.'
 
 Before you can use CVAT, you’ll need to get it installed. The document below
 contains instructions for the most popular operating systems. If your system is
-not covered by the document it should be relatively straight forward to adapt
+not covered by the document it should be relatively straightforward to adapt
 the instructions below for other systems.
 
 Probably you need to modify the instructions below in case you are behind a proxy
@@ -64,7 +64,7 @@ For access from China, read [sources for users from China](#sources-for-users-fr
 - Clone _CVAT_ source code from the
   [GitHub repository](https://github.com/opencv/cvat) with Git.
 
-  Following command will clone latest develop branch:
+  Following command will clone the latest develop branch:
   ```shell
   git clone https://github.com/opencv/cvat
   cd cvat
@@ -97,9 +97,9 @@ For access from China, read [sources for users from China](#sources-for-users-fr
 - Alternative: if you want to build the images locally with unreleased changes
   see [How to pull/build/update CVAT images section](#how-to-pullbuildupdate-cvat-images)
 
-- You can register a user but by default it will not have rights even to view
-  list of tasks. Thus you should create a superuser. A superuser can use an
-  admin panel to assign correct groups to the user. Please use the command
+- You can register a user but by default, it will not have rights even to view
+  the list of tasks. Thus you should create a superuser. A superuser can use an
+  admin panel to assign the correct groups to the user. Please use the command
   below:
 
   ```shell
@@ -109,7 +109,7 @@ For access from China, read [sources for users from China](#sources-for-users-fr
   Choose a username and a password for your admin account. For more information
   please read [Django documentation](https://docs.djangoproject.com/en/2.2/ref/django-admin/#createsuperuser).
 
-- Google Chrome is the only browser which is supported by CVAT. You need to
+- Google Chrome is the only browser that is supported by CVAT. You need to
   install it as well. Type commands below in a terminal window:
 
   ```shell
@@ -179,8 +179,8 @@ enable integration with the Linux Distribution that you chose.
 - Alternative: if you want to build the images locally with unreleased changes
   see [How to pull/build/update CVAT images section](#how-to-pullbuildupdate-cvat-images)
 
-- You can register a user but by default it will not have rights even to view
-  list of tasks. Thus you should create a superuser. A superuser can use an
+- You can register a user but by default, it will not have rights even to view
+  the list of tasks. Thus you should create a superuser. A superuser can use an
   admin panel to assign correct groups to other users. Please use the command
   below:
 
@@ -261,8 +261,8 @@ enable integration with the Linux Distribution that you chose.
 - Alternative: if you want to build the images locally with unreleased changes
   see [How to pull/build/update CVAT images section](#how-to-pullbuildupdate-cvat-images)
 
-- You can register a user but by default it will not have rights even to view
-  list of tasks. Thus you should create a superuser. A superuser can use an
+- You can register a user but by default, it will not have rights even to view
+  the list of tasks. Thus you should create a superuser. A superuser can use an
   admin panel to assign correct groups to other users. Please use the command
   below:
 
@@ -326,7 +326,7 @@ cd cvat
 
 #### Curl (Linux, Mac)
 
-To download latest develop branch:
+To download the latest develop branch:
 ```shell
 curl -LO https://github.com/opencv/cvat/archive/refs/heads/develop.zip
 unzip develop.zip && mv cvat-develop cvat
@@ -341,11 +341,11 @@ cd cvat
 ```
 
 ### CVAT healthcheck command
-The following command allows to test the CVAT container to make sure it works.
+The following command allows testing the CVAT container to make sure it works.
 ```shell
 docker exec -t cvat_server python manage.py health_check
 ```
-Expected output of a healthy CVAT container:
+The expected output of a healthy CVAT container:
 ```shell
 Cache backend: default   ... working
 DatabaseBackend          ... working
@@ -437,8 +437,8 @@ export CVAT_HOST=<YOUR_DOMAIN>
 
 ### Share path
 
-You can use a share storage for data uploading during you are creating a task.
-To do that you can mount it to CVAT docker container. Example of
+You can use shared storage for uploading data when you create a task.
+To do that, you must mount the shared storage to the CVAT docker container. Example of
 docker-compose.override.yml for this purpose:
 
 ```yml
@@ -481,7 +481,7 @@ ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 ```
 
-Also you need to configure the Django email backend to send emails.
+Also, you need to configure the Django email backend to send emails.
 This depends on the email server you are using and is not covered in this tutorial, please see
 [Django SMTP backend configuration](https://docs.djangoproject.com/en/3.1/topics/email/#django.core.mail.backends.smtp.EmailBackend)
 for details.
@@ -494,10 +494,10 @@ to install and set up remote access to CVAT on a Scaleway cloud instance with da
 
 ### Deploy secure CVAT instance with HTTPS
 
-Using Traefik, you can automatically obtain TLS certificate for your domain from Let's Encrypt,
+Using Traefik, you can automatically obtain a TLS certificate for your domain from Let's Encrypt,
 enabling you to use HTTPS protocol to access your website.
 
-To enable this, first set the the `CVAT_HOST` (the domain of your website) and `ACME_EMAIL`
+To enable this, first set the `CVAT_HOST` (the domain of your website) and `ACME_EMAIL`
 (contact email for Let's Encrypt) environment variables:
 
 ```shell
@@ -511,7 +511,7 @@ Then, use the `docker-compose.https.yml` file to override the base `docker-compo
 docker compose -f docker-compose.yml -f docker-compose.https.yml up -d
 ```
 
-> In firewall, ports 80 and 443 must be open for inbound connections from any
+> In the firewall, ports 80 and 443 must be open for inbound connections from any
 
 Then, the CVAT instance will be available at your domain on ports 443 (HTTPS) and 80 (HTTP, redirects to 443).
 
@@ -620,7 +620,7 @@ If you stay in China, for installation you need to override the following source
 
 ### HTTPS is not working because of a certificate
 
-If you're having trouble with SSL connection, to find the cause,
+If you're having trouble with an SSL connection, to find the cause,
 you'll need to get the logs from traefik by running:
 
 ```shell

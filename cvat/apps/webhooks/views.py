@@ -94,9 +94,6 @@ class WebhookViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
 
-        if getattr(self, 'swagger_fake_view', False):
-            return queryset
-
         if self.action == "list":
             perm = WebhookPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
