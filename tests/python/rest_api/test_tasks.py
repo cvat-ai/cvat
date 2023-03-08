@@ -38,8 +38,8 @@ from shared.utils.helpers import generate_image_files
 
 from .utils import (
     CollectionSimpleFilterTestBase,
-    export_dataset,
     _test_create_task,
+    export_dataset,
     wait_until_task_is_created,
 )
 
