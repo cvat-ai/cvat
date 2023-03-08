@@ -4,18 +4,18 @@
 #
 # SPDX-License-Identifier: MIT
 
-from functools import reduce
 import os.path as osp
-import re
 import sys
-import numpy as np
+import xml.etree.ElementTree as ET
 from collections import namedtuple
+from functools import reduce
 from pathlib import Path
 from types import SimpleNamespace
 from typing import (Any, Callable, DefaultDict, Dict, List, Literal, Mapping,
                     NamedTuple, OrderedDict, Set, Tuple, Union)
 
 import datumaro as dm
+import numpy as np
 import rq
 from attr import attrib, attrs
 from datumaro.components.media import PointCloud
@@ -28,7 +28,7 @@ from cvat.apps.engine.models import Image as Img
 from cvat.apps.engine.models import Label, LabelType, Project, ShapeType, Task
 
 from .annotation import AnnotationIR, AnnotationManager, TrackManager
-from .formats.transformations import EllipsesToMasks, CVATRleToCOCORle
+from .formats.transformations import CVATRleToCOCORle, EllipsesToMasks
 
 CVAT_INTERNAL_ATTRIBUTES = {'occluded', 'outside', 'keyframe', 'track_id', 'rotation'}
 
@@ -1221,10 +1221,13 @@ class CVATDataExtractorMixin:
                 label_categories.attributes.add(attr['name'])
 
             if label['type'] == str(LabelType.SKELETON):
-                labels_from = list(map(int, re.findall(r'data-node-from="(\d+)"', label['svg'])))
-                labels_to = list(map(int, re.findall(r'data-node-to="(\d+)"', label['svg'])))
-                sublabels = [max(s) for s in re.findall(r'data-label-name="((\w+( +\w+)*))"', label['svg'])]
-                joints = zip(labels_from, labels_to)
+                joints = []
+                sublabels = []
+                for el in ET.fromstring('<root>' + label.get('svg', '') + '</root>'):
+                    if el.tag == 'line':
+                        joints.append([el.attrib['data-node-from'], el.attrib['data-node-to']])
+                    elif el.tag == 'circle':
+                        sublabels.append(el.attrib['data-label-name'])
 
                 point_categories.add(label_id, sublabels, joints)
 
