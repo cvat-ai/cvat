@@ -1225,7 +1225,7 @@ class CVATDataExtractorMixin:
                 sublabels = []
                 for el in ET.fromstring('<root>' + label.get('svg', '') + '</root>'):
                     if el.tag == 'line':
-                        joints.append([el.attrib['data-node-from'], el.attrib['data-node-to']])
+                        joints.append([int(el.attrib['data-node-from']), int(el.attrib['data-node-to'])])
                     elif el.tag == 'circle':
                         sublabels.append(el.attrib['data-label-name'])
 
