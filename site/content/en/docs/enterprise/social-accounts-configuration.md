@@ -59,7 +59,7 @@ To enable authentication, do the following:
    ---
    social_account:
    enabled: true
-   <google>:
+   google:
      client_id: <some_client_id>
      client_secret: <some_client_secret>
    ```
