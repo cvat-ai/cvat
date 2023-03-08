@@ -6,7 +6,6 @@
 
 import os.path as osp
 import sys
-import xml.etree.ElementTree as ET
 from collections import namedtuple
 from functools import reduce
 from pathlib import Path
@@ -15,6 +14,7 @@ from typing import (Any, Callable, DefaultDict, Dict, List, Literal, Mapping,
                     NamedTuple, OrderedDict, Set, Tuple, Union)
 
 import datumaro as dm
+import defusedxml.ElementTree as ET
 import numpy as np
 import rq
 from attr import attrib, attrs
