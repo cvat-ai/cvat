@@ -52,6 +52,7 @@ class TestGetAnalytics:
         else:
             self._test_cannot_see(user)
 
+
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetAuditEvents:
     _USERNAME = "admin1"
@@ -67,7 +68,7 @@ class TestGetAuditEvents:
     def setup(self):
         project_spec = {
             "name": f"Test project created by {self._USERNAME}",
-             "labels": [
+            "labels": [
                 {
                     "name": "car",
                     "color": "#ff00ff",
@@ -94,8 +95,12 @@ class TestGetAuditEvents:
             "client_files": generate_image_files(3),
         }
         self.task_ids = [
-            test_create_task(self._USERNAME, task_spec, task_data, content_type="multipart/form-data"),
-            test_create_task(self._USERNAME, task_spec, task_data, content_type="multipart/form-data"),
+            test_create_task(
+                self._USERNAME, task_spec, task_data, content_type="multipart/form-data"
+            ),
+            test_create_task(
+                self._USERNAME, task_spec, task_data, content_type="multipart/form-data"
+            ),
         ]
         # Wait some time to events be processed by Vector and Clickhouse
         # This will be improved when request tracking UUID is implemented.
@@ -105,7 +110,9 @@ class TestGetAuditEvents:
     def _export_events(endpoint, *, max_retries: int = 20, interval: float = 0.1, **kwargs):
         query_id = ""
         for _ in range(max_retries):
-            (_, response) = endpoint.call_with_http_info(**kwargs, query_id=query_id, _parse_response=False)
+            (_, response) = endpoint.call_with_http_info(
+                **kwargs, query_id=query_id, _parse_response=False
+            )
             if response.status == HTTPStatus.CREATED:
                 break
             assert response.status == HTTPStatus.ACCEPTED
@@ -115,7 +122,9 @@ class TestGetAuditEvents:
             sleep(interval)
         assert response.status == HTTPStatus.CREATED
 
-        (_, response) = endpoint.call_with_http_info(**kwargs, query_id=query_id, action="download", _parse_response=False)
+        (_, response) = endpoint.call_with_http_info(
+            **kwargs, query_id=query_id, action="download", _parse_response=False
+        )
         assert response.status == HTTPStatus.OK
 
         return response.data
@@ -134,7 +143,9 @@ class TestGetAuditEvents:
     def _filter_events(events, filter_):
         res = []
         for event in events:
-            if all((event[filter_key] == filter_value for filter_key, filter_value in filter_.items())):
+            if all(
+                (event[filter_key] == filter_value for filter_key, filter_value in filter_.items())
+            ):
                 res.append(event)
 
         return res
@@ -153,14 +164,14 @@ class TestGetAuditEvents:
         with make_api_client(self._USERNAME) as api_client:
             return self._export_events(api_client.events_api.list_endpoint, **kwargs)
 
-    def test_time_interval(self,):
+    def test_time_interval(self):
         now = datetime.now(timezone.utc)
         to_datetime = now
         from_datetime = now - timedelta(minutes=3)
 
         query_params = {
             "_from": from_datetime.isoformat(),
-            "to": to_datetime.isoformat()
+            "to": to_datetime.isoformat(),
         }
 
         data = self._test_get_audit_logs_as_csv(**query_params)
@@ -170,7 +181,7 @@ class TestGetAuditEvents:
             event_timestamp = datetime_parser.isoparse(event["timestamp"])
             assert from_datetime <= event_timestamp <= to_datetime
 
-    def test_filter_by_project(self,):
+    def test_filter_by_project(self):
         query_params = {
             "project_id": self.project_id,
         }
@@ -181,12 +192,14 @@ class TestGetAuditEvents:
         filtered_events = self._filter_events(events, {"project_id": str(self.project_id)})
         assert len(filtered_events)
 
-        event_count = self._count_events_by_scopes(filtered_events, ["create:project", "create:task", "create:job"])
+        event_count = self._count_events_by_scopes(
+            filtered_events, ["create:project", "create:task", "create:job"]
+        )
         assert event_count["create:project"] == 1
         assert event_count["create:task"] == 2
         assert event_count["create:job"] == 4
 
-    def test_filter_by_task(self,):
+    def test_filter_by_task(self):
         for task_id in self.task_ids:
             query_params = {
                 "task_id": task_id,
@@ -198,7 +211,9 @@ class TestGetAuditEvents:
             filtered_events = self._filter_events(events, {"task_id": str(task_id)})
             assert len(filtered_events)
 
-            event_count = self._count_events_by_scopes(filtered_events, ["create:project", "create:task", "create:job"])
+            event_count = self._count_events_by_scopes(
+                filtered_events, ["create:project", "create:task", "create:job"]
+            )
             assert event_count["create:task"] == 1
             assert event_count["create:job"] == 2
 

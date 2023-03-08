@@ -130,6 +130,7 @@ def build_exclude_paths_expr(ignore_fields: Iterator[str]) -> List[str]:
 
     return exclude_expr_parts
 
+
 def wait_until_task_is_created(api: apis.TasksApi, task_id: int) -> models.RqStatus:
     for _ in range(100):
         (status, _) = api.retrieve_status(task_id)
@@ -137,6 +138,7 @@ def wait_until_task_is_created(api: apis.TasksApi, task_id: int) -> models.RqSta
             return status
         sleep(1)
     raise Exception("Cannot create task")
+
 
 def test_create_task(username, spec, data, content_type, **kwargs):
     with make_api_client(username) as api_client:
