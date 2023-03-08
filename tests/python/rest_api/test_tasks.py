@@ -39,8 +39,8 @@ from shared.utils.helpers import generate_image_files
 from .utils import (
     CollectionSimpleFilterTestBase,
     export_dataset,
-    wait_until_task_is_created,
     test_create_task,
+    wait_until_task_is_created,
 )
 
 

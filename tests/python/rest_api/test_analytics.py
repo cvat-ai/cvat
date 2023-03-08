@@ -3,24 +3,20 @@
 #
 # SPDX-License-Identifier: MIT
 
-from http import HTTPStatus
-from datetime import datetime, timedelta, timezone
-from dateutil import parser as datetime_parser
-from time import sleep
-import json
 import csv
+import json
+from datetime import datetime, timedelta, timezone
+from http import HTTPStatus
 from io import StringIO
+from time import sleep
 
 import pytest
+from dateutil import parser as datetime_parser
 
-
-from shared.utils.config import (
-    make_api_client,
-    server_get,
-)
-from .utils import test_create_task
-
+from shared.utils.config import make_api_client, server_get
 from shared.utils.helpers import generate_image_files
+
+from .utils import test_create_task
 
 # https://docs.pytest.org/en/7.1.x/example/markers.html#marking-whole-classes-or-modules
 pytestmark = [pytest.mark.with_external_services]

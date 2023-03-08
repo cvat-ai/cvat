@@ -3,10 +3,10 @@
 # SPDX-License-Identifier: MIT
 
 from abc import ABCMeta, abstractmethod
+from copy import deepcopy
 from http import HTTPStatus
 from time import sleep
 from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, Union
-from copy import deepcopy
 
 from cvat_sdk.api_client import apis, models
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
