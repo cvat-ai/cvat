@@ -5,6 +5,7 @@
 from copy import deepcopy
 from datetime import datetime, timezone
 import traceback
+import rq
 
 from rest_framework.renderers import JSONRenderer
 from rest_framework.views import exception_handler
@@ -64,26 +65,45 @@ def job_id(instance):
     except Exception:
         return None
 
-def _get_current_user(instance):
+def _get_current_user(instance=None):
+    # Try to get current user from request
+    user = get_current_user()
+    if user is not None:
+        return user
+
+    # Try to get user from rq_job
+    if isinstance(instance, rq.job.Job):
+        return instance.meta.get("user", None)
+    else:
+        rq_job = rq.get_current_job()
+        if rq_job:
+            return rq_job.meta.get("user", None)
+
     if isinstance(instance, User):
         return instance
 
-    if isinstance(instance, Job):
-        return instance.segment.task.owner
+    return None
 
-    return get_current_user()
-
-def user_id(instance):
+def user_id(instance=None):
     current_user = _get_current_user(instance)
-    return getattr(current_user, "id", None)
+    if current_user is not None:
+        return getattr(current_user, "id", None)
 
-def user_name(instance):
-    current_user = _get_current_user(instance)
-    return getattr(current_user, "username", None)
+    return None
 
-def user_email(instance):
+def user_name(instance=None):
     current_user = _get_current_user(instance)
-    return getattr(current_user, "email", None)
+    if current_user is not None:
+        return getattr(current_user, "username", None)
+
+    return None
+
+def user_email(instance=None):
+    current_user = _get_current_user(instance)
+    if current_user is not None:
+        return getattr(current_user, "email", None)
+
+    return None
 
 def organization_slug(instance):
     if isinstance(instance, Organization):
@@ -404,12 +424,9 @@ def handle_rq_exception(rq_job, exc_type, exc_value, tb):
     pid = rq_job.meta.get("project_id", None)
     tid = rq_job.meta.get("task_id", None)
     jid = rq_job.meta.get("job_id", None)
-    user_info = rq_job.meta.get("user", None)
-    if user_info:
-        uid = user_info.get("id", None)
-        uname = user_info.get("name", None)
-        uemail = user_info.get("email", None)
-
+    uid = user_id(rq_job)
+    uname = user_name(rq_job)
+    uemail = user_email(rq_job)
     tb_strings = traceback.format_exception(exc_type, exc_value, tb)
 
     payload = {

@@ -161,7 +161,7 @@ def get_rq_job_meta(request, db_obj):
     return {
         'user': {
             'id': getattr(request.user, "id", None),
-            'name': getattr(request.user, "username", None),
+            'username': getattr(request.user, "username", None),
             'email': getattr(request.user, "email", None),
         },
         'org_id': oid,
