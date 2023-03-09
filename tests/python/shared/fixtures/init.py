@@ -179,6 +179,7 @@ def docker_restore_clickhouse_db():
         ]
     )
 
+
 def kube_restore_clickhouse_db():
     kube_exec_clickhouse_db(
         [
