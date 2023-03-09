@@ -12,6 +12,7 @@ from time import sleep
 
 import pytest
 import requests
+
 from shared.utils.config import ASSETS_DIR, get_server_url
 
 logger = logging.getLogger(__name__)
