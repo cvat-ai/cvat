@@ -110,7 +110,11 @@ export default function ManifestsManager(props: Props): JSX.Element {
                                         </Col>
                                         <Col>
                                             <Form.Item>
-                                                <Button type='link' onClick={() => onDeleteManifestItem(idx)}>
+                                                <Button
+                                                    className='cvat-delete-manifest-button'
+                                                    type='link'
+                                                    onClick={() => onDeleteManifestItem(idx)}
+                                                >
                                                     <DeleteOutlined />
                                                 </Button>
                                             </Form.Item>

@@ -97,6 +97,16 @@ spec:
           - name: CVAT_NUCLIO_HOST
             value: "{{ .Release.Name }}-nuclio-dashboard"
           {{- end }}
+          {{- if .Values.analytics.enabled}}
+          - name: CVAT_ANALYTICS
+            value: "1"
+          - name: DJANGO_LOG_SERVER_HOST
+            value: "{{ .Release.Name }}-vector"
+          - name: DJANGO_LOG_SERVER_PORT
+            value: "80"
+          - name: CLICKHOUSE_HOST
+            value: "{{ .Release.Name }}-clickhouse"
+          {{- end }}
           {{- with .Values.cvat.backend.utils.additionalEnv }}
           {{- toYaml . | nindent 10 }}
           {{- end }}

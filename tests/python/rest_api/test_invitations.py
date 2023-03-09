@@ -119,8 +119,4 @@ class TestInvitationsListFilters(CollectionSimpleFilterTestBase):
         ("owner",),
     )
     def test_can_use_simple_filter_for_object_list(self, field):
-        value, gt_objects = self._get_field_samples(field)
-
-        received_items = self._retrieve_collection(**{field: str(value)})
-
-        assert set(p["key"] for p in gt_objects) == set(p.key for p in received_items)
+        return super().test_can_use_simple_filter_for_object_list(field)

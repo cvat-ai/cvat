@@ -9,3 +9,6 @@ globalProperties:
   generateAliasAsModel: true
   apiTests: false
   modelTests: false
+files:
+  api_summary.mustache:
+    destinationFilename: api_summary.md

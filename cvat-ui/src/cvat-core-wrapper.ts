@@ -9,16 +9,18 @@ import Webhook from 'cvat-core/src/webhook';
 import MLModel from 'cvat-core/src/ml-model';
 import { ModelProvider } from 'cvat-core/src/lambda-manager';
 import {
-    Label, Attribute, RawAttribute, RawLabel,
+    Label, Attribute,
 } from 'cvat-core/src/labels';
+import { SerializedAttribute, SerializedLabel } from 'cvat-core/src/server-response-types';
 import { Job, Task } from 'cvat-core/src/session';
+import Project from 'cvat-core/src/project';
 import {
-    ShapeType, LabelType, ModelKind, ModelProviders, ModelReturnType,
+    ShapeType, LabelType, ModelKind, ModelProviders, ModelReturnType, DimensionType,
 } from 'cvat-core/src/enums';
 import { Storage, StorageData } from 'cvat-core/src/storage';
 import Issue from 'cvat-core/src/issue';
 import Comment from 'cvat-core/src/comment';
-import { SocialAuthMethods, SocialAuthMethod } from 'cvat-core/src/auth-methods';
+import { SocialAuthMethods, SocialAuthMethod, SelectionSchema } from 'cvat-core/src/auth-methods';
 
 const cvat: any = _cvat;
 
@@ -37,6 +39,7 @@ export {
     Label,
     Job,
     Task,
+    Project,
     Attribute,
     ShapeType,
     LabelType,
@@ -49,11 +52,13 @@ export {
     ModelKind,
     ModelProviders,
     ModelReturnType,
+    SelectionSchema,
+    DimensionType,
 };
 
 export type {
-    RawAttribute,
-    RawLabel,
+    SerializedAttribute,
+    SerializedLabel,
     StorageData,
     SocialAuthMethods,
     ModelProvider,

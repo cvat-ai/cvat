@@ -9,13 +9,13 @@ import { AuthActionTypes } from 'actions/auth-actions';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
+import { DimensionType } from 'cvat-core-wrapper';
 import { clamp } from 'utils/math';
 
 import {
     ActiveControl,
     AnnotationState,
     ContextMenuType,
-    DimensionType,
     JobStage,
     ObjectType,
     ShapeType,
@@ -118,18 +118,6 @@ const defaultState: AnnotationState = {
     sidebarCollapsed: false,
     appearanceCollapsed: false,
     filtersPanelVisible: false,
-    predictor: {
-        enabled: false,
-        error: null,
-        message: '',
-        projectScore: 0,
-        fetching: false,
-        annotatedFrames: [],
-        timeRemaining: 0,
-        progress: 0,
-        annotationAmount: 0,
-        mediaAmount: 0,
-    },
     workspace: Workspace.STANDARD,
 };
 
@@ -169,7 +157,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             let activeShapeType = defaultLabel && defaultLabel.type !== 'any' ?
                 defaultLabel.type : ShapeType.RECTANGLE;
 
-            if (job.dimension === DimensionType.DIM_3D) {
+            if (job.dimension === DimensionType.DIMENSION_3D) {
                 workspaceSelected = Workspace.STANDARD3D;
                 activeShapeType = ShapeType.CUBOID;
             }
@@ -221,7 +209,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
                 canvas: {
                     ...state.canvas,
-                    instance: job.dimension === DimensionType.DIM_2D ? new Canvas() : new Canvas3d(),
+                    instance: job.dimension === DimensionType.DIMENSION_2D ? new Canvas() : new Canvas3d(),
                 },
                 colors,
                 workspace: isReview ? Workspace.REVIEW_WORKSPACE : workspaceSelected,
@@ -1110,47 +1098,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     ...state.annotations,
                     activatedStateID: null,
                     activatedAttributeID: null,
-                },
-            };
-        }
-        case AnnotationActionTypes.UPDATE_PREDICTOR_STATE: {
-            const { payload } = action;
-            return {
-                ...state,
-                predictor: {
-                    ...state.predictor,
-                    ...payload,
-                },
-            };
-        }
-        case AnnotationActionTypes.GET_PREDICTIONS: {
-            return {
-                ...state,
-                predictor: {
-                    ...state.predictor,
-                    fetching: true,
-                },
-            };
-        }
-        case AnnotationActionTypes.GET_PREDICTIONS_SUCCESS: {
-            const { frame } = action.payload;
-            const annotatedFrames = [...state.predictor.annotatedFrames, frame];
-
-            return {
-                ...state,
-                predictor: {
-                    ...state.predictor,
-                    fetching: false,
-                    annotatedFrames,
-                },
-            };
-        }
-        case AnnotationActionTypes.GET_PREDICTIONS_FAILED: {
-            return {
-                ...state,
-                predictor: {
-                    ...state.predictor,
-                    fetching: false,
                 },
             };
         }

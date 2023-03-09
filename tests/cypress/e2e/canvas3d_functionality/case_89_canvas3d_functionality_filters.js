@@ -11,11 +11,13 @@ context('Canvas 3D functionality. Filters.', () => {
     const secondLabel = 'car';
     const screenshotsPath = 'cypress/screenshots/canvas3d_functionality/case_89_canvas3d_functionality_filters.js';
     const firstCuboidCreationParams = {
+        objectType: 'Shape',
         labelName,
         x: 350,
         y: 250,
     };
     const secondCuboidCreationParams = {
+        objectType: 'Shape',
         labelName: secondLabel,
         x: 450,
         y: 250,

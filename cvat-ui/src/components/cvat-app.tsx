@@ -20,6 +20,7 @@ import 'antd/dist/antd.css';
 import LogoutComponent from 'components/logout-component';
 import LoginPageContainer from 'containers/login-page/login-page';
 import LoginWithTokenComponent from 'components/login-with-token/login-with-token';
+import LoginWithSSOComponent from 'components/login-with-social-app/login-with-sso';
 import LoginWithSocialAppComponent from 'components/login-with-social-app/login-with-social-app';
 import RegisterPageContainer from 'containers/register-page/register-page';
 import ResetPasswordPageConfirmComponent from 'components/reset-password-confirm-page/reset-password-confirm-page';
@@ -39,7 +40,7 @@ import ModelsPageComponent from 'components/models-page/models-page';
 
 import TasksPageContainer from 'containers/tasks-page/tasks-page';
 import CreateTaskPageContainer from 'containers/create-task-page/create-task-page';
-import TaskPageContainer from 'containers/task-page/task-page';
+import TaskPageComponent from 'components/task-page/task-page';
 
 import ProjectsPageComponent from 'components/projects-page/projects-page';
 import CreateProjectPageComponent from 'components/create-project-page/create-project-page';
@@ -69,10 +70,12 @@ import showPlatformNotification, {
 } from 'utils/platform-checker';
 import '../styles.scss';
 import appConfig from 'config';
+import EventRecorder from 'utils/controls-logger';
 import EmailConfirmationPage from './email-confirmation-pages/email-confirmed';
 import EmailVerificationSentPage from './email-confirmation-pages/email-verification-sent';
 import IncorrectEmailConfirmationPage from './email-confirmation-pages/incorrect-email-confirmation';
 import CreateModelPage from './create-model-page/create-model-page';
+import PremiumFeaturesModal from './premium-features-modal/premium-features-modal';
 
 interface CVATAppProps {
     loadFormats: () => void;
@@ -126,23 +129,36 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
     public componentDidMount(): void {
         const core = getCore();
         const { history, location } = this.props;
+        const {
+            HEALTH_CHECK_RETRIES, HEALTH_CHECK_PERIOD, HEALTH_CHECK_REQUEST_TIMEOUT, SERVER_UNAVAILABLE_COMPONENT,
+            RESET_NOTIFICATIONS_PATHS,
+        } = appConfig;
         // configure({ ignoreRepeatedEventsWhenKeyHeldDown: false });
 
         // Logger configuration
         const userActivityCallback: (() => void)[] = [];
-        window.addEventListener('click', () => {
+        window.addEventListener('click', (event: MouseEvent) => {
             userActivityCallback.forEach((handler) => handler());
+            EventRecorder.log(event);
         });
         core.logger.configure(() => window.document.hasFocus, userActivityCallback);
+        EventRecorder.initSave();
 
         customWaViewHit(location.pathname, location.search, location.hash);
-        history.listen((_location) => {
-            customWaViewHit(_location.pathname, _location.search, _location.hash);
+        history.listen((newLocation) => {
+            customWaViewHit(newLocation.pathname, newLocation.search, newLocation.hash);
+            const { location: prevLocation } = this.props;
+            const shouldResetNotifications = RESET_NOTIFICATIONS_PATHS.from.some(
+                (pathname) => prevLocation.pathname === pathname,
+            );
+            const pathExcluded = shouldResetNotifications && RESET_NOTIFICATIONS_PATHS.exclude.some(
+                (pathname) => newLocation.pathname.includes(pathname),
+            );
+            if (shouldResetNotifications && !pathExcluded) {
+                this.resetNotifications();
+            }
         });
 
-        const {
-            HEALTH_CHECK_RETRIES, HEALTH_CHECK_PERIOD, HEALTH_CHECK_REQUEST_TIMEOUT, SERVER_UNAVAILABLE_COMPONENT,
-        } = appConfig;
         core.server.healthCheck(
             HEALTH_CHECK_RETRIES,
             HEALTH_CHECK_PERIOD,
@@ -356,6 +372,14 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         }
     }
 
+    private resetNotifications(): void {
+        const { resetErrors, resetMessages } = this.props;
+
+        notification.destroy();
+        resetErrors();
+        resetMessages();
+    }
+
     // Where you go depends on your URL
     public render(): JSX.Element {
         const {
@@ -374,6 +398,8 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             location,
             isModelPluginActive,
         } = this.props;
+
+        const { CVAT_BILLING_URL } = appConfig;
 
         const { healthIinitialized, backendIsHealthy } = this.state;
 
@@ -426,7 +452,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                             <Route exact path='/projects/:id/webhooks' component={WebhooksPage} />
                                             <Route exact path='/tasks' component={TasksPageContainer} />
                                             <Route exact path='/tasks/create' component={CreateTaskPageContainer} />
-                                            <Route exact path='/tasks/:id' component={TaskPageContainer} />
+                                            <Route exact path='/tasks/:id' component={TaskPageComponent} />
                                             <Route exact path='/tasks/:tid/jobs/:jid' component={AnnotationPageContainer} />
                                             <Route exact path='/jobs' component={JobsPageComponent} />
                                             <Route exact path='/cloudstorages' component={CloudStoragesPageComponent} />
@@ -470,6 +496,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                     <ExportBackupModal />
                                     <ImportDatasetModal />
                                     <ImportBackupModal />
+                                    { CVAT_BILLING_URL && <PremiumFeaturesModal /> }
                                     {/* eslint-disable-next-line */}
                                     <a id='downloadAnchor' target='_blank' style={{ display: 'none' }} download />
                                 </Layout.Content>
@@ -493,8 +520,13 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                         />
                         <Route
                             exact
-                            path='/auth/login-with-social-app/'
+                            path={['/auth/login-with-social-app/', '/auth/login-with-oidc/']}
                             component={LoginWithSocialAppComponent}
+                        />
+                        <Route
+                            exact
+                            path='/auth/oidc/select-identity-provider/'
+                            component={LoginWithSSOComponent}
                         />
                         <Route exact path='/auth/password/reset' component={ResetPasswordPageComponent} />
                         <Route

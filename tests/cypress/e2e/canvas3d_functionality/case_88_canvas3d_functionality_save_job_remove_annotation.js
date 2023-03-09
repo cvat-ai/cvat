@@ -14,7 +14,10 @@ context('Canvas 3D functionality. Save a job. Remove annotations.', () => {
     const screenshotsPath =
         'cypress/screenshots/canvas3d_functionality/case_88_canvas3d_functionality_save_job_remove_annotation.js';
     const cuboidCreationParams = {
+        objectType: 'Shape',
         labelName,
+        x: 480,
+        y: 160,
     };
     const waitTime = 2000;
 

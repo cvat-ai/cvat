@@ -132,13 +132,13 @@ class TaskVisionDataset(torchvision.datasets.VisionDataset):
                 {
                     label.id: label_index
                     for label_index, label in enumerate(
-                        sorted(self._task.labels, key=lambda l: l.id)
+                        sorted(self._task.get_labels(), key=lambda l: l.id)
                     )
                 }
             )
         else:
             self._label_id_to_index = types.MappingProxyType(
-                {label.id: label_name_to_index[label.name] for label in self._task.labels}
+                {label.id: label_name_to_index[label.name] for label in self._task.get_labels()}
             )
 
         annotations = cache_manager.ensure_task_model(
