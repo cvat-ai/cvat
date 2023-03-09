@@ -78,6 +78,7 @@ Tracks can be exported/imported to/from Datumaro and Sly Pointcloud formats (<ht
 - \[Server API\] Ability to rename label to an existing name (<https://github.com/opencv/cvat/pull/5662>)
 - Parsing skeleton sublabels containing spaces results in an error in dataset export (<https://github.com/opencv/cvat/pull/5794>)
 - Missing CVAT_BASE_URL in docker-compose.yml (<https://github.com/opencv/cvat/pull/5792>)
+- Helm: Make traefik optional (<https://github.com/opencv/cvat/pull/5830>)
 
 ### Security
 - Fixed vulnerability with social authentication (<https://github.com/opencv/cvat/pull/5521>)
