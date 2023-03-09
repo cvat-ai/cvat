@@ -48,7 +48,7 @@ helm dependency update
 1. Ingress configuration for the Traefik ingress controller is enabled by default.
 
    Note for Minikube use:
-   - because the Traefik creates its main service with `Loadbalanser` type,
+   - because the Traefik creates its main service with `LoadBalancer` type,
      which involve the assignment of externalIP by Cloud, what never happens on Minikube,
      you need to explicitly set the externalIP address for the traefic service.
      Add the following to `values.override.yaml` file:
@@ -64,6 +64,12 @@ helm dependency update
      ```shell
      echo "$(minikube ip) cvat.local" | sudo tee -a /etc/hosts
      ```
+   - If you have an existing ingress controller, you can disable traefik with
+     ```yaml
+     traefik:
+       enabled: false
+     ```
+     and make necessary changes to the `ingress` values as necessary.
 
 ## Configuration
 1. Create `values.override.yaml` file inside `helm-chart` directory.
