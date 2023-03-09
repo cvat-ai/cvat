@@ -21,17 +21,13 @@ CVAT_ROOT_DIR = next(dir.parent for dir in Path(__file__).parents if dir.name ==
 CVAT_DB_DIR = ASSETS_DIR / "cvat_db"
 PREFIX = "test"
 
-CONTAINER_NAME_FILES = [CVAT_ROOT_DIR / dc_file for dc_file in ("docker-compose.tests.yml",)]
-ENV_FILE = CVAT_ROOT_DIR / 'tests/python/webhook_receiver/.env'
+CONTAINER_NAME_FILES = ["docker-compose.tests.yml"]
 
 DC_FILES = [
-    CVAT_ROOT_DIR / dc_file
-    for dc_file in (
-        "docker-compose.dev.yml",
-        "tests/docker-compose.file_share.yml",
-        "tests/docker-compose.minio.yml",
-        "tests/docker-compose.test_servers.yml",
-    )
+    "docker-compose.dev.yml",
+    "tests/docker-compose.file_share.yml",
+    "tests/docker-compose.minio.yml",
+    "tests/docker-compose.test_servers.yml",
 ] + CONTAINER_NAME_FILES
 
 
@@ -237,7 +233,7 @@ def get_server_image_tag():
     return f"cvat/server:{os.environ.get('CVAT_VERSION', 'dev')}"
 
 
-def start_services(dc_files, rebuild=False, cwd_build=None, cwd_up=None, env_file=ENV_FILE):
+def start_services(dc_files, rebuild=False, cvat_root_dir=CVAT_ROOT_DIR):
     if any([cn in ["cvat_server", "cvat_db"] for cn in running_containers()]):
         pytest.exit(
             "It's looks like you already have running cvat containers. Stop them and try again. "
@@ -252,11 +248,11 @@ def start_services(dc_files, rebuild=False, cwd_build=None, cwd_up=None, env_fil
             # use compatibility mode to have fixed names for containers (with underscores)
             # https://github.com/docker/compose#about-update-and-backward-compatibility
             "--compatibility",
-            f"--env-file={env_file}",
+            f"--env-file={cvat_root_dir / 'tests/python/webhook_receiver/.env'}",
             *(f"--file={f}" for f in dc_files),
             "build",
         ],
-        capture_output=False, cwd=cwd_build
+        capture_output=False, cwd=cvat_root_dir
     )
 
     _run(
@@ -267,16 +263,16 @@ def start_services(dc_files, rebuild=False, cwd_build=None, cwd_up=None, env_fil
             # use compatibility mode to have fixed names for containers (with underscores)
             # https://github.com/docker/compose#about-update-and-backward-compatibility
             "--compatibility",
-            f"--env-file={env_file}",
+            f"--env-file={cvat_root_dir / 'tests/python/webhook_receiver/.env'}",
             *(f"--file={f}" for f in dc_files),
             "up",
             "-d",
             *["--build"] * rebuild,
         ],
-        capture_output=False, cwd=cwd_up
+        capture_output=False,
     )
 
-def stop_services(dc_files, env_file=ENV_FILE):
+def stop_services(dc_files, cvat_root_dir=CVAT_ROOT_DIR):
     run(
         [
             "docker",
@@ -285,7 +281,7 @@ def stop_services(dc_files, env_file=ENV_FILE):
             # use compatibility mode to have fixed names for containers (with underscores)
             # https://github.com/docker/compose#about-update-and-backward-compatibility
             "--compatibility",
-            f"--env-file={env_file}",
+            f"--env-file={cvat_root_dir / 'tests/python/webhook_receiver/.env'}",
             *(f"--file={f}" for f in dc_files),
             "down",
             "-v",
@@ -293,8 +289,7 @@ def stop_services(dc_files, env_file=ENV_FILE):
         capture_output=False,
     )
 
-
-def pytest_sessionstart(session: pytest.Session) -> None:
+def session_start(session, cvat_root_dir=CVAT_ROOT_DIR, cvat_db_dir=CVAT_DB_DIR, extra_dc_files=[]):
     stop = session.config.getoption("--stop-services")
     start = session.config.getoption("--start-services")
     rebuild = session.config.getoption("--rebuild")
@@ -319,59 +314,73 @@ def pytest_sessionstart(session: pytest.Session) -> None:
         )
 
     if platform == "local":
-        if start and stop:
-            raise Exception("--start-services and --stop-services are incompatible")
-
-        if dumpdb:
-            dump_db()
-            pytest.exit("data.json has been updated", returncode=0)
-
-        if cleanup:
-            delete_compose_files(CONTAINER_NAME_FILES)
-            pytest.exit("All generated test files have been deleted", returncode=0)
-
-        if not all([f.exists() for f in CONTAINER_NAME_FILES]) or rebuild:
-            delete_compose_files(CONTAINER_NAME_FILES)
-            create_compose_files(CONTAINER_NAME_FILES)
-
-        if stop:
-            stop_services(DC_FILES)
-            pytest.exit("All testing containers are stopped", returncode=0)
-
-        if not no_init:
-            start_services(DC_FILES, rebuild)
-        docker_restore_data_volumes()
-        docker_cp(CVAT_DB_DIR / "restore.sql", f"{PREFIX}_cvat_db_1:/tmp/restore.sql")
-        docker_cp(CVAT_DB_DIR / "data.json", f"{PREFIX}_cvat_server_1:/tmp/data.json")
-        wait_for_services()
-
-        docker_exec_cvat("python manage.py loaddata /tmp/data.json")
-        docker_exec_cvat_db(
-            "psql -U root -d postgres -v from=cvat -v to=test_db -f /tmp/restore.sql"
-        )
-
-        if start:
-            pytest.exit("All necessary containers have been created and started.", returncode=0)
+        local_start(start, stop, dumpdb, cleanup, rebuild, no_init,
+                    cvat_root_dir, cvat_db_dir, extra_dc_files)
 
     elif platform == "kube":
-        kube_restore_data_volumes()
-        server_pod_name = _kube_get_server_pod_name()
-        db_pod_name = _kube_get_db_pod_name()
-        kube_cp(CVAT_DB_DIR / "restore.sql", f"{db_pod_name}:/tmp/restore.sql")
-        kube_cp(CVAT_DB_DIR / "data.json", f"{server_pod_name}:/tmp/data.json")
+        kube_start(cvat_db_dir)
 
-        wait_for_services()
 
-        kube_exec_cvat("python manage.py loaddata /tmp/data.json")
+def local_start(start, stop, dumpdb, cleanup, rebuild, no_init, cvat_root_dir, cvat_db_dir, extra_dc_files):
+    if start and stop:
+        raise Exception("--start-services and --stop-services are incompatible")
 
-        kube_exec_cvat_db(
-            [
-                "/bin/sh",
-                "-c",
-                "PGPASSWORD=cvat_postgresql_postgres psql -U postgres -d postgres -v from=cvat -v to=test_db -f /tmp/restore.sql",
-            ]
-        )
+    if dumpdb:
+        dump_db()
+        pytest.exit("data.json has been updated", returncode=0)
 
+    dc_files = [cvat_root_dir / f for f in DC_FILES] + extra_dc_files
+    container_name_files = [cvat_root_dir / f for f in CONTAINER_NAME_FILES]
+
+    if cleanup:
+        delete_compose_files(container_name_files)
+        pytest.exit("All generated test files have been deleted", returncode=0)
+
+    if not not all([f.exists() for f in container_name_files]) or rebuild:
+        delete_compose_files(container_name_files)
+        create_compose_files(container_name_files)
+
+    if stop:
+        stop_services(dc_files, cvat_root_dir)
+        pytest.exit("All testing containers are stopped", returncode=0)
+
+    if not no_init:
+        start_services(dc_files, rebuild, cvat_root_dir)
+    docker_restore_data_volumes()
+    docker_cp(cvat_db_dir / "restore.sql", f"{PREFIX}_cvat_db_1:/tmp/restore.sql")
+    docker_cp(cvat_db_dir / "data.json", f"{PREFIX}_cvat_server_1:/tmp/data.json")
+    wait_for_services()
+
+    docker_exec_cvat("python manage.py loaddata /tmp/data.json")
+    docker_exec_cvat_db(
+        "psql -U root -d postgres -v from=cvat -v to=test_db -f /tmp/restore.sql"
+    )
+
+    if start:
+        pytest.exit("All necessary containers have been created and started.", returncode=0)
+
+def kube_start(cvat_db_dir):
+    kube_restore_data_volumes()
+    server_pod_name = _kube_get_server_pod_name()
+    db_pod_name = _kube_get_db_pod_name()
+    kube_cp(cvat_db_dir / "restore.sql", f"{db_pod_name}:/tmp/restore.sql")
+    kube_cp(cvat_db_dir / "data.json", f"{server_pod_name}:/tmp/data.json")
+
+    wait_for_services()
+
+    kube_exec_cvat("python manage.py loaddata /tmp/data.json")
+
+    kube_exec_cvat_db(
+        [
+            "/bin/sh",
+            "-c",
+            "PGPASSWORD=cvat_postgresql_postgres psql -U postgres -d postgres -v from=cvat -v to=test_db -f /tmp/restore.sql",
+        ]
+    )
+
+
+def pytest_sessionstart(session: pytest.Session) -> None:
+    session_start(session)
 
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     if session.config.getoption("--collect-only"):
