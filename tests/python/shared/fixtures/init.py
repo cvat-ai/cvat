@@ -12,7 +12,6 @@ from time import sleep
 
 import pytest
 import requests
-
 from shared.utils.config import ASSETS_DIR, get_server_url
 
 logger = logging.getLogger(__name__)
@@ -398,6 +397,16 @@ def pytest_sessionstart(session: pytest.Session) -> None:
     session_start(session)
 
 
+def local_finish(recreate_db):
+    docker_restore_db()
+    docker_exec_cvat_db("dropdb test_db")
+
+    if recreate_db:
+        docker_exec_cvat_db("dropdb --if-exists cvat")
+        docker_exec_cvat_db("createdb cvat")
+        docker_exec_cvat("python manage.py migrate")
+
+
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     if session.config.getoption("--collect-only"):
         return
@@ -405,14 +414,8 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     platform = session.config.getoption("--platform")
 
     if platform == "local":
-        docker_restore_db()
-        docker_exec_cvat_db("dropdb test_db")
-
         recreate_db = session.config.getoption("--recreate-db")
-        if recreate_db:
-            docker_exec_cvat_db("dropdb --if-exists cvat")
-            docker_exec_cvat_db("createdb cvat")
-            docker_exec_cvat("python manage.py migrate")
+        local_finish(recreate_db)
 
 
 @pytest.fixture(scope="function")
