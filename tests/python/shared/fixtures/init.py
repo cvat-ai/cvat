@@ -336,7 +336,7 @@ def local_start(start, stop, dumpdb, cleanup, rebuild, no_init, cvat_root_dir, c
         delete_compose_files(container_name_files)
         pytest.exit("All generated test files have been deleted", returncode=0)
 
-    if not not all([f.exists() for f in container_name_files]) or rebuild:
+    if not all([f.exists() for f in container_name_files]) or rebuild:
         delete_compose_files(container_name_files)
         create_compose_files(container_name_files)
 
