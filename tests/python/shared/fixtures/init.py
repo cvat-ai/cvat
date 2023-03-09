@@ -243,8 +243,7 @@ def start_services(dc_files, rebuild=False, cvat_root_dir=CVAT_ROOT_DIR):
 
     _run(
         [
-            "docker",
-            "compose",
+            "docker-compose",
             f"--project-name={PREFIX}",
             # use compatibility mode to have fixed names for containers (with underscores)
             # https://github.com/docker/compose#about-update-and-backward-compatibility
@@ -258,8 +257,7 @@ def start_services(dc_files, rebuild=False, cvat_root_dir=CVAT_ROOT_DIR):
 
     _run(
         [
-            "docker",
-            "compose",
+            "docker-compose",
             f"--project-name={PREFIX}",
             # use compatibility mode to have fixed names for containers (with underscores)
             # https://github.com/docker/compose#about-update-and-backward-compatibility
@@ -277,8 +275,7 @@ def start_services(dc_files, rebuild=False, cvat_root_dir=CVAT_ROOT_DIR):
 def stop_services(dc_files, cvat_root_dir=CVAT_ROOT_DIR):
     run(
         [
-            "docker",
-            "compose",
+            "docker-compose",
             f"--project-name={PREFIX}",
             # use compatibility mode to have fixed names for containers (with underscores)
             # https://github.com/docker/compose#about-update-and-backward-compatibility
