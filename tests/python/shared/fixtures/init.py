@@ -84,16 +84,16 @@ def pytest_addoption(parser):
     )
 
 
-def _run(command, capture_output=True, cwd=None):
+def _run(command, capture_output=True):
     _command = command.split() if isinstance(command, str) else command
 
     try:
         stdout, stderr = "", ""
         if capture_output:
-            proc = run(_command, check=True, stdout=PIPE, stderr=PIPE, cwd=cwd)  # nosec
+            proc = run(_command, check=True, stdout=PIPE, stderr=PIPE)  # nosec
             stdout, stderr = proc.stdout.decode(), proc.stderr.decode()
         else:
-            proc = run(_command, check=True, cwd=cwd)  # nosec
+            proc = run(_command, check=True)  # nosec
         return stdout, stderr
     except CalledProcessError as exc:
         stderr = exc.stderr.decode() if capture_output else "see above"
@@ -233,7 +233,7 @@ def get_server_image_tag():
     return f"cvat/server:{os.environ.get('CVAT_VERSION', 'dev')}"
 
 
-def start_services(dc_files, rebuild=False, cvat_root_dir=CVAT_ROOT_DIR, extra_dc_files=[]):
+def start_services(dc_files, rebuild=False, cvat_root_dir=CVAT_ROOT_DIR):
     if any([cn in ["cvat_server", "cvat_db"] for cn in running_containers()]):
         pytest.exit(
             "It's looks like you already have running cvat containers. Stop them and try again. "
@@ -252,7 +252,7 @@ def start_services(dc_files, rebuild=False, cvat_root_dir=CVAT_ROOT_DIR, extra_d
             *(f"--file={f}" for f in dc_files),
             "build",
         ],
-        capture_output=False, cwd=cvat_root_dir
+        capture_output=False
     )
 
     _run(
@@ -264,7 +264,7 @@ def start_services(dc_files, rebuild=False, cvat_root_dir=CVAT_ROOT_DIR, extra_d
             # https://github.com/docker/compose#about-update-and-backward-compatibility
             "--compatibility",
             f"--env-file={cvat_root_dir / 'tests/python/webhook_receiver/.env'}",
-            *(f"--file={f}" for f in dc_files + extra_dc_files),
+            *(f"--file={f}" for f in dc_files),
             "up",
             "-d",
             *["--build"] * rebuild,
@@ -329,7 +329,7 @@ def local_start(start, stop, dumpdb, cleanup, rebuild, no_init, cvat_root_dir, c
         dump_db()
         pytest.exit("data.json has been updated", returncode=0)
 
-    dc_files = [cvat_root_dir / f for f in DC_FILES]
+    dc_files = [cvat_root_dir / f for f in DC_FILES] + extra_dc_files
     container_name_files = [cvat_root_dir / f for f in CONTAINER_NAME_FILES]
 
     if cleanup:
@@ -345,7 +345,7 @@ def local_start(start, stop, dumpdb, cleanup, rebuild, no_init, cvat_root_dir, c
         pytest.exit("All testing containers are stopped", returncode=0)
 
     if not no_init:
-        start_services(dc_files, rebuild, cvat_root_dir, extra_dc_files)
+        start_services(dc_files, rebuild, cvat_root_dir)
     docker_restore_data_volumes()
     docker_cp(cvat_db_dir / "restore.sql", f"{PREFIX}_cvat_db_1:/tmp/restore.sql")
     docker_cp(cvat_db_dir / "data.json", f"{PREFIX}_cvat_server_1:/tmp/data.json")
