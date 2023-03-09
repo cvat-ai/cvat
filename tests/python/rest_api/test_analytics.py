@@ -5,6 +5,7 @@
 
 import csv
 import json
+from collections import Counter
 from datetime import datetime, timedelta, timezone
 from http import HTTPStatus
 from io import StringIO
@@ -19,7 +20,6 @@ from shared.utils.helpers import generate_image_files
 from .utils import _test_create_task
 
 
-@pytest.mark.usefixtures("restore_db_per_class")
 class TestGetAnalytics:
     endpoint = "analytics"
 
@@ -58,7 +58,7 @@ class TestGetAuditEvents:
         return project.id
 
     @pytest.fixture(autouse=True)
-    def setup(self):
+    def setup(self, restore_clickhouse_db_per_function):
         project_spec = {
             "name": f"Test project created by {self._USERNAME}",
             "labels": [
@@ -143,21 +143,11 @@ class TestGetAuditEvents:
 
         return res
 
-    @staticmethod
-    def _count_events_by_scopes(events, scopes):
-        res = {scope: 0 for scope in scopes}
-
-        for event in events:
-            if event["scope"] in res:
-                res[event["scope"]] += 1
-
-        return res
-
     def _test_get_audit_logs_as_csv(self, **kwargs):
         with make_api_client(self._USERNAME) as api_client:
             return self._export_events(api_client.events_api.list_endpoint, **kwargs)
 
-    def test_time_interval(self):
+    def test_entry_to_time_interval(self):
         now = datetime.now(timezone.utc)
         to_datetime = now
         from_datetime = now - timedelta(minutes=3)
@@ -169,6 +159,7 @@ class TestGetAuditEvents:
 
         data = self._test_get_audit_logs_as_csv(**query_params)
         events = self._csv_to_dict(data)
+        assert len(events)
 
         for event in events:
             event_timestamp = datetime_parser.isoparse(event["timestamp"])
@@ -185,9 +176,7 @@ class TestGetAuditEvents:
         filtered_events = self._filter_events(events, {"project_id": str(self.project_id)})
         assert len(filtered_events)
 
-        event_count = self._count_events_by_scopes(
-            filtered_events, ["create:project", "create:task", "create:job"]
-        )
+        event_count = Counter([e["scope"] for e in filtered_events])
         assert event_count["create:project"] == 1
         assert event_count["create:task"] == 2
         assert event_count["create:job"] == 4
@@ -204,9 +193,7 @@ class TestGetAuditEvents:
             filtered_events = self._filter_events(events, {"task_id": str(task_id)})
             assert len(filtered_events)
 
-            event_count = self._count_events_by_scopes(
-                filtered_events, ["create:project", "create:task", "create:job"]
-            )
+            event_count = Counter([e["scope"] for e in filtered_events])
             assert event_count["create:task"] == 1
             assert event_count["create:job"] == 2
 
