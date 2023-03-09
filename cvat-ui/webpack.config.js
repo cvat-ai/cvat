@@ -122,6 +122,10 @@ module.exports = (env) => {
                     ],
                 },
                 {
+                    test: /\.(png|jpg|jpeg|gif)$/i,
+                    type: 'asset/resource',
+                },
+                {
                     test: /3rdparty\/.*\.worker\.js$/,
                     use: {
                         loader: 'worker-loader',
