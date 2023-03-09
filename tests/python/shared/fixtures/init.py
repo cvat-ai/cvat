@@ -289,7 +289,9 @@ def stop_services(dc_files, cvat_root_dir=CVAT_ROOT_DIR):
     )
 
 
-def session_start(session, cvat_root_dir=CVAT_ROOT_DIR, cvat_db_dir=CVAT_DB_DIR, extra_dc_files=None):
+def session_start(
+    session, cvat_root_dir=CVAT_ROOT_DIR, cvat_db_dir=CVAT_DB_DIR, extra_dc_files=None
+):
     stop = session.config.getoption("--stop-services")
     start = session.config.getoption("--start-services")
     rebuild = session.config.getoption("--rebuild")
