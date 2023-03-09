@@ -113,6 +113,7 @@ def _kube_get_db_pod_name():
     )
     return output
 
+
 def _kube_get_clichouse_pod_name():
     output, _ = _run(
         "kubectl get pods -l app.kubernetes.io/name=clickhouse -o jsonpath={.items[0].metadata.name}"
@@ -174,7 +175,7 @@ def docker_restore_clickhouse_db():
         [
             "/bin/sh",
             "-c",
-            "clickhouse-client --query \"DROP TABLE IF EXISTS ${CLICKHOUSE_DB}.events;\" && /docker-entrypoint-initdb.d/init.sh",
+            'clickhouse-client --query "DROP TABLE IF EXISTS ${CLICKHOUSE_DB}.events;" && /docker-entrypoint-initdb.d/init.sh',
         ]
     )
 
@@ -183,9 +184,10 @@ def kube_restore_clickhouse_db():
         [
             "/bin/sh",
             "-c",
-            "clickhouse-client --query \"DROP TABLE IF EXISTS ${CLICKHOUSE_DB}.events;\" && /bin/sh /docker-entrypoint-initdb.d/init.sh",
+            'clickhouse-client --query "DROP TABLE IF EXISTS ${CLICKHOUSE_DB}.events;" && /bin/sh /docker-entrypoint-initdb.d/init.sh',
         ]
     )
+
 
 def running_containers():
     return [cn for cn in _run("docker ps --format {{.Names}}")[0].split("\n") if cn]
