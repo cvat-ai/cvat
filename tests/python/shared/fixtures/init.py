@@ -23,6 +23,7 @@ PREFIX = "test"
 
 CONTAINER_NAME_FILES = ["docker-compose.tests.yml"]
 
+
 DC_FILES = [
     "docker-compose.dev.yml",
     "tests/docker-compose.file_share.yml",
@@ -252,7 +253,7 @@ def start_services(dc_files, rebuild=False, cvat_root_dir=CVAT_ROOT_DIR):
             *(f"--file={f}" for f in dc_files),
             "build",
         ],
-        capture_output=False
+        capture_output=False,
     )
 
     _run(
@@ -272,6 +273,7 @@ def start_services(dc_files, rebuild=False, cvat_root_dir=CVAT_ROOT_DIR):
         capture_output=False,
     )
 
+
 def stop_services(dc_files, cvat_root_dir=CVAT_ROOT_DIR):
     run(
         [
@@ -289,7 +291,8 @@ def stop_services(dc_files, cvat_root_dir=CVAT_ROOT_DIR):
         capture_output=False,
     )
 
-def session_start(session, cvat_root_dir=CVAT_ROOT_DIR, cvat_db_dir=CVAT_DB_DIR, extra_dc_files=[]):
+
+def session_start(session, cvat_root_dir=CVAT_ROOT_DIR, cvat_db_dir=CVAT_DB_DIR, extra_dc_files=None):
     stop = session.config.getoption("--stop-services")
     start = session.config.getoption("--start-services")
     rebuild = session.config.getoption("--rebuild")
@@ -314,14 +317,25 @@ def session_start(session, cvat_root_dir=CVAT_ROOT_DIR, cvat_db_dir=CVAT_DB_DIR,
         )
 
     if platform == "local":
-        local_start(start, stop, dumpdb, cleanup, rebuild, no_init,
-                    cvat_root_dir, cvat_db_dir, extra_dc_files)
+        local_start(
+            start,
+            stop,
+            dumpdb,
+            cleanup,
+            rebuild,
+            no_init,
+            cvat_root_dir,
+            cvat_db_dir,
+            extra_dc_files,
+        )
 
     elif platform == "kube":
         kube_start(cvat_db_dir)
 
 
-def local_start(start, stop, dumpdb, cleanup, rebuild, no_init, cvat_root_dir, cvat_db_dir, extra_dc_files):
+def local_start(
+    start, stop, dumpdb, cleanup, rebuild, no_init, cvat_root_dir, cvat_db_dir, extra_dc_files
+):
     if start and stop:
         raise Exception("--start-services and --stop-services are incompatible")
 
@@ -329,7 +343,10 @@ def local_start(start, stop, dumpdb, cleanup, rebuild, no_init, cvat_root_dir, c
         dump_db()
         pytest.exit("data.json has been updated", returncode=0)
 
-    dc_files = [cvat_root_dir / f for f in DC_FILES] + extra_dc_files
+    dc_files = [cvat_root_dir / f for f in DC_FILES]
+    if extra_dc_files is not None:
+        dc_files += extra_dc_files
+
     container_name_files = [cvat_root_dir / f for f in CONTAINER_NAME_FILES]
 
     if cleanup:
@@ -352,12 +369,11 @@ def local_start(start, stop, dumpdb, cleanup, rebuild, no_init, cvat_root_dir, c
     wait_for_services()
 
     docker_exec_cvat("python manage.py loaddata /tmp/data.json")
-    docker_exec_cvat_db(
-        "psql -U root -d postgres -v from=cvat -v to=test_db -f /tmp/restore.sql"
-    )
+    docker_exec_cvat_db("psql -U root -d postgres -v from=cvat -v to=test_db -f /tmp/restore.sql")
 
     if start:
         pytest.exit("All necessary containers have been created and started.", returncode=0)
+
 
 def kube_start(cvat_db_dir):
     kube_restore_data_volumes()
@@ -381,6 +397,7 @@ def kube_start(cvat_db_dir):
 
 def pytest_sessionstart(session: pytest.Session) -> None:
     session_start(session)
+
 
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     if session.config.getoption("--collect-only"):
