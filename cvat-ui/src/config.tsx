@@ -116,6 +116,17 @@ const SSO_PROVIDER_KEY = 'sso';
 
 const CONTROLS_LOGS_INTERVAL = 90000; // 1.5 min in ms
 
+const RESET_NOTIFICATIONS_PATHS = {
+    from: [
+        '/auth/login',
+        '/auth/register',
+        '/auth/logout',
+    ],
+    exclude: [
+        '/auth',
+    ],
+};
+
 export default {
     UNDEFINED_ATTRIBUTE_VALUE,
     NO_BREAK_SPACE,
@@ -151,4 +162,5 @@ export default {
     CANVAS_WORKSPACE_DEFAULT_CONTEXT_HEIGHT,
     CONTROLS_LOGS_INTERVAL,
     SSO_PROVIDER_KEY,
+    RESET_NOTIFICATIONS_PATHS,
 };

@@ -262,6 +262,10 @@ Axios.interceptors.request.use((reqConfig) => {
         return reqConfig;
     }
 
+    if (reqConfig.url.endsWith('/limits')) {
+        return reqConfig;
+    }
+
     reqConfig.params = { ...organization, ...(reqConfig.params || {}) };
     return reqConfig;
 });
@@ -492,6 +496,25 @@ async function getSelf(): Promise<SerializedUser> {
     }
 
     return response.data;
+}
+
+async function hasLimits(userId: number, orgId: number): Promise<boolean> {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.get(`${backendAPI}/limits`, {
+            params: {
+                ...(orgId ? { org_id: orgId } : { user_id: userId }),
+            },
+        });
+        return response.data?.count !== 0;
+    } catch (serverError) {
+        if (serverError.code === 404) {
+            return false;
+        }
+
+        throw serverError;
+    }
 }
 
 async function authorized(): Promise<boolean> {
@@ -2369,6 +2392,7 @@ export default Object.freeze({
         installedApps,
         loginWithSocialAccount,
         selectSSOIdentityProvider,
+        hasLimits,
     }),
 
     projects: Object.freeze({

@@ -28,6 +28,7 @@ docker run --rm -v "$DST_DIR:/local" -u "$(id -u)":"$(id -g)" \
         -i "/local/schema/schema.yml" \
         --config "/local/${TEMPLATE_DIR_NAME}/generator-config.yml" \
         -p "packageVersion=$VERSION" \
+        -p "httpUserAgent=cvat_sdk/$VERSION" \
         -g python \
         -o "/local/"
 
