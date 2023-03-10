@@ -78,6 +78,7 @@ Tracks can be exported/imported to/from Datumaro and Sly Pointcloud formats (<ht
 - SiamMask and TransT serverless functions (<https://github.com/opencv/cvat/pull/5658>)
 - Сreating a project or task with the same labels (<https://github.com/opencv/cvat/pull/5700>)
 - \[Server API\] Ability to rename label to an existing name (<https://github.com/opencv/cvat/pull/5662>)
+- Parsing skeleton sublabels containing spaces results in an error in dataset export (<https://github.com/opencv/cvat/pull/5794>)
 - Missing CVAT_BASE_URL in docker-compose.yml (<https://github.com/opencv/cvat/pull/5792>)
 
 ### Security
@@ -183,6 +184,7 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
   (<https://github.com/opencv/cvat/issues/4365>)
 - Queries via the low-level API using the `multipart/form-data` Content-Type with string fields
   (<https://github.com/opencv/cvat/pull/5479>)
+- Skeletons cannot be added to a task or project (<https://github.com/opencv/cvat/pull/5813>)
 
 ### Security
 - `Project.import_dataset` not waiting for completion correctly
