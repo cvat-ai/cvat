@@ -5,12 +5,12 @@
 
 import csv
 import json
+import uuid
 from collections import Counter
 from datetime import datetime, timedelta, timezone
 from http import HTTPStatus
 from io import StringIO
 from time import sleep
-import uuid
 
 import pytest
 from dateutil import parser as datetime_parser
@@ -78,7 +78,9 @@ class TestGetAuditEvents:
                 }
             ],
         }
-        self.project_id, project_request_id = TestGetAuditEvents._create_project(self._USERNAME, project_spec)
+        self.project_id, project_request_id = TestGetAuditEvents._create_project(
+            self._USERNAME, project_spec
+        )
         task_spec = {
             "name": f"test {self._USERNAME} to create a task",
             "segment_size": 2,
