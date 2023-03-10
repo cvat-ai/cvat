@@ -1131,7 +1131,7 @@ class TestPatchTaskLabel:
         assert response.json()["labels"]["count"] == task["labels"]["count"] + 1
 
     def test_admin_can_add_skeleton(self, tasks, admin_user):
-        task = list(tasks)[0]
+        task = [t for t in tasks if t["project_id"] is None][0]
         new_skeleton = {
             "name": "skeleton1",
             "type": "skeleton",
