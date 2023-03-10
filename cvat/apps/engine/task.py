@@ -16,7 +16,6 @@ import shutil
 from distutils.dir_util import copy_tree
 from urllib import parse as urlparse
 from urllib import request as urlrequest
-import requests
 import ipaddress
 import dns.resolver
 import django_rq
@@ -31,6 +30,7 @@ from cvat.apps.engine.log import slogger
 from cvat.apps.engine.media_extractors import (MEDIA_TYPES, Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter,
     ValidateDimension, ZipChunkWriter, ZipCompressedChunkWriter, get_mime, sort)
 from cvat.apps.engine.utils import av_scan_paths, get_rq_job_meta
+from cvat.utils.http import make_requests_session
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager, is_manifest
 from utils.dataset_manifest.core import VideoManifestValidator
 from utils.dataset_manifest.utils import detect_related_images
@@ -343,24 +343,26 @@ def _validate_url(url):
 def _download_data(urls, upload_dir):
     job = rq.get_current_job()
     local_files = {}
-    for url in urls:
-        name = os.path.basename(urlrequest.url2pathname(urlparse.urlparse(url).path))
-        if name in local_files:
-            raise Exception("filename collision: {}".format(name))
-        _validate_url(url)
-        slogger.glob.info("Downloading: {}".format(url))
-        job.meta['status'] = '{} is being downloaded..'.format(url)
-        job.save_meta()
 
-        response = requests.get(url, stream=True)
-        if response.status_code == 200:
-            response.raw.decode_content = True
-            with open(os.path.join(upload_dir, name), 'wb') as output_file:
-                shutil.copyfileobj(response.raw, output_file)
-        else:
-            raise Exception("Failed to download " + url)
+    with make_requests_session() as session:
+        for url in urls:
+            name = os.path.basename(urlrequest.url2pathname(urlparse.urlparse(url).path))
+            if name in local_files:
+                raise Exception("filename collision: {}".format(name))
+            _validate_url(url)
+            slogger.glob.info("Downloading: {}".format(url))
+            job.meta['status'] = '{} is being downloaded..'.format(url)
+            job.save_meta()
 
-        local_files[name] = True
+            response = session.get(url, stream=True)
+            if response.status_code == 200:
+                response.raw.decode_content = True
+                with open(os.path.join(upload_dir, name), 'wb') as output_file:
+                    shutil.copyfileobj(response.raw, output_file)
+            else:
+                raise Exception("Failed to download " + url)
+
+            local_files[name] = True
 
     return list(local_files.keys())
 
