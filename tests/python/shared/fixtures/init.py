@@ -316,10 +316,10 @@ def pytest_sessionstart(session: pytest.Session) -> None:
 
         if not no_init:
             start_services(rebuild)
-        wait_for_services()
         docker_restore_data_volumes()
         docker_cp(CVAT_DB_DIR / "restore.sql", f"{PREFIX}_cvat_db_1:/tmp/restore.sql")
         docker_cp(CVAT_DB_DIR / "data.json", f"{PREFIX}_cvat_server_1:/tmp/data.json")
+        wait_for_services()
 
         docker_exec_cvat("python manage.py loaddata /tmp/data.json")
         docker_exec_cvat_db(

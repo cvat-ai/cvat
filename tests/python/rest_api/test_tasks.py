@@ -424,7 +424,7 @@ class TestPatchTaskAnnotations:
     ):
         users = find_users(role=role, org=org)
         tasks = tasks_by_org[org]
-        username, tid = find_task_staff_user(tasks, users, task_staff, [12, 14])
+        username, tid = find_task_staff_user(tasks, users, task_staff, [12, 14, 18])
 
         data = request_data(tid)
         with make_api_client(username) as api_client:
@@ -1014,7 +1014,7 @@ class TestPatchTaskLabel:
         assert DeepDiff(resulting_labels, task_labels, ignore_order=True) == {}
 
     def test_cannot_rename_label_to_duplicate_name(self, tasks, labels, admin_user):
-        task = [t for t in tasks if t["labels"]["count"] > 1][0]
+        task = [t for t in tasks if t["project_id"] is None and t["labels"]["count"] > 1][0]
         task_labels = deepcopy([l for l in labels if l.get("task_id") == task["id"]])
         task_labels[0].update({"name": task_labels[1]["name"]})
 
@@ -1063,7 +1063,7 @@ class TestPatchTaskLabel:
             for user, task in product(users, tasks)
             if not is_task_staff(user["id"], task["id"])
             and task["organization"]
-            and is_org_member(user["id"], task["organization"])
+            and is_org_member(user["id"], task["organization"] and task["project_id"] is None)
         )
 
         new_label = {"name": "new name"}
@@ -1127,6 +1127,26 @@ class TestPatchTaskLabel:
             {"labels": [new_label]},
             org_id=task["organization"],
         )
+        assert response.status_code == HTTPStatus.OK
+        assert response.json()["labels"]["count"] == task["labels"]["count"] + 1
+
+    def test_admin_can_add_skeleton(self, tasks, admin_user):
+        task = [t for t in tasks if t["project_id"] is None][0]
+        new_skeleton = {
+            "name": "skeleton1",
+            "type": "skeleton",
+            "sublabels": [
+                {
+                    "name": "1",
+                    "type": "points",
+                }
+            ],
+            "svg": '<circle r="1.5" stroke="black" fill="#b3b3b3" cx="48.794559478759766" '
+            'cy="36.98698806762695" stroke-width="0.1" data-type="element node" '
+            'data-element-id="1" data-node-id="1" data-label-name="597501"></circle>',
+        }
+
+        response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [new_skeleton]})
         assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == task["labels"]["count"] + 1
 
@@ -1341,7 +1361,7 @@ class TestUnequalJobs:
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestPatchTask:
-    @pytest.mark.parametrize("task_id, project_id, user", [(18, 11, "admin1")])
+    @pytest.mark.parametrize("task_id, project_id, user", [(19, 12, "admin1")])
     def test_move_task_to_project_with_attributes(self, task_id, project_id, user):
         response = get_method(user, f"tasks/{task_id}/annotations")
         assert response.status_code == HTTPStatus.OK
@@ -1369,7 +1389,7 @@ class TestPatchTask:
             == {}
         )
 
-    @pytest.mark.parametrize("task_id, project_id, user", [(19, 12, "admin1")])
+    @pytest.mark.parametrize("task_id, project_id, user", [(20, 13, "admin1")])
     def test_move_task_from_one_project_to_another_with_attributes(self, task_id, project_id, user):
         response = get_method(user, f"tasks/{task_id}/annotations")
         assert response.status_code == HTTPStatus.OK

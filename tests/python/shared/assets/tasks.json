@@ -1,12 +1,61 @@
 {
-  "count": 14,
+  "count": 15,
   "next": null,
   "previous": null,
   "results": [
     {
       "assignee": null,
       "bug_tracker": "",
-      "created_date": "2023-02-24T16:42:56.466000Z",
+      "created_date": "2023-03-10T11:57:31.614000Z",
+      "data": 19,
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "data_original_chunk_type": "imageset",
+      "dimension": "2d",
+      "id": 20,
+      "image_quality": 70,
+      "jobs": {
+        "completed": 0,
+        "count": 1,
+        "url": "http://localhost:8080/api/jobs?task_id=20"
+      },
+      "labels": {
+        "count": 2,
+        "url": "http://localhost:8080/api/labels?task_id=20"
+      },
+      "mode": "annotation",
+      "name": "task in project with attributes",
+      "organization": null,
+      "overlap": 0,
+      "owner": {
+        "first_name": "Admin",
+        "id": 1,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/1",
+        "username": "admin1"
+      },
+      "project_id": 12,
+      "segment_size": 2,
+      "size": 2,
+      "source_storage": {
+        "cloud_storage_id": null,
+        "id": 29,
+        "location": "local"
+      },
+      "status": "annotation",
+      "subset": "",
+      "target_storage": {
+        "cloud_storage_id": null,
+        "id": 30,
+        "location": "local"
+      },
+      "updated_date": "2023-03-10T11:57:48.835000Z",
+      "url": "http://localhost:8080/api/tasks/20"
+    },
+    {
+      "assignee": null,
+      "bug_tracker": "",
+      "created_date": "2023-03-10T11:56:33.757000Z",
       "data": 18,
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
@@ -20,11 +69,11 @@
         "url": "http://localhost:8080/api/jobs?task_id=19"
       },
       "labels": {
-        "count": 1,
+        "count": 2,
         "url": "http://localhost:8080/api/labels?task_id=19"
       },
       "mode": "annotation",
-      "name": "task in the project with attributes",
+      "name": "task with attributes",
       "organization": null,
       "overlap": 0,
       "owner": {
@@ -34,7 +83,7 @@
         "url": "http://localhost:8080/api/users/1",
         "username": "admin1"
       },
-      "project_id": 11,
+      "project_id": null,
       "segment_size": 2,
       "size": 2,
       "source_storage": {
@@ -49,13 +98,13 @@
         "id": 26,
         "location": "local"
       },
-      "updated_date": "2023-02-24T16:43:24.230000Z",
+      "updated_date": "2023-03-10T11:56:54.904000Z",
       "url": "http://localhost:8080/api/tasks/19"
     },
     {
       "assignee": null,
       "bug_tracker": "",
-      "created_date": "2023-02-24T16:41:19.866000Z",
+      "created_date": "2023-03-01T15:36:26.668000Z",
       "data": 17,
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
@@ -73,8 +122,8 @@
         "url": "http://localhost:8080/api/labels?task_id=18"
       },
       "mode": "annotation",
-      "name": "task with attributes",
-      "organization": null,
+      "name": "task in project7",
+      "organization": 2,
       "overlap": 0,
       "owner": {
         "first_name": "Admin",
@@ -83,22 +132,22 @@
         "url": "http://localhost:8080/api/users/1",
         "username": "admin1"
       },
-      "project_id": null,
-      "segment_size": 5,
-      "size": 5,
+      "project_id": 11,
+      "segment_size": 2,
+      "size": 2,
       "source_storage": {
         "cloud_storage_id": null,
-        "id": 21,
+        "id": 23,
         "location": "local"
       },
       "status": "annotation",
       "subset": "",
       "target_storage": {
         "cloud_storage_id": null,
-        "id": 22,
+        "id": 24,
         "location": "local"
       },
-      "updated_date": "2023-02-24T16:41:33.985000Z",
+      "updated_date": "2023-03-01T15:36:37.897000Z",
       "url": "http://localhost:8080/api/tasks/18"
     },
     {

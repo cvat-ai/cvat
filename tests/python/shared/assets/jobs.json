@@ -1,5 +1,5 @@
 {
-  "count": 16,
+  "count": 17,
   "next": null,
   "previous": null,
   "results": [
@@ -9,29 +9,55 @@
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
+      "id": 24,
+      "issues": {
+        "count": 0,
+        "url": "http://localhost:8080/api/issues?job_id=24"
+      },
+      "labels": {
+        "count": 2,
+        "url": "http://localhost:8080/api/labels?job_id=24"
+      },
+      "mode": "annotation",
+      "project_id": 12,
+      "stage": "annotation",
+      "start_frame": 0,
+      "state": "in progress",
+      "status": "annotation",
+      "stop_frame": 1,
+      "task_id": 20,
+      "updated_date": "2023-03-10T11:57:49.019000Z",
+      "url": "http://localhost:8080/api/jobs/24"
+    },
+    {
+      "assignee": null,
+      "bug_tracker": null,
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "dimension": "2d",
       "id": 23,
       "issues": {
         "count": 0,
         "url": "http://localhost:8080/api/issues?job_id=23"
       },
       "labels": {
-        "count": 1,
+        "count": 2,
         "url": "http://localhost:8080/api/labels?job_id=23"
       },
       "mode": "annotation",
-      "project_id": 11,
+      "project_id": null,
       "stage": "annotation",
       "start_frame": 0,
       "state": "in progress",
       "status": "annotation",
       "stop_frame": 1,
       "task_id": 19,
-      "updated_date": "2023-02-24T16:43:24.455000Z",
+      "updated_date": "2023-03-10T11:56:55.066000Z",
       "url": "http://localhost:8080/api/jobs/23"
     },
     {
       "assignee": null,
-      "bug_tracker": null,
+      "bug_tracker": "",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
@@ -45,14 +71,14 @@
         "url": "http://localhost:8080/api/labels?job_id=22"
       },
       "mode": "annotation",
-      "project_id": null,
+      "project_id": 11,
       "stage": "annotation",
       "start_frame": 0,
       "state": "in progress",
       "status": "annotation",
-      "stop_frame": 4,
+      "stop_frame": 1,
       "task_id": 18,
-      "updated_date": "2023-02-24T16:41:34.216000Z",
+      "updated_date": "2023-03-01T15:36:38.114000Z",
       "url": "http://localhost:8080/api/jobs/22"
     },
     {
