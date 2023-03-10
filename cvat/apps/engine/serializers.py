@@ -254,6 +254,8 @@ class LabelSerializer(SublabelSerializer):
     def update_label(
         cls,
         validated_data: Dict[str, Any],
+        svg: str,
+        sublabels: Iterable[Dict[str, Any]],
         *,
         parent_instance: Union[models.Project, models.Task],
         parent_label: Optional[models.Label] = None
@@ -298,6 +300,19 @@ class LabelSerializer(SublabelSerializer):
             except models.InvalidLabel as exc:
                 raise exceptions.ValidationError(str(exc)) from exc
             logger.info("New {} label was created".format(db_label.name))
+
+            cls.update_labels(sublabels, parent_instance=parent_instance, parent_label=db_label)
+
+            if db_label.type == str(models.LabelType.SKELETON):
+                for db_sublabel in list(db_label.sublabels.all()):
+                    svg = svg.replace(
+                        f'data-label-name="{db_sublabel.name}"',
+                        f'data-label-id="{db_sublabel.id}"'
+                    )
+                db_skeleton = models.Skeleton.objects.create(root=db_label, svg=svg)
+                logger.info(
+                    f'label:update Skeleton id:{db_skeleton.id} for label_id:{db_label.id}'
+                )
 
         if validated_data.get('deleted'):
             assert validated_data['id'] # must be checked in the validate()
@@ -400,7 +415,7 @@ class LabelSerializer(SublabelSerializer):
         for label in labels:
             sublabels = label.pop('sublabels', [])
             svg = label.pop('svg', '')
-            db_label = cls.update_label(label,
+            db_label = cls.update_label(label, svg, sublabels,
                 parent_instance=parent_instance, parent_label=parent_label
             )
             if db_label:
@@ -413,20 +428,6 @@ class LabelSerializer(SublabelSerializer):
                     f'label:delete label:{label} with '
                     f'sublabels:{sublabels}, parent_label:{parent_label}'
                 )
-
-            if not label.get('deleted'):
-                cls.update_labels(sublabels, parent_instance=parent_instance, parent_label=db_label)
-
-                if label.get('id') is None and db_label.type == str(models.LabelType.SKELETON):
-                    for db_sublabel in list(db_label.sublabels.all()):
-                        svg = svg.replace(
-                            f'data-label-name="{db_sublabel.name}"',
-                            f'data-label-id="{db_sublabel.id}"'
-                        )
-                    db_skeleton = models.Skeleton.objects.create(root=db_label, svg=svg)
-                    logger.info(
-                        f'label:update Skeleton id:{db_skeleton.id} for label_id:{db_label.id}'
-                    )
 
     @classmethod
     def _get_parent_info(cls, parent_instance: Union[models.Project, models.Task]):
