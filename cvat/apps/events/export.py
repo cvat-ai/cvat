@@ -51,6 +51,8 @@ def _create_csv(query_params, output_filename, cache_ttl):
         if conditions:
             query += " WHERE " + " AND ".join(conditions)
 
+        query += " ORDER BY timestamp ASC"
+
         with clickhouse_connect.get_client(
             host=clickhouse_settings['HOST'],
             database=clickhouse_settings['NAME'],
