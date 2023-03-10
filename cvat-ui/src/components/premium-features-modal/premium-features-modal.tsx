@@ -16,6 +16,7 @@ import PaidFeaturesPreviewImage from 'assets/paid-features-preview.png';
 import moment from 'moment';
 import config from 'config';
 import './styles.scss';
+import { UpgradeIcon } from 'icons';
 
 const core = getCore();
 const { CVAT_BILLING_URL, GITHUB_URL } = config;
@@ -28,6 +29,7 @@ export default function PremiumFeaturesModal(): JSX.Element {
     const [dontShowAgainToday, setDontShowAgainToday] = useState(localStorage.getItem('paidNotificationShown') === moment().format('YYYY-MM-DD'));
     const organization = useSelector((state: CombinedState) => state.organizations.current);
     const user = useSelector((state: CombinedState) => state.auth.user);
+    const upgradeButtonText = organization?.id ? 'Upgrade to Team' : 'Upgrade to Pro';
 
     const closeModal = useCallback((): void => {
         if (dontShowAgainToday) {
@@ -75,7 +77,8 @@ export default function PremiumFeaturesModal(): JSX.Element {
                                 type='primary'
                                 onClick={openBillingPage}
                             >
-                                Check premium features
+                                <UpgradeIcon />
+                                {upgradeButtonText}
                             </Button>
                         </Col>
                     </Row>
