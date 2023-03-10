@@ -234,6 +234,18 @@ def get_server_image_tag():
     return f"cvat/server:{os.environ.get('CVAT_VERSION', 'dev')}"
 
 
+def docker_compose(dc_files, cvat_root_dir):
+    return [
+        "docker-compose",
+        f"--project-name={PREFIX}",
+        # use compatibility mode to have fixed names for containers (with underscores)
+        # https://github.com/docker/compose#about-update-and-backward-compatibility
+        "--compatibility",
+        f"--env-file={cvat_root_dir / 'tests/python/webhook_receiver/.env'}",
+        *(f"--file={f}" for f in dc_files),
+    ]
+
+
 def start_services(dc_files, rebuild=False, cvat_root_dir=CVAT_ROOT_DIR):
     if any([cn in ["cvat_server", "cvat_db"] for cn in running_containers()]):
         pytest.exit(
@@ -241,52 +253,15 @@ def start_services(dc_files, rebuild=False, cvat_root_dir=CVAT_ROOT_DIR):
             f"List of running containers: {', '.join(running_containers())}"
         )
 
+    _run(docker_compose(dc_files, cvat_root_dir) + ["build"], capture_output=False)
     _run(
-        [
-            "docker-compose",
-            f"--project-name={PREFIX}",
-            # use compatibility mode to have fixed names for containers (with underscores)
-            # https://github.com/docker/compose#about-update-and-backward-compatibility
-            "--compatibility",
-            f"--env-file={cvat_root_dir / 'tests/python/webhook_receiver/.env'}",
-            *(f"--file={f}" for f in dc_files),
-            "build",
-        ],
-        capture_output=False,
-    )
-
-    _run(
-        [
-            "docker-compose",
-            f"--project-name={PREFIX}",
-            # use compatibility mode to have fixed names for containers (with underscores)
-            # https://github.com/docker/compose#about-update-and-backward-compatibility
-            "--compatibility",
-            f"--env-file={cvat_root_dir / 'tests/python/webhook_receiver/.env'}",
-            *(f"--file={f}" for f in dc_files),
-            "up",
-            "-d",
-            *["--build"] * rebuild,
-        ],
+        docker_compose(dc_files, cvat_root_dir) + ["up", "-d", *["--build"] * rebuild],
         capture_output=False,
     )
 
 
 def stop_services(dc_files, cvat_root_dir=CVAT_ROOT_DIR):
-    run(
-        [
-            "docker-compose",
-            f"--project-name={PREFIX}",
-            # use compatibility mode to have fixed names for containers (with underscores)
-            # https://github.com/docker/compose#about-update-and-backward-compatibility
-            "--compatibility",
-            f"--env-file={cvat_root_dir / 'tests/python/webhook_receiver/.env'}",
-            *(f"--file={f}" for f in dc_files),
-            "down",
-            "-v",
-        ],
-        capture_output=False,
-    )
+    run(docker_compose(dc_files, cvat_root_dir) + ["down", "-v"], capture_output=False)
 
 
 def session_start(
