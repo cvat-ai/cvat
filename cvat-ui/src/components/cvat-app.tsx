@@ -75,6 +75,7 @@ import EmailConfirmationPage from './email-confirmation-pages/email-confirmed';
 import EmailVerificationSentPage from './email-confirmation-pages/email-verification-sent';
 import IncorrectEmailConfirmationPage from './email-confirmation-pages/incorrect-email-confirmation';
 import CreateModelPage from './create-model-page/create-model-page';
+import PremiumFeaturesModal from './premium-features-modal/premium-features-modal';
 
 interface CVATAppProps {
     loadFormats: () => void;
@@ -398,6 +399,8 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             isModelPluginActive,
         } = this.props;
 
+        const { CVAT_BILLING_URL } = appConfig;
+
         const { healthIinitialized, backendIsHealthy } = this.state;
 
         const notRegisteredUserInitialized = (userInitialized && (user == null || !user.isVerified));
@@ -493,6 +496,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                     <ExportBackupModal />
                                     <ImportDatasetModal />
                                     <ImportBackupModal />
+                                    { CVAT_BILLING_URL && <PremiumFeaturesModal /> }
                                     {/* eslint-disable-next-line */}
                                     <a id='downloadAnchor' target='_blank' style={{ display: 'none' }} download />
                                 </Layout.Content>

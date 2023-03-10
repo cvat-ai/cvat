@@ -86,6 +86,11 @@ export default function implementAPI(cvat) {
         await serverProxy.server.logout();
     };
 
+    cvat.server.hasLimits.implementation = async (userId, orgId) => {
+        const result = await serverProxy.server.hasLimits(userId, orgId);
+        return result;
+    };
+
     cvat.server.socialAuthentication.implementation = async () => {
         const result: SocialAuthMethodsRawType = await serverProxy.server.socialAuthentication();
         return Object.entries(result).map(([provider, value]) => new SocialAuthMethod({ ...value, provider }));
