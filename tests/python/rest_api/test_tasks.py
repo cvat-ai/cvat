@@ -13,12 +13,11 @@ from http import HTTPStatus
 from itertools import chain, product
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from time import sleep
 from typing import List
 
 import pytest
 from cvat_sdk import Client, Config
-from cvat_sdk.api_client import apis, models
+from cvat_sdk.api_client import models
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from cvat_sdk.core.helpers import get_paginated_collection
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
@@ -37,7 +36,12 @@ from shared.utils.config import (
 )
 from shared.utils.helpers import generate_image_files
 
-from .utils import CollectionSimpleFilterTestBase, export_dataset
+from .utils import (
+    CollectionSimpleFilterTestBase,
+    _test_create_task,
+    export_dataset,
+    wait_until_task_is_created,
+)
 
 
 def get_cloud_storage_content(username, cloud_storage_id, manifest):
@@ -424,7 +428,7 @@ class TestPatchTaskAnnotations:
     ):
         users = find_users(role=role, org=org)
         tasks = tasks_by_org[org]
-        username, tid = find_task_staff_user(tasks, users, task_staff, [12, 14])
+        username, tid = find_task_staff_user(tasks, users, task_staff, [12, 14, 18])
 
         data = request_data(tid)
         with make_api_client(username) as api_client:
@@ -457,48 +461,6 @@ class TestGetTaskDataset:
 class TestPostTaskData:
     _USERNAME = "admin1"
 
-    @staticmethod
-    def _wait_until_task_is_created(api: apis.TasksApi, task_id: int) -> models.RqStatus:
-        for _ in range(100):
-            (status, _) = api.retrieve_status(task_id)
-            if status.state.value in ["Finished", "Failed"]:
-                return status
-            sleep(1)
-        raise Exception("Cannot create task")
-
-    @staticmethod
-    def _test_create_task(username, spec, data, content_type, **kwargs):
-        with make_api_client(username) as api_client:
-            (task, response) = api_client.tasks_api.create(spec, **kwargs)
-            assert response.status == HTTPStatus.CREATED
-
-            if data.get("client_files") and "json" in content_type:
-                # Can't encode binary files in json
-                (_, response) = api_client.tasks_api.create_data(
-                    task.id,
-                    data_request=models.DataRequest(
-                        client_files=data["client_files"],
-                        image_quality=data["image_quality"],
-                    ),
-                    upload_multiple=True,
-                    _content_type="multipart/form-data",
-                    **kwargs,
-                )
-                assert response.status == HTTPStatus.OK
-
-                data = data.copy()
-                del data["client_files"]
-
-            (_, response) = api_client.tasks_api.create_data(
-                task.id, data_request=deepcopy(data), _content_type=content_type, **kwargs
-            )
-            assert response.status == HTTPStatus.ACCEPTED
-
-            status = TestPostTaskData._wait_until_task_is_created(api_client.tasks_api, task.id)
-            assert status.state.value == "Finished"
-
-        return task.id
-
     def _test_cannot_create_task(self, username, spec, data, **kwargs):
         with make_api_client(username) as api_client:
             (task, response) = api_client.tasks_api.create(spec, **kwargs)
@@ -509,7 +471,7 @@ class TestPostTaskData:
             )
             assert response.status == HTTPStatus.ACCEPTED
 
-            status = self._wait_until_task_is_created(api_client.tasks_api, task.id)
+            status = wait_until_task_is_created(api_client.tasks_api, task.id)
             assert status.state.value == "Failed"
 
         return status
@@ -541,7 +503,7 @@ class TestPostTaskData:
             "client_files": generate_image_files(7),
         }
 
-        task_id = self._test_create_task(
+        task_id = _test_create_task(
             self._USERNAME, task_spec, task_data, content_type="multipart/form-data"
         )
 
@@ -572,7 +534,7 @@ class TestPostTaskData:
 
         # Besides testing that the sorting method is applied, this also checks for
         # regressions of <https://github.com/opencv/cvat/issues/4962>.
-        task_id = self._test_create_task(
+        task_id = _test_create_task(
             self._USERNAME, task_spec, task_data, content_type="multipart/form-data"
         )
 
@@ -612,7 +574,7 @@ class TestPostTaskData:
             "client_files": generate_image_files(3),
         }
 
-        task_id = self._test_create_task(
+        task_id = _test_create_task(
             self._USERNAME, spec, task_data, content_type="multipart/form-data"
         )
 
@@ -774,7 +736,7 @@ class TestPostTaskData:
             "server_files": cloud_storage_content,
         }
 
-        self._test_create_task(
+        _test_create_task(
             self._USERNAME, task_spec, data_spec, content_type="application/json", org=org
         )
 
@@ -881,7 +843,7 @@ class TestPostTaskData:
         }
 
         if task_size:
-            task_id = self._test_create_task(
+            task_id = _test_create_task(
                 self._USERNAME, task_spec, data_spec, content_type="application/json", org=org
             )
 
@@ -913,7 +875,7 @@ class TestPostTaskData:
             "job_file_mapping": expected_segments,
         }
 
-        task_id = self._test_create_task(
+        task_id = _test_create_task(
             self._USERNAME, task_spec, data_spec, content_type="application/json"
         )
 
@@ -971,7 +933,7 @@ class TestPatchTaskLabel:
             )
 
     def test_can_delete_label(self, tasks, labels, admin_user):
-        task = [t for t in tasks if t["labels"]["count"] > 0][0]
+        task = [t for t in tasks if t["project_id"] is None and t["labels"]["count"] > 0][0]
         label = deepcopy([l for l in labels if l.get("task_id") == task["id"]][0])
         label_payload = {"id": label["id"], "deleted": True}
 
@@ -1003,7 +965,7 @@ class TestPatchTaskLabel:
         assert DeepDiff(resulting_labels, task_labels, ignore_order=True) == {}
 
     def test_can_rename_label(self, tasks, labels, admin_user):
-        task = [t for t in tasks if t["labels"]["count"] > 0][0]
+        task = [t for t in tasks if t["project_id"] is None and t["labels"]["count"] > 0][0]
         task_labels = deepcopy([l for l in labels if l.get("task_id") == task["id"]])
         task_labels[0].update({"name": "new name"})
 
@@ -1025,7 +987,7 @@ class TestPatchTaskLabel:
         assert "All label names must be unique" in response.text
 
     def test_cannot_add_foreign_label(self, tasks, labels, admin_user):
-        task = list(tasks)[0]
+        task = [t for t in tasks if t["project_id"] is None][0]
         new_label = deepcopy(
             [
                 l
@@ -1040,7 +1002,7 @@ class TestPatchTaskLabel:
         assert f"Not found label with id #{new_label['id']} to change" in response.text
 
     def test_admin_can_add_label(self, tasks, admin_user):
-        task = list(tasks)[0]
+        task = [t for t in tasks if t["project_id"] is None][0]
         new_label = {"name": "new name"}
 
         response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [new_label]})
@@ -1063,7 +1025,7 @@ class TestPatchTaskLabel:
             for user, task in product(users, tasks)
             if not is_task_staff(user["id"], task["id"])
             and task["organization"]
-            and is_org_member(user["id"], task["organization"])
+            and is_org_member(user["id"], task["organization"] and task["project_id"] is None)
         )
 
         new_label = {"name": "new name"}
@@ -1130,6 +1092,26 @@ class TestPatchTaskLabel:
         assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == task["labels"]["count"] + 1
 
+    def test_admin_can_add_skeleton(self, tasks, admin_user):
+        task = [t for t in tasks if t["project_id"] is None][0]
+        new_skeleton = {
+            "name": "skeleton1",
+            "type": "skeleton",
+            "sublabels": [
+                {
+                    "name": "1",
+                    "type": "points",
+                }
+            ],
+            "svg": '<circle r="1.5" stroke="black" fill="#b3b3b3" cx="48.794559478759766" '
+            'cy="36.98698806762695" stroke-width="0.1" data-type="element node" '
+            'data-element-id="1" data-node-id="1" data-label-name="597501"></circle>',
+        }
+
+        response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [new_skeleton]})
+        assert response.status_code == HTTPStatus.OK
+        assert response.json()["labels"]["count"] == task["labels"]["count"] + 1
+
 
 @pytest.mark.usefixtures("restore_db_per_function")
 @pytest.mark.usefixtures("restore_cvat_data")
@@ -1159,7 +1141,7 @@ class TestWorkWithTask:
             "server_files": cloud_storage_content,
         }
 
-        task_id = TestPostTaskData._test_create_task(
+        task_id = _test_create_task(
             self._USERNAME, task_spec, data_spec, content_type="application/json", org=org
         )
 
