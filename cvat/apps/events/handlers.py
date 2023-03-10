@@ -84,9 +84,34 @@ def _get_current_user(instance=None):
 
     return None
 
+def _get_current_request(instance=None):
+    request = get_current_request()
+    if request is not None:
+        return request
+
+    if isinstance(instance, rq.job.Job):
+        return instance.meta.get("request", None)
+    else:
+        rq_job = rq.get_current_job()
+        if rq_job:
+            return rq_job.meta.get("request", None)
+
+    return None
+
+def request_id(instance=None):
+    request = _get_current_request(instance)
+    if request is not None:
+        if isinstance(request, dict):
+            return request.get("uuid", None)
+        return getattr(request, "uuid", None)
+
+    return None
+
 def user_id(instance=None):
     current_user = _get_current_user(instance)
     if current_user is not None:
+        if isinstance(current_user, dict):
+            return current_user.get("id", None)
         return getattr(current_user, "id", None)
 
     return None
@@ -94,6 +119,8 @@ def user_id(instance=None):
 def user_name(instance=None):
     current_user = _get_current_user(instance)
     if current_user is not None:
+        if isinstance(current_user, dict):
+            return current_user.get("username", None)
         return getattr(current_user, "username", None)
 
     return None
@@ -101,6 +128,8 @@ def user_name(instance=None):
 def user_email(instance=None):
     current_user = _get_current_user(instance)
     if current_user is not None:
+        if isinstance(current_user, dict):
+            return current_user.get("email", None)
         return getattr(current_user, "email", None)
 
     return None
@@ -216,6 +245,15 @@ def _get_serializer(instance):
         serializer.fields.pop("url", None)
     return serializer
 
+def set_request_id(payload, **kwargs):
+    return {
+        **payload,
+        "request": {
+            **payload.get("request", {}),
+            "id": request_id(**kwargs),
+        },
+    }
+
 def handle_create(scope, instance, **kwargs):
     oid = organization_id(instance)
     oslug = organization_slug(instance)
@@ -246,7 +284,7 @@ def handle_create(scope, instance, **kwargs):
         user_id=uid,
         user_name=uname,
         user_email=uemail,
-        payload=payload,
+        payload=set_request_id(payload),
     )
     message = JSONRenderer().render(event).decode('UTF-8')
 
@@ -284,9 +322,9 @@ def handle_update(scope, instance, old_instance, **kwargs):
             user_id=uid,
             user_name=uname,
             user_email=uemail,
-            payload= {
+            payload=set_request_id({
                 "old_value": change["old_value"],
-            },
+            }),
         )
 
         message = JSONRenderer().render(event).decode('UTF-8')
@@ -315,6 +353,7 @@ def handle_delete(scope, instance, **kwargs):
         user_id=uid,
         user_name=uname,
         user_email=uemail,
+        payload=set_request_id({}),
     )
     message = JSONRenderer().render(event).decode('UTF-8')
 
@@ -358,7 +397,7 @@ def handle_annotations_patch(instance, annotations, action, **kwargs):
             user_id=uid,
             user_name=uname,
             user_email=uemail,
-            payload=tags,
+            payload=set_request_id(tags),
         )
         message = JSONRenderer().render(event).decode('UTF-8')
         vlogger.info(message)
@@ -383,7 +422,7 @@ def handle_annotations_patch(instance, annotations, action, **kwargs):
                 user_id=uid,
                 user_name=uname,
                 user_email=uemail,
-                payload=shapes,
+                payload=set_request_id(shapes),
             )
             message = JSONRenderer().render(event).decode('UTF-8')
             vlogger.info(message)
@@ -413,7 +452,7 @@ def handle_annotations_patch(instance, annotations, action, **kwargs):
                 user_id=uid,
                 user_name=uname,
                 user_email=uemail,
-                payload=tracks,
+                payload=set_request_id(tracks),
             )
             message = JSONRenderer().render(event).decode('UTF-8')
             vlogger.info(message)
@@ -431,7 +470,7 @@ def handle_rq_exception(rq_job, exc_type, exc_value, tb):
 
     payload = {
         "message": tb_strings[-1],
-        "stack": ''.join(tb_strings)
+        "stack": ''.join(tb_strings),
     }
 
     event = create_event(
@@ -446,7 +485,7 @@ def handle_rq_exception(rq_job, exc_type, exc_value, tb):
         user_id=uid,
         user_name=uname,
         user_email=uemail,
-        payload=payload,
+        payload=set_request_id(payload, instance=rq_job),
     )
     message = JSONRenderer().render(event).decode('UTF-8')
     vlogger.info(message)
@@ -474,7 +513,7 @@ def handle_viewset_exception(exc, context):
             "query_params": request.query_params,
             "content_type": request.content_type,
             "method": request.method,
-        },
+         },
         "message": tb_strings[-1],
         "stack": ''.join(tb_strings),
         "status_code": status_code,
@@ -487,7 +526,7 @@ def handle_viewset_exception(exc, context):
         user_id=getattr(request.user, "id", None),
         user_name=getattr(request.user, "username", None),
         user_email=getattr(request.user, "email", None),
-        payload=payload,
+        payload=set_request_id(payload),
     )
     message = JSONRenderer().render(event).decode('UTF-8')
     vlogger.info(message)

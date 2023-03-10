@@ -164,6 +164,9 @@ def get_rq_job_meta(request, db_obj):
             'username': getattr(request.user, "username", None),
             'email': getattr(request.user, "email", None),
         },
+        'request': {
+            "uuid": request.uuid,
+        },
         'org_id': oid,
         'org_slug': oslug,
         'project_id': pid,
