@@ -397,7 +397,9 @@ def handle_annotations_patch(instance, annotations, action, **kwargs):
             user_id=uid,
             user_name=uname,
             user_email=uemail,
-            payload=set_request_id(tags),
+            payload=set_request_id({
+            "tags": tags,
+            }),
         )
         message = JSONRenderer().render(event).decode('UTF-8')
         vlogger.info(message)
@@ -422,7 +424,9 @@ def handle_annotations_patch(instance, annotations, action, **kwargs):
                 user_id=uid,
                 user_name=uname,
                 user_email=uemail,
-                payload=set_request_id(shapes),
+                payload=set_request_id({
+                    "shapes": shapes,
+                }),
             )
             message = JSONRenderer().render(event).decode('UTF-8')
             vlogger.info(message)
@@ -452,7 +456,9 @@ def handle_annotations_patch(instance, annotations, action, **kwargs):
                 user_id=uid,
                 user_name=uname,
                 user_email=uemail,
-                payload=set_request_id(tracks),
+                payload=set_request_id({
+                    "tracks": tracks,
+                }),
             )
             message = JSONRenderer().render(event).decode('UTF-8')
             vlogger.info(message)
