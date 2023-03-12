@@ -24,7 +24,7 @@ module.exports = (env) => {
     const transformedPlugins = pluginsList
         .filter((plugin) => !!plugin).reduce((acc, _path, index) => ({
             ...acc,
-            [`${path.basename(path.dirname(_path))}`]: {
+            [`plugin_${index}`]: {
                 dependOn: 'cvat-ui',
                 import: _path,
             },
