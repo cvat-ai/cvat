@@ -5,7 +5,7 @@
 
 import { PluginsActionTypes, PluginActions } from 'actions/plugins-actions';
 import { registerGitPlugin } from 'utils/git-utils';
-import { PluginsState } from '.';
+import { PluginComponent, PluginsState } from '.';
 
 const defaultState: PluginsState = {
     fetching: false,
@@ -15,6 +15,7 @@ const defaultState: PluginsState = {
         ANALYTICS: false,
         MODELS: false,
     },
+    current: {},
     components: {
         loginPage: {
             loginForm: [],
@@ -22,6 +23,28 @@ const defaultState: PluginsState = {
         router: [],
     },
 };
+
+function findContainerFromPath(path: string, state: PluginsState): PluginComponent[] {
+    const pathSegments = path.split('.');
+    let updatedStateSegment: any = state.components;
+    for (const pathSegment of pathSegments) {
+        if (Array.isArray(updatedStateSegment[pathSegment])) {
+            updatedStateSegment[pathSegment] = [...updatedStateSegment[pathSegment]];
+        } else {
+            updatedStateSegment[pathSegment] = { ...updatedStateSegment[pathSegment] };
+        }
+        updatedStateSegment = updatedStateSegment[pathSegment];
+        if (typeof updatedStateSegment === 'undefined') {
+            throw new Error('Could not add plugin component. Path is not supported by the core application');
+        }
+    }
+
+    if (!Array.isArray(updatedStateSegment)) {
+        throw new Error('Could not add plugin component. Target path is not array');
+    }
+
+    return updatedStateSegment;
+}
 
 export default function (state: PluginsState = defaultState, action: PluginActions): PluginsState {
     switch (action.type) {
@@ -55,32 +78,13 @@ export default function (state: PluginsState = defaultState, action: PluginActio
         }
         case PluginsActionTypes.ADD_UI_COMPONENT: {
             const { path, component, data } = action.payload;
-            const pathSegments = path.split('.');
             const updatedState = {
                 ...state,
                 components: { ...state.components },
             };
 
-            let updatedStateSegment: any = updatedState.components;
-            // let stateSegment: any = state.components;
-            for (const pathSegment of pathSegments) {
-                if (Array.isArray(updatedStateSegment[pathSegment])) {
-                    updatedStateSegment[pathSegment] = [...updatedStateSegment[pathSegment]];
-                } else {
-                    updatedStateSegment[pathSegment] = { ...updatedStateSegment[pathSegment] };
-                }
-                updatedStateSegment = updatedStateSegment[pathSegment];
-                // stateSegment = stateSegment[pathSegment];
-                if (typeof updatedStateSegment === 'undefined') {
-                    throw new Error('Could not add plugin component. Path is not supported by the core application');
-                }
-            }
-
-            if (!Array.isArray(updatedStateSegment)) {
-                throw new Error('Could not add plugin component. Target path is not array');
-            }
-
-            updatedStateSegment.push({
+            const container = findContainerFromPath(path, updatedState);
+            container.push({
                 component,
                 data: {
                     weight: data.weight || Number.MAX_SAFE_INTEGER,
@@ -91,8 +95,29 @@ export default function (state: PluginsState = defaultState, action: PluginActio
             return updatedState;
         }
         case PluginsActionTypes.REMOVE_UI_COMPONENT: {
-            // TODO: finish
-            return state;
+            const { path, component } = action.payload;
+            const updatedState = {
+                ...state,
+                components: { ...state.components },
+            };
+
+            const container = findContainerFromPath(path, updatedState);
+            const index = container.findIndex((el) => el.component === component);
+            if (index !== -1) {
+                container.splice(index, 1);
+            }
+
+            return updatedState;
+        }
+        case PluginsActionTypes.ADD_PLUGIN: {
+            const { name, destructor } = action.payload;
+            return {
+                ...state,
+                current: {
+                    ...state.current,
+                    [name]: destructor,
+                },
+            };
         }
         default:
             return state;

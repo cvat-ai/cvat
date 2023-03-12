@@ -527,6 +527,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                 </Space>
             );
         }
+
         return <Spin size='large' className='cvat-spinner' tip='Connecting...' />;
     }
 }

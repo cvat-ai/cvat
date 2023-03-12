@@ -265,7 +265,7 @@ export interface PluginComponent {
     component: any;
     data: {
         weight: number;
-        shouldBeRendered: (props: unknown, state: unknown) => boolean;
+        shouldBeRendered: (props?: object, state?: object) => boolean;
     };
 }
 
@@ -273,6 +273,9 @@ export interface PluginsState {
     fetching: boolean;
     initialized: boolean;
     list: PluginsList;
+    current: {
+        [index: string]: CallableFunction;
+    },
     components: {
         loginPage: {
             loginForm: PluginComponent[];

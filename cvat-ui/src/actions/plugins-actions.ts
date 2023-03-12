@@ -13,14 +13,18 @@ export enum PluginsActionTypes {
     GET_PLUGINS = 'GET_PLUGINS',
     GET_PLUGINS_SUCCESS = 'GET_PLUGINS_SUCCESS',
     GET_PLUGINS_FAILED = 'GET_PLUGINS_FAILED',
+    ADD_PLUGIN = 'ADD_PLUGIN',
     ADD_UI_COMPONENT = 'ADD_UI_COMPONENT',
     REMOVE_UI_COMPONENT = 'REMOVE_UI_COMPONENT',
 }
 
-const pluginActions = {
+export const pluginActions = {
     checkPlugins: () => createAction(PluginsActionTypes.GET_PLUGINS),
     checkPluginsSuccess: (list: PluginsList) => createAction(PluginsActionTypes.GET_PLUGINS_SUCCESS, { list }),
     checkPluginsFailed: (error: any) => createAction(PluginsActionTypes.GET_PLUGINS_FAILED, { error }),
+    addPlugin: (name: string, destructor: CallableFunction) => createAction(
+        PluginsActionTypes.ADD_PLUGIN, { name, destructor },
+    ),
     addUIComponent: (
         path: string,
         component: React.Component,

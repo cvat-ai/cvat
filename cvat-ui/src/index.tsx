@@ -11,24 +11,23 @@ import { getAboutAsync } from 'actions/about-actions';
 import { authorizedAsync, loadAuthActionsAsync } from 'actions/auth-actions';
 import { getFormatsAsync } from 'actions/formats-actions';
 import { getModelsAsync } from 'actions/models-actions';
-import { getPluginsAsync, PluginsActionTypes } from 'actions/plugins-actions';
+import { getPluginsAsync } from 'actions/plugins-actions';
 import { switchSettingsDialog } from 'actions/settings-actions';
 import { shortcutsActions } from 'actions/shortcuts-actions';
 import { getUserAgreementsAsync } from 'actions/useragreements-actions';
 import CVATApplication from 'components/cvat-app';
+import PluginsEntrypoint from 'components/plugins-entrypoint';
 import LayoutGrid from 'components/layout-grid/layout-grid';
 import logger, { LogType } from 'cvat-logger';
 import createCVATStore, { getCVATStore } from 'cvat-store';
-import { getCore } from 'cvat-core-wrapper';
 import { KeyMap } from 'utils/mousetrap-react';
 import createRootReducer from 'reducers/root-reducer';
 import { getOrganizationsAsync } from 'actions/organization-actions';
-import { resetErrors, resetMessages } from './actions/notification-actions';
+import { resetErrors, resetMessages } from 'actions/notification-actions';
 import { CombinedState, NotificationsState, PluginsState } from './reducers';
 
 createCVATStore(createRootReducer);
 
-const core = getCore();
 const cvatStore = getCVATStore();
 
 interface StateToProps {
@@ -110,21 +109,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
 }
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
-    // Configure React plugins entrypoint
-    // TODO: Move to the right place
-    Object.defineProperty(window, 'cvatUI', {
-        value: Object.freeze({
-            registerComponent: (componentBuilder: CallableFunction) => {
-                componentBuilder({
-                    dispatch,
-                    REGISTER_ACTION: PluginsActionTypes.ADD_UI_COMPONENT,
-                    REMOVE_ACTION: PluginsActionTypes.REMOVE_UI_COMPONENT,
-                    core,
-                });
-            },
-        }),
-    });
-
     return {
         loadFormats: (): void => dispatch(getFormatsAsync()),
         verifyAuthorized: (): void => dispatch(authorizedAsync()),
@@ -146,6 +130,7 @@ const ReduxAppWrapper = connect(mapStateToProps, mapDispatchToProps)(CVATApplica
 ReactDOM.render(
     <Provider store={cvatStore}>
         <BrowserRouter>
+            <PluginsEntrypoint />
             <ReduxAppWrapper />
         </BrowserRouter>
         <LayoutGrid />
