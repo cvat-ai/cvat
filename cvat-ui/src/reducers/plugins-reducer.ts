@@ -88,7 +88,12 @@ export default function (state: PluginsState = defaultState, action: PluginActio
                 component,
                 data: {
                     weight: data.weight || Number.MAX_SAFE_INTEGER,
-                    shouldBeRendered: data.shouldBeRendered || (() => true),
+                    shouldBeRendered: (componentProps: object = {}, componentState: object = {}) => {
+                        if (data.shouldBeRendered) {
+                            return data.shouldBeRendered(Object.freeze(componentProps), Object.freeze(componentState));
+                        }
+                        return true;
+                    },
                 },
             });
 

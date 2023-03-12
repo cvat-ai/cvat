@@ -6,6 +6,8 @@
 import {
     useRef, useEffect, useState, useCallback,
 } from 'react';
+import { useSelector } from 'react-redux';
+import { CombinedState, PluginComponent } from 'reducers';
 
 // eslint-disable-next-line import/prefer-default-export
 export function usePrevious<T>(value: T): T | undefined {
@@ -27,6 +29,23 @@ export function useIsMounted(): () => boolean {
     }, []);
 
     return useCallback(() => ref.current, []);
+}
+
+export function usePlugins(
+    getState: (state: CombinedState) => PluginComponent[],
+    props: object = {}, state: object = {},
+): any {
+    const components = useSelector(getState);
+    const filteredComponents = components.filter((component) => component.data.shouldBeRendered(props, state));
+    const mappedComponents = filteredComponents.map(({ component }) => component);
+    const ref = useRef<React.Component[]>(mappedComponents);
+
+    if (ref.current.length !== mappedComponents.length ||
+        ref.current.some((comp, idx) => comp !== mappedComponents[idx])) {
+        ref.current = mappedComponents;
+    }
+
+    return ref.current;
 }
 
 export interface ICardHeightHOC {

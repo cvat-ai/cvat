@@ -4,20 +4,22 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+
 import Form from 'antd/lib/form';
 import Button from 'antd/lib/button';
 import Input from 'antd/lib/input';
+import { Col, Row } from 'antd/lib/grid';
+import Title from 'antd/lib/typography/Title';
+import Text from 'antd/lib/typography/Text';
 import Icon from '@ant-design/icons';
 import {
     BackArrowIcon, ClearIcon,
 } from 'icons';
-import { Col, Row } from 'antd/lib/grid';
-import Title from 'antd/lib/typography/Title';
-import Text from 'antd/lib/typography/Text';
-import { Link } from 'react-router-dom';
+
 import CVATSigningInput, { CVATInputType } from 'components/signing-common/cvat-signing-input';
 import { CombinedState } from 'reducers';
-import { useSelector } from 'react-redux';
+import { usePlugins } from 'utils/hooks';
 
 export interface LoginData {
     credential: string;
@@ -34,15 +36,12 @@ function LoginFormComponent(props: Props): JSX.Element {
     const {
         fetching, onSubmit, renderResetPassword,
     } = props;
-    const pluginComponents = useSelector((state: CombinedState) => state.plugins.components.loginPage.loginForm);
     const [form] = Form.useForm();
     const [credential, setCredential] = useState('');
-
-    const pluginsToRender = pluginComponents
-        .filter((pluginComponent) => pluginComponent.data.shouldBeRendered(props, { credential }))
-        .map(({ component: Component }, id) => (
-            <Component key={id} />
-        ));
+    const pluginsToRender = usePlugins(
+        (state: CombinedState) => state.plugins.components.loginPage.loginForm,
+        props, { credential },
+    );
 
     const forgotPasswordLink = (
         <Col className='cvat-credentials-link'>
@@ -157,7 +156,7 @@ function LoginFormComponent(props: Props): JSX.Element {
                         </Form.Item>
                     )
                 }
-                { pluginsToRender }
+                { pluginsToRender.map((Component: React.FunctionComponent, index: number) => <Component key={index} />)}
             </Form>
         </div>
     );
