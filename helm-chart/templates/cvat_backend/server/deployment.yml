@@ -109,18 +109,12 @@ spec:
           - name: CVAT_ANALYTICS
             value: "1"
           - name: DJANGO_LOG_SERVER_HOST
-          {{- if .Values.analytics.external.useExternal }}
-            value: "{{ .Values.analytics.logServerHost }}"
-          {{- else}}
-            value: "{{ .Release.Name }}-logstash"
-          {{- end}}
+            value: "{{ .Release.Name }}-vector"
           - name: DJANGO_LOG_SERVER_PORT
-          {{- if .Values.analytics.external.useExternal }}
-            value: "{{ .Values.analytics.logServerPort }}"
-          {{- else}}
-            value: "8080"
-          {{- end}}
-          {{- end}}
+            value: "80"
+          - name: CLICKHOUSE_HOST
+            value: "{{ .Release.Name }}-clickhouse"
+          {{- end }}
           {{- with .Values.cvat.backend.server.additionalEnv }}
           {{- toYaml . | nindent 10 }}
           {{- end }}

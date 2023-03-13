@@ -26,6 +26,7 @@ from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.models import Job, Task
 from cvat.apps.engine.serializers import LabeledDataSerializer
 from cvat.apps.engine.models import ShapeType, SourceType
+from cvat.utils.http import make_requests_session
 
 from drf_spectacular.utils import (extend_schema, extend_schema_view,
     OpenApiResponse, OpenApiParameter, inline_serializer)
@@ -65,10 +66,11 @@ class LambdaGateway:
         else:
             url = NUCLIO_GATEWAY
 
-        reply = getattr(requests, method)(url, headers=extra_headers,
-            timeout=NUCLIO_TIMEOUT, json=data)
-        reply.raise_for_status()
-        response = reply.json()
+        with make_requests_session() as session:
+            reply = session.request(method, url, headers=extra_headers,
+                timeout=NUCLIO_TIMEOUT, json=data)
+            reply.raise_for_status()
+            response = reply.json()
 
         return response
 
@@ -97,9 +99,11 @@ class LambdaGateway:
             url = f'http://host.docker.internal:{func.port}'
         else:
             url = f'http://localhost:{func.port}'
-        reply = requests.post(url, timeout=NUCLIO_TIMEOUT, json=payload)
-        reply.raise_for_status()
-        response = reply.json()
+
+        with make_requests_session() as session:
+            reply = session.post(url, timeout=NUCLIO_TIMEOUT, json=payload)
+            reply.raise_for_status()
+            response = reply.json()
 
         return response
 
