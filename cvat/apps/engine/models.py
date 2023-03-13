@@ -349,7 +349,6 @@ class TaskQuerySet(models.QuerySet):
                 filter=models.Q(segment__job__stage=StageChoice.VALIDATION.value)
             )
         )
-    with_job_summary.queryset_only = False
 
 class Task(models.Model):
     objects = TaskQuerySet.as_manager()
