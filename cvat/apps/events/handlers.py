@@ -507,7 +507,7 @@ def handle_viewset_exception(exc, context):
             "query_params": request.query_params,
             "content_type": request.content_type,
             "method": request.method,
-         },
+        },
         "message": tb_strings[-1],
         "stack": ''.join(tb_strings),
         "status_code": status_code,
