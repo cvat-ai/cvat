@@ -19,6 +19,9 @@ const defaultState: AuthState = {
     socialAuthFetching: false,
     socialAuthInitialized: false,
     socialAuthMethods: [],
+    ssoIDPSelectFetching: false,
+    ssoIDPSelected: false,
+    ssoIDP: null,
 };
 
 export default function (state = defaultState, action: AuthActions | BoundariesActions): AuthState {
@@ -178,6 +181,29 @@ export default function (state = defaultState, action: AuthActions | BoundariesA
                 ...state,
                 socialAuthFetching: false,
                 socialAuthInitialized: true,
+            };
+        }
+        case AuthActionTypes.SELECT_IDENTITY_PROVIDER: {
+            return {
+                ...state,
+                ssoIDPSelectFetching: true,
+                ssoIDPSelected: false,
+            };
+        }
+        case AuthActionTypes.SELECT_IDENTITY_PROVIDER_SUCCESS: {
+            const { identityProviderID } = action.payload;
+            return {
+                ...state,
+                ssoIDPSelectFetching: false,
+                ssoIDPSelected: true,
+                ssoIDP: identityProviderID,
+            };
+        }
+        case AuthActionTypes.SELECT_IDENTITY_PROVIDER_FAILED: {
+            return {
+                ...state,
+                ssoIDPSelectFetching: false,
+                ssoIDPSelected: true,
             };
         }
         case BoundariesActionTypes.RESET_AFTER_ERROR: {

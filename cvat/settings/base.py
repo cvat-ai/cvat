@@ -15,15 +15,18 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/2.0/ref/settings/
 """
 
-from enum import Enum
-import os
-import sys
 import fcntl
+import mimetypes
+import os
 import shutil
 import subprocess
-import mimetypes
-from corsheaders.defaults import default_headers
+import sys
 from distutils.util import strtobool
+from enum import Enum
+
+from corsheaders.defaults import default_headers
+from logstash_async.constants import constants as logstash_async_constants
+
 from cvat import __version__
 
 mimetypes.add_type("application/wasm", ".wasm", True)
@@ -190,6 +193,7 @@ REST_FRAMEWORK = {
     },
     'DEFAULT_METADATA_CLASS': 'rest_framework.metadata.SimpleMetadata',
     'DEFAULT_SCHEMA_CLASS': 'cvat.apps.iam.schema.CustomAutoSchema',
+    'EXCEPTION_HANDLER': 'cvat.apps.events.handlers.handle_viewset_exception',
 }
 
 
@@ -328,7 +332,10 @@ NUCLIO = {
 }
 
 RQ_SHOW_ADMIN_LINK = True
-RQ_EXCEPTION_HANDLERS = ['cvat.apps.engine.views.rq_handler']
+RQ_EXCEPTION_HANDLERS = [
+    'cvat.apps.engine.views.rq_exception_handler',
+    'cvat.apps.events.handlers.handle_rq_exception',
+]
 
 
 # JavaScript and CSS compression
@@ -426,6 +433,7 @@ os.makedirs(Path(IAM_OPA_BUNDLE_PATH).parent, exist_ok=True)
 # logging is known to be unreliable with RQ when using async transports
 vector_log_handler = os.getenv('VECTOR_EVENT_HANDLER', 'AsynchronousLogstashHandler')
 
+logstash_async_constants.QUEUED_EVENTS_FLUSH_INTERVAL = 2.0
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -490,6 +498,7 @@ if os.getenv('DJANGO_LOG_SERVER_HOST'):
 
 DATA_UPLOAD_MAX_MEMORY_SIZE = 100 * 1024 * 1024  # 100 MB
 DATA_UPLOAD_MAX_NUMBER_FIELDS = None   # this django check disabled
+DATA_UPLOAD_MAX_NUMBER_FILES = None
 LOCAL_LOAD_MAX_FILES_COUNT = 500
 LOCAL_LOAD_MAX_FILES_SIZE = 512 * 1024 * 1024  # 512 MB
 

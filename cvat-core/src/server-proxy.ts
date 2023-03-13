@@ -262,6 +262,10 @@ Axios.interceptors.request.use((reqConfig) => {
         return reqConfig;
     }
 
+    if (reqConfig.url.endsWith('/limits')) {
+        return reqConfig;
+    }
+
     reqConfig.params = { ...organization, ...(reqConfig.params || {}) };
     return reqConfig;
 });
@@ -403,7 +407,7 @@ async function login(credential: string, password: string): Promise<void> {
 }
 
 async function loginWithSocialAccount(
-    provider: string,
+    tokenURL: string,
     code: string,
     authParams?: string,
     process?: string,
@@ -418,7 +422,7 @@ async function loginWithSocialAccount(
     };
     let authenticationResponse = null;
     try {
-        authenticationResponse = await Axios.post(`${config.backendAPI}/auth/${provider}/login/token`, data);
+        authenticationResponse = await Axios.post(tokenURL, data);
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -496,6 +500,25 @@ async function getSelf(): Promise<SerializedUser> {
     }
 
     return response.data;
+}
+
+async function hasLimits(userId: number, orgId: number): Promise<boolean> {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.get(`${backendAPI}/limits`, {
+            params: {
+                ...(orgId ? { org_id: orgId } : { user_id: userId }),
+            },
+        });
+        return response.data?.count !== 0;
+    } catch (serverError) {
+        if (serverError.code === 404) {
+            return false;
+        }
+
+        throw serverError;
+    }
 }
 
 async function authorized(): Promise<boolean> {
@@ -2068,6 +2091,7 @@ async function createOrganization(data) {
     let response = null;
     try {
         response = await Axios.post(`${backendAPI}/organizations`, JSON.stringify(data), {
+            params: { org: '' },
             headers: {
                 'Content-Type': 'application/json',
             },
@@ -2330,10 +2354,24 @@ async function receiveWebhookEvents(type: WebhookSourceType): Promise<string[]> 
 async function socialAuthentication(): Promise<any> {
     const { backendAPI } = config;
     try {
-        const response = await Axios.get(`${backendAPI}/auth/social/methods`, {
+        const response = await Axios.get(`${backendAPI}/auth/social`, {
             validateStatus: (status) => status === 200 || status === 404,
         });
         return (response.status === 200) ? response.data : {};
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function selectSSOIdentityProvider(email?: string, iss?: string): Promise<string> {
+    const { backendAPI } = config;
+    try {
+        const response = await Axios.get(
+            `${backendAPI}/auth/oidc/select-idp/`, {
+                params: { ...(email ? { email } : {}), ...(iss ? { iss } : {}) },
+            },
+        );
+        return response.data;
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -2357,6 +2395,8 @@ export default Object.freeze({
         userAgreements,
         installedApps,
         loginWithSocialAccount,
+        selectSSOIdentityProvider,
+        hasLimits,
     }),
 
     projects: Object.freeze({

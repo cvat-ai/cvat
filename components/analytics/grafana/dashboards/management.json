@@ -140,7 +140,6 @@
             "groupBy": [
               "user_id"
             ],
-            "limit": null,
             "metrics": [
               {
                 "aggregation": "count",
@@ -167,7 +166,6 @@
               "groupBy": [
                 "user_id"
               ],
-              "limit": null,
               "metrics": [
                 {
                   "aggregation": "count",
@@ -272,7 +270,6 @@
           "builderOptions": {
             "fields": [],
             "filters": [],
-            "limit": 100,
             "metrics": [
               {
                 "aggregation": "count",
@@ -292,7 +289,7 @@
           },
           "format": 0,
           "queryType": "builder",
-          "rawSql": "SELECT $__timeInterval(timestamp) as time,  count(*) Count FROM events WHERE $__timeFilter(timestamp) GROUP BY time ORDER BY time ASC LIMIT 100",
+          "rawSql": "SELECT $__timeInterval(timestamp) as time,  count(*) Count FROM events WHERE $__timeFilter(timestamp) GROUP BY time ORDER BY time ASC",
           "refId": "A"
         }
       ],
@@ -398,14 +395,14 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "PDEE91DDB90597936"
         },
-        "definition": "SELECT user_id\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND source = 'client'",
+        "definition": "SELECT DISTINCT user_id\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND source = 'client'",
         "hide": 0,
         "includeAll": true,
         "label": "User",
         "multi": true,
         "name": "users",
         "options": [],
-        "query": "SELECT user_id\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND source = 'client'",
+        "query": "SELECT DISTINCT user_id\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND source = 'client'",
         "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
@@ -427,14 +424,14 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "PDEE91DDB90597936"
         },
-        "definition": "SELECT project_id\nFROM events\nWHERE  $__timeFilter(timestamp)\n  AND project_id IS NOT NULL\n  AND source = 'client'",
+        "definition": "SELECT DISTINCT project_id\nFROM events\nWHERE  $__timeFilter(timestamp)\n  AND project_id IS NOT NULL\n  AND source = 'client'",
         "hide": 0,
         "includeAll": true,
         "label": "Project",
         "multi": true,
         "name": "projects",
         "options": [],
-        "query": "SELECT project_id\nFROM events\nWHERE  $__timeFilter(timestamp)\n  AND project_id IS NOT NULL\n  AND source = 'client'",
+        "query": "SELECT DISTINCT project_id\nFROM events\nWHERE  $__timeFilter(timestamp)\n  AND project_id IS NOT NULL\n  AND source = 'client'",
         "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
@@ -451,7 +448,7 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "PDEE91DDB90597936"
         },
-        "definition": "SELECT task_id\nFROM events\nWHERE $__timeFilter(timestamp) \n  AND task_id IS NOT NULL\n  AND source = 'client'\n  AND (-1 IN (${projects}) OR project_id IN (${projects}))",
+        "definition": "SELECT DISTINCT task_id\nFROM events\nWHERE $__timeFilter(timestamp) \n  AND task_id IS NOT NULL\n  AND source = 'client'\n  AND (-1 IN (${projects}) OR project_id IN (${projects}))",
         "description": "",
         "hide": 0,
         "includeAll": true,
@@ -459,7 +456,7 @@
         "multi": true,
         "name": "tasks",
         "options": [],
-        "query": "SELECT task_id\nFROM events\nWHERE $__timeFilter(timestamp) \n  AND task_id IS NOT NULL\n  AND source = 'client'\n  AND (-1 IN (${projects}) OR project_id IN (${projects}))",
+        "query": "SELECT DISTINCT task_id\nFROM events\nWHERE $__timeFilter(timestamp) \n  AND task_id IS NOT NULL\n  AND source = 'client'\n  AND (-1 IN (${projects}) OR project_id IN (${projects}))",
         "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
@@ -480,14 +477,14 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "PDEE91DDB90597936"
         },
-        "definition": "SELECT job_id\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND job_id IS NOT NULL\n  AND source = 'client'\n  AND task_id in (${tasks})",
+        "definition": "SELECT DISTINCT job_id\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND job_id IS NOT NULL\n  AND source = 'client'\n  AND task_id in (${tasks})",
         "hide": 0,
         "includeAll": true,
         "label": "Job",
         "multi": true,
         "name": "jobs",
         "options": [],
-        "query": "SELECT job_id\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND job_id IS NOT NULL\n  AND source = 'client'\n  AND task_id in (${tasks})",
+        "query": "SELECT DISTINCT job_id\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND job_id IS NOT NULL\n  AND source = 'client'\n  AND task_id in (${tasks})",
         "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
@@ -504,6 +501,6 @@
   "timezone": "",
   "title": "Management",
   "uid": "w0if6WAVz",
-  "version": 1,
+  "version": 2,
   "weekStart": ""
 }
