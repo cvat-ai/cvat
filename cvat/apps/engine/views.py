@@ -2287,8 +2287,14 @@ def _import_annotations(request, rq_id, rq_func, db_obj, format_name,
                 key = filename
                 fd, filename = mkstemp(prefix='cvat_{}'.format(db_obj.pk), dir=settings.TMP_FILES_ROOT)
                 dependent_job = configure_dependent_job(
-                    queue, rq_id, _download_file_from_bucket,
-                    db_storage, filename, key)
+                    queue=queue,
+                    rq_id=rq_id,
+                    rq_func=_download_file_from_bucket,
+                    db_storage=db_storage,
+                    filename=filename,
+                    key=key,
+                    request=request,
+                )
 
         av_scan_paths(filename)
         meta = {
@@ -2459,8 +2465,14 @@ def _import_project_dataset(request, rq_id, rq_func, db_obj, format_name, filena
             key = filename
             fd, filename = mkstemp(prefix='cvat_{}'.format(db_obj.pk), dir=settings.TMP_FILES_ROOT)
             dependent_job = configure_dependent_job(
-                queue, rq_id, _download_file_from_bucket,
-                db_storage, filename, key)
+                queue=queue,
+                rq_id=rq_id,
+                rq_func=_download_file_from_bucket,
+                db_storage=db_storage,
+                filename=filename,
+                key=key,
+                request=request,
+            )
 
         rq_job = queue.enqueue_call(
             func=rq_func,

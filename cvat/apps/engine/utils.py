@@ -136,7 +136,7 @@ def process_failed_job(rq_job):
 
     return parse_exception_message(exc_info)
 
-def configure_dependent_job(queue, rq_id, rq_func, db_storage, filename, key):
+def configure_dependent_job(queue, rq_id, rq_func, db_storage, filename, key, request):
     rq_job_id_download_file = rq_id + f'?action=download_{filename}'
     rq_job_download_file = queue.fetch_job(rq_job_id_download_file)
     if not rq_job_download_file:
@@ -144,7 +144,8 @@ def configure_dependent_job(queue, rq_id, rq_func, db_storage, filename, key):
         rq_job_download_file = queue.enqueue_call(
             func=rq_func,
             args=(db_storage, filename, key),
-            job_id=rq_job_id_download_file
+            job_id=rq_job_id_download_file,
+            meta=get_rq_job_meta(request=request, db_obj=db_storage),
         )
     return rq_job_download_file
 

@@ -922,8 +922,14 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
             key = filename
             fd, filename = mkstemp(prefix='cvat_', dir=settings.TMP_FILES_ROOT)
             dependent_job = configure_dependent_job(
-                queue, rq_id, _download_file_from_bucket,
-                db_storage, filename, key)
+                queue=queue,
+                rq_id=rq_id,
+                rq_func=_download_file_from_bucket,
+                db_storage=db_storage,
+                filename=filename,
+                key=key,
+                request=request,
+            )
 
         rq_job = queue.enqueue_call(
             func=importer,

@@ -233,11 +233,12 @@ def _get_serializer(instance):
         serializer.fields.pop("url", None)
     return serializer
 
-def set_request_id(payload, **kwargs):
+def set_request_id(payload=None, **kwargs):
+    _payload = payload or {}
     return {
-        **payload,
+        **_payload,
         "request": {
-            **payload.get("request", {}),
+            **_payload.get("request", {}),
             "id": request_id(**kwargs),
         },
     }
@@ -341,7 +342,7 @@ def handle_delete(scope, instance, **kwargs):
         user_id=uid,
         user_name=uname,
         user_email=uemail,
-        payload=set_request_id({}),
+        payload=set_request_id(),
     )
     message = JSONRenderer().render(event).decode('UTF-8')
 

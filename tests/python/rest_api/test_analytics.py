@@ -90,7 +90,7 @@ class TestGetAuditEvents:
             "image_quality": 10,
             "client_files": generate_image_files(3),
         }
-        tasks = [
+        task_ids = [
             _test_create_task(
                 self._USERNAME, task_spec, task_data, content_type="multipart/form-data"
             ),
@@ -99,11 +99,11 @@ class TestGetAuditEvents:
             ),
         ]
 
-        self.task_ids = [t[0] for t in tasks]
+        self.task_ids = [t[0] for t in task_ids]
 
         expected_request_ids = [
             project_request_id,
-            *[t[1] for t in tasks]
+            *[t[1] for t in task_ids]
         ]
 
         assert all(req_id is not None for req_id in expected_request_ids)
