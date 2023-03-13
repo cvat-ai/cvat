@@ -410,13 +410,15 @@ class Task(models.Model):
     @cached_property
     def completed_jobs_count(self) -> Optional[int]:
         # Requires this field to be defined externally,
-        # e.g. by calling Task.objects.with_job_summary
+        # e.g. by calling Task.objects.with_job_summary,
+        # to avoid unexpected DB queries on access.
         return None
 
     @cached_property
     def validation_jobs_count(self) -> Optional[int]:
         # Requires this field to be defined externally,
-        # e.g. by calling Task.objects.with_job_summary
+        # e.g. by calling Task.objects.with_job_summary,
+        # to avoid unexpected DB queries on access.
         return None
 
     def __str__(self):
