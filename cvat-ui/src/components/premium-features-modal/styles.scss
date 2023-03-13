@@ -28,6 +28,17 @@
                 margin-right: $grid-unit-size * 2;
             }
         }
+
+        .ant-btn-primary {
+            svg {
+                position: absolute;
+                top: 25%;
+                left: 10%;
+            }
+
+            padding-right: $grid-unit-size * 3;
+            padding-left: $grid-unit-size * 5;
+        }
     }
 
     .cvat-paid-features-notification-description {

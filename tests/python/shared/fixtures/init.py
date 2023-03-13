@@ -105,6 +105,13 @@ def _kube_get_db_pod_name():
     return output
 
 
+def _kube_get_clichouse_pod_name():
+    output, _ = _run(
+        "kubectl get pods -l app.kubernetes.io/name=clickhouse -o jsonpath={.items[0].metadata.name}"
+    )
+    return output
+
+
 def docker_cp(source, target):
     _run(f"docker container cp {source} {target}")
 
@@ -131,6 +138,15 @@ def kube_exec_cvat_db(command):
     _run(["kubectl", "exec", pod_name, "--"] + command)
 
 
+def docker_exec_clickhouse_db(command):
+    _run(["docker", "exec", f"{PREFIX}_cvat_clickhouse_1"] + command)
+
+
+def kube_exec_clickhouse_db(command):
+    pod_name = _kube_get_clichouse_pod_name()
+    _run(["kubectl", "exec", pod_name, "--"] + command)
+
+
 def docker_restore_db():
     docker_exec_cvat_db("psql -U root -d postgres -v from=test_db -v to=cvat -f /tmp/restore.sql")
 
@@ -141,6 +157,26 @@ def kube_restore_db():
             "/bin/sh",
             "-c",
             "PGPASSWORD=cvat_postgresql_postgres psql -U postgres -d postgres -v from=test_db -v to=cvat -f /tmp/restore.sql",
+        ]
+    )
+
+
+def docker_restore_clickhouse_db():
+    docker_exec_clickhouse_db(
+        [
+            "/bin/sh",
+            "-c",
+            'clickhouse-client --query "DROP TABLE IF EXISTS ${CLICKHOUSE_DB}.events;" && /docker-entrypoint-initdb.d/init.sh',
+        ]
+    )
+
+
+def kube_restore_clickhouse_db():
+    kube_exec_clickhouse_db(
+        [
+            "/bin/sh",
+            "-c",
+            'clickhouse-client --query "DROP TABLE IF EXISTS ${CLICKHOUSE_DB}.events;" && /bin/sh /docker-entrypoint-initdb.d/init.sh',
         ]
     )
 
@@ -403,3 +439,24 @@ def restore_cvat_data(request):
         docker_restore_data_volumes()
     else:
         kube_restore_data_volumes()
+
+
+@pytest.fixture(scope="function")
+def restore_clickhouse_db_per_function(request):
+    # Note that autouse fixtures are executed first within their scope, so be aware of the order
+    # Pre-test DB setups (eg. with class-declared autouse setup() method) may be cleaned.
+    # https://docs.pytest.org/en/stable/reference/fixtures.html#autouse-fixtures-are-executed-first-within-their-scope
+    platform = request.config.getoption("--platform")
+    if platform == "local":
+        docker_restore_clickhouse_db()
+    else:
+        kube_restore_clickhouse_db()
+
+
+@pytest.fixture(scope="class")
+def restore_clickhouse_db_per_class(request):
+    platform = request.config.getoption("--platform")
+    if platform == "local":
+        docker_restore_clickhouse_db()
+    else:
+        kube_restore_clickhouse_db()
