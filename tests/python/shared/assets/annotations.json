@@ -761,6 +761,161 @@
       "tags": [],
       "tracks": [],
       "version": 0
+    },
+    "21": {
+      "shapes": [
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 47,
+          "label_id": 38,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            106.361328125,
+            85.150390625,
+            240.083984375,
+            241.263671875
+          ],
+          "rotation": 45.9,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 0
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 1,
+          "group": 0,
+          "id": 48,
+          "label_id": 38,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            414.29522752496996,
+            124.8035516093205,
+            522.2641509433943,
+            286.75693673695605
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 0
+        }
+      ],
+      "tags": [
+        {
+          "attributes": [],
+          "frame": 2,
+          "group": 0,
+          "id": 5,
+          "label_id": 39,
+          "source": "manual"
+        },
+        {
+          "attributes": [],
+          "frame": 3,
+          "group": 0,
+          "id": 6,
+          "label_id": 38,
+          "source": "manual"
+        }
+      ],
+      "tracks": [],
+      "version": 0
+    },
+    "22": {
+      "shapes": [
+        {
+          "attributes": [],
+          "elements": [
+            {
+              "attributes": [],
+              "frame": 0,
+              "group": 0,
+              "id": 52,
+              "label_id": 49,
+              "occluded": false,
+              "outside": false,
+              "points": [
+                326.2062528608664,
+                107.42983682983868
+              ],
+              "rotation": 0.0,
+              "source": "manual",
+              "type": "points",
+              "z_order": 0
+            },
+            {
+              "attributes": [],
+              "frame": 0,
+              "group": 0,
+              "id": 50,
+              "label_id": 47,
+              "occluded": false,
+              "outside": false,
+              "points": [
+                136.46993006993034,
+                138.72697241590762
+              ],
+              "rotation": 0.0,
+              "source": "manual",
+              "type": "points",
+              "z_order": 0
+            },
+            {
+              "attributes": [],
+              "frame": 0,
+              "group": 0,
+              "id": 51,
+              "label_id": 48,
+              "occluded": false,
+              "outside": false,
+              "points": [
+                192.9001336620433,
+                421.9659673659692
+              ],
+              "rotation": 0.0,
+              "source": "manual",
+              "type": "points",
+              "z_order": 0
+            },
+            {
+              "attributes": [],
+              "frame": 0,
+              "group": 0,
+              "id": 53,
+              "label_id": 50,
+              "occluded": false,
+              "outside": false,
+              "points": [
+                412.07832167832197,
+                337.46374412038085
+              ],
+              "rotation": 0.0,
+              "source": "manual",
+              "type": "points",
+              "z_order": 0
+            }
+          ],
+          "frame": 0,
+          "group": 0,
+          "id": 49,
+          "label_id": 46,
+          "occluded": false,
+          "outside": false,
+          "points": [],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "skeleton",
+          "z_order": 0
+        }
+      ],
+      "tags": [],
+      "tracks": [],
+      "version": 0
     }
   },
   "task": {
@@ -1500,6 +1655,161 @@
           "rotation": 0.0,
           "source": "manual",
           "type": "rectangle",
+          "z_order": 0
+        }
+      ],
+      "tags": [],
+      "tracks": [],
+      "version": 0
+    },
+    "17": {
+      "shapes": [
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 47,
+          "label_id": 38,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            106.361328125,
+            85.150390625,
+            240.083984375,
+            241.263671875
+          ],
+          "rotation": 45.9,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 0
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 1,
+          "group": 0,
+          "id": 48,
+          "label_id": 38,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            414.29522752496996,
+            124.8035516093205,
+            522.2641509433943,
+            286.75693673695605
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 0
+        }
+      ],
+      "tags": [
+        {
+          "attributes": [],
+          "frame": 2,
+          "group": 0,
+          "id": 5,
+          "label_id": 39,
+          "source": "manual"
+        },
+        {
+          "attributes": [],
+          "frame": 3,
+          "group": 0,
+          "id": 6,
+          "label_id": 38,
+          "source": "manual"
+        }
+      ],
+      "tracks": [],
+      "version": 0
+    },
+    "18": {
+      "shapes": [
+        {
+          "attributes": [],
+          "elements": [
+            {
+              "attributes": [],
+              "frame": 0,
+              "group": 0,
+              "id": 52,
+              "label_id": 49,
+              "occluded": false,
+              "outside": false,
+              "points": [
+                326.2062528608664,
+                107.42983682983868
+              ],
+              "rotation": 0.0,
+              "source": "manual",
+              "type": "points",
+              "z_order": 0
+            },
+            {
+              "attributes": [],
+              "frame": 0,
+              "group": 0,
+              "id": 50,
+              "label_id": 47,
+              "occluded": false,
+              "outside": false,
+              "points": [
+                136.46993006993034,
+                138.72697241590762
+              ],
+              "rotation": 0.0,
+              "source": "manual",
+              "type": "points",
+              "z_order": 0
+            },
+            {
+              "attributes": [],
+              "frame": 0,
+              "group": 0,
+              "id": 51,
+              "label_id": 48,
+              "occluded": false,
+              "outside": false,
+              "points": [
+                192.9001336620433,
+                421.9659673659692
+              ],
+              "rotation": 0.0,
+              "source": "manual",
+              "type": "points",
+              "z_order": 0
+            },
+            {
+              "attributes": [],
+              "frame": 0,
+              "group": 0,
+              "id": 53,
+              "label_id": 50,
+              "occluded": false,
+              "outside": false,
+              "points": [
+                412.07832167832197,
+                337.46374412038085
+              ],
+              "rotation": 0.0,
+              "source": "manual",
+              "type": "points",
+              "z_order": 0
+            }
+          ],
+          "frame": 0,
+          "group": 0,
+          "id": 49,
+          "label_id": 46,
+          "occluded": false,
+          "outside": false,
+          "points": [],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "skeleton",
           "z_order": 0
         }
       ],

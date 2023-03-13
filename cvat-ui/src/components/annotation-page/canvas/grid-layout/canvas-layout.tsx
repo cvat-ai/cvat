@@ -22,7 +22,8 @@ import {
 } from '@ant-design/icons';
 
 import config from 'config';
-import { DimensionType, CombinedState } from 'reducers';
+import { DimensionType } from 'cvat-core-wrapper';
+import { CombinedState } from 'reducers';
 import CanvasWrapperComponent from 'components/annotation-page/canvas/views/canvas2d/canvas-wrapper';
 import CanvasWrapper3DComponent, {
     PerspectiveViewComponent,
@@ -72,7 +73,8 @@ const fitLayout = (type: DimensionType, layoutConfig: ItemLayout[]): ItemLayout[
     const relatedViews = layoutConfig
         .filter((item: ItemLayout) => item.viewType === ViewType.RELATED_IMAGE);
     const relatedViewsCols = relatedViews.length > 6 ? 2 : 1;
-    const height = Math.floor(config.CANVAS_WORKSPACE_ROWS / (relatedViews.length / relatedViewsCols));
+    let height = Math.floor(config.CANVAS_WORKSPACE_ROWS / (relatedViews.length / relatedViewsCols));
+    height = Math.min(height, config.CANVAS_WORKSPACE_DEFAULT_CONTEXT_HEIGHT);
     relatedViews.forEach((view: ItemLayout, i: number) => {
         updatedLayout.push({
             ...view,
@@ -88,7 +90,7 @@ const fitLayout = (type: DimensionType, layoutConfig: ItemLayout[]): ItemLayout[
         widthAvail -= updatedLayout[0].w * relatedViewsCols;
     }
 
-    if (type === DimensionType.DIM_2D) {
+    if (type === DimensionType.DIMENSION_2D) {
         const canvas = layoutConfig
             .find((item: ItemLayout) => item.viewType === ViewType.CANVAS) as ItemLayout;
         updatedLayout.push({
@@ -210,6 +212,10 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
         i: typeof (value.viewIndex) !== 'undefined' ? `${value.viewType}_${value.viewIndex}` : `${value.viewType}`,
     }));
 
+    const singleClassName = 'cvat-canvas-grid-root-single';
+    const className = !relatedFiles && children.length <= 1 ?
+        `cvat-canvas-grid-root ${singleClassName}` : 'cvat-canvas-grid-root';
+
     return (
         <Layout.Content>
             { !!rowHeight && (
@@ -219,7 +225,7 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
                     style={{ background: canvasBackgroundColor }}
                     containerPadding={[config.CANVAS_WORKSPACE_PADDING, config.CANVAS_WORKSPACE_PADDING]}
                     margin={[config.CANVAS_WORKSPACE_MARGIN, config.CANVAS_WORKSPACE_MARGIN]}
-                    className='cvat-canvas-grid-root'
+                    className={className}
                     rowHeight={rowHeight}
                     layout={layout}
                     onLayoutChange={(updatedLayout: RGL.Layout[]) => {
@@ -293,7 +299,7 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
                     }) }
                 </ReactGridLayout>
             )}
-            { type === DimensionType.DIM_3D && <CanvasWrapper3DComponent /> }
+            { type === DimensionType.DIMENSION_3D && <CanvasWrapper3DComponent /> }
             <div className='cvat-grid-layout-common-setups'>
                 <CVATTooltip title='Fit views'>
                     <PicCenterOutlined
@@ -355,7 +361,7 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
 }
 
 CanvasLayout.defaultProps = {
-    type: DimensionType.DIM_2D,
+    type: DimensionType.DIMENSION_2D,
 };
 
 CanvasLayout.PropType = {

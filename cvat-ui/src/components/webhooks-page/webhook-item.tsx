@@ -32,13 +32,13 @@ interface WebhookStatus {
 function setUpWebhookStatus(status: number): WebhookStatus {
     if (status && status.toString().startsWith('2')) {
         return {
-            message: `Last delivery was succesful. Response: ${status}`,
+            message: `Last delivery was successful. Response: ${status}`,
             className: 'cvat-webhook-status-available',
         };
     }
     if (status && status.toString().startsWith('5')) {
         return {
-            message: `Last delivery was not succesful. Response: ${status}`,
+            message: `Last delivery was not successful. Response: ${status}`,
             className: 'cvat-webhook-status-failed',
         };
     }

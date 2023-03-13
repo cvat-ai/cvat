@@ -38,7 +38,7 @@
         "url": "http://localhost:8080/api/users/1",
         "username": "admin1"
       },
-      "project": null,
+      "project_id": null,
       "target_url": "http://example.com/",
       "type": "organization",
       "updated_date": "2022-09-29T08:00:48.441000Z",
@@ -65,7 +65,7 @@
         "url": "http://localhost:8080/api/users/3",
         "username": "user2"
       },
-      "project": 3,
+      "project_id": 3,
       "target_url": "http://example.com",
       "type": "project",
       "updated_date": "2022-09-28T12:19:49.744000Z",
@@ -101,7 +101,7 @@
         "url": "http://localhost:8080/api/users/10",
         "username": "business1"
       },
-      "project": 1,
+      "project_id": 1,
       "target_url": "http://example.com/",
       "type": "project",
       "updated_date": "2022-09-28T12:18:12.412000Z",
@@ -128,7 +128,7 @@
         "url": "http://localhost:8080/api/users/2",
         "username": "user1"
       },
-      "project": 6,
+      "project_id": 6,
       "target_url": "http://example.com/",
       "type": "project",
       "updated_date": "2022-09-28T12:16:28.311000Z",

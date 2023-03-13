@@ -11,6 +11,7 @@ import { connect, useSelector } from 'react-redux';
 import {
     ArrowDownOutlined, ArrowLeftOutlined, ArrowRightOutlined, ArrowUpOutlined,
 } from '@ant-design/icons';
+import Button from 'antd/lib/button';
 import Spin from 'antd/lib/spin';
 
 import {
@@ -21,8 +22,10 @@ import {
     editShape,
     groupAnnotationsAsync,
     groupObjects,
+    mergeAnnotationsAsync,
     resetCanvas,
     shapeDrawn,
+    splitAnnotationsAsync,
     updateAnnotationsAsync,
     updateCanvasContextMenu,
 } from 'actions/annotation-actions';
@@ -33,7 +36,7 @@ import { CameraAction, Canvas3d, ViewsDOM } from 'cvat-canvas3d-wrapper';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { LogType } from 'cvat-logger';
-import { getCore } from 'cvat-core-wrapper';
+import { getCore, ObjectState, Job } from 'cvat-core-wrapper';
 
 const cvat = getCore();
 
@@ -45,7 +48,7 @@ interface StateToProps {
     colorBy: ColorBy;
     frameFetching: boolean;
     canvasInstance: Canvas3d;
-    jobInstance: any;
+    jobInstance: Job;
     frameData: any;
     annotations: any[];
     contextMenuVisibility: boolean;
@@ -62,9 +65,11 @@ interface DispatchToProps {
     onSetupCanvas(): void;
     onGroupObjects: (enabled: boolean) => void;
     onResetCanvas(): void;
-    onCreateAnnotations(sessionInstance: any, frame: number, states: any[]): void;
-    onUpdateAnnotations(states: any[]): void;
-    onGroupAnnotations(sessionInstance: any, frame: number, states: any[]): void;
+    onCreateAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void;
+    onGroupAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void;
+    onMergeAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void;
+    onSplitAnnotations(sessionInstance: Job, frame: number, state: ObjectState): void;
+    onUpdateAnnotations(states: ObjectState[]): void;
     onActivateObject: (activatedStateID: number | null) => void;
     onShapeDrawn: () => void;
     onEditShape: (enabled: boolean) => void;
@@ -134,14 +139,20 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onGroupObjects(enabled: boolean): void {
             dispatch(groupObjects(enabled));
         },
-        onCreateAnnotations(sessionInstance: any, frame: number, states: any[]): void {
-            dispatch(createAnnotationsAsync(sessionInstance, frame, states));
-        },
         onShapeDrawn(): void {
             dispatch(shapeDrawn());
         },
-        onGroupAnnotations(sessionInstance: any, frame: number, states: any[]): void {
+        onCreateAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void {
+            dispatch(createAnnotationsAsync(sessionInstance, frame, states));
+        },
+        onGroupAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void {
             dispatch(groupAnnotationsAsync(sessionInstance, frame, states));
+        },
+        onMergeAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void {
+            dispatch(mergeAnnotationsAsync(sessionInstance, frame, states));
+        },
+        onSplitAnnotations(sessionInstance: Job, frame: number, state: ObjectState): void {
+            dispatch(splitAnnotationsAsync(sessionInstance, frame, state));
         },
         onActivateObject(activatedStateID: number | null): void {
             if (activatedStateID === null) {
@@ -153,7 +164,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onEditShape(enabled: boolean): void {
             dispatch(editShape(enabled));
         },
-        onUpdateAnnotations(states: any[]): void {
+        onUpdateAnnotations(states: ObjectState[]): void {
             dispatch(updateAnnotationsAsync(states));
         },
         onUpdateContextMenu(
@@ -187,104 +198,106 @@ export const PerspectiveViewComponent = React.memo(
         };
 
         const ArrowGroup = (): ReactElement => (
-            <span className='cvat-canvas3d-perspective-arrow-directions'>
-                <CVATTooltip title='Shift+Arrow Up' placement='topRight'>
-                    <button
-                        data-cy='arrow-up'
-                        onClick={() => screenKeyControl(CameraAction.TILT_UP, false, true)}
-                        type='button'
-                        className='cvat-canvas3d-perspective-arrow-directions-icons-up'
-                    >
-                        <ArrowUpOutlined className='cvat-canvas3d-perspective-arrow-directions-icons-color' />
-                    </button>
-                </CVATTooltip>
-                <br />
-                <CVATTooltip title='Shift+Arrow Left' placement='topRight'>
-                    <button
-                        onClick={() => screenKeyControl(CameraAction.ROTATE_LEFT, false, true)}
-                        type='button'
-                        className='cvat-canvas3d-perspective-arrow-directions-icons-bottom'
-                    >
-                        <ArrowLeftOutlined className='cvat-canvas3d-perspective-arrow-directions-icons-color' />
-                    </button>
-                </CVATTooltip>
-                <CVATTooltip title='Shift+Arrow Bottom' placement='topRight'>
-                    <button
-                        onClick={() => screenKeyControl(CameraAction.TILT_DOWN, false, true)}
-                        type='button'
-                        className='cvat-canvas3d-perspective-arrow-directions-icons-bottom'
-                    >
-                        <ArrowDownOutlined className='cvat-canvas3d-perspective-arrow-directions-icons-color' />
-                    </button>
-                </CVATTooltip>
-                <CVATTooltip title='Shift+Arrow Right' placement='topRight'>
-                    <button
-                        onClick={() => screenKeyControl(CameraAction.ROTATE_RIGHT, false, true)}
-                        type='button'
-                        className='cvat-canvas3d-perspective-arrow-directions-icons-bottom'
-                    >
-                        <ArrowRightOutlined className='cvat-canvas3d-perspective-arrow-directions-icons-color' />
-                    </button>
-                </CVATTooltip>
-            </span>
+            <div className='cvat-canvas3d-perspective-arrow-directions'>
+                <div>
+                    <CVATTooltip title='Shift+Arrow Up' placement='topRight'>
+                        <Button
+                            size='small'
+                            onClick={() => screenKeyControl(CameraAction.TILT_UP, false, true)}
+                            className='cvat-canvas3d-perspective-arrow-directions-icons-up'
+                        >
+                            <ArrowUpOutlined className='cvat-canvas3d-perspective-arrow-directions-icons-color' />
+                        </Button>
+                    </CVATTooltip>
+                </div>
+                <div>
+                    <CVATTooltip title='Shift+Arrow Left' placement='topRight'>
+                        <Button
+                            size='small'
+                            onClick={() => screenKeyControl(CameraAction.ROTATE_LEFT, false, true)}
+                            className='cvat-canvas3d-perspective-arrow-directions-icons-left'
+                        >
+                            <ArrowLeftOutlined className='cvat-canvas3d-perspective-arrow-directions-icons-color' />
+                        </Button>
+                    </CVATTooltip>
+                    <CVATTooltip title='Shift+Arrow Bottom' placement='topRight'>
+                        <Button
+                            size='small'
+                            onClick={() => screenKeyControl(CameraAction.TILT_DOWN, false, true)}
+                            className='cvat-canvas3d-perspective-arrow-directions-icons-bottom'
+                        >
+                            <ArrowDownOutlined className='cvat-canvas3d-perspective-arrow-directions-icons-color' />
+                        </Button>
+                    </CVATTooltip>
+                    <CVATTooltip title='Shift+Arrow Right' placement='topRight'>
+                        <Button
+                            size='small'
+                            onClick={() => screenKeyControl(CameraAction.ROTATE_RIGHT, false, true)}
+                            className='cvat-canvas3d-perspective-arrow-directions-icons-right'
+                        >
+                            <ArrowRightOutlined className='cvat-canvas3d-perspective-arrow-directions-icons-color' />
+                        </Button>
+                    </CVATTooltip>
+                </div>
+            </div>
         );
 
         const ControlGroup = (): ReactElement => (
             <span className='cvat-canvas3d-perspective-directions'>
                 <CVATTooltip title='Alt+U' placement='topLeft'>
-                    <button
+                    <Button
+                        size='small'
                         onClick={() => screenKeyControl(CameraAction.MOVE_UP, true, false)}
-                        type='button'
-                        className='cvat-canvas3d-perspective-directions-icon'
+                        className='cvat-canvas3d-perspective-directions-icon cvat-canvas3d-perspective-shift-down'
                     >
                         U
-                    </button>
+                    </Button>
                 </CVATTooltip>
                 <CVATTooltip title='Alt+I' placement='topLeft'>
-                    <button
+                    <Button
+                        size='small'
                         onClick={() => screenKeyControl(CameraAction.ZOOM_IN, true, false)}
-                        type='button'
-                        className='cvat-canvas3d-perspective-directions-icon'
+                        className='cvat-canvas3d-perspective-directions-icon cvat-canvas3d-perspective-zoom-in'
                     >
                         I
-                    </button>
+                    </Button>
                 </CVATTooltip>
                 <CVATTooltip title='Alt+O' placement='topLeft'>
-                    <button
+                    <Button
+                        size='small'
                         onClick={() => screenKeyControl(CameraAction.MOVE_DOWN, true, false)}
-                        type='button'
-                        className='cvat-canvas3d-perspective-directions-icon'
+                        className='cvat-canvas3d-perspective-directions-icon cvat-canvas3d-perspective-shift-up'
                     >
                         O
-                    </button>
+                    </Button>
                 </CVATTooltip>
                 <br />
                 <CVATTooltip title='Alt+J' placement='topLeft'>
-                    <button
+                    <Button
+                        size='small'
                         onClick={() => screenKeyControl(CameraAction.MOVE_LEFT, true, false)}
-                        type='button'
-                        className='cvat-canvas3d-perspective-directions-icon'
+                        className='cvat-canvas3d-perspective-directions-icon cvat-canvas3d-perspective-shift-left'
                     >
                         J
-                    </button>
+                    </Button>
                 </CVATTooltip>
                 <CVATTooltip title='Alt+K' placement='topLeft'>
-                    <button
+                    <Button
+                        size='small'
                         onClick={() => screenKeyControl(CameraAction.ZOOM_OUT, true, false)}
-                        type='button'
-                        className='cvat-canvas3d-perspective-directions-icon'
+                        className='cvat-canvas3d-perspective-directions-icon cvat-canvas3d-perspective-zoom-out'
                     >
                         K
-                    </button>
+                    </Button>
                 </CVATTooltip>
                 <CVATTooltip title='Alt+L' placement='topLeft'>
-                    <button
+                    <Button
+                        size='small'
                         onClick={() => screenKeyControl(CameraAction.MOVE_RIGHT, true, false)}
-                        type='button'
-                        className='cvat-canvas3d-perspective-directions-icon'
+                        className='cvat-canvas3d-perspective-directions-icon cvat-canvas3d-perspective-shift-right'
                     >
                         L
-                    </button>
+                    </Button>
                 </CVATTooltip>
             </span>
         );
@@ -395,8 +408,6 @@ const Canvas3DWrapperComponent = React.memo((props: Props): ReactElement => {
         colorBy,
         contextMenuVisibility,
         frameData,
-        onResetCanvas,
-        onSetupCanvas,
         annotations,
         frame,
         jobInstance,
@@ -404,8 +415,14 @@ const Canvas3DWrapperComponent = React.memo((props: Props): ReactElement => {
         activatedStateID,
         resetZoom,
         activeObjectType,
+        onResetCanvas,
+        onSetupCanvas,
         onShapeDrawn,
+        onGroupObjects,
         onCreateAnnotations,
+        onMergeAnnotations,
+        onSplitAnnotations,
+        onGroupAnnotations,
     } = props;
     const { canvasInstance } = props as { canvasInstance: Canvas3d };
 
@@ -554,13 +571,20 @@ const Canvas3DWrapperComponent = React.memo((props: Props): ReactElement => {
         );
     };
 
-    const onCanvasObjectsGroupped = (event: any): void => {
-        const { onGroupAnnotations, onGroupObjects } = props;
-
-        onGroupObjects(false);
-
+    const onCanvasObjectsGroupped = (event: CustomEvent<{ states: ObjectState[] }>): void => {
         const { states } = event.detail;
+        onGroupObjects(false);
         onGroupAnnotations(jobInstance, frame, states);
+    };
+
+    const onCanvasObjectsMerged = (event: CustomEvent<{ states: ObjectState[] }>): void => {
+        const { states } = event.detail;
+        onMergeAnnotations(jobInstance, frame, states);
+    };
+
+    const onCanvasTrackSplitted = (event: CustomEvent<{ state: ObjectState }>): void => {
+        const { state } = event.detail;
+        onSplitAnnotations(jobInstance, frame, state);
     };
 
     useEffect(() => {
@@ -575,7 +599,9 @@ const Canvas3DWrapperComponent = React.memo((props: Props): ReactElement => {
         canvasInstanceDOM.perspective.addEventListener('canvas.edited', onCanvasEditDone);
         canvasInstanceDOM.perspective.addEventListener('canvas.contextmenu', onContextMenu);
         canvasInstanceDOM.perspective.addEventListener('click', onCanvasClick);
-        canvasInstanceDOM.perspective.addEventListener('canvas.groupped', onCanvasObjectsGroupped);
+        canvasInstanceDOM.perspective.addEventListener('canvas.groupped', onCanvasObjectsGroupped as EventListener);
+        canvasInstanceDOM.perspective.addEventListener('canvas.merged', onCanvasObjectsMerged as EventListener);
+        canvasInstanceDOM.perspective.addEventListener('canvas.splitted', onCanvasTrackSplitted as EventListener);
 
         return () => {
             canvasInstanceDOM.perspective.removeEventListener('canvas.drawn', onCanvasShapeDrawn);
@@ -583,9 +609,11 @@ const Canvas3DWrapperComponent = React.memo((props: Props): ReactElement => {
             canvasInstanceDOM.perspective.removeEventListener('canvas.edited', onCanvasEditDone);
             canvasInstanceDOM.perspective.removeEventListener('canvas.contextmenu', onContextMenu);
             canvasInstanceDOM.perspective.removeEventListener('click', onCanvasClick);
-            canvasInstanceDOM.perspective.removeEventListener('canvas.groupped', onCanvasObjectsGroupped);
+            canvasInstanceDOM.perspective.removeEventListener('canvas.groupped', onCanvasObjectsGroupped as EventListener);
+            canvasInstanceDOM.perspective.removeEventListener('canvas.merged', onCanvasObjectsMerged as EventListener);
+            canvasInstanceDOM.perspective.removeEventListener('canvas.splitted', onCanvasTrackSplitted as EventListener);
         };
-    }, [frameData, annotations, activeLabelID, contextMenuVisibility]);
+    }, [frameData, annotations, activeLabelID, contextMenuVisibility, activeObjectType]);
 
     return <></>;
 });

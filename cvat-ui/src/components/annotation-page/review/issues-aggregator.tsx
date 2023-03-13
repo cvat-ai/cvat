@@ -118,13 +118,12 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
             issueDialogs.push(
                 <IssueDialog
                     key={issue.id}
-                    id={issue.id}
+                    issue={issue}
                     top={minY}
                     left={minX}
                     angle={-geometry.angle}
                     scale={1 / geometry.scale}
                     isFetching={issueFetching !== null}
-                    comments={issue.comments}
                     resolved={issueResolved}
                     highlight={highlight}
                     blur={blur}
@@ -143,17 +142,16 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
                     }}
                 />,
             );
-        } else if (issue.comments.length) {
+        } else {
             issueLabels.push(
                 <HiddenIssueLabel
                     key={issue.id}
-                    id={issue.id}
+                    issue={issue}
                     top={minY}
                     left={minX}
                     angle={-geometry.angle}
                     scale={1 / geometry.scale}
                     resolved={issueResolved}
-                    message={issue.comments[issue.comments.length - 1].message}
                     highlight={highlight}
                     blur={blur}
                     onClick={() => {

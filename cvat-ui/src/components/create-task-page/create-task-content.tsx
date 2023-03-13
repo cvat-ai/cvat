@@ -547,7 +547,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         }, resolve);
     });
 
-    private handleSubmitMutliTasks = (): void => {
+    private handleSubmitMultiTasks = (): void => {
         this.validateBlocks()
             .then(() => {
                 this.addMultiTasks();
@@ -839,12 +839,22 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         return (
             <Row justify='end' gutter={5}>
                 <Col>
-                    <Button type='primary' onClick={this.handleSubmitAndOpen} disabled={!!uploadFileErrorMessage}>
+                    <Button
+                        className='cvat-submit-open-task-button'
+                        type='primary'
+                        onClick={this.handleSubmitAndOpen}
+                        disabled={!!uploadFileErrorMessage}
+                    >
                         Submit & Open
                     </Button>
                 </Col>
                 <Col>
-                    <Button type='primary' onClick={this.handleSubmitAndContinue} disabled={!!uploadFileErrorMessage}>
+                    <Button
+                        className='cvat-submit-open-task-button'
+                        type='primary'
+                        onClick={this.handleSubmitAndContinue}
+                        disabled={!!uploadFileErrorMessage}
+                    >
                         Submit & Continue
                     </Button>
                 </Col>
@@ -852,7 +862,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         );
     }
 
-    private renderFooterMutliTasks(): JSX.Element {
+    private renderFooterMultiTasks(): JSX.Element {
         const {
             multiTasks: items,
             uploadFileErrorMessage,
@@ -880,9 +890,10 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             <Row justify='end' gutter={5}>
                 <Col>
                     <Button
+                        className='cvat-submit-multiple-tasks-button'
                         htmlType='submit'
                         type='primary'
-                        onClick={this.handleSubmitMutliTasks}
+                        onClick={this.handleSubmitMultiTasks}
                         disabled={!!uploadFileErrorMessage}
                     >
                         Submit&nbsp;
@@ -911,7 +922,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                 {this.renderAdvancedBlock()}
 
                 <Col span={24} className='cvat-create-task-content-footer'>
-                    {many ? this.renderFooterMutliTasks() : this.renderFooterSingleTask() }
+                    {many ? this.renderFooterMultiTasks() : this.renderFooterSingleTask() }
                 </Col>
             </Row>
         );

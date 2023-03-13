@@ -1,4 +1,4 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -18,6 +18,7 @@ from PIL import Image
 from cvat_sdk.api_client import apis, exceptions, models
 from cvat_sdk.core import git
 from cvat_sdk.core.downloading import Downloader
+from cvat_sdk.core.helpers import get_paginated_collection
 from cvat_sdk.core.progress import ProgressReporter
 from cvat_sdk.core.proxies.annotations import AnnotationCrudMixin
 from cvat_sdk.core.proxies.jobs import Job
@@ -302,11 +303,21 @@ class Task(
         self._client.logger.info(f"Backup for task {self.id} has been downloaded to {filename}")
 
     def get_jobs(self) -> List[Job]:
-        return [Job(self._client, m) for m in self.api.list_jobs(id=self.id)[0]]
+        return [
+            Job(self._client, model=m)
+            for m in get_paginated_collection(
+                self._client.api_client.jobs_api.list_endpoint, task_id=self.id
+            )
+        ]
 
     def get_meta(self) -> models.IDataMetaRead:
         (meta, _) = self.api.retrieve_data_meta(self.id)
         return meta
+
+    def get_labels(self) -> List[models.ILabel]:
+        return get_paginated_collection(
+            self._client.api_client.labels_api.list_endpoint, task_id=self.id
+        )
 
     def get_frames_info(self) -> List[models.IFrameMeta]:
         return self.get_meta().frames
@@ -330,7 +341,7 @@ class TasksRepo(
     def create_from_data(
         self,
         spec: models.ITaskWriteRequest,
-        resources: Sequence[str],
+        resources: Sequence[StrPath],
         *,
         resource_type: ResourceType = ResourceType.LOCAL,
         data_params: Optional[Dict[str, Any]] = None,

@@ -15,6 +15,7 @@ from django.conf import settings
 from cvat.apps.engine.models import Project
 from cvat.apps.engine.serializers import BasicUserSerializer
 from cvat.apps.organizations.models import Organization
+from cvat.utils.http import make_requests_session
 
 from .event_type import EventTypeChoice, event_name
 from .models import Webhook, WebhookDelivery, WebhookTypeChoice
@@ -36,23 +37,24 @@ def send_webhook(webhook, payload, delivery):
             "sha256="
             + hmac.new(
                 webhook.secret.encode("utf-8"),
-                (json.dumps(payload) + "\n").encode("utf-8"),
+                json.dumps(payload).encode("utf-8"),
                 digestmod=hashlib.sha256,
             ).hexdigest()
         )
 
     response_body = None
     try:
-        response = requests.post(
-            webhook.target_url,
-            json=payload,
-            verify=webhook.enable_ssl,
-            headers=headers,
-            timeout=WEBHOOK_TIMEOUT,
-            stream=True,
-        )
-        status_code = response.status_code
-        response_body = response.raw.read(RESPONSE_SIZE_LIMIT + 1, decode_content=True)
+        with make_requests_session() as session:
+            response = session.post(
+                webhook.target_url,
+                json=payload,
+                verify=webhook.enable_ssl,
+                headers=headers,
+                timeout=WEBHOOK_TIMEOUT,
+                stream=True,
+            )
+            status_code = response.status_code
+            response_body = response.raw.read(RESPONSE_SIZE_LIMIT + 1, decode_content=True)
     except requests.ConnectionError:
         status_code = HTTPStatus.BAD_GATEWAY
     except requests.Timeout:
@@ -98,7 +100,6 @@ def select_webhooks(project_id, org_id, event):
             is_active=True,
             events__contains=event,
             type=WebhookTypeChoice.PROJECT,
-            organization=org_id,
             project=project_id,
         )
         selected_webhooks += list(webhooks)

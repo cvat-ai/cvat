@@ -1,5 +1,11 @@
-import { ArgumentError, DataError } from './exceptions';
+// Copyright (C) 2019-2022 Intel Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+import { ArgumentError } from './exceptions';
 import { HistoryActions } from './enums';
+import { Storage } from './storage';
 import loggerStorage from './logger-storage';
 import serverProxy from './server-proxy';
 import {
@@ -7,14 +13,16 @@ import {
     deleteFrame,
     restoreFrame,
     getRanges,
-    getPreview,
     clear as clearFrames,
     findNotDeletedFrame,
     getContextImage,
     patchMeta,
     getDeletedFrames,
+    decodePreview,
 } from './frames';
 import Issue from './issue';
+import { Label } from './labels';
+import { SerializedLabel } from './server-response-types';
 import { checkObjectType } from './common';
 import {
     getAnnotations, putAnnotations, saveAnnotations,
@@ -146,8 +154,9 @@ export function implementJob(Job) {
             return '';
         }
 
-        const frameData = await getPreview(this.taskId, this.id);
-        return frameData;
+        const preview = await serverProxy.jobs.getPreview(this.id);
+        const decoded = await decodePreview(preview);
+        return decoded;
     };
 
     Job.prototype.frames.contextImage.implementation = async function (frameId) {
@@ -343,40 +352,16 @@ export function implementJob(Job) {
     };
 
     Job.prototype.logger.log.implementation = async function (logType, payload, wait) {
-        const result = await loggerStorage.log(logType, { ...payload, task_id: this.taskId, job_id: this.id }, wait);
-        return result;
-    };
-
-    Job.prototype.predictor.status.implementation = async function () {
-        if (!Number.isInteger(this.projectId)) {
-            throw new DataError('The job must belong to a project to use the feature');
-        }
-
-        const result = await serverProxy.predictor.status(this.projectId);
-        return {
-            message: result.message,
-            progress: result.progress,
-            projectScore: result.score,
-            timeRemaining: result.time_remaining,
-            mediaAmount: result.media_amount,
-            annotationAmount: result.annotation_amount,
-        };
-    };
-
-    Job.prototype.predictor.predict.implementation = async function (frame) {
-        if (!Number.isInteger(frame) || frame < 0) {
-            throw new ArgumentError(`Frame must be a positive integer. Got: "${frame}"`);
-        }
-
-        if (frame < this.startFrame || frame > this.stopFrame) {
-            throw new ArgumentError(`The frame with number ${frame} is out of the job`);
-        }
-
-        if (!Number.isInteger(this.projectId)) {
-            throw new DataError('The job must belong to a project to use the feature');
-        }
-
-        const result = await serverProxy.predictor.predict(this.taskId, frame);
+        const result = await loggerStorage.log(
+            logType,
+            {
+                ...payload,
+                project_id: this.projectId,
+                task_id: this.taskId,
+                job_id: this.id,
+            },
+            wait,
+        );
         return result;
     };
 
@@ -401,7 +386,6 @@ export function implementTask(Task) {
     };
 
     Task.prototype.save.implementation = async function (onUpdate) {
-        // TODO: Add ability to change an owner and an assignee
         if (typeof this.id !== 'undefined') {
             // If the task has been already created, we update it
             const taskData = this._updateTrigger.getUpdated(this, {
@@ -409,17 +393,47 @@ export function implementTask(Task) {
                 projectId: 'project_id',
                 assignee: 'assignee_id',
             });
+
             if (taskData.assignee_id) {
                 taskData.assignee_id = taskData.assignee_id.id;
             }
-            if (taskData.labels) {
-                taskData.labels = this._internalData.labels;
-                taskData.labels = taskData.labels.map((el) => el.toJSON());
+
+            await Promise.all((taskData.labels || []).map((label: Label): Promise<unknown> => {
+                if (label.deleted) {
+                    return serverProxy.labels.delete(label.id);
+                }
+
+                if (label.patched) {
+                    return serverProxy.labels.update(label.id, label.toJSON());
+                }
+
+                return Promise.resolve();
+            }));
+
+            // leave only new labels to create them via project PATCH request
+            taskData.labels = (taskData.labels || [])
+                .filter((label: SerializedLabel) => !Number.isInteger(label.id)).map((el) => el.toJSON());
+            if (!taskData.labels.length) {
+                delete taskData.labels;
             }
 
-            const data = await serverProxy.tasks.save(this.id, taskData);
             this._updateTrigger.reset();
-            return new Task(data);
+
+            let serializedTask = null;
+            if (Object.keys(taskData).length) {
+                serializedTask = await serverProxy.tasks.save(this.id, taskData);
+            } else {
+                [serializedTask] = (await serverProxy.tasks.get({ id: this.id }));
+            }
+            const labels = await serverProxy.labels.get({ task_id: this.id });
+            const jobs = await serverProxy.jobs.get({ task_id: this.id }, true);
+
+            return new Task({
+                ...serializedTask,
+                progress: serializedTask.jobs,
+                jobs: jobs.results,
+                labels: labels.results,
+            });
         }
 
         const taskSpec: any = {
@@ -459,29 +473,26 @@ export function implementTask(Task) {
             use_zip_chunks: this.useZipChunks,
             use_cache: this.useCache,
             sorting_method: this.sortingMethod,
+            ...(typeof this.startFrame !== 'undefined' ? { start_frame: this.startFrame } : {}),
+            ...(typeof this.stopFrame !== 'undefined' ? { stop_frame: this.stopFrame } : {}),
+            ...(typeof this.frameFilter !== 'undefined' ? { frame_filter: this.frameFilter } : {}),
+            ...(typeof this.dataChunkSize !== 'undefined' ? { chunk_size: this.dataChunkSize } : {}),
+            ...(typeof this.copyData !== 'undefined' ? { copy_data: this.copyData } : {}),
+            ...(typeof this.cloudStorageId !== 'undefined' ? { cloud_storage_id: this.cloudStorageId } : {}),
         };
 
-        if (typeof this.startFrame !== 'undefined') {
-            taskDataSpec.start_frame = this.startFrame;
-        }
-        if (typeof this.stopFrame !== 'undefined') {
-            taskDataSpec.stop_frame = this.stopFrame;
-        }
-        if (typeof this.frameFilter !== 'undefined') {
-            taskDataSpec.frame_filter = this.frameFilter;
-        }
-        if (typeof this.dataChunkSize !== 'undefined') {
-            taskDataSpec.chunk_size = this.dataChunkSize;
-        }
-        if (typeof this.copyData !== 'undefined') {
-            taskDataSpec.copy_data = this.copyData;
-        }
-        if (typeof this.cloudStorageId !== 'undefined') {
-            taskDataSpec.cloud_storage_id = this.cloudStorageId;
-        }
-
         const task = await serverProxy.tasks.create(taskSpec, taskDataSpec, onUpdate);
-        return new Task(task);
+        const labels = await serverProxy.labels.get({ task_id: task.id });
+        const jobs = await serverProxy.jobs.get({
+            filter: JSON.stringify({ and: [{ '==': [{ var: 'task_id' }, task.id] }] }),
+        }, true);
+
+        return new Task({
+            ...task,
+            progress: task.jobs,
+            jobs: jobs.results,
+            labels: labels.results,
+        });
     };
 
     Task.prototype.delete.implementation = async function () {
@@ -525,6 +536,7 @@ export function implementTask(Task) {
             job.stopFrame,
             isPlaying,
             step,
+            this.dimension,
         );
         return result;
     };
@@ -547,8 +559,9 @@ export function implementTask(Task) {
             return '';
         }
 
-        const frameData = await getPreview(this.id);
-        return frameData;
+        const preview = await serverProxy.tasks.getPreview(this.id);
+        const decoded = await decodePreview(preview);
+        return decoded;
     };
 
     Task.prototype.frames.delete.implementation = async function (frame) {
@@ -785,40 +798,15 @@ export function implementTask(Task) {
     };
 
     Task.prototype.logger.log.implementation = async function (logType, payload, wait) {
-        const result = await loggerStorage.log(logType, { ...payload, task_id: this.id }, wait);
-        return result;
-    };
-
-    Task.prototype.predictor.status.implementation = async function () {
-        if (!Number.isInteger(this.projectId)) {
-            throw new DataError('The task must belong to a project to use the feature');
-        }
-
-        const result = await serverProxy.predictor.status(this.projectId);
-        return {
-            message: result.message,
-            progress: result.progress,
-            projectScore: result.score,
-            timeRemaining: result.time_remaining,
-            mediaAmount: result.media_amount,
-            annotationAmount: result.annotation_amount,
-        };
-    };
-
-    Task.prototype.predictor.predict.implementation = async function (frame) {
-        if (!Number.isInteger(frame) || frame < 0) {
-            throw new ArgumentError(`Frame must be a positive integer. Got: "${frame}"`);
-        }
-
-        if (frame >= this.size) {
-            throw new ArgumentError(`The frame with number ${frame} is out of the task`);
-        }
-
-        if (!Number.isInteger(this.projectId)) {
-            throw new DataError('The task must belong to a project to use the feature');
-        }
-
-        const result = await serverProxy.predictor.predict(this.id, frame);
+        const result = await loggerStorage.log(
+            logType,
+            {
+                ...payload,
+                project_id: this.projectId,
+                task_id: this.id,
+            },
+            wait,
+        );
         return result;
     };
 

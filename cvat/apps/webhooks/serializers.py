@@ -1,6 +1,11 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
+
+from rest_framework import serializers
+
+from cvat.apps.engine.models import Project
+from cvat.apps.engine.serializers import BasicUserSerializer, WriteOnceMixin
 
 from .event_type import EventTypeChoice, ProjectEvents, OrganizationEvents
 from .models import (
@@ -9,8 +14,6 @@ from .models import (
     WebhookTypeChoice,
     WebhookDelivery,
 )
-from rest_framework import serializers
-from cvat.apps.engine.serializers import BasicUserSerializer, WriteOnceMixin
 
 
 class EventTypeValidator:
@@ -60,6 +63,7 @@ class WebhookReadSerializer(serializers.ModelSerializer):
 
     events = EventTypesSerializer(read_only=True)
 
+    project_id = serializers.IntegerField(required=False, allow_null=True)
     type = serializers.ChoiceField(choices=WebhookTypeChoice.choices())
     content_type = serializers.ChoiceField(choices=WebhookContentTypeChoice.choices())
 
@@ -85,13 +89,16 @@ class WebhookReadSerializer(serializers.ModelSerializer):
             "created_date",
             "updated_date",
             "owner",
-            "project",
+            "project_id",
             "organization",
             "events",
             "last_status",
             "last_delivery_date",
         )
         read_only_fields = fields
+        extra_kwargs = {
+            "organization": {"allow_null": True},
+        }
 
 
 class WebhookWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
@@ -122,6 +129,9 @@ class WebhookWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         validators = [EventTypeValidator()]
 
     def create(self, validated_data):
+        if (project_id := validated_data.get('project_id')) is not None:
+            validated_data['organization'] = Project.objects.get(pk=project_id).organization
+
         db_webhook = Webhook.objects.create(**validated_data)
         return db_webhook
 

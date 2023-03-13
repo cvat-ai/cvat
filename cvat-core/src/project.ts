@@ -1,11 +1,12 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import { StorageLocation } from './enums';
+import _ from 'lodash';
+import { DimensionType, ProjectStatus, StorageLocation } from './enums';
 import { Storage } from './storage';
-
+import { SerializedLabel, SerializedProject } from './server-response-types';
 import PluginRegistry from './plugins';
 import { ArgumentError } from './exceptions';
 import { Label } from './labels';
@@ -13,19 +14,37 @@ import User from './user';
 import { FieldUpdateTrigger } from './common';
 
 export default class Project {
-    constructor(initialData) {
+    public readonly id: number;
+    public name: string;
+    public assignee: User;
+    public bugTracker: string;
+    public readonly status: ProjectStatus;
+    public readonly organization: string | null;
+    public readonly owner: User;
+    public readonly createdDate: string;
+    public readonly updatedDate: string;
+    public readonly taskSubsets: string[];
+    public readonly dimension: DimensionType;
+    public readonly sourceStorage: Storage;
+    public readonly targetStorage: Storage;
+    public labels: Label[];
+    public annotations: {
+        exportDataset: CallableFunction;
+        importDataset: CallableFunction;
+    }
+
+    constructor(initialData: SerializedProject & { labels?: SerializedLabel[] }) {
         const data = {
             id: undefined,
             name: undefined,
             status: undefined,
             assignee: undefined,
+            organization: undefined,
             owner: undefined,
             bug_tracker: undefined,
             created_date: undefined,
             updated_date: undefined,
             task_subsets: undefined,
-            training_project: undefined,
-            task_ids: undefined,
             dimension: undefined,
             source_storage: undefined,
             target_storage: undefined,
@@ -45,10 +64,6 @@ export default class Project {
         if (Array.isArray(initialData.labels)) {
             data.labels = initialData.labels
                 .map((labelData) => new Label(labelData)).filter((label) => !label.hasParent);
-        }
-
-        if (typeof initialData.training_project === 'object') {
-            data.training_project = { ...initialData.training_project };
         }
 
         Object.defineProperties(
@@ -83,6 +98,9 @@ export default class Project {
                 owner: {
                     get: () => data.owner,
                 },
+                organization: {
+                    get: () => data.organization,
+                },
                 bugTracker: {
                     get: () => data.bug_tracker,
                     set: (tracker) => {
@@ -101,45 +119,52 @@ export default class Project {
                 },
                 labels: {
                     get: () => [...data.labels],
-                    set: (labels) => {
+                    set: (labels: Label[]) => {
                         if (!Array.isArray(labels)) {
                             throw new ArgumentError('Value must be an array of Labels');
                         }
 
                         if (!Array.isArray(labels) || labels.some((label) => !(label instanceof Label))) {
                             throw new ArgumentError(
-                                `Each array value must be an instance of Label. ${typeof label} was found`,
+                                'Each array value must be an instance of Label',
                             );
                         }
 
-                        const IDs = labels.map((_label) => _label.id);
-                        const deletedLabels = data.labels.filter((_label) => !IDs.includes(_label.id));
-                        deletedLabels.forEach((_label) => {
-                            _label.deleted = true;
+                        const oldIDs = data.labels.map((_label) => _label.id);
+                        const newIDs = labels.map((_label) => _label.id);
+
+                        // find any deleted labels and mark them
+                        data.labels.filter((_label) => !newIDs.includes(_label.id))
+                            .forEach((_label) => {
+                                // for deleted labels let's specify that they are deleted
+                                _label.deleted = true;
+                            });
+
+                        // find any patched labels and mark them
+                        labels.forEach((_label) => {
+                            const { id } = _label;
+                            if (oldIDs.includes(id)) {
+                                const oldLabelIndex = data.labels.findIndex((__label) => __label.id === id);
+                                if (oldLabelIndex !== -1) {
+                                    // replace current label by the patched one
+                                    const oldLabel = data.labels[oldLabelIndex];
+                                    data.labels.splice(oldLabelIndex, 1, _label);
+                                    if (!_.isEqual(_label.toJSON(), oldLabel.toJSON())) {
+                                        _label.patched = true;
+                                    }
+                                }
+                            }
                         });
 
-                        data.labels = [...deletedLabels, ...labels];
+                        // find new labels to append them to the end
+                        const newLabels = labels.filter((_label) => !Number.isInteger(_label.id));
+                        data.labels = [...data.labels, ...newLabels];
+
                         updateTrigger.update('labels');
                     },
                 },
                 subsets: {
                     get: () => [...data.task_subsets],
-                },
-                trainingProject: {
-                    get: () => {
-                        if (typeof data.training_project === 'object') {
-                            return { ...data.training_project };
-                        }
-                        return data.training_project;
-                    },
-                    set: (updatedProject) => {
-                        if (typeof training === 'object') {
-                            data.training_project = { ...updatedProject };
-                        } else {
-                            data.training_project = updatedProject;
-                        }
-                        updateTrigger.update('trainingProject');
-                    },
                 },
                 sourceStorage: {
                     get: () => (
@@ -168,7 +193,7 @@ export default class Project {
 
         // When we call a function, for example: project.annotations.get()
         // In the method get we lose the project context
-        // So, we need return it
+        // So, we need to bind it
         this.annotations = {
             exportDataset: Object.getPrototypeOf(this).annotations.exportDataset.bind(this),
             importDataset: Object.getPrototypeOf(this).annotations.importDataset.bind(this),

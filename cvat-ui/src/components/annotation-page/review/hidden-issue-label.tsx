@@ -1,17 +1,20 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import React, { ReactPortal, useEffect, useRef } from 'react';
+import React, {
+    ReactPortal, useEffect, useRef,
+} from 'react';
 import ReactDOM from 'react-dom';
 import Tag from 'antd/lib/tag';
-import { CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
+import { CheckCircleOutlined, CloseCircleOutlined, WarningOutlined } from '@ant-design/icons';
 
+import { Issue } from 'cvat-core-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
 
 interface Props {
-    id: number;
-    message: string;
+    issue: Issue;
     top: number;
     left: number;
     angle: number;
@@ -24,11 +27,11 @@ interface Props {
 
 export default function HiddenIssueLabel(props: Props): ReactPortal {
     const {
-        id, message, top, left, angle, scale, resolved, onClick, highlight, blur,
+        issue, top, left, angle, scale, resolved, onClick, highlight, blur,
     } = props;
 
+    const { id, comments } = issue;
     const ref = useRef<HTMLElement>(null);
-
     useEffect(() => {
         if (!resolved) {
             setTimeout(highlight);
@@ -39,7 +42,7 @@ export default function HiddenIssueLabel(props: Props): ReactPortal {
 
     const elementID = `cvat-hidden-issue-label-${id}`;
     return ReactDOM.createPortal(
-        <CVATTooltip title={message}>
+        <CVATTooltip title={comments[0]?.message || 'Messages not found'}>
             <Tag
                 ref={ref}
                 id={elementID}
@@ -64,7 +67,7 @@ export default function HiddenIssueLabel(props: Props): ReactPortal {
                 ) : (
                     <CloseCircleOutlined className='cvat-hidden-issue-unsolved-indicator' />
                 )}
-                {message}
+                {comments[0]?.message || <WarningOutlined />}
             </Tag>
         </CVATTooltip>,
         window.document.getElementById('cvat_canvas_attachment_board') as HTMLElement,
