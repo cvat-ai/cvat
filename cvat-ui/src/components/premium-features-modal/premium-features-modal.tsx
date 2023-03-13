@@ -16,15 +16,20 @@ import PaidFeaturesPreviewImage from 'assets/paid-features-preview.png';
 import moment from 'moment';
 import config from 'config';
 import './styles.scss';
+import { UpgradeIcon } from 'icons';
 
 const core = getCore();
-const { CVAT_BILLING_URL } = config;
+const { CVAT_BILLING_URL, GITHUB_URL } = config;
+
+const PRICING_PAGE_LINK = 'https://www.cvat.ai/pricing/cloud';
+const PRICING_ACRICLE_LINK = 'https://www.cvat.ai/post/new-pricing-plans';
 
 export default function PremiumFeaturesModal(): JSX.Element {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [dontShowAgainToday, setDontShowAgainToday] = useState(localStorage.getItem('paidNotificationShown') === moment().format('YYYY-MM-DD'));
     const organization = useSelector((state: CombinedState) => state.organizations.current);
     const user = useSelector((state: CombinedState) => state.auth.user);
+    const upgradeButtonText = organization?.id ? 'Upgrade to Team' : 'Upgrade to Pro';
 
     const closeModal = useCallback((): void => {
         if (dontShowAgainToday) {
@@ -72,7 +77,8 @@ export default function PremiumFeaturesModal(): JSX.Element {
                                 type='primary'
                                 onClick={openBillingPage}
                             >
-                                Check premium features
+                                <UpgradeIcon />
+                                {upgradeButtonText}
                             </Button>
                         </Col>
                     </Row>
@@ -86,12 +92,27 @@ export default function PremiumFeaturesModal(): JSX.Element {
                     <Col className='cvat-paid-features-notification-description-details' span={14}>
                         <Space direction='vertical' size='small'>
                             <Typography.Text>
-                                We&apos;ve added premium features designed to enhance your experience and productivity.
-                                These features include advanced analytics and reporting, automated annotation,
-                                better user management, and increased storage capacity.
+                                Subscribe to the
+                                <a rel='noopener noreferrer' target='_blank' href={PRICING_PAGE_LINK}>
+                                    &nbsp;Paid&nbsp;
+                                </a>
+                                plan to enhance your experience and productivity. For more information, see
+                                <a rel='noopener noreferrer' target='_blank' href={PRICING_ACRICLE_LINK}>
+                                    &nbsp;Pricing: everything you need to know.&nbsp;
+                                </a>
                             </Typography.Text>
                             <Typography.Text>
-                                In order to access these features, you need to subscribe to our paid plan.
+                                Subscribing to the paid plan will contribute to the growth of the CVAT community.
+                                Your investment will support the development of new features and
+                                improve the overall performance of our product.
+                            </Typography.Text>
+                            <Typography.Text>
+                                Please give us a ⭐ on GitHub:
+                                <a rel='noopener noreferrer' target='_blank' href={GITHUB_URL}>
+                                    &nbsp;
+                                    {GITHUB_URL}
+                                </a>
+                                !
                             </Typography.Text>
                         </Space>
                     </Col>
