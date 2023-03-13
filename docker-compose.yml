@@ -171,9 +171,6 @@ services:
     container_name: cvat_ui
     image: cvat/ui:${CVAT_VERSION:-dev}
     restart: always
-    build:
-      args:
-        CLIENT_PLUGINS: ${CLIENT_PLUGINS}
     depends_on:
       - cvat_server
     labels:
