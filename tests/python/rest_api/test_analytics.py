@@ -103,8 +103,7 @@ class TestGetAuditEvents:
 
         expected_request_ids = [
             project_request_id,
-            tasks[0][1],
-            tasks[1][1],
+            *[t[1] for t in tasks]
         ]
 
         assert all(req_id is not None for req_id in expected_request_ids)
