@@ -360,7 +360,7 @@ Use the SAS token or connection string to grant secure access to the container.
 
 To configure the credentials:
 
-1. Go to **Home** > **Resourse groups** > You resourse name > Your storage account.
+1. Go to **Home** > **Resourse groups** > You resource name > Your storage account.
 2. On the left menu, click **Shared access signature**.
 3. Change the following fields:
    - **Allowed services**: Enable **Blob** . Disable all other fields.
@@ -421,5 +421,5 @@ For example, the dataset is [The Oxford-IIIT Pet Dataset](https://www.robots.ox.
 3. Create a manifest. For more information, see [**Dataset manifest**](/docs/manual/advanced/dataset_manifest/):
 
 ```bash
-python <cvat repository>/utils/dataset_manifest/create.py --output-dir <yourfolder> <yourfolder>
+python <cvat repository>/utils/dataset_manifest/create.py --output-dir <your_folder> <your_folder>
 ```
