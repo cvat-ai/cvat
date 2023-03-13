@@ -386,7 +386,7 @@ def handle_annotations_patch(instance, annotations, action, **kwargs):
             user_name=uname,
             user_email=uemail,
             payload=set_request_id({
-            "tags": tags,
+                "tags": tags,
             }),
         )
         message = JSONRenderer().render(event).decode('UTF-8')
