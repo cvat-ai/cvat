@@ -72,18 +72,6 @@ def pytest_addoption(parser):
         help="Platform identifier - 'kube' or 'local'. (default: %(default)s)",
     )
 
-    group._addoption(
-        "--no-run-services",
-        action="store_true",
-        help="Run tests without running containers. (default: %(default)s)",
-    )
-
-    group._addoption(
-        "--recreate-db",
-        action="store_true",
-        help="Recreate db after running tests. (default: %(default)s)",
-    )
-
 
 def _run(command, capture_output=True):
     _command = command.split() if isinstance(command, str) else command
@@ -272,7 +260,6 @@ def session_start(
     rebuild = session.config.getoption("--rebuild")
     cleanup = session.config.getoption("--cleanup")
     dumpdb = session.config.getoption("--dumpdb")
-    no_init = session.config.getoption("--no-run-services")
 
     if session.config.getoption("--collect-only"):
         if any((stop, start, rebuild, cleanup, dumpdb)):
@@ -297,7 +284,6 @@ def session_start(
             dumpdb,
             cleanup,
             rebuild,
-            no_init,
             cvat_root_dir,
             cvat_db_dir,
             extra_dc_files,
@@ -307,9 +293,7 @@ def session_start(
         kube_start(cvat_db_dir)
 
 
-def local_start(
-    start, stop, dumpdb, cleanup, rebuild, no_init, cvat_root_dir, cvat_db_dir, extra_dc_files
-):
+def local_start(start, stop, dumpdb, cleanup, rebuild, cvat_root_dir, cvat_db_dir, extra_dc_files):
     if start and stop:
         raise Exception("--start-services and --stop-services are incompatible")
 
@@ -335,8 +319,11 @@ def local_start(
         stop_services(dc_files, cvat_root_dir)
         pytest.exit("All testing containers are stopped", returncode=0)
 
-    if not no_init:
+    if not any(
+        [cn in [f"{PREFIX}_cvat_server_1", f"{PREFIX}_cvat_db_1"] for cn in running_containers()]
+    ):
         start_services(dc_files, rebuild, cvat_root_dir)
+
     docker_restore_data_volumes()
     docker_cp(cvat_db_dir / "restore.sql", f"{PREFIX}_cvat_db_1:/tmp/restore.sql")
     docker_cp(cvat_db_dir / "data.json", f"{PREFIX}_cvat_server_1:/tmp/data.json")
@@ -373,16 +360,6 @@ def pytest_sessionstart(session: pytest.Session) -> None:
     session_start(session)
 
 
-def local_finish(recreate_db):
-    docker_restore_db()
-    docker_exec_cvat_db("dropdb test_db")
-
-    if recreate_db:
-        docker_exec_cvat_db("dropdb --if-exists cvat")
-        docker_exec_cvat_db("createdb cvat")
-        docker_exec_cvat("python manage.py migrate")
-
-
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     if session.config.getoption("--collect-only"):
         return
@@ -390,8 +367,12 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     platform = session.config.getoption("--platform")
 
     if platform == "local":
-        recreate_db = session.config.getoption("--recreate-db")
-        local_finish(recreate_db)
+        docker_restore_db()
+        docker_exec_cvat_db("dropdb test_db")
+
+        docker_exec_cvat_db("dropdb --if-exists cvat")
+        docker_exec_cvat_db("createdb cvat")
+        docker_exec_cvat("python manage.py migrate")
 
 
 @pytest.fixture(scope="function")
