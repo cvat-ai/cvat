@@ -262,16 +262,12 @@ vector:
 clickhouse:
   shards: 1
   replicaCount: 1
-  extraEnvVarsSecret: "cvat-analytics-secret"
-  extraVolumes:
-    - name: clickhouse-config
-      configMap:
-        name: cvat-clickhouse-init
-        defaultMode: 0774
-  extraVolumeMounts:
-    - name: clickhouse-config
-      mountPath: "/docker-entrypoint-initdb.d"
-      readOnly: true
+  extraEnvVarsSecret: cvat-analytics-secret
+  initdbScriptsSecret: cvat-clickhouse-init
+  auth:
+    username: user
+    existingSecret: cvat-analytics-secret
+    existingSecretKey: CLICKHOUSE_PASSWORD
 
 grafana:
   datasources:
