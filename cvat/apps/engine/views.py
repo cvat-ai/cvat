@@ -2346,7 +2346,8 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
         if isinstance(db_instance, Project):
             tasks_update = list(map(lambda db_task: timezone.localtime(db_task.updated_date), db_instance.tasks.all()))
             last_instance_update_time = max(tasks_update + [last_instance_update_time])
-        request_time = rq_job.meta.get('request_time', None)
+        rq_request = rq_job.meta.get('request_time', None)
+        request_time = rq_request.get('time', None) if rq_request else None
         if request_time is None or request_time < last_instance_update_time:
             rq_job.cancel()
             rq_job.delete()
@@ -2418,10 +2419,7 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
         func=callback,
         args=(db_instance.id, format_name, server_address),
         job_id=rq_id,
-        meta={
-            'request_time': timezone.localtime(),
-            **get_rq_job_meta(request=request, db_obj=db_instance),
-        },
+        meta=get_rq_job_meta(request=request, db_obj=db_instance),
         result_ttl=ttl, failure_ttl=ttl)
     return Response(status=status.HTTP_202_ACCEPTED)
 

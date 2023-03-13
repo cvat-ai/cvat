@@ -12,6 +12,7 @@ import traceback
 import subprocess
 import os
 import urllib.parse
+from django.utils import timezone
 
 from av import VideoFrame
 from PIL import Image
@@ -166,6 +167,7 @@ def get_rq_job_meta(request, db_obj):
         },
         'request': {
             "uuid": request.uuid,
+            "time": timezone.localtime(),
         },
         'org_id': oid,
         'org_slug': oslug,

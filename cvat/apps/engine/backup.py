@@ -823,7 +823,8 @@ def export(db_instance, request, queue_name):
     rq_job = queue.fetch_job(rq_id)
     if rq_job:
         last_project_update_time = timezone.localtime(db_instance.updated_date)
-        request_time = rq_job.meta.get('request_time', None)
+        rq_request = rq_job.meta.get('request', None)
+        request_time = rq_request.get("time", None) if rq_request else None
         if request_time is None or request_time < last_project_update_time:
             rq_job.cancel()
             rq_job.delete()
@@ -878,10 +879,7 @@ def export(db_instance, request, queue_name):
         func=_create_backup,
         args=(db_instance, Exporter, '{}_backup.zip'.format(obj_type), logger, cache_ttl),
         job_id=rq_id,
-        meta={
-            'request_time': timezone.localtime(),
-            **get_rq_job_meta(request=request, db_obj=db_instance),
-        },
+        meta=get_rq_job_meta(request=request, db_obj=db_instance),
         result_ttl=ttl, failure_ttl=ttl)
     return Response(status=status.HTTP_202_ACCEPTED)
 
