@@ -17,7 +17,8 @@
       "jobs": {
         "completed": 0,
         "count": 1,
-        "url": "http://localhost:8080/api/jobs?task_id=20"
+        "url": "http://localhost:8080/api/jobs?task_id=20",
+        "validation": 0
       },
       "labels": {
         "count": 2,
@@ -66,7 +67,8 @@
       "jobs": {
         "completed": 0,
         "count": 1,
-        "url": "http://localhost:8080/api/jobs?task_id=19"
+        "url": "http://localhost:8080/api/jobs?task_id=19",
+        "validation": 0
       },
       "labels": {
         "count": 2,
@@ -115,7 +117,8 @@
       "jobs": {
         "completed": 0,
         "count": 1,
-        "url": "http://localhost:8080/api/jobs?task_id=18"
+        "url": "http://localhost:8080/api/jobs?task_id=18",
+        "validation": 0
       },
       "labels": {
         "count": 1,
