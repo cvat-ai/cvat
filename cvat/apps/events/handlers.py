@@ -98,41 +98,29 @@ def _get_current_request(instance=None):
 
     return None
 
-def request_id(instance=None):
-    request = _get_current_request(instance)
-    if request is not None:
-        if isinstance(request, dict):
-            return request.get("uuid", None)
-        return getattr(request, "uuid", None)
+def _get_value(obj, key):
+    if obj is not None:
+        if isinstance(obj, dict):
+            return obj.get(key, None)
+        return getattr(obj, key, None)
 
     return None
+
+def request_id(instance=None):
+    request = _get_current_request(instance)
+    return _get_value(request, "uuid")
 
 def user_id(instance=None):
     current_user = _get_current_user(instance)
-    if current_user is not None:
-        if isinstance(current_user, dict):
-            return current_user.get("id", None)
-        return getattr(current_user, "id", None)
-
-    return None
+    return _get_value(current_user, "id")
 
 def user_name(instance=None):
     current_user = _get_current_user(instance)
-    if current_user is not None:
-        if isinstance(current_user, dict):
-            return current_user.get("username", None)
-        return getattr(current_user, "username", None)
-
-    return None
+    return _get_value(current_user, "username")
 
 def user_email(instance=None):
     current_user = _get_current_user(instance)
-    if current_user is not None:
-        if isinstance(current_user, dict):
-            return current_user.get("email", None)
-        return getattr(current_user, "email", None)
-
-    return None
+    return _get_value(current_user, "email")
 
 def organization_slug(instance):
     if isinstance(instance, Organization):
