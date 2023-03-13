@@ -16,7 +16,7 @@ from boto3.s3.transfer import TransferConfig
 from botocore.exceptions import ClientError
 from botocore.handlers import disable_signing
 
-from azure.storage.blob import BlobServiceClient
+from azure.storage.blob import BlobServiceClient, ContainerClient
 from azure.core.exceptions import ResourceExistsError, HttpResponseError
 from azure.storage.blob import PublicAccess
 
@@ -25,6 +25,8 @@ from google.cloud.exceptions import NotFound as GoogleCloudNotFound, Forbidden a
 
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.models import CredentialsTypeChoice, CloudProviderChoice
+
+from typing import Optional
 
 class Status(str, Enum):
     AVAILABLE = 'AVAILABLE'
@@ -383,7 +385,13 @@ class AzureBlobContainer(_CloudStorage):
     class Effect:
         pass
 
-    def __init__(self, container, account_name, sas_token=None, connection_string=None):
+    def __init__(
+        self,
+        container: str,
+        account_name: Optional[str] = None,
+        sas_token: Optional[str] = None,
+        connection_string: Optional[str] = None
+    ):
         super().__init__()
         self._account_name = account_name
         if connection_string:
@@ -395,16 +403,18 @@ class AzureBlobContainer(_CloudStorage):
         self._container_client = self._blob_service_client.get_container_client(container)
 
     @property
-    def container(self):
+    def container(self) -> ContainerClient:
         return self._container_client
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._container_client.container_name
 
     @property
-    def account_url(self):
-        return "{}.blob.core.windows.net".format(self._account_name)
+    def account_url(self) -> Optional[str]:
+        if self._account_name:
+            return "{}.blob.core.windows.net".format(self._account_name)
+        return None
 
     def create(self):
         try:

@@ -29,8 +29,8 @@ export interface Props {
     cloudStorage?: CloudStorage;
 }
 
-type CredentialsFormNames = 'key' | 'secret_key' | 'account_name' | 'session_token';
-type CredentialsCamelCaseNames = 'key' | 'secretKey' | 'accountName' | 'sessionToken';
+type CredentialsFormNames = 'key' | 'secret_key' | 'account_name' | 'session_token' | 'connection_string';
+type CredentialsCamelCaseNames = 'key' | 'secretKey' | 'accountName' | 'sessionToken' | 'connectionString';
 
 interface CloudStorageForm {
     credentials_type: CredentialsType;
@@ -43,6 +43,7 @@ interface CloudStorageForm {
     secret_key?: string;
     SAS_token?: string;
     key_file?: File;
+    connection_string?: string;
     description?: string;
     region?: string;
     prefix?: string;
@@ -77,6 +78,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
         key: 'X'.repeat(128),
         secretKey: 'X'.repeat(40),
         keyFile: new File([], 'fakeKey.json'),
+        connectionString: 'X'.repeat(400),
     };
 
     const [keyVisibility, setKeyVisibility] = useState(false);
@@ -112,6 +114,8 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             fieldsValue.secret_key = fakeCredentialsData.secretKey;
         } else if (cloudStorage.credentialsType === CredentialsType.KEY_FILE_PATH) {
             setUploadedKeyFile(fakeCredentialsData.keyFile);
+        } else if (cloudStorage.credentialsType === CredentialsType.CONNECTION_STRING) {
+            fieldsValue.connection_string = fakeCredentialsData.connectionString;
         }
 
         if (cloudStorage.specificAttributes) {
@@ -261,6 +265,9 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             }
             if (cloudStorageData.session_token === fakeCredentialsData.sessionToken) {
                 delete cloudStorageData.session_token;
+            }
+            if (cloudStorageData.connection_string === fakeCredentialsData.connectionString) {
+                delete cloudStorageData.connection_string;
             }
             dispatch(updateCloudStorageAsync(cloudStorageData));
         } else {
@@ -425,7 +432,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                         {...internalCommonProps}
                     >
                         <Input.Password
-                            maxLength={437}
+                            maxLength={440}
                             visibilityToggle={connectionStringVisibility}
                             onChange={() => setConnectionStringVisibility(true)}
                         />

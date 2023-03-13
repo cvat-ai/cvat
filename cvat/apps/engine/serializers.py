@@ -1435,7 +1435,7 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
         provider_type = attrs.get('provider_type')
         if provider_type == models.CloudProviderChoice.AZURE_CONTAINER:
             if not attrs.get('account_name', '') and not attrs.get('connection_string', ''):
-                raise serializers.ValidationError('Account name or Connection string for Azure container was not specified')
+                raise serializers.ValidationError('Account name or connection string for Azure container was not specified')
         return attrs
 
     @staticmethod
