@@ -63,7 +63,7 @@ function waitForClone({ data: cloneResponse }: any): Promise<void> {
 
                         reject(message);
                     } else {
-                        const message = `Repository status check returned the status "${response.status}"`;
+                        const message = `Repository status check returned the status "${data.status}"`;
                         reject(message);
                     }
                 })
