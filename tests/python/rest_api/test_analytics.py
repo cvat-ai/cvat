@@ -101,10 +101,7 @@ class TestGetAuditEvents:
 
         self.task_ids = [t[0] for t in task_ids]
 
-        expected_request_ids = [
-            project_request_id,
-            *[t[1] for t in task_ids]
-        ]
+        expected_request_ids = [project_request_id, *[t[1] for t in task_ids]]
 
         assert all(req_id is not None for req_id in expected_request_ids)
 
