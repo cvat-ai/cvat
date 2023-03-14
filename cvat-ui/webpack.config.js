@@ -25,8 +25,8 @@ module.exports = (env) => {
             [`plugin_${index}`]: {
                 dependOn: 'cvat-ui',
                 // path can be absolute, in this case it is accepted as is
-                // otherwise path can be relative to cvat root directory
-                import: path.isAbsolute(_path) ? _path : path.join(__dirname, '..', _path, 'src', 'ts', 'index.tsx'),
+                // also the path can be relative to cvat-ui root directory
+                import: path.isAbsolute(_path) ? _path : path.join(__dirname, _path, 'src', 'ts', 'index.tsx'),
             },
         }), {});
 
