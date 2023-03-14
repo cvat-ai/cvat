@@ -36,7 +36,7 @@
   "pk": 1,
   "fields": {
     "password": "pbkdf2_sha256$260000$DevmxlmLwciP1P6sZs2Qag$U9DFtjTWx96Sk95qY6UXVcvpdQEP2LcoFBftk5D2RKY=",
-    "last_login": "2023-03-01T15:34:27.878Z",
+    "last_login": "2023-03-10T11:54:54.620Z",
     "is_superuser": true,
     "username": "admin1",
     "first_name": "Admin",
@@ -613,6 +613,14 @@
   "fields": {
     "session_data": ".eJxVjDsOwjAQBe_iGll2Ev8o6TmDtetd4wCypTipEHeHSCmgfTPzXiLCtpa4dV7iTOIstBKn3xEhPbjuhO5Qb02mVtdlRrkr8qBdXhvx83K4fwcFevnWjDT6KfmRlSEHTmGyOfigKA8aR9TZgiXO3jKlwRAr61JGA2YKgZ0S7w8qsjkD:1mxDjE:ktIwpvhQwj3_BtA8Avyq5WmmpmIJD88pF_vSxFzeetA",
     "expire_date": "2021-12-28T19:44:48.529Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "rmk4xete2em5m8rbllkk7d2nbd4q4rzg",
+  "fields": {
+    "session_data": ".eJxVjEEOwiAQRe_C2pDSDjC4dO8ZCMOAVA0kpV0Z765NutDtf-_9l_BhW4vfelr8zOIslDj9bhTiI9Ud8D3UW5Ox1XWZSe6KPGiX18bpeTncv4MSevnWzo0RtZ0MgAEmVg4HS2jdoAxqpAh5cmizNkwBIRlFEJzmEdhkVCTeH7LvNxA:1pabKo:-Qpngoe5m2XSdO9BYT01S3o_V8dldaxml3hDBR9GcNc",
+    "expire_date": "2023-03-24T11:54:54.631Z"
   }
 },
 {
@@ -1227,6 +1235,44 @@
 {
   "model": "engine.data",
   "pk": 17,
+  "fields": {
+    "chunk_size": 72,
+    "size": 2,
+    "image_quality": 70,
+    "start_frame": 0,
+    "stop_frame": 1,
+    "frame_filter": "",
+    "compressed_chunk_type": "imageset",
+    "original_chunk_type": "imageset",
+    "storage_method": "cache",
+    "storage": "local",
+    "cloud_storage": null,
+    "sorting_method": "lexicographical",
+    "deleted_frames": "[]"
+  }
+},
+{
+  "model": "engine.data",
+  "pk": 18,
+  "fields": {
+    "chunk_size": 72,
+    "size": 2,
+    "image_quality": 70,
+    "start_frame": 0,
+    "stop_frame": 1,
+    "frame_filter": "",
+    "compressed_chunk_type": "imageset",
+    "original_chunk_type": "imageset",
+    "storage_method": "cache",
+    "storage": "local",
+    "cloud_storage": null,
+    "sorting_method": "lexicographical",
+    "deleted_frames": "[]"
+  }
+},
+{
+  "model": "engine.data",
+  "pk": 19,
   "fields": {
     "chunk_size": 72,
     "size": 2,
@@ -2364,6 +2410,50 @@
   }
 },
 {
+  "model": "engine.image",
+  "pk": 453,
+  "fields": {
+    "data": 18,
+    "path": "15.png",
+    "frame": 0,
+    "width": 982,
+    "height": 376
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 454,
+  "fields": {
+    "data": 18,
+    "path": "16.png",
+    "frame": 1,
+    "width": 565,
+    "height": 365
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 455,
+  "fields": {
+    "data": 19,
+    "path": "33.png",
+    "frame": 0,
+    "width": 339,
+    "height": 351
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 456,
+  "fields": {
+    "data": 19,
+    "path": "34.png",
+    "frame": 1,
+    "width": 944,
+    "height": 271
+  }
+},
+{
   "model": "engine.project",
   "pk": 1,
   "fields": {
@@ -2553,6 +2643,42 @@
     "organization": 2,
     "source_storage": 21,
     "target_storage": 22
+  }
+},
+{
+  "model": "engine.project",
+  "pk": 12,
+  "fields": {
+    "name": "project with attributes",
+    "owner": [
+      "admin1"
+    ],
+    "assignee": null,
+    "bug_tracker": "",
+    "created_date": "2023-03-10T11:57:14.944Z",
+    "updated_date": "2023-03-10T11:57:48.747Z",
+    "status": "annotation",
+    "organization": null,
+    "source_storage": 27,
+    "target_storage": 28
+  }
+},
+{
+  "model": "engine.project",
+  "pk": 13,
+  "fields": {
+    "name": "project with attributes 2",
+    "owner": [
+      "admin1"
+    ],
+    "assignee": null,
+    "bug_tracker": "",
+    "created_date": "2023-03-10T11:58:04.216Z",
+    "updated_date": "2023-03-10T11:58:04.216Z",
+    "status": "annotation",
+    "organization": null,
+    "source_storage": 31,
+    "target_storage": 32
   }
 },
 {
@@ -2894,6 +3020,56 @@
     "organization": 2,
     "source_storage": 23,
     "target_storage": 24
+  }
+},
+{
+  "model": "engine.task",
+  "pk": 19,
+  "fields": {
+    "project": null,
+    "name": "task with attributes",
+    "mode": "annotation",
+    "owner": [
+      "admin1"
+    ],
+    "assignee": null,
+    "bug_tracker": "",
+    "created_date": "2023-03-10T11:56:33.757Z",
+    "updated_date": "2023-03-10T11:56:54.904Z",
+    "overlap": 0,
+    "segment_size": 2,
+    "status": "annotation",
+    "data": 18,
+    "dimension": "2d",
+    "subset": "",
+    "organization": null,
+    "source_storage": 25,
+    "target_storage": 26
+  }
+},
+{
+  "model": "engine.task",
+  "pk": 20,
+  "fields": {
+    "project": 12,
+    "name": "task in project with attributes",
+    "mode": "annotation",
+    "owner": [
+      "admin1"
+    ],
+    "assignee": null,
+    "bug_tracker": "",
+    "created_date": "2023-03-10T11:57:31.614Z",
+    "updated_date": "2023-03-10T11:57:48.835Z",
+    "overlap": 0,
+    "segment_size": 2,
+    "status": "annotation",
+    "data": 19,
+    "dimension": "2d",
+    "subset": "",
+    "organization": null,
+    "source_storage": 29,
+    "target_storage": 30
   }
 },
 {
@@ -3673,6 +3849,38 @@
   }
 },
 {
+  "model": "engine.clientfile",
+  "pk": 445,
+  "fields": {
+    "data": 18,
+    "file": "/home/django/data/data/18/raw/16.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 446,
+  "fields": {
+    "data": 18,
+    "file": "/home/django/data/data/18/raw/15.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 447,
+  "fields": {
+    "data": 19,
+    "file": "/home/django/data/data/19/raw/33.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 448,
+  "fields": {
+    "data": 19,
+    "file": "/home/django/data/data/19/raw/34.png"
+  }
+},
+{
   "model": "engine.relatedfile",
   "pk": 1,
   "fields": {
@@ -3812,6 +4020,24 @@
   "pk": 22,
   "fields": {
     "task": 18,
+    "start_frame": 0,
+    "stop_frame": 1
+  }
+},
+{
+  "model": "engine.segment",
+  "pk": 23,
+  "fields": {
+    "task": 19,
+    "start_frame": 0,
+    "stop_frame": 1
+  }
+},
+{
+  "model": "engine.segment",
+  "pk": 24,
+  "fields": {
+    "task": 20,
     "start_frame": 0,
     "stop_frame": 1
   }
@@ -4001,6 +4227,30 @@
     "segment": 22,
     "assignee": null,
     "updated_date": "2023-03-01T15:36:38.114Z",
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "in progress"
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 23,
+  "fields": {
+    "segment": 23,
+    "assignee": null,
+    "updated_date": "2023-03-10T11:56:55.066Z",
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "in progress"
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 24,
+  "fields": {
+    "segment": 24,
+    "assignee": null,
+    "updated_date": "2023-03-10T11:57:49.019Z",
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress"
@@ -4523,6 +4773,78 @@
   }
 },
 {
+  "model": "engine.label",
+  "pk": 51,
+  "fields": {
+    "task": 19,
+    "project": null,
+    "name": "cat",
+    "color": "#6080c0",
+    "type": "any",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 52,
+  "fields": {
+    "task": 19,
+    "project": null,
+    "name": "car",
+    "color": "#2080c0",
+    "type": "any",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 53,
+  "fields": {
+    "task": null,
+    "project": 12,
+    "name": "cat",
+    "color": "#6080c0",
+    "type": "any",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 54,
+  "fields": {
+    "task": null,
+    "project": 12,
+    "name": "car",
+    "color": "#2080c0",
+    "type": "any",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 55,
+  "fields": {
+    "task": null,
+    "project": 13,
+    "name": "cat",
+    "color": "#6080c0",
+    "type": "any",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 56,
+  "fields": {
+    "task": null,
+    "project": 13,
+    "name": "car",
+    "color": "#2080c0",
+    "type": "any",
+    "parent": null
+  }
+},
+{
   "model": "engine.skeleton",
   "pk": 1,
   "fields": {
@@ -4612,6 +4934,78 @@
     "input_type": "checkbox",
     "default_value": "false",
     "values": "false"
+  }
+},
+{
+  "model": "engine.attributespec",
+  "pk": 7,
+  "fields": {
+    "label": 51,
+    "name": "attr",
+    "mutable": false,
+    "input_type": "text",
+    "default_value": "default",
+    "values": "default"
+  }
+},
+{
+  "model": "engine.attributespec",
+  "pk": 8,
+  "fields": {
+    "label": 52,
+    "name": "color",
+    "mutable": false,
+    "input_type": "radio",
+    "default_value": "white",
+    "values": "white\nblack\nred"
+  }
+},
+{
+  "model": "engine.attributespec",
+  "pk": 9,
+  "fields": {
+    "label": 53,
+    "name": "attr",
+    "mutable": false,
+    "input_type": "text",
+    "default_value": "default",
+    "values": "default"
+  }
+},
+{
+  "model": "engine.attributespec",
+  "pk": 10,
+  "fields": {
+    "label": 54,
+    "name": "color",
+    "mutable": false,
+    "input_type": "radio",
+    "default_value": "white",
+    "values": "white\nblack\nred"
+  }
+},
+{
+  "model": "engine.attributespec",
+  "pk": 11,
+  "fields": {
+    "label": 55,
+    "name": "attr",
+    "mutable": false,
+    "input_type": "text",
+    "default_value": "default",
+    "values": "default"
+  }
+},
+{
+  "model": "engine.attributespec",
+  "pk": 12,
+  "fields": {
+    "label": 56,
+    "name": "color",
+    "mutable": false,
+    "input_type": "radio",
+    "default_value": "white",
+    "values": "white\nblack\nred"
   }
 },
 {
@@ -5163,6 +5557,78 @@
   }
 },
 {
+  "model": "engine.labeledshape",
+  "pk": 54,
+  "fields": {
+    "job": 23,
+    "label": 51,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[244.32906271072352, 57.53054619015711, 340.34389750505943, 191.28914362778414]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 55,
+  "fields": {
+    "job": 23,
+    "label": 52,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[424.4396493594086, 86.6660822656795, 664.8078219824692, 251.54672960215976]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 56,
+  "fields": {
+    "job": 24,
+    "label": 53,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[35.913636363637124, 80.58636363636288, 94.8227272727272, 170.58636363636288]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 57,
+  "fields": {
+    "job": 24,
+    "label": 54,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[190.95909090909117, 100.22272727272684, 297.7318181818191, 209.8590909090908]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
   "model": "engine.labeledshapeattributeval",
   "pk": 1,
   "fields": {
@@ -5187,6 +5653,42 @@
     "spec": 1,
     "value": "mazda",
     "shape": 42
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 4,
+  "fields": {
+    "spec": 7,
+    "value": "non-default",
+    "shape": 54
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 5,
+  "fields": {
+    "spec": 8,
+    "value": "black",
+    "shape": 55
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 6,
+  "fields": {
+    "spec": 9,
+    "value": "non-default",
+    "shape": 56
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 7,
+  "fields": {
+    "spec": 10,
+    "value": "black",
+    "shape": 57
   }
 },
 {
@@ -6021,6 +6523,70 @@
 {
   "model": "engine.storage",
   "pk": 24,
+  "fields": {
+    "location": "local",
+    "cloud_storage_id": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 25,
+  "fields": {
+    "location": "local",
+    "cloud_storage_id": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 26,
+  "fields": {
+    "location": "local",
+    "cloud_storage_id": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 27,
+  "fields": {
+    "location": "local",
+    "cloud_storage_id": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 28,
+  "fields": {
+    "location": "local",
+    "cloud_storage_id": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 29,
+  "fields": {
+    "location": "local",
+    "cloud_storage_id": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 30,
+  "fields": {
+    "location": "local",
+    "cloud_storage_id": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 31,
+  "fields": {
+    "location": "local",
+    "cloud_storage_id": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 32,
   "fields": {
     "location": "local",
     "cloud_storage_id": null
