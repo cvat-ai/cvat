@@ -1,5 +1,5 @@
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -14,7 +14,7 @@ from contextlib import closing
 from PIL import Image
 from json.decoder import JSONDecodeError
 
-from .errors import InvalidFieldValueError, InvalidManifestError, InvalidVideoFrameError, MissingFieldError
+from .errors import InvalidManifestError, InvalidVideoFrameError
 from .utils import SortingMethod, md5_hash, rotate_image, sort
 
 class VideoStreamReader:
@@ -357,7 +357,7 @@ class _ManifestManager(ABC):
     def _json_item_is_valid(self, **state):
         for item in self._required_item_attributes:
             if state.get(item, None) is None:
-                raise MissingFieldError(
+                raise InvalidManifestError(
                     f"Invalid '{self.manifest.name}' file structure: "
                     f"'{item}' is required, but not found"
                 )
@@ -654,11 +654,11 @@ class _BaseManifestValidator(ABC):
     @staticmethod
     def _validate_version(_dict):
         if not _dict['version'] in _Manifest.SupportedVersion.choices():
-            raise InvalidFieldValueError('Incorrect version field')
+            raise InvalidManifestError('Incorrect version field')
 
     def _validate_type(self, _dict):
         if not _dict['type'] == self.TYPE:
-            raise InvalidFieldValueError('Incorrect type field')
+            raise InvalidManifestError('Incorrect type field')
 
     @abstractproperty
     def validators(self):
@@ -684,18 +684,18 @@ class _VideoManifestStructureValidator(_BaseManifestValidator):
     def _validate_properties(_dict):
         properties = _dict['properties']
         if not isinstance(properties['name'], str):
-            raise InvalidFieldValueError('Incorrect name field')
+            raise InvalidManifestError('Incorrect name field')
         if not isinstance(properties['resolution'], list):
-            raise InvalidFieldValueError('Incorrect resolution field')
+            raise InvalidManifestError('Incorrect resolution field')
         if not isinstance(properties['length'], int) or properties['length'] == 0:
-            raise InvalidFieldValueError('Incorrect length field')
+            raise InvalidManifestError('Incorrect length field')
 
     @staticmethod
     def _validate_first_item(_dict):
         if not isinstance(_dict['number'], int):
-            raise InvalidFieldValueError('Incorrect number field')
+            raise InvalidManifestError('Incorrect number field')
         if not isinstance(_dict['pts'], int):
-            raise InvalidFieldValueError('Incorrect pts field')
+            raise InvalidManifestError('Incorrect pts field')
 
 class _DatasetManifestStructureValidator(_BaseManifestValidator):
     TYPE = 'images'
@@ -711,18 +711,18 @@ class _DatasetManifestStructureValidator(_BaseManifestValidator):
     @staticmethod
     def _validate_first_item(_dict):
         if not isinstance(_dict['name'], str):
-            raise InvalidFieldValueError('Incorrect name field')
+            raise InvalidManifestError('Incorrect name field')
         if not isinstance(_dict['extension'], str):
-            raise InvalidFieldValueError('Incorrect extension field')
+            raise InvalidManifestError('Incorrect extension field')
         # FIXME
         # Width and height are required for 2D data, but
         # for 3D these parameters are not saved now.
         # It is necessary to uncomment these restrictions when manual preparation for 3D data is implemented.
 
         # if not isinstance(_dict['width'], int):
-        #     raise InvalidFieldValueError('Incorrect width field')
+        #     raise InvalidManifestError('Incorrect width field')
         # if not isinstance(_dict['height'], int):
-        #     raise InvalidFieldValueError('Incorrect height field')
+        #     raise InvalidManifestError('Incorrect height field')
 
 def is_manifest(full_manifest_path):
     return is_video_manifest(full_manifest_path) or \
