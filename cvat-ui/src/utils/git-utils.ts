@@ -43,22 +43,22 @@ interface ReposData {
     lfs: boolean
 }
 
-function waitForClone(cloneResponse: any): Promise<void> {
+function waitForClone({ data: cloneResponse }: any): Promise<void> {
     return new Promise((resolve, reject): void => {
         async function checkCallback(): Promise<void> {
             core.server
                 .request(`${baseURL}/git/repository/check/${cloneResponse.rq_id}`, {
                     method: 'GET',
                 })
-                .then((response: any): void => {
-                    if (['queued', 'started'].includes(response.status)) {
+                .then(({ data }: any): void => {
+                    if (['queued', 'started'].includes(data.status)) {
                         setTimeout(checkCallback, 1000);
-                    } else if (response.status === 'finished') {
+                    } else if (data.status === 'finished') {
                         resolve();
-                    } else if (response.status === 'failed') {
+                    } else if (data.status === 'failed') {
                         let message = 'Repository status check failed. ';
-                        if (response.stderr) {
-                            message += response.stderr;
+                        if (data.stderr) {
+                            message += data.stderr;
                         }
 
                         reject(message);
@@ -169,7 +169,7 @@ export function syncRepos(tid: number): Promise<void> {
             .request(`${baseURL}/git/repository/push/${tid}`, {
                 method: 'GET',
             })
-            .then((syncResponse: any): void => {
+            .then(({ data: syncResponse }: any): void => {
                 async function checkSync(): Promise<void> {
                     const id = syncResponse.rq_id;
                     const response = (await core.server.request(`${baseURL}/git/repository/check/${id}`, {
