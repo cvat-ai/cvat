@@ -282,12 +282,21 @@ def _validate_job_file_mapping(
 
     return job_file_mapping
 
-def _validate_manifest(manifests, root_dir, is_in_cloud, db_cloud_storage, data_storage_method):
+def _validate_manifest(
+    manifests: List[str],
+    root_dir: Optional[str],
+    is_in_cloud: bool,
+    db_cloud_storage,
+    *,
+    data_storage_method: str,
+    data_sorting_method: str,
+) -> Optional[str]:
     if manifests:
         if len(manifests) != 1:
             raise ValidationError('Only one manifest file can be attached to data')
         manifest_file = manifests[0]
         full_manifest_path = os.path.join(root_dir, manifests[0])
+
         if is_in_cloud:
             cloud_storage_instance = db_storage_to_storage_instance(db_cloud_storage)
             # check that cloud storage manifest file exists and is up to date
@@ -295,11 +304,24 @@ def _validate_manifest(manifests, root_dir, is_in_cloud, db_cloud_storage, data_
                     datetime.utcfromtimestamp(os.path.getmtime(full_manifest_path)).replace(tzinfo=pytz.UTC) \
                     < cloud_storage_instance.get_file_last_modified(manifest_file):
                 cloud_storage_instance.download_file(manifest_file, full_manifest_path)
+
         if is_manifest(full_manifest_path):
-            if not (settings.USE_CACHE or data_storage_method != models.StorageMethodChoice.CACHE):
-                raise ValidationError("Manifest file can be uploaded only if 'Use cache' option is also selected")
+            if not (
+                data_sorting_method == models.SortingMethod.PREDEFINED or
+                data_storage_method == models.StorageMethodChoice.CACHE and settings.USE_CACHE
+            ):
+                if data_storage_method == models.StorageMethodChoice.CACHE and not settings.USE_CACHE:
+                    slogger.glob.warning("This server doesn't allow to use cache for data. "
+                        "Please turn 'use cache' off and try to recreate the task")
+
+                raise ValidationError(
+                    "A manifest file can only be used with the 'use cache' option "
+                    "or when the 'sorting_method' == 'predefined'"
+                )
             return manifest_file
+
         raise ValidationError('Invalid manifest was uploaded')
+
     return None
 
 def _validate_url(url):
@@ -482,38 +504,14 @@ def _create_thread(
     else:
         assert False, f"Unknown file storage {db_data.storage}"
 
-    manifest_file = _retrieve_manifest(
-        manifest_files, manifest_root,
-        is_data_in_cloud, db_data.cloud_storage if is_data_in_cloud else None,
-        db_data.storage_method,
+    manifest_file = _validate_manifest(
+        manifest_files,
+        manifest_root,
+        is_data_in_cloud,
+        db_data.cloud_storage if is_data_in_cloud else None,
+        data_storage_method=db_data.storage_method,
+        data_sorting_method=data['sorting_method'],
     )
-    if manifest_file and not (
-        data['sorting_method'] == models.SortingMethod.PREDEFINED or
-        db_data.storage_method == models.StorageMethodChoice.CACHE and settings.USE_CACHE
-    ):
-        if db_data.storage_method == models.StorageMethodChoice.CACHE and not settings.USE_CACHE:
-            slogger.glob.warning("This server doesn't allow to use cache for data. "
-                "Please turn 'use cache' off and try to recreate the task")
-
-        raise Exception(
-            "A manifest file can only be used with the 'use cache' option "
-            "or when the 'sorting_method' == 'predefined'"
-        )
-
-    manifest = None
-    if data['server_files'] and is_data_in_cloud:
-        cloud_storage_instance = db_storage_to_storage_instance(db_data.cloud_storage)
-        sorted_media = sort(media['image'], data['sorting_method'])
-
-        data_size = len(sorted_media)
-        segment_step, *_ = _get_task_segment_data(db_task, data_size)
-        for start_frame in range(0, data_size, segment_step):
-            first_sorted_media_image = sorted_media[start_frame]
-            cloud_storage_instance.download_file(first_sorted_media_image, os.path.join(upload_dir, first_sorted_media_image))
-
-        # prepare task manifest file from cloud storage manifest file
-        # NOTE we should create manifest before defining chunk_size
-        # FIXME in the future when will be implemented archive support
 
     if is_data_in_cloud:
         manifest = ImageManifestManager(db_data.get_manifest_path())
