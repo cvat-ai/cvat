@@ -285,9 +285,9 @@ def _validate_job_file_mapping(
 def _validate_manifest(
     manifests: List[str],
     root_dir: Optional[str],
-    is_in_cloud: bool,
-    db_cloud_storage,
     *,
+    is_in_cloud: bool,
+    db_cloud_storage: Optional[Any],
     data_storage_method: str,
     data_sorting_method: str,
 ) -> Optional[str]:
@@ -392,11 +392,6 @@ def _download_data(urls, upload_dir):
 def _get_manifest_frame_indexer(start_frame=0, frame_step=1):
     return lambda frame_id: start_frame + frame_id * frame_step
 
-class InvalidManifestError(Exception):
-    """
-    Indicates an invalid manifest file uploaded
-    """
-
 def _read_dataset_manifest(path: str) -> ImageManifestManager:
     """
     Reads an upload manifest file
@@ -405,7 +400,7 @@ def _read_dataset_manifest(path: str) -> ImageManifestManager:
     if is_dataset_manifest(path):
         return ImageManifestManager(path)
     elif not is_manifest(path):
-        raise InvalidManifestError(
+        raise ValidationError(
             "Can't recognize a manifest file in "
             "the uploaded file '{}'".format(os.path.basename(path))
         )
@@ -507,12 +502,13 @@ def _create_thread(
     manifest_file = _validate_manifest(
         manifest_files,
         manifest_root,
-        is_data_in_cloud,
-        db_data.cloud_storage if is_data_in_cloud else None,
+        is_in_cloud=is_data_in_cloud,
+        db_cloud_storage=db_data.cloud_storage if is_data_in_cloud else None,
         data_storage_method=db_data.storage_method,
         data_sorting_method=data['sorting_method'],
     )
 
+    manifest = None
     if is_data_in_cloud:
         manifest = ImageManifestManager(db_data.get_manifest_path())
         cloud_storage_manifest = ImageManifestManager(
@@ -582,12 +578,12 @@ def _create_thread(
     if (not isBackupRestore and manifest_file and
         data['sorting_method'] == models.SortingMethod.RANDOM
     ):
-        raise Exception("It isn't supported to upload manifest file and use random sorting")
+        raise ValidationError("It isn't supported to upload manifest file and use random sorting")
 
     if (isBackupRestore and db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM and
         data['sorting_method'] in {models.SortingMethod.RANDOM, models.SortingMethod.PREDEFINED}
     ):
-        raise Exception(
+        raise ValidationError(
             "It isn't supported to import the task that was created "
             "without cache but with random/predefined sorting"
         )
@@ -600,7 +596,7 @@ def _create_thread(
             continue
 
         if extractor is not None:
-            raise Exception('Combined data types are not supported')
+            raise ValidationError('Combined data types are not supported')
 
         if (isDatasetImport or isBackupRestore) and media_type == 'image' and db_data.storage == models.StorageChoice.SHARE:
             manifest_index = _get_manifest_frame_indexer(db_data.start_frame, db_data.get_frame_step())
@@ -625,7 +621,7 @@ def _create_thread(
         extractor = MEDIA_TYPES[media_type]['extractor'](**details)
 
     if extractor is None:
-        raise Exception("Can't create a task without data")
+        raise ValidationError("Can't create a task without data")
 
     if isinstance(extractor, MEDIA_TYPES['zip']['extractor']):
         extractor.extract()
@@ -642,7 +638,7 @@ def _create_thread(
         db_task.project.tasks.count() > 1 and
         db_task.project.tasks.first().dimension != validate_dimension.dimension
     ):
-        raise Exception(
+        raise ValidationError(
             f"Dimension ({validate_dimension.dimension}) of the task must be the "
             f"same as other tasks in project ({db_task.project.tasks.first().dimension})"
         )

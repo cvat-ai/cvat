@@ -415,7 +415,7 @@ class ClientFile(models.Model):
     class Meta:
         default_permissions = ()
         unique_together = ("data", "file")
-        ordering = 'id'
+        ordering = ('id', )
 
 # For server files on the mounted share
 class ServerFile(models.Model):
@@ -425,7 +425,7 @@ class ServerFile(models.Model):
     class Meta:
         default_permissions = ()
         unique_together = ("data", "file")
-        ordering = 'id'
+        ordering = ('id', )
 
 # For URLs
 class RemoteFile(models.Model):
@@ -435,7 +435,7 @@ class RemoteFile(models.Model):
     class Meta:
         default_permissions = ()
         unique_together = ("data", "file")
-        ordering = 'id'
+        ordering = ('id', )
 
 
 class RelatedFile(models.Model):
@@ -447,7 +447,7 @@ class RelatedFile(models.Model):
     class Meta:
         default_permissions = ()
         unique_together = ("data", "path")
-        ordering = 'id'
+        ordering = ('id', )
 
 class Segment(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE)

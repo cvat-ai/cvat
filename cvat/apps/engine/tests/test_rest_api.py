@@ -40,7 +40,6 @@ from cvat.apps.engine.media_extractors import ValidateDimension, sort
 from cvat.apps.engine.tests.utils import get_paginated_collection
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 
-from cvat.apps.engine.media_extractors import ValidateDimension, sort
 from cvat.apps.engine.tests.utils import ApiTestBase, ForceLogin, disable_logging, generate_video_file
 from cvat.apps.engine.tests.utils import generate_image_file as _generate_image_file
 
@@ -4028,14 +4027,19 @@ class TaskDataAPITestCase(ApiTestBase):
             # Suppress stacktrace spam from another thread from the expected error
             es.enter_context(disable_logging())
 
+            def _send_callback(*args, **kwargs):
+                response = self._run_api_v2_tasks_id_data_post(*args, **kwargs)
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+                raise Exception(response.content.decode(response.charset))
+
             task_spec = task_spec_common.copy()
             task_spec['name'] = task_spec['name'] + f' manifest without cache'
             task_data_copy = task_data.copy()
             task_data_copy['use_cache'] = False
             self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data_copy,
                 self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
-                image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE)
-
+                image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE,
+                send_data_callback=_send_callback)
 
     def _test_api_v2_tasks_id_data_create_can_use_server_images_with_predefined_sorting(self, user):
         task_spec = {

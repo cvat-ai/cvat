@@ -4,6 +4,7 @@
 
 import io
 import json
+import os.path as osp
 import zipfile
 from logging import Logger
 from pathlib import Path
