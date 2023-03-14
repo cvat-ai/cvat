@@ -800,6 +800,9 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             db_project.save()
             assert serializer.instance.organization == db_project.organization
 
+    def _is_data_uploading(self) -> bool:
+        return 'data' in self.action
+
     # UploadMixin method
     def get_upload_dir(self):
         if 'annotations' in self.action:
