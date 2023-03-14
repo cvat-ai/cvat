@@ -17,18 +17,20 @@ module.exports = (env) => {
     const defaultPlugins = [];
     const appConfigFile = process.env.UI_APP_CONFIG ? process.env.UI_APP_CONFIG : defaultAppConfig;
     const pluginsList = process.env.CLIENT_PLUGINS ? process.env.CLIENT_PLUGINS.split(':')
-        .map((s) => s.trim()).filter((s) => !!s) : defaultPlugins;
-    console.log('Application config file is: ', appConfigFile);
-    console.log('List of plugins: ', pluginsList);
+        .map((s) => s.trim()).filter((s) => !!s) : defaultPlugins
 
     const transformedPlugins = pluginsList
         .filter((plugin) => !!plugin).reduce((acc, _path, index) => ({
             ...acc,
             [`plugin_${index}`]: {
                 dependOn: 'cvat-ui',
-                import: _path,
+                // path can be absolute, in this case it is accepted as is
+                // otherwise path can be relative to cvat root directory
+                import: path.isAbsolute(_path) ? _path : path.join(__dirname, '..', _path, 'src', 'ts', 'index.tsx'),
             },
         }), {});
+
+    console.log('List of plugins: ', Object.values(transformedPlugins).map((plugin) => plugin.import));
 
     return {
         target: 'web',
