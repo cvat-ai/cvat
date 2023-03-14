@@ -58,9 +58,9 @@ class ApiTestBase(APITestCase):
         # This situation is not expected to happen on a real server, because
         # cache keys include Data object ids, which cannot be reused or freed
         # in real scenarios
-        for cache_dir in [settings.CACHE_ROOT, settings.CACHES["media"]["LOCATION"]]:
-            if os.path.isdir(cache_dir):
-                shutil.rmtree(cache_dir)
+        from django.core.cache import caches
+        for cache in caches.all(initialized_only=True):
+            cache.clear()
 
         return super().tearDown()
 
