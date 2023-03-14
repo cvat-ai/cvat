@@ -46,10 +46,6 @@ in the input list of files, it must not be inside the archive.
 
 If there are multiple manifest files in the input file list, an error will be raised.
 
-> If the input files are images and available locally to the server at the time of task creation
-> (i.e. they are not in the cloud), only the file names and extensions are required in
-> the manifest file.
-
 ## How to generate manifest files
 
 CVAT provides a dedicated Python tool to generate manifest files.
@@ -202,8 +198,8 @@ The file describes an ordered set of images and 3d point clouds.
 {
   "name": <string, image filename>,
   "extension": <string, . + file extension>,
-  "width": <int, width, optional>,
-  "height": <int, height, optional>,
+  "width": <int, width>,
+  "height": <int, height>,
   "meta": <dict, optional>,
   "checksum": <string, md5 hash, optional>
 } (repeatable)
@@ -233,15 +229,4 @@ The file describes an ordered set of images and 3d point clouds.
 {"name":"image1","extension":".jpg","width":720,"height":405,"meta":{"related_images":[]},"checksum":"548918ec4b56132a5cff1d4acabe9947"}
 {"name":"image2","extension":".jpg","width":183,"height":275,"meta":{"related_images":[]},"checksum":"4b4eefd03cc6a45c1c068b98477fb639"}
 {"name":"image3","extension":".jpg","width":301,"height":167,"meta":{"related_images":[]},"checksum":"0e454a6f4a13d56c82890c98be063663"}
-```
-
-If the images are available to the server at the time of task creation,
-extra fields can be omitted:
-
-```json
-{"version":"1.0"}
-{"type":"images"}
-{"name":"image1","extension":".jpg"}
-{"name":"subdir/image2","extension":".jpg"}
-{"name":"subdir/image3","extension":".png"}
 ```

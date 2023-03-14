@@ -3042,8 +3042,6 @@ def generate_pdf_file(filename, page_count=1):
 
 def generate_manifest_file(data_type, manifest_path, sources, *,
     sorting_method=SortingMethod.LEXICOGRAPHICAL,
-    with_hash=False,
-    with_image_info=True,
     root_dir=None,
 ):
     if data_type == 'video':
@@ -3057,8 +3055,7 @@ def generate_manifest_file(data_type, manifest_path, sources, *,
         kwargs = {
             'sources': sources,
             'sorting_method': sorting_method,
-            'use_image_hash': with_hash,
-            'with_image_info': with_image_info,
+            'use_image_hash': True,
             'data_dir': root_dir,
         }
         manifest = ImageManifestManager(manifest_path, create_index=False)
@@ -3203,17 +3200,14 @@ class TaskDataAPITestCase(ApiTestBase):
             'test_1.jpg', "subdir2/subdir3/test_zxc.jpg", 'test_qwe.jpg',
             'test_3.jpg', 'test_10.jpg', 'data/test_3.jpg', 'test_2.jpg',
         ]
-        for with_image_info, ordered in product([True, False], [True, False]):
-            filename = 'images_manifest_{}{}.jsonl'.format(
-                "with_meta" if with_image_info else "without_meta",
+        for ordered in [True, False]:
+            filename = 'images_manifest{}.jsonl'.format(
                 "_sorted" if ordered else ""
             )
             generate_manifest_file(data_type='images',
                 manifest_path=os.path.join(settings.SHARE_ROOT, filename),
                 sources=[os.path.join(settings.SHARE_ROOT, fn) for fn in image_files],
                 sorting_method=SortingMethod.LEXICOGRAPHICAL if ordered else SortingMethod.PREDEFINED,
-                with_image_info=with_image_info,
-                with_hash=with_image_info,
                 root_dir=settings.SHARE_ROOT,
             )
             cls._share_files.append(filename)
@@ -3992,7 +3986,7 @@ class TaskDataAPITestCase(ApiTestBase):
             "use_cache": True
         }
 
-        manifest_name = "images_manifest_with_meta_sorted.jsonl"
+        manifest_name = "images_manifest_sorted.jsonl"
         images = get_manifest_images_list(os.path.join(settings.SHARE_ROOT, manifest_name))
         image_sizes = [self._share_image_sizes[fn] for fn in images]
         task_data.update({
@@ -4021,7 +4015,7 @@ class TaskDataAPITestCase(ApiTestBase):
             task_spec = task_spec_common.copy()
             task_spec['name'] = task_spec['name'] + f' mismatching file order'
             task_data_copy = task_data.copy()
-            task_data_copy[f'server_files[{len(images)}]'] = "images_manifest_with_meta.jsonl"
+            task_data_copy[f'server_files[{len(images)}]'] = "images_manifest.jsonl"
             self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data_copy,
                 self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
                 image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE)
@@ -4059,13 +4053,16 @@ class TaskDataAPITestCase(ApiTestBase):
             "sorting_method": SortingMethod.PREDEFINED
         }
 
-        for caching_enabled, manifest, with_image_info in product(
-            [True, False], [True, False], [True, False]
+        manifest_name = "images_manifest.jsonl"
+        images = get_manifest_images_list(os.path.join(settings.SHARE_ROOT, manifest_name))
+        image_sizes = [self._share_image_sizes[v] for v in images]
+
+        for caching_enabled, manifest in product(
+            [True, False], [True, False]
         ):
             with self.subTest(current_function_name(),
                 manifest=manifest,
                 caching_enabled=caching_enabled,
-                with_image_info=with_image_info,
             ):
                 task_data = task_data_common.copy()
 
@@ -4076,11 +4073,6 @@ class TaskDataAPITestCase(ApiTestBase):
                     storage_method = StorageMethodChoice.FILE_SYSTEM
 
                 if manifest:
-                    manifest_name = "images_manifest_{}.jsonl".format(
-                        "with_meta" if with_image_info else "without_meta"
-                    )
-                    images = get_manifest_images_list(
-                        os.path.join(settings.SHARE_ROOT, manifest_name))
                     task_data.update(
                         (f"server_files[{i}]", f)
                         for i, f in enumerate(reversed(images + [manifest_name]))
@@ -4093,8 +4085,6 @@ class TaskDataAPITestCase(ApiTestBase):
                         (f"server_files[{i}]", f)
                         for i, f in enumerate(images)
                     )
-
-                image_sizes = [self._share_image_sizes[v] for v in images]
 
                 self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data,
                     self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
@@ -4128,13 +4118,12 @@ class TaskDataAPITestCase(ApiTestBase):
                 "sorting_method": SortingMethod.PREDEFINED
             }
 
-            for (caching_enabled, include_image_info, manifest) in product(
-                [True, False], [True, False], [True, False]
+            for (caching_enabled, manifest) in product(
+                [True, False], [True, False]
             ):
                 manifest_path = os.path.join(test_dir, "manifest.jsonl")
                 generate_manifest_file("images", manifest_path, image_paths,
-                    sorting_method=SortingMethod.PREDEFINED,
-                    with_image_info=include_image_info)
+                    sorting_method=SortingMethod.PREDEFINED)
 
                 task_data_common["use_cache"] = caching_enabled
                 if caching_enabled:
@@ -4145,7 +4134,6 @@ class TaskDataAPITestCase(ApiTestBase):
                 with self.subTest(current_function_name(),
                     manifest=manifest,
                     caching_enabled=caching_enabled,
-                    include_image_info=include_image_info
                 ), ExitStack() as es:
                     images = [es.enter_context(open(p, 'rb')) for p in image_paths]
 
@@ -4189,13 +4177,12 @@ class TaskDataAPITestCase(ApiTestBase):
         }
         archive_name = "test_archive_2.zip"
 
-        for (caching_enabled, include_image_info, manifest) in product(
-            [True, False], [True, False], [True, False]
+        for (caching_enabled, manifest) in product(
+            [True, False], [True, False]
         ):
             with self.subTest(current_function_name(),
                 manifest=manifest,
                 caching_enabled=caching_enabled,
-                include_image_info=include_image_info
             ), ExitStack() as es:
                 task_data = task_data_common.copy()
 
@@ -4207,11 +4194,8 @@ class TaskDataAPITestCase(ApiTestBase):
 
                 task_data["server_files[0]"] = archive_name
 
-                manifest_name = "images_manifest_{}.jsonl".format(
-                    "with_meta" if include_image_info else "without_meta"
-                )
-                images = get_manifest_images_list(
-                    os.path.join(settings.SHARE_ROOT, manifest_name))
+                manifest_name = "images_manifest.jsonl"
+                images = get_manifest_images_list(os.path.join(settings.SHARE_ROOT, manifest_name))
                 image_sizes = [self._share_image_sizes[v] for v in images]
 
                 if manifest:
@@ -4274,8 +4258,7 @@ class TaskDataAPITestCase(ApiTestBase):
 
                     manifest_path = os.path.join(test_dir, "manifest.jsonl")
                     generate_manifest_file("images", manifest_path, image_paths,
-                        sorting_method=SortingMethod.PREDEFINED,
-                        with_image_info=include_image_info)
+                        sorting_method=SortingMethod.PREDEFINED)
 
                     task_data["use_cache"] = caching_enabled
                     if caching_enabled:

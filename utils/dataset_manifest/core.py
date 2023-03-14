@@ -155,13 +155,11 @@ class DatasetImagesReader:
                 meta=None,
                 sorting_method=SortingMethod.PREDEFINED,
                 use_image_hash=False,
-                with_image_info=True,
                 **kwargs):
         self._sources = sort(sources, sorting_method)
         self._meta = meta
         self._data_dir = kwargs.get('data_dir', None)
         self._use_image_hash = use_image_hash
-        self._with_image_info = with_image_info
         self._start = start
         self._stop = stop if stop else len(sources)
         self._step = step
@@ -196,7 +194,7 @@ class DatasetImagesReader:
             if idx in self.range_:
                 image = next(sources)
                 img = Image.open(image, mode='r')
-                orientation = img.getexif().get(274, 1)
+
                 img_name = os.path.relpath(image, self._data_dir) if self._data_dir \
                     else os.path.basename(image)
                 name, extension = os.path.splitext(img_name)
@@ -205,12 +203,12 @@ class DatasetImagesReader:
                     'extension': extension,
                 }
 
-                if self._with_image_info:
-                    width, height = img.width, img.height
-                    if orientation > 4:
-                        width, height = height, width
-                    image_properties['width'] = width
-                    image_properties['height'] = height
+                width, height = img.width, img.height
+                orientation = img.getexif().get(274, 1)
+                if orientation > 4:
+                    width, height = height, width
+                image_properties['width'] = width
+                image_properties['height'] = height
 
                 if self._meta and img_name in self._meta:
                     image_properties['meta'] = self._meta[img_name]
