@@ -261,7 +261,7 @@ class _Manifest:
 
     FILE_NAME = 'manifest.jsonl'
     VERSION = SupportedVersion.V1_1
-    TYPE: str
+    TYPE: str  # must be set externally
 
     def __init__(self, path, upload_dir=None):
         assert path, 'A path to manifest file not found'
@@ -338,15 +338,13 @@ class _Index:
                 line = manifest_file.readline()
 
     def __getitem__(self, number):
-        assert 0 <= number < len(self), \
-            'Invalid index number: {}\nMax: {}'.format(number, len(self) - 1)
+        if not 0 <= number < len(self):
+            raise IndexError('Invalid index number: {}\nMax: {}'.format(number, len(self) - 1))
+
         return self._index[number]
 
     def __len__(self):
         return len(self._index)
-
-    def __iter__(self):
-        yield from self._index.values()
 
 class _ManifestManager(ABC):
     BASE_INFORMATION = {
