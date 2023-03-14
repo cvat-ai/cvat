@@ -12,7 +12,7 @@ import { CanvasMode as Canvas3DMode } from 'cvat-canvas3d-wrapper';
 import {
     RectDrawingMethod, CuboidDrawingMethod, Canvas, CanvasMode as Canvas2DMode,
 } from 'cvat-canvas-wrapper';
-import { getCore, MLModel } from 'cvat-core-wrapper';
+import { getCore, MLModel, DimensionType } from 'cvat-core-wrapper';
 import logger, { LogType } from 'cvat-logger';
 import { getCVATStore } from 'cvat-store';
 
@@ -20,13 +20,11 @@ import {
     ActiveControl,
     CombinedState,
     ContextMenuType,
-    DimensionType,
     FrameSpeed,
     ObjectType,
     OpenCVTool,
     Rotation,
     ShapeType,
-    Task,
     Workspace,
 } from 'reducers';
 import { updateJobAsync } from './tasks-actions';
@@ -190,10 +188,6 @@ export enum AnnotationActionTypes {
     INTERACT_WITH_CANVAS = 'INTERACT_WITH_CANVAS',
     GET_DATA_FAILED = 'GET_DATA_FAILED',
     SET_FORCE_EXIT_ANNOTATION_PAGE_FLAG = 'SET_FORCE_EXIT_ANNOTATION_PAGE_FLAG',
-    UPDATE_PREDICTOR_STATE = 'UPDATE_PREDICTOR_STATE',
-    GET_PREDICTIONS = 'GET_PREDICTIONS',
-    GET_PREDICTIONS_FAILED = 'GET_PREDICTIONS_FAILED',
-    GET_PREDICTIONS_SUCCESS = 'GET_PREDICTIONS_SUCCESS',
     SWITCH_NAVIGATION_BLOCKED = 'SWITCH_NAVIGATION_BLOCKED',
     DELETE_FRAME = 'DELETE_FRAME',
     DELETE_FRAME_SUCCESS = 'DELETE_FRAME_SUCCESS',
@@ -575,86 +569,6 @@ export function switchPlay(playing: boolean): AnyAction {
     };
 }
 
-export function getPredictionsAsync(): ThunkAction {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        const {
-            annotations: {
-                states: currentStates,
-                zLayer: { cur: curZOrder },
-            },
-            predictor: { enabled, annotatedFrames },
-        } = getStore().getState().annotation;
-
-        const {
-            filters, frame, showAllInterpolationTracks, jobInstance: job,
-        } = receiveAnnotationsParameters();
-        if (!enabled || currentStates.length || annotatedFrames.includes(frame)) return;
-
-        dispatch({
-            type: AnnotationActionTypes.GET_PREDICTIONS,
-            payload: {},
-        });
-
-        let annotations = [];
-        try {
-            annotations = await job.predictor.predict(frame);
-            // current frame could be changed during a request above, need to fetch it from store again
-            const { number: currentFrame } = getStore().getState().annotation.player.frame;
-            if (frame !== currentFrame || annotations === null) {
-                // another request has already been sent or user went to another frame
-                // we do not need dispatch predictions success action
-                return;
-            }
-            annotations = annotations.map(
-                (data: any): any => new cvat.classes.ObjectState({
-                    shapeType: data.type,
-                    label: job.labels.filter((label: any): boolean => label.id === data.label)[0],
-                    points: data.points,
-                    objectType: ObjectType.SHAPE,
-                    frame,
-                    occluded: false,
-                    source: 'auto',
-                    attributes: {},
-                    zOrder: curZOrder,
-                }),
-            );
-
-            dispatch({
-                type: AnnotationActionTypes.GET_PREDICTIONS_SUCCESS,
-                payload: { frame },
-            });
-        } catch (error) {
-            dispatch({
-                type: AnnotationActionTypes.GET_PREDICTIONS_FAILED,
-                payload: {
-                    error,
-                },
-            });
-        }
-
-        try {
-            await job.annotations.put(annotations);
-            const states = await job.annotations.get(frame, showAllInterpolationTracks, filters);
-            const history = await job.actions.get();
-
-            dispatch({
-                type: AnnotationActionTypes.CREATE_ANNOTATIONS_SUCCESS,
-                payload: {
-                    states,
-                    history,
-                },
-            });
-        } catch (error) {
-            dispatch({
-                type: AnnotationActionTypes.CREATE_ANNOTATIONS_FAILED,
-                payload: {
-                    error,
-                },
-            });
-        }
-    };
-}
-
 export function confirmCanvasReady(): AnyAction {
     return {
         type: AnnotationActionTypes.CONFIRM_CANVAS_READY,
@@ -770,7 +684,6 @@ export function changeFrameAsync(
                     delay,
                 },
             });
-            dispatch(getPredictionsAsync());
         } catch (error) {
             if (error !== 'not needed') {
                 dispatch({
@@ -978,6 +891,10 @@ export function getJobAsync(
                 },
             });
 
+            if (!Number.isInteger(tid) || !Number.isInteger(jid)) {
+                throw new Error('Requested resource id is not valid');
+            }
+
             const loadJobEvent = await logger.log(
                 LogType.loadJob,
                 {
@@ -987,20 +904,8 @@ export function getJobAsync(
                 true,
             );
 
-            // Check if the task was already downloaded to the state
-            let job: any | null = null;
-            const [task] = state.tasks.current
-                .filter((_task: Task) => _task.id === tid);
-            if (task) {
-                [job] = task.jobs.filter((_job: any) => _job.id === jid);
-                if (!job) {
-                    throw new Error(`Task ${tid} doesn't contain the job ${jid}`);
-                }
-            } else {
-                [job] = await cvat.jobs.get({ jobID: jid });
-            }
-
-            // opening correct first frame according to setup
+            const [job] = await cvat.jobs.get({ jobID: jid });
+            // navigate to correct first frame according to setup
             let frameNumber;
             if (initialFrame === null && !showDeletedFrames) {
                 frameNumber = (await job.frames.search(
@@ -1049,38 +954,9 @@ export function getJobAsync(
                 },
             });
 
-            if (job.dimension === DimensionType.DIM_3D) {
+            if (job.dimension === DimensionType.DIMENSION_3D) {
                 const workspace = Workspace.STANDARD3D;
                 dispatch(changeWorkspace(workspace));
-            }
-
-            const updatePredictorStatus = async (): Promise<void> => {
-                // get current job
-                const currentState: CombinedState = getState();
-                const { openTime: currentOpenTime, instance: currentJob } = currentState.annotation.job;
-                if (currentJob === null || currentJob.id !== job.id || currentOpenTime !== openTime) {
-                    // the job was closed, changed or reopened
-                    return;
-                }
-
-                try {
-                    const status = await job.predictor.status();
-                    dispatch({
-                        type: AnnotationActionTypes.UPDATE_PREDICTOR_STATE,
-                        payload: status,
-                    });
-                    setTimeout(updatePredictorStatus, 60 * 1000);
-                } catch (error) {
-                    dispatch({
-                        type: AnnotationActionTypes.UPDATE_PREDICTOR_STATE,
-                        payload: { error },
-                    });
-                    setTimeout(updatePredictorStatus, 20 * 1000);
-                }
-            };
-
-            if (state.plugins.list.PREDICT && job.projectId !== null) {
-                updatePredictorStatus();
             }
 
             dispatch(changeFrameAsync(frameNumber, false));
@@ -1110,7 +986,6 @@ export function saveAnnotationsAsync(sessionInstance: any, afterSave?: () => voi
             await sessionInstance.frames.save();
             await sessionInstance.annotations.save();
             await saveJobEvent.close();
-            await sessionInstance.logger.log(LogType.sendTaskInfo, await jobInfoGenerator(sessionInstance));
             dispatch(saveLogsAsync());
 
             const { frame } = receiveAnnotationsParameters();
@@ -1638,15 +1513,6 @@ export function setForceExitAnnotationFlag(forceExit: boolean): AnyAction {
         type: AnnotationActionTypes.SET_FORCE_EXIT_ANNOTATION_PAGE_FLAG,
         payload: {
             forceExit,
-        },
-    };
-}
-
-export function switchPredictor(predictorEnabled: boolean): AnyAction {
-    return {
-        type: AnnotationActionTypes.UPDATE_PREDICTOR_STATE,
-        payload: {
-            enabled: predictorEnabled,
         },
     };
 }

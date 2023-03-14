@@ -5,7 +5,6 @@
 
 const config = {
     backendAPI: '/api',
-    proxy: false,
     organizationID: null,
     origin: '',
     uploadChunkSize: 100,

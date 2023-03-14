@@ -4,15 +4,20 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { connect } from 'react-redux';
 import Modal from 'antd/lib/modal';
+import notification from 'antd/lib/notification';
 
 import { ThunkDispatch } from 'utils/redux';
 import { modelsActions, startInferenceAsync } from 'actions/models-actions';
+import CVATLoadingSpinner from 'components/common/loading-spinner';
 import { CombinedState } from 'reducers';
 import MLModel from 'cvat-core/src/ml-model';
+import { getCore, Task } from 'cvat-core-wrapper';
 import DetectorRunner from './detector-runner';
+
+const core = getCore();
 
 interface StateToProps {
     visible: boolean;
@@ -57,6 +62,19 @@ function ModelRunnerDialog(props: StateToProps & DispatchToProps): JSX.Element {
     } = props;
 
     const models = [...reid, ...detectors, ...classifiers];
+    const [taskInstance, setTaskInstance] = useState<Task | null>(null);
+
+    useEffect(() => {
+        if (task) {
+            core.tasks.get({ id: task.id }).then(([_task]: Task[]) => {
+                if (_task) {
+                    setTaskInstance(_task);
+                }
+            }).catch((error: any) => {
+                notification.error({ message: 'Could not get task details', description: error.toString() });
+            });
+        }
+    }, [visible, task]);
 
     return (
         <Modal
@@ -67,18 +85,18 @@ function ModelRunnerDialog(props: StateToProps & DispatchToProps): JSX.Element {
             maskClosable
             title='Automatic annotation'
         >
-            { task ? (
+            { taskInstance ? (
                 <DetectorRunner
                     withCleanup
                     models={models}
-                    labels={task.labels}
-                    dimension={task.dimension}
+                    labels={taskInstance.labels}
+                    dimension={taskInstance.dimension}
                     runInference={(...args) => {
                         closeDialog();
-                        runInference(task.id, ...args);
+                        runInference(taskInstance.id, ...args);
                     }}
                 />
-            ) : null }
+            ) : <CVATLoadingSpinner /> }
         </Modal>
     );
 }

@@ -266,6 +266,22 @@ class TestPostWebhooks:
 
         assert response.status_code == HTTPStatus.CREATED
 
+    def test_can_create_with_mismatching_project_org_fields(self, projects_by_org):
+        # In this case we could either fail or ignore invalid query param
+        # Currently, the invalid org id will be ignored and the value
+        # will be taken from the project.
+        post_data = deepcopy(self.proj_webhook)
+        org_id = next(iter(projects_by_org))
+        project = projects_by_org[org_id][0]
+        post_data["project_id"] = project["id"]
+        org_id = next(k for k in projects_by_org if k != org_id)
+
+        response = post_method("admin1", "webhooks", post_data, org_id=org_id)
+
+        assert response.status_code == HTTPStatus.CREATED
+        assert response.json()["project_id"] == post_data["project_id"]
+        assert response.json()["organization"] == project["organization"]
+
     def test_cannot_create_without_target_url(self):
         post_data = deepcopy(self.proj_webhook)
         post_data.pop("target_url")

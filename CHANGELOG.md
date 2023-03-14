@@ -26,6 +26,9 @@ Tracks can be exported/imported to/from Datumaro and Sly Pointcloud formats (<ht
 - Dummy github and google authentication servers (<https://github.com/opencv/cvat/pull/5444>)
 - \[Server API\] Simple filters for object collection endpoints
   (<https://github.com/opencv/cvat/pull/5575>)
+- Analytics based on Clickhouse, Vector and Grafana instead of the ELK stack (<https://github.com/opencv/cvat/pull/5646>)
+- \[SDK\] High-level API for working with organizations
+  (<https://github.com/opencv/cvat/pull/5718>)
 
 ### Changed
 - The Docker Compose files now use the Compose Specification version
@@ -41,6 +44,14 @@ Tracks can be exported/imported to/from Datumaro and Sly Pointcloud formats (<ht
 - The contour detection function for semantic segmentation (<https://github.com/opencv/cvat/pull/4665>)
 - Delete newline character when generating a webhook signature (<https://github.com/opencv/cvat/pull/5622>)
 - DL models UI (<https://github.com/opencv/cvat/pull/5635>)
+- \[Server API\], \[SDK\] Arbitrary-sized collections in endpoints:
+  `/api/projects/{id}.tasks`, `/api/tasks/{id}.segments`, `/api/jobs/{id}.issues`,
+  `/api/issues/{id}.comments`, `/api/projects | tasks | jobs/{id}.labels`
+  (<https://github.com/opencv/cvat/pull/5662>)
+- Hide analytics link from non-admin users (<https://github.com/opencv/cvat/pull/5789>)
+- Hide notifications on login/logout/register (<https://github.com/opencv/cvat/pull/5788>)
+- CVAT and CVAT SDK now use a custom `User-Agent` header in HTTP requests
+  (<https://github.com/opencv/cvat/issues/5598>)
 
 ### Deprecated
 - TBD
@@ -60,9 +71,16 @@ Tracks can be exported/imported to/from Datumaro and Sly Pointcloud formats (<ht
 - Export annotations to Azure container (<https://github.com/opencv/cvat/pull/5596>)
 - Fix the type of the credentials parameter of make_client from the Python SDK
 - Reduced number of noisy information on ortho views for 3D canvas (<https://github.com/opencv/cvat/pull/5608>)
-- Clean up disk space after a project is removed (<https://github.com/opencv/cvat/pull/5632>)
+- Clean up disk space after a project is removed (<https://github.com/opencv/cvat/pull/5632>, <https://github.com/opencv/cvat/pull/5752>)
+- Submit button is locked while file is not selected when importing a dataset (<https://github.com/opencv/cvat/pull/5757>)
 - \[Server API\] Various errors in the generated schema (<https://github.com/opencv/cvat/pull/5575>)
+- Fixed freezing browser when request a job by NaN id (<https://github.com/opencv/cvat/pull/5763>)
 - SiamMask and TransT serverless functions (<https://github.com/opencv/cvat/pull/5658>)
+- Сreating a project or task with the same labels (<https://github.com/opencv/cvat/pull/5700>)
+- \[Server API\] Ability to rename label to an existing name (<https://github.com/opencv/cvat/pull/5662>)
+- Moving a task to a project leads to reset of attributes (<https://github.com/opencv/cvat/pull/5764>)
+- Parsing skeleton sublabels containing spaces results in an error in dataset export (<https://github.com/opencv/cvat/pull/5794>)
+- Missing CVAT_BASE_URL in docker-compose.yml (<https://github.com/opencv/cvat/pull/5792>)
 
 ### Security
 - Fixed vulnerability with social authentication (<https://github.com/opencv/cvat/pull/5521>)
@@ -170,6 +188,7 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
   (<https://github.com/opencv/cvat/issues/4365>)
 - Queries via the low-level API using the `multipart/form-data` Content-Type with string fields
   (<https://github.com/opencv/cvat/pull/5479>)
+- Skeletons cannot be added to a task or project (<https://github.com/opencv/cvat/pull/5813>)
 
 ### Security
 - `Project.import_dataset` not waiting for completion correctly

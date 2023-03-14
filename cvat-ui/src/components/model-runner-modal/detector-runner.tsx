@@ -18,11 +18,11 @@ import notification from 'antd/lib/notification';
 import { ModelAttribute, StringObject } from 'reducers';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { Label as LabelInterface } from 'components/labels-editor/common';
 import { clamp } from 'utils/math';
 import config from 'config';
-import { MLModel, ModelKind, ModelReturnType } from 'cvat-core-wrapper';
-import { DimensionType } from '../../reducers';
+import {
+    MLModel, ModelKind, ModelReturnType, DimensionType, Label as LabelInterface,
+} from 'cvat-core-wrapper';
 
 interface Props {
     withCleanup: boolean;
@@ -230,8 +230,8 @@ function DetectorRunner(props: Props): JSX.Element {
                 <Col span={4}>Model:</Col>
                 <Col span={20}>
                     <Select
-                        placeholder={dimension === DimensionType.DIM_2D ? 'Select a model' : 'No models available'}
-                        disabled={dimension !== DimensionType.DIM_2D}
+                        placeholder={dimension === DimensionType.DIMENSION_2D ? 'Select a model' : 'No models available'}
+                        disabled={dimension !== DimensionType.DIMENSION_2D}
                         style={{ width: '100%' }}
                         onChange={(_modelID: string): void => {
                             const chosenModel = models.filter((_model): boolean => _model.id === _modelID)[0];
@@ -426,6 +426,7 @@ function DetectorRunner(props: Props): JSX.Element {
             <Row align='middle' justify='end'>
                 <Col>
                     <Button
+                        className='cvat-inference-run-button'
                         disabled={!buttonEnabled}
                         type='primary'
                         onClick={() => {

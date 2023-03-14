@@ -1,5 +1,5 @@
 # Copyright (C) 2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -11,16 +11,16 @@ from collections import namedtuple
 from enum import Enum
 from typing import Any, List, Optional, Sequence, cast
 
-import requests
 from attrs import define, field
 from django.conf import settings
 from django.db.models import Q
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, PermissionDenied
 from rest_framework.permissions import BasePermission
 
-from cvat.apps.engine.models import Issue, Job, Project, Task
 from cvat.apps.organizations.models import Membership, Organization
+from cvat.apps.engine.models import Label, Project, Task, Job, Issue
 from cvat.apps.webhooks.models import WebhookTypeChoice
+from cvat.utils.http import make_requests_session
 
 
 class StrEnum(str, Enum):
@@ -107,8 +107,9 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
         return None
 
     def check_access(self) -> PermissionResult:
-        response = requests.post(self.url, json=self.payload)
-        output = response.json()['result']
+        with make_requests_session() as session:
+            response = session.post(self.url, json=self.payload)
+            output = response.json()['result']
 
         allow = False
         reasons = []
@@ -124,14 +125,17 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
 
     def filter(self, queryset):
         url = self.url.replace('/allow', '/filter')
-        r = requests.post(url, json=self.payload)
+
+        with make_requests_session() as session:
+            r = session.post(url, json=self.payload).json()['result']
+
         q_objects = []
         ops_dict = {
             '|': operator.or_,
             '&': operator.and_,
             '~': operator.not_,
         }
-        for item in r.json()['result']:
+        for item in r:
             if isinstance(item, str):
                 val1 = q_objects.pop()
                 if item == '~':
@@ -334,8 +338,6 @@ class MembershipPermission(OpenPolicyAgentPermission):
 class ServerPermission(OpenPolicyAgentPermission):
     class Scopes(StrEnum):
         VIEW = 'view'
-        SEND_EXCEPTION = 'send:exception'
-        SEND_LOGS = 'send:logs'
         LIST_CONTENT = 'list:content'
 
     @classmethod
@@ -356,13 +358,56 @@ class ServerPermission(OpenPolicyAgentPermission):
     def get_scopes(request, view, obj):
         Scopes = __class__.Scopes
         return [{
-            'annotation_formats': Scopes.VIEW,
-            'about': Scopes.VIEW,
-            'plugins': Scopes.VIEW,
-            'exception': Scopes.SEND_EXCEPTION,
-            'logs': Scopes.SEND_LOGS,
-            'share': Scopes.LIST_CONTENT,
-        }.get(view.action, None)]
+            ('annotation_formats', 'GET'): Scopes.VIEW,
+            ('about', 'GET'): Scopes.VIEW,
+            ('plugins', 'GET'): Scopes.VIEW,
+            ('share', 'GET'): Scopes.LIST_CONTENT,
+        }.get((view.action, request.method))]
+
+    def get_resource(self):
+        return None
+
+class EventsPermission(OpenPolicyAgentPermission):
+    class Scopes(StrEnum):
+        SEND_EVENTS = 'send:events'
+        DUMP_EVENTS = 'dump:events'
+
+    @classmethod
+    def create(cls, request, view, obj):
+        permissions = []
+        if view.basename == 'events':
+            for scope in cls.get_scopes(request, view, obj):
+                self = cls.create_base_perm(request, view, scope, obj)
+                permissions.append(self)
+
+        return permissions
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.url = settings.IAM_OPA_DATA_URL + '/events/allow'
+
+    def filter(self, query_params):
+        url = self.url.replace('/allow', '/filter')
+
+        with make_requests_session() as session:
+            r = session.post(url, json=self.payload).json()['result']
+
+        filter_params = query_params.copy()
+        for query in r:
+            for attr, value in query.items():
+                if filter_params.get(attr, value) != value:
+                    raise PermissionDenied(f"You don't have permission to view events with {attr}={filter_params.get(attr)}")
+                else:
+                    filter_params[attr] = value
+        return filter_params
+
+    @staticmethod
+    def get_scopes(request, view, obj):
+        Scopes = __class__.Scopes
+        return [{
+            ('create', 'POST'): Scopes.SEND_EVENTS,
+            ('list', 'GET'): Scopes.DUMP_EVENTS,
+        }.get((view.action, request.method))]
 
     def get_resource(self):
         return None
@@ -1340,6 +1385,108 @@ class IssuePermission(OpenPolicyAgentPermission):
             })
 
         return data
+
+
+class LabelPermission(OpenPolicyAgentPermission):
+    obj: Optional[Label]
+
+    class Scopes(StrEnum):
+        LIST = 'list'
+        DELETE = 'delete'
+        UPDATE = 'update'
+        VIEW = 'view'
+
+    @classmethod
+    def create(cls, request, view, obj):
+        Scopes = __class__.Scopes
+
+        permissions = []
+        if view.basename == 'label':
+            for scope in cls.get_scopes(request, view, obj):
+                if scope in [Scopes.DELETE, Scopes.UPDATE, Scopes.VIEW]:
+                    obj = cast(Label, obj)
+
+                    # Access rights are the same as in the owning objects
+                    # Job assignees are not supposed to work with separate labels.
+                    # They should only use the list operation.
+                    if obj.project:
+                        if scope == Scopes.VIEW:
+                            owning_perm_scope = ProjectPermission.Scopes.VIEW
+                        else:
+                            owning_perm_scope = ProjectPermission.Scopes.UPDATE_DESC
+
+                        owning_perm = ProjectPermission.create_base_perm(
+                            request, view, scope=owning_perm_scope, obj=obj.project,
+                        )
+                    else:
+                        if scope == Scopes.VIEW:
+                            owning_perm_scope = TaskPermission.Scopes.VIEW
+                        else:
+                            owning_perm_scope = TaskPermission.Scopes.UPDATE_DESC
+
+                        owning_perm = TaskPermission.create_base_perm(
+                            request, view, scope=owning_perm_scope, obj=obj.task,
+                        )
+
+                    # This component doesn't define its own rules for these cases
+                    permissions.append(owning_perm)
+                elif scope == Scopes.LIST and isinstance(obj, Job):
+                    permissions.append(JobPermission.create_base_perm(
+                        request, view, scope=JobPermission.Scopes.VIEW, obj=obj,
+                    ))
+                elif scope == Scopes.LIST and isinstance(obj, Task):
+                    permissions.append(TaskPermission.create_base_perm(
+                        request, view, scope=TaskPermission.Scopes.VIEW, obj=obj,
+                    ))
+                elif scope == Scopes.LIST and isinstance(obj, Project):
+                    permissions.append(ProjectPermission.create_base_perm(
+                        request, view, scope=ProjectPermission.Scopes.VIEW, obj=obj,
+                    ))
+                else:
+                    permissions.append(cls.create_base_perm(request, view, scope, obj))
+
+        return permissions
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.url = settings.IAM_OPA_DATA_URL + '/labels/allow'
+
+    @staticmethod
+    def get_scopes(request, view, obj):
+        Scopes = __class__.Scopes
+        return [{
+            'list': Scopes.LIST,
+            'destroy': Scopes.DELETE,
+            'partial_update': Scopes.UPDATE,
+            'retrieve': Scopes.VIEW,
+        }.get(view.action, None)]
+
+    def get_resource(self):
+        data = None
+
+        if self.obj:
+            if self.obj.project:
+                organization = self.obj.project.organization
+            else:
+                organization = self.obj.task.organization
+
+            data = {
+                "id": self.obj.id,
+                'organization': {
+                    "id": getattr(organization, 'id', None)
+                },
+                "task": {
+                    "owner": { "id": getattr(self.obj.task.owner, 'id', None) },
+                    "assignee": { "id": getattr(self.obj.task.assignee, 'id', None) }
+                } if self.obj.task else None,
+                "project": {
+                    "owner": { "id": getattr(self.obj.project.owner, 'id', None) },
+                    "assignee": { "id": getattr(self.obj.project.assignee, 'id', None) }
+                } if self.obj.project else None,
+            }
+
+        return data
+
 
 class PolicyEnforcer(BasePermission):
     # pylint: disable=no-self-use

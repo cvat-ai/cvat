@@ -13,10 +13,8 @@ import rq
 import re
 import shutil
 from distutils.dir_util import copy_tree
-from traceback import print_exception
 from urllib import parse as urlparse
 from urllib import request as urlrequest
-import requests
 import ipaddress
 import dns.resolver
 import django_rq
@@ -30,7 +28,8 @@ from cvat.apps.engine import models
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.media_extractors import (MEDIA_TYPES, ImageListReader, Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter,
     ValidateDimension, ZipChunkWriter, ZipCompressedChunkWriter, get_mime, sort)
-from cvat.apps.engine.utils import av_scan_paths
+from cvat.apps.engine.utils import av_scan_paths, get_rq_job_meta
+from cvat.utils.http import make_requests_session
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager, is_manifest
 from utils.dataset_manifest.core import VideoManifestValidator, is_dataset_manifest
 from utils.dataset_manifest.utils import detect_related_images
@@ -38,25 +37,15 @@ from .cloud_provider import db_storage_to_storage_instance
 
 ############################# Low Level server API
 
-def create(tid, data, username):
+def create(db_task, data, request):
     """Schedule the task"""
     q = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
-    q.enqueue_call(func=_create_thread, args=(tid, data),
-        job_id=f"create:task.id{tid}-by-{username}")
-
-@transaction.atomic
-def rq_handler(job, exc_type, exc_value, traceback):
-    split = job.id.split('/')
-    tid = split[split.index('tasks') + 1]
-    try:
-        tid = int(tid)
-        db_task = models.Task.objects.select_for_update().get(pk=tid)
-        with open(db_task.get_log_path(), "wt") as log_file:
-            print_exception(exc_type, exc_value, traceback, file=log_file)
-    except (models.Task.DoesNotExist, ValueError):
-        pass # skip exceptions in the code
-
-    return False
+    q.enqueue_call(
+        func=_create_thread,
+        args=(db_task.pk, data),
+        job_id=f"create:task.id{db_task.pk}-by-{request.user.username}",
+        meta=get_rq_job_meta(request=request, db_obj=db_task),
+    )
 
 ############################# Internal implementation for server API
 
@@ -355,24 +344,26 @@ def _validate_url(url):
 def _download_data(urls, upload_dir):
     job = rq.get_current_job()
     local_files = {}
-    for url in urls:
-        name = os.path.basename(urlrequest.url2pathname(urlparse.urlparse(url).path))
-        if name in local_files:
-            raise Exception("filename collision: {}".format(name))
-        _validate_url(url)
-        slogger.glob.info("Downloading: {}".format(url))
-        job.meta['status'] = '{} is being downloaded..'.format(url)
-        job.save_meta()
 
-        response = requests.get(url, stream=True)
-        if response.status_code == 200:
-            response.raw.decode_content = True
-            with open(os.path.join(upload_dir, name), 'wb') as output_file:
-                shutil.copyfileobj(response.raw, output_file)
-        else:
-            raise Exception("Failed to download " + url)
+    with make_requests_session() as session:
+        for url in urls:
+            name = os.path.basename(urlrequest.url2pathname(urlparse.urlparse(url).path))
+            if name in local_files:
+                raise Exception("filename collision: {}".format(name))
+            _validate_url(url)
+            slogger.glob.info("Downloading: {}".format(url))
+            job.meta['status'] = '{} is being downloaded..'.format(url)
+            job.save_meta()
 
-        local_files[name] = True
+            response = session.get(url, stream=True)
+            if response.status_code == 200:
+                response.raw.decode_content = True
+                with open(os.path.join(upload_dir, name), 'wb') as output_file:
+                    shutil.copyfileobj(response.raw, output_file)
+            else:
+                raise Exception("Failed to download " + url)
+
+            local_files[name] = True
 
     return list(local_files.keys())
 

@@ -1,5 +1,5 @@
 # Copyright (C) 2018-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -12,13 +12,14 @@ from typing import Optional
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.files.storage import FileSystemStorage
-from django.db import models
+from django.db import IntegrityError, models
 from django.db.models.fields import FloatField
-from django.core.serializers.json import DjangoJSONEncoder
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
+
 from cvat.apps.engine.utils import parse_specific_attributes
 from cvat.apps.organizations.models import Organization
+
 
 class SafeCharField(models.CharField):
     def get_prep_value(self, value):
@@ -307,6 +308,9 @@ class Project(models.Model):
     target_storage = models.ForeignKey('Storage', null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name='+')
 
+    def get_labels(self):
+        return self.label_set.filter(parent__isnull=True)
+
     def get_dirname(self):
         return os.path.join(settings.PROJECTS_ROOT, str(self.id))
 
@@ -364,7 +368,7 @@ class Task(models.Model):
 
     def get_labels(self):
         project = self.project
-        return project.label_set if project else self.label_set
+        return project.get_labels() if project else self.label_set.filter(parent__isnull=True)
 
     def get_dirname(self):
         return os.path.join(settings.TASKS_ROOT, str(self.id))
@@ -488,7 +492,10 @@ class Job(models.Model):
         return task.id if task else None
 
     def get_organization_id(self):
-        return self.segment.task.organization
+        return self.segment.task.organization_id
+
+    def get_organization_slug(self):
+        return self.segment.task.organization.slug
 
     def get_bug_tracker(self):
         task = self.segment.task
@@ -498,18 +505,13 @@ class Job(models.Model):
     def get_labels(self):
         task = self.segment.task
         project = task.project
-        return project.label_set if project else task.label_set
-
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        db_commit = JobCommit(job=self, scope='create',
-            owner=self.segment.task.owner, data={
-                'stage': self.stage, 'state': self.state, 'assignee': self.assignee
-            })
-        db_commit.save()
+        return project.get_labels() if project else task.get_labels()
 
     class Meta:
         default_permissions = ()
+
+class InvalidLabel(ValueError):
+    pass
 
 class Label(models.Model):
     task = models.ForeignKey(Task, null=True, blank=True, on_delete=models.CASCADE)
@@ -525,9 +527,43 @@ class Label(models.Model):
     def has_parent_label(self):
         return bool(self.parent)
 
+    def save(self, *args, **kwargs):
+        try:
+            super().save(*args, **kwargs)
+        except IntegrityError:
+            raise InvalidLabel("All label names must be unique")
+
+    @classmethod
+    def create(cls, **kwargs):
+        try:
+            return cls.objects.create(**kwargs)
+        except IntegrityError:
+            raise InvalidLabel("All label names must be unique")
+
     class Meta:
         default_permissions = ()
-        unique_together = ('task', 'name', 'parent')
+        constraints = [
+            models.UniqueConstraint(
+                name='project_name_unique',
+                fields=('project', 'name'),
+                condition=models.Q(task__isnull=True, parent__isnull=True)
+            ),
+            models.UniqueConstraint(
+                name='task_name_unique',
+                fields=('task', 'name'),
+                condition=models.Q(project__isnull=True, parent__isnull=True)
+            ),
+            models.UniqueConstraint(
+                name='project_name_parent_unique',
+                fields=('project', 'name', 'parent'),
+                condition=models.Q(task__isnull=True)
+            ),
+            models.UniqueConstraint(
+                name='task_name_parent_unique',
+                fields=('task', 'name', 'parent'),
+                condition=models.Q(project__isnull=True)
+            )
+        ]
 
 class Skeleton(models.Model):
     root = models.OneToOneField(Label, on_delete=models.CASCADE)
@@ -618,29 +654,6 @@ class Annotation(models.Model):
         abstract = True
         default_permissions = ()
 
-class Commit(models.Model):
-    class JSONEncoder(DjangoJSONEncoder):
-        def default(self, o):
-            if isinstance(o, User):
-                data = {'user': {'id': o.id, 'username': o.username}}
-                return data
-            else:
-                return super().default(o)
-
-
-    id = models.BigAutoField(primary_key=True)
-    scope = models.CharField(max_length=32, default="")
-    owner = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
-    timestamp = models.DateTimeField(auto_now=True)
-    data = models.JSONField(default=dict, encoder=JSONEncoder)
-
-    class Meta:
-        abstract = True
-        default_permissions = ()
-
-class JobCommit(Commit):
-    job = models.ForeignKey(Job, on_delete=models.CASCADE, related_name="commits")
-
 class Shape(models.Model):
     type = models.CharField(max_length=16, choices=ShapeType.choices())
     occluded = models.BooleanField(default=False)
@@ -701,6 +714,16 @@ class Issue(models.Model):
     def get_organization_id(self):
         return self.job.get_organization_id()
 
+    def get_organization_slug(self):
+        return self.job.get_organization_slug()
+
+    def get_task_id(self):
+        return self.job.get_task_id()
+
+    def get_job_id(self):
+        return self.job_id
+
+
 class Comment(models.Model):
     issue = models.ForeignKey(Issue, related_name='comments', on_delete=models.CASCADE)
     owner = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
@@ -713,6 +736,15 @@ class Comment(models.Model):
 
     def get_organization_id(self):
         return self.issue.get_organization_id()
+
+    def get_organization_slug(self):
+        return self.issue.get_organization_slug()
+
+    def get_task_id(self):
+        return self.issue.get_task_id()
+
+    def get_job_id(self):
+        return self.issue.get_job_id()
 
 class CloudProviderChoice(str, Enum):
     AWS_S3 = 'AWS_S3_BUCKET'

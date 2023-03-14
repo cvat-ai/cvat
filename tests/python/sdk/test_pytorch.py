@@ -83,7 +83,7 @@ class TestTaskVisionDataset:
             data_params={"chunk_size": 3},
         )
 
-        self.label_ids = sorted(l.id for l in self.task.labels)
+        self.label_ids = sorted(l.id for l in self.task.get_labels())
 
         self.task.update_annotations(
             models.PatchedLabeledDataRequest(
@@ -222,7 +222,7 @@ class TestTaskVisionDataset:
         assert isinstance(dataset[0][1], PIL.Image.Image)
 
     def test_custom_label_mapping(self):
-        label_name_to_id = {label.name: label.id for label in self.task.labels}
+        label_name_to_id = {label.name: label.id for label in self.task.get_labels()}
 
         dataset = cvatpt.TaskVisionDataset(
             self.client,
@@ -275,7 +275,7 @@ class TestProjectVisionDataset:
                 ],
             )
         )
-        self.label_ids = sorted(l.id for l in self.project.labels)
+        self.label_ids = sorted(l.id for l in self.project.get_labels())
 
         subsets = ["Train", "Test", "Val"]
         num_images_per_task = 3
@@ -356,7 +356,7 @@ class TestProjectVisionDataset:
         self._test_filtering(include_subsets={self.tasks[1].subset, self.tasks[2].subset})
 
     def test_custom_label_mapping(self):
-        label_name_to_id = {label.name: label.id for label in self.project.labels}
+        label_name_to_id = {label.name: label.id for label in self.project.get_labels()}
 
         dataset = cvatpt.ProjectVisionDataset(
             self.client, self.project.id, label_name_to_index={"person": 123, "car": 456}

@@ -15,15 +15,18 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/2.0/ref/settings/
 """
 
-from enum import Enum
-import os
-import sys
 import fcntl
+import mimetypes
+import os
 import shutil
 import subprocess
-import mimetypes
-from corsheaders.defaults import default_headers
+import sys
 from distutils.util import strtobool
+from enum import Enum
+
+from corsheaders.defaults import default_headers
+from logstash_async.constants import constants as logstash_async_constants
+
 from cvat import __version__
 
 mimetypes.add_type("application/wasm", ".wasm", True)
@@ -123,10 +126,6 @@ INSTALLED_APPS = [
     'allauth.account',
     'corsheaders',
     'allauth.socialaccount',
-    # social providers
-    'allauth.socialaccount.providers.amazon_cognito',
-    'allauth.socialaccount.providers.github',
-    'allauth.socialaccount.providers.google',
     'health_check',
     'health_check.db',
     'health_check.contrib.migrations',
@@ -140,6 +139,7 @@ INSTALLED_APPS = [
     'cvat.apps.opencv',
     'cvat.apps.webhooks',
     'cvat.apps.health',
+    'cvat.apps.events',
 ]
 
 SITE_ID = 1
@@ -193,6 +193,7 @@ REST_FRAMEWORK = {
     },
     'DEFAULT_METADATA_CLASS': 'rest_framework.metadata.SimpleMetadata',
     'DEFAULT_SCHEMA_CLASS': 'cvat.apps.iam.schema.CustomAutoSchema',
+    'EXCEPTION_HANDLER': 'cvat.apps.events.handlers.handle_viewset_exception',
 }
 
 
@@ -217,6 +218,7 @@ MIDDLEWARE = [
     # FIXME
     # 'corsheaders.middleware.CorsPostCsrfMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'crum.CurrentRequestUserMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'dj_pagination.middleware.PaginationMiddleware',
@@ -330,7 +332,10 @@ NUCLIO = {
 }
 
 RQ_SHOW_ADMIN_LINK = True
-RQ_EXCEPTION_HANDLERS = ['cvat.apps.engine.views.rq_handler']
+RQ_EXCEPTION_HANDLERS = [
+    'cvat.apps.engine.views.rq_exception_handler',
+    'cvat.apps.events.handlers.handle_rq_exception',
+]
 
 
 # JavaScript and CSS compression
@@ -384,10 +389,10 @@ os.makedirs(STATIC_ROOT, exist_ok=True)
 
 # Make sure to update other config files when upading these directories
 DATA_ROOT = os.path.join(BASE_DIR, 'data')
-LOGSTASH_DB = os.path.join(DATA_ROOT,'logstash.db')
+EVENTS_LOCAL_DB = os.path.join(DATA_ROOT,'events.db')
 os.makedirs(DATA_ROOT, exist_ok=True)
-if not os.path.exists(LOGSTASH_DB):
-    open(LOGSTASH_DB, 'w').close()
+if not os.path.exists(EVENTS_LOCAL_DB):
+    open(EVENTS_LOCAL_DB, 'w').close()
 
 MEDIA_DATA_ROOT = os.path.join(DATA_ROOT, 'data')
 os.makedirs(MEDIA_DATA_ROOT, exist_ok=True)
@@ -425,14 +430,16 @@ os.makedirs(TMP_FILES_ROOT, exist_ok=True)
 IAM_OPA_BUNDLE_PATH = os.path.join(STATIC_ROOT, 'opa', 'bundle.tar.gz')
 os.makedirs(Path(IAM_OPA_BUNDLE_PATH).parent, exist_ok=True)
 
+# logging is known to be unreliable with RQ when using async transports
+vector_log_handler = os.getenv('VECTOR_EVENT_HANDLER', 'AsynchronousLogstashHandler')
+
+logstash_async_constants.QUEUED_EVENTS_FLUSH_INTERVAL = 2.0
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
-        'logstash': {
-            '()': 'logstash_async.formatter.DjangoLogstashFormatter',
-            'message_type': 'python-logstash',
-            'fqdn': False, # Fully qualified domain name. Default value: false.
+        'vector': {
+            'format': '%(message)s',
         },
         'standard': {
             'format': '[%(asctime)s] %(levelname)s %(name)s: %(message)s'
@@ -452,18 +459,18 @@ LOGGING = {
             'maxBytes': 1024*1024*50, # 50 MB
             'backupCount': 5,
         },
-        'logstash': {
+        'vector': {
             'level': 'INFO',
-            'class': 'logstash_async.handler.AsynchronousLogstashHandler',
-            'formatter': 'logstash',
+            'class': f'logstash_async.handler.{vector_log_handler}',
+            'formatter': 'vector',
             'transport': 'logstash_async.transport.HttpTransport',
             'ssl_enable': False,
             'ssl_verify': False,
             'host': os.getenv('DJANGO_LOG_SERVER_HOST', 'localhost'),
-            'port': os.getenv('DJANGO_LOG_SERVER_PORT', 8080),
+            'port': os.getenv('DJANGO_LOG_SERVER_PORT', 8282),
             'version': 1,
             'message_type': 'django',
-            'database_path': LOGSTASH_DB,
+            'database_path': EVENTS_LOCAL_DB,
         }
     },
     'loggers': {
@@ -472,24 +479,26 @@ LOGGING = {
             'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
         },
 
-        'cvat.client': {
-            'handlers': [],
-            'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
-        },
         'django': {
             'handlers': ['console', 'server_file'],
             'level': 'INFO',
             'propagate': True
+        },
+        'vector': {
+            'handlers': [],
+            'level': 'INFO',
+            # set True for debug
+            'propagate': False
         }
     },
 }
 
 if os.getenv('DJANGO_LOG_SERVER_HOST'):
-    LOGGING['loggers']['cvat.server']['handlers'] += ['logstash']
-    LOGGING['loggers']['cvat.client']['handlers'] += ['logstash']
+    LOGGING['loggers']['vector']['handlers'] += ['vector']
 
 DATA_UPLOAD_MAX_MEMORY_SIZE = 100 * 1024 * 1024  # 100 MB
 DATA_UPLOAD_MAX_NUMBER_FIELDS = None   # this django check disabled
+DATA_UPLOAD_MAX_NUMBER_FILES = None
 LOCAL_LOAD_MAX_FILES_COUNT = 500
 LOCAL_LOAD_MAX_FILES_SIZE = 512 * 1024 * 1024  # 512 MB
 
@@ -613,81 +622,22 @@ SPECTACULAR_SETTINGS = {
     'SCHEMA_PATH_PREFIX_TRIM': False,
 }
 
-# allauth configuration
-USE_ALLAUTH_SOCIAL_ACCOUNTS = strtobool(os.getenv('USE_ALLAUTH_SOCIAL_ACCOUNTS') or 'False')
-
-ACCOUNT_ADAPTER = 'cvat.apps.iam.adapters.DefaultAccountAdapterEx'
-
-# the same in UI
+# set similar UI restrictions
+# https://github.com/opencv/cvat/blob/bad1dc2799afbb22222faaecc7336d999f4cc3fe/cvat-ui/src/utils/validation-patterns.ts#L26
 ACCOUNT_USERNAME_MIN_LENGTH = 5
 ACCOUNT_LOGOUT_ON_PASSWORD_CHANGE = True
+
+ACCOUNT_ADAPTER = 'cvat.apps.iam.adapters.DefaultAccountAdapterEx'
 
 CVAT_HOST = os.getenv('CVAT_HOST', 'localhost')
 CVAT_BASE_URL = os.getenv('CVAT_BASE_URL', f'http://{CVAT_HOST}:8080').rstrip('/')
 
-if USE_ALLAUTH_SOCIAL_ACCOUNTS:
-    SOCIALACCOUNT_ADAPTER = 'cvat.apps.iam.adapters.SocialAccountAdapterEx'
-    SOCIALACCOUNT_GITHUB_ADAPTER = 'cvat.apps.iam.adapters.GitHubAdapter'
-    SOCIALACCOUNT_GOOGLE_ADAPTER = 'cvat.apps.iam.adapters.GoogleAdapter'
-    SOCIALACCOUNT_AMAZON_COGNITO_ADAPTER = 'cvat.apps.iam.adapters.AmazonCognitoOAuth2AdapterEx'
-    SOCIALACCOUNT_LOGIN_ON_GET = True
-    # It's required to define email in the case when a user has a private hidden email.
-    # (e.g in github account set keep my email addresses private)
-    # default = ACCOUNT_EMAIL_REQUIRED
-    SOCIALACCOUNT_QUERY_EMAIL = True
-    SOCIALACCOUNT_CALLBACK_CANCELLED_URL = '/auth/login'
-    # custom variable because by default LOGIN_REDIRECT_URL will be used
-    SOCIAL_APP_LOGIN_REDIRECT_URL = f'{CVAT_BASE_URL}/auth/login-with-social-app'
-
-    AMAZON_COGNITO_REDIRECT_URI = f'{CVAT_BASE_URL}/api/auth/amazon-cognito/login/callback/'
-    GITHUB_CALLBACK_URL = f'{CVAT_BASE_URL}/api/auth/github/login/callback/'
-    GOOGLE_CALLBACK_URL = f'{CVAT_BASE_URL}/api/auth/google/login/callback/'
-
-    SOCIAL_AUTH_GOOGLE_CLIENT_ID = os.getenv('SOCIAL_AUTH_GOOGLE_CLIENT_ID')
-    SOCIAL_AUTH_GOOGLE_CLIENT_SECRET = os.getenv('SOCIAL_AUTH_GOOGLE_CLIENT_SECRET')
-
-    SOCIAL_AUTH_GITHUB_CLIENT_ID = os.getenv('SOCIAL_AUTH_GITHUB_CLIENT_ID')
-    SOCIAL_AUTH_GITHUB_CLIENT_SECRET = os.getenv('SOCIAL_AUTH_GITHUB_CLIENT_SECRET')
-
-    SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_ID = os.getenv('SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_ID')
-    SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_SECRET = os.getenv('SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_SECRET')
-    SOCIAL_AUTH_AMAZON_COGNITO_DOMAIN = os.getenv('SOCIAL_AUTH_AMAZON_COGNITO_DOMAIN')
-
-    # Django allauth social account providers
-    # https://django-allauth.readthedocs.io/en/latest/providers.html
-    SOCIALACCOUNT_PROVIDERS = {
-        'google': {
-            'APP': {
-                'client_id': SOCIAL_AUTH_GOOGLE_CLIENT_ID,
-                'secret': SOCIAL_AUTH_GOOGLE_CLIENT_SECRET,
-                'key': ''
-            },
-            'SCOPE': [ 'profile', 'email', 'openid'],
-            'AUTH_PARAMS': {
-                'access_type': 'online',
-            },
-        },
-        'github': {
-            'APP': {
-                'client_id': SOCIAL_AUTH_GITHUB_CLIENT_ID,
-                'secret': SOCIAL_AUTH_GITHUB_CLIENT_SECRET,
-                'key': ''
-            },
-            'SCOPE': [ 'read:user', 'user:email' ],
-            # NOTE: Custom field. This is necessary for the user interface
-            # to render possible social account authentication option.
-            # If this field is not specified, then the option with the provider
-            # key with a capital letter will be used
-            'PUBLIC_NAME': 'GitHub',
-        },
-        'amazon_cognito': {
-            'DOMAIN': SOCIAL_AUTH_AMAZON_COGNITO_DOMAIN,
-            'SCOPE': [ 'profile', 'email', 'openid'],
-            'APP': {
-                'client_id': SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_ID,
-                'secret': SOCIAL_AUTH_AMAZON_COGNITO_CLIENT_SECRET,
-                'key': ''
-            },
-            'PUBLIC_NAME': 'Amazon Cognito',
-        }
+CLICKHOUSE = {
+    'events': {
+        'NAME': os.getenv('CLICKHOUSE_DB', 'cvat'),
+        'HOST': os.getenv('CLICKHOUSE_HOST', 'localhost'),
+        'PORT': os.getenv('CLICKHOUSE_PORT', 8123),
+        'USER': os.getenv('CLICKHOUSE_USER', 'user'),
+        'PASSWORD': os.getenv('CLICKHOUSE_PASSWORD', 'user'),
     }
+}
