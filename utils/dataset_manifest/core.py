@@ -204,16 +204,20 @@ class DatasetImagesReader:
                     'name': name.replace('\\', '/'),
                     'extension': extension,
                 }
+
                 if self._with_image_info:
                     width, height = img.width, img.height
                     if orientation > 4:
                         width, height = height, width
                     image_properties['width'] = width
                     image_properties['height'] = height
+
                 if self._meta and img_name in self._meta:
                     image_properties['meta'] = self._meta[img_name]
+
                 if self._use_image_hash:
                     image_properties['checksum'] = md5_hash(img)
+
                 yield image_properties
             else:
                 yield dict()
