@@ -56,11 +56,12 @@ class ApiTestBase(APITestCase):
         # The parent class clears DB changes, and it can lead to under-cleaned task data,
         # which can affect other tests.
         # This situation is not expected to happen on a real server, because
-        # cache keys include Data object ids, which cannot be reused or freed.
+        # cache keys include Data object ids, which cannot be reused or freed
+        # in real scenarios
+        for cache_dir in [settings.CACHE_ROOT, settings.CACHES["media"]["LOCATION"]]:
+            if os.path.isdir(cache_dir):
+                shutil.rmtree(cache_dir)
 
-        server_frame_cache_dir = settings.CACHE_ROOT
-        if os.path.isdir(server_frame_cache_dir):
-            shutil.rmtree(server_frame_cache_dir)
         return super().tearDown()
 
 
