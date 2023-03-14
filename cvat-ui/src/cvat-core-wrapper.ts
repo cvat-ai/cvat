@@ -20,6 +20,7 @@ import {
 import { Storage, StorageData } from 'cvat-core/src/storage';
 import Issue from 'cvat-core/src/issue';
 import Comment from 'cvat-core/src/comment';
+import User from 'cvat-core/src/user';
 
 const cvat: any = _cvat;
 
@@ -45,6 +46,7 @@ export {
     Storage,
     Webhook,
     Issue,
+    User,
     Comment,
     MLModel,
     ModelKind,
