@@ -824,7 +824,7 @@ def export(db_instance, request, queue_name):
     if rq_job:
         last_project_update_time = timezone.localtime(db_instance.updated_date)
         rq_request = rq_job.meta.get('request', None)
-        request_time = rq_request.get("time", None) if rq_request else None
+        request_time = rq_request.get("timestamp", None) if rq_request else None
         if request_time is None or request_time < last_project_update_time:
             rq_job.cancel()
             rq_job.delete()

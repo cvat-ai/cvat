@@ -2352,8 +2352,8 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
         if isinstance(db_instance, Project):
             tasks_update = list(map(lambda db_task: timezone.localtime(db_task.updated_date), db_instance.tasks.all()))
             last_instance_update_time = max(tasks_update + [last_instance_update_time])
-        rq_request = rq_job.meta.get('request_time', None)
-        request_time = rq_request.get('time', None) if rq_request else None
+        rq_request = rq_job.meta.get('request', None)
+        request_time = rq_request.get('timestamp', None) if rq_request else None
         if request_time is None or request_time < last_instance_update_time:
             rq_job.cancel()
             rq_job.delete()

@@ -168,7 +168,7 @@ def get_rq_job_meta(request, db_obj):
         },
         'request': {
             "uuid": request.uuid,
-            "time": timezone.localtime(),
+            "timestamp": timezone.localtime(),
         },
         'org_id': oid,
         'org_slug': oslug,
