@@ -8,9 +8,8 @@ from typing import Callable, Iterator, TypeVar
 import itertools
 import logging
 import os
-import shutil
 
-from django.conf import settings
+from django.core.cache import caches
 from django.http.response import HttpResponse
 from PIL import Image
 from rest_framework.test import APIClient, APITestCase
@@ -58,7 +57,6 @@ class ApiTestBase(APITestCase):
         # This situation is not expected to happen on a real server, because
         # cache keys include Data object ids, which cannot be reused or freed
         # in real scenarios
-        from django.core.cache import caches
         for cache in caches.all(initialized_only=True):
             cache.clear()
 
