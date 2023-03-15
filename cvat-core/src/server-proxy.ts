@@ -17,6 +17,7 @@ import { Storage } from './storage';
 import { StorageLocation, WebhookSourceType } from './enums';
 import { isEmail } from './common';
 import config from './config';
+import callbacks from './callbacks';
 import DownloadWorker from './download.worker';
 import { ServerError } from './exceptions';
 import { FunctionsResponseBody } from './server-response-types';
@@ -2021,8 +2022,10 @@ async function getCloudStorages(filter = {}) {
     let response = null;
     try {
         response = await Axios.get(`${backendAPI}/cloudstorages`, {
-            params: filter,
-            page_size: 12,
+            params: {
+                ...filter,
+                page_size: 12,
+            },
         });
     } catch (errorData) {
         throw generateError(errorData);
