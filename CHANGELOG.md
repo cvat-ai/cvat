@@ -82,6 +82,8 @@ Tracks can be exported/imported to/from Datumaro and Sly Pointcloud formats (<ht
 - Resolved issue of resetting attributes when moving a task to a project (<https://github.com/opencv/cvat/pull/5764>)
 - Fixed error in dataset export when parsing skeleton sublabels containing spaces (<https://github.com/opencv/cvat/pull/5794>)
 - Added missing `CVAT_BASE_URL` in docker-compose.yml (<https://github.com/opencv/cvat/pull/5792>)
+- Create cloud storage button size and models pagination (<https://github.com/opencv/cvat/pull/5858>)
+
 
 ### Security
 - Fixed vulnerability with social authentication (<https://github.com/opencv/cvat/pull/5521>)

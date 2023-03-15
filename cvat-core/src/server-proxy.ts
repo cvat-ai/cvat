@@ -2017,8 +2017,10 @@ async function getCloudStorages(filter = {}) {
     let response = null;
     try {
         response = await Axios.get(`${backendAPI}/cloudstorages`, {
-            params: filter,
-            page_size: 12,
+            params: {
+                ...filter,
+                page_size: 12,
+            },
         });
     } catch (errorData) {
         throw generateError(errorData);
