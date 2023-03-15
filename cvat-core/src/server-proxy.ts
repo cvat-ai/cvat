@@ -388,17 +388,13 @@ async function register(
 }
 
 async function login(credential: string, password: string): Promise<void> {
-    const authenticationData = [
-        `${encodeURIComponent(isEmail(credential) ? 'email' : 'username')}=${encodeURIComponent(credential)}`,
-        `${encodeURIComponent('password')}=${encodeURIComponent(password)}`,
-    ]
-        .join('&')
-        .replace(/%20/g, '+');
-
     removeAuthData();
     let authenticationResponse = null;
     try {
-        authenticationResponse = await Axios.post(`${config.backendAPI}/auth/login`, authenticationData);
+        authenticationResponse = await Axios.post(`${config.backendAPI}/auth/login`, {
+            [isEmail(credential) ? 'email' : 'username']: credential,
+            password,
+        });
     } catch (errorData) {
         throw generateError(errorData);
     }
