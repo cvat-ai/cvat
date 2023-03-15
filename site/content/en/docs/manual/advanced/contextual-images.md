@@ -77,7 +77,8 @@ By default they will be positioned on the right side of the main image.
 
 ![contex_images_1](/images/context_img_01.jpg)
 
-When you add contextual images to the set, small toolbar will appear on the top of the screen, with the following elements:
+When you add contextual images to the set,
+small toolbar will appear on the top of the screen, with the following elements:
 
 <!--lint disable maximum-line-length-->
 
