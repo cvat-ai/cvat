@@ -395,7 +395,7 @@ class _ManifestManager(ABC):
                 self._index.dump()
 
     def reset_index(self):
-        if os.path.exists(self._index.path):
+        if self._create_index and os.path.exists(self._index.path):
             self._index.remove()
 
     def set_index(self):

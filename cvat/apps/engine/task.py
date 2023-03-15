@@ -392,13 +392,13 @@ def _download_data(urls, upload_dir):
 def _get_manifest_frame_indexer(start_frame=0, frame_step=1):
     return lambda frame_id: start_frame + frame_id * frame_step
 
-def _read_dataset_manifest(path: str) -> ImageManifestManager:
+def _read_dataset_manifest(path: str, *, create_index: bool = False) -> ImageManifestManager:
     """
     Reads an upload manifest file
     """
 
     if is_dataset_manifest(path):
-        return ImageManifestManager(path)
+        return ImageManifestManager(path, create_index=create_index)
     elif not is_manifest(path):
         raise ValidationError(
             "Can't recognize a manifest file in "
@@ -546,6 +546,7 @@ def _create_thread(
     if data['server_files']:
         if db_data.storage == models.StorageChoice.LOCAL:
             _copy_data_from_source(data['server_files'], upload_dir, data.get('server_files_path'))
+            manifest_root = upload_dir
         elif is_data_in_cloud:
             if job_file_mapping is not None:
                 sorted_media = list(itertools.chain.from_iterable(job_file_mapping))
@@ -702,8 +703,9 @@ def _create_thread(
                         .format(manifest_file or os.path.basename(db_data.get_manifest_path()))
                     )
 
-                manifest = _read_dataset_manifest(os.path.join(manifest_root, manifest_file))
-                manifest.set_index()
+                manifest = _read_dataset_manifest(os.path.join(manifest_root, manifest_file),
+                    create_index=manifest_root.startswith(db_data.get_upload_dirname())
+                )
 
             sorted_media_files = _restore_file_order_from_manifest(extractor, manifest, upload_dir)
 
@@ -785,7 +787,6 @@ def _create_thread(
 
     if settings.USE_CACHE and db_data.storage_method == models.StorageMethodChoice.CACHE:
         for media_type, media_files in media.items():
-
             if not media_files:
                 continue
 
@@ -793,8 +794,9 @@ def _create_thread(
             if manifest_file and not os.path.exists(db_data.get_manifest_path()):
                 shutil.copyfile(os.path.join(manifest_root, manifest_file),
                     db_data.get_manifest_path())
-                if manifest_root and not manifest_root.startswith(settings.SHARE_ROOT):
+                if manifest_root and manifest_root.startswith(db_data.get_upload_dirname()):
                     os.remove(os.path.join(manifest_root, manifest_file))
+                manifest_file = os.path.relpath(db_data.get_manifest_path(), upload_dir)
 
             if task_mode == MEDIA_TYPES['video']['mode']:
                 try:
