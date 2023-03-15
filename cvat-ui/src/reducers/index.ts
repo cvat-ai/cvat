@@ -418,7 +418,6 @@ export interface NotificationsState {
             requestPasswordReset: null | ErrorState;
             resetPassword: null | ErrorState;
             loadAuthActions: null | ErrorState;
-            sso: null | ErrorState;
         };
         projects: {
             fetching: null | ErrorState;
