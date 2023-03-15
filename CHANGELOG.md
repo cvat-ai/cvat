@@ -29,6 +29,7 @@ Tracks can be exported/imported to/from Datumaro and Sly Pointcloud formats (<ht
 - Analytics based on Clickhouse, Vector and Grafana instead of the ELK stack (<https://github.com/opencv/cvat/pull/5646>)
 - \[SDK\] High-level API for working with organizations
   (<https://github.com/opencv/cvat/pull/5718>)
+- Use correct service name in LDAP authentication documentation (<https://github.com/opencv/cvat/pull/5848>)
 
 ### Changed
 - The Docker Compose files now use the Compose Specification version

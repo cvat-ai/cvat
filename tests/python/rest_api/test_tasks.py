@@ -503,7 +503,7 @@ class TestPostTaskData:
             "client_files": generate_image_files(7),
         }
 
-        task_id = _test_create_task(
+        task_id, _ = _test_create_task(
             self._USERNAME, task_spec, task_data, content_type="multipart/form-data"
         )
 
@@ -534,7 +534,7 @@ class TestPostTaskData:
 
         # Besides testing that the sorting method is applied, this also checks for
         # regressions of <https://github.com/opencv/cvat/issues/4962>.
-        task_id = _test_create_task(
+        task_id, _ = _test_create_task(
             self._USERNAME, task_spec, task_data, content_type="multipart/form-data"
         )
 
@@ -574,7 +574,7 @@ class TestPostTaskData:
             "client_files": generate_image_files(3),
         }
 
-        task_id = _test_create_task(
+        task_id, _ = _test_create_task(
             self._USERNAME, spec, task_data, content_type="multipart/form-data"
         )
 
@@ -843,7 +843,7 @@ class TestPostTaskData:
         }
 
         if task_size:
-            task_id = _test_create_task(
+            task_id, _ = _test_create_task(
                 self._USERNAME, task_spec, data_spec, content_type="application/json", org=org
             )
 
@@ -875,7 +875,7 @@ class TestPostTaskData:
             "job_file_mapping": expected_segments,
         }
 
-        task_id = _test_create_task(
+        task_id, _ = _test_create_task(
             self._USERNAME, task_spec, data_spec, content_type="application/json"
         )
 
@@ -1141,7 +1141,7 @@ class TestWorkWithTask:
             "server_files": cloud_storage_content,
         }
 
-        task_id = _test_create_task(
+        task_id, _ = _test_create_task(
             self._USERNAME, task_spec, data_spec, content_type="application/json", org=org
         )
 
