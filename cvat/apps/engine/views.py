@@ -2287,8 +2287,14 @@ def _import_annotations(request, rq_id, rq_func, db_obj, format_name,
                 key = filename
                 fd, filename = mkstemp(prefix='cvat_{}'.format(db_obj.pk), dir=settings.TMP_FILES_ROOT)
                 dependent_job = configure_dependent_job(
-                    queue, rq_id, _download_file_from_bucket,
-                    db_storage, filename, key)
+                    queue=queue,
+                    rq_id=rq_id,
+                    rq_func=_download_file_from_bucket,
+                    db_storage=db_storage,
+                    filename=filename,
+                    key=key,
+                    request=request,
+                )
 
         av_scan_paths(filename)
         meta = {
@@ -2346,7 +2352,8 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
         if isinstance(db_instance, Project):
             tasks_update = list(map(lambda db_task: timezone.localtime(db_task.updated_date), db_instance.tasks.all()))
             last_instance_update_time = max(tasks_update + [last_instance_update_time])
-        request_time = rq_job.meta.get('request_time', None)
+        rq_request = rq_job.meta.get('request', None)
+        request_time = rq_request.get('timestamp', None) if rq_request else None
         if request_time is None or request_time < last_instance_update_time:
             rq_job.cancel()
             rq_job.delete()
@@ -2418,10 +2425,7 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
         func=callback,
         args=(db_instance.id, format_name, server_address),
         job_id=rq_id,
-        meta={
-            'request_time': timezone.localtime(),
-            **get_rq_job_meta(request=request, db_obj=db_instance),
-        },
+        meta=get_rq_job_meta(request=request, db_obj=db_instance),
         result_ttl=ttl, failure_ttl=ttl)
     return Response(status=status.HTTP_202_ACCEPTED)
 
@@ -2461,8 +2465,14 @@ def _import_project_dataset(request, rq_id, rq_func, db_obj, format_name, filena
             key = filename
             fd, filename = mkstemp(prefix='cvat_{}'.format(db_obj.pk), dir=settings.TMP_FILES_ROOT)
             dependent_job = configure_dependent_job(
-                queue, rq_id, _download_file_from_bucket,
-                db_storage, filename, key)
+                queue=queue,
+                rq_id=rq_id,
+                rq_func=_download_file_from_bucket,
+                db_storage=db_storage,
+                filename=filename,
+                key=key,
+                request=request,
+            )
 
         rq_job = queue.enqueue_call(
             func=rq_func,
