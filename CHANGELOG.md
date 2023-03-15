@@ -78,7 +78,7 @@ Tracks can be exported/imported to/from Datumaro and Sly Pointcloud formats (<ht
 - Resolved browser freezing when requesting a job with NaN id (<https://github.com/opencv/cvat/pull/5763>)
 - Fixed SiamMask and TransT serverless functions (<https://github.com/opencv/cvat/pull/5658>)
 - Addressed creation of a project or task with the same labels (<https://github.com/opencv/cvat/pull/5700>)
-- /[Server API] Fixed ability to rename label to an existing name (<https://github.com/opencv/cvat/pull/5662>)
+- \[Server API\] Fixed ability to rename label to an existing name (<https://github.com/opencv/cvat/pull/5662>)
 - Resolved issue of resetting attributes when moving a task to a project (<https://github.com/opencv/cvat/pull/5764>)
 - Fixed error in dataset export when parsing skeleton sublabels containing spaces (<https://github.com/opencv/cvat/pull/5794>)
 - Added missing `CVAT_BASE_URL` in docker-compose.yml (<https://github.com/opencv/cvat/pull/5792>)
