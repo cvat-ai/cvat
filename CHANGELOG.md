@@ -74,7 +74,7 @@ Tracks can be exported/imported to/from Datumaro and Sly Pointcloud formats (<ht
 - Reduced noisy information in ortho views for 3D canvas (<https://github.com/opencv/cvat/pull/5608>)
 - Cleared disk space after project removal (<https://github.com/opencv/cvat/pull/5632>, <https://github.com/opencv/cvat/pull/5752>)
 - Locked submit button when file is not selected during dataset import (<https://github.com/opencv/cvat/pull/5757>)
-- /[Server API] Various errors in the generated schema (<https://github.com/opencv/cvat/pull/5575>)
+- \[Server API\]Various errors in the generated schema (<https://github.com/opencv/cvat/pull/5575>)
 - Resolved browser freezing when requesting a job with NaN id (<https://github.com/opencv/cvat/pull/5763>)
 - Fixed SiamMask and TransT serverless functions (<https://github.com/opencv/cvat/pull/5658>)
 - Addressed creation of a project or task with the same labels (<https://github.com/opencv/cvat/pull/5700>)
