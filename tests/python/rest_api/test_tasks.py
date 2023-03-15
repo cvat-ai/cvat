@@ -503,7 +503,7 @@ class TestPostTaskData:
             "client_files": generate_image_files(7),
         }
 
-        task_id = _test_create_task(
+        task_id, _ = _test_create_task(
             self._USERNAME, task_spec, task_data, content_type="multipart/form-data"
         )
 
@@ -534,7 +534,7 @@ class TestPostTaskData:
 
         # Besides testing that the sorting method is applied, this also checks for
         # regressions of <https://github.com/opencv/cvat/issues/4962>.
-        task_id = _test_create_task(
+        task_id, _ = _test_create_task(
             self._USERNAME, task_spec, task_data, content_type="multipart/form-data"
         )
 
@@ -574,7 +574,7 @@ class TestPostTaskData:
             "client_files": generate_image_files(3),
         }
 
-        task_id = _test_create_task(
+        task_id, _ = _test_create_task(
             self._USERNAME, spec, task_data, content_type="multipart/form-data"
         )
 
@@ -843,7 +843,7 @@ class TestPostTaskData:
         }
 
         if task_size:
-            task_id = _test_create_task(
+            task_id, _ = _test_create_task(
                 self._USERNAME, task_spec, data_spec, content_type="application/json", org=org
             )
 
@@ -875,7 +875,7 @@ class TestPostTaskData:
             "job_file_mapping": expected_segments,
         }
 
-        task_id = _test_create_task(
+        task_id, _ = _test_create_task(
             self._USERNAME, task_spec, data_spec, content_type="application/json"
         )
 
@@ -976,7 +976,7 @@ class TestPatchTaskLabel:
         assert DeepDiff(resulting_labels, task_labels, ignore_order=True) == {}
 
     def test_cannot_rename_label_to_duplicate_name(self, tasks, labels, admin_user):
-        task = [t for t in tasks if t["labels"]["count"] > 1][0]
+        task = [t for t in tasks if t["project_id"] is None and t["labels"]["count"] > 1][0]
         task_labels = deepcopy([l for l in labels if l.get("task_id") == task["id"]])
         task_labels[0].update({"name": task_labels[1]["name"]})
 
@@ -1141,7 +1141,7 @@ class TestWorkWithTask:
             "server_files": cloud_storage_content,
         }
 
-        task_id = _test_create_task(
+        task_id, _ = _test_create_task(
             self._USERNAME, task_spec, data_spec, content_type="application/json", org=org
         )
 
@@ -1319,3 +1319,62 @@ class TestUnequalJobs:
         for old_job, new_job in zip(old_jobs, new_jobs):
             assert old_job.start_frame == new_job.start_frame
             assert old_job.stop_frame == new_job.stop_frame
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+class TestPatchTask:
+    @pytest.mark.parametrize("task_id, project_id, user", [(19, 12, "admin1")])
+    def test_move_task_to_project_with_attributes(self, task_id, project_id, user):
+        response = get_method(user, f"tasks/{task_id}/annotations")
+        assert response.status_code == HTTPStatus.OK
+        annotations = response.json()
+
+        response = patch_method(user, f"tasks/{task_id}", {"project_id": project_id})
+        assert response.status_code == HTTPStatus.OK
+
+        response = get_method(user, f"tasks/{task_id}")
+        assert response.status_code == HTTPStatus.OK
+        assert response.json().get("project_id") == project_id
+
+        response = get_method(user, f"tasks/{task_id}/annotations")
+        assert response.status_code == HTTPStatus.OK
+        assert (
+            DeepDiff(
+                annotations,
+                response.json(),
+                ignore_order=True,
+                exclude_regex_paths=[
+                    r"root\['\w+'\]\[\d+\]\['label_id'\]",
+                    r"root\['\w+'\]\[\d+\]\['attributes'\]\[\d+\]\['spec_id'\]",
+                ],
+            )
+            == {}
+        )
+
+    @pytest.mark.parametrize("task_id, project_id, user", [(20, 13, "admin1")])
+    def test_move_task_from_one_project_to_another_with_attributes(self, task_id, project_id, user):
+        response = get_method(user, f"tasks/{task_id}/annotations")
+        assert response.status_code == HTTPStatus.OK
+        annotations = response.json()
+
+        response = patch_method(user, f"tasks/{task_id}", {"project_id": project_id})
+        assert response.status_code == HTTPStatus.OK
+
+        response = get_method(user, f"tasks/{task_id}")
+        assert response.status_code == HTTPStatus.OK
+        assert response.json().get("project_id") == project_id
+
+        response = get_method(user, f"tasks/{task_id}/annotations")
+        assert response.status_code == HTTPStatus.OK
+        assert (
+            DeepDiff(
+                annotations,
+                response.json(),
+                ignore_order=True,
+                exclude_regex_paths=[
+                    r"root\['\w+'\]\[\d+\]\['label_id'\]",
+                    r"root\['\w+'\]\[\d+\]\['attributes'\]\[\d+\]\['spec_id'\]",
+                ],
+            )
+            == {}
+        )
