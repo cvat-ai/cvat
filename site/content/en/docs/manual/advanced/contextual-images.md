@@ -1,22 +1,22 @@
 ---
-title: 'Context images'
-linkTitle: 'Context images'
+title: 'Contextual images'
+linkTitle: 'Contextual images'
 weight: 26
-description: 'Context images of the task'
+description: 'Contextual images of the task'
 ---
 
-Context images are additional images that provide
+Contextual images are additional images that provide
 context or additional information related to the primary image.
 
-Use them to add extra context about the object to improve the accuracy of annotation.
+Use them to add extra contextual about the object to improve the accuracy of annotation.
 
-Context images are available for 2D and 3D tasks.
+Contextual images are available for 2D and 3D tasks.
 
 See:
 
 - [Folder structure](#folder-structure)
 - [Data format](#data-format)
-- [Context images](#context-images)
+- [Contextual images](#contextual-images)
 
 ## Folder structure
 
@@ -28,7 +28,7 @@ Before uploading the archive to CVAT, do the following:
 1. In the folder with the images for annotation, create a folder: `related_images`.
 2. Add to the `related_images` a subfolder with the same name
    as the primary image to which it should be linked.
-3. Place the context image(s) within the subfolder created in step 2.
+3. Place the contextual image(s) within the subfolder created in step 2.
 4. Add folder to the archive.
 5. [Create task](/docs/manual/basics/create_an_annotation_task/#create-a-task).
 
@@ -67,17 +67,17 @@ Example file structure for 2D and 3D tasks:
 For more general information about 3D data formats,
 see [3D data formats](/docs/manual/basics/create_an_annotation_task/#data-formats-for-a-3d-task).
 
-## Context images
+## Contextual images
 
-The maximum amount of context images is twelve.
+The maximum amount of contextual images is twelve.
 
 By default they will be positioned on the right side of the main image.
 
-> **Note:** By default, only three context images will be visible.
+> **Note:** By default, only three contextual images will be visible.
 
 ![contex_images_1](/images/context_img_01.jpg)
 
-When you add context images to the set, small toolbar will appear on the top of the screen, with the following elements:
+When you add contextual images to the set, small toolbar will appear on the top of the screen, with the following elements:
 
 <!--lint disable maximum-line-length-->
 
@@ -97,11 +97,11 @@ Each context image has the following elements:
 
 | Element | Description                                                                                                                             |
 | ------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| 1       | **Full screen**. Click to expand the context image in to the full screen mode. <p>Click again to revert context image to windowed mode. |
-| 2       | **Move context image**. Hold and move context image to the other place on the screen. <p>![contex_images_3](/images/context_img_03.gif) |
-| 3       | **Name**. Unique context image name                                                                                                     |
-| 4       | **Select context image**. Click to open a horisontal listview of all available context images. <p>Click on one to select.               |
-| 5       | **Close**. Click to remove image from context images menu.                                                         |
+| 1       | **Full screen**. Click to expand the contextual image in to the full screen mode. <p>Click again to revert contextual image to windowed mode. |
+| 2       | **Move contextual image**. Hold and move contextual image to the other place on the screen. <p>![contex_images_3](/images/context_img_03.gif) |
+| 3       | **Name**. Unique contextual image name                                                                                                     |
+| 4       | **Select contextual image**. Click to open a horisontal listview of all available contextual images. <p>Click on one to select.               |
+| 5       | **Close**. Click to remove image from contextual images menu.                                                         |
 | 6       | **Extend** Hold and pull to extend the image.                                                                                           |
 
 <!--lint enable maximum-line-length-->

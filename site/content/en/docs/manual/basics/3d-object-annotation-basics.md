@@ -5,54 +5,112 @@ weight: 19
 description: 'Overview of basic operations available when annotating 3D objects.'
 ---
 
-### Navigation
 
-To move in 3D space you can use several methods:
-- Select the `move the image` tool so you can move the camera using the mouse:
+Use the 3D Annotation tool for labeling 3D objects and scenes, such as vehicles, buildings, landscapes, and others.
 
-  ![](/images/image149.jpg)
+See:
+- [Navigation](#navigation)
+- [Annotation with cuboids](#annotation-with-cuboids)
+  - [Annotation with shapes](#annotation-with-shapes)
+  - [Tracking with cuboids](#tracking-with-cuboids)
 
-  - Hold down the left mouse button in the perspective window to turn the camera around the conditional point.
-  - Hold down the right mouse button in the perspective window to move the camera inside the 3D space.
-  - Move the mouse while holding down the wheel to zoom in/out in the perspective window.
-  - Scroll the wheel to zoom in/out (works both in perspective and in projections).
 
-- Move using the keys in the perspective window
+## Navigation
+
+The 3D annotation canvas looks like the following
+
+![3D canvas](/images/3d-canvas.jpg)
+
+
+  > Note: if you added contextual images to the dataset, the canvas will include them. For more information, see [Contextual images](docs/manual/advanced/context-images/)
+
+
+For information on the available tools, see [Controls sidebar](http://localhost:1313/docs/manual/basics/controls-sidebar/).
+
+
+You can navigate, using the mouse, or navigation keys:
 
   ![](/images/image216_carla_town3.jpg)
 
-You can move around by pressing the corresponding buttons:
-- To rotate the camera use: `Shift+Up Arrow`/`Shift+Down Arrow`/`Shift+Left Arrow`/`Shift+Right Arrow`.
-- To move left/right use: `Alt+J`/`Alt+L`.
-- To move up/down use: `Alt+U`/`Alt+O`.
-- To zoom in/out use: `Alt+K`/`Alt+I`.
+You can also use keyboard shortcuts to navigate:
 
-### Creating a cuboid
+|Action|Keys|
+|---|---|
+|Camera rotation| **Shift** + **Arrow** (Up, Down, Left, Right)|
+|Left/Right| **Alt**+**J**/ **Alt**+**L**|
+|Up/down|**Al**t+**U**/ **Alt**+**O**|
+|Zoom in/ou| **Alt**+**K**/ **Alt**+**I**|
 
-To create a cube in a 3D task you need to click the appropriate icon on the control sidebar,
-select the label of the future object and click `shape`.
+
+## Annotation with cuboids
+
+There are two options available for 3D annotation:
+
+- **Shape**: for tasks like object detection, segmentation, and classification.
+- **Track**: uses interpolation to predict the position of objects in subsequent frames of images or videos.
+A unique ID will be assigned to each object and maintained throughout the video or set of images.
+
+### Annotation with shapes
+
+To add a 3D shape, do the following:
+
+1. On the objects pane, select **Draw new cuboid** >
+   select the label from the drop-down list > **Shape**.
+
 
   ![](/images/image217.jpg)
 
-After that the cursor will be followed by a cube. In the creation process you can rotate and move the camera
-only using the keys. Left double-click will create an object.
-You can place an object only near the dots of the point cloud.
+2. The cursor will be followed by a cuboid.
+Place the cuboid on the 3D object.
 
   ![](/images/gif026_carla_town3.gif)
 
-To adjust the size precisely, you need to edit the cuboid on the projections, for this change `Cursor` on control
-sidebar or press `Esc`. In each projection you can:
-
-Move the object in the projection plane - to do this, hover over the object,
-press the left mouse button and move the object.
+3. Use projections to adjust the cuboid.
+Click and hold the left mouse button to edit the label shape on the projection.
 
   ![](/images/gif027_carla_town3.gif)
 
-Move one of the four points - you can change the size of the cuboid by dragging the points in the projection.
+4. (Optional) Move one of the four points to change the size of the cuboid.
 
   ![](/images/gif028_carla_town3.gif)
 
-Rotate the cuboid in the projection plane – to rotate the cuboid you should click on the appropriate point
-and then drag it up/down or to the left/right.
+5. (Optional) To rotate the cuboid, click on the middle point
+and then drag the cuboid up/down or to left/right.
 
   ![](/images/gif029_carla_town3.gif)
+
+### Tracking with cuboids
+
+To track with cuboids, do the following:
+
+1. On the objects pane, select **Draw new cuboid** >
+   select the label from the drop-down list > **Track**.
+
+2. The cursor will be followed by a cuboid.
+Place the cuboid on the 3D object.
+
+3. Use projections to adjust the cuboid.
+Click and hold the left mouse button to edit the label shape on the projection.
+
+  ![](/images/gif027_carla_town3.gif)
+
+4. (Optional) Move one of the four points to change the size of the cuboid.
+
+  ![](/images/gif028_carla_town3.gif)
+
+5. (Optional) To rotate the cuboid, click on the middle point
+and then drag the cuboid up/down or to left/right.
+
+  ![](/images/gif029_carla_town3.gif)
+
+7. Move several frames forward. You will see the cuboid you've added in frame 1.
+Adjust it, if needed.
+
+8. Repeat to the last frame with the presence of the object you are tracking.
+
+
+For more information about tracking, see [Track mode](/docs/manual/basics/track-mode-basics/)
+
+
+
+
