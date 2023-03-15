@@ -107,7 +107,8 @@
     "server:cvat-canvas": "yarn workspace cvat-canvas run server",
     "server:cvat-canvas3d": "yarn workspace cvat-canvas3d run server",
     "server:cvat-data": "yarn workspace cvat-data run server",
-    "start:cvat-ui": "yarn workspace cvat-ui run start"
+    "start:cvat-ui": "yarn workspace cvat-ui run start",
+    "install-dep": "npm install --global yarn webpack webpack-cli && cd cvat-core && yarn --frozen-lockfile && cd - && yarn --frozen-lockfile && cd .. && echo 'Installation completed successfully. Do npm run start to start the application.'"
   },
   "repository": {
     "type": "git",
