@@ -98,8 +98,8 @@ Tracks can be exported/imported to/from Datumaro and Sly Pointcloud formats (<ht
 - Objects sorting option in the sidebar, by z-order. Additional visualization when sorting is applied
 (<https://github.com/opencv/cvat/pull/5145>)
 - Added YOLOv5 serverless function with NVIDIA GPU support (<https://github.com/opencv/cvat/pull/4960>)
-- Mask tools now supported (brush, eraser, polygon-plus, 
-polygon-minus, returning masks from online detectors & interactors) 
+- Mask tools now supported (brush, eraser, polygon-plus,
+polygon-minus, returning masks from online detectors & interactors)
 (<https://github.com/opencv/cvat/pull/4543>)
 - Added Webhooks (<https://github.com/opencv/cvat/pull/4863>)
 - Authentication with social accounts: Google & GitHub (<https://github.com/opencv/cvat/pull/5147>, <https://github.com/opencv/cvat/pull/5181>, <https://github.com/opencv/cvat/pull/5295>)
@@ -194,7 +194,6 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
 ### Security
 - `Project.import_dataset` not waiting for completion correctly
   (<https://github.com/opencv/cvat/pull/5459>)
-
 
 ## \[2.2.0] - 2022-09-12
 ### Added
