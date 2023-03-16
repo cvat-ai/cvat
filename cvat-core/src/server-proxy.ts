@@ -1698,38 +1698,6 @@ async function getFunctionRequestStatus(requestID) {
     }
 }
 
-// Session is 'task' or 'job'
-async function dumpAnnotations(id, name, format) {
-    const { backendAPI } = config;
-    const baseURL = `${backendAPI}/tasks/${id}/annotations`;
-    const params = enableOrganization();
-    params.format = encodeURIComponent(format);
-    if (name) {
-        const filename = name.replace(/\//g, '_');
-        params.filename = encodeURIComponent(filename);
-    }
-
-    return new Promise((resolve, reject) => {
-        async function request() {
-            Axios.get(baseURL, {
-                params,
-            })
-                .then((response) => {
-                    if (response.status === 202) {
-                        setTimeout(request, 3000);
-                    } else {
-                        params.action = 'download';
-                        resolve(`${baseURL}?${new URLSearchParams(params).toString()}`);
-                    }
-                })
-                .catch((errorData) => {
-                    reject(generateError(errorData));
-                });
-        }
-        setTimeout(request);
-    });
-}
-
 async function cancelFunctionRequest(requestId: string): Promise<void> {
     const { backendAPI } = config;
 
@@ -2268,7 +2236,6 @@ export default Object.freeze({
     annotations: Object.freeze({
         updateAnnotations,
         getAnnotations,
-        dumpAnnotations,
         uploadAnnotations,
     }),
 
