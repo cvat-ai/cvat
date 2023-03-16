@@ -52,7 +52,7 @@ Example file structure for 2D and 3D tasks:
           image_3_to_be_annotated_jpg/
              context_image_for_image_3.jpg
 {{< /tab >}}
-{{< tab header="3D task" >}}
+{{< tab header="3D option 1" >}}
  root_directory
     image_1_to_be_annotated.pcd
     image_2_to_be_annotated.pcd
@@ -62,7 +62,53 @@ Example file structure for 2D and 3D tasks:
         image_2_to_be_annotated_pcd/
            context_image_for_image_2.jpg
 {{< /tab >}}
+{{< tab header="3D option 2" >}}
+ /any_directory
+    pointcloud.pcd
+    pointcloud.jpg
+/any_other_directory
+    /any_subdirectory
+        pointcloud.pcd
+        pointcloud.png
+{{< /tab >}}
+{{< tab header="3D task KITTI format" >}}
+ /image_00
+    /data
+        /0000000000.png
+        /0000000001.png
+        /0000000002.png
+        /0000000003.png
+/image_01
+    /data
+        /0000000000.png
+        /0000000001.png
+        /0000000002.png
+        /0000000003.png
+/image_02
+    /data
+        /0000000000.png
+        /0000000001.png
+        /0000000002.png
+        /0000000003.png
+/image_0N
+    /data
+        /0000000000.png
+        /0000000001.png
+        /0000000002.png
+        /0000000003.png
+/velodyne_points
+    /data
+        /0000000000.bin
+        /0000000001.bin
+        /0000000002.bin
+        /0000000003.bin
+{{< /tab >}}
 {{< /tabpane >}}
+
+- For KITTI: `image_00`, `image_01`, `image_02`, `image_0N`,
+(where `N` is any number <= 12) are context images.
+- For 3D option 2: a regular image file placed near
+a .pcd file with the same name is considered to be a context image.
 
 For more general information about 3D data formats,
 see [3D data formats](/docs/manual/basics/create_an_annotation_task/#data-formats-for-a-3d-task).

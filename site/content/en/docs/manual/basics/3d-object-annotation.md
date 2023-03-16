@@ -45,7 +45,7 @@ You can also use keyboard shortcuts to navigate:
 
 There are two options available for 3D annotation:
 
-- **Shape**: for tasks like object detection, segmentation, and classification.
+- **Shape**: for tasks like object detection.
 - **Track**: uses interpolation to predict the position of objects in subsequent frames.
   A unique ID will be assigned to each object and maintained throughout the sequence of images.
 
