@@ -3,10 +3,12 @@
 # SPDX-License-Identifier: MIT
 
 from abc import ABCMeta, abstractmethod
+from copy import deepcopy
 from http import HTTPStatus
 from time import sleep
 from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 
+from cvat_sdk.api_client import apis, models
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
@@ -127,3 +129,45 @@ def build_exclude_paths_expr(ignore_fields: Iterator[str]) -> List[str]:
         exclude_expr_parts.append(expr)
 
     return exclude_expr_parts
+
+
+def wait_until_task_is_created(api: apis.TasksApi, task_id: int) -> models.RqStatus:
+    for _ in range(100):
+        (status, _) = api.retrieve_status(task_id)
+        if status.state.value in ["Finished", "Failed"]:
+            return status
+        sleep(1)
+    raise Exception("Cannot create task")
+
+
+def _test_create_task(username, spec, data, content_type, **kwargs):
+    with make_api_client(username) as api_client:
+        (task, response_) = api_client.tasks_api.create(spec, **kwargs)
+        assert response_.status == HTTPStatus.CREATED
+
+        if data.get("client_files") and "json" in content_type:
+            # Can't encode binary files in json
+            (_, response) = api_client.tasks_api.create_data(
+                task.id,
+                data_request=models.DataRequest(
+                    client_files=data["client_files"],
+                    image_quality=data["image_quality"],
+                ),
+                upload_multiple=True,
+                _content_type="multipart/form-data",
+                **kwargs,
+            )
+            assert response.status == HTTPStatus.OK
+
+            data = data.copy()
+            del data["client_files"]
+
+        (_, response) = api_client.tasks_api.create_data(
+            task.id, data_request=deepcopy(data), _content_type=content_type, **kwargs
+        )
+        assert response.status == HTTPStatus.ACCEPTED
+
+        status = wait_until_task_is_created(api_client.tasks_api, task.id)
+        assert status.state.value == "Finished"
+
+    return task.id, response_.headers.get("X-Request-Id")

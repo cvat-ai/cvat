@@ -947,7 +947,7 @@
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT\r\n  timestamp,\r\n  user_id,\r\n  user_name,\r\n  source,\r\n  project_id,\r\n  task_id,\r\n  job_id,\r\n  JSONExtractString(payload, 'message') as error,\r\n  JSONExtractString(payload, 'stack') as stack,\r\n  payload\r\nFROM events\r\nWHERE\r\n  ( timestamp  >= $__fromTime AND timestamp <= $__toTime )\r\n  AND scope = 'send:exception'\r\n  AND source IN (${sources})\r\n  AND (-1 IN (${users}) OR user_id IN (${users}))\r\n  AND (-1 IN (${organizations}) OR org_id IN (${organizations}))\r\n  AND (-1 IN (${projects}) OR project_id IN (${projects}))\r\n  AND (-1 IN (${tasks}) OR task_id IN (${tasks}))\r\n  AND (-1 IN (${jobs}) OR job_id IN (${jobs}))\r\n  AND ('-1' IN (${errors}) OR error IN (${errors}))\r\nORDER BY timestamp DESC",
+          "rawSql": "SELECT\r\n  timestamp,\r\n  user_id,\r\n  user_name,\r\n  source,\r\n  project_id,\r\n  task_id,\r\n  job_id,\r\n  JSONExtractString(payload, 'message') as error,\r\n  JSONExtractString(payload, 'stack') as stack,\r\n  payload\r\nFROM events\r\nWHERE\r\n  ( timestamp  >= $__fromTime AND timestamp <= $__toTime )\r\n  AND scope = 'send:exception'\r\n  AND source IN (${sources})\r\n  AND (-1 IN (${users}) OR user_id IN (${users}))\r\n  AND (-1 IN (${organizations}) OR org_id IN (${organizations}))\r\n  AND (-1 IN (${projects}) OR project_id IN (${projects}))\r\n  AND (-1 IN (${tasks}) OR task_id IN (${tasks}))\r\n  AND (-1 IN (${jobs}) OR job_id IN (${jobs}))\r\n  AND ('-1' IN (${errors}) OR error IN (${errors}))\r\nORDER BY timestamp DESC\r\nLIMIT 1000",
           "refId": "A"
         }
       ],
@@ -963,7 +963,7 @@
     "list": [
       {
         "current": {
-          "selected": false,
+          "selected": true,
           "text": [
             "All"
           ],
@@ -975,14 +975,14 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "PDEE91DDB90597936"
         },
-        "definition": "SELECT source\nFROM events\nWHERE $__timeFilter(timestamp)",
+        "definition": "SELECT DISTINCT source\nFROM events\nWHERE $__timeFilter(timestamp)",
         "hide": 0,
         "includeAll": true,
         "label": "Source",
         "multi": true,
         "name": "sources",
         "options": [],
-        "query": "SELECT source\nFROM events\nWHERE $__timeFilter(timestamp)",
+        "query": "SELECT DISTINCT source\nFROM events\nWHERE $__timeFilter(timestamp)",
         "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
@@ -992,7 +992,7 @@
       {
         "allValue": "-1",
         "current": {
-          "selected": false,
+          "selected": true,
           "text": [
             "All"
           ],
@@ -1004,14 +1004,14 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "PDEE91DDB90597936"
         },
-        "definition": "SELECT user_id\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND user_id IS NOT NULL",
+        "definition": "SELECT DISTINCT user_id\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND user_id IS NOT NULL",
         "hide": 0,
         "includeAll": true,
         "label": "User",
         "multi": true,
         "name": "users",
         "options": [],
-        "query": "SELECT user_id\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND user_id IS NOT NULL",
+        "query": "SELECT DISTINCT user_id\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND user_id IS NOT NULL",
         "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
@@ -1021,7 +1021,7 @@
       {
         "allValue": "-1",
         "current": {
-          "selected": false,
+          "selected": true,
           "text": [
             "All"
           ],
@@ -1033,14 +1033,14 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "PDEE91DDB90597936"
         },
-        "definition": "SELECT project_id\nFROM events\nWHERE  $__timeFilter(timestamp)\n  AND project_id IS NOT NULL",
+        "definition": "SELECT DISTINCT project_id\nFROM events\nWHERE  $__timeFilter(timestamp)\n  AND project_id IS NOT NULL",
         "hide": 0,
         "includeAll": true,
         "label": "Project",
         "multi": true,
         "name": "projects",
         "options": [],
-        "query": "SELECT project_id\nFROM events\nWHERE  $__timeFilter(timestamp)\n  AND project_id IS NOT NULL",
+        "query": "SELECT DISTINCT project_id\nFROM events\nWHERE  $__timeFilter(timestamp)\n  AND project_id IS NOT NULL",
         "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
@@ -1062,43 +1062,14 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "PDEE91DDB90597936"
         },
-        "definition": "SELECT task_id\nFROM events\nWHERE $__timeFilter(timestamp) \n  AND task_id IS NOT NULL",
+        "definition": "SELECT DISTINCT task_id\nFROM events\nWHERE $__timeFilter(timestamp) \n  AND task_id IS NOT NULL",
         "hide": 0,
         "includeAll": true,
         "label": "Task",
         "multi": true,
         "name": "tasks",
         "options": [],
-        "query": "SELECT task_id\nFROM events\nWHERE $__timeFilter(timestamp) \n  AND task_id IS NOT NULL",
-        "refresh": 2,
-        "regex": "",
-        "skipUrlSync": false,
-        "sort": 0,
-        "type": "query"
-      },
-      {
-        "allValue": "-1",
-        "current": {
-          "selected": false,
-          "text": [
-            "All"
-          ],
-          "value": [
-            "$__all"
-          ]
-        },
-        "datasource": {
-          "type": "grafana-clickhouse-datasource",
-          "uid": "PDEE91DDB90597936"
-        },
-        "definition": "SELECT job_id\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND job_id IS NOT NULL",
-        "hide": 0,
-        "includeAll": true,
-        "label": "Job",
-        "multi": true,
-        "name": "jobs",
-        "options": [],
-        "query": "SELECT job_id\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND job_id IS NOT NULL",
+        "query": "SELECT DISTINCT task_id\nFROM events\nWHERE $__timeFilter(timestamp) \n  AND task_id IS NOT NULL",
         "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
@@ -1120,14 +1091,43 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "PDEE91DDB90597936"
         },
-        "definition": "SELECT org_id\nFROM events\nWHERE $__timeFilter(timestamp)\nAND org_id IS NOT NULL",
+        "definition": "SELECT DISTINCT job_id\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND job_id IS NOT NULL",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Job",
+        "multi": true,
+        "name": "jobs",
+        "options": [],
+        "query": "SELECT DISTINCT job_id\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND job_id IS NOT NULL",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "allValue": "-1",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "PDEE91DDB90597936"
+        },
+        "definition": "SELECT DISTINCT org_id\nFROM events\nWHERE $__timeFilter(timestamp)\nAND org_id IS NOT NULL",
         "hide": 0,
         "includeAll": true,
         "label": "Organization",
         "multi": true,
         "name": "organizations",
         "options": [],
-        "query": "SELECT org_id\nFROM events\nWHERE $__timeFilter(timestamp)\nAND org_id IS NOT NULL",
+        "query": "SELECT DISTINCT org_id\nFROM events\nWHERE $__timeFilter(timestamp)\nAND org_id IS NOT NULL",
         "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
@@ -1145,14 +1145,18 @@
             "$__all"
           ]
         },
-        "definition": "SELECT\n  JSONExtractString(payload, 'message')\n  FROM cvat.events\nWHERE $__timeFilter(timestamp)\n  AND JSONHas(payload, 'message')\n  AND scope='send:exception'",
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "PDEE91DDB90597936"
+        },
+        "definition": "SELECT\n  DISTINCT JSONExtractString(payload, 'message')\n  FROM cvat.events\nWHERE $__timeFilter(timestamp)\n  AND JSONHas(payload, 'message')\n  AND scope='send:exception'",
         "hide": 0,
         "includeAll": true,
         "label": "Error message",
         "multi": true,
         "name": "errors",
         "options": [],
-        "query": "SELECT\n  JSONExtractString(payload, 'message')\n  FROM cvat.events\nWHERE $__timeFilter(timestamp)\n  AND JSONHas(payload, 'message')\n  AND scope='send:exception'",
+        "query": "SELECT\n  DISTINCT JSONExtractString(payload, 'message')\n  FROM cvat.events\nWHERE $__timeFilter(timestamp)\n  AND JSONHas(payload, 'message')\n  AND scope='send:exception'",
         "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
@@ -1162,13 +1166,13 @@
     ]
   },
   "time": {
-    "from": "now-2d",
+    "from": "now-7d",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "Monitoring",
   "uid": "WvDvWK04k",
-  "version": 2,
+  "version": 3,
   "weekStart": ""
 }

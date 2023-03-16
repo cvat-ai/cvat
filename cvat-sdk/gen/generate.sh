@@ -8,7 +8,7 @@ set -e
 
 GENERATOR_VERSION="v6.0.1"
 
-VERSION="2.3.0"
+VERSION="2.4.0"
 LIB_NAME="cvat_sdk"
 LAYER1_LIB_NAME="${LIB_NAME}/api_client"
 DST_DIR="$(cd "$(dirname -- "$0")/.." && pwd)"
@@ -28,6 +28,7 @@ docker run --rm -v "$DST_DIR:/local" -u "$(id -u)":"$(id -g)" \
         -i "/local/schema/schema.yml" \
         --config "/local/${TEMPLATE_DIR_NAME}/generator-config.yml" \
         -p "packageVersion=$VERSION" \
+        -p "httpUserAgent=cvat_sdk/$VERSION" \
         -g python \
         -o "/local/"
 
