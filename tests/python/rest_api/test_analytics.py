@@ -18,7 +18,7 @@ from dateutil import parser as datetime_parser
 from shared.utils.config import make_api_client, server_get
 from shared.utils.helpers import generate_image_files
 
-from .utils import _test_create_task
+from .utils import create_task
 
 
 class TestGetAnalytics:
@@ -91,12 +91,8 @@ class TestGetAuditEvents:
             "client_files": generate_image_files(3),
         }
         task_ids = [
-            _test_create_task(
-                self._USERNAME, task_spec, task_data, content_type="multipart/form-data"
-            ),
-            _test_create_task(
-                self._USERNAME, task_spec, task_data, content_type="multipart/form-data"
-            ),
+            create_task(self._USERNAME, task_spec, task_data),
+            create_task(self._USERNAME, task_spec, task_data),
         ]
 
         self.task_ids = [t[0] for t in task_ids]

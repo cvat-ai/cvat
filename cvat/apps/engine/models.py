@@ -415,6 +415,9 @@ class ClientFile(models.Model):
     class Meta:
         default_permissions = ()
         unique_together = ("data", "file")
+
+        # Some DBs can shuffle the rows. Here we restore the insertion order.
+        # https://github.com/opencv/cvat/pull/5083#discussion_r1038032715
         ordering = ('id', )
 
 # For server files on the mounted share
@@ -425,6 +428,9 @@ class ServerFile(models.Model):
     class Meta:
         default_permissions = ()
         unique_together = ("data", "file")
+
+        # Some DBs can shuffle the rows. Here we restore the insertion order.
+        # https://github.com/opencv/cvat/pull/5083#discussion_r1038032715
         ordering = ('id', )
 
 # For URLs
@@ -435,6 +441,9 @@ class RemoteFile(models.Model):
     class Meta:
         default_permissions = ()
         unique_together = ("data", "file")
+
+        # Some DBs can shuffle the rows. Here we restore the insertion order.
+        # https://github.com/opencv/cvat/pull/5083#discussion_r1038032715
         ordering = ('id', )
 
 
@@ -447,6 +456,9 @@ class RelatedFile(models.Model):
     class Meta:
         default_permissions = ()
         unique_together = ("data", "path")
+
+        # Some DBs can shuffle the rows. Here we restore the insertion order.
+        # https://github.com/opencv/cvat/pull/5083#discussion_r1038032715
         ordering = ('id', )
 
 class Segment(models.Model):

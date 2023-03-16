@@ -102,6 +102,9 @@ class UploadMixin:
 
     Implements the following protocols:
     a. A single Data request
+
+    and
+
     b.1. An Upload-Start request
     b.2.a. The regular TUS protocol requests (Upload-Length + Chunks)
     b.2.b. Upload-Multiple requests
