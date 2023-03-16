@@ -683,9 +683,6 @@ async function deleteTask(id: number, organizationID: string | null = null): Pro
     try {
         await Axios.delete(`${backendAPI}/tasks/${id}`, {
             ...(organizationID ? { org: organizationID } : {}),
-            headers: {
-                'Content-Type': 'application/json',
-            },
         });
     } catch (errorData) {
         throw generateError(errorData);
@@ -707,7 +704,7 @@ async function getLabels(filter: {
 async function deleteLabel(id: number): Promise<void> {
     const { backendAPI } = config;
     try {
-        await Axios.delete(`${backendAPI}/labels/${id}`, { method: 'DELETE' });
+        await Axios.delete(`${backendAPI}/labels/${id}`);
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -717,7 +714,7 @@ async function updateLabel(id: number, body: SerializedLabel): Promise<Serialize
     const { backendAPI } = config;
     let response = null;
     try {
-        response = await Axios.patch(`${backendAPI}/labels/${id}`, body, { method: 'PATCH' });
+        response = await Axios.patch(`${backendAPI}/labels/${id}`, body);
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -1480,8 +1477,7 @@ async function getMeta(session, jid): Promise<FramesMetaData> {
 
     let response = null;
     try {
-        response = await Axios.get(`${backendAPI}/${session}s/${jid}/data/meta`, {
-        });
+        response = await Axios.get(`${backendAPI}/${session}s/${jid}/data/meta`);
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -1553,8 +1549,7 @@ async function getFunctionProviders() {
     const { backendAPI } = config;
 
     try {
-        const response = await Axios.get(`${backendAPI}/functions/info`, {
-        });
+        const response = await Axios.get(`${backendAPI}/functions/info`);
         return response.data;
     } catch (errorData) {
         if (errorData.response.status === 404) {
@@ -1568,11 +1563,7 @@ async function deleteFunction(functionId: number) {
     const { backendAPI } = config;
 
     try {
-        await Axios.delete(`${backendAPI}/functions/${functionId}`, {
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
+        await Axios.delete(`${backendAPI}/functions/${functionId}`);
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -1746,9 +1737,7 @@ async function cancelFunctionRequest(requestId: string): Promise<void> {
     const { backendAPI } = config;
 
     try {
-        await Axios.delete(`${backendAPI}/functions/requests/${requestId}`, {
-            method: 'DELETE',
-        });
+        await Axios.delete(`${backendAPI}/functions/requests/${requestId}`);
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -1867,9 +1856,7 @@ async function cancelLambdaRequest(requestId) {
     const { backendAPI } = config;
 
     try {
-        await Axios.delete(`${backendAPI}/lambda/requests/${requestId}`, {
-            method: 'DELETE',
-        });
+        await Axios.delete(`${backendAPI}/lambda/requests/${requestId}`);
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -2012,11 +1999,7 @@ async function deleteOrganization(id) {
     const { backendAPI } = config;
 
     try {
-        await Axios.delete(`${backendAPI}/organizations/${id}`, {
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
+        await Axios.delete(`${backendAPI}/organizations/${id}`);
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -2103,9 +2086,6 @@ async function getWebhookDelivery(webhookID: number, deliveryID: number): Promis
     try {
         const response = await Axios.get(`${backendAPI}/webhooks/${webhookID}/deliveries/${deliveryID}`, {
             params,
-            headers: {
-                'Content-Type': 'application/json',
-            },
         });
         return response.data;
     } catch (errorData) {
@@ -2123,9 +2103,6 @@ async function getWebhooks(filter, pageSize = 10): Promise<any> {
                 ...params,
                 ...filter,
                 page_size: pageSize,
-            },
-            headers: {
-                'Content-Type': 'application/json',
             },
         });
 
@@ -2171,9 +2148,6 @@ async function deleteWebhook(webhookID: number): Promise<void> {
     try {
         await Axios.delete(`${backendAPI}/webhooks/${webhookID}`, {
             params,
-            headers: {
-                'Content-Type': 'application/json',
-            },
         });
     } catch (errorData) {
         throw generateError(errorData);
@@ -2201,9 +2175,6 @@ async function pingWebhook(webhookID: number): Promise<any> {
     try {
         const response = await Axios.post(`${backendAPI}/webhooks/${webhookID}/ping`, {
             params,
-            headers: {
-                'Content-Type': 'application/json',
-            },
         });
 
         const deliveryID = response.data.id;
@@ -2221,9 +2192,6 @@ async function receiveWebhookEvents(type: WebhookSourceType): Promise<string[]> 
         const response = await Axios.get(`${backendAPI}/webhooks/events`, {
             params: {
                 type,
-            },
-            headers: {
-                'Content-Type': 'application/json',
             },
         });
         return response.data.events;
