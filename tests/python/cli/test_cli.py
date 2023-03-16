@@ -118,14 +118,14 @@ class TestCLI:
         assert self.client.tasks.retrieve(task_id).size == 5
 
     def test_can_create_task_from_local_images_with_parameters(self):
-        files = generate_images(str(self.tmp_path), 5)
+        files = generate_images(self.tmp_path, 5)
         files.sort(reverse=True)
 
         stdout = self.run_cli(
             "create",
             "test_task",
             ResourceType.LOCAL.name,
-            *files,
+            *map(os.fspath, files),
             "--labels",
             json.dumps([{"name": "car"}, {"name": "person"}]),
             "--completion_verification_period",

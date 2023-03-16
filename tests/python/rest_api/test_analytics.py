@@ -1,5 +1,5 @@
 # Copyright (C) 2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -86,13 +86,15 @@ class TestGetAuditEvents:
             "segment_size": 2,
             "project_id": self.project_id,
         }
-        task_data = {
-            "image_quality": 10,
-            "client_files": generate_image_files(3),
-        }
         task_ids = [
-            create_task(self._USERNAME, task_spec, task_data),
-            create_task(self._USERNAME, task_spec, task_data),
+            create_task(self._USERNAME, task_spec, {
+                "image_quality": 10,
+                "client_files": generate_image_files(3),
+            }),
+            create_task(self._USERNAME, task_spec, {
+                "image_quality": 10,
+                "client_files": generate_image_files(3),
+            }),
         ]
 
         self.task_ids = [t[0] for t in task_ids]

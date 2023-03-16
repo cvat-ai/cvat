@@ -13,7 +13,7 @@ from glob import glob
 
 from tqdm import tqdm
 
-from .utils import detect_related_images, is_image, is_video, SortingMethod
+from utils import detect_related_images, is_image, is_video, SortingMethod
 
 def get_args():
     parser = argparse.ArgumentParser()

@@ -331,7 +331,7 @@ class AnnotationMixin:
         is_tus_request = request.headers.get('Upload-Length', None) is not None or \
             request.method == 'OPTIONS'
         if is_tus_request:
-            return self.init_file_upload(request)
+            return self.init_tus_upload(request)
 
         use_default_location = request.query_params.get('use_default_location', True)
         conv_mask_to_poly = strtobool(request.query_params.get('conv_mask_to_poly', 'True'))
