@@ -59,7 +59,7 @@ To add a 3D shape, do the following:
 ![](/images/image217.jpg)
 
 2. The cursor will be followed by a cuboid.
-   Place the cuboid on the 3D object.
+   Place the cuboid on the 3D scene.
 
 ![](/images/gif026_carla_town3.gif)
 
