@@ -172,7 +172,7 @@ export class OpenCVWrapper {
                 model: () => new TrackerMImplementation(this.cv),
                 name: 'TrackerMIL',
                 description: 'Light client-side model useful to track simple objects',
-                type: 'opencv_tracker_mil',
+                kind: 'opencv_tracker_mil',
             },
         };
     }

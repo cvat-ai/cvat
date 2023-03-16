@@ -1,36 +1,22 @@
 name: Helm
 on:
+  push:
+    branches:
+      - 'master'
+      - 'develop'
   pull_request:
     types: [edited, ready_for_review, opened, synchronize, reopened]
+    paths-ignore:
+      - 'site/**'
+      - '**/*.md'
   workflow_dispatch:
 
 jobs:
-  check_changes:
-    runs-on: ubuntu-latest
-    outputs:
-      helm_dir_changed: ${{ steps.check_updates.outputs.helm_dir_changed }}
-    steps:
-      - uses: jitterbit/get-changed-files@v1
-        id: files
-        continue-on-error: true
-
-      - name: Run check
-        id: check_updates
-        env:
-          PR_FILES_AM: ${{ steps.files.outputs.added_modified }}
-          PR_FILES_RENAMED: ${{ steps.files.outputs.renamed }}
-        run: |
-          PR_FILES="$PR_FILES_AM $PR_FILES_RENAMED"
-          for FILE in $PR_FILES; do
-              if [[ $FILE == helm-chart/* ]] ; then
-                echo "helm_dir_changed=true" >> $GITHUB_OUTPUT
-                break
-              fi
-          done
-
   testing:
-    needs: check_changes
-    if: needs.check_changes.outputs.helm_dir_changed == 'true'
+    if: |
+      github.event.pull_request.draft == false &&
+      !startsWith(github.event.pull_request.title, '[WIP]') &&
+      !startsWith(github.event.pull_request.title, '[Dependent]')
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -59,7 +45,6 @@ jobs:
     - name: Deploy to minikube
       run: |
         printf "traefik:\n  service:\n    externalIPs:\n      - $(minikube ip)\n" >> tests/values.test.yaml
-        find cvat/apps/iam/rules -name "*.rego" -and ! -name '*test*' -exec basename {} \; | tar -czf helm-chart/rules.tar.gz -C cvat/apps/iam/rules/ -T -
         cd helm-chart
         helm dependency update
         cd ..
@@ -87,23 +72,17 @@ jobs:
         kubectl exec $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}') -- /bin/bash -c "python manage.py spectacular --file /tmp/schema.yml"
         kubectl cp $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}'):/tmp/schema.yml cvat-sdk/schema/schema.yml
         pip3 install --user -r cvat-sdk/gen/requirements.txt
-        cd cvat-sdk/
-        gen/generate.sh
-        cd ..
+        ./cvat-sdk/gen/generate.sh
 
-    - name: Install test requrements
+    - name: Install test requirements
       run: |
         pip3 install --user cvat-sdk/
         pip3 install --user cvat-cli/
         pip3 install --user -r tests/python/requirements.txt
 
     - name: REST API and SDK tests
+      # We don't have external services in Helm tests, so we ignore corresponding cases
+      # They are still tested without Helm
       run: |
         kubectl cp tests/mounted_file_share/images $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}'):/home/django/share
-        pytest --platform=kube \
-          --ignore=tests/python/rest_api/test_cloud_storages.py \
-          --ignore=tests/python/rest_api/test_analytics.py \
-          --ignore=tests/python/rest_api/test_resource_import_export.py \
-          --ignore=tests/python/rest_api/test_webhooks_sender.py \
-          -k 'not create_task_with_cloud_storage_files' \
-        tests/python
+        pytest --timeout 30 --platform=kube -m "not with_external_services" tests/python

@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,7 +8,6 @@ import moment from 'moment';
 import { useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
 import Text from 'antd/lib/typography/Text';
-import Empty from 'antd/lib/empty';
 import Card from 'antd/lib/card';
 import Meta from 'antd/lib/card/Meta';
 import Dropdown from 'antd/lib/dropdown';
@@ -16,6 +16,7 @@ import { MoreOutlined } from '@ant-design/icons';
 
 import { CombinedState, Project } from 'reducers';
 import { useCardHeightHOC } from 'utils/hooks';
+import Preview from 'components/common/preview';
 import ProjectActionsMenuComponent from './actions-menu';
 
 interface Props {
@@ -31,7 +32,7 @@ const useCardHeight = useCardHeightHOC({
 
 export default function ProjectItemComponent(props: Props): JSX.Element {
     const {
-        projectInstance: { instance, preview },
+        projectInstance: instance,
     } = props;
 
     const history = useHistory();
@@ -53,21 +54,16 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
 
     return (
         <Card
-            cover={
-                preview ? (
-                    <img
-                        className='cvat-projects-project-item-card-preview'
-                        src={preview}
-                        alt='Preview'
-                        onClick={onOpenProject}
-                        aria-hidden
-                    />
-                ) : (
-                    <div className='cvat-projects-project-item-card-preview' onClick={onOpenProject} aria-hidden>
-                        <Empty description='No tasks' />
-                    </div>
-                )
-            }
+            cover={(
+                <Preview
+                    project={instance}
+                    loadingClassName='cvat-project-item-loading-preview'
+                    emptyPreviewClassName='cvat-project-item-empty-preview'
+                    previewWrapperClassName='cvat-projects-project-item-card-preview-wrapper'
+                    previewClassName='cvat-projects-project-item-card-preview'
+                    onClick={onOpenProject}
+                />
+            )}
             size='small'
             style={style}
             className='cvat-projects-project-item-card'
@@ -79,7 +75,7 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
                     </span>
                 )}
                 description={(
-                    <div className='cvat-porjects-project-item-description'>
+                    <div className='cvat-projects-project-item-description'>
                         <div>
                             {ownerName && (
                                 <>
@@ -91,7 +87,7 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
                         </div>
                         <div>
                             <Dropdown overlay={<ProjectActionsMenuComponent projectInstance={instance} />}>
-                                <Button type='link' size='large' icon={<MoreOutlined />} />
+                                <Button className='cvat-project-details-button' type='link' size='large' icon={<MoreOutlined />} />
                             </Dropdown>
                         </div>
                     </div>

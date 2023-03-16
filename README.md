@@ -2,8 +2,6 @@
 
 # Computer Vision Annotation Tool (CVAT)
 
-<a href="https://www.producthunt.com/posts/cvat-computer-vision-annotation-tool?utm_source=badge-featured&utm_medium=badge&utm_souce=badge-cvat&#0045;computer&#0045;vision&#0045;annotation&#0045;tool" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=353415&theme=light" alt="CVAT&#0032;–&#0032;Computer&#0032;Vision&#0032;Annotation&#0032;Tool - The&#0032;open&#0032;data&#0032;annotation&#0032;platform&#0032;for&#0032;AI | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a>
-
 [![CI][ci-img]][ci-url]
 [![Gitter chat][gitter-img]][gitter-url]
 [![Discord][discord-img]][discord-url]
@@ -18,14 +16,17 @@ companies around the world. Our mission is to help developers, companies, and
 organizations around the world to solve real problems using the Data-centric
 AI approach.
 
-CVAT is free and open-source.
+Start using CVAT online: [cvat.ai](https://cvat.ai). You can use it for free,
+or [subscribe](https://www.cvat.ai/pricing/cloud) to get unlimited data,
+organizations, autoannotations, and [Roboflow and HuggingFace integration](
+  https://www.cvat.ai/post/integrating-hugging-face-and-roboflow-models).
 
-**A new repo**: CVAT core team moved the active development of the tool
-to this new repository.
-
-Start using CVAT online for free: [cvat.ai](https://cvat.ai).
-Or set it up as a self-hosted solution:
+Or set CVAT up as a self-hosted solution:
 [Self-hosted Installation Guide](https://opencv.github.io/cvat/docs/administration/basics/installation/).
+We provide [Enterprise support](https://www.cvat.ai/pricing/on-prem) for
+self-hosted installations with premium features: SSO, LDAP, Roboflow and
+HuggingFace integrations, and advanced analytics (coming soon). We also
+do trainings and a dedicated support with 24 hour SLA.
 
 ![CVAT screencast](site/content/en/images/cvat-ai-screencast.gif)
 
@@ -95,10 +96,19 @@ Here are some screencasts showing how to use CVAT.
 
 <!--lint disable maximum-line-length-->
 
-[Computer Vision Annotation Course](https://www.youtube.com/playlist?list=PL0to7Ng4PuuYQT4eXlHb_oIlq_RPeuasN): we introduce our course series designed to help you annotate data faster and better using CVAT. This course is about CVAT deployment and integrations, it includes presentations and covers the following topics:
+[Computer Vision Annotation Course](https://www.youtube.com/playlist?list=PL0to7Ng4PuuYQT4eXlHb_oIlq_RPeuasN):
+we introduce our course series designed to help you annotate data faster and better
+using CVAT. This course is about CVAT deployment and integrations, it includes
+presentations and covers the following topics:
 
-- **Speeding up your data annotation process: introduction to CVAT and Datumaro**. What problems do CVAT and Datumaro solve, and how they can speed up your model training process. Some resources you can use to learn more about how to use them.
-- **Deployment and use CVAT**. Use the app online at [app.cvat.ai](app.cvat.ai). A local deployment. A containerized local deployment with docker-compose (for regular use), and a local cluster deployment with Kubernetes (for enterprise users). A 2-minute tour of the interface, a breakdown of CVAT’s internals, and a demonstration of how to deploy CVAT using docker-compose.
+- **Speeding up your data annotation process: introduction to CVAT and Datumaro**.
+What problems do CVAT and Datumaro solve, and how they can speed up your model
+training process. Some resources you can use to learn more about how to use them.
+- **Deployment and use CVAT**. Use the app online at [app.cvat.ai](app.cvat.ai).
+A local deployment. A containerized local deployment with Docker Compose (for regular use),
+and a local cluster deployment with Kubernetes (for enterprise users). A 2-minute
+tour of the interface, a breakdown of CVAT’s internals, and a demonstration of how
+to deploy CVAT using Docker Compose.
 
 [Product tour](https://www.youtube.com/playlist?list=PL0to7Ng4Puua37NJVMIShl_pzqJTigFzg): in this course, we show how to use CVAT, and help to get familiar with CVAT functionality and interfaces. This course does not cover integrations and is dedicated solely to CVAT. It covers the following topics:
 
@@ -178,6 +188,7 @@ up to 10x. Here is a list of the algorithms we support, and the platforms they c
 | [Faster RCNN](/serverless/openvino/omz/public/faster_rcnn_inception_v2_coco/nuclio)                     | detector   | OpenVINO   | ✔️  |     |
 | [Mask RCNN](/serverless/openvino/omz/public/mask_rcnn_inception_resnet_v2_atrous_coco/nuclio)           | detector   | OpenVINO   | ✔️  |     |
 | [YOLO v3](/serverless/openvino/omz/public/yolo-v3-tf/nuclio)                                            | detector   | OpenVINO   | ✔️  |     |
+| [YOLO v7](/serverless/onnx/WongKinYiu/yolov7/nuclio)                                                    | detector   | ONNX       | ✔️  | ✔️  |
 | [Object reidentification](/serverless/openvino/omz/intel/person-reidentification-retail-300/nuclio)     | reid       | OpenVINO   | ✔️  |     |
 | [Semantic segmentation for ADAS](/serverless/openvino/omz/intel/semantic-segmentation-adas-0001/nuclio) | detector   | OpenVINO   | ✔️  |     |
 | [Text detection v4](/serverless/openvino/omz/intel/text-detection-0004/nuclio)                          | detector   | OpenVINO   | ✔️  |     |

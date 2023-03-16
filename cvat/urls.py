@@ -34,6 +34,9 @@ if apps.is_installed('cvat.apps.dataset_repo'):
 if apps.is_installed('cvat.apps.log_viewer'):
     urlpatterns.append(path('', include('cvat.apps.log_viewer.urls')))
 
+if apps.is_installed('cvat.apps.events'):
+    urlpatterns.append(path('api/', include('cvat.apps.events.urls')))
+
 if apps.is_installed('cvat.apps.lambda_manager'):
     urlpatterns.append(path('', include('cvat.apps.lambda_manager.urls')))
 

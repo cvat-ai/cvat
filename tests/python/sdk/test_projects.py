@@ -1,4 +1,4 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -13,6 +13,7 @@ from cvat_sdk.api_client import exceptions
 from cvat_sdk.core.proxies.projects import Project
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from cvat_sdk.core.utils import filter_dict
+from PIL import Image
 
 from .util import make_pbar
 
@@ -52,12 +53,13 @@ class TestProjectUsecases:
 
     @pytest.fixture
     def fxt_task_with_shapes(self, fxt_new_task: Task):
+        labels = fxt_new_task.get_labels()
         fxt_new_task.set_annotations(
             models.LabeledDataRequest(
                 shapes=[
                     models.LabeledShapeRequest(
                         frame=0,
-                        label_id=fxt_new_task.labels[0].id,
+                        label_id=labels[0].id,
                         type="rectangle",
                         points=[1, 1, 2, 2],
                     ),
@@ -91,7 +93,7 @@ class TestProjectUsecases:
                     models.PatchedLabelRequest(
                         **filter_dict(label.to_dict(), drop=["id", "has_parent"])
                     )
-                    for label in fxt_task_with_shapes.labels
+                    for label in fxt_task_with_shapes.get_labels()
                 ],
             )
         )
@@ -160,12 +162,18 @@ class TestProjectUsecases:
         assert self.stdout.getvalue() == ""
 
     def test_can_get_tasks(self, fxt_project_with_shapes: Project):
-        task_ids = set(fxt_project_with_shapes.tasks)
-
         tasks = fxt_project_with_shapes.get_tasks()
 
         assert len(tasks) == 1
-        assert {tasks[0].id} == task_ids
+        assert tasks[0].project_id == fxt_project_with_shapes.id
+
+    def test_can_get_labels(self, fxt_project_with_shapes: Project):
+        expected_labels = {"car", "person"}
+
+        received_labels = fxt_project_with_shapes.get_labels()
+
+        assert {obj.name for obj in received_labels} == expected_labels
+        assert self.stdout.getvalue() == ""
 
     def test_can_download_backup(self, fxt_project_with_shapes: Project):
         pbar_out = io.StringIO()
@@ -186,4 +194,11 @@ class TestProjectUsecases:
 
         assert restored_project.get_tasks()[0].size == 1
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
+        assert self.stdout.getvalue() == ""
+
+    def test_can_download_preview(self, fxt_project_with_shapes: Project):
+        frame_encoded = fxt_project_with_shapes.get_preview()
+        (width, height) = Image.open(frame_encoded).size
+
+        assert width > 0 and height > 0
         assert self.stdout.getvalue() == ""

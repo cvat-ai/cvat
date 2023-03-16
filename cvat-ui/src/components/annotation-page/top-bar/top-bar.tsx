@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -6,9 +7,7 @@ import React from 'react';
 import Input from 'antd/lib/input';
 import { Col, Row } from 'antd/lib/grid';
 
-import {
-    ActiveControl, PredictorState, ToolsBlockerState, Workspace,
-} from 'reducers';
+import { ActiveControl, ToolsBlockerState, Workspace } from 'reducers';
 import LeftGroup from './left-group';
 import PlayerButtons from './player-buttons';
 import PlayerNavigation from './player-navigation';
@@ -17,7 +16,6 @@ import RightGroup from './right-group';
 interface Props {
     playing: boolean;
     saving: boolean;
-    savingStatuses: string[];
     frameNumber: number;
     frameFilename: string;
     frameDeleted: boolean;
@@ -33,6 +31,7 @@ interface Props {
     drawShortcut: string;
     switchToolsBlockerShortcut: string;
     playPauseShortcut: string;
+    deleteFrameShortcut: string;
     nextFrameShortcut: string;
     previousFrameShortcut: string;
     forwardShortcut: string;
@@ -40,12 +39,9 @@ interface Props {
     prevButtonType: string;
     nextButtonType: string;
     focusFrameInputShortcut: string;
-    predictor: PredictorState;
-    isTrainingActive: boolean;
     activeControl: ActiveControl;
     toolsBlockerState: ToolsBlockerState;
     changeWorkspace(workspace: Workspace): void;
-    switchPredictor(predictorEnabled: boolean): void;
     showStatistics(): void;
     showFilters(): void;
     onSwitchPlay(): void;
@@ -74,7 +70,6 @@ interface Props {
 export default function AnnotationTopBarComponent(props: Props): JSX.Element {
     const {
         saving,
-        savingStatuses,
         undoAction,
         redoAction,
         playing,
@@ -91,18 +86,17 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         drawShortcut,
         switchToolsBlockerShortcut,
         playPauseShortcut,
+        deleteFrameShortcut,
         nextFrameShortcut,
         previousFrameShortcut,
         forwardShortcut,
         backwardShortcut,
         prevButtonType,
         nextButtonType,
-        predictor,
         focusFrameInputShortcut,
         activeControl,
         toolsBlockerState,
         showStatistics,
-        switchPredictor,
         showFilters,
         changeWorkspace,
         onSwitchPlay,
@@ -126,14 +120,12 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         onRestoreFrame,
         switchNavigationBlocked,
         jobInstance,
-        isTrainingActive,
     } = props;
 
     return (
         <Row justify='space-between'>
             <LeftGroup
                 saving={saving}
-                savingStatuses={savingStatuses}
                 undoAction={undoAction}
                 redoAction={redoAction}
                 saveShortcut={saveShortcut}
@@ -154,6 +146,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                     <PlayerButtons
                         playing={playing}
                         playPauseShortcut={playPauseShortcut}
+                        deleteFrameShortcut={deleteFrameShortcut}
                         nextFrameShortcut={nextFrameShortcut}
                         previousFrameShortcut={previousFrameShortcut}
                         forwardShortcut={forwardShortcut}
@@ -177,6 +170,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                         frameNumber={frameNumber}
                         frameFilename={frameFilename}
                         frameDeleted={frameDeleted}
+                        deleteFrameShortcut={deleteFrameShortcut}
                         focusFrameInputShortcut={focusFrameInputShortcut}
                         inputFrameRef={inputFrameRef}
                         onSliderChange={onSliderChange}
@@ -189,13 +183,10 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                 </Row>
             </Col>
             <RightGroup
-                predictor={predictor}
                 workspace={workspace}
-                switchPredictor={switchPredictor}
                 jobInstance={jobInstance}
                 changeWorkspace={changeWorkspace}
                 showStatistics={showStatistics}
-                isTrainingActive={isTrainingActive}
                 showFilters={showFilters}
             />
         </Row>

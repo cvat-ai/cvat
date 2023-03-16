@@ -5,6 +5,7 @@
 
 import os
 import base64
+from unittest import mock
 import uuid
 
 from django.conf import settings
@@ -245,8 +246,8 @@ class UploadMixin:
         raise NotImplementedError('You need to implement upload_finished in UploadMixin')
 
 class AnnotationMixin:
-    def export_annotations(self, request, pk, db_obj, export_func, callback, get_data=None):
-        format_name = request.query_params.get("format")
+    def export_annotations(self, request, db_obj, export_func, callback, get_data=None):
+        format_name = request.query_params.get("format", "")
         action = request.query_params.get("action", "").lower()
         filename = request.query_params.get("filename", "")
 
@@ -259,7 +260,8 @@ class AnnotationMixin:
             field_name=StorageType.TARGET,
         )
 
-        rq_id = "/api/{}/{}/annotations/{}".format(self._object.__class__.__name__.lower(), pk, format_name)
+        object_name = self._object.__class__.__name__.lower()
+        rq_id = f"export:annotations-for-{object_name}.id{self._object.pk}-in-{format_name.replace(' ', '_')}-format"
 
         if format_name:
             return export_func(db_instance=self._object,
@@ -275,12 +277,12 @@ class AnnotationMixin:
         if not get_data:
             return Response("Format is not specified",status=status.HTTP_400_BAD_REQUEST)
 
-        data = get_data(pk)
+        data = get_data(self._object.pk)
         serializer = LabeledDataSerializer(data=data)
         if serializer.is_valid(raise_exception=True):
             return Response(serializer.data)
 
-    def import_annotations(self, request, pk, db_obj, import_func, rq_func, rq_id):
+    def import_annotations(self, request, db_obj, import_func, rq_func, rq_id):
         is_tus_request = request.headers.get('Upload-Length', None) is not None or \
             request.method == 'OPTIONS'
         if is_tus_request:
@@ -304,7 +306,7 @@ class AnnotationMixin:
                 request=request,
                 rq_id=rq_id,
                 rq_func=rq_func,
-                pk=pk,
+                db_obj=self._object,
                 format_name=format_name,
                 location_conf=location_conf,
                 filename=file_name,
@@ -316,13 +318,21 @@ class AnnotationMixin:
 class SerializeMixin:
     def serialize(self, request, export_func):
         db_object = self.get_object() # force to call check_object_permissions
-        return export_func(db_object, request)
+        return export_func(
+            db_object,
+            request,
+            queue_name=settings.CVAT_QUEUES.EXPORT_DATA.value,
+        )
 
     def deserialize(self, request, import_func):
         location = request.query_params.get("location", Location.LOCAL)
         if location == Location.CLOUD_STORAGE:
             file_name = request.query_params.get("filename", "")
-            return import_func(request, filename=file_name)
+            return import_func(
+                request,
+                queue_name=settings.CVAT_QUEUES.IMPORT_DATA.value,
+                filename=file_name,
+            )
         return self.upload_data(request)
 
 
@@ -337,6 +347,10 @@ class PartialUpdateModelMixin:
 
     Almost the same as UpdateModelMixin, but has no public PUT / update() method.
     """
+
+    def _update(self, request, *args, **kwargs):
+        # This method must not be named "update" not to be matched with the PUT method
+        return mixins.UpdateModelMixin.update(self, request, *args, **kwargs)
 
     def perform_update(self, serializer):
         instance = serializer.instance
@@ -354,8 +368,9 @@ class PartialUpdateModelMixin:
         signal_update.send(self, instance=serializer.instance, old_values=old_values)
 
     def partial_update(self, request, *args, **kwargs):
-        kwargs['partial'] = True
-        return mixins.UpdateModelMixin.update(self, request=request, *args, **kwargs)
+        with mock.patch.object(self, 'update', new=self._update, create=True):
+            return mixins.UpdateModelMixin.partial_update(self, request=request, *args, **kwargs)
+
 
 class DestroyModelMixin(mixins.DestroyModelMixin):
     def perform_destroy(self, instance):

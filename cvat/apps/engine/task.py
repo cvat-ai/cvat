@@ -5,17 +5,17 @@
 # SPDX-License-Identifier: MIT
 
 import itertools
+import fnmatch
 import os
 import sys
+from typing import Any, Dict, Iterator, List, NamedTuple, Optional, Union
 from rest_framework.serializers import ValidationError
 import rq
 import re
 import shutil
 from distutils.dir_util import copy_tree
-from traceback import print_exception
 from urllib import parse as urlparse
 from urllib import request as urlrequest
-import requests
 import ipaddress
 import dns.resolver
 import django_rq
@@ -29,7 +29,8 @@ from cvat.apps.engine import models
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.media_extractors import (MEDIA_TYPES, Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter,
     ValidateDimension, ZipChunkWriter, ZipCompressedChunkWriter, get_mime, sort)
-from cvat.apps.engine.utils import av_scan_paths
+from cvat.apps.engine.utils import av_scan_paths, get_rq_job_meta
+from cvat.utils.http import make_requests_session
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager, is_manifest
 from utils.dataset_manifest.core import VideoManifestValidator
 from utils.dataset_manifest.utils import detect_related_images
@@ -37,27 +38,28 @@ from .cloud_provider import db_storage_to_storage_instance
 
 ############################# Low Level server API
 
-def create(tid, data):
+def create(db_task, data, request):
     """Schedule the task"""
-    q = django_rq.get_queue('default')
-    q.enqueue_call(func=_create_thread, args=(tid, data),
-        job_id="/api/tasks/{}".format(tid))
-
-@transaction.atomic
-def rq_handler(job, exc_type, exc_value, traceback):
-    split = job.id.split('/')
-    tid = split[split.index('tasks') + 1]
-    try:
-        tid = int(tid)
-        db_task = models.Task.objects.select_for_update().get(pk=tid)
-        with open(db_task.get_log_path(), "wt") as log_file:
-            print_exception(exc_type, exc_value, traceback, file=log_file)
-    except (models.Task.DoesNotExist, ValueError):
-        pass # skip exceptions in the code
-
-    return False
+    q = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
+    q.enqueue_call(
+        func=_create_thread,
+        args=(db_task.pk, data),
+        job_id=f"create:task.id{db_task.pk}-by-{request.user.username}",
+        meta=get_rq_job_meta(request=request, db_obj=db_task),
+    )
 
 ############################# Internal implementation for server API
+
+JobFileMapping = List[List[str]]
+
+class SegmentParams(NamedTuple):
+    start_frame: int
+    stop_frame: int
+
+class SegmentsParams(NamedTuple):
+    segments: Iterator[SegmentParams]
+    segment_size: int
+    overlap: int
 
 def _copy_data_from_source(server_files, upload_dir, server_dir=None):
     job = rq.get_current_job()
@@ -78,37 +80,68 @@ def _copy_data_from_source(server_files, upload_dir, server_dir=None):
                 os.makedirs(target_dir)
             shutil.copyfile(source_path, target_path)
 
-def _get_task_segment_data(db_task, data_size):
-    segment_size = db_task.segment_size
-    segment_step = segment_size
-    if segment_size == 0 or segment_size > data_size:
-        segment_size = data_size
+def _get_task_segment_data(
+    db_task: models.Task,
+    *,
+    data_size: Optional[int] = None,
+    job_file_mapping: Optional[JobFileMapping] = None,
+) -> SegmentsParams:
+    if job_file_mapping is not None:
+        def _segments():
+            # It is assumed here that files are already saved ordered in the task
+            # Here we just need to create segments by the job sizes
+            start_frame = 0
+            for jf in job_file_mapping:
+                segment_size = len(jf)
+                stop_frame = start_frame + segment_size - 1
+                yield SegmentParams(start_frame, stop_frame)
 
-        # Segment step must be more than segment_size + overlap in single-segment tasks
-        # Otherwise a task contains an extra segment
-        segment_step = sys.maxsize
+                start_frame = stop_frame + 1
 
-    overlap = 5 if db_task.mode == 'interpolation' else 0
-    if db_task.overlap is not None:
-        overlap = min(db_task.overlap, segment_size  // 2)
+        segments = _segments()
+        segment_size = 0
+        overlap = 0
+    else:
+        # The segments have equal parameters
+        if data_size is None:
+            data_size = db_task.data.size
 
-    segment_step -= overlap
-    return segment_step, segment_size, overlap
+        segment_size = db_task.segment_size
+        segment_step = segment_size
+        if segment_size == 0 or segment_size > data_size:
+            segment_size = data_size
 
-def _save_task_to_db(db_task, extractor):
+            # Segment step must be more than segment_size + overlap in single-segment tasks
+            # Otherwise a task contains an extra segment
+            segment_step = sys.maxsize
+
+        overlap = 5 if db_task.mode == 'interpolation' else 0
+        if db_task.overlap is not None:
+            overlap = min(db_task.overlap, segment_size  // 2)
+
+        segment_step -= overlap
+
+        segments = (
+            SegmentParams(start_frame, min(start_frame + segment_size - 1, data_size - 1))
+            for start_frame in range(0, data_size, segment_step)
+        )
+
+    return SegmentsParams(segments, segment_size, overlap)
+
+def _save_task_to_db(db_task: models.Task, *, job_file_mapping: Optional[JobFileMapping] = None):
     job = rq.get_current_job()
     job.meta['status'] = 'Task is being saved in database'
     job.save_meta()
 
-    segment_step, segment_size, overlap = _get_task_segment_data(db_task, db_task.data.size)
+    segments, segment_size, overlap = _get_task_segment_data(
+        db_task=db_task, job_file_mapping=job_file_mapping
+    )
     db_task.segment_size = segment_size
     db_task.overlap = overlap
 
-    for start_frame in range(0, db_task.data.size, segment_step):
-        stop_frame = min(start_frame + segment_size - 1, db_task.data.size - 1)
-
-        slogger.glob.info("New segment for task #{}: start_frame = {}, \
-            stop_frame = {}".format(db_task.id, start_frame, stop_frame))
+    for segment_idx, (start_frame, stop_frame) in enumerate(segments):
+        slogger.glob.info("New segment for task #{}: idx = {}, start_frame = {}, \
+            stop_frame = {}".format(db_task.id, segment_idx, start_frame, stop_frame))
 
         db_segment = models.Segment()
         db_segment.task = db_task
@@ -124,13 +157,10 @@ def _save_task_to_db(db_task, extractor):
             shutil.rmtree(job_path)
         os.makedirs(job_path)
 
-        preview = extractor.get_preview(frame=start_frame)
-        preview.save(db_job.get_preview_path())
-
     db_task.data.save()
     db_task.save()
 
-def _count_files(data, manifest_files=None):
+def _count_files(data):
     share_root = settings.SHARE_ROOT
     server_files = []
 
@@ -161,7 +191,7 @@ def _count_files(data, manifest_files=None):
             if mime in counter:
                 counter[mime].append(rel_path)
             elif rel_path.endswith('.jsonl'):
-                manifest_files.append(rel_path)
+                continue
             else:
                 slogger.glob.warn("Skip '{}' file (its mime type doesn't "
                     "correspond to supported MIME file type)".format(full_path))
@@ -179,6 +209,12 @@ def _count_files(data, manifest_files=None):
     )
 
     return counter
+
+def _find_manifest_files(data):
+    manifest_files = []
+    for files in ['client_files', 'server_files', 'remote_files']:
+        manifest_files.extend(list(filter(lambda x: x.endswith('.jsonl'), data[files])))
+    return manifest_files
 
 def _validate_data(counter, manifest_files=None):
     unique_entries = 0
@@ -210,10 +246,45 @@ def _validate_data(counter, manifest_files=None):
 
     return counter, task_modes[0]
 
-def _validate_manifest(manifests, root_dir, is_in_cloud, db_cloud_storage):
+def _validate_job_file_mapping(
+    db_task: models.Task, data: Dict[str, Any]
+) -> Optional[JobFileMapping]:
+    job_file_mapping = data.get('job_file_mapping', None)
+
+    if job_file_mapping is None:
+        return None
+    elif not list(itertools.chain.from_iterable(job_file_mapping)):
+        raise ValidationError("job_file_mapping cannot be empty")
+
+    if db_task.segment_size:
+        raise ValidationError("job_file_mapping cannot be used with segment_size")
+
+    if (data.get('sorting_method', db_task.data.sorting_method)
+        != models.SortingMethod.LEXICOGRAPHICAL
+    ):
+        raise ValidationError("job_file_mapping cannot be used with sorting_method")
+
+    if data.get('start_frame', db_task.data.start_frame):
+        raise ValidationError("job_file_mapping cannot be used with start_frame")
+
+    if data.get('stop_frame', db_task.data.stop_frame):
+        raise ValidationError("job_file_mapping cannot be used with stop_frame")
+
+    if data.get('frame_filter', db_task.data.frame_filter):
+        raise ValidationError("job_file_mapping cannot be used with frame_filter")
+
+    if db_task.data.get_frame_step() != 1:
+        raise ValidationError("job_file_mapping cannot be used with frame step")
+
+    if data.get('filename_pattern'):
+        raise ValidationError("job_file_mapping cannot be used with filename_pattern")
+
+    return job_file_mapping
+
+def _validate_manifest(manifests, root_dir, is_in_cloud, db_cloud_storage, data_storage_method):
     if manifests:
         if len(manifests) != 1:
-            raise Exception('Only one manifest file can be attached with data')
+            raise ValidationError('Only one manifest file can be attached to data')
         manifest_file = manifests[0]
         full_manifest_path = os.path.join(root_dir, manifests[0])
         if is_in_cloud:
@@ -224,8 +295,10 @@ def _validate_manifest(manifests, root_dir, is_in_cloud, db_cloud_storage):
                     < cloud_storage_instance.get_file_last_modified(manifest_file):
                 cloud_storage_instance.download_file(manifest_file, full_manifest_path)
         if is_manifest(full_manifest_path):
+            if not (settings.USE_CACHE or data_storage_method != models.StorageMethodChoice.CACHE):
+                raise ValidationError("Manifest file can be uploaded only if 'Use cache' option is also selected")
             return manifest_file
-        raise Exception('Invalid manifest was uploaded')
+        raise ValidationError('Invalid manifest was uploaded')
     return None
 
 def _validate_url(url):
@@ -270,102 +343,143 @@ def _validate_url(url):
 def _download_data(urls, upload_dir):
     job = rq.get_current_job()
     local_files = {}
-    for url in urls:
-        name = os.path.basename(urlrequest.url2pathname(urlparse.urlparse(url).path))
-        if name in local_files:
-            raise Exception("filename collision: {}".format(name))
-        _validate_url(url)
-        slogger.glob.info("Downloading: {}".format(url))
-        job.meta['status'] = '{} is being downloaded..'.format(url)
-        job.save_meta()
 
-        response = requests.get(url, stream=True)
-        if response.status_code == 200:
-            response.raw.decode_content = True
-            with open(os.path.join(upload_dir, name), 'wb') as output_file:
-                shutil.copyfileobj(response.raw, output_file)
-        else:
-            raise Exception("Failed to download " + url)
+    with make_requests_session() as session:
+        for url in urls:
+            name = os.path.basename(urlrequest.url2pathname(urlparse.urlparse(url).path))
+            if name in local_files:
+                raise Exception("filename collision: {}".format(name))
+            _validate_url(url)
+            slogger.glob.info("Downloading: {}".format(url))
+            job.meta['status'] = '{} is being downloaded..'.format(url)
+            job.save_meta()
 
-        local_files[name] = True
+            response = session.get(url, stream=True)
+            if response.status_code == 200:
+                response.raw.decode_content = True
+                with open(os.path.join(upload_dir, name), 'wb') as output_file:
+                    shutil.copyfileobj(response.raw, output_file)
+            else:
+                raise Exception("Failed to download " + url)
+
+            local_files[name] = True
 
     return list(local_files.keys())
 
 def _get_manifest_frame_indexer(start_frame=0, frame_step=1):
     return lambda frame_id: start_frame + frame_id * frame_step
 
+def _create_task_manifest_based_on_cloud_storage_manifest(
+    sorted_media,
+    cloud_storage_manifest_prefix,
+    cloud_storage_manifest,
+    manifest
+):
+    if cloud_storage_manifest_prefix:
+        sorted_media_without_manifest_prefix = [
+            os.path.relpath(i, cloud_storage_manifest_prefix) for i in sorted_media
+        ]
+        sequence, raw_content = cloud_storage_manifest.get_subset(sorted_media_without_manifest_prefix)
+        def _add_prefix(properties):
+            file_name = properties['name']
+            properties['name'] = os.path.join(cloud_storage_manifest_prefix, file_name)
+            return properties
+        content = list(map(_add_prefix, raw_content))
+    else:
+        sequence, content = cloud_storage_manifest.get_subset(sorted_media)
+    if not content:
+        raise ValidationError('There is no intersection of the files specified'
+                            'in the request with the contents of the bucket')
+    sorted_content = (i[1] for i in sorted(zip(sequence, content)))
+    manifest.create(sorted_content)
 
 @transaction.atomic
-def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
+def _create_thread(
+    db_task: Union[int, models.Task],
+    data: Dict[str, Any],
+    *,
+    isBackupRestore: bool = False,
+    isDatasetImport: bool = False,
+) -> None:
     if isinstance(db_task, int):
         db_task = models.Task.objects.select_for_update().get(pk=db_task)
 
     slogger.glob.info("create task #{}".format(db_task.id))
 
+    job_file_mapping = _validate_job_file_mapping(db_task, data)
+
     db_data = db_task.data
-    upload_dir = db_data.get_upload_dirname()
+    upload_dir = db_data.get_upload_dirname() if db_data.storage != models.StorageChoice.SHARE else settings.SHARE_ROOT
     is_data_in_cloud = db_data.storage == models.StorageChoice.CLOUD_STORAGE
 
     if data['remote_files'] and not isDatasetImport:
         data['remote_files'] = _download_data(data['remote_files'], upload_dir)
 
-    manifest_files = []
-    media = _count_files(data, manifest_files)
-    media, task_mode = _validate_data(media, manifest_files)
-
-    if data['server_files']:
-        if db_data.storage == models.StorageChoice.LOCAL:
-            _copy_data_from_source(data['server_files'], upload_dir, data.get('server_files_path'))
-        elif db_data.storage == models.StorageChoice.SHARE:
-            upload_dir = settings.SHARE_ROOT
-
+    # find and validate manifest file
+    manifest_files = _find_manifest_files(data)
     manifest_root = None
-    if db_data.storage in {models.StorageChoice.LOCAL, models.StorageChoice.SHARE}:
+
+    # we should also handle this case because files from the share source have not been downloaded yet
+    if data['copy_data']:
+        manifest_root = settings.SHARE_ROOT
+    elif db_data.storage in {models.StorageChoice.LOCAL, models.StorageChoice.SHARE}:
         manifest_root = upload_dir
     elif is_data_in_cloud:
         manifest_root = db_data.cloud_storage.get_storage_dirname()
 
     manifest_file = _validate_manifest(
         manifest_files, manifest_root,
-        is_data_in_cloud, db_data.cloud_storage if is_data_in_cloud else None
+        is_data_in_cloud, db_data.cloud_storage if is_data_in_cloud else None,
+        db_data.storage_method,
     )
-    if manifest_file and (not settings.USE_CACHE or db_data.storage_method != models.StorageMethodChoice.CACHE):
-        raise Exception("File with meta information can be uploaded if 'Use cache' option is also selected")
 
-    if data['server_files'] and is_data_in_cloud:
-        cloud_storage_instance = db_storage_to_storage_instance(db_data.cloud_storage)
-        sorted_media = sort(media['image'], data['sorting_method'])
-
-        data_size = len(sorted_media)
-        segment_step, *_ = _get_task_segment_data(db_task, data_size)
-        for start_frame in range(0, data_size, segment_step):
-            first_sorted_media_image = sorted_media[start_frame]
-            cloud_storage_instance.download_file(first_sorted_media_image, os.path.join(upload_dir, first_sorted_media_image))
-
-        # prepare task manifest file from cloud storage manifest file
-        # NOTE we should create manifest before defining chunk_size
-        # FIXME in the future when will be implemented archive support
+    if is_data_in_cloud:
         manifest = ImageManifestManager(db_data.get_manifest_path())
         cloud_storage_manifest = ImageManifestManager(
             os.path.join(db_data.cloud_storage.get_storage_dirname(), manifest_file),
             db_data.cloud_storage.get_storage_dirname()
         )
-        cloud_storage_manifest_prefix = os.path.dirname(manifest_file)
         cloud_storage_manifest.set_index()
-        if cloud_storage_manifest_prefix:
-            sorted_media_without_manifest_prefix = [
-                os.path.relpath(i, cloud_storage_manifest_prefix) for i in sorted_media
-            ]
-            sequence, raw_content = cloud_storage_manifest.get_subset(sorted_media_without_manifest_prefix)
-            def _add_prefix(properties):
-                file_name = properties['name']
-                properties['name'] = os.path.join(cloud_storage_manifest_prefix, file_name)
-                return properties
-            content = list(map(_add_prefix, raw_content))
+        cloud_storage_manifest_prefix = os.path.dirname(manifest_file)
+
+    # update list with server files if task creation approach with pattern and manifest file is used
+    if is_data_in_cloud and data['filename_pattern']:
+        if 1 != len(data['server_files']):
+            l = len(data['server_files']) - 1
+            raise ValidationError(
+                'Using a filename_pattern is only supported with a manifest file, '
+                f'but others {l} file{"s" if l > 1 else ""} {"were" if l > 1 else "was"} found'
+                'Please remove extra files and keep only manifest file in server_files field.'
+            )
+
+        cloud_storage_manifest_data = list(cloud_storage_manifest.data) if not cloud_storage_manifest_prefix \
+            else [os.path.join(cloud_storage_manifest_prefix, f) for f in cloud_storage_manifest.data]
+        if data['filename_pattern'] == '*':
+            server_files = cloud_storage_manifest_data
         else:
-            sequence, content = cloud_storage_manifest.get_subset(sorted_media)
-        sorted_content = (i[1] for i in sorted(zip(sequence, content)))
-        manifest.create(sorted_content)
+            server_files = fnmatch.filter(cloud_storage_manifest_data, data['filename_pattern'])
+        data['server_files'].extend(server_files)
+
+    # count and validate uploaded files
+    media = _count_files(data)
+    media, task_mode = _validate_data(media, manifest_files)
+
+    if job_file_mapping is not None and task_mode != 'annotation':
+        raise ValidationError("job_file_mapping can't be used with sequence-based data like videos")
+
+    if data['server_files']:
+        if db_data.storage == models.StorageChoice.LOCAL:
+            _copy_data_from_source(data['server_files'], upload_dir, data.get('server_files_path'))
+        elif is_data_in_cloud:
+            if job_file_mapping is not None:
+                sorted_media = list(itertools.chain.from_iterable(job_file_mapping))
+            else:
+                sorted_media = sort(media['image'], data['sorting_method'])
+
+            # Define task manifest content based on cloud storage manifest content and uploaded files
+            _create_task_manifest_based_on_cloud_storage_manifest(
+                sorted_media, cloud_storage_manifest_prefix,
+                cloud_storage_manifest, manifest)
 
     av_scan_paths(upload_dir)
 
@@ -455,24 +569,44 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
         extractor.filter(lambda x: not re.search(r'(^|{0})related_images{0}'.format(os.sep), x))
         related_images = detect_related_images(extractor.absolute_source_paths, upload_dir)
 
-    if isBackupRestore and not isinstance(extractor, MEDIA_TYPES['video']['extractor']) and db_data.storage_method == models.StorageMethodChoice.CACHE and \
-            db_data.sorting_method in {models.SortingMethod.RANDOM, models.SortingMethod.PREDEFINED} and validate_dimension.dimension != models.DimensionType.DIM_3D:
-        # we should sort media_files according to the manifest content sequence
-        # and we should do this in general after validation step for 3D data and after filtering from related_images
-        manifest = ImageManifestManager(db_data.get_manifest_path())
-        manifest.set_index()
+    # Sort the files
+    if (isBackupRestore and (
+            not isinstance(extractor, MEDIA_TYPES['video']['extractor'])
+            and db_data.storage_method == models.StorageMethodChoice.CACHE
+            and db_data.sorting_method in {models.SortingMethod.RANDOM, models.SortingMethod.PREDEFINED}
+            and validate_dimension.dimension != models.DimensionType.DIM_3D
+        ) or job_file_mapping
+    ):
         sorted_media_files = []
 
-        for idx in range(len(extractor.absolute_source_paths)):
-            properties = manifest[idx]
-            image_name = properties.get('name', None)
-            image_extension = properties.get('extension', None)
+        if job_file_mapping:
+            sorted_media_files.extend(itertools.chain.from_iterable(job_file_mapping))
+        else:
+            # we should sort media_files according to the manifest content sequence
+            # and we should do this in general after validation step for 3D data and after filtering from related_images
+            manifest = ImageManifestManager(db_data.get_manifest_path())
+            manifest.set_index()
 
-            full_image_path = os.path.join(upload_dir, f"{image_name}{image_extension}") if image_name and image_extension else None
-            if full_image_path and full_image_path in extractor:
-                sorted_media_files.append(full_image_path)
+            for idx in range(len(extractor.absolute_source_paths)):
+                properties = manifest[idx]
+                image_name = properties.get('name', None)
+                image_extension = properties.get('extension', None)
+
+                full_image_path = f"{image_name}{image_extension}" if image_name and image_extension else None
+                if full_image_path:
+                    sorted_media_files.append(full_image_path)
+
+        sorted_media_files = [os.path.join(upload_dir, fn) for fn in sorted_media_files]
+
+        for file_path in sorted_media_files:
+            if not file_path in extractor:
+                raise ValidationError(
+                    f"Can't find file '{os.path.basename(file_path)}' in the input files"
+                )
+
         media_files = sorted_media_files.copy()
         del sorted_media_files
+
         data['sorting_method'] = models.SortingMethod.PREDEFINED
         extractor.reconcile(
             source_files=media_files,
@@ -688,8 +822,5 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
         db_data.stop_frame = min(db_data.stop_frame, \
             db_data.start_frame + (db_data.size - 1) * db_data.get_frame_step())
 
-    task_preview = extractor.get_preview(frame=0)
-    task_preview.save(db_data.get_preview_path())
-
     slogger.glob.info("Found frames {} for Data #{}".format(db_data.size, db_data.id))
-    _save_task_to_db(db_task, extractor)
+    _save_task_to_db(db_task, job_file_mapping=job_file_mapping)

@@ -26,6 +26,7 @@ from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.models import Job, Task
 from cvat.apps.engine.serializers import LabeledDataSerializer
 from cvat.apps.engine.models import ShapeType, SourceType
+from cvat.utils.http import make_requests_session
 
 from drf_spectacular.utils import (extend_schema, extend_schema_view,
     OpenApiResponse, OpenApiParameter, inline_serializer)
@@ -65,10 +66,11 @@ class LambdaGateway:
         else:
             url = NUCLIO_GATEWAY
 
-        reply = getattr(requests, method)(url, headers=extra_headers,
-            timeout=NUCLIO_TIMEOUT, json=data)
-        reply.raise_for_status()
-        response = reply.json()
+        with make_requests_session() as session:
+            reply = session.request(method, url, headers=extra_headers,
+                timeout=NUCLIO_TIMEOUT, json=data)
+            reply.raise_for_status()
+            response = reply.json()
 
         return response
 
@@ -97,9 +99,11 @@ class LambdaGateway:
             url = f'http://host.docker.internal:{func.port}'
         else:
             url = f'http://localhost:{func.port}'
-        reply = requests.post(url, timeout=NUCLIO_TIMEOUT, json=payload)
-        reply.raise_for_status()
-        response = reply.json()
+
+        with make_requests_session() as session:
+            reply = session.post(url, timeout=NUCLIO_TIMEOUT, json=payload)
+            reply.raise_for_status()
+            response = reply.json()
 
         return response
 
@@ -364,8 +368,7 @@ class LambdaFunction:
 
 class LambdaQueue:
     def _get_queue(self):
-        QUEUE_NAME = "low"
-        return django_rq.get_queue(QUEUE_NAME)
+        return django_rq.get_queue(settings.CVAT_QUEUES.AUTO_ANNOTATION.value)
 
     def get_jobs(self):
         queue = self._get_queue()
@@ -562,11 +565,11 @@ class LambdaJob:
 
                     results.append_shape(shape)
 
-                # Accumulate data during 100 frames before sumbitting results.
-                # It is optimization to make fewer calls to our server. Also
-                # it isn't possible to keep all results in memory.
-                if frame and frame % 100 == 0:
-                    results.submit()
+            # Accumulate data during 100 frames before sumbitting results.
+            # It is optimization to make fewer calls to our server. Also
+            # it isn't possible to keep all results in memory.
+            if frame and frame % 100 == 0:
+                results.submit()
 
         results.submit()
 

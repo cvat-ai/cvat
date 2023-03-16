@@ -9,7 +9,8 @@ from typing import Tuple
 
 import packaging.version as pv
 import pytest
-from cvat_sdk import Client
+from cvat_sdk import Client, models
+from cvat_sdk.api_client.exceptions import NotFoundException
 from cvat_sdk.core.client import Config, make_client
 from cvat_sdk.core.exceptions import IncompatibleVersionException, InvalidHostException
 from cvat_sdk.exceptions import ApiException
@@ -166,3 +167,48 @@ def test_can_control_ssl_verification_with_config(verify: bool):
     client = Client(BASE_URL, config=config)
 
     assert client.api_client.configuration.verify_ssl == verify
+
+
+def test_organization_contexts(admin_user: str):
+    with make_client(BASE_URL, credentials=(admin_user, USER_PASS)) as client:
+        assert client.organization_slug is None
+
+        org = client.organizations.create(models.OrganizationWriteRequest(slug="testorg"))
+
+        # create a project in the personal workspace
+        client.organization_slug = ""
+        personal_project = client.projects.create(models.ProjectWriteRequest(name="Personal"))
+        assert personal_project.organization is None
+
+        # create a project in the organization
+        client.organization_slug = org.slug
+        org_project = client.projects.create(models.ProjectWriteRequest(name="Org"))
+        assert org_project.organization == org.id
+
+        # both projects should be visible with no context
+        client.organization_slug = None
+        client.projects.retrieve(personal_project.id)
+        client.projects.retrieve(org_project.id)
+
+        # only the personal project should be visible in the personal workspace
+        client.organization_slug = ""
+        client.projects.retrieve(personal_project.id)
+        with pytest.raises(NotFoundException):
+            client.projects.retrieve(org_project.id)
+
+        # only the organizational project should be visible in the organization
+        client.organization_slug = org.slug
+        client.projects.retrieve(org_project.id)
+        with pytest.raises(NotFoundException):
+            client.projects.retrieve(personal_project.id)
+
+
+def test_organization_context_manager():
+    client = Client(BASE_URL)
+
+    client.organization_slug = "abc"
+
+    with client.organization_context("def"):
+        assert client.organization_slug == "def"
+
+    assert client.organization_slug == "abc"

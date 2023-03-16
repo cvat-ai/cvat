@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,13 +9,13 @@ import { AuthActionTypes } from 'actions/auth-actions';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
+import { DimensionType } from 'cvat-core-wrapper';
 import { clamp } from 'utils/math';
 
 import {
     ActiveControl,
     AnnotationState,
     ContextMenuType,
-    DimensionType,
     JobStage,
     ObjectType,
     ShapeType,
@@ -65,7 +65,7 @@ const defaultState: AnnotationState = {
             number: 0,
             filename: '',
             data: null,
-            hasRelatedContext: false,
+            relatedFiles: 0,
             fetching: false,
             delay: 0,
             changeTime: null,
@@ -73,11 +73,6 @@ const defaultState: AnnotationState = {
         playing: false,
         frameAngles: [],
         navigationBlocked: false,
-        contextImage: {
-            fetching: false,
-            data: null,
-            hidden: false,
-        },
     },
     drawing: {
         activeShapeType: ShapeType.RECTANGLE,
@@ -91,7 +86,6 @@ const defaultState: AnnotationState = {
         saving: {
             forceExit: false,
             uploading: false,
-            statuses: [],
         },
         collapsed: {},
         collapsedAll: true,
@@ -124,18 +118,6 @@ const defaultState: AnnotationState = {
     sidebarCollapsed: false,
     appearanceCollapsed: false,
     filtersPanelVisible: false,
-    predictor: {
-        enabled: false,
-        error: null,
-        message: '',
-        projectScore: 0,
-        fetching: false,
-        annotatedFrames: [],
-        timeRemaining: 0,
-        progress: 0,
-        annotationAmount: 0,
-        mediaAmount: 0,
-    },
     workspace: Workspace.STANDARD,
 };
 
@@ -160,7 +142,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 openTime,
                 frameNumber: number,
                 frameFilename: filename,
-                frameHasRelatedContext,
+                relatedFiles,
                 colors,
                 filters,
                 frameData: data,
@@ -175,7 +157,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             let activeShapeType = defaultLabel && defaultLabel.type !== 'any' ?
                 defaultLabel.type : ShapeType.RECTANGLE;
 
-            if (job.dimension === DimensionType.DIM_3D) {
+            if (job.dimension === DimensionType.DIMENSION_3D) {
                 workspaceSelected = Workspace.STANDARD3D;
                 activeShapeType = ShapeType.CUBOID;
             }
@@ -213,7 +195,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     frame: {
                         ...state.player.frame,
                         filename,
-                        hasRelatedContext: frameHasRelatedContext,
+                        relatedFiles,
                         number,
                         data,
                     },
@@ -227,7 +209,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
                 canvas: {
                     ...state.canvas,
-                    instance: job.dimension === DimensionType.DIM_2D ? new Canvas() : new Canvas3d(),
+                    instance: job.dimension === DimensionType.DIMENSION_2D ? new Canvas() : new Canvas3d(),
                 },
                 colors,
                 workspace: isReview ? Workspace.REVIEW_WORKSPACE : workspaceSelected,
@@ -277,7 +259,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 number,
                 data,
                 filename,
-                hasRelatedContext,
+                relatedFiles,
                 states,
                 minZ,
                 maxZ,
@@ -293,15 +275,11 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     frame: {
                         data,
                         filename,
-                        hasRelatedContext,
+                        relatedFiles,
                         number,
                         fetching: false,
                         changeTime,
                         delay,
-                    },
-                    contextImage: {
-                        ...state.player.contextImage,
-                        ...(state.player.frame.number === number ? {} : { data: null }),
                     },
                 },
                 annotations: {
@@ -351,7 +329,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     saving: {
                         ...state.annotations.saving,
                         uploading: true,
-                        statuses: [],
                     },
                 },
             };
@@ -381,20 +358,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     saving: {
                         ...state.annotations.saving,
                         uploading: false,
-                    },
-                },
-            };
-        }
-        case AnnotationActionTypes.SAVE_UPDATE_ANNOTATIONS_STATUS: {
-            const { status } = action.payload;
-
-            return {
-                ...state,
-                annotations: {
-                    ...state.annotations,
-                    saving: {
-                        ...state.annotations.saving,
-                        statuses: [...state.annotations.saving.statuses, status],
                     },
                 },
             };
@@ -1103,7 +1066,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
                 canvas: {
                     ...state.canvas,
-                    activeControl: activeInteractor.type.startsWith('opencv') ?
+                    activeControl: activeInteractor.kind.startsWith('opencv') ?
                         ActiveControl.OPENCV_TOOLS :
                         ActiveControl.AI_TOOLS,
                 },
@@ -1138,105 +1101,12 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        case AnnotationActionTypes.UPDATE_PREDICTOR_STATE: {
-            const { payload } = action;
-            return {
-                ...state,
-                predictor: {
-                    ...state.predictor,
-                    ...payload,
-                },
-            };
-        }
-        case AnnotationActionTypes.GET_PREDICTIONS: {
-            return {
-                ...state,
-                predictor: {
-                    ...state.predictor,
-                    fetching: true,
-                },
-            };
-        }
-        case AnnotationActionTypes.GET_PREDICTIONS_SUCCESS: {
-            const { frame } = action.payload;
-            const annotatedFrames = [...state.predictor.annotatedFrames, frame];
-
-            return {
-                ...state,
-                predictor: {
-                    ...state.predictor,
-                    fetching: false,
-                    annotatedFrames,
-                },
-            };
-        }
-        case AnnotationActionTypes.GET_PREDICTIONS_FAILED: {
-            return {
-                ...state,
-                predictor: {
-                    ...state.predictor,
-                    fetching: false,
-                },
-            };
-        }
         case AnnotationActionTypes.RESET_CANVAS: {
             return {
                 ...state,
                 canvas: {
                     ...state.canvas,
                     activeControl: ActiveControl.CURSOR,
-                },
-            };
-        }
-        case AnnotationActionTypes.HIDE_SHOW_CONTEXT_IMAGE: {
-            const { hidden } = action.payload;
-            return {
-                ...state,
-                player: {
-                    ...state.player,
-                    contextImage: {
-                        ...state.player.contextImage,
-                        hidden,
-                    },
-                },
-            };
-        }
-        case AnnotationActionTypes.GET_CONTEXT_IMAGE: {
-            return {
-                ...state,
-                player: {
-                    ...state.player,
-                    contextImage: {
-                        ...state.player.contextImage,
-                        fetching: true,
-                    },
-                },
-            };
-        }
-        case AnnotationActionTypes.GET_CONTEXT_IMAGE_SUCCESS: {
-            const { contextImageData } = action.payload;
-
-            return {
-                ...state,
-                player: {
-                    ...state.player,
-                    contextImage: {
-                        ...state.player.contextImage,
-                        fetching: false,
-                        data: contextImageData,
-                    },
-                },
-            };
-        }
-        case AnnotationActionTypes.GET_CONTEXT_IMAGE_FAILED: {
-            return {
-                ...state,
-                player: {
-                    ...state.player,
-                    contextImage: {
-                        ...state.player.contextImage,
-                        fetching: false,
-                    },
                 },
             };
         }

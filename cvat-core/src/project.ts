@@ -1,42 +1,50 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import { StorageLocation } from './enums';
+import _ from 'lodash';
+import { DimensionType, ProjectStatus, StorageLocation } from './enums';
 import { Storage } from './storage';
+import { SerializedLabel, SerializedProject } from './server-response-types';
+import PluginRegistry from './plugins';
+import { ArgumentError } from './exceptions';
+import { Label } from './labels';
+import User from './user';
+import { FieldUpdateTrigger } from './common';
 
-const PluginRegistry = require('./plugins').default;
-const { ArgumentError } = require('./exceptions');
-const { Label } = require('./labels');
-const User = require('./user').default;
-const { FieldUpdateTrigger } = require('./common');
-
-/**
- * Class representing a project
- * @memberof module:API.cvat.classes
- */
 export default class Project {
-    /**
-     * In a fact you need use the constructor only if you want to create a project
-     * @param {object} initialData - Object which is used for initialization
-     * <br> It can contain keys:
-     * <br> <li style="margin-left: 10px;"> name
-     * <br> <li style="margin-left: 10px;"> labels
-     */
-    constructor(initialData) {
+    public readonly id: number;
+    public name: string;
+    public assignee: User;
+    public bugTracker: string;
+    public readonly status: ProjectStatus;
+    public readonly organization: string | null;
+    public readonly owner: User;
+    public readonly createdDate: string;
+    public readonly updatedDate: string;
+    public readonly taskSubsets: string[];
+    public readonly dimension: DimensionType;
+    public readonly sourceStorage: Storage;
+    public readonly targetStorage: Storage;
+    public labels: Label[];
+    public annotations: {
+        exportDataset: CallableFunction;
+        importDataset: CallableFunction;
+    }
+
+    constructor(initialData: SerializedProject & { labels?: SerializedLabel[] }) {
         const data = {
             id: undefined,
             name: undefined,
             status: undefined,
             assignee: undefined,
+            organization: undefined,
             owner: undefined,
             bug_tracker: undefined,
             created_date: undefined,
             updated_date: undefined,
             task_subsets: undefined,
-            training_project: undefined,
-            task_ids: undefined,
             dimension: undefined,
             source_storage: undefined,
             target_storage: undefined,
@@ -58,30 +66,12 @@ export default class Project {
                 .map((labelData) => new Label(labelData)).filter((label) => !label.hasParent);
         }
 
-        if (typeof initialData.training_project === 'object') {
-            data.training_project = { ...initialData.training_project };
-        }
-
         Object.defineProperties(
             this,
             Object.freeze({
-                /**
-                 * @name id
-                 * @type {number}
-                 * @memberof module:API.cvat.classes.Project
-                 * @readonly
-                 * @instance
-                 */
                 id: {
                     get: () => data.id,
                 },
-                /**
-                 * @name name
-                 * @type {string}
-                 * @memberof module:API.cvat.classes.Project
-                 * @instance
-                 * @throws {module:API.cvat.exceptions.ArgumentError}
-                 */
                 name: {
                     get: () => data.name,
                     set: (value) => {
@@ -92,25 +82,9 @@ export default class Project {
                         updateTrigger.update('name');
                     },
                 },
-
-                /**
-                 * @name status
-                 * @type {module:API.cvat.enums.TaskStatus}
-                 * @memberof module:API.cvat.classes.Project
-                 * @readonly
-                 * @instance
-                 */
                 status: {
                     get: () => data.status,
                 },
-                /**
-                 * Instance of a user who was assigned for the project
-                 * @name assignee
-                 * @type {module:API.cvat.classes.User}
-                 * @memberof module:API.cvat.classes.Project
-                 * @readonly
-                 * @instance
-                 */
                 assignee: {
                     get: () => data.assignee,
                     set: (assignee) => {
@@ -121,24 +95,12 @@ export default class Project {
                         updateTrigger.update('assignee');
                     },
                 },
-                /**
-                 * Instance of a user who has created the project
-                 * @name owner
-                 * @type {module:API.cvat.classes.User}
-                 * @memberof module:API.cvat.classes.Project
-                 * @readonly
-                 * @instance
-                 */
                 owner: {
                     get: () => data.owner,
                 },
-                /**
-                 * @name bugTracker
-                 * @type {string}
-                 * @memberof module:API.cvat.classes.Project
-                 * @instance
-                 * @throws {module:API.cvat.exceptions.ArgumentError}
-                 */
+                organization: {
+                    get: () => data.organization,
+                },
                 bugTracker: {
                     get: () => data.bug_tracker,
                     set: (tracker) => {
@@ -146,113 +108,64 @@ export default class Project {
                         updateTrigger.update('bugTracker');
                     },
                 },
-                /**
-                 * @name createdDate
-                 * @type {string}
-                 * @memberof module:API.cvat.classes.Project
-                 * @readonly
-                 * @instance
-                 */
                 createdDate: {
                     get: () => data.created_date,
                 },
-                /**
-                 * @name updatedDate
-                 * @type {string}
-                 * @memberof module:API.cvat.classes.Project
-                 * @readonly
-                 * @instance
-                 */
                 updatedDate: {
                     get: () => data.updated_date,
                 },
-                /**
-                 * Dimesion of the tasks in the project, if no task dimension is null
-                 * @name dimension
-                 * @type {string}
-                 * @memberof module:API.cvat.classes.Project
-                 * @readonly
-                 * @instance
-                 */
                 dimension: {
                     get: () => data.dimension,
                 },
-                /**
-                 * After project has been created value can be appended only.
-                 * @name labels
-                 * @type {module:API.cvat.classes.Label[]}
-                 * @memberof module:API.cvat.classes.Project
-                 * @instance
-                 * @throws {module:API.cvat.exceptions.ArgumentError}
-                 */
                 labels: {
                     get: () => [...data.labels],
-                    set: (labels) => {
+                    set: (labels: Label[]) => {
                         if (!Array.isArray(labels)) {
                             throw new ArgumentError('Value must be an array of Labels');
                         }
 
                         if (!Array.isArray(labels) || labels.some((label) => !(label instanceof Label))) {
                             throw new ArgumentError(
-                                `Each array value must be an instance of Label. ${typeof label} was found`,
+                                'Each array value must be an instance of Label',
                             );
                         }
 
-                        const IDs = labels.map((_label) => _label.id);
-                        const deletedLabels = data.labels.filter((_label) => !IDs.includes(_label.id));
-                        deletedLabels.forEach((_label) => {
-                            _label.deleted = true;
+                        const oldIDs = data.labels.map((_label) => _label.id);
+                        const newIDs = labels.map((_label) => _label.id);
+
+                        // find any deleted labels and mark them
+                        data.labels.filter((_label) => !newIDs.includes(_label.id))
+                            .forEach((_label) => {
+                                // for deleted labels let's specify that they are deleted
+                                _label.deleted = true;
+                            });
+
+                        // find any patched labels and mark them
+                        labels.forEach((_label) => {
+                            const { id } = _label;
+                            if (oldIDs.includes(id)) {
+                                const oldLabelIndex = data.labels.findIndex((__label) => __label.id === id);
+                                if (oldLabelIndex !== -1) {
+                                    // replace current label by the patched one
+                                    const oldLabel = data.labels[oldLabelIndex];
+                                    data.labels.splice(oldLabelIndex, 1, _label);
+                                    if (!_.isEqual(_label.toJSON(), oldLabel.toJSON())) {
+                                        _label.patched = true;
+                                    }
+                                }
+                            }
                         });
 
-                        data.labels = [...deletedLabels, ...labels];
+                        // find new labels to append them to the end
+                        const newLabels = labels.filter((_label) => !Number.isInteger(_label.id));
+                        data.labels = [...data.labels, ...newLabels];
+
                         updateTrigger.update('labels');
                     },
                 },
-                /**
-                 * Subsets array for related tasks
-                 * @name subsets
-                 * @type {string[]}
-                 * @memberof module:API.cvat.classes.Project
-                 * @readonly
-                 * @instance
-                 */
                 subsets: {
                     get: () => [...data.task_subsets],
                 },
-                /**
-                 * Training project associated with this annotation project
-                 * This is a simple object which contains
-                 * keys like host, username, password, enabled, project_class
-                 * @name trainingProject
-                 * @type {object}
-                 * @memberof module:API.cvat.classes.Project
-                 * @readonly
-                 * @instance
-                 */
-                trainingProject: {
-                    get: () => {
-                        if (typeof data.training_project === 'object') {
-                            return { ...data.training_project };
-                        }
-                        return data.training_project;
-                    },
-                    set: (updatedProject) => {
-                        if (typeof training === 'object') {
-                            data.training_project = { ...updatedProject };
-                        } else {
-                            data.training_project = updatedProject;
-                        }
-                        updateTrigger.update('trainingProject');
-                    },
-                },
-                /**
-                 * Source storage for import resources.
-                 * @name sourceStorage
-                 * @type {module:API.cvat.classes.Storage}
-                 * @memberof module:API.cvat.classes.Project
-                 * @readonly
-                 * @instance
-                 */
                 sourceStorage: {
                     get: () => (
                         new Storage({
@@ -261,14 +174,6 @@ export default class Project {
                         })
                     ),
                 },
-                /**
-                 * Target storage for export resources.
-                 * @name targetStorage
-                 * @type {module:API.cvat.classes.Storage}
-                 * @memberof module:API.cvat.classes.Project
-                 * @readonly
-                 * @instance
-                 */
                 targetStorage: {
                     get: () => (
                         new Storage({
@@ -288,71 +193,28 @@ export default class Project {
 
         // When we call a function, for example: project.annotations.get()
         // In the method get we lose the project context
-        // So, we need return it
+        // So, we need to bind it
         this.annotations = {
             exportDataset: Object.getPrototypeOf(this).annotations.exportDataset.bind(this),
             importDataset: Object.getPrototypeOf(this).annotations.importDataset.bind(this),
         };
     }
 
-    /**
-     * Get the first frame of the first task of a project for preview
-     * @method preview
-     * @memberof Project
-     * @returns {string} - jpeg encoded image
-     * @instance
-     * @async
-     * @throws {module:API.cvat.exceptions.PluginError}
-     * @throws {module:API.cvat.exceptions.ServerError}
-     * @throws {module:API.cvat.exceptions.ArgumentError}
-     */
     async preview() {
         const result = await PluginRegistry.apiWrapper.call(this, Project.prototype.preview);
         return result;
     }
 
-    /**
-     * Method updates data of a created project or creates new project from scratch
-     * @method save
-     * @returns {module:API.cvat.classes.Project}
-     * @memberof module:API.cvat.classes.Project
-     * @readonly
-     * @instance
-     * @async
-     * @throws {module:API.cvat.exceptions.ServerError}
-     * @throws {module:API.cvat.exceptions.PluginError}
-     */
     async save() {
         const result = await PluginRegistry.apiWrapper.call(this, Project.prototype.save);
         return result;
     }
 
-    /**
-     * Method deletes a project from a server
-     * @method delete
-     * @memberof module:API.cvat.classes.Project
-     * @readonly
-     * @instance
-     * @async
-     * @throws {module:API.cvat.exceptions.ServerError}
-     * @throws {module:API.cvat.exceptions.PluginError}
-     */
     async delete() {
         const result = await PluginRegistry.apiWrapper.call(this, Project.prototype.delete);
         return result;
     }
 
-    /**
-     * Method makes a backup of a project
-     * @method backup
-     * @memberof module:API.cvat.classes.Project
-     * @readonly
-     * @instance
-     * @async
-     * @throws {module:API.cvat.exceptions.ServerError}
-     * @throws {module:API.cvat.exceptions.PluginError}
-     * @returns {string} URL to get result archive
-     */
     async backup(targetStorage: Storage, useDefaultSettings: boolean, fileName?: string) {
         const result = await PluginRegistry.apiWrapper.call(
             this,
@@ -364,17 +226,6 @@ export default class Project {
         return result;
     }
 
-    /**
-     * Method restores a project from a backup
-     * @method restore
-     * @memberof module:API.cvat.classes.Project
-     * @readonly
-     * @instance
-     * @async
-     * @throws {module:API.cvat.exceptions.ServerError}
-     * @throws {module:API.cvat.exceptions.PluginError}
-     * @returns {number} ID of the imported project
-     */
     static async restore(storage: Storage, file: File | string) {
         const result = await PluginRegistry.apiWrapper.call(this, Project.restore, storage, file);
         return result;

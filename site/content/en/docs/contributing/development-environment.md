@@ -64,6 +64,7 @@ description: 'Installing a development environment for different operating syste
   - [Prettier Formatter for Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
   - [licenser](https://marketplace.visualstudio.com/items?itemName=ymotongpoo.licenser)
   - [Trailing Spaces](https://marketplace.visualstudio.com/items?itemName=shardulm94.trailing-spaces)
+  - [Code Spell Checker](https://marketplace.visualstudio.com/items?itemName=streetsidesoftware.code-spell-checker)
 
 - Make sure to use Python 3.9.0 or higher
   ```
@@ -170,7 +171,7 @@ description: 'Installing a development environment for different operating syste
 - Pull and run OpenPolicyAgent Docker image:
 
   ```bash
-   docker run -d --rm --name cvat_opa_debug -p 8181:8181 openpolicyagent/opa:0.34.2-rootless \
+   docker run -d --rm --name cvat_opa_debug -p 8181:8181 openpolicyagent/opa:0.45.0-rootless \
    run --server --set=decision_logs.console=true --set=services.cvat.url=http://host.docker.internal:7000 \
    --set=bundles.cvat.service=cvat --set=bundles.cvat.resource=/api/auth/rules
   ```

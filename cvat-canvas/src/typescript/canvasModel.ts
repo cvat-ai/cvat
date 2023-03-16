@@ -527,7 +527,6 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 if (typeof exception !== 'number' || exception === this.data.imageID) {
                     this.notify(UpdateReasons.DATA_FAILED);
                 }
-                throw exception;
             });
     }
 

@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corp
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,9 +10,10 @@ import { Row, Col } from 'antd/lib/grid';
 
 import SigningLayout, { formSizes } from 'components/signing-common/signing-layout';
 import SocialAccountLink from 'components/signing-common/social-account-link';
-import { SocialGithubLogo, SocialGoogleLogo } from 'icons';
+
+import { getCore, SocialAuthMethods, SocialAuthMethod } from 'cvat-core-wrapper';
+import config from 'config';
 import LoginForm, { LoginData } from './login-form';
-import { getCore } from '../../cvat-core-wrapper';
 
 const cvat = getCore();
 
@@ -20,18 +21,40 @@ interface LoginPageComponentProps {
     fetching: boolean;
     renderResetPassword: boolean;
     hasEmailVerificationBeenSent: boolean;
-    googleAuthentication: boolean;
-    githubAuthentication: boolean;
+    socialAuthMethods: SocialAuthMethods;
     onLogin: (credential: string, password: string) => void;
-    loadAdvancedAuthenticationMethods: () => void;
+    loadSocialAuthenticationMethods: () => void;
 }
+
+const renderSocialAuthMethods = (methods: SocialAuthMethods): JSX.Element | null => {
+    const { backendAPI } = cvat.config;
+    const activeMethods = methods.filter((item: SocialAuthMethod) => item.isEnabled);
+
+    if (!activeMethods.length) {
+        return null;
+    }
+
+    return (
+        <div className='cvat-social-authentication-row-with-icons'>
+            {activeMethods.map((method: SocialAuthMethod) => (
+                <SocialAccountLink
+                    key={method.provider}
+                    icon={method.icon}
+                    href={(method.provider !== config.SSO_PROVIDER_KEY) ? `${backendAPI}/auth/social/${method.provider}/login/` : '/auth/oidc/select-identity-provider/'}
+                    className={`cvat-social-authentication-${method.provider}`}
+                >
+                    {`Continue with ${method.publicName}`}
+                </SocialAccountLink>
+            ))}
+        </div>
+    );
+};
 
 function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps): JSX.Element {
     const history = useHistory();
-    const { backendAPI } = cvat.config;
     const {
         fetching, renderResetPassword, hasEmailVerificationBeenSent,
-        googleAuthentication, githubAuthentication, onLogin, loadAdvancedAuthenticationMethods,
+        socialAuthMethods, onLogin, loadSocialAuthenticationMethods,
     } = props;
 
     if (hasEmailVerificationBeenSent) {
@@ -39,7 +62,7 @@ function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps
     }
 
     useEffect(() => {
-        loadAdvancedAuthenticationMethods();
+        loadSocialAuthenticationMethods();
     }, []);
 
     return (
@@ -50,26 +73,9 @@ function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps
                         <LoginForm
                             fetching={fetching}
                             renderResetPassword={renderResetPassword}
-                            socialAuthentication={(googleAuthentication || githubAuthentication) ? (
+                            socialAuthentication={(socialAuthMethods) ? (
                                 <div className='cvat-social-authentication'>
-                                    {githubAuthentication && (
-                                        <SocialAccountLink
-                                            icon={SocialGithubLogo}
-                                            href={`${backendAPI}/auth/github/login`}
-                                            className='cvat-social-authentication-github'
-                                        >
-                                            Continue with GitHub
-                                        </SocialAccountLink>
-                                    )}
-                                    {googleAuthentication && (
-                                        <SocialAccountLink
-                                            icon={SocialGoogleLogo}
-                                            href={`${backendAPI}/auth/google/login`}
-                                            className='cvat-social-authentication-google'
-                                        >
-                                            Continue with Google
-                                        </SocialAccountLink>
-                                    )}
+                                    {renderSocialAuthMethods(socialAuthMethods)}
                                 </div>
                             ) : null}
                             onSubmit={(loginData: LoginData): void => {

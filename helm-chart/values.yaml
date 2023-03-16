@@ -19,20 +19,11 @@ cvat:
       envs:
         ALLOWED_HOSTS: "*"
         DJANGO_MODWSGI_EXTRA_ARGS: ""
-        USE_ALLAUTH_SOCIAL_ACCOUNTS: false
-      secret:
-        create: true
-        name: "{{ .Release.Name }}-cvat-server-secret"
-        socialAccountAuthentication:
-          googleClientId: ""
-          googleClientSecret: ""
-          githubClientId: ""
-          githubClientSecret: ""
       additionalEnv: []
       additionalVolumes: []
       additionalVolumeMounts: []
     worker:
-      default:
+      export:
         replicas: 2
         labels: {}
         annotations: {}
@@ -42,7 +33,17 @@ cvat:
         additionalEnv: []
         additionalVolumes: []
         additionalVolumeMounts: []
-      low:
+      import:
+        replicas: 2
+        labels: {}
+        annotations: {}
+        resources: {}
+        affinity: {}
+        tolerations: []
+        additionalEnv: []
+        additionalVolumes: []
+        additionalVolumeMounts: []
+      annotation:
         replicas: 1
         labels: {}
         annotations: {}
@@ -74,8 +75,8 @@ cvat:
       additionalVolumeMounts: []
     replicas: 1
     image: cvat/server
-    tag: v2.3.0
-    imagepullploicy: IfNotPresent
+    tag: v2.4.0
+    imagePullPolicy: Always
     permissionFix:
       enabled: true
     service:
@@ -94,8 +95,8 @@ cvat:
   frontend:
     replicas: 1
     image: cvat/ui
-    tag: v2.3.0
-    imagepullploicy: IfNotPresent
+    tag: v2.4.0
+    imagePullPolicy: Always
     labels: {}
     #  test: test
     annotations: {}
@@ -137,7 +138,7 @@ cvat:
   opa:
     replicas: 1
     image: openpolicyagent/opa
-    tag: 0.34.2-rootless
+    tag: 0.45.0-rootless
     imagepullploicy: IfNotPresent
     labels: {}
     #  test: test
@@ -170,7 +171,7 @@ cvat:
     # -   mountPath: /tmp
     #     name: tmp
     #     subPath: test
-    composeCompatibleServiceName: true # Sets service name to opa in order to be docker-compose compatible. Necessary because changing IAM_OPA_DATA_URL via environment variables in current images. Hinders multiple deployment due to duplicate name
+    composeCompatibleServiceName: true # Sets service name to opa in order to be compatible with Docker Compose. Necessary because changing IAM_OPA_DATA_URL via environment variables in current images. Hinders multiple deployment due to duplicate name
     service:
       type: ClusterIP
       ports:
@@ -185,23 +186,20 @@ postgresql:
   external:
     host: 127.0.0.1
     port: 5432
-    user: postgres
-    password: postgres
-    dbname: cvat
  # If not external following config will be applied by default
-  global:
-    postgresql:
-      existingSecret: "{{ .Release.Name }}-postgres-secret"
+  auth:
+    existingSecret: "{{ .Release.Name }}-postgres-secret"
+    username: cvat
+    database: cvat
+  service:
+    ports:
+      postgresql: 5432
   secret:
     create: true
     name: "{{ .Release.Name }}-postgres-secret"
     password: cvat_postgresql
     postgres_password: cvat_postgresql_postgres
     replication_password: cvat_postgresql_replica
-  postgresqlDatabase: cvat
-  postgresqlUsername: cvat
-  service:
-    port: 5432
 
 redis:
   #See https://github.com/bitnami/charts/blob/master/bitnami/redis/ for more info
@@ -209,7 +207,11 @@ redis:
   external:
       host: 127.0.0.1
   auth:
-    enabled: false
+    existingSecret: "{{ .Release.Name }}-redis-secret"
+  secret:
+    create: true
+    name: "{{ .Release.Name }}-redis-secret"
+    password: cvat_redis
   cluster:
     enabled: false
 
@@ -223,56 +225,98 @@ nuclio:
 #      password: somepass
 
 analytics:
-  enabled: false
-  external:
-    useExternal: false
-    logServerHost: logstash
-    logServerPort: 8080
+  enabled: true
+  clickhouseDb: cvat
+  clickhouseUser: user
+  clickhousePassword: user
+  clickhouseHost: "{{ .Release.Name }}-clickhouse"
+
   ingress:
     path: /analytics
     pathType: "Prefix"
     annotations:
       kubernetes.io/ingress.class: traefik
     service:
-      name: kibana
-      port: 5601
+      name: grafana
+      port: 80
 
-# Because custom images are required here, you'll need to build them yourself and add them to your preferred docker registry.
-# Ignored if analytics.enabled is false
-# See https://github.com/elastic/helm-charts/blob/main/logstash/values.yaml for details
-logstash:
-  image: "your_logstash_image"
-  imageTag: "latest"
-  # For compatibility with compose config
-  extraEnvs:
-    - name: "LOGSTASH_OUTPUT_HOST"
-      value: "elasticsearch-master:9200"
-    - name: LOGSTASH_OUTPUT_USER
-      value: ""
-    - name: LOGSTASH_OUTPUT_PASS
-      value: ""
-  imagePullPolicy: Always
+vector:
+  envFrom:
+    - secretRef:
+        name: cvat-analytics-secret
+  existingConfigMaps:
+    - cvat-vector-config
+  dataDir: "/vector-data-dir"
+  containerPorts:
+    - name: http
+      containerPort: 80
+      protocol: TCP
   service:
-    type: ClusterIP
     ports:
       - name: http
-        port: 8080
+        port: 80
         protocol: TCP
-        targetPort: 8080
+  image:
+    tag: "0.26.0-alpine"
 
-# Ignored if analytics.enabled is false
-# See https://github.com/elastic/helm-charts/blob/main/elasticsearch/values.yaml for details
-elasticsearch:
-  image: "your_elasticsearch_image"
-  imageTag: "latest"
-  replicas: 1
-  minimumMasterNodes: 1
+clickhouse:
+  shards: 1
+  replicaCount: 1
+  extraEnvVarsSecret: cvat-analytics-secret
+  initdbScriptsSecret: cvat-clickhouse-init
+  auth:
+    username: user
+    existingSecret: cvat-analytics-secret
+    existingSecretKey: CLICKHOUSE_PASSWORD
 
-# Ignored if analytics.enabled is false
-# See https://github.com/elastic/helm-charts/blob/main/kibana/values.yaml for details
-kibana:
-  image: "your_kibana_image"
-  imageTag: "latest"
+grafana:
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+      - name: 'ClickHouse'
+        type: 'grafana-clickhouse-datasource'
+        isDefault: true
+        jsonData:
+          defaultDatabase: cvat
+          port: 9000
+          server: "{{ .Release.Name }}-clickhouse"
+          username: user
+          tlsSkipVerify: false
+        secureJsonData:
+          password: user
+        editable: false
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+      - name: 'default'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards
+  dashboardsConfigMaps:
+    default: "cvat-grafana-dashboards"
+  plugins:
+    - grafana-clickhouse-datasource
+  grafana.ini:
+    server:
+      root_url: https://cvat.local/analytics
+    dashboards:
+      default_home_dashboard_path: /var/lib/grafana/dashboards/default/all_events.json
+    users:
+      viewers_can_edit: true
+    auth:
+      disable_login_form: true
+      disable_signout_menu: true
+    auth.anonymous:
+      enabled: true
+      org_role: Admin
+    auth.basic:
+      enabled: false
 
 ingress:
   enabled: true

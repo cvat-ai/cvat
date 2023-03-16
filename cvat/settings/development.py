@@ -24,7 +24,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    }
+    },
 }
 
 # Cross-Origin Resource Sharing settings for CVAT UI
@@ -46,9 +46,3 @@ CORS_ORIGIN_WHITELIST = [UI_URL]
 CORS_REPLACE_HTTPS_REFERER = True
 IAM_OPA_HOST = 'http://localhost:8181'
 IAM_OPA_DATA_URL = f'{IAM_OPA_HOST}/v1/data'
-
-if USE_ALLAUTH_SOCIAL_ACCOUNTS:
-    GITHUB_CALLBACK_URL = f'{UI_URL}/api/auth/github/login/callback/'
-    GOOGLE_CALLBACK_URL = f'{UI_URL}/api/auth/google/login/callback/'
-    SOCIALACCOUNT_CALLBACK_CANCELLED_URL = f'{UI_URL}/auth/login'
-    SOCIAL_APP_LOGIN_REDIRECT_URL = f'{UI_URL}/auth/login-with-social-app'

@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -31,9 +31,9 @@ import Text from 'antd/lib/typography/Text';
 import Select from 'antd/lib/select';
 
 import { getCore } from 'cvat-core-wrapper';
-import consts from 'consts';
+import config from 'config';
 
-import { CVATLogo } from 'icons';
+import { CVATLogo, UpgradeIcon } from 'icons';
 import ChangePasswordDialog from 'components/change-password-modal/change-password-modal';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { switchSettingsDialog as switchSettingsDialogAction } from 'actions/settings-actions';
@@ -163,8 +163,8 @@ function HeaderContainer(props: Props): JSX.Element {
     } = props;
 
     const {
-        CHANGELOG_URL, LICENSE_URL, GITTER_URL, GITHUB_URL, GUIDE_URL, DISCORD_URL,
-    } = consts;
+        CHANGELOG_URL, LICENSE_URL, GITTER_URL, GITHUB_URL, GUIDE_URL, DISCORD_URL, CVAT_BILLING_URL,
+    } = config;
 
     const history = useHistory();
     const location = useLocation();
@@ -244,6 +244,26 @@ function HeaderContainer(props: Props): JSX.Element {
             }
         }
     };
+
+    let upgradeMenuItem = null;
+    if (CVAT_BILLING_URL) {
+        let upgradeText = 'Upgrade to Pro';
+        let upgradeLink = `${CVAT_BILLING_URL}/?type=personal`;
+        if (currentOrganization) {
+            upgradeText = 'Upgrade to Team';
+            upgradeLink = `${CVAT_BILLING_URL}/?type=organization&orgId=${currentOrganization.id}`;
+        }
+        upgradeMenuItem = (
+            <Menu.Item
+                className='cvat-menu-item-highlighted'
+                icon={<UpgradeIcon />}
+                key='upgrade'
+                onClick={() => window.open(upgradeLink, '_self')}
+            >
+                {upgradeText}
+            </Menu.Item>
+        );
+    }
 
     const userMenu = (
         <Menu className='cvat-header-menu'>
@@ -345,6 +365,9 @@ function HeaderContainer(props: Props): JSX.Element {
             >
                 Settings
             </Menu.Item>
+            {
+                upgradeMenuItem
+            }
             <Menu.Item icon={<InfoCircleOutlined />} key='about' onClick={() => showAboutModal()}>
                 About
             </Menu.Item>
@@ -376,7 +399,9 @@ function HeaderContainer(props: Props): JSX.Element {
     const getButtonClassName = (value: string): string => {
         // eslint-disable-next-line security/detect-non-literal-regexp
         const regex = new RegExp(`${value}$`);
-        return location.pathname.match(regex) ? 'cvat-header-button cvat-active-header-button' : 'cvat-header-button';
+        const baseClass = `cvat-header-${value}-button cvat-header-button`;
+        return location.pathname.match(regex) ?
+            `${baseClass} cvat-active-header-button` : baseClass;
     };
 
     return (
@@ -445,16 +470,16 @@ function HeaderContainer(props: Props): JSX.Element {
                         Models
                     </Button>
                 ) : null}
-                {isAnalyticsPluginActive ? (
+                {isAnalyticsPluginActive && user.isSuperuser ? (
                     <Button
-                        className='cvat-header-button'
+                        className={getButtonClassName('analytics')}
                         type='link'
-                        href={`${tool.server.host}/analytics/app/kibana`}
+                        href={`${tool.server.host}/analytics`}
                         onClick={(event: React.MouseEvent): void => {
                             event.preventDefault();
                             // false positive
                             // eslint-disable-next-line
-                            window.open(`${tool.server.host}/analytics/app/kibana`, '_blank');
+                            window.open(`${tool.server.host}/analytics`, '_blank');
                         }}
                     >
                         Analytics
@@ -466,7 +491,7 @@ function HeaderContainer(props: Props): JSX.Element {
                     <Button
                         icon={<GithubOutlined />}
                         size='large'
-                        className='cvat-header-button'
+                        className='cvat-open-repository-button cvat-header-button'
                         type='link'
                         href={GITHUB_URL}
                         onClick={(event: React.MouseEvent): void => {
@@ -481,7 +506,7 @@ function HeaderContainer(props: Props): JSX.Element {
                     <Button
                         icon={<QuestionCircleOutlined />}
                         size='large'
-                        className='cvat-header-button'
+                        className='cvat-open-guide-button cvat-header-button'
                         type='link'
                         href={GUIDE_URL}
                         onClick={(event: React.MouseEvent): void => {

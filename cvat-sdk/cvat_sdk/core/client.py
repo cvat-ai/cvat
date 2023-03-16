@@ -7,12 +7,14 @@ from __future__ import annotations
 
 import logging
 import urllib.parse
-from contextlib import suppress
+from contextlib import contextmanager, suppress
+from pathlib import Path
 from time import sleep
-from typing import Any, Dict, Optional, Sequence, Tuple
+from typing import Any, Dict, Iterator, Optional, Sequence, Tuple, TypeVar
 
 import attrs
 import packaging.version as pv
+import platformdirs
 import urllib3
 import urllib3.exceptions
 
@@ -22,10 +24,15 @@ from cvat_sdk.core.helpers import expect_status
 from cvat_sdk.core.proxies.issues import CommentsRepo, IssuesRepo
 from cvat_sdk.core.proxies.jobs import JobsRepo
 from cvat_sdk.core.proxies.model_proxy import Repo
+from cvat_sdk.core.proxies.organizations import OrganizationsRepo
 from cvat_sdk.core.proxies.projects import ProjectsRepo
 from cvat_sdk.core.proxies.tasks import TasksRepo
 from cvat_sdk.core.proxies.users import UsersRepo
 from cvat_sdk.version import VERSION
+
+_DEFAULT_CACHE_DIR = platformdirs.user_cache_path("cvat-sdk", "CVAT.ai")
+
+_RepoType = TypeVar("_RepoType", bound=Repo)
 
 
 @attrs.define
@@ -43,6 +50,9 @@ class Config:
     verify_ssl: Optional[bool] = None
     """Whether to verify host SSL certificate or not"""
 
+    cache_dir: Path = attrs.field(converter=Path, default=_DEFAULT_CACHE_DIR)
+    """Directory in which to store cached server data"""
+
 
 class Client:
     """
@@ -55,6 +65,7 @@ class Client:
         pv.Version("2.1"),
         pv.Version("2.2"),
         pv.Version("2.3"),
+        pv.Version("2.4"),
     )
 
     def __init__(
@@ -86,6 +97,37 @@ class Client:
 
         self._repos: Dict[str, Repo] = {}
         """A cache for created Repository instances"""
+
+    _ORG_SLUG_HEADER = "X-Organization"
+
+    @property
+    def organization_slug(self) -> Optional[str]:
+        """
+        If this is set to a slug for an organization,
+        all requests will be made in the context of that organization.
+
+        If it's set to an empty string, requests will be made in the context
+        of the user's personal workspace.
+
+        If set to None (the default), no organization context will be used.
+        """
+        return self.api_client.default_headers.get(self._ORG_SLUG_HEADER)
+
+    @organization_slug.setter
+    def organization_slug(self, org_slug: Optional[str]):
+        if org_slug is None:
+            self.api_client.default_headers.pop(self._ORG_SLUG_HEADER, None)
+        else:
+            self.api_client.default_headers[self._ORG_SLUG_HEADER] = org_slug
+
+    @contextmanager
+    def organization_context(self, slug: str) -> Iterator[None]:
+        prev_slug = self.organization_slug
+        self.organization_slug = slug
+        try:
+            yield
+        finally:
+            self.organization_slug = prev_slug
 
     ALLOWED_SCHEMAS = ("https", "http")
 
@@ -236,45 +278,40 @@ class Client:
         (about, _) = self.api_client.server_api.retrieve_about()
         return pv.Version(about.version)
 
-    def _get_repo(self, key: str) -> Repo:
-        _repo_map = {
-            "tasks": TasksRepo,
-            "projects": ProjectsRepo,
-            "jobs": JobsRepo,
-            "users": UsersRepo,
-            "issues": IssuesRepo,
-            "comments": CommentsRepo,
-        }
-
-        repo = self._repos.get(key, None)
+    def _get_repo(self, repo_type: _RepoType) -> _RepoType:
+        repo = self._repos.get(repo_type, None)
         if repo is None:
-            repo = _repo_map[key](self)
-            self._repos[key] = repo
+            repo = repo_type(self)
+            self._repos[repo_type] = repo
         return repo
 
     @property
     def tasks(self) -> TasksRepo:
-        return self._get_repo("tasks")
+        return self._get_repo(TasksRepo)
 
     @property
     def projects(self) -> ProjectsRepo:
-        return self._get_repo("projects")
+        return self._get_repo(ProjectsRepo)
 
     @property
     def jobs(self) -> JobsRepo:
-        return self._get_repo("jobs")
+        return self._get_repo(JobsRepo)
 
     @property
     def users(self) -> UsersRepo:
-        return self._get_repo("users")
+        return self._get_repo(UsersRepo)
+
+    @property
+    def organizations(self) -> OrganizationsRepo:
+        return self._get_repo(OrganizationsRepo)
 
     @property
     def issues(self) -> IssuesRepo:
-        return self._get_repo("issues")
+        return self._get_repo(IssuesRepo)
 
     @property
     def comments(self) -> CommentsRepo:
-        return self._get_repo("comments")
+        return self._get_repo(CommentsRepo)
 
 
 class CVAT_API_V2:
@@ -311,7 +348,7 @@ class CVAT_API_V2:
 
 
 def make_client(
-    host: str, *, port: Optional[int] = None, credentials: Optional[Tuple[int, int]] = None
+    host: str, *, port: Optional[int] = None, credentials: Optional[Tuple[str, str]] = None
 ) -> Client:
     url = host.rstrip("/")
     if port:

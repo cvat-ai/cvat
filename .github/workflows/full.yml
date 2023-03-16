@@ -17,31 +17,7 @@ env:
 
 jobs:
   search_cache:
-    runs-on: ubuntu-latest
-    outputs:
-      sha: ${{ steps.get-sha.outputs.sha}}
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      REPO: ${{ github.repository }}
-    steps:
-      - name: Getting SHA with cache from the default branch
-        id: get-sha
-        run: |
-          DEFAULT_BRANCH=$(gh api /repos/$REPO | jq -r '.default_branch')
-          for sha in $(gh api "/repos/$REPO/commits?per_page=100&sha=$DEFAULT_BRANCH" | jq -r '.[].sha');
-          do
-            RUN_status=$(gh api /repos/${REPO}/actions/workflows/cache.yml/runs | \
-              jq -r ".workflow_runs[]? | select((.head_sha == \"${sha}\") and (.conclusion == \"success\")) | .status")
-            if [[ ${RUN_status} == "completed" ]]; then
-              SHA=$sha
-              break
-            fi
-          done
-          echo Default branch is ${DEFAULT_BRANCH}
-          echo Workflow will try to get cache from commit: ${SHA}
-
-          echo "default_branch=${DEFAULT_BRANCH}" >> $GITHUB_OUTPUT
-          echo "sha=${SHA}" >> $GITHUB_OUTPUT
+    uses: ./.github/workflows/search-cache.yml
 
   build:
     needs: search_cache
@@ -65,6 +41,10 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
+        with:
+          # we specify version of buildkit due to issue that occurs in latest version
+          # https://github.com/moby/buildkit/issues/2631
+          driver-opts: image=moby/buildkit:v0.10.0
 
       - name: Create artifact directories
         run: |
@@ -97,9 +77,7 @@ jobs:
             --entrypoint /bin/bash -u root cvat/server \
             -c 'python manage.py spectacular --file /transfer/schema.yml'
           pip3 install --user -r cvat-sdk/gen/requirements.txt
-          cd cvat-sdk/
-          gen/generate.sh
-          cd ..
+          ./cvat-sdk/gen/generate.sh
 
           cp -r cvat-sdk/* /tmp/cvat_sdk/
 
@@ -135,38 +113,6 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@master
-
-      - name: Getting CVAT Elasticsearch cache from the default branch
-        uses: actions/cache@v3
-        with:
-          path: /tmp/cvat_cache_elasticsearch
-          key: ${{ runner.os }}-build-elasticsearch-${{ needs.search_cache.outputs.sha }}
-
-      - name: Getting CVAT Logstash cache from the default branch
-        uses: actions/cache@v3
-        with:
-          path: /tmp/cvat_cache_logstash
-          key: ${{ runner.os }}-build-logstash-${{ needs.search_cache.outputs.sha }}
-
-      - name: Building CVAT Elasticsearch
-        uses: docker/build-push-action@v2
-        with:
-          context: ./components/analytics/elasticsearch/
-          file: ./components/analytics/elasticsearch/Dockerfile
-          cache-from: type=local,src=/tmp/cvat_cache_elasticsearch
-          tags: cvat_elasticsearch:latest
-          load: true
-          build-args: ELK_VERSION=6.8.23
-
-      - name: Building CVAT Logstash
-        uses: docker/build-push-action@v2
-        with:
-          context: ./components/analytics/logstash/
-          file: ./components/analytics/logstash/Dockerfile
-          cache-from: type=local,src=/tmp/cvat_cache_logstash
-          tags: cvat_logstash:latest
-          load: true
-          build-args: ELK_VERSION=6.8.23
 
       - name: Download CVAT server image
         uses: actions/download-artifact@v3
@@ -208,7 +154,8 @@ jobs:
         run: |
             mkdir $LOGS_DIR
             docker logs test_cvat_server_1 > $LOGS_DIR/cvat_server.log
-            docker logs test_cvat_worker_default_1 > $LOGS_DIR/cvat_worker_default.log
+            docker logs test_cvat_worker_export_1 > $LOGS_DIR/cvat_worker_export.log
+            docker logs test_cvat_worker_import_1 > $LOGS_DIR/cvat_worker_import.log
             docker logs test_cvat_opa_1 2> $LOGS_DIR/cvat_opa.log
 
       - name: Uploading "cvat" container logs as an artifact
@@ -246,7 +193,7 @@ jobs:
           python cvat/apps/iam/rules/tests/generate_tests.py \
             --output-dir cvat/apps/iam/rules/
 
-          curl -L -o opa https://openpolicyagent.org/downloads/v0.34.2/opa_linux_amd64_static
+          curl -L -o opa https://openpolicyagent.org/downloads/v0.45.0/opa_linux_amd64_static
           chmod +x ./opa
           ./opa test cvat/apps/iam/rules
 
@@ -255,14 +202,14 @@ jobs:
           HOST_COVERAGE_DATA_DIR: ${{ github.workspace }}
           CONTAINER_COVERAGE_DATA_DIR: "/coverage_data"
         run: |
-          docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d cvat_opa cvat_server
+          docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d cvat_opa cvat_server
           max_tries=12
           while [[  $(curl -s -o /dev/null -w "%{http_code}" localhost:8181/health?bundles) != "200" && max_tries -gt 0 ]]; do (( max_tries-- )); sleep 5; done
 
-          docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
+          docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
             -c 'python manage.py test cvat/apps -v 2'
 
-          docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
+          docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
             -c 'yarn --frozen-lockfile --ignore-scripts && yarn workspace cvat-core run test'
 
       - name: Creating a log file from cvat containers
@@ -325,7 +272,7 @@ jobs:
 
       - name: Run CVAT instance
         run: |
-          docker-compose \
+          docker compose \
             -f docker-compose.yml \
             -f docker-compose.dev.yml \
             -f components/serverless/docker-compose.serverless.yml \
@@ -363,13 +310,13 @@ jobs:
               --headed \
               --browser chrome \
               --env coverage=false \
-              --config-file cypress_canvas3d.json \
-              --spec 'cypress/integration/${{ matrix.specs }}/**/*.js,cypress/integration/remove_users_tasks_projects_organizations.js'
+              --config-file cypress_canvas3d.config.js \
+              --spec 'cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
           else
             npx cypress run \
               --browser chrome \
               --env coverage=false \
-              --spec 'cypress/integration/${{ matrix.specs }}/**/*.js,cypress/integration/remove_users_tasks_projects_organizations.js'
+              --spec 'cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
           fi
 
       - name: Creating a log file from "cvat" container logs

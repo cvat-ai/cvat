@@ -16,7 +16,7 @@ import { importActions } from 'actions/import-actions';
 import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
 import { TasksQuery } from 'reducers';
 import { usePrevious } from 'utils/hooks';
-import { MutliPlusIcon } from 'icons';
+import { MultiPlusIcon } from 'icons';
 import CvatDropdownMenuPaper from 'components/common/cvat-dropdown-menu-paper';
 import {
     localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues, config,
@@ -107,7 +107,7 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
                                     className='cvat-create-multi-tasks-button'
                                     type='primary'
                                     onClick={(): void => history.push('/tasks/create?many=true')}
-                                    icon={<span className='anticon'><MutliPlusIcon /></span>}
+                                    icon={<span className='anticon'><MultiPlusIcon /></span>}
                                 >
                                     Create multi tasks
                                 </Button>

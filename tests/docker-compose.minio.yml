@@ -1,5 +1,3 @@
-version: '3.3'
-
 services:
   minio:
     image: quay.io/minio/minio:RELEASE.2022-09-17T00-09-45Z
@@ -39,7 +37,7 @@ services:
       TEST_BUCKET: "test"
       IMPORT_EXPORT_BUCKET: "importexportbucket"
     volumes:
-      - ./tests/cypress/integration/actions_tasks/assets/case_65_manifest/:/storage
+      - ./tests/cypress/e2e/actions_tasks/assets/case_65_manifest/:/storage
     networks:
       - cvat
     entrypoint: >

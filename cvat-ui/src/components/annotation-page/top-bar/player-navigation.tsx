@@ -23,6 +23,7 @@ interface Props {
     frameNumber: number;
     frameFilename: string;
     frameDeleted: boolean;
+    deleteFrameShortcut: string;
     focusFrameInputShortcut: string;
     inputFrameRef: React.RefObject<Input>;
     onSliderChange(value: number): void;
@@ -41,6 +42,7 @@ function PlayerNavigation(props: Props): JSX.Element {
         frameNumber,
         frameFilename,
         frameDeleted,
+        deleteFrameShortcut,
         focusFrameInputShortcut,
         inputFrameRef,
         onSliderChange,
@@ -104,7 +106,7 @@ function PlayerNavigation(props: Props): JSX.Element {
                             <LinkOutlined className='cvat-player-frame-url-icon' onClick={onURLIconClick} />
                         </CVATTooltip>
                         { (!frameDeleted) ? (
-                            <CVATTooltip title='Delete the frame'>
+                            <CVATTooltip title={`Delete the frame ${deleteFrameShortcut}`}>
                                 <DeleteOutlined className='cvat-player-delete-frame' onClick={showDeleteFrameDialog} />
                             </CVATTooltip>
                         ) : (
@@ -127,6 +129,7 @@ function PlayerNavigation(props: Props): JSX.Element {
                                 setFrameInputValue(Math.floor(clamp(+value, startFrame, stopFrame)));
                             }
                         }}
+                        onFocus={() => inputFrameRef.current?.select()}
                         onBlur={() => {
                             onInputChange(frameInputValue);
                         }}

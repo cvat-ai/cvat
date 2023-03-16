@@ -21,7 +21,7 @@ export default function EmailVerificationSentPage(): JSX.Element {
                 <Row justify='center' align='middle' id='email-verification-sent-page-container'>
                     <Col>
                         <h1>Please, confirm your email</h1>
-                        <Button type='link' href='/auth/login'>
+                        <Button className='cvat-go-to-login-button' type='link' href='/auth/login'>
                             Go to login page
                         </Button>
                     </Col>

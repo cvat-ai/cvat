@@ -1,9 +1,16 @@
 attrs==21.4.0
-click==7.1.2
-Django==3.2.16
+click==8.1.3
+Django==3.2.18
 django-appconf==1.0.4
 django-auth-ldap==2.2.0
 django-compressor==2.4
+# dj-rest-auth[with_social] includes django-allauth but with version range: >=0.40.0,<0.53.0
+# This does not suit us in the case when one of the previous allauth version was installed.
+# Despite direct indication allauth in requirements we should keep 'with_social' for dj-rest-auth
+# to avoid possible further versions conflicts (we use registration functionality)
+# https://dj-rest-auth.readthedocs.io/en/latest/installation.html#registration-optional
+django-allauth>=0.52.0
+dj-rest-auth[with_social]==2.2.7
 django-rq==2.3.2
 EasyProcess==0.3
 Pillow==9.3.0
@@ -22,7 +29,7 @@ django-sendfile2==0.7.0
 dj-pagination==2.5.0
 python-logstash-async==2.5.0
 rules==2.2
-GitPython==3.1.27
+GitPython==3.1.30
 coreapi==2.3.3
 django-filter==2.4.0
 Markdown==3.2.2
@@ -31,7 +38,6 @@ Pygments==2.7.4
 drf-spectacular==0.22.1
 Shapely==1.7.1
 pdf2image==1.14.0
-dj-rest-auth[with_social]==2.2.4
 opencv-python-headless==4.5.5.62
 h5py==3.6.0
 django-cors-headers==3.5.0
@@ -41,7 +47,7 @@ tensorflow==2.9.3 # Optional requirement of Datumaro. Use tensorflow-macos==2.8.
 # The package is used by pyunpack as a command line tool to support multiple
 # archives. Don't use as a python module because it has GPL license.
 patool==1.12
-diskcache==5.0.2
+diskcache==5.4.0
 boto3==1.17.61
 azure-storage-blob==12.13.0
 google-cloud-storage==1.42.0
@@ -53,3 +59,5 @@ dnspython==2.2.0
 setuptools==65.5.1
 django-health-check==3.17.0
 psutil==5.9.4
+clickhouse-connect==0.5.10
+django-crum==0.7.9

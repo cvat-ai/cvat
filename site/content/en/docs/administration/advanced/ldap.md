@@ -27,10 +27,8 @@ In your override config you need to passthrough your settings and tell CVAT to
 use them by setting the `DJANGO_SETTINGS_MODULE` variable.
 
 ```yml
-version: '3.3'
-
 services:
-  cvat:
+  cvat_server:
     environment:
       DJANGO_SETTINGS_MODULE: settings
     volumes:

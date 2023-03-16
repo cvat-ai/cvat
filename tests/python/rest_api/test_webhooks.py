@@ -1,4 +1,4 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -7,9 +7,12 @@ from http import HTTPStatus
 from itertools import product
 
 import pytest
+from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from deepdiff import DeepDiff
 
 from shared.utils.config import delete_method, get_method, patch_method, post_method
+
+from .utils import CollectionSimpleFilterTestBase
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -263,6 +266,22 @@ class TestPostWebhooks:
 
         assert response.status_code == HTTPStatus.CREATED
 
+    def test_can_create_with_mismatching_project_org_fields(self, projects_by_org):
+        # In this case we could either fail or ignore invalid query param
+        # Currently, the invalid org id will be ignored and the value
+        # will be taken from the project.
+        post_data = deepcopy(self.proj_webhook)
+        org_id = next(iter(projects_by_org))
+        project = projects_by_org[org_id][0]
+        post_data["project_id"] = project["id"]
+        org_id = next(k for k in projects_by_org if k != org_id)
+
+        response = post_method("admin1", "webhooks", post_data, org_id=org_id)
+
+        assert response.status_code == HTTPStatus.CREATED
+        assert response.json()["project_id"] == post_data["project_id"]
+        assert response.json()["organization"] == project["organization"]
+
     def test_cannot_create_without_target_url(self):
         post_data = deepcopy(self.proj_webhook)
         post_data.pop("target_url")
@@ -304,8 +323,8 @@ class TestPostWebhooks:
 
         assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
 
+    @pytest.mark.skip("Not implemented yet")
     def test_cannot_create_non_unique_webhook(self):
-        pytest.skip("Not implemented yet")
         response = post_method("admin2", "webhooks", self.proj_webhook)
 
         response = post_method("admin2", "webhooks", self.proj_webhook)
@@ -319,7 +338,7 @@ class TestPostWebhooks:
 
         response = post_method("admin2", "webhooks", post_data, org_id=org_id)
 
-        assert response.status_code == HTTPStatus.BAD_REQUEST
+        assert response.status_code == HTTPStatus.NOT_FOUND
 
     def test_cannot_create_for_non_existent_project(self, projects):
         post_data = deepcopy(self.proj_webhook)
@@ -381,7 +400,7 @@ class TestGetWebhooks:
                 for webhook in proj_webhooks
                 if "admin" in user["groups"]
                 and webhook["owner"]["id"] != user["id"]
-                and projects[webhook["project"]]["owner"]["id"] != user["id"]
+                and projects[webhook["project_id"]]["owner"]["id"] != user["id"]
             )
         )
 
@@ -400,7 +419,7 @@ class TestGetWebhooks:
                 for user in users
                 for webhook in proj_webhooks
                 if privilege not in user["groups"]
-                and projects[webhook["project"]]["owner"]["id"] == user["id"]
+                and projects[webhook["project_id"]]["owner"]["id"] == user["id"]
             )
         )
 
@@ -437,7 +456,7 @@ class TestGetWebhooks:
                 for user in users
                 for webhook in proj_webhooks
                 if privilege in user["groups"]
-                and projects[webhook["project"]]["owner"]["id"] != user["id"]
+                and projects[webhook["project_id"]]["owner"]["id"] != user["id"]
                 and webhook["owner"]["id"] != user["id"]
             )
         )
@@ -467,7 +486,7 @@ class TestGetWebhooks:
                 (user["username"], webhook)
                 for webhook in proj_webhooks
                 for user in find_users(role=role, org=webhook["organization"])
-                if projects[webhook["project"]]["owner"]["id"] != user["id"]
+                if projects[webhook["project_id"]]["owner"]["id"] != user["id"]
                 and webhook["owner"]["id"] != user["id"]
             )
         )
@@ -497,7 +516,7 @@ class TestGetWebhooks:
                 (user["username"], webhook)
                 for webhook in proj_webhooks
                 for user in find_users(role=role, org=webhook["organization"])
-                if projects[webhook["project"]]["owner"]["id"] != user["id"]
+                if projects[webhook["project_id"]]["owner"]["id"] != user["id"]
                 and webhook["owner"]["id"] != user["id"]
             )
         )
@@ -516,7 +535,7 @@ class TestGetWebhooks:
                 (user["username"], webhook)
                 for webhook in proj_webhooks
                 for user in find_users(role=role, org=webhook["organization"])
-                if projects[webhook["project"]]["owner"]["id"] == user["id"]
+                if projects[webhook["project_id"]]["owner"]["id"] == user["id"]
                 or webhook["owner"]["id"] == user["id"]
             )
         )
@@ -526,6 +545,27 @@ class TestGetWebhooks:
         assert response.status_code == HTTPStatus.OK
         assert "secret" not in response.json()
         assert DeepDiff(webhook, response.json(), ignore_order=True) == {}
+
+
+class TestWebhooksListFilters(CollectionSimpleFilterTestBase):
+    field_lookups = {
+        "owner": ["owner", "username"],
+    }
+
+    @pytest.fixture(autouse=True)
+    def setup(self, restore_db_per_class, admin_user, webhooks):
+        self.user = admin_user
+        self.samples = webhooks
+
+    def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
+        return api_client.webhooks_api.list_endpoint
+
+    @pytest.mark.parametrize(
+        "field",
+        ("target_url", "owner", "type", "project_id"),
+    )
+    def test_can_use_simple_filter_for_object_list(self, field):
+        return super().test_can_use_simple_filter_for_object_list(field)
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -540,7 +580,7 @@ class TestGetListWebhooks:
     def test_admin_can_get_webhooks_for_project(self, webhooks):
         pid = next(
             (
-                webhook["project"]
+                webhook["project_id"]
                 for webhook in webhooks
                 if webhook["type"] == "project" and webhook["organization"] is None
             )
@@ -549,7 +589,7 @@ class TestGetListWebhooks:
         expected_response = [
             webhook
             for webhook in webhooks
-            if webhook["type"] == "project" and webhook["project"] == pid
+            if webhook["type"] == "project" and webhook["project_id"] == pid
         ]
         filter_val = '{"and":[{"==":[{"var":"project_id"},%s]}]}' % pid
 
@@ -573,7 +613,7 @@ class TestGetListWebhooks:
     def test_admin_can_get_webhooks_for_project_in_org(self, webhooks):
         pid, oid = next(
             (
-                (webhook["project"], webhook["organization"])
+                (webhook["project_id"], webhook["organization"])
                 for webhook in webhooks
                 if webhook["type"] == "project" and webhook["organization"] is not None
             )
@@ -582,7 +622,7 @@ class TestGetListWebhooks:
         expected_response = [
             webhook
             for webhook in webhooks
-            if webhook["project"] == pid and webhook["organization"] == oid
+            if webhook["project_id"] == pid and webhook["organization"] == oid
         ]
         filter_val = '{"and":[{"==":[{"var":"project_id"},%s]}]}' % pid
 
@@ -597,13 +637,13 @@ class TestGetListWebhooks:
     ):
         username, pid = next(
             (
-                (user["username"], webhook["project"])
+                (user["username"], webhook["project_id"])
                 for user in find_users(privilege=privilege)
                 for webhook in webhooks
                 if webhook["type"] == "project"
                 and webhook["organization"] is None
                 and webhook["owner"]["id"] != user["id"]
-                and projects[webhook["project"]]["owner"]["id"] != user["id"]
+                and projects[webhook["project_id"]]["owner"]["id"] != user["id"]
             )
         )
 
@@ -618,16 +658,18 @@ class TestGetListWebhooks:
     def test_user_can_get_webhook_list_for_project(self, privilege, find_users, webhooks, projects):
         username, pid = next(
             (
-                (user["username"], webhook["project"])
+                (user["username"], webhook["project_id"])
                 for user in find_users(privilege=privilege)
                 for webhook in webhooks
                 if webhook["type"] == "project"
                 and webhook["organization"] is None
-                and projects[webhook["project"]]["owner"]["id"] == user["id"]
+                and projects[webhook["project_id"]]["owner"]["id"] == user["id"]
             )
         )
 
-        expected_response = [w for w in webhooks if w["type"] == "project" and w["project"] == pid]
+        expected_response = [
+            w for w in webhooks if w["type"] == "project" and w["project_id"] == pid
+        ]
         filter_val = '{"and":[{"==":[{"var":"project_id"},%s]}]}' % pid
 
         response = get_method(username, "webhooks", filter=filter_val)
@@ -691,8 +733,8 @@ class TestGetListWebhooks:
             and (
                 webhook["owner"]["username"] == username
                 or (
-                    webhook["project"]
-                    and projects[webhook["project"]]["owner"]["username"] == username
+                    webhook["project_id"]
+                    and projects[webhook["project_id"]]["owner"]["username"] == username
                 )
             )
         ]
@@ -714,7 +756,7 @@ class TestGetListWebhooks:
                 for user in find_users(role=role, org=org["id"])
                 if webhook["organization"] == org["id"]
                 and webhook["type"] == "project"
-                and projects[webhook["project"]]["owner"]["id"] == user["id"]
+                and projects[webhook["project_id"]]["owner"]["id"] == user["id"]
             )
         )
 
@@ -723,7 +765,7 @@ class TestGetListWebhooks:
             for webhook in webhooks
             if webhook["organization"] == org_id
             and webhook["type"] == "project"
-            and projects[webhook["project"]]["owner"]["username"] == username
+            and projects[webhook["project_id"]]["owner"]["username"] == username
         ]
 
         response = get_method(username, "webhooks", org_id=org_id)
@@ -914,7 +956,7 @@ class TestPatchWebhooks:
                 for u in find_users(role=role, org=o["id"])
                 for w in proj_webhooks
                 for p in projects_by_org.get(o["id"], [])
-                if w["project"] == p["id"]
+                if w["project_id"] == p["id"]
                 and w["organization"] == o["id"]
                 and not is_project_staff(u["id"], p["id"])
                 and w["owner"]["id"] != u["id"]
@@ -953,7 +995,7 @@ class TestPatchWebhooks:
                 for u in find_users(role=role, org=o["id"])
                 for w in proj_webhooks
                 for p in projects_by_org.get(o["id"], [])
-                if w["project"] == p["id"]
+                if w["project_id"] == p["id"]
                 and w["organization"] == o["id"]
                 and u["id"] == p["owner"]["id"]
             )
@@ -994,7 +1036,7 @@ class TestDeleteWebhooks:
                 if webhook["type"] == "project"
                 and webhook["organization"] is None
                 and webhook["owner"]["id"] != user["id"]
-                and projects[webhook["project"]]["owner"]["id"] != user["id"]
+                and projects[webhook["project_id"]]["owner"]["id"] != user["id"]
             )
         )
 
@@ -1020,7 +1062,7 @@ class TestDeleteWebhooks:
                 if webhook["type"] == "project"
                 and webhook["organization"] is not None
                 and webhook["owner"]["id"] != user["id"]
-                and projects[webhook["project"]]["owner"]["id"] != user["id"]
+                and projects[webhook["project_id"]]["owner"]["id"] != user["id"]
                 and not is_org_member(user["id"], webhook["organization"])
             )
         )
@@ -1063,7 +1105,7 @@ class TestDeleteWebhooks:
                 for webhook in webhooks
                 if webhook["type"] == "project"
                 and webhook["organization"] is None
-                and projects[webhook["project"]]["owner"]["id"] == user["id"]
+                and projects[webhook["project_id"]]["owner"]["id"] == user["id"]
             )
         )
 
@@ -1101,7 +1143,6 @@ class TestDeleteWebhooks:
     )
     def test_member_can_delete_org_webhook(self, role, allow, find_users, organizations, webhooks):
         org_webhooks = [w for w in webhooks if w["type"] == "organization"]
-        print(org_webhooks)
         username, org_id, webhook_id = next(
             (
                 (user["username"], org["id"], webhook["id"])
@@ -1138,7 +1179,7 @@ class TestDeleteWebhooks:
                 for webhook in proj_webhooks
                 if webhook["organization"]
                 and webhook["organization"] == org["id"]
-                and projects[webhook["project"]]["owner"]["id"] != user["id"]
+                and projects[webhook["project_id"]]["owner"]["id"] != user["id"]
                 and webhook["owner"]["id"] != user["id"]
             )
         )
@@ -1167,7 +1208,7 @@ class TestDeleteWebhooks:
                 if webhook["organization"]
                 and webhook["organization"] == org["id"]
                 and (
-                    projects[webhook["project"]]["owner"]["id"] == user["id"]
+                    projects[webhook["project_id"]]["owner"]["id"] == user["id"]
                     or webhook["owner"]["id"] == user["id"]
                 )
             )

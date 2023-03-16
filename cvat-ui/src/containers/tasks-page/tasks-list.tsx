@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -37,7 +38,7 @@ function TasksListContainer(props: TasksListContainerProps): JSX.Element {
 
     return (
         <TasksListComponent
-            currentTasksIndexes={tasks.current.map((task): number => task.instance.id)}
+            currentTasksIndexes={tasks.current.map((task): number => task.id)}
         />
     );
 }

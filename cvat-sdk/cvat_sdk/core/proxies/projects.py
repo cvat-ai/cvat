@@ -1,15 +1,17 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from __future__ import annotations
 
+import io
 import json
 from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional
 
 from cvat_sdk.api_client import apis, models
 from cvat_sdk.core.downloading import Downloader
+from cvat_sdk.core.helpers import get_paginated_collection
 from cvat_sdk.core.progress import ProgressReporter
 from cvat_sdk.core.proxies.model_proxy import (
     ModelCreateMixin,
@@ -123,7 +125,23 @@ class Project(
         return annotations
 
     def get_tasks(self) -> List[Task]:
-        return [Task(self._client, m) for m in self.api.list_tasks(id=self.id)[0].results]
+        return [
+            Task(self._client, m)
+            for m in get_paginated_collection(
+                self._client.api_client.tasks_api.list_endpoint, project_id=self.id
+            )
+        ]
+
+    def get_labels(self) -> List[models.ILabel]:
+        return get_paginated_collection(
+            self._client.api_client.labels_api.list_endpoint, project_id=self.id
+        )
+
+    def get_preview(
+        self,
+    ) -> io.RawIOBase:
+        (_, response) = self.api.retrieve_preview(self.id)
+        return io.BytesIO(response.data)
 
 
 class ProjectsRepo(

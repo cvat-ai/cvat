@@ -15,7 +15,7 @@ description: 'A CVAT installation guide for different operating systems.'
 
 Before you can use CVAT, you’ll need to get it installed. The document below
 contains instructions for the most popular operating systems. If your system is
-not covered by the document it should be relatively straight forward to adapt
+not covered by the document it should be relatively straightforward to adapt
 the instructions below for other systems.
 
 Probably you need to modify the instructions below in case you are behind a proxy
@@ -28,7 +28,7 @@ For access from China, read [sources for users from China](#sources-for-users-fr
 - Open a terminal window. If you don't know how to open a terminal window on
   Ubuntu please read [the answer](https://askubuntu.com/questions/183775/how-do-i-open-a-terminal).
 
-- Type commands below into the terminal window to install `docker`. More
+- Type commands below into the terminal window to install Docker and Docker Compose. More
   instructions can be found [here](https://docs.docker.com/install/linux/docker-ce/ubuntu/).
 
   ```shell
@@ -45,7 +45,8 @@ For access from China, read [sources for users from China](#sources-for-users-fr
     $(lsb_release -cs) \
     stable"
   sudo apt-get update
-  sudo apt-get --no-install-recommends install -y docker-ce docker-ce-cli containerd.io
+  sudo apt-get --no-install-recommends install -y \
+    docker-ce docker-ce-cli containerd.io docker-compose-plugin
   ```
 
 - Perform [post-installation steps](https://docs.docker.com/install/linux/linux-postinstall/)
@@ -60,18 +61,10 @@ For access from China, read [sources for users from China](#sources-for-users-fr
   re-evaluated. You can type `groups` command in a terminal window after
   that and check if `docker` group is in its output.
 
-- Install docker-compose (1.19.0 or newer). Compose is a tool for
-  defining and running multi-container docker applications.
-
-  ```shell
-  sudo apt-get --no-install-recommends install -y python3-pip python3-setuptools
-  sudo python3 -m pip install setuptools docker-compose
-  ```
-
 - Clone _CVAT_ source code from the
   [GitHub repository](https://github.com/opencv/cvat) with Git.
 
-  Following command will clone latest develop branch:
+  Following command will clone the latest develop branch:
   ```shell
   git clone https://github.com/opencv/cvat
   cd cvat
@@ -90,7 +83,7 @@ For access from China, read [sources for users from China](#sources-for-users-fr
   release and other required images like postgres, redis, etc. from DockerHub and create containers.
 
   ```shell
-  docker-compose up -d
+  docker compose up -d
   ```
 
 - (Optional) Use `CVAT_VERSION` environment variable to specify the version of CVAT you want to
@@ -98,15 +91,15 @@ For access from China, read [sources for users from China](#sources-for-users-fr
   Default behavior: `dev` images will be pulled for develop branch,
   and corresponding release images for release versions.
   ```shell
-  CVAT_VERSION=dev docker-compose up -d
+  CVAT_VERSION=dev docker compose up -d
   ```
 
 - Alternative: if you want to build the images locally with unreleased changes
   see [How to pull/build/update CVAT images section](#how-to-pullbuildupdate-cvat-images)
 
-- You can register a user but by default it will not have rights even to view
-  list of tasks. Thus you should create a superuser. A superuser can use an
-  admin panel to assign correct groups to the user. Please use the command
+- You can register a user but by default, it will not have rights even to view
+  the list of tasks. Thus you should create a superuser. A superuser can use an
+  admin panel to assign the correct groups to the user. Please use the command
   below:
 
   ```shell
@@ -116,7 +109,7 @@ For access from China, read [sources for users from China](#sources-for-users-fr
   Choose a username and a password for your admin account. For more information
   please read [Django documentation](https://docs.djangoproject.com/en/2.2/ref/django-admin/#createsuperuser).
 
-- Google Chrome is the only browser which is supported by CVAT. You need to
+- Google Chrome is the only browser that is supported by CVAT. You need to
   install it as well. Type commands below in a terminal window:
 
   ```shell
@@ -134,8 +127,7 @@ For access from China, read [sources for users from China](#sources-for-users-fr
 ## Windows 10
 
 - Install WSL2 (Windows subsystem for Linux) refer to [this official guide](https://docs.microsoft.com/windows/wsl/install-win10).
-  WSL2 requires Windows 10, version 2004 or higher. Note: You may not have to install a Linux distribution unless
-  needed.
+  WSL2 requires Windows 10, version 2004 or higher. After installing WSL2, install a Linux Distribution of your choice.
 
 - Download and install [Docker Desktop for Windows](https://desktop.docker.com/win/main/amd64/Docker%20Desktop%20Installer.exe).
   Double-click `Docker for Windows Installer` to run the installer.
@@ -143,6 +135,9 @@ For access from China, read [sources for users from China](#sources-for-users-fr
   Official guide for docker WSL2 backend can be found
   [here](https://docs.docker.com/docker-for-windows/wsl/). Note: Check that you are specifically using WSL2 backend
   for Docker.
+
+- In Docker Desktop, go to `Settings >> Resources >> WSL Integration`, and
+enable integration with the Linux Distribution that you chose.
 
 - Download and install
   [Git for Windows](https://github.com/git-for-windows/git/releases/download/v2.21.0.windows.1/Git-2.21.0-64-bit.exe).
@@ -152,7 +147,7 @@ For access from China, read [sources for users from China](#sources-for-users-fr
 - Download and install [Google Chrome](https://www.google.com/chrome/). It is the only browser
   which is supported by CVAT.
 
-- Go to windows menu, find `Git Bash` application and run it. You should see a terminal window.
+- Go to windows menu, find the Linux distribution you installed and run it. You should see a terminal window.
 
 - Clone _CVAT_ source code from the
   [GitHub repository](https://github.com/opencv/cvat).
@@ -170,7 +165,7 @@ For access from China, read [sources for users from China](#sources-for-users-fr
   release and other required images like postgres, redis, etc. from DockerHub and create containers.
 
   ```shell
-  docker-compose up -d
+  docker compose up -d
   ```
 
 - (Optional) Use `CVAT_VERSION` environment variable to specify the version of CVAT you want to
@@ -178,19 +173,19 @@ For access from China, read [sources for users from China](#sources-for-users-fr
   Default behavior: `dev` images will be pulled for develop branch,
   and corresponding release images for release versions.
   ```shell
-  CVAT_VERSION=dev docker-compose up -d
+  CVAT_VERSION=dev docker compose up -d
   ```
 
 - Alternative: if you want to build the images locally with unreleased changes
   see [How to pull/build/update CVAT images section](#how-to-pullbuildupdate-cvat-images)
 
-- You can register a user but by default it will not have rights even to view
-  list of tasks. Thus you should create a superuser. A superuser can use an
+- You can register a user but by default, it will not have rights even to view
+  the list of tasks. Thus you should create a superuser. A superuser can use an
   admin panel to assign correct groups to other users. Please use the command
   below:
 
   ```shell
-  winpty docker exec -it cvat_server bash -ic 'python3 ~/manage.py createsuperuser'
+  sudo docker exec -it cvat_server bash -ic 'python3 ~/manage.py createsuperuser'
   ```
 
   If you don't have winpty installed or the above command does not work, you may also try the following:
@@ -252,7 +247,7 @@ For access from China, read [sources for users from China](#sources-for-users-fr
   release and other required images like postgres, redis, etc. from DockerHub and create containers.
 
   ```shell
-  docker-compose up -d
+  docker compose up -d
   ```
 
 - (Optional) Use `CVAT_VERSION` environment variable to specify the version of CVAT you want to
@@ -260,14 +255,14 @@ For access from China, read [sources for users from China](#sources-for-users-fr
   Default behavior: `dev` images will be pulled for develop branch,
   and corresponding release images for release versions.
   ```shell
-  CVAT_VERSION=dev docker-compose up -d
+  CVAT_VERSION=dev docker compose up -d
   ```
 
 - Alternative: if you want to build the images locally with unreleased changes
   see [How to pull/build/update CVAT images section](#how-to-pullbuildupdate-cvat-images)
 
-- You can register a user but by default it will not have rights even to view
-  list of tasks. Thus you should create a superuser. A superuser can use an
+- You can register a user but by default, it will not have rights even to view
+  the list of tasks. Thus you should create a superuser. A superuser can use an
   admin panel to assign correct groups to other users. Please use the command
   below:
 
@@ -331,7 +326,7 @@ cd cvat
 
 #### Curl (Linux, Mac)
 
-To download latest develop branch:
+To download the latest develop branch:
 ```shell
 curl -LO https://github.com/opencv/cvat/archive/refs/heads/develop.zip
 unzip develop.zip && mv cvat-develop cvat
@@ -346,11 +341,11 @@ cd cvat
 ```
 
 ### CVAT healthcheck command
-The following command allows to test the CVAT container to make sure it works.
+The following command allows testing the CVAT container to make sure it works.
 ```shell
 docker exec -t cvat_server python manage.py health_check
 ```
-Expected output of a healthy CVAT container:
+The expected output of a healthy CVAT container:
 ```shell
 Cache backend: default   ... working
 DatabaseBackend          ... working
@@ -419,15 +414,7 @@ if you want to keep the dashboard in production you should read Traefik's
 
 ### Additional components
 
-- [Analytics: management and monitoring of data annotation team](/docs/administration/advanced/analytics/)
-
-```shell
-# Build and run containers with Analytics component support:
-docker-compose -f docker-compose.yml \
-  -f components/analytics/docker-compose.analytics.yml up -d --build
-```
-
-### Semi-automatic and automatic annotation
+#### Semi-automatic and automatic annotation
 
 Please follow this [guide](/docs/administration/advanced/installation_automatic_annotation/).
 
@@ -436,7 +423,7 @@ Please follow this [guide](/docs/administration/advanced/installation_automatic_
 The command below stops and removes containers and networks created by `up`.
 
 ```shell
-docker-compose down
+docker compose down
 ```
 
 ### Use your own domain
@@ -450,18 +437,16 @@ export CVAT_HOST=<YOUR_DOMAIN>
 
 ### Share path
 
-You can use a share storage for data uploading during you are creating a task.
-To do that you can mount it to CVAT docker container. Example of
+You can use shared storage for uploading data when you create a task.
+To do that, you must mount the shared storage to the CVAT docker container. Example of
 docker-compose.override.yml for this purpose:
 
 ```yml
-version: '3.3'
-
 services:
   cvat_server:
     volumes:
       - cvat_share:/home/django/share:ro
-  cvat_worker_default:
+  cvat_worker_import:
     volumes:
       - cvat_share:/home/django/share:ro
 
@@ -496,7 +481,7 @@ ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 ```
 
-Also you need to configure the Django email backend to send emails.
+Also, you need to configure the Django email backend to send emails.
 This depends on the email server you are using and is not covered in this tutorial, please see
 [Django SMTP backend configuration](https://docs.djangoproject.com/en/3.1/topics/email/#django.core.mail.backends.smtp.EmailBackend)
 for details.
@@ -509,10 +494,10 @@ to install and set up remote access to CVAT on a Scaleway cloud instance with da
 
 ### Deploy secure CVAT instance with HTTPS
 
-Using Traefik, you can automatically obtain TLS certificate for your domain from Let's Encrypt,
+Using Traefik, you can automatically obtain a TLS certificate for your domain from Let's Encrypt,
 enabling you to use HTTPS protocol to access your website.
 
-To enable this, first set the the `CVAT_HOST` (the domain of your website) and `ACME_EMAIL`
+To enable this, first set the `CVAT_HOST` (the domain of your website) and `ACME_EMAIL`
 (contact email for Let's Encrypt) environment variables:
 
 ```shell
@@ -523,10 +508,10 @@ export ACME_EMAIL=<YOUR_EMAIL>
 Then, use the `docker-compose.https.yml` file to override the base `docker-compose.yml` file:
 
 ```shell
-docker-compose -f docker-compose.yml -f docker-compose.https.yml up -d
+docker compose -f docker-compose.yml -f docker-compose.https.yml up -d
 ```
 
-> In firewall, ports 80 and 443 must be open for inbound connections from any
+> In the firewall, ports 80 and 443 must be open for inbound connections from any
 
 Then, the CVAT instance will be available at your domain on ports 443 (HTTPS) and 80 (HTTP, redirects to 443).
 
@@ -545,21 +530,21 @@ Then, the CVAT instance will be available at your domain on ports 443 (HTTPS) an
   prebuilt images from DockerHub using `CVAT_VERSION` environment variable to specify
   the version (e.g. `dev`):
   ```shell
-  CVAT_VERSION=dev docker-compose pull
+  CVAT_VERSION=dev docker compose pull
   ```
 
-- To build images yourself include `docker-compose.dev.yml` compose config file to `docker-compose` command.
+- To build images yourself include `docker-compose.dev.yml` compose config file to `docker compose` command.
   This can be useful if you want to build a CVAT with some source code changes.
   ```shell
-  docker-compose -f docker-compose.yml -f docker-compose.dev.yml build
+  docker compose -f docker-compose.yml -f docker-compose.dev.yml build
   ```
 - To update local images to `latest` or `dev` tags run:
   ```shell
-  CVAT_VERSION=dev docker-compose pull
+  CVAT_VERSION=dev docker compose pull
   ```
   or
   ```shell
-  CVAT_VERSION=latest docker-compose pull
+  CVAT_VERSION=latest docker compose pull
   ```
 
 ## Troubleshooting
@@ -635,7 +620,7 @@ If you stay in China, for installation you need to override the following source
 
 ### HTTPS is not working because of a certificate
 
-If you're having trouble with SSL connection, to find the cause,
+If you're having trouble with an SSL connection, to find the cause,
 you'll need to get the logs from traefik by running:
 
 ```shell
@@ -652,7 +637,7 @@ If the error is related to a firewall, then:
 After `acme.json` is removed, stop all cvat docker containers:
 
 ```shell
-docker-compose -f docker-compose.yml -f docker-compose.https.yml down
+docker compose -f docker-compose.yml -f docker-compose.https.yml down
 ```
 
 Make sure variables set (with your values):
@@ -665,5 +650,5 @@ export ACME_EMAIL=<YOUR_EMAIL>
 and restart docker:
 
 ```shell
-docker-compose -f docker-compose.yml -f docker-compose.https.yml up -d
+docker compose -f docker-compose.yml -f docker-compose.https.yml up -d
 ```

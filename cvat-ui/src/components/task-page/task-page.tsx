@@ -1,96 +1,155 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React from 'react';
-import { RouteComponentProps } from 'react-router';
-import { withRouter } from 'react-router-dom';
+import React, { useEffect, useRef, useState } from 'react';
+import { useHistory, useParams } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import Spin from 'antd/lib/spin';
 import Result from 'antd/lib/result';
+import notification from 'antd/lib/notification';
 
-import DetailsContainer from 'containers/task-page/details';
-import JobListContainer from 'containers/task-page/job-list';
+import { getCore, Task, Job } from 'cvat-core-wrapper';
+import JobListComponent from 'components/task-page/job-list';
 import ModelRunnerModal from 'components/model-runner-modal/model-runner-dialog';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import MoveTaskModal from 'components/move-task-modal/move-task-modal';
-import { Task } from 'reducers';
+import { useSelector } from 'react-redux';
+import { CombinedState } from 'reducers';
 import TopBarComponent from './top-bar';
+import DetailsComponent from './details';
 
-interface TaskPageComponentProps {
-    task: Task | null | undefined;
-    fetching: boolean;
-    updating: boolean;
-    jobUpdating: boolean;
-    deleteActivity: boolean | null;
-    installedGit: boolean;
-    getTask: () => void;
-}
+const core = getCore();
 
-type Props = TaskPageComponentProps & RouteComponentProps<{ id: string }>;
+function TaskPageComponent(): JSX.Element {
+    const history = useHistory();
+    const id = +useParams<{ id: string }>().id;
 
-class TaskPageComponent extends React.PureComponent<Props> {
-    public componentDidMount(): void {
-        const { task, fetching, getTask } = this.props;
+    const [taskInstance, setTaskInstance] = useState<Task | null>(null);
+    const [fetchingTask, setFetchingTask] = useState(true);
+    const [updatingTask, setUpdatingTask] = useState(false);
+    const mounted = useRef(false);
 
-        if (task === null && !fetching) {
-            getTask();
+    const deletes = useSelector((state: CombinedState) => state.tasks.activities.deletes);
+
+    const receieveTask = (): void => {
+        if (Number.isInteger(id)) {
+            core.tasks.get({ id })
+                .then(([task]: Task[]) => {
+                    if (task && mounted.current) {
+                        setTaskInstance(task);
+                    }
+                }).catch((error: Error) => {
+                    if (mounted.current) {
+                        notification.error({
+                            message: 'Could not receive the requested project from the server',
+                            description: error.toString(),
+                        });
+                    }
+                }).finally(() => {
+                    if (mounted.current) {
+                        setFetchingTask(false);
+                    }
+                });
+        } else {
+            notification.error({
+                message: 'Could not receive the requested task from the server',
+                description: `Requested task id "${id}" is not valid`,
+            });
+            setFetchingTask(false);
         }
+    };
+
+    useEffect(() => {
+        receieveTask();
+        mounted.current = true;
+        return () => {
+            mounted.current = false;
+        };
+    }, []);
+
+    useEffect(() => {
+        if (taskInstance && id in deletes && deletes[id]) {
+            history.push('/tasks');
+        }
+    }, [deletes]);
+
+    if (fetchingTask) {
+        return <Spin size='large' className='cvat-spinner' />;
     }
 
-    public componentDidUpdate(prevProps: Props): void {
-        const {
-            deleteActivity, history, task, fetching, getTask, jobUpdating,
-        } = this.props;
-
-        const jobUpdated = prevProps.jobUpdating && !jobUpdating;
-        if ((task === null && !fetching) || jobUpdated) {
-            getTask();
-        }
-
-        if (deleteActivity) {
-            history.replace('/tasks');
-        }
-    }
-
-    public render(): JSX.Element {
-        const { task, updating, fetching } = this.props;
-
-        if (task === null || (fetching && !updating)) {
-            return <Spin size='large' className='cvat-spinner' />;
-        }
-
-        if (typeof task === 'undefined') {
-            return (
-                <Result
-                    className='cvat-not-found'
-                    status='404'
-                    title='Sorry, but this task was not found'
-                    subTitle='Please, be sure information you tried to get exist and you have access'
-                />
-            );
-        }
-
+    if (!taskInstance) {
         return (
-            <div className='cvat-task-page'>
-                { updating ? <CVATLoadingSpinner size='large' /> : null }
-                <Row
-                    justify='center'
-                    align='top'
-                    className='cvat-task-details-wrapper'
-                >
-                    <Col md={22} lg={18} xl={16} xxl={14}>
-                        <TopBarComponent taskInstance={(task as Task).instance} />
-                        <DetailsContainer task={task as Task} />
-                        <JobListContainer task={task as Task} />
-                    </Col>
-                </Row>
-                <ModelRunnerModal />
-                <MoveTaskModal />
-            </div>
+            <Result
+                className='cvat-not-found'
+                status='404'
+                title='There was something wrong during getting the task'
+                subTitle='Please, be sure, that information you tried to get exist and you are eligible to access it'
+            />
         );
     }
+
+    const onUpdateTask = (task: Task): Promise<void> => (
+        new Promise((resolve, reject) => {
+            setUpdatingTask(true);
+            task.save().then((updatedTask: Task) => {
+                if (mounted.current) {
+                    setTaskInstance(updatedTask);
+                }
+                resolve();
+            }).catch((error: Error) => {
+                notification.error({
+                    message: 'Could not update the task',
+                    className: 'cvat-notification-notice-update-task-failed',
+                    description: error.toString(),
+                });
+                reject();
+            }).finally(() => {
+                if (mounted.current) {
+                    setUpdatingTask(false);
+                }
+            });
+        })
+    );
+
+    const onJobUpdate = (job: Job): void => {
+        setUpdatingTask(true);
+        job.save().then(() => {
+            if (mounted.current) {
+                receieveTask();
+            }
+        }).catch((error: Error) => {
+            notification.error({
+                message: 'Could not update the job',
+                description: error.toString(),
+            });
+        }).finally(() => {
+            if (mounted.current) {
+                setUpdatingTask(false);
+            }
+        });
+    };
+
+    return (
+        <div className='cvat-task-page'>
+            { updatingTask ? <CVATLoadingSpinner size='large' /> : null }
+            <Row
+                justify='center'
+                align='top'
+                className='cvat-task-details-wrapper'
+            >
+                <Col md={22} lg={18} xl={16} xxl={14}>
+                    <TopBarComponent taskInstance={taskInstance} />
+                    <DetailsComponent task={taskInstance} onUpdateTask={onUpdateTask} />
+                    <JobListComponent task={taskInstance} onUpdateJob={onJobUpdate} />
+                </Col>
+            </Row>
+            <ModelRunnerModal />
+            <MoveTaskModal onUpdateTask={onUpdateTask} />
+        </div>
+    );
 }
 
-export default withRouter(TaskPageComponent);
+export default React.memo(TaskPageComponent);

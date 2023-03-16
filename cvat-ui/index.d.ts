@@ -5,4 +5,5 @@
 import 'redux-thunk/extend-redux';
 
 declare module '*.svg';
+declare module '*.png';
 declare module 'cvat-core/src/api';

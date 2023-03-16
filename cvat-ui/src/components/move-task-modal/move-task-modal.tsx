@@ -1,9 +1,12 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useState, useEffect } from 'react';
+import React, {
+    useState, useEffect, useCallback, useRef,
+} from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import Modal from 'antd/lib/modal';
 import { Row, Col } from 'antd/lib/grid';
@@ -12,90 +15,142 @@ import notification from 'antd/lib/notification';
 import { QuestionCircleOutlined } from '@ant-design/icons';
 
 import ProjectSearch from 'components/create-task-page/project-search-field';
+import CVATLoadingSpinner from 'components/common/loading-spinner';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { CombinedState } from 'reducers';
-import { switchMoveTaskModalVisible, moveTaskToProjectAsync } from 'actions/tasks-actions';
-import { getCore } from 'cvat-core-wrapper';
+import { switchMoveTaskModalVisible } from 'actions/tasks-actions';
+import { getCore, Task, Label } from 'cvat-core-wrapper';
 import LabelMapperItem, { LabelMapperItemValue } from './label-mapper-item';
 
 const core = getCore();
 
-export default function MoveTaskModal(): JSX.Element {
-    const visible = useSelector((state: CombinedState) => state.tasks.moveTask.modalVisible);
-    const task = useSelector((state: CombinedState) => {
-        const [taskInstance] = state.tasks.current.filter((_task) => _task.instance.id === state.tasks.moveTask.taskId);
-        return taskInstance?.instance;
-    });
-    const taskUpdating = useSelector((state: CombinedState) => state.tasks.updating);
+function MoveTaskModal({
+    onUpdateTask,
+}: {
+    onUpdateTask?: (task: Task) => Promise<void>,
+}): JSX.Element {
     const dispatch = useDispatch();
+    const visible = useSelector((state: CombinedState) => state.tasks.moveTask.modalVisible);
+    const taskId = useSelector((state: CombinedState) => state.tasks.moveTask.taskId);
+    const mounted = useRef(false);
 
+    const [taskFetching, setTaskFetching] = useState(false);
+    const [taskInstance, setTaskInstance] = useState<Task | null>(null);
+    const [isUpdating, setIsUpdating] = useState(false);
     const [projectId, setProjectId] = useState<number | null>(null);
     const [project, setProject] = useState<any>(null);
     const [labelMap, setLabelMap] = useState<{ [key: string]: LabelMapperItemValue }>({});
 
-    const initValues = (): void => {
+    const initValues = useCallback(() => {
         const labelValues: { [key: string]: LabelMapperItemValue } = {};
-        if (task) {
-            task.labels.forEach((label: any) => {
-                labelValues[label.id] = {
-                    labelId: label.id,
+        if (taskInstance) {
+            taskInstance.labels.forEach((label: Label) => {
+                const labelId = label.id as number;
+                labelValues[labelId] = {
+                    labelId,
                     newLabelName: null,
-                    clearAttributes: true,
                 };
             });
         }
-        setLabelMap(labelValues);
-    };
 
-    const onCancel = (): void => {
+        setLabelMap(labelValues);
+    }, [taskInstance]);
+
+    const onCancel = useCallback(() => {
         dispatch(switchMoveTaskModalVisible(false));
         initValues();
         setProject(null);
         setProjectId(null);
-    };
+    }, [initValues]);
+
+    const projectsFilter = useCallback((_project: { id: number }) => (
+        _project.id !== taskInstance?.projectId
+    ), [taskInstance]);
 
     const submitMove = async (): Promise<void> => {
+        if (!taskInstance) {
+            throw new Error('Task to move is not specified');
+        }
+
         if (!projectId) {
+            notification.error({ message: 'Please, select a project' });
+            return;
+        }
+
+        if (Object.values(labelMap).some((map) => map.newLabelName === null)) {
             notification.error({
-                message: 'Project not selected',
+                message: 'Please, specify mapping for all the labels',
             });
             return;
         }
-        if (!Object.values(labelMap).every((map) => map.newLabelName !== null)) {
-            notification.error({
-                message: 'Not all labels mapped',
-                description: 'Please choose any action to not mapped labels first',
+
+        taskInstance.projectId = projectId;
+        taskInstance.labels = Object.values(labelMap).map((mapper) => ({
+            id: mapper.labelId,
+            name: mapper.newLabelName,
+        })).map(({ id, name }) => {
+            const [label] = taskInstance.labels.filter((_label: Label) => _label.id === id);
+            (label as Label).name = name as string;
+            return label;
+        });
+
+        setIsUpdating(true);
+        if (onUpdateTask) {
+            onUpdateTask(taskInstance).finally(() => {
+                if (mounted.current) {
+                    setIsUpdating(false);
+                }
             });
-            return;
+        } else {
+            taskInstance.save().finally(() => {
+                if (mounted.current) {
+                    setIsUpdating(false);
+                }
+            }).catch((error: Error) => notification.error({
+                message: 'Could not update the task',
+                className: 'cvat-notification-notice-update-task-failed',
+                description: error.toString(),
+            }));
         }
-        dispatch(
-            moveTaskToProjectAsync(
-                task,
-                projectId,
-                Object.values(labelMap).map((map) => ({
-                    label_id: map.labelId,
-                    new_label_name: map.newLabelName,
-                    clear_attributes: map.clearAttributes,
-                })),
-            ),
-        );
+
         onCancel();
     };
 
     useEffect(() => {
-        if (projectId) {
-            core.projects.get({ id: projectId }).then((_project: any) => {
-                if (projectId) {
-                    setProject(_project[0]);
-                    const { labels } = _project[0];
+        if (visible && Number.isInteger(taskId)) {
+            setTaskFetching(true);
+            core.tasks.get({ id: taskId })
+                .then(([task]: Task[]) => {
+                    if (mounted.current) {
+                        setLabelMap({});
+                        setTaskInstance(task);
+                    }
+                })
+                .catch((error: Error) => notification.error({
+                    message: 'Could not fetch task from the server',
+                    description: error.toString(),
+                })).finally(() => {
+                    if (mounted.current) {
+                        setTaskFetching(false);
+                    }
+                });
+        }
+    }, [visible, taskId]);
+
+    useEffect(() => {
+        if (projectId && taskInstance) {
+            core.projects.get({ id: projectId }).then(([_project]: any) => {
+                if (_project) {
+                    setProject(_project);
+                    const { labels } = _project;
                     const labelValues: { [key: string]: LabelMapperItemValue } = {};
                     Object.entries(labelMap).forEach(([id, label]) => {
-                        const taskLabelName = task.labels.filter((_label: any) => _label.id === label.labelId)[0].name;
+                        const taskLabelName = taskInstance
+                            .labels.filter((_label: any) => _label.id === label.labelId)[0].name;
                         const [autoNewLabel] = labels.filter((_label: any) => _label.name === taskLabelName);
                         labelValues[id] = {
                             labelId: label.labelId,
                             newLabelName: autoNewLabel ? autoNewLabel.name : null,
-                            clearAttributes: true,
                         };
                     });
                     setLabelMap(labelValues);
@@ -104,21 +159,28 @@ export default function MoveTaskModal(): JSX.Element {
         } else {
             setProject(null);
         }
-    }, [projectId]);
+    }, [projectId, taskInstance]);
 
     useEffect(() => {
         initValues();
-    }, [task?.id]);
+    }, [taskInstance]);
+
+    useEffect(() => {
+        mounted.current = true;
+        return () => {
+            mounted.current = false;
+        };
+    }, []);
 
     return (
         <Modal
             visible={visible}
             onCancel={onCancel}
             onOk={submitMove}
-            okButtonProps={{ disabled: taskUpdating }}
+            okButtonProps={{ disabled: isUpdating }}
             title={(
                 <span>
-                    {`Move task ${task?.id} to project`}
+                    {`Move task ${taskInstance?.id} to project`}
                     {/* TODO: replace placeholder */}
                     <CVATTooltip title='Some moving process description here'>
                         <QuestionCircleOutlined className='ant-typography-secondary' />
@@ -127,20 +189,21 @@ export default function MoveTaskModal(): JSX.Element {
             )}
             className='cvat-task-move-modal'
         >
+            { taskFetching && <CVATLoadingSpinner size='large' /> }
             <Row align='middle'>
                 <Col>Project:</Col>
                 <Col>
                     <ProjectSearch
                         value={projectId}
                         onSelect={setProjectId}
-                        filter={(_project) => _project.id !== task?.projectId}
+                        filter={projectsFilter}
                     />
                 </Col>
             </Row>
             <Divider orientation='left'>Label mapping</Divider>
             {!!Object.keys(labelMap).length &&
-                !taskUpdating &&
-                task?.labels.map((label: any) => (
+                !isUpdating &&
+                taskInstance?.labels.map((label: any) => (
                     <LabelMapperItem
                         label={label}
                         key={label.id}
@@ -158,3 +221,5 @@ export default function MoveTaskModal(): JSX.Element {
         </Modal>
     );
 }
+
+export default React.memo(MoveTaskModal);

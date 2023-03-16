@@ -16,7 +16,7 @@ import GlobalHotKeys from 'utils/mousetrap-react';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import ShortcutsContext from 'components/shortcuts.context';
 import { ShapeType } from 'cvat-core-wrapper';
-import consts from 'consts';
+import config from 'config';
 import {
     idGenerator, LabelOptColor, SkeletonConfiguration, toSVGCoord,
 } from './common';
@@ -429,7 +429,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
             setAttributes(circle, {
                 r: 1.5,
                 stroke: 'black',
-                fill: consts.NEW_LABEL_COLOR,
+                fill: config.NEW_LABEL_COLOR,
                 cx: x,
                 cy: y,
                 'stroke-width': 0.1,
@@ -696,7 +696,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                         >
                             <p className='ant-upload-drag-icon'>
                                 <CVATTooltip title='Upload a background image'>
-                                    <Button icon={<PictureOutlined />} />
+                                    <Button className='cvat-upload-skeleton-constructor-background' icon={<PictureOutlined />} />
                                 </CVATTooltip>
                             </p>
                         </Upload>
@@ -742,6 +742,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                     <Row justify='space-between' className='cvat-skeleton-configurator-svg-buttons'>
                         <CVATTooltip title='Download skeleton as SVG'>
                             <Button
+                                className='cvat-download-skeleton-svg-button'
                                 type='default'
                                 icon={<DownloadOutlined />}
                                 onClick={() => {
@@ -819,7 +820,12 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                             }}
                         >
                             <CVATTooltip title='Upload a skeleton from SVG'>
-                                <Button style={disabledStyle} icon={<UploadOutlined />} type='default' />
+                                <Button
+                                    className='cvat-upload-skeleton-svg-button'
+                                    style={disabledStyle}
+                                    icon={<UploadOutlined />}
+                                    type='default'
+                                />
                             </CVATTooltip>
                         </Upload>
                     </Row>

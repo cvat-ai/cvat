@@ -1,16 +1,15 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React, { useState } from 'react';
-import { useDispatch } from 'react-redux';
 import moment from 'moment';
 import { Row, Col } from 'antd/lib/grid';
 import Title from 'antd/lib/typography/Title';
 import Text from 'antd/lib/typography/Text';
 
-import { getCore } from 'cvat-core-wrapper';
-import { updateProjectAsync } from 'actions/projects-actions';
+import { getCore, Project } from 'cvat-core-wrapper';
 import LabelsEditor from 'components/labels-editor/labels-editor';
 import BugTrackerEditor from 'components/task-page/bug-tracker-editor';
 import UserSelector from 'components/task-page/user-selector';
@@ -18,17 +17,16 @@ import UserSelector from 'components/task-page/user-selector';
 const core = getCore();
 
 interface DetailsComponentProps {
-    project: any;
+    project: Project;
+    onUpdateProject: (project: Project) => void;
 }
 
 export default function DetailsComponent(props: DetailsComponentProps): JSX.Element {
-    const { project } = props;
-
-    const dispatch = useDispatch();
+    const { project, onUpdateProject } = props;
     const [projectName, setProjectName] = useState(project.name);
 
     return (
-        <div cvat-project-id={project.id} className='cvat-project-details'>
+        <div data-cvat-project-id={project.id} className='cvat-project-details'>
             <Row>
                 <Col>
                     <Title
@@ -37,7 +35,7 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
                             onChange: (value: string): void => {
                                 setProjectName(value);
                                 project.name = value;
-                                dispatch(updateProjectAsync(project));
+                                onUpdateProject(project);
                             },
                         }}
                         className='cvat-text-color cvat-project-name'
@@ -57,7 +55,7 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
                         instance={project}
                         onChange={(bugTracker): void => {
                             project.bugTracker = bugTracker;
-                            dispatch(updateProjectAsync(project));
+                            onUpdateProject(project);
                         }}
                     />
                 </Col>
@@ -67,7 +65,7 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
                         value={project.assignee}
                         onSelect={(user) => {
                             project.assignee = user;
-                            dispatch(updateProjectAsync(project));
+                            onUpdateProject(project);
                         }}
                     />
                 </Col>
@@ -76,7 +74,7 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
                 labels={project.labels.map((label: any): string => label.toJSON())}
                 onSubmit={(labels: any[]): void => {
                     project.labels = labels.map((labelData): any => new core.classes.Label(labelData));
-                    dispatch(updateProjectAsync(project));
+                    onUpdateProject(project);
                 }}
             />
         </div>

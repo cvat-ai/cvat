@@ -1,5 +1,5 @@
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -12,14 +12,8 @@ from dj_rest_auth.views import (
 from allauth.account import app_settings as allauth_settings
 
 from cvat.apps.iam.views import (
-    SigningView, RegisterViewEx, RulesView, ConfirmEmailViewEx,
-)
-from cvat.apps.iam.views import (
-    github_oauth2_login as github_login,
-    github_oauth2_callback as github_callback,
-    google_oauth2_login as google_login,
-    google_oauth2_callback as google_callback,
-    LoginViewEx, GitHubLogin, GoogleLogin,
+    SigningView, RegisterViewEx, RulesView,
+    ConfirmEmailViewEx, LoginViewEx
 )
 
 urlpatterns = [
@@ -46,16 +40,6 @@ if settings.IAM_TYPE == 'BASIC':
         urlpatterns += [
             re_path(r'^account-confirm-email/(?P<key>[-:\w]+)/$', ConfirmEmailViewEx.as_view(),
                 name='account_confirm_email'),
-        ]
-    if settings.USE_ALLAUTH_SOCIAL_ACCOUNTS:
-        # social accounts
-        urlpatterns += [
-            path('github/login/', github_login, name='github_login'),
-            path('github/login/callback/', github_callback, name='github_callback'),
-            path('github/login/token', GitHubLogin.as_view()),
-            path('google/login/', google_login, name='google_login'),
-            path('google/login/callback/', google_callback, name='google_callback'),
-            path('google/login/token', GoogleLogin.as_view()),
         ]
 
 urlpatterns = [path('auth/', include(urlpatterns))]

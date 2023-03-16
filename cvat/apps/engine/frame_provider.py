@@ -6,15 +6,17 @@
 import math
 from enum import Enum
 from io import BytesIO
+import os
 
 import cv2
 import numpy as np
 from PIL import Image
 
-from cvat.apps.engine.cache import CacheInteraction
+from cvat.apps.engine.cache import MediaCache
 from cvat.apps.engine.media_extractors import VideoReader, ZipReader
 from cvat.apps.engine.mime_types import mimetypes
 from cvat.apps.engine.models import DataChoice, StorageMethodChoice, DimensionType
+from cvat.apps.engine.media_extractors import rotate_within_exif
 from rest_framework.exceptions import ValidationError
 
 class RandomAccessIterator:
@@ -86,6 +88,7 @@ class FrameProvider:
 
     def __init__(self, db_data, dimension=DimensionType.DIM_2D):
         self._db_data = db_data
+        self._dimension = dimension
         self._loaders = {}
 
         reader_class = {
@@ -94,16 +97,16 @@ class FrameProvider:
         }
 
         if db_data.storage_method == StorageMethodChoice.CACHE:
-            cache = CacheInteraction(dimension=dimension)
+            cache = MediaCache(dimension=dimension)
 
             self._loaders[self.Quality.COMPRESSED] = self.BuffChunkLoader(
                 reader_class[db_data.compressed_chunk_type],
-                cache.get_buff_mime,
+                cache.get_buf_chunk_with_mime,
                 self.Quality.COMPRESSED,
                 self._db_data)
             self._loaders[self.Quality.ORIGINAL] = self.BuffChunkLoader(
                 reader_class[db_data.original_chunk_type],
-                cache.get_buff_mime,
+                cache.get_buf_chunk_with_mime,
                 self.Quality.ORIGINAL,
                 self._db_data)
         else:
@@ -162,8 +165,23 @@ class FrameProvider:
         else:
             raise RuntimeError('unsupported output type')
 
-    def get_preview(self):
-        return self._db_data.get_preview_path()
+    def get_preview(self, frame_number):
+        PREVIEW_SIZE = (256, 256)
+        PREVIEW_MIME = 'image/jpeg'
+
+        if self._dimension == DimensionType.DIM_3D:
+            # TODO
+            preview = Image.open(os.path.join(os.path.dirname(__file__), 'assets/3d_preview.jpeg'))
+        else:
+            preview, _ = self.get_frame(frame_number, self.Quality.COMPRESSED, self.Type.PIL)
+
+        preview = rotate_within_exif(preview)
+        preview.thumbnail(PREVIEW_SIZE)
+
+        output_buf = BytesIO()
+        preview.convert('RGB').save(output_buf, format="JPEG")
+
+        return output_buf, PREVIEW_MIME
 
     def get_chunk(self, chunk_number, quality=Quality.ORIGINAL):
         chunk_number = self._validate_chunk_number(chunk_number)
@@ -186,3 +204,7 @@ class FrameProvider:
     def get_frames(self, start_frame, stop_frame, quality=Quality.ORIGINAL, out_type=Type.BUFFER):
         for idx in range(start_frame, stop_frame):
             yield self.get_frame(idx, quality=quality, out_type=out_type)
+
+    @property
+    def data_id(self):
+        return self._db_data.id

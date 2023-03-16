@@ -40,35 +40,7 @@ jobs:
 
   search_cache:
     needs: check_updates
-    if:
-      needs.check_updates.outputs.last_commit_time > needs.check_updates.outputs.last_night_time
-    runs-on: ubuntu-latest
-    outputs:
-      sha: ${{ steps.get-sha.outputs.sha}}
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      REPO: ${{ github.repository }}
-    steps:
-      - name: Getting SHA with cache from the default branch
-        id: get-sha
-        run: |
-          DEFAULT_BRANCH=$(gh api /repos/$REPO | jq -r '.default_branch')
-          for sha in $(gh api "/repos/$REPO/commits?per_page=100&sha=$DEFAULT_BRANCH" | jq -r '.[].sha');
-          do
-            RUN_status=$(gh api /repos/${REPO}/actions/workflows/cache.yml/runs | \
-              jq -r ".workflow_runs[]? | select((.head_sha == \"${sha}\") and (.conclusion == \"success\")) | .status")
-
-            if [[ ${RUN_status} == "completed" ]]; then
-              SHA=$sha
-              break
-            fi
-          done
-
-          echo Default branch is ${DEFAULT_BRANCH}
-          echo Workflow will try to get cache from commit: ${SHA}
-
-          echo "default_branch=${DEFAULT_BRANCH}" >> $GITHUB_OUTPUT
-          echo "sha=${SHA}" >> $GITHUB_OUTPUT
+    uses: ./.github/workflows/search-cache.yml
 
   build:
     needs: search_cache
@@ -157,18 +129,6 @@ jobs:
           path: /tmp/cvat_cache_ui
           key: ${{ runner.os }}-build-ui-${{ needs.search_cache.outputs.sha }}
 
-      - name: Getting CVAT Logstash cache from the default branch
-        uses: actions/cache@v3
-        with:
-          path: /tmp/cvat_cache_logstash
-          key: ${{ runner.os }}-build-logstash-${{ needs.search_cache.outputs.sha }}
-
-      - name: Getting CVAT Elasticsearch cache from the default branch
-        uses: actions/cache@v3
-        with:
-          path: /tmp/cvat_cache_elasticsearch
-          key: ${{ runner.os }}-build-elasticsearch-${{ needs.search_cache.outputs.sha }}
-
       - name: Building CVAT UI image
         uses: docker/build-push-action@v2
         with:
@@ -176,26 +136,6 @@ jobs:
           file: ./Dockerfile.ui
           cache-from: type=local,src=/tmp/cvat_cache_ui
           tags: cvat/ui:latest
-          load: true
-
-      - name: Building CVAT Logstash image
-        uses: docker/build-push-action@v2
-        with:
-          context: ./components/analytics/logstash/
-          file: ./components/analytics/logstash/Dockerfile
-          cache-from: type=local,src=/tmp/cvat_cache_logstash
-          build-args: ELK_VERSION=6.8.23
-          tags: cvat_logstash
-          load: true
-
-      - name: Building CVAT Elasticsearch image
-        uses: docker/build-push-action@v2
-        with:
-          context: ./components/analytics/elasticsearch/
-          file: ./components/analytics/elasticsearch/Dockerfile
-          cache-from: type=local,src=/tmp/cvat_cache_elasticsearch
-          build-args: ELK_VERSION=6.8.23
-          tags: cvat_elasticsearch
           load: true
 
       - name: CVAT server. Extract metadata (tags, labels) for Docker
@@ -221,7 +161,7 @@ jobs:
 
       - name: OPA tests
         run: |
-          curl -L -o opa https://openpolicyagent.org/downloads/v0.34.2/opa_linux_amd64_static
+          curl -L -o opa https://openpolicyagent.org/downloads/v0.45.0/opa_linux_amd64_static
           chmod +x ./opa
           ./opa test cvat/apps/iam/rules
 
@@ -231,9 +171,7 @@ jobs:
             --entrypoint /bin/bash -u root cvat/server \
             -c 'python manage.py spectacular --file /transfer/schema.yml'
           pip3 install --user -r cvat-sdk/gen/requirements.txt
-          cd cvat-sdk/
-          gen/generate.sh
-          cd ..
+          ./cvat-sdk/gen/generate.sh
 
           pip3 install --user 'cvat-sdk/[pytorch]'
           pip3 install --user cvat-cli/
@@ -246,17 +184,17 @@ jobs:
           HOST_COVERAGE_DATA_DIR: ${{ github.workspace }}
           CONTAINER_COVERAGE_DATA_DIR: "/coverage_data"
         run: |
-          docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d cvat_opa cvat_server
+          docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d cvat_opa cvat_server
           max_tries=12
           while [[  $(curl -s -o /dev/null -w "%{http_code}" localhost:8181/health?bundles) != "200" && max_tries -gt 0 ]]; do (( max_tries-- )); sleep 5; done
 
-          docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
+          docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
           -c 'coverage run -a manage.py test cvat/apps && mv .coverage ${CONTAINER_COVERAGE_DATA_DIR}'
 
-          docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
+          docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
           -c 'yarn --frozen-lockfile --ignore-scripts && yarn workspace cvat-core run test'
 
-          docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml down -v
+          docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml down -v
 
       - name: Uploading code coverage results as an artifact
         uses: actions/upload-artifact@v3.1.1
@@ -318,7 +256,7 @@ jobs:
 
       - name: Run CVAT instance
         run: |
-          docker-compose \
+          docker compose \
             -f docker-compose.yml \
             -f docker-compose.dev.yml \
             -f tests/docker-compose.file_share.yml \
@@ -373,13 +311,13 @@ jobs:
             npx cypress run \
               --headed \
               --browser chrome \
-              --config-file cypress_canvas3d.json \
-              --spec 'cypress/integration/${{ matrix.specs }}/**/*.js,cypress/integration/remove_users_tasks_projects_organizations.js'
+              --config-file cypress_canvas3d.config.js \
+              --spec 'cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
             mv ./.nyc_output/out.json ./.nyc_output/out_${{ matrix.specs }}.json
           else
             npx cypress run \
               --browser chrome \
-              --spec 'cypress/integration/${{ matrix.specs }}/**/*.js,cypress/integration/remove_users_tasks_projects_organizations.js'
+              --spec 'cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
             mv ./.nyc_output/out.json ./.nyc_output/out_${{ matrix.specs }}.json
           fi
 
@@ -458,13 +396,13 @@ jobs:
         run: |
             npx nyc report --reporter=text-lcov >> ${HOST_COVERAGE_DATA_DIR}/lcov.info
 
-            docker-compose \
+            docker compose \
               -f docker-compose.yml \
               -f docker-compose.dev.yml \
               -f docker-compose.ci.yml \
               run cvat_ci /bin/bash -c 'cd ${CONTAINER_COVERAGE_DATA_DIR} && coveralls-lcov -v -n lcov.info > ${CONTAINER_COVERAGE_DATA_DIR}/coverage.json'
 
-            docker-compose \
+            docker compose \
               -f docker-compose.yml \
               -f docker-compose.dev.yml \
               -f docker-compose.ci.yml \

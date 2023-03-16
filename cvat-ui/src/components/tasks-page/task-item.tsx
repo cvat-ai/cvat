@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -14,12 +15,12 @@ import Progress from 'antd/lib/progress';
 import moment from 'moment';
 
 import ActionsMenuContainer from 'containers/actions-menu/actions-menu';
+import Preview from 'components/common/preview';
 import { ActiveInference } from 'reducers';
 import AutomaticAnnotationProgress from './automatic-annotation-progress';
 
 export interface TaskItemProps {
     taskInstance: any;
-    previewImage: string;
     deleted: boolean;
     hidden: boolean;
     activeInference: ActiveInference | null;
@@ -28,12 +29,16 @@ export interface TaskItemProps {
 
 class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteComponentProps> {
     private renderPreview(): JSX.Element {
-        const { previewImage } = this.props;
+        const { taskInstance } = this.props;
         return (
             <Col span={4}>
-                <div className='cvat-task-item-preview-wrapper'>
-                    <img alt='Preview' className='cvat-task-item-preview' src={previewImage} />
-                </div>
+                <Preview
+                    task={taskInstance}
+                    loadingClassName='cvat-task-item-loading-preview'
+                    emptyPreviewClassName='cvat-task-item-empty-preview'
+                    previewWrapperClassName='cvat-task-item-preview-wrapper'
+                    previewClassName='cvat-task-item-preview'
+                />
             </Col>
         );
     }
@@ -70,8 +75,8 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
     private renderProgress(): JSX.Element {
         const { taskInstance, activeInference, cancelAutoAnnotation } = this.props;
         // Count number of jobs and performed jobs
-        const numOfJobs = taskInstance.jobs.length;
-        const numOfCompleted = taskInstance.jobs.filter((job: any): boolean => job.stage === 'acceptance').length;
+        const numOfJobs = taskInstance.progress.totalJobs;
+        const numOfCompleted = taskInstance.progress.completedJobs;
 
         // Progress appearance depends on number of jobs
         let progressColor = null;

@@ -1,12 +1,11 @@
 {
   "name": "cvat-core",
-  "version": "7.3.0",
+  "version": "8.2.0",
   "description": "Part of Computer Vision Tool which presents an interface for client-side integration",
   "main": "src/api.ts",
   "scripts": {
     "build": "webpack",
     "test": "jest --config=jest.config.js --coverage",
-    "docs": "jsdoc --readme README.md src/*.js -p -c jsdoc.config.js -d docs",
     "coveralls": "cat ./reports/coverage/lcov.info | coveralls",
     "type-check": "tsc --noEmit",
     "type-check:watch": "yarn run type-check --watch"
@@ -23,10 +22,10 @@
     "coveralls": "^3.0.5",
     "jest": "^26.6.3",
     "jest-junit": "^6.4.0",
-    "jsdoc": "^3.6.6",
     "ts-jest": "26"
   },
   "dependencies": {
+    "@types/lodash": "^4.14.191",
     "axios": "^0.27.2",
     "browser-or-node": "^2.0.0",
     "cvat-data": "link:./../cvat-data",
@@ -36,6 +35,7 @@
     "jest-config": "^29.0.3",
     "js-cookie": "^3.0.1",
     "json-logic-js": "^2.0.1",
+    "lodash": "^4.17.21",
     "platform": "^1.3.5",
     "quickhull": "^1.0.3",
     "store": "^2.0.12",
