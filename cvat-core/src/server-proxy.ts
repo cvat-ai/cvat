@@ -365,7 +365,7 @@ async function register(
 ): Promise<SerializedRegister> {
     let response = null;
     try {
-        const data = JSON.stringify({
+        response = await Axios.post(`${config.backendAPI}/auth/register`, {
             username,
             first_name: firstName,
             last_name: lastName,
@@ -373,11 +373,6 @@ async function register(
             password1: password,
             password2: password,
             confirmations,
-        });
-        response = await Axios.post(`${config.backendAPI}/auth/register`, data, {
-            headers: {
-                'Content-Type': 'application/json',
-            },
         });
         setAuthData(response);
     } catch (errorData) {
@@ -413,15 +408,10 @@ async function logout(): Promise<void> {
 
 async function changePassword(oldPassword: string, newPassword1: string, newPassword2: string): Promise<void> {
     try {
-        const data = JSON.stringify({
+        await Axios.post(`${config.backendAPI}/auth/password/change`, {
             old_password: oldPassword,
             new_password1: newPassword1,
             new_password2: newPassword2,
-        });
-        await Axios.post(`${config.backendAPI}/auth/password/change`, data, {
-            headers: {
-                'Content-Type': 'application/json',
-            },
         });
     } catch (errorData) {
         throw generateError(errorData);
@@ -430,13 +420,8 @@ async function changePassword(oldPassword: string, newPassword1: string, newPass
 
 async function requestPasswordReset(email: string): Promise<void> {
     try {
-        const data = JSON.stringify({
+        await Axios.post(`${config.backendAPI}/auth/password/reset`, {
             email,
-        });
-        await Axios.post(`${config.backendAPI}/auth/password/reset`, data, {
-            headers: {
-                'Content-Type': 'application/json',
-            },
         });
     } catch (errorData) {
         throw generateError(errorData);
@@ -445,16 +430,11 @@ async function requestPasswordReset(email: string): Promise<void> {
 
 async function resetPassword(newPassword1: string, newPassword2: string, uid: string, _token: string): Promise<void> {
     try {
-        const data = JSON.stringify({
+        await Axios.post(`${config.backendAPI}/auth/password/reset/confirm`, {
             new_password1: newPassword1,
             new_password2: newPassword2,
             uid,
             token: _token,
-        });
-        await Axios.post(`${config.backendAPI}/auth/password/reset/confirm`, data, {
-            headers: {
-                'Content-Type': 'application/json',
-            },
         });
     } catch (errorData) {
         throw generateError(errorData);
@@ -628,11 +608,7 @@ async function saveProject(id: number, projectData: Partial<SerializedProject>):
 
     let response = null;
     try {
-        response = await Axios.patch(`${backendAPI}/projects/${id}`, JSON.stringify(projectData), {
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
+        response = await Axios.patch(`${backendAPI}/projects/${id}`, projectData);
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -654,11 +630,7 @@ async function createProject(projectSpec: SerializedProject): Promise<Serialized
     const { backendAPI } = config;
 
     try {
-        const response = await Axios.post(`${backendAPI}/projects`, JSON.stringify(projectSpec), {
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
+        const response = await Axios.post(`${backendAPI}/projects`, projectSpec);
         return response.data;
     } catch (errorData) {
         throw generateError(errorData);
@@ -697,11 +669,7 @@ async function saveTask(id: number, taskData: Partial<SerializedTask>): Promise<
 
     let response = null;
     try {
-        response = await Axios.patch(`${backendAPI}/tasks/${id}`, JSON.stringify(taskData), {
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
+        response = await Axios.patch(`${backendAPI}/tasks/${id}`, taskData);
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -1172,11 +1140,8 @@ async function createTask(taskSpec, taskDataSpec, onUpdate) {
 
     onUpdate('The task is being created on the server..', null);
     try {
-        response = await Axios.post(`${backendAPI}/tasks`, JSON.stringify(taskSpec), {
+        response = await Axios.post(`${backendAPI}/tasks`, taskSpec, {
             params,
-            headers: {
-                'Content-Type': 'application/json',
-            },
         });
     } catch (errorData) {
         throw generateError(errorData);
@@ -1342,11 +1307,7 @@ async function createComment(data) {
 
     let response = null;
     try {
-        response = await Axios.post(`${backendAPI}/comments`, JSON.stringify(data), {
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
+        response = await Axios.post(`${backendAPI}/comments`, data);
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -1360,11 +1321,8 @@ async function createIssue(data) {
     let response = null;
     try {
         const organization = enableOrganization();
-        response = await Axios.post(`${backendAPI}/issues`, JSON.stringify(data), {
+        response = await Axios.post(`${backendAPI}/issues`, data, {
             params: { ...organization },
-            headers: {
-                'Content-Type': 'application/json',
-            },
         });
 
         const commentsResponse = await fetchAll(`${backendAPI}/comments`, {
@@ -1385,11 +1343,7 @@ async function updateIssue(issueID, data) {
 
     let response = null;
     try {
-        response = await Axios.patch(`${backendAPI}/issues/${issueID}`, JSON.stringify(data), {
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
+        response = await Axios.patch(`${backendAPI}/issues/${issueID}`, data);
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -1412,11 +1366,7 @@ async function saveJob(id: number, jobData: Partial<SerializedJob>): Promise<Ser
 
     let response = null;
     try {
-        response = await Axios.patch(`${backendAPI}/jobs/${id}`, JSON.stringify(jobData), {
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
+        response = await Axios.patch(`${backendAPI}/jobs/${id}`, jobData);
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -1644,11 +1594,8 @@ async function updateAnnotations(session, id, data, action) {
 
     let response = null;
     try {
-        response = await requestFunc(url, JSON.stringify(data), {
+        response = await requestFunc(url, data, {
             params,
-            headers: {
-                'Content-Type': 'application/json',
-            },
         });
     } catch (errorData) {
         throw generateError(errorData);
@@ -1660,11 +1607,7 @@ async function runFunctionRequest(body) {
     const { backendAPI } = config;
 
     try {
-        const response = await Axios.post(`${backendAPI}/functions/requests/`, JSON.stringify(body), {
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
+        const response = await Axios.post(`${backendAPI}/functions/requests/`, body);
 
         return response.data;
     } catch (errorData) {
@@ -1816,11 +1759,8 @@ async function createFunction(functionData: any) {
     const { backendAPI } = config;
 
     try {
-        const response = await Axios.post(`${backendAPI}/functions`, JSON.stringify(functionData), {
+        const response = await Axios.post(`${backendAPI}/functions`, functionData, {
             params,
-            headers: {
-                'Content-Type': 'application/json',
-            },
         });
         return response.data;
     } catch (errorData) {
@@ -1832,12 +1772,7 @@ async function saveEvents(events) {
     const { backendAPI } = config;
 
     try {
-        await Axios.post(`${backendAPI}/events`, JSON.stringify(events), {
-            proxy: config.proxy,
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
+        await Axios.post(`${backendAPI}/events`, events);
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -1847,12 +1782,7 @@ async function callFunction(funId, body) {
     const { backendAPI } = config;
 
     try {
-        const response = await Axios.post(`${backendAPI}/functions/${funId}/run`, JSON.stringify(body), {
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
-
+        const response = await Axios.post(`${backendAPI}/functions/${funId}/run`, body);
         return response.data;
     } catch (errorData) {
         throw generateError(errorData);
@@ -1891,11 +1821,7 @@ async function runLambdaRequest(body) {
     const { backendAPI } = config;
 
     try {
-        const response = await Axios.post(`${backendAPI}/lambda/requests`, JSON.stringify(body), {
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
+        const response = await Axios.post(`${backendAPI}/lambda/requests`, body);
 
         return response.data;
     } catch (errorData) {
@@ -1907,11 +1833,7 @@ async function callLambdaFunction(funId, body) {
     const { backendAPI } = config;
 
     try {
-        const response = await Axios.post(`${backendAPI}/lambda/functions/${funId}`, JSON.stringify(body), {
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
+        const response = await Axios.post(`${backendAPI}/lambda/functions/${funId}`, body);
 
         return response.data;
     } catch (errorData) {
@@ -2063,11 +1985,8 @@ async function createOrganization(data) {
 
     let response = null;
     try {
-        response = await Axios.post(`${backendAPI}/organizations`, JSON.stringify(data), {
+        response = await Axios.post(`${backendAPI}/organizations`, data, {
             params: { org: '' },
-            headers: {
-                'Content-Type': 'application/json',
-            },
         });
     } catch (errorData) {
         throw generateError(errorData);
@@ -2081,11 +2000,7 @@ async function updateOrganization(id, data) {
 
     let response = null;
     try {
-        response = await Axios.patch(`${backendAPI}/organizations/${id}`, JSON.stringify(data), {
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
+        response = await Axios.patch(`${backendAPI}/organizations/${id}`, data);
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -2226,11 +2141,8 @@ async function createWebhook(webhookData: any): Promise<any> {
     const { backendAPI } = config;
 
     try {
-        const response = await Axios.post(`${backendAPI}/webhooks`, JSON.stringify(webhookData), {
+        const response = await Axios.post(`${backendAPI}/webhooks`, webhookData, {
             params,
-            headers: {
-                'Content-Type': 'application/json',
-            },
         });
         return response.data;
     } catch (errorData) {
@@ -2243,13 +2155,9 @@ async function updateWebhook(webhookID: number, webhookData: any): Promise<any> 
     const { backendAPI } = config;
 
     try {
-        const response = await Axios
-            .patch(`${backendAPI}/webhooks/${webhookID}`, JSON.stringify(webhookData), {
-                params,
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            });
+        const response = await Axios.patch(`${backendAPI}/webhooks/${webhookID}`, webhookData, {
+            params,
+        });
         return response.data;
     } catch (errorData) {
         throw generateError(errorData);
