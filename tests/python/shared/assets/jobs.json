@@ -1,8 +1,60 @@
 {
-  "count": 15,
+  "count": 17,
   "next": null,
   "previous": null,
   "results": [
+    {
+      "assignee": null,
+      "bug_tracker": "",
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "dimension": "2d",
+      "id": 24,
+      "issues": {
+        "count": 0,
+        "url": "http://localhost:8080/api/issues?job_id=24"
+      },
+      "labels": {
+        "count": 2,
+        "url": "http://localhost:8080/api/labels?job_id=24"
+      },
+      "mode": "annotation",
+      "project_id": 12,
+      "stage": "annotation",
+      "start_frame": 0,
+      "state": "in progress",
+      "status": "annotation",
+      "stop_frame": 1,
+      "task_id": 20,
+      "updated_date": "2023-03-10T11:57:49.019000Z",
+      "url": "http://localhost:8080/api/jobs/24"
+    },
+    {
+      "assignee": null,
+      "bug_tracker": null,
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "dimension": "2d",
+      "id": 23,
+      "issues": {
+        "count": 0,
+        "url": "http://localhost:8080/api/issues?job_id=23"
+      },
+      "labels": {
+        "count": 2,
+        "url": "http://localhost:8080/api/labels?job_id=23"
+      },
+      "mode": "annotation",
+      "project_id": null,
+      "stage": "annotation",
+      "start_frame": 0,
+      "state": "in progress",
+      "status": "annotation",
+      "stop_frame": 1,
+      "task_id": 19,
+      "updated_date": "2023-03-10T11:56:55.066000Z",
+      "url": "http://localhost:8080/api/jobs/23"
+    },
     {
       "assignee": null,
       "bug_tracker": "",

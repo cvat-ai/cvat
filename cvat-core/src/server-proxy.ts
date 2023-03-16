@@ -388,41 +388,13 @@ async function register(
 }
 
 async function login(credential: string, password: string): Promise<void> {
-    const authenticationData = [
-        `${encodeURIComponent(isEmail(credential) ? 'email' : 'username')}=${encodeURIComponent(credential)}`,
-        `${encodeURIComponent('password')}=${encodeURIComponent(password)}`,
-    ]
-        .join('&')
-        .replace(/%20/g, '+');
-
     removeAuthData();
     let authenticationResponse = null;
     try {
-        authenticationResponse = await Axios.post(`${config.backendAPI}/auth/login`, authenticationData);
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
-
-    setAuthData(authenticationResponse);
-}
-
-async function loginWithSocialAccount(
-    tokenURL: string,
-    code: string,
-    authParams?: string,
-    process?: string,
-    scope?: string,
-): Promise<void> {
-    removeAuthData();
-    const data = {
-        code,
-        ...(process ? { process } : {}),
-        ...(scope ? { scope } : {}),
-        ...(authParams ? { auth_params: authParams } : {}),
-    };
-    let authenticationResponse = null;
-    try {
-        authenticationResponse = await Axios.post(tokenURL, data);
+        authenticationResponse = await Axios.post(`${config.backendAPI}/auth/login`, {
+            [isEmail(credential) ? 'email' : 'username']: credential,
+            password,
+        });
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -590,14 +562,13 @@ async function healthCheck(
         });
 }
 
-async function serverRequest(url: string, data: object): Promise<void> {
+async function serverRequest(url: string, data: object): Promise<any> {
     try {
-        return (
-            await Axios({
-                url,
-                ...data,
-            })
-        ).data;
+        const res = await Axios({
+            url,
+            ...data,
+        });
+        return res;
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -2021,8 +1992,10 @@ async function getCloudStorages(filter = {}) {
     let response = null;
     try {
         response = await Axios.get(`${backendAPI}/cloudstorages`, {
-            params: filter,
-            page_size: 12,
+            params: {
+                ...filter,
+                page_size: 12,
+            },
         });
     } catch (errorData) {
         throw generateError(errorData);
@@ -2351,40 +2324,15 @@ async function receiveWebhookEvents(type: WebhookSourceType): Promise<string[]> 
     }
 }
 
-async function socialAuthentication(): Promise<any> {
-    const { backendAPI } = config;
-    try {
-        const response = await Axios.get(`${backendAPI}/auth/social`, {
-            validateStatus: (status) => status === 200 || status === 404,
-        });
-        return (response.status === 200) ? response.data : {};
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
-}
-
-async function selectSSOIdentityProvider(email?: string, iss?: string): Promise<string> {
-    const { backendAPI } = config;
-    try {
-        const response = await Axios.get(
-            `${backendAPI}/auth/oidc/select-idp/`, {
-                params: { ...(email ? { email } : {}), ...(iss ? { iss } : {}) },
-            },
-        );
-        return response.data;
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
-}
-
 export default Object.freeze({
     server: Object.freeze({
+        setAuthData,
+        removeAuthData,
         about,
         share,
         formats,
         login,
         logout,
-        socialAuthentication,
         changePassword,
         requestPasswordReset,
         resetPassword,
@@ -2394,8 +2342,6 @@ export default Object.freeze({
         request: serverRequest,
         userAgreements,
         installedApps,
-        loginWithSocialAccount,
-        selectSSOIdentityProvider,
         hasLimits,
     }),
 

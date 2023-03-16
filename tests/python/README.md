@@ -39,8 +39,10 @@ When you have a new use case which cannot be expressed using objects already
 available in the system like comments, users, issues, please use the following
 procedure to add them:
 
-1. Run a clean CVAT instance
-1. Restore DB and data volume using commands below or running tests
+1. Run a clean CVAT instance and restore DB and data volume
+   ```console
+   pytest tests/python/ --start-services
+   ```
 1. Add new objects (e.g. issues, comments, tasks, projects)
 1. Backup DB and data volume using commands below
 1. Don't forget to dump new objects into corresponding json files inside
