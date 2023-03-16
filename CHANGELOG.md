@@ -20,6 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - An invalid project/org handling in webhooks (<https://github.com/opencv/cvat/pull/5707>)
+- Cloud storage content listing when the manifest name contains special characters
+  (<https://github.com/opencv/cvat/pull/5873>)
 
 ### Security
 - TDB
