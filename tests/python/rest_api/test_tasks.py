@@ -546,6 +546,48 @@ class TestPostTaskData:
             for image_file, frame in zip(image_files, data_meta.frames):
                 assert image_file.name == frame.name
 
+    @pytest.mark.parametrize('data_source', ['client_files', 'server_files'])
+    def test_can_create_task_with_sorting_method_predefined(self, data_source):
+        task_spec = {
+            "name": f"test {self._USERNAME} to create a task with a custom sorting method",
+            "labels": [
+                {
+                    "name": "car",
+                }
+            ],
+        }
+
+        if data_source == 'client_files':
+            image_files = generate_image_files(15)
+
+            # shuffle to check for occasional sorting, e.g. in the DB
+            image_files = image_files[7:] + image_files[5:7] + image_files[:5]
+        elif data_source == 'server_files':
+            # Files from the test file share
+            image_files = ["images/image_3.jpg", "images/image_1.jpg", "images/image_2.jpg"]
+        else:
+            assert False
+
+        task_data = {
+            data_source: image_files,
+            "image_quality": 70,
+            "sorting_method": "predefined",
+        }
+
+        (task_id, _) = create_task(self._USERNAME, task_spec, task_data)
+
+        # check that the frames were sorted again
+        with make_api_client(self._USERNAME) as api_client:
+            (data_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+
+            for image_file, frame in zip(image_files, data_meta.frames):
+                if isinstance(image_file, str):
+                    image_name = image_file
+                else:
+                    image_name = image_file.name
+
+                assert image_name == frame.name
+
     def test_can_get_annotations_from_new_task_with_skeletons(self):
         spec = {
             "name": f"test admin1 to create a task with skeleton",

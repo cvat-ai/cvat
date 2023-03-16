@@ -8,7 +8,7 @@ import io
 import os
 import os.path as osp
 import textwrap
-from typing import Any, Dict, List, Optional, Sequence
+from typing import List, Optional, Sequence
 import pytz
 import traceback
 from datetime import datetime
@@ -59,7 +59,7 @@ from cvat.apps.engine.serializers import (
     FileInfoSerializer, JobReadSerializer, JobWriteSerializer, LabelSerializer,
     LabeledDataSerializer,
     ProjectReadSerializer, ProjectWriteSerializer,
-    RqStatusSerializer, TaskReadSerializer, TaskWriteSerializer, TusUploadingMetaSerializer,
+    RqStatusSerializer, TaskReadSerializer, TaskWriteSerializer,
     UserSerializer, PluginsSerializer, IssueReadSerializer,
     IssueWriteSerializer, CommentReadSerializer, CommentWriteSerializer, CloudStorageWriteSerializer,
     CloudStorageReadSerializer, DatasetFileSerializer,
@@ -950,23 +950,24 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     # UploadMixin method
     def upload_started(self, request):
         """
-        Obtains TUS upload metainfo for the upcoming uploading.
-        Must be used if the initial file order needs to be preserved.
+        Obtains TUS upload info for the upcoming uploading.
         """
 
         if self._is_data_uploading():
             if request.data:
-                serializer = TusUploadingMetaSerializer(self._object, data=request.data)
+                serializer = DataSerializer(self._object, data=request.data)
                 serializer.is_valid(raise_exception=True)
-                file_list = serializer.validated_data['files']
+                file_list = serializer.validated_data.get(self._TUS_FILE_ORDER_FIELD, None)
             else:
                 file_list = None
 
             if file_list:
+                # The files are sent in the arbitrary order and need to be sorted afterwards.
                 # Remember the list of expected files for the upcoming uploading
                 self._init_tus_custom_ordering(file_list)
 
             else:
+                # The files are sent in the correct order.
                 # The server must record uploaded files order during the uploading
                 self._init_tus_input_ordering()
 
@@ -1074,6 +1075,9 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         return Response(data='Unknown upload was finished',
                         status=status.HTTP_400_BAD_REQUEST)
 
+    _TUS_FILE_ORDER_FIELD = 'tus_file_order'
+    assert _TUS_FILE_ORDER_FIELD in DataSerializer().fields
+
     @extend_schema(methods=['POST'],
         summary="Method permanently attaches data (images, video etc.) to a task",
         description=textwrap.dedent("""\
@@ -1100,9 +1104,10 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             The 'Upload-Start' request allows to specify file order for TUS requests.
             This may be needed because files in these requests and the requests themselves
             can come (or be sent) unordered. To state that the input files are sent ordered,
-            pass an empty list of files in the 'files' field. If the files are sent unordered,
-            the ordered file list is expected in the 'files' field. It must be a list of string
-            file names, relatively to the dataset root.
+            pass an empty list of files in the '{tus_file_order_field}' field. If the files
+            are sent unordered, the ordered file list is expected in the '{tus_file_order_field}'
+            field. It must be a list of string file names relatively to the dataset root.
+
             Example:
             files = [
                 cats/cat_1.jpg,
@@ -1121,7 +1126,9 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             https://opencv.github.io/cvat/docs/manual/advanced/dataset_manifest/
 
             After all data is sent, the operation status can be retrieved in the /status endpoint.
-        """),
+        """.format_map(
+            {'tus_file_order_field': _TUS_FILE_ORDER_FIELD}
+        )),
         # TODO: add a tutorial on this endpoint in the REST API docs
         request=DataSerializer,
         parameters=[

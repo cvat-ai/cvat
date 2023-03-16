@@ -4353,7 +4353,8 @@ class TaskDataAPITestCase(ApiTestBase):
         }
 
         def _send_data(tid, user, data):
-            response = self._run_api_v2_tasks_id_data_post(tid, user, data={'files': upload_info},
+            response = self._run_api_v2_tasks_id_data_post(tid, user,
+                data={'tus_file_order': upload_info, 'image_quality': task_data["image_quality"]},
                 headers={ 'Upload-Start': True })
             assert response.status_code == status.HTTP_202_ACCEPTED, response.status_code
 
