@@ -90,7 +90,7 @@ Example file structure for 2D and 3D tasks:
         /0000000001.png
         /0000000002.png
         /0000000003.png
-/image_0N
+/image_N
     /data
         /0000000000.png
         /0000000001.png
@@ -105,7 +105,7 @@ Example file structure for 2D and 3D tasks:
 {{< /tab >}}
 {{< /tabpane >}}
 
-- For KITTI: `image_00`, `image_01`, `image_02`, `image_0N`,
+- For KITTI: `image_00`, `image_01`, `image_02`, `image_N`,
 (where `N` is any number <= 12) are context images.
 - For 3D option 2: a regular image file placed near
 a .pcd file with the same name is considered to be a context image.
