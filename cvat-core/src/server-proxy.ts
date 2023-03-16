@@ -1916,10 +1916,12 @@ async function getCloudStorageContent(id, manifestPath) {
 
     let response = null;
     try {
-        const url = `${backendAPI}/cloudstorages/${id}/content${
-            manifestPath ? `?manifest_path=${manifestPath}` : ''
-        }`;
-        response = await Axios.get(url);
+        const url = `${backendAPI}/cloudstorages/${id}/content`;
+        response = await Axios.get(url, {
+            params: {
+                ...(manifestPath ? { manifest_path: manifestPath } : {}),
+            },
+        });
     } catch (errorData) {
         throw generateError(errorData);
     }
