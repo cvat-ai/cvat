@@ -1574,20 +1574,18 @@ async function updateAnnotations(session, id, data, action) {
     const { backendAPI } = config;
     const url = `${backendAPI}/${session}s/${id}/annotations`;
     const params = {};
-    let requestFunc = null;
+    let method: string;
 
     if (action.toUpperCase() === 'PUT') {
-        requestFunc = Axios.put.bind(Axios);
+        method = 'PUT';
     } else {
-        requestFunc = Axios.patch.bind(Axios);
+        method = 'PATCH';
         params.action = action;
     }
 
     let response = null;
     try {
-        response = await requestFunc(url, data, {
-            params,
-        });
+        response = await Axios(url, { method, data, params });
     } catch (errorData) {
         throw generateError(errorData);
     }
