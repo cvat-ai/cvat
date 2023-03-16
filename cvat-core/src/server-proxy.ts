@@ -679,7 +679,9 @@ async function deleteTask(id: number, organizationID: string | null = null): Pro
 
     try {
         await Axios.delete(`${backendAPI}/tasks/${id}`, {
-            ...(organizationID ? { org: organizationID } : {}),
+            params: {
+                ...(organizationID ? { org: organizationID } : {}),
+            },
         });
     } catch (errorData) {
         throw generateError(errorData);
