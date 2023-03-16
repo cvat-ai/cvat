@@ -1,7 +1,13 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
-import { useRef, useEffect, useState } from 'react';
+
+import {
+    useRef, useEffect, useState, useCallback,
+} from 'react';
+import { useSelector } from 'react-redux';
+import { CombinedState, PluginComponent } from 'reducers';
 
 // eslint-disable-next-line import/prefer-default-export
 export function usePrevious<T>(value: T): T | undefined {
@@ -9,6 +15,36 @@ export function usePrevious<T>(value: T): T | undefined {
     useEffect(() => {
         ref.current = value;
     });
+    return ref.current;
+}
+
+export function useIsMounted(): () => boolean {
+    const ref = useRef(false);
+
+    useEffect(() => {
+        ref.current = true;
+        return () => {
+            ref.current = false;
+        };
+    }, []);
+
+    return useCallback(() => ref.current, []);
+}
+
+export function usePlugins(
+    getState: (state: CombinedState) => PluginComponent[],
+    props: object = {}, state: object = {},
+): any {
+    const components = useSelector(getState);
+    const filteredComponents = components.filter((component) => component.data.shouldBeRendered(props, state));
+    const mappedComponents = filteredComponents.map(({ component }) => component);
+    const ref = useRef<React.Component[]>(mappedComponents);
+
+    if (ref.current.length !== mappedComponents.length ||
+        ref.current.some((comp, idx) => comp !== mappedComponents[idx])) {
+        ref.current = mappedComponents;
+    }
+
     return ref.current;
 }
 
