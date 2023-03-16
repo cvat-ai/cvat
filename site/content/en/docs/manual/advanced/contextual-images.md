@@ -107,7 +107,7 @@ Example file structure for 2D and 3D tasks:
 
 - For KITTI: `image_00`, `image_01`, `image_02`, `image_N`,
 (where `N` is any number <= 12) are context images.
-- For 3D option 2: a regular image file placed near
+- For 3D option 3: a regular image file placed near
 a .pcd file with the same name is considered to be a context image.
 
 For more general information about 3D data formats,
