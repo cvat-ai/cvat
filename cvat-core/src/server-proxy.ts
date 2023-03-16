@@ -544,10 +544,7 @@ async function healthCheck(
 
 async function serverRequest(url: string, data: object): Promise<any> {
     try {
-        const res = await Axios({
-            url,
-            ...data,
-        });
+        const res = await Axios(url, data);
         return res;
     } catch (errorData) {
         throw generateError(errorData);
@@ -2042,12 +2039,7 @@ async function updateOrganizationMembership(membershipId, data) {
     const { backendAPI } = config;
     let response = null;
     try {
-        response = await Axios.patch(
-            `${backendAPI}/memberships/${membershipId}`,
-            {
-                ...data,
-            },
-        );
+        response = await Axios.patch(`${backendAPI}/memberships/${membershipId}`, data);
     } catch (errorData) {
         throw generateError(errorData);
     }
