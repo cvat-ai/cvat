@@ -101,9 +101,9 @@ To track with cuboids, do the following:
 
 ![](/images/gif029_carla_town3.gif)
 
-7. Move several frames forward. You will see the cuboid you've added in frame 1.
+6. Move several frames forward. You will see the cuboid you've added in frame 1.
    Adjust it, if needed.
 
-8. Repeat to the last frame with the presence of the object you are tracking.
+7. Repeat to the last frame with the presence of the object you are tracking.
 
 For more information about tracking, see [Track mode](/docs/manual/basics/track-mode-basics/)
