@@ -85,7 +85,7 @@ To track with cuboids, do the following:
    select the label from the drop-down list > **Track**.
 
 2. The cursor will be followed by a cuboid.
-   Place the cuboid on the 3D object.
+   Place the cuboid on the 3D scene.
 
 3. Use projections to adjust the cuboid.
    Click and hold the left mouse button to edit the label shape on the projection.
