@@ -47,7 +47,7 @@ There are two options available for 3D annotation:
 
 - **Shape**: for tasks like object detection, segmentation, and classification.
 - **Track**: uses interpolation to predict the position of objects in subsequent frames.
-  A unique ID will be assigned to each object and maintained throughout the video or set of images.
+  A unique ID will be assigned to each object and maintained throughout the sequence of images.
 
 ### Annotation with shapes
 
