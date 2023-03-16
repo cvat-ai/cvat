@@ -87,14 +87,22 @@ class TestGetAuditEvents:
             "project_id": self.project_id,
         }
         task_ids = [
-            create_task(self._USERNAME, task_spec, {
-                "image_quality": 10,
-                "client_files": generate_image_files(3),
-            }),
-            create_task(self._USERNAME, task_spec, {
-                "image_quality": 10,
-                "client_files": generate_image_files(3),
-            }),
+            create_task(
+                self._USERNAME,
+                task_spec,
+                {
+                    "image_quality": 10,
+                    "client_files": generate_image_files(3),
+                },
+            ),
+            create_task(
+                self._USERNAME,
+                task_spec,
+                {
+                    "image_quality": 10,
+                    "client_files": generate_image_files(3),
+                },
+            ),
         ]
 
         self.task_ids = [t[0] for t in task_ids]

@@ -540,7 +540,7 @@ class TestPostTaskData:
             for image_file, frame in zip(image_files, data_meta.frames):
                 assert image_file.name == frame.name
 
-    @pytest.mark.parametrize('data_source', ['client_files', 'server_files'])
+    @pytest.mark.parametrize("data_source", ["client_files", "server_files"])
     def test_can_create_task_with_sorting_method_predefined(self, data_source):
         task_spec = {
             "name": f"test {self._USERNAME} to create a task with a custom sorting method",
@@ -551,12 +551,12 @@ class TestPostTaskData:
             ],
         }
 
-        if data_source == 'client_files':
+        if data_source == "client_files":
             image_files = generate_image_files(15)
 
             # shuffle to check for occasional sorting, e.g. in the DB
             image_files = image_files[7:] + image_files[5:7] + image_files[:5]
-        elif data_source == 'server_files':
+        elif data_source == "server_files":
             # Files from the test file share
             image_files = ["images/image_3.jpg", "images/image_1.jpg", "images/image_2.jpg"]
         else:
