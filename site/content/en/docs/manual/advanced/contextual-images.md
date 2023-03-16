@@ -1,22 +1,22 @@
 ---
-title: 'Context images'
-linkTitle: 'Context images'
+title: 'Contextual images'
+linkTitle: 'Contextual images'
 weight: 26
-description: 'Context images of the task'
+description: 'Contextual images of the task'
 ---
 
-Context images are additional images that provide
+Contextual images are additional images that provide
 context or additional information related to the primary image.
 
-Use them to add extra context about the object to improve the accuracy of annotation.
+Use them to add extra contextual about the object to improve the accuracy of annotation.
 
-Context images are available for 2D and 3D tasks.
+Contextual images are available for 2D and 3D tasks.
 
 See:
 
 - [Folder structure](#folder-structure)
 - [Data format](#data-format)
-- [Context images](#context-images)
+- [Contextual images](#contextual-images)
 
 ## Folder structure
 
@@ -28,7 +28,7 @@ Before uploading the archive to CVAT, do the following:
 1. In the folder with the images for annotation, create a folder: `related_images`.
 2. Add to the `related_images` a subfolder with the same name
    as the primary image to which it should be linked.
-3. Place the context image(s) within the subfolder created in step 2.
+3. Place the contextual image(s) within the subfolder created in step 2.
 4. Add folder to the archive.
 5. [Create task](/docs/manual/basics/create_an_annotation_task/#create-a-task).
 
@@ -52,7 +52,7 @@ Example file structure for 2D and 3D tasks:
           image_3_to_be_annotated_jpg/
              context_image_for_image_3.jpg
 {{< /tab >}}
-{{< tab header="3D task" >}}
+{{< tab header="3D option 1" >}}
  root_directory
     image_1_to_be_annotated.pcd
     image_2_to_be_annotated.pcd
@@ -62,22 +62,69 @@ Example file structure for 2D and 3D tasks:
         image_2_to_be_annotated_pcd/
            context_image_for_image_2.jpg
 {{< /tab >}}
+{{< tab header="3D option 2" >}}
+ /any_directory
+    pointcloud.pcd
+    pointcloud.jpg
+/any_other_directory
+    /any_subdirectory
+        pointcloud.pcd
+        pointcloud.png
+{{< /tab >}}
+{{< tab header="3D task KITTI format" >}}
+ /image_00
+    /data
+        /0000000000.png
+        /0000000001.png
+        /0000000002.png
+        /0000000003.png
+/image_01
+    /data
+        /0000000000.png
+        /0000000001.png
+        /0000000002.png
+        /0000000003.png
+/image_02
+    /data
+        /0000000000.png
+        /0000000001.png
+        /0000000002.png
+        /0000000003.png
+/image_N
+    /data
+        /0000000000.png
+        /0000000001.png
+        /0000000002.png
+        /0000000003.png
+/velodyne_points
+    /data
+        /0000000000.bin
+        /0000000001.bin
+        /0000000002.bin
+        /0000000003.bin
+{{< /tab >}}
 {{< /tabpane >}}
+
+- For KITTI: `image_00`, `image_01`, `image_02`, `image_N`,
+(where `N` is any number <= 12) are context images.
+- For 3D option 3: a regular image file placed near
+a .pcd file with the same name is considered to be a context image.
 
 For more general information about 3D data formats,
 see [3D data formats](/docs/manual/basics/create_an_annotation_task/#data-formats-for-a-3d-task).
 
-## Context images
+## Contextual images
 
-The maximum amount of context images is twelve.
+The maximum amount of contextual images is twelve.
 
 By default they will be positioned on the right side of the main image.
 
-> **Note:** By default, only three context images will be visible.
+> **Note:** By default, only three contextual images will be visible.
 
 ![contex_images_1](/images/context_img_01.jpg)
 
-When you add context images to the set, small toolbar will appear on the top of the screen, with the following elements:
+When you add contextual images to the set,
+small toolbar will appear on the top of the screen, with the following elements:
 
 <!--lint disable maximum-line-length-->
 
@@ -97,11 +144,11 @@ Each context image has the following elements:
 
 | Element | Description                                                                                                                             |
 | ------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| 1       | **Full screen**. Click to expand the context image in to the full screen mode. <p>Click again to revert context image to windowed mode. |
-| 2       | **Move context image**. Hold and move context image to the other place on the screen. <p>![contex_images_3](/images/context_img_03.gif) |
-| 3       | **Name**. Unique context image name                                                                                                     |
-| 4       | **Select context image**. Click to open a horisontal listview of all available context images. <p>Click on one to select.               |
-| 5       | **Close**. Click to remove image from context images menu.                                                         |
+| 1       | **Full screen**. Click to expand the contextual image in to the full screen mode. <p>Click again to revert contextual image to windowed mode. |
+| 2       | **Move contextual image**. Hold and move contextual image to the other place on the screen. <p>![contex_images_3](/images/context_img_03.gif) |
+| 3       | **Name**. Unique contextual image name                                                                                                     |
+| 4       | **Select contextual image**. Click to open a horisontal listview of all available contextual images. <p>Click on one to select.               |
+| 5       | **Close**. Click to remove image from contextual images menu.                                                         |
 | 6       | **Extend** Hold and pull to extend the image.                                                                                           |
 
 <!--lint enable maximum-line-length-->
