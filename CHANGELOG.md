@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - \[Server API\] The `predefined` sorting method for task data uploads (<https://github.com/opencv/cvat/pull/5083>)
+- An invalid project/org handling in webhooks (<https://github.com/opencv/cvat/pull/5707>)
 
 ### Security
 - TDB
@@ -102,7 +103,6 @@ Tracks can be exported/imported to/from Datumaro and Sly Pointcloud formats (<ht
 - Fixed error in dataset export when parsing skeleton sublabels containing spaces (<https://github.com/opencv/cvat/pull/5794>)
 - Added missing `CVAT_BASE_URL` in docker-compose.yml (<https://github.com/opencv/cvat/pull/5792>)
 - Create cloud storage button size and models pagination (<https://github.com/opencv/cvat/pull/5858>)
-
 
 ### Security
 - Fixed vulnerability with social authentication (<https://github.com/opencv/cvat/pull/5521>)
