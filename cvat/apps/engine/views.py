@@ -1103,8 +1103,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
               Contains data in the body.
             - Upload-Start - POST, has an 'Upload-Start' header.
               Can contain uploading info in the body.
-            - Upload-Length - HEAD, has an 'Upload-Length' header (read the TUS protocol)
-            - Chunk - PATCH (read the TUS protocol). Sent to /data/<file id> endpoints.
+            - Upload-Length - HEAD, has an 'Upload-Length' header (see the TUS specification)
+            - Chunk - HEAD/PATCH (see the TUS specification). Sent to /data/<file id> endpoints.
             - Upload-Finish - POST, has an 'Upload-Finish' header. Can contain data in the body.
             - Upload-Multiple - POST, has an 'Upload-Multiple' header. Contains data in the body.
 
@@ -1113,7 +1113,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             can come (or be sent) unordered. To state that the input files are sent ordered,
             pass an empty list of files in the '{tus_file_order_field}' field. If the files
             are sent unordered, the ordered file list is expected in the '{tus_file_order_field}'
-            field. It must be a list of string file names relatively to the dataset root.
+            field. It must be a list of string file paths, relative to the dataset root.
 
             Example:
             files = [
@@ -1127,12 +1127,13 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             ('client_files', 'server_files', etc.), when the 'predefined'
             sorting method is selected, the uploaded files will be ordered according
             to the '.jsonl' manifest file, if it is found in the list of files.
-            For archives (e.g. '.zip'), a manifest file ('*.jsonl') required when using
+            For archives (e.g. '.zip'), a manifest file ('*.jsonl') is required when using
             the 'predefined' file ordering. Such file must be provided next to the archive
             in the list of files. Read more about manifest files here:
             https://opencv.github.io/cvat/docs/manual/advanced/dataset_manifest/
 
-            After all data is sent, the operation status can be retrieved in the /status endpoint.
+            After all data is sent, the operation status can be retrieved via
+            the /status endpoint.
         """.format_map(
             {'tus_file_order_field': _TUS_FILE_ORDER_FIELD}
         )),

@@ -397,14 +397,13 @@ def _read_dataset_manifest(path: str, *, create_index: bool = False) -> ImageMan
     Reads an upload manifest file
     """
 
-    if is_dataset_manifest(path):
-        return ImageManifestManager(path, create_index=create_index)
-    elif not is_manifest(path):
+    if not is_dataset_manifest(path):
         raise ValidationError(
-            "Can't recognize a manifest file in "
+            "Can't recognize a dataset manifest file in "
             "the uploaded file '{}'".format(os.path.basename(path))
         )
-    return None
+
+    return ImageManifestManager(path, create_index=create_index)
 
 def _restore_file_order_from_manifest(
     extractor: ImageListReader, manifest: ImageManifestManager, upload_dir: str
