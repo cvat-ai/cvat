@@ -279,7 +279,7 @@ export interface PluginsState {
     components: {
         header: {
             userMenu: {
-                items: [],
+                items: PluginComponent[],
             },
         },
         loginPage: {
