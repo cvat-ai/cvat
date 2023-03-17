@@ -5636,12 +5636,12 @@ paths:
         - Upload-Finish - POST, has an 'Upload-Finish' header. Can contain data in the body.
         - Upload-Multiple - POST, has an 'Upload-Multiple' header. Contains data in the body.
 
-        The 'Upload-Start' request allows to specify file order for TUS requests.
-        This may be needed because files in these requests and the requests themselves
-        can come (or be sent) unordered. To state that the input files are sent ordered,
-        pass an empty list of files in the 'tus_file_order' field. If the files
-        are sent unordered, the ordered file list is expected in the 'tus_file_order'
-        field. It must be a list of string file paths, relative to the dataset root.
+        The 'Upload-Start' request allows to specify the uploaded files should be ordered.
+        This may be needed if the files can be sent unordered. To state that the input files
+        are sent ordered, pass an empty list of files in the 'tus_file_order' field.
+        If the files are sent unordered, the ordered file list is expected
+        in the 'tus_file_order' field. It must be a list of string file paths,
+        relative to the dataset root.
 
         Example:
         files = [
