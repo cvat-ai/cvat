@@ -133,7 +133,7 @@ jobs:
       - name: Verify API schema
         id: verify_schema
         run: |
-          docker run --rm --entrypoint /bin/bash cvat/server:dev \
+          docker run --rm --entrypoint /bin/bash cvat/server:${CVAT_VERSION} \
             -c 'python manage.py spectacular' > cvat/schema-expected.yml
 
           if ! git diff --no-index cvat/schema.yml cvat/schema-expected.yml; then
