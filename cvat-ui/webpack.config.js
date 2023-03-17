@@ -75,6 +75,7 @@ module.exports = (env) => {
             },
             alias: {
                 config$: appConfigFile,
+                react$: '@modules/react',
                 '@root': path.resolve(__dirname, 'src'),
                 '@modules': path.resolve(__dirname, '..', 'node_modules'),
             },

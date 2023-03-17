@@ -17,10 +17,16 @@ const defaultState: PluginsState = {
     },
     current: {},
     components: {
+        header: {
+            userMenu: {
+                items: [],
+            },
+        },
         loginPage: {
             loginForm: [],
         },
         router: [],
+        loggedInModals: [],
     },
 };
 

@@ -277,10 +277,16 @@ export interface PluginsState {
         [index: string]: CallableFunction;
     },
     components: {
+        header: {
+            userMenu: {
+                items: [],
+            },
+        },
         loginPage: {
             loginForm: PluginComponent[];
         }
         router: PluginComponent[],
+        loggedInModals: PluginComponent[],
     }
 }
 
