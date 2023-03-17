@@ -46,7 +46,6 @@ export default function (
         case OrganizationActionsTypes.ACTIVATE_ORGANIZATION_SUCCESS: {
             return {
                 ...state,
-                fetching: false,
                 current: action.payload.organization,
             };
         }

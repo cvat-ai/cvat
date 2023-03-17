@@ -390,8 +390,8 @@ function HeaderContainer(props: Props): JSX.Element {
     ), 50]);
 
     menuItems.push(
-        ...plugins.map(({ component: Component, weight }) => (
-            [<Component targetProps={props} />, weight] as [JSX.Element, number]
+        ...plugins.map(({ component: Component, weight }, index) => (
+            [<Component key={index} targetProps={props} />, weight] as [JSX.Element, number]
         )),
     );
 

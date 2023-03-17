@@ -274,7 +274,10 @@ export interface PluginsState {
     initialized: boolean;
     list: PluginsList;
     current: {
-        [index: string]: CallableFunction;
+        [index: string]: {
+            destructor: CallableFunction;
+            globalStateDidUpdate?: CallableFunction;
+        };
     },
     components: {
         header: {
