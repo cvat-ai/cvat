@@ -72,10 +72,6 @@ jobs:
 
       - name: CVAT SDK. Build
         run: |
-          docker load --input /tmp/cvat_server/image.tar
-          docker run --rm -v ${PWD}/cvat-sdk/schema/:/transfer \
-            --entrypoint /bin/bash -u root cvat/server \
-            -c 'python manage.py spectacular --file /transfer/schema.yml'
           pip3 install --user -r cvat-sdk/gen/requirements.txt
           ./cvat-sdk/gen/generate.sh
 
@@ -140,7 +136,30 @@ jobs:
           docker tag cvat/ui:latest cvat/ui:dev
           docker image ls -a
 
+      - name: Verify API schema
+        id: verify_schema
+        run: |
+          docker run --rm --entrypoint /bin/bash cvat/server:dev \
+            -c 'python manage.py spectacular' > cvat/schema-expected.yml
+
+          if ! git diff --no-index cvat/schema.yml cvat/schema-expected.yml; then
+            echo
+            echo 'API schema has changed! Please update cvat/schema.yml:'
+            echo
+            echo '  docker run --rm --entrypoint /bin/bash cvat/server:dev \'
+            echo "    -c 'python manage.py spectacular' > cvat/schema.yml"
+            exit 1
+          fi
+
+      - name: Upload expected schema as an artifact
+        if: failure() && steps.verify_schema.conclusion == 'failure'
+        uses: actions/upload-artifact@v3.1.2
+        with:
+          name: expected_schema
+          path: cvat/schema-expected.yml
+
       - name: Running REST API and SDK tests
+        id: run_tests
         run: |
           pip3 install --user '/tmp/cvat_sdk/[pytorch]'
           pip3 install --user cvat-cli/
@@ -148,7 +167,7 @@ jobs:
           pytest tests/python -s -v
 
       - name: Creating a log file from cvat containers
-        if: failure()
+        if: failure() && steps.run_tests.conclusion == 'failure'
         env:
           LOGS_DIR: "${{ github.workspace }}/rest_api"
         run: |
@@ -159,8 +178,8 @@ jobs:
             docker logs test_cvat_opa_1 2> $LOGS_DIR/cvat_opa.log
 
       - name: Uploading "cvat" container logs as an artifact
-        if: failure()
-        uses: actions/upload-artifact@v3.1.1
+        if: failure() && steps.run_tests.conclusion == 'failure'
+        uses: actions/upload-artifact@v3.1.2
         with:
           name: rest_api_container_logs
           path: "${{ github.workspace }}/rest_api"

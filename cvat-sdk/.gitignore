@@ -66,7 +66,6 @@ target/
 .ipynb_checkpoints
 
 # Workflow
-schema/
 .openapi-generator/
 
 # Generated code
