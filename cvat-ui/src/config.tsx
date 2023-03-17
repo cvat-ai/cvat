@@ -115,6 +115,17 @@ const HEALTH_CHECK_REQUEST_TIMEOUT = 5000; // ms
 
 const CONTROLS_LOGS_INTERVAL = 90000; // 1.5 min in ms
 
+const RESET_NOTIFICATIONS_PATHS = {
+    from: [
+        '/auth/login',
+        '/auth/register',
+        '/auth/logout',
+    ],
+    exclude: [
+        '/auth',
+    ],
+};
+
 export default {
     UNDEFINED_ATTRIBUTE_VALUE,
     NO_BREAK_SPACE,
@@ -149,4 +160,5 @@ export default {
     CANVAS_WORKSPACE_PADDING,
     CANVAS_WORKSPACE_DEFAULT_CONTEXT_HEIGHT,
     CONTROLS_LOGS_INTERVAL,
+    RESET_NOTIFICATIONS_PATHS,
 };

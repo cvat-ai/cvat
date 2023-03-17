@@ -77,8 +77,8 @@ function build() {
                 const result = await PluginRegistry.apiWrapper(cvat.server.logout);
                 return result;
             },
-            async socialAuthentication() {
-                const result = await PluginRegistry.apiWrapper(cvat.server.socialAuthentication);
+            async hasLimits(userId, orgId) {
+                const result = await PluginRegistry.apiWrapper(cvat.server.hasLimits, userId, orgId);
                 return result;
             },
             async changePassword(oldPassword, newPassword1, newPassword2) {
@@ -122,20 +122,16 @@ function build() {
                 const result = await PluginRegistry.apiWrapper(cvat.server.request, url, data);
                 return result;
             },
-            async installedApps() {
-                const result = await PluginRegistry.apiWrapper(cvat.server.installedApps);
+            async setAuthData(response) {
+                const result = await PluginRegistry.apiWrapper(cvat.server.setAuthData, response);
                 return result;
             },
-            async loginWithSocialAccount(
-                provider: string,
-                code: string,
-                authParams?: string,
-                process?: string,
-                scope?: string,
-            ) {
-                const result = await PluginRegistry.apiWrapper(
-                    cvat.server.loginWithSocialAccount, provider, code, authParams, process, scope,
-                );
+            async removeAuthData() {
+                const result = await PluginRegistry.apiWrapper(cvat.server.removeAuthData);
+                return result;
+            },
+            async installedApps() {
+                const result = await PluginRegistry.apiWrapper(cvat.server.installedApps);
                 return result;
             },
         },
@@ -214,12 +210,6 @@ function build() {
             },
             set backendAPI(value) {
                 config.backendAPI = value;
-            },
-            get proxy() {
-                return config.proxy;
-            },
-            set proxy(value) {
-                config.proxy = value;
             },
             get origin() {
                 return config.origin;

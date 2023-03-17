@@ -12,12 +12,25 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const Dotenv = require('dotenv-webpack');
 const CopyPlugin = require('copy-webpack-plugin');
 
-
 module.exports = (env) => {
-    console.log()
     const defaultAppConfig = path.join(__dirname, 'src/config.tsx');
+    const defaultPlugins = [];
     const appConfigFile = process.env.UI_APP_CONFIG ? process.env.UI_APP_CONFIG : defaultAppConfig;
-    console.log('Application config file is: ', appConfigFile);
+    const pluginsList = process.env.CLIENT_PLUGINS ? process.env.CLIENT_PLUGINS.split(':')
+        .map((s) => s.trim()).filter((s) => !!s) : defaultPlugins
+
+    const transformedPlugins = pluginsList
+        .filter((plugin) => !!plugin).reduce((acc, _path, index) => ({
+            ...acc,
+            [`plugin_${index}`]: {
+                dependOn: 'cvat-ui',
+                // path can be absolute, in this case it is accepted as is
+                // also the path can be relative to cvat-ui root directory
+                import: path.isAbsolute(_path) ? _path : path.join(__dirname, _path, 'src', 'ts', 'index.tsx'),
+            },
+        }), {});
+
+    console.log('List of plugins: ', Object.values(transformedPlugins).map((plugin) => plugin.import));
 
     return {
         target: 'web',
@@ -25,6 +38,7 @@ module.exports = (env) => {
         devtool: 'source-map',
         entry: {
             'cvat-ui': './src/index.tsx',
+            ...transformedPlugins,
         },
         output: {
             path: path.resolve(__dirname, 'dist'),
@@ -56,12 +70,13 @@ module.exports = (env) => {
         },
         resolve: {
             extensions: ['.tsx', '.ts', '.jsx', '.js', '.json'],
-
             fallback: {
                 fs: false,
             },
             alias: {
                 config$: appConfigFile,
+                '@root': path.resolve(__dirname, 'src'),
+                '@modules': path.resolve(__dirname, '..', 'node_modules'),
             },
             modules: [path.resolve(__dirname, 'src'), 'node_modules'],
         },
@@ -120,6 +135,10 @@ module.exports = (env) => {
                             },
                         },
                     ],
+                },
+                {
+                    test: /\.(png|jpg|jpeg|gif)$/i,
+                    type: 'asset/resource',
                 },
                 {
                     test: /3rdparty\/.*\.worker\.js$/,

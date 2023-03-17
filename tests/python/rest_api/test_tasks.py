@@ -13,12 +13,11 @@ from http import HTTPStatus
 from itertools import chain, product
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from time import sleep
 from typing import List
 
 import pytest
 from cvat_sdk import Client, Config
-from cvat_sdk.api_client import apis, models
+from cvat_sdk.api_client import models
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from cvat_sdk.core.helpers import get_paginated_collection
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
@@ -27,10 +26,22 @@ from PIL import Image
 
 import shared.utils.s3 as s3
 from shared.fixtures.init import get_server_image_tag
-from shared.utils.config import BASE_URL, USER_PASS, get_method, make_api_client, patch_method
+from shared.utils.config import (
+    BASE_URL,
+    USER_PASS,
+    get_method,
+    make_api_client,
+    patch_method,
+    post_method,
+)
 from shared.utils.helpers import generate_image_files
 
-from .utils import CollectionSimpleFilterTestBase, export_dataset
+from .utils import (
+    CollectionSimpleFilterTestBase,
+    _test_create_task,
+    export_dataset,
+    wait_until_task_is_created,
+)
 
 
 def get_cloud_storage_content(username, cloud_storage_id, manifest):
@@ -48,7 +59,7 @@ class TestGetTasks:
             results = get_paginated_collection(
                 api_client.tasks_api.list_endpoint,
                 return_json=True,
-                project_id=str(project_id),
+                project_id=project_id,
                 **kwargs,
             )
             assert DeepDiff(data, results, ignore_order=True, exclude_paths=exclude_paths) == {}
@@ -417,7 +428,7 @@ class TestPatchTaskAnnotations:
     ):
         users = find_users(role=role, org=org)
         tasks = tasks_by_org[org]
-        username, tid = find_task_staff_user(tasks, users, task_staff, [12, 14])
+        username, tid = find_task_staff_user(tasks, users, task_staff, [12, 14, 18])
 
         data = request_data(tid)
         with make_api_client(username) as api_client:
@@ -450,48 +461,6 @@ class TestGetTaskDataset:
 class TestPostTaskData:
     _USERNAME = "admin1"
 
-    @staticmethod
-    def _wait_until_task_is_created(api: apis.TasksApi, task_id: int) -> models.RqStatus:
-        for _ in range(100):
-            (status, _) = api.retrieve_status(task_id)
-            if status.state.value in ["Finished", "Failed"]:
-                return status
-            sleep(1)
-        raise Exception("Cannot create task")
-
-    @staticmethod
-    def _test_create_task(username, spec, data, content_type, **kwargs):
-        with make_api_client(username) as api_client:
-            (task, response) = api_client.tasks_api.create(spec, **kwargs)
-            assert response.status == HTTPStatus.CREATED
-
-            if data.get("client_files") and "json" in content_type:
-                # Can't encode binary files in json
-                (_, response) = api_client.tasks_api.create_data(
-                    task.id,
-                    data_request=models.DataRequest(
-                        client_files=data["client_files"],
-                        image_quality=data["image_quality"],
-                    ),
-                    upload_multiple=True,
-                    _content_type="multipart/form-data",
-                    **kwargs,
-                )
-                assert response.status == HTTPStatus.OK
-
-                data = data.copy()
-                del data["client_files"]
-
-            (_, response) = api_client.tasks_api.create_data(
-                task.id, data_request=deepcopy(data), _content_type=content_type, **kwargs
-            )
-            assert response.status == HTTPStatus.ACCEPTED
-
-            status = TestPostTaskData._wait_until_task_is_created(api_client.tasks_api, task.id)
-            assert status.state.value == "Finished"
-
-        return task.id
-
     def _test_cannot_create_task(self, username, spec, data, **kwargs):
         with make_api_client(username) as api_client:
             (task, response) = api_client.tasks_api.create(spec, **kwargs)
@@ -502,7 +471,7 @@ class TestPostTaskData:
             )
             assert response.status == HTTPStatus.ACCEPTED
 
-            status = self._wait_until_task_is_created(api_client.tasks_api, task.id)
+            status = wait_until_task_is_created(api_client.tasks_api, task.id)
             assert status.state.value == "Failed"
 
         return status
@@ -534,7 +503,7 @@ class TestPostTaskData:
             "client_files": generate_image_files(7),
         }
 
-        task_id = self._test_create_task(
+        task_id, _ = _test_create_task(
             self._USERNAME, task_spec, task_data, content_type="multipart/form-data"
         )
 
@@ -565,7 +534,7 @@ class TestPostTaskData:
 
         # Besides testing that the sorting method is applied, this also checks for
         # regressions of <https://github.com/opencv/cvat/issues/4962>.
-        task_id = self._test_create_task(
+        task_id, _ = _test_create_task(
             self._USERNAME, task_spec, task_data, content_type="multipart/form-data"
         )
 
@@ -605,7 +574,7 @@ class TestPostTaskData:
             "client_files": generate_image_files(3),
         }
 
-        task_id = self._test_create_task(
+        task_id, _ = _test_create_task(
             self._USERNAME, spec, task_data, content_type="multipart/form-data"
         )
 
@@ -767,7 +736,7 @@ class TestPostTaskData:
             "server_files": cloud_storage_content,
         }
 
-        self._test_create_task(
+        _test_create_task(
             self._USERNAME, task_spec, data_spec, content_type="application/json", org=org
         )
 
@@ -874,7 +843,7 @@ class TestPostTaskData:
         }
 
         if task_size:
-            task_id = self._test_create_task(
+            task_id, _ = _test_create_task(
                 self._USERNAME, task_spec, data_spec, content_type="application/json", org=org
             )
 
@@ -906,13 +875,13 @@ class TestPostTaskData:
             "job_file_mapping": expected_segments,
         }
 
-        task_id = self._test_create_task(
+        task_id, _ = _test_create_task(
             self._USERNAME, task_spec, data_spec, content_type="application/json"
         )
 
         with make_api_client(self._USERNAME) as api_client:
             jobs: List[models.JobRead] = get_paginated_collection(
-                api_client.jobs_api.list_endpoint, task_id=str(task_id), sort="id"
+                api_client.jobs_api.list_endpoint, task_id=task_id, sort="id"
             )
             (task_meta, _) = api_client.tasks_api.retrieve_data_meta(id=task_id)
 
@@ -929,6 +898,30 @@ class TestPostTaskData:
 
                 start_frame = stop_frame + 1
 
+    def test_cannot_create_task_with_same_labels(self):
+        task_spec = {
+            "name": "test cannot create task with same labels",
+            "labels": [{"name": "l1"}, {"name": "l1"}],
+        }
+        response = post_method(self._USERNAME, "/tasks", task_spec)
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+
+        response = get_method(self._USERNAME, "/tasks")
+        assert response.status_code == HTTPStatus.OK
+
+    def test_cannot_create_task_with_same_skeleton_sublabels(self):
+        task_spec = {
+            "name": "test cannot create task with same skeleton sublabels",
+            "labels": [
+                {"name": "s1", "type": "skeleton", "sublabels": [{"name": "1"}, {"name": "1"}]}
+            ],
+        }
+        response = post_method(self._USERNAME, "/tasks", task_spec)
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+
+        response = get_method(self._USERNAME, "/tasks")
+        assert response.status_code == HTTPStatus.OK
+
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestPatchTaskLabel:
@@ -936,11 +929,11 @@ class TestPatchTaskLabel:
         kwargs.setdefault("return_json", True)
         with make_api_client(user) as api_client:
             return get_paginated_collection(
-                api_client.labels_api.list_endpoint, task_id=str(pid), **kwargs
+                api_client.labels_api.list_endpoint, task_id=pid, **kwargs
             )
 
     def test_can_delete_label(self, tasks, labels, admin_user):
-        task = [t for t in tasks if t["labels"]["count"] > 0][0]
+        task = [t for t in tasks if t["project_id"] is None and t["labels"]["count"] > 0][0]
         label = deepcopy([l for l in labels if l.get("task_id") == task["id"]][0])
         label_payload = {"id": label["id"], "deleted": True}
 
@@ -972,7 +965,7 @@ class TestPatchTaskLabel:
         assert DeepDiff(resulting_labels, task_labels, ignore_order=True) == {}
 
     def test_can_rename_label(self, tasks, labels, admin_user):
-        task = [t for t in tasks if t["labels"]["count"] > 0][0]
+        task = [t for t in tasks if t["project_id"] is None and t["labels"]["count"] > 0][0]
         task_labels = deepcopy([l for l in labels if l.get("task_id") == task["id"]])
         task_labels[0].update({"name": "new name"})
 
@@ -983,7 +976,7 @@ class TestPatchTaskLabel:
         assert DeepDiff(resulting_labels, task_labels, ignore_order=True) == {}
 
     def test_cannot_rename_label_to_duplicate_name(self, tasks, labels, admin_user):
-        task = [t for t in tasks if t["labels"]["count"] > 1][0]
+        task = [t for t in tasks if t["project_id"] is None and t["labels"]["count"] > 1][0]
         task_labels = deepcopy([l for l in labels if l.get("task_id") == task["id"]])
         task_labels[0].update({"name": task_labels[1]["name"]})
 
@@ -991,10 +984,10 @@ class TestPatchTaskLabel:
 
         response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [label_payload]})
         assert response.status_code == HTTPStatus.BAD_REQUEST
-        assert f"Label '{task_labels[0]['name']}' already exists" in response.text
+        assert "All label names must be unique" in response.text
 
     def test_cannot_add_foreign_label(self, tasks, labels, admin_user):
-        task = list(tasks)[0]
+        task = [t for t in tasks if t["project_id"] is None][0]
         new_label = deepcopy(
             [
                 l
@@ -1009,7 +1002,7 @@ class TestPatchTaskLabel:
         assert f"Not found label with id #{new_label['id']} to change" in response.text
 
     def test_admin_can_add_label(self, tasks, admin_user):
-        task = list(tasks)[0]
+        task = [t for t in tasks if t["project_id"] is None][0]
         new_label = {"name": "new name"}
 
         response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [new_label]})
@@ -1032,7 +1025,7 @@ class TestPatchTaskLabel:
             for user, task in product(users, tasks)
             if not is_task_staff(user["id"], task["id"])
             and task["organization"]
-            and is_org_member(user["id"], task["organization"])
+            and is_org_member(user["id"], task["organization"] and task["project_id"] is None)
         )
 
         new_label = {"name": "new name"}
@@ -1099,6 +1092,26 @@ class TestPatchTaskLabel:
         assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == task["labels"]["count"] + 1
 
+    def test_admin_can_add_skeleton(self, tasks, admin_user):
+        task = [t for t in tasks if t["project_id"] is None][0]
+        new_skeleton = {
+            "name": "skeleton1",
+            "type": "skeleton",
+            "sublabels": [
+                {
+                    "name": "1",
+                    "type": "points",
+                }
+            ],
+            "svg": '<circle r="1.5" stroke="black" fill="#b3b3b3" cx="48.794559478759766" '
+            'cy="36.98698806762695" stroke-width="0.1" data-type="element node" '
+            'data-element-id="1" data-node-id="1" data-label-name="597501"></circle>',
+        }
+
+        response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [new_skeleton]})
+        assert response.status_code == HTTPStatus.OK
+        assert response.json()["labels"]["count"] == task["labels"]["count"] + 1
+
 
 @pytest.mark.usefixtures("restore_db_per_function")
 @pytest.mark.usefixtures("restore_cvat_data")
@@ -1128,7 +1141,7 @@ class TestWorkWithTask:
             "server_files": cloud_storage_content,
         }
 
-        task_id = TestPostTaskData._test_create_task(
+        task_id, _ = _test_create_task(
             self._USERNAME, task_spec, data_spec, content_type="application/json", org=org
         )
 
@@ -1306,3 +1319,62 @@ class TestUnequalJobs:
         for old_job, new_job in zip(old_jobs, new_jobs):
             assert old_job.start_frame == new_job.start_frame
             assert old_job.stop_frame == new_job.stop_frame
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+class TestPatchTask:
+    @pytest.mark.parametrize("task_id, project_id, user", [(19, 12, "admin1")])
+    def test_move_task_to_project_with_attributes(self, task_id, project_id, user):
+        response = get_method(user, f"tasks/{task_id}/annotations")
+        assert response.status_code == HTTPStatus.OK
+        annotations = response.json()
+
+        response = patch_method(user, f"tasks/{task_id}", {"project_id": project_id})
+        assert response.status_code == HTTPStatus.OK
+
+        response = get_method(user, f"tasks/{task_id}")
+        assert response.status_code == HTTPStatus.OK
+        assert response.json().get("project_id") == project_id
+
+        response = get_method(user, f"tasks/{task_id}/annotations")
+        assert response.status_code == HTTPStatus.OK
+        assert (
+            DeepDiff(
+                annotations,
+                response.json(),
+                ignore_order=True,
+                exclude_regex_paths=[
+                    r"root\['\w+'\]\[\d+\]\['label_id'\]",
+                    r"root\['\w+'\]\[\d+\]\['attributes'\]\[\d+\]\['spec_id'\]",
+                ],
+            )
+            == {}
+        )
+
+    @pytest.mark.parametrize("task_id, project_id, user", [(20, 13, "admin1")])
+    def test_move_task_from_one_project_to_another_with_attributes(self, task_id, project_id, user):
+        response = get_method(user, f"tasks/{task_id}/annotations")
+        assert response.status_code == HTTPStatus.OK
+        annotations = response.json()
+
+        response = patch_method(user, f"tasks/{task_id}", {"project_id": project_id})
+        assert response.status_code == HTTPStatus.OK
+
+        response = get_method(user, f"tasks/{task_id}")
+        assert response.status_code == HTTPStatus.OK
+        assert response.json().get("project_id") == project_id
+
+        response = get_method(user, f"tasks/{task_id}/annotations")
+        assert response.status_code == HTTPStatus.OK
+        assert (
+            DeepDiff(
+                annotations,
+                response.json(),
+                ignore_order=True,
+                exclude_regex_paths=[
+                    r"root\['\w+'\]\[\d+\]\['label_id'\]",
+                    r"root\['\w+'\]\[\d+\]\['attributes'\]\[\d+\]\['spec_id'\]",
+                ],
+            )
+            == {}
+        )

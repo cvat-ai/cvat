@@ -49,7 +49,6 @@ function MoveTaskModal({
                 labelValues[labelId] = {
                     labelId,
                     newLabelName: null,
-                    clearAttributes: true,
                 };
             });
         }
@@ -152,7 +151,6 @@ function MoveTaskModal({
                         labelValues[id] = {
                             labelId: label.labelId,
                             newLabelName: autoNewLabel ? autoNewLabel.name : null,
-                            clearAttributes: true,
                         };
                     });
                     setLabelMap(labelValues);

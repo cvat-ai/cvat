@@ -63,6 +63,8 @@ function fetchAll(url, filter = {}): Promise<any> {
         }).then((initialData) => {
             const { count, results } = initialData.data;
             result.results = result.results.concat(results);
+            result.count = result.results.length;
+
             if (count <= pageSize) {
                 resolve(result);
                 return;
@@ -260,6 +262,10 @@ Axios.interceptors.request.use((reqConfig) => {
         return reqConfig;
     }
 
+    if (reqConfig.url.endsWith('/limits')) {
+        return reqConfig;
+    }
+
     reqConfig.params = { ...organization, ...(reqConfig.params || {}) };
     return reqConfig;
 });
@@ -382,41 +388,13 @@ async function register(
 }
 
 async function login(credential: string, password: string): Promise<void> {
-    const authenticationData = [
-        `${encodeURIComponent(isEmail(credential) ? 'email' : 'username')}=${encodeURIComponent(credential)}`,
-        `${encodeURIComponent('password')}=${encodeURIComponent(password)}`,
-    ]
-        .join('&')
-        .replace(/%20/g, '+');
-
     removeAuthData();
     let authenticationResponse = null;
     try {
-        authenticationResponse = await Axios.post(`${config.backendAPI}/auth/login`, authenticationData);
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
-
-    setAuthData(authenticationResponse);
-}
-
-async function loginWithSocialAccount(
-    provider: string,
-    code: string,
-    authParams?: string,
-    process?: string,
-    scope?: string,
-): Promise<void> {
-    removeAuthData();
-    const data = {
-        code,
-        ...(process ? { process } : {}),
-        ...(scope ? { scope } : {}),
-        ...(authParams ? { auth_params: authParams } : {}),
-    };
-    let authenticationResponse = null;
-    try {
-        authenticationResponse = await Axios.post(`${config.backendAPI}/auth/${provider}/login/token`, data);
+        authenticationResponse = await Axios.post(`${config.backendAPI}/auth/login`, {
+            [isEmail(credential) ? 'email' : 'username']: credential,
+            password,
+        });
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -496,6 +474,25 @@ async function getSelf(): Promise<SerializedUser> {
     return response.data;
 }
 
+async function hasLimits(userId: number, orgId: number): Promise<boolean> {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.get(`${backendAPI}/limits`, {
+            params: {
+                ...(orgId ? { org_id: orgId } : { user_id: userId }),
+            },
+        });
+        return response.data?.count !== 0;
+    } catch (serverError) {
+        if (serverError.code === 404) {
+            return false;
+        }
+
+        throw serverError;
+    }
+}
+
 async function authorized(): Promise<boolean> {
     try {
         // In CVAT app we use two types of authentication
@@ -565,14 +562,13 @@ async function healthCheck(
         });
 }
 
-async function serverRequest(url: string, data: object): Promise<void> {
+async function serverRequest(url: string, data: object): Promise<any> {
     try {
-        return (
-            await Axios({
-                url,
-                ...data,
-            })
-        ).data;
+        const res = await Axios({
+            url,
+            ...data,
+        });
+        return res;
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -1573,8 +1569,8 @@ async function getFunctions(): Promise<FunctionsResponseBody> {
     const { backendAPI } = config;
 
     try {
-        const response = await Axios.get(`${backendAPI}/functions`);
-        return response.data;
+        const response = await fetchAll(`${backendAPI}/functions`);
+        return response;
     } catch (errorData) {
         if (errorData.response.status === 404) {
             return {
@@ -1996,8 +1992,10 @@ async function getCloudStorages(filter = {}) {
     let response = null;
     try {
         response = await Axios.get(`${backendAPI}/cloudstorages`, {
-            params: filter,
-            page_size: 12,
+            params: {
+                ...filter,
+                page_size: 12,
+            },
         });
     } catch (errorData) {
         throw generateError(errorData);
@@ -2066,6 +2064,7 @@ async function createOrganization(data) {
     let response = null;
     try {
         response = await Axios.post(`${backendAPI}/organizations`, JSON.stringify(data), {
+            params: { org: '' },
             headers: {
                 'Content-Type': 'application/json',
             },
@@ -2325,24 +2324,15 @@ async function receiveWebhookEvents(type: WebhookSourceType): Promise<string[]> 
     }
 }
 
-async function socialAuthentication(): Promise<any> {
-    const { backendAPI } = config;
-    try {
-        const response = await Axios.get(`${backendAPI}/auth/social/methods`);
-        return response.data;
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
-}
-
 export default Object.freeze({
     server: Object.freeze({
+        setAuthData,
+        removeAuthData,
         about,
         share,
         formats,
         login,
         logout,
-        socialAuthentication,
         changePassword,
         requestPasswordReset,
         resetPassword,
@@ -2352,7 +2342,7 @@ export default Object.freeze({
         request: serverRequest,
         userAgreements,
         installedApps,
-        loginWithSocialAccount,
+        hasLimits,
     }),
 
     projects: Object.freeze({
