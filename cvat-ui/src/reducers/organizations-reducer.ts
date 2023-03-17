@@ -2,13 +2,13 @@
 //
 // SPDX-License-Identifier: MIT
 
+import _ from 'lodash';
 import { AuthActions, AuthActionTypes } from 'actions/auth-actions';
 import { OrganizationActions, OrganizationActionsTypes } from 'actions/organization-actions';
 import { OrganizationState } from '.';
 
 const defaultState: OrganizationState = {
     list: [],
-    current: null,
     initialized: false,
     fetching: false,
     creating: false,
@@ -102,12 +102,12 @@ export default function (
             };
         }
         case OrganizationActionsTypes.REMOVE_ORGANIZATION_SUCCESS: {
-            return {
+            const updatedState = {
                 ...state,
-                current: null,
                 list: state.list.filter((org: any) => org.slug !== action.payload.slug),
                 fetching: false,
             };
+            return _.omit(updatedState, 'current');
         }
         case OrganizationActionsTypes.REMOVE_ORGANIZATION_FAILED: {
             return {

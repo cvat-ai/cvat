@@ -848,7 +848,7 @@ export interface ReviewState {
 
 export interface OrganizationState {
     list: any[];
-    current: any | null;
+    current?: any | null;
     initialized: boolean;
     fetching: boolean;
     creating: boolean;
