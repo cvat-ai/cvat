@@ -12,6 +12,7 @@
 
 # Component: Server
 /cvat/          @nmanovic
+/cvat/schema.yml @SpecLad
 
 # Component: CVAT UI
 /cvat-ui/       @bsekachev
