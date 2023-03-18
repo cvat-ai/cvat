@@ -5,9 +5,7 @@
 
 import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
-import {
-    Webhook, SocialAuthMethods, MLModel, ModelProvider,
-} from 'cvat-core-wrapper';
+import { Webhook, MLModel, ModelProvider } from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap } from 'utils/mousetrap-react';
 import { OpenCVTracker } from 'utils/opencv-wrapper/opencv-interfaces';
@@ -26,12 +24,6 @@ export interface AuthState {
     allowChangePassword: boolean;
     allowResetPassword: boolean;
     hasEmailVerificationBeenSent: boolean;
-    socialAuthFetching: boolean;
-    socialAuthInitialized: boolean;
-    socialAuthMethods: SocialAuthMethods;
-    ssoIDPSelectFetching: boolean;
-    ssoIDPSelected: boolean;
-    ssoIDP: string | null;
 }
 
 export interface ProjectsQuery {
@@ -269,10 +261,27 @@ export type PluginsList = {
     [name in SupportedPlugins]: boolean;
 };
 
+export interface PluginComponent {
+    component: any;
+    data: {
+        weight: number;
+        shouldBeRendered: (props?: object, state?: object) => boolean;
+    };
+}
+
 export interface PluginsState {
     fetching: boolean;
     initialized: boolean;
     list: PluginsList;
+    current: {
+        [index: string]: CallableFunction;
+    },
+    components: {
+        loginPage: {
+            loginForm: PluginComponent[];
+        }
+        router: PluginComponent[],
+    }
 }
 
 export interface AboutState {
@@ -409,7 +418,6 @@ export interface NotificationsState {
             requestPasswordReset: null | ErrorState;
             resetPassword: null | ErrorState;
             loadAuthActions: null | ErrorState;
-            sso: null | ErrorState;
         };
         projects: {
             fetching: null | ErrorState;
