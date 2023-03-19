@@ -826,17 +826,6 @@ class CloudStorage(models.Model):
 
     class Meta:
         default_permissions = ()
-        constraints = [
-            models.UniqueConstraint(
-                name='unique_provider_type_resource_credentials',
-                fields=('provider_type', 'resource', 'credentials'),
-            ),
-            models.UniqueConstraint(
-                name='unique_provider_type_resource',
-                fields=('provider_type', 'resource'),
-                condition=models.Q(credentials__isnull=True)
-            ),
-        ]
 
     def __str__(self):
         return "{} {} {}".format(self.provider_type, self.display_name, self.id)
