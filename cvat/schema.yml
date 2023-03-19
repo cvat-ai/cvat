@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: '2.5'
+  version: 2.5.dev20230319134213
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -534,6 +534,8 @@ paths:
                   resource: somebucket
                   display_name: Bucket
                   credentials_type: KEY_SECRET_KEY_PAIR
+                  key: XXX
+                  secret_key: XXX
                   specific_attributes: region=eu-central-1
                   description: Some description
                   manifests:
@@ -670,6 +672,8 @@ paths:
                   resource: somebucket
                   display_name: Bucket
                   credentials_type: KEY_SECRET_KEY_PAIR
+                  key: XXX
+                  secret_key: XXX
                   specific_attributes: region=eu-central-1
                   description: Some description
                   manifests:
@@ -7298,25 +7302,17 @@ components:
       properties:
         chunk_size:
           type: integer
-          maximum: 2147483647
-          minimum: 0
           nullable: true
         size:
           type: integer
-          maximum: 2147483647
-          minimum: 0
         image_quality:
           type: integer
           maximum: 100
           minimum: 0
         start_frame:
           type: integer
-          maximum: 2147483647
-          minimum: 0
         stop_frame:
           type: integer
-          maximum: 2147483647
-          minimum: 0
         frame_filter:
           type: string
           maxLength: 256
@@ -7725,8 +7721,6 @@ components:
       properties:
         frame:
           type: integer
-          maximum: 2147483647
-          minimum: 0
         position:
           type: array
           items:
@@ -7809,18 +7803,12 @@ components:
           readOnly: true
         start_frame:
           type: integer
-          maximum: 2147483647
-          minimum: -2147483648
           readOnly: true
         stop_frame:
           type: integer
-          maximum: 2147483647
-          minimum: -2147483648
           readOnly: true
         data_chunk_size:
           type: integer
-          maximum: 2147483647
-          minimum: 0
           nullable: true
           readOnly: true
         data_compressed_chunk_type:
@@ -9188,8 +9176,6 @@ components:
           $ref: '#/components/schemas/LocationEnum'
         cloud_storage_id:
           type: integer
-          maximum: 2147483647
-          minimum: -2147483648
           nullable: true
     StorageMethod:
       enum:
@@ -9203,8 +9189,6 @@ components:
           $ref: '#/components/schemas/LocationEnum'
         cloud_storage_id:
           type: integer
-          maximum: 2147483647
-          minimum: -2147483648
           nullable: true
     StorageType:
       enum:
@@ -9497,8 +9481,6 @@ components:
           readOnly: true
         data_chunk_size:
           type: integer
-          maximum: 2147483647
-          minimum: 0
           nullable: true
           readOnly: true
         data_compressed_chunk_type:
@@ -9511,13 +9493,9 @@ components:
           readOnly: true
         size:
           type: integer
-          maximum: 2147483647
-          minimum: 0
           readOnly: true
         image_quality:
           type: integer
-          maximum: 32767
-          minimum: 0
           readOnly: true
         data:
           type: integer
@@ -9569,13 +9547,9 @@ components:
           maxLength: 2000
         overlap:
           type: integer
-          maximum: 2147483647
-          minimum: 0
           nullable: true
         segment_size:
           type: integer
-          maximum: 2147483647
-          minimum: 0
         labels:
           type: array
           items:
