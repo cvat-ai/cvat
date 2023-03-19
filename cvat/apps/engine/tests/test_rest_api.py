@@ -2395,7 +2395,14 @@ class TaskMoveAPITestCase(APITestCase):
             "name": "Project for task move 1",
             "owner": cls.admin,
             "labels": [{
-                "name": "car"
+                "name": "car",
+                "attributes": [{
+                    "name": "color",
+                    "mutable": False,
+                    "input_type": AttributeType.SELECT,
+                    "default_value": "white",
+                    "values": ["white", "yellow", "green", "red"]
+                }]
             }, {
                 "name": "person"
             }]

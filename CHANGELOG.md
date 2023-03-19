@@ -5,7 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## \[2.4.0] - Unreleased
+## \[2.5.0] - Unreleased
+### Added
+- TDB
+
+### Changed
+- TDB
+
+### Deprecated
+- TDB
+
+### Removed
+- TDB
+
+### Fixed
+- An invalid project/org handling in webhooks (<https://github.com/opencv/cvat/pull/5707>)
+- Warning `key` is undefined on project page (<https://github.com/opencv/cvat/pull/5876>)
+
+### Security
+- TDB
+
+## \[2.4.0] - 2023-03-16
 ### Added
 - \[SDK\] An arg to wait for data processing in the task data uploading function
   (<https://github.com/opencv/cvat/pull/5502>)
@@ -29,6 +49,7 @@ Tracks can be exported/imported to/from Datumaro and Sly Pointcloud formats (<ht
 - Analytics based on Clickhouse, Vector and Grafana instead of the ELK stack (<https://github.com/opencv/cvat/pull/5646>)
 - \[SDK\] High-level API for working with organizations
   (<https://github.com/opencv/cvat/pull/5718>)
+- Use correct service name in LDAP authentication documentation (<https://github.com/opencv/cvat/pull/5848>)
 
 ### Changed
 - The Docker Compose files now use the Compose Specification version
@@ -66,44 +87,47 @@ Tracks can be exported/imported to/from Datumaro and Sly Pointcloud formats (<ht
 
 ### Fixed
 - Helm: Empty password for Redis (<https://github.com/opencv/cvat/pull/5520>)
-- Fixed HRNet serverless function runtime error on images with alpha channel (<https://github.com/opencv/cvat/pull/5570>)
-- Preview & chunk cache settings are ignored (<https://github.com/opencv/cvat/pull/5569>)
-- Export annotations to Azure container (<https://github.com/opencv/cvat/pull/5596>)
-- Fix the type of the credentials parameter of make_client from the Python SDK
-- Reduced number of noisy information on ortho views for 3D canvas (<https://github.com/opencv/cvat/pull/5608>)
-- Clean up disk space after a project is removed (<https://github.com/opencv/cvat/pull/5632>, <https://github.com/opencv/cvat/pull/5752>)
-- Submit button is locked while file is not selected when importing a dataset (<https://github.com/opencv/cvat/pull/5757>)
-- \[Server API\] Various errors in the generated schema (<https://github.com/opencv/cvat/pull/5575>)
-- Fixed freezing browser when request a job by NaN id (<https://github.com/opencv/cvat/pull/5763>)
-- SiamMask and TransT serverless functions (<https://github.com/opencv/cvat/pull/5658>)
-- Сreating a project or task with the same labels (<https://github.com/opencv/cvat/pull/5700>)
-- \[Server API\] Ability to rename label to an existing name (<https://github.com/opencv/cvat/pull/5662>)
-- Parsing skeleton sublabels containing spaces results in an error in dataset export (<https://github.com/opencv/cvat/pull/5794>)
-- Missing CVAT_BASE_URL in docker-compose.yml (<https://github.com/opencv/cvat/pull/5792>)
+- Resolved HRNet serverless function runtime error on images with an alpha channel (<https://github.com/opencv/cvat/pull/5570>)
+- Addressed ignored preview & chunk cache settings (<https://github.com/opencv/cvat/pull/5569>)
+- Fixed exporting annotations to Azure container (<https://github.com/opencv/cvat/pull/5596>)
+- Corrected the type of the credentials parameter of `make_client` in the Python SDK
+- Reduced noisy information in ortho views for 3D canvas (<https://github.com/opencv/cvat/pull/5608>)
+- Cleared disk space after project removal (<https://github.com/opencv/cvat/pull/5632>, <https://github.com/opencv/cvat/pull/5752>)
+- Locked submit button when file is not selected during dataset import (<https://github.com/opencv/cvat/pull/5757>)
+- \[Server API\]Various errors in the generated schema (<https://github.com/opencv/cvat/pull/5575>)
+- Resolved browser freezing when requesting a job with NaN id (<https://github.com/opencv/cvat/pull/5763>)
+- Fixed SiamMask and TransT serverless functions (<https://github.com/opencv/cvat/pull/5658>)
+- Addressed creation of a project or task with the same labels (<https://github.com/opencv/cvat/pull/5700>)
+- \[Server API\] Fixed ability to rename label to an existing name (<https://github.com/opencv/cvat/pull/5662>)
+- Resolved issue of resetting attributes when moving a task to a project (<https://github.com/opencv/cvat/pull/5764>)
+- Fixed error in dataset export when parsing skeleton sublabels containing spaces (<https://github.com/opencv/cvat/pull/5794>)
+- Added missing `CVAT_BASE_URL` in docker-compose.yml (<https://github.com/opencv/cvat/pull/5792>)
+- Create cloud storage button size and models pagination (<https://github.com/opencv/cvat/pull/5858>)
 
 ### Security
 - Fixed vulnerability with social authentication (<https://github.com/opencv/cvat/pull/5521>)
 
 ## \[2.3.0] - 2022-12-22
 ### Added
-- SDK section in docs (<https://github.com/opencv/cvat/pull/4928>)
-- An option to enable or disable host certificate checking in CLI (<https://github.com/opencv/cvat/pull/4928>)
+- SDK section in documentation (<https://github.com/opencv/cvat/pull/4928>)
+- Option to enable or disable host certificate checking in CLI (<https://github.com/opencv/cvat/pull/4928>)
 - REST API tests with skeletons (<https://github.com/opencv/cvat/pull/4987>)
 - Host schema auto-detection in SDK (<https://github.com/opencv/cvat/pull/4910>)
 - Server compatibility checks in SDK (<https://github.com/opencv/cvat/pull/4935>)
-- Objects sorting option in the sidebar, by z order. Additional visualization when the sorting is applied
+- Objects sorting option in the sidebar, by z-order. Additional visualization when sorting is applied
 (<https://github.com/opencv/cvat/pull/5145>)
-- Added YOLOv5 serverless function NVIDIA GPU support (<https://github.com/opencv/cvat/pull/4960>)
-- Mask tools are supported now (brush, eraser, polygon-plus, polygon-minus, returning masks
-from online detectors & interactors) (<https://github.com/opencv/cvat/pull/4543>)
+- Added YOLOv5 serverless function with NVIDIA GPU support (<https://github.com/opencv/cvat/pull/4960>)
+- Mask tools now supported (brush, eraser, polygon-plus,
+polygon-minus, returning masks from online detectors & interactors)
+(<https://github.com/opencv/cvat/pull/4543>)
 - Added Webhooks (<https://github.com/opencv/cvat/pull/4863>)
-- Authentication with social accounts google & github (<https://github.com/opencv/cvat/pull/5147>, <https://github.com/opencv/cvat/pull/5181>, <https://github.com/opencv/cvat/pull/5295>)
-- REST API tests to export job datasets & annotations and validate their structure  (<https://github.com/opencv/cvat/pull/5160>)
-- Propagation backward on UI (<https://github.com/opencv/cvat/pull/5355>)
+- Authentication with social accounts: Google & GitHub (<https://github.com/opencv/cvat/pull/5147>, <https://github.com/opencv/cvat/pull/5181>, <https://github.com/opencv/cvat/pull/5295>)
+- REST API tests for exporting job datasets & annotations and validating their structure (<https://github.com/opencv/cvat/pull/5160>)
+- Backward propagation on UI (<https://github.com/opencv/cvat/pull/5355>)
 - Keyboard shortcut to delete a frame (Alt + Del) (<https://github.com/opencv/cvat/pull/5369>)
-- A PyTorch dataset adapter layer in the SDK
-  (<https://github.com/opencv/cvat/pull/5417>)
-- A way to debug the server deployed with Docker (<https://github.com/opencv/cvat/issues/5327>)
+- PyTorch dataset adapter layer in the SDK
+(<https://github.com/opencv/cvat/pull/5417>)
+- Method for debugging the server deployed with Docker (<https://github.com/opencv/cvat/issues/5327>)
 
 ### Changed
 - `api/docs`, `api/swagger`, `api/schema`, `server/about` endpoints now allow unauthorized access (<https://github.com/opencv/cvat/pull/4928>, <https://github.com/opencv/cvat/pull/4935>)
@@ -112,7 +136,7 @@ from online detectors & interactors) (<https://github.com/opencv/cvat/pull/4543>
 - Allowed trailing slashes in the SDK host address (<https://github.com/opencv/cvat/pull/5057>)
 - Adjusted initial camera position, enabled 'Reset zoom' option for 3D canvas (<https://github.com/opencv/cvat/pull/5395>)
 - Enabled authentication via email (<https://github.com/opencv/cvat/pull/5037>)
-- Unify error handling with the cloud storage (<https://github.com/opencv/cvat/pull/5389>)
+- Unified error handling with the cloud storage (<https://github.com/opencv/cvat/pull/5389>)
 - In the SDK, functions taking paths as strings now also accept path-like objects
   (<https://github.com/opencv/cvat/pull/5435>)
 
@@ -189,7 +213,6 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
 ### Security
 - `Project.import_dataset` not waiting for completion correctly
   (<https://github.com/opencv/cvat/pull/5459>)
-
 
 ## \[2.2.0] - 2022-09-12
 ### Added

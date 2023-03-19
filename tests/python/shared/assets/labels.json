@@ -1,5 +1,5 @@
 {
-  "count": 27,
+  "count": 33,
   "next": null,
   "previous": null,
   "results": [
@@ -494,6 +494,144 @@
       ],
       "svg": "<line x1=\"55.60200500488281\" y1=\"21.477842330932617\" x2=\"28.344482421875\" y2=\"55.089881896972656\" stroke=\"black\" data-type=\"edge\" data-node-from=\"3\" stroke-width=\"0.5\" data-node-to=\"2\"></line><line x1=\"73.16053771972656\" y1=\"46.059783935546875\" x2=\"55.60200500488281\" y2=\"21.477842330932617\" stroke=\"black\" data-type=\"edge\" data-node-from=\"4\" stroke-width=\"0.5\" data-node-to=\"3\"></line><line x1=\"16.806020736694336\" y1=\"24.822324752807617\" x2=\"73.16053771972656\" y2=\"46.059783935546875\" stroke=\"black\" data-type=\"edge\" data-node-from=\"1\" stroke-width=\"0.5\" data-node-to=\"4\"></line><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"16.806020736694336\" cy=\"24.822324752807617\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-id=\"47\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"28.344482421875\" cy=\"55.089881896972656\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-id=\"48\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"55.60200500488281\" cy=\"21.477842330932617\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"3\" data-node-id=\"3\" data-label-id=\"49\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"73.16053771972656\" cy=\"46.059783935546875\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"4\" data-node-id=\"4\" data-label-id=\"50\"></circle>",
       "type": "skeleton"
+    },
+    {
+      "attributes": [
+        {
+          "default_value": "default",
+          "id": 7,
+          "input_type": "text",
+          "mutable": false,
+          "name": "attr",
+          "values": [
+            "default"
+          ]
+        }
+      ],
+      "color": "#6080c0",
+      "has_parent": false,
+      "id": 51,
+      "name": "cat",
+      "parent_id": null,
+      "sublabels": [],
+      "task_id": 19,
+      "type": "any"
+    },
+    {
+      "attributes": [
+        {
+          "default_value": "white",
+          "id": 8,
+          "input_type": "radio",
+          "mutable": false,
+          "name": "color",
+          "values": [
+            "white",
+            "black",
+            "red"
+          ]
+        }
+      ],
+      "color": "#2080c0",
+      "has_parent": false,
+      "id": 52,
+      "name": "car",
+      "parent_id": null,
+      "sublabels": [],
+      "task_id": 19,
+      "type": "any"
+    },
+    {
+      "attributes": [
+        {
+          "default_value": "default",
+          "id": 9,
+          "input_type": "text",
+          "mutable": false,
+          "name": "attr",
+          "values": [
+            "default"
+          ]
+        }
+      ],
+      "color": "#6080c0",
+      "has_parent": false,
+      "id": 53,
+      "name": "cat",
+      "parent_id": null,
+      "project_id": 12,
+      "sublabels": [],
+      "type": "any"
+    },
+    {
+      "attributes": [
+        {
+          "default_value": "white",
+          "id": 10,
+          "input_type": "radio",
+          "mutable": false,
+          "name": "color",
+          "values": [
+            "white",
+            "black",
+            "red"
+          ]
+        }
+      ],
+      "color": "#2080c0",
+      "has_parent": false,
+      "id": 54,
+      "name": "car",
+      "parent_id": null,
+      "project_id": 12,
+      "sublabels": [],
+      "type": "any"
+    },
+    {
+      "attributes": [
+        {
+          "default_value": "default",
+          "id": 11,
+          "input_type": "text",
+          "mutable": false,
+          "name": "attr",
+          "values": [
+            "default"
+          ]
+        }
+      ],
+      "color": "#6080c0",
+      "has_parent": false,
+      "id": 55,
+      "name": "cat",
+      "parent_id": null,
+      "project_id": 13,
+      "sublabels": [],
+      "type": "any"
+    },
+    {
+      "attributes": [
+        {
+          "default_value": "white",
+          "id": 12,
+          "input_type": "radio",
+          "mutable": false,
+          "name": "color",
+          "values": [
+            "white",
+            "black",
+            "red"
+          ]
+        }
+      ],
+      "color": "#2080c0",
+      "has_parent": false,
+      "id": 56,
+      "name": "car",
+      "parent_id": null,
+      "project_id": 13,
+      "sublabels": [],
+      "type": "any"
     }
   ]
 }
