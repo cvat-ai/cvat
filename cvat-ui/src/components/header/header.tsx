@@ -255,8 +255,6 @@ function HeaderContainer(props: Props): JSX.Element {
                 icon={<ControlOutlined />}
                 key='admin_page'
                 onClick={(): void => {
-                    // false positive
-                    // eslint-disable-next-line
                     window.open(`${tool.server.host}/admin`, '_blank');
                 }}
             >
@@ -483,8 +481,6 @@ function HeaderContainer(props: Props): JSX.Element {
                         href={`${tool.server.host}/analytics`}
                         onClick={(event: React.MouseEvent): void => {
                             event.preventDefault();
-                            // false positive
-                            // eslint-disable-next-line
                             window.open(`${tool.server.host}/analytics`, '_blank');
                         }}
                     >
@@ -502,8 +498,6 @@ function HeaderContainer(props: Props): JSX.Element {
                         href={GITHUB_URL}
                         onClick={(event: React.MouseEvent): void => {
                             event.preventDefault();
-                            // false alarm
-                            // eslint-disable-next-line security/detect-non-literal-fs-filename
                             window.open(GITHUB_URL, '_blank');
                         }}
                     />
@@ -517,8 +511,6 @@ function HeaderContainer(props: Props): JSX.Element {
                         href={GUIDE_URL}
                         onClick={(event: React.MouseEvent): void => {
                             event.preventDefault();
-                            // false alarm
-                            // eslint-disable-next-line security/detect-non-literal-fs-filename
                             window.open(GUIDE_URL, '_blank');
                         }}
                     />
