@@ -137,13 +137,15 @@ class TestCLI:
             "--frame_step",
             str(frame_step),
             "--bug_tracker",
-            "http://localhost/bug"
+            "http://localhost/bug",
         )
 
         task_id = int(stdout.split()[-1])
         task = self.client.tasks.retrieve(task_id)
         frames = task.get_frames_info()
-        assert [f.name for i, f in enumerate(frames) if i % frame_step == 0] == [f.name for f in files]
+        assert [f.name for i, f in enumerate(frames) if i % frame_step == 0] == [
+            f.name for f in files
+        ]
         assert task.get_meta().frame_filter == f"step={frame_step}"
         assert task.bug_tracker == "http://localhost/bug"
 

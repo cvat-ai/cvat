@@ -704,7 +704,7 @@ class DataSerializer(WriteOnceMixin, serializers.ModelSerializer):
             To state that the input files are sent in the correct order,
             pass an empty list.
 
-            If you want to send files in the arbitrary order
+            If you want to send files in an arbitrary order
             and reorder them afterwards on the server,
             pass the list of file names in the required order.
         """)
@@ -746,13 +746,6 @@ class DataSerializer(WriteOnceMixin, serializers.ModelSerializer):
                     )
 
                 existing_files.add(filename)
-
-        return value
-
-    def validate_upload_file_order(self, value):
-        for filename in value:
-            if filename.startswith('..') or filename.startswith('/') or filename.startswith('\\'):
-                raise serializers.ValidationError(f"Invalid filename '{filename}'")
 
         return value
 

@@ -498,9 +498,10 @@ class VideoManifestManager(_ManifestManager):
         if not len(self._reader):
             tmp_file = StringIO()
             self._write_core_part(tmp_file, _tqdm)
+
             with open(self._manifest.path, 'w') as manifest_file:
                 self._write_base_information(manifest_file)
-                manifest_file.write(tmp_file.read())
+                manifest_file.write(tmp_file.getvalue())
         else:
             with open(self._manifest.path, 'w') as manifest_file:
                 self._write_base_information(manifest_file)

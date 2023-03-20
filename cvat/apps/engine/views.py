@@ -892,8 +892,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         expected_files = self._read_tus_upload_meta_file(osp.join(upload_dir, upload_metafile))
         expected_files.append(upload_metafile)
 
-        uploaded_file_names = { f: f for f in uploaded_files }
-        mismatching_files = list(uploaded_file_names.keys() ^ expected_files)
+        uploaded_file_names = set(uploaded_files)
+        mismatching_files = list(uploaded_file_names ^ expected_files)
         if mismatching_files:
             DISPLAY_ENTRIES_COUNT = 5
             mismatching_display = [
@@ -902,7 +902,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             ]
             remaining_count = len(mismatching_files) - DISPLAY_ENTRIES_COUNT
             raise self._InvalidMetafileError(
-                "Uploaded files do no match the upload file list contents. "
+                "Uploaded files do not match the upload file list contents. "
                 "Please check the upload metainfo and the list of uploaded files. "
                 "Mismatching files: {}{}"
                 .format(
@@ -911,7 +911,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 )
             )
 
-        return [uploaded_file_names[fn] for fn in expected_files]
+        return list(expected_files)
 
     # UploadMixin method
     def init_tus_upload(self, request):
