@@ -52,6 +52,7 @@ export default function ProjectActionsMenuComponent(props: Props): JSX.Element {
                 Import dataset
             </Menu.Item>
             <Menu.Item
+                key='backup-project'
                 disabled={exportBackupIsActive}
                 onClick={() => dispatch(exportActions.openExportBackupModal(projectInstance))}
                 icon={exportBackupIsActive && <LoadingOutlined id='cvat-export-project-loading' />}

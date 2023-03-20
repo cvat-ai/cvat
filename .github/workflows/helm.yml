@@ -66,11 +66,8 @@ jobs:
         kubectl logs $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}')
 
 
-    - name: Generate schema
+    - name: Generate SDK
       run: |
-        mkdir cvat-sdk/schema
-        kubectl exec $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}') -- /bin/bash -c "python manage.py spectacular --file /tmp/schema.yml"
-        kubectl cp $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}'):/tmp/schema.yml cvat-sdk/schema/schema.yml
         pip3 install --user -r cvat-sdk/gen/requirements.txt
         ./cvat-sdk/gen/generate.sh
 
