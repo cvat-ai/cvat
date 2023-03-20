@@ -893,7 +893,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         expected_files.append(upload_metafile)
 
         uploaded_file_names = set(uploaded_files)
-        mismatching_files = list(uploaded_file_names ^ expected_files)
+        mismatching_files = list(uploaded_file_names.symmetric_difference(expected_files))
         if mismatching_files:
             DISPLAY_ENTRIES_COUNT = 5
             mismatching_display = [
