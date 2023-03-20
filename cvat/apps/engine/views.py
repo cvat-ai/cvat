@@ -1103,7 +1103,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
               Contains data in the body.
             - Upload-Start - POST, has an 'Upload-Start' header.
               Can contain uploading info in the body.
-            - Upload-Length - HEAD, has an 'Upload-Length' header (see the TUS specification)
+            - Upload-Length - POST, has an 'Upload-Length' header (see the TUS specification)
             - Chunk - HEAD/PATCH (see the TUS specification). Sent to /data/<file id> endpoints.
             - Upload-Finish - POST, has an 'Upload-Finish' header. Can contain data in the body.
             - Upload-Multiple - POST, has an 'Upload-Multiple' header. Contains data in the body.
