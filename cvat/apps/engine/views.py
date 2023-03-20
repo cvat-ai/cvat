@@ -957,7 +957,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             if request.data:
                 serializer = DataSerializer(self._object, data=request.data)
                 serializer.is_valid(raise_exception=True)
-                file_list = serializer.validated_data.get(self._TUS_FILE_ORDER_FIELD, None)
+                file_list = serializer.validated_data.get(self._UPLOAD_FILE_ORDER_FIELD, None)
             else:
                 file_list = None
 
@@ -1078,8 +1078,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         return Response(data='Unknown upload was finished',
                         status=status.HTTP_400_BAD_REQUEST)
 
-    _TUS_FILE_ORDER_FIELD = 'tus_file_order'
-    assert _TUS_FILE_ORDER_FIELD in DataSerializer().fields
+    _UPLOAD_FILE_ORDER_FIELD = 'upload_file_order'
+    assert _UPLOAD_FILE_ORDER_FIELD in DataSerializer().fields
 
     @extend_schema(methods=['POST'],
         summary="Method permanently attaches data (images, video, etc.) to a task",
@@ -1094,7 +1094,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             and
 
             2.1. An Upload-Start request
-            2.2.a. The regular TUS protocol requests (Upload-Length + Chunks)
+            2.2.a. Regular TUS protocol requests (Upload-Length + Chunks)
             2.2.b. Upload-Multiple requests
             2.3. An Upload-Finish request
 
@@ -1110,9 +1110,9 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
             The 'Upload-Start' request allows to specify the uploaded files should be ordered.
             This may be needed if the files can be sent unordered. To state that the input files
-            are sent ordered, pass an empty list of files in the '{tus_file_order_field}' field.
+            are sent ordered, pass an empty list of files in the '{upload_file_order_field}' field.
             If the files are sent unordered, the ordered file list is expected
-            in the '{tus_file_order_field}' field. It must be a list of string file paths,
+            in the '{upload_file_order_field}' field. It must be a list of string file paths,
             relative to the dataset root.
 
             Example:
@@ -1135,7 +1135,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             After all data is sent, the operation status can be retrieved via
             the /status endpoint.
         """.format_map(
-            {'tus_file_order_field': _TUS_FILE_ORDER_FIELD}
+            {'upload_file_order_field': _UPLOAD_FILE_ORDER_FIELD}
         )),
         # TODO: add a tutorial on this endpoint in the REST API docs
         request=DataSerializer,

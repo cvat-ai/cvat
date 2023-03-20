@@ -340,7 +340,7 @@ class DataUploader(Uploader):
         if str(kwargs.get("sorting_method")).lower() == "predefined":
             # Request file ordering, because we reorder files to send more efficiently
             upload_info = {
-                "tus_file_order": [p.name for p in resources],
+                "upload_file_order": [p.name for p in resources],
                 "image_quality": kwargs["image_quality"],
             }
 
