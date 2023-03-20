@@ -150,14 +150,14 @@ class TestTaskUsecases:
             fname.write_bytes(f.getvalue())
             task_filenames.append(fname)
 
-        task_files = [task_files[i] for i in [2, 4, 1, 5, 0, 3]]
+        task_filenames = [task_filenames[i] for i in [2, 4, 1, 5, 0, 3]]
 
         task.upload_data(
-            resources=task_files,
+            resources=task_filenames,
             params={"sorting_method": "predefined"},
         )
 
-        assert [f.name for f in task.get_frames_info()] == [f.name for f in task_files]
+        assert [f.name for f in task.get_frames_info()] == [f.name for f in task_filenames]
 
     def test_can_create_task_with_remote_data(self):
         task = self.client.tasks.create_from_data(
