@@ -528,8 +528,6 @@ class TestPostTaskData:
             "sorting_method": "natural",
         }
 
-        # Besides testing that the sorting method is applied, this also checks for
-        # regressions of <https://github.com/opencv/cvat/issues/4962>.
         task_id, _ = create_task(self._USERNAME, task_spec, task_data)
 
         # check that the frames were sorted again

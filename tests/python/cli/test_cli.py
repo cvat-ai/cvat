@@ -1,11 +1,10 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import io
 import json
 import os
-import os.path as osp
 from pathlib import Path
 
 import packaging.version as pv
@@ -118,8 +117,11 @@ class TestCLI:
         assert self.client.tasks.retrieve(task_id).size == 5
 
     def test_can_create_task_from_local_images_with_parameters(self):
-        files = generate_images(self.tmp_path, 5)
+        # Checks for regressions of <https://github.com/opencv/cvat/issues/4962>
+
+        files = generate_images(self.tmp_path, 7)
         files.sort(reverse=True)
+        frame_step = 3
 
         stdout = self.run_cli(
             "create",
@@ -132,12 +134,18 @@ class TestCLI:
             "0.01",
             "--sorting-method",
             "predefined",
+            "--frame_step",
+            str(frame_step),
+            "--bug_tracker",
+            "http://localhost/bug"
         )
 
         task_id = int(stdout.split()[-1])
         task = self.client.tasks.retrieve(task_id)
         frames = task.get_frames_info()
-        assert [f.name for f in frames] == [osp.basename(f) for f in files]
+        assert [f.name for i, f in enumerate(frames) if i % frame_step == 0] == [f.name for f in files]
+        assert task.get_meta().frame_filter == f"step={frame_step}"
+        assert task.bug_tracker == "http://localhost/bug"
 
     def test_can_list_tasks_in_simple_format(self, fxt_new_task: Task):
         output = self.run_cli("ls")

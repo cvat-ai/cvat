@@ -144,11 +144,11 @@ class TestTaskUsecases:
         task = fxt_new_task_without_data
 
         task_files = generate_image_files(6)
-        for i, f in enumerate(task_files):
+        task_filenames = []
+        for f in task_files:
             fname = self.tmp_path / osp.basename(f.name)
-            with fname.open("wb") as fd:
-                fd.write(f.getvalue())
-                task_files[i] = str(fname)
+            fname.write_bytes(f.getvalue())
+            task_filenames.append(fname)
 
         task_files = [task_files[i] for i in [2, 4, 1, 5, 0, 3]]
 
@@ -157,7 +157,7 @@ class TestTaskUsecases:
             params={"sorting_method": "predefined"},
         )
 
-        assert [f.name for f in task.get_meta().frames] == [osp.basename(f) for f in task_files]
+        assert [f.name for f in task.get_frames_info()] == [f.name for f in task_files]
 
     def test_can_create_task_with_remote_data(self):
         task = self.client.tasks.create_from_data(
