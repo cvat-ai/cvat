@@ -84,7 +84,7 @@ function WebhookItem(props: WebhookItemProps): JSX.Element | null {
                 }
 
             </Col>
-            <Col span={7}>
+            <Col span={6}>
                 <Paragraph ellipsis={{
                     tooltip: description,
                     rows: 2,
@@ -101,7 +101,7 @@ function WebhookItem(props: WebhookItemProps): JSX.Element | null {
                 )}
                 <Text type='secondary'>{`Last updated ${updated}`}</Text>
             </Col>
-            <Col span={7}>
+            <Col span={6} offset={1}>
                 <Paragraph ellipsis={{
                     tooltip: targetURL,
                     rows: 3,
@@ -111,7 +111,7 @@ function WebhookItem(props: WebhookItemProps): JSX.Element | null {
                     {targetURL}
                 </Paragraph>
             </Col>
-            <Col span={6}>
+            <Col span={6} offset={1}>
                 <Paragraph ellipsis={{
                     tooltip: eventsList,
                     rows: 3,
