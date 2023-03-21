@@ -438,6 +438,10 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             .filter(({ data: { shouldBeRendered } }) => shouldBeRendered(this.props, this.state))
             .map(({ component: Component }) => Component());
 
+        const loggedInModals = pluginComponents.loggedInModals
+            .filter(({ data: { shouldBeRendered } }) => shouldBeRendered(this.props, this.state))
+            .map(({ component: Component }) => Component);
+
         if (readyForRender) {
             if (user && user.isVerified) {
                 return (
@@ -500,6 +504,9 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                     <ExportBackupModal />
                                     <ImportDatasetModal />
                                     <ImportBackupModal />
+                                    { loggedInModals.map((Component, idx) => (
+                                        <Component key={idx} targetProps={this.props} targetState={this.state} />
+                                    ))}
                                     <OrganizationWatcher />
                                     {/* eslint-disable-next-line */}
                                     <a id='downloadAnchor' target='_blank' style={{ display: 'none' }} download />

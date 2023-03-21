@@ -5,7 +5,9 @@
 
 import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
-import { Webhook, MLModel, ModelProvider } from 'cvat-core-wrapper';
+import {
+    Webhook, MLModel, ModelProvider, Organization,
+} from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap } from 'utils/mousetrap-react';
 import { OpenCVTracker } from 'utils/opencv-wrapper/opencv-interfaces';
@@ -274,13 +276,22 @@ export interface PluginsState {
     initialized: boolean;
     list: PluginsList;
     current: {
-        [index: string]: CallableFunction;
+        [index: string]: {
+            destructor: CallableFunction;
+            globalStateDidUpdate?: CallableFunction;
+        };
     },
     components: {
+        header: {
+            userMenu: {
+                items: PluginComponent[],
+            },
+        },
         loginPage: {
             loginForm: PluginComponent[];
         }
         router: PluginComponent[],
+        loggedInModals: PluginComponent[],
     }
 }
 
@@ -839,7 +850,7 @@ export interface ReviewState {
 
 export interface OrganizationState {
     list: any[];
-    current: any | null;
+    current?: Organization | null;
     initialized: boolean;
     fetching: boolean;
     creating: boolean;

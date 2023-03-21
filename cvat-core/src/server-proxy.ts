@@ -469,25 +469,6 @@ async function getSelf(): Promise<SerializedUser> {
     return response.data;
 }
 
-async function hasLimits(userId: number, orgId: number): Promise<boolean> {
-    const { backendAPI } = config;
-
-    try {
-        const response = await Axios.get(`${backendAPI}/limits`, {
-            params: {
-                ...(orgId ? { org_id: orgId } : { user_id: userId }),
-            },
-        });
-        return response.data?.count !== 0;
-    } catch (serverError) {
-        if (serverError.code === 404) {
-            return false;
-        }
-
-        throw serverError;
-    }
-}
-
 async function authorized(): Promise<boolean> {
     try {
         // In CVAT app we use two types of authentication
@@ -2195,7 +2176,6 @@ export default Object.freeze({
         request: serverRequest,
         userAgreements,
         installedApps,
-        hasLimits,
     }),
 
     projects: Object.freeze({

@@ -77,10 +77,6 @@ function build() {
                 const result = await PluginRegistry.apiWrapper(cvat.server.logout);
                 return result;
             },
-            async hasLimits(userId, orgId) {
-                const result = await PluginRegistry.apiWrapper(cvat.server.hasLimits, userId, orgId);
-                return result;
-            },
             async changePassword(oldPassword, newPassword1, newPassword2) {
                 const result = await PluginRegistry.apiWrapper(
                     cvat.server.changePassword,
