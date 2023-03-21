@@ -8911,7 +8911,7 @@ components:
           type: string
           format: uri
           minLength: 1
-          maxLength: 200
+          maxLength: 8192
         description:
           type: string
           maxLength: 128
@@ -9861,7 +9861,7 @@ components:
           type: string
           format: uri
           minLength: 1
-          maxLength: 200
+          maxLength: 8192
         description:
           type: string
           maxLength: 128
