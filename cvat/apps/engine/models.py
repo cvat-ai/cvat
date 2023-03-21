@@ -781,6 +781,7 @@ class CredentialsTypeChoice(str, Enum):
     ACCOUNT_NAME_TOKEN_PAIR = 'ACCOUNT_NAME_TOKEN_PAIR' # nosec
     KEY_FILE_PATH = 'KEY_FILE_PATH'
     ANONYMOUS_ACCESS = 'ANONYMOUS_ACCESS'
+    CONNECTION_STRING = 'CONNECTION_STRING'
 
     @classmethod
     def choices(cls):

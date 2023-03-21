@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## \[2.5.0] - Unreleased
 ### Added
 - \[Server API\] An option to supply custom file ordering for task data uploads with TUS (<https://github.com/opencv/cvat/pull/5083>)
+- Add support for Azure Blob Storage connection string authentication(<https://github.com/openvinotoolkit/cvat/pull/4649>)
 
 ### Changed
 - Allowed to use dataset manifest for the `predefined` sorting method for task data (<https://github.com/opencv/cvat/pull/5083>)

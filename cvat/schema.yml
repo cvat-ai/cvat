@@ -417,6 +417,7 @@ paths:
           - ACCOUNT_NAME_TOKEN_PAIR
           - KEY_FILE_PATH
           - ANONYMOUS_ACCESS
+          - CONNECTION_STRING
       - name: filter
         required: false
         in: query
@@ -7237,6 +7238,9 @@ components:
         secret_key:
           type: string
           maxLength: 44
+        connection_string:
+          type: string
+          maxLength: 440
         key_file:
           type: string
           format: binary
@@ -7307,6 +7311,7 @@ components:
       - ACCOUNT_NAME_TOKEN_PAIR
       - KEY_FILE_PATH
       - ANONYMOUS_ACCESS
+      - CONNECTION_STRING
       type: string
     DataMetaRead:
       type: object
@@ -8718,6 +8723,9 @@ components:
         secret_key:
           type: string
           maxLength: 44
+        connection_string:
+          type: string
+          maxLength: 440
         key_file:
           type: string
           format: binary
