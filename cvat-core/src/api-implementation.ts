@@ -3,7 +3,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { SocialAuthMethod, SocialAuthMethodsRawType } from './auth-methods';
 import config from './config';
 
 import PluginRegistry from './plugins';
@@ -86,21 +85,6 @@ export default function implementAPI(cvat) {
         await serverProxy.server.logout();
     };
 
-    cvat.server.hasLimits.implementation = async (userId, orgId) => {
-        const result = await serverProxy.server.hasLimits(userId, orgId);
-        return result;
-    };
-
-    cvat.server.socialAuthentication.implementation = async () => {
-        const result: SocialAuthMethodsRawType = await serverProxy.server.socialAuthentication();
-        return Object.entries(result).map(([provider, value]) => new SocialAuthMethod({ ...value, provider }));
-    };
-
-    cvat.server.selectSSOIdentityProvider.implementation = async (email?: string, iss?: string):Promise<string> => {
-        const result: string = await serverProxy.server.selectSSOIdentityProvider(email, iss);
-        return result;
-    };
-
     cvat.server.changePassword.implementation = async (oldPassword, newPassword1, newPassword2) => {
         await serverProxy.server.changePassword(oldPassword, newPassword1, newPassword2);
     };
@@ -133,19 +117,18 @@ export default function implementAPI(cvat) {
         return result;
     };
 
-    cvat.server.installedApps.implementation = async () => {
-        const result = await serverProxy.server.installedApps();
+    cvat.server.setAuthData.implementation = async (response) => {
+        const result = await serverProxy.server.setAuthData(response);
         return result;
     };
 
-    cvat.server.loginWithSocialAccount.implementation = async (
-        tokenURL: string,
-        code: string,
-        authParams?: string,
-        process?: string,
-        scope?: string,
-    ) => {
-        const result = await serverProxy.server.loginWithSocialAccount(tokenURL, code, authParams, process, scope);
+    cvat.server.removeAuthData.implementation = async () => {
+        const result = await serverProxy.server.removeAuthData();
+        return result;
+    };
+
+    cvat.server.installedApps.implementation = async () => {
+        const result = await serverProxy.server.installedApps();
         return result;
     };
 

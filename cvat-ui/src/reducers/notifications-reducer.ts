@@ -37,7 +37,6 @@ const defaultState: NotificationsState = {
             requestPasswordReset: null,
             resetPassword: null,
             loadAuthActions: null,
-            sso: null,
         },
         projects: {
             fetching: null,
@@ -362,21 +361,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.errors.auth,
                         loadAuthActions: {
                             message: 'Could not check available auth actions',
-                            reason: action.payload.error.toString(),
-                        },
-                    },
-                },
-            };
-        }
-        case AuthActionTypes.SELECT_IDENTITY_PROVIDER_FAILED: {
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    auth: {
-                        ...state.errors.auth,
-                        sso: {
-                            message: 'Single sign-on (SSO) is not configured on your account',
                             reason: action.payload.error.toString(),
                         },
                     },
