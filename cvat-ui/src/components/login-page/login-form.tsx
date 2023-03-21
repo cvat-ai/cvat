@@ -156,7 +156,11 @@ function LoginFormComponent(props: Props): JSX.Element {
                         </Form.Item>
                     )
                 }
-                { pluginsToRender.map((Component: React.FunctionComponent, index: number) => <Component key={index} />)}
+                {
+                    pluginsToRender.map(({ component: Component }, index) => (
+                        <Component targetProps={props} targetState={{ credential }} key={index} />
+                    ))
+                }
             </Form>
         </div>
     );
