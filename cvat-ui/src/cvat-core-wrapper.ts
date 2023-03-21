@@ -20,7 +20,8 @@ import {
 import { Storage, StorageData } from 'cvat-core/src/storage';
 import Issue from 'cvat-core/src/issue';
 import Comment from 'cvat-core/src/comment';
-import { SocialAuthMethods, SocialAuthMethod, SelectionSchema } from 'cvat-core/src/auth-methods';
+import User from 'cvat-core/src/user';
+import Organization from 'cvat-core/src/organization';
 
 const cvat: any = _cvat;
 
@@ -45,14 +46,14 @@ export {
     LabelType,
     Storage,
     Webhook,
-    SocialAuthMethod,
     Issue,
+    User,
+    Organization,
     Comment,
     MLModel,
     ModelKind,
     ModelProviders,
     ModelReturnType,
-    SelectionSchema,
     DimensionType,
 };
 
@@ -60,6 +61,5 @@ export type {
     SerializedAttribute,
     SerializedLabel,
     StorageData,
-    SocialAuthMethods,
     ModelProvider,
 };
