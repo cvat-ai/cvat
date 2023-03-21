@@ -297,6 +297,85 @@
       ],
       "title": "All events",
       "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PDEE91DDB90597936"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 12,
+        "x": 0,
+        "y": 30
+      },
+      "id": 6,
+      "options": {
+        "displayMode": "gradient",
+        "minVizHeight": 10,
+        "minVizWidth": 0,
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": true
+        },
+        "showUnfilled": true,
+        "text": {}
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "builderOptions": {
+            "fields": [],
+            "filters": [],
+            "limit": 100,
+            "mode": "list",
+            "orderBy": [],
+            "table": "events"
+          },
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PDEE91DDB90597936"
+          },
+          "format": 1,
+          "meta": {
+            "builderOptions": {
+              "fields": [],
+              "filters": [],
+              "limit": 100,
+              "mode": "list",
+              "orderBy": [],
+              "table": "events"
+            }
+          },
+          "queryType": "sql",
+          "rawSql": "SELECT\r\n    browser,\r\n    count()\r\nFROM\r\n(\r\n    SELECT\r\n        concat(JSON_VALUE(payload, '$.platform.name'), ' ', JSON_VALUE(payload, '$.platform.version')) AS browser,\r\n        user_id\r\n    FROM cvat.events\r\n    WHERE  $__timeFilter(timestamp) AND (scope = 'load:cvat') AND (browser != ' ')\r\n    GROUP BY\r\n        user_id,\r\n        browser\r\n)\r\nGROUP BY browser\r\nORDER BY count() DESC",
+          "refId": "A"
+        }
+      ],
+      "title": "Browser",
+      "type": "bargauge"
     }
   ],
   "refresh": false,
@@ -518,6 +597,6 @@
   "timezone": "",
   "title": "All events",
   "uid": "EIGSTDAVz",
-  "version": 3,
+  "version": 1,
   "weekStart": ""
 }
