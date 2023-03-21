@@ -6,10 +6,11 @@
 import pytest
 
 from shared.utils.resource_import_export import (
-    _CloudStorageResourceTest, _make_export_resource_params, _make_import_resource_params
+    _CloudStorageResourceTest,
+    _make_export_resource_params,
+    _make_import_resource_params,
 )
 from shared.utils.s3 import make_client as make_s3_client
-
 
 # https://docs.pytest.org/en/7.1.x/example/markers.html#marking-whole-classes-or-modules
 pytestmark = [pytest.mark.with_external_services]
@@ -147,4 +148,3 @@ class TestImportResourceFromS3(_S3ResourceTest):
         import_kwargs = _make_import_resource_params(resource, obj=obj)
         self._export_resource(cloud_storage, obj_id, obj, resource, **export_kwargs)
         self._import_resource(cloud_storage, resource, obj_id, obj, **import_kwargs)
-

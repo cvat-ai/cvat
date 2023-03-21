@@ -1,4 +1,3 @@
-
 import functools
 import json
 from abc import ABC, abstractstaticmethod
@@ -15,6 +14,7 @@ from shared.utils.config import get_method, post_method
 FILENAME_TEMPLATE = "cvat/{}/{}.zip"
 EXPORT_FORMAT = "CVAT for images 1.1"
 IMPORT_FORMAT = "CVAT 1.1"
+
 
 def _make_custom_resource_params(resource: str, obj: str, cloud_storage_id: int) -> Dict[str, Any]:
     return {
