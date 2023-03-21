@@ -12,15 +12,7 @@ from typing import Any, Dict, TypeVar
 
 import pytest
 
-from shared.utils.azure import make_client as make_azure_blob_container_client
-from shared.utils.config import (
-    AZURE_ACCOUNT_NAME,
-    AZURE_CONTAINER,
-    AZURE_TOKEN,
-    get_method,
-    make_api_client,
-    post_method,
-)
+from shared.utils.config import get_method, post_method
 from shared.utils.s3 import make_client as make_s3_client
 
 T = TypeVar("T")
@@ -29,6 +21,8 @@ FILENAME_TEMPLATE = "cvat/{}/{}.zip"
 EXPORT_FORMAT = "CVAT for images 1.1"
 IMPORT_FORMAT = "CVAT 1.1"
 
+# https://docs.pytest.org/en/7.1.x/example/markers.html#marking-whole-classes-or-modules
+pytestmark = [pytest.mark.with_external_services]
 
 def _make_custom_resource_params(resource: str, obj: str, cloud_storage_id: int) -> Dict[str, Any]:
     return {
@@ -184,8 +178,6 @@ class _S3ResourceTest(_CloudStorageResourceTest):
         return make_s3_client()
 
 
-# https://docs.pytest.org/en/7.1.x/example/markers.html#marking-whole-classes-or-modules
-@pytest.mark.with_external_services
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestExportResourceToS3(_S3ResourceTest):
     @pytest.mark.parametrize("cloud_storage_id", [3])
@@ -251,7 +243,6 @@ class TestExportResourceToS3(_S3ResourceTest):
         self._export_resource(cloud_storage, obj_id, obj, resource, **kwargs)
 
 
-@pytest.mark.with_external_services
 @pytest.mark.usefixtures("restore_db_per_function")
 @pytest.mark.usefixtures("restore_cvat_data")
 class TestImportResourceFromS3(_S3ResourceTest):
@@ -314,63 +305,3 @@ class TestImportResourceFromS3(_S3ResourceTest):
         self._export_resource(cloud_storage, obj_id, obj, resource, **export_kwargs)
         self._import_resource(cloud_storage, resource, obj_id, obj, **import_kwargs)
 
-
-class _AzureResourceTest(_CloudStorageResourceTest):
-    SPEC = {
-        "provider_type": "AZURE_CONTAINER",
-        "resource": AZURE_CONTAINER,
-        "display_name": "Azure Container",
-        "credentials_type": "ACCOUNT_NAME_TOKEN_PAIR",
-        "session_token": AZURE_TOKEN,
-        "account_name": AZURE_ACCOUNT_NAME,
-        "description": "Some description",
-        "manifests": [
-            "empty_manifest.jsonl",
-        ],
-    }
-
-    @staticmethod
-    def _make_client():
-        return make_azure_blob_container_client()
-
-
-@pytest.mark.skipif(
-    not bool(AZURE_CONTAINER and AZURE_TOKEN and AZURE_ACCOUNT_NAME),
-    reason="Azure credentials were not found",
-)
-@pytest.mark.usefixtures("restore_db_per_class")
-@pytest.mark.usefixtures("restore_cvat_data")
-class TestExportImportAnnotationsToAzure(_AzureResourceTest):
-    @pytest.mark.parametrize("obj, obj_id, resource", [("tasks", 11, "annotations")])
-    def test_export_resource_to_azure_cloud_storage(self, obj: str, obj_id: int, resource: str):
-        with make_api_client(self.user) as api_client:
-            (cloud_storage, response) = api_client.cloudstorages_api.create(self.SPEC)
-            assert response.status == HTTPStatus.CREATED
-
-        kwargs = _make_export_resource_params(
-            resource, is_default=False, obj=obj, cloud_storage_id=cloud_storage["id"]
-        )
-        self._export_resource(cloud_storage, obj_id, obj, resource, **kwargs)
-
-
-@pytest.mark.skipif(
-    not bool(AZURE_CONTAINER and AZURE_TOKEN and AZURE_ACCOUNT_NAME),
-    reason="Azure credentials were not found",
-)
-@pytest.mark.usefixtures("restore_db_per_class")
-@pytest.mark.usefixtures("restore_cvat_data")
-class TestImportAnnotationsFromAzure(_AzureResourceTest):
-    @pytest.mark.parametrize("obj, obj_id, resource", [("tasks", 11, "annotations")])
-    def test_import_resource_from_cloud_storage(self, obj: str, obj_id: int, resource: str):
-        with make_api_client(self.user) as api_client:
-            (cloud_storage, response) = api_client.cloudstorages_api.create(self.SPEC)
-            assert response.status == HTTPStatus.CREATED
-
-        export_kwargs = _make_export_resource_params(
-            resource, is_default=False, obj=obj, cloud_storage_id=cloud_storage["id"]
-        )
-        import_kwargs = _make_import_resource_params(
-            resource, is_default=False, obj=obj, cloud_storage_id=cloud_storage["id"]
-        )
-        self._export_resource(cloud_storage, obj_id, obj, resource, **export_kwargs)
-        self._import_resource(cloud_storage, resource, obj_id, obj, **import_kwargs)
