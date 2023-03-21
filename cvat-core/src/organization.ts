@@ -282,7 +282,10 @@ Object.defineProperties(Organization.prototype.remove, {
         value: async function implementation() {
             if (typeof this.id === 'number') {
                 await serverProxy.organizations.delete(this.id);
-                config.organizationID = null;
+                config.organization = {
+                    organizationID: null,
+                    organizationSlug: null,
+                };
             }
         },
     },

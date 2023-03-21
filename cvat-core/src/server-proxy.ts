@@ -32,7 +32,7 @@ type Params = {
 };
 
 function enableOrganization(): { org: string } {
-    return { org: config.organizationID || '' };
+    return { org: config.organization.organizationSlug || '' };
 }
 
 function configureStorage(storage: Storage, useDefaultLocation = false): Partial<Params> {
@@ -266,8 +266,23 @@ Axios.interceptors.request.use((reqConfig) => {
         return reqConfig;
     }
 
+    if (/\/([0-9]+)$/.test(reqConfig.url)) {
+        return reqConfig;
+    }
+
     reqConfig.params = { ...organization, ...(reqConfig.params || {}) };
     return reqConfig;
+});
+
+Axios.interceptors.response.use((response) => {
+    if (/\/([0-9]+)$/.test(response.config.url)) {
+        const newOrg = response.data.organization;
+        if (newOrg && config.organization.organizationID !== newOrg) {
+            config?.onOrganizationChange(newOrg);
+        }
+    }
+
+    return response;
 });
 
 let token = store.get('token');
