@@ -96,7 +96,6 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
         } else if (action === Actions.DELETE_TASK) {
             deleteTask(taskInstance);
         } else if (action === Actions.OPEN_BUG_TRACKER) {
-            /* eslint-disable-next-line security/detect-non-literal-fs-filename */
             window.open(`${taskInstance.bugTracker}`, '_blank');
         } else if (action === Actions.RUN_AUTO_ANNOTATION) {
             openRunModelWindow(taskInstance);

@@ -23,8 +23,8 @@ export const pluginActions = {
     checkPlugins: () => createAction(PluginsActionTypes.GET_PLUGINS),
     checkPluginsSuccess: (list: PluginsList) => createAction(PluginsActionTypes.GET_PLUGINS_SUCCESS, { list }),
     checkPluginsFailed: (error: any) => createAction(PluginsActionTypes.GET_PLUGINS_FAILED, { error }),
-    addPlugin: (name: string, destructor: CallableFunction) => createAction(
-        PluginsActionTypes.ADD_PLUGIN, { name, destructor },
+    addPlugin: (name: string, destructor: CallableFunction, globalStateDidUpdate?: CallableFunction) => createAction(
+        PluginsActionTypes.ADD_PLUGIN, { name, destructor, globalStateDidUpdate },
     ),
     addUIComponent: (
         path: string,
