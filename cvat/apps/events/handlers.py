@@ -5,6 +5,7 @@
 from copy import deepcopy
 from datetime import datetime, timezone
 import traceback
+import rq
 
 from rest_framework.renderers import JSONRenderer
 from rest_framework.views import exception_handler
@@ -64,26 +65,62 @@ def job_id(instance):
     except Exception:
         return None
 
-def _get_current_user(instance):
+def _get_current_user(instance=None):
+    # Try to get current user from request
+    user = get_current_user()
+    if user is not None:
+        return user
+
+    # Try to get user from rq_job
+    if isinstance(instance, rq.job.Job):
+        return instance.meta.get("user", None)
+    else:
+        rq_job = rq.get_current_job()
+        if rq_job:
+            return rq_job.meta.get("user", None)
+
     if isinstance(instance, User):
         return instance
 
-    if isinstance(instance, Job):
-        return instance.segment.task.owner
+    return None
 
-    return get_current_user()
+def _get_current_request(instance=None):
+    request = get_current_request()
+    if request is not None:
+        return request
 
-def user_id(instance):
+    if isinstance(instance, rq.job.Job):
+        return instance.meta.get("request", None)
+    else:
+        rq_job = rq.get_current_job()
+        if rq_job:
+            return rq_job.meta.get("request", None)
+
+    return None
+
+def _get_value(obj, key):
+    if obj is not None:
+        if isinstance(obj, dict):
+            return obj.get(key, None)
+        return getattr(obj, key, None)
+
+    return None
+
+def request_id(instance=None):
+    request = _get_current_request(instance)
+    return _get_value(request, "uuid")
+
+def user_id(instance=None):
     current_user = _get_current_user(instance)
-    return getattr(current_user, "id", None)
+    return _get_value(current_user, "id")
 
-def user_name(instance):
+def user_name(instance=None):
     current_user = _get_current_user(instance)
-    return getattr(current_user, "username", None)
+    return _get_value(current_user, "username")
 
-def user_email(instance):
+def user_email(instance=None):
     current_user = _get_current_user(instance)
-    return getattr(current_user, "email", None)
+    return _get_value(current_user, "email")
 
 def organization_slug(instance):
     if isinstance(instance, Organization):
@@ -196,6 +233,16 @@ def _get_serializer(instance):
         serializer.fields.pop("url", None)
     return serializer
 
+def set_request_id(payload=None, **kwargs):
+    _payload = payload or {}
+    return {
+        **_payload,
+        "request": {
+            **_payload.get("request", {}),
+            "id": request_id(**kwargs),
+        },
+    }
+
 def handle_create(scope, instance, **kwargs):
     oid = organization_id(instance)
     oslug = organization_slug(instance)
@@ -226,7 +273,7 @@ def handle_create(scope, instance, **kwargs):
         user_id=uid,
         user_name=uname,
         user_email=uemail,
-        payload=payload,
+        payload=set_request_id(payload),
     )
     message = JSONRenderer().render(event).decode('UTF-8')
 
@@ -264,9 +311,9 @@ def handle_update(scope, instance, old_instance, **kwargs):
             user_id=uid,
             user_name=uname,
             user_email=uemail,
-            payload= {
+            payload=set_request_id({
                 "old_value": change["old_value"],
-            },
+            }),
         )
 
         message = JSONRenderer().render(event).decode('UTF-8')
@@ -295,6 +342,7 @@ def handle_delete(scope, instance, **kwargs):
         user_id=uid,
         user_name=uname,
         user_email=uemail,
+        payload=set_request_id(),
     )
     message = JSONRenderer().render(event).decode('UTF-8')
 
@@ -338,7 +386,9 @@ def handle_annotations_patch(instance, annotations, action, **kwargs):
             user_id=uid,
             user_name=uname,
             user_email=uemail,
-            payload=tags,
+            payload=set_request_id({
+                "tags": tags,
+            }),
         )
         message = JSONRenderer().render(event).decode('UTF-8')
         vlogger.info(message)
@@ -363,7 +413,9 @@ def handle_annotations_patch(instance, annotations, action, **kwargs):
                 user_id=uid,
                 user_name=uname,
                 user_email=uemail,
-                payload=shapes,
+                payload=set_request_id({
+                    "shapes": shapes,
+                }),
             )
             message = JSONRenderer().render(event).decode('UTF-8')
             vlogger.info(message)
@@ -393,7 +445,9 @@ def handle_annotations_patch(instance, annotations, action, **kwargs):
                 user_id=uid,
                 user_name=uname,
                 user_email=uemail,
-                payload=tracks,
+                payload=set_request_id({
+                    "tracks": tracks,
+                }),
             )
             message = JSONRenderer().render(event).decode('UTF-8')
             vlogger.info(message)
@@ -404,17 +458,14 @@ def handle_rq_exception(rq_job, exc_type, exc_value, tb):
     pid = rq_job.meta.get("project_id", None)
     tid = rq_job.meta.get("task_id", None)
     jid = rq_job.meta.get("job_id", None)
-    user_info = rq_job.meta.get("user", None)
-    if user_info:
-        uid = user_info.get("id", None)
-        uname = user_info.get("name", None)
-        uemail = user_info.get("email", None)
-
+    uid = user_id(rq_job)
+    uname = user_name(rq_job)
+    uemail = user_email(rq_job)
     tb_strings = traceback.format_exception(exc_type, exc_value, tb)
 
     payload = {
         "message": tb_strings[-1],
-        "stack": ''.join(tb_strings)
+        "stack": ''.join(tb_strings),
     }
 
     event = create_event(
@@ -429,7 +480,7 @@ def handle_rq_exception(rq_job, exc_type, exc_value, tb):
         user_id=uid,
         user_name=uname,
         user_email=uemail,
-        payload=payload,
+        payload=set_request_id(payload, instance=rq_job),
     )
     message = JSONRenderer().render(event).decode('UTF-8')
     vlogger.info(message)
@@ -470,7 +521,7 @@ def handle_viewset_exception(exc, context):
         user_id=getattr(request.user, "id", None),
         user_name=getattr(request.user, "username", None),
         user_email=getattr(request.user, "email", None),
-        payload=payload,
+        payload=set_request_id(payload),
     )
     message = JSONRenderer().render(event).decode('UTF-8')
     vlogger.info(message)

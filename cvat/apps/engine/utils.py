@@ -12,6 +12,7 @@ import traceback
 import subprocess
 import os
 import urllib.parse
+from django.utils import timezone
 
 from av import VideoFrame
 from PIL import Image
@@ -135,7 +136,7 @@ def process_failed_job(rq_job):
 
     return parse_exception_message(exc_info)
 
-def configure_dependent_job(queue, rq_id, rq_func, db_storage, filename, key):
+def configure_dependent_job(queue, rq_id, rq_func, db_storage, filename, key, request):
     rq_job_id_download_file = rq_id + f'?action=download_{filename}'
     rq_job_download_file = queue.fetch_job(rq_job_id_download_file)
     if not rq_job_download_file:
@@ -143,7 +144,8 @@ def configure_dependent_job(queue, rq_id, rq_func, db_storage, filename, key):
         rq_job_download_file = queue.enqueue_call(
             func=rq_func,
             args=(db_storage, filename, key),
-            job_id=rq_job_id_download_file
+            job_id=rq_job_id_download_file,
+            meta=get_rq_job_meta(request=request, db_obj=db_storage),
         )
     return rq_job_download_file
 
@@ -161,8 +163,12 @@ def get_rq_job_meta(request, db_obj):
     return {
         'user': {
             'id': getattr(request.user, "id", None),
-            'name': getattr(request.user, "username", None),
+            'username': getattr(request.user, "username", None),
             'email': getattr(request.user, "email", None),
+        },
+        'request': {
+            "uuid": request.uuid,
+            "timestamp": timezone.localtime(),
         },
         'org_id': oid,
         'org_slug': oslug,

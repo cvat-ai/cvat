@@ -18,7 +18,7 @@ context('Move a task between projects.', () => {
         name: `Second project case ${caseID}`,
         label: 'bicycle',
         attrName: 'color',
-        attrVaue: 'yellow',
+        attrVaue: 'red',
         multiAttrParams: false,
     };
 

@@ -12,7 +12,7 @@ import { CanvasMode as Canvas3DMode } from 'cvat-canvas3d-wrapper';
 import {
     RectDrawingMethod, CuboidDrawingMethod, Canvas, CanvasMode as Canvas2DMode,
 } from 'cvat-canvas-wrapper';
-import { getCore, MLModel } from 'cvat-core-wrapper';
+import { getCore, MLModel, DimensionType } from 'cvat-core-wrapper';
 import logger, { LogType } from 'cvat-logger';
 import { getCVATStore } from 'cvat-store';
 
@@ -20,7 +20,6 @@ import {
     ActiveControl,
     CombinedState,
     ContextMenuType,
-    DimensionType,
     FrameSpeed,
     ObjectType,
     OpenCVTool,
@@ -892,6 +891,10 @@ export function getJobAsync(
                 },
             });
 
+            if (!Number.isInteger(tid) || !Number.isInteger(jid)) {
+                throw new Error('Requested resource id is not valid');
+            }
+
             const loadJobEvent = await logger.log(
                 LogType.loadJob,
                 {
@@ -951,7 +954,7 @@ export function getJobAsync(
                 },
             });
 
-            if (job.dimension === DimensionType.DIM_3D) {
+            if (job.dimension === DimensionType.DIMENSION_3D) {
                 const workspace = Workspace.STANDARD3D;
                 dispatch(changeWorkspace(workspace));
             }

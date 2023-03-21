@@ -15,12 +15,13 @@ import { SerializedAttribute, SerializedLabel } from 'cvat-core/src/server-respo
 import { Job, Task } from 'cvat-core/src/session';
 import Project from 'cvat-core/src/project';
 import {
-    ShapeType, LabelType, ModelKind, ModelProviders, ModelReturnType,
+    ShapeType, LabelType, ModelKind, ModelProviders, ModelReturnType, DimensionType,
 } from 'cvat-core/src/enums';
 import { Storage, StorageData } from 'cvat-core/src/storage';
 import Issue from 'cvat-core/src/issue';
 import Comment from 'cvat-core/src/comment';
-import { SocialAuthMethods, SocialAuthMethod } from 'cvat-core/src/auth-methods';
+import User from 'cvat-core/src/user';
+import Organization from 'cvat-core/src/organization';
 
 const cvat: any = _cvat;
 
@@ -45,19 +46,20 @@ export {
     LabelType,
     Storage,
     Webhook,
-    SocialAuthMethod,
     Issue,
+    User,
+    Organization,
     Comment,
     MLModel,
     ModelKind,
     ModelProviders,
     ModelReturnType,
+    DimensionType,
 };
 
 export type {
     SerializedAttribute,
     SerializedLabel,
     StorageData,
-    SocialAuthMethods,
     ModelProvider,
 };
