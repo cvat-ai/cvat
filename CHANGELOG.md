@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## \[2.5.0] - Unreleased
 ### Added
-- TDB
+- Add support for Azure Blob Storage connection string authentication(<https://github.com/openvinotoolkit/cvat/pull/4649>)
 
 ### Changed
 - TDB
@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - An invalid project/org handling in webhooks (<https://github.com/opencv/cvat/pull/5707>)
 - Warning `key` is undefined on project page (<https://github.com/opencv/cvat/pull/5876>)
 - Invalid mask when running automatic annotation on a task (<https://github.com/opencv/cvat/pull/5883>)
+- Cloud storage content listing when the manifest name contains special characters
+  (<https://github.com/opencv/cvat/pull/5873>)
 
 ### Security
 - TDB

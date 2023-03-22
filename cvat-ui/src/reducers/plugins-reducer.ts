@@ -17,10 +17,16 @@ const defaultState: PluginsState = {
     },
     current: {},
     components: {
+        header: {
+            userMenu: {
+                items: [],
+            },
+        },
         loginPage: {
             loginForm: [],
         },
         router: [],
+        loggedInModals: [],
     },
 };
 
@@ -115,12 +121,15 @@ export default function (state: PluginsState = defaultState, action: PluginActio
             return updatedState;
         }
         case PluginsActionTypes.ADD_PLUGIN: {
-            const { name, destructor } = action.payload;
+            const { name, destructor, globalStateDidUpdate } = action.payload;
             return {
                 ...state,
                 current: {
                     ...state.current,
-                    [name]: destructor,
+                    [name]: {
+                        destructor,
+                        globalStateDidUpdate,
+                    },
                 },
             };
         }

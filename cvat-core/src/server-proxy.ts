@@ -365,7 +365,7 @@ async function register(
 ): Promise<SerializedRegister> {
     let response = null;
     try {
-        const data = JSON.stringify({
+        response = await Axios.post(`${config.backendAPI}/auth/register`, {
             username,
             first_name: firstName,
             last_name: lastName,
@@ -373,11 +373,6 @@ async function register(
             password1: password,
             password2: password,
             confirmations,
-        });
-        response = await Axios.post(`${config.backendAPI}/auth/register`, data, {
-            headers: {
-                'Content-Type': 'application/json',
-            },
         });
         setAuthData(response);
     } catch (errorData) {
@@ -413,15 +408,10 @@ async function logout(): Promise<void> {
 
 async function changePassword(oldPassword: string, newPassword1: string, newPassword2: string): Promise<void> {
     try {
-        const data = JSON.stringify({
+        await Axios.post(`${config.backendAPI}/auth/password/change`, {
             old_password: oldPassword,
             new_password1: newPassword1,
             new_password2: newPassword2,
-        });
-        await Axios.post(`${config.backendAPI}/auth/password/change`, data, {
-            headers: {
-                'Content-Type': 'application/json',
-            },
         });
     } catch (errorData) {
         throw generateError(errorData);
@@ -430,13 +420,8 @@ async function changePassword(oldPassword: string, newPassword1: string, newPass
 
 async function requestPasswordReset(email: string): Promise<void> {
     try {
-        const data = JSON.stringify({
+        await Axios.post(`${config.backendAPI}/auth/password/reset`, {
             email,
-        });
-        await Axios.post(`${config.backendAPI}/auth/password/reset`, data, {
-            headers: {
-                'Content-Type': 'application/json',
-            },
         });
     } catch (errorData) {
         throw generateError(errorData);
@@ -445,16 +430,11 @@ async function requestPasswordReset(email: string): Promise<void> {
 
 async function resetPassword(newPassword1: string, newPassword2: string, uid: string, _token: string): Promise<void> {
     try {
-        const data = JSON.stringify({
+        await Axios.post(`${config.backendAPI}/auth/password/reset/confirm`, {
             new_password1: newPassword1,
             new_password2: newPassword2,
             uid,
             token: _token,
-        });
-        await Axios.post(`${config.backendAPI}/auth/password/reset/confirm`, data, {
-            headers: {
-                'Content-Type': 'application/json',
-            },
         });
     } catch (errorData) {
         throw generateError(errorData);
@@ -472,25 +452,6 @@ async function getSelf(): Promise<SerializedUser> {
     }
 
     return response.data;
-}
-
-async function hasLimits(userId: number, orgId: number): Promise<boolean> {
-    const { backendAPI } = config;
-
-    try {
-        const response = await Axios.get(`${backendAPI}/limits`, {
-            params: {
-                ...(orgId ? { org_id: orgId } : { user_id: userId }),
-            },
-        });
-        return response.data?.count !== 0;
-    } catch (serverError) {
-        if (serverError.code === 404) {
-            return false;
-        }
-
-        throw serverError;
-    }
 }
 
 async function authorized(): Promise<boolean> {
@@ -564,10 +525,7 @@ async function healthCheck(
 
 async function serverRequest(url: string, data: object): Promise<any> {
     try {
-        const res = await Axios({
-            url,
-            ...data,
-        });
+        const res = await Axios(url, data);
         return res;
     } catch (errorData) {
         throw generateError(errorData);
@@ -628,11 +586,7 @@ async function saveProject(id: number, projectData: Partial<SerializedProject>):
 
     let response = null;
     try {
-        response = await Axios.patch(`${backendAPI}/projects/${id}`, JSON.stringify(projectData), {
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
+        response = await Axios.patch(`${backendAPI}/projects/${id}`, projectData);
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -654,11 +608,7 @@ async function createProject(projectSpec: SerializedProject): Promise<Serialized
     const { backendAPI } = config;
 
     try {
-        const response = await Axios.post(`${backendAPI}/projects`, JSON.stringify(projectSpec), {
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
+        const response = await Axios.post(`${backendAPI}/projects`, projectSpec);
         return response.data;
     } catch (errorData) {
         throw generateError(errorData);
@@ -697,11 +647,7 @@ async function saveTask(id: number, taskData: Partial<SerializedTask>): Promise<
 
     let response = null;
     try {
-        response = await Axios.patch(`${backendAPI}/tasks/${id}`, JSON.stringify(taskData), {
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
+        response = await Axios.patch(`${backendAPI}/tasks/${id}`, taskData);
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -714,9 +660,8 @@ async function deleteTask(id: number, organizationID: string | null = null): Pro
 
     try {
         await Axios.delete(`${backendAPI}/tasks/${id}`, {
-            ...(organizationID ? { org: organizationID } : {}),
-            headers: {
-                'Content-Type': 'application/json',
+            params: {
+                ...(organizationID ? { org: organizationID } : {}),
             },
         });
     } catch (errorData) {
@@ -739,7 +684,7 @@ async function getLabels(filter: {
 async function deleteLabel(id: number): Promise<void> {
     const { backendAPI } = config;
     try {
-        await Axios.delete(`${backendAPI}/labels/${id}`, { method: 'DELETE' });
+        await Axios.delete(`${backendAPI}/labels/${id}`);
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -749,7 +694,7 @@ async function updateLabel(id: number, body: SerializedLabel): Promise<Serialize
     const { backendAPI } = config;
     let response = null;
     try {
-        response = await Axios.patch(`${backendAPI}/labels/${id}`, body, { method: 'PATCH' });
+        response = await Axios.patch(`${backendAPI}/labels/${id}`, body);
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -1172,11 +1117,8 @@ async function createTask(taskSpec, taskDataSpec, onUpdate) {
 
     onUpdate('The task is being created on the server..', null);
     try {
-        response = await Axios.post(`${backendAPI}/tasks`, JSON.stringify(taskSpec), {
+        response = await Axios.post(`${backendAPI}/tasks`, taskSpec, {
             params,
-            headers: {
-                'Content-Type': 'application/json',
-            },
         });
     } catch (errorData) {
         throw generateError(errorData);
@@ -1342,11 +1284,7 @@ async function createComment(data) {
 
     let response = null;
     try {
-        response = await Axios.post(`${backendAPI}/comments`, JSON.stringify(data), {
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
+        response = await Axios.post(`${backendAPI}/comments`, data);
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -1360,11 +1298,8 @@ async function createIssue(data) {
     let response = null;
     try {
         const organization = enableOrganization();
-        response = await Axios.post(`${backendAPI}/issues`, JSON.stringify(data), {
+        response = await Axios.post(`${backendAPI}/issues`, data, {
             params: { ...organization },
-            headers: {
-                'Content-Type': 'application/json',
-            },
         });
 
         const commentsResponse = await fetchAll(`${backendAPI}/comments`, {
@@ -1385,11 +1320,7 @@ async function updateIssue(issueID, data) {
 
     let response = null;
     try {
-        response = await Axios.patch(`${backendAPI}/issues/${issueID}`, JSON.stringify(data), {
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
+        response = await Axios.patch(`${backendAPI}/issues/${issueID}`, data);
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -1412,11 +1343,7 @@ async function saveJob(id: number, jobData: Partial<SerializedJob>): Promise<Ser
 
     let response = null;
     try {
-        response = await Axios.patch(`${backendAPI}/jobs/${id}`, JSON.stringify(jobData), {
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
+        response = await Axios.patch(`${backendAPI}/jobs/${id}`, jobData);
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -1530,8 +1457,7 @@ async function getMeta(session, jid): Promise<FramesMetaData> {
 
     let response = null;
     try {
-        response = await Axios.get(`${backendAPI}/${session}s/${jid}/data/meta`, {
-        });
+        response = await Axios.get(`${backendAPI}/${session}s/${jid}/data/meta`);
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -1603,8 +1529,7 @@ async function getFunctionProviders() {
     const { backendAPI } = config;
 
     try {
-        const response = await Axios.get(`${backendAPI}/functions/info`, {
-        });
+        const response = await Axios.get(`${backendAPI}/functions/info`);
         return response.data;
     } catch (errorData) {
         if (errorData.response.status === 404) {
@@ -1618,11 +1543,7 @@ async function deleteFunction(functionId: number) {
     const { backendAPI } = config;
 
     try {
-        await Axios.delete(`${backendAPI}/functions/${functionId}`, {
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
+        await Axios.delete(`${backendAPI}/functions/${functionId}`);
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -1633,23 +1554,18 @@ async function updateAnnotations(session, id, data, action) {
     const { backendAPI } = config;
     const url = `${backendAPI}/${session}s/${id}/annotations`;
     const params = {};
-    let requestFunc = null;
+    let method: string;
 
     if (action.toUpperCase() === 'PUT') {
-        requestFunc = Axios.put.bind(Axios);
+        method = 'PUT';
     } else {
-        requestFunc = Axios.patch.bind(Axios);
+        method = 'PATCH';
         params.action = action;
     }
 
     let response = null;
     try {
-        response = await requestFunc(url, JSON.stringify(data), {
-            params,
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
+        response = await Axios(url, { method, data, params });
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -1660,11 +1576,7 @@ async function runFunctionRequest(body) {
     const { backendAPI } = config;
 
     try {
-        const response = await Axios.post(`${backendAPI}/functions/requests/`, JSON.stringify(body), {
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
+        const response = await Axios.post(`${backendAPI}/functions/requests/`, body);
 
         return response.data;
     } catch (errorData) {
@@ -1767,45 +1679,11 @@ async function getFunctionRequestStatus(requestID) {
     }
 }
 
-// Session is 'task' or 'job'
-async function dumpAnnotations(id, name, format) {
-    const { backendAPI } = config;
-    const baseURL = `${backendAPI}/tasks/${id}/annotations`;
-    const params = enableOrganization();
-    params.format = encodeURIComponent(format);
-    if (name) {
-        const filename = name.replace(/\//g, '_');
-        params.filename = encodeURIComponent(filename);
-    }
-
-    return new Promise((resolve, reject) => {
-        async function request() {
-            Axios.get(baseURL, {
-                params,
-            })
-                .then((response) => {
-                    if (response.status === 202) {
-                        setTimeout(request, 3000);
-                    } else {
-                        params.action = 'download';
-                        resolve(`${baseURL}?${new URLSearchParams(params).toString()}`);
-                    }
-                })
-                .catch((errorData) => {
-                    reject(generateError(errorData));
-                });
-        }
-        setTimeout(request);
-    });
-}
-
 async function cancelFunctionRequest(requestId: string): Promise<void> {
     const { backendAPI } = config;
 
     try {
-        await Axios.delete(`${backendAPI}/functions/requests/${requestId}`, {
-            method: 'DELETE',
-        });
+        await Axios.delete(`${backendAPI}/functions/requests/${requestId}`);
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -1816,11 +1694,8 @@ async function createFunction(functionData: any) {
     const { backendAPI } = config;
 
     try {
-        const response = await Axios.post(`${backendAPI}/functions`, JSON.stringify(functionData), {
+        const response = await Axios.post(`${backendAPI}/functions`, functionData, {
             params,
-            headers: {
-                'Content-Type': 'application/json',
-            },
         });
         return response.data;
     } catch (errorData) {
@@ -1832,12 +1707,7 @@ async function saveEvents(events) {
     const { backendAPI } = config;
 
     try {
-        await Axios.post(`${backendAPI}/events`, JSON.stringify(events), {
-            proxy: config.proxy,
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
+        await Axios.post(`${backendAPI}/events`, events);
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -1847,12 +1717,7 @@ async function callFunction(funId, body) {
     const { backendAPI } = config;
 
     try {
-        const response = await Axios.post(`${backendAPI}/functions/${funId}/run`, JSON.stringify(body), {
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
-
+        const response = await Axios.post(`${backendAPI}/functions/${funId}/run`, body);
         return response.data;
     } catch (errorData) {
         throw generateError(errorData);
@@ -1891,11 +1756,7 @@ async function runLambdaRequest(body) {
     const { backendAPI } = config;
 
     try {
-        const response = await Axios.post(`${backendAPI}/lambda/requests`, JSON.stringify(body), {
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
+        const response = await Axios.post(`${backendAPI}/lambda/requests`, body);
 
         return response.data;
     } catch (errorData) {
@@ -1907,11 +1768,7 @@ async function callLambdaFunction(funId, body) {
     const { backendAPI } = config;
 
     try {
-        const response = await Axios.post(`${backendAPI}/lambda/functions/${funId}`, JSON.stringify(body), {
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
+        const response = await Axios.post(`${backendAPI}/lambda/functions/${funId}`, body);
 
         return response.data;
     } catch (errorData) {
@@ -1945,9 +1802,7 @@ async function cancelLambdaRequest(requestId) {
     const { backendAPI } = config;
 
     try {
-        await Axios.delete(`${backendAPI}/lambda/requests/${requestId}`, {
-            method: 'DELETE',
-        });
+        await Axios.delete(`${backendAPI}/lambda/requests/${requestId}`);
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -2010,10 +1865,12 @@ async function getCloudStorageContent(id, manifestPath) {
 
     let response = null;
     try {
-        const url = `${backendAPI}/cloudstorages/${id}/content${
-            manifestPath ? `?manifest_path=${manifestPath}` : ''
-        }`;
-        response = await Axios.get(url);
+        const url = `${backendAPI}/cloudstorages/${id}/content`;
+        response = await Axios.get(url, {
+            params: {
+                ...(manifestPath ? { manifest_path: manifestPath } : {}),
+            },
+        });
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -2063,11 +1920,8 @@ async function createOrganization(data) {
 
     let response = null;
     try {
-        response = await Axios.post(`${backendAPI}/organizations`, JSON.stringify(data), {
+        response = await Axios.post(`${backendAPI}/organizations`, data, {
             params: { org: '' },
-            headers: {
-                'Content-Type': 'application/json',
-            },
         });
     } catch (errorData) {
         throw generateError(errorData);
@@ -2081,11 +1935,7 @@ async function updateOrganization(id, data) {
 
     let response = null;
     try {
-        response = await Axios.patch(`${backendAPI}/organizations/${id}`, JSON.stringify(data), {
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
+        response = await Axios.patch(`${backendAPI}/organizations/${id}`, data);
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -2097,11 +1947,7 @@ async function deleteOrganization(id) {
     const { backendAPI } = config;
 
     try {
-        await Axios.delete(`${backendAPI}/organizations/${id}`, {
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
+        await Axios.delete(`${backendAPI}/organizations/${id}`);
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -2146,12 +1992,7 @@ async function updateOrganizationMembership(membershipId, data) {
     const { backendAPI } = config;
     let response = null;
     try {
-        response = await Axios.patch(
-            `${backendAPI}/memberships/${membershipId}`,
-            {
-                ...data,
-            },
-        );
+        response = await Axios.patch(`${backendAPI}/memberships/${membershipId}`, data);
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -2188,9 +2029,6 @@ async function getWebhookDelivery(webhookID: number, deliveryID: number): Promis
     try {
         const response = await Axios.get(`${backendAPI}/webhooks/${webhookID}/deliveries/${deliveryID}`, {
             params,
-            headers: {
-                'Content-Type': 'application/json',
-            },
         });
         return response.data;
     } catch (errorData) {
@@ -2209,9 +2047,6 @@ async function getWebhooks(filter, pageSize = 10): Promise<any> {
                 ...filter,
                 page_size: pageSize,
             },
-            headers: {
-                'Content-Type': 'application/json',
-            },
         });
 
         response.data.results.count = response.data.count;
@@ -2226,11 +2061,8 @@ async function createWebhook(webhookData: any): Promise<any> {
     const { backendAPI } = config;
 
     try {
-        const response = await Axios.post(`${backendAPI}/webhooks`, JSON.stringify(webhookData), {
+        const response = await Axios.post(`${backendAPI}/webhooks`, webhookData, {
             params,
-            headers: {
-                'Content-Type': 'application/json',
-            },
         });
         return response.data;
     } catch (errorData) {
@@ -2243,13 +2075,9 @@ async function updateWebhook(webhookID: number, webhookData: any): Promise<any> 
     const { backendAPI } = config;
 
     try {
-        const response = await Axios
-            .patch(`${backendAPI}/webhooks/${webhookID}`, JSON.stringify(webhookData), {
-                params,
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            });
+        const response = await Axios.patch(`${backendAPI}/webhooks/${webhookID}`, webhookData, {
+            params,
+        });
         return response.data;
     } catch (errorData) {
         throw generateError(errorData);
@@ -2263,9 +2091,6 @@ async function deleteWebhook(webhookID: number): Promise<void> {
     try {
         await Axios.delete(`${backendAPI}/webhooks/${webhookID}`, {
             params,
-            headers: {
-                'Content-Type': 'application/json',
-            },
         });
     } catch (errorData) {
         throw generateError(errorData);
@@ -2293,9 +2118,6 @@ async function pingWebhook(webhookID: number): Promise<any> {
     try {
         const response = await Axios.post(`${backendAPI}/webhooks/${webhookID}/ping`, {
             params,
-            headers: {
-                'Content-Type': 'application/json',
-            },
         });
 
         const deliveryID = response.data.id;
@@ -2313,9 +2135,6 @@ async function receiveWebhookEvents(type: WebhookSourceType): Promise<string[]> 
         const response = await Axios.get(`${backendAPI}/webhooks/events`, {
             params: {
                 type,
-            },
-            headers: {
-                'Content-Type': 'application/json',
             },
         });
         return response.data.events;
@@ -2342,7 +2161,6 @@ export default Object.freeze({
         request: serverRequest,
         userAgreements,
         installedApps,
-        hasLimits,
     }),
 
     projects: Object.freeze({
@@ -2398,7 +2216,6 @@ export default Object.freeze({
     annotations: Object.freeze({
         updateAnnotations,
         getAnnotations,
-        dumpAnnotations,
         uploadAnnotations,
     }),
 

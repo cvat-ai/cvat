@@ -3,6 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import _ from 'lodash';
 import {
     useRef, useEffect, useState, useCallback,
 } from 'react';
@@ -31,17 +32,28 @@ export function useIsMounted(): () => boolean {
     return useCallback(() => ref.current, []);
 }
 
+type Plugin = {
+    component: CallableFunction;
+    weight: number;
+};
+
 export function usePlugins(
     getState: (state: CombinedState) => PluginComponent[],
     props: object = {}, state: object = {},
-): any {
+): Plugin[] {
     const components = useSelector(getState);
     const filteredComponents = components.filter((component) => component.data.shouldBeRendered(props, state));
-    const mappedComponents = filteredComponents.map(({ component }) => component);
-    const ref = useRef<React.Component[]>(mappedComponents);
+    const mappedComponents = filteredComponents
+        .map(({ component, data }): {
+            component: CallableFunction;
+            weight: number;
+        } => ({
+            component,
+            weight: data.weight,
+        }));
+    const ref = useRef<Plugin[]>(mappedComponents);
 
-    if (ref.current.length !== mappedComponents.length ||
-        ref.current.some((comp, idx) => comp !== mappedComponents[idx])) {
+    if (!_.isEqual(ref.current, mappedComponents)) {
         ref.current = mappedComponents;
     }
 
