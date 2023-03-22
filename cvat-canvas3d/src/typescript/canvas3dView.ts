@@ -1201,6 +1201,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                             canvasContext.strokeText('IMAGE REMOVED', width / 2, height / 2);
                             canvasContext.fillStyle = 'black';
                             canvasContext.fillText('IMAGE REMOVED', width / 2, height / 2);
+                            this.dispatchEvent(new CustomEvent('canvas.setup'));
                         } finally {
                             model.unlockFrameUpdating();
                         }
