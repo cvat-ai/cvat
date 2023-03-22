@@ -493,7 +493,6 @@ const Canvas3DWrapperComponent = React.memo((props: Props): ReactElement => {
         canvasInstanceDOM.perspective.addEventListener('canvas.canceled', onCanvasCancel);
         canvasInstanceDOM.perspective.addEventListener('canvas.dragstart', onCanvasDragStart);
         canvasInstanceDOM.perspective.addEventListener('canvas.dragstop', onCanvasDragDone);
-        canvasInstance.configure({ resetZoom });
     };
 
     const keyControlsKeyDown = (key: KeyboardEvent): void => {
@@ -547,7 +546,17 @@ const Canvas3DWrapperComponent = React.memo((props: Props): ReactElement => {
     }, [activatedStateID]);
 
     useEffect(() => {
-        canvasInstance.configure({ resetZoom });
+        let listener: EventListener | null = null;
+        if (resetZoom) {
+            listener = () => canvasInstance.fit();
+            canvasInstance.html().perspective.addEventListener('canvas.setup', listener);
+        }
+
+        return () => {
+            if (listener) {
+                canvasInstance.html().perspective.removeEventListener('canvas.setup', listener);
+            }
+        };
     }, [resetZoom]);
 
     const updateShapesView = (): void => {

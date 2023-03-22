@@ -1467,13 +1467,11 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         const material = points.material.clone();
         if (!this.views.perspective.camera) return;
 
+        // updating correct camera settings
         points.geometry.computeBoundingBox();
         this.cameraSettings.perspective.position = getCameraSettingsToFitScene(
             this.views.perspective.camera as THREE.PerspectiveCamera, points.geometry.boundingBox,
         );
-        if (this.model.configuration.resetZoom) {
-            this.fitCanvas(false);
-        }
 
         this.sceneBBox = new THREE.Box3().setFromObject(points);
         this.views.perspective.scene.add(points.clone());
