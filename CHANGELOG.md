@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add support for Azure Blob Storage connection string authentication(<https://github.com/openvinotoolkit/cvat/pull/4649>)
 
 ### Changed
-- TDB
+- Moving a task from a project to another project is disabled (<https://github.com/opencv/cvat/pull/5901>)
 
 ### Deprecated
 - TDB
