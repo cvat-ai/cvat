@@ -84,7 +84,8 @@ On each image it is possible to have many different objects. Each object can hav
 If an annotation task is created with `z_order` flag then each object will have `z_order` attribute which is used
 to draw objects properly when they are intersected (if `z_order` is bigger the object is closer to camera).
 In previous versions of the format only `box` shape was available.
-In later releases `mask`, `polygon`, `polyline`, `points`, `skeletons` and `tags` were added. Please see below for more details:
+In later releases `mask`, `polygon`, `polyline`, `points`, `skeletons` and `tags` were added.
+Please see below for more details:
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
