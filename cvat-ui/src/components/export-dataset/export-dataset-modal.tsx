@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -18,7 +18,10 @@ import Space from 'antd/lib/space';
 import TargetStorageField from 'components/storage/target-storage-field';
 import { CombinedState, StorageLocation } from 'reducers';
 import { exportActions, exportDatasetAsync } from 'actions/export-actions';
-import { getCore, Storage, StorageData } from 'cvat-core-wrapper';
+import {
+    Dumper,
+    getCore, Job, Project, Storage, StorageData, Task,
+} from 'cvat-core-wrapper';
 
 const core = getCore();
 
@@ -47,7 +50,9 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
         instance,
         current,
     } = props;
-
+    console.log(dumpers,
+        instance,
+        current);
     const [instanceType, setInstanceType] = useState('');
 
     const [useDefaultTargetStorage, setUseDefaultTargetStorage] = useState(true);
@@ -56,15 +61,15 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
         location: StorageLocation.LOCAL,
     });
     const [defaultStorageLocation, setDefaultStorageLocation] = useState(StorageLocation.LOCAL);
-    const [defaultStorageCloudId, setDefaultStorageCloudId] = useState<number | null>(null);
+    const [defaultStorageCloudId, setDefaultStorageCloudId] = useState<number>();
     const [helpMessage, setHelpMessage] = useState('');
     const dispatch = useDispatch();
 
     useEffect(() => {
-        if (instance instanceof core.classes.Project) {
+        if (instance instanceof Project) {
             setInstanceType(`project #${instance.id}`);
-        } else if (instance instanceof core.classes.Task || instance instanceof core.classes.Job) {
-            if (instance instanceof core.classes.Task) {
+        } else if (instance instanceof Task || instance instanceof Job) {
+            if (instance instanceof Task) {
                 setInstanceType(`task #${instance.id}`);
             } else {
                 setInstanceType(`job #${instance.id}`);
@@ -79,16 +84,16 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
 
     useEffect(() => {
         if (instance) {
-            if (instance instanceof core.classes.Project || instance instanceof core.classes.Task) {
+            if (instance instanceof Project || instance instanceof Task) {
                 setDefaultStorageLocation(instance.targetStorage?.location || StorageLocation.LOCAL);
-                setDefaultStorageCloudId(instance.targetStorage?.cloudStorageId || null);
+                setDefaultStorageCloudId(instance.targetStorage?.cloudStorageId);
             } else {
                 core.tasks.get({ id: instance.taskId })
                     .then((response: any) => {
                         if (response.length) {
                             const [taskInstance] = response;
                             setDefaultStorageLocation(taskInstance.targetStorage?.location || StorageLocation.LOCAL);
-                            setDefaultStorageCloudId(taskInstance.targetStorage?.cloudStorageId || null);
+                            setDefaultStorageCloudId(taskInstance.targetStorage?.cloudStorageId);
                         }
                     })
                     .catch((error: Error) => {
@@ -129,7 +134,7 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
                         location: defaultStorageLocation,
                         cloudStorageId: defaultStorageCloudId,
                     }) : new Storage(targetStorage),
-                    values.customName ? `${values.customName}.zip` : null,
+                    values.customName ? `${values.customName}.zip` : undefined,
                 ),
             );
             closeModal();
@@ -168,10 +173,10 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
                 >
                     <Select virtual={false} placeholder='Select dataset format' className='cvat-modal-export-select'>
                         {dumpers
-                            .sort((a: any, b: any) => a.name.localeCompare(b.name))
-                            .filter((dumper: any): boolean => dumper.dimension === instance?.dimension)
+                            .sort((a: Dumper, b: Dumper) => a.name.localeCompare(b.name))
+                            .filter((dumper: Dumper): boolean => dumper.dimension === instance?.dimension)
                             .map(
-                                (dumper: any): JSX.Element => {
+                                (dumper: Dumper): JSX.Element => {
                                     const pending = (instance && current ? current : [])
                                         .includes(dumper.name);
                                     const disabled = !dumper.enabled || pending;
@@ -224,9 +229,9 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
 }
 
 interface StateToProps {
-    dumpers: any;
-    instance: any;
-    current: any;
+    dumpers: Dumper[];
+    instance: Project | Task | Job;
+    current: string[];
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
