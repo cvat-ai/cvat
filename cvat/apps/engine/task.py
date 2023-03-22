@@ -6,6 +6,7 @@
 import itertools
 import os
 import sys
+import imghdr
 
 from django.core.files import File
 from rest_framework.serializers import ValidationError
@@ -284,6 +285,13 @@ def _validate_url(url):
             raise ValidationError('Cannot resolve IP address for domain \'{}\''.format(parsed_url.hostname))
 
 
+def _fix_extension(filename, file_path):
+    name, ext = os.path.splitext(filename)
+    if not ext:
+        ext = imghdr.what(file_path)
+    return f'{name}.{ext}'
+
+
 def _download_data(db_data: models.Data, upload_dir):
     job = rq.get_current_job()
     local_files = {}
@@ -301,8 +309,14 @@ def _download_data(db_data: models.Data, upload_dir):
         response = requests.get(url, stream=True)
         if response.status_code == 200:
             response.raw.decode_content = True
-            with open(os.path.join(upload_dir, name), 'wb') as output_file:
+            output_path = os.path.join(upload_dir, name)
+            with open(output_path, 'wb') as output_file:
                 shutil.copyfileobj(response.raw, output_file)
+            new_name = _fix_extension(name, output_path)
+            if new_name != name:
+                name = new_name
+                new_path = os.path.join(upload_dir, name)
+                os.rename(output_path, new_path)
         else:
             raise Exception("Failed to download " + url)
 
