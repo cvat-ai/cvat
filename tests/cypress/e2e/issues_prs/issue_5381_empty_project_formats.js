@@ -12,7 +12,7 @@ const project = {
     attrVaue: 'Oak',
 };
 
-context('Check behavior in case of missing authentification data', () => {
+context('List of export formats for a project without tasks is not empty', () => {
     before(() => {
         cy.visit('auth/login');
         cy.login();
