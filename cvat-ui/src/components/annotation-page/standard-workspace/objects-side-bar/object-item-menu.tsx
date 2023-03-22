@@ -14,9 +14,9 @@ import {
     BackgroundIcon, ForegroundIcon, ResetPerspectiveIcon, ColorizeIcon,
 } from 'icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import {
-    ObjectType, ShapeType, ColorBy, DimensionType,
-} from 'reducers';
+import { ObjectType, ShapeType, ColorBy } from 'reducers';
+import { DimensionType } from 'cvat-core-wrapper';
+
 import ColorPicker from './color-picker';
 
 interface Props {
@@ -58,7 +58,13 @@ function CreateURLItem(props: ItemProps): JSX.Element {
     const { serverID, createURL } = toolProps;
     return (
         <Menu.Item {...rest}>
-            <Button disabled={serverID === undefined} type='link' icon={<LinkOutlined />} onClick={createURL}>
+            <Button
+                className='cvat-object-item-menu-create-url'
+                disabled={serverID === undefined}
+                type='link'
+                icon={<LinkOutlined />}
+                onClick={createURL}
+            >
                 Create object URL
             </Button>
         </Menu.Item>
@@ -71,7 +77,12 @@ function MakeCopyItem(props: ItemProps): JSX.Element {
     return (
         <Menu.Item {...rest}>
             <CVATTooltip title={`${copyShortcut} and ${pasteShortcut}`}>
-                <Button type='link' icon={<CopyOutlined />} onClick={copy}>
+                <Button
+                    className='cvat-object-item-menu-make-copy'
+                    type='link'
+                    icon={<CopyOutlined />}
+                    onClick={copy}
+                >
                     Make a copy
                 </Button>
             </CVATTooltip>
@@ -85,7 +96,12 @@ function EditMaskItem(props: ItemProps): JSX.Element {
     return (
         <Menu.Item {...rest}>
             <CVATTooltip title='Shift + Double click'>
-                <Button type='link' icon={<EditOutlined />} onClick={edit}>
+                <Button
+                    type='link'
+                    icon={<EditOutlined />}
+                    onClick={edit}
+                    className='cvat-object-item-menu-edit-object'
+                >
                     Edit
                 </Button>
             </CVATTooltip>
@@ -99,7 +115,12 @@ function PropagateItem(props: ItemProps): JSX.Element {
     return (
         <Menu.Item {...rest}>
             <CVATTooltip title={`${propagateShortcut}`}>
-                <Button type='link' icon={<BlockOutlined />} onClick={propagate}>
+                <Button
+                    type='link'
+                    icon={<BlockOutlined />}
+                    onClick={propagate}
+                    className='cvat-object-item-menu-propagate-item'
+                >
                     Propagate
                 </Button>
             </CVATTooltip>
@@ -112,7 +133,12 @@ function SwitchOrientationItem(props: ItemProps): JSX.Element {
     const { switchOrientation } = toolProps;
     return (
         <Menu.Item {...rest}>
-            <Button type='link' icon={<RetweetOutlined />} onClick={switchOrientation}>
+            <Button
+                type='link'
+                icon={<RetweetOutlined />}
+                onClick={switchOrientation}
+                className='cvat-object-item-menu-switch-orientation'
+            >
                 Switch orientation
             </Button>
         </Menu.Item>
@@ -124,7 +150,11 @@ function ResetPerspectiveItem(props: ItemProps): JSX.Element {
     const { resetCuboidPerspective } = toolProps;
     return (
         <Menu.Item {...rest}>
-            <Button type='link' onClick={resetCuboidPerspective}>
+            <Button
+                type='link'
+                onClick={resetCuboidPerspective}
+                className='cvat-object-item-menu-reset-perspective'
+            >
                 <Icon component={ResetPerspectiveIcon} />
                 Reset perspective
             </Button>
@@ -138,7 +168,11 @@ function ToBackgroundItem(props: ItemProps): JSX.Element {
     return (
         <Menu.Item {...rest}>
             <CVATTooltip title={`${toBackgroundShortcut}`}>
-                <Button type='link' onClick={toBackground}>
+                <Button
+                    type='link'
+                    onClick={toBackground}
+                    className='cvat-object-item-menu-to-background'
+                >
                     <Icon component={BackgroundIcon} />
                     To background
                 </Button>
@@ -153,7 +187,11 @@ function ToForegroundItem(props: ItemProps): JSX.Element {
     return (
         <Menu.Item {...rest}>
             <CVATTooltip title={`${toForegroundShortcut}`}>
-                <Button type='link' onClick={toForeground}>
+                <Button
+                    type='link'
+                    onClick={toForeground}
+                    className='cvat-object-item-menu-to-foreground'
+                >
                     <Icon component={ForegroundIcon} />
                     To foreground
                 </Button>
@@ -182,7 +220,7 @@ function SwitchColorItem(props: ItemProps): JSX.Element {
                 resetVisible={false}
             >
                 <CVATTooltip title={`${changeColorShortcut}`}>
-                    <Button type='link'>
+                    <Button type='link' className='cvat-object-item-menu-change-color'>
                         <Icon component={ColorizeIcon} />
                         {`Change ${colorBy.toLowerCase()} color`}
                     </Button>
@@ -202,6 +240,7 @@ function RemoveItem(props: ItemProps): JSX.Element {
                     type='link'
                     icon={<DeleteOutlined />}
                     onClick={remove}
+                    className='cvat-object-item-menu-remove-object'
                 >
                     Remove
                 </Button>
@@ -228,7 +267,7 @@ export default function ItemMenu(props: Props): JSX.Element {
         EDIT_MASK = 'edit_mask',
     }
 
-    const is2D = jobInstance.dimension === DimensionType.DIM_2D;
+    const is2D = jobInstance.dimension === DimensionType.DIMENSION_2D;
 
     return (
         <Menu className='cvat-object-item-menu' selectable={false}>

@@ -6,7 +6,7 @@
 import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 import {
-    Webhook, SocialAuthMethods, MLModel, ModelProvider,
+    Webhook, MLModel, ModelProvider, Organization,
 } from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap } from 'utils/mousetrap-react';
@@ -26,9 +26,6 @@ export interface AuthState {
     allowChangePassword: boolean;
     allowResetPassword: boolean;
     hasEmailVerificationBeenSent: boolean;
-    socialAuthFetching: boolean;
-    socialAuthInitialized: boolean;
-    socialAuthMethods: SocialAuthMethods;
 }
 
 export interface ProjectsQuery {
@@ -101,7 +98,6 @@ export interface JobsState {
 export interface TasksState {
     initialized: boolean;
     fetching: boolean;
-    updating: boolean;
     hideEmpty: boolean;
     moveTask: {
         modalVisible: boolean;
@@ -116,9 +112,6 @@ export interface TasksState {
     activities: {
         deletes: {
             [tid: number]: boolean; // deleted (deleting if in dictionary)
-        };
-        jobUpdates: {
-            [jid: number]: boolean,
         };
     };
 }
@@ -264,17 +257,42 @@ export enum SupportedPlugins {
     GIT_INTEGRATION = 'GIT_INTEGRATION',
     ANALYTICS = 'ANALYTICS',
     MODELS = 'MODELS',
-    PREDICT = 'PREDICT',
 }
 
 export type PluginsList = {
     [name in SupportedPlugins]: boolean;
 };
 
+export interface PluginComponent {
+    component: any;
+    data: {
+        weight: number;
+        shouldBeRendered: (props?: object, state?: object) => boolean;
+    };
+}
+
 export interface PluginsState {
     fetching: boolean;
     initialized: boolean;
     list: PluginsList;
+    current: {
+        [index: string]: {
+            destructor: CallableFunction;
+            globalStateDidUpdate?: CallableFunction;
+        };
+    },
+    components: {
+        header: {
+            userMenu: {
+                items: PluginComponent[],
+            },
+        },
+        loginPage: {
+            loginForm: PluginComponent[];
+        }
+        router: PluginComponent[],
+        loggedInModals: PluginComponent[],
+    }
 }
 
 export interface AboutState {
@@ -496,9 +514,6 @@ export interface NotificationsState {
             submittingReview: null | ErrorState;
             deletingIssue: null | ErrorState;
         };
-        predictor: {
-            prediction: null | ErrorState;
-        };
         exporting: {
             dataset: null | ErrorState;
             annotation: null | ErrorState;
@@ -620,19 +635,6 @@ export enum Rotation {
     CLOCKWISE90,
 }
 
-export interface PredictorState {
-    timeRemaining: number;
-    progress: number;
-    projectScore: number;
-    message: string;
-    error: Error | null;
-    enabled: boolean;
-    fetching: boolean;
-    annotationAmount: number;
-    mediaAmount: number;
-    annotatedFrames: number[];
-}
-
 export interface AnnotationState {
     activities: {
         loads: {
@@ -732,7 +734,6 @@ export interface AnnotationState {
     sidebarCollapsed: boolean;
     appearanceCollapsed: boolean;
     workspace: Workspace;
-    predictor: PredictorState;
 }
 
 export enum Workspace {
@@ -849,7 +850,7 @@ export interface ReviewState {
 
 export interface OrganizationState {
     list: any[];
-    current: any | null;
+    current?: Organization | null;
     initialized: boolean;
     fetching: boolean;
     creating: boolean;
@@ -897,11 +898,6 @@ export interface CombinedState {
     cloudStorages: CloudStoragesState;
     organizations: OrganizationState;
     webhooks: WebhooksState;
-}
-
-export enum DimensionType {
-    DIM_3D = '3d',
-    DIM_2D = '2d',
 }
 
 export interface Indexable {

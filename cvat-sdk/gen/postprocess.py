@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright (C) 2022 CVAT.ai Corporation
 #
@@ -107,7 +107,7 @@ class Replacer:
             try:
                 self.process_file(filename)
             except Exception as e:
-                print(f"Failed to process file '{osp.basename(filename)}': {e}")
+                raise RuntimeError(f"Failed to process file {filename!r}") from e
 
 
 def parse_schema(path):

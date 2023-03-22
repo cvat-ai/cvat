@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -16,16 +17,18 @@ import { switchSettingsDialog } from 'actions/settings-actions';
 import { shortcutsActions } from 'actions/shortcuts-actions';
 import { getUserAgreementsAsync } from 'actions/useragreements-actions';
 import CVATApplication from 'components/cvat-app';
+import PluginsEntrypoint from 'components/plugins-entrypoint';
 import LayoutGrid from 'components/layout-grid/layout-grid';
 import logger, { LogType } from 'cvat-logger';
 import createCVATStore, { getCVATStore } from 'cvat-store';
 import { KeyMap } from 'utils/mousetrap-react';
 import createRootReducer from 'reducers/root-reducer';
 import { getOrganizationsAsync } from 'actions/organization-actions';
-import { resetErrors, resetMessages } from './actions/notification-actions';
-import { CombinedState, NotificationsState } from './reducers';
+import { resetErrors, resetMessages } from 'actions/notification-actions';
+import { CombinedState, NotificationsState, PluginsState } from './reducers';
 
 createCVATStore(createRootReducer);
+
 const cvatStore = getCVATStore();
 
 interface StateToProps {
@@ -51,6 +54,7 @@ interface StateToProps {
     user: any;
     keyMap: KeyMap;
     isModelPluginActive: boolean;
+    pluginComponents: PluginsState['components'];
 }
 
 interface DispatchToProps {
@@ -100,6 +104,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         notifications: state.notifications,
         user: auth.user,
         keyMap: shortcuts.keyMap,
+        pluginComponents: plugins.components,
         isModelPluginActive: plugins.list.MODELS,
     };
 }
@@ -126,6 +131,7 @@ const ReduxAppWrapper = connect(mapStateToProps, mapDispatchToProps)(CVATApplica
 ReactDOM.render(
     <Provider store={cvatStore}>
         <BrowserRouter>
+            <PluginsEntrypoint />
             <ReduxAppWrapper />
         </BrowserRouter>
         <LayoutGrid />
@@ -154,9 +160,9 @@ window.addEventListener('error', (errorEvent: ErrorEvent) => {
         const re = RegExp(/\/tasks\/[0-9]+\/jobs\/[0-9]+$/);
         const { instance: job } = state.annotation.job;
         if (re.test(pathname) && job) {
-            job.logger.log(LogType.sendException, logPayload);
+            job.logger.log(LogType.exception, logPayload);
         } else {
-            logger.log(LogType.sendException, logPayload);
+            logger.log(LogType.exception, logPayload);
         }
     }
 });

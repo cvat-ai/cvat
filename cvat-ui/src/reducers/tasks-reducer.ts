@@ -1,21 +1,19 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { AnyAction } from 'redux';
-import { omit } from 'lodash';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { TasksActionTypes } from 'actions/tasks-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
 
 import { AnnotationActionTypes } from 'actions/annotation-actions';
-import { TasksState, Task } from '.';
+import { TasksState } from '.';
 
 const defaultState: TasksState = {
     initialized: false,
     fetching: false,
-    updating: false,
     hideEmpty: false,
     moveTask: {
         modalVisible: false,
@@ -34,7 +32,6 @@ const defaultState: TasksState = {
     },
     activities: {
         deletes: {},
-        jobUpdates: {},
     },
 };
 
@@ -61,7 +58,6 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                 ...state,
                 initialized: true,
                 fetching: false,
-                updating: false,
                 count: action.payload.count,
                 current: action.payload.array,
             };
@@ -120,84 +116,6 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                 },
             };
         }
-        case TasksActionTypes.UPDATE_TASK: {
-            return {
-                ...state,
-                updating: true,
-            };
-        }
-        case TasksActionTypes.UPDATE_TASK_SUCCESS: {
-            // a task will be undefined after updating when a user doesn't have access to the task anymore
-            const { task, taskID } = action.payload;
-
-            if (typeof task === 'undefined') {
-                return {
-                    ...state,
-                    updating: false,
-                    current: state.current.filter((_task: Task): boolean => _task.id !== taskID),
-                };
-            }
-
-            return {
-                ...state,
-                updating: false,
-                current: state.current.map(
-                    (_task): Task => {
-                        if (_task.id === task.id) {
-                            return task;
-                        }
-
-                        return _task;
-                    },
-                ),
-            };
-        }
-        case TasksActionTypes.UPDATE_TASK_FAILED: {
-            return {
-                ...state,
-                updating: false,
-                current: state.current.map(
-                    (task): Task => {
-                        if (task.id === action.payload.task.id) {
-                            return action.payload.task;
-                        }
-
-                        return task;
-                    },
-                ),
-            };
-        }
-        case TasksActionTypes.UPDATE_JOB: {
-            const { jobID } = action.payload;
-            const { jobUpdates } = state.activities;
-
-            return {
-                ...state,
-                updating: true,
-                activities: {
-                    ...state.activities,
-                    jobUpdates: {
-                        ...jobUpdates,
-                        ...Object.fromEntries([[jobID, true]]),
-                    },
-                },
-            };
-        }
-        case TasksActionTypes.UPDATE_JOB_SUCCESS:
-        case TasksActionTypes.UPDATE_JOB_FAILED: {
-            const { jobID } = action.payload;
-            const { jobUpdates } = state.activities;
-
-            delete jobUpdates[jobID];
-
-            return {
-                ...state,
-                activities: {
-                    ...state.activities,
-                    jobUpdates: omit(jobUpdates, [jobID]),
-                },
-            };
-        }
         case TasksActionTypes.HIDE_EMPTY_TASKS: {
             return {
                 ...state,
@@ -217,7 +135,6 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
         case AnnotationActionTypes.CLOSE_JOB: {
             return {
                 ...state,
-                updating: false,
             };
         }
         case BoundariesActionTypes.RESET_AFTER_ERROR:

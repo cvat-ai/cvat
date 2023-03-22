@@ -68,6 +68,7 @@ class OrganizationViewSet(viewsets.GenericViewSet,
 
     def get_queryset(self):
         queryset = super().get_queryset()
+
         permission = OrganizationPermission.create_scope_list(self.request)
         return permission.filter(queryset)
 
@@ -131,6 +132,7 @@ class MembershipViewSet(mixins.RetrieveModelMixin, DestroyModelMixin,
 
     def get_queryset(self):
         queryset = super().get_queryset()
+
         permission = MembershipPermission.create_scope_list(self.request)
         return permission.filter(queryset)
 
@@ -190,6 +192,7 @@ class InvitationViewSet(viewsets.GenericViewSet,
 
     def get_queryset(self):
         queryset = super().get_queryset()
+
         permission = InvitationPermission.create_scope_list(self.request)
         return permission.filter(queryset)
 

@@ -26,7 +26,7 @@ export default function IncorrectEmailConfirmationPage(): JSX.Element {
                         <p>
                             Please issue a new e-mail confirmation request.
                         </p>
-                        <Button type='link' href='/auth/login'>
+                        <Button className='cvat-go-to-login-button' type='link' href='/auth/login'>
                             Go to login page
                         </Button>
                     </Col>
