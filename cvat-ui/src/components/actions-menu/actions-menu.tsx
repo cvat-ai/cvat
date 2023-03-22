@@ -14,6 +14,7 @@ import { DimensionType } from 'cvat-core-wrapper';
 
 interface Props {
     taskID: number;
+    projectID: number | null;
     taskMode: string;
     bugTracker: string;
     loaders: any[];
@@ -37,6 +38,7 @@ export enum Actions {
 function ActionsMenuComponent(props: Props): JSX.Element {
     const {
         taskID,
+        projectID,
         bugTracker,
         inferenceIsActive,
         backupIsActive,
@@ -86,7 +88,9 @@ function ActionsMenuComponent(props: Props): JSX.Element {
                 Backup Task
             </Menu.Item>
             <Menu.Divider />
-            <Menu.Item key={Actions.MOVE_TASK_TO_PROJECT}>Move to project</Menu.Item>
+            { projectID === null && (
+                <Menu.Item key={Actions.MOVE_TASK_TO_PROJECT}>Move to project</Menu.Item>
+            )}
             <Menu.Item key={Actions.DELETE_TASK}>Delete</Menu.Item>
         </Menu>
     );
