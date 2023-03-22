@@ -32,7 +32,7 @@ with ApiClient(configuration) as api_client:
 {{/optionalParams}}
 
     try:
-        {{#returnType}}(data, response) = {{/returnType}}%%%make_api_name!!!{{classname}}%%%.{{>operation_name}}({{#requiredParams}}
+        {{#returnType}}(data, response) = api_client.{{/returnType}}%%%make_api_name!!!{{classname}}%%%.{{>operation_name}}({{#requiredParams}}
             {{^defaultValue}}{{paramName}},{{/defaultValue}}{{/requiredParams}}{{#optionalParams}}
             {{paramName}}={{paramName}},{{#-last}}
         {{/-last}}{{/optionalParams}})
