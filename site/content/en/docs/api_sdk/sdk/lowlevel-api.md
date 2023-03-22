@@ -371,8 +371,9 @@ low-level SDK API. Please use the following recommendations.
 
 #### Sending data
 
-By default, requests use the `application/json` content type. However, it's not possible or
-inefficient to send binary data in this encoding. If you need to send files or other binary data,
+By default, requests use the `application/json` content type, which is a text type.
+However, it's inefficient to send binary data in this encoding, and the data passed
+won't be converted automatically. If you need to send files or other binary data,
 please specify `_content_type="multipart/form-data"` in the request parameters:
 
 Example:
@@ -390,9 +391,10 @@ Example:
 )
 ```
 
-Please also note that if there are complex fields in the data (such as arrays or dicts), they,
-in turn, cannot be encoded as `multipart/form-data`, so the recommended solution is to split
-fields into files and others, and send them in different requests with different content type:
+Please also note that if there are complex fields in the data (such as nested lists or dicts),
+they, in turn, cannot be encoded as `multipart/form-data`, so the recommended solution is to
+split fields into files and others, and send them in different requests with different content
+types:
 
 Example:
 
