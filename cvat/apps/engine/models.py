@@ -12,12 +12,14 @@ from typing import Optional
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.files.storage import FileSystemStorage
-from django.db import models
+from django.db import IntegrityError, models
 from django.db.models.fields import FloatField
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
+
 from cvat.apps.engine.utils import parse_specific_attributes
 from cvat.apps.organizations.models import Organization
+
 
 class SafeCharField(models.CharField):
     def get_prep_value(self, value):
@@ -502,7 +504,6 @@ class Job(models.Model):
     class Meta:
         default_permissions = ()
 
-
 class InvalidLabel(ValueError):
     pass
 
@@ -520,28 +521,43 @@ class Label(models.Model):
     def has_parent_label(self):
         return bool(self.parent)
 
-    def _check_save_constraints(self) -> None:
-        # NOTE: constraints don't work for some reason
-        # https://github.com/opencv/cvat/pull/5700#discussion_r1112276036
-        # This method is not 100% reliable because of possible race conditions
-        # but it should work in relevant cases.
+    def save(self, *args, **kwargs):
+        try:
+            super().save(*args, **kwargs)
+        except IntegrityError:
+            raise InvalidLabel("All label names must be unique")
 
-        parent_entity = self.project or self.task
-
-        # Check for possible labels name duplicates in case of saving the new label
-        existing_labels: models.QuerySet = parent_entity.get_labels()
-        if self.id:
-            existing_labels = existing_labels.exclude(id=self.id)
-        if existing_labels.filter(name=self.name).count():
-            raise InvalidLabel(f"Label '{self.name}' already exists")
-
-    def save(self, *args, **kwargs) -> None:
-        self._check_save_constraints()
-        return super().save(*args, **kwargs)
+    @classmethod
+    def create(cls, **kwargs):
+        try:
+            return cls.objects.create(**kwargs)
+        except IntegrityError:
+            raise InvalidLabel("All label names must be unique")
 
     class Meta:
         default_permissions = ()
-        unique_together = ('task', 'name', 'parent')
+        constraints = [
+            models.UniqueConstraint(
+                name='project_name_unique',
+                fields=('project', 'name'),
+                condition=models.Q(task__isnull=True, parent__isnull=True)
+            ),
+            models.UniqueConstraint(
+                name='task_name_unique',
+                fields=('task', 'name'),
+                condition=models.Q(project__isnull=True, parent__isnull=True)
+            ),
+            models.UniqueConstraint(
+                name='project_name_parent_unique',
+                fields=('project', 'name', 'parent'),
+                condition=models.Q(task__isnull=True)
+            ),
+            models.UniqueConstraint(
+                name='task_name_parent_unique',
+                fields=('task', 'name', 'parent'),
+                condition=models.Q(project__isnull=True)
+            )
+        ]
 
 class Skeleton(models.Model):
     root = models.OneToOneField(Label, on_delete=models.CASCADE)
@@ -699,6 +715,12 @@ class Issue(models.Model):
     def get_organization_slug(self):
         return self.job.get_organization_slug()
 
+    def get_task_id(self):
+        return self.job.get_task_id()
+
+    def get_job_id(self):
+        return self.job_id
+
 
 class Comment(models.Model):
     issue = models.ForeignKey(Issue, related_name='comments', on_delete=models.CASCADE)
@@ -715,6 +737,12 @@ class Comment(models.Model):
 
     def get_organization_slug(self):
         return self.issue.get_organization_slug()
+
+    def get_task_id(self):
+        return self.issue.get_task_id()
+
+    def get_job_id(self):
+        return self.issue.get_job_id()
 
 class CloudProviderChoice(str, Enum):
     AWS_S3 = 'AWS_S3_BUCKET'
@@ -739,6 +767,7 @@ class CredentialsTypeChoice(str, Enum):
     ACCOUNT_NAME_TOKEN_PAIR = 'ACCOUNT_NAME_TOKEN_PAIR' # nosec
     KEY_FILE_PATH = 'KEY_FILE_PATH'
     ANONYMOUS_ACCESS = 'ANONYMOUS_ACCESS'
+    CONNECTION_STRING = 'CONNECTION_STRING'
 
     @classmethod
     def choices(cls):

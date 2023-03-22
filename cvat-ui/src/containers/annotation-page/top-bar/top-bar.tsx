@@ -30,11 +30,11 @@ import {
 import AnnotationTopBarComponent from 'components/annotation-page/top-bar/top-bar';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
+import { DimensionType } from 'cvat-core-wrapper';
 import {
     CombinedState,
     FrameSpeed,
     Workspace,
-    DimensionType,
     ActiveControl,
     ToolsBlockerState,
 } from 'reducers';
@@ -543,7 +543,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
                     if (stillPlaying) {
                         if (isAbleToChangeFrame()) {
                             onChangeFrame(frameNumber + 1 + framesSkipped, stillPlaying, framesSkipped + 1);
-                        } else if (jobInstance.dimension === DimensionType.DIM_2D) {
+                        } else if (jobInstance.dimension === DimensionType.DIMENSION_2D) {
                             onSwitchPlay(false);
                         } else {
                             setTimeout(() => this.play(), frameDelay);

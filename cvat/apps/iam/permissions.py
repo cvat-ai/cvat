@@ -11,7 +11,6 @@ from collections import namedtuple
 from enum import Enum
 from typing import Any, List, Optional, Sequence, cast
 
-import requests
 from attrs import define, field
 from django.conf import settings
 from django.db.models import Q
@@ -21,6 +20,7 @@ from rest_framework.permissions import BasePermission
 from cvat.apps.organizations.models import Membership, Organization
 from cvat.apps.engine.models import Label, Project, Task, Job, Issue
 from cvat.apps.webhooks.models import WebhookTypeChoice
+from cvat.utils.http import make_requests_session
 
 
 class StrEnum(str, Enum):
@@ -107,8 +107,9 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
         return None
 
     def check_access(self) -> PermissionResult:
-        response = requests.post(self.url, json=self.payload)
-        output = response.json()['result']
+        with make_requests_session() as session:
+            response = session.post(self.url, json=self.payload)
+            output = response.json()['result']
 
         allow = False
         reasons = []
@@ -124,14 +125,17 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
 
     def filter(self, queryset):
         url = self.url.replace('/allow', '/filter')
-        r = requests.post(url, json=self.payload)
+
+        with make_requests_session() as session:
+            r = session.post(url, json=self.payload).json()['result']
+
         q_objects = []
         ops_dict = {
             '|': operator.or_,
             '&': operator.and_,
             '~': operator.not_,
         }
-        for item in r.json()['result']:
+        for item in r:
             if isinstance(item, str):
                 val1 = q_objects.pop()
                 if item == '~':
@@ -384,9 +388,12 @@ class EventsPermission(OpenPolicyAgentPermission):
 
     def filter(self, query_params):
         url = self.url.replace('/allow', '/filter')
-        r = requests.post(url, json=self.payload)
+
+        with make_requests_session() as session:
+            r = session.post(url, json=self.payload).json()['result']
+
         filter_params = query_params.copy()
-        for query in r.json()['result']:
+        for query in r:
             for attr, value in query.items():
                 if filter_params.get(attr, value) != value:
                     raise PermissionDenied(f"You don't have permission to view events with {attr}={filter_params.get(attr)}")

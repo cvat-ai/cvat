@@ -64,6 +64,7 @@ description: 'Installing a development environment for different operating syste
   - [Prettier Formatter for Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
   - [licenser](https://marketplace.visualstudio.com/items?itemName=ymotongpoo.licenser)
   - [Trailing Spaces](https://marketplace.visualstudio.com/items?itemName=shardulm94.trailing-spaces)
+  - [Code Spell Checker](https://marketplace.visualstudio.com/items?itemName=streetsidesoftware.code-spell-checker)
 
 - Make sure to use Python 3.9.0 or higher
   ```

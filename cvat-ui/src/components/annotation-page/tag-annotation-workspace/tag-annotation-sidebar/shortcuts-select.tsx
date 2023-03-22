@@ -8,8 +8,7 @@ import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 import Select from 'antd/lib/select';
 
-import { DimensionType } from 'reducers';
-import { Label } from 'cvat-core-wrapper';
+import { Label, DimensionType } from 'cvat-core-wrapper';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { shift } from 'utils/math';
 
@@ -63,7 +62,7 @@ const ShortcutsSelect = (props: Props): JSX.Element => {
                 description: `Setup tag with "${label.name}" label`,
                 sequences: [`${id}`, `shift+${id}`],
                 action: 'keydown',
-                applicable: [DimensionType.DIM_2D, DimensionType.DIM_3D],
+                applicable: [DimensionType.DIMENSION_2D, DimensionType.DIMENSION_3D],
             };
 
             handlers[key] = (event: KeyboardEvent | undefined) => {

@@ -6,7 +6,7 @@
 import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 import {
-    Webhook, SocialAuthMethods, MLModel, ModelProvider,
+    Webhook, MLModel, ModelProvider, Organization,
 } from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap } from 'utils/mousetrap-react';
@@ -26,9 +26,6 @@ export interface AuthState {
     allowChangePassword: boolean;
     allowResetPassword: boolean;
     hasEmailVerificationBeenSent: boolean;
-    socialAuthFetching: boolean;
-    socialAuthInitialized: boolean;
-    socialAuthMethods: SocialAuthMethods;
 }
 
 export interface ProjectsQuery {
@@ -266,10 +263,36 @@ export type PluginsList = {
     [name in SupportedPlugins]: boolean;
 };
 
+export interface PluginComponent {
+    component: any;
+    data: {
+        weight: number;
+        shouldBeRendered: (props?: object, state?: object) => boolean;
+    };
+}
+
 export interface PluginsState {
     fetching: boolean;
     initialized: boolean;
     list: PluginsList;
+    current: {
+        [index: string]: {
+            destructor: CallableFunction;
+            globalStateDidUpdate?: CallableFunction;
+        };
+    },
+    components: {
+        header: {
+            userMenu: {
+                items: PluginComponent[],
+            },
+        },
+        loginPage: {
+            loginForm: PluginComponent[];
+        }
+        router: PluginComponent[],
+        loggedInModals: PluginComponent[],
+    }
 }
 
 export interface AboutState {
@@ -827,7 +850,7 @@ export interface ReviewState {
 
 export interface OrganizationState {
     list: any[];
-    current: any | null;
+    current?: Organization | null;
     initialized: boolean;
     fetching: boolean;
     creating: boolean;
@@ -875,11 +898,6 @@ export interface CombinedState {
     cloudStorages: CloudStoragesState;
     organizations: OrganizationState;
     webhooks: WebhooksState;
-}
-
-export enum DimensionType {
-    DIM_3D = '3d',
-    DIM_2D = '2d',
 }
 
 export interface Indexable {

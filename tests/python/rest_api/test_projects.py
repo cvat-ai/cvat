@@ -21,7 +21,14 @@ from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
 from PIL import Image
 
-from shared.utils.config import BASE_URL, USER_PASS, get_method, make_api_client, patch_method
+from shared.utils.config import (
+    BASE_URL,
+    USER_PASS,
+    get_method,
+    make_api_client,
+    patch_method,
+    post_method,
+)
 from shared.utils.helpers import make_skeleton_label_payload
 
 from .utils import CollectionSimpleFilterTestBase, export_dataset
@@ -391,6 +398,30 @@ class TestPostProjects:
 
         return org
 
+    def test_cannot_create_project_with_same_labels(self, admin_user):
+        project_spec = {
+            "name": "test cannot create project with same labels",
+            "labels": [{"name": "l1"}, {"name": "l1"}],
+        }
+        response = post_method(admin_user, "/projects", project_spec)
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+
+        response = get_method(admin_user, "/projects")
+        assert response.status_code == HTTPStatus.OK
+
+    def test_cannot_create_project_with_same_skeleton_sublabels(self, admin_user):
+        project_spec = {
+            "name": "test cannot create project with same skeleton sublabels",
+            "labels": [
+                {"name": "s1", "type": "skeleton", "sublabels": [{"name": "1"}, {"name": "1"}]}
+            ],
+        }
+        response = post_method(admin_user, "/projects", project_spec)
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+
+        response = get_method(admin_user, "/projects")
+        assert response.status_code == HTTPStatus.OK
+
 
 def _check_cvat_for_video_project_annotations_meta(content, values_to_be_checked):
     document = ET.fromstring(content)
@@ -620,6 +651,14 @@ class TestImportExportDatasetProject:
 
         assert task1_rotation == task2_rotation
 
+    def test_can_export_dataset_with_skeleton_labels_with_spaces(self):
+        # https://github.com/opencv/cvat/issues/5257
+        # https://github.com/opencv/cvat/issues/5600
+        username = "admin1"
+        project_id = 11
+
+        self._test_export_project(username, project_id, "COCO Keypoints 1.0")
+
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestPatchProjectLabel:
@@ -627,7 +666,7 @@ class TestPatchProjectLabel:
         kwargs.setdefault("return_json", True)
         with make_api_client(user) as api_client:
             return get_paginated_collection(
-                api_client.labels_api.list_endpoint, project_id=str(pid), **kwargs
+                api_client.labels_api.list_endpoint, project_id=pid, **kwargs
             )
 
     def test_can_delete_label(self, projects, labels, admin_user):
@@ -701,7 +740,7 @@ class TestPatchProjectLabel:
             admin_user, f'/projects/{project["id"]}', {"labels": [label_payload]}
         )
         assert response.status_code == HTTPStatus.BAD_REQUEST
-        assert f"Label '{project_labels[0]['name']}' already exists" in response.text
+        assert "All label names must be unique" in response.text
 
     def test_cannot_add_foreign_label(self, projects, labels, admin_user):
         project = list(projects)[0]
@@ -798,6 +837,28 @@ class TestPatchProjectLabel:
             f'/projects/{project["id"]}',
             {"labels": [new_label]},
             org_id=project["organization"],
+        )
+        assert response.status_code == HTTPStatus.OK
+        assert response.json()["labels"]["count"] == project["labels"]["count"] + 1
+
+    def test_admin_can_add_skeleton(self, projects, admin_user):
+        project = list(projects)[0]
+        new_skeleton = {
+            "name": "skeleton1",
+            "type": "skeleton",
+            "sublabels": [
+                {
+                    "name": "1",
+                    "type": "points",
+                }
+            ],
+            "svg": '<circle r="1.5" stroke="black" fill="#b3b3b3" cx="48.794559478759766" '
+            'cy="36.98698806762695" stroke-width="0.1" data-type="element node" '
+            'data-element-id="1" data-node-id="1" data-label-name="597501"></circle>',
+        }
+
+        response = patch_method(
+            admin_user, f'/projects/{project["id"]}', {"labels": [new_skeleton]}
         )
         assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == project["labels"]["count"] + 1

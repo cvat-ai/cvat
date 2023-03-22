@@ -247,6 +247,8 @@ class LabelSerializer(SublabelSerializer):
     def update_label(
         cls,
         validated_data: Dict[str, Any],
+        svg: str,
+        sublabels: Iterable[Dict[str, Any]],
         *,
         parent_instance: Union[models.Project, models.Task],
         parent_label: Optional[models.Label] = None
@@ -281,13 +283,28 @@ class LabelSerializer(SublabelSerializer):
 
             logger.info("Label id {} ({}) was updated".format(db_label.id, db_label.name))
         else:
-            db_label = models.Label.objects.create(
-                name=validated_data.get('name'),
-                type=validated_data.get('type'),
-                parent=parent_label,
-                **parent_info
-            )
+            try:
+                db_label = models.Label.create(
+                    name=validated_data.get('name'),
+                    type=validated_data.get('type'),
+                    parent=parent_label,
+                    **parent_info
+                )
+            except models.InvalidLabel as exc:
+                raise exceptions.ValidationError(str(exc)) from exc
             logger.info("New {} label was created".format(db_label.name))
+
+            cls.update_labels(sublabels, parent_instance=parent_instance, parent_label=db_label)
+
+            if db_label.type == str(models.LabelType.SKELETON):
+                for db_sublabel in list(db_label.sublabels.all()):
+                    svg = models.Skeleton.embed_label_name_to_svg(
+                        svg, label_id=db_sublabel.id, label_name=db_sublabel.name,
+                    )
+                db_skeleton = models.Skeleton.objects.create(root=db_label, svg=svg)
+                logger.info(
+                    f'label:update Skeleton id:{db_skeleton.id} for label_id:{db_label.id}'
+                )
 
         if validated_data.get('deleted'):
             assert validated_data['id'] # must be checked in the validate()
@@ -352,7 +369,10 @@ class LabelSerializer(SublabelSerializer):
 
             sublabels = label.pop('sublabels', [])
             svg = label.pop('svg', '')
-            db_label = models.Label.objects.create(**label, **parent_info, parent=parent_label)
+            try:
+                db_label = models.Label.create(**label, **parent_info, parent=parent_label)
+            except models.InvalidLabel as exc:
+                raise exceptions.ValidationError(str(exc)) from exc
             logger.info(
                 f'label:create Label id:{db_label.id} for spec:{label} '
                 f'with sublabels:{sublabels}, parent_label:{parent_label}'
@@ -363,7 +383,7 @@ class LabelSerializer(SublabelSerializer):
             if db_label.type == str(models.LabelType.SKELETON):
                 for db_sublabel in list(db_label.sublabels.all()):
                     svg = models.Skeleton.embed_label_name_to_svg(
-                        svg, label_id=db_sublabel.id, label_name=db_sublabel.name
+                        svg, label_id=db_sublabel.id, label_name=db_sublabel.name,
                     )
                 db_skeleton = models.Skeleton.objects.create(root=db_label, svg=svg)
                 logger.info(f'label:create Skeleton id:{db_skeleton.id} for label_id:{db_label.id}')
@@ -386,7 +406,7 @@ class LabelSerializer(SublabelSerializer):
         for label in labels:
             sublabels = label.pop('sublabels', [])
             svg = label.pop('svg', '')
-            db_label = cls.update_label(label,
+            db_label = cls.update_label(label, svg, sublabels,
                 parent_instance=parent_instance, parent_label=parent_label
             )
             if db_label:
@@ -399,20 +419,6 @@ class LabelSerializer(SublabelSerializer):
                     f'label:delete label:{label} with '
                     f'sublabels:{sublabels}, parent_label:{parent_label}'
                 )
-
-            if not label.get('deleted'):
-                cls.update_labels(sublabels, parent_instance=parent_instance, parent_label=db_label)
-
-                if label.get('id') is None and db_label.type == str(models.LabelType.SKELETON):
-                    for db_sublabel in list(db_label.sublabels.all()):
-                        svg = models.Skeleton.embed_label_name_to_svg(
-                            svg, label_id=db_sublabel.id, label_name=db_sublabel.name
-                        )
-                    db_skeleton = models.Skeleton.objects.create(root=db_label, svg=svg)
-
-                    logger.info(
-                        f'label:update Skeleton id:{db_skeleton.id} for label_id:{db_label.id}'
-                    )
 
     @classmethod
     def _get_parent_info(cls, parent_instance: Union[models.Project, models.Task]):
@@ -829,6 +835,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         return serializer.data
 
     # pylint: disable=no-self-use
+    @transaction.atomic
     def create(self, validated_data):
         project_id = validated_data.get("project_id")
         if not (validated_data.get("label_set") or project_id):
@@ -871,6 +878,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         return db_task
 
     # pylint: disable=no-self-use
+    @transaction.atomic
     def update(self, instance, validated_data):
         instance.name = validated_data.get('name', instance.name)
         instance.owner_id = validated_data.get('owner_id', instance.owner_id)
@@ -888,45 +896,51 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             project = models.Project.objects.get(id=validated_project_id)
             if project.tasks.count() and project.tasks.first().dimension != instance.dimension:
                 raise serializers.ValidationError(f'Dimension ({instance.dimension}) of the task must be the same as other tasks in project ({project.tasks.first().dimension})')
+
             if instance.project_id is None:
-                for old_label in instance.label_set.all():
-                    try:
-                        if old_label.parent:
-                            new_label = project.label_set.filter(name=old_label.name, parent__name=old_label.parent.name).first()
-                        else:
-                            new_label = project.label_set.filter(name=old_label.name).first()
-                    except ValueError:
-                        raise serializers.ValidationError(f'Target project does not have label with name "{old_label.name}"')
-                    old_label.attributespec_set.all().delete()
-                    for model in (models.LabeledTrack, models.LabeledShape, models.LabeledImage):
-                        model.objects.filter(job__segment__task=instance, label=old_label).update(
-                            label=new_label
-                        )
-                instance.label_set.all().delete()
+                label_set = instance.label_set.all()
             else:
-                for old_label in instance.project.label_set.all():
-                    new_label_for_name = list(filter(lambda x: x.get('id', None) == old_label.id, labels))
-                    if len(new_label_for_name):
-                        old_label.name = new_label_for_name[0].get('name', old_label.name)
-                    try:
-                        if old_label.parent:
-                            new_label = project.label_set.filter(name=old_label.name, parent__name=old_label.parent.name).first()
-                        else:
-                            new_label = project.label_set.filter(name=old_label.name).first()
-                    except ValueError:
-                        raise serializers.ValidationError(f'Target project does not have label with name "{old_label.name}"')
-                    for (model, attr, attr_name) in (
-                        (models.LabeledTrack, models.LabeledTrackAttributeVal, 'track'),
-                        (models.LabeledShape, models.LabeledShapeAttributeVal, 'shape'),
-                        (models.LabeledImage, models.LabeledImageAttributeVal, 'image')
+                label_set = instance.project.label_set.all()
+
+            for old_label in label_set:
+                new_label_for_name = list(filter(lambda x: x.get('id', None) == old_label.id, labels))
+                if len(new_label_for_name):
+                    old_label.name = new_label_for_name[0].get('name', old_label.name)
+                try:
+                    if old_label.parent:
+                        new_label = project.label_set.filter(name=old_label.name, parent__name=old_label.parent.name).first()
+                    else:
+                        new_label = project.label_set.filter(name=old_label.name).first()
+                except ValueError:
+                    raise serializers.ValidationError(f'Target project does not have label with name "{old_label.name}"')
+
+                for old_attr in old_label.attributespec_set.all():
+                    new_attr = new_label.attributespec_set.filter(name=old_attr.name,
+                                                                  values=old_attr.values,
+                                                                  input_type=old_attr.input_type).first()
+                    if new_attr is None:
+                        raise serializers.ValidationError('Target project does not have ' \
+                            f'"{old_label.name}" label with "{old_attr.name}" attribute')
+
+                    for (model, model_name) in (
+                        (models.LabeledTrackAttributeVal, 'track'),
+                        (models.LabeledShapeAttributeVal, 'shape'),
+                        (models.LabeledImageAttributeVal, 'image')
                     ):
-                        attr.objects.filter(**{
-                            f'{attr_name}__job__segment__task': instance,
-                            f'{attr_name}__label': old_label
-                        }).delete()
-                        model.objects.filter(job__segment__task=instance, label=old_label).update(
-                            label=new_label
-                        )
+                        model.objects.filter(**{
+                            f'{model_name}__job__segment__task': instance,
+                            f'{model_name}__label': old_label,
+                            'spec': old_attr
+                        }).update(spec=new_attr)
+
+                for model in (models.LabeledTrack, models.LabeledShape, models.LabeledImage):
+                    model.objects.filter(job__segment__task=instance, label=old_label).update(
+                        label=new_label
+                    )
+
+            if instance.project_id is None:
+                instance.label_set.all().delete()
+
             instance.project = project
 
         # update source and target storages
@@ -983,19 +997,8 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             for label, sublabels in new_sublabel_names.items():
                 if sublabels != target_project_sublabel_names.get(label):
                     raise serializers.ValidationError('All task or project label names must be mapped to the target project')
-        else:
-            if 'label_set' in attrs.keys():
-                # FIXME: doesn't work for renaming just a single label
-                label_names = [
-                    label['name']
-                    for label in attrs.get('label_set')
-                    if not label.get('deleted')
-                ]
-                if len(label_names) != len(set(label_names)):
-                    raise serializers.ValidationError('All label names must be unique for the task')
 
         return attrs
-
 
 class ProjectReadSerializer(serializers.ModelSerializer):
     owner = BasicUserSerializer(required=False, read_only=True)
@@ -1045,6 +1048,7 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
         return serializer.data
 
     # pylint: disable=no-self-use
+    @transaction.atomic
     def create(self, validated_data):
         labels = validated_data.pop('label_set')
 
@@ -1068,6 +1072,7 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
         return db_project
 
     # pylint: disable=no-self-use
+    @transaction.atomic
     def update(self, instance, validated_data):
         instance.name = validated_data.get('name', instance.name)
         instance.owner_id = validated_data.get('owner_id', instance.owner_id)
@@ -1082,18 +1087,6 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
 
         instance.save()
         return instance
-
-    def validate_labels(self, value):
-        if value:
-            # FIXME: doesn't work for renaming just a single label
-            label_names = [
-                label['name']
-                for label in value
-                if not label.get('deleted')
-            ]
-            if len(label_names) != len(set(label_names)):
-                raise serializers.ValidationError('All label names must be unique for the project')
-        return value
 
 class AboutSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=128)
@@ -1413,13 +1406,14 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
     key_file = serializers.FileField(required=False)
     account_name = serializers.CharField(max_length=24, allow_blank=True, required=False)
     manifests = ManifestSerializer(many=True, default=[])
+    connection_string = serializers.CharField(max_length=440, allow_blank=True, required=False)
 
     class Meta:
         model = models.CloudStorage
         fields = (
             'provider_type', 'resource', 'display_name', 'owner', 'credentials_type',
             'created_date', 'updated_date', 'session_token', 'account_name', 'key',
-            'secret_key', 'key_file', 'specific_attributes', 'description', 'id',
+            'secret_key', 'connection_string', 'key_file', 'specific_attributes', 'description', 'id',
             'manifests', 'organization'
         )
         read_only_fields = ('created_date', 'updated_date', 'owner', 'organization')
@@ -1437,8 +1431,8 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         provider_type = attrs.get('provider_type')
         if provider_type == models.CloudProviderChoice.AZURE_CONTAINER:
-            if not attrs.get('account_name', ''):
-                raise serializers.ValidationError('Account name for Azure container was not specified')
+            if not attrs.get('account_name', '') and not attrs.get('connection_string', ''):
+                raise serializers.ValidationError('Account name or connection string for Azure container was not specified')
         return attrs
 
     @staticmethod
@@ -1476,7 +1470,8 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
             secret_key=validated_data.pop('secret_key', ''),
             session_token=validated_data.pop('session_token', ''),
             key_file_path=temporary_file,
-            credentials_type = validated_data.get('credentials_type')
+            credentials_type = validated_data.get('credentials_type'),
+            connection_string = validated_data.pop('connection_string', '')
         )
         details = {
             'resource': validated_data.get('resource'),

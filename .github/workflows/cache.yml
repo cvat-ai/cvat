@@ -9,7 +9,7 @@ jobs:
     uses: ./.github/workflows/search-cache.yml
 
   Caching_CVAT:
-    needs: search_cache
+    needs: get-sha
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       REPO: ${{ github.repository }}
