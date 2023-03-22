@@ -26,9 +26,9 @@ Method | HTTP request | Description
 {{^allParams}}This endpoint does not need any parameter.{{/allParams}}{{#allParams}}{{#-last}}
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------{{/-last}}{{/allParams}}
-{{#requiredParams}}{{^defaultValue}} **{{paramName}}** | {{^baseType}}**{{dataType}}**{{/baseType}}{{#baseType}}[**{{dataType}}**](../models/{{baseType}}){{/baseType}}| {{description}} |
-{{/defaultValue}}{{/requiredParams}}{{#requiredParams}}{{#defaultValue}} **{{paramName}}** | {{^baseType}}**{{dataType}}**{{/baseType}}{{#baseType}}[**{{dataType}}**](../models/{{baseType}}){{/baseType}}| {{description}} | defaults to {{{.}}}
-{{/defaultValue}}{{/requiredParams}}{{#optionalParams}} **{{paramName}}** | {{^baseType}}**{{dataType}}**{{/baseType}}{{#baseType}}[**{{dataType}}**](../models/{{baseType}}){{/baseType}}| {{description}} | [optional]{{#defaultValue}} if omitted the server will use the default value of {{{.}}}{{/defaultValue}}
+{{#requiredParams}}{{^defaultValue}} **{{paramName}}** | {{^baseType}}**{{dataType}}**{{/baseType}}{{#baseType}}[**{{dataType}}**](../models/{{baseType}}){{/baseType}}| {{{description}}} |
+{{/defaultValue}}{{/requiredParams}}{{#requiredParams}}{{#defaultValue}} **{{paramName}}** | {{^baseType}}**{{dataType}}**{{/baseType}}{{#baseType}}[**{{dataType}}**](../models/{{baseType}}){{/baseType}}| {{{description}}} | defaults to {{{.}}}
+{{/defaultValue}}{{/requiredParams}}{{#optionalParams}} **{{paramName}}** | {{^baseType}}**{{dataType}}**{{/baseType}}{{#baseType}}[**{{dataType}}**](../models/{{baseType}}){{/baseType}}| {{{description}}} | [optional]{{#defaultValue}} if omitted the server will use the default value of {{{.}}}{{/defaultValue}}
 {{/optionalParams}}
 
 ### Return type
@@ -51,7 +51,7 @@ A tuple is returned: ({{#returnType}}{{#returnTypeIsPrimitive}}**{{{returnType}}
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 {{#responses}}
-**{{code}}** | {{message}} | {{#headers}} * {{baseName}} - {{description}} <br> {{/headers}}{{^headers.0}} - {{/headers.0}} |
+**{{code}}** | {{message}} | {{#headers}} * {{baseName}} - {{{description}}} <br> {{/headers}}{{^headers.0}} - {{/headers.0}} |
 {{/responses}}
 {{/responses.0}}
 
