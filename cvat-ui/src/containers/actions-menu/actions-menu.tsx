@@ -111,6 +111,7 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
     return (
         <ActionsMenuComponent
             taskID={taskInstance.id}
+            projectID={taskInstance.projectId}
             taskMode={taskInstance.mode}
             bugTracker={taskInstance.bugTracker}
             loaders={loaders}
