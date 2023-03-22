@@ -13,7 +13,13 @@ Method | HTTP request | Description
 {{#operations}}
 {{#operation}}
 ## **{{>operation_name}}**
-> {{>operation_name}}({{#requiredParams}}{{^defaultValue}}{{paramName}}{{^-last}}, {{/-last}}{{/defaultValue}}{{/requiredParams}}) -> ({{>return_type}}, HTTPResponse)
+
+> {{>operation_name}}({{#requiredParams}}{{^defaultValue}}
+>    {{paramName}},{{/defaultValue}}{{/requiredParams}}{{#requiredParams}}{{#defaultValue}}
+>    {{paramName}}={{{defaultValue}}},{{/defaultValue}}{{/requiredParams}}{{#optionalParams}}
+>    {{paramName}}=None,{{/optionalParams}}
+>    **kwargs
+> )
 
 {{{summary}}}{{#notes}}
 
