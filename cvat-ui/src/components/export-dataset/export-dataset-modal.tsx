@@ -173,7 +173,7 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
                             .sort((a: Dumper, b: Dumper) => a.name.localeCompare(b.name))
                             .filter(
                                 (dumper: Dumper): boolean => dumper.dimension === instance?.dimension ||
-                                    instance instanceof Project,
+                                    (instance instanceof Project && instance.dimension === null),
                             )
                             .map(
                                 (dumper: Dumper): JSX.Element => {
@@ -215,7 +215,7 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
                     />
                 </Form.Item>
                 <TargetStorageField
-                    instanceId={instance?.id}
+                    instanceId={instance ? instance.id : null}
                     switchDescription='Use default settings'
                     switchHelpMessage={helpMessage}
                     useDefaultStorage={useDefaultTargetStorage}
@@ -234,7 +234,7 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
 
 interface StateToProps {
     dumpers: Dumper[];
-    instance: Project | Task | Job;
+    instance: Project | Task | Job | null;
     current: string[];
 }
 

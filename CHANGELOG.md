@@ -24,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Invalid mask when running automatic annotation on a task (<https://github.com/opencv/cvat/pull/5883>)
 - Cloud storage content listing when the manifest name contains special characters
   (<https://github.com/opencv/cvat/pull/5873>)
-- Export formats for empty project are not shown (<https://github.com/opencv/cvat/pull/5899>)
+- Empty list of export formats for a project without tasks (<https://github.com/opencv/cvat/pull/5899>)
 
 ### Security
 - TDB
