@@ -363,3 +363,100 @@ project_tasks = get_paginated_collection(
     id=project_id,
 )
 ```
+
+### Binary data in requests and responses
+
+At the moment, sending and receiving binary data - such as files - can be difficult via the
+low-level SDK API. Please follow these recommendations:
+
+#### Sending data
+
+By default, requests use the `application/json` ContentType. However, it's not possible or
+inefficient to send binary data in this encoding. If you need to send files or other binary data,
+please specify `_content_type="multipart/form-data"` in the request parameters:
+
+Example:
+
+```python
+(_, response) = api_client.tasks_api.create_data(
+    id=42,
+    data_request=models.DataRequest(
+        client_files=data["client_files"],
+        image_quality=data["image_quality"],
+    ),
+    _content_type="multipart/form-data", # required
+)
+```
+
+Please also note that if there are complex fields in the data (such as arrays or dicts), they,
+in turn, cannot be encoded as `multipart/form-data`, so the recommended solution is to split
+fields into files and others, and send them in different requests:
+
+Example:
+
+```python
+data = {
+    'client_files': [...], # a list of binary files
+    'image_quality': ..., # a simple type - int
+    'job_file_mapping': [...], # a complex type - list
+}
+
+# Initialize uploading
+api_client.tasks_api.create_data(
+    id=42,
+    data_request=models.DataRequest(image_quality=data["image_quality"]),
+    upload_start=True,
+)
+
+# Upload binary data
+api_client.tasks_api.create_data(
+    id=42,
+    data_request=models.DataRequest(
+        client_files=data.pop("client_files"),
+        image_quality=data["image_quality"],
+    ),
+    upload_multiple=True,
+    _content_type="multipart/form-data",
+)
+
+# Finalize the uploading and send the remaining fields
+api_client.tasks_api.create_data(
+    id=42,
+    data_request=models.DataRequest(**data),
+    upload_finish=True,
+)
+```
+
+#### Receiving data
+
+Receiving binary files can also be difficult with the low-level API. To avoid unexpected
+behavior, it is recommended to specify `_parse_response=False` in the request parameters.
+In this case, SDK will not try to parse models from responses, are the response data
+can be fetched directly from the response:
+
+```python
+from time import sleep
+
+# Export a task as a dataset
+for _ in range(max_retries):
+    (_, response) = api_client.tasks_api.retrieve_dataset(
+        id=42,
+        format='COCO 1.0',
+        _parse_response=False,
+    )
+    if response.status == HTTPStatus.CREATED:
+        break
+
+    sleep(interval)
+
+(_, response) = api_client.tasks_api.retrieve_dataset(
+    id=42,
+    format='COCO 1.0',
+    action="download",
+    _parse_response=False,
+)
+
+# Save the resulting file
+with open('output_file', 'wb') as output_file:
+    output_file.write(response.data)
+```
