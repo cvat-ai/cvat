@@ -22,6 +22,7 @@ import Issue from 'cvat-core/src/issue';
 import Comment from 'cvat-core/src/comment';
 import User from 'cvat-core/src/user';
 import Organization from 'cvat-core/src/organization';
+import { Dumper } from 'cvat-core/src/annotation-formats';
 
 const cvat: any = _cvat;
 
@@ -55,6 +56,7 @@ export {
     ModelProviders,
     ModelReturnType,
     DimensionType,
+    Dumper,
 };
 
 export type {
