@@ -50,9 +50,7 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
         instance,
         current,
     } = props;
-    console.log(dumpers,
-        instance,
-        current);
+
     const [instanceType, setInstanceType] = useState('');
 
     const [useDefaultTargetStorage, setUseDefaultTargetStorage] = useState(true);
@@ -109,7 +107,6 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
     }, [instance]);
 
     useEffect(() => {
-        // eslint-disable-next-line prefer-template
         setHelpMessage(`Export to ${(defaultStorageLocation) ? defaultStorageLocation.split('_')[0] : 'local'} ` +
                         `storage ${(defaultStorageCloudId) ? `№${defaultStorageCloudId}` : ''}`);
     }, [defaultStorageLocation, defaultStorageCloudId]);
@@ -174,7 +171,10 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
                     <Select virtual={false} placeholder='Select dataset format' className='cvat-modal-export-select'>
                         {dumpers
                             .sort((a: Dumper, b: Dumper) => a.name.localeCompare(b.name))
-                            .filter((dumper: Dumper): boolean => dumper.dimension === instance?.dimension)
+                            .filter(
+                                (dumper: Dumper): boolean => dumper.dimension === instance?.dimension ||
+                                    instance instanceof Project,
+                            )
                             .map(
                                 (dumper: Dumper): JSX.Element => {
                                     const pending = (instance && current ? current : [])
@@ -197,7 +197,11 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
                     </Select>
                 </Form.Item>
                 <Space>
-                    <Form.Item name='saveImages' className='cvat-modal-export-switch-use-default-storage'>
+                    <Form.Item
+                        className='cvat-modal-export-switch-use-default-storage'
+                        name='saveImages'
+                        valuePropName='checked'
+                    >
                         <Switch className='cvat-modal-export-save-images' />
                     </Form.Item>
                     <Text strong>Save images</Text>
