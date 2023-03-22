@@ -129,7 +129,7 @@ Please see below for more details:
       <attribute name="String: an attribute name">String: the attribute value</attribute>
       ...
     </skeleton>
-    <mask label="String: the associated label" source="manual or auto"occluded="Number: 0 - False, 1 - True" rle="RLE mask" left="Number: left coordinate of the image where the mask begins" top="Number: top coordinate of the image where the mask begins" width="Number: width of the mask" height="Number: height of the mask" z_order="Number: z-order of the object">
+    <mask label="String: the associated label" source="manual or auto" occluded="Number: 0 - False, 1 - True" rle="RLE mask" left="Number: left coordinate of the image where the mask begins" top="Number: top coordinate of the image where the mask begins" width="Number: width of the mask" height="Number: height of the mask" z_order="Number: z-order of the object">
     </mask>
     ...
   </image>
