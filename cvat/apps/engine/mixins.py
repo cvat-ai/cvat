@@ -175,6 +175,7 @@ class UploadMixin:
                 return self._tus_response(status=status.HTTP_409_CONFLICT,
                     data="File with same name already exists")
 
+            # TODO: check if rq job exists and is active
             file_size = int(request.META.get("HTTP_UPLOAD_LENGTH", "0"))
             if file_size > int(self._tus_max_file_size):
                 return self._tus_response(status=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,

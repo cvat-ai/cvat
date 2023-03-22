@@ -64,7 +64,7 @@ from cvat.apps.engine.serializers import (
 
 from utils.dataset_manifest import ImageManifestManager
 from cvat.apps.engine.utils import (
-    av_scan_paths, process_failed_job, configure_dependent_job, parse_exception_message, get_rq_job_meta
+    av_scan_paths, process_failed_job, configure_dependent_job, parse_exception_message, get_rq_job_meta, handle_finished_or_failed_job
 )
 from cvat.apps.engine import backup
 from cvat.apps.engine.mixins import PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin, DestroyModelMixin, CreateModelMixin
@@ -327,8 +327,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 if rq_job is None:
                     return Response(status=status.HTTP_404_NOT_FOUND)
                 elif rq_job.is_finished:
-                    if rq_job.meta['tmp_file_descriptor']: os.close(rq_job.meta['tmp_file_descriptor'])
-                    os.remove(rq_job.meta['tmp_file'])
+                    handle_finished_or_failed_job(rq_job)
                     if rq_job.dependency:
                         rq_job.dependency.delete()
                     rq_job.delete()
@@ -1318,17 +1317,15 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     # UploadMixin method
     def get_upload_dir(self):
-        task = self._object.segment.task
-        return task.get_tmp_dirname()
+        return self._object.get_tmp_dirname()
 
     # UploadMixin method
     def upload_finished(self, request):
-        task = self._object.segment.task
         if self.action == 'annotations':
             format_name = request.query_params.get("format", "")
             filename = request.query_params.get("filename", "")
             conv_mask_to_poly = strtobool(request.query_params.get('conv_mask_to_poly', 'True'))
-            tmp_dir = task.get_tmp_dirname()
+            tmp_dir = self._object.get_tmp_dirname()
             if os.path.isfile(os.path.join(tmp_dir, filename)):
                 annotation_file = os.path.join(tmp_dir, filename)
                 return _import_annotations(
@@ -2232,7 +2229,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return HttpResponseBadRequest(msg)
 
 def rq_exception_handler(rq_job, exc_type, exc_value, tb):
-    rq_job.exc_info = "".join(
+    rq_job.meta["formatted_exception"] = "".join(
         traceback.format_exception_only(exc_type, exc_value))
     rq_job.save()
 
@@ -2276,7 +2273,7 @@ def _import_annotations(request, rq_id, rq_func, db_obj, format_name,
                         for chunk in anno_file.chunks():
                             f.write(chunk)
             else:
-                assert filename, 'The filename was not spesified'
+                assert filename, 'The filename was not specified'
                 try:
                     storage_id = location_conf['storage_id']
                 except KeyError:
@@ -2306,12 +2303,13 @@ def _import_annotations(request, rq_id, rq_func, db_obj, format_name,
             args=(db_obj.pk, filename, format_name, conv_mask_to_poly),
             job_id=rq_id,
             depends_on=dependent_job,
-            meta={**meta, **get_rq_job_meta(request=request, db_obj=db_obj)}
+            meta={**meta, **get_rq_job_meta(request=request, db_obj=db_obj)},
+            on_success=handle_finished_or_failed_job,
+            on_failure=handle_finished_or_failed_job
         )
     else:
         if rq_job.is_finished:
-            if rq_job.meta['tmp_file_descriptor']: os.close(rq_job.meta['tmp_file_descriptor'])
-            os.remove(rq_job.meta['tmp_file'])
+            handle_finished_or_failed_job(rq_job)
             rq_job.delete()
             return Response(status=status.HTTP_201_CREATED)
         elif rq_job.is_failed or \
@@ -2324,6 +2322,8 @@ def _import_annotations(request, rq_id, rq_func, db_obj, format_name,
                 exc_info = exc_info.replace(import_error_prefix + ': ', '')
                 return Response(data=exc_info,
                     status=status.HTTP_400_BAD_REQUEST)
+            elif "Failed to find 'coco' dataset" in exc_info:
+                return Response(data=exc_info, status=status.HTTP_400_BAD_REQUEST)
             else:
                 return Response(data=exc_info,
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -2359,7 +2359,7 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
             rq_job.delete()
         else:
             if rq_job.is_finished:
-                file_path = rq_job.return_value
+                file_path = rq_job.return_value()
                 if action == "download" and osp.exists(file_path):
                     rq_job.delete()
 
@@ -2401,7 +2401,7 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
                     if osp.exists(file_path):
                         return Response(status=status.HTTP_201_CREATED)
             elif rq_job.is_failed:
-                exc_info = str(rq_job.exc_info)
+                exc_info = rq_job.meta.get('formatted_exception', str(rq_job.exc_info))
                 rq_job.delete()
                 return Response(exc_info,
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -2484,6 +2484,8 @@ def _import_project_dataset(request, rq_id, rq_func, db_obj, format_name, filena
                 **get_rq_job_meta(request=request, db_obj=db_obj),
             },
             depends_on=dependent_job,
+            on_success=handle_finished_or_failed_job,
+            on_failure=handle_finished_or_failed_job
         )
     else:
         return Response(status=status.HTTP_409_CONFLICT, data='Import job already exists')

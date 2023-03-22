@@ -12,7 +12,9 @@ import traceback
 import subprocess
 import os
 import urllib.parse
+import logging
 from django.utils import timezone
+from rq.job import Job
 
 from av import VideoFrame
 from PIL import Image
@@ -124,17 +126,26 @@ def parse_exception_message(msg):
         pass
     return parsed_msg
 
-def process_failed_job(rq_job):
-    if rq_job.meta['tmp_file_descriptor']:
-        os.close(rq_job.meta['tmp_file_descriptor'])
-    if os.path.exists(rq_job.meta['tmp_file']):
-        os.remove(rq_job.meta['tmp_file'])
+def process_failed_job(rq_job: Job):
+    handle_finished_or_failed_job(rq_job)
     exc_info = str(rq_job.exc_info or rq_job.dependency.exc_info)
     if rq_job.dependency:
         rq_job.dependency.delete()
     rq_job.delete()
 
-    return parse_exception_message(exc_info)
+    msg = parse_exception_message(exc_info)
+    log = logging.getLogger('cvat.server.engine')
+    log.error(msg)
+    return msg
+
+def handle_finished_or_failed_job(rq_job: Job, *args, **kwargs):
+    # TODO check file from dependent job
+    if rq_job.meta['tmp_file_descriptor']:
+        os.close(rq_job.meta['tmp_file_descriptor'])
+        rq_job.meta['tmp_file_descriptor'] = None
+        rq_job.save()
+    if os.path.exists(rq_job.meta['tmp_file']):
+        os.remove(rq_job.meta['tmp_file'])
 
 def configure_dependent_job(queue, rq_id, rq_func, db_storage, filename, key, request):
     rq_job_id_download_file = rq_id + f'?action=download_{filename}'
@@ -146,6 +157,8 @@ def configure_dependent_job(queue, rq_id, rq_func, db_storage, filename, key, re
             args=(db_storage, filename, key),
             job_id=rq_job_id_download_file,
             meta=get_rq_job_meta(request=request, db_obj=db_storage),
+            on_success=handle_finished_or_failed_job,
+            on_failure=handle_finished_or_failed_job,
         )
     return rq_job_download_file
 

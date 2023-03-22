@@ -34,7 +34,9 @@ from cvat.apps.engine.log import slogger
 from cvat.apps.engine.serializers import (AttributeSerializer, DataSerializer, LabelSerializer,
     LabeledDataSerializer, SegmentSerializer, SimpleJobSerializer, TaskReadSerializer,
     ProjectReadSerializer, ProjectFileSerializer, TaskFileSerializer)
-from cvat.apps.engine.utils import av_scan_paths, process_failed_job, configure_dependent_job, get_rq_job_meta
+from cvat.apps.engine.utils import (
+    av_scan_paths, process_failed_job, configure_dependent_job, get_rq_job_meta, handle_finished_or_failed_job
+)
 from cvat.apps.engine.models import (
     StorageChoice, StorageMethodChoice, DataChoice, Task, Project, Location,
     CloudStorage as CloudStorageModel)
@@ -830,7 +832,7 @@ def export(db_instance, request, queue_name):
             rq_job.delete()
         else:
             if rq_job.is_finished:
-                file_path = rq_job.return_value
+                file_path = rq_job.return_value()
                 if action == "download" and os.path.exists(file_path):
                     rq_job.delete()
 
@@ -867,7 +869,7 @@ def export(db_instance, request, queue_name):
                     if os.path.exists(file_path):
                         return Response(status=status.HTTP_201_CREATED)
             elif rq_job.is_failed:
-                exc_info = str(rq_job.exc_info)
+                exc_info = rq_job.meta.get('formatted_exception', str(rq_job.exc_info))
                 rq_job.delete()
                 return Response(exc_info,
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -940,13 +942,14 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
                 'tmp_file_descriptor': fd,
                 **get_rq_job_meta(request=request, db_obj=None)
             },
-            depends_on=dependent_job
+            depends_on=dependent_job,
+            on_success=handle_finished_or_failed_job,
+            on_failure=handle_finished_or_failed_job
         )
     else:
         if rq_job.is_finished:
-            project_id = rq_job.return_value
-            if rq_job.meta['tmp_file_descriptor']: os.close(rq_job.meta['tmp_file_descriptor'])
-            os.remove(rq_job.meta['tmp_file'])
+            project_id = rq_job.return_value()
+            handle_finished_or_failed_job(rq_job)
             rq_job.delete()
             return Response({'id': project_id}, status=status.HTTP_201_CREATED)
         elif rq_job.is_failed or \
