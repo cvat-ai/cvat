@@ -489,6 +489,9 @@ const Canvas3DWrapperComponent = React.memo((props: Props): ReactElement => {
 
     const initialSetup = (): void => {
         const canvasInstanceDOM = canvasInstance.html() as ViewsDOM;
+        canvasInstanceDOM.perspective.addEventListener('canvas.setup', () => {
+            canvasInstance.fit();
+        }, { once: true });
         canvasInstanceDOM.perspective.addEventListener('canvas.setup', onCanvasSetup);
         canvasInstanceDOM.perspective.addEventListener('canvas.canceled', onCanvasCancel);
         canvasInstanceDOM.perspective.addEventListener('canvas.dragstart', onCanvasDragStart);

@@ -267,10 +267,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             },
         };
         CameraControls.install({ THREE });
-        this.views.perspective.renderer.domElement.addEventListener('canvas.setup', () => {
-            // initial fit when canvas is opened for the first time
-            this.fitCanvas(false);
-        }, { once: true });
 
         const canvasPerspectiveView = this.views.perspective.renderer.domElement;
         const canvasTopView = this.views.top.renderer.domElement;
