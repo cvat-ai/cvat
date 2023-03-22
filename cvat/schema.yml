@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: '2.5'
+  version: 2.5.dev20230322160711
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -2890,7 +2890,7 @@ paths:
           description: ''
     patch:
       operationId: labels_partial_update
-      summary: Methods does a partial update of chosen fields in a labelTo modify
+      summary: Method does a partial update of chosen fields in a label. To modify
         a sublabel, please use the PATCH method of the parent label
       parameters:
       - in: header

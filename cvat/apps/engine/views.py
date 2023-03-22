@@ -1828,7 +1828,7 @@ class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '200': LabelSerializer(many=True),
         }),
     partial_update=extend_schema(
-        summary='Method does a partial update of chosen fields in a label'
+        summary='Method does a partial update of chosen fields in a label. '
         'To modify a sublabel, please use the PATCH method of the parent label',
         request=LabelSerializer(partial=True),
         responses={
