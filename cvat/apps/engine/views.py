@@ -39,6 +39,7 @@ from django_sendfile import sendfile
 
 import cvat.apps.dataset_manager as dm
 import cvat.apps.dataset_manager.views  # pylint: disable=unused-import
+from cvat.apps.dataset_manager.views import IMPORT_CACHE_FAILED_TTL, IMPORT_CACHE_SUCCESS_TTL
 from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
 from cvat.apps.dataset_manager.bindings import CvatImportError
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
@@ -2290,6 +2291,8 @@ def _import_annotations(request, rq_id, rq_func, db_obj, format_name,
                     filename=filename,
                     key=key,
                     request=request,
+                    result_ttl=IMPORT_CACHE_SUCCESS_TTL,
+                    failure_ttl=IMPORT_CACHE_FAILED_TTL
                 )
 
         av_scan_paths(filename)
@@ -2303,7 +2306,9 @@ def _import_annotations(request, rq_id, rq_func, db_obj, format_name,
             depends_on=dependent_job,
             meta={**meta, **get_rq_job_meta(request=request, db_obj=db_obj)},
             on_success=handle_finished_or_failed_job,
-            on_failure=handle_finished_or_failed_job
+            on_failure=handle_finished_or_failed_job,
+            result_ttl=IMPORT_CACHE_SUCCESS_TTL,
+            failure_ttl=IMPORT_CACHE_FAILED_TTL
         )
     else:
         if rq_job.is_finished:
@@ -2451,7 +2456,7 @@ def _import_project_dataset(request, rq_id, rq_func, db_obj, format_name, filena
                     for chunk in dataset_file.chunks():
                         f.write(chunk)
         elif location == Location.CLOUD_STORAGE:
-            assert filename, 'The filename was not spesified'
+            assert filename, 'The filename was not specified'
             try:
                 storage_id = location_conf['storage_id']
             except KeyError:
@@ -2469,6 +2474,8 @@ def _import_project_dataset(request, rq_id, rq_func, db_obj, format_name, filena
                 filename=filename,
                 key=key,
                 request=request,
+                result_ttl=IMPORT_CACHE_SUCCESS_TTL,
+                failure_ttl=IMPORT_CACHE_FAILED_TTL
             )
 
         rq_job = queue.enqueue_call(
@@ -2481,7 +2488,9 @@ def _import_project_dataset(request, rq_id, rq_func, db_obj, format_name, filena
             },
             depends_on=dependent_job,
             on_success=handle_finished_or_failed_job,
-            on_failure=handle_finished_or_failed_job
+            on_failure=handle_finished_or_failed_job,
+            result_ttl=IMPORT_CACHE_SUCCESS_TTL,
+            failure_ttl=IMPORT_CACHE_FAILED_TTL
         )
     else:
         return Response(status=status.HTTP_409_CONFLICT, data='Import job already exists')

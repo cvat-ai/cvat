@@ -15,6 +15,10 @@ import urllib.parse
 import logging
 from django.utils import timezone
 from rq.job import Job
+from django_rq.queues import DjangoRQ
+from typing import Callable, Any
+from django.http.request import HttpRequest
+from datetime import timedelta
 
 from av import VideoFrame
 from PIL import Image
@@ -142,7 +146,17 @@ def handle_finished_or_failed_job(rq_job: Job, *args, **kwargs):
     if os.path.exists(rq_job.meta['tmp_file']):
         os.remove(rq_job.meta['tmp_file'])
 
-def configure_dependent_job(queue, rq_id, rq_func, db_storage, filename, key, request):
+def configure_dependent_job(
+    queue: DjangoRQ,
+    rq_id: str,
+    rq_func: Callable[[Any, str, str], None],
+    db_storage: Any,
+    filename: str,
+    key: str,
+    request: HttpRequest,
+    result_ttl: timedelta,
+    failure_ttl: timedelta
+) -> Job:
     rq_job_id_download_file = rq_id + f'?action=download_{filename}'
     rq_job_download_file = queue.fetch_job(rq_job_id_download_file)
     if not rq_job_download_file:
@@ -153,6 +167,8 @@ def configure_dependent_job(queue, rq_id, rq_func, db_storage, filename, key, re
             job_id=rq_job_id_download_file,
             meta=get_rq_job_meta(request=request, db_obj=db_storage),
             on_failure=handle_finished_or_failed_job,
+            result_ttl=result_ttl,
+            failure_ttl=failure_ttl
         )
     return rq_job_download_file
 

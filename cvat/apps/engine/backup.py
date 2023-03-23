@@ -27,6 +27,7 @@ from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError, PermissionDenied, NotFound
 from django_sendfile import sendfile
 from distutils.util import strtobool
+from datetime import timedelta
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.engine import models
@@ -50,6 +51,9 @@ from cvat.apps.engine.location import StorageType, get_location_configuration
 class Version(Enum):
     V1 = '1.0'
 
+
+IMPORT_CACHE_FAILED_TTL = timedelta(hours=10).total_seconds()
+IMPORT_CACHE_SUCCESS_TTL = timedelta(hours=1).total_seconds()
 
 def _get_label_mapping(db_labels):
     label_mapping = {db_label.id: db_label.name for db_label in db_labels}
@@ -930,6 +934,8 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
                 filename=filename,
                 key=key,
                 request=request,
+                result_ttl=IMPORT_CACHE_SUCCESS_TTL,
+                failure_ttl=IMPORT_CACHE_FAILED_TTL
             )
 
         rq_job = queue.enqueue_call(
@@ -942,7 +948,9 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
             },
             depends_on=dependent_job,
             on_success=handle_finished_or_failed_job,
-            on_failure=handle_finished_or_failed_job
+            on_failure=handle_finished_or_failed_job,
+            result_ttl=IMPORT_CACHE_SUCCESS_TTL,
+            failure_ttl=IMPORT_CACHE_FAILED_TTL
         )
     else:
         if rq_job.is_finished:
