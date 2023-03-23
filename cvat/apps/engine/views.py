@@ -3,9 +3,12 @@
 #
 # SPDX-License-Identifier: MIT
 
+from copy import copy
 import io
 import os
 import os.path as osp
+import textwrap
+from typing import List, Optional, Sequence
 import pytz
 import traceback
 from datetime import datetime
@@ -797,15 +800,178 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             db_project.save()
             assert serializer.instance.organization == db_project.organization
 
+    def _is_data_uploading(self) -> bool:
+        return 'data' in self.action
+
     # UploadMixin method
     def get_upload_dir(self):
         if 'annotations' in self.action:
             return self._object.get_tmp_dirname()
-        elif 'data' in self.action:
+        elif self._is_data_uploading():
             return self._object.data.get_upload_dirname()
         elif 'backup' in self.action:
             return backup.get_backup_dirname()
         return ""
+
+    _TUS_RESERVED_PREFIX = "__tus_"
+    _TUS_INPUT_ORDERING_FILE_NAME = _TUS_RESERVED_PREFIX + "input_order"
+    _TUS_CUSTOM_ORDERING_FILE_NAME = _TUS_RESERVED_PREFIX + "custom_order"
+
+    def _get_tus_metafile_names(self) -> List[str]:
+        return [
+            self._TUS_INPUT_ORDERING_FILE_NAME,
+            self._TUS_CUSTOM_ORDERING_FILE_NAME,
+        ]
+
+    # UploadMixin method
+    def is_valid_uploaded_file_name(self, filename: str) -> bool:
+        return (
+            super().is_valid_uploaded_file_name(filename) and
+            not osp.basename(filename).startswith(self._TUS_RESERVED_PREFIX)
+        )
+
+    def _read_tus_upload_meta_file(self, path: str) -> Sequence[str]:
+        """
+        Reads the input file and returns its contents.
+        """
+
+        with open(path) as f:
+            return [line.strip() for line in f]
+
+    def _prepare_upload_metafile_entry(self, filename: str) -> str:
+        filename = osp.normpath(filename)
+        upload_dir = self.get_upload_dir()
+        if filename.startswith(upload_dir):
+            filename = osp.relpath(filename, upload_dir)
+        return filename
+
+    def _maybe_append_tus_upload_metafile_entry(self,
+        metafile: str, filename: str, *, existing_files: Optional[Sequence[str]] = None
+    ):
+        if existing_files is None:
+            existing_files = self._read_tus_upload_meta_file(metafile)
+
+        new_entry = self._prepare_upload_metafile_entry(filename)
+        if new_entry not in existing_files:
+            with open(metafile, 'a') as f:
+                print(new_entry, file=f)
+        else:
+            # Don't do anything in the opposite case, because
+            # file uploading can be restarted. In such case we'll
+            # just reuse the first occurrence in this file
+            pass
+
+    class _InvalidMetafileError(Exception):
+        """
+        Indicates an invalid upload metafile found
+        """
+
+    def _sort_uploaded_files(self, uploaded_files: List[str]) -> List[str]:
+        """
+        Restores file ordering for the "predefined" file sorting method of the task creation.
+        Without this, the file order is defined by os.listdir() or by DB, which can return
+        files unordered.
+
+        Read more: https://github.com/opencv/cvat/issues/5061
+        """
+
+        upload_dir = self. get_upload_dir()
+
+        upload_metafile = None
+        for filename in self._get_tus_metafile_names():
+            if osp.isfile(osp.join(upload_dir, filename)):
+                upload_metafile = filename
+                break
+
+        if not upload_metafile:
+            raise FileNotFoundError(
+                "Uploaded file order is not specified. "
+                "Please make sure the Upload-Start request has been sent."
+            )
+
+        expected_files = self._read_tus_upload_meta_file(osp.join(upload_dir, upload_metafile))
+        expected_files.append(upload_metafile)
+
+        uploaded_file_names = set(uploaded_files)
+        mismatching_files = list(uploaded_file_names.symmetric_difference(expected_files))
+        if mismatching_files:
+            DISPLAY_ENTRIES_COUNT = 5
+            mismatching_display = [
+                fn + (" (extra)" if fn in uploaded_file_names else " (missing)")
+                for fn in mismatching_files[:DISPLAY_ENTRIES_COUNT]
+            ]
+            remaining_count = len(mismatching_files) - DISPLAY_ENTRIES_COUNT
+            raise self._InvalidMetafileError(
+                "Uploaded files do not match the upload file list contents. "
+                "Please check the upload metainfo and the list of uploaded files. "
+                "Mismatching files: {}{}"
+                .format(
+                    ", ".join(mismatching_display),
+                    f" (and {remaining_count} more). " if 0 < remaining_count else ""
+                )
+            )
+
+        return list(expected_files)
+
+    # UploadMixin method
+    def init_tus_upload(self, request):
+        response = super().init_tus_upload(request)
+
+        if self._is_data_uploading() and response.status_code == status.HTTP_201_CREATED:
+            metafile = osp.join(self.get_upload_dir(), self._TUS_INPUT_ORDERING_FILE_NAME)
+            if osp.isfile(metafile):
+                self._maybe_append_tus_upload_metafile_entry(metafile, response['Upload-Filename'])
+
+        return response
+
+    # UploadMixin method
+    def append_files(self, request):
+        client_files = self._get_request_client_files(request)
+        if self._is_data_uploading() and client_files:
+            metafile = osp.join(self.get_upload_dir(), self._TUS_INPUT_ORDERING_FILE_NAME)
+            if osp.isfile(metafile):
+                file_list = self._read_tus_upload_meta_file(metafile)
+
+                for client_file in client_files:
+                    self._maybe_append_tus_upload_metafile_entry(metafile,
+                        client_file['file'].name, existing_files=file_list)
+
+        return super().append_files(request)
+
+    def _init_tus_input_ordering(self) -> None:
+        with open(osp.join(self.get_upload_dir(), self._TUS_INPUT_ORDERING_FILE_NAME), 'w'):
+            pass # just create the file
+
+    def _init_tus_custom_ordering(self, file_list: List[str]) -> None:
+        with open(osp.join(self.get_upload_dir(), self._TUS_CUSTOM_ORDERING_FILE_NAME), 'w') as f:
+            for filename in file_list:
+                print(self._prepare_upload_metafile_entry(filename), file=f)
+
+    # UploadMixin method
+    def upload_started(self, request):
+        """
+        Obtains TUS upload info for the upcoming uploading.
+        """
+
+        if self._is_data_uploading():
+            if request.data:
+                serializer = DataSerializer(self._object, data=request.data)
+                serializer.is_valid(raise_exception=True)
+                file_list = serializer.validated_data.get(self._UPLOAD_FILE_ORDER_FIELD, None)
+            else:
+                file_list = None
+
+            if file_list:
+                # The files are sent in the arbitrary order and need to be sorted afterwards.
+                # Remember the list of expected files for the upcoming uploading
+                self._init_tus_custom_ordering(file_list)
+
+            else:
+                # The files are sent in the correct order.
+                # The server must record uploaded files order during the uploading
+                self._init_tus_input_ordering()
+
+        return Response(status=status.HTTP_202_ACCEPTED)
 
     # UploadMixin method
     def upload_finished(self, request):
@@ -833,15 +999,32 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             task_data = self._object.data
             serializer = DataSerializer(task_data, data=request.data)
             serializer.is_valid(raise_exception=True)
-            data = dict(serializer.validated_data.items())
-            uploaded_files = task_data.get_uploaded_files()
-            uploaded_files.extend(data.get('client_files'))
-            serializer.validated_data.update({'client_files': uploaded_files})
+            data = serializer.validated_data
 
+            # Merge file lists from TUS and simple/multi uploading
+            uploaded_files = task_data.get_uploaded_files()
+            if data.get('client_files'):
+                if not uploaded_files:
+                    # This request is the only request in the uploading.
+                    # We need to remember file ordering as it may be lost,
+                    # e.g. on a server crash. The input file order could be
+                    # restored from this variable otherwise.
+                    self._init_tus_custom_ordering([f['file'].name for f in data['client_files']])
+
+                response = self.append_files(request)
+                if not 200 <= response.status_code < 300:
+                    return response
+                uploaded_files = task_data.get_uploaded_files()
+
+            data.update({'client_files': uploaded_files})
+
+            # Refresh the db value with the updated file list and other request parameters
             db_data = serializer.save()
             self._object.data = db_data
             self._object.save()
-            data = {k: v for k, v in serializer.data.items()}
+
+            # Create a temporary copy of the parameters we will try to create the task with
+            data = copy(serializer.data)
 
             if 'job_file_mapping' in serializer.validated_data:
                 data['job_file_mapping'] = serializer.validated_data['job_file_mapping']
@@ -849,6 +1032,20 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             data['use_zip_chunks'] = serializer.validated_data['use_zip_chunks']
             data['use_cache'] = serializer.validated_data['use_cache']
             data['copy_data'] = serializer.validated_data['copy_data']
+
+            if data['sorting_method'] == models.SortingMethod.PREDEFINED and data['client_files']:
+                # DBs can sort client_files records in unpredictable way, which conflicts
+                # with the "predefined" sorting method. We need to restore the file order.
+                # Not all DB providers do this.
+                # https://github.com/opencv/cvat/pull/5083#discussion_r1038032715
+                #
+                # In the case of custom ordering with TUS uploads, the requested order
+                # must be applied.
+                try:
+                    data['client_files'] = self._sort_uploaded_files(data['client_files'])
+                except self._InvalidMetafileError as e:
+                    return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
+
             if data['use_cache']:
                 self._object.data.storage_method = StorageMethodChoice.CACHE
                 self._object.data.save(update_fields=['storage_method'])
@@ -858,9 +1055,9 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             if db_data.cloud_storage:
                 self._object.data.storage = StorageChoice.CLOUD_STORAGE
                 self._object.data.save(update_fields=['storage'])
+            if 'stop_frame' not in serializer.validated_data:
                 # if the value of stop_frame is 0, then inside the function we cannot know
                 # the value specified by the user or it's default value from the database
-            if 'stop_frame' not in serializer.validated_data:
                 data['stop_frame'] = None
             task.create(self._object, data, request)
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
@@ -881,12 +1078,70 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         return Response(data='Unknown upload was finished',
                         status=status.HTTP_400_BAD_REQUEST)
 
+    _UPLOAD_FILE_ORDER_FIELD = 'upload_file_order'
+    assert _UPLOAD_FILE_ORDER_FIELD in DataSerializer().fields
+
     @extend_schema(methods=['POST'],
-        summary='Method permanently attaches images or video to a task. Supports tus uploads, see more https://tus.io/',
+        summary="Method permanently attaches data (images, video, etc.) to a task",
+        description=textwrap.dedent("""\
+            Allows to upload data to a task.
+            Supports the TUS open file uploading protocol (https://tus.io/).
+
+            Supports the following protocols:
+
+            1. A single Data request
+
+            and
+
+            2.1. An Upload-Start request
+            2.2.a. Regular TUS protocol requests (Upload-Length + Chunks)
+            2.2.b. Upload-Multiple requests
+            2.3. An Upload-Finish request
+
+            Requests:
+            - Data - POST, no extra headers or 'Upload-Start' + 'Upload-Finish' headers.
+              Contains data in the body.
+            - Upload-Start - POST, has an 'Upload-Start' header.
+              Can contain uploading info in the body.
+            - Upload-Length - POST, has an 'Upload-Length' header (see the TUS specification)
+            - Chunk - HEAD/PATCH (see the TUS specification). Sent to /data/<file id> endpoints.
+            - Upload-Finish - POST, has an 'Upload-Finish' header. Can contain data in the body.
+            - Upload-Multiple - POST, has an 'Upload-Multiple' header. Contains data in the body.
+
+            The 'Upload-Start' request allows to specify the uploaded files should be ordered.
+            This may be needed if the files can be sent unordered. To state that the input files
+            are sent ordered, pass an empty list of files in the '{upload_file_order_field}' field.
+            If the files are sent unordered, the ordered file list is expected
+            in the '{upload_file_order_field}' field. It must be a list of string file paths,
+            relative to the dataset root.
+
+            Example:
+            files = [
+                "cats/cat_1.jpg",
+                "dogs/dog2.jpg",
+                "image_3.png",
+                ...
+            ]
+
+            Independently of the file declaration field used
+            ('client_files', 'server_files', etc.), when the 'predefined'
+            sorting method is selected, the uploaded files will be ordered according
+            to the '.jsonl' manifest file, if it is found in the list of files.
+            For archives (e.g. '.zip'), a manifest file ('*.jsonl') is required when using
+            the 'predefined' file ordering. Such file must be provided next to the archive
+            in the list of files. Read more about manifest files here:
+            https://opencv.github.io/cvat/docs/manual/advanced/dataset_manifest/
+
+            After all data is sent, the operation status can be retrieved via
+            the /status endpoint.
+        """.format_map(
+            {'upload_file_order_field': _UPLOAD_FILE_ORDER_FIELD}
+        )),
+        # TODO: add a tutorial on this endpoint in the REST API docs
         request=DataSerializer,
         parameters=[
             OpenApiParameter('Upload-Start', location=OpenApiParameter.HEADER, type=OpenApiTypes.BOOL,
-                description='Initializes data upload. No data should be sent with this header'),
+                description='Initializes data upload. Optionally, can include upload metadata in the request body.'),
             OpenApiParameter('Upload-Multiple', location=OpenApiParameter.HEADER, type=OpenApiTypes.BOOL,
                 description='Indicates that data with this request are single or multiple files that should be attached to a task'),
             OpenApiParameter('Upload-Finish', location=OpenApiParameter.HEADER, type=OpenApiTypes.BOOL,
@@ -895,7 +1150,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         responses={
             '202': OpenApiResponse(description=''),
         })
-    @extend_schema(methods=['GET'], summary='Method returns data for a specific task',
+    @extend_schema(methods=['GET'],
+        summary='Method returns data for a specific task',
         parameters=[
             OpenApiParameter('type', location=OpenApiParameter.QUERY, required=False,
                 type=OpenApiTypes.STR, enum=['chunk', 'frame', 'context_image'],

@@ -38,7 +38,7 @@ from shared.utils.helpers import generate_image_files
 
 from .utils import (
     CollectionSimpleFilterTestBase,
-    _test_create_task,
+    create_task,
     export_dataset,
     wait_until_task_is_created,
 )
@@ -503,23 +503,19 @@ class TestPostTaskData:
             "client_files": generate_image_files(7),
         }
 
-        task_id, _ = _test_create_task(
-            self._USERNAME, task_spec, task_data, content_type="multipart/form-data"
-        )
+        task_id, _ = create_task(self._USERNAME, task_spec, task_data)
 
         # check task size
         with make_api_client(self._USERNAME) as api_client:
             (task, _) = api_client.tasks_api.retrieve(task_id)
             assert task.size == 4
 
-    def test_can_create_task_with_sorting_method(self):
+    def test_can_create_task_with_sorting_method_natural(self):
         task_spec = {
             "name": f"test {self._USERNAME} to create a task with a custom sorting method",
             "labels": [
                 {
                     "name": "car",
-                    "color": "#ff00ff",
-                    "attributes": [],
                 }
             ],
         }
@@ -532,11 +528,7 @@ class TestPostTaskData:
             "sorting_method": "natural",
         }
 
-        # Besides testing that the sorting method is applied, this also checks for
-        # regressions of <https://github.com/opencv/cvat/issues/4962>.
-        task_id, _ = _test_create_task(
-            self._USERNAME, task_spec, task_data, content_type="multipart/form-data"
-        )
+        task_id, _ = create_task(self._USERNAME, task_spec, task_data)
 
         # check that the frames were sorted again
         with make_api_client(self._USERNAME) as api_client:
@@ -545,6 +537,48 @@ class TestPostTaskData:
             # generate_image_files produces files that are already naturally sorted
             for image_file, frame in zip(image_files, data_meta.frames):
                 assert image_file.name == frame.name
+
+    @pytest.mark.parametrize("data_source", ["client_files", "server_files"])
+    def test_can_create_task_with_sorting_method_predefined(self, data_source):
+        task_spec = {
+            "name": f"test {self._USERNAME} to create a task with a custom sorting method",
+            "labels": [
+                {
+                    "name": "car",
+                }
+            ],
+        }
+
+        if data_source == "client_files":
+            image_files = generate_image_files(15)
+
+            # shuffle to check for occasional sorting, e.g. in the DB
+            image_files = image_files[7:] + image_files[5:7] + image_files[:5]
+        elif data_source == "server_files":
+            # Files from the test file share
+            image_files = ["images/image_3.jpg", "images/image_1.jpg", "images/image_2.jpg"]
+        else:
+            assert False
+
+        task_data = {
+            data_source: image_files,
+            "image_quality": 70,
+            "sorting_method": "predefined",
+        }
+
+        (task_id, _) = create_task(self._USERNAME, task_spec, task_data)
+
+        # check that the frames were sorted again
+        with make_api_client(self._USERNAME) as api_client:
+            (data_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+
+            for image_file, frame in zip(image_files, data_meta.frames):
+                if isinstance(image_file, str):
+                    image_name = image_file
+                else:
+                    image_name = image_file.name
+
+                assert image_name == frame.name
 
     def test_can_get_annotations_from_new_task_with_skeletons(self):
         spec = {
@@ -574,9 +608,7 @@ class TestPostTaskData:
             "client_files": generate_image_files(3),
         }
 
-        task_id, _ = _test_create_task(
-            self._USERNAME, spec, task_data, content_type="multipart/form-data"
-        )
+        task_id, _ = create_task(self._USERNAME, spec, task_data)
 
         response = get_method(self._USERNAME, "labels", task_id=f"{task_id}")
         label_ids = {}
@@ -736,9 +768,7 @@ class TestPostTaskData:
             "server_files": cloud_storage_content,
         }
 
-        _test_create_task(
-            self._USERNAME, task_spec, data_spec, content_type="application/json", org=org
-        )
+        create_task(self._USERNAME, task_spec, data_spec, org=org)
 
     @pytest.mark.with_external_services
     @pytest.mark.parametrize("cloud_storage_id", [1])
@@ -843,9 +873,7 @@ class TestPostTaskData:
         }
 
         if task_size:
-            task_id, _ = _test_create_task(
-                self._USERNAME, task_spec, data_spec, content_type="application/json", org=org
-            )
+            task_id, _ = create_task(self._USERNAME, task_spec, data_spec, org=org)
 
             with make_api_client(self._USERNAME) as api_client:
                 (task, response) = api_client.tasks_api.retrieve(task_id, org=org)
@@ -875,7 +903,7 @@ class TestPostTaskData:
             "job_file_mapping": expected_segments,
         }
 
-        task_id, _ = _test_create_task(
+        task_id, _ = create_task(
             self._USERNAME, task_spec, data_spec, content_type="application/json"
         )
 
@@ -1141,9 +1169,7 @@ class TestWorkWithTask:
             "server_files": cloud_storage_content,
         }
 
-        task_id, _ = _test_create_task(
-            self._USERNAME, task_spec, data_spec, content_type="application/json", org=org
-        )
+        task_id, _ = create_task(self._USERNAME, task_spec, data_spec, org=org)
 
         # save image from the "public" bucket and remove it temporary
 

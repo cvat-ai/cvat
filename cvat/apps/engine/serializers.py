@@ -691,12 +691,35 @@ class DataSerializer(WriteOnceMixin, serializers.ModelSerializer):
     filename_pattern = serializers.CharField(allow_null=True, required=False)
     job_file_mapping = JobFileMapping(required=False, write_only=True)
 
+    # NOTE: This field is defined here instead of a separate serializer
+    # to avoid backward-incompatible API changes in the schema and SDK,
+    # that would be produced by PolymorphicProxySerializer use in the
+    # Upload-Start request.
+    upload_file_order = serializers.ListField(
+        child=serializers.CharField(max_length=1024),
+        default=list, allow_empty=True, write_only=True,
+        help_text=textwrap.dedent("""\
+            Allows to specify file order for client file uploads.
+
+            To state that the input files are sent in the correct order,
+            pass an empty list.
+
+            If you want to send files in an arbitrary order
+            and reorder them afterwards on the server,
+            pass the list of file names in the required order.
+        """)
+    )
+
     class Meta:
         model = models.Data
-        fields = ('chunk_size', 'size', 'image_quality', 'start_frame', 'stop_frame', 'frame_filter',
-            'compressed_chunk_type', 'original_chunk_type', 'client_files', 'server_files', 'remote_files', 'use_zip_chunks',
-            'cloud_storage_id', 'use_cache', 'copy_data', 'storage_method', 'storage', 'sorting_method', 'filename_pattern',
-            'job_file_mapping')
+        fields = (
+            'chunk_size', 'size', 'image_quality', 'start_frame', 'stop_frame', 'frame_filter',
+            'compressed_chunk_type', 'original_chunk_type',
+            'client_files', 'server_files', 'remote_files', 'use_zip_chunks',
+            'cloud_storage_id', 'use_cache', 'copy_data', 'storage_method',
+            'storage', 'sorting_method', 'filename_pattern',
+            'job_file_mapping', 'upload_file_order',
+        )
 
     # pylint: disable=no-self-use
     def validate_frame_filter(self, value):
@@ -759,7 +782,8 @@ class DataSerializer(WriteOnceMixin, serializers.ModelSerializer):
         server_files = validated_data.pop('server_files')
         remote_files = validated_data.pop('remote_files')
 
-        validated_data.pop('job_file_mapping', None) # optional
+        validated_data.pop('job_file_mapping', None) # optional, not present in Data
+        validated_data.pop('upload_file_order', None) # optional, not present in Data
 
         for extra_key in { 'use_zip_chunks', 'use_cache', 'copy_data' }:
             validated_data.pop(extra_key)

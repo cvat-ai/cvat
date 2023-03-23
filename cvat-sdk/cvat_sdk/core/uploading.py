@@ -1,4 +1,4 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -234,7 +234,7 @@ class Uploader:
             )
             tus_uploader.upload()
 
-    def _tus_start_upload(self, url, *, query_params=None):
+    def _tus_start_upload(self, url, *, query_params=None, fields=None):
         response = self._client.api_client.rest_client.POST(
             url,
             query_params=query_params,
@@ -242,6 +242,7 @@ class Uploader:
                 "Upload-Start": "",
                 **self._client.api_client.get_common_headers(),
             },
+            post_params=fields,
         )
         expect_status(202, response)
         return response
@@ -335,7 +336,15 @@ class DataUploader(Uploader):
         if pbar is not None:
             pbar.start(total_size, desc="Uploading data")
 
-        self._tus_start_upload(url)
+        upload_info = None
+        if str(kwargs.get("sorting_method")).lower() == "predefined":
+            # Request file ordering, because we reorder files to send more efficiently
+            upload_info = {
+                "upload_file_order": [p.name for p in resources],
+                "image_quality": kwargs["image_quality"],
+            }
+
+        self._tus_start_upload(url, fields=upload_info)
 
         for group, group_size in bulk_file_groups:
             files = {}
@@ -359,7 +368,6 @@ class DataUploader(Uploader):
                 pbar.advance(group_size)
 
         for filename in separate_files:
-            # TODO: check if basename produces invalid paths here, can lead to overwriting
             self._upload_file_data_with_tus(
                 url,
                 filename,

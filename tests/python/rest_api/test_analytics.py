@@ -1,5 +1,5 @@
 # Copyright (C) 2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -18,7 +18,7 @@ from dateutil import parser as datetime_parser
 from shared.utils.config import make_api_client, server_get
 from shared.utils.helpers import generate_image_files
 
-from .utils import _test_create_task
+from .utils import create_task
 
 
 class TestGetAnalytics:
@@ -86,16 +86,22 @@ class TestGetAuditEvents:
             "segment_size": 2,
             "project_id": self.project_id,
         }
-        task_data = {
-            "image_quality": 10,
-            "client_files": generate_image_files(3),
-        }
         task_ids = [
-            _test_create_task(
-                self._USERNAME, task_spec, task_data, content_type="multipart/form-data"
+            create_task(
+                self._USERNAME,
+                task_spec,
+                {
+                    "image_quality": 10,
+                    "client_files": generate_image_files(3),
+                },
             ),
-            _test_create_task(
-                self._USERNAME, task_spec, task_data, content_type="multipart/form-data"
+            create_task(
+                self._USERNAME,
+                task_spec,
+                {
+                    "image_quality": 10,
+                    "client_files": generate_image_files(3),
+                },
             ),
         ]
 

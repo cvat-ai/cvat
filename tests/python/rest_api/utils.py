@@ -140,12 +140,24 @@ def wait_until_task_is_created(api: apis.TasksApi, task_id: int) -> models.RqSta
     raise Exception("Cannot create task")
 
 
-def _test_create_task(username, spec, data, content_type, **kwargs):
+def create_task(username, spec, data, content_type="application/json", **kwargs):
     with make_api_client(username) as api_client:
         (task, response_) = api_client.tasks_api.create(spec, **kwargs)
         assert response_.status == HTTPStatus.CREATED
 
+        sent_upload_start = False
+
         if data.get("client_files") and "json" in content_type:
+            (_, response) = api_client.tasks_api.create_data(
+                task.id,
+                data_request=models.DataRequest(image_quality=data["image_quality"]),
+                upload_start=True,
+                _content_type=content_type,
+                **kwargs,
+            )
+            assert response.status == HTTPStatus.ACCEPTED
+            sent_upload_start = True
+
             # Can't encode binary files in json
             (_, response) = api_client.tasks_api.create_data(
                 task.id,
@@ -162,12 +174,20 @@ def _test_create_task(username, spec, data, content_type, **kwargs):
             data = data.copy()
             del data["client_files"]
 
+        last_kwargs = {}
+        if sent_upload_start:
+            last_kwargs["upload_finish"] = True
+
         (_, response) = api_client.tasks_api.create_data(
-            task.id, data_request=deepcopy(data), _content_type=content_type, **kwargs
+            task.id,
+            data_request=deepcopy(data),
+            _content_type=content_type,
+            **kwargs,
+            **last_kwargs,
         )
         assert response.status == HTTPStatus.ACCEPTED
 
         status = wait_until_task_is_created(api_client.tasks_api, task.id)
-        assert status.state.value == "Finished"
+        assert status.state.value == "Finished", status.message
 
     return task.id, response_.headers.get("X-Request-Id")

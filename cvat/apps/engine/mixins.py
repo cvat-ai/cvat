@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 import os
+import os.path
 import base64
 from unittest import mock
 import uuid
@@ -94,9 +95,30 @@ class TusChunk:
         self.size = int(request.META.get("CONTENT_LENGTH", settings.TUS_DEFAULT_CHUNK_SIZE))
         self.content = request.body
 
-# This upload mixin is implemented using tus
-# tus is open protocol for file uploads (see more https://tus.io/)
 class UploadMixin:
+    """
+    Implements file uploads to the server. Allows to upload single and multiple files, suspend
+    and resume uploading. Uses the TUS open file uploading protocol (https://tus.io/).
+
+    Implements the following protocols:
+    a. A single Data request
+
+    and
+
+    b.1. An Upload-Start request
+    b.2.a. The regular TUS protocol requests (Upload-Length + Chunks)
+    b.2.b. Upload-Multiple requests
+    b.3. An Upload-Finish request
+
+    Requests:
+    - Data - POST, no extra headers or 'Upload-Start' + 'Upload-Finish' headers
+    - Upload-Start - POST, has an 'Upload-Start' header
+    - Upload-Length - POST, has an 'Upload-Length' header (read the TUS protocol)
+    - Chunk - HEAD/PATCH (read the TUS protocol)
+    - Upload-Finish - POST, has an 'Upload-Finish' header
+    - Upload-Multiple - POST, has a 'Upload-Multiple' header
+    """
+
     _tus_api_version = '1.0.0'
     _tus_api_version_supported = ['1.0.0']
     _tus_api_extensions = []
@@ -147,11 +169,11 @@ class UploadMixin:
         if one_request_upload or finish_upload:
             return self.upload_finished(request)
         elif start_upload:
-            return Response(status=status.HTTP_202_ACCEPTED)
+            return self.upload_started(request)
         elif tus_request:
             return self.init_tus_upload(request)
         elif bulk_file_upload:
-            return self.append(request)
+            return self.append_files(request)
         else: # backward compatibility case - no upload headers were found
             return self.upload_finished(request)
 
@@ -161,7 +183,7 @@ class UploadMixin:
         else:
             metadata = self._get_metadata(request)
             filename = metadata.get('filename', '')
-            if not self.validate_filename(filename):
+            if not self.is_valid_uploaded_file_name(filename):
                 return self._tus_response(status=status.HTTP_400_BAD_REQUEST,
                     data="File name {} is not allowed".format(filename))
 
@@ -218,32 +240,55 @@ class UploadMixin:
                                       extra_headers={'Upload-Offset': tus_file.offset,
                                                      'Upload-Filename': tus_file.filename})
 
-    def validate_filename(self, filename):
+    def is_valid_uploaded_file_name(self, filename: str) -> bool:
+        """
+        Checks the file name to be valid.
+        Returns True if the filename is valid, otherwise returns False.
+        """
+
         upload_dir = self.get_upload_dir()
         file_path = os.path.join(upload_dir, filename)
         return os.path.commonprefix((os.path.realpath(file_path), upload_dir)) == upload_dir
 
-    def get_upload_dir(self):
+    def get_upload_dir(self) -> str:
         return self._object.data.get_upload_dirname()
 
-    def get_request_client_files(self, request):
+    def _get_request_client_files(self, request):
         serializer = DataSerializer(self._object, data=request.data)
         serializer.is_valid(raise_exception=True)
-        data = {k: v for k, v in serializer.validated_data.items()}
-        return data.get('client_files', None)
+        return serializer.validated_data.get('client_files')
 
-    def append(self, request):
-        client_files = self.get_request_client_files(request)
+    def append_files(self, request):
+        """
+        Processes a single or multiple files sent in a single request inside
+        a file uploading session.
+        """
+
+        client_files = self._get_request_client_files(request)
         if client_files:
             upload_dir = self.get_upload_dir()
             for client_file in client_files:
-                with open(os.path.join(upload_dir, client_file['file'].name), 'ab+') as destination:
+                filename = client_file['file'].name
+                if not self.is_valid_uploaded_file_name(filename):
+                    return Response(status=status.HTTP_400_BAD_REQUEST,
+                        data=f"File name {filename} is not allowed", content_type="text/plain")
+
+                with open(os.path.join(upload_dir, filename), 'ab+') as destination:
                     destination.write(client_file['file'].read())
         return Response(status=status.HTTP_200_OK)
 
-    # override this to do stuff after upload
+    def upload_started(self, request):
+        """
+        Allows to do actions before upcoming file uploading.
+        """
+        return Response(status=status.HTTP_202_ACCEPTED)
+
     def upload_finished(self, request):
-        raise NotImplementedError('You need to implement upload_finished in UploadMixin')
+        """
+        Allows to process uploaded files.
+        """
+
+        raise NotImplementedError('Must be implemented in the derived class')
 
 class AnnotationMixin:
     def export_annotations(self, request, db_obj, export_func, callback, get_data=None):
