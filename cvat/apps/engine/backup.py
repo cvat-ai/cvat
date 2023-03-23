@@ -13,7 +13,7 @@ from typing import Any, Dict, Iterable
 import uuid
 from zipfile import ZipFile
 from datetime import datetime
-from tempfile import mkstemp
+from tempfile import NamedTemporaryFile
 
 import django_rq
 from django.conf import settings
@@ -898,7 +898,6 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
 
     if not rq_job:
         org_id = getattr(request.iam_context['organization'], 'id', None)
-        fd = None
         dependent_job = None
 
         location = location_conf.get('location')
@@ -907,7 +906,7 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
                 serializer = Serializer(data=request.data)
                 serializer.is_valid(raise_exception=True)
                 payload_file = serializer.validated_data[file_field_name]
-                fd, filename = mkstemp(prefix='cvat_', dir=settings.TMP_FILES_ROOT)
+                filename = NamedTemporaryFile(prefix='cvat_', dir=settings.TMP_FILES_ROOT, delete=False).name
                 with open(filename, 'wb+') as f:
                     for chunk in payload_file.chunks():
                         f.write(chunk)
@@ -922,7 +921,7 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
                     ' but cloud storage id was not specified')
             db_storage = get_object_or_404(CloudStorageModel, pk=storage_id)
             key = filename
-            fd, filename = mkstemp(prefix='cvat_', dir=settings.TMP_FILES_ROOT)
+            filename = NamedTemporaryFile(prefix='cvat_', dir=settings.TMP_FILES_ROOT, delete=False).name
             dependent_job = configure_dependent_job(
                 queue=queue,
                 rq_id=rq_id,
@@ -939,7 +938,6 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
             job_id=rq_id,
             meta={
                 'tmp_file': filename,
-                'tmp_file_descriptor': fd,
                 **get_rq_job_meta(request=request, db_obj=None)
             },
             depends_on=dependent_job,

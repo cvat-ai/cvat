@@ -139,11 +139,6 @@ def process_failed_job(rq_job: Job):
     return msg
 
 def handle_finished_or_failed_job(rq_job: Job, *args, **kwargs):
-    # TODO check file from dependent job
-    if rq_job.meta['tmp_file_descriptor']:
-        os.close(rq_job.meta['tmp_file_descriptor'])
-        rq_job.meta['tmp_file_descriptor'] = None
-        rq_job.save()
     if os.path.exists(rq_job.meta['tmp_file']):
         os.remove(rq_job.meta['tmp_file'])
 
@@ -157,7 +152,6 @@ def configure_dependent_job(queue, rq_id, rq_func, db_storage, filename, key, re
             args=(db_storage, filename, key),
             job_id=rq_job_id_download_file,
             meta=get_rq_job_meta(request=request, db_obj=db_storage),
-            on_success=handle_finished_or_failed_job,
             on_failure=handle_finished_or_failed_job,
         )
     return rq_job_download_file

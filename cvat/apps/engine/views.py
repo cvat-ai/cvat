@@ -10,7 +10,7 @@ import pytz
 import traceback
 from datetime import datetime
 from distutils.util import strtobool
-from tempfile import mkstemp
+from tempfile import NamedTemporaryFile
 
 from django.db.models.query import Prefetch
 from django.shortcuts import get_object_or_404
@@ -2259,7 +2259,6 @@ def _import_annotations(request, rq_id, rq_func, db_obj, format_name,
         # If filename is specified we consider that file was uploaded via TUS, so it exists in filesystem
         # Then we dont need to create temporary file
         # Or filename specify key in cloud storage so we need to download file
-        fd = None
         dependent_job = None
         location = location_conf.get('location') if location_conf else Location.LOCAL
 
@@ -2268,7 +2267,7 @@ def _import_annotations(request, rq_id, rq_func, db_obj, format_name,
                 serializer = AnnotationFileSerializer(data=request.data)
                 if serializer.is_valid(raise_exception=True):
                     anno_file = serializer.validated_data['annotation_file']
-                    fd, filename = mkstemp(prefix='cvat_{}'.format(db_obj.pk), dir=settings.TMP_FILES_ROOT)
+                    filename = NamedTemporaryFile(prefix='cvat_{}'.format(db_obj.pk), dir=settings.TMP_FILES_ROOT, delete=False).name
                     with open(filename, 'wb+') as f:
                         for chunk in anno_file.chunks():
                             f.write(chunk)
@@ -2282,7 +2281,7 @@ def _import_annotations(request, rq_id, rq_func, db_obj, format_name,
                         ' but cloud storage id was not specified')
                 db_storage = get_object_or_404(CloudStorageModel, pk=storage_id)
                 key = filename
-                fd, filename = mkstemp(prefix='cvat_{}'.format(db_obj.pk), dir=settings.TMP_FILES_ROOT)
+                filename = NamedTemporaryFile(prefix='cvat_{}'.format(db_obj.pk), dir=settings.TMP_FILES_ROOT, delete=False).name
                 dependent_job = configure_dependent_job(
                     queue=queue,
                     rq_id=rq_id,
@@ -2296,7 +2295,6 @@ def _import_annotations(request, rq_id, rq_func, db_obj, format_name,
         av_scan_paths(filename)
         meta = {
             'tmp_file': filename,
-            'tmp_file_descriptor': fd,
         }
         rq_job = queue.enqueue_call(
             func=rq_func,
@@ -2442,14 +2440,13 @@ def _import_project_dataset(request, rq_id, rq_func, db_obj, format_name, filena
     rq_job = queue.fetch_job(rq_id)
 
     if not rq_job:
-        fd = None
         dependent_job = None
         location = location_conf.get('location') if location_conf else None
         if not filename and location != Location.CLOUD_STORAGE:
             serializer = DatasetFileSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
                 dataset_file = serializer.validated_data['dataset_file']
-                fd, filename = mkstemp(prefix='cvat_{}'.format(db_obj.pk), dir=settings.TMP_FILES_ROOT)
+                filename = NamedTemporaryFile(prefix='cvat_{}'.format(db_obj.pk), dir=settings.TMP_FILES_ROOT, delete=False).name
                 with open(filename, 'wb+') as f:
                     for chunk in dataset_file.chunks():
                         f.write(chunk)
@@ -2463,7 +2460,7 @@ def _import_project_dataset(request, rq_id, rq_func, db_obj, format_name, filena
                     ' but cloud storage id was not specified')
             db_storage = get_object_or_404(CloudStorageModel, pk=storage_id)
             key = filename
-            fd, filename = mkstemp(prefix='cvat_{}'.format(db_obj.pk), dir=settings.TMP_FILES_ROOT)
+            filename = NamedTemporaryFile(prefix='cvat_{}'.format(db_obj.pk), dir=settings.TMP_FILES_ROOT, delete=False).name
             dependent_job = configure_dependent_job(
                 queue=queue,
                 rq_id=rq_id,
@@ -2480,7 +2477,6 @@ def _import_project_dataset(request, rq_id, rq_func, db_obj, format_name, filena
             job_id=rq_id,
             meta={
                 'tmp_file': filename,
-                'tmp_file_descriptor': fd,
                 **get_rq_job_meta(request=request, db_obj=db_obj),
             },
             depends_on=dependent_job,
