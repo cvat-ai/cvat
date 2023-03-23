@@ -225,6 +225,10 @@ function HeaderContainer(props: Props): JSX.Element {
         });
     }, [tool]);
 
+    const closeSettings = useCallback(() => {
+        switchSettingsDialog(false);
+    }, []);
+
     const resetOrganization = (): void => {
         localStorage.removeItem('currentOrganization');
         if (/(webhooks)|(\d+)/.test(window.location.pathname)) {
@@ -536,7 +540,7 @@ function HeaderContainer(props: Props): JSX.Element {
                     </span>
                 </Dropdown>
             </div>
-            <SettingsModal visible={settingsDialogShown} onClose={() => switchSettingsDialog(false)} />
+            <SettingsModal visible={settingsDialogShown} onClose={closeSettings} />
             {renderChangePasswordItem && <ChangePasswordDialog onClose={() => switchChangePasswordDialog(false)} />}
         </Layout.Header>
     );
