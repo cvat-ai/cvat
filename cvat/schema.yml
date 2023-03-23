@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: '2.5'
+  version: '2.4'
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -417,7 +417,6 @@ paths:
           - ACCOUNT_NAME_TOKEN_PAIR
           - KEY_FILE_PATH
           - ANONYMOUS_ACCESS
-          - CONNECTION_STRING
       - name: filter
         required: false
         in: query
@@ -7187,9 +7186,6 @@ components:
         secret_key:
           type: string
           maxLength: 44
-        connection_string:
-          type: string
-          maxLength: 440
         key_file:
           type: string
           format: binary
@@ -7260,7 +7256,6 @@ components:
       - ACCOUNT_NAME_TOKEN_PAIR
       - KEY_FILE_PATH
       - ANONYMOUS_ACCESS
-      - CONNECTION_STRING
       type: string
     DataMetaRead:
       type: object
@@ -7583,17 +7578,25 @@ components:
       - create:comment
       - create:invitation
       - create:issue
+      - create:job
+      - create:label
+      - create:membership
       - create:project
       - create:task
       - delete:comment
       - delete:invitation
       - delete:issue
+      - delete:job
+      - delete:label
       - delete:membership
+      - delete:organization
       - delete:project
       - delete:task
       - update:comment
+      - update:invitation
       - update:issue
       - update:job
+      - update:label
       - update:membership
       - update:organization
       - update:project
@@ -8656,9 +8659,6 @@ components:
         secret_key:
           type: string
           maxLength: 44
-        connection_string:
-          type: string
-          maxLength: 440
         key_file:
           type: string
           format: binary
@@ -8919,7 +8919,7 @@ components:
           type: string
           format: uri
           minLength: 1
-          maxLength: 8192
+          maxLength: 200
         description:
           type: string
           maxLength: 128
@@ -9869,7 +9869,7 @@ components:
           type: string
           format: uri
           minLength: 1
-          maxLength: 8192
+          maxLength: 200
         description:
           type: string
           maxLength: 128
