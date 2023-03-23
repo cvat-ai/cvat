@@ -20,6 +20,10 @@ context('Canvas 3D functionality. Basic actions.', () => {
         cy.customScreenshot('.cvat-canvas3d-perspective', screenshotNameBefore);
         cy.get('.cvat-canvas3d-perspective').trigger('mouseover');
         cy.get('body').type(`{alt}${key}`);
+
+        // wait for animation end
+        cy.wait(1000);
+
         cy.customScreenshot('.cvat-canvas3d-perspective', screenshotNameAfter);
         cy.compareImagesAndCheckResult(
             `${screenshotsPath}/${screenshotNameBefore}.png`,
