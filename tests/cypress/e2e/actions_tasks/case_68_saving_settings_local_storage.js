@@ -63,7 +63,6 @@ context('Saving setting to local storage.', () => {
             setupAndSaveSettings(true);
             cy.reload();
             testCheckedSettings(true);
-
             setupAndSaveSettings(false);
             cy.reload();
             testCheckedSettings(false);
