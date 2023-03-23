@@ -19,6 +19,7 @@ import { EventDataNode } from 'rc-tree/lib/interface';
 
 import config from 'config';
 import { CloudStorage } from 'reducers';
+import CVATLoadingSpinner from 'components/common/loading-spinner';
 import CloudStorageTab from './cloud-storages-tab';
 import LocalFiles from './local-files';
 
@@ -35,6 +36,7 @@ interface State {
     active: 'local' | 'share' | 'remote' | 'cloudStorage';
     cloudStorage: CloudStorage | null;
     potentialCloudStorage: string;
+    sharedStorageInitialized: boolean;
 }
 
 interface Props {
@@ -55,7 +57,6 @@ export class FileManager extends React.PureComponent<Props, State> {
     public constructor(props: Props) {
         super(props);
         this.cloudStorageTabFormRef = React.createRef<FormInstance>();
-        const { onLoadData } = this.props;
 
         this.state = {
             files: {
@@ -65,12 +66,22 @@ export class FileManager extends React.PureComponent<Props, State> {
                 cloudStorage: [],
             },
             cloudStorage: null,
+            sharedStorageInitialized: false,
             potentialCloudStorage: '',
             expandedKeys: [],
             active: 'local',
         };
+    }
 
-        onLoadData('/');
+    public componentDidUpdate(): void {
+        const { sharedStorageInitialized, active } = this.state;
+        const { onLoadData } = this.props;
+
+        if (active === 'share' && !sharedStorageInitialized) {
+            onLoadData('/').then(() => {
+                this.setState({ sharedStorageInitialized: true });
+            });
+        }
     }
 
     private handleUploadCloudStorageFiles = (cloudStorageFiles: string[]): void => {
@@ -157,7 +168,15 @@ export class FileManager extends React.PureComponent<Props, State> {
 
         const { SHARE_MOUNT_GUIDE_URL } = config;
         const { treeData, onUploadShareFiles, onLoadData } = this.props;
-        const { expandedKeys, files } = this.state;
+        const { expandedKeys, files, sharedStorageInitialized } = this.state;
+
+        if (!sharedStorageInitialized) {
+            return (
+                <Tabs.TabPane key='share' tab='Connected file share'>
+                    <CVATLoadingSpinner />
+                </Tabs.TabPane>
+            );
+        }
 
         return (
             <Tabs.TabPane key='share' tab='Connected file share'>
