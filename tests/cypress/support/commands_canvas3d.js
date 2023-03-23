@@ -40,7 +40,7 @@ Cypress.Commands.add('customScreenshot', (element, screenshotName) => {
         const scale = parentRect.width / iframe.clientWidth;
         cy.screenshot(screenshotName, {
             // tricky way to make screenshots to avoid screen resizing
-            // we screen all the screen including runner and then clip it
+            // we take a screenshot of the whole screen, including runner and then clip it
             // according to iframe coordinates and scale in the runner
             overwrite: true,
             capture: 'runner',
