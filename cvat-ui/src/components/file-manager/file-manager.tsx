@@ -36,12 +36,12 @@ interface State {
     active: 'local' | 'share' | 'remote' | 'cloudStorage';
     cloudStorage: CloudStorage | null;
     potentialCloudStorage: string;
-    sharedStorageInitialized: boolean;
 }
 
 interface Props {
+    sharedStorageInitialized: boolean;
+    sharedStorageFetching: boolean;
     treeData: (TreeNodeNormal & { mime_type: string })[];
-    share: any;
     many: boolean;
     onLoadData: (key: string) => Promise<any>;
     onChangeActiveKey(key: string): void;
@@ -66,7 +66,6 @@ export class FileManager extends React.PureComponent<Props, State> {
                 cloudStorage: [],
             },
             cloudStorage: null,
-            sharedStorageInitialized: false,
             potentialCloudStorage: '',
             expandedKeys: [],
             active: 'local',
@@ -74,13 +73,11 @@ export class FileManager extends React.PureComponent<Props, State> {
     }
 
     public componentDidUpdate(): void {
-        const { sharedStorageInitialized, active } = this.state;
-        const { onLoadData } = this.props;
+        const { active } = this.state;
+        const { onLoadData, sharedStorageInitialized, sharedStorageFetching } = this.props;
 
-        if (active === 'share' && !sharedStorageInitialized) {
-            onLoadData('/').then(() => {
-                this.setState({ sharedStorageInitialized: true });
-            });
+        if (active === 'share' && !sharedStorageInitialized && !sharedStorageFetching) {
+            onLoadData('/');
         }
     }
 
@@ -167,8 +164,10 @@ export class FileManager extends React.PureComponent<Props, State> {
         }
 
         const { SHARE_MOUNT_GUIDE_URL } = config;
-        const { treeData, onUploadShareFiles, onLoadData } = this.props;
-        const { expandedKeys, files, sharedStorageInitialized } = this.state;
+        const {
+            treeData, sharedStorageInitialized, onUploadShareFiles, onLoadData,
+        } = this.props;
+        const { expandedKeys, files } = this.state;
 
         if (!sharedStorageInitialized) {
             return (
