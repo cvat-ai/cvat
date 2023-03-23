@@ -19,7 +19,7 @@ context('Canvas 3D functionality. Basic actions.', () => {
     function testPerspectiveChangeOnKeyPress(key, screenshotNameBefore, screenshotNameAfter) {
         cy.customScreenshot('.cvat-canvas3d-perspective', screenshotNameBefore);
         cy.get('.cvat-canvas3d-perspective').trigger('mouseover');
-        cy.get('body').click().type(`{alt}${key}`);
+        cy.get('body').type(`{alt}${key}`);
         cy.customScreenshot('.cvat-canvas3d-perspective', screenshotNameAfter);
         cy.compareImagesAndCheckResult(
             `${screenshotsPath}/${screenshotNameBefore}.png`,
@@ -30,7 +30,7 @@ context('Canvas 3D functionality. Basic actions.', () => {
     function testPerspectiveChangeOnArrowKeyPress(key, screenshotNameBefore, screenshotNameAfter) {
         cy.customScreenshot('.cvat-canvas3d-perspective', screenshotNameBefore);
         cy.get('.cvat-canvas3d-perspective').trigger('mouseover');
-        cy.get('body').click().type(`{Shift}${key}`);
+        cy.get('body').type(`{Shift}${key}`);
         cy.customScreenshot('.cvat-canvas3d-perspective', screenshotNameAfter);
         cy.compareImagesAndCheckResult(
             `${screenshotsPath}/${screenshotNameBefore}.png`,
