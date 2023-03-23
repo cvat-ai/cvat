@@ -5,32 +5,33 @@
 
 import base64
 import json
-from functools import wraps
-from enum import Enum
-from copy import deepcopy
+import os
 import textwrap
+from copy import deepcopy
+from enum import Enum
+from functools import wraps
 from typing import Any, Dict, Optional
 
+import datumaro.util.mask_tools as mask_tools
 import django_rq
+import numpy as np
 import requests
 import rq
-import os
-
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
-from rest_framework import status, viewsets, serializers
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import (OpenApiParameter, OpenApiResponse,
+                                   extend_schema, extend_schema_view,
+                                   inline_serializer)
+from rest_framework import serializers, status, viewsets
 from rest_framework.response import Response
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.engine.frame_provider import FrameProvider
-from cvat.apps.engine.models import Job, Task
+from cvat.apps.engine.models import Job, ShapeType, SourceType, Task
 from cvat.apps.engine.serializers import LabeledDataSerializer
-from cvat.apps.engine.models import ShapeType, SourceType
 from cvat.utils.http import make_requests_session
 
-from drf_spectacular.utils import (extend_schema, extend_schema_view,
-    OpenApiResponse, OpenApiParameter, inline_serializer)
-from drf_spectacular.types import OpenApiTypes
 
 class LambdaType(Enum):
     DETECTOR = "detector"
@@ -552,14 +553,7 @@ class LambdaJob:
                     elif anno["type"] == "mask":
                         [xtl, ytl, xbr, ybr] = shape["points"][-4:]
                         cut_points = shape["points"][:-4]
-                        rle = [0]
-                        prev = shape["points"][0]
-                        for val in cut_points:
-                            if val == prev:
-                                rle[-1] += 1
-                            else:
-                                rle.append(1)
-                                prev = val
+                        rle = mask_tools.mask_to_rle(np.array(cut_points))["counts"].tolist()
                         rle.extend([xtl, ytl, xbr, ybr])
                         shape["points"] = rle
 
