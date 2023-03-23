@@ -9,7 +9,7 @@ class Migration(migrations.Migration):
     dependencies = [
         ('organizations', '0001_initial'),
         ('engine', '0065_auto_20230221_0931'),
-        ('webhooks', '0003_alter_webhookdelivery_status_code'),
+        ('webhooks', '0004_alter_webhook_target_url'),
     ]
 
     operations = [
