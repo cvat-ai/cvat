@@ -37,9 +37,19 @@ Name | Type | Description  | Notes
 {{/defaultValue}}{{/requiredParams}}{{#optionalParams}} **{{paramName}}** | {{^baseType}}**{{dataType}}**{{/baseType}}{{#baseType}}[**{{dataType}}**](../models/{{baseType}}){{/baseType}}| {{{description}}} | [optional]{{#defaultValue}} if omitted the server will use the default value of {{{.}}}{{/defaultValue}}
 {{/optionalParams}}
 
-### Return type
+There are also optional kwargs that control the function invocation behavior.
+[Read more here](https://opencv.github.io/cvat/docs/api_sdk/sdk/lowlevel-api/#sending-requests).
 
-A tuple is returned: ({{#returnType}}{{#returnTypeIsPrimitive}}**{{{returnType}}}**{{/returnTypeIsPrimitive}}{{^returnTypeIsPrimitive}}[**{{{returnType}}}**](../models/{{returnBaseType}}){{/returnTypeIsPrimitive}}{{/returnType}}{{^returnType}}None{{/returnType}}, urllib3.HTTPResponse)
+### Returned values
+
+Returned type: `Tuple[{{>return_type}}, urllib3.HTTPResponse]`.
+
+Returns a tuple with 2 values: `({{#returnType}}parsed_response{{/returnType}}{{^returnType}}None{{/returnType}}, raw_response)`.
+
+{{#returnType}}The first value is a model parsed from the response data.{{/returnType}}{{^returnType}}This endpoint does not have any return value, so `None` is always returned as the first value.{{/returnType}}
+The second value is the raw response, which can be useful to get response parameters, such as
+status code, headers, or raw response data. Read more about invocation parameters
+and returned values [here](https://opencv.github.io/cvat/docs/api_sdk/sdk/lowlevel-api/#sending-requests).
 
 ### Authorization
 
