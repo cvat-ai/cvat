@@ -9,8 +9,7 @@ from time import sleep
 import pytest
 from deepdiff import DeepDiff
 from shared.fixtures.init import CVAT_ROOT_DIR, _run
-from shared.utils.config import (delete_method, get_method, patch_method,
-                                 post_method)
+from shared.utils.config import delete_method, get_method, patch_method, post_method
 
 # Testing webhook functionality:
 #  - webhook_receiver container receive post request and return responses with the same body
@@ -340,6 +339,7 @@ class TestWebhookTaskEvents:
 
         assert deliveries["count"] == 1
         from pprint import pprint
+
         pprint(deliveries)
         assert payload["label"]["task_id"] == task_id
         assert payload["label"]["name"] == labels[0]["name"]
@@ -589,6 +589,7 @@ class TestWebhookMembershipEvents:
 
         deliveries, payload = get_deliveries(webhook_id)
         from pprint import pprint
+
         pprint(payload)
 
         assert deliveries["count"] == 1
