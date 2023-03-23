@@ -13,7 +13,6 @@ from rest_framework import status
 from crum import get_current_user, get_current_request
 
 from cvat.apps.engine.models import (
-    Organization,
     Project,
     Task,
     Job,
@@ -34,11 +33,36 @@ from cvat.apps.engine.serializers import (
     LabelSerializer,
 )
 from cvat.apps.engine.models import ShapeType
-from cvat.apps.organizations.serializers import OrganizationReadSerializer
-from cvat.apps.webhooks.signals import project_id, organization_id
+from cvat.apps.organizations.models import Membership, Organization, Invitation
+from cvat.apps.organizations.serializers import OrganizationReadSerializer, MembershipReadSerializer, InvitationReadSerializer
 from cvat.apps.engine.log import vlogger
 
 from .event import event_scope, create_event
+
+def project_id(instance):
+    if isinstance(instance, Project):
+        return instance.id
+
+    try:
+        pid = getattr(instance, "project_id", None)
+        if pid is None:
+            return instance.get_project_id()
+        return pid
+    except Exception:
+        return None
+
+
+def organization_id(instance):
+    if isinstance(instance, Organization):
+        return instance.id
+
+    try:
+        oid = getattr(instance, "organization_id", None)
+        if oid is None:
+            return instance.get_organization_id()
+        return oid
+    except Exception:
+        return None
 
 
 def task_id(instance):
@@ -134,13 +158,13 @@ def organization_slug(instance):
     except Exception:
         return None
 
-def _get_instance_diff(old_data, data):
-    ingone_related_fields = (
+def get_instance_diff(old_data, data):
+    ignore_related_fields = (
         "labels",
     )
     diff = {}
     for prop, value in data.items():
-        if prop in ingone_related_fields:
+        if prop in ignore_related_fields:
             continue
         old_value = old_data.get(prop)
         if old_value != value:
@@ -228,8 +252,16 @@ def _get_serializer(instance):
         serializer = CommentReadSerializer(instance=instance, context=context)
     if isinstance(instance, Label):
         serializer = LabelSerializer(instance=instance, context=context)
+    if isinstance(instance, Membership):
+        serializer = MembershipReadSerializer(instance=instance, context=context)
+    if isinstance(instance, Invitation):
+        serializer = InvitationReadSerializer(instance=instance, context=context)
 
-    if serializer :
+    return serializer
+
+def get_serializer(instance):
+    serializer = _get_serializer(instance)
+    if serializer:
         serializer.fields.pop("url", None)
     return serializer
 
@@ -253,7 +285,7 @@ def handle_create(scope, instance, **kwargs):
     uname = user_name(instance)
     uemail = user_email(instance)
 
-    serializer = _get_serializer(instance=instance)
+    serializer = get_serializer(instance=instance)
     try:
         payload = serializer.data
     except Exception:
@@ -289,9 +321,9 @@ def handle_update(scope, instance, old_instance, **kwargs):
     uname = user_name(instance)
     uemail = user_email(instance)
 
-    old_serializer = _get_serializer(instance=old_instance)
-    serializer = _get_serializer(instance=instance)
-    diff = _get_instance_diff(old_data=old_serializer.data, data=serializer.data)
+    old_serializer = get_serializer(instance=old_instance)
+    serializer = get_serializer(instance=instance)
+    diff = get_instance_diff(old_data=old_serializer.data, data=serializer.data)
 
     timestamp = str(datetime.now(timezone.utc).timestamp())
     for prop, change in diff.items():

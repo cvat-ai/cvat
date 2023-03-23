@@ -6,77 +6,92 @@
 import io
 import os
 import os.path as osp
-import pytz
 import traceback
 from datetime import datetime
 from distutils.util import strtobool
 from tempfile import mkstemp
 
-from django.db.models.query import Prefetch
-from django.shortcuts import get_object_or_404
+import django.db.models as dj_models
 import django_rq
+import pytz
 from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import IntegrityError
-from django.http import HttpResponse, HttpResponseNotFound, HttpResponseBadRequest
+from django.db.models.query import Prefetch
+from django.http import (HttpResponse, HttpResponseBadRequest,
+                         HttpResponseNotFound)
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
-import django.db.models as dj_models
-
-from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import (
-    OpenApiParameter, OpenApiResponse, PolymorphicProxySerializer,
-    extend_schema_view, extend_schema
-)
+from django_sendfile import sendfile
 from drf_spectacular.plumbing import build_array_type, build_basic_type
-
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import (OpenApiParameter, OpenApiResponse,
+                                   PolymorphicProxySerializer, extend_schema,
+                                   extend_schema_view)
 from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import APIException, NotFound, ValidationError, PermissionDenied
+from rest_framework.exceptions import (APIException, NotFound,
+                                       PermissionDenied, ValidationError)
 from rest_framework.permissions import SAFE_METHODS
 from rest_framework.response import Response
-from django_sendfile import sendfile
 
 import cvat.apps.dataset_manager as dm
 import cvat.apps.dataset_manager.views  # pylint: disable=unused-import
-from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
 from cvat.apps.dataset_manager.bindings import CvatImportError
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
-from cvat.apps.engine.frame_provider import FrameProvider
-from cvat.apps.engine.media_extractors import get_mime
-from cvat.apps.engine.models import (
-    Job, Label, Task, Project, Issue, Data,
-    Comment, StorageMethodChoice, StorageChoice,
-    CloudProviderChoice, Location
-)
-from cvat.apps.engine.models import CloudStorage as CloudStorageModel
-from cvat.apps.engine.serializers import (
-    AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
-    DataMetaReadSerializer, DataMetaWriteSerializer, DataSerializer,
-    FileInfoSerializer, JobReadSerializer, JobWriteSerializer, LabelSerializer,
-    LabeledDataSerializer,
-    ProjectReadSerializer, ProjectWriteSerializer,
-    RqStatusSerializer, TaskReadSerializer, TaskWriteSerializer,
-    UserSerializer, PluginsSerializer, IssueReadSerializer,
-    IssueWriteSerializer, CommentReadSerializer, CommentWriteSerializer, CloudStorageWriteSerializer,
-    CloudStorageReadSerializer, DatasetFileSerializer,
-    ProjectFileSerializer, TaskFileSerializer)
-
-from utils.dataset_manifest import ImageManifestManager
-from cvat.apps.engine.utils import (
-    av_scan_paths, process_failed_job, configure_dependent_job, parse_exception_message, get_rq_job_meta
-)
 from cvat.apps.engine import backup
-from cvat.apps.engine.mixins import PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin, DestroyModelMixin, CreateModelMixin
-from cvat.apps.engine.location import get_location_configuration, StorageType
+from cvat.apps.engine.cache import MediaCache
+from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
+from cvat.apps.engine.frame_provider import FrameProvider
+from cvat.apps.engine.location import StorageType, get_location_configuration
+from cvat.apps.engine.media_extractors import get_mime
+from cvat.apps.engine.mixins import (AnnotationMixin, PartialUpdateModelMixin,
+                                     SerializeMixin, UploadMixin)
+from cvat.apps.engine.models import CloudProviderChoice
+from cvat.apps.engine.models import CloudStorage as CloudStorageModel
+from cvat.apps.engine.models import (Comment, Data, Issue, Job, Label,
+                                     Location, Project, StorageChoice,
+                                     StorageMethodChoice, Task)
+from cvat.apps.engine.serializers import (AboutSerializer,
+                                          AnnotationFileSerializer,
+                                          BasicUserSerializer,
+                                          CloudStorageReadSerializer,
+                                          CloudStorageWriteSerializer,
+                                          CommentReadSerializer,
+                                          CommentWriteSerializer,
+                                          DataMetaReadSerializer,
+                                          DataMetaWriteSerializer,
+                                          DataSerializer,
+                                          DatasetFileSerializer,
+                                          FileInfoSerializer,
+                                          IssueReadSerializer,
+                                          IssueWriteSerializer,
+                                          JobReadSerializer,
+                                          JobWriteSerializer,
+                                          LabeledDataSerializer,
+                                          LabelSerializer, PluginsSerializer,
+                                          ProjectFileSerializer,
+                                          ProjectReadSerializer,
+                                          ProjectWriteSerializer,
+                                          RqStatusSerializer,
+                                          TaskFileSerializer,
+                                          TaskReadSerializer,
+                                          TaskWriteSerializer, UserSerializer)
+from cvat.apps.engine.utils import (av_scan_paths, configure_dependent_job,
+                                    get_rq_job_meta, parse_exception_message,
+                                    process_failed_job)
+from cvat.apps.events.handlers import handle_annotations_patch
+from cvat.apps.iam.permissions import (CloudStoragePermission,
+                                       CommentPermission, IssuePermission,
+                                       JobPermission, LabelPermission,
+                                       ProjectPermission, TaskPermission,
+                                       UserPermission)
+from utils.dataset_manifest import ImageManifestManager
 
 from . import models, task
 from .log import slogger
-from cvat.apps.iam.permissions import (CloudStoragePermission,
-    CommentPermission, IssuePermission, JobPermission, LabelPermission, ProjectPermission,
-    TaskPermission, UserPermission)
-from cvat.apps.engine.cache import MediaCache
-from cvat.apps.events.handlers import handle_annotations_patch
+
 
 @extend_schema(tags=['server'])
 class ServerViewSet(viewsets.ViewSet):
@@ -215,7 +230,7 @@ class ServerViewSet(viewsets.ViewSet):
         })
 )
 class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
-    mixins.RetrieveModelMixin, CreateModelMixin, DestroyModelMixin,
+    mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
     PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
 ):
     queryset = models.Project.objects.select_related(
@@ -250,8 +265,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         return queryset
 
     def perform_create(self, serializer, **kwargs):
-        super().perform_create(
-            serializer,
+        serializer.save(
             owner=self.request.user,
             organization=self.request.iam_context['organization']
         )
@@ -666,7 +680,7 @@ class DataChunkGetter:
         })
 )
 class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
-    mixins.RetrieveModelMixin, CreateModelMixin, DestroyModelMixin,
+    mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
     PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
 ):
     queryset = Task.objects.select_related(
@@ -787,8 +801,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             updated_instance.project.save()
 
     def perform_create(self, serializer, **kwargs):
-        super().perform_create(
-            serializer,
+        serializer.save(
             owner=self.request.user,
             organization=self.request.iam_context['organization']
         )
@@ -945,7 +958,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @extend_schema(methods=['HEAD'],
         summary="Implements TUS file uploading protocol."
     )
-    @action(detail=True, methods=['HEAD', 'PATCH'], url_path='data/'+UploadMixin.file_id_regex)
+    @action(detail=True, methods=['HEAD', 'PATCH'], url_path='data/' + UploadMixin.file_id_regex)
     def append_data_chunk(self, request, pk, file_id):
         self._object = self.get_object()
         return self.append_tus_chunk(request, file_id)
@@ -1697,7 +1710,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         })
 )
 class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
-    mixins.RetrieveModelMixin, CreateModelMixin, DestroyModelMixin,
+    mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
     PartialUpdateModelMixin
 ):
     queryset = Issue.objects.prefetch_related(
@@ -1734,7 +1747,7 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return IssueWriteSerializer
 
     def perform_create(self, serializer, **kwargs):
-        super().perform_create(serializer, owner=self.request.user)
+        serializer.save(owner=self.request.user)
 
 @extend_schema(tags=['comments'])
 @extend_schema_view(
@@ -1767,7 +1780,7 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         })
 )
 class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
-    mixins.RetrieveModelMixin, CreateModelMixin, DestroyModelMixin,
+    mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
     PartialUpdateModelMixin
 ):
     queryset = Comment.objects.prefetch_related(
@@ -1803,7 +1816,7 @@ class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return CommentWriteSerializer
 
     def perform_create(self, serializer, **kwargs):
-        super().perform_create(serializer, owner=self.request.user)
+        serializer.save(owner=self.request.user)
 
 
 @extend_schema(tags=['labels'])
