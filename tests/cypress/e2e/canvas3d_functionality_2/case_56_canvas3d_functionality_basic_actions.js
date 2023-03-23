@@ -19,11 +19,7 @@ context('Canvas 3D functionality. Basic actions.', () => {
     function testPerspectiveChangeOnKeyPress(key, screenshotNameBefore, screenshotNameAfter) {
         cy.customScreenshot('.cvat-canvas3d-perspective', screenshotNameBefore);
         cy.get('.cvat-canvas3d-perspective').trigger('mouseover');
-        cy.get('body').type(`{alt}${key}`);
-
-        // wait for animation end
-        cy.wait(1000);
-
+        cy.get('body').click().type(`{alt}${key}`);
         cy.customScreenshot('.cvat-canvas3d-perspective', screenshotNameAfter);
         cy.compareImagesAndCheckResult(
             `${screenshotsPath}/${screenshotNameBefore}.png`,
@@ -34,7 +30,7 @@ context('Canvas 3D functionality. Basic actions.', () => {
     function testPerspectiveChangeOnArrowKeyPress(key, screenshotNameBefore, screenshotNameAfter) {
         cy.customScreenshot('.cvat-canvas3d-perspective', screenshotNameBefore);
         cy.get('.cvat-canvas3d-perspective').trigger('mouseover');
-        cy.get('body').type(`{Shift}${key}`);
+        cy.get('body').click().type(`{Shift}${key}`);
         cy.customScreenshot('.cvat-canvas3d-perspective', screenshotNameAfter);
         cy.compareImagesAndCheckResult(
             `${screenshotsPath}/${screenshotNameBefore}.png`,
@@ -57,8 +53,8 @@ context('Canvas 3D functionality. Basic actions.', () => {
     function testTopSideFrontChangeOnWheel(element, screenshotNameBefore, screenshotNameAfter) {
         cy.customScreenshot(element, screenshotNameBefore);
         cy.get(element).within(() => {
-            for (let i = 0; i < 3; i++) {
-                cy.get('.cvat-canvas3d-fullsize canvas').trigger('wheel', { deltaY: -100 });
+            for (let i = 0; i < 10; i++) {
+                cy.get('.cvat-canvas3d-fullsize canvas').trigger('wheel', { deltaY: -1 });
             }
         });
 
