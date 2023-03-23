@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/opencv/cvat/pull/5873>)
 - Width and height in CVAT dataset format mask annotations (<https://github.com/opencv/cvat/pull/5905>)
 - Empty list of export formats for a project without tasks (<https://github.com/opencv/cvat/pull/5899>)
+- Downgrade NumPy used by HRNet because `np.int` is no longer available (<https://github.com/opencv/cvat/pull/5574>)
 
 ### Security
 - TDB
