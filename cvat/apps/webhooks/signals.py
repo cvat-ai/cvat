@@ -168,6 +168,7 @@ def update_resource_event(sender, instance, **kwargs):
     batch_add_to_queue(filtered_webhooks, data)
 
 
+
 @receiver(post_save, sender=Project, dispatch_uid="project:create")
 @receiver(post_save, sender=Task, dispatch_uid="task:create")
 @receiver(post_save, sender=Job, dispatch_uid="job:create")
@@ -231,6 +232,17 @@ def resource_delete(sender, instance, **kwargs):
     }
 
     batch_add_to_queue(filtered_webhooks, data)
+
+    # Clean up webhook objects
+    if resource_name == "project":
+        for webhook in filtered_webhooks:
+            if webhook.project_id == instance.id:
+                webhook.delete()
+
+    if resource_name == "organization":
+        for webhook in filtered_webhooks:
+            if webhook.organization_id == instance.id:
+                webhook.delete()
 
 
 @receiver(signal_redelivery)

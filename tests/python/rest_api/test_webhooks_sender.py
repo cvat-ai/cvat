@@ -8,9 +8,9 @@ from time import sleep
 
 import pytest
 from deepdiff import DeepDiff
-
 from shared.fixtures.init import CVAT_ROOT_DIR, _run
-from shared.utils.config import delete_method, get_method, patch_method, post_method
+from shared.utils.config import (delete_method, get_method, patch_method,
+                                 post_method)
 
 # Testing webhook functionality:
 #  - webhook_receiver container receive post request and return responses with the same body
@@ -138,7 +138,7 @@ class TestWebhookProjectEvents:
         assert payload["event"] == events[0]
         assert payload["label"]["name"] == labels["labels"][0]["name"]
 
-    def test_webhook_create_and_delete_project(self, organizations):
+    def test_webhook_create_and_delete_project_in_organization(self, organizations):
         org_id = list(organizations)[0]["id"]
         events = ["create:project", "delete:project"]
 
