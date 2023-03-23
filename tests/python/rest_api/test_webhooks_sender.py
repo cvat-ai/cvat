@@ -119,16 +119,16 @@ class TestWebhookProjectEvents:
             == {}
         )
 
-    def test_webhook_update_project_labels(self):
+    def test_webhook_add_project_labels(self):
         response = post_method("admin1", "projects", {"name": "project"})
         assert response.status_code == HTTPStatus.CREATED
         project = response.json()
 
-        events = ["update:project"]
+        events = ["create:label"]
         webhook = create_webhook(events, "project", project["id"])
 
-        patch_data = {"labels": [{"name": "label_0", "color": "#aabbcc"}]}
-        response = patch_method("admin1", f"projects/{project['id']}", patch_data)
+        labels = {"labels": [{"name": "label_0", "color": "#aabbcc"}]}
+        response = patch_method("admin1", f"projects/{project['id']}", labels)
         assert response.status_code == HTTPStatus.OK
 
         deliveries, payload = get_deliveries(webhook["id"])
@@ -136,8 +136,7 @@ class TestWebhookProjectEvents:
         assert deliveries["count"] == 1
 
         assert payload["event"] == events[0]
-        assert payload["before_update"]["labels"]["count"] == 0
-        assert payload["project"]["labels"]["count"] == 1
+        assert payload["label"]["name"] == labels["labels"][0]["name"]
 
     def test_webhook_create_and_delete_project(self, organizations):
         org_id = list(organizations)[0]["id"]
@@ -319,7 +318,7 @@ class TestWebhookTaskEvents:
         deliveries, payload = get_deliveries(webhook_id=webhook_id)
 
         assert deliveries["count"] == 1
-        assert payload["before_update"]["assignee_id"] == tasks[task_id]["assignee"]["id"]
+        assert payload["before_update"]["assignee"]["id"] == tasks[task_id]["assignee"]["id"]
         assert payload["task"]["assignee"]["id"] == assignee_id
 
     def test_webhook_update_task_label(self, tasks):
@@ -331,20 +330,19 @@ class TestWebhookTaskEvents:
             )
         )
 
-        webhook_id = create_webhook(["update:task"], "organization", org_id=org_id)["id"]
+        webhook_id = create_webhook(["create:label"], "organization", org_id=org_id)["id"]
 
-        patch_data = {"labels": [{"name": "new_label"}]}
-        response = patch_method("admin1", f"tasks/{task_id}", patch_data, org_id=org_id)
+        labels = {"labels": [{"name": "new_label"}]}
+        response = patch_method("admin1", f"tasks/{task_id}", labels, org_id=org_id)
         assert response.status_code == HTTPStatus.OK
 
         deliveries, payload = get_deliveries(webhook_id=webhook_id)
 
         assert deliveries["count"] == 1
-        assert (
-            payload["before_update"]["labels"]["count"]
-            == tasks[task_id]["labels"]["count"]
-            == payload["task"]["labels"]["count"] - 1
-        )
+        from pprint import pprint
+        pprint(deliveries)
+        assert payload["label"]["task_id"] == task_id
+        assert payload["label"]["name"] == labels[0]["name"]
 
     def test_webhook_create_and_delete_task(self, organizations):
         org_id = list(organizations)[0]["id"]
@@ -376,7 +374,7 @@ class TestWebhookTaskEvents:
                 create_payload["task"],
                 task,
                 ignore_order=True,
-                exclude_paths=["root['updated_date']"],
+                exclude_paths=["root['updated_date']", "root['labels']"],
             )
             == {}
         )
@@ -385,7 +383,7 @@ class TestWebhookTaskEvents:
                 delete_payload["task"],
                 task,
                 ignore_order=True,
-                exclude_paths=["root['updated_date']"],
+                exclude_paths=["root['updated_date']", "root['labels']"],
             )
             == {}
         )
@@ -539,7 +537,7 @@ class TestWebhookIssueEvents:
                 create_payload["issue"],
                 issue,
                 ignore_order=True,
-                exclude_paths=["root['updated_date']"],
+                exclude_paths=["root['updated_date']", "root['comments']"],
             )
             == {}
         )
@@ -548,7 +546,7 @@ class TestWebhookIssueEvents:
                 delete_payload["issue"],
                 issue,
                 ignore_order=True,
-                exclude_paths=["root['updated_date']"],
+                exclude_paths=["root['updated_date']", "root['comments']"],
             )
             == {}
         )
@@ -590,6 +588,8 @@ class TestWebhookMembershipEvents:
         assert response.status_code == HTTPStatus.NO_CONTENT
 
         deliveries, payload = get_deliveries(webhook_id)
+        from pprint import pprint
+        pprint(payload)
 
         assert deliveries["count"] == 1
         assert (
@@ -597,7 +597,7 @@ class TestWebhookMembershipEvents:
                 payload["membership"],
                 membership,
                 ignore_order=True,
-                exclude_paths=["root['updated_date']"],
+                exclude_paths=["root['updated_date']", "root['invitation']"],
             )
             == {}
         )
@@ -735,7 +735,7 @@ class TestWebhookRedelivery:
         response = post_method(
             "admin1", f"webhooks/{webhook_id}/deliveries/{delivery_id}/redelivery", {}
         )
-        assert response.status_code == HTTPStatus.OK
+        assert response.status_code == HTTPStatus.CREATED
 
         deliveries_2, payload_2 = get_deliveries(webhook_id)
 
