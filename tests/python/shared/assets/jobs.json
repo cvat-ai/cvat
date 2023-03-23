@@ -1,8 +1,444 @@
 {
-  "count": 13,
+  "count": 17,
   "next": null,
   "previous": null,
   "results": [
+    {
+      "assignee": null,
+      "bug_tracker": null,
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "dimension": "2d",
+      "id": 23,
+      "issues": "http://localhost:8080/api/issues?job_id=23",
+      "labels": [
+        {
+          "attributes": [],
+          "color": "#6080c0",
+          "has_parent": false,
+          "id": 31,
+          "name": "cat",
+          "sublabels": [],
+          "type": "any"
+        },
+        {
+          "attributes": [],
+          "color": "#2b3145",
+          "has_parent": false,
+          "id": 32,
+          "name": "skeleton1",
+          "sublabels": [
+            {
+              "attributes": [],
+              "color": "#d12345",
+              "has_parent": true,
+              "id": 33,
+              "name": "1",
+              "type": "points"
+            },
+            {
+              "attributes": [],
+              "color": "#350dea",
+              "has_parent": true,
+              "id": 34,
+              "name": "2",
+              "type": "points"
+            },
+            {
+              "attributes": [],
+              "color": "#479ffe",
+              "has_parent": true,
+              "id": 35,
+              "name": "3",
+              "type": "points"
+            },
+            {
+              "attributes": [],
+              "color": "#4a649f",
+              "has_parent": true,
+              "id": 36,
+              "name": "4",
+              "type": "points"
+            }
+          ],
+          "svg": "<line x1=\"51.588626861572266\" y1=\"24.487876892089844\" x2=\"31.354515075683594\" y2=\"53.417640686035156\" stroke=\"black\" data-type=\"edge\" data-node-from=\"3\" stroke-width=\"0.5\" data-node-to=\"2\"></line><line x1=\"69.81605529785156\" y1=\"59.43770980834961\" x2=\"51.588626861572266\" y2=\"24.487876892089844\" stroke=\"black\" data-type=\"edge\" data-node-from=\"4\" stroke-width=\"0.5\" data-node-to=\"3\"></line><line x1=\"18.645484924316406\" y1=\"22.146739959716797\" x2=\"69.81605529785156\" y2=\"59.43770980834961\" stroke=\"black\" data-type=\"edge\" data-node-from=\"1\" stroke-width=\"0.5\" data-node-to=\"4\"></line><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"18.645484924316406\" cy=\"22.146739959716797\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-id=\"33\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"31.354515075683594\" cy=\"53.417640686035156\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-id=\"34\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"51.588626861572266\" cy=\"24.487876892089844\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"3\" data-node-id=\"3\" data-label-id=\"35\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"69.81605529785156\" cy=\"59.43770980834961\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"4\" data-node-id=\"4\" data-label-id=\"36\"></circle>",
+          "type": "skeleton"
+        },
+        {
+          "attributes": [],
+          "color": "#d12345",
+          "has_parent": true,
+          "id": 33,
+          "name": "1",
+          "sublabels": [],
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#350dea",
+          "has_parent": true,
+          "id": 34,
+          "name": "2",
+          "sublabels": [],
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#479ffe",
+          "has_parent": true,
+          "id": 35,
+          "name": "3",
+          "sublabels": [],
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#4a649f",
+          "has_parent": true,
+          "id": 36,
+          "name": "4",
+          "sublabels": [],
+          "type": "points"
+        }
+      ],
+      "mode": "annotation",
+      "project_id": null,
+      "stage": "annotation",
+      "start_frame": 9,
+      "state": "new",
+      "status": "annotation",
+      "stop_frame": 9,
+      "task_id": 16,
+      "updated_date": "2023-03-23T10:18:59.434000Z",
+      "url": "http://localhost:8080/api/jobs/23"
+    },
+    {
+      "assignee": null,
+      "bug_tracker": null,
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "dimension": "2d",
+      "id": 22,
+      "issues": "http://localhost:8080/api/issues?job_id=22",
+      "labels": [
+        {
+          "attributes": [],
+          "color": "#6080c0",
+          "has_parent": false,
+          "id": 31,
+          "name": "cat",
+          "sublabels": [],
+          "type": "any"
+        },
+        {
+          "attributes": [],
+          "color": "#2b3145",
+          "has_parent": false,
+          "id": 32,
+          "name": "skeleton1",
+          "sublabels": [
+            {
+              "attributes": [],
+              "color": "#d12345",
+              "has_parent": true,
+              "id": 33,
+              "name": "1",
+              "type": "points"
+            },
+            {
+              "attributes": [],
+              "color": "#350dea",
+              "has_parent": true,
+              "id": 34,
+              "name": "2",
+              "type": "points"
+            },
+            {
+              "attributes": [],
+              "color": "#479ffe",
+              "has_parent": true,
+              "id": 35,
+              "name": "3",
+              "type": "points"
+            },
+            {
+              "attributes": [],
+              "color": "#4a649f",
+              "has_parent": true,
+              "id": 36,
+              "name": "4",
+              "type": "points"
+            }
+          ],
+          "svg": "<line x1=\"51.588626861572266\" y1=\"24.487876892089844\" x2=\"31.354515075683594\" y2=\"53.417640686035156\" stroke=\"black\" data-type=\"edge\" data-node-from=\"3\" stroke-width=\"0.5\" data-node-to=\"2\"></line><line x1=\"69.81605529785156\" y1=\"59.43770980834961\" x2=\"51.588626861572266\" y2=\"24.487876892089844\" stroke=\"black\" data-type=\"edge\" data-node-from=\"4\" stroke-width=\"0.5\" data-node-to=\"3\"></line><line x1=\"18.645484924316406\" y1=\"22.146739959716797\" x2=\"69.81605529785156\" y2=\"59.43770980834961\" stroke=\"black\" data-type=\"edge\" data-node-from=\"1\" stroke-width=\"0.5\" data-node-to=\"4\"></line><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"18.645484924316406\" cy=\"22.146739959716797\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-id=\"33\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"31.354515075683594\" cy=\"53.417640686035156\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-id=\"34\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"51.588626861572266\" cy=\"24.487876892089844\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"3\" data-node-id=\"3\" data-label-id=\"35\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"69.81605529785156\" cy=\"59.43770980834961\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"4\" data-node-id=\"4\" data-label-id=\"36\"></circle>",
+          "type": "skeleton"
+        },
+        {
+          "attributes": [],
+          "color": "#d12345",
+          "has_parent": true,
+          "id": 33,
+          "name": "1",
+          "sublabels": [],
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#350dea",
+          "has_parent": true,
+          "id": 34,
+          "name": "2",
+          "sublabels": [],
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#479ffe",
+          "has_parent": true,
+          "id": 35,
+          "name": "3",
+          "sublabels": [],
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#4a649f",
+          "has_parent": true,
+          "id": 36,
+          "name": "4",
+          "sublabels": [],
+          "type": "points"
+        }
+      ],
+      "mode": "annotation",
+      "project_id": null,
+      "stage": "annotation",
+      "start_frame": 6,
+      "state": "in progress",
+      "status": "annotation",
+      "stop_frame": 9,
+      "task_id": 16,
+      "updated_date": "2023-03-23T12:12:11.760000Z",
+      "url": "http://localhost:8080/api/jobs/22"
+    },
+    {
+      "assignee": null,
+      "bug_tracker": null,
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "dimension": "2d",
+      "id": 21,
+      "issues": "http://localhost:8080/api/issues?job_id=21",
+      "labels": [
+        {
+          "attributes": [],
+          "color": "#6080c0",
+          "has_parent": false,
+          "id": 31,
+          "name": "cat",
+          "sublabels": [],
+          "type": "any"
+        },
+        {
+          "attributes": [],
+          "color": "#2b3145",
+          "has_parent": false,
+          "id": 32,
+          "name": "skeleton1",
+          "sublabels": [
+            {
+              "attributes": [],
+              "color": "#d12345",
+              "has_parent": true,
+              "id": 33,
+              "name": "1",
+              "type": "points"
+            },
+            {
+              "attributes": [],
+              "color": "#350dea",
+              "has_parent": true,
+              "id": 34,
+              "name": "2",
+              "type": "points"
+            },
+            {
+              "attributes": [],
+              "color": "#479ffe",
+              "has_parent": true,
+              "id": 35,
+              "name": "3",
+              "type": "points"
+            },
+            {
+              "attributes": [],
+              "color": "#4a649f",
+              "has_parent": true,
+              "id": 36,
+              "name": "4",
+              "type": "points"
+            }
+          ],
+          "svg": "<line x1=\"51.588626861572266\" y1=\"24.487876892089844\" x2=\"31.354515075683594\" y2=\"53.417640686035156\" stroke=\"black\" data-type=\"edge\" data-node-from=\"3\" stroke-width=\"0.5\" data-node-to=\"2\"></line><line x1=\"69.81605529785156\" y1=\"59.43770980834961\" x2=\"51.588626861572266\" y2=\"24.487876892089844\" stroke=\"black\" data-type=\"edge\" data-node-from=\"4\" stroke-width=\"0.5\" data-node-to=\"3\"></line><line x1=\"18.645484924316406\" y1=\"22.146739959716797\" x2=\"69.81605529785156\" y2=\"59.43770980834961\" stroke=\"black\" data-type=\"edge\" data-node-from=\"1\" stroke-width=\"0.5\" data-node-to=\"4\"></line><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"18.645484924316406\" cy=\"22.146739959716797\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-id=\"33\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"31.354515075683594\" cy=\"53.417640686035156\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-id=\"34\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"51.588626861572266\" cy=\"24.487876892089844\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"3\" data-node-id=\"3\" data-label-id=\"35\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"69.81605529785156\" cy=\"59.43770980834961\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"4\" data-node-id=\"4\" data-label-id=\"36\"></circle>",
+          "type": "skeleton"
+        },
+        {
+          "attributes": [],
+          "color": "#d12345",
+          "has_parent": true,
+          "id": 33,
+          "name": "1",
+          "sublabels": [],
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#350dea",
+          "has_parent": true,
+          "id": 34,
+          "name": "2",
+          "sublabels": [],
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#479ffe",
+          "has_parent": true,
+          "id": 35,
+          "name": "3",
+          "sublabels": [],
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#4a649f",
+          "has_parent": true,
+          "id": 36,
+          "name": "4",
+          "sublabels": [],
+          "type": "points"
+        }
+      ],
+      "mode": "annotation",
+      "project_id": null,
+      "stage": "annotation",
+      "start_frame": 3,
+      "state": "new",
+      "status": "annotation",
+      "stop_frame": 8,
+      "task_id": 16,
+      "updated_date": "2023-03-23T10:18:59.406000Z",
+      "url": "http://localhost:8080/api/jobs/21"
+    },
+    {
+      "assignee": null,
+      "bug_tracker": null,
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "dimension": "2d",
+      "id": 20,
+      "issues": "http://localhost:8080/api/issues?job_id=20",
+      "labels": [
+        {
+          "attributes": [],
+          "color": "#6080c0",
+          "has_parent": false,
+          "id": 31,
+          "name": "cat",
+          "sublabels": [],
+          "type": "any"
+        },
+        {
+          "attributes": [],
+          "color": "#2b3145",
+          "has_parent": false,
+          "id": 32,
+          "name": "skeleton1",
+          "sublabels": [
+            {
+              "attributes": [],
+              "color": "#d12345",
+              "has_parent": true,
+              "id": 33,
+              "name": "1",
+              "type": "points"
+            },
+            {
+              "attributes": [],
+              "color": "#350dea",
+              "has_parent": true,
+              "id": 34,
+              "name": "2",
+              "type": "points"
+            },
+            {
+              "attributes": [],
+              "color": "#479ffe",
+              "has_parent": true,
+              "id": 35,
+              "name": "3",
+              "type": "points"
+            },
+            {
+              "attributes": [],
+              "color": "#4a649f",
+              "has_parent": true,
+              "id": 36,
+              "name": "4",
+              "type": "points"
+            }
+          ],
+          "svg": "<line x1=\"51.588626861572266\" y1=\"24.487876892089844\" x2=\"31.354515075683594\" y2=\"53.417640686035156\" stroke=\"black\" data-type=\"edge\" data-node-from=\"3\" stroke-width=\"0.5\" data-node-to=\"2\"></line><line x1=\"69.81605529785156\" y1=\"59.43770980834961\" x2=\"51.588626861572266\" y2=\"24.487876892089844\" stroke=\"black\" data-type=\"edge\" data-node-from=\"4\" stroke-width=\"0.5\" data-node-to=\"3\"></line><line x1=\"18.645484924316406\" y1=\"22.146739959716797\" x2=\"69.81605529785156\" y2=\"59.43770980834961\" stroke=\"black\" data-type=\"edge\" data-node-from=\"1\" stroke-width=\"0.5\" data-node-to=\"4\"></line><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"18.645484924316406\" cy=\"22.146739959716797\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-id=\"33\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"31.354515075683594\" cy=\"53.417640686035156\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-id=\"34\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"51.588626861572266\" cy=\"24.487876892089844\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"3\" data-node-id=\"3\" data-label-id=\"35\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"69.81605529785156\" cy=\"59.43770980834961\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"4\" data-node-id=\"4\" data-label-id=\"36\"></circle>",
+          "type": "skeleton"
+        },
+        {
+          "attributes": [],
+          "color": "#d12345",
+          "has_parent": true,
+          "id": 33,
+          "name": "1",
+          "sublabels": [],
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#350dea",
+          "has_parent": true,
+          "id": 34,
+          "name": "2",
+          "sublabels": [],
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#479ffe",
+          "has_parent": true,
+          "id": 35,
+          "name": "3",
+          "sublabels": [],
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#4a649f",
+          "has_parent": true,
+          "id": 36,
+          "name": "4",
+          "sublabels": [],
+          "type": "points"
+        }
+      ],
+      "mode": "annotation",
+      "project_id": null,
+      "stage": "annotation",
+      "start_frame": 0,
+      "state": "in progress",
+      "status": "annotation",
+      "stop_frame": 5,
+      "task_id": 16,
+      "updated_date": "2023-03-23T10:20:01.652000Z",
+      "url": "http://localhost:8080/api/jobs/20"
+    },
     {
       "assignee": null,
       "bug_tracker": "",

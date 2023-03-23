@@ -831,8 +831,7 @@ class TrackManager(ObjectManager):
                 for attr in prev_shape["attributes"]:
                     if attr["spec_id"] not in map(lambda el: el["spec_id"], shape["attributes"]):
                         shape["attributes"].append(deepcopy(attr))
-                if not prev_shape["outside"]:
-                    shapes.extend(interpolate(prev_shape, shape))
+                shapes.extend(interpolate(prev_shape, shape))
 
             shape["keyframe"] = True
             shapes.append(shape)
