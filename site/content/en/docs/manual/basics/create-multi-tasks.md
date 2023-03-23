@@ -31,10 +31,10 @@ And specify the following parameters:
 
 1. In the **Name** field, enter the name of the new task:
 
-   - Enter the name of the task. If the name includes more than one word, use the underscore: `Word1_word2_word3`
+   - Enter the name of the task. If the name includes more than one word, use the underscore: `Word1 word2 word3`
    - (Optional) `{{index}}` adds an index to the file in the set (starting from 0).
    - (Optional) `{{file_name}}` adds the file's name to the task's name.
-     > **Note:** use hyphen between three parameters: `Word1_word2_word3-{{index}}-{{file_name}}`
+     > **Note:** use hyphen between three parameters: `Word1 word2 word3 {{index}} {{file_name}}`
 
 2. (Optional) From the **Projects** drop-down, select a project for the tasks.
    <br>Leave this field empty if you do not want to assign tasks to any project.
