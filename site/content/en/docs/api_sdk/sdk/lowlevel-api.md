@@ -323,8 +323,8 @@ extra common arguments which control invocation logic:
   for instance, if you need to parse data manually, or if you expect an error in the response.
   Default is `True`.
 - `_check_status` (`bool`) - Allows to enable or disable response status checks. When enabled, the
-  response status code is checked to be positive as defined in the [HTTP standards](https://en.wikipedia.org/wiki/List_of_HTTP_status_codes). In the case of negative status, an exception is raised.
-  Default is `True`.
+  response status code is checked to be positive as defined in the [HTTP standards](https://en.wikipedia.org/wiki/List_of_HTTP_status_codes).
+  In the case of negative status, an exception is raised. Default is `True`.
 - `_validate_inputs` (`bool`): specifies if type checking should be done one the data
   sent to the server. Default is `True`.
 - `_validate_outputs` (`bool`): specifies if type checking should be done one the data
