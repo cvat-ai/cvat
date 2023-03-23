@@ -6,6 +6,8 @@
 import inspect
 import os, os.path as osp
 import zipfile
+import functools
+from contextlib import suppress
 from django.conf import settings
 
 
@@ -35,3 +37,15 @@ def bulk_create(db_model, objects, flt_param):
             return db_model.objects.bulk_create(objects)
 
     return []
+
+
+def remove_resources(func):
+    @functools.wraps(func)
+    def wrapper(src_file, *args, **kwargs):
+        try:
+            func(src_file, *args, **kwargs)
+        finally:
+            with suppress(FileNotFoundError):
+                os.remove(src_file)
+        return None
+    return wrapper

@@ -7,6 +7,7 @@ import os
 import base64
 from unittest import mock
 import uuid
+import django_rq
 
 from django.conf import settings
 from django.core.cache import cache
@@ -170,12 +171,26 @@ class UploadMixin:
             if message_id:
                 metadata["message_id"] = base64.b64decode(message_id)
 
-            file_exists = os.path.lexists(os.path.join(self.get_upload_dir(), filename))
+            file_path = os.path.join(self.get_upload_dir(), filename)
+            file_exists = os.path.lexists(file_path)
+
+            if file_exists:
+                # check whether the rw_job is in progress or has been finished/failed
+                object_class_name = self._object.__class__.__name__.lower()
+                import_type = request.path.strip('/').split('/')[-1]
+                if import_type != 'backup':
+                    template = settings.COMMON_IMPORT_RQ_ID_TEMPLATE.format(object_class_name, self._object.pk, import_type, request.user)
+                    queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
+                    finished_job_ids = queue.finished_job_registry.get_job_ids()
+                    failed_job_ids = queue.failed_job_registry.get_job_ids()
+                    if template in finished_job_ids or template in failed_job_ids:
+                        os.remove(file_path)
+                        file_exists = False
+
             if file_exists:
                 return self._tus_response(status=status.HTTP_409_CONFLICT,
                     data="File with same name already exists")
 
-            # TODO: check if rq job exists and is active
             file_size = int(request.META.get("HTTP_UPLOAD_LENGTH", "0"))
             if file_size > int(self._tus_max_file_size):
                 return self._tus_response(status=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
@@ -283,7 +298,7 @@ class AnnotationMixin:
         if serializer.is_valid(raise_exception=True):
             return Response(serializer.data)
 
-    def import_annotations(self, request, db_obj, import_func, rq_func, rq_id):
+    def import_annotations(self, request, db_obj, import_func, rq_func, rq_id_template):
         is_tus_request = request.headers.get('Upload-Length', None) is not None or \
             request.method == 'OPTIONS'
         if is_tus_request:
@@ -305,7 +320,7 @@ class AnnotationMixin:
 
             return import_func(
                 request=request,
-                rq_id=rq_id,
+                rq_id_template=rq_id_template,
                 rq_func=rq_func,
                 db_obj=self._object,
                 format_name=format_name,

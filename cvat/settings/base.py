@@ -338,6 +338,8 @@ RQ_EXCEPTION_HANDLERS = [
     'cvat.apps.events.handlers.handle_rq_exception',
 ]
 
+# import:<task|project|job>-<id|uuid>-<annotations|dataset|backup>-by-<user>
+COMMON_IMPORT_RQ_ID_TEMPLATE="import:{}-{}-{}-by-{}"
 
 # JavaScript and CSS compression
 # https://django-compressor.readthedocs.io

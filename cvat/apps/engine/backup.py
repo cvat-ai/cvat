@@ -9,11 +9,13 @@ from enum import Enum
 import re
 import shutil
 import tempfile
+import functools
 from typing import Any, Dict, Iterable
 import uuid
 from zipfile import ZipFile
 from datetime import datetime
 from tempfile import NamedTemporaryFile
+from contextlib import suppress
 
 import django_rq
 from django.conf import settings
@@ -36,7 +38,7 @@ from cvat.apps.engine.serializers import (AttributeSerializer, DataSerializer, L
     LabeledDataSerializer, SegmentSerializer, SimpleJobSerializer, TaskReadSerializer,
     ProjectReadSerializer, ProjectFileSerializer, TaskFileSerializer)
 from cvat.apps.engine.utils import (
-    av_scan_paths, process_failed_job, configure_dependent_job, get_rq_job_meta, handle_finished_or_failed_job
+    av_scan_paths, process_failed_job, configure_dependent_job, get_rq_job_meta
 )
 from cvat.apps.engine.models import (
     StorageChoice, StorageMethodChoice, DataChoice, Task, Project, Location,
@@ -54,6 +56,17 @@ class Version(Enum):
 
 IMPORT_CACHE_FAILED_TTL = timedelta(hours=10).total_seconds()
 IMPORT_CACHE_SUCCESS_TTL = timedelta(hours=1).total_seconds()
+
+def remove_resources(func):
+    @functools.wraps(func)
+    def wrapper(filename, *args, **kwargs):
+        try:
+            result = func(filename, *args, **kwargs)
+        finally:
+            with suppress(FileNotFoundError):
+                os.remove(filename)
+        return result
+    return wrapper
 
 def _get_label_mapping(db_labels):
     label_mapping = {db_label.id: db_label.name for db_label in db_labels}
@@ -633,6 +646,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         return self._db_task
 
 @transaction.atomic
+@remove_resources
 def _import_task(filename, user, org_id):
     av_scan_paths(filename)
     task_importer = TaskImporter(filename, user, org_id)
@@ -752,6 +766,7 @@ class ProjectImporter(_ImporterBase, _ProjectBackupBase):
         return self._db_project
 
 @transaction.atomic
+@remove_resources
 def _import_project(filename, user, org_id):
     av_scan_paths(filename)
     project_importer = ProjectImporter(filename, user, org_id)
@@ -947,15 +962,12 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
                 **get_rq_job_meta(request=request, db_obj=None)
             },
             depends_on=dependent_job,
-            on_success=handle_finished_or_failed_job,
-            on_failure=handle_finished_or_failed_job,
             result_ttl=IMPORT_CACHE_SUCCESS_TTL,
             failure_ttl=IMPORT_CACHE_FAILED_TTL
         )
     else:
         if rq_job.is_finished:
             project_id = rq_job.return_value()
-            handle_finished_or_failed_job(rq_job)
             rq_job.delete()
             return Response({'id': project_id}, status=status.HTTP_201_CREATED)
         elif rq_job.is_failed or \
@@ -981,7 +993,7 @@ def import_project(request, queue_name, filename=None):
     if 'rq_id' in request.data:
         rq_id = request.data['rq_id']
     else:
-        rq_id = f"import:project.{uuid.uuid4()}-by-{request.user}"
+        rq_id = settings.COMMON_IMPORT_RQ_ID_TEMPLATE.format('project', uuid.uuid4(), 'backup', request.user)
     Serializer = ProjectFileSerializer
     file_field_name = 'project_file'
 
@@ -1007,7 +1019,7 @@ def import_task(request, queue_name, filename=None):
     if 'rq_id' in request.data:
         rq_id = request.data['rq_id']
     else:
-        rq_id = f"import:task.{uuid.uuid4()}-by-{request.user}"
+        rq_id = settings.COMMON_IMPORT_RQ_ID_TEMPLATE.format('task', uuid.uuid4(), 'backup', request.user)
     Serializer = TaskFileSerializer
     file_field_name = 'task_file'
 

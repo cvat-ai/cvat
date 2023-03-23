@@ -131,7 +131,6 @@ def parse_exception_message(msg):
     return parsed_msg
 
 def process_failed_job(rq_job: Job):
-    handle_finished_or_failed_job(rq_job)
     exc_info = str(rq_job.exc_info or rq_job.dependency.exc_info)
     if rq_job.dependency:
         rq_job.dependency.delete()
@@ -142,9 +141,6 @@ def process_failed_job(rq_job: Job):
     log.error(msg)
     return msg
 
-def handle_finished_or_failed_job(rq_job: Job, *args, **kwargs):
-    if os.path.exists(rq_job.meta['tmp_file']):
-        os.remove(rq_job.meta['tmp_file'])
 
 def configure_dependent_job(
     queue: DjangoRQ,
@@ -166,7 +162,6 @@ def configure_dependent_job(
             args=(db_storage, filename, key),
             job_id=rq_job_id_download_file,
             meta=get_rq_job_meta(request=request, db_obj=db_storage),
-            on_failure=handle_finished_or_failed_job,
             result_ttl=result_ttl,
             failure_ttl=failure_ttl
         )

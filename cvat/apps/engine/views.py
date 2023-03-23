@@ -65,7 +65,7 @@ from cvat.apps.engine.serializers import (
 
 from utils.dataset_manifest import ImageManifestManager
 from cvat.apps.engine.utils import (
-    av_scan_paths, process_failed_job, configure_dependent_job, parse_exception_message, get_rq_job_meta, handle_finished_or_failed_job
+    av_scan_paths, process_failed_job, configure_dependent_job, parse_exception_message, get_rq_job_meta
 )
 from cvat.apps.engine import backup
 from cvat.apps.engine.mixins import PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin, DestroyModelMixin, CreateModelMixin
@@ -235,6 +235,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     ordering = "-id"
     lookup_fields = {'owner': 'owner__username', 'assignee': 'assignee__username'}
     iam_organization_field = 'organization'
+    IMPORT_RQ_ID_TEMPLATE = settings.COMMON_IMPORT_RQ_ID_TEMPLATE.format('project', {}, 'dataset', {})
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
@@ -310,7 +311,6 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         url_path=r'dataset/?$')
     def dataset(self, request, pk):
         self._object = self.get_object() # force call of check_object_permissions()
-        rq_id = f"import:dataset-for-project.id{pk}-by-{request.user}"
 
         if request.method in {'POST', 'OPTIONS'}:
             return self.import_annotations(
@@ -318,17 +318,19 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 db_obj=self._object,
                 import_func=_import_project_dataset,
                 rq_func=dm.project.import_dataset_as_project,
-                rq_id=rq_id,
+                rq_id_template=self.IMPORT_RQ_ID_TEMPLATE
             )
         else:
             action = request.query_params.get("action", "").lower()
             if action in ("import_status",):
                 queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
+                rq_id = request.query_params.get('rq_id')
+                if not rq_id:
+                    return Response('The rq_id param should be specified in the query parameters', status=status.HTTP_400_BAD_REQUEST)
                 rq_job = queue.fetch_job(rq_id)
                 if rq_job is None:
                     return Response(status=status.HTTP_404_NOT_FOUND)
                 elif rq_job.is_finished:
-                    handle_finished_or_failed_job(rq_job)
                     if rq_job.dependency:
                         rq_job.dependency.delete()
                     rq_job.delete()
@@ -391,7 +393,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return _import_project_dataset(
                 request=request,
                 filename=uploaded_file,
-                rq_id=f"import:dataset-for-project.id{self._object.pk}-by-{request.user}",
+                rq_id_template=self.IMPORT_RQ_ID_TEMPLATE,
                 rq_func=dm.project.import_dataset_as_project,
                 db_obj=self._object,
                 format_name=format_name,
@@ -700,6 +702,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     ordering_fields = list(filter_fields)
     ordering = "-id"
     iam_organization_field = 'organization'
+    IMPORT_RQ_ID_TEMPLATE = settings.COMMON_IMPORT_RQ_ID_TEMPLATE.format('task', {}, 'annotations', {})
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
@@ -819,8 +822,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 return _import_annotations(
                         request=request,
                         filename=annotation_file,
-                        rq_id=(f"import:annotations-for-task.id{self._object.pk}-"
-                            f"in-{format_name.replace(' ', '_')}-by-{request.user}"),
+                        rq_id_template=self.IMPORT_RQ_ID_TEMPLATE,
                         rq_func=dm.task.import_task_annotations,
                         db_obj=self._object,
                         format_name=format_name,
@@ -1054,7 +1056,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 db_obj=self._object,
                 import_func=_import_annotations,
                 rq_func=dm.task.import_task_annotations,
-                rq_id = f"import:annotations-for-task.id{pk}-in-{format_name.replace(' ', '_')}-by-{request.user}"
+                rq_id_template=self.IMPORT_RQ_ID_TEMPLATE
             )
         elif request.method == 'PUT':
             format_name = request.query_params.get('format', '')
@@ -1067,7 +1069,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 )
                 return _import_annotations(
                     request=request,
-                    rq_id = f"import:annotations-for-task.id{pk}-in-{format_name.replace(' ', '_')}-by-{request.user}",
+                    rq_id_template=self.IMPORT_RQ_ID_TEMPLATE,
                     rq_func=dm.task.import_task_annotations,
                     db_obj=self._object,
                     format_name=format_name,
@@ -1300,6 +1302,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         'project_name': 'segment__task__project__name',
         'assignee': 'assignee__username'
     }
+    IMPORT_RQ_ID_TEMPLATE = settings.COMMON_IMPORT_RQ_ID_TEMPLATE.format('job', {}, 'annotations', {})
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -1332,8 +1335,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 return _import_annotations(
                         request=request,
                         filename=annotation_file,
-                        rq_id=(f"import:annotations-for-job.id{self._object.pk}-"
-                            f"in-{format_name.replace(' ', '_')}-by-{request.user}"),
+                        rq_id_template=self.IMPORT_RQ_ID_TEMPLATE,
                         rq_func=dm.task.import_job_annotations,
                         db_obj=self._object,
                         format_name=format_name,
@@ -1440,13 +1442,13 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         elif request.method == 'POST' or request.method == 'OPTIONS':
             format_name = request.query_params.get('format', '')
+            # TODO: fix
             return self.import_annotations(
                 request=request,
                 db_obj=self._object.segment.task,
                 import_func=_import_annotations,
                 rq_func=dm.task.import_job_annotations,
-                rq_id=(f"import:annotations-for-job.id{self._object.pk}-"
-                            f"in-{format_name.replace(' ', '_')}-by-{request.user}"),
+                rq_id_template=self.IMPORT_RQ_ID_TEMPLATE
             )
 
         elif request.method == 'PUT':
@@ -1460,8 +1462,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 )
                 return _import_annotations(
                     request=request,
-                    rq_id=(f"import:annotations-for-job.id{pk}-"
-                            f"in-{format_name.replace(' ', '_')}-by-{request.user}"),
+                    rq_id_template=self.IMPORT_RQ_ID_TEMPLATE,
                     rq_func=dm.task.import_job_annotations,
                     db_obj=self._object,
                     format_name=format_name,
@@ -2243,7 +2244,7 @@ def _download_file_from_bucket(db_storage, filename, key):
     with open(filename, 'wb+') as f:
         f.write(data.getbuffer())
 
-def _import_annotations(request, rq_id, rq_func, db_obj, format_name,
+def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
                         filename=None, location_conf=None, conv_mask_to_poly=True):
     format_desc = {f.DISPLAY_NAME: f
         for f in dm.views.get_import_formats()}.get(format_name)
@@ -2252,6 +2253,8 @@ def _import_annotations(request, rq_id, rq_func, db_obj, format_name,
             "Unknown input format '{}'".format(format_name))
     elif not format_desc.ENABLED:
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    rq_id = request.data.get('rq_id', rq_id_template.format(db_obj.pk, request.user))
 
     queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
     rq_job = queue.fetch_job(rq_id)
@@ -2301,18 +2304,15 @@ def _import_annotations(request, rq_id, rq_func, db_obj, format_name,
         }
         rq_job = queue.enqueue_call(
             func=rq_func,
-            args=(db_obj.pk, filename, format_name, conv_mask_to_poly),
+            args=(filename, db_obj.pk, format_name, conv_mask_to_poly),
             job_id=rq_id,
             depends_on=dependent_job,
             meta={**meta, **get_rq_job_meta(request=request, db_obj=db_obj)},
-            on_success=handle_finished_or_failed_job,
-            on_failure=handle_finished_or_failed_job,
             result_ttl=IMPORT_CACHE_SUCCESS_TTL,
             failure_ttl=IMPORT_CACHE_FAILED_TTL
         )
     else:
         if rq_job.is_finished:
-            handle_finished_or_failed_job(rq_job)
             rq_job.delete()
             return Response(status=status.HTTP_201_CREATED)
         elif rq_job.is_failed or \
@@ -2331,7 +2331,7 @@ def _import_annotations(request, rq_id, rq_func, db_obj, format_name,
                 return Response(data=exc_info,
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    return Response(status=status.HTTP_202_ACCEPTED)
+    return Response({'rq_id': rq_id}, status=status.HTTP_202_ACCEPTED)
 
 def _export_annotations(db_instance, rq_id, request, format_name, action, callback,
                         filename, location_conf):
@@ -2432,7 +2432,7 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
         result_ttl=ttl, failure_ttl=ttl)
     return Response(status=status.HTTP_202_ACCEPTED)
 
-def _import_project_dataset(request, rq_id, rq_func, db_obj, format_name, filename=None, conv_mask_to_poly=True, location_conf=None):
+def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_name, filename=None, conv_mask_to_poly=True, location_conf=None):
     format_desc = {f.DISPLAY_NAME: f
         for f in dm.views.get_import_formats()}.get(format_name)
     if format_desc is None:
@@ -2441,10 +2441,17 @@ def _import_project_dataset(request, rq_id, rq_func, db_obj, format_name, filena
     elif not format_desc.ENABLED:
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
+    rq_id = rq_id_template.format(db_obj.pk, request.user)
+
     queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
     rq_job = queue.fetch_job(rq_id)
 
-    if not rq_job:
+    if not rq_job or rq_job.is_finished or rq_job.is_failed:
+        if rq_job and (rq_job.is_finished or rq_job.is_failed):
+            # for some reason the previous job has not been deleted
+            # (e.g the user closed the browser tab when job has been created
+            # but no one requests for checking status were not made)
+            rq_job.delete()
         dependent_job = None
         location = location_conf.get('location') if location_conf else None
         if not filename and location != Location.CLOUD_STORAGE:
@@ -2480,19 +2487,17 @@ def _import_project_dataset(request, rq_id, rq_func, db_obj, format_name, filena
 
         rq_job = queue.enqueue_call(
             func=rq_func,
-            args=(db_obj.pk, filename, format_name, conv_mask_to_poly),
+            args=(filename, db_obj.pk, format_name, conv_mask_to_poly),
             job_id=rq_id,
             meta={
                 'tmp_file': filename,
                 **get_rq_job_meta(request=request, db_obj=db_obj),
             },
             depends_on=dependent_job,
-            on_success=handle_finished_or_failed_job,
-            on_failure=handle_finished_or_failed_job,
             result_ttl=IMPORT_CACHE_SUCCESS_TTL,
             failure_ttl=IMPORT_CACHE_FAILED_TTL
         )
     else:
         return Response(status=status.HTTP_409_CONFLICT, data='Import job already exists')
 
-    return Response(status=status.HTTP_202_ACCEPTED)
+    return Response({'rq_id': rq_id}, status=status.HTTP_202_ACCEPTED)
