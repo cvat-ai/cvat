@@ -1,9 +1,13 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import { JobStage, JobState, StorageLocation } from './enums';
+import _ from 'lodash';
+import {
+    ChunkType, DimensionType, JobStage,
+    JobState, StorageLocation, TaskMode, TaskStatus,
+} from './enums';
 import { Storage } from './storage';
 
 import PluginRegistry from './plugins';
@@ -295,25 +299,68 @@ function buildDuplicatedAPI(prototype) {
             },
             writable: true,
         }),
-        predictor: Object.freeze({
-            value: {
-                async status() {
-                    const result = await PluginRegistry.apiWrapper.call(this, prototype.predictor.status);
-                    return result;
-                },
-                async predict(frame) {
-                    const result = await PluginRegistry.apiWrapper.call(this, prototype.predictor.predict, frame);
-                    return result;
-                },
-            },
-            writable: true,
-        }),
     });
 }
 
 export class Session {}
 
 export class Job extends Session {
+    public assignee: User;
+    public stage: JobStage;
+    public state: JobState;
+    public readonly id: number;
+    public readonly startFrame: number;
+    public readonly stopFrame: number;
+    public readonly projectId: number | null;
+    public readonly taskId: number;
+    public readonly dimension: DimensionType;
+    public readonly dataCompressedChunkType: ChunkType;
+    public readonly bugTracker: string | null;
+    public readonly mode: TaskMode;
+    public readonly labels: Label[];
+
+    public annotations: {
+        get: CallableFunction;
+        put: CallableFunction;
+        save: CallableFunction;
+        merge: CallableFunction;
+        split: CallableFunction;
+        group: CallableFunction;
+        clear: CallableFunction;
+        search: CallableFunction;
+        searchEmpty: CallableFunction;
+        upload: CallableFunction;
+        select: CallableFunction;
+        import: CallableFunction;
+        export: CallableFunction;
+        statistics: CallableFunction;
+        hasUnsavedChanges: CallableFunction;
+        exportDataset: CallableFunction;
+    };
+
+    public actions: {
+        undo: CallableFunction;
+        redo: CallableFunction;
+        freeze: CallableFunction;
+        clear: CallableFunction;
+        get: CallableFunction;
+    };
+
+    public frames: {
+        get: CallableFunction;
+        delete: CallableFunction;
+        restore: CallableFunction;
+        save: CallableFunction;
+        ranges: CallableFunction;
+        preview: CallableFunction;
+        contextImage: CallableFunction;
+        search: CallableFunction;
+    };
+
+    public logger: {
+        log: CallableFunction;
+    };
+
     constructor(initialData) {
         super();
         const data = {
@@ -325,7 +372,7 @@ export class Job extends Session {
             stop_frame: undefined,
             project_id: null,
             task_id: undefined,
-            labels: undefined,
+            labels: [],
             dimension: undefined,
             data_compressed_chunk_type: undefined,
             data_chunk_size: undefined,
@@ -358,8 +405,6 @@ export class Job extends Session {
 
                 return new Label(labelData);
             }).filter((label) => !label.hasParent);
-        } else {
-            throw new Error('Job labels must be an array');
         }
 
         Object.defineProperties(
@@ -435,22 +480,13 @@ export class Job extends Session {
                     get: () => data.task_id,
                 },
                 labels: {
-                    get: () => data.labels.filter((_label) => !_label.deleted),
+                    get: () => [...data.labels],
                 },
                 dimension: {
                     get: () => data.dimension,
                 },
                 dataChunkSize: {
                     get: () => data.data_chunk_size,
-                    set: (chunkSize) => {
-                        if (typeof chunkSize !== 'number' || chunkSize < 1) {
-                            throw new ArgumentError(
-                                `Chunk size value must be a positive number. But value ${chunkSize} has been got.`,
-                            );
-                        }
-
-                        data.data_chunk_size = chunkSize;
-                    },
                 },
                 dataChunkType: {
                     get: () => data.data_compressed_chunk_type,
@@ -511,11 +547,6 @@ export class Job extends Session {
         this.logger = {
             log: Object.getPrototypeOf(this).logger.log.bind(this),
         };
-
-        this.predictor = {
-            status: Object.getPrototypeOf(this).predictor.status.bind(this),
-            predict: Object.getPrototypeOf(this).predictor.predict.bind(this),
-        };
     }
 
     async save() {
@@ -540,8 +571,86 @@ export class Job extends Session {
 }
 
 export class Task extends Session {
+    public name: string;
+    public projectId: number | null;
+    public assignee: User | null;
+    public bugTracker: string;
+    public subset: string;
+    public labels: Label[];
+    public readonly id: number;
+    public readonly status: TaskStatus;
+    public readonly size: number;
+    public readonly mode: TaskMode;
+    public readonly owner: User;
+    public readonly createdDate: string;
+    public readonly updatedDate: string;
+    public readonly overlap: number | null;
+    public readonly segmentSize: number;
+    public readonly imageQuality: number;
+    public readonly dataChunkSize: number;
+    public readonly dataCompressedChunkType: ChunkType;
+    public readonly dataOriginalChunkType: ChunkType;
+    public readonly dimension: DimensionType;
+    public readonly sourceStorage: Storage;
+    public readonly targetStorage: Storage;
+    public readonly organization: number | null;
+    public readonly progress: { count: number; completed: number };
+    public readonly jobs: Job[];
+
+    public readonly startFrame: number;
+    public readonly stopFrame: number;
+    public readonly frameFilter: string;
+    public readonly useZipChunks: boolean;
+    public readonly useCache: boolean;
+    public readonly copyData: boolean;
+    public readonly cloudStorageID: number;
+    public readonly sortingMethod: string;
+
+    public annotations: {
+        get: CallableFunction;
+        put: CallableFunction;
+        save: CallableFunction;
+        merge: CallableFunction;
+        split: CallableFunction;
+        group: CallableFunction;
+        clear: CallableFunction;
+        search: CallableFunction;
+        searchEmpty: CallableFunction;
+        upload: CallableFunction;
+        select: CallableFunction;
+        import: CallableFunction;
+        export: CallableFunction;
+        statistics: CallableFunction;
+        hasUnsavedChanges: CallableFunction;
+        exportDataset: CallableFunction;
+    };
+
+    public actions: {
+        undo: CallableFunction;
+        redo: CallableFunction;
+        freeze: CallableFunction;
+        clear: CallableFunction;
+        get: CallableFunction;
+    };
+
+    public frames: {
+        get: CallableFunction;
+        delete: CallableFunction;
+        restore: CallableFunction;
+        save: CallableFunction;
+        ranges: CallableFunction;
+        preview: CallableFunction;
+        contextImage: CallableFunction;
+        search: CallableFunction;
+    };
+
+    public logger: {
+        log: CallableFunction;
+    };
+
     constructor(initialData) {
         super();
+
         const data = {
             id: undefined,
             name: undefined,
@@ -558,21 +667,26 @@ export class Task extends Session {
             overlap: undefined,
             segment_size: undefined,
             image_quality: undefined,
-            start_frame: undefined,
-            stop_frame: undefined,
-            frame_filter: undefined,
             data_chunk_size: undefined,
             data_compressed_chunk_type: undefined,
             data_original_chunk_type: undefined,
-            deleted_frames: undefined,
+            dimension: undefined,
+            source_storage: undefined,
+            target_storage: undefined,
+            organization: undefined,
+            progress: undefined,
+            labels: undefined,
+            jobs: undefined,
+
+            start_frame: undefined,
+            stop_frame: undefined,
+            frame_filter: undefined,
             use_zip_chunks: undefined,
             use_cache: undefined,
             copy_data: undefined,
-            dimension: undefined,
             cloud_storage_id: undefined,
             sorting_method: undefined,
-            source_storage: undefined,
-            target_storage: undefined,
+            files: undefined,
         };
 
         const updateTrigger = new FieldUpdateTrigger();
@@ -588,6 +702,12 @@ export class Task extends Session {
 
         data.labels = [];
         data.jobs = [];
+
+        data.progress = {
+            completedJobs: initialData?.jobs?.completed || 0,
+            totalJobs: initialData?.jobs?.count || 0,
+        };
+
         data.files = Object.freeze({
             server_files: [],
             client_files: [],
@@ -599,33 +719,30 @@ export class Task extends Session {
                 .map((labelData) => new Label(labelData)).filter((label) => !label.hasParent);
         }
 
-        if (Array.isArray(initialData.segments)) {
-            for (const segment of initialData.segments) {
-                if (Array.isArray(segment.jobs)) {
-                    for (const job of segment.jobs) {
-                        const jobInstance = new Job({
-                            url: job.url,
-                            id: job.id,
-                            assignee: job.assignee,
-                            state: job.state,
-                            stage: job.stage,
-                            start_frame: segment.start_frame,
-                            stop_frame: segment.stop_frame,
-                            // following fields also returned when doing API request /jobs/<id>
-                            // here we know them from task and append to constructor
-                            task_id: data.id,
-                            project_id: data.project_id,
-                            labels: data.labels,
-                            bug_tracker: data.bug_tracker,
-                            mode: data.mode,
-                            dimension: data.dimension,
-                            data_compressed_chunk_type: data.data_compressed_chunk_type,
-                            data_chunk_size: data.data_chunk_size,
-                        });
+        if (Array.isArray(initialData.jobs)) {
+            for (const job of initialData.jobs) {
+                const jobInstance = new Job({
+                    url: job.url,
+                    id: job.id,
+                    assignee: job.assignee,
+                    state: job.state,
+                    stage: job.stage,
+                    start_frame: job.start_frame,
+                    stop_frame: job.stop_frame,
 
-                        data.jobs.push(jobInstance);
-                    }
-                }
+                    // following fields also returned when doing API request /jobs/<id>
+                    // here we know them from task and append to constructor
+                    task_id: data.id,
+                    project_id: data.project_id,
+                    labels: data.labels,
+                    bug_tracker: data.bug_tracker,
+                    mode: data.mode,
+                    dimension: data.dimension,
+                    data_compressed_chunk_type: data.data_compressed_chunk_type,
+                    data_chunk_size: data.data_chunk_size,
+                });
+
+                data.jobs.push(jobInstance);
             }
         }
 
@@ -712,85 +829,70 @@ export class Task extends Session {
                 },
                 overlap: {
                     get: () => data.overlap,
-                    set: (overlap) => {
-                        if (!Number.isInteger(overlap) || overlap < 0) {
-                            throw new ArgumentError('Value must be a non negative integer');
-                        }
-                        data.overlap = overlap;
-                    },
                 },
                 segmentSize: {
                     get: () => data.segment_size,
-                    set: (segment) => {
-                        if (!Number.isInteger(segment) || segment < 0) {
-                            throw new ArgumentError('Value must be a positive integer');
-                        }
-                        data.segment_size = segment;
-                    },
                 },
                 imageQuality: {
                     get: () => data.image_quality,
-                    set: (quality) => {
-                        if (!Number.isInteger(quality) || quality < 0) {
-                            throw new ArgumentError('Value must be a positive integer');
-                        }
-                        data.image_quality = quality;
-                    },
                 },
                 useZipChunks: {
                     get: () => data.use_zip_chunks,
-                    set: (useZipChunks) => {
-                        if (typeof useZipChunks !== 'boolean') {
-                            throw new ArgumentError('Value must be a boolean');
-                        }
-                        data.use_zip_chunks = useZipChunks;
-                    },
                 },
                 useCache: {
                     get: () => data.use_cache,
-                    set: (useCache) => {
-                        if (typeof useCache !== 'boolean') {
-                            throw new ArgumentError('Value must be a boolean');
-                        }
-                        data.use_cache = useCache;
-                    },
                 },
                 copyData: {
                     get: () => data.copy_data,
-                    set: (copyData) => {
-                        if (typeof copyData !== 'boolean') {
-                            throw new ArgumentError('Value must be a boolean');
-                        }
-                        data.copy_data = copyData;
-                    },
                 },
                 labels: {
-                    get: () => data.labels.filter((_label) => !_label.deleted),
-                    set: (labels) => {
+                    get: () => [...data.labels],
+                    set: (labels: Label[]) => {
                         if (!Array.isArray(labels)) {
                             throw new ArgumentError('Value must be an array of Labels');
                         }
 
-                        for (const label of labels) {
-                            if (!(label instanceof Label)) {
-                                throw new ArgumentError(
-                                    `Each array value must be an instance of Label. ${typeof label} was found`,
-                                );
-                            }
+                        if (!Array.isArray(labels) || labels.some((label) => !(label instanceof Label))) {
+                            throw new ArgumentError(
+                                'Each array value must be an instance of Label',
+                            );
                         }
 
-                        const IDs = labels.map((_label) => _label.id);
-                        const deletedLabels = data.labels.filter((_label) => !IDs.includes(_label.id));
-                        deletedLabels.forEach((_label) => {
-                            _label.deleted = true;
+                        const oldIDs = data.labels.map((_label) => _label.id);
+                        const newIDs = labels.map((_label) => _label.id);
+
+                        // find any deleted labels and mark them
+                        data.labels.filter((_label) => !newIDs.includes(_label.id))
+                            .forEach((_label) => {
+                                // for deleted labels let's specify that they are deleted
+                                _label.deleted = true;
+                            });
+
+                        // find any patched labels and mark them
+                        labels.forEach((_label) => {
+                            const { id } = _label;
+                            if (oldIDs.includes(id)) {
+                                const oldLabelIndex = data.labels.findIndex((__label) => __label.id === id);
+                                if (oldLabelIndex !== -1) {
+                                    // replace current label by the patched one
+                                    const oldLabel = data.labels[oldLabelIndex];
+                                    data.labels.splice(oldLabelIndex, 1, _label);
+                                    if (!_.isEqual(_label.toJSON(), oldLabel.toJSON())) {
+                                        _label.patched = true;
+                                    }
+                                }
+                            }
                         });
 
+                        // find new labels to append them to the end
+                        const newLabels = labels.filter((_label) => !Number.isInteger(_label.id));
+                        data.labels = [...data.labels, ...newLabels];
+
                         updateTrigger.update('labels');
-                        data.labels = [...deletedLabels, ...labels];
                     },
                 },
                 jobs: {
-                    get: () => [...data.jobs],
+                    get: () => [...(data.jobs || [])],
                 },
                 serverFiles: {
                     get: () => [...data.files.server_files],
@@ -852,47 +954,17 @@ export class Task extends Session {
                         Array.prototype.push.apply(data.files.remote_files, remoteFiles);
                     },
                 },
+                frameFilter: {
+                    get: () => data.frame_filter,
+                },
                 startFrame: {
                     get: () => data.start_frame,
-                    set: (frame) => {
-                        if (!Number.isInteger(frame) || frame < 0) {
-                            throw new ArgumentError('Value must be a not negative integer');
-                        }
-                        data.start_frame = frame;
-                    },
                 },
                 stopFrame: {
                     get: () => data.stop_frame,
-                    set: (frame) => {
-                        if (!Number.isInteger(frame) || frame < 0) {
-                            throw new ArgumentError('Value must be a not negative integer');
-                        }
-                        data.stop_frame = frame;
-                    },
-                },
-                frameFilter: {
-                    get: () => data.frame_filter,
-                    set: (filter) => {
-                        if (typeof filter !== 'string') {
-                            throw new ArgumentError(
-                                `Filter value must be a string. But ${typeof filter} has been got.`,
-                            );
-                        }
-
-                        data.frame_filter = filter;
-                    },
                 },
                 dataChunkSize: {
                     get: () => data.data_chunk_size,
-                    set: (chunkSize) => {
-                        if (typeof chunkSize !== 'number' || chunkSize < 1) {
-                            throw new ArgumentError(
-                                `Chunk size value must be a positive number. But value ${chunkSize} has been got.`,
-                            );
-                        }
-
-                        data.data_chunk_size = chunkSize;
-                    },
                 },
                 dataChunkType: {
                     get: () => data.data_compressed_chunk_type,
@@ -905,6 +977,9 @@ export class Task extends Session {
                 },
                 sortingMethod: {
                     get: () => data.sorting_method,
+                },
+                organization: {
+                    get: () => data.organization,
                 },
                 sourceStorage: {
                     get: () => (
@@ -921,6 +996,9 @@ export class Task extends Session {
                             cloudStorageId: data.target_storage?.cloud_storage_id,
                         })
                     ),
+                },
+                progress: {
+                    get: () => data.progress,
                 },
                 _internalData: {
                     get: () => data,
@@ -975,24 +1053,19 @@ export class Task extends Session {
         this.logger = {
             log: Object.getPrototypeOf(this).logger.log.bind(this),
         };
-
-        this.predictor = {
-            status: Object.getPrototypeOf(this).predictor.status.bind(this),
-            predict: Object.getPrototypeOf(this).predictor.predict.bind(this),
-        };
     }
 
-    async close() {
+    async close(): Promise<Task> {
         const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.close);
         return result;
     }
 
-    async save(onUpdate = () => {}) {
+    async save(onUpdate = () => {}): Promise<Task> {
         const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.save, onUpdate);
         return result;
     }
 
-    async delete() {
+    async delete(): Promise<void> {
         const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.delete);
         return result;
     }

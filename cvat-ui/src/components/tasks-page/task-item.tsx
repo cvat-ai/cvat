@@ -75,8 +75,8 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
     private renderProgress(): JSX.Element {
         const { taskInstance, activeInference, cancelAutoAnnotation } = this.props;
         // Count number of jobs and performed jobs
-        const numOfJobs = taskInstance.jobs.length;
-        const numOfCompleted = taskInstance.jobs.filter((job: any): boolean => job.stage === 'acceptance').length;
+        const numOfJobs = taskInstance.progress.totalJobs;
+        const numOfCompleted = taskInstance.progress.completedJobs;
 
         // Progress appearance depends on number of jobs
         let progressColor = null;

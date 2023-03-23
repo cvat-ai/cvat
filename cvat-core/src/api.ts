@@ -10,7 +10,7 @@
 
 import PluginRegistry from './plugins';
 import loggerStorage from './logger-storage';
-import { Log } from './log';
+import { EventLogger } from './log';
 import ObjectState from './object-state';
 import Statistics from './statistics';
 import Comment from './comment';
@@ -77,10 +77,6 @@ function build() {
                 const result = await PluginRegistry.apiWrapper(cvat.server.logout);
                 return result;
             },
-            async socialAuthentication() {
-                const result = await PluginRegistry.apiWrapper(cvat.server.socialAuthentication);
-                return result;
-            },
             async changePassword(oldPassword, newPassword1, newPassword2) {
                 const result = await PluginRegistry.apiWrapper(
                     cvat.server.changePassword,
@@ -122,20 +118,16 @@ function build() {
                 const result = await PluginRegistry.apiWrapper(cvat.server.request, url, data);
                 return result;
             },
-            async installedApps() {
-                const result = await PluginRegistry.apiWrapper(cvat.server.installedApps);
+            async setAuthData(response) {
+                const result = await PluginRegistry.apiWrapper(cvat.server.setAuthData, response);
                 return result;
             },
-            async loginWithSocialAccount(
-                provider: string,
-                code: string,
-                authParams?: string,
-                process?: string,
-                scope?: string,
-            ) {
-                const result = await PluginRegistry.apiWrapper(
-                    cvat.server.loginWithSocialAccount, provider, code, authParams, process, scope,
-                );
+            async removeAuthData() {
+                const result = await PluginRegistry.apiWrapper(cvat.server.removeAuthData);
+                return result;
+            },
+            async installedApps() {
+                const result = await PluginRegistry.apiWrapper(cvat.server.installedApps);
                 return result;
             },
         },
@@ -190,16 +182,20 @@ function build() {
                 const result = await PluginRegistry.apiWrapper(cvat.lambda.call, task, model, args);
                 return result;
             },
-            async cancel(requestID) {
-                const result = await PluginRegistry.apiWrapper(cvat.lambda.cancel, requestID);
+            async cancel(requestID, functionID) {
+                const result = await PluginRegistry.apiWrapper(cvat.lambda.cancel, requestID, functionID);
                 return result;
             },
-            async listen(requestID, onChange) {
-                const result = await PluginRegistry.apiWrapper(cvat.lambda.listen, requestID, onChange);
+            async listen(requestID, functionID, onChange) {
+                const result = await PluginRegistry.apiWrapper(cvat.lambda.listen, requestID, functionID, onChange);
                 return result;
             },
             async requests() {
                 const result = await PluginRegistry.apiWrapper(cvat.lambda.requests);
+                return result;
+            },
+            async providers() {
+                const result = await PluginRegistry.apiWrapper(cvat.lambda.providers);
                 return result;
             },
         },
@@ -210,12 +206,6 @@ function build() {
             },
             set backendAPI(value) {
                 config.backendAPI = value;
-            },
-            get proxy() {
-                return config.proxy;
-            },
-            set proxy(value) {
-                config.proxy = value;
             },
             get origin() {
                 return config.origin;
@@ -279,7 +269,7 @@ function build() {
             Project: implementProject(Project),
             Task: implementTask(Task),
             Job: implementJob(Job),
-            Log,
+            EventLogger,
             Attribute,
             Label,
             Statistics,

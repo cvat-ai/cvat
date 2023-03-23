@@ -18,12 +18,15 @@ Cypress.Commands.add('compareImagesAndCheckResult', (baseImage, afterImage, noCh
 });
 
 Cypress.Commands.add('create3DCuboid', (cuboidCreationParams) => {
+    const {
+        x, y, labelName, objectType,
+    } = cuboidCreationParams;
     cy.interactControlButton('draw-cuboid');
-    cy.switchLabel(cuboidCreationParams.labelName, 'draw-cuboid');
-    cy.get('.cvat-draw-cuboid-popover').find('button').click();
+    cy.switchLabel(labelName, 'draw-cuboid');
+    cy.get('.cvat-draw-cuboid-popover').contains(objectType).click();
     cy.get('.cvat-canvas3d-perspective')
-        .trigger('mousemove', cuboidCreationParams.x, cuboidCreationParams.y)
-        .dblclick(cuboidCreationParams.x, cuboidCreationParams.y);
+        .trigger('mousemove', x, y)
+        .dblclick(x, y);
     cy.wait(1000); // Waiting for a cuboid creation
     cy.get('.cvat-draw-cuboid-popover').should('be.hidden');
 });

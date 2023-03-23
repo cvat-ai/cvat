@@ -1,0 +1,17 @@
+{{- if .Values.analytics.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  # vector helm doesn't allow template name of CM
+  name: cvat-vector-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cvat.labels" . | nindent 4 }}
+    app: cvat-app
+    tier: vector
+{{- if semverCompare ">=1.21-0" .Capabilities.KubeVersion.GitVersion }}
+immutable: false
+{{- end }}
+data:
+{{ (.Files.Glob "analytics/vector/*.toml").AsConfig | indent 2 }}
+{{- end}}

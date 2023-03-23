@@ -1,14 +1,14 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import { isBrowser, isNode } from 'browser-or-node';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
 import { ArgumentError } from './exceptions';
 import { CloudStorageCredentialsType, CloudStorageProviderType, CloudStorageStatus } from './enums';
 import User from './user';
+import { decodePreview } from './frames';
 
 function validateNotEmptyString(value: string): void {
     if (typeof value !== 'string') {
@@ -30,6 +30,7 @@ interface RawCloudStorageData {
     secret_key?: string,
     session_token?: string,
     key_file?: File,
+    connection_string?: string,
     specific_attributes?: string,
     owner?: any,
     created_date?: string,
@@ -47,6 +48,7 @@ export default class CloudStorage {
     public secretKey: string;
     public token: string;
     public keyFile: File;
+    public connectionString: string;
     public resource: string;
     public manifestPath: string;
     public provider_type: CloudStorageProviderType;
@@ -70,6 +72,7 @@ export default class CloudStorage {
             secret_key: undefined,
             session_token: undefined,
             key_file: undefined,
+            connection_string: undefined,
             specific_attributes: undefined,
             owner: undefined,
             created_date: undefined,
@@ -142,6 +145,13 @@ export default class CloudStorage {
                         } else {
                             throw new ArgumentError(`Should be a file. ${typeof file} was found`);
                         }
+                    },
+                },
+                connectionString: {
+                    get: () => data.connection_string,
+                    set: (value) => {
+                        validateNotEmptyString(value);
+                        data.connection_string = value;
                     },
                 },
                 resource: {
@@ -282,6 +292,10 @@ Object.defineProperties(CloudStorage.prototype.save, {
                     data.key_file = cloudStorageInstance.keyFile;
                 }
 
+                if (cloudStorageInstance.connectionString) {
+                    data.connection_string = cloudStorageInstance.connectionString;
+                }
+
                 if (cloudStorageInstance.specificAttributes !== undefined) {
                     data.specific_attributes = cloudStorageInstance.specificAttributes;
                 }
@@ -362,17 +376,8 @@ Object.defineProperties(CloudStorage.prototype.getPreview, {
             return new Promise((resolve, reject) => {
                 serverProxy.cloudStorages
                     .getPreview(this.id)
-                    .then((result) => {
-                        if (isNode) {
-                            resolve(global.Buffer.from(result, 'binary').toString('base64'));
-                        } else if (isBrowser) {
-                            const reader = new FileReader();
-                            reader.onload = () => {
-                                resolve(reader.result);
-                            };
-                            reader.readAsDataURL(result);
-                        }
-                    })
+                    .then((result) => decodePreview(result))
+                    .then((decoded) => resolve(decoded))
                     .catch((error) => {
                         reject(error);
                     });

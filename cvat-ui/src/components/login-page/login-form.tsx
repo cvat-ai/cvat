@@ -1,21 +1,25 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+
 import Form from 'antd/lib/form';
 import Button from 'antd/lib/button';
 import Input from 'antd/lib/input';
+import { Col, Row } from 'antd/lib/grid';
+import Title from 'antd/lib/typography/Title';
+import Text from 'antd/lib/typography/Text';
 import Icon from '@ant-design/icons';
 import {
     BackArrowIcon, ClearIcon,
 } from 'icons';
-import { Col, Row } from 'antd/lib/grid';
-import Title from 'antd/lib/typography/Title';
-import Text from 'antd/lib/typography/Text';
-import { Link } from 'react-router-dom';
+
 import CVATSigningInput, { CVATInputType } from 'components/signing-common/cvat-signing-input';
+import { CombinedState } from 'reducers';
+import { usePlugins } from 'utils/hooks';
 
 export interface LoginData {
     credential: string;
@@ -25,16 +29,19 @@ export interface LoginData {
 interface Props {
     renderResetPassword: boolean;
     fetching: boolean;
-    socialAuthentication: JSX.Element | null;
     onSubmit(loginData: LoginData): void;
 }
 
 function LoginFormComponent(props: Props): JSX.Element {
     const {
-        fetching, onSubmit, renderResetPassword, socialAuthentication,
+        fetching, onSubmit, renderResetPassword,
     } = props;
     const [form] = Form.useForm();
     const [credential, setCredential] = useState('');
+    const pluginsToRender = usePlugins(
+        (state: CombinedState) => state.plugins.components.loginPage.loginForm,
+        props, { credential },
+    );
 
     const forgotPasswordLink = (
         <Col className='cvat-credentials-link'>
@@ -47,6 +54,7 @@ function LoginFormComponent(props: Props): JSX.Element {
             </Text>
         </Col>
     );
+
     return (
         <div className='cvat-login-form-wrapper'>
             <Row justify='space-between' className='cvat-credentials-navigation'>
@@ -135,7 +143,7 @@ function LoginFormComponent(props: Props): JSX.Element {
                     )
                 }
                 {
-                    credential || !socialAuthentication ? (
+                    !!credential && (
                         <Form.Item>
                             <Button
                                 className='cvat-credentials-action-button'
@@ -146,7 +154,12 @@ function LoginFormComponent(props: Props): JSX.Element {
                                 Next
                             </Button>
                         </Form.Item>
-                    ) : socialAuthentication
+                    )
+                }
+                {
+                    pluginsToRender.map(({ component: Component }, index) => (
+                        <Component targetProps={props} targetState={{ credential }} key={index} />
+                    ))
                 }
             </Form>
         </div>

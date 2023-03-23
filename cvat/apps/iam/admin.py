@@ -15,6 +15,15 @@ class CustomUserAdmin(UserAdmin):
                                        'groups',)}),
         (_('Important dates'), {'fields': ('last_login', 'date_joined')}),
     )
+    add_fieldsets = (
+        (
+            None,
+            {
+                "classes": ("wide",),
+                "fields": ("username", "email", "password1", "password2"),
+            },
+        ),
+    )
 
 class CustomGroupAdmin(GroupAdmin):
     fieldsets = ((None, {'fields': ('name',)}),)

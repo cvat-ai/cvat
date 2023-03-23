@@ -21,6 +21,7 @@ from django.contrib.auth.models import User
 from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseNotFound, HttpResponseBadRequest
 from django.utils import timezone
+import django.db.models as dj_models
 
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
@@ -33,7 +34,6 @@ from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import APIException, NotFound, ValidationError, PermissionDenied
 from rest_framework.permissions import SAFE_METHODS
-from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from django_sendfile import sendfile
 
@@ -45,37 +45,38 @@ from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.media_extractors import get_mime
 from cvat.apps.engine.models import (
-    Job, JobCommit, Task, Project, Issue, Data,
+    Job, Label, Task, Project, Issue, Data,
     Comment, StorageMethodChoice, StorageChoice,
     CloudProviderChoice, Location
 )
 from cvat.apps.engine.models import CloudStorage as CloudStorageModel
 from cvat.apps.engine.serializers import (
     AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
-    DataMetaReadSerializer, DataMetaWriteSerializer, DataSerializer, ExceptionSerializer,
-    FileInfoSerializer, JobReadSerializer, JobWriteSerializer, LabeledDataSerializer,
-    LogEventSerializer, ProjectReadSerializer, ProjectWriteSerializer, ProjectSearchSerializer,
-    RqStatusSerializer, TaskReadSerializer, TaskWriteSerializer, UserSerializer, PluginsSerializer, IssueReadSerializer,
+    DataMetaReadSerializer, DataMetaWriteSerializer, DataSerializer,
+    FileInfoSerializer, JobReadSerializer, JobWriteSerializer, LabelSerializer,
+    LabeledDataSerializer,
+    ProjectReadSerializer, ProjectWriteSerializer,
+    RqStatusSerializer, TaskReadSerializer, TaskWriteSerializer,
+    UserSerializer, PluginsSerializer, IssueReadSerializer,
     IssueWriteSerializer, CommentReadSerializer, CommentWriteSerializer, CloudStorageWriteSerializer,
-    CloudStorageReadSerializer, DatasetFileSerializer, JobCommitSerializer,
+    CloudStorageReadSerializer, DatasetFileSerializer,
     ProjectFileSerializer, TaskFileSerializer)
 
 from utils.dataset_manifest import ImageManifestManager
-from cvat.apps.engine.view_utils import make_paginated_response
 from cvat.apps.engine.utils import (
-    av_scan_paths, process_failed_job, configure_dependent_job, parse_exception_message
+    av_scan_paths, process_failed_job, configure_dependent_job, parse_exception_message, get_rq_job_meta
 )
 from cvat.apps.engine import backup
 from cvat.apps.engine.mixins import PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin, DestroyModelMixin, CreateModelMixin
 from cvat.apps.engine.location import get_location_configuration, StorageType
 
 from . import models, task
-from .log import clogger, slogger
+from .log import slogger
 from cvat.apps.iam.permissions import (CloudStoragePermission,
-    CommentPermission, IssuePermission, JobPermission, ProjectPermission,
+    CommentPermission, IssuePermission, JobPermission, LabelPermission, ProjectPermission,
     TaskPermission, UserPermission)
 from cvat.apps.engine.cache import MediaCache
-
+from cvat.apps.events.handlers import handle_annotations_patch
 
 @extend_schema(tags=['server'])
 class ServerViewSet(viewsets.ViewSet):
@@ -111,56 +112,6 @@ class ServerViewSet(viewsets.ViewSet):
         serializer = AboutSerializer(data=about)
         if serializer.is_valid(raise_exception=True):
             return Response(data=serializer.data)
-
-    @staticmethod
-    @extend_schema(summary='Method saves an exception from a client on the server',
-        description='Sends logs to the ELK if it is connected',
-        request=ExceptionSerializer, responses={
-            '201': ExceptionSerializer,
-        })
-    @action(detail=False, methods=['POST'], serializer_class=ExceptionSerializer)
-    def exception(request):
-        serializer = ExceptionSerializer(data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            additional_info = {
-                "username": request.user.username,
-                "name": "Send exception",
-            }
-            message = JSONRenderer().render({**serializer.data, **additional_info}).decode('UTF-8')
-            jid = serializer.data.get("job_id")
-            tid = serializer.data.get("task_id")
-            if jid:
-                clogger.job[jid].error(message)
-            elif tid:
-                clogger.task[tid].error(message)
-            else:
-                clogger.glob.error(message)
-
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-    @staticmethod
-    @extend_schema(summary='Method saves logs from a client on the server',
-        description='Sends logs to the ELK if it is connected',
-        request=LogEventSerializer(many=True),
-        responses={
-            '201': LogEventSerializer(many=True),
-        })
-    @action(detail=False, methods=['POST'], serializer_class=LogEventSerializer)
-    def logs(request):
-        serializer = LogEventSerializer(many=True, data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            user = { "username": request.user.username }
-            for event in serializer.data:
-                message = JSONRenderer().render({**event, **user}).decode('UTF-8')
-                jid = event.get("job_id")
-                tid = event.get("task_id")
-                if jid:
-                    clogger.job[jid].info(message)
-                elif tid:
-                    clogger.task[tid].info(message)
-                else:
-                    clogger.glob.info(message)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @staticmethod
     @extend_schema(
@@ -236,16 +187,13 @@ class ServerViewSet(viewsets.ViewSet):
 @extend_schema(tags=['projects'])
 @extend_schema_view(
     list=extend_schema(
-        summary='Returns a paginated list of projects according to query parameters (12 projects per page)',
+        summary='Returns a paginated list of projects',
         responses={
-            '200': PolymorphicProxySerializer(component_name='PolymorphicProject',
-                serializers=[
-                    ProjectReadSerializer, ProjectSearchSerializer,
-                ], resource_type_field_name=None, many=True),
+            '200': ProjectReadSerializer(many=True),
         }),
     create=extend_schema(
         summary='Method creates a new project',
-        # request=ProjectWriteSerializer,
+        request=ProjectWriteSerializer,
         responses={
             '201': ProjectReadSerializer, # check ProjectWriteSerializer.to_representation
         }),
@@ -261,7 +209,7 @@ class ServerViewSet(viewsets.ViewSet):
         }),
     partial_update=extend_schema(
         summary='Methods does a partial update of chosen fields in a project',
-        # request=ProjectWriteSerializer,
+        request=ProjectWriteSerializer(partial=True),
         responses={
             '200': ProjectReadSerializer, # check ProjectWriteSerializer.to_representation
         })
@@ -270,31 +218,32 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, CreateModelMixin, DestroyModelMixin,
     PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
 ):
-    queryset = models.Project.objects.select_related('assignee', 'owner',
-        'target_storage', 'source_storage').prefetch_related(
+    queryset = models.Project.objects.select_related(
+        'assignee', 'owner', 'target_storage', 'source_storage'
+    ).prefetch_related(
         'tasks', 'label_set__sublabels__attributespec_set',
-        'label_set__attributespec_set')
+        'label_set__attributespec_set'
+    ).all()
 
     # NOTE: The search_fields attribute should be a list of names of text
     # type fields on the model,such as CharField or TextField
     search_fields = ('name', 'owner', 'assignee', 'status')
     filter_fields = list(search_fields) + ['id', 'updated_date']
-    ordering_fields = filter_fields
+    simple_filters = list(search_fields)
+    ordering_fields = list(filter_fields)
     ordering = "-id"
     lookup_fields = {'owner': 'owner__username', 'assignee': 'assignee__username'}
     iam_organization_field = 'organization'
 
     def get_serializer_class(self):
-        if self.request.path.endswith('tasks'):
-            return TaskReadSerializer
+        if self.request.method in SAFE_METHODS:
+            return ProjectReadSerializer
         else:
-            if self.request.method in SAFE_METHODS:
-                return ProjectReadSerializer
-            else:
-                return ProjectWriteSerializer
+            return ProjectWriteSerializer
 
     def get_queryset(self):
         queryset = super().get_queryset()
+
         if self.action == 'list':
             perm = ProjectPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
@@ -306,21 +255,6 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             owner=self.request.user,
             organization=self.request.iam_context['organization']
         )
-
-    @extend_schema(
-        summary='Method returns information of the tasks of the project with the selected id',
-        responses=TaskReadSerializer(many=True)) # Duplicate to still get 'list' op. nam
-    @action(detail=True, methods=['GET'], serializer_class=TaskReadSerializer,
-        pagination_class=viewsets.GenericViewSet.pagination_class,
-        # Remove regular list() parameters from the swagger schema.
-        # Unset, they would be taken from the enclosing class, which is wrong.
-        # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
-        filter_fields=None, search_fields=None, ordering_fields=None)
-    def tasks(self, request, pk):
-        self.get_object() # force to call check_object_permissions
-        return make_paginated_response(Task.objects.filter(project_id=pk).order_by('-id'),
-            viewset=self, serializer_type=self.serializer_class) # from @action
-
 
     @extend_schema(methods=['GET'], summary='Export project as a dataset in a specific format',
         parameters=[
@@ -374,13 +308,12 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=True, methods=['GET', 'POST', 'OPTIONS'], serializer_class=None,
         url_path=r'dataset/?$')
     def dataset(self, request, pk):
-        self._object = self.get_object() # force to call check_object_permissions
+        self._object = self.get_object() # force call of check_object_permissions()
         rq_id = f"import:dataset-for-project.id{pk}-by-{request.user}"
 
         if request.method in {'POST', 'OPTIONS'}:
             return self.import_annotations(
                 request=request,
-                pk=pk,
                 db_obj=self._object,
                 import_func=_import_project_dataset,
                 rq_func=dm.project.import_dataset_as_project,
@@ -419,7 +352,6 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             else:
                 return self.export_annotations(
                     request=request,
-                    pk=pk,
                     db_obj=self._object,
                     export_func=_export_annotations,
                     callback=dm.views.export_project_as_dataset
@@ -461,7 +393,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 filename=uploaded_file,
                 rq_id=f"import:dataset-for-project.id{self._object.pk}-by-{request.user}",
                 rq_func=dm.project.import_dataset_as_project,
-                pk=self._object.pk,
+                db_obj=self._object,
                 format_name=format_name,
                 conv_mask_to_poly=conv_mask_to_poly
             )
@@ -514,10 +446,9 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=True, methods=['GET'],
         serializer_class=LabeledDataSerializer)
     def annotations(self, request, pk):
-        self._object = self.get_object() # force to call check_object_permissions
+        self._object = self.get_object() # force call of check_object_permissions()
         return self.export_annotations(
             request=request,
-            pk=pk,
             db_obj=self._object,
             export_func=_export_annotations,
             callback=dm.views.export_project_annotations,
@@ -707,7 +638,7 @@ class DataChunkGetter:
 @extend_schema(tags=['tasks'])
 @extend_schema_view(
     list=extend_schema(
-        summary='Returns a paginated list of tasks according to query parameters (10 tasks per page)',
+        summary='Returns a paginated list of tasks',
         responses={
             '200': TaskReadSerializer(many=True),
         }),
@@ -738,16 +669,35 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, CreateModelMixin, DestroyModelMixin,
     PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
 ):
-    queryset = Task.objects.all().select_related('data', 'assignee', 'owner',
-        'target_storage', 'source_storage').prefetch_related(
+    queryset = Task.objects.select_related(
+        'data', 'assignee', 'owner',
+        'target_storage', 'source_storage'
+    ).prefetch_related(
+        'segment_set__job_set',
         'segment_set__job_set__assignee', 'label_set__attributespec_set',
         'project__label_set__attributespec_set',
         'label_set__sublabels__attributespec_set',
-        'project__label_set__sublabels__attributespec_set')
-    lookup_fields = {'project_name': 'project__name', 'owner': 'owner__username', 'assignee': 'assignee__username'}
-    search_fields = ('project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension')
+        'project__label_set__sublabels__attributespec_set'
+    ).annotate(
+        completed_jobs_count=dj_models.Count(
+            'segment__job',
+            filter=dj_models.Q(segment__job__state=models.StateChoice.COMPLETED.value)
+        )
+    ).all()
+
+    lookup_fields = {
+        'project_name': 'project__name',
+        'owner': 'owner__username',
+        'assignee': 'assignee__username',
+        'tracker_link': 'bug_tracker',
+    }
+    search_fields = (
+        'project_name', 'name', 'owner', 'status', 'assignee',
+        'subset', 'mode', 'dimension', 'tracker_link'
+    )
     filter_fields = list(search_fields) + ['id', 'project_id', 'updated_date']
-    ordering_fields = filter_fields
+    simple_filters = list(search_fields) + ['project_id']
+    ordering_fields = list(filter_fields)
     ordering = "-id"
     iam_organization_field = 'organization'
 
@@ -759,6 +709,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     def get_queryset(self):
         queryset = super().get_queryset()
+
         if self.action == 'list':
             perm = TaskPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
@@ -846,19 +797,6 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             db_project.save()
             assert serializer.instance.organization == db_project.organization
 
-    @extend_schema(summary='Method returns a list of jobs for a specific task',
-        responses=JobReadSerializer(many=True)) # Duplicate to still get 'list' op. name
-    @action(detail=True, methods=['GET'], serializer_class=JobReadSerializer,
-        pagination_class=viewsets.GenericViewSet.pagination_class,
-        # Remove regular list() parameters from the swagger schema.
-        # Unset, they would be taken from the enclosing class, which is wrong.
-        # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
-        filter_fields=None, search_fields=None, ordering_fields=None)
-    def jobs(self, request, pk):
-        self.get_object() # force to call check_object_permissions
-        return make_paginated_response(Job.objects.filter(segment__task_id=pk).order_by('id'),
-            viewset=self, serializer_type=self.serializer_class) # from @action
-
     # UploadMixin method
     def get_upload_dir(self):
         if 'annotations' in self.action:
@@ -884,7 +822,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                         rq_id=(f"import:annotations-for-task.id{self._object.pk}-"
                             f"in-{format_name.replace(' ', '_')}-by-{request.user}"),
                         rq_func=dm.task.import_task_annotations,
-                        pk=self._object.pk,
+                        db_obj=self._object,
                         format_name=format_name,
                         conv_mask_to_poly=conv_mask_to_poly,
                     )
@@ -924,7 +862,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 # the value specified by the user or it's default value from the database
             if 'stop_frame' not in serializer.validated_data:
                 data['stop_frame'] = None
-            task.create(self._object.id, data, request.user)
+            task.create(self._object, data, request)
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
         elif self.action == 'import_backup':
             filename = request.query_params.get("filename", "")
@@ -1096,12 +1034,11 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH', 'POST', 'OPTIONS'], url_path=r'annotations/?$',
         serializer_class=None)
     def annotations(self, request, pk):
-        self._object = self.get_object() # force to call check_object_permissions
+        self._object = self.get_object() # force call of check_object_permissions()
         if request.method == 'GET':
             if self._object.data:
                 return self.export_annotations(
                     request=request,
-                    pk=pk,
                     db_obj=self._object,
                     export_func=_export_annotations,
                     callback=dm.views.export_task_annotations,
@@ -1114,7 +1051,6 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             format_name = request.query_params.get('format', '')
             return self.import_annotations(
                 request=request,
-                pk=pk,
                 db_obj=self._object,
                 import_func=_import_annotations,
                 rq_func=dm.task.import_task_annotations,
@@ -1133,7 +1069,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                     request=request,
                     rq_id = f"import:annotations-for-task.id{pk}-in-{format_name.replace(' ', '_')}-by-{request.user}",
                     rq_func=dm.task.import_task_annotations,
-                    pk=pk,
+                    db_obj=self._object,
                     format_name=format_name,
                     location_conf=location_conf,
                     conv_mask_to_poly=conv_mask_to_poly
@@ -1182,7 +1118,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         })
     @action(detail=True, methods=['GET'], serializer_class=RqStatusSerializer)
     def status(self, request, pk):
-        self.get_object() # force to call check_object_permissions
+        self.get_object() # force call of check_object_permissions()
         response = self._get_rq_response(
             queue=settings.CVAT_QUEUES.IMPORT_DATA.value,
             job_id=f"create:task.id{pk}-by-{request.user}"
@@ -1286,12 +1222,11 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=True, methods=['GET'], serializer_class=None,
         url_path='dataset')
     def dataset_export(self, request, pk):
-        self._object = self.get_object() # force to call check_object_permissions
+        self._object = self.get_object() # force call of check_object_permissions()
 
         if self._object.data:
             return self.export_annotations(
                 request=request,
-                pk=pk,
                 db_obj=self._object,
                 export_func=_export_annotations,
                 callback=dm.views.export_task_as_dataset)
@@ -1329,31 +1264,33 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '200': JobReadSerializer,
         }),
     list=extend_schema(
-        summary='Method returns a paginated list of jobs according to query parameters',
+        summary='Method returns a paginated list of jobs',
         responses={
             '200': JobReadSerializer(many=True),
         }),
     partial_update=extend_schema(
         summary='Methods does a partial update of chosen fields in a job',
-        request=JobWriteSerializer,
+        request=JobWriteSerializer(partial=True),
         responses={
             '200': JobReadSerializer, # check JobWriteSerializer.to_representation
         })
 )
-
 class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, PartialUpdateModelMixin, UploadMixin, AnnotationMixin
 ):
-    queryset = Job.objects.all().select_related('segment__task__data').prefetch_related(
+    queryset = Job.objects.select_related('segment__task__data').prefetch_related(
         'segment__task__label_set', 'segment__task__project__label_set',
         'segment__task__label_set__sublabels__attributespec_set',
         'segment__task__project__label_set__sublabels__attributespec_set',
         'segment__task__label_set__attributespec_set',
-        'segment__task__project__label_set__attributespec_set')
+        'segment__task__project__label_set__attributespec_set'
+    ).all()
+
     iam_organization_field = 'segment__task__organization'
     search_fields = ('task_name', 'project_name', 'assignee', 'state', 'stage')
-    filter_fields = list(search_fields) + ['id', 'task_id', 'project_id', 'updated_date']
-    ordering_fields = filter_fields
+    filter_fields = list(search_fields) + ['id', 'task_id', 'project_id', 'updated_date', 'dimension']
+    simple_filters = list(set(filter_fields) - {'id', 'updated_date'})
+    ordering_fields = list(filter_fields)
     ordering = "-id"
     lookup_fields = {
         'dimension': 'segment__task__dimension',
@@ -1400,7 +1337,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                         rq_id=(f"import:annotations-for-job.id{self._object.pk}-"
                             f"in-{format_name.replace(' ', '_')}-by-{request.user}"),
                         rq_func=dm.task.import_job_annotations,
-                        pk=self._object.pk,
+                        db_obj=self._object,
                         format_name=format_name,
                         conv_mask_to_poly=conv_mask_to_poly,
                     )
@@ -1493,11 +1430,10 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH', 'POST', 'OPTIONS'], url_path=r'annotations/?$',
         serializer_class=LabeledDataSerializer)
     def annotations(self, request, pk):
-        self._object = self.get_object() # force to call check_object_permissions
+        self._object = self.get_object() # force call of check_object_permissions()
         if request.method == 'GET':
             return self.export_annotations(
                 request=request,
-                pk=pk,
                 db_obj=self._object.segment.task,
                 export_func=_export_annotations,
                 callback=dm.views.export_job_annotations,
@@ -1508,7 +1444,6 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             format_name = request.query_params.get('format', '')
             return self.import_annotations(
                 request=request,
-                pk=pk,
                 db_obj=self._object.segment.task,
                 import_func=_import_annotations,
                 rq_func=dm.task.import_job_annotations,
@@ -1530,7 +1465,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                     rq_id=(f"import:annotations-for-job.id{pk}-"
                             f"in-{format_name.replace(' ', '_')}-by-{request.user}"),
                     rq_func=dm.task.import_job_annotations,
-                    pk=pk,
+                    db_obj=self._object,
                     format_name=format_name,
                     location_conf=location_conf,
                     conv_mask_to_poly=conv_mask_to_poly
@@ -1557,6 +1492,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                     data = dm.task.patch_job_data(pk, serializer.data, action)
                 except (AttributeError, IntegrityError) as e:
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
+                handle_annotations_patch(instance=self._object, annotations=data, action=action)
                 return Response(data)
 
 
@@ -1604,28 +1540,14 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=True, methods=['GET'], serializer_class=None,
         url_path='dataset')
     def dataset_export(self, request, pk):
-        self._object = self.get_object() # force to call check_object_permissions
+        self._object = self.get_object() # force call of check_object_permissions()
 
         return self.export_annotations(
             request=request,
-            pk=pk,
             db_obj=self._object.segment.task,
             export_func=_export_annotations,
             callback=dm.views.export_job_as_dataset
         )
-
-    @extend_schema(summary='Method returns list of issues for the job',
-        responses=IssueReadSerializer(many=True)) # Duplicate to still get 'list' op. name
-    @action(detail=True, methods=['GET'], serializer_class=IssueReadSerializer,
-        pagination_class=viewsets.GenericViewSet.pagination_class,
-        # Remove regular list() parameters from the swagger schema.
-        # Unset, they would be taken from the enclosing class, which is wrong.
-        # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
-        filter_fields=None, search_fields=None, ordering_fields=None)
-    def issues(self, request, pk):
-        self.get_object() # force to call check_object_permissions
-        return make_paginated_response(Issue.objects.filter(job_id=pk).order_by('id'),
-            viewset=self, serializer_type=self.serializer_class) # from @action
 
     @extend_schema(summary='Method returns data for a specific job',
         parameters=[
@@ -1667,7 +1589,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=True, methods=['GET', 'PATCH'], serializer_class=DataMetaReadSerializer,
         url_path='data/meta')
     def metadata(self, request, pk):
-        self.get_object() # force to call check_object_permissions
+        self.get_object() # force call of check_object_permissions()
         db_job = models.Job.objects.prefetch_related(
             'segment',
             'segment__task',
@@ -1726,19 +1648,6 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         serializer = DataMetaReadSerializer(db_data)
         return Response(serializer.data)
 
-    @extend_schema(summary='The action returns the list of tracked changes for the job',
-        responses=JobCommitSerializer(many=True)) # Duplicate to still get 'list' op. name
-    @action(detail=True, methods=['GET'], serializer_class=JobCommitSerializer,
-        pagination_class=viewsets.GenericViewSet.pagination_class,
-        # Remove regular list() parameters from the swagger schema.
-        # Unset, they would be taken from the enclosing class, which is wrong.
-        # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
-        filter_fields=None, search_fields=None, ordering_fields=None)
-    def commits(self, request, pk):
-        self.get_object() # force to call check_object_permissions
-        return make_paginated_response(JobCommit.objects.filter(job_id=pk).order_by('-id'),
-            viewset=self, serializer_type=self.serializer_class) # from @action
-
     @extend_schema(summary='Method returns a preview image for the job',
         responses={
             '200': OpenApiResponse(description='Job image preview'),
@@ -1765,13 +1674,13 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '200': IssueReadSerializer,
         }),
     list=extend_schema(
-        summary='Method returns a paginated list of issues according to query parameters',
+        summary='Method returns a paginated list of issues',
         responses={
             '200': IssueReadSerializer(many=True),
         }),
     partial_update=extend_schema(
         summary='Methods does a partial update of chosen fields in an issue',
-        request=IssueWriteSerializer,
+        request=IssueWriteSerializer(partial=True),
         responses={
             '200': IssueReadSerializer, # check IssueWriteSerializer.to_representation
         }),
@@ -1791,21 +1700,27 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, CreateModelMixin, DestroyModelMixin,
     PartialUpdateModelMixin
 ):
-    queryset = Issue.objects.all().order_by('-id')
+    queryset = Issue.objects.prefetch_related(
+        'job__segment__task', 'owner', 'assignee', 'job'
+    ).all()
+
     iam_organization_field = 'job__segment__task__organization'
     search_fields = ('owner', 'assignee')
-    filter_fields = list(search_fields) + ['id', 'job_id', 'task_id', 'resolved']
+    filter_fields = list(search_fields) + ['id', 'job_id', 'task_id', 'resolved', 'frame_id']
+    simple_filters = list(search_fields) + ['job_id', 'task_id', 'resolved', 'frame_id']
+    ordering_fields = list(filter_fields)
     lookup_fields = {
         'owner': 'owner__username',
         'assignee': 'assignee__username',
-        'job_id': 'job__id',
+        'job_id': 'job',
         'task_id': 'job__segment__task__id',
+        'frame_id': 'frame',
     }
-    ordering_fields = filter_fields
     ordering = '-id'
 
     def get_queryset(self):
         queryset = super().get_queryset()
+
         if self.action == 'list':
             perm = IssuePermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
@@ -1821,19 +1736,6 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def perform_create(self, serializer, **kwargs):
         super().perform_create(serializer, owner=self.request.user)
 
-    @extend_schema(summary='The action returns all comments of a specific issue',
-        responses=CommentReadSerializer(many=True)) # Duplicate to still get 'list' op. name
-    @action(detail=True, methods=['GET'], serializer_class=CommentReadSerializer,
-        pagination_class=viewsets.GenericViewSet.pagination_class,
-        # Remove regular list() parameters from the swagger schema.
-        # Unset, they would be taken from the enclosing class, which is wrong.
-        # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
-        filter_fields=None, search_fields=None, ordering_fields=None)
-    def comments(self, request, pk):
-        self.get_object() # force to call check_object_permissions
-        return make_paginated_response(Comment.objects.filter(issue_id=pk).order_by('-id'),
-            viewset=self, serializer_type=self.serializer_class) # from @action
-
 @extend_schema(tags=['comments'])
 @extend_schema_view(
     retrieve=extend_schema(
@@ -1842,13 +1744,13 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '200': CommentReadSerializer,
         }),
     list=extend_schema(
-        summary='Method returns a paginated list of comments according to query parameters',
+        summary='Method returns a paginated list of comments',
         responses={
-            '200':CommentReadSerializer(many=True),
+            '200': CommentReadSerializer(many=True),
         }),
     partial_update=extend_schema(
         summary='Methods does a partial update of chosen fields in a comment',
-        request=CommentWriteSerializer,
+        request=CommentWriteSerializer(partial=True),
         responses={
             '200': CommentReadSerializer, # check CommentWriteSerializer.to_representation
         }),
@@ -1868,16 +1770,26 @@ class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, CreateModelMixin, DestroyModelMixin,
     PartialUpdateModelMixin
 ):
-    queryset = Comment.objects.all().order_by('-id')
+    queryset = Comment.objects.prefetch_related(
+        'issue', 'issue__job', 'owner'
+    ).all()
+
     iam_organization_field = 'issue__job__segment__task__organization'
     search_fields = ('owner',)
-    filter_fields = list(search_fields) + ['id', 'issue_id']
-    ordering_fields = filter_fields
+    filter_fields = list(search_fields) + ['id', 'issue_id', 'frame_id', 'job_id']
+    simple_filters = list(search_fields) + ['issue_id', 'frame_id', 'job_id']
+    ordering_fields = list(filter_fields)
     ordering = '-id'
-    lookup_fields = {'owner': 'owner__username', 'issue_id': 'issue__id'}
+    lookup_fields = {
+        'owner': 'owner__username',
+        'issue_id': 'issue__id',
+        'job_id': 'issue__job__id',
+        'frame_id': 'issue__frame',
+    }
 
     def get_queryset(self):
         queryset = super().get_queryset()
+
         if self.action == 'list':
             perm = CommentPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
@@ -1893,10 +1805,153 @@ class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def perform_create(self, serializer, **kwargs):
         super().perform_create(serializer, owner=self.request.user)
 
+
+@extend_schema(tags=['labels'])
+@extend_schema_view(
+    retrieve=extend_schema(
+        summary='Method returns details of a label',
+        responses={
+            '200': LabelSerializer,
+        }),
+    list=extend_schema(
+        summary='Method returns a paginated list of labels',
+        parameters=[
+            # These filters are implemented differently from others
+            OpenApiParameter('job_id', type=OpenApiTypes.INT,
+                description='A simple equality filter for job id'),
+            OpenApiParameter('task_id', type=OpenApiTypes.INT,
+                description='A simple equality filter for task id'),
+            OpenApiParameter('project_id', type=OpenApiTypes.INT,
+                description='A simple equality filter for project id'),
+        ],
+        responses={
+            '200': LabelSerializer(many=True),
+        }),
+    partial_update=extend_schema(
+        summary='Methods does a partial update of chosen fields in a label'
+        'To modify a sublabel, please use the PATCH method of the parent label',
+        request=LabelSerializer(partial=True),
+        responses={
+            '200': LabelSerializer,
+        }),
+    destroy=extend_schema(
+        summary='Method deletes a label. '
+        'To delete a sublabel, please use the PATCH method of the parent label',
+        responses={
+            '204': OpenApiResponse(description='The label has been deleted'),
+        })
+)
+class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
+    mixins.RetrieveModelMixin, mixins.DestroyModelMixin, PartialUpdateModelMixin
+):
+    queryset = Label.objects.prefetch_related(
+        'attributespec_set',
+        'sublabels__attributespec_set',
+        'task',
+        'task__owner',
+        'task__assignee',
+        'task__organization',
+        'project',
+        'project__owner',
+        'project__assignee',
+        'project__organization'
+    ).all()
+
+    # NOTE: This filter works incorrectly for this view
+    # it requires task__organization OR project__organization check.
+    # Thus, we rely on permission-based filtering
+    iam_organization_field = None
+
+    search_fields = ('name', 'parent')
+    filter_fields = list(search_fields) + ['id', 'type', 'color', 'parent_id']
+    simple_filters = list(set(filter_fields) - {'id'})
+    ordering_fields = list(filter_fields)
+    lookup_fields = {
+        'parent': 'parent__name',
+    }
+    ordering = 'id'
+    serializer_class = LabelSerializer
+
+    def get_queryset(self):
+        if self.action == 'list':
+            job_id = self.request.GET.get('job_id', None)
+            task_id = self.request.GET.get('task_id', None)
+            project_id = self.request.GET.get('project_id', None)
+            if sum(v is not None for v in [job_id, task_id, project_id]) > 1:
+                raise ValidationError(
+                    "job_id, task_id and project_id parameters cannot be used together",
+                    code=status.HTTP_400_BAD_REQUEST
+                )
+
+            if job_id:
+                # NOTE: This filter is too complex to be implemented by other means
+                # It requires the following filter query:
+                # (
+                #  project__task__segment__job__id = job_id
+                #  OR
+                #  task__segment__job__id = job_id
+                # )
+                job = Job.objects.get(id=job_id)
+                self.check_object_permissions(self.request, job)
+                queryset = job.get_labels()
+            elif task_id:
+                # NOTE: This filter is too complex to be implemented by other means
+                # It requires the following filter query:
+                # (
+                #  project__task__id = task_id
+                #  OR
+                #  task_id = task_id
+                # )
+                task = Task.objects.get(id=task_id)
+                self.check_object_permissions(self.request, task)
+                queryset = task.get_labels()
+            elif project_id:
+                # NOTE: this check is to make behavior consistent with other source filters
+                project = Project.objects.get(id=project_id)
+                self.check_object_permissions(self.request, project)
+                queryset = project.get_labels()
+            else:
+                # In other cases permissions are checked already
+                queryset = super().get_queryset()
+                perm = LabelPermission.create_scope_list(self.request)
+                queryset = perm.filter(queryset)
+
+            # Include only 1st level labels in list responses
+            queryset = queryset.filter(parent__isnull=True)
+        else:
+            queryset = super().get_queryset()
+
+        return queryset
+
+    def get_serializer(self, *args, **kwargs):
+        kwargs['local'] = True
+        return super().get_serializer(*args, **kwargs)
+
+    def perform_update(self, serializer):
+        if serializer.instance.parent is not None:
+            # NOTE: this can be relaxed when skeleton updates are implemented properly
+            raise ValidationError(
+                "Sublabels cannot be modified this way. "
+                "Please send a PATCH request with updated parent label data instead.",
+                code=status.HTTP_400_BAD_REQUEST)
+
+        return super().perform_update(serializer)
+
+    def perform_destroy(self, instance):
+        if instance.parent is not None:
+            # NOTE: this can be relaxed when skeleton updates are implemented properly
+            raise ValidationError(
+                "Sublabels cannot be deleted this way. "
+                "Please send a PATCH request with updated parent label data instead.",
+                code=status.HTTP_400_BAD_REQUEST)
+
+        return super().perform_destroy(instance)
+
+
 @extend_schema(tags=['users'])
 @extend_schema_view(
     list=extend_schema(
-        summary='Method provides a paginated list of users registered on the server',
+        summary='Method returns a paginated list of users',
         responses={
             '200': PolymorphicProxySerializer(component_name='MetaUser',
                 serializers=[
@@ -1916,7 +1971,7 @@ class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         responses={
             '200': PolymorphicProxySerializer(component_name='MetaUser',
                 serializers=[
-                    UserSerializer, BasicUserSerializer,
+                    UserSerializer(partial=True), BasicUserSerializer(partial=True),
                 ], resource_type_field_name=None),
         }),
     destroy=extend_schema(
@@ -1928,15 +1983,17 @@ class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, PartialUpdateModelMixin, mixins.DestroyModelMixin):
     queryset = User.objects.prefetch_related('groups').all()
-    search_fields = ('username', 'first_name', 'last_name')
     iam_organization_field = 'memberships__organization'
 
-    filter_fields = ('id', 'is_active', 'username')
-    ordering_fields = filter_fields
+    search_fields = ('username', 'first_name', 'last_name')
+    filter_fields = list(search_fields) + ['id', 'is_active']
+    simple_filters = list(search_fields) + ['is_active']
+    ordering_fields = list(filter_fields)
     ordering = "-id"
 
     def get_queryset(self):
         queryset = super().get_queryset()
+
         if self.action == 'list':
             perm = UserPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
@@ -1983,7 +2040,7 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '200': CloudStorageReadSerializer,
         }),
     list=extend_schema(
-        summary='Returns a paginated list of storages according to query parameters',
+        summary='Returns a paginated list of storages',
         responses={
             '200': CloudStorageReadSerializer(many=True),
         }),
@@ -1994,7 +2051,7 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         }),
     partial_update=extend_schema(
         summary='Methods does a partial update of chosen fields in a cloud storage instance',
-        request=CloudStorageWriteSerializer,
+        request=CloudStorageWriteSerializer(partial=True),
         responses={
             '200': CloudStorageReadSerializer, # check CloudStorageWriteSerializer.to_representation
         }),
@@ -2009,14 +2066,15 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
     PartialUpdateModelMixin
 ):
-    queryset = CloudStorageModel.objects.all().prefetch_related('data')
+    queryset = CloudStorageModel.objects.prefetch_related('data').all()
 
-    search_fields = ('provider_type', 'display_name', 'resource',
+    search_fields = ('provider_type', 'name', 'resource',
                     'credentials_type', 'owner', 'description')
     filter_fields = list(search_fields) + ['id']
-    ordering_fields = filter_fields
+    simple_filters = list(set(search_fields) - {'description'})
+    ordering_fields = list(filter_fields)
     ordering = "-id"
-    lookup_fields = {'owner': 'owner__username'}
+    lookup_fields = {'owner': 'owner__username', 'name': 'display_name'}
     iam_organization_field = 'organization'
 
     def get_serializer_class(self):
@@ -2027,6 +2085,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     def get_queryset(self):
         queryset = super().get_queryset()
+
         if self.action == 'list':
             perm = CloudStoragePermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
@@ -2172,12 +2231,10 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             msg = str(ex)
             return HttpResponseBadRequest(msg)
 
-def rq_handler(job, exc_type, exc_value, tb):
-    job.exc_info = "".join(
+def rq_exception_handler(rq_job, exc_type, exc_value, tb):
+    rq_job.exc_info = "".join(
         traceback.format_exception_only(exc_type, exc_value))
-    job.save()
-    if "tasks" in job.id.split("/"):
-        return task.rq_handler(job, exc_type, exc_value, tb)
+    rq_job.save()
 
     return True
 
@@ -2188,7 +2245,7 @@ def _download_file_from_bucket(db_storage, filename, key):
     with open(filename, 'wb+') as f:
         f.write(data.getbuffer())
 
-def _import_annotations(request, rq_id, rq_func, pk, format_name,
+def _import_annotations(request, rq_id, rq_func, db_obj, format_name,
                         filename=None, location_conf=None, conv_mask_to_poly=True):
     format_desc = {f.DISPLAY_NAME: f
         for f in dm.views.get_import_formats()}.get(format_name)
@@ -2214,7 +2271,7 @@ def _import_annotations(request, rq_id, rq_func, pk, format_name,
                 serializer = AnnotationFileSerializer(data=request.data)
                 if serializer.is_valid(raise_exception=True):
                     anno_file = serializer.validated_data['annotation_file']
-                    fd, filename = mkstemp(prefix='cvat_{}'.format(pk), dir=settings.TMP_FILES_ROOT)
+                    fd, filename = mkstemp(prefix='cvat_{}'.format(db_obj.pk), dir=settings.TMP_FILES_ROOT)
                     with open(filename, 'wb+') as f:
                         for chunk in anno_file.chunks():
                             f.write(chunk)
@@ -2228,21 +2285,29 @@ def _import_annotations(request, rq_id, rq_func, pk, format_name,
                         ' but cloud storage id was not specified')
                 db_storage = get_object_or_404(CloudStorageModel, pk=storage_id)
                 key = filename
-                fd, filename = mkstemp(prefix='cvat_{}'.format(pk), dir=settings.TMP_FILES_ROOT)
+                fd, filename = mkstemp(prefix='cvat_{}'.format(db_obj.pk), dir=settings.TMP_FILES_ROOT)
                 dependent_job = configure_dependent_job(
-                    queue, rq_id, _download_file_from_bucket,
-                    db_storage, filename, key)
+                    queue=queue,
+                    rq_id=rq_id,
+                    rq_func=_download_file_from_bucket,
+                    db_storage=db_storage,
+                    filename=filename,
+                    key=key,
+                    request=request,
+                )
 
         av_scan_paths(filename)
+        meta = {
+            'tmp_file': filename,
+            'tmp_file_descriptor': fd,
+        }
         rq_job = queue.enqueue_call(
             func=rq_func,
-            args=(pk, filename, format_name, conv_mask_to_poly),
+            args=(db_obj.pk, filename, format_name, conv_mask_to_poly),
             job_id=rq_id,
-            depends_on=dependent_job
+            depends_on=dependent_job,
+            meta={**meta, **get_rq_job_meta(request=request, db_obj=db_obj)}
         )
-        rq_job.meta['tmp_file'] = filename
-        rq_job.meta['tmp_file_descriptor'] = fd
-        rq_job.save_meta()
     else:
         if rq_job.is_finished:
             if rq_job.meta['tmp_file_descriptor']: os.close(rq_job.meta['tmp_file_descriptor'])
@@ -2287,7 +2352,8 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
         if isinstance(db_instance, Project):
             tasks_update = list(map(lambda db_task: timezone.localtime(db_task.updated_date), db_instance.tasks.all()))
             last_instance_update_time = max(tasks_update + [last_instance_update_time])
-        request_time = rq_job.meta.get('request_time', None)
+        rq_request = rq_job.meta.get('request', None)
+        request_time = rq_request.get('timestamp', None) if rq_request else None
         if request_time is None or request_time < last_instance_update_time:
             rq_job.cancel()
             rq_job.delete()
@@ -2355,13 +2421,15 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
         'job': dm.views.JOB_CACHE_TTL,
     }
     ttl = TTL_CONSTS[db_instance.__class__.__name__.lower()].total_seconds()
-    queue.enqueue_call(func=callback,
-        args=(db_instance.id, format_name, server_address), job_id=rq_id,
-        meta={ 'request_time': timezone.localtime() },
+    queue.enqueue_call(
+        func=callback,
+        args=(db_instance.id, format_name, server_address),
+        job_id=rq_id,
+        meta=get_rq_job_meta(request=request, db_obj=db_instance),
         result_ttl=ttl, failure_ttl=ttl)
     return Response(status=status.HTTP_202_ACCEPTED)
 
-def _import_project_dataset(request, rq_id, rq_func, pk, format_name, filename=None, conv_mask_to_poly=True, location_conf=None):
+def _import_project_dataset(request, rq_id, rq_func, db_obj, format_name, filename=None, conv_mask_to_poly=True, location_conf=None):
     format_desc = {f.DISPLAY_NAME: f
         for f in dm.views.get_import_formats()}.get(format_name)
     if format_desc is None:
@@ -2381,7 +2449,7 @@ def _import_project_dataset(request, rq_id, rq_func, pk, format_name, filename=N
             serializer = DatasetFileSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
                 dataset_file = serializer.validated_data['dataset_file']
-                fd, filename = mkstemp(prefix='cvat_{}'.format(pk), dir=settings.TMP_FILES_ROOT)
+                fd, filename = mkstemp(prefix='cvat_{}'.format(db_obj.pk), dir=settings.TMP_FILES_ROOT)
                 with open(filename, 'wb+') as f:
                     for chunk in dataset_file.chunks():
                         f.write(chunk)
@@ -2395,20 +2463,27 @@ def _import_project_dataset(request, rq_id, rq_func, pk, format_name, filename=N
                     ' but cloud storage id was not specified')
             db_storage = get_object_or_404(CloudStorageModel, pk=storage_id)
             key = filename
-            fd, filename = mkstemp(prefix='cvat_{}'.format(pk), dir=settings.TMP_FILES_ROOT)
+            fd, filename = mkstemp(prefix='cvat_{}'.format(db_obj.pk), dir=settings.TMP_FILES_ROOT)
             dependent_job = configure_dependent_job(
-                queue, rq_id, _download_file_from_bucket,
-                db_storage, filename, key)
+                queue=queue,
+                rq_id=rq_id,
+                rq_func=_download_file_from_bucket,
+                db_storage=db_storage,
+                filename=filename,
+                key=key,
+                request=request,
+            )
 
         rq_job = queue.enqueue_call(
             func=rq_func,
-            args=(pk, filename, format_name, conv_mask_to_poly),
+            args=(db_obj.pk, filename, format_name, conv_mask_to_poly),
             job_id=rq_id,
             meta={
                 'tmp_file': filename,
                 'tmp_file_descriptor': fd,
+                **get_rq_job_meta(request=request, db_obj=db_obj),
             },
-            depends_on=dependent_job
+            depends_on=dependent_job,
         )
     else:
         return Response(status=status.HTTP_409_CONFLICT, data='Import job already exists')

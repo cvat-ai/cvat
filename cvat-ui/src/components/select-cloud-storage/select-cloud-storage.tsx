@@ -39,7 +39,7 @@ const searchCloudStoragesWrapper = debounce((phrase, setList) => {
     const filter = {
         filter: JSON.stringify({
             and: [{
-                '==': [{ var: 'display_name' }, phrase],
+                '==': [{ var: 'name' }, phrase],
             }],
         }),
     };

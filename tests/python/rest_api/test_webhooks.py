@@ -1,4 +1,4 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -7,9 +7,12 @@ from http import HTTPStatus
 from itertools import product
 
 import pytest
+from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from deepdiff import DeepDiff
 
 from shared.utils.config import delete_method, get_method, patch_method, post_method
+
+from .utils import CollectionSimpleFilterTestBase
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -262,6 +265,22 @@ class TestPostWebhooks:
         response = post_method("admin2", "webhooks", post_data)
 
         assert response.status_code == HTTPStatus.CREATED
+
+    def test_can_create_with_mismatching_project_org_fields(self, projects_by_org):
+        # In this case we could either fail or ignore invalid query param
+        # Currently, the invalid org id will be ignored and the value
+        # will be taken from the project.
+        post_data = deepcopy(self.proj_webhook)
+        org_id = next(iter(projects_by_org))
+        project = projects_by_org[org_id][0]
+        post_data["project_id"] = project["id"]
+        org_id = next(k for k in projects_by_org if k != org_id)
+
+        response = post_method("admin1", "webhooks", post_data, org_id=org_id)
+
+        assert response.status_code == HTTPStatus.CREATED
+        assert response.json()["project_id"] == post_data["project_id"]
+        assert response.json()["organization"] == project["organization"]
 
     def test_cannot_create_without_target_url(self):
         post_data = deepcopy(self.proj_webhook)
@@ -526,6 +545,27 @@ class TestGetWebhooks:
         assert response.status_code == HTTPStatus.OK
         assert "secret" not in response.json()
         assert DeepDiff(webhook, response.json(), ignore_order=True) == {}
+
+
+class TestWebhooksListFilters(CollectionSimpleFilterTestBase):
+    field_lookups = {
+        "owner": ["owner", "username"],
+    }
+
+    @pytest.fixture(autouse=True)
+    def setup(self, restore_db_per_class, admin_user, webhooks):
+        self.user = admin_user
+        self.samples = webhooks
+
+    def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
+        return api_client.webhooks_api.list_endpoint
+
+    @pytest.mark.parametrize(
+        "field",
+        ("target_url", "owner", "type", "project_id"),
+    )
+    def test_can_use_simple_filter_for_object_list(self, field):
+        return super().test_can_use_simple_filter_for_object_list(field)
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
