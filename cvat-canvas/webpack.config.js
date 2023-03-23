@@ -38,12 +38,6 @@ module.exports = {
         library: 'canvas',
         libraryTarget: 'window',
     },
-    devServer: {
-        contentBase: path.join(__dirname, 'dist'),
-        compress: false,
-        inline: true,
-        port: 3000,
-    },
     resolve: {
         extensions: ['.ts', '.js', '.json'],
     },
