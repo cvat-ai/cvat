@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from contextlib import ExitStack
 import io
 import os
 from enum import Enum
@@ -36,7 +37,7 @@ from cvat.apps.engine.serializers import (AttributeSerializer, DataSerializer, L
     ProjectReadSerializer, ProjectFileSerializer, TaskFileSerializer)
 from cvat.apps.engine.utils import av_scan_paths, process_failed_job, configure_dependent_job, get_rq_job_meta
 from cvat.apps.engine.models import (
-    StorageChoice, StorageMethodChoice, DataChoice, Task, Project, Location,
+    SortingMethod, StorageChoice, DataChoice, Task, Project, Location,
     CloudStorage as CloudStorageModel)
 from cvat.apps.engine.task import JobFileMapping, _create_thread
 from cvat.apps.dataset_manager.views import TASK_CACHE_TTL, PROJECT_CACHE_TTL, get_export_cache_dir, clear_export_cache, log_exception
@@ -44,6 +45,9 @@ from cvat.apps.dataset_manager.bindings import CvatImportError
 from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
 
 from cvat.apps.engine.location import StorageType, get_location_configuration
+
+from utils.dataset_manifest import ImageManifestManager
+
 
 class Version(Enum):
     V1 = '1.0'
@@ -256,10 +260,15 @@ class _ExporterBase():
                     target_dir=target_dir,
                 )
 
+class ShareUnreachableError(Exception):
+    pass
+
 class TaskExporter(_ExporterBase, _TaskBackupBase):
     def __init__(self, pk, version=Version.V1):
         super().__init__(logger=slogger.task[pk])
-        self._db_task = models.Task.objects.prefetch_related('data__images').select_related('data__video').get(pk=pk)
+        self._db_task = models.Task.objects.prefetch_related(
+                'data__images', 'data__images__related_files'
+            ).select_related('data__video').get(pk=pk)
         self._db_data = self._db_task.data
         self._version = version
 
@@ -278,24 +287,61 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
         elif self._db_data.storage == StorageChoice.SHARE:
             data_dir = settings.SHARE_ROOT
             if hasattr(self._db_data, 'video'):
-                media_files = (os.path.join(data_dir, self._db_data.video.path), )
+                media_files = {
+                    os.path.join(data_dir, self._db_data.video.path): {
+                        'related_images': []
+                    }
+                }
             else:
-                media_files = (os.path.join(data_dir, im.path) for im in self._db_data.images.all().order_by('frame'))
+                media_files = {
+                    os.path.join(data_dir, im.path): {
+                        'related_images': [
+                            os.path.relpath(f.path, data_dir) for f in im.related_files
+                        ]
+                    }
+                    for im in self._db_data.images.all().order_by('frame')
+                }
 
             self._write_files(
                 source_dir=data_dir,
                 zip_object=zip_object,
-                files=media_files,
+                files=list(media_files),
                 target_dir=target_data_dir,
             )
 
-            upload_dir = self._db_data.get_upload_dirname()
-            self._write_files(
-                source_dir=upload_dir,
-                zip_object=zip_object,
-                files=(os.path.join(upload_dir, f) for f in ('manifest.jsonl',)),
-                target_dir=target_data_dir,
-            )
+            with ExitStack() as es:
+                manifest_path = self._db_data.get_manifest_path()
+                if os.path.isfile(manifest_path):
+                    manifest_source_dir = self._db_data.get_upload_dirname()
+                else:
+                    if hasattr(self._db_data, 'video'):
+                        manifest_path = None
+                    else:
+                        manifest_source_dir = es.enter_context(tempfile.TemporaryDirectory())
+                        manifest_path = os.path.join(
+                            manifest_source_dir, os.path.basename(manifest_path)
+                        )
+
+                        manifest = ImageManifestManager(
+                            manifest_path, upload_dir=data_dir, create_index=False
+                        )
+                        manifest.link(
+                            sources=list(media_files),
+                            meta={
+                                k: {'related_images': v['related_images'] }
+                                for k, v in media_files.items()
+                            },
+                            data_dir=data_dir,
+                            DIM_3D=(self._db_task.dimension == models.DimensionType.DIM_3D),
+                        )
+                        manifest.create()
+
+                self._write_files(
+                    source_dir=manifest_source_dir,
+                    zip_object=zip_object,
+                    files=[manifest_path],
+                    target_dir=target_data_dir,
+                )
         else:
             raise NotImplementedError()
 
@@ -402,10 +448,6 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
         self._write_annotations(zip_obj, target_dir)
 
     def export_to(self, file, target_dir=None):
-        if self._db_task.data.storage_method == StorageMethodChoice.FILE_SYSTEM and \
-                self._db_task.data.storage == StorageChoice.SHARE:
-            raise Exception('The task cannot be exported because it does not contain any raw data')
-
         if isinstance(file, str):
             with ZipFile(file, 'w') as zf:
                 self._export_task(zip_obj=zf, target_dir=target_dir)
@@ -530,7 +572,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         return segments
 
     def _import_task(self):
-        def _write_data(zip_object):
+        def _extract_data(zip_object):
             data_path = self._db_task.data.get_upload_dirname()
             task_dirname = os.path.join(self._subdir, self.TASK_DIRNAME) if self._subdir else self.TASK_DIRNAME
             data_dirname = os.path.join(self._subdir, self.DATA_DIRNAME) if self._subdir else self.DATA_DIRNAME
@@ -586,6 +628,13 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
             self._labels_mapping = self._create_labels(db_task=self._db_task, labels=labels)
 
         self._prepare_data_meta(data)
+
+        if data['storage'] == StorageChoice.SHARE:
+            # In this case the data is imported as if it was created from local files.
+            # The original file order must be preserved, it is loaded from the manifest.
+            data['storage'] = StorageChoice.LOCAL
+            data['sorting_method'] = SortingMethod.PREDEFINED
+
         data_serializer = DataSerializer(data=data)
         data_serializer.is_valid(raise_exception=True)
         db_data = data_serializer.save()
@@ -594,9 +643,9 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
 
         if isinstance(self._file, str):
             with ZipFile(self._file, 'r') as zf:
-                uploaded_files = _write_data(zf)
+                uploaded_files = _extract_data(zf)
         else:
-            uploaded_files = _write_data(self._file)
+            uploaded_files = _extract_data(self._file)
 
         data['use_zip_chunks'] = data.pop('chunk_type') == DataChoice.IMAGESET
         data = data_serializer.data

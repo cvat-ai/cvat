@@ -580,12 +580,11 @@ def _create_thread(
     ):
         raise ValidationError("It isn't supported to upload manifest file and use random sorting")
 
-    if (isBackupRestore and db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM and
+    if (isBackupRestore and not manifest_file and
         data['sorting_method'] in {models.SortingMethod.RANDOM, models.SortingMethod.PREDEFINED}
     ):
         raise ValidationError(
-            "It isn't supported to import the task that was created "
-            "without cache but with random/predefined sorting"
+            "Manifest is required to restore a task with random/predefined sorting"
         )
 
     # Extract input data
@@ -670,7 +669,6 @@ def _create_thread(
         (
             not isinstance(extractor, MEDIA_TYPES['video']['extractor']) and
             isBackupRestore and
-            db_data.storage_method == models.StorageMethodChoice.CACHE and
             db_data.sorting_method in {models.SortingMethod.RANDOM, models.SortingMethod.PREDEFINED}
         ) or (
             not isDatasetImport and
