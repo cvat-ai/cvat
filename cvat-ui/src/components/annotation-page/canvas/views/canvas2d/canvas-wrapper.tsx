@@ -584,11 +584,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         const { state, duration } = event.detail;
         const isDrawnFromScratch = !state.label;
-        if (isDrawnFromScratch) {
-            jobInstance.logger.log(LogType.drawObject, { count: 1, duration });
-        } else {
-            jobInstance.logger.log(LogType.pasteObject, { count: 1, duration });
-        }
 
         state.objectType = state.objectType || activeObjectType;
         state.label = state.label || jobInstance.labels.filter((label: any) => label.id === activeLabelID)[0];
@@ -606,6 +601,22 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                 element.occluded = element.occluded || false;
                 element.outside = element.outside || false;
             });
+        }
+
+        const payload = {
+            object_type: state.objectType,
+            label: state.label.name,
+            frame: state.frame,
+            rotation: state.rotation,
+            occluded: state.occluded,
+            outside: state.outside,
+            shape_type: state.shapeType,
+        };
+
+        if (isDrawnFromScratch) {
+            jobInstance.logger.log(LogType.drawObject, { count: 1, duration, ...payload });
+        } else {
+            jobInstance.logger.log(LogType.pasteObject, { count: 1, duration, ...payload });
         }
 
         const objectState = new cvat.classes.ObjectState(state);

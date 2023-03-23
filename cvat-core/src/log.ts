@@ -8,9 +8,9 @@ import PluginRegistry from './plugins';
 import { LogType } from './enums';
 import { ArgumentError } from './exceptions';
 
-export class Log {
+export class EventLogger {
     public readonly id: number;
-    public readonly type: LogType;
+    public readonly scope: LogType;
     public readonly time: Date;
 
     public payload: any;
@@ -20,7 +20,7 @@ export class Log {
     constructor(logType: LogType, payload: any) {
         this.onCloseCallback = null;
 
-        this.type = logType;
+        this.scope = logType;
         this.payload = { ...payload };
         this.time = new Date();
     }
@@ -45,11 +45,22 @@ export class Log {
     public dump(): any {
         const payload = { ...this.payload };
         const body = {
-            name: this.type,
-            time: this.time.toISOString(),
+            scope: this.scope,
+            timestamp: this.time.toISOString(),
         };
 
-        for (const field of ['client_id', 'job_id', 'task_id', 'is_active']) {
+        for (const field of [
+            'obj_name',
+            'obj_id',
+            'obj_val',
+            'count',
+            'duration',
+            'project_id',
+            'task_id',
+            'job_id',
+            'user_id',
+            'organization',
+        ]) {
             if (field in payload) {
                 body[field] = payload[field];
                 delete payload[field];
@@ -58,7 +69,7 @@ export class Log {
 
         return {
             ...body,
-            payload,
+            payload: JSON.stringify(payload),
         };
     }
 
@@ -67,12 +78,12 @@ export class Log {
     // Log duration will be computed based on the latest call
     // All payloads will be shallowly combined (all top level properties will exist)
     public async close(payload = {}): Promise<void> {
-        const result = await PluginRegistry.apiWrapper.call(this, Log.prototype.close, payload);
+        const result = await PluginRegistry.apiWrapper.call(this, EventLogger.prototype.close, payload);
         return result;
     }
 }
 
-Object.defineProperties(Log.prototype.close, {
+Object.defineProperties(EventLogger.prototype.close, {
     implementation: {
         writable: false,
         enumerable: false,
@@ -86,131 +97,71 @@ Object.defineProperties(Log.prototype.close, {
     },
 });
 
-class LogWithCount extends Log {
+class LogWithCount extends EventLogger {
     public validatePayload(): void {
         super.validatePayload.call(this);
         if (!Number.isInteger(this.payload.count) || this.payload.count < 1) {
-            const message = `The field "count" is required for "${this.type}" log. It must be a positive integer`;
+            const message = `The field "count" is required for "${this.scope}" log. It must be a positive integer`;
             throw new ArgumentError(message);
         }
     }
 }
 
-class LogWithObjectsInfo extends Log {
-    public validatePayload(): void {
-        const generateError = (name: string, range: string): void => {
-            const message = `The field "${name}" is required for "${this.type}" log. ${range}`;
-            throw new ArgumentError(message);
-        };
-
-        if (!Number.isInteger(this.payload['track count']) || this.payload['track count'] < 0) {
-            generateError('track count', 'It must be an integer not less than 0');
-        }
-
-        if (!Number.isInteger(this.payload['tag count']) || this.payload['tag count'] < 0) {
-            generateError('tag count', 'It must be an integer not less than 0');
-        }
-
-        if (!Number.isInteger(this.payload['object count']) || this.payload['object count'] < 0) {
-            generateError('object count', 'It must be an integer not less than 0');
-        }
-
-        if (!Number.isInteger(this.payload['frame count']) || this.payload['frame count'] < 1) {
-            generateError('frame count', 'It must be an integer not less than 1');
-        }
-
-        if (!Number.isInteger(this.payload['box count']) || this.payload['box count'] < 0) {
-            generateError('box count', 'It must be an integer not less than 0');
-        }
-
-        if (!Number.isInteger(this.payload['polygon count']) || this.payload['polygon count'] < 0) {
-            generateError('polygon count', 'It must be an integer not less than 0');
-        }
-
-        if (!Number.isInteger(this.payload['polyline count']) || this.payload['polyline count'] < 0) {
-            generateError('polyline count', 'It must be an integer not less than 0');
-        }
-
-        if (!Number.isInteger(this.payload['points count']) || this.payload['points count'] < 0) {
-            generateError('points count', 'It must be an integer not less than 0');
-        }
-    }
-}
-
-class LogWithWorkingTime extends Log {
-    public validatePayload(): void {
-        super.validatePayload.call(this);
-
-        if (
-            !('working_time' in this.payload) ||
-            !(typeof this.payload.working_time === 'number') ||
-            this.payload.working_time < 0
-        ) {
-            const message = `
-                The field "working_time" is required for ${this.type} log. It must be a number not less than 0
-            `;
-            throw new ArgumentError(message);
-        }
-    }
-}
-
-class LogWithExceptionInfo extends Log {
+class LogWithExceptionInfo extends EventLogger {
     public validatePayload(): void {
         super.validatePayload.call(this);
 
         if (typeof this.payload.message !== 'string') {
-            const message = `The field "message" is required for ${this.type} log. It must be a string`;
+            const message = `The field "message" is required for ${this.scope} log. It must be a string`;
             throw new ArgumentError(message);
         }
 
         if (typeof this.payload.filename !== 'string') {
-            const message = `The field "filename" is required for ${this.type} log. It must be a string`;
+            const message = `The field "filename" is required for ${this.scope} log. It must be a string`;
             throw new ArgumentError(message);
         }
 
         if (typeof this.payload.line !== 'number') {
-            const message = `The field "line" is required for ${this.type} log. It must be a number`;
+            const message = `The field "line" is required for ${this.scope} log. It must be a number`;
             throw new ArgumentError(message);
         }
 
         if (typeof this.payload.column !== 'number') {
-            const message = `The field "column" is required for ${this.type} log. It must be a number`;
+            const message = `The field "column" is required for ${this.scope} log. It must be a number`;
             throw new ArgumentError(message);
         }
 
         if (typeof this.payload.stack !== 'string') {
-            const message = `The field "stack" is required for ${this.type} log. It must be a string`;
+            const message = `The field "stack" is required for ${this.scope} log. It must be a string`;
             throw new ArgumentError(message);
         }
     }
 
     public dump(): any {
-        let body = super.dump();
-        const { payload } = body;
+        const body = super.dump();
         const client = detect();
-        body = {
-            ...body,
-            message: payload.message,
-            filename: payload.filename,
-            line: payload.line,
-            column: payload.column,
-            stack: payload.stack,
+        body.payload = JSON.stringify({
+            ...JSON.parse(body.payload),
             system: client.os,
             client: client.name,
             version: client.version,
-        };
-
-        delete payload.message;
-        delete payload.filename;
-        delete payload.line;
-        delete payload.column;
-        delete payload.stack;
+        });
 
         return body;
     }
 }
 
-export default function logFactory(logType: LogType, payload: any): Log {
+class LogWithControlsInfo extends EventLogger {
+    public dump(): any {
+        this.payload = {
+            obj_val: this.payload?.text,
+            obj_name: this.payload?.classes,
+        };
+        return super.dump();
+    }
+}
+
+export default function logFactory(logType: LogType, payload: any): EventLogger {
     const logsWithCount = [
         LogType.deleteObject,
         LogType.mergeObjects,
@@ -222,17 +173,14 @@ export default function logFactory(logType: LogType, payload: any): Log {
     if (logsWithCount.includes(logType)) {
         return new LogWithCount(logType, payload);
     }
-    if ([LogType.sendTaskInfo, LogType.loadJob, LogType.uploadAnnotations].includes(logType)) {
-        return new LogWithObjectsInfo(logType, payload);
-    }
 
-    if (logType === LogType.sendUserActivity) {
-        return new LogWithWorkingTime(logType, payload);
-    }
-
-    if (logType === LogType.sendException) {
+    if (logType === LogType.exception) {
         return new LogWithExceptionInfo(logType, payload);
     }
 
-    return new Log(logType, payload);
+    if (logType === LogType.clickElement) {
+        return new LogWithControlsInfo(logType, payload);
+    }
+
+    return new EventLogger(logType, payload);
 }

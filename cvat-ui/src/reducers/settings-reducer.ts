@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,9 +10,9 @@ import { AuthActionTypes } from 'actions/auth-actions';
 import { SettingsActionTypes } from 'actions/settings-actions';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
 import {
-    SettingsState, GridColor, FrameSpeed, ColorBy, DimensionType,
+    SettingsState, GridColor, FrameSpeed, ColorBy,
 } from 'reducers';
-import { ObjectState, ShapeType } from 'cvat-core-wrapper';
+import { ObjectState, ShapeType, DimensionType } from 'cvat-core-wrapper';
 
 const defaultState: SettingsState = {
     shapes: {
@@ -412,11 +413,10 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 ...state,
                 player: {
                     ...state.player,
-                    resetZoom: job && job.mode === 'annotation',
                 },
                 shapes: {
                     ...defaultState.shapes,
-                    ...(job.dimension === DimensionType.DIM_3D ?
+                    ...(job.dimension === DimensionType.DIMENSION_3D ?
                         {
                             opacity: 40,
                             selectedOpacity: 60,

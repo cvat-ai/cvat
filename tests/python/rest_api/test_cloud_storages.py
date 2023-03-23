@@ -4,8 +4,8 @@
 # SPDX-License-Identifier: MIT
 
 import io
+import json
 from http import HTTPStatus
-from typing import List
 
 import pytest
 from cvat_sdk.api_client import ApiClient, models
@@ -13,7 +13,7 @@ from cvat_sdk.api_client.api_client import Endpoint
 from deepdiff import DeepDiff
 from PIL import Image
 
-from shared.utils.config import get_method, patch_method, post_method
+from shared.utils.config import make_api_client
 
 from .utils import CollectionSimpleFilterTestBase
 
@@ -24,20 +24,32 @@ pytestmark = [pytest.mark.with_external_services]
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetCloudStorage:
     def _test_can_see(self, user, storage_id, data, **kwargs):
-        response = get_method(user, f"cloudstorages/{storage_id}", **kwargs)
-        response_data = response.json()
-        response_data = response_data.get("results", response_data)
+        with make_api_client(user) as api_client:
+            (_, response) = api_client.cloudstorages_api.retrieve(
+                id=storage_id,
+                **kwargs,
+                _parse_response=False,
+                _check_status=False,
+            )
+            assert response.status == HTTPStatus.OK
+            response_json = json.loads(response.data)
 
-        assert response.status_code == HTTPStatus.OK
-        assert (
-            DeepDiff(data, response_data, ignore_order=True, exclude_paths="root['updated_date']")
-            == {}
-        )
+            assert (
+                DeepDiff(
+                    data, response_json, ignore_order=True, exclude_paths="root['updated_date']"
+                )
+                == {}
+            )
 
     def _test_cannot_see(self, user, storage_id, **kwargs):
-        response = get_method(user, f"cloudstorages/{storage_id}", **kwargs)
-
-        assert response.status_code == HTTPStatus.FORBIDDEN
+        with make_api_client(user) as api_client:
+            (_, response) = api_client.cloudstorages_api.retrieve(
+                id=storage_id,
+                **kwargs,
+                _parse_response=False,
+                _check_status=False,
+            )
+            assert response.status == HTTPStatus.FORBIDDEN
 
     @pytest.mark.parametrize("storage_id", [1])
     @pytest.mark.parametrize(
@@ -116,13 +128,6 @@ class TestCloudStoragesListFilters(CollectionSimpleFilterTestBase):
     def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
         return api_client.cloudstorages_api.list_endpoint
 
-    def _retrieve_collection(self, **kwargs) -> List:
-        # TODO: fix invalid serializer schema for manifests
-        results = super()._retrieve_collection(_parse_response=False, return_json=True, **kwargs)
-        for r in results:
-            r["manifests"] = [{"filename": m} for m in r["manifests"]]
-        return [models.CloudStorageRead._from_openapi_data(**r) for r in results]
-
     @pytest.mark.parametrize(
         "field",
         ("provider_type", "name", "resource", "credentials_type", "owner"),
@@ -160,22 +165,32 @@ class TestPostCloudStorage:
     ]
 
     def _test_can_create(self, user, spec, **kwargs):
-        response = post_method(user, "cloudstorages", spec, **kwargs)
-        response_data = response.json()
-        response_data = response_data.get("results", response_data)
-
-        assert response.status_code == HTTPStatus.CREATED
-        assert (
-            DeepDiff(
-                self._SPEC, response_data, ignore_order=True, exclude_paths=self._EXCLUDE_PATHS
+        with make_api_client(user) as api_client:
+            (_, response) = api_client.cloudstorages_api.create(
+                models.CloudStorageWriteRequest(**spec),
+                **kwargs,
+                _parse_response=False,
+                _check_status=False,
             )
-            == {}
-        )
+            assert response.status == HTTPStatus.CREATED
+            response_json = json.loads(response.data)
+
+            assert (
+                DeepDiff(
+                    self._SPEC, response_json, ignore_order=True, exclude_paths=self._EXCLUDE_PATHS
+                )
+                == {}
+            )
 
     def _test_cannot_create(self, user, spec, **kwargs):
-        response = post_method(user, "cloudstorages", spec, **kwargs)
-
-        assert response.status_code == HTTPStatus.FORBIDDEN
+        with make_api_client(user) as api_client:
+            (_, response) = api_client.cloudstorages_api.create(
+                models.CloudStorageWriteRequest(**spec),
+                **kwargs,
+                _parse_response=False,
+                _check_status=False,
+            )
+            assert response.status == HTTPStatus.FORBIDDEN
 
     @pytest.mark.parametrize("group, is_allow", [("user", True), ("worker", False)])
     def test_sandbox_user_create_cloud_storage(self, group, is_allow, users):
@@ -241,22 +256,32 @@ class TestPatchCloudStorage:
     ]
 
     def _test_can_update(self, user, storage_id, spec, **kwargs):
-        response = patch_method(user, f"cloudstorages/{storage_id}", spec, **kwargs)
-        response_data = response.json()
-        response_data = response_data.get("results", response_data)
+        with make_api_client(user) as api_client:
+            (_, response) = api_client.cloudstorages_api.partial_update(
+                id=storage_id,
+                patched_cloud_storage_write_request=models.PatchedCloudStorageWriteRequest(**spec),
+                **kwargs,
+                _parse_response=False,
+                _check_status=False,
+            )
+            assert response.status == HTTPStatus.OK
+            response_json = json.loads(response.data)
 
-        assert response.status_code == HTTPStatus.OK
-        assert (
-            DeepDiff(spec, response_data, ignore_order=True, exclude_paths=self._EXCLUDE_PATHS)
-            == {}
-        )
-
-        assert response.status_code == HTTPStatus.OK
+            assert (
+                DeepDiff(spec, response_json, ignore_order=True, exclude_paths=self._EXCLUDE_PATHS)
+                == {}
+            )
 
     def _test_cannot_update(self, user, storage_id, spec, **kwargs):
-        response = patch_method(user, f"cloudstorages/{storage_id}", spec, **kwargs)
-
-        assert response.status_code == HTTPStatus.FORBIDDEN
+        with make_api_client(user) as api_client:
+            (_, response) = api_client.cloudstorages_api.partial_update(
+                id=storage_id,
+                patched_cloud_storage_write_request=models.PatchedCloudStorageWriteRequest(**spec),
+                **kwargs,
+                _parse_response=False,
+                _check_status=False,
+            )
+            assert response.status == HTTPStatus.FORBIDDEN
 
     @pytest.mark.parametrize("storage_id", [1])
     @pytest.mark.parametrize(
@@ -324,16 +349,27 @@ class TestPatchCloudStorage:
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetCloudStoragePreview:
     def _test_can_see(self, user, storage_id, **kwargs):
-        response = get_method(user, f"cloudstorages/{storage_id}/preview", **kwargs)
+        with make_api_client(user) as api_client:
+            (_, response) = api_client.cloudstorages_api.retrieve_preview(
+                id=storage_id,
+                **kwargs,
+                _parse_response=False,
+                _check_status=False,
+            )
+            assert response.status == HTTPStatus.OK
 
-        assert response.status_code == HTTPStatus.OK
-        (width, height) = Image.open(io.BytesIO(response.content)).size
-        assert width > 0 and height > 0
+            (width, height) = Image.open(io.BytesIO(response.data)).size
+            assert width > 0 and height > 0
 
     def _test_cannot_see(self, user, storage_id, **kwargs):
-        response = get_method(user, f"cloudstorages/{storage_id}/preview", **kwargs)
-
-        assert response.status_code == HTTPStatus.FORBIDDEN
+        with make_api_client(user) as api_client:
+            (_, response) = api_client.cloudstorages_api.retrieve_preview(
+                id=storage_id,
+                **kwargs,
+                _parse_response=False,
+                _check_status=False,
+            )
+            assert response.status == HTTPStatus.FORBIDDEN
 
     @pytest.mark.parametrize("storage_id", [1])
     @pytest.mark.parametrize(

@@ -13,7 +13,8 @@ import Spin from 'antd/lib/spin';
 import Text from 'antd/lib/typography/Text';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { CombinedState, DimensionType } from 'reducers';
+import { CombinedState } from 'reducers';
+import { DimensionType } from 'cvat-core-wrapper';
 import { showStatistics } from 'actions/annotation-actions';
 
 interface StateToProps {
@@ -86,7 +87,7 @@ function StatisticsModalComponent(props: StateToProps & DispatchToProps): JSX.El
         dimension,
     } = props;
 
-    const is2D = dimension === DimensionType.DIM_2D;
+    const is2D = dimension === DimensionType.DIMENSION_2D;
 
     const baseProps = {
         cancelButtonProps: { style: { display: 'none' } },

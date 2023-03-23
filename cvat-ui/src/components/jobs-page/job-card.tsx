@@ -37,7 +37,6 @@ function JobCardComponent(props: Props): JSX.Element {
     const onClick = (event: React.MouseEvent): void => {
         const url = `/tasks/${job.taskId}/jobs/${job.id}`;
         if (event.ctrlKey) {
-            // eslint-disable-next-line security/detect-non-literal-fs-filename
             window.open(url, '_blank', 'noopener noreferrer');
         } else {
             history.push(url);
@@ -85,8 +84,6 @@ function JobCardComponent(props: Props): JSX.Element {
                     } else if (action.key === 'project') {
                         history.push(`/projects/${job.projectId}`);
                     } else if (action.key === 'bug_tracker') {
-                        // false alarm
-                        // eslint-disable-next-line security/detect-non-literal-fs-filename
                         window.open(job.bugTracker, '_blank', 'noopener noreferrer');
                     }
                 }}
