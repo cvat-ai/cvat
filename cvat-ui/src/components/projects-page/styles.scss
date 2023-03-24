@@ -142,6 +142,9 @@
         font-size: $grid-unit-size * 15;
         text-align: center;
         height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
 
         svg {
             width: 80%;
@@ -159,6 +162,10 @@
         &:hover {
             cursor: pointer;
         }
+    }
+
+    .cvat-project-item-loading-preview {
+        padding-top: $grid-unit-size * 3;
     }
 
     .cvat-projects-project-item-title {
