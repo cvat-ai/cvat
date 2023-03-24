@@ -11,7 +11,7 @@ import django_rq
 import requests
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models.signals import post_delete, post_save, pre_save
+from django.db.models.signals import pre_delete, post_save, pre_save
 from django.dispatch import Signal, receiver
 
 from cvat.apps.engine.models import Comment, Issue, Job, Label, Project, Task
@@ -31,7 +31,7 @@ RESPONSE_SIZE_LIMIT = 1 * 1024 * 1024  # 1 MB
 signal_redelivery = Signal()
 signal_ping = Signal()
 
-def send_webhook(webhook, payload, delivery):
+def send_webhook(webhook, payload, redelivery=False):
     headers = {}
     if webhook.secret:
         headers["X-Signature-256"] = (
@@ -63,28 +63,24 @@ def send_webhook(webhook, payload, delivery):
     except requests.Timeout:
         status_code = HTTPStatus.GATEWAY_TIMEOUT
 
-    delivery.status_code = status_code
+    response = ""
     if response_body is not None and len(response_body) < RESPONSE_SIZE_LIMIT + 1:
-        delivery.response = response_body.decode("utf-8")
+        response = response_body.decode("utf-8")
 
-    delivery.save()
-
-
-def add_to_queue(webhook, payload, redelivery=False):
-    delivery = WebhookDelivery.objects.create(
+    WebhookDelivery.objects.create(
         webhook_id=webhook.id,
         event=payload["event"],
-        status_code=None,
+        status_code=status_code,
         changed_fields=",".join(list(payload.get("before_update", {}).keys())),
         redelivery=redelivery,
         request=payload,
-        response="",
+        response=response,
     )
 
-    queue = django_rq.get_queue(settings.CVAT_QUEUES.WEBHOOKS.value)
-    queue.enqueue_call(func=send_webhook, args=(webhook, payload, delivery))
 
-    return delivery
+def add_to_queue(webhook, payload, redelivery=False):
+    queue = django_rq.get_queue(settings.CVAT_QUEUES.WEBHOOKS.value)
+    queue.enqueue_call(func=send_webhook, args=(webhook, payload, redelivery))
 
 
 def batch_add_to_queue(webhooks, data):
@@ -203,15 +199,15 @@ def resource_create(sender, instance, created, **kwargs):
     batch_add_to_queue(filtered_webhooks, data)
 
 
-@receiver(post_delete, sender=Project, dispatch_uid="project:delete")
-@receiver(post_delete, sender=Task, dispatch_uid="task:delete")
-@receiver(post_delete, sender=Job, dispatch_uid="job:delete")
-@receiver(post_delete, sender=Label, dispatch_uid="label:delete")
-@receiver(post_delete, sender=Issue, dispatch_uid="issue:delete")
-@receiver(post_delete, sender=Comment, dispatch_uid="comment:delete")
-@receiver(post_delete, sender=Organization, dispatch_uid="organization:delete")
-@receiver(post_delete, sender=Invitation, dispatch_uid="invitation:delete")
-@receiver(post_delete, sender=Membership, dispatch_uid="membership:delete")
+@receiver(pre_delete, sender=Project, dispatch_uid="project:delete")
+@receiver(pre_delete, sender=Task, dispatch_uid="task:delete")
+@receiver(pre_delete, sender=Job, dispatch_uid="job:delete")
+@receiver(pre_delete, sender=Label, dispatch_uid="label:delete")
+@receiver(pre_delete, sender=Issue, dispatch_uid="issue:delete")
+@receiver(pre_delete, sender=Comment, dispatch_uid="comment:delete")
+@receiver(pre_delete, sender=Organization, dispatch_uid="organization:delete")
+@receiver(pre_delete, sender=Invitation, dispatch_uid="invitation:delete")
+@receiver(pre_delete, sender=Membership, dispatch_uid="membership:delete")
 def resource_delete(sender, instance, **kwargs):
     resource_name = instance.__class__.__name__.lower()
 
@@ -220,9 +216,6 @@ def resource_delete(sender, instance, **kwargs):
         return
 
     filtered_webhooks = select_webhooks(instance, event_type)
-    if not filtered_webhooks:
-        return
-
     serializer = _get_serializer(instance=instance)
 
     data = {
@@ -235,14 +228,12 @@ def resource_delete(sender, instance, **kwargs):
 
     # Clean up webhook objects
     if resource_name == "project":
-        for webhook in filtered_webhooks:
-            if webhook.project_id == instance.id:
-                webhook.delete()
+        for webhook in Webhook.objects.filter(project_id=instance.id):
+            webhook.delete()
 
     if resource_name == "organization":
-        for webhook in filtered_webhooks:
-            if webhook.organization_id == instance.id:
-                webhook.delete()
+        for webhook in Webhook.objects.filter(organization_id=instance.id):
+            webhook.delete()
 
 
 @receiver(signal_redelivery)
@@ -253,5 +244,4 @@ def redelivery(sender, data=None, **kwargs):
 @receiver(signal_ping)
 def ping(sender, serializer, **kwargs):
     data = {"event": "ping", "webhook": serializer.data, "sender": get_sender(serializer.instance)}
-    delivery = add_to_queue(serializer.instance, data)
-    return delivery
+    add_to_queue(serializer.instance, data)

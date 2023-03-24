@@ -57,10 +57,10 @@ class Webhook(models.Model):
         User, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
     )
     project = models.ForeignKey(
-        Project, null=True, on_delete=models.DO_NOTHING, related_name="+"
+        Project, null=True, on_delete=models.DO_NOTHING, related_name="+", db_constraint=False
     )
     organization = models.ForeignKey(
-        Organization, null=True, on_delete=models.DO_NOTHING, related_name="+"
+        Organization, null=True, on_delete=models.DO_NOTHING, related_name="+", db_constraint=False
     )
 
     class Meta:
