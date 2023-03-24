@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Moving a task from a project to another project is disabled (<https://github.com/opencv/cvat/pull/5901>)
+- In skeleton annotation wrapping rectangle is visible only when a skeleton is activated (<https://github.com/opencv/cvat/pull/5911>)
 
 ### Deprecated
 - TDB
