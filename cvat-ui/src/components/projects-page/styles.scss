@@ -141,7 +141,24 @@
 
         font-size: $grid-unit-size * 15;
         text-align: center;
-        height: $grid-unit-size * 24;
+        height: 100%;
+
+        svg {
+            width: 80%;
+            height: 80%;
+        }
+
+        .anticon {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        &:hover {
+            cursor: pointer;
+        }
     }
 
     .cvat-projects-project-item-title {
