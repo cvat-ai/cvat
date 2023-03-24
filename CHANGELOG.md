@@ -5,7 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## \[2.4.0] - Unreleased
+## \[2.5.0] - Unreleased
+### Added
+- Add support for Azure Blob Storage connection string authentication(<https://github.com/openvinotoolkit/cvat/pull/4649>)
+
+### Changed
+- Moving a task from a project to another project is disabled (<https://github.com/opencv/cvat/pull/5901>)
+
+### Deprecated
+- TDB
+
+### Removed
+- TDB
+
+### Fixed
+- An invalid project/org handling in webhooks (<https://github.com/opencv/cvat/pull/5707>)
+- Warning `key` is undefined on project page (<https://github.com/opencv/cvat/pull/5876>)
+- Invalid mask when running automatic annotation on a task (<https://github.com/opencv/cvat/pull/5883>)
+- Option 'Reset zoom' now restored as user specified when reload CVAT (<https://github.com/opencv/cvat/pull/5908>)
+- Cloud storage content listing when the manifest name contains special characters
+  (<https://github.com/opencv/cvat/pull/5873>)
+- Width and height in CVAT dataset format mask annotations (<https://github.com/opencv/cvat/pull/5905>)
+- Empty list of export formats for a project without tasks (<https://github.com/opencv/cvat/pull/5899>)
+- Downgrade NumPy used by HRNet because `np.int` is no longer available (<https://github.com/opencv/cvat/pull/5574>)
+- Make empty previews responsive to page resize <https://github.com/opencv/cvat/pull/5925>
+
+### Security
+- TDB
+
+## \[2.4.0] - 2023-03-16
 ### Added
 - \[SDK\] An arg to wait for data processing in the task data uploading function
   (<https://github.com/opencv/cvat/pull/5502>)
@@ -84,7 +112,6 @@ Tracks can be exported/imported to/from Datumaro and Sly Pointcloud formats (<ht
 - Added missing `CVAT_BASE_URL` in docker-compose.yml (<https://github.com/opencv/cvat/pull/5792>)
 - Create cloud storage button size and models pagination (<https://github.com/opencv/cvat/pull/5858>)
 
-
 ### Security
 - Fixed vulnerability with social authentication (<https://github.com/opencv/cvat/pull/5521>)
 
@@ -98,8 +125,8 @@ Tracks can be exported/imported to/from Datumaro and Sly Pointcloud formats (<ht
 - Objects sorting option in the sidebar, by z-order. Additional visualization when sorting is applied
 (<https://github.com/opencv/cvat/pull/5145>)
 - Added YOLOv5 serverless function with NVIDIA GPU support (<https://github.com/opencv/cvat/pull/4960>)
-- Mask tools now supported (brush, eraser, polygon-plus, 
-polygon-minus, returning masks from online detectors & interactors) 
+- Mask tools now supported (brush, eraser, polygon-plus,
+polygon-minus, returning masks from online detectors & interactors)
 (<https://github.com/opencv/cvat/pull/4543>)
 - Added Webhooks (<https://github.com/opencv/cvat/pull/4863>)
 - Authentication with social accounts: Google & GitHub (<https://github.com/opencv/cvat/pull/5147>, <https://github.com/opencv/cvat/pull/5181>, <https://github.com/opencv/cvat/pull/5295>)
@@ -194,7 +221,6 @@ non-ascii paths while adding files from "Connected file share" (issue #4428)
 ### Security
 - `Project.import_dataset` not waiting for completion correctly
   (<https://github.com/opencv/cvat/pull/5459>)
-
 
 ## \[2.2.0] - 2022-09-12
 ### Added

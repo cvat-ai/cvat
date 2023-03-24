@@ -795,8 +795,8 @@ def dump_as_cvat_annotation(dumper, annotations):
                         ("rle", f"{list(int (v) for v in shape.points[:-4])}"[1:-1]),
                         ("left", f"{int(shape.points[-4])}"),
                         ("top", f"{int(shape.points[-3])}"),
-                        ("width", f"{int(shape.points[-2] - shape.points[-4])}"),
-                        ("height", f"{int(shape.points[-1] - shape.points[-3])}"),
+                        ("width", f"{int(shape.points[-2] - shape.points[-4]) + 1}"),
+                        ("height", f"{int(shape.points[-1] - shape.points[-3]) + 1}"),
                     ]))
                 elif shape.type != 'skeleton':
                     dump_data.update(OrderedDict([
@@ -933,8 +933,8 @@ def dump_as_cvat_interpolation(dumper, annotations):
                 ("rle", f"{list(int (v) for v in shape.points[:-4])}"[1:-1]),
                 ("left", f"{int(shape.points[-4])}"),
                 ("top", f"{int(shape.points[-3])}"),
-                ("width", f"{int(shape.points[-2] - shape.points[-4])}"),
-                ("height", f"{int(shape.points[-1] - shape.points[-3])}"),
+                ("width", f"{int(shape.points[-2] - shape.points[-4]) + 1}"),
+                ("height", f"{int(shape.points[-1] - shape.points[-3]) + 1}"),
             ]))
         elif shape.type == "cuboid":
             dump_data.update(OrderedDict([
@@ -1293,8 +1293,8 @@ def load_anno(file_object, annotations):
                     shape['points'] = el.attrib['rle'].split(',')
                     shape['points'].append(el.attrib['left'])
                     shape['points'].append(el.attrib['top'])
-                    shape['points'].append("{}".format(int(el.attrib['left']) + int(el.attrib['width'])))
-                    shape['points'].append("{}".format(int(el.attrib['top']) + int(el.attrib['height'])))
+                    shape['points'].append("{}".format(int(el.attrib['left']) + int(el.attrib['width']) - 1))
+                    shape['points'].append("{}".format(int(el.attrib['top']) + int(el.attrib['height']) - 1))
                 elif el.tag == 'cuboid':
                     shape['points'].append(el.attrib['xtl1'])
                     shape['points'].append(el.attrib['ytl1'])
