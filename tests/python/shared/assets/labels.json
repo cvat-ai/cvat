@@ -1,5 +1,5 @@
 {
-  "count": 33,
+  "count": 35,
   "next": null,
   "previous": null,
   "results": [
@@ -632,6 +632,62 @@
       "project_id": 13,
       "sublabels": [],
       "type": "any"
+    },
+    {
+      "attributes": [],
+      "color": "#6080c0",
+      "has_parent": false,
+      "id": 57,
+      "name": "cat",
+      "parent_id": null,
+      "sublabels": [],
+      "task_id": 21,
+      "type": "any"
+    },
+    {
+      "attributes": [],
+      "color": "#2b3145",
+      "has_parent": false,
+      "id": 58,
+      "name": "skeleton1",
+      "parent_id": null,
+      "sublabels": [
+        {
+          "attributes": [],
+          "color": "#d12345",
+          "has_parent": true,
+          "id": 59,
+          "name": "1",
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#350dea",
+          "has_parent": true,
+          "id": 60,
+          "name": "2",
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#479ffe",
+          "has_parent": true,
+          "id": 61,
+          "name": "3",
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#4a649f",
+          "has_parent": true,
+          "id": 62,
+          "name": "4",
+          "type": "points"
+        }
+      ],
+      "svg": "<line x1=\"53.07773208618164\" y1=\"29.821428298950195\" x2=\"32.909664154052734\" y2=\"59.905460357666016\" stroke=\"black\" data-type=\"edge\" data-node-from=\"3\" stroke-width=\"0.5\" data-node-to=\"2\"></line><line x1=\"69.71638488769531\" y1=\"68.30882263183594\" x2=\"53.07773208618164\" y2=\"29.821428298950195\" stroke=\"black\" data-type=\"edge\" data-node-from=\"4\" stroke-width=\"0.5\" data-node-to=\"3\"></line><line x1=\"31.060924530029297\" y1=\"35.871849060058594\" x2=\"69.71638488769531\" y2=\"68.30882263183594\" stroke=\"black\" data-type=\"edge\" data-node-from=\"1\" stroke-width=\"0.5\" data-node-to=\"4\"></line><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"31.060924530029297\" cy=\"35.871849060058594\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-id=\"59\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"32.909664154052734\" cy=\"59.905460357666016\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-id=\"60\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"53.07773208618164\" cy=\"29.821428298950195\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"3\" data-node-id=\"3\" data-label-id=\"61\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"69.71638488769531\" cy=\"68.30882263183594\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"4\" data-node-id=\"4\" data-label-id=\"62\"></circle>",
+      "task_id": 21,
+      "type": "skeleton"
     }
   ]
 }

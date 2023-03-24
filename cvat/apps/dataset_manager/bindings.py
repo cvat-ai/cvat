@@ -333,7 +333,7 @@ class CommonData(InstanceLabelData):
     def _export_track(self, track, idx):
         track['shapes'] = list(filter(lambda x: not self._is_frame_deleted(x['frame']), track['shapes']))
         tracked_shapes = TrackManager.get_interpolated_shapes(
-            track, 0, len(self), self._annotation_ir.dimension)
+            track, 0, self._db_task.data.size, self._annotation_ir.dimension)
         for tracked_shape in tracked_shapes:
             tracked_shape["attributes"] += track["attributes"]
             tracked_shape["track_id"] = idx
@@ -385,7 +385,7 @@ class CommonData(InstanceLabelData):
                     get_frame(idx)
 
         anno_manager = AnnotationManager(self._annotation_ir)
-        for shape in sorted(anno_manager.to_shapes(len(self), self._annotation_ir.dimension),
+        for shape in sorted(anno_manager.to_shapes(self._db_task.data.size, self._annotation_ir.dimension),
                 key=lambda shape: shape.get("z_order", 0)):
             shape_data = ''
             if shape['frame'] not in self._frame_info or self._is_frame_deleted(shape['frame']):
