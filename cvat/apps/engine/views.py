@@ -2246,6 +2246,10 @@ def _download_file_from_bucket(db_storage, filename, key):
 
 def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
                         filename=None, location_conf=None, conv_mask_to_poly=True):
+
+    def _is_there_past_non_deleted_job():
+        return rq_job and request.method == 'POST' and (rq_job.is_finished or rq_job.is_failed)
+
     format_desc = {f.DISPLAY_NAME: f
         for f in dm.views.get_import_formats()}.get(format_name)
     if format_desc is None:
@@ -2258,6 +2262,10 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
 
     queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
     rq_job = queue.fetch_job(rq_id)
+
+    if _is_there_past_non_deleted_job():
+        rq_job.delete()
+        rq_job = queue.fetch_job(rq_id)
 
     if not rq_job:
         # If filename is specified we consider that file was uploaded via TUS, so it exists in filesystem
