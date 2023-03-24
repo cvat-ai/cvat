@@ -60,3 +60,14 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{- define "cvat.nuclioEnv" }}
+{{- if .Values.nuclio.enabled }}
+- name: CVAT_SERVERLESS
+  value: "1"
+- name: CVAT_NUCLIO_HOST
+  value: "{{ .Release.Name }}-nuclio-dashboard"
+- name: CVAT_NUCLIO_FUNCTION_NAMESPACE
+  value: "{{ .Release.Namespace }}"
+{{- end }}
+{{- end }}
