@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Moving a task from a project to another project is disabled (<https://github.com/opencv/cvat/pull/5901>)
+- In skeleton annotation wrapping rectangle is visible only when a skeleton is activated (<https://github.com/opencv/cvat/pull/5911>)
 
 ### Deprecated
 - TDB
@@ -27,6 +28,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/opencv/cvat/pull/5873>)
 - Width and height in CVAT dataset format mask annotations (<https://github.com/opencv/cvat/pull/5905>)
 - Empty list of export formats for a project without tasks (<https://github.com/opencv/cvat/pull/5899>)
+- Downgrade NumPy used by HRNet because `np.int` is no longer available (<https://github.com/opencv/cvat/pull/5574>)
+- Make empty previews responsive to page resize <https://github.com/opencv/cvat/pull/5925>
+- Nuclio function invocations when deployed via the Helm chart
+  (<https://github.com/opencv/cvat/issues/5626>)
 
 ### Security
 - TDB
