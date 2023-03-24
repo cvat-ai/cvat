@@ -135,29 +135,7 @@
 
     .cvat-project-item-loading-preview,
     .cvat-project-item-empty-preview {
-        .ant-spin {
-            position: inherit;
-        }
-
-        font-size: $grid-unit-size * 15;
-        text-align: center;
-        height: 100%;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-
-        svg {
-            width: 80%;
-            height: 80%;
-        }
-
-        .anticon {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
+        @extend .cvat-base-preview;
 
         &:hover {
             cursor: pointer;
