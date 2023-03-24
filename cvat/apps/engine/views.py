@@ -26,7 +26,7 @@ import django.db.models as dj_models
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
     OpenApiParameter, OpenApiResponse, PolymorphicProxySerializer,
-    extend_schema_view, extend_schema
+    extend_schema_view, extend_schema, inline_serializer
 )
 from drf_spectacular.plumbing import build_array_type, build_basic_type
 
@@ -61,7 +61,7 @@ from cvat.apps.engine.serializers import (
     UserSerializer, PluginsSerializer, IssueReadSerializer,
     IssueWriteSerializer, CommentReadSerializer, CommentWriteSerializer, CloudStorageWriteSerializer,
     CloudStorageReadSerializer, DatasetFileSerializer,
-    ProjectFileSerializer, TaskFileSerializer)
+    ProjectFileSerializer, TaskFileSerializer, RqIdSerializer)
 
 from utils.dataset_manifest import ImageManifestManager
 from cvat.apps.engine.utils import (
@@ -497,8 +497,10 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             resource_type_field_name=None
         ),
         responses={
-            '201': OpenApiResponse(description='The project has been imported'), # or better specify {id: project_id}
-            '202': OpenApiResponse(description='Importing a backup file has been started'),
+            '201': OpenApiResponse(inline_serializer("ImportedProjectIdSerializer", fields={
+                "id": serializers.IntegerField(required=True),
+            }), description='The project has been imported'),
+            '202': OpenApiResponse(RqIdSerializer, description='Importing a backup file has been started'),
         })
     @action(detail=False, methods=['OPTIONS', 'POST'], url_path=r'backup/?$',
         serializer_class=ProjectFileSerializer(required=False))
@@ -731,8 +733,10 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         ],
         request=TaskFileSerializer(required=False),
         responses={
-            '201': OpenApiResponse(description='The task has been imported'), # or better specify {id: task_id}
-            '202': OpenApiResponse(description='Importing a backup file has been started'),
+            '201': OpenApiResponse(inline_serializer("ImportedTaskIdSerializer", fields={
+                "id": serializers.IntegerField(required=True),
+            }), description='The task has been imported'),
+            '202': OpenApiResponse(RqIdSerializer, description='Importing a backup file has been started'),
         })
     @action(detail=False, methods=['OPTIONS', 'POST'], url_path=r'backup/?$', serializer_class=TaskFileSerializer(required=False))
     def import_backup(self, request, pk=None):
