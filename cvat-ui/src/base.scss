@@ -43,3 +43,29 @@ $box-shadow-base: 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 6px 16px 0 rgba(0, 0, 0,
 
 $monospaced-fonts-stack: Consolas, Monaco, Lucida Console, Liberation Mono, DejaVu Sans Mono, Bitstream Vera Sans Mono,
     Courier New, monospace;
+
+.cvat-base-preview {
+    .ant-spin {
+        position: inherit;
+    }
+
+    font-size: $grid-unit-size * 15;
+    text-align: center;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    svg {
+        width: 65%;
+        height: 65%;
+    }
+
+    .anticon {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+}
