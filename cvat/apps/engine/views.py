@@ -257,7 +257,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         )
 
     def perform_destroy(self, instance):
-        # Explicitly delete related Jobs due to optimization
+        # Explicitly delete related Jobs to avoid extra DB queries in signal handler
         Job.objects.prefetch_related('segment__task').filter(segment__task__project_id=instance.id).delete()
 
         super().perform_destroy(instance)
@@ -804,7 +804,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             assert serializer.instance.organization == db_project.organization
 
     def perform_destroy(self, instance):
-        # Explicitly delete related Jobs due to optimization
+        # Explicitly delete related Jobs to avoid extra DB queries in signal handler
         Job.objects.prefetch_related('segment__task').filter(segment__task_id=instance.id).delete()
 
         super().perform_destroy(instance)
