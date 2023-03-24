@@ -434,10 +434,6 @@ class TrackManager(ObjectManager):
                 for shape in element_shapes:
                     track_shapes[shape["frame"]]["elements"].append(shape)
 
-                for frame, shape in list(track_shapes.items()):
-                    if all([el["outside"] for el in shape["elements"]]):
-                        track_shapes.pop(frame)
-
             shapes.extend(list(track_shapes.values()))
         return shapes
 
@@ -831,7 +827,8 @@ class TrackManager(ObjectManager):
                 for attr in prev_shape["attributes"]:
                     if attr["spec_id"] not in map(lambda el: el["spec_id"], shape["attributes"]):
                         shape["attributes"].append(deepcopy(attr))
-                shapes.extend(interpolate(prev_shape, shape))
+                if not prev_shape["outside"]:
+                    shapes.extend(interpolate(prev_shape, shape))
 
             shape["keyframe"] = True
             shapes.append(shape)
