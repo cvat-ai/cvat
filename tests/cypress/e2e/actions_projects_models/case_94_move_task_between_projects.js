@@ -18,7 +18,7 @@ context('Move a task between projects.', () => {
         name: `Second project case ${caseID}`,
         label: 'bicycle',
         attrName: 'color',
-        attrVaue: 'yellow',
+        attrVaue: 'red',
         multiAttrParams: false,
     };
 
@@ -104,7 +104,18 @@ context('Move a task between projects.', () => {
     });
 
     describe(`Testing "Case ${caseID}"`, () => {
-        it('Move a task between projects from a project.', () => {
+        it('Check not able to move a task from one project to another.', () => {
+            checkTask(secondProject.name, 'not.exist');
+            checkTask(firtsProject.name, 'exist');
+            cy.contains('.cvat-item-open-task-actions', 'Actions').click();
+            cy.get('.cvat-actions-menu')
+                .should('be.visible')
+                .find('[role="menuitem"]')
+                .filter(':contains("Move to project")')
+                .should('not.exist');
+        });
+
+        it.skip('Move a task between projects from a project.', () => {
             checkTask(secondProject.name, 'not.exist');
             checkTask(firtsProject.name, 'exist');
             cy.movingTask(taskName, secondProject.name, firtsProject.label, secondProject.label);
@@ -112,14 +123,14 @@ context('Move a task between projects.', () => {
             checkTask(secondProject.name, 'exist');
         });
 
-        it('Move a task between projects from task list.', () => {
+        it.skip('Move a task between projects from task list.', () => {
             cy.goToTaskList();
             cy.movingTask(taskName, secondProject.name, firtsProject.label, secondProject.label);
             checkTask(firtsProject.name, 'not.exist');
             checkTask(secondProject.name, 'exist');
         });
 
-        it('Move a task between projects from a task.', () => {
+        it.skip('Move a task between projects from a task.', () => {
             cy.goToTaskList();
             cy.openTask(taskName);
             cy.movingTask(taskName, secondProject.name, firtsProject.label, secondProject.label, true);

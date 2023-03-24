@@ -5,6 +5,7 @@
 import { getCore } from 'cvat-core-wrapper';
 import { LogType } from 'cvat-logger';
 import config from 'config';
+import { platformInfo } from 'utils/platform-checker';
 
 const core = getCore();
 const { CONTROLS_LOGS_INTERVAL } = config;
@@ -16,6 +17,10 @@ class EventRecorder {
     #savingInterval: number | null;
     public constructor() {
         this.#savingInterval = null;
+        core.logger.log(LogType.loadTool, {
+            location: window.location.pathname + window.location.search,
+            platform: platformInfo(),
+        });
     }
 
     public log(event: MouseEvent): void {
@@ -29,13 +34,14 @@ class EventRecorder {
 
         const logData = {
             text: element.innerText,
-            classes: element.className,
+            classes: this.filterClassName(element.className),
+            location: window.location.pathname + window.location.search,
         };
 
         if (!toRecord && element.parentElement) {
             element = element.parentElement;
             toRecord = this.isEventToBeRecorded(element, parentClassFilter);
-            logData.classes = element.className;
+            logData.classes = this.filterClassName(element.className);
         }
 
         if (toRecord) {
@@ -48,6 +54,14 @@ class EventRecorder {
         this.#savingInterval = setInterval(() => {
             core.logger.save();
         }, CONTROLS_LOGS_INTERVAL) as unknown as number;
+    }
+
+    private filterClassName(cls: string): string {
+        if (typeof cls === 'string') {
+            return cls.split(' ').filter((_cls: string) => _cls.startsWith('cvat')).join(' ');
+        }
+
+        return '';
     }
 
     private isEventToBeRecorded(node: HTMLElement, filter: string[]): boolean {

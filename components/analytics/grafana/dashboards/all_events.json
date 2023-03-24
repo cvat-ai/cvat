@@ -196,7 +196,7 @@
         ]
       },
       "gridPos": {
-        "h": 15,
+        "h": 23,
         "w": 24,
         "x": 0,
         "y": 7
@@ -291,12 +291,224 @@
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT * \r\nFROM events \r\nWHERE $__timeFilter(timestamp)\r\nORDER BY timestamp DESC",
+          "rawSql": "SELECT * \r\nFROM events \r\nWHERE $__timeFilter(timestamp)\r\n    AND scope IN (${scopes})\r\n    AND source IN (${sources})\r\n    AND (-1 IN (${users}) OR user_id IN (${users}))\r\n    AND (-1 IN (${organizations}) OR org_id IN (${organizations}))\r\n    AND (-1 IN (${projects}) OR project_id IN (${projects}))\r\n    AND (-1 IN (${tasks}) OR task_id IN (${tasks}))\r\n    AND (-1 IN (${jobs}) OR job_id IN (${jobs}))\r\nORDER BY timestamp DESC\r\nLIMIT 1000",
           "refId": "A"
         }
       ],
       "title": "All events",
       "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PDEE91DDB90597936"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisGridShow": false,
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineWidth": 0,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "percentage",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 12,
+        "x": 0,
+        "y": 30
+      },
+      "id": 6,
+      "options": {
+        "barRadius": 0,
+        "barWidth": 0.51,
+        "groupWidth": 0.7,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "orientation": "horizontal",
+        "showValue": "always",
+        "stacking": "none",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "xField": "browser",
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "builderOptions": {
+            "fields": [],
+            "filters": [],
+            "limit": 100,
+            "mode": "list",
+            "orderBy": [],
+            "table": "events"
+          },
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PDEE91DDB90597936"
+          },
+          "format": 1,
+          "meta": {
+            "builderOptions": {
+              "fields": [],
+              "filters": [],
+              "limit": 100,
+              "mode": "list",
+              "orderBy": [],
+              "table": "events"
+            }
+          },
+          "queryType": "sql",
+          "rawSql": "SELECT\r\n    browser,\r\n    count()\r\nFROM\r\n(\r\n    SELECT\r\n        concat(JSON_VALUE(payload, '$.platform.name'), ' ', JSON_VALUE(payload, '$.platform.version')) AS browser,\r\n        user_id\r\n    FROM cvat.events\r\n    WHERE  $__timeFilter(timestamp) AND (scope = 'load:cvat') AND (browser != ' ')\r\n    GROUP BY\r\n        user_id,\r\n        browser\r\n)\r\nGROUP BY browser\r\nORDER BY count() DESC",
+          "refId": "A"
+        }
+      ],
+      "title": "Browser",
+      "type": "barchart"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PDEE91DDB90597936"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisGridShow": false,
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineWidth": 0,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "percentage",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 12,
+        "x": 12,
+        "y": 30
+      },
+      "id": 8,
+      "options": {
+        "barRadius": 0,
+        "barWidth": 0.51,
+        "groupWidth": 0.7,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "orientation": "horizontal",
+        "showValue": "always",
+        "stacking": "none",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "xField": "os",
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "builderOptions": {
+            "fields": [],
+            "filters": [],
+            "limit": 100,
+            "mode": "list",
+            "orderBy": [],
+            "table": "events"
+          },
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PDEE91DDB90597936"
+          },
+          "format": 1,
+          "meta": {
+            "builderOptions": {
+              "fields": [],
+              "filters": [],
+              "limit": 100,
+              "mode": "list",
+              "orderBy": [],
+              "table": "events"
+            }
+          },
+          "queryType": "sql",
+          "rawSql": "SELECT\r\n    os,\r\n    count()\r\nFROM\r\n(\r\n    SELECT\r\n        JSON_VALUE(payload, '$.platform.os') AS os,\r\n        user_id\r\n    FROM cvat.events\r\n    WHERE  $__timeFilter(timestamp) AND (scope = 'load:cvat') AND (os != '')\r\n    GROUP BY\r\n        user_id,\r\n        os\r\n)\r\nGROUP BY os\r\nORDER BY count() DESC",
+          "refId": "A"
+        }
+      ],
+      "title": "OS",
+      "type": "barchart"
     }
   ],
   "refresh": false,
@@ -320,14 +532,14 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "PDEE91DDB90597936"
         },
-        "definition": "SELECT scope\nFROM events\nWHERE $__timeFilter(timestamp)",
+        "definition": "SELECT DISTINCT scope\nFROM events\nWHERE $__timeFilter(timestamp)",
         "hide": 0,
         "includeAll": true,
         "label": "Scope",
         "multi": true,
         "name": "scopes",
         "options": [],
-        "query": "SELECT scope\nFROM events\nWHERE $__timeFilter(timestamp)",
+        "query": "SELECT DISTINCT scope\nFROM events\nWHERE $__timeFilter(timestamp)",
         "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
@@ -349,14 +561,14 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "PDEE91DDB90597936"
         },
-        "definition": "SELECT source\nFROM events\nWHERE $__timeFilter(timestamp)",
+        "definition": "SELECT DISTINCT source\nFROM events\nWHERE $__timeFilter(timestamp)",
         "hide": 0,
         "includeAll": true,
         "label": "Source",
         "multi": true,
         "name": "sources",
         "options": [],
-        "query": "SELECT source\nFROM events\nWHERE $__timeFilter(timestamp)",
+        "query": "SELECT DISTINCT source\nFROM events\nWHERE $__timeFilter(timestamp)",
         "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
@@ -378,14 +590,14 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "PDEE91DDB90597936"
         },
-        "definition": "SELECT user_id\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND user_id IS NOT NULL",
+        "definition": "SELECT DISTINCT user_id\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND user_id IS NOT NULL",
         "hide": 0,
         "includeAll": true,
         "label": "User",
         "multi": true,
         "name": "users",
         "options": [],
-        "query": "SELECT user_id\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND user_id IS NOT NULL",
+        "query": "SELECT DISTINCT user_id\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND user_id IS NOT NULL",
         "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
@@ -407,14 +619,14 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "PDEE91DDB90597936"
         },
-        "definition": "SELECT project_id\nFROM events\nWHERE  $__timeFilter(timestamp)\n  AND project_id IS NOT NULL",
+        "definition": "SELECT DISTINCT project_id\nFROM events\nWHERE  $__timeFilter(timestamp)\n  AND project_id IS NOT NULL",
         "hide": 0,
         "includeAll": true,
         "label": "Project",
         "multi": true,
         "name": "projects",
         "options": [],
-        "query": "SELECT project_id\nFROM events\nWHERE  $__timeFilter(timestamp)\n  AND project_id IS NOT NULL",
+        "query": "SELECT DISTINCT project_id\nFROM events\nWHERE  $__timeFilter(timestamp)\n  AND project_id IS NOT NULL",
         "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
@@ -436,14 +648,14 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "PDEE91DDB90597936"
         },
-        "definition": "SELECT task_id\nFROM events\nWHERE $__timeFilter(timestamp) \n  AND task_id IS NOT NULL",
+        "definition": "SELECT DISTINCT task_id\nFROM events\nWHERE $__timeFilter(timestamp) \n  AND task_id IS NOT NULL",
         "hide": 0,
         "includeAll": true,
         "label": "Task",
         "multi": true,
         "name": "tasks",
         "options": [],
-        "query": "SELECT task_id\nFROM events\nWHERE $__timeFilter(timestamp) \n  AND task_id IS NOT NULL",
+        "query": "SELECT DISTINCT task_id\nFROM events\nWHERE $__timeFilter(timestamp) \n  AND task_id IS NOT NULL",
         "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
@@ -465,14 +677,14 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "PDEE91DDB90597936"
         },
-        "definition": "SELECT job_id\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND job_id IS NOT NULL",
+        "definition": "SELECT DISTINCT job_id\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND job_id IS NOT NULL",
         "hide": 0,
         "includeAll": true,
         "label": "Job",
         "multi": true,
         "name": "jobs",
         "options": [],
-        "query": "SELECT job_id\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND job_id IS NOT NULL",
+        "query": "SELECT DISTINCT job_id\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND job_id IS NOT NULL",
         "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
@@ -494,14 +706,14 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "PDEE91DDB90597936"
         },
-        "definition": "SELECT org_id\nFROM events\nWHERE $__timeFilter(timestamp)\nAND org_id IS NOT NULL",
+        "definition": "SELECT DISTINCT org_id\nFROM events\nWHERE $__timeFilter(timestamp)\nAND org_id IS NOT NULL",
         "hide": 0,
         "includeAll": true,
         "label": "Organization",
         "multi": true,
         "name": "organizations",
         "options": [],
-        "query": "SELECT org_id\nFROM events\nWHERE $__timeFilter(timestamp)\nAND org_id IS NOT NULL",
+        "query": "SELECT DISTINCT org_id\nFROM events\nWHERE $__timeFilter(timestamp)\nAND org_id IS NOT NULL",
         "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
@@ -511,7 +723,7 @@
     ]
   },
   "time": {
-    "from": "now-2d",
+    "from": "now-7d",
     "to": "now"
   },
   "timepicker": {},

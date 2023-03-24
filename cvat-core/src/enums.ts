@@ -8,11 +8,18 @@ export enum ShareFileType {
     REG = 'REG',
 }
 
+export enum ChunkType {
+    IMAGESET = 'imageset',
+    VIDEO = 'video',
+}
+
 export enum TaskStatus {
     ANNOTATION = 'annotation',
     VALIDATION = 'validation',
     COMPLETED = 'completed',
 }
+
+export type ProjectStatus = TaskStatus;
 
 export enum JobStage {
     ANNOTATION = 'annotation',
@@ -76,6 +83,8 @@ export enum Source {
 }
 
 export enum LogType {
+    loadTool = 'load:cvat',
+
     loadJob = 'load:job',
     saveJob = 'save:job',
     restoreJob = 'restore:job',

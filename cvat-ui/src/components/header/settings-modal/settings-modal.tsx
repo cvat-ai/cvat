@@ -1,9 +1,11 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useEffect } from 'react';
+import _ from 'lodash';
+import React, { useCallback, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import Tabs from 'antd/lib/tabs';
 import Text from 'antd/lib/typography/Text';
@@ -29,34 +31,36 @@ const SettingsModal = (props: SettingsModalProps): JSX.Element => {
     const settings = useSelector((state: CombinedState) => state.settings);
     const dispatch = useDispatch();
 
-    const onSaveSettings = (): void => {
+    const onSaveSettings = useCallback(() => {
         const settingsForSaving: any = {};
         for (const [key, value] of Object.entries(settings)) {
-            if (typeof value === 'object') {
+            if (['player', 'workspace'].includes(key)) {
                 settingsForSaving[key] = value;
             }
         }
+
         localStorage.setItem('clientSettings', JSON.stringify(settingsForSaving));
         notification.success({
-            message: 'Settings was successfully saved',
+            message: 'Settings were successfully saved',
             className: 'cvat-notification-notice-save-settings-success',
         });
-    };
+
+        onClose();
+    }, [onClose, settings]);
 
     useEffect(() => {
         try {
-            const newSettings: any = {};
+            const newSettings = _.pick(settings, 'player', 'workspace');
             const settingsString = localStorage.getItem('clientSettings') as string;
             if (!settingsString) return;
             const loadedSettings = JSON.parse(settingsString);
-            for (const [sectionKey, section] of Object.entries(settings)) {
+            for (const [sectionKey, section] of Object.entries(newSettings)) {
                 for (const [key, value] of Object.entries(section)) {
                     let settedValue = value;
                     if (sectionKey in loadedSettings && key in loadedSettings[sectionKey]) {
                         settedValue = loadedSettings[sectionKey][key];
+                        Object.defineProperty(newSettings[(sectionKey as 'player' | 'workspace')], key, { value: settedValue });
                     }
-                    if (!(sectionKey in newSettings)) newSettings[sectionKey] = {};
-                    newSettings[sectionKey][key] = settedValue;
                 }
             }
             dispatch(setSettings(newSettings));
@@ -77,12 +81,12 @@ const SettingsModal = (props: SettingsModalProps): JSX.Element => {
             className='cvat-settings-modal'
             footer={(
                 <>
-                    <Tooltip title='Will save settings from this page and appearance settings on standard workspace page in browser'>
-                        <Button type='primary' onClick={onSaveSettings}>
+                    <Tooltip title='Will save settings to restore them after the app is reopened'>
+                        <Button className='cvat-save-settings-button' type='primary' onClick={onSaveSettings}>
                             Save
                         </Button>
                     </Tooltip>
-                    <Button type='default' onClick={onClose}>
+                    <Button className='cvat-close-settings-button' type='default' onClick={onClose}>
                         Close
                     </Button>
                 </>

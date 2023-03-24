@@ -956,6 +956,28 @@ class ProjectDeleteAPITestCase(APITestCase):
     def test_api_v2_projects_id_no_auth(self):
         self._check_api_v2_projects_id(None)
 
+    def test_api_v2_projects_delete_project_data_after_delete_project(self):
+        tasks = {}
+        for project in self.projects:
+            tasks[project.name] = create_dummy_db_tasks(self.__class__, project)
+
+            project_dir = project.get_dirname()
+            self.assertTrue(os.path.exists(project_dir))
+
+            for task in tasks[project.name]:
+                task_dir = task.get_dirname()
+                self.assertTrue(os.path.exists(task_dir))
+
+        self._check_api_v2_projects_id(self.admin)
+
+        for project in self.projects:
+            project_dir = project.get_dirname()
+            self.assertFalse(os.path.exists(project_dir))
+
+            for task in tasks[project.name]:
+                task_dir = task.get_dirname()
+                self.assertFalse(os.path.exists(task_dir))
+
 class ProjectCreateAPITestCase(APITestCase):
     def setUp(self):
         self.client = APIClient()
@@ -967,6 +989,14 @@ class ProjectCreateAPITestCase(APITestCase):
     def _run_api_v2_projects(self, user, data):
         with ForceLogin(user, self.client):
             response = self.client.post('/api/projects', data=data, format="json")
+
+            if 200 <= response.status_code < 400:
+                labels_response = list(get_paginated_collection(
+                    lambda page: self.client.get(
+                        "/api/labels?project_id=%s&page=%s" % (response.data["id"], page)
+                    )
+                ))
+                response.data["labels"] = labels_response
 
         return response
 
@@ -1062,6 +1092,12 @@ class ProjectPartialUpdateAPITestCase(APITestCase):
         with ForceLogin(user, self.client):
             response = self.client.patch('/api/projects/{}'.format(pid),
                 data=data, format="json")
+
+            if 200 <= response.status_code < 400:
+                labels_response = list(get_paginated_collection(
+                    lambda page: self.client.get("/api/labels?project_id=%s&page=%s" % (pid, page))
+                ))
+                response.data["labels"] = labels_response
 
         return response
 
@@ -1196,6 +1232,12 @@ class ProjectUpdateLabelsAPITestCase(UpdateLabelsAPITestCase):
         with ForceLogin(user, self.client):
             response = self.client.patch('/api/projects/{}'.format(pid),
                 data=data, format="json")
+
+            if 200 <= response.status_code < 400:
+                labels_response = list(get_paginated_collection(
+                    lambda page: self.client.get("/api/labels?project_id=%s&page=%s" % (pid, page))
+                ))
+                response.data["labels"] = labels_response
 
         return response
 
@@ -1932,6 +1974,14 @@ class TaskGetAPITestCase(APITestCase):
         with ForceLogin(user, self.client):
             response = self.client.get('/api/tasks/{}'.format(tid))
 
+            if 200 <= response.status_code < 400:
+                labels_response = list(get_paginated_collection(
+                    lambda page: self.client.get(
+                        "/api/labels?task_id=%s&page=%s" % (tid, page)
+                    )
+                ))
+                response.data["labels"] = labels_response
+
         return response
 
     def _check_response(self, response, db_task):
@@ -2108,6 +2158,12 @@ class TaskPartialUpdateAPITestCase(APITestCase):
         with ForceLogin(user, self.client):
             response = self.client.patch('/api/tasks/{}'.format(tid),
                 data=data, format="json")
+
+            if 200 <= response.status_code < 400:
+                labels_response = list(get_paginated_collection(
+                    lambda page: self.client.get("/api/labels?task_id=%s&page=%s" % (tid, page))
+                ))
+                response.data["labels"] = labels_response
 
         return response
 
@@ -2286,6 +2342,12 @@ class TaskUpdateLabelsAPITestCase(UpdateLabelsAPITestCase):
             response = self.client.patch('/api/tasks/{}'.format(tid),
                 data=data, format="json")
 
+            if 200 <= response.status_code < 400:
+                labels_response = list(get_paginated_collection(
+                    lambda page: self.client.get("/api/labels?task_id=%s&page=%s" % (tid, page))
+                ))
+                response.data["labels"] = labels_response
+
         return response
 
     def test_api_v2_tasks_create_label(self):
@@ -2333,7 +2395,14 @@ class TaskMoveAPITestCase(APITestCase):
             "name": "Project for task move 1",
             "owner": cls.admin,
             "labels": [{
-                "name": "car"
+                "name": "car",
+                "attributes": [{
+                    "name": "color",
+                    "mutable": False,
+                    "input_type": AttributeType.SELECT,
+                    "default_value": "white",
+                    "values": ["white", "yellow", "green", "red"]
+                }]
             }, {
                 "name": "person"
             }]
@@ -2521,6 +2590,14 @@ class TaskCreateAPITestCase(APITestCase):
     def _run_api_v2_tasks(self, user, data):
         with ForceLogin(user, self.client):
             response = self.client.post('/api/tasks', data=data, format="json")
+
+            if 200 <= response.status_code < 400:
+                labels_response = list(get_paginated_collection(
+                    lambda page: self.client.get(
+                        "/api/labels?task_id=%s&page=%s" % (response.data["id"], page)
+                    )
+                ))
+                response.data["labels"] = labels_response
 
         return response
 
@@ -4241,6 +4318,14 @@ class JobAnnotationAPITestCase(APITestCase):
 
             response = self.client.get("/api/tasks/{}".format(tid))
             task = response.data
+
+            if 200 <= response.status_code < 400:
+                labels_response = list(get_paginated_collection(
+                    lambda page: self.client.get(
+                        "/api/labels?task_id=%s&page=%s" % (response.data["id"], page)
+                    )
+                ))
+                response.data["labels"] = labels_response
 
             jobs = get_paginated_collection(lambda page:
                 self.client.get("/api/jobs?task_id={}&page={}".format(tid, page))

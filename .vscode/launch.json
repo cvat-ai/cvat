@@ -25,7 +25,7 @@
             "justMyCode": false,
         },
         {
-            "name": "REST API tests: Attach to RQ low",
+            "name": "REST API tests: Attach to RQ annotation worker",
             "type": "python",
             "request": "attach",
             "connect": {
@@ -45,12 +45,32 @@
             "justMyCode": false,
         },
         {
-            "name": "REST API tests: Attach to RQ default",
+            "name": "REST API tests: Attach to RQ export worker",
             "type": "python",
             "request": "attach",
             "connect": {
                 "host": "127.0.0.1",
                 "port": 9092
+            },
+            "pathMappings": [
+                {
+                    "localRoot": "${workspaceFolder}",
+                    "remoteRoot": "/home/django/"
+                },
+                {
+                    "localRoot": "${workspaceFolder}/.env",
+                    "remoteRoot": "/opt/venv",
+                }
+            ],
+            "justMyCode": false,
+        },
+        {
+            "name": "REST API tests: Attach to RQ import worker",
+            "type": "python",
+            "request": "attach",
+            "connect": {
+                "host": "127.0.0.1",
+                "port": 9093
             },
             "pathMappings": [
                 {
@@ -337,7 +357,7 @@
             "python": "${command:python.interpreterPath}",
             "program": "${workspaceFolder}/cvat-sdk/gen/postprocess.py",
             "args": [
-                "--schema", "${workspaceFolder}/cvat-sdk/schema/schema.yml",
+                "--schema", "${workspaceFolder}/cvat/schema.yml",
                 "--input-path", "${workspaceFolder}/cvat-sdk/cvat_sdk/"
             ],
             "cwd": "${workspaceFolder}",
@@ -369,7 +389,7 @@
             "args": [
                 "spectacular",
                 "--file",
-                "schema.yml"
+                "${workspaceFolder}/cvat/schema.yml"
             ],
             "django": true,
             "cwd": "${workspaceFolder}",

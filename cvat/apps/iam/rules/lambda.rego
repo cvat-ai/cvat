@@ -34,11 +34,6 @@ allow {
 }
 
 allow {
-    input.scope == utils.CALL_ONLINE
+    { utils.CALL_ONLINE, utils.CALL_OFFLINE }[input.scope]
     utils.has_perm(utils.WORKER)
-}
-
-allow {
-    input.scope == utils.CALL_OFFLINE
-    utils.has_perm(utils.BUSINESS)
 }

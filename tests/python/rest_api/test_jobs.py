@@ -369,7 +369,7 @@ class TestPatchJobAnnotations:
         users = find_users(role=role, org=org)
         jobs = jobs_by_org[org]
         filtered_jobs = filter_jobs_with_shapes(jobs)
-        username, jid = find_job_staff_user(filtered_jobs, users, job_staff, [18])
+        username, jid = find_job_staff_user(filtered_jobs, users, job_staff, [18, 22])
 
         data = request_data(jid)
         self._check_respone(username, jid, expect_success, data, org=org)
@@ -393,7 +393,7 @@ class TestPatchJobAnnotations:
         users = find_users(privilege=privilege, exclude_org=org)
         jobs = jobs_by_org[org]
         filtered_jobs = filter_jobs_with_shapes(jobs)
-        username, jid = find_job_staff_user(filtered_jobs, users, False, [18])
+        username, jid = find_job_staff_user(filtered_jobs, users, False, [18, 22])
 
         data = request_data(jid)
         self._check_respone(username, jid, expect_success, data, org=org)
@@ -427,7 +427,7 @@ class TestPatchJobAnnotations:
         users = find_users(privilege=privilege)
         jobs = jobs_by_org[org]
         filtered_jobs = filter_jobs_with_shapes(jobs)
-        username, jid = find_job_staff_user(filtered_jobs, users, job_staff, [22])
+        username, jid = find_job_staff_user(filtered_jobs, users, job_staff, [27])
 
         data = request_data(jid)
         self._check_respone(username, jid, expect_success, data, org=org)
@@ -656,7 +656,7 @@ class TestJobDataset:
         check_func(content, values_to_be_checked)
 
     @pytest.mark.parametrize("username", ["admin1"])
-    @pytest.mark.parametrize("jid", [20, 21, 22, 23])
+    @pytest.mark.parametrize("jid", [25, 26, 27, 28])
     @pytest.mark.parametrize(
         "anno_format, anno_file_name, check_func",
         [

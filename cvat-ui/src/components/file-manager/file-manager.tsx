@@ -19,6 +19,7 @@ import { EventDataNode } from 'rc-tree/lib/interface';
 
 import config from 'config';
 import { CloudStorage } from 'reducers';
+import CVATLoadingSpinner from 'components/common/loading-spinner';
 import CloudStorageTab from './cloud-storages-tab';
 import LocalFiles from './local-files';
 
@@ -38,8 +39,9 @@ interface State {
 }
 
 interface Props {
+    sharedStorageInitialized: boolean;
+    sharedStorageFetching: boolean;
     treeData: (TreeNodeNormal & { mime_type: string })[];
-    share: any;
     many: boolean;
     onLoadData: (key: string) => Promise<any>;
     onChangeActiveKey(key: string): void;
@@ -55,7 +57,6 @@ export class FileManager extends React.PureComponent<Props, State> {
     public constructor(props: Props) {
         super(props);
         this.cloudStorageTabFormRef = React.createRef<FormInstance>();
-        const { onLoadData } = this.props;
 
         this.state = {
             files: {
@@ -69,8 +70,15 @@ export class FileManager extends React.PureComponent<Props, State> {
             expandedKeys: [],
             active: 'local',
         };
+    }
 
-        onLoadData('/');
+    public componentDidUpdate(): void {
+        const { active } = this.state;
+        const { onLoadData, sharedStorageInitialized, sharedStorageFetching } = this.props;
+
+        if (active === 'share' && !sharedStorageInitialized && !sharedStorageFetching) {
+            onLoadData('/');
+        }
     }
 
     private handleUploadCloudStorageFiles = (cloudStorageFiles: string[]): void => {
@@ -156,12 +164,19 @@ export class FileManager extends React.PureComponent<Props, State> {
         }
 
         const { SHARE_MOUNT_GUIDE_URL } = config;
-        const { treeData, onUploadShareFiles, onLoadData } = this.props;
+        const {
+            treeData, sharedStorageInitialized, onUploadShareFiles, onLoadData,
+        } = this.props;
         const { expandedKeys, files } = this.state;
 
         return (
             <Tabs.TabPane key='share' tab='Connected file share'>
-                {treeData[0].children && treeData[0].children.length ? (
+                {!sharedStorageInitialized && (
+                    <div className='cvat-share-tree-initialization'>
+                        <CVATLoadingSpinner />
+                    </div>
+                )}
+                {sharedStorageInitialized && !!treeData[0].children?.length && (
                     <Tree
                         className='cvat-share-tree'
                         checkable
@@ -196,7 +211,8 @@ export class FileManager extends React.PureComponent<Props, State> {
                         }}
                         treeData={getTreeNodes(treeData)}
                     />
-                ) : (
+                )}
+                {sharedStorageInitialized && !treeData[0].children?.length && (
                     <div className='cvat-empty-share-tree'>
                         <Empty />
                         <Paragraph className='cvat-text-color'>

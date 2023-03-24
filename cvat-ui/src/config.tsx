@@ -108,12 +108,22 @@ const DEFAULT_GOOGLE_CLOUD_STORAGE_LOCATIONS: string[][] = [
     ['NAM4', 'US-CENTRAL1 and US-EAST1'],
 ];
 
-const CVAT_BILLING_URL = process.env.CVAT_BILLING_HOST;
 const HEALTH_CHECK_RETRIES = 10;
 const HEALTH_CHECK_PERIOD = 3000; // ms
 const HEALTH_CHECK_REQUEST_TIMEOUT = 5000; // ms
 
 const CONTROLS_LOGS_INTERVAL = 90000; // 1.5 min in ms
+
+const RESET_NOTIFICATIONS_PATHS = {
+    from: [
+        '/auth/login',
+        '/auth/register',
+        '/auth/logout',
+    ],
+    exclude: [
+        '/auth',
+    ],
+};
 
 export default {
     UNDEFINED_ATTRIBUTE_VALUE,
@@ -138,7 +148,6 @@ export default {
     DEFAULT_GOOGLE_CLOUD_STORAGE_LOCATIONS,
     OUTSIDE_PIC_URL,
     DATASET_MANIFEST_GUIDE_URL,
-    CVAT_BILLING_URL,
     HEALTH_CHECK_RETRIES,
     HEALTH_CHECK_PERIOD,
     HEALTH_CHECK_REQUEST_TIMEOUT,
@@ -149,4 +158,5 @@ export default {
     CANVAS_WORKSPACE_PADDING,
     CANVAS_WORKSPACE_DEFAULT_CONTEXT_HEIGHT,
     CONTROLS_LOGS_INTERVAL,
+    RESET_NOTIFICATIONS_PATHS,
 };

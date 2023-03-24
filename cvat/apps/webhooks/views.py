@@ -14,7 +14,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import SAFE_METHODS
 from rest_framework.response import Response
 
-from cvat.apps.engine.view_utils import make_paginated_response
+from cvat.apps.engine.view_utils import list_action, make_paginated_response
 from cvat.apps.iam.permissions import WebhookPermission
 
 from .event_type import AllEvents, OrganizationEvents, ProjectEvents
@@ -93,6 +93,7 @@ class WebhookViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
+
         if self.action == "list":
             perm = WebhookPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
@@ -142,17 +143,7 @@ class WebhookViewSet(viewsets.ModelViewSet):
             many=True
         ),  # Duplicate to still get 'list' op. name
     )
-    @action(
-        detail=True,
-        methods=["GET"],
-        serializer_class=WebhookDeliveryReadSerializer,
-        pagination_class=viewsets.GenericViewSet.pagination_class,
-        # These non-root list endpoints do not suppose extra options, just the basic output
-        # Remove regular list() parameters from the swagger schema.
-        # Unset, they would be taken from the enclosing class, which is wrong.
-        # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
-        filter_fields=None, ordering_fields=None, search_fields=None, simple_filters=None,
-    )
+    @list_action(serializer_class=WebhookDeliveryReadSerializer)
     def deliveries(self, request, pk):
         self.get_object() # force call of check_object_permissions()
         queryset = WebhookDelivery.objects.filter(webhook_id=pk).order_by(

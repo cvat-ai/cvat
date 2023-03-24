@@ -61,11 +61,8 @@ class Client:
     """
 
     SUPPORTED_SERVER_VERSIONS = (
-        pv.Version("2.0"),
-        pv.Version("2.1"),
-        pv.Version("2.2"),
-        pv.Version("2.3"),
         pv.Version("2.4"),
+        pv.Version("2.5"),
     )
 
     def __init__(

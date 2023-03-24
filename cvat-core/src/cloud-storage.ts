@@ -30,6 +30,7 @@ interface RawCloudStorageData {
     secret_key?: string,
     session_token?: string,
     key_file?: File,
+    connection_string?: string,
     specific_attributes?: string,
     owner?: any,
     created_date?: string,
@@ -47,6 +48,7 @@ export default class CloudStorage {
     public secretKey: string;
     public token: string;
     public keyFile: File;
+    public connectionString: string;
     public resource: string;
     public manifestPath: string;
     public provider_type: CloudStorageProviderType;
@@ -70,6 +72,7 @@ export default class CloudStorage {
             secret_key: undefined,
             session_token: undefined,
             key_file: undefined,
+            connection_string: undefined,
             specific_attributes: undefined,
             owner: undefined,
             created_date: undefined,
@@ -142,6 +145,13 @@ export default class CloudStorage {
                         } else {
                             throw new ArgumentError(`Should be a file. ${typeof file} was found`);
                         }
+                    },
+                },
+                connectionString: {
+                    get: () => data.connection_string,
+                    set: (value) => {
+                        validateNotEmptyString(value);
+                        data.connection_string = value;
                     },
                 },
                 resource: {
@@ -282,6 +292,10 @@ Object.defineProperties(CloudStorage.prototype.save, {
                     data.key_file = cloudStorageInstance.keyFile;
                 }
 
+                if (cloudStorageInstance.connectionString) {
+                    data.connection_string = cloudStorageInstance.connectionString;
+                }
+
                 if (cloudStorageInstance.specificAttributes !== undefined) {
                     data.specific_attributes = cloudStorageInstance.specificAttributes;
                 }
@@ -363,6 +377,7 @@ Object.defineProperties(CloudStorage.prototype.getPreview, {
                 serverProxy.cloudStorages
                     .getPreview(this.id)
                     .then((result) => decodePreview(result))
+                    .then((decoded) => resolve(decoded))
                     .catch((error) => {
                         reject(error);
                     });
