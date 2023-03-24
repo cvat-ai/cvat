@@ -14,6 +14,8 @@ from django.core.cache import cache
 from distutils.util import strtobool
 from rest_framework import status, mixins
 from rest_framework.response import Response
+from tempfile import mkdtemp
+from pathlib import Path
 
 from cvat.apps.engine.models import Location
 from cvat.apps.engine.location import StorageType, get_location_configuration
@@ -171,14 +173,20 @@ class UploadMixin:
             if message_id:
                 metadata["message_id"] = base64.b64decode(message_id)
 
+            import_type = request.path.strip('/').split('/')[-1]
+            if import_type == 'backup':
+                # we need to create unique temp dir here because
+                # users can try to import backups with the same name at the same time
+                unique_tmp_dir = Path(mkdtemp(prefix='cvat-', suffix='.backup', dir=self.get_upload_dir()))
+                filename = os.path.join(unique_tmp_dir.name, filename)
+                metadata['filename'] = filename
             file_path = os.path.join(self.get_upload_dir(), filename)
             file_exists = os.path.lexists(file_path)
 
             if file_exists:
                 # check whether the rw_job is in progress or has been finished/failed
-                object_class_name = self._object.__class__.__name__.lower()
-                import_type = request.path.strip('/').split('/')[-1]
                 if import_type != 'backup':
+                    object_class_name = self._object.__class__.__name__.lower()
                     template = settings.COMMON_IMPORT_RQ_ID_TEMPLATE.format(object_class_name, self._object.pk, import_type, request.user)
                     queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
                     finished_job_ids = queue.finished_job_registry.get_job_ids()
@@ -195,6 +203,7 @@ class UploadMixin:
             if file_size > int(self._tus_max_file_size):
                 return self._tus_response(status=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
                     data="File size exceeds max limit of {} bytes".format(self._tus_max_file_size))
+
 
             tus_file = TusFile.create_file(metadata, file_size, self.get_upload_dir())
 

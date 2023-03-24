@@ -30,6 +30,7 @@ from rest_framework.exceptions import ValidationError, PermissionDenied, NotFoun
 from django_sendfile import sendfile
 from distutils.util import strtobool
 from datetime import timedelta
+from pathlib import Path
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.engine import models
@@ -65,6 +66,9 @@ def remove_resources(func):
         finally:
             with suppress(FileNotFoundError):
                 os.remove(filename)
+                tmp_dir = Path(filename).parent
+                if str(tmp_dir.parent) == get_backup_dirname():
+                    tmp_dir.rmdir()
         return result
     return wrapper
 
