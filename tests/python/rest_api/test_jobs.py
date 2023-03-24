@@ -617,7 +617,7 @@ class TestJobDataset:
         "anno_format, anno_file_name, check_func",
         [
             ("COCO 1.0", "annotations/instances_default.json", _check_coco_job_annotations),
-            ("CVAT for images 1.1", "annotations.xml",_check_cvat_for_images_job_annotations),
+            ("CVAT for images 1.1", "annotations.xml", _check_cvat_for_images_job_annotations),
         ],
     )
     def test_exported_job_dataset_structure(
@@ -653,7 +653,6 @@ class TestJobDataset:
             )  # images + annotation file
             content = zip_file.read(anno_file_name)
         check_func(content, values_to_be_checked)
-
 
     @pytest.mark.parametrize("username", ["admin1"])
     @pytest.mark.parametrize("jid", [25, 26, 27, 28])

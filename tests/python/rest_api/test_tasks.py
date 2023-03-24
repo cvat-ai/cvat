@@ -456,9 +456,7 @@ class TestGetTaskDataset:
         assert response.data
 
     @pytest.mark.parametrize("tid", [21])
-    @pytest.mark.parametrize(
-        "format", ["CVAT for images 1.1", "CVAT for video 1.1"]
-    )
+    @pytest.mark.parametrize("format", ["CVAT for images 1.1", "CVAT for video 1.1"])
     def test_can_export_task_with_several_jobs(self, admin_user, tid, format):
         response = self._test_export_task(admin_user, tid, format=format)
         assert response.data
