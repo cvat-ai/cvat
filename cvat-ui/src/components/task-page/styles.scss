@@ -40,13 +40,10 @@
 
         .cvat-task-item-loading-preview,
         .cvat-task-item-empty-preview {
-            .ant-spin {
-                position: inherit;
-            }
+            @extend .cvat-base-preview;
 
             height: $grid-unit-size * 18;
             font-size: $grid-unit-size * 10;
-            text-align: center;
             margin-bottom: $grid-unit-size * 3;
         }
 

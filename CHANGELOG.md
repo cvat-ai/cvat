@@ -22,10 +22,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - An invalid project/org handling in webhooks (<https://github.com/opencv/cvat/pull/5707>)
 - Warning `key` is undefined on project page (<https://github.com/opencv/cvat/pull/5876>)
 - Invalid mask when running automatic annotation on a task (<https://github.com/opencv/cvat/pull/5883>)
+- Option 'Reset zoom' now restored as user specified when reload CVAT (<https://github.com/opencv/cvat/pull/5908>)
 - Cloud storage content listing when the manifest name contains special characters
   (<https://github.com/opencv/cvat/pull/5873>)
 - Width and height in CVAT dataset format mask annotations (<https://github.com/opencv/cvat/pull/5905>)
 - Empty list of export formats for a project without tasks (<https://github.com/opencv/cvat/pull/5899>)
+- Downgrade NumPy used by HRNet because `np.int` is no longer available (<https://github.com/opencv/cvat/pull/5574>)
+- Make empty previews responsive to page resize <https://github.com/opencv/cvat/pull/5925>
 
 ### Security
 - TDB
