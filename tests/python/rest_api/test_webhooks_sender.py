@@ -72,10 +72,8 @@ def get_deliveries(webhook_id):
         assert response.status_code == HTTPStatus.OK
 
         deliveries = response.json()
-        delivery = deliveries["results"][0]["response"]
-
-        if delivery:
-            delivery_response = json.loads(delivery)
+        if deliveries["count"] > 0:
+            delivery_response = json.loads(deliveries["results"][0]["response"])
             break
 
         sleep(1)
@@ -339,11 +337,8 @@ class TestWebhookTaskEvents:
         deliveries, payload = get_deliveries(webhook_id=webhook_id)
 
         assert deliveries["count"] == 1
-        from pprint import pprint
-
-        pprint(deliveries)
         assert payload["label"]["task_id"] == task_id
-        assert payload["label"]["name"] == labels[0]["name"]
+        assert payload["label"]["name"] == labels["labels"][0]["name"]
 
     def test_webhook_create_and_delete_task(self, organizations):
         org_id = list(organizations)[0]["id"]
@@ -589,9 +584,6 @@ class TestWebhookMembershipEvents:
         assert response.status_code == HTTPStatus.NO_CONTENT
 
         deliveries, payload = get_deliveries(webhook_id)
-        from pprint import pprint
-
-        pprint(payload)
 
         assert deliveries["count"] == 1
         assert (
