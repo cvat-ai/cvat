@@ -189,11 +189,14 @@ class WebhookViewSet(viewsets.ModelViewSet):
         responses={"200": WebhookDeliveryReadSerializer},
     )
     @action(
-        detail=True, methods=["POST"]
+        detail=True, methods=["POST"], serializer_class=WebhookDeliveryReadSerializer
     )
     def ping(self, request, pk):
         instance = self.get_object() # force call of check_object_permissions()
         serializer = WebhookReadSerializer(instance, context={"request": request})
 
-        signal_ping.send(sender=self, serializer=serializer)
-        return Response({})
+        delivery = signal_ping.send(sender=self, serializer=serializer)[0][1]
+        serializer = WebhookDeliveryReadSerializer(
+            delivery, context={"request": request}
+        )
+        return Response(serializer.data)
