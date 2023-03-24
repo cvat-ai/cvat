@@ -169,17 +169,12 @@ export class FileManager extends React.PureComponent<Props, State> {
         } = this.props;
         const { expandedKeys, files } = this.state;
 
-        if (!sharedStorageInitialized) {
-            return (
-                <Tabs.TabPane key='share' tab='Connected file share'>
-                    <CVATLoadingSpinner />
-                </Tabs.TabPane>
-            );
-        }
-
         return (
             <Tabs.TabPane key='share' tab='Connected file share'>
-                {treeData[0].children && treeData[0].children.length ? (
+                {!sharedStorageInitialized && (
+                    <CVATLoadingSpinner />
+                )}
+                {sharedStorageInitialized && !!treeData[0].children?.length && (
                     <Tree
                         className='cvat-share-tree'
                         checkable
@@ -214,7 +209,8 @@ export class FileManager extends React.PureComponent<Props, State> {
                         }}
                         treeData={getTreeNodes(treeData)}
                     />
-                ) : (
+                )}
+                {sharedStorageInitialized && !treeData[0].children?.length && (
                     <div className='cvat-empty-share-tree'>
                         <Empty />
                         <Paragraph className='cvat-text-color'>
