@@ -260,8 +260,7 @@ def get_server_image_tag():
 
 def docker_compose(dc_files, cvat_root_dir):
     return [
-        "docker",
-        "compose",
+        "docker-compose",
         f"--project-name={PREFIX}",
         # use compatibility mode to have fixed names for containers (with underscores)
         # https://github.com/docker/compose#about-update-and-backward-compatibility
