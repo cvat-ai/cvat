@@ -326,6 +326,37 @@ class Project(models.Model):
     def get_log_path(self):
         return os.path.join(self.get_project_logs_dirname(), "project.log")
 
+    def delete(self, using=None, keep_parents=False):
+        from cvat.apps.events.signals import resource_delete
+        from cvat.apps.events.utils import clear_cache
+        try:
+            db_tasks = Task.objects.filter(
+                project_id=self.id
+            ).prefetch_related(
+                'project',
+                'segment_set__job_set__issues__comments'
+            )
+            db_segments = [db_segment for db_task in db_tasks for db_segment in db_task.segment_set.all()]
+            db_jobs = [db_job for db_segment in db_segments for db_job in db_segment.job_set.all()]
+            db_issues = [db_issue for db_job in db_jobs for db_issue in db_job.issues.all()]
+            db_comments = [db_comment for db_issue in db_issues for db_comment in db_issue.comments.all()]
+
+            for db_comment in db_comments:
+                resource_delete(Comment, db_comment, store_in_deletion_cache=True)
+
+            for db_issue in db_issues:
+                resource_delete(Issue, db_issue, store_in_deletion_cache=True)
+
+            for db_job in db_jobs:
+                resource_delete(Job, db_job, store_in_deletion_cache=True)
+
+            for db_task in db_tasks:
+                resource_delete(Task, db_task, store_in_deletion_cache=True)
+
+            super().delete(using, keep_parents)
+        finally:
+            clear_cache()
+
     # Extend default permission model
     class Meta:
         default_permissions = ()
@@ -390,6 +421,33 @@ class Task(models.Model):
 
     def __str__(self):
         return self.name
+
+    def delete(self, using=None, keep_parents=False):
+        from cvat.apps.events.signals import resource_delete
+        from cvat.apps.events.utils import clear_cache
+        try:
+            db_segments = Segment.objects.filter(
+                task_id=self.id
+            ).prefetch_related(
+                'job_set__issues__comments',
+                 'task__project'
+            )
+            db_jobs = [db_job for db_segment in db_segments for db_job in db_segment.job_set.all()]
+            db_issues = [db_issue for db_job in db_jobs for db_issue in db_job.issues.all()]
+            db_comments = [db_comment for db_issue in db_issues for db_comment in db_issue.comments.all()]
+
+            for db_comment in db_comments:
+                resource_delete(Comment, db_comment, store_in_deletion_cache=True)
+
+            for db_issue in db_issues:
+                resource_delete(Issue, db_issue, store_in_deletion_cache=True)
+
+            for db_job in db_jobs:
+                resource_delete(Job, db_job, store_in_deletion_cache=True)
+
+            super().delete(using, keep_parents)
+        finally:
+            clear_cache()
 
 # Redefined a couple of operation for FileSystemStorage to avoid renaming
 # or other side effects.

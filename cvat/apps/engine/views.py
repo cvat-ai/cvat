@@ -256,12 +256,6 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             organization=self.request.iam_context['organization']
         )
 
-    def perform_destroy(self, instance):
-        # Explicitly delete related Jobs to avoid extra DB queries in signal handler
-        Job.objects.prefetch_related('segment__task').filter(segment__task__project_id=instance.id).delete()
-
-        super().perform_destroy(instance)
-
     @extend_schema(methods=['GET'], summary='Export project as a dataset in a specific format',
         parameters=[
             OpenApiParameter('format', description='Desired output format name\n'
@@ -802,12 +796,6 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             db_project = serializer.instance.project
             db_project.save()
             assert serializer.instance.organization == db_project.organization
-
-    def perform_destroy(self, instance):
-        # Explicitly delete related Jobs to avoid extra DB queries in signal handler
-        Job.objects.prefetch_related('segment__task').filter(segment__task_id=instance.id).delete()
-
-        super().perform_destroy(instance)
 
     # UploadMixin method
     def get_upload_dir(self):
