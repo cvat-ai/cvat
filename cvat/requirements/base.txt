@@ -11,7 +11,7 @@ django-compressor==2.4
 # https://dj-rest-auth.readthedocs.io/en/latest/installation.html#registration-optional
 django-allauth>=0.52.0
 dj-rest-auth[with_social]==2.2.7
-django-rq==2.7.0
+django-rq==2.3.2
 EasyProcess==0.3
 Pillow==9.3.0
 numpy==1.22.0
@@ -22,7 +22,7 @@ rcssmin==1.0.6
 redis==3.5.3
 rjsmin==1.1.0
 requests==2.26.0
-rq==1.13.0
+rq==1.5.2
 rq-scheduler==0.10.0
 sqlparse==0.4.2
 django-sendfile2==0.7.0

@@ -855,7 +855,7 @@ def export(db_instance, request, queue_name):
             rq_job.delete()
         else:
             if rq_job.is_finished:
-                file_path = rq_job.return_value()
+                file_path = rq_job.return_value
                 if action == "download" and os.path.exists(file_path):
                     rq_job.delete()
 
@@ -971,7 +971,7 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
         )
     else:
         if rq_job.is_finished:
-            project_id = rq_job.return_value()
+            project_id = rq_job.return_value
             rq_job.delete()
             return Response({'id': project_id}, status=status.HTTP_201_CREATED)
         elif rq_job.is_failed or \

@@ -136,7 +136,7 @@ def export(request, filter_query, queue_name):
 
     if rq_job:
         if rq_job.is_finished:
-            file_path = rq_job.return_value()
+            file_path = rq_job.return_value
             if action == "download" and os.path.exists(file_path):
                 rq_job.delete()
                 timestamp = datetime.strftime(datetime.now(), "%Y_%m_%d_%H_%M_%S")
