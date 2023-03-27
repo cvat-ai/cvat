@@ -13,6 +13,7 @@ from http import HTTPStatus
 from itertools import chain, product
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from time import sleep
 from typing import List
 
 import pytest
@@ -21,6 +22,7 @@ from cvat_sdk.api_client import models
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from cvat_sdk.core.helpers import get_paginated_collection
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
+from cvat_sdk.core.uploading import Uploader
 from deepdiff import DeepDiff
 from PIL import Image
 
@@ -1378,3 +1380,58 @@ class TestPatchTask:
             )
             == {}
         )
+
+
+class TestImportTaskAnnotations:
+    def _make_client(self) -> Client:
+        return Client(BASE_URL)
+
+    @pytest.fixture(autouse=True)
+    def setup(self, restore_db_per_function, tmp_path: Path, admin_user: str):
+        self.tmp_dir = tmp_path
+        self.client = self._make_client()
+        self.user = admin_user
+        self.format = "COCO 1.0"
+
+        with self.client:
+            self.client.login((self.user, USER_PASS))
+
+    def _check_annotations(self, task_id):
+        with make_api_client(self.user) as api_client:
+            (_, response) = api_client.tasks_api.retrieve_annotations(id=task_id)
+            assert response.status == HTTPStatus.OK
+            annotations = json.loads(response.data)["shapes"]
+            assert len(annotations) > 0
+
+    def _delete_annotations(self, task_id):
+        with make_api_client(self.user) as api_client:
+            (_, response) = api_client.tasks_api.destroy_annotations(id=task_id)
+            assert response.status == HTTPStatus.NO_CONTENT
+
+    @pytest.mark.parametrize("task_id", [20])
+    def test_can_import_annotations_after_previous_unclear_import(self, task_id):
+        self._check_annotations(task_id)
+
+        filename = self.tmp_dir / f"task_{task_id}_coco.zip"
+        task = self.client.tasks.retrieve(task_id)
+        task.export_dataset(self.format, filename)
+
+        self._delete_annotations(task_id)
+
+        params = {"format": self.format, "filename": filename.name}
+        url = self.client.api_map.make_endpoint_url(
+            self.client.api_client.tasks_api.create_annotations_endpoint.path
+        ).format(id=task_id)
+        uploader = Uploader(self.client)
+
+        response = uploader.upload_file(
+            url, filename, meta=params, query_params=params, logger=self.client.logger.debug
+        )
+
+        rq_id = json.loads(response.data)["rq_id"]
+        assert rq_id
+        sleep(3)
+        self._check_annotations(task_id)
+        self._delete_annotations(task_id)
+        task.import_annotations(self.format, filename)
+        self._check_annotations(task_id)
