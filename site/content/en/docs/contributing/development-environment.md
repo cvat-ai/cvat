@@ -11,7 +11,7 @@ description: 'Installing a development environment for different operating syste
   Ubuntu 18.04
 
   ```bash
-  sudo apt-get update && sudo apt-get --no-install-recommends install -y build-essential curl git redis-server python3-dev python3-pip python3-venv python3-tk libldap2-dev libsasl2-dev pkg-config libavformat-dev libavcodec-dev libavdevice-dev libavutil-dev libswscale-dev libswresample-dev libavfilter-dev
+  sudo apt-get update && sudo apt-get --no-install-recommends install -y build-essential curl git redis-server python3-dev python3-pip python3-venv python3-tk libldap2-dev libsasl2-dev pkg-config libavformat-dev libavcodec-dev libavdevice-dev libavutil-dev libswscale-dev libswresample-dev libavfilter-dev apache2-dev
   ```
 
   ```bash
@@ -24,7 +24,7 @@ description: 'Installing a development environment for different operating syste
   MacOS 10.15
 
   ```bash
-  brew install git python pyenv redis curl openssl node sqlite3 geos
+  brew install git python pyenv redis curl openssl node sqlite3 geos httpd
   ```
 
   Arch Linux
@@ -36,7 +36,7 @@ description: 'Installing a development environment for different operating syste
 
   ```bash
   # Install the required dependencies:
-  sudo pacman -S base-devel curl git redis cmake gcc python python-pip tk libldap libsasl pkgconf ffmpeg geos openldap python-lda
+  sudo pacman -S base-devel curl git redis cmake gcc python python-pip tk libldap libsasl pkgconf ffmpeg geos openldap apache
   ```
 
   ```bash
@@ -79,7 +79,10 @@ description: 'Installing a development environment for different operating syste
   python3 -m venv .env
   . .env/bin/activate
   pip install -U pip wheel setuptools
-  pip install -r cvat/requirements/development.txt -r utils/dataset_manifest/requirements.txt
+  pip install \
+      -r cvat/requirements/development.txt \
+      -r cvat/requirements/production.txt \
+      -r utils/dataset_manifest/requirements.txt
   python manage.py migrate
   python manage.py collectstatic
   ```
