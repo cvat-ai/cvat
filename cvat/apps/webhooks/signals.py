@@ -5,19 +5,21 @@
 import hashlib
 import hmac
 import json
+from copy import deepcopy
 from http import HTTPStatus
 
 import django_rq
 import requests
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models.signals import pre_delete, post_save, pre_save, post_delete
+from django.db.models.signals import (post_delete, post_save, pre_delete,
+                                      pre_save)
 from django.dispatch import Signal, receiver
 
 from cvat.apps.engine.models import Comment, Issue, Job, Label, Project, Task
 from cvat.apps.engine.serializers import BasicUserSerializer
-from cvat.apps.events.handlers import (_get_current_request, get_instance_diff,
-                                       _get_serializer, organization_id,
+from cvat.apps.events.handlers import (_get_current_request, _get_serializer,
+                                       get_instance_diff, organization_id,
                                        project_id)
 from cvat.apps.organizations.models import Invitation, Membership, Organization
 from cvat.utils.http import make_requests_session
@@ -202,8 +204,8 @@ def pre_delete_resource_event(sender, instance, **kwargs):
     elif resource_name == "organization":
         related_webhooks = Webhook.objects.filter(organization_id=instance.id)
 
-    serializer =_get_serializer(instance=instance)
-    setattr(instance, "_deleted_object", serializer.data)
+    serializer = _get_serializer(instance=deepcopy(instance))
+    setattr(instance, "_deleted_object", dict(serializer.data))
     setattr(instance, "_related_webhooks", list(related_webhooks))
 
 
