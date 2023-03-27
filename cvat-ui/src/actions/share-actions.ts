@@ -29,7 +29,7 @@ const shareActions = {
 
 export type ShareActions = ActionUnion<typeof shareActions>;
 
-export function loadShareDataAsync(directory: string): ThunkAction {
+export function loadShareDataAsync(directory: string): ThunkAction<Promise<ShareFileInfo[]>> {
     return async (dispatch): Promise<ShareFileInfo[]> => {
         try {
             dispatch(shareActions.loadShareData());
