@@ -1,5 +1,5 @@
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -161,6 +161,13 @@ class _DbTestBase(APITestCase):
             assert response.status_code == status.HTTP_202_ACCEPTED, response.status_code
 
             response = self.client.get("/api/tasks/%s" % tid)
+
+            if 200 <= response.status_code < 400:
+                labels_response = list(get_paginated_collection(
+                    lambda page: self.client.get("/api/labels?task_id=%s&page=%s" % (tid, page))
+                ))
+                response.data["labels"] = labels_response
+
             task = response.data
 
         return task
@@ -176,7 +183,7 @@ class _DbTestBase(APITestCase):
     def _get_jobs(self, task_id):
         with ForceLogin(self.admin, self.client):
             values = get_paginated_collection(lambda page:
-                self.client.get("/api/tasks/{}/jobs?page={}".format(task_id, page))
+                self.client.get("/api/jobs?task_id={}&page={}".format(task_id, page))
             )
         return values
 

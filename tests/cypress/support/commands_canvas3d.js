@@ -18,23 +18,38 @@ Cypress.Commands.add('compareImagesAndCheckResult', (baseImage, afterImage, noCh
 });
 
 Cypress.Commands.add('create3DCuboid', (cuboidCreationParams) => {
+    const {
+        x, y, labelName, objectType,
+    } = cuboidCreationParams;
     cy.interactControlButton('draw-cuboid');
-    cy.switchLabel(cuboidCreationParams.labelName, 'draw-cuboid');
-    cy.get('.cvat-draw-cuboid-popover').find('button').click();
+    cy.switchLabel(labelName, 'draw-cuboid');
+    cy.get('.cvat-draw-cuboid-popover').contains(objectType).click();
     cy.get('.cvat-canvas3d-perspective')
-        .trigger('mousemove', cuboidCreationParams.x, cuboidCreationParams.y)
-        .dblclick(cuboidCreationParams.x, cuboidCreationParams.y);
+        .trigger('mousemove', x, y)
+        .dblclick(x, y);
     cy.wait(1000); // Waiting for a cuboid creation
     cy.get('.cvat-draw-cuboid-popover').should('be.hidden');
 });
 
 Cypress.Commands.add('customScreenshot', (element, screenshotName) => {
     cy.get(`${element} canvas`).then(([$el]) => ($el.getBoundingClientRect())).then((rect) => {
+        const iframe = window.parent.document
+            .querySelector('iframe.aut-iframe');
+        const parentRect = iframe.getBoundingClientRect();
+
+        const scale = parentRect.width / iframe.clientWidth;
         cy.screenshot(screenshotName, {
+            // tricky way to make screenshots to avoid screen resizing
+            // we take a screenshot of the whole screen, including runner and then clip it
+            // according to iframe coordinates and scale in the runner
             overwrite: true,
-            capture: 'fullPage',
+            capture: 'runner',
+            scale: false,
             clip: {
-                x: rect.x, y: rect.y, width: rect.width, height: rect.height,
+                x: parentRect.x + rect.x * scale,
+                y: parentRect.y + rect.y * scale,
+                width: rect.width * scale,
+                height: rect.height * scale,
             },
         });
     });

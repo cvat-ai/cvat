@@ -151,6 +151,11 @@ class Job(
         (meta, _) = self.api.retrieve_data_meta(self.id)
         return meta
 
+    def get_labels(self) -> List[models.ILabel]:
+        return get_paginated_collection(
+            self._client.api_client.labels_api.list_endpoint, job_id=self.id
+        )
+
     def get_frames_info(self) -> List[models.IFrameMeta]:
         return self.get_meta().frames
 
@@ -163,11 +168,10 @@ class Job(
     def get_issues(self) -> List[Issue]:
         return [
             Issue(self._client, m)
-            for m in get_paginated_collection(self.api.list_issues_endpoint, id=self.id)
+            for m in get_paginated_collection(
+                self._client.api_client.issues_api.list_endpoint, job_id=self.id
+            )
         ]
-
-    def get_commits(self) -> List[models.IJobCommit]:
-        return get_paginated_collection(self.api.list_commits_endpoint, id=self.id)
 
 
 class JobsRepo(

@@ -57,30 +57,6 @@ spec:
             value: {{ .Values.cvat.backend.server.envs.ALLOWED_HOSTS | squote}}
           - name: DJANGO_MODWSGI_EXTRA_ARGS
             value: {{ .Values.cvat.backend.server.envs.DJANGO_MODWSGI_EXTRA_ARGS}}
-          - name: USE_ALLAUTH_SOCIAL_ACCOUNTS
-            value: {{ .Values.cvat.backend.server.envs.USE_ALLAUTH_SOCIAL_ACCOUNTS | squote }}
-          {{- if .Values.cvat.backend.server.envs.USE_ALLAUTH_SOCIAL_ACCOUNTS }}
-          - name: SOCIAL_AUTH_GOOGLE_CLIENT_ID
-            valueFrom:
-              secretKeyRef:
-                name: "{{ tpl (.Values.cvat.backend.server.secret.name) . }}"
-                key:  googleClientId
-          - name: SOCIAL_AUTH_GOOGLE_CLIENT_SECRET
-            valueFrom:
-              secretKeyRef:
-                name: "{{ tpl (.Values.cvat.backend.server.secret.name) . }}"
-                key:  googleClientSecret
-          - name: SOCIAL_AUTH_GITHUB_CLIENT_ID
-            valueFrom:
-              secretKeyRef:
-                name: "{{ tpl (.Values.cvat.backend.server.secret.name) . }}"
-                key:  githubClientId
-          - name: SOCIAL_AUTH_GITHUB_CLIENT_SECRET
-            valueFrom:
-              secretKeyRef:
-                name: "{{ tpl (.Values.cvat.backend.server.secret.name) . }}"
-                key:  googleClientSecret
-          {{- end }}
           - name: IAM_OPA_BUNDLE
             value: "1"
           {{- if .Values.redis.enabled }}
@@ -121,30 +97,17 @@ spec:
               secretKeyRef:
                 name: "{{ tpl (.Values.postgresql.secret.name) . }}"
                 key: password
-          {{- if .Values.nuclio.enabled }}
-          - name: CVAT_SERVERLESS
-            value: "1"
-          - name: CVAT_NUCLIO_HOST
-            value: "{{ .Release.Name }}-nuclio-dashboard"
-          - name: CVAT_NUCLIO_FUNCTION_NAMESPACE
-            value: "{{ .Release.Namespace }}"
-          {{- end }}
+          {{ include "cvat.nuclioEnv" . | indent 10 }}
           {{- if .Values.analytics.enabled}}
           - name: CVAT_ANALYTICS
             value: "1"
           - name: DJANGO_LOG_SERVER_HOST
-          {{- if .Values.analytics.external.useExternal }}
-            value: "{{ .Values.analytics.logServerHost }}"
-          {{- else}}
-            value: "{{ .Release.Name }}-logstash"
-          {{- end}}
+            value: "{{ .Release.Name }}-vector"
           - name: DJANGO_LOG_SERVER_PORT
-          {{- if .Values.analytics.external.useExternal }}
-            value: "{{ .Values.analytics.logServerPort }}"
-          {{- else}}
-            value: "8080"
-          {{- end}}
-          {{- end}}
+            value: "80"
+          - name: CLICKHOUSE_HOST
+            value: "{{ .Release.Name }}-clickhouse"
+          {{- end }}
           {{- with .Values.cvat.backend.server.additionalEnv }}
           {{- toYaml . | nindent 10 }}
           {{- end }}

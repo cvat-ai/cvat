@@ -618,26 +618,20 @@ export async function getContextImage(jobID, frame) {
     return frameDataCache[jobID].frameBuffer.getContextImage(frame);
 }
 
-export async function getPreview(taskID = null, jobID = null) {
+export function decodePreview(preview: Blob): Promise<string> {
     return new Promise((resolve, reject) => {
-        // Just go to server and get preview (no any cache)
-        serverProxy.frames
-            .getPreview(taskID, jobID)
-            .then((result) => {
-                if (isNode) {
-                    // eslint-disable-next-line no-undef
-                    resolve(global.Buffer.from(result, 'binary').toString('base64'));
-                } else if (isBrowser) {
-                    const reader = new FileReader();
-                    reader.onload = () => {
-                        resolve(reader.result);
-                    };
-                    reader.readAsDataURL(result);
-                }
-            })
-            .catch((error) => {
+        if (isNode) {
+            resolve(global.Buffer.from(preview, 'binary').toString('base64'));
+        } else if (isBrowser) {
+            const reader = new FileReader();
+            reader.onload = () => {
+                resolve(reader.result as string);
+            };
+            reader.onerror = (error) => {
                 reject(error);
-            });
+            };
+            reader.readAsDataURL(preview);
+        }
     });
 }
 

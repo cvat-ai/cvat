@@ -1,10 +1,11 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { PluginsActionTypes, PluginActions } from 'actions/plugins-actions';
 import { registerGitPlugin } from 'utils/git-utils';
-import { PluginsState } from '.';
+import { PluginComponent, PluginsState } from '.';
 
 const defaultState: PluginsState = {
     fetching: false,
@@ -13,9 +14,43 @@ const defaultState: PluginsState = {
         GIT_INTEGRATION: false,
         ANALYTICS: false,
         MODELS: false,
-        PREDICT: false,
+    },
+    current: {},
+    components: {
+        header: {
+            userMenu: {
+                items: [],
+            },
+        },
+        loginPage: {
+            loginForm: [],
+        },
+        router: [],
+        loggedInModals: [],
     },
 };
+
+function findContainerFromPath(path: string, state: PluginsState): PluginComponent[] {
+    const pathSegments = path.split('.');
+    let updatedStateSegment: any = state.components;
+    for (const pathSegment of pathSegments) {
+        if (Array.isArray(updatedStateSegment[pathSegment])) {
+            updatedStateSegment[pathSegment] = [...updatedStateSegment[pathSegment]];
+        } else {
+            updatedStateSegment[pathSegment] = { ...updatedStateSegment[pathSegment] };
+        }
+        updatedStateSegment = updatedStateSegment[pathSegment];
+        if (typeof updatedStateSegment === 'undefined') {
+            throw new Error('Could not add plugin component. Path is not supported by the core application');
+        }
+    }
+
+    if (!Array.isArray(updatedStateSegment)) {
+        throw new Error('Could not add plugin component. Target path is not array');
+    }
+
+    return updatedStateSegment;
+}
 
 export default function (state: PluginsState = defaultState, action: PluginActions): PluginsState {
     switch (action.type) {
@@ -45,6 +80,57 @@ export default function (state: PluginsState = defaultState, action: PluginActio
                 ...state,
                 initialized: true,
                 fetching: false,
+            };
+        }
+        case PluginsActionTypes.ADD_UI_COMPONENT: {
+            const { path, component, data } = action.payload;
+            const updatedState = {
+                ...state,
+                components: { ...state.components },
+            };
+
+            const container = findContainerFromPath(path, updatedState);
+            container.push({
+                component,
+                data: {
+                    weight: data.weight || Number.MAX_SAFE_INTEGER,
+                    shouldBeRendered: (componentProps: object = {}, componentState: object = {}) => {
+                        if (data.shouldBeRendered) {
+                            return data.shouldBeRendered(Object.freeze(componentProps), Object.freeze(componentState));
+                        }
+                        return true;
+                    },
+                },
+            });
+
+            return updatedState;
+        }
+        case PluginsActionTypes.REMOVE_UI_COMPONENT: {
+            const { path, component } = action.payload;
+            const updatedState = {
+                ...state,
+                components: { ...state.components },
+            };
+
+            const container = findContainerFromPath(path, updatedState);
+            const index = container.findIndex((el) => el.component === component);
+            if (index !== -1) {
+                container.splice(index, 1);
+            }
+
+            return updatedState;
+        }
+        case PluginsActionTypes.ADD_PLUGIN: {
+            const { name, destructor, globalStateDidUpdate } = action.payload;
+            return {
+                ...state,
+                current: {
+                    ...state.current,
+                    [name]: {
+                        destructor,
+                        globalStateDidUpdate,
+                    },
+                },
             };
         }
         default:

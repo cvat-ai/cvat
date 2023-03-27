@@ -1,0 +1,43 @@
+[sources.http-events]
+type = "http_server"
+address = "0.0.0.0:80"
+encoding = "json"
+
+# Uncomment for debug
+# [sinks.console]
+# type = "console"
+# inputs = [ "http-events" ]
+# target = "stdout"
+
+# [sinks.console.encoding]
+# codec = "json"
+
+[sinks.clickhouse]
+inputs = [ "http-events" ]
+type = "clickhouse"
+database = "${CLICKHOUSE_DB}"
+table = "events"
+auth.strategy = "basic"
+auth.user = "${CLICKHOUSE_USER}"
+auth.password = "${CLICKHOUSE_PASSWORD}"
+endpoint = "http://${CLICKHOUSE_HOST}:8123"
+request.concurrency = "adaptive"
+encoding.only_fields = [
+    "scope",
+    "obj_name",
+    "obj_id",
+    "obj_val",
+    "source",
+    "timestamp",
+    "count",
+    "duration",
+    "project_id",
+    "task_id",
+    "job_id",
+    "user_id",
+    "user_name",
+    "user_email",
+    "org_id",
+    "org_slug",
+    "payload",
+]

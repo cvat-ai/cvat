@@ -80,6 +80,8 @@ const defaultState: NotificationsState = {
             canceling: null,
             metaFetching: null,
             inferenceStatusFetching: null,
+            creating: null,
+            deleting: null,
         },
         annotation: {
             saving: null,
@@ -119,9 +121,6 @@ const defaultState: NotificationsState = {
             resolvingIssue: null,
             submittingReview: null,
             deletingIssue: null,
-        },
-        predictor: {
-            prediction: null,
         },
         exporting: {
             dataset: null,
@@ -524,23 +523,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
-        case TasksActionTypes.UPDATE_TASK_FAILED: {
-            const taskID = action.payload.task.id;
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    tasks: {
-                        ...state.errors.tasks,
-                        updating: {
-                            message: `Could not update [task ${taskID}](/tasks/${taskID})`,
-                            reason: action.payload.error.toString(),
-                            className: 'cvat-notification-notice-update-task-failed',
-                        },
-                    },
-                },
-            };
-        }
         case TasksActionTypes.DELETE_TASK_FAILED: {
             const { taskID } = action.payload;
             return {
@@ -574,23 +556,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
-        case TasksActionTypes.UPDATE_JOB_FAILED: {
-            const jobID = action.payload.jobInstance.id;
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    jobs: {
-                        ...state.errors.jobs,
-                        updating: {
-                            message: `Could not update job with ID #${jobID}`,
-                            reason: action.payload.error.toString(),
-                            className: 'cvat-notification-notice-update-job-failed',
-                        },
-                    },
-                },
-            };
-        }
         case ProjectsActionTypes.GET_PROJECTS_FAILED: {
             return {
                 ...state,
@@ -617,23 +582,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             message: 'Could not create the project',
                             reason: action.payload.error.toString(),
                             className: 'cvat-notification-notice-create-project-failed',
-                        },
-                    },
-                },
-            };
-        }
-        case ProjectsActionTypes.UPDATE_PROJECT_FAILED: {
-            const { id: projectId } = action.payload.project;
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    projects: {
-                        ...state.errors.projects,
-                        updating: {
-                            message: `Could not update [project ${projectId}](/project/${projectId})`,
-                            reason: action.payload.error.toString(),
-                            className: 'cvat-notification-notice-update-project-failed',
                         },
                     },
                 },
@@ -797,6 +745,37 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.errors.models,
                         canceling: {
                             message: `Could not cancel model inference for the [task ${taskID}](/tasks/${taskID})`,
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case ModelsActionTypes.CREATE_MODEL_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    models: {
+                        ...state.errors.models,
+                        creating: {
+                            message: 'Could not create model',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case ModelsActionTypes.DELETE_MODEL_FAILED: {
+            const { modelName } = action.payload;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    models: {
+                        ...state.errors.models,
+                        deleting: {
+                            message: `Could not delete model ${modelName}`,
                             reason: action.payload.error.toString(),
                         },
                     },
@@ -1248,21 +1227,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             message: 'Could not fetch frame data from the server',
                             reason: action.payload.error,
                             className: 'cvat-notification-notice-fetch-frame-data-from-the-server-failed',
-                        },
-                    },
-                },
-            };
-        }
-        case AnnotationActionTypes.GET_PREDICTIONS_FAILED: {
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    predictor: {
-                        ...state.errors.predictor,
-                        prediction: {
-                            message: 'Could not fetch prediction data',
-                            reason: action.payload.error,
                         },
                     },
                 },

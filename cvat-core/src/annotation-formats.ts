@@ -3,22 +3,21 @@
 //
 // SPDX-License-Identifier: MIT
 
-interface RawLoaderData {
-    name: string;
-    ext: string;
-    version: string;
-    enabled: boolean;
-    dimension: '2d' | '3d';
-}
+import { DimensionType } from 'enums';
+import {
+    SerializedAnnotationExporter,
+    SerializedAnnotationFormats,
+    SerializedAnnotationImporter,
+} from 'server-response-types';
 
 export class Loader {
     public name: string;
     public format: string;
     public version: string;
     public enabled: boolean;
-    public dimension: '2d' | '3d';
+    public dimension: DimensionType;
 
-    constructor(initialData: RawLoaderData) {
+    constructor(initialData: SerializedAnnotationImporter) {
         const data = {
             name: initialData.name,
             format: initialData.ext,
@@ -46,17 +45,15 @@ export class Loader {
         });
     }
 }
-
-type RawDumperData = RawLoaderData;
 
 export class Dumper {
     public name: string;
     public format: string;
     public version: string;
     public enabled: boolean;
-    public dimension: '2d' | '3d';
+    public dimension: DimensionType;
 
-    constructor(initialData: RawDumperData) {
+    constructor(initialData: SerializedAnnotationExporter) {
         const data = {
             name: initialData.name,
             format: initialData.ext,
@@ -85,16 +82,11 @@ export class Dumper {
     }
 }
 
-interface AnnotationFormatRawData {
-    importers: RawLoaderData[];
-    exporters: RawDumperData[];
-}
-
 export class AnnotationFormats {
     public loaders: Loader[];
     public dumpers: Dumper[];
 
-    constructor(initialData: AnnotationFormatRawData) {
+    constructor(initialData: SerializedAnnotationFormats) {
         const data = {
             exporters: initialData.exporters.map((el) => new Dumper(el)),
             importers: initialData.importers.map((el) => new Loader(el)),
