@@ -90,7 +90,7 @@ class _MyTusUploader(_TusUploader):
         headers["upload-length"] = str(self.file_size)
         headers["upload-metadata"] = ",".join(self.encode_metadata())
         resp = self._api_client.rest_client.POST(self.client.url, headers=headers)
-        self.metadata['real_filename'] = resp.headers.get('Upload-Filename')
+        self.metadata["real_filename"] = resp.headers.get("Upload-Filename")
         url = resp.headers.get("location")
         if url is None:
             msg = "Attempt to retrieve create file url with status {}".format(resp.status_code)
@@ -281,8 +281,8 @@ class AnnotationUploader(Uploader):
             url, filename, pbar=pbar, query_params=params, meta={"filename": params["filename"]}
         )
 
-        rq_id = json.loads(response.data).get('rq_id')
-        assert rq_id, 'The rq_id was not found in the response'
+        rq_id = json.loads(response.data).get("rq_id")
+        assert rq_id, "The rq_id was not found in the response"
 
         self._wait_for_completion(
             url,
