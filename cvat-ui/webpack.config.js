@@ -75,6 +75,13 @@ module.exports = (env) => {
             },
             alias: {
                 config$: appConfigFile,
+
+                // when import svg modules
+                // the loader transforms their to modules with JSX code
+                // and adds 'import React from "react";'
+                // in plugins it leads to errors because they must import '@modules/react'
+                // so, this alias added to fix it
+                react$: '@modules/react',
                 '@root': path.resolve(__dirname, 'src'),
                 '@modules': path.resolve(__dirname, '..', 'node_modules'),
             },

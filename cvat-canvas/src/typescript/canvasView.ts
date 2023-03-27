@@ -2826,6 +2826,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 'shape-rendering': 'geometricprecision',
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
                 'data-z-order': state.zOrder,
+                'pointer-events': 'all',
                 ...this.getShapeColorization(state),
             }).addClass('cvat_canvas_shape') as SVG.G;
 

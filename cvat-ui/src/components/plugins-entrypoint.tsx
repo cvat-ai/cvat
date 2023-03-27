@@ -24,6 +24,7 @@ export type ComponentBuilder = ({
 }) => {
     name: string;
     destructor: CallableFunction;
+    globalStateDidUpdate?: CallableFunction;
 };
 
 export type PluginEntryPoint = (componentBuilder: ComponentBuilder) => void;
@@ -35,14 +36,14 @@ function PluginEntrypoint(): null {
         Object.defineProperty(window, 'cvatUI', {
             value: Object.freeze({
                 registerComponent: (componentBuilder: ComponentBuilder) => {
-                    const { name, destructor } = componentBuilder({
+                    const { name, destructor, globalStateDidUpdate } = componentBuilder({
                         dispatch,
                         REGISTER_ACTION: PluginsActionTypes.ADD_UI_COMPONENT,
                         REMOVE_ACTION: PluginsActionTypes.REMOVE_UI_COMPONENT,
                         core,
                     });
 
-                    dispatch(pluginActions.addPlugin(name, destructor));
+                    dispatch(pluginActions.addPlugin(name, destructor, globalStateDidUpdate));
                 },
             }),
         });

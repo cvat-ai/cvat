@@ -354,13 +354,13 @@ You need to upload data for annotation and the `manifest.jsonl` file.
 
 ![](/images/azure_blob_container_tutorial9.jpg)
 
-### SAS token
+### SAS token and connection string
 
-Use the SAS token to grant secure access to the container.
+Use the SAS token or connection string to grant secure access to the container.
 
-To configure the SAS token:
+To configure the credentials:
 
-1. Go to **Home** > **Resourse groups** > You resourse name > Your storage account.
+1. Go to **Home** > **Resourse groups** > You resource name > Your storage account.
 2. On the left menu, click **Shared access signature**.
 3. Change the following fields:
    - **Allowed services**: Enable **Blob** . Disable all other fields.
@@ -369,7 +369,7 @@ To configure the SAS token:
    - **Start and expiry date**: Set up start and expiry dates.
    - **Allowed protocols**: Select **HTTPS and HTTP**
    - Leave all other fields with default parameters.
-4. Click **Generate SAS token** and copy **SAS token**.
+4. Click **Generate SAS and connection string** and copy **SAS token** or **Connection string**.
 
 ![](/images/azure_blob_container_tutorial3.jpg)
 
@@ -421,5 +421,5 @@ For example, the dataset is [The Oxford-IIIT Pet Dataset](https://www.robots.ox.
 3. Create a manifest. For more information, see [**Dataset manifest**](/docs/manual/advanced/dataset_manifest/):
 
 ```bash
-python <cvat repository>/utils/dataset_manifest/create.py --output-dir <yourfolder> <yourfolder>
+python <cvat repository>/utils/dataset_manifest/create.py --output-dir <your_folder> <your_folder>
 ```

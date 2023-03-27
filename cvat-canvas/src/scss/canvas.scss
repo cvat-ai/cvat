@@ -265,6 +265,14 @@ g.cvat_canvas_shape_occluded {
     transform: none !important;
 }
 
+.cvat_canvas_shape > .cvat_canvas_skeleton_wrapping_rect {
+    visibility: hidden;
+}
+
+.cvat_canvas_shape.cvat_canvas_shape_activated > .cvat_canvas_skeleton_wrapping_rect {
+    visibility: initial;
+}
+
 .cvat_canvas_pixelized {
     image-rendering: optimizeSpeed;             /* Legal fallback */
     image-rendering: -moz-crisp-edges;          /* Firefox        */

@@ -417,6 +417,7 @@ paths:
           - ACCOUNT_NAME_TOKEN_PAIR
           - KEY_FILE_PATH
           - ANONYMOUS_ACCESS
+          - CONNECTION_STRING
       - name: filter
         required: false
         in: query
@@ -534,6 +535,8 @@ paths:
                   resource: somebucket
                   display_name: Bucket
                   credentials_type: KEY_SECRET_KEY_PAIR
+                  key: XXX
+                  secret_key: XXX
                   specific_attributes: region=eu-central-1
                   description: Some description
                   manifests:
@@ -670,6 +673,8 @@ paths:
                   resource: somebucket
                   display_name: Bucket
                   credentials_type: KEY_SECRET_KEY_PAIR
+                  key: XXX
+                  secret_key: XXX
                   specific_attributes: region=eu-central-1
                   description: Some description
                   manifests:
@@ -7186,6 +7191,9 @@ components:
         secret_key:
           type: string
           maxLength: 44
+        connection_string:
+          type: string
+          maxLength: 440
         key_file:
           type: string
           format: binary
@@ -7256,6 +7264,7 @@ components:
       - ACCOUNT_NAME_TOKEN_PAIR
       - KEY_FILE_PATH
       - ANONYMOUS_ACCESS
+      - CONNECTION_STRING
       type: string
     DataMetaRead:
       type: object
@@ -8651,6 +8660,9 @@ components:
         secret_key:
           type: string
           maxLength: 44
+        connection_string:
+          type: string
+          maxLength: 440
         key_file:
           type: string
           format: binary
@@ -8911,7 +8923,7 @@ components:
           type: string
           format: uri
           minLength: 1
-          maxLength: 200
+          maxLength: 8192
         description:
           type: string
           maxLength: 128
@@ -9861,7 +9873,7 @@ components:
           type: string
           format: uri
           minLength: 1
-          maxLength: 200
+          maxLength: 8192
         description:
           type: string
           maxLength: 128
