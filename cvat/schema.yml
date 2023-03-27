@@ -535,6 +535,8 @@ paths:
                   resource: somebucket
                   display_name: Bucket
                   credentials_type: KEY_SECRET_KEY_PAIR
+                  key: XXX
+                  secret_key: XXX
                   specific_attributes: region=eu-central-1
                   description: Some description
                   manifests:
@@ -671,6 +673,8 @@ paths:
                   resource: somebucket
                   display_name: Bucket
                   credentials_type: KEY_SECRET_KEY_PAIR
+                  key: XXX
+                  secret_key: XXX
                   specific_attributes: region=eu-central-1
                   description: Some description
                   manifests:
