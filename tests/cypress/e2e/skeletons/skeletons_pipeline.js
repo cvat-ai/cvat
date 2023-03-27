@@ -46,16 +46,18 @@ context('Manipulations with skeletons', { scrollBehavior: false }, () => {
 
     after(() => {
         cy.clearAllCookies();
-        cy.getAuthKey().then((response) => {
-            const authKey = response.body.key;
-            cy.request({
-                method: 'DELETE',
-                url: `/api/tasks/${taskID}`,
-                headers: {
-                    Authorization: `Token ${authKey}`,
-                },
+        if (taskID !== null) {
+            cy.getAuthKey().then((response) => {
+                const authKey = response.body.key;
+                cy.request({
+                    method: 'DELETE',
+                    url: `/api/tasks/${taskID}`,
+                    headers: {
+                        Authorization: `Token ${authKey}`,
+                    },
+                });
             });
-        });
+        }
     });
 
     describe('Create a task with skeletons', () => {
@@ -159,7 +161,6 @@ context('Manipulations with skeletons', { scrollBehavior: false }, () => {
         }
 
         function deleteSkeleton(selector, shapeType, force) {
-            cy.get(selector).trigger('mousemove').should('have.class', 'cvat_canvas_shape_activated');
             cy.get('body').type(force ? '{shift}{del}' : '{del}');
             if (shapeType.toLowerCase() === 'track' && !force) {
                 cy.get('.cvat-remove-object-confirm-wrapper').should('exist').and('be.visible');
@@ -169,6 +170,19 @@ context('Manipulations with skeletons', { scrollBehavior: false }, () => {
             }
             cy.get(selector).should('not.exist');
         }
+
+        it('Wrapping bounding box for a skeleton is visible only when skeleton is activated', () => {
+            createSkeletonObject('shape');
+
+            cy.get('body').click();
+            cy.get('#cvat_canvas_shape_1').within(($el) => {
+                cy.get('.cvat_canvas_skeleton_wrapping_rect').should('exist').and('not.be.visible');
+                cy.wrap($el).trigger('mousemove').should('have.class', 'cvat_canvas_shape_activated');
+                cy.get('.cvat_canvas_skeleton_wrapping_rect').should('exist').and('be.visible');
+            });
+
+            cy.removeAnnotations();
+        });
 
         it('Creating, checking occluded for a single point, and removing a skeleton shape', () => {
             createSkeletonObject('shape');
@@ -196,7 +210,6 @@ context('Manipulations with skeletons', { scrollBehavior: false }, () => {
                     prevY = +$rect[0].getAttribute('y');
                 });
             });
-            cy.get('#cvat_canvas_shape_1').trigger('mousemove').should('have.class', 'cvat_canvas_shape_activated');
             cy.get('body').trigger('keydown', { keyCode: 78, code: 'KeyN', shiftKey: true });
             cy.get('.cvat-canvas-container')
                 .click(skeletonPosition.xtl + REDRAW_MARGIN, skeletonPosition.ytl + REDRAW_MARGIN)

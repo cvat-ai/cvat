@@ -70,13 +70,14 @@
 
     .cvat-cloud-storage-item-loading-preview,
     .cvat-cloud-storage-item-empty-preview {
-        .ant-spin {
-            position: inherit;
-        }
+        @extend .cvat-base-preview;
 
-        font-size: $grid-unit-size * 15;
-        text-align: center;
         height: $grid-unit-size * 24;
+
+        svg {
+            width: 40%;
+            height: 40%;
+        }
     }
 
     .cvat-cloud-storage-item-preview {

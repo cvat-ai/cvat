@@ -125,17 +125,17 @@
 
 .cvat-model-item-loading-preview,
 .cvat-model-item-empty-preview {
-    .ant-spin {
-        position: inherit;
-    }
+    @extend .cvat-base-preview;
 
-    font-size: 80px;
-    text-align: center;
     height: $grid-unit-size * 18;
 
     &:hover {
         cursor: pointer;
     }
+}
+
+.cvat-model-item-loading-preview {
+    padding-top: $grid-unit-size * 3;
 }
 
 .cvat-models-item-card-preview-wrapper {
