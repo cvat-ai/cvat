@@ -36,7 +36,7 @@
   "pk": 1,
   "fields": {
     "password": "pbkdf2_sha256$260000$DevmxlmLwciP1P6sZs2Qag$U9DFtjTWx96Sk95qY6UXVcvpdQEP2LcoFBftk5D2RKY=",
-    "last_login": "2023-03-24T15:47:56.947Z",
+    "last_login": "2023-03-27T19:06:41.550Z",
     "is_superuser": true,
     "username": "admin1",
     "first_name": "Admin",
@@ -561,6 +561,14 @@
 },
 {
   "model": "sessions.session",
+  "pk": "kxl8ptkbmarqynt3suxkv33cj4ydkvmc",
+  "fields": {
+    "session_data": ".eJxVjEEOwiAQRe_C2hBKGTq4dO8ZyDCAVA0kpV0Z765NutDtf-_9l_C0rcVvPS1-juIsBnH63QLxI9UdxDvVW5Pc6rrMQe6KPGiX1xbT83K4fweFevnWFLJzkCwlUlqRNiNbNxp0aA1rBMRggBLrSBBwAguKg4sTjNlmPbB4fwDf0jez:1pgsAz:RTj9nJ-XuKRexyoIAYjnSSeB_IjwXNoqh49bdhH9wMc",
+    "expire_date": "2023-04-10T19:06:41.555Z"
+  }
+},
+{
+  "model": "sessions.session",
   "pk": "lqzut02cip3i7xxinmal28z3mo302vey",
   "fields": {
     "session_data": ".eJxVjEEOwiAQRe_C2hCmUCgu3XsGMjCDVA1NSrsy3l1JutDtf-_9lwi4byXsjdcwkzgLEKffLWJ6cO2A7lhvi0xL3dY5yq7IgzZ5XYifl8P9OyjYSq-9niK4b6A1cfYZnCUEBGuzZxW1UsnYFBV7A9PAIxlMzmmj8pDdyOL9AfdKOC0:1nNLbm:bXtVicsOrZtQ_p4Qr9bOTAmHWYJMHD8_GCUbncB6nzQ",
@@ -637,14 +645,6 @@
   "fields": {
     "session_data": ".eJxVjEEOgjAQRe_StWlmahlal-45A5npFEFNSSisjHdXEha6_e-9_zI9b-vYbzUv_aTmYhDM6XcUTo9cdqJ3LrfZprmsyyR2V-xBq-1mzc_r4f4djFzHbx2G5oxKA4foXCRS9QlEghKDpwBNExWyEw-Z2owOJSTH2IK24smjeX8A-A43ag:1oVRr1:YjNerWaOn53u4nuATnD-oXeI5uqdL6lAyKX4jCG0b94",
     "expire_date": "2022-09-20T06:14:35.567Z"
-  }
-},
-{
-  "model": "sessions.session",
-  "pk": "w95k82spq987lzo5p1gfgreyawi4robh",
-  "fields": {
-    "session_data": ".eJxVjEEOwiAQRe_C2hBKGTq4dO8ZyDCAVA0kpV0Z765NutDtf-_9l_C0rcVvPS1-juIsBnH63QLxI9UdxDvVW5Pc6rrMQe6KPGiX1xbT83K4fweFevnWFLJzkCwlUlqRNiNbNxp0aA1rBMRggBLrSBBwAguKg4sTjNlmPbB4fwDf0jez:1pfje0:JqllwDP92BigdT2x3qgxEJG-ZUAbDi8zcfisT4pS5WA",
-    "expire_date": "2023-04-07T15:47:56.958Z"
   }
 },
 {
@@ -3221,9 +3221,9 @@
     ],
     "assignee": null,
     "bug_tracker": "",
-    "created_date": "2023-03-24T15:50:01.710Z",
-    "updated_date": "2023-03-24T15:50:49.681Z",
-    "overlap": 3,
+    "created_date": "2023-03-27T19:08:07.649Z",
+    "updated_date": "2023-03-27T19:08:40.032Z",
+    "overlap": 0,
     "segment_size": 6,
     "status": "annotation",
     "data": 20,
@@ -4298,25 +4298,7 @@
   "pk": 26,
   "fields": {
     "task": 21,
-    "start_frame": 3,
-    "stop_frame": 8
-  }
-},
-{
-  "model": "engine.segment",
-  "pk": 27,
-  "fields": {
-    "task": 21,
     "start_frame": 6,
-    "stop_frame": 9
-  }
-},
-{
-  "model": "engine.segment",
-  "pk": 28,
-  "fields": {
-    "task": 21,
-    "start_frame": 9,
     "stop_frame": 9
   }
 },
@@ -4540,7 +4522,7 @@
   "fields": {
     "segment": 25,
     "assignee": null,
-    "updated_date": "2023-03-24T15:50:22.774Z",
+    "updated_date": "2023-03-27T19:08:27.216Z",
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress"
@@ -4552,34 +4534,10 @@
   "fields": {
     "segment": 26,
     "assignee": null,
-    "updated_date": "2023-03-24T15:50:01.962Z",
-    "status": "annotation",
-    "stage": "annotation",
-    "state": "new"
-  }
-},
-{
-  "model": "engine.job",
-  "pk": 27,
-  "fields": {
-    "segment": 27,
-    "assignee": null,
-    "updated_date": "2023-03-24T15:50:49.819Z",
+    "updated_date": "2023-03-27T19:08:40.166Z",
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress"
-  }
-},
-{
-  "model": "engine.job",
-  "pk": 28,
-  "fields": {
-    "segment": 28,
-    "assignee": null,
-    "updated_date": "2023-03-24T15:50:01.972Z",
-    "status": "annotation",
-    "stage": "annotation",
-    "state": "new"
   }
 },
 {
@@ -5279,7 +5237,7 @@
   "pk": 5,
   "fields": {
     "root": 58,
-    "svg": "<line x1=\"53.07773208618164\" y1=\"29.821428298950195\" x2=\"32.909664154052734\" y2=\"59.905460357666016\" stroke=\"black\" data-type=\"edge\" data-node-from=\"3\" stroke-width=\"0.5\" data-node-to=\"2\"></line><line x1=\"69.71638488769531\" y1=\"68.30882263183594\" x2=\"53.07773208618164\" y2=\"29.821428298950195\" stroke=\"black\" data-type=\"edge\" data-node-from=\"4\" stroke-width=\"0.5\" data-node-to=\"3\"></line><line x1=\"31.060924530029297\" y1=\"35.871849060058594\" x2=\"69.71638488769531\" y2=\"68.30882263183594\" stroke=\"black\" data-type=\"edge\" data-node-from=\"1\" stroke-width=\"0.5\" data-node-to=\"4\"></line><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"31.060924530029297\" cy=\"35.871849060058594\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-id=\"59\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"32.909664154052734\" cy=\"59.905460357666016\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-id=\"60\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"53.07773208618164\" cy=\"29.821428298950195\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"3\" data-node-id=\"3\" data-label-id=\"61\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"69.71638488769531\" cy=\"68.30882263183594\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"4\" data-node-id=\"4\" data-label-id=\"62\"></circle>"
+    "svg": "<line x1=\"49.88445281982422\" y1=\"18.897058486938477\" x2=\"35.59873962402344\" y2=\"61.081932067871094\" stroke=\"black\" data-type=\"edge\" data-node-from=\"3\" stroke-width=\"0.5\" data-node-to=\"2\"></line><line x1=\"70.72479248046875\" y1=\"68.30882263183594\" x2=\"49.88445281982422\" y2=\"18.897058486938477\" stroke=\"black\" data-type=\"edge\" data-node-from=\"4\" stroke-width=\"0.5\" data-node-to=\"3\"></line><line x1=\"25.0105037689209\" y1=\"31.165966033935547\" x2=\"70.72479248046875\" y2=\"68.30882263183594\" stroke=\"black\" data-type=\"edge\" data-node-from=\"1\" stroke-width=\"0.5\" data-node-to=\"4\"></line><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"25.0105037689209\" cy=\"31.165966033935547\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-id=\"59\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"35.59873962402344\" cy=\"61.081932067871094\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-id=\"60\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"49.88445281982422\" cy=\"18.897058486938477\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"3\" data-node-id=\"3\" data-label-id=\"61\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"70.72479248046875\" cy=\"68.30882263183594\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"4\" data-node-id=\"4\" data-label-id=\"62\"></circle>"
   }
 },
 {
@@ -6038,7 +5996,25 @@
   "model": "engine.labeledshape",
   "pk": 58,
   "fields": {
-    "job": 27,
+    "job": 26,
+    "label": 57,
+    "frame": 6,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[42.63157931421483, 51.228199155397306, 106.13274329786509, 138.0929989443539]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 59,
+  "fields": {
+    "job": 26,
     "label": 58,
     "frame": 6,
     "group": 0,
@@ -6054,27 +6030,9 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 59,
-  "fields": {
-    "job": 27,
-    "label": 57,
-    "frame": 6,
-    "group": 0,
-    "source": "manual",
-    "type": "rectangle",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "[109.12808122162278, 74.8913687530785, 200.78542168858985, 144.38320858424413]",
-    "rotation": 0.0,
-    "parent": null
-  }
-},
-{
-  "model": "engine.labeledshape",
   "pk": 60,
   "fields": {
-    "job": 27,
+    "job": 26,
     "label": 59,
     "frame": 6,
     "group": 0,
@@ -6083,16 +6041,16 @@
     "occluded": false,
     "outside": false,
     "z_order": 0,
-    "points": "[195.6933472182027, 53.22683643853867]",
+    "points": "[103.73647295885894, 51.085564225393554]",
     "rotation": 0.0,
-    "parent": 58
+    "parent": 59
   }
 },
 {
   "model": "engine.labeledshape",
   "pk": 61,
   "fields": {
-    "job": 27,
+    "job": 26,
     "label": 60,
     "frame": 6,
     "group": 0,
@@ -6101,16 +6059,16 @@
     "occluded": false,
     "outside": false,
     "z_order": 0,
-    "points": "[199.56124055346018, 99.23993241097814]",
+    "points": "[125.86783527366472, 101.86367376801435]",
     "rotation": 0.0,
-    "parent": 58
+    "parent": 59
   }
 },
 {
   "model": "engine.labeledshape",
   "pk": 62,
   "fields": {
-    "job": 27,
+    "job": 26,
     "label": 61,
     "frame": 6,
     "group": 0,
@@ -6119,16 +6077,16 @@
     "occluded": false,
     "outside": false,
     "z_order": 0,
-    "points": "[241.75643912335494, 41.64311779937452]",
+    "points": "[155.7276059652392, 30.260833689097126]",
     "rotation": 0.0,
-    "parent": 58
+    "parent": 59
   }
 },
 {
   "model": "engine.labeledshape",
   "pk": 63,
   "fields": {
-    "job": 27,
+    "job": 26,
     "label": 62,
     "frame": 6,
     "group": 0,
@@ -6137,9 +6095,9 @@
     "occluded": false,
     "outside": false,
     "z_order": 0,
-    "points": "[276.5674711596446, 115.32843072379936]",
+    "points": "[199.28775272671066, 114.13029555429613]",
     "rotation": 0.0,
-    "parent": 58
+    "parent": 59
   }
 },
 {
@@ -6329,7 +6287,7 @@
   "model": "engine.labeledtrack",
   "pk": 11,
   "fields": {
-    "job": 27,
+    "job": 26,
     "label": 58,
     "frame": 6,
     "group": 0,
@@ -6341,7 +6299,7 @@
   "model": "engine.labeledtrack",
   "pk": 12,
   "fields": {
-    "job": 27,
+    "job": 26,
     "label": 59,
     "frame": 6,
     "group": 0,
@@ -6353,7 +6311,7 @@
   "model": "engine.labeledtrack",
   "pk": 13,
   "fields": {
-    "job": 27,
+    "job": 26,
     "label": 60,
     "frame": 6,
     "group": 0,
@@ -6365,7 +6323,7 @@
   "model": "engine.labeledtrack",
   "pk": 14,
   "fields": {
-    "job": 27,
+    "job": 26,
     "label": 61,
     "frame": 6,
     "group": 0,
@@ -6377,7 +6335,7 @@
   "model": "engine.labeledtrack",
   "pk": 15,
   "fields": {
-    "job": 27,
+    "job": 26,
     "label": 62,
     "frame": 6,
     "group": 0,
@@ -6551,7 +6509,7 @@
     "occluded": false,
     "outside": true,
     "z_order": 0,
-    "points": "[316.1327744068658, 107.8600451806883]",
+    "points": "[230.39103314621025, 149.98846070356873]",
     "rotation": 0.0,
     "track": 7,
     "frame": 0
@@ -6565,10 +6523,10 @@
     "occluded": false,
     "outside": false,
     "z_order": 0,
-    "points": "[316.1327744068658, 107.8600451806883]",
+    "points": "[230.39103314621025, 149.98846070356873]",
     "rotation": 0.0,
     "track": 7,
-    "frame": 2
+    "frame": 3
   }
 },
 {
@@ -6579,7 +6537,7 @@
     "occluded": false,
     "outside": false,
     "z_order": 0,
-    "points": "[328.5185393626825, 263.38617417333893]",
+    "points": "[292.80597636674844, 284.1818841927473]",
     "rotation": 0.0,
     "track": 8,
     "frame": 0
@@ -6593,7 +6551,7 @@
     "occluded": false,
     "outside": false,
     "z_order": 0,
-    "points": "[463.6359705976206, 68.70660676897387]",
+    "points": "[377.016603158851, 94.95407858346152]",
     "rotation": 0.0,
     "track": 9,
     "frame": 0
@@ -6607,7 +6565,7 @@
     "occluded": false,
     "outside": false,
     "z_order": 0,
-    "points": "[575.1078296431301, 317.7659504308768]",
+    "points": "[499.86507710826913, 316.59939612801213]",
     "rotation": 0.0,
     "track": 10,
     "frame": 0
@@ -6635,7 +6593,7 @@
     "occluded": false,
     "outside": false,
     "z_order": 0,
-    "points": "[30.35069382681104, 61.88454181626504]",
+    "points": "[92.95325643333308, 129.2954675940839]",
     "rotation": 0.0,
     "track": 12,
     "frame": 6
@@ -6649,7 +6607,7 @@
     "occluded": false,
     "outside": false,
     "z_order": 0,
-    "points": "[36.48202103973772, 162.514808617779]",
+    "points": "[133.81649280769233, 195.4883603907146]",
     "rotation": 0.0,
     "track": 13,
     "frame": 6
@@ -6663,7 +6621,7 @@
     "occluded": false,
     "outside": false,
     "z_order": 0,
-    "points": "[103.369224698682, 36.55104332898736]",
+    "points": "[188.94942364574058, 102.14894385926891]",
     "rotation": 0.0,
     "track": 14,
     "frame": 6
@@ -6677,7 +6635,7 @@
     "occluded": false,
     "outside": false,
     "z_order": 0,
-    "points": "[158.55115696361523, 197.70022362711973]",
+    "points": "[269.3786601426267, 211.47877807640333]",
     "rotation": 0.0,
     "track": 15,
     "frame": 6

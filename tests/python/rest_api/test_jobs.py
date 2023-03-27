@@ -658,7 +658,7 @@ class TestJobDataset:
         check_func(content, values_to_be_checked)
 
     @pytest.mark.parametrize("username", ["admin1"])
-    @pytest.mark.parametrize("jid", [25, 26, 27, 28])
+    @pytest.mark.parametrize("jid", [25, 26])
     @pytest.mark.parametrize(
         "anno_format, anno_file_name, check_func",
         [

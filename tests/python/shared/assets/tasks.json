@@ -6,7 +6,7 @@
     {
       "assignee": null,
       "bug_tracker": "",
-      "created_date": "2023-03-24T15:50:01.710000Z",
+      "created_date": "2023-03-27T19:08:07.649000Z",
       "data": 20,
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
@@ -16,7 +16,7 @@
       "image_quality": 70,
       "jobs": {
         "completed": 0,
-        "count": 4,
+        "count": 2,
         "url": "http://localhost:8080/api/jobs?task_id=21"
       },
       "labels": {
@@ -26,7 +26,7 @@
       "mode": "annotation",
       "name": "task with several jobs",
       "organization": null,
-      "overlap": 3,
+      "overlap": 0,
       "owner": {
         "first_name": "Admin",
         "id": 1,
@@ -49,7 +49,7 @@
         "id": 34,
         "location": "local"
       },
-      "updated_date": "2023-03-24T15:50:49.681000Z",
+      "updated_date": "2023-03-27T19:08:40.032000Z",
       "url": "http://localhost:8080/api/tasks/21"
     },
     {

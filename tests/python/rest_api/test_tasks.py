@@ -389,7 +389,7 @@ class TestPatchTaskAnnotations:
         users = find_users(privilege=privilege)
         tasks = tasks_by_org[org]
         filtered_tasks = filter_tasks_with_shapes(tasks)
-        username, tid = find_task_staff_user(filtered_tasks, users, task_staff)
+        username, tid = find_task_staff_user(filtered_tasks, users, task_staff, [21])
 
         data = request_data(tid)
         with make_api_client(username) as api_client:
