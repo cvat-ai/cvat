@@ -25,52 +25,7 @@ const styleLoaders = [
     'sass-loader',
 ];
 
-const nodeConfig = {
-    target: 'node',
-    mode: 'production',
-    devtool: 'source-map',
-    entry: './src/typescript/canvas3d.ts',
-    output: {
-        path: path.resolve(__dirname, 'dist'),
-        filename: 'cvat-canvas3d.node.js',
-        library: 'canvas3d',
-        libraryTarget: 'commonjs',
-    },
-    resolve: {
-        extensions: ['.ts', '.js', '.json'],
-    },
-    module: {
-        rules: [
-            {
-                test: /\.ts$/,
-                exclude: /node_modules/,
-                use: {
-                    loader: 'babel-loader',
-                    options: {
-                        plugins: [
-                            '@babel/plugin-proposal-class-properties',
-                            '@babel/plugin-proposal-optional-chaining',
-                        ],
-                        presets: [['@babel/preset-env', { targets: 'node > 10' }], '@babel/typescript'],
-                        sourceType: 'unambiguous',
-                    },
-                },
-            },
-            {
-                test: /\.(css|scss)$/,
-                exclude: /node_modules/,
-                use: styleLoaders,
-            },
-        ],
-    },
-    plugins: [
-        new BundleDeclarationsWebpackPlugin({
-            outFile: "declaration/src/cvat-canvas.d.ts",
-        }),
-    ],
-};
-
-const webConfig = {
+module.exports = {
     target: 'web',
     mode: 'production',
     devtool: 'source-map',
@@ -82,12 +37,6 @@ const webConfig = {
         filename: '[name].[contenthash].js',
         library: 'canvas3d',
         libraryTarget: 'window',
-    },
-    devServer: {
-        contentBase: path.join(__dirname, 'dist'),
-        compress: false,
-        inline: true,
-        port: 3000,
     },
     resolve: {
         extensions: ['.ts', '.js', '.json'],
@@ -119,5 +68,3 @@ const webConfig = {
         }),
     ],
 };
-
-module.exports = [webConfig, nodeConfig];

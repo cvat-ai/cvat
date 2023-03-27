@@ -238,10 +238,14 @@ export class MasksHandlerImpl implements MasksHandler {
                         const alpha = +object.stroke.split(',')[3].slice(0, -1);
                         color.setAlpha(alpha);
                         object.set({ stroke: color.toRgba() });
-                    } else if (!(object instanceof fabric.Image)) {
+                    } else if (
+                        object instanceof fabric.Rect ||
+                        object instanceof fabric.Polygon ||
+                        object instanceof fabric.Circle
+                    ) {
                         const alpha = +(object.fill as string).split(',')[3].slice(0, -1);
                         color.setAlpha(alpha);
-                        object.set({ fill: color.toRgba() });
+                        (object as fabric.Object).set({ fill: color.toRgba() });
                     }
                 }
                 this.canvas.renderAll();
