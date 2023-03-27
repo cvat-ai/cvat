@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: '2.5'
+  version: 2.5.dev20230327193052
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -7304,30 +7304,39 @@ components:
       - image_quality
     DataRequest:
       type: object
+      description: |-
+        Read more about parameters here:
+        https://opencv.github.io/cvat/docs/manual/basics/create_an_annotation_task/#advanced-configuration
       properties:
         chunk_size:
           type: integer
           maximum: 2147483647
           minimum: 0
           nullable: true
+          description: Maximum size of data chunks
         size:
           type: integer
           maximum: 2147483647
           minimum: 0
+          description: The number of frames
         image_quality:
           type: integer
           maximum: 100
           minimum: 0
+          description: Image quality to use during annotation
         start_frame:
           type: integer
           maximum: 2147483647
           minimum: 0
+          description: First frame index
         stop_frame:
           type: integer
           maximum: 2147483647
           minimum: 0
+          description: Last frame index
         frame_filter:
           type: string
+          description: 'Frame filter. The only supported syntax is: ''step=N'''
           maxLength: 256
         compressed_chunk_type:
           $ref: '#/components/schemas/ChunkType'
@@ -7339,6 +7348,7 @@ components:
             type: string
             format: binary
           default: []
+          description: Files to be uploaded
         server_files:
           type: array
           items:
@@ -7346,6 +7356,8 @@ components:
             minLength: 1
             maxLength: 1024
           default: []
+          description: Files from a file share mounted on the server, or from a cloud
+            storage
         remote_files:
           type: array
           items:
@@ -7353,19 +7365,34 @@ components:
             minLength: 1
             maxLength: 1024
           default: []
+          description: Direct download URLs for files
         use_zip_chunks:
           type: boolean
           default: false
+          description: |
+            Force the use of frame-based chunks for videos.
+            By default, chunks are created from video segments
         cloud_storage_id:
           type: integer
           writeOnly: true
           nullable: true
+          description: |
+            Allows to specify a cloud storage to be used as the data source.
+            The cloud storage record needs to be defined first. Both user
+            sandbox and organization cloud storages can be used
         use_cache:
           type: boolean
           default: false
+          description: |
+            Enable or disable task data chunk caching for the task.
+            Read more: https://opencv.github.io/cvat/docs/manual/advanced/data_on_fly/
         copy_data:
           type: boolean
           default: false
+          description: |
+            Allows to copy data from the server file share to CVAT during the task creation.
+            This will create a copy of the data, making the server independent from
+            the file share availability
         storage_method:
           $ref: '#/components/schemas/StorageMethod'
         storage:
@@ -7376,6 +7403,10 @@ components:
           type: string
           nullable: true
           minLength: 1
+          description: |
+            Allows to specify filename filter for cloud storage files
+            listed in the manifest. Implements fnmatch logic and wildcards.
+            Read more: https://docs.python.org/3/library/fnmatch.html
         job_file_mapping:
           type: array
           items:
@@ -7389,7 +7420,7 @@ components:
 
             Represents a file-to-job mapping. Useful to specify a custom job
             configuration during task creation. This option is not compatible with
-            most other job split-related options.
+            most other job split-related options. Files in the jobs must not overlap and repeat.
 
             Example:
             [
@@ -7397,8 +7428,6 @@ components:
                 ["file3.png"], # job #2 files
                 ["file4.jpg", "file5.png", "file6.bmp"], # job #3 files
             ]
-
-            Files in the jobs must not overlap and repeat.
       required:
       - image_quality
     DatasetFileRequest:
