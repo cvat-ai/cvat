@@ -2251,7 +2251,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 def rq_exception_handler(rq_job, exc_type, exc_value, tb):
     rq_job.meta["formatted_exception"] = "".join(
         traceback.format_exception_only(exc_type, exc_value))
-    rq_job.save()
+    rq_job.save_meta()
 
     return True
 
