@@ -16,9 +16,10 @@ from tempfile import TemporaryDirectory
 from typing import List
 
 import pytest
-from cvat_sdk import Client, Config
+from cvat_sdk import Client, Config, exceptions
 from cvat_sdk.api_client import models
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
+from cvat_sdk.api_client.configuration import Configuration
 from cvat_sdk.core.helpers import get_paginated_collection
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from deepdiff import DeepDiff
@@ -739,6 +740,54 @@ class TestPostTaskData:
         _test_create_task(
             self._USERNAME, task_spec, data_spec, content_type="application/json", org=org
         )
+
+    @pytest.fixture
+    def regular_lonely_user(self):
+        username = "newuser"
+        email = "123@456.com"
+        with ApiClient(Configuration(host=BASE_URL)) as api_client:
+            api_client.auth_api.create_register(
+                models.RegisterSerializerExRequest(
+                    username=username, password1=USER_PASS, password2=USER_PASS, email=email
+                )
+            )
+
+        yield username
+
+    @pytest.mark.with_external_services
+    @pytest.mark.parametrize(
+        "cloud_storage_id, manifest",
+        [
+            (1, "manifest.jsonl"),  # public bucket
+            (2, "sub/manifest.jsonl"),  # private bucket
+        ],
+    )
+    def test_user_cannot_create_task_with_cloud_storage_without_access(
+        self, cloud_storage_id, manifest, regular_lonely_user
+    ):
+        user = regular_lonely_user
+
+        task_spec = {
+            "name": f"Task with files from foreign cloud storage {cloud_storage_id}",
+            "labels": [
+                {
+                    "name": "car",
+                }
+            ],
+        }
+
+        data_spec = {
+            "image_quality": 75,
+            "use_cache": True,
+            "cloud_storage_id": cloud_storage_id,
+            "server_files": [manifest],
+            "filename_pattern": "*",
+        }
+
+        with pytest.raises(exceptions.ApiException) as capture:
+            _test_create_task(user, task_spec, data_spec, content_type="application/json")
+
+        assert capture.value.status == HTTPStatus.FORBIDDEN
 
     @pytest.mark.with_external_services
     @pytest.mark.parametrize("cloud_storage_id", [1])
