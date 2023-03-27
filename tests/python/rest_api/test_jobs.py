@@ -334,7 +334,10 @@ class TestPatchJobAnnotations:
     def request_data(self, annotations):
         def get_data(jid):
             data = deepcopy(annotations["job"][str(jid)])
-            data["shapes"][0].update({"points": [2.0, 3.0, 4.0, 5.0, 6.0, 7.0]})
+            if data["shapes"][0]["type"] == "skeleton":
+                data["shapes"][0]["elements"][0].update({"points": [2.0, 3.0, 4.0, 5.0]})
+            else:
+                data["shapes"][0].update({"points": [2.0, 3.0, 4.0, 5.0, 6.0, 7.0]})
             data["version"] += 1
             return data
 
@@ -369,7 +372,7 @@ class TestPatchJobAnnotations:
         users = find_users(role=role, org=org)
         jobs = jobs_by_org[org]
         filtered_jobs = filter_jobs_with_shapes(jobs)
-        username, jid = find_job_staff_user(filtered_jobs, users, job_staff, [18, 22])
+        username, jid = find_job_staff_user(filtered_jobs, users, job_staff)
 
         data = request_data(jid)
         self._check_respone(username, jid, expect_success, data, org=org)
@@ -393,7 +396,7 @@ class TestPatchJobAnnotations:
         users = find_users(privilege=privilege, exclude_org=org)
         jobs = jobs_by_org[org]
         filtered_jobs = filter_jobs_with_shapes(jobs)
-        username, jid = find_job_staff_user(filtered_jobs, users, False, [18, 22])
+        username, jid = find_job_staff_user(filtered_jobs, users, False)
 
         data = request_data(jid)
         self._check_respone(username, jid, expect_success, data, org=org)
@@ -427,7 +430,7 @@ class TestPatchJobAnnotations:
         users = find_users(privilege=privilege)
         jobs = jobs_by_org[org]
         filtered_jobs = filter_jobs_with_shapes(jobs)
-        username, jid = find_job_staff_user(filtered_jobs, users, job_staff, [27])
+        username, jid = find_job_staff_user(filtered_jobs, users, job_staff)
 
         data = request_data(jid)
         self._check_respone(username, jid, expect_success, data, org=org)
