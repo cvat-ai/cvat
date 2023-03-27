@@ -271,4 +271,4 @@ To save and open the task click **Submit & Open** .
 
 To create several tasks in sequence, click on the **Submit & Continue**.
 
-Created tasks will be displayed on the [tasks page](/docs/manual/basics tasks-page/).
+Created tasks will be displayed on the [tasks page](/docs/manual/basics/tasks-page/).
