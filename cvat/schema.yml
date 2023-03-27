@@ -2233,6 +2233,10 @@ paths:
         '201':
           description: Uploading has finished
         '202':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/RqId'
           description: Uploading has been started
         '405':
           description: Format is not available
@@ -4155,6 +4159,11 @@ paths:
           type: integer
         description: Organization identifier
       - in: query
+        name: rq_id
+        schema:
+          type: string
+        description: rq id
+      - in: query
         name: use_default_location
         schema:
           type: boolean
@@ -4263,6 +4272,10 @@ paths:
       - basicAuth: []
       responses:
         '202':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/RqId'
           description: Importing has been started
         '400':
           description: Failed to import dataset
@@ -4428,6 +4441,10 @@ paths:
         '201':
           description: The project has been imported
         '202':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/RqId'
           description: Importing a backup file has been started
   /api/projects/backup/{file_id}:
     patch:
@@ -5260,6 +5277,10 @@ paths:
         '201':
           description: Uploading has finished
         '202':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/RqId'
           description: Uploading has been started
         '405':
           description: Format is not available
@@ -6065,6 +6086,10 @@ paths:
         '201':
           description: The task has been imported
         '202':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/RqId'
           description: Importing a backup file has been started
   /api/tasks/backup/{file_id}:
     patch:
@@ -9138,6 +9163,13 @@ components:
       - maintainer
       - owner
       type: string
+    RqId:
+      type: object
+      properties:
+        rq_id:
+          type: string
+      required:
+      - rq_id
     RqStatus:
       type: object
       properties:

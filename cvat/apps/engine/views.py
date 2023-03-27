@@ -275,6 +275,8 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             OpenApiParameter('use_default_location', description='Use the location that was configured in project to import dataset',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.BOOL, required=False,
                 default=True),
+            OpenApiParameter('rq_id', description='rq id',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
         ],
         responses={
             '200': OpenApiResponse(OpenApiTypes.BINARY, description='Download of file started'),
@@ -303,7 +305,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             resource_type_field_name=None
         ),
         responses={
-            '202': OpenApiResponse(description='Importing has been started'),
+            '202': OpenApiResponse(RqIdSerializer, description='Importing has been started'),
             '400': OpenApiResponse(description='Failed to import dataset'),
             '405': OpenApiResponse(description='Format is not available'),
         })
@@ -482,7 +484,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def export_backup(self, request, pk=None):
         return self.serialize(request, backup.export)
 
-    @extend_schema(summary='Methods create a project from a backup',
+    @extend_schema(methods=['POST'], summary='Methods create a project from a backup',
         parameters=[
             OpenApiParameter('location', description='Where to import the backup file from',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
@@ -497,11 +499,17 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             resource_type_field_name=None
         ),
         responses={
-            '201': OpenApiResponse(inline_serializer("ImportedProjectIdSerializer", fields={
-                "id": serializers.IntegerField(required=True),
-            }), description='The project has been imported'),
+            '201': OpenApiResponse(description='The project has been imported'),
             '202': OpenApiResponse(RqIdSerializer, description='Importing a backup file has been started'),
         })
+        # TODO: for some reason the code generated from schema with different serializers
+        # contains only one serializer, need to fix that.
+        # responses={
+        #     '201': OpenApiResponse(inline_serializer("ImportedProjectIdSerializer", fields={
+        #         "id": serializers.IntegerField(required=True),
+        #     }), description='The project has been imported'),
+        #     '202': OpenApiResponse(RqIdSerializer, description='Importing a backup file has been started'),
+        # })
     @action(detail=False, methods=['OPTIONS', 'POST'], url_path=r'backup/?$',
         serializer_class=ProjectFileSerializer(required=False))
     def import_backup(self, request, pk=None):
@@ -733,11 +741,17 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         ],
         request=TaskFileSerializer(required=False),
         responses={
-            '201': OpenApiResponse(inline_serializer("ImportedTaskIdSerializer", fields={
-                "id": serializers.IntegerField(required=True),
-            }), description='The task has been imported'),
+            '201': OpenApiResponse(description='The task has been imported'),
             '202': OpenApiResponse(RqIdSerializer, description='Importing a backup file has been started'),
         })
+        # TODO: for some reason the code generated from schema with different serializers
+        # contains only one serializer, need to fix that.
+        # responses={
+        #     '201': OpenApiResponse(inline_serializer("ImportedTaskIdSerializer", fields={
+        #         "id": serializers.IntegerField(required=True),
+        #     }), description='The project has been imported'),
+        #     '202': OpenApiResponse(RqIdSerializer, description='Importing a backup file has been started'),
+        # })
     @action(detail=False, methods=['OPTIONS', 'POST'], url_path=r'backup/?$', serializer_class=TaskFileSerializer(required=False))
     def import_backup(self, request, pk=None):
         return self.deserialize(request, backup.import_task)
@@ -1021,7 +1035,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         ),
         responses={
             '201': OpenApiResponse(description='Uploading has finished'),
-            '202': OpenApiResponse(description='Uploading has been started'),
+            '202': OpenApiResponse(RqIdSerializer, description='Uploading has been started'),
             '405': OpenApiResponse(description='Format is not available'),
         })
     @extend_schema(methods=['PATCH'], summary='Method performs a partial update of annotations in a specific task',
@@ -1400,7 +1414,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         request=AnnotationFileSerializer,
         responses={
             '201': OpenApiResponse(description='Uploading has finished'),
-            '202': OpenApiResponse(description='Uploading has been started'),
+            '202': OpenApiResponse(RqIdSerializer, description='Uploading has been started'),
             '405': OpenApiResponse(description='Format is not available'),
         })
     @extend_schema(methods=['PUT'], summary='Method performs an update of all annotations in a specific job',
@@ -2262,7 +2276,7 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
     elif not format_desc.ENABLED:
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    rq_id = request.data.get('rq_id', rq_id_template.format(db_obj.pk, request.user))
+    rq_id = request.query_params.get('rq_id', rq_id_template.format(db_obj.pk, request.user))
 
     queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
     rq_job = queue.fetch_job(rq_id)
@@ -2323,6 +2337,7 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
             result_ttl=IMPORT_CACHE_SUCCESS_TTL,
             failure_ttl=IMPORT_CACHE_FAILED_TTL
         )
+        return Response({'rq_id': rq_id}, status=status.HTTP_202_ACCEPTED)
     else:
         if rq_job.is_finished:
             rq_job.delete()
@@ -2343,7 +2358,7 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
                 return Response(data=exc_info,
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    return Response({'rq_id': rq_id}, status=status.HTTP_202_ACCEPTED)
+    return Response(status=status.HTTP_202_ACCEPTED)
 
 def _export_annotations(db_instance, rq_id, request, format_name, action, callback,
                         filename, location_conf):

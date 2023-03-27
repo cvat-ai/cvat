@@ -778,7 +778,6 @@ async function importDataset(
                         params: { ...params, action: 'import_status', rq_id: rqId },
                     });
                     if (response.status === 202) {
-                        rqId = response.data.rq_id;
                         if (response.data.message) {
                             options.updateStatusCallback(response.data.message, response.data.progress || 0);
                         }
@@ -1613,19 +1612,14 @@ async function uploadAnnotations(
         return new Promise<void>((resolve, reject) => {
             async function requestStatus() {
                 try {
-                    const data = new FormData();
-                    if (rqId) {
-                        data.set('rq_id', rqId);
-                    }
                     const response = await Axios.put(
                         url,
-                        data,
+                        new FormData(),
                         {
-                            params,
+                            params: { ...params, rq_id: rqId },
                         },
                     );
                     if (response.status === 202) {
-                        rqId = response.data.rq_id;
                         setTimeout(requestStatus, 3000);
                     } else {
                         resolve();

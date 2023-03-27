@@ -11,7 +11,7 @@ from typing import Any, Dict, TypeVar
 
 import pytest
 
-from shared.utils.config import get_method, post_method
+from shared.utils.config import get_method, post_method, put_method
 from shared.utils.s3 import make_client
 
 T = TypeVar("T")
@@ -86,10 +86,12 @@ class _S3ResourceTest:
         url = f"{obj}/{obj_id}/annotations"
         response = post_method(user, url, data=None, **kwargs)
         status = response.status_code
+        rq_id = response.json().get('rq_id')
+        assert rq_id, 'The rq_id was not found in the response'
 
         while status != HTTPStatus.CREATED:
             assert status == HTTPStatus.ACCEPTED
-            response = post_method(user, url, data=None, **kwargs)
+            response = put_method(user, url, data=None, rq_id=rq_id, **kwargs)
             status = response.status_code
 
     def _import_backup_from_cloud_storage(self, obj_id, obj, *, user, **kwargs):
@@ -107,10 +109,12 @@ class _S3ResourceTest:
         url = f"{obj}/{obj_id}/dataset"
         response = post_method(user, url, data=None, **kwargs)
         status = response.status_code
+        rq_id = response.json().get('rq_id')
+        assert rq_id, 'The rq_id was not found in the response'
 
         while status != HTTPStatus.CREATED:
             assert status == HTTPStatus.ACCEPTED
-            response = get_method(user, url, action="import_status")
+            response = get_method(user, url, action="import_status", rq_id=rq_id)
             status = response.status_code
 
     def _export_resource(self, cloud_storage: Dict[str, Any], *args, **kwargs):

@@ -461,11 +461,13 @@ class TestImportExportDatasetProject:
                 _content_type="multipart/form-data",
             )
             assert response.status == HTTPStatus.ACCEPTED
+            rq_id = json.loads(response.data).get('rq_id')
+            assert rq_id, 'The rq_id was not found in the response'
 
             while True:
                 # TODO: It's better be refactored to a separate endpoint to get request status
                 (_, response) = api_client.projects_api.retrieve_dataset(
-                    project_id, action="import_status"
+                    project_id, action="import_status", rq_id=rq_id
                 )
                 if response.status == HTTPStatus.CREATED:
                     break

@@ -595,6 +595,9 @@ class RqStatusSerializer(serializers.Serializer):
     message = serializers.CharField(allow_blank=True, default="")
     progress = serializers.FloatField(max_value=100, default=0)
 
+class RqIdSerializer(serializers.Serializer):
+    rq_id = serializers.CharField()
+
 class WriteOnceMixin:
     """
     Adds support for write once fields to serializers.
