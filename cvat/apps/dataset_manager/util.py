@@ -39,13 +39,14 @@ def bulk_create(db_model, objects, flt_param):
     return []
 
 
-def remove_resources(func):
+def remove_resources(func, should_be_deleted=True):
     @functools.wraps(func)
     def wrapper(src_file, *args, **kwargs):
         try:
             func(src_file, *args, **kwargs)
         finally:
-            with suppress(FileNotFoundError):
-                os.remove(src_file)
+            if should_be_deleted:
+                with suppress(FileNotFoundError):
+                    os.remove(src_file)
         return None
     return wrapper

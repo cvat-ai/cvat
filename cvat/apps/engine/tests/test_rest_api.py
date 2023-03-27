@@ -1880,9 +1880,9 @@ class ProjectImportExportAPITestCase(APITestCase):
             response = self.client.post("/api/projects/{}/dataset?format={}".format(pid, f),  data=data, format="multipart")
         return response
 
-    def _run_api_v2_projects_id_dataset_import_status(self, pid, user):
+    def _run_api_v2_projects_id_dataset_import_status(self, pid, user, rq_id):
         with ForceLogin(user, self.client):
-            response = self.client.get("/api/projects/{}/dataset?action=import_status".format(pid), format="json")
+            response = self.client.get("/api/projects/{}/dataset?action=import_status&rq_id={}".format(pid, rq_id), format="json")
         return response
 
     def test_api_v2_projects_id_export_import(self):
@@ -1911,7 +1911,8 @@ class ProjectImportExportAPITestCase(APITestCase):
         response = self._run_api_v2_projects_id_dataset_import(pid_import, self.owner, import_data, "CVAT 1.1")
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
 
-        response = self._run_api_v2_projects_id_dataset_import_status(pid_import, self.owner)
+        rq_id = response.data.get('rq_id')
+        response = self._run_api_v2_projects_id_dataset_import_status(pid_import, self.owner, rq_id)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def tearDown(self) -> None:
