@@ -86,8 +86,8 @@ class _S3ResourceTest:
         url = f"{obj}/{obj_id}/annotations"
         response = post_method(user, url, data=None, **kwargs)
         status = response.status_code
-        rq_id = response.json().get('rq_id')
-        assert rq_id, 'The rq_id was not found in the response'
+        rq_id = response.json().get("rq_id")
+        assert rq_id, "The rq_id was not found in the response"
 
         while status != HTTPStatus.CREATED:
             assert status == HTTPStatus.ACCEPTED
@@ -109,8 +109,8 @@ class _S3ResourceTest:
         url = f"{obj}/{obj_id}/dataset"
         response = post_method(user, url, data=None, **kwargs)
         status = response.status_code
-        rq_id = response.json().get('rq_id')
-        assert rq_id, 'The rq_id was not found in the response'
+        rq_id = response.json().get("rq_id")
+        assert rq_id, "The rq_id was not found in the response"
 
         while status != HTTPStatus.CREATED:
             assert status == HTTPStatus.ACCEPTED
