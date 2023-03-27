@@ -218,6 +218,7 @@ MIDDLEWARE = [
     # FIXME
     # 'corsheaders.middleware.CorsPostCsrfMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'cvat.apps.engine.middleware.RequestTrackingMiddleware',
     'crum.CurrentRequestUserMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',

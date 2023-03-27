@@ -1355,6 +1355,8 @@ class CloudStorageReadSerializer(serializers.ModelSerializer):
                 'resource': 'somebucket',
                 'display_name': 'Bucket',
                 'credentials_type': models.CredentialsTypeChoice.KEY_SECRET_KEY_PAIR,
+                'key': 'XXX',
+                'secret_key': 'XXX',
                 'specific_attributes': 'region=eu-central-1',
                 'description': 'Some description',
                 'manifests': [
@@ -1416,13 +1418,14 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
     key_file = serializers.FileField(required=False)
     account_name = serializers.CharField(max_length=24, allow_blank=True, required=False)
     manifests = ManifestSerializer(many=True, default=[])
+    connection_string = serializers.CharField(max_length=440, allow_blank=True, required=False)
 
     class Meta:
         model = models.CloudStorage
         fields = (
             'provider_type', 'resource', 'display_name', 'owner', 'credentials_type',
             'created_date', 'updated_date', 'session_token', 'account_name', 'key',
-            'secret_key', 'key_file', 'specific_attributes', 'description', 'id',
+            'secret_key', 'connection_string', 'key_file', 'specific_attributes', 'description', 'id',
             'manifests', 'organization'
         )
         read_only_fields = ('created_date', 'updated_date', 'owner', 'organization')
@@ -1440,8 +1443,8 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         provider_type = attrs.get('provider_type')
         if provider_type == models.CloudProviderChoice.AZURE_CONTAINER:
-            if not attrs.get('account_name', ''):
-                raise serializers.ValidationError('Account name for Azure container was not specified')
+            if not attrs.get('account_name', '') and not attrs.get('connection_string', ''):
+                raise serializers.ValidationError('Account name or connection string for Azure container was not specified')
         return attrs
 
     @staticmethod
@@ -1466,7 +1469,7 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
 
         key_file = validated_data.pop('key_file', None)
         # we need to save it to temporary file to check the granted permissions
-        temporary_file = ''
+        temporary_file = None
         if key_file:
             with NamedTemporaryFile(mode='wb', prefix='cvat', delete=False) as temp_key:
                 temp_key.write(key_file.read())
@@ -1479,7 +1482,8 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
             secret_key=validated_data.pop('secret_key', ''),
             session_token=validated_data.pop('session_token', ''),
             key_file_path=temporary_file,
-            credentials_type = validated_data.get('credentials_type')
+            credentials_type = validated_data.get('credentials_type'),
+            connection_string = validated_data.pop('connection_string', '')
         )
         details = {
             'resource': validated_data.get('resource'),
@@ -1547,7 +1551,7 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
         }}
 
         key_file = validated_data.pop('key_file', None)
-        temporary_file = ''
+        temporary_file = None
         if key_file:
             with NamedTemporaryFile(mode='wb', prefix='cvat', delete=False) as temp_key:
                 temp_key.write(key_file.read())

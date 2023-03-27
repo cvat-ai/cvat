@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -412,7 +413,6 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 ...state,
                 player: {
                     ...state.player,
-                    resetZoom: job && job.mode === 'annotation',
                 },
                 shapes: {
                     ...defaultState.shapes,

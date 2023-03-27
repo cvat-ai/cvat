@@ -796,6 +796,7 @@ class CredentialsTypeChoice(str, Enum):
     ACCOUNT_NAME_TOKEN_PAIR = 'ACCOUNT_NAME_TOKEN_PAIR' # nosec
     KEY_FILE_PATH = 'KEY_FILE_PATH'
     ANONYMOUS_ACCESS = 'ANONYMOUS_ACCESS'
+    CONNECTION_STRING = 'CONNECTION_STRING'
 
     @classmethod
     def choices(cls):
@@ -850,7 +851,7 @@ class CloudStorage(models.Model):
         on_delete=models.SET_NULL, related_name="cloud_storages")
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
-    credentials = models.CharField(max_length=500)
+    credentials = models.CharField(max_length=500, null=True, blank=True)
     credentials_type = models.CharField(max_length=29, choices=CredentialsTypeChoice.choices())#auth_type
     specific_attributes = models.CharField(max_length=1024, blank=True)
     description = models.TextField(blank=True)
@@ -859,7 +860,6 @@ class CloudStorage(models.Model):
 
     class Meta:
         default_permissions = ()
-        unique_together = ('provider_type', 'resource', 'credentials')
 
     def __str__(self):
         return "{} {} {}".format(self.provider_type, self.display_name, self.id)

@@ -116,7 +116,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - uses: actions/setup-python@v3
+      - uses: actions/setup-python@v4
         with:
           python-version: '3.8'
 
@@ -167,9 +167,6 @@ jobs:
 
       - name: REST API and SDK tests
         run: |
-          docker run --rm -v ${PWD}/cvat-sdk/schema/:/transfer \
-            --entrypoint /bin/bash -u root cvat/server \
-            -c 'python manage.py spectacular --file /transfer/schema.yml'
           pip3 install --user -r cvat-sdk/gen/requirements.txt
           ./cvat-sdk/gen/generate.sh
 
