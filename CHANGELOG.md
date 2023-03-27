@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TDB
 
 ### Removed
-- TDB
+- Cloud storage unique_together limitation (<https://github.com/opencv/cvat/pull/5855>)
 
 ### Fixed
 - An invalid project/org handling in webhooks (<https://github.com/opencv/cvat/pull/5707>)
