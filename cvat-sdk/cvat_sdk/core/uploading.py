@@ -308,12 +308,17 @@ class DatasetUploader(Uploader):
     ):
         url = self._client.api_map.make_endpoint_url(upload_endpoint.path, kwsub=url_params)
         params = {"format": format_name, "filename": filename.name}
-        self.upload_file(
+        response = self.upload_file(
             url, filename, pbar=pbar, query_params=params, meta={"filename": params["filename"]}
         )
+        rq_id = json.loads(response.data).get("rq_id")
+        assert rq_id, "The rq_id was not found in the response"
 
         url = self._client.api_map.make_endpoint_url(retrieve_endpoint.path, kwsub=url_params)
-        params = {"action": "import_status"}
+        params = {
+            "action": "import_status",
+            "rq_id": rq_id,
+        }
         self._wait_for_completion(
             url,
             success_status=201,
