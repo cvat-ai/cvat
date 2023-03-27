@@ -623,7 +623,7 @@ class Credentials:
         self.secret_key = credentials.get('secret_key', '')
         self.session_token = credentials.get('session_token', '')
         self.account_name = credentials.get('account_name', '')
-        self.key_file_path = credentials.get('key_file_path', '')
+        self.key_file_path = credentials.get('key_file_path', None)
         self.credentials_type = credentials.get('credentials_type', None)
         self.connection_string = credentials.get('connection_string', None)
 
