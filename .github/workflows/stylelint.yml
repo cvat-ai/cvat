@@ -7,7 +7,10 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
-            node-version: '16.x'
+          node-version: '16.x'
+          cache: yarn
+          cache-dependency-path: '**/yarn.lock'
+
       - id: files
         uses: jitterbit/get-changed-files@v1
         continue-on-error: true

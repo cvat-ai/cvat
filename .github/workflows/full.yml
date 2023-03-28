@@ -256,7 +256,9 @@ jobs:
 
       - uses: actions/setup-node@v3
         with:
-            node-version: '16.x'
+          node-version: '16.x'
+          cache: yarn
+          cache-dependency-path: '**/yarn.lock'
 
       - name: Download CVAT server image
         uses: actions/download-artifact@v3
