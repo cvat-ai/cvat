@@ -525,7 +525,8 @@ class TestPatchJob:
 
 def _check_coco_job_annotations(content, values_to_be_checked):
     exported_annotations = json.loads(content)
-    assert values_to_be_checked["shapes_length"] == len(exported_annotations["annotations"])
+    if values_to_be_checked.get("shapes_length") is not None:
+        assert values_to_be_checked["shapes_length"] == len(exported_annotations["annotations"])
     assert values_to_be_checked["job_size"] == len(exported_annotations["images"])
     assert values_to_be_checked["task_size"] > len(exported_annotations["images"])
 
@@ -664,6 +665,7 @@ class TestJobDataset:
         [
             ("CVAT for images 1.1", "annotations.xml", _check_cvat_for_images_job_annotations),
             ("CVAT for video 1.1", "annotations.xml", _check_cvat_for_video_job_annotations),
+            ("COCO Keypoints 1.0", "annotations/person_keypoints_default.json", _check_coco_job_annotations),
         ],
     )
     def test_export_job_among_several_jobs_in_task(
