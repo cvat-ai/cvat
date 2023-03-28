@@ -39,7 +39,7 @@ from cvat.apps.webhooks.signals import project_id, organization_id
 from cvat.apps.engine.log import vlogger
 
 from .event import event_scope, create_event
-from .utils import get_cache
+from .cache import get_cache
 
 
 def task_id(instance):
