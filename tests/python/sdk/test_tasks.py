@@ -367,7 +367,7 @@ class TestTaskUsecases:
         assert task.id
         assert task.id != fxt_new_task.id
         assert task.size == fxt_new_task.size
-        assert "imported sucessfully" in self.logger_stream.getvalue()
+        assert "imported successfully" in self.logger_stream.getvalue()
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
         assert self.stdout.getvalue() == ""
 
