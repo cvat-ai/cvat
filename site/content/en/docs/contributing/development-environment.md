@@ -135,19 +135,11 @@ description: 'Installing a development environment for different operating syste
 
   > Note for Arch Linux users:
   >
-  > In order to build `python-ldap`, the `gcc` compiler needs to be pointed to the right file,
-  > since lib name has been changed from `libldap_r` to `libldap`, otherwise wheels
-  > for `python-ldap` won't be built and the install will fail. You need to create
-  > a symlink between the newer and older `ldap` libraries:
-  > ```
-  > sudo ln -s /usr/lib/libldap.so /usr/lib/libldap_r.so
-  > ```
-  >
   > Because PyAV as of version 10.0.0 already [works](https://github.com/PyAV-Org/PyAV/pull/910)
   > with FFMPEG5, you may consider changing the `av` version requirement
   > in `/cvat/cvat/requirements/base.txt` to 10.0.0 or higher.
   >
-  > Perform these actions before installing cvat requirements from the list mentioned above.
+  > Perform this action before installing cvat requirements from the list mentioned above.
 
 - Create a super user for CVAT:
 
