@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Make empty previews responsive to page resize <https://github.com/opencv/cvat/pull/5925>
 - Nuclio function invocations when deployed via the Helm chart
   (<https://github.com/opencv/cvat/issues/5626>)
+- Export of a job from a task with multiple jobs (<https://github.com/opencv/cvat/pull/5928>)
 
 ### Security
 - TDB
