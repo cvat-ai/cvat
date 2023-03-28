@@ -2121,8 +2121,6 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def create(self, request, *args, **kwargs):
         try:
             response = super().create(request, *args, **kwargs)
-        except IntegrityError:
-            response = HttpResponseBadRequest('Same storage already exists')
         except ValidationError as exceptions:
             msg_body = ""
             for ex in exceptions.args:

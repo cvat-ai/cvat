@@ -336,6 +336,8 @@ export interface ShareItem {
 
 export interface ShareState {
     root: ShareItem;
+    fetching: boolean;
+    initialized: boolean;
 }
 
 export interface ModelAttribute {

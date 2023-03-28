@@ -1357,6 +1357,8 @@ class CloudStorageReadSerializer(serializers.ModelSerializer):
                 'resource': 'somebucket',
                 'display_name': 'Bucket',
                 'credentials_type': models.CredentialsTypeChoice.KEY_SECRET_KEY_PAIR,
+                'key': 'XXX',
+                'secret_key': 'XXX',
                 'specific_attributes': 'region=eu-central-1',
                 'description': 'Some description',
                 'manifests': [
@@ -1469,7 +1471,7 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
 
         key_file = validated_data.pop('key_file', None)
         # we need to save it to temporary file to check the granted permissions
-        temporary_file = ''
+        temporary_file = None
         if key_file:
             with NamedTemporaryFile(mode='wb', prefix='cvat', delete=False) as temp_key:
                 temp_key.write(key_file.read())
@@ -1551,7 +1553,7 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
         }}
 
         key_file = validated_data.pop('key_file', None)
-        temporary_file = ''
+        temporary_file = None
         if key_file:
             with NamedTemporaryFile(mode='wb', prefix='cvat', delete=False) as temp_key:
                 temp_key.write(key_file.read())

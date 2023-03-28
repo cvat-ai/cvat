@@ -8,9 +8,12 @@ import { AuthActionTypes, AuthActions } from 'actions/auth-actions';
 import { ShareState, ShareFileInfo, ShareItem } from '.';
 
 const defaultState: ShareState = {
+    initialized: false,
+    fetching: false,
     root: {
         name: '',
         type: 'DIR',
+        mime_type: '',
         children: [],
     },
 };
@@ -20,6 +23,12 @@ export default function (
     action: ShareActions | AuthActions | BoundariesActions,
 ): ShareState {
     switch (action.type) {
+        case ShareActionTypes.LOAD_SHARE_DATA: {
+            return {
+                ...state,
+                fetching: true,
+            };
+        }
         case ShareActionTypes.LOAD_SHARE_DATA_SUCCESS: {
             const { values } = action.payload;
             const { directory } = action.payload;
@@ -42,6 +51,20 @@ export default function (
 
             return {
                 ...state,
+
+                // to correct work we destruct root element
+                // to let know app that the structure has been updated
+                root: { ...state.root },
+
+                initialized: state.initialized || directory === '/',
+                fetching: false,
+            };
+        }
+        case ShareActionTypes.LOAD_SHARE_DATA_FAILED: {
+            return {
+                ...state,
+                fetching: false,
+                initialized: true,
             };
         }
         case BoundariesActionTypes.RESET_AFTER_ERROR:
