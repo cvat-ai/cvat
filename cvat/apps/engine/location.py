@@ -1,6 +1,6 @@
 from enum import Enum
 
-from cvat.apps.engine.models import Location
+from cvat.apps.engine.models import Location, Job
 
 class StorageType(str, Enum):
     TARGET = 'target_storage'
@@ -12,7 +12,7 @@ class StorageType(str, Enum):
 def get_location_configuration(obj, field_name, use_settings=False):
     location_conf = dict()
     if use_settings:
-        storage = getattr(obj, field_name)
+        storage = getattr(obj, field_name) if not isinstance(obj, Job) else getattr(obj.segment.task, field_name)
         if storage is None:
             location_conf['location'] = Location.LOCAL
         else:

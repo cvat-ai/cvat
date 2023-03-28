@@ -1460,10 +1460,9 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         elif request.method == 'POST' or request.method == 'OPTIONS':
             format_name = request.query_params.get('format', '')
-            # TODO: fix
             return self.import_annotations(
                 request=request,
-                db_obj=self._object.segment.task,
+                db_obj=self._object,
                 import_func=_import_annotations,
                 rq_func=dm.task.import_job_annotations,
                 rq_id_template=self.IMPORT_RQ_ID_TEMPLATE
