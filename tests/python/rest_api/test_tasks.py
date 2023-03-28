@@ -1384,7 +1384,7 @@ class TestPatchTask:
 
 class TestImportTaskAnnotations:
     def _make_client(self) -> Client:
-        return Client(BASE_URL)
+        return Client(BASE_URL, config=Config(status_check_period=0.01))
 
     @pytest.fixture(autouse=True)
     def setup(self, restore_db_per_function, tmp_path: Path, admin_user: str):
