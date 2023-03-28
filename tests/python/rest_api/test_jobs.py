@@ -665,7 +665,11 @@ class TestJobDataset:
         [
             ("CVAT for images 1.1", "annotations.xml", _check_cvat_for_images_job_annotations),
             ("CVAT for video 1.1", "annotations.xml", _check_cvat_for_video_job_annotations),
-            ("COCO Keypoints 1.0", "annotations/person_keypoints_default.json", _check_coco_job_annotations),
+            (
+                "COCO Keypoints 1.0",
+                "annotations/person_keypoints_default.json",
+                _check_coco_job_annotations,
+            ),
         ],
     )
     def test_export_job_among_several_jobs_in_task(
