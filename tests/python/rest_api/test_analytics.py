@@ -251,7 +251,7 @@ class TestGetAuditEvents:
         response = delete_method("admin1", f"projects/{self.project_id}")
         assert response.status_code == HTTPStatus.NO_CONTENT
 
-        self._wait_for_request_ids([response.headers.get("X-Request-Id"),])
+        self._wait_for_request_ids([response.headers.get("X-Request-Id")])
 
         query_params = {
             "project_id": self.project_id,
