@@ -525,7 +525,7 @@ class TestPatchJob:
 
 def _check_coco_job_annotations(content, values_to_be_checked):
     exported_annotations = json.loads(content)
-    if values_to_be_checked.get("shapes_length") is not None:
+    if "shapes_length" in values_to_be_checked:
         assert values_to_be_checked["shapes_length"] == len(exported_annotations["annotations"])
     assert values_to_be_checked["job_size"] == len(exported_annotations["images"])
     assert values_to_be_checked["task_size"] > len(exported_annotations["images"])
