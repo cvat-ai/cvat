@@ -2275,6 +2275,7 @@ def _import_annotations(request, rq_id, rq_func, db_obj, format_name,
                             f.write(chunk)
             else:
                 assert filename, 'The filename was not specified'
+
                 try:
                     storage_id = location_conf['storage_id']
                 except KeyError:
@@ -2284,6 +2285,7 @@ def _import_annotations(request, rq_id, rq_func, db_obj, format_name,
                 db_storage = get_cloud_storage_for_import_or_export(
                     storage_id=storage_id, request=request,
                     is_default=location_conf['is_default'])
+
                 key = filename
                 fd, filename = mkstemp(prefix='cvat_{}'.format(db_obj.pk), dir=settings.TMP_FILES_ROOT)
                 dependent_job = configure_dependent_job(
