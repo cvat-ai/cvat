@@ -15,9 +15,8 @@ from time import sleep
 import pytest
 from dateutil import parser as datetime_parser
 
-from shared.utils.config import make_api_client, server_get
+from shared.utils.config import delete_method, make_api_client, server_get
 from shared.utils.helpers import generate_image_files
-from shared.utils.config import delete_method
 
 from .utils import _test_create_task
 
