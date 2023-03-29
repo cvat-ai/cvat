@@ -351,7 +351,10 @@ class TestPatchTaskAnnotations:
     def request_data(self, annotations):
         def get_data(tid):
             data = deepcopy(annotations["task"][str(tid)])
-            data["shapes"][0].update({"points": [2.0, 3.0, 4.0, 5.0, 6.0, 7.0]})
+            if data["shapes"][0]["type"] == "skeleton":
+                data["shapes"][0]["elements"][0].update({"points": [2.0, 3.0, 4.0, 5.0]})
+            else:
+                data["shapes"][0].update({"points": [2.0, 3.0, 4.0, 5.0, 6.0, 7.0]})
             data["version"] += 1
             return data
 
@@ -386,7 +389,7 @@ class TestPatchTaskAnnotations:
         users = find_users(privilege=privilege)
         tasks = tasks_by_org[org]
         filtered_tasks = filter_tasks_with_shapes(tasks)
-        username, tid = find_task_staff_user(filtered_tasks, users, task_staff)
+        username, tid = find_task_staff_user(filtered_tasks, users, task_staff, [21])
 
         data = request_data(tid)
         with make_api_client(username) as api_client:
@@ -428,7 +431,7 @@ class TestPatchTaskAnnotations:
     ):
         users = find_users(role=role, org=org)
         tasks = tasks_by_org[org]
-        username, tid = find_task_staff_user(tasks, users, task_staff, [12, 14, 18])
+        username, tid = find_task_staff_user(tasks, users, task_staff)
 
         data = request_data(tid)
         with make_api_client(username) as api_client:
@@ -453,6 +456,12 @@ class TestGetTaskDataset:
     def test_can_export_task_dataset(self, admin_user, tasks_with_shapes):
         task = tasks_with_shapes[0]
         response = self._test_export_task(admin_user, task["id"], format="CVAT for images 1.1")
+        assert response.data
+
+    @pytest.mark.parametrize("tid", [21])
+    @pytest.mark.parametrize("format_name", ["CVAT for images 1.1", "CVAT for video 1.1"])
+    def test_can_export_task_with_several_jobs(self, admin_user, tid, format_name):
+        response = self._test_export_task(admin_user, tid, format=format_name)
         assert response.data
 
 
@@ -1157,7 +1166,7 @@ class TestPatchTaskLabel:
     def test_admin_can_add_skeleton(self, tasks, admin_user):
         task = [t for t in tasks if t["project_id"] is None][0]
         new_skeleton = {
-            "name": "skeleton1",
+            "name": "new skeleton",
             "type": "skeleton",
             "sublabels": [
                 {
