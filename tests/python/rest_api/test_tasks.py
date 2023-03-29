@@ -19,7 +19,6 @@ import pytest
 from cvat_sdk import Client, Config, exceptions
 from cvat_sdk.api_client import models
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
-from cvat_sdk.api_client.configuration import Configuration
 from cvat_sdk.core.helpers import get_paginated_collection
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from deepdiff import DeepDiff
@@ -741,34 +740,29 @@ class TestPostTaskData:
             self._USERNAME, task_spec, data_spec, content_type="application/json", org=org
         )
 
-    @pytest.fixture
-    def regular_lonely_user(self):
-        username = "newuser"
-        email = "123@456.com"
-        with ApiClient(Configuration(host=BASE_URL)) as api_client:
-            api_client.auth_api.create_register(
-                models.RegisterSerializerExRequest(
-                    username=username, password1=USER_PASS, password2=USER_PASS, email=email
-                )
-            )
-
-        yield username
-
     @pytest.mark.with_external_services
     @pytest.mark.parametrize(
-        "cloud_storage_id, manifest",
+        "storage_id, manifest",
         [
             (1, "manifest.jsonl"),  # public bucket
             (2, "sub/manifest.jsonl"),  # private bucket
         ],
     )
+    @pytest.mark.parametrize(
+        "spec, field",
+        [
+            ("spec", "source_storage"),
+            ("spec", "target_storage"),
+            ("data", "cloud_storage_id"),
+        ],
+    )
     def test_user_cannot_create_task_with_cloud_storage_without_access(
-        self, cloud_storage_id, manifest, regular_lonely_user
+        self, storage_id, spec, field, manifest, regular_lonely_user
     ):
         user = regular_lonely_user
 
         task_spec = {
-            "name": f"Task with files from foreign cloud storage {cloud_storage_id}",
+            "name": f"Task with files from foreign cloud storage {storage_id}",
             "labels": [
                 {
                     "name": "car",
@@ -779,10 +773,29 @@ class TestPostTaskData:
         data_spec = {
             "image_quality": 75,
             "use_cache": True,
-            "cloud_storage_id": cloud_storage_id,
-            "server_files": [manifest],
-            "filename_pattern": "*",
         }
+
+        if spec == "spec":
+            task_spec.update(
+                {
+                    field: {
+                        "location": "cloud_storage",
+                        "cloud_storage_id": storage_id,
+                    }
+                }
+            )
+            data_spec["server_files"] = ["images/image_1.jpg"]
+
+        elif spec == "data":
+            data_spec.update(
+                {
+                    field: storage_id,
+                    "filename_pattern": "*",
+                    "server_files": [manifest],
+                }
+            )
+        else:
+            assert False
 
         with pytest.raises(exceptions.ApiException) as capture:
             _test_create_task(user, task_spec, data_spec, content_type="application/json")
@@ -1427,3 +1440,50 @@ class TestPatchTask:
             )
             == {}
         )
+
+    @pytest.mark.with_external_services
+    @pytest.mark.parametrize(
+        "storage_id",
+        [
+            1,  # public bucket
+            2,  # private bucket
+        ],
+    )
+    @pytest.mark.parametrize("field", ["source_storage", "target_storage"])
+    def test_user_cannot_update_task_with_cloud_storage_without_access(
+        self, storage_id, field, regular_lonely_user
+    ):
+        user = regular_lonely_user
+
+        task_spec = {
+            "name": f"Task with files from foreign cloud storage {storage_id}",
+            "labels": [
+                {
+                    "name": "car",
+                }
+            ],
+        }
+        data_spec = {
+            "image_quality": 75,
+            "use_cache": True,
+            "server_files": ["images/image_1.jpg"],
+        }
+        (task_id, _) = _test_create_task(
+            user, task_spec, data_spec, content_type="application/json"
+        )
+
+        updated_fields = {
+            field: {
+                "location": "cloud_storage",
+                "cloud_storage_id": storage_id,
+            }
+        }
+
+        with make_api_client(user) as api_client:
+            (_, response) = api_client.tasks_api.partial_update(
+                task_id,
+                patched_task_write_request=updated_fields,
+                _parse_response=False,
+                _check_status=False,
+            )
+        assert response.status == HTTPStatus.FORBIDDEN
