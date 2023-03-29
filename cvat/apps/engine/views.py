@@ -2298,7 +2298,7 @@ def _import_annotations(request, rq_id, rq_func, db_obj, format_name,
                     storage_id = location_conf['storage_id']
                 except KeyError:
                     raise serializers.ValidationError(
-                        'Cloud storage location was selected for source'
+                        'Cloud storage location was selected as source,'
                         ' but cloud storage id was not specified')
                 db_storage = get_cloud_storage_for_import_or_export(
                     storage_id=storage_id, request=request,
@@ -2402,7 +2402,7 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
                             storage_id = location_conf['storage_id']
                         except KeyError:
                             return HttpResponseBadRequest(
-                                'Cloud storage location was selected for destination'
+                                'Cloud storage location was selected for destination,'
                                 ' but cloud storage id was not specified')
                         db_storage = get_cloud_storage_for_import_or_export(
                             storage_id=storage_id, request=request,
@@ -2480,7 +2480,7 @@ def _import_project_dataset(request, rq_id, rq_func, db_obj, format_name, filena
                 storage_id = location_conf['storage_id']
             except KeyError:
                 raise serializers.ValidationError(
-                    'Cloud storage location was selected for destination'
+                    'Cloud storage location was selected as source,'
                     ' but cloud storage id was not specified')
             db_storage = get_cloud_storage_for_import_or_export(
                 storage_id=storage_id, request=request,
