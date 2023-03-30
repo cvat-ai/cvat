@@ -547,7 +547,7 @@ def _check_cvat_for_images_job_annotations(content, values_to_be_checked):
     # check number of images, their sorting, number of annotations
     images = document.findall("image")
     assert len(images) == values_to_be_checked["job_size"]
-    if values_to_be_checked.get("shapes_length") is not None:
+    if "shapes_length" in values_to_be_checked:
         assert len(list(document.iter("box"))) == values_to_be_checked["shapes_length"]
     current_id = values_to_be_checked["start_frame"]
     for image_elem in images:

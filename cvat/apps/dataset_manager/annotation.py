@@ -413,7 +413,11 @@ class TrackManager(ObjectManager):
         for idx, track in enumerate(self.objects):
             track_shapes = {}
             for shape in TrackManager.get_interpolated_shapes(
-                track, 0, end_frame, self._dimension, end_skeleton_frame is not None
+                track,
+                0,
+                end_frame,
+                self._dimension,
+                include_outside_frames=end_skeleton_frame is not None,
             ):
                 shape["label_id"] = track["label_id"]
                 shape["group"] = track["group"]
@@ -501,7 +505,7 @@ class TrackManager(ObjectManager):
 
     @staticmethod
     def get_interpolated_shapes(
-        track, start_frame, end_frame, dimension, is_skeleton=False
+        track, start_frame, end_frame, dimension, *, include_outside_frames=False
     ):
         def copy_shape(source, frame, points=None, rotation=None):
             copied = deepcopy(source)
@@ -831,7 +835,7 @@ class TrackManager(ObjectManager):
                 for attr in prev_shape["attributes"]:
                     if attr["spec_id"] not in map(lambda el: el["spec_id"], shape["attributes"]):
                         shape["attributes"].append(deepcopy(attr))
-                if not prev_shape["outside"] or is_skeleton:
+                if not prev_shape["outside"] or include_outside_frames:
                     shapes.extend(interpolate(prev_shape, shape))
 
             shape["keyframe"] = True
