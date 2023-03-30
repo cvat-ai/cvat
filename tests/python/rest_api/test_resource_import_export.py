@@ -112,7 +112,6 @@ class TestExportResourceToS3(_S3ResourceTest):
 
         self._export_resource(cloud_storage, obj_id, obj, resource, **kwargs)
 
-    @pytest.mark.usefixtures("restore_db_per_function")
     @pytest.mark.parametrize("storage_id", [3])
     @pytest.mark.parametrize(
         "obj, resource",
@@ -201,10 +200,10 @@ class TestImportResourceFromS3(_S3ResourceTest):
         self._export_resource(cloud_storage, obj_id, obj, resource, **export_kwargs)
         self._import_resource(cloud_storage, resource, obj_id, obj, **kwargs)
 
-    @pytest.mark.parametrize("user_type", [
-        # "admin",
-        "assigned_org_member"
-    ])
+    @pytest.mark.parametrize(
+        "user_type",
+        ["admin", "assigned_org_member"],
+    )
     @pytest.mark.parametrize(
         "obj_id, obj, resource",
         [
@@ -315,7 +314,9 @@ class TestImportResourceFromS3(_S3ResourceTest):
             assert False
 
         cloud_storage = cloud_storages[storage_id]
-        kwargs = _make_import_resource_params(resource, is_default=False, obj=obj, cloud_storage_id=storage_id)
+        kwargs = _make_import_resource_params(
+            resource, is_default=False, obj=obj, cloud_storage_id=storage_id
+        )
         if resource == "annotations":
             kwargs["_check_uploaded"] = False
 

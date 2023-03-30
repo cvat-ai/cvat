@@ -392,3 +392,11 @@ def regular_user(users):
         if not user["is_superuser"] and user["is_active"]:
             return user["username"]
     raise Exception("Can't find any regular user in the test DB")
+
+
+@pytest.fixture(scope="session")
+def regular_lonely_user(users):
+    for user in users:
+        if user["username"] == "lonely_user":
+            return user["username"]
+    raise Exception("Can't find the lonely user in the test DB")

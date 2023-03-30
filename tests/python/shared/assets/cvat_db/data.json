@@ -456,6 +456,28 @@
   }
 },
 {
+  "model": "auth.user",
+  "pk": 21,
+  "fields": {
+    "password": "pbkdf2_sha256$260000$pROH9UgQcjk9vIlTBdUDPD$MdGF+2HcnBv2qI/kuLyBl0oYhMwgvhgKMQgcTsmku8c=",
+    "last_login": "2023-03-30T09:37:31.708Z",
+    "is_superuser": false,
+    "username": "lonely_user",
+    "first_name": "Lonely",
+    "last_name": "User",
+    "email": "lonely_user@cvat.org",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2023-03-30T09:37:31.615Z",
+    "groups": [
+      [
+        "user"
+      ]
+    ],
+    "user_permissions": []
+  }
+},
+{
   "model": "sessions.session",
   "pk": "3p7i7jibc6g827i39r8e0ce5i9f1orzp",
   "fields": {
@@ -549,6 +571,14 @@
   "fields": {
     "session_data": ".eJxVjMsOwiAQRf-FtSEDFRhcuu83kBkeUjU0Ke3K-O_apAvd3nPOfYlA21rD1vMSpiQuQonT78YUH7ntIN2p3WYZ57YuE8tdkQftcpxTfl4P9--gUq_fWns0mX22NsLZDlE7INLWAzkyODjFyKwzAnExUQNQUamgRnIOkzLi_QHSyzeb:1mxPj7:Bl2FnM4tKrtDftiy20PMjYuIfpHYUK6FG6IYdZjPS6o",
     "expire_date": "2021-12-29T08:33:29.459Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "ilhwzs0ncffpbykc2qhygpfbqnk56g20",
+  "fields": {
+    "session_data": ".eJxVjMEOgyAQRP-Fc2NkAQVv7Y-QhV0jKcVEsZem_15tvHicNzPvIzDGeSvVv3lJY2Ly_MKUxVC2nG_C41Ynv628-ERiECDFBQaMTy5HgzkfuDl9zX9z1mtz3xOXmiLWNJfH-bqoJlyn3aNjB9IEZ5UC7RQHSdSPzgRCE61VwTmiaIEQFELfOh06NhaktaBb14nvD6YGRzI:1phoip:F22_YNqySTANuGQ7rvr8h1I1iTZsk18kocsSnQ-IrLM",
+    "expire_date": "2023-04-13T09:37:31.750Z"
   }
 },
 {
@@ -676,6 +706,16 @@
   }
 },
 {
+  "model": "authtoken.token",
+  "pk": "7245b803f045dc12002d72473e3479ce6146801c",
+  "fields": {
+    "user": [
+      "lonely_user"
+    ],
+    "created": "2023-03-30T09:37:31.700Z"
+  }
+},
+{
   "model": "sites.site",
   "pk": 1,
   "fields": {
@@ -704,6 +744,18 @@
     ],
     "email": "admin2@cvat.org",
     "verified": true,
+    "primary": true
+  }
+},
+{
+  "model": "account.emailaddress",
+  "pk": 3,
+  "fields": {
+    "user": [
+      "lonely_user"
+    ],
+    "email": "lonely_user@cvat.org",
+    "verified": false,
     "primary": true
   }
 },
@@ -6837,6 +6889,16 @@
   "fields": {
     "user": [
       "user6"
+    ],
+    "rating": 0.0
+  }
+},
+{
+  "model": "engine.profile",
+  "pk": 21,
+  "fields": {
+    "user": [
+      "lonely_user"
     ],
     "rating": 0.0
   }
