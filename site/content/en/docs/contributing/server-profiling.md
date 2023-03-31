@@ -17,9 +17,9 @@ presenting them in a user interface for further inspection:
 ![Silk Screenshot](https://raw.githubusercontent.com/jazzband/django-silk/master/screenshots/1.png)
 
 Primary features:
-* Request Inspection
-* SQL Inspection
-* Profiling of python code
+- Request Inspection
+- SQL Inspection
+- Profiling of python code
 
 Silk is available in the development configuration of CVAT server for
 authenticated users: <http://localhost:3000/profiler/>.
