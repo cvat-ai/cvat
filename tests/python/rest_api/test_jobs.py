@@ -334,7 +334,10 @@ class TestPatchJobAnnotations:
     def request_data(self, annotations):
         def get_data(jid):
             data = deepcopy(annotations["job"][str(jid)])
-            data["shapes"][0].update({"points": [2.0, 3.0, 4.0, 5.0, 6.0, 7.0]})
+            if data["shapes"][0]["type"] == "skeleton":
+                data["shapes"][0]["elements"][0].update({"points": [2.0, 3.0, 4.0, 5.0]})
+            else:
+                data["shapes"][0].update({"points": [2.0, 3.0, 4.0, 5.0, 6.0, 7.0]})
             data["version"] += 1
             return data
 
@@ -369,7 +372,7 @@ class TestPatchJobAnnotations:
         users = find_users(role=role, org=org)
         jobs = jobs_by_org[org]
         filtered_jobs = filter_jobs_with_shapes(jobs)
-        username, jid = find_job_staff_user(filtered_jobs, users, job_staff, [18, 22])
+        username, jid = find_job_staff_user(filtered_jobs, users, job_staff)
 
         data = request_data(jid)
         self._check_respone(username, jid, expect_success, data, org=org)
@@ -393,7 +396,7 @@ class TestPatchJobAnnotations:
         users = find_users(privilege=privilege, exclude_org=org)
         jobs = jobs_by_org[org]
         filtered_jobs = filter_jobs_with_shapes(jobs)
-        username, jid = find_job_staff_user(filtered_jobs, users, False, [18, 22])
+        username, jid = find_job_staff_user(filtered_jobs, users, False)
 
         data = request_data(jid)
         self._check_respone(username, jid, expect_success, data, org=org)
@@ -522,12 +525,13 @@ class TestPatchJob:
 
 def _check_coco_job_annotations(content, values_to_be_checked):
     exported_annotations = json.loads(content)
-    assert values_to_be_checked["shapes_length"] == len(exported_annotations["annotations"])
+    if "shapes_length" in values_to_be_checked:
+        assert values_to_be_checked["shapes_length"] == len(exported_annotations["annotations"])
     assert values_to_be_checked["job_size"] == len(exported_annotations["images"])
     assert values_to_be_checked["task_size"] > len(exported_annotations["images"])
 
 
-def _check_cvat_job_annotations(content, values_to_be_checked):
+def _check_cvat_for_images_job_annotations(content, values_to_be_checked):
     document = ET.fromstring(content)
     # check meta information
     meta = document.find("meta")
@@ -543,11 +547,30 @@ def _check_cvat_job_annotations(content, values_to_be_checked):
     # check number of images, their sorting, number of annotations
     images = document.findall("image")
     assert len(images) == values_to_be_checked["job_size"]
-    assert len(list(document.iter("box"))) == values_to_be_checked["shapes_length"]
+    if "shapes_length" in values_to_be_checked:
+        assert len(list(document.iter("box"))) == values_to_be_checked["shapes_length"]
     current_id = values_to_be_checked["start_frame"]
     for image_elem in images:
         assert image_elem.attrib["id"] == str(current_id)
         current_id += 1
+
+
+def _check_cvat_for_video_job_annotations(content, values_to_be_checked):
+    document = ET.fromstring(content)
+    # check meta information
+    meta = document.find("meta")
+    instance = list(meta)[0]
+    assert instance.tag == "job"
+    assert instance.find("id").text == values_to_be_checked["job_id"]
+    assert instance.find("size").text == str(values_to_be_checked["job_size"])
+    assert instance.find("start_frame").text == str(values_to_be_checked["start_frame"])
+    assert instance.find("stop_frame").text == str(values_to_be_checked["stop_frame"])
+    assert instance.find("mode").text == values_to_be_checked["mode"]
+    assert len(instance.find("segments")) == 1
+
+    # check number of annotations
+    if values_to_be_checked.get("shapes_length") is not None:
+        assert len(list(document.iter("track"))) == values_to_be_checked["tracks_length"]
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -598,7 +621,7 @@ class TestJobDataset:
         "anno_format, anno_file_name, check_func",
         [
             ("COCO 1.0", "annotations/instances_default.json", _check_coco_job_annotations),
-            ("CVAT for images 1.1", "annotations.xml", _check_cvat_job_annotations),
+            ("CVAT for images 1.1", "annotations.xml", _check_cvat_for_images_job_annotations),
         ],
     )
     def test_exported_job_dataset_structure(
@@ -623,6 +646,46 @@ class TestJobDataset:
             "stop_frame": job_data["stop_frame"],
             "shapes_length": len(annotations_before["shapes"]),
             "job_id": str(jid),
+            "mode": job_data["mode"],
+        }
+
+        response = self._export_dataset(username, jid, format=anno_format)
+        assert response.data
+        with zipfile.ZipFile(BytesIO(response.data)) as zip_file:
+            assert (
+                len(zip_file.namelist()) == values_to_be_checked["job_size"] + 1
+            )  # images + annotation file
+            content = zip_file.read(anno_file_name)
+        check_func(content, values_to_be_checked)
+
+    @pytest.mark.parametrize("username", ["admin1"])
+    @pytest.mark.parametrize("jid", [25, 26])
+    @pytest.mark.parametrize(
+        "anno_format, anno_file_name, check_func",
+        [
+            ("CVAT for images 1.1", "annotations.xml", _check_cvat_for_images_job_annotations),
+            ("CVAT for video 1.1", "annotations.xml", _check_cvat_for_video_job_annotations),
+            (
+                "COCO Keypoints 1.0",
+                "annotations/person_keypoints_default.json",
+                _check_coco_job_annotations,
+            ),
+        ],
+    )
+    def test_export_job_among_several_jobs_in_task(
+        self, username, jid, anno_format, anno_file_name, check_func, tasks, jobs, annotations
+    ):
+        job_data = jobs[jid]
+        annotations_before = annotations["job"][str(jid)]
+
+        values_to_be_checked = {
+            "task_size": tasks[job_data["task_id"]]["size"],
+            # NOTE: data step is not stored in assets, default = 1
+            "job_size": job_data["stop_frame"] - job_data["start_frame"] + 1,
+            "start_frame": job_data["start_frame"],
+            "stop_frame": job_data["stop_frame"],
+            "job_id": str(jid),
+            "tracks_length": len(annotations_before["tracks"]),
             "mode": job_data["mode"],
         }
 

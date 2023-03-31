@@ -47,15 +47,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/LoginSerializerExRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/LoginSerializerExRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/LoginSerializerExRequest'
-          application/offset+octet-stream:
-            schema:
-              $ref: '#/components/schemas/LoginSerializerExRequest'
         required: true
       security:
       - sessionAuth: []
@@ -140,15 +131,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PasswordChangeRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PasswordChangeRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PasswordChangeRequest'
-          application/offset+octet-stream:
-            schema:
-              $ref: '#/components/schemas/PasswordChangeRequest'
         required: true
       security:
       - sessionAuth: []
@@ -191,15 +173,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/PasswordResetSerializerExRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PasswordResetSerializerExRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PasswordResetSerializerExRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/PasswordResetSerializerExRequest'
         required: true
@@ -249,15 +222,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PasswordResetConfirmRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PasswordResetConfirmRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PasswordResetConfirmRequest'
-          application/offset+octet-stream:
-            schema:
-              $ref: '#/components/schemas/PasswordResetConfirmRequest'
         required: true
       security:
       - sessionAuth: []
@@ -296,15 +260,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/RegisterSerializerExRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/RegisterSerializerExRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/RegisterSerializerExRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/RegisterSerializerExRequest'
         required: true
@@ -373,15 +328,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/SigningRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/SigningRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/SigningRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/SigningRequest'
         required: true
@@ -572,13 +518,7 @@ paths:
                   manifests:
                   - manifest.jsonl
                 summary: Create GCS
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/CloudStorageWriteRequest'
           multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/CloudStorageWriteRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/CloudStorageWriteRequest'
         required: true
@@ -710,13 +650,7 @@ paths:
                   manifests:
                   - manifest.jsonl
                 summary: Create GCS
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedCloudStorageWriteRequest'
           multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedCloudStorageWriteRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/PatchedCloudStorageWriteRequest'
       security:
@@ -1047,15 +981,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/CommentWriteRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/CommentWriteRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/CommentWriteRequest'
-          application/offset+octet-stream:
-            schema:
-              $ref: '#/components/schemas/CommentWriteRequest'
         required: true
       security:
       - sessionAuth: []
@@ -1139,15 +1064,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedCommentWriteRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedCommentWriteRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedCommentWriteRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/PatchedCommentWriteRequest'
       security:
@@ -1311,15 +1227,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ClientEventsRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/ClientEventsRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/ClientEventsRequest'
-          application/offset+octet-stream:
-            schema:
-              $ref: '#/components/schemas/ClientEventsRequest'
         required: true
       security:
       - sessionAuth: []
@@ -1429,15 +1336,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/InvitationWriteRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/InvitationWriteRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/InvitationWriteRequest'
-          application/offset+octet-stream:
-            schema:
-              $ref: '#/components/schemas/InvitationWriteRequest'
         required: true
       security:
       - sessionAuth: []
@@ -1521,15 +1419,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedInvitationWriteRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedInvitationWriteRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedInvitationWriteRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/PatchedInvitationWriteRequest'
       security:
@@ -1702,15 +1591,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/IssueWriteRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/IssueWriteRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/IssueWriteRequest'
-          application/offset+octet-stream:
-            schema:
-              $ref: '#/components/schemas/IssueWriteRequest'
         required: true
       security:
       - sessionAuth: []
@@ -1794,15 +1674,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedIssueWriteRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedIssueWriteRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedIssueWriteRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/PatchedIssueWriteRequest'
       security:
@@ -2045,15 +1916,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PatchedJobWriteRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedJobWriteRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedJobWriteRequest'
-          application/offset+octet-stream:
-            schema:
-              $ref: '#/components/schemas/PatchedJobWriteRequest'
       security:
       - sessionAuth: []
         csrfAuth: []
@@ -2217,13 +2079,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/AnnotationFileRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/AnnotationFileRequest'
           multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/AnnotationFileRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/AnnotationFileRequest'
         required: true
@@ -2279,13 +2135,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/JobAnnotationsUpdateRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/JobAnnotationsUpdateRequest'
           multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/JobAnnotationsUpdateRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/JobAnnotationsUpdateRequest'
       security:
@@ -2341,13 +2191,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PatchedLabeledDataRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedLabeledDataRequest'
           multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedLabeledDataRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/PatchedLabeledDataRequest'
       security:
@@ -2430,18 +2274,6 @@ paths:
       - jobs
       requestBody:
         content:
-          application/json:
-            schema:
-              type: string
-              format: binary
-          application/x-www-form-urlencoded:
-            schema:
-              type: string
-              format: binary
-          multipart/form-data:
-            schema:
-              type: string
-              format: binary
           application/offset+octet-stream:
             schema:
               type: string
@@ -2587,15 +2419,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedDataMetaWriteRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedDataMetaWriteRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedDataMetaWriteRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/PatchedDataMetaWriteRequest'
       security:
@@ -2924,15 +2747,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PatchedLabelRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedLabelRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedLabelRequest'
-          application/offset+octet-stream:
-            schema:
-              $ref: '#/components/schemas/PatchedLabelRequest'
       security:
       - sessionAuth: []
         csrfAuth: []
@@ -3089,15 +2903,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/OnlineFunctionCallRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/OnlineFunctionCallRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/OnlineFunctionCallRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/OnlineFunctionCallRequest'
       security:
@@ -3356,15 +3161,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PatchedMembershipWriteRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedMembershipWriteRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedMembershipWriteRequest'
-          application/offset+octet-stream:
-            schema:
-              $ref: '#/components/schemas/PatchedMembershipWriteRequest'
       security:
       - sessionAuth: []
         csrfAuth: []
@@ -3519,15 +3315,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/OrganizationWriteRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/OrganizationWriteRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/OrganizationWriteRequest'
-          application/offset+octet-stream:
-            schema:
-              $ref: '#/components/schemas/OrganizationWriteRequest'
         required: true
       security:
       - sessionAuth: []
@@ -3611,15 +3398,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedOrganizationWriteRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedOrganizationWriteRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedOrganizationWriteRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/PatchedOrganizationWriteRequest'
       security:
@@ -3786,15 +3564,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ProjectWriteRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/ProjectWriteRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/ProjectWriteRequest'
-          application/offset+octet-stream:
-            schema:
-              $ref: '#/components/schemas/ProjectWriteRequest'
         required: true
       security:
       - sessionAuth: []
@@ -3878,15 +3647,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedProjectWriteRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedProjectWriteRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedProjectWriteRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/PatchedProjectWriteRequest'
       security:
@@ -4250,13 +4010,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/DatasetWriteRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/DatasetWriteRequest'
           multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/DatasetWriteRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/DatasetWriteRequest'
       security:
@@ -4307,18 +4061,6 @@ paths:
       - projects
       requestBody:
         content:
-          application/json:
-            schema:
-              type: string
-              format: binary
-          application/x-www-form-urlencoded:
-            schema:
-              type: string
-              format: binary
-          multipart/form-data:
-            schema:
-              type: string
-              format: binary
           application/offset+octet-stream:
             schema:
               type: string
@@ -4413,13 +4155,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/BackupWriteRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/BackupWriteRequest'
           multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/BackupWriteRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/BackupWriteRequest'
       security:
@@ -4462,18 +4198,6 @@ paths:
       - projects
       requestBody:
         content:
-          application/json:
-            schema:
-              type: string
-              format: binary
-          application/x-www-form-urlencoded:
-            schema:
-              type: string
-              format: binary
-          multipart/form-data:
-            schema:
-              type: string
-              format: binary
           application/offset+octet-stream:
             schema:
               type: string
@@ -4941,15 +4665,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/TaskWriteRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/TaskWriteRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/TaskWriteRequest'
-          application/offset+octet-stream:
-            schema:
-              $ref: '#/components/schemas/TaskWriteRequest'
         required: true
       security:
       - sessionAuth: []
@@ -5033,15 +4748,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedTaskWriteRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedTaskWriteRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedTaskWriteRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/PatchedTaskWriteRequest'
       security:
@@ -5245,13 +4951,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/TaskAnnotationsWriteRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/TaskAnnotationsWriteRequest'
           multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/TaskAnnotationsWriteRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/TaskAnnotationsWriteRequest'
       security:
@@ -5306,13 +5006,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/TaskAnnotationsUpdateRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/TaskAnnotationsUpdateRequest'
           multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/TaskAnnotationsUpdateRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/TaskAnnotationsUpdateRequest'
       security:
@@ -5368,13 +5062,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PatchedLabeledDataRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedLabeledDataRequest'
           multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedLabeledDataRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/PatchedLabeledDataRequest'
       security:
@@ -5461,18 +5149,6 @@ paths:
       - tasks
       requestBody:
         content:
-          application/json:
-            schema:
-              type: string
-              format: binary
-          application/x-www-form-urlencoded:
-            schema:
-              type: string
-              format: binary
-          multipart/form-data:
-            schema:
-              type: string
-              format: binary
           application/offset+octet-stream:
             schema:
               type: string
@@ -5663,13 +5339,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/DataRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/DataRequest'
           multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/DataRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/DataRequest'
         required: true
@@ -5717,18 +5387,6 @@ paths:
       - tasks
       requestBody:
         content:
-          application/json:
-            schema:
-              type: string
-              format: binary
-          application/x-www-form-urlencoded:
-            schema:
-              type: string
-              format: binary
-          multipart/form-data:
-            schema:
-              type: string
-              format: binary
           application/offset+octet-stream:
             schema:
               type: string
@@ -5811,15 +5469,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedDataMetaWriteRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedDataMetaWriteRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedDataMetaWriteRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/PatchedDataMetaWriteRequest'
       security:
@@ -6049,13 +5698,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/TaskFileRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/TaskFileRequest'
           multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/TaskFileRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/TaskFileRequest'
         required: true
@@ -6099,18 +5742,6 @@ paths:
       - tasks
       requestBody:
         content:
-          application/json:
-            schema:
-              type: string
-              format: binary
-          application/x-www-form-urlencoded:
-            schema:
-              type: string
-              format: binary
-          multipart/form-data:
-            schema:
-              type: string
-              format: binary
           application/offset+octet-stream:
             schema:
               type: string
@@ -6278,15 +5909,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedUserRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedUserRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedUserRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/PatchedUserRequest'
       security:
@@ -6488,15 +6110,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/WebhookWriteRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/WebhookWriteRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/WebhookWriteRequest'
-          application/offset+octet-stream:
-            schema:
-              $ref: '#/components/schemas/WebhookWriteRequest'
         required: true
       security:
       - sessionAuth: []
@@ -6582,15 +6195,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/WebhookWriteRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/WebhookWriteRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/WebhookWriteRequest'
-          application/offset+octet-stream:
-            schema:
-              $ref: '#/components/schemas/WebhookWriteRequest'
         required: true
       security:
       - sessionAuth: []
@@ -6634,15 +6238,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedWebhookWriteRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedWebhookWriteRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedWebhookWriteRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/PatchedWebhookWriteRequest'
       security:
