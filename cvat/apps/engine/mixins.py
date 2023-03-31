@@ -184,7 +184,7 @@ class UploadMixin:
             file_exists = os.path.lexists(file_path)
 
             if file_exists:
-                # check whether the rw_job is in progress or has been finished/failed
+                # check whether the rq_job is in progress or has been finished/failed
                 if import_type != 'backup':
                     object_class_name = self._object.__class__.__name__.lower()
                     template = settings.COMMON_IMPORT_RQ_ID_TEMPLATE.format(object_class_name, self._object.pk, import_type, request.user)
