@@ -33,8 +33,10 @@ from drf_spectacular.plumbing import build_array_type, build_basic_type
 from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import APIException, NotFound, ValidationError, PermissionDenied
+from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import SAFE_METHODS
 from rest_framework.response import Response
+from rest_framework.settings import api_settings
 from django_sendfile import sendfile
 
 import cvat.apps.dataset_manager as dm
@@ -50,6 +52,7 @@ from cvat.apps.engine.models import (
     CloudProviderChoice, Location
 )
 from cvat.apps.engine.models import CloudStorage as CloudStorageModel
+from cvat.apps.engine.parsers import TusUploadParser
 from cvat.apps.engine.serializers import (
     AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
     DataMetaReadSerializer, DataMetaWriteSerializer, DataSerializer,
@@ -77,6 +80,8 @@ from cvat.apps.iam.permissions import (CloudStoragePermission,
     TaskPermission, UserPermission)
 from cvat.apps.engine.cache import MediaCache
 from cvat.apps.events.handlers import handle_annotations_patch
+
+_UPLOAD_PARSER_CLASSES = api_settings.DEFAULT_PARSER_CLASSES + [MultiPartParser]
 
 @extend_schema(tags=['server'])
 class ServerViewSet(viewsets.ViewSet):
@@ -306,7 +311,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '405': OpenApiResponse(description='Format is not available'),
         })
     @action(detail=True, methods=['GET', 'POST', 'OPTIONS'], serializer_class=None,
-        url_path=r'dataset/?$')
+        url_path=r'dataset/?$', parser_classes=_UPLOAD_PARSER_CLASSES)
     def dataset(self, request, pk):
         self._object = self.get_object() # force call of check_object_permissions()
         rq_id = f"import:dataset-for-project.id{pk}-by-{request.user}"
@@ -367,7 +372,8 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @extend_schema(methods=['HEAD'],
         summary="Implements TUS file uploading protocol."
     )
-    @action(detail=True, methods=['HEAD', 'PATCH'], url_path='dataset/'+UploadMixin.file_id_regex)
+    @action(detail=True, methods=['HEAD', 'PATCH'], url_path='dataset/'+UploadMixin.file_id_regex,
+        parser_classes=[TusUploadParser])
     def append_dataset_chunk(self, request, pk, file_id):
         self._object = self.get_object()
         return self.append_tus_chunk(request, file_id)
@@ -499,7 +505,8 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '202': OpenApiResponse(description='Importing a backup file has been started'),
         })
     @action(detail=False, methods=['OPTIONS', 'POST'], url_path=r'backup/?$',
-        serializer_class=ProjectFileSerializer(required=False))
+        serializer_class=ProjectFileSerializer(required=False),
+        parser_classes=_UPLOAD_PARSER_CLASSES)
     def import_backup(self, request, pk=None):
         return self.deserialize(request, backup.import_project)
 
@@ -514,7 +521,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         summary="Implements TUS file uploading protocol."
     )
     @action(detail=False, methods=['HEAD', 'PATCH'], url_path='backup/'+UploadMixin.file_id_regex,
-        serializer_class=None)
+        serializer_class=None, parser_classes=[TusUploadParser])
     def append_backup_chunk(self, request, file_id):
         return self.append_tus_chunk(request, file_id)
 
@@ -731,7 +738,9 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '201': OpenApiResponse(description='The task has been imported'), # or better specify {id: task_id}
             '202': OpenApiResponse(description='Importing a backup file has been started'),
         })
-    @action(detail=False, methods=['OPTIONS', 'POST'], url_path=r'backup/?$', serializer_class=TaskFileSerializer(required=False))
+    @action(detail=False, methods=['OPTIONS', 'POST'], url_path=r'backup/?$',
+        serializer_class=TaskFileSerializer(required=False),
+        parser_classes=_UPLOAD_PARSER_CLASSES)
     def import_backup(self, request, pk=None):
         return self.deserialize(request, backup.import_task)
 
@@ -745,7 +754,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @extend_schema(methods=['HEAD'],
         summary="Implements TUS file uploading protocol."
     )
-    @action(detail=False, methods=['HEAD', 'PATCH'], url_path='backup/'+UploadMixin.file_id_regex)
+    @action(detail=False, methods=['HEAD', 'PATCH'], url_path='backup/'+UploadMixin.file_id_regex,
+        parser_classes=[TusUploadParser])
     def append_backup_chunk(self, request, file_id):
         return self.append_tus_chunk(request, file_id)
 
@@ -909,7 +919,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         responses={
             '200': OpenApiResponse(description='Data of a specific type'),
         })
-    @action(detail=True, methods=['OPTIONS', 'POST', 'GET'], url_path=r'data/?$')
+    @action(detail=True, methods=['OPTIONS', 'POST', 'GET'], url_path=r'data/?$',
+        parser_classes=_UPLOAD_PARSER_CLASSES)
     def data(self, request, pk):
         self._object = self.get_object() # call check_object_permissions as well
         if request.method == 'POST' or request.method == 'OPTIONS':
@@ -945,7 +956,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @extend_schema(methods=['HEAD'],
         summary="Implements TUS file uploading protocol."
     )
-    @action(detail=True, methods=['HEAD', 'PATCH'], url_path='data/'+UploadMixin.file_id_regex)
+    @action(detail=True, methods=['HEAD', 'PATCH'], url_path='data/'+UploadMixin.file_id_regex,
+        parser_classes=[TusUploadParser])
     def append_data_chunk(self, request, pk, file_id):
         self._object = self.get_object()
         return self.append_tus_chunk(request, file_id)
@@ -1032,7 +1044,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '204': OpenApiResponse(description='The annotation has been deleted'),
         })
     @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH', 'POST', 'OPTIONS'], url_path=r'annotations/?$',
-        serializer_class=None)
+        serializer_class=None, parser_classes=_UPLOAD_PARSER_CLASSES)
     def annotations(self, request, pk):
         self._object = self.get_object() # force call of check_object_permissions()
         if request.method == 'GET':
@@ -1106,7 +1118,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         operation_id='tasks_annotations_file_retrieve_status',
         summary="Implements TUS file uploading protocol."
     )
-    @action(detail=True, methods=['HEAD', 'PATCH'], url_path='annotations/'+UploadMixin.file_id_regex)
+    @action(detail=True, methods=['HEAD', 'PATCH'], url_path='annotations/'+UploadMixin.file_id_regex,
+        parser_classes=[TusUploadParser])
     def append_annotations_chunk(self, request, pk, file_id):
         self._object = self.get_object()
         return self.append_tus_chunk(request, file_id)
@@ -1428,7 +1441,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '204': OpenApiResponse(description='The annotation has been deleted'),
         })
     @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH', 'POST', 'OPTIONS'], url_path=r'annotations/?$',
-        serializer_class=LabeledDataSerializer)
+        serializer_class=LabeledDataSerializer, parser_classes=_UPLOAD_PARSER_CLASSES)
     def annotations(self, request, pk):
         self._object = self.get_object() # force call of check_object_permissions()
         if request.method == 'GET':
@@ -1506,7 +1519,8 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @extend_schema(methods=['HEAD'],
         summary="Implements TUS file uploading protocol."
     )
-    @action(detail=True, methods=['HEAD', 'PATCH'], url_path='annotations/'+UploadMixin.file_id_regex)
+    @action(detail=True, methods=['HEAD', 'PATCH'], url_path='annotations/'+UploadMixin.file_id_regex,
+        parser_classes=[TusUploadParser])
     def append_annotations_chunk(self, request, pk, file_id):
         self._object = self.get_object()
         return self.append_tus_chunk(request, file_id)
@@ -2076,6 +2090,10 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     ordering = "-id"
     lookup_fields = {'owner': 'owner__username', 'name': 'display_name'}
     iam_organization_field = 'organization'
+
+    # Multipart support is necessary here, as CloudStorageWriteSerializer
+    # contains a file field (key_file).
+    parser_classes = _UPLOAD_PARSER_CLASSES
 
     def get_serializer_class(self):
         if self.request.method in ('POST', 'PATCH'):
