@@ -95,15 +95,17 @@ export default function (state = defaultState, action: ModelsActions | AuthActio
                 ...state,
                 fetching: false,
             };
+
             if (action.payload.model.kind === ModelKind.REID) {
                 return {
                     ...mutual,
                     reid: [...state.reid, action.payload.model],
                 };
             }
+
             return {
                 ...mutual,
-                [`${action.payload.model.kind}s`]: [...`${action.payload.model.kind}s`, action.payload.model],
+                [`${action.payload.model.kind}s`]: [...state[`${action.payload.model.kind}s`], action.payload.model],
             };
         }
         case ModelsActionTypes.SHOW_RUN_MODEL_DIALOG: {
