@@ -83,6 +83,26 @@ from cvat.apps.events.handlers import handle_annotations_patch
 
 _UPLOAD_PARSER_CLASSES = api_settings.DEFAULT_PARSER_CLASSES + [MultiPartParser]
 
+def _tus_chunk_action(*, detail: bool, suffix_base: str):
+    def decorator(f):
+        f = action(detail=detail, methods=['HEAD', 'PATCH'],
+            url_path=f'{suffix_base}/{UploadMixin.file_id_regex}',
+            parser_classes=[TusUploadParser],
+            serializer_class=None,
+        )(f)
+
+        # tus chunk endpoints are never accessed directly (the client must
+        # access them by following the Location header from the response to
+        # the creation endpoint). Moreover, the details of how these endpoints
+        # work are already described by the tus specification. Since we don't
+        # need to document either where these points are or how they work,
+        # they don't need to be in the schema.
+        f = extend_schema(exclude=True)(f)
+
+        return f
+
+    return decorator
+
 @extend_schema(tags=['server'])
 class ServerViewSet(viewsets.ViewSet):
     serializer_class = None
@@ -362,18 +382,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                     callback=dm.views.export_project_as_dataset
                 )
 
-    @extend_schema(methods=['PATCH'],
-        operation_id='projects_partial_update_dataset_file',
-        summary="Allows to upload a file chunk. "
-            "Implements TUS file uploading protocol.",
-        request=OpenApiTypes.BINARY,
-        responses={}
-    )
-    @extend_schema(methods=['HEAD'],
-        summary="Implements TUS file uploading protocol."
-    )
-    @action(detail=True, methods=['HEAD', 'PATCH'], url_path='dataset/'+UploadMixin.file_id_regex,
-        parser_classes=[TusUploadParser])
+    @_tus_chunk_action(detail=True, suffix_base="dataset")
     def append_dataset_chunk(self, request, pk, file_id):
         self._object = self.get_object()
         return self.append_tus_chunk(request, file_id)
@@ -510,18 +519,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def import_backup(self, request, pk=None):
         return self.deserialize(request, backup.import_project)
 
-    @extend_schema(methods=['PATCH'],
-        operation_id='projects_partial_update_backup_file',
-        summary="Allows to upload a file chunk. "
-            "Implements TUS file uploading protocol.",
-        request=OpenApiTypes.BINARY,
-        responses={}
-    )
-    @extend_schema(methods=['HEAD'],
-        summary="Implements TUS file uploading protocol."
-    )
-    @action(detail=False, methods=['HEAD', 'PATCH'], url_path='backup/'+UploadMixin.file_id_regex,
-        serializer_class=None, parser_classes=[TusUploadParser])
+    @_tus_chunk_action(detail=False, suffix_base="backup")
     def append_backup_chunk(self, request, file_id):
         return self.append_tus_chunk(request, file_id)
 
@@ -744,18 +742,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def import_backup(self, request, pk=None):
         return self.deserialize(request, backup.import_task)
 
-    @extend_schema(methods=['PATCH'],
-        operation_id='tasks_partial_update_backup_file',
-        summary="Allows to upload a file chunk. "
-            "Implements TUS file uploading protocol.",
-        request=OpenApiTypes.BINARY,
-        responses={}
-    )
-    @extend_schema(methods=['HEAD'],
-        summary="Implements TUS file uploading protocol."
-    )
-    @action(detail=False, methods=['HEAD', 'PATCH'], url_path='backup/'+UploadMixin.file_id_regex,
-        parser_classes=[TusUploadParser])
+    @_tus_chunk_action(detail=False, suffix_base="backup")
     def append_backup_chunk(self, request, file_id):
         return self.append_tus_chunk(request, file_id)
 
@@ -946,18 +933,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return data_getter(request, self._object.data.start_frame,
                 self._object.data.stop_frame, self._object.data)
 
-    @extend_schema(methods=['PATCH'],
-        operation_id='tasks_partial_update_data_file',
-        summary="Allows to upload a file chunk. "
-            "Implements TUS file uploading protocol.",
-        request=OpenApiTypes.BINARY,
-        responses={}
-    )
-    @extend_schema(methods=['HEAD'],
-        summary="Implements TUS file uploading protocol."
-    )
-    @action(detail=True, methods=['HEAD', 'PATCH'], url_path='data/'+UploadMixin.file_id_regex,
-        parser_classes=[TusUploadParser])
+    @_tus_chunk_action(detail=True, suffix_base="data")
     def append_data_chunk(self, request, pk, file_id):
         self._object = self.get_object()
         return self.append_tus_chunk(request, file_id)
@@ -1107,19 +1083,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
                 return Response(data)
 
-    @extend_schema(methods=['PATCH'],
-        operation_id='tasks_partial_update_annotations_file',
-        summary="Allows to upload an annotation file chunk. "
-            "Implements TUS file uploading protocol.",
-        request=OpenApiTypes.BINARY,
-        responses={}
-    )
-    @extend_schema(methods=['HEAD'],
-        operation_id='tasks_annotations_file_retrieve_status',
-        summary="Implements TUS file uploading protocol."
-    )
-    @action(detail=True, methods=['HEAD', 'PATCH'], url_path='annotations/'+UploadMixin.file_id_regex,
-        parser_classes=[TusUploadParser])
+    @_tus_chunk_action(detail=True, suffix_base="annotations")
     def append_annotations_chunk(self, request, pk, file_id):
         self._object = self.get_object()
         return self.append_tus_chunk(request, file_id)
@@ -1509,18 +1473,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 return Response(data)
 
 
-    @extend_schema(methods=['PATCH'],
-        operation_id='jobs_partial_update_annotations_file',
-        summary="Allows to upload an annotation file chunk. "
-            "Implements TUS file uploading protocol.",
-        request=OpenApiTypes.BINARY,
-        responses={}
-    )
-    @extend_schema(methods=['HEAD'],
-        summary="Implements TUS file uploading protocol."
-    )
-    @action(detail=True, methods=['HEAD', 'PATCH'], url_path='annotations/'+UploadMixin.file_id_regex,
-        parser_classes=[TusUploadParser])
+    @_tus_chunk_action(detail=True, suffix_base="annotations")
     def append_annotations_chunk(self, request, pk, file_id):
         self._object = self.get_object()
         return self.append_tus_chunk(request, file_id)
