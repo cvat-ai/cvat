@@ -300,7 +300,7 @@ def is_org_member(memberships):
                 for m in memberships
                 if m["user"] is not None
                 if m["organization"] == org_id
-                if role and m["role"] == role
+                if not role or m["role"] == role
             )
 
     return check
