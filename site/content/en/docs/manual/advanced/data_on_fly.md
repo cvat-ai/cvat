@@ -23,7 +23,7 @@ This method of working with data allows:
 - store data in a cache of the limited size with a policy of evicting less popular items.
 
 Unfortunately, this method has several drawbacks:
-- The first access to the data will take more time
+- The first access to the data will take more time.
 - It will not work for some videos, even if they have a valid manifest file.
   If there are not enough keyframes in the video for smooth video decoding,
   the task data chunks will be created with the default method, i.e. during the task creation.
