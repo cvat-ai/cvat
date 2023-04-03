@@ -334,7 +334,7 @@ class ShapeManager(ObjectManager):
             else:
                 return 0 # if there's invalid polygon, assume similarity is 0
 
-        has_same_type  = obj0["type"] == obj1["type"]
+        has_same_type = obj0["type"] == obj1["type"]
         has_same_label = obj0.get("label_id") == obj1.get("label_id")
         if has_same_type and has_same_label:
             if obj0["type"] == ShapeType.RECTANGLE:
@@ -366,7 +366,7 @@ class ShapeManager(ObjectManager):
 
                 p_top0 = geometry.box(*top_view_0)
                 p_top1 = geometry.box(*top_view_1)
-                top_similarity =_calc_polygons_similarity(p_top0, p_top1)
+                top_similarity = _calc_polygons_similarity(p_top0, p_top1)
 
                 side_view_0 = [
                     x_c0 - x_len0 / 2,
@@ -383,7 +383,7 @@ class ShapeManager(ObjectManager):
                 ]
                 p_side0 = geometry.box(*side_view_0)
                 p_side1 = geometry.box(*side_view_1)
-                side_similarity =_calc_polygons_similarity(p_side0, p_side1)
+                side_similarity = _calc_polygons_similarity(p_side0, p_side1)
 
                 return top_similarity * side_similarity
             elif obj0["type"] == ShapeType.POLYGON:
@@ -412,7 +412,13 @@ class TrackManager(ObjectManager):
         shapes = []
         for idx, track in enumerate(self.objects):
             track_shapes = {}
-            for shape in TrackManager.get_interpolated_shapes(track, 0, end_frame, self._dimension):
+            for shape in TrackManager.get_interpolated_shapes(
+                track,
+                0,
+                end_frame,
+                self._dimension,
+                include_outside_frames=end_skeleton_frame is not None,
+            ):
                 shape["label_id"] = track["label_id"]
                 shape["group"] = track["group"]
                 shape["track_id"] = idx
@@ -433,10 +439,6 @@ class TrackManager(ObjectManager):
 
                 for shape in element_shapes:
                     track_shapes[shape["frame"]]["elements"].append(shape)
-
-                for frame, shape in list(track_shapes.items()):
-                    if all([el["outside"] for el in shape["elements"]]):
-                        track_shapes.pop(frame)
 
             shapes.extend(list(track_shapes.values()))
         return shapes
@@ -502,7 +504,9 @@ class TrackManager(ObjectManager):
                 self._modify_unmached_object(element, end_frame)
 
     @staticmethod
-    def get_interpolated_shapes(track, start_frame, end_frame, dimension):
+    def get_interpolated_shapes(
+        track, start_frame, end_frame, dimension, *, include_outside_frames=False
+    ):
         def copy_shape(source, frame, points=None, rotation=None):
             copied = deepcopy(source)
             copied["keyframe"] = False
@@ -831,7 +835,7 @@ class TrackManager(ObjectManager):
                 for attr in prev_shape["attributes"]:
                     if attr["spec_id"] not in map(lambda el: el["spec_id"], shape["attributes"]):
                         shape["attributes"].append(deepcopy(attr))
-                if not prev_shape["outside"]:
+                if not prev_shape["outside"] or include_outside_frames:
                     shapes.extend(interpolate(prev_shape, shape))
 
             shape["keyframe"] = True
@@ -850,7 +854,7 @@ class TrackManager(ObjectManager):
     def _unite_objects(obj0, obj1):
         track = obj0 if obj0["frame"] < obj1["frame"] else obj1
         assert obj0["label_id"] == obj1["label_id"]
-        shapes = {shape["frame"]:shape for shape in obj0["shapes"]}
+        shapes = {shape["frame"]: shape for shape in obj0["shapes"]}
         for shape in obj1["shapes"]:
             frame = shape["frame"]
             if frame in shapes:
