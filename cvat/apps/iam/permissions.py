@@ -585,13 +585,13 @@ class CloudStoragePermission(OpenPolicyAgentPermission):
         return permissions
 
     @classmethod
-    def create_scope_read(cls, request, storage_id):
+    def create_scope_view(cls, request, storage_id):
         try:
             obj = CloudStorage.objects.get(id=storage_id)
         except CloudStorage.DoesNotExist as ex:
             raise ValidationError(str(ex))
 
-        return cls(**cls.unpack_context(request), obj=obj, scope=__class__.Scopes.LIST_CONTENT)
+        return cls(**cls.unpack_context(request), obj=obj, scope=__class__.Scopes.VIEW)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -682,7 +682,7 @@ class ProjectPermission(OpenPolicyAgentPermission):
             ]:
                 field_path = field.split('.')
                 if cloud_storage_id := get_field(field_source, field_path, None):
-                    permissions.append(CloudStoragePermission.create_scope_read(
+                    permissions.append(CloudStoragePermission.create_scope_view(
                         request=request, storage_id=cloud_storage_id))
 
         return permissions
@@ -871,7 +871,7 @@ class TaskPermission(OpenPolicyAgentPermission):
             ]:
                 field_path = field.split('.')
                 if cloud_storage_id := get_field(field_source, field_path, None):
-                    permissions.append(CloudStoragePermission.create_scope_read(
+                    permissions.append(CloudStoragePermission.create_scope_view(
                         request=request, storage_id=cloud_storage_id))
 
         return permissions
@@ -1173,7 +1173,7 @@ class JobPermission(OpenPolicyAgentPermission):
             ]:
                 field_path = field.split('.')
                 if cloud_storage_id := get_field(field_source, field_path, None):
-                    permissions.append(CloudStoragePermission.create_scope_read(
+                    permissions.append(CloudStoragePermission.create_scope_view(
                         request=request, storage_id=cloud_storage_id))
 
         return permissions

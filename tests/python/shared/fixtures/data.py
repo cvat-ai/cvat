@@ -291,14 +291,16 @@ def org_staff(memberships):
 
 @pytest.fixture(scope="session")
 def is_org_member(memberships):
-    def check(user_id, org_id):
+    def check(user_id, org_id, *, role=None):
         if org_id in ["", None]:
             return True
         else:
             return user_id in set(
                 m["user"]["id"]
                 for m in memberships
-                if m["user"] is not None and m["organization"] == org_id
+                if m["user"] is not None
+                if m["organization"] == org_id
+                if role and m["role"] == role
             )
 
     return check

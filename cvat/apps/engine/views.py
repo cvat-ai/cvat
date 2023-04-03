@@ -13,7 +13,6 @@ from distutils.util import strtobool
 from tempfile import mkstemp
 
 from django.db.models.query import Prefetch
-from django.shortcuts import get_object_or_404
 import django_rq
 from django.apps import apps
 from django.conf import settings
@@ -64,6 +63,7 @@ from cvat.apps.engine.serializers import (
     IssueWriteSerializer, CommentReadSerializer, CommentWriteSerializer, CloudStorageWriteSerializer,
     CloudStorageReadSerializer, DatasetFileSerializer,
     ProjectFileSerializer, TaskFileSerializer)
+from cvat.apps.engine.view_utils import get_cloud_storage_for_import_or_export
 
 from utils.dataset_manifest import ImageManifestManager
 from cvat.apps.engine.utils import (
@@ -2298,7 +2298,7 @@ def _import_annotations(request, rq_id, rq_func, db_obj, format_name,
                     storage_id = location_conf['storage_id']
                 except KeyError:
                     raise serializers.ValidationError(
-                        'Cloud storage location was selected as source,'
+                        'Cloud storage location was selected as the source,'
                         ' but cloud storage id was not specified')
                 db_storage = get_cloud_storage_for_import_or_export(
                     storage_id=storage_id, request=request,
@@ -2402,7 +2402,7 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
                             storage_id = location_conf['storage_id']
                         except KeyError:
                             return HttpResponseBadRequest(
-                                'Cloud storage location was selected for destination,'
+                                'Cloud storage location was selected as the destination,'
                                 ' but cloud storage id was not specified')
                         db_storage = get_cloud_storage_for_import_or_export(
                             storage_id=storage_id, request=request,
@@ -2480,7 +2480,7 @@ def _import_project_dataset(request, rq_id, rq_func, db_obj, format_name, filena
                 storage_id = location_conf['storage_id']
             except KeyError:
                 raise serializers.ValidationError(
-                    'Cloud storage location was selected as source,'
+                    'Cloud storage location was selected as the source,'
                     ' but cloud storage id was not specified')
             db_storage = get_cloud_storage_for_import_or_export(
                 storage_id=storage_id, request=request,
@@ -2513,21 +2513,3 @@ def _import_project_dataset(request, rq_id, rq_func, db_obj, format_name, filena
         return Response(status=status.HTTP_409_CONFLICT, data='Import job already exists')
 
     return Response(status=status.HTTP_202_ACCEPTED)
-
-def get_cloud_storage_for_import_or_export(
-    storage_id: int, *, request, is_default: bool = False
-) -> CloudStorageModel:
-    if is_default:
-        # NOTE: If the storage is default, we may need to check access rights
-        # transitively, e.g. for a job worker in an org, trying to export to a default
-        # target cloud storage for the project.
-        # It is supposed that in this case access to the resource (e.g. a task)
-        # implies ability to use it with the default (i.e. provided) configuration.
-        pass
-    else:
-        perm = CloudStoragePermission.create_scope_read(request=request, storage_id=storage_id)
-        result = perm.check_access()
-        if not result.allow:
-            raise PermissionDenied("User does not have access to this cloud storage")
-
-    return get_object_or_404(CloudStorageModel, pk=storage_id)

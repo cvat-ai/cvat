@@ -53,7 +53,7 @@ class TestExportResourceToS3(_S3ResourceTest):
 
         self._export_resource(cloud_storage, obj_id, obj, resource, **kwargs)
 
-    @pytest.mark.parametrize("user_type", ["admin", "assigned_org_member"])
+    @pytest.mark.parametrize("user_type", ["admin", "assigned_supervisor_org_member"])
     @pytest.mark.parametrize(
         "obj_id, obj, resource",
         [
@@ -81,6 +81,7 @@ class TestExportResourceToS3(_S3ResourceTest):
         is_project_staff,
         is_task_staff,
         is_job_staff,
+        is_org_member,
     ):
         objects = {
             "projects": projects,
@@ -96,16 +97,18 @@ class TestExportResourceToS3(_S3ResourceTest):
 
         if user_type == "admin":
             user = self.user
-        elif user_type == "assigned_org_member":
-            if obj == "projects":
-                user = next(u for u in users if is_project_staff(u["id"], obj_id))
-            elif obj == "tasks":
-                user = next(u for u in users if is_task_staff(u["id"], obj_id))
-            elif obj == "jobs":
-                user = next(u for u in users if is_job_staff(u["id"], obj_id))
-            else:
-                assert False
-            user = user["username"]
+        elif user_type == "assigned_supervisor_org_member":
+            is_staff = {"projects": is_project_staff, "tasks": is_task_staff, "jobs": is_job_staff}[
+                obj
+            ]
+            user = next(
+                u
+                for u in users
+                if is_staff(u["id"], obj_id)
+                if is_org_member(u["id"], cloud_storage["organization"], role="supervisor")
+            )["username"]
+        else:
+            assert False
 
         kwargs = _make_export_resource_params(resource, obj=obj)
         kwargs["user"] = user
@@ -202,7 +205,7 @@ class TestImportResourceFromS3(_S3ResourceTest):
 
     @pytest.mark.parametrize(
         "user_type",
-        ["admin", "assigned_org_member"],
+        ["admin", "assigned_supervisor_org_member"],
     )
     @pytest.mark.parametrize(
         "obj_id, obj, resource",
@@ -226,6 +229,7 @@ class TestImportResourceFromS3(_S3ResourceTest):
         is_project_staff,
         is_task_staff,
         is_job_staff,
+        is_org_member,
     ):
         objects = {
             "projects": projects,
@@ -241,16 +245,18 @@ class TestImportResourceFromS3(_S3ResourceTest):
 
         if user_type == "admin":
             user = self.user
-        elif user_type == "assigned_org_member":
-            if obj == "projects":
-                user = next(u for u in users if is_project_staff(u["id"], obj_id))
-            elif obj == "tasks":
-                user = next(u for u in users if is_task_staff(u["id"], obj_id))
-            elif obj == "jobs":
-                user = next(u for u in users if is_job_staff(u["id"], obj_id))
-            else:
-                assert False
-            user = user["username"]
+        elif user_type == "assigned_supervisor_org_member":
+            is_staff = {"projects": is_project_staff, "tasks": is_task_staff, "jobs": is_job_staff}[
+                obj
+            ]
+            user = next(
+                u
+                for u in users
+                if is_staff(u["id"], obj_id)
+                if is_org_member(u["id"], cloud_storage["organization"], role="supervisor")
+            )["username"]
+        else:
+            assert False
 
         export_kwargs = _make_export_resource_params(resource, obj=obj)
         import_kwargs = _make_import_resource_params(resource, obj=obj)
