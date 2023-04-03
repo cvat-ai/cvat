@@ -267,8 +267,8 @@ The following parameters are available:
 
 <!--lint enable maximum-line-length-->
 
-To save and open the task click **Submit & Open** .
+To save and open the task, click **Submit & Open** .
 
-To create several tasks in sequence, click on the **Submit & Continue**.
+To create several tasks in sequence, click **Submit & Continue**.
 
 Created tasks will be displayed on the [tasks page](/docs/manual/basics/tasks-page/).

@@ -25,7 +25,7 @@ This method of working with data allows:
 Unfortunately, this method has several drawbacks:
 - The first access to the data will take more time
 - It will not work for some videos, even if they have a valid manifest file.
-  If there is not enough keyframes in the video for smooth video decoding,
+  If there are not enough keyframes in the video for smooth video decoding,
   the task data chunks will be created with the default method, i.e. during the task creation.
 - If the data has not been cached yet, and is not reachable during the access time,
   it cannot be retrieved.
