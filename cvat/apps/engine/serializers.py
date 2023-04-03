@@ -687,11 +687,11 @@ class DataSerializer(WriteOnceMixin, serializers.ModelSerializer):
         help_text="Image quality to use during annotation")
     use_zip_chunks = serializers.BooleanField(default=False,
         help_text=textwrap.dedent("""\
-            Force the use of frame-based chunks for videos.
-            By default, chunks are created from video segments
+            When true, video chunks will be represented as zip archives with decoded video frames.
+            When false, video chunks are represented as video segments
         """))
     client_files = ClientFileSerializer(many=True, default=[],
-        help_text="Files to be uploaded")
+        help_text="Uploaded files")
     server_files = ServerFileSerializer(many=True, default=[],
         help_text="Files from a file share mounted on the server, or from a cloud storage")
     remote_files = RemoteFileSerializer(many=True, default=[],
@@ -709,13 +709,14 @@ class DataSerializer(WriteOnceMixin, serializers.ModelSerializer):
     cloud_storage_id = serializers.IntegerField(write_only=True, allow_null=True, required=False,
         help_text=textwrap.dedent("""\
             Allows to specify a cloud storage to be used as the data source.
-            The cloud storage record needs to be defined first. Both user
-            sandbox and organization cloud storages can be used
+            The cloud storages applicable depend on the context.
+            In the user sandbox, only the user sandbox cloud storages can be used.
+            In an organization, only the organization cloud storages can be used.
         """))
     filename_pattern = serializers.CharField(allow_null=True, required=False,
         help_text=textwrap.dedent("""\
             Allows to specify filename filter for cloud storage files
-            listed in the manifest. Implements fnmatch logic and wildcards.
+            listed in the manifest. Supports fnmatch wildcards.
             Read more: https://docs.python.org/3/library/fnmatch.html
         """))
     job_file_mapping = JobFileMapping(required=False, write_only=True)
@@ -727,7 +728,7 @@ class DataSerializer(WriteOnceMixin, serializers.ModelSerializer):
             'cloud_storage_id', 'use_cache', 'copy_data', 'storage_method', 'storage', 'sorting_method', 'filename_pattern',
             'job_file_mapping')
         extra_kwargs = {
-            'chunk_size': { 'help_text': "Maximum size of data chunks" },
+            'chunk_size': { 'help_text': "Maximum number of frames per chunk" },
             'size': { 'help_text': "The number of frames" },
             'start_frame': { 'help_text': "First frame index" },
             'stop_frame': { 'help_text': "Last frame index" },
