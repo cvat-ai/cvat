@@ -673,9 +673,11 @@ class ProjectPermission(OpenPolicyAgentPermission):
                 permissions.append(perm)
 
             for field_source, field in [
+                # from ProjectWriteSerializer used in create and partial update endpoints
                 (request.data, 'source_storage.cloud_storage_id'),
                 (request.data, 'target_storage.cloud_storage_id'),
-                (request.data, 'cloud_storage_id'),
+
+                # from /backup, /annotations and /dataset endpoints
                 (request.query_params, 'cloud_storage_id'),
             ]:
                 field_path = field.split('.')
@@ -857,9 +859,14 @@ class TaskPermission(OpenPolicyAgentPermission):
                 permissions.append(perm)
 
             for field_source, field in [
+                # from TaskWriteSerializer being used in the create and partial_update endpoints
                 (request.data, 'source_storage.cloud_storage_id'),
                 (request.data, 'target_storage.cloud_storage_id'),
+
+                # from DataSerializer being used in the /data endpoint
                 (request.data, 'cloud_storage_id'),
+
+                # from /backup, /annotations and /dataset endpoints
                 (request.query_params, 'cloud_storage_id'),
             ]:
                 field_path = field.split('.')
@@ -1161,9 +1168,7 @@ class JobPermission(OpenPolicyAgentPermission):
                 permissions.append(perm)
 
             for field_source, field in [
-                (request.data, 'source_storage.cloud_storage_id'),
-                (request.data, 'target_storage.cloud_storage_id'),
-                (request.data, 'cloud_storage_id'),
+                # from /annotations and /dataset endpoints
                 (request.query_params, 'cloud_storage_id'),
             ]:
                 field_path = field.split('.')
