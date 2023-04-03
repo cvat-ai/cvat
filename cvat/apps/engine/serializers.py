@@ -660,7 +660,7 @@ class JobFileMapping(serializers.ListField):
     """
     Represents a file-to-job mapping. Useful to specify a custom job
     configuration during task creation. This option is not compatible with
-    most other job split-related options. Files in the jobs must not overlap and repeat.
+    most other job split-related options. Files in the jobs must not overlap or repeat.
 
     Example:
     [
@@ -693,7 +693,7 @@ class DataSerializer(WriteOnceMixin, serializers.ModelSerializer):
     client_files = ClientFileSerializer(many=True, default=[],
         help_text="Uploaded files")
     server_files = ServerFileSerializer(many=True, default=[],
-        help_text="Files from a file share mounted on the server, or from a cloud storage")
+        help_text="Paths to files from a file share mounted on the server, or from a cloud storage")
     remote_files = RemoteFileSerializer(many=True, default=[],
         help_text="Direct download URLs for files")
     use_cache = serializers.BooleanField(default=False,
@@ -702,20 +702,21 @@ class DataSerializer(WriteOnceMixin, serializers.ModelSerializer):
             Read more: https://opencv.github.io/cvat/docs/manual/advanced/data_on_fly/
         """))
     copy_data = serializers.BooleanField(default=False, help_text=textwrap.dedent("""\
-            Allows to copy data from the server file share to CVAT during the task creation.
+            Copy data from the server file share to CVAT during the task creation.
             This will create a copy of the data, making the server independent from
             the file share availability
         """))
     cloud_storage_id = serializers.IntegerField(write_only=True, allow_null=True, required=False,
         help_text=textwrap.dedent("""\
-            Allows to specify a cloud storage to be used as the data source.
+            If not null, the files referenced by server_files will be retrieved
+            from the cloud storage with the specified ID.
             The cloud storages applicable depend on the context.
             In the user sandbox, only the user sandbox cloud storages can be used.
             In an organization, only the organization cloud storages can be used.
         """))
     filename_pattern = serializers.CharField(allow_null=True, required=False,
         help_text=textwrap.dedent("""\
-            Allows to specify filename filter for cloud storage files
+            A filename filter for cloud storage files
             listed in the manifest. Supports fnmatch wildcards.
             Read more: https://docs.python.org/3/library/fnmatch.html
         """))
