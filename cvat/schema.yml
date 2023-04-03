@@ -6908,7 +6908,7 @@ components:
           maximum: 2147483647
           minimum: 0
           nullable: true
-          description: Maximum size of data chunks
+          description: Maximum number of frames per chunk
         size:
           type: integer
           maximum: 2147483647
@@ -6943,7 +6943,7 @@ components:
             type: string
             format: binary
           default: []
-          description: Files to be uploaded
+          description: Uploaded files
         server_files:
           type: array
           items:
@@ -6951,8 +6951,8 @@ components:
             minLength: 1
             maxLength: 1024
           default: []
-          description: Files from a file share mounted on the server, or from a cloud
-            storage
+          description: Paths to files from a file share mounted on the server, or
+            from a cloud storage
         remote_files:
           type: array
           items:
@@ -6965,16 +6965,18 @@ components:
           type: boolean
           default: false
           description: |
-            Force the use of frame-based chunks for videos.
-            By default, chunks are created from video segments
+            When true, video chunks will be represented as zip archives with decoded video frames.
+            When false, video chunks are represented as video segments
         cloud_storage_id:
           type: integer
           writeOnly: true
           nullable: true
           description: |
-            Allows to specify a cloud storage to be used as the data source.
-            The cloud storage record needs to be defined first. Both user
-            sandbox and organization cloud storages can be used
+            If not null, the files referenced by server_files will be retrieved
+            from the cloud storage with the specified ID.
+            The cloud storages applicable depend on the context.
+            In the user sandbox, only the user sandbox cloud storages can be used.
+            In an organization, only the organization cloud storages can be used.
         use_cache:
           type: boolean
           default: false
@@ -6985,7 +6987,7 @@ components:
           type: boolean
           default: false
           description: |
-            Allows to copy data from the server file share to CVAT during the task creation.
+            Copy data from the server file share to CVAT during the task creation.
             This will create a copy of the data, making the server independent from
             the file share availability
         storage_method:
@@ -6999,8 +7001,8 @@ components:
           nullable: true
           minLength: 1
           description: |
-            Allows to specify filename filter for cloud storage files
-            listed in the manifest. Implements fnmatch logic and wildcards.
+            A filename filter for cloud storage files
+            listed in the manifest. Supports fnmatch wildcards.
             Read more: https://docs.python.org/3/library/fnmatch.html
         job_file_mapping:
           type: array
@@ -7015,7 +7017,7 @@ components:
 
             Represents a file-to-job mapping. Useful to specify a custom job
             configuration during task creation. This option is not compatible with
-            most other job split-related options. Files in the jobs must not overlap and repeat.
+            most other job split-related options. Files in the jobs must not overlap or repeat.
 
             Example:
             [
