@@ -366,6 +366,7 @@ class JobAnnotation:
                 attributeval_set.append(dotdict([
                     ('spec_id', db_attr.spec_id),
                     ('value', db_attr.value),
+                    ('id', None),
                 ]))
 
     def _init_tags_from_db(self):
@@ -399,8 +400,18 @@ class JobAnnotation:
             self._extend_attributes(db_tag.labeledimageattributeval_set,
                 self.db_attributes[db_tag.label_id]["all"].values())
 
-        serializer = serializers.LabeledImageSerializer(db_tags, many=True)
-        self.ir_data.tags = serializer.data
+        def convert_tag(value):
+            value['attributes'] = value['labeledshapeattributeval_set']
+            del value['labeledshapeattributeval_set']
+            for attr in value['attributes']:
+                del attr['id']
+
+            keys = list(value.keys())
+            for field in keys:
+                if value[field] is None:
+                    del value[field]
+
+        self.ir_data.tags = [convert_tag(value) for value in db_tags]
 
     def _init_shapes_from_db(self):
         db_shapes = self.db_job.labeledshape_set.prefetch_related(
@@ -453,25 +464,24 @@ class JobAnnotation:
         for shape_id, shape_elements in elements.items():
             shapes[shape_id].elements = shape_elements
 
-        def convert_shape(value):
-            value['attributes'] = value['labeledshapeattributeval_set']
-            del value['labeledshapeattributeval_set']
-            for attr in value['attributes']:
+        def convert_shape(shape):
+            shape['attributes'] = shape['labeledshapeattributeval_set']
+            del shape['labeledshapeattributeval_set']
+            for attr in shape['attributes']:
                 del attr['id']
 
-            keys = list(value.keys())
+            keys = list(shape.keys())
             for field in keys:
-                if value[field] is None:
-                    del value[field]
+                if shape[field] is None:
+                    del shape[field]
 
-            if value['elements']:
-                for element in value['elements']:
+            if 'elements' in shape:
+                for element in shape['elements']:
                     convert_shape(element)
 
-            return value
+            return shape
 
-        values = [convert_shape(value) for value in shapes.values()]
-        self.ir_data.shapes = values
+        self.ir_data.shapes = [convert_shape(value) for value in shapes.values()]
 
     def _init_tracks_from_db(self):
         db_tracks = self.db_job.labeledtrack_set.prefetch_related(
@@ -529,6 +539,7 @@ class JobAnnotation:
         tracks = {}
         elements = {}
         for db_track in db_tracks:
+            db_track['elements'] = []
             db_track["trackedshape_set"] = _merge_table_rows(db_track["trackedshape_set"], {
                 'trackedshapeattributeval_set': [
                     'trackedshapeattributeval__value',
@@ -563,8 +574,36 @@ class JobAnnotation:
         for track_id, track_elements in elements.items():
             tracks[track_id].elements = track_elements
 
-        serializer = serializers.LabeledTrackSerializer(list(tracks.values()), many=True)
-        self.ir_data.tracks = serializer.data
+        def remove_none(dictionary):
+            keys = list(dictionary.keys())
+            for field in keys:
+                if dictionary[field] is None:
+                    del dictionary[field]
+            return dictionary
+
+        def convert_track(track):
+            track['attributes'] = track['labeledtrackattributeval_set']
+            del track['labeledtrackattributeval_set']
+            for attr in track['attributes']:
+                del attr['id']
+
+            remove_none(track)
+            track['shapes'] = track['trackedshape_set']
+            del track['trackedshape_set']
+
+            for shape in track['shapes']:
+                remove_none(shape)
+                shape['attributes'] = shape['trackedshapeattributeval_set']
+                for attr in shape['attributes']:
+                    del attr['id']
+
+            if 'elements' in track:
+                for element in track['elements']:
+                    convert_track(element)
+
+            return track
+
+        self.ir_data.tracks = [convert_track(value) for value in tracks.values()]
 
     def _init_version_from_db(self):
         self.ir_data.version = 0 # FIXME: should be removed in the future
