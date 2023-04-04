@@ -12,7 +12,7 @@ from django.db import transaction
 from django.db.models.query import Prefetch
 from django.utils import timezone
 
-from cvat.apps.engine import models, serializers
+from cvat.apps.engine import models
 from cvat.apps.engine.plugins import plugin_decorator
 from cvat.apps.profiler import silk_profile
 
@@ -41,6 +41,13 @@ class PatchAction(str, Enum):
 
     def __str__(self):
         return self.value
+
+def _remove_none(dictionary):
+    keys = list(dictionary.keys())
+    for field in keys:
+        if dictionary[field] is None:
+            del dictionary[field]
+    return dictionary
 
 def _merge_table_rows(rows, keys_for_merge, field_id):
     # It is necessary to keep a stable order of original rows
@@ -313,6 +320,7 @@ class JobAnnotation:
             self._set_updated_date()
             self.db_job.save()
 
+
     def create(self, data):
         self._create(data)
 
@@ -400,16 +408,13 @@ class JobAnnotation:
             self._extend_attributes(db_tag.labeledimageattributeval_set,
                 self.db_attributes[db_tag.label_id]["all"].values())
 
-        def convert_tag(value):
-            value['attributes'] = value['labeledshapeattributeval_set']
-            del value['labeledshapeattributeval_set']
-            for attr in value['attributes']:
-                del attr['id']
+        def convert_tag(tag):
+            tag['attributes'] = tag['labeledshapeattributeval_set']
+            del tag['labeledshapeattributeval_set']
 
-            keys = list(value.keys())
-            for field in keys:
-                if value[field] is None:
-                    del value[field]
+            _remove_none(tag)
+            for attr in tag['attributes']:
+                del attr['id']
 
         self.ir_data.tags = [convert_tag(value) for value in db_tags]
 
@@ -467,13 +472,9 @@ class JobAnnotation:
         def convert_shape(shape):
             shape['attributes'] = shape['labeledshapeattributeval_set']
             del shape['labeledshapeattributeval_set']
+            _remove_none(shape)
             for attr in shape['attributes']:
                 del attr['id']
-
-            keys = list(shape.keys())
-            for field in keys:
-                if shape[field] is None:
-                    del shape[field]
 
             if 'elements' in shape:
                 for element in shape['elements']:
@@ -574,25 +575,17 @@ class JobAnnotation:
         for track_id, track_elements in elements.items():
             tracks[track_id].elements = track_elements
 
-        def remove_none(dictionary):
-            keys = list(dictionary.keys())
-            for field in keys:
-                if dictionary[field] is None:
-                    del dictionary[field]
-            return dictionary
-
         def convert_track(track):
+            track['shapes'] = track['trackedshape_set']
+            del track['trackedshape_set']
             track['attributes'] = track['labeledtrackattributeval_set']
             del track['labeledtrackattributeval_set']
+            _remove_none(track)
             for attr in track['attributes']:
                 del attr['id']
 
-            remove_none(track)
-            track['shapes'] = track['trackedshape_set']
-            del track['trackedshape_set']
-
             for shape in track['shapes']:
-                remove_none(shape)
+                _remove_none(shape)
                 shape['attributes'] = shape['trackedshapeattributeval_set']
                 for attr in shape['attributes']:
                     del attr['id']
