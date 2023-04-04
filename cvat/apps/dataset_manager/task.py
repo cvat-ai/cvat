@@ -453,8 +453,25 @@ class JobAnnotation:
         for shape_id, shape_elements in elements.items():
             shapes[shape_id].elements = shape_elements
 
-        serializer = serializers.LabeledShapeSerializer(list(shapes.values()), many=True)
-        self.ir_data.shapes = serializer.data
+        def convert_shape(value):
+            value['attributes'] = value['labeledshapeattributeval_set']
+            del value['labeledshapeattributeval_set']
+            for attr in value['attributes']:
+                del attr['id']
+
+            keys = list(value.keys())
+            for field in keys:
+                if value[field] is None:
+                    del value[field]
+
+            if value['elements']:
+                for element in value['elements']:
+                    convert_shape(element)
+
+            return value
+
+        values = [convert_shape(value) for value in shapes.values()]
+        self.ir_data.shapes = values
 
     def _init_tracks_from_db(self):
         db_tracks = self.db_job.labeledtrack_set.prefetch_related(

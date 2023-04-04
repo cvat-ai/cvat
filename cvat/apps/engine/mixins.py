@@ -279,8 +279,7 @@ class AnnotationMixin:
 
         data = get_data(self._object.pk)
         serializer = LabeledDataSerializer(data=data)
-        if serializer.is_valid(raise_exception=True):
-            return Response(serializer.data)
+        return Response(serializer.initial_data)
 
     def import_annotations(self, request, db_obj, import_func, rq_func, rq_id):
         is_tus_request = request.headers.get('Upload-Length', None) is not None or \
