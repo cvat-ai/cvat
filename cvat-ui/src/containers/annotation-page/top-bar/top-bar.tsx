@@ -323,7 +323,9 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
         let newFrame = Math.max(jobInstance.startFrame, frameNumber - frameStep);
         if (!showDeletedFrames) {
             newFrame = await jobInstance.frames.search(
-                { notDeleted: true, offset: frameStep }, frameNumber - 1, jobInstance.startFrame,
+                { notDeleted: true, offset: frameStep },
+                Math.max(jobInstance.startFrame, frameNumber - 1),
+                jobInstance.startFrame,
             );
         }
 
@@ -392,7 +394,9 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
         let newFrame = Math.min(jobInstance.stopFrame, frameNumber + frameStep);
         if (!showDeletedFrames) {
             newFrame = await jobInstance.frames.search(
-                { notDeleted: true, offset: frameStep }, frameNumber + 1, jobInstance.stopFrame,
+                { notDeleted: true, offset: frameStep },
+                Math.min(jobInstance.stopFrame, frameNumber + 1),
+                jobInstance.stopFrame,
             );
         }
 
