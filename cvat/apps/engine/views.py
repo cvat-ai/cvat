@@ -6,6 +6,7 @@
 import io
 import os
 import os.path as osp
+import textwrap
 import pytz
 import traceback
 from datetime import datetime
@@ -47,7 +48,7 @@ from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.media_extractors import get_mime
 from cvat.apps.engine.models import (
-    Job, Label, Task, Project, Issue, Data,
+    Job, JobType, Label, Task, Project, Issue, Data,
     Comment, StorageMethodChoice, StorageChoice,
     CloudProviderChoice, Location
 )
@@ -1271,6 +1272,12 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
 @extend_schema(tags=['jobs'])
 @extend_schema_view(
+    create=extend_schema(
+        summary='Method creates a new job in the task',
+        request=JobWriteSerializer,
+        responses={
+            '201': JobReadSerializer, # check JobWriteSerializer.to_representation
+        }),
     retrieve=extend_schema(
         summary='Method returns details of a job',
         responses={
@@ -1286,10 +1293,20 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         request=JobWriteSerializer(partial=True),
         responses={
             '200': JobReadSerializer, # check JobWriteSerializer.to_representation
-        })
+        }),
+    destroy=extend_schema(
+        summary='Method deletes a job and its related annotations',
+        description=textwrap.dedent("""\
+            Please note, that not every job can be removed. Currently,
+            it is only available for Ground Truth jobs.
+            """),
+        responses={
+            '204': OpenApiResponse(description='The job has been deleted'),
+        }),
 )
-class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
-    mixins.RetrieveModelMixin, PartialUpdateModelMixin, UploadMixin, AnnotationMixin
+class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateModelMixin,
+    mixins.RetrieveModelMixin, PartialUpdateModelMixin, mixins.DestroyModelMixin,
+    UploadMixin, AnnotationMixin
 ):
     queryset = Job.objects.select_related('segment__task__data').prefetch_related(
         'segment__task__label_set', 'segment__task__project__label_set',
@@ -1328,6 +1345,12 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return JobReadSerializer
         else:
             return JobWriteSerializer
+
+    def perform_destroy(self, instance):
+        if instance.type != JobType.GROUND_TRUTH:
+            raise ValidationError("Only ground truth jobs can be removed")
+
+        return super().perform_destroy(instance)
 
     # UploadMixin method
     def get_upload_dir(self):

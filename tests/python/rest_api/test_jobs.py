@@ -9,9 +9,10 @@ import zipfile
 from copy import deepcopy
 from http import HTTPStatus
 from io import BytesIO
-from typing import List
+from typing import Any, Dict, List
 
 import pytest
+from cvat_sdk import models
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
@@ -50,6 +51,44 @@ def filter_jobs(jobs, tasks, org):
         jobs = [job for job in jobs if tasks[job["task_id"]]["organization"] == org]
 
     return jobs, kwargs
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+class TestPostJobs:
+    def _test_create_job_ok(self, user: str, data: Dict[str, Any], **kwargs):
+        with make_api_client(user) as api_client:
+            (_, response) = api_client.jobs_api.create(models.JobWriteRequest(**data), **kwargs)
+            assert response.status == HTTPStatus.OK
+            assert (
+                DeepDiff(
+                    data,
+                    json.loads(response.data),
+                    exclude_paths="root['updated_date']",
+                    ignore_order=True,
+                )
+                == {}
+            )
+
+    @pytest.mark.parametrize("task_mode", ["annotation", "interpolation"])
+    def test_can_create_gt_job_with_manual_frames(self, admin_user, tasks, task_mode):
+        user = admin_user
+        job_frame_count = 4
+        task = next(
+            t
+            for t in tasks
+            if not t["project_id"]
+            and not t["organization"]
+            and t["mode"] == task_mode
+            and t["size"] > job_frame_count
+        )
+        task_id = task["id"]
+
+        job_spec = {
+            "task_id": task_id,
+            "type": "ground_truth",
+            "frames": list(range(job_frame_count)),
+        }
+        self._test_create_job_ok(user, job_spec)
 
 
 @pytest.mark.usefixtures("restore_db_per_class")

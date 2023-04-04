@@ -27,6 +27,70 @@ from drf_spectacular.utils import OpenApiExample, extend_schema_field, extend_sc
 
 from cvat.apps.engine.view_utils import build_field_filter_params, get_list_view_name, reverse
 
+
+class WriteOnceMixin:
+    """
+    Adds support for write once fields to serializers.
+
+    To use it, specify a list of fields as `write_once_fields` on the
+    serializer's Meta:
+    ```
+    class Meta:
+        model = SomeModel
+        fields = '__all__'
+        write_once_fields = ('collection', )
+    ```
+
+    Now the fields in `write_once_fields` can be set during POST (create),
+    but cannot be changed afterwards via PUT or PATCH (update).
+    Inspired by http://stackoverflow.com/a/37487134/627411.
+    """
+
+    def get_extra_kwargs(self):
+        extra_kwargs = super().get_extra_kwargs()
+
+        # We're only interested in PATCH/PUT.
+        if 'update' in getattr(self.context.get('view'), 'action', ''):
+            extra_kwargs = self._set_write_once_fields(extra_kwargs)
+
+        return extra_kwargs
+
+    def get_fields(self):
+        fields = super().get_fields()
+
+        extra_kwargs = self.get_extra_kwargs()
+
+        for field_name, field_extra_kwargs in extra_kwargs.items():
+            field = fields.get(field_name)
+            read_only = field_extra_kwargs.get('read_only')
+            if read_only:
+                setattr(field, 'read_only', read_only)
+
+        return fields
+
+    def _set_write_once_fields(self, extra_kwargs):
+        """
+        Set all fields in `Meta.write_once_fields` to read_only.
+        """
+
+        write_once_fields = getattr(self.Meta, 'write_once_fields', None)
+        if not write_once_fields:
+            return extra_kwargs
+
+        if not isinstance(write_once_fields, (list, tuple)):
+            raise TypeError(
+                'The `write_once_fields` option must be a list or tuple. '
+                'Got {}.'.format(type(write_once_fields).__name__)
+            )
+
+        for field_name in write_once_fields:
+            kwargs = extra_kwargs.get(field_name, {})
+            kwargs['read_only'] = True
+            extra_kwargs[field_name] = kwargs
+
+        return extra_kwargs
+
+
 @extend_schema_field(serializers.URLField)
 class HyperlinkedEndpointSerializer(serializers.Serializer):
     key_field = 'pk'
@@ -494,13 +558,52 @@ class JobReadSerializer(serializers.ModelSerializer):
             'updated_date', 'issues', 'labels')
         read_only_fields = fields
 
-class JobWriteSerializer(serializers.ModelSerializer):
+
+class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     assignee = serializers.IntegerField(allow_null=True, required=False)
 
+    type = serializers.ChoiceField(choices=models.JobType.choices())
+    task_id = serializers.IntegerField()
+    frame_selection_method = serializers.ChoiceField(
+        choices=models.JobFrameSelectionMethod.choices(), required=False)
+
+    # Random selection fields
+    count = serializers.IntegerField(min_value=0, required=False,
+        help_text=textwrap.dedent("""\
+            The number of frames included in the job.
+            Applicable only to the random frame selection
+        """))
+
+    # Manual selection fields
+    frames = serializers.ListField(child=serializers.IntegerField(min_value=0),
+        required=False, help_text=textwrap.dedent("""\
+            The list of frame ids. Applicable only to the manual frame selection
+        """))
+
+    class Meta:
+        model = models.Job
+        write_once_fields = ('type', 'task_id', 'frame_selection_method', 'count', 'frames')
+        fields = ('assignee', 'stage', 'state', ) + write_once_fields
+
     def to_representation(self, instance):
-        # FIXME: deal with resquest/response separation
         serializer = JobReadSerializer(instance, context=self.context)
         return serializer.data
+
+    @transaction.atomic
+    def create(self, validated_data):
+        task_id = validated_data.pop('task_id')
+        task = models.Task.objects.get(pk=task_id)
+
+        if not task.data:
+            raise serializers.ValidationError(
+                "This task has no data yet. Please set up the task data and try again"
+            )
+        size = task.data.size
+
+        segment = models.Segment.objects.create(start_frame=0, stop_frame=size, task=task)
+
+        validated_data['segment'] = segment
+        return super().create(validated_data)
 
     def update(self, instance, validated_data):
         state = validated_data.get('state')
@@ -524,11 +627,6 @@ class JobWriteSerializer(serializers.ModelSerializer):
         instance = super().update(instance, validated_data)
 
         return instance
-
-
-    class Meta:
-        model = models.Job
-        fields = ('assignee', 'stage', 'state')
 
 class SimpleJobSerializer(serializers.ModelSerializer):
     assignee = BasicUserSerializer(allow_null=True)
@@ -594,55 +692,6 @@ class RqStatusSerializer(serializers.Serializer):
         "Queued", "Started", "Finished", "Failed"])
     message = serializers.CharField(allow_blank=True, default="")
     progress = serializers.FloatField(max_value=100, default=0)
-
-class WriteOnceMixin:
-    """
-    Adds support for write once fields to serializers.
-
-    To use it, specify a list of fields as `write_once_fields` on the
-    serializer's Meta:
-    ```
-    class Meta:
-        model = SomeModel
-        fields = '__all__'
-        write_once_fields = ('collection', )
-    ```
-
-    Now the fields in `write_once_fields` can be set during POST (create),
-    but cannot be changed afterwards via PUT or PATCH (update).
-    Inspired by http://stackoverflow.com/a/37487134/627411.
-    """
-
-    def get_extra_kwargs(self):
-        extra_kwargs = super().get_extra_kwargs()
-
-        # We're only interested in PATCH/PUT.
-        if 'update' in getattr(self.context.get('view'), 'action', ''):
-            extra_kwargs = self._set_write_once_fields(extra_kwargs)
-
-        return extra_kwargs
-
-    def _set_write_once_fields(self, extra_kwargs):
-        """
-        Set all fields in `Meta.write_once_fields` to read_only.
-        """
-
-        write_once_fields = getattr(self.Meta, 'write_once_fields', None)
-        if not write_once_fields:
-            return extra_kwargs
-
-        if not isinstance(write_once_fields, (list, tuple)):
-            raise TypeError(
-                'The `write_once_fields` option must be a list or tuple. '
-                'Got {}.'.format(type(write_once_fields).__name__)
-            )
-
-        for field_name in write_once_fields:
-            kwargs = extra_kwargs.get(field_name, {})
-            kwargs['read_only'] = True
-            extra_kwargs[field_name] = kwargs
-
-        return extra_kwargs
 
 
 class JobFiles(serializers.ListField):

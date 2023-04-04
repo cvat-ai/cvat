@@ -154,6 +154,28 @@ class SortingMethod(str, Enum):
     def __str__(self):
         return self.value
 
+class JobType(str, Enum):
+    NORMAL = 'normal'
+    GROUND_TRUTH = 'ground_truth'
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+    def __str__(self):
+        return self.value
+
+class JobFrameSelectionMethod(str, Enum):
+    RANDOM_UNIFORM = 'random_uniform'
+    MANUAL = 'manual'
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+    def __str__(self):
+        return self.value
+
 class AbstractArrayField(models.TextField):
     separator = ","
     converter = lambda x: x
@@ -476,6 +498,8 @@ class Job(models.Model):
         default=StageChoice.ANNOTATION)
     state = models.CharField(max_length=32, choices=StateChoice.choices(),
         default=StateChoice.NEW)
+    type = models.CharField(max_length=32, choices=JobType.choices(),
+        default=JobType.NORMAL)
 
     def get_dirname(self):
         return os.path.join(settings.JOBS_ROOT, str(self.id))

@@ -1845,6 +1845,45 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedJobReadList'
           description: ''
+    post:
+      operationId: jobs_create
+      summary: Method creates a new job in the task
+      parameters:
+      - in: header
+        name: X-Organization
+        schema:
+          type: string
+      - in: query
+        name: org
+        schema:
+          type: string
+        description: Organization unique slug
+      - in: query
+        name: org_id
+        schema:
+          type: integer
+        description: Organization identifier
+      tags:
+      - jobs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JobWriteRequest'
+        required: true
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/JobRead'
+          description: ''
   /api/jobs/{id}:
     get:
       operationId: jobs_retrieve
@@ -1929,6 +1968,44 @@ paths:
               schema:
                 $ref: '#/components/schemas/JobRead'
           description: ''
+    delete:
+      operationId: jobs_destroy
+      description: |
+        Please note, that not every job can be removed. Currently,
+        it is only available for Ground Truth jobs.
+      summary: Method deletes a job and its related annotations
+      parameters:
+      - in: header
+        name: X-Organization
+        schema:
+          type: string
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this job.
+        required: true
+      - in: query
+        name: org
+        schema:
+          type: string
+        description: Organization unique slug
+      - in: query
+        name: org_id
+        schema:
+          type: integer
+        description: Organization identifier
+      tags:
+      - jobs
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: The job has been deleted
   /api/jobs/{id}/annotations/:
     get:
       operationId: jobs_retrieve_annotations
@@ -7269,6 +7346,11 @@ components:
       - name
       - related_files
       - width
+    FrameSelectionMethodEnum:
+      enum:
+      - random_uniform
+      - manual
+      type: string
     InputTypeEnum:
       enum:
       - checkbox
@@ -7484,6 +7566,43 @@ components:
       - annotation
       - validation
       - completed
+      type: string
+    JobWriteRequest:
+      type: object
+      properties:
+        assignee:
+          type: integer
+          nullable: true
+        stage:
+          $ref: '#/components/schemas/JobStage'
+        state:
+          $ref: '#/components/schemas/OperationStatus'
+        type:
+          $ref: '#/components/schemas/JobWriteTypeEnum'
+        task_id:
+          type: integer
+        frame_selection_method:
+          $ref: '#/components/schemas/FrameSelectionMethodEnum'
+        count:
+          type: integer
+          minimum: 0
+          description: |
+            The number of frames included in the job.
+            Applicable only to the random frame selection.
+        frames:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+          description: |
+            The list of frame ids. Applicable only to the manual frame selection.
+      required:
+      - task_id
+      - type
+    JobWriteTypeEnum:
+      enum:
+      - normal
+      - ground_truth
       type: string
     JobsSummary:
       type: object
