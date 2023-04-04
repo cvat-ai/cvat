@@ -386,8 +386,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
             for db_job_id in db_job_ids:
                 annotations = dm.task.get_job_data(db_job_id)
                 annotations_serializer = LabeledDataSerializer(data=annotations)
-                annotations_serializer.is_valid(raise_exception=True)
-                job_annotations.append(self._prepare_annotations(annotations_serializer.data, self._label_mapping))
+                job_annotations.append(self._prepare_annotations(annotations_serializer.initial_data, self._label_mapping))
 
             return job_annotations
 
