@@ -61,8 +61,7 @@ context('Mutable attribute.', () => {
         it('Go to Standard mode. The object details have correct values on the corresponding frames.', () => {
             cy.changeWorkspace('Standard');
             cy.get('#cvat_canvas_shape_1')
-                .trigger('mousemove')
-                .trigger('mouseover')
+                .trigger('mousemove', { scrollBehavior: false })
                 .should('have.class', 'cvat_canvas_shape_activated');
             [
                 [
