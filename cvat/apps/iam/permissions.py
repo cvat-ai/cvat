@@ -27,21 +27,19 @@ class StrEnum(str, Enum):
     def __str__(self) -> str:
         return self.value
 
-def get_field(
-    d: Dict[str, Any], field_path: Union[str, Sequence[str]], default: Any = None
-) -> Optional[Any]:
+def _get_key(d: Dict[str, Any], key_path: Union[str, Sequence[str]]) -> Optional[Any]:
     """
-    Like dict.get(), but supports nested fields
+    Like dict.get(), but supports nested fields. If the field is missing, returns None.
     """
 
-    if isinstance(field_path, str):
-        field_path = [field_path]
+    if isinstance(key_path, str):
+        key_path = [key_path]
     else:
-        assert field_path
+        assert key_path
 
-    for field_part in field_path:
-        d = d.get(field_part, default)
-        if d is default or d is None:
+    for key_part in key_path:
+        d = d.get(key_part)
+        if d is None:
             return d
 
     return d
@@ -681,7 +679,7 @@ class ProjectPermission(OpenPolicyAgentPermission):
                 (request.query_params, 'cloud_storage_id'),
             ]:
                 field_path = field.split('.')
-                if cloud_storage_id := get_field(field_source, field_path, None):
+                if cloud_storage_id := _get_key(field_source, field_path):
                     permissions.append(CloudStoragePermission.create_scope_view(
                         request=request, storage_id=cloud_storage_id))
 
@@ -870,7 +868,7 @@ class TaskPermission(OpenPolicyAgentPermission):
                 (request.query_params, 'cloud_storage_id'),
             ]:
                 field_path = field.split('.')
-                if cloud_storage_id := get_field(field_source, field_path, None):
+                if cloud_storage_id := _get_key(field_source, field_path):
                     permissions.append(CloudStoragePermission.create_scope_view(
                         request=request, storage_id=cloud_storage_id))
 
@@ -1172,7 +1170,7 @@ class JobPermission(OpenPolicyAgentPermission):
                 (request.query_params, 'cloud_storage_id'),
             ]:
                 field_path = field.split('.')
-                if cloud_storage_id := get_field(field_source, field_path, None):
+                if cloud_storage_id := _get_key(field_source, field_path):
                     permissions.append(CloudStoragePermission.create_scope_view(
                         request=request, storage_id=cloud_storage_id))
 
