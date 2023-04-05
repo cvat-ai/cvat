@@ -589,6 +589,7 @@ class JobAnnotation:
             for shape in track['shapes']:
                 _remove_none(shape)
                 shape['attributes'] = shape['trackedshapeattributeval_set']
+                del shape['trackedshapeattributeval_set']
                 for attr in shape['attributes']:
                     del attr['id']
 
