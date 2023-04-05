@@ -1225,14 +1225,16 @@ class LabeledShapeSerializerFromDB(serializers.BaseSerializer):
         def convert_shape(shape):
             shape['attributes'] = [OrderedDict(attr) for attr in shape['labeledshapeattributeval_set']]
             del shape['labeledshapeattributeval_set']
+
             if 'parent' in shape:
+                if 'elements' in shape:
+                    del shape['elements']
                 del shape['parent']
             for attr in shape['attributes']:
                 del attr['id']
             if 'elements' in shape:
                 for element in shape['elements']:
                     convert_shape(element)
-
             return OrderedDict(shape)
 
         return convert_shape(instance)
