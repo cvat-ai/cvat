@@ -30,7 +30,8 @@ class EventSerializer(serializers.Serializer):
 class ClientEventsSerializer(serializers.Serializer):
     events = EventSerializer(many=True, default=[])
     timestamp = serializers.DateTimeField()
-    _TIME_THRESHOLD = 100 # seconds
+    _TIME_THRESHOLD = datetime.timedelta(seconds=100)
+    _WORKING_TIME_RESOLUTION = datetime.timedelta(milliseconds=1)
 
     def to_internal_value(self, data):
         request = self.context.get("request")
@@ -47,12 +48,12 @@ class ClientEventsSerializer(serializers.Serializer):
             timestamp = datetime_parser.isoparse(event['timestamp'])
             if last_timestamp:
                 t_diff = timestamp - last_timestamp
-                if t_diff.seconds < self._TIME_THRESHOLD:
+                if t_diff < self._TIME_THRESHOLD:
                     payload = event.get('payload', {})
                     if payload:
                         payload = json.loads(payload)
 
-                    payload['working_time'] = t_diff.microseconds // 1000
+                    payload['working_time'] = t_diff // self._WORKING_TIME_RESOLUTION
                     payload['username'] = request.user.username
                     event['payload'] = json.dumps(payload)
 
