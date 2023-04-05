@@ -51,7 +51,6 @@ from cvat.apps.engine.models import (
     CloudProviderChoice, Location
 )
 from cvat.apps.engine.models import CloudStorage as CloudStorageModel
-from cvat.apps.engine.parsers import TusUploadParser
 from cvat.apps.engine.serializers import (
     AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
     DataMetaReadSerializer, DataMetaWriteSerializer, DataSerializer,
@@ -80,28 +79,9 @@ from cvat.apps.iam.permissions import (CloudStoragePermission,
     TaskPermission, UserPermission)
 from cvat.apps.engine.cache import MediaCache
 from cvat.apps.events.handlers import handle_annotations_patch
+from cvat.apps.engine.view_utils import tus_chunk_action
 
 _UPLOAD_PARSER_CLASSES = api_settings.DEFAULT_PARSER_CLASSES + [MultiPartParser]
-
-def _tus_chunk_action(*, detail: bool, suffix_base: str):
-    def decorator(f):
-        f = action(detail=detail, methods=['HEAD', 'PATCH'],
-            url_path=f'{suffix_base}/{UploadMixin.file_id_regex}',
-            parser_classes=[TusUploadParser],
-            serializer_class=None,
-        )(f)
-
-        # tus chunk endpoints are never accessed directly (the client must
-        # access them by following the Location header from the response to
-        # the creation endpoint). Moreover, the details of how these endpoints
-        # work are already described by the tus specification. Since we don't
-        # need to document either where these points are or how they work,
-        # they don't need to be in the schema.
-        f = extend_schema(exclude=True)(f)
-
-        return f
-
-    return decorator
 
 @extend_schema(tags=['server'])
 class ServerViewSet(viewsets.ViewSet):
@@ -382,7 +362,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                     callback=dm.views.export_project_as_dataset
                 )
 
-    @_tus_chunk_action(detail=True, suffix_base="dataset")
+    @tus_chunk_action(detail=True, suffix_base="dataset")
     def append_dataset_chunk(self, request, pk, file_id):
         self._object = self.get_object()
         return self.append_tus_chunk(request, file_id)
@@ -519,7 +499,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def import_backup(self, request, pk=None):
         return self.deserialize(request, backup.import_project)
 
-    @_tus_chunk_action(detail=False, suffix_base="backup")
+    @tus_chunk_action(detail=False, suffix_base="backup")
     def append_backup_chunk(self, request, file_id):
         return self.append_tus_chunk(request, file_id)
 
@@ -742,7 +722,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def import_backup(self, request, pk=None):
         return self.deserialize(request, backup.import_task)
 
-    @_tus_chunk_action(detail=False, suffix_base="backup")
+    @tus_chunk_action(detail=False, suffix_base="backup")
     def append_backup_chunk(self, request, file_id):
         return self.append_tus_chunk(request, file_id)
 
@@ -933,7 +913,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return data_getter(request, self._object.data.start_frame,
                 self._object.data.stop_frame, self._object.data)
 
-    @_tus_chunk_action(detail=True, suffix_base="data")
+    @tus_chunk_action(detail=True, suffix_base="data")
     def append_data_chunk(self, request, pk, file_id):
         self._object = self.get_object()
         return self.append_tus_chunk(request, file_id)
@@ -1083,7 +1063,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
                 return Response(data)
 
-    @_tus_chunk_action(detail=True, suffix_base="annotations")
+    @tus_chunk_action(detail=True, suffix_base="annotations")
     def append_annotations_chunk(self, request, pk, file_id):
         self._object = self.get_object()
         return self.append_tus_chunk(request, file_id)
@@ -1473,7 +1453,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 return Response(data)
 
 
-    @_tus_chunk_action(detail=True, suffix_base="annotations")
+    @tus_chunk_action(detail=True, suffix_base="annotations")
     def append_annotations_chunk(self, request, pk, file_id):
         self._object = self.get_object()
         return self.append_tus_chunk(request, file_id)

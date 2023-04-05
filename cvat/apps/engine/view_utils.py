@@ -17,8 +17,11 @@ from rest_framework.response import Response
 from rest_framework.reverse import reverse as _reverse
 from rest_framework.serializers import Serializer
 from rest_framework.viewsets import GenericViewSet
+from drf_spectacular.utils import extend_schema
 
+from cvat.apps.engine.mixins import UploadMixin
 from cvat.apps.engine.models import CloudStorage as CloudStorageModel
+from cvat.apps.engine.parsers import TusUploadParser
 from cvat.apps.iam.permissions import CloudStoragePermission
 
 
@@ -124,3 +127,23 @@ def get_cloud_storage_for_import_or_export(
         raise PermissionDenied(error_message)
 
     return get_object_or_404(CloudStorageModel, pk=storage_id)
+
+def tus_chunk_action(*, detail: bool, suffix_base: str):
+    def decorator(f):
+        f = action(detail=detail, methods=['HEAD', 'PATCH'],
+            url_path=f'{suffix_base}/{UploadMixin.file_id_regex}',
+            parser_classes=[TusUploadParser],
+            serializer_class=None,
+        )(f)
+
+        # tus chunk endpoints are never accessed directly (the client must
+        # access them by following the Location header from the response to
+        # the creation endpoint). Moreover, the details of how these endpoints
+        # work are already described by the tus specification. Since we don't
+        # need to document either where these points are or how they work,
+        # they don't need to be in the schema.
+        f = extend_schema(exclude=True)(f)
+
+        return f
+
+    return decorator
