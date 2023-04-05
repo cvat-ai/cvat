@@ -42,12 +42,6 @@ class PatchAction(str, Enum):
     def __str__(self):
         return self.value
 
-def _transform_object(dictionary):
-    if 'parent' in dictionary:
-        del dictionary['parent']
-
-    return dictionary
-
 def _merge_table_rows(rows, keys_for_merge, field_id):
     # It is necessary to keep a stable order of original rows
     # (e.g. for tracked boxes). Otherwise prev_box.frame can be bigger
@@ -318,7 +312,6 @@ class JobAnnotation:
         if self._save_to_db(data):
             self._set_updated_date()
             self.db_job.save()
-
 
     def create(self, data):
         self._create(data)
