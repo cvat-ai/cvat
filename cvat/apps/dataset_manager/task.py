@@ -408,14 +408,14 @@ class JobAnnotation:
                 self.db_attributes[db_tag.label_id]["all"].values())
 
         def convert_tag(tag):
-            tag['attributes'] = tag['labeledimageattributeval_set']
+            tag['attributes'] = [OrderedDict(attr) for attr in tag['labeledimageattributeval_set']]
             del tag['labeledimageattributeval_set']
 
             _transform_object(tag)
             for attr in tag['attributes']:
                 del attr['id']
 
-            return tag
+            return OrderedDict(tag)
 
         self.ir_data.tags = [convert_tag(value) for value in db_tags]
 
@@ -471,7 +471,7 @@ class JobAnnotation:
             shapes[shape_id].elements = shape_elements
 
         def convert_shape(shape):
-            shape['attributes'] = shape['labeledshapeattributeval_set']
+            shape['attributes'] = [OrderedDict(attr) for attr in shape['labeledshapeattributeval_set']]
             del shape['labeledshapeattributeval_set']
             _transform_object(shape)
             for attr in shape['attributes']:
@@ -481,7 +481,7 @@ class JobAnnotation:
                 for element in shape['elements']:
                     convert_shape(element)
 
-            return shape
+            return OrderedDict(shape)
 
         self.ir_data.shapes = [convert_shape(value) for value in shapes.values()]
 
@@ -577,9 +577,9 @@ class JobAnnotation:
             tracks[track_id].elements = track_elements
 
         def convert_track(track):
-            track['shapes'] = track['trackedshape_set']
+            track['shapes'] = [OrderedDict(attr) for attr in track['trackedshape_set']]
             del track['trackedshape_set']
-            track['attributes'] = track['labeledtrackattributeval_set']
+            track['attributes'] = [OrderedDict(attr) for attr in track['labeledtrackattributeval_set']]
             del track['labeledtrackattributeval_set']
             _transform_object(track)
             for attr in track['attributes']:
@@ -587,7 +587,7 @@ class JobAnnotation:
 
             for shape in track['shapes']:
                 _transform_object(shape)
-                shape['attributes'] = shape['trackedshapeattributeval_set']
+                shape['attributes'] = [OrderedDict(attr) for attr in shape['trackedshapeattributeval_set']]
                 del shape['trackedshapeattributeval_set']
                 for attr in shape['attributes']:
                     del attr['id']
@@ -596,7 +596,7 @@ class JobAnnotation:
                 for element in track['elements']:
                     convert_track(element)
 
-            return track
+            return OrderedDict(track)
 
         self.ir_data.tracks = [convert_track(value) for value in tracks.values()]
 
