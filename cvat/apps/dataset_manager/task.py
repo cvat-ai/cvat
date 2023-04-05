@@ -42,11 +42,10 @@ class PatchAction(str, Enum):
     def __str__(self):
         return self.value
 
-def _remove_none(dictionary):
-    keys = list(dictionary.keys())
-    for field in keys:
-        if dictionary[field] is None:
-            del dictionary[field]
+def _transform_object(dictionary):
+    if 'parent' in dictionary:
+        del dictionary['parent']
+
     return dictionary
 
 def _merge_table_rows(rows, keys_for_merge, field_id):
@@ -412,7 +411,7 @@ class JobAnnotation:
             tag['attributes'] = tag['labeledimageattributeval_set']
             del tag['labeledimageattributeval_set']
 
-            _remove_none(tag)
+            _transform_object(tag)
             for attr in tag['attributes']:
                 del attr['id']
 
@@ -474,7 +473,7 @@ class JobAnnotation:
         def convert_shape(shape):
             shape['attributes'] = shape['labeledshapeattributeval_set']
             del shape['labeledshapeattributeval_set']
-            _remove_none(shape)
+            _transform_object(shape)
             for attr in shape['attributes']:
                 del attr['id']
 
@@ -582,12 +581,12 @@ class JobAnnotation:
             del track['trackedshape_set']
             track['attributes'] = track['labeledtrackattributeval_set']
             del track['labeledtrackattributeval_set']
-            _remove_none(track)
+            _transform_object(track)
             for attr in track['attributes']:
                 del attr['id']
 
             for shape in track['shapes']:
-                _remove_none(shape)
+                _transform_object(shape)
                 shape['attributes'] = shape['trackedshapeattributeval_set']
                 del shape['trackedshapeattributeval_set']
                 for attr in shape['attributes']:
