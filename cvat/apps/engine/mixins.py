@@ -16,7 +16,7 @@ from rest_framework.response import Response
 
 from cvat.apps.engine.models import Location
 from cvat.apps.engine.location import StorageType, get_location_configuration
-from cvat.apps.engine.serializers import DataSerializer, LabeledDataSerializer
+from cvat.apps.engine.serializers import DataSerializer
 from cvat.apps.webhooks.signals import signal_update, signal_create, signal_delete
 
 class TusFile:
@@ -278,9 +278,7 @@ class AnnotationMixin:
             return Response("Format is not specified",status=status.HTTP_400_BAD_REQUEST)
 
         data = get_data(self._object.pk)
-        serializer = LabeledDataSerializer(data=data)
-        if serializer.is_valid(raise_exception=True):
-            return Response(serializer.data)
+        return Response(data)
 
     def import_annotations(self, request, db_obj, import_func, rq_func, rq_id):
         is_tus_request = request.headers.get('Upload-Length', None) is not None or \

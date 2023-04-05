@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## \[2.4.1] - 2023-04-05
+### Fixed
+- Optimized annotation fetching up to 10 times (<https://github.com/opencv/cvat/pull/5974>)
+- Incorrect calculation of working time in analytics (<https://github.com/opencv/cvat/pull/5973>)
+
 ## \[2.4.0] - 2023-03-16
 ### Added
 - \[SDK\] An arg to wait for data processing in the task data uploading function
