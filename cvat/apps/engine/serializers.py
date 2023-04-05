@@ -1212,7 +1212,7 @@ class LabeledImageSerializerFromDB(serializers.BaseSerializer):
             attr_keys = ['spec_id', 'value']
             keys = ['id', 'label_id', 'frame', 'group', 'source']
 
-            result = OrderedDict([(key, tag.get(key, None)) for key in keys])
+            result = OrderedDict([(key, tag[key]) for key in keys])
             result['attributes'] = [
                 OrderedDict([(key, attr[key]) for key in attr_keys]) for attr in tag['labeledimageattributeval_set']
             ]
@@ -1230,7 +1230,7 @@ class LabeledShapeSerializerFromDB(serializers.BaseSerializer):
                 'source', 'occluded', 'outside', 'z_order',
                 'rotation', 'points',
             ]
-            result = OrderedDict([(key, shape.get(key, None)) for key in keys])
+            result = OrderedDict([(key, shape[key]) for key in keys])
             result['attributes'] = [
                 OrderedDict([(key, attr[key]) for key in attr_keys]) for attr in shape['labeledshapeattributeval_set']
             ]
@@ -1251,7 +1251,7 @@ class LabeledTrackSerializerFromDB(serializers.BaseSerializer):
                 'id', 'type', 'frame', 'occluded', 'outside', 'z_order',
                 'rotation', 'points', 'trackedshapeattributeval_set',
             ]
-            result = OrderedDict([(key, track.get(key, None)) for key in keys])
+            result = OrderedDict([(key, track[key]) for key in keys])
             result['shapes'] = [
                 OrderedDict([(key, shape[key]) for key in shape_keys]) for shape in track['trackedshape_set']
             ]
@@ -1259,8 +1259,6 @@ class LabeledTrackSerializerFromDB(serializers.BaseSerializer):
                 OrderedDict([(key, attr[key]) for key in attr_keys]) for attr in track['labeledtrackattributeval_set']
             ]
 
-            if track.get('parent', None) is not None:
-                result.pop('elements', None)
             for shape in result['shapes']:
                 shape['attributes'] = [
                     OrderedDict([(key, attr[key]) for key in attr_keys]) for attr in shape['trackedshapeattributeval_set']
