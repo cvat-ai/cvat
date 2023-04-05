@@ -16,7 +16,7 @@ from rest_framework.response import Response
 
 from cvat.apps.engine.models import Location
 from cvat.apps.engine.location import StorageType, get_location_configuration
-from cvat.apps.engine.serializers import DataSerializer, LabeledDataSerializer
+from cvat.apps.engine.serializers import DataSerializer
 from cvat.apps.webhooks.signals import signal_update, signal_create, signal_delete
 
 class TusFile:
