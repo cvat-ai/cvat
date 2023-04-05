@@ -6,7 +6,7 @@
 import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 import {
-    Webhook, MLModel, ModelProvider, Organization,
+    Webhook, MLModel, Organization,
 } from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap } from 'utils/mousetrap-react';
@@ -293,6 +293,12 @@ export interface PluginsState {
         modelsPage: {
             topBar: {
                 items: PluginComponent[],
+            },
+            deployedModelItem: {
+                menu: {
+                    items: PluginComponent[],
+                },
+                icon: PluginComponent[],
             }
         },
         router: PluginComponent[],
@@ -410,10 +416,6 @@ export interface ModelsState {
     modelRunnerIsVisible: boolean;
     modelRunnerTask: any;
     query: ModelsQuery;
-    providers: {
-        fetching: boolean;
-        list: ModelProvider[];
-    }
     previews: {
         [index: string]: Preview;
     };

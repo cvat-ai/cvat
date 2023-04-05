@@ -165,20 +165,6 @@ class LambdaManager {
         };
     }
 
-    async providers(): Promise<ModelProvider[]> {
-        const providersData: Record<string, Record<string, string>> = await serverProxy.functions.providers();
-        const providers = Object.entries(providersData).map(([provider, attributes]) => {
-            const { icon } = attributes;
-            delete attributes.icon;
-            return {
-                name: provider,
-                icon,
-                attributes,
-            };
-        });
-        return providers;
-    }
-
     modelProxy(model: MLModel): ModelProxy | undefined {
         return this.proxyMap[model.provider];
     }

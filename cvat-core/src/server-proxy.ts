@@ -19,7 +19,6 @@ import { isEmail } from './common';
 import config from './config';
 import DownloadWorker from './download.worker';
 import { ServerError } from './exceptions';
-import { FunctionsResponseBody } from './server-response-types';
 
 type Params = {
     org: number | string,
@@ -1501,64 +1500,6 @@ async function getAnnotations(session, id) {
     return response.data;
 }
 
-async function getFunctions(): Promise<FunctionsResponseBody> {
-    const { backendAPI } = config;
-
-    try {
-        const response = await fetchAll(`${backendAPI}/functions`);
-        return response;
-    } catch (errorData) {
-        if (errorData.response.status === 404) {
-            return {
-                results: [],
-                count: 0,
-            };
-        }
-        throw generateError(errorData);
-    }
-}
-
-async function getFunctionPreview(modelID) {
-    const { backendAPI } = config;
-
-    let response = null;
-    try {
-        const url = `${backendAPI}/functions/${modelID}/preview`;
-        response = await Axios.get(url, {
-            responseType: 'blob',
-        });
-    } catch (errorData) {
-        const code = errorData.response ? errorData.response.status : errorData.code;
-        throw new ServerError(`Could not get preview for the model ${modelID} from the server`, code);
-    }
-
-    return response.data;
-}
-
-async function getFunctionProviders() {
-    const { backendAPI } = config;
-
-    try {
-        const response = await Axios.get(`${backendAPI}/functions/info`);
-        return response.data;
-    } catch (errorData) {
-        if (errorData.response.status === 404) {
-            return [];
-        }
-        throw generateError(errorData);
-    }
-}
-
-async function deleteFunction(functionId: number) {
-    const { backendAPI } = config;
-
-    try {
-        await Axios.delete(`${backendAPI}/functions/${functionId}`);
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
-}
-
 // Session is 'task' or 'job'
 async function updateAnnotations(session, id, data, action) {
     const { backendAPI } = config;
@@ -1580,18 +1521,6 @@ async function updateAnnotations(session, id, data, action) {
         throw generateError(errorData);
     }
     return response.data;
-}
-
-async function runFunctionRequest(body) {
-    const { backendAPI } = config;
-
-    try {
-        const response = await Axios.post(`${backendAPI}/functions/requests/`, body);
-
-        return response.data;
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
 }
 
 // Session is 'task' or 'job'
@@ -1678,72 +1607,12 @@ async function uploadAnnotations(
     }
 }
 
-async function getFunctionRequestStatus(requestID) {
-    const { backendAPI } = config;
-
-    try {
-        const response = await Axios.get(`${backendAPI}/functions/requests/${requestID}`);
-        return response.data;
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
-}
-
-async function cancelFunctionRequest(requestId: string): Promise<void> {
-    const { backendAPI } = config;
-
-    try {
-        await Axios.delete(`${backendAPI}/functions/requests/${requestId}`);
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
-}
-
-async function createFunction(functionData: any) {
-    const params = enableOrganization();
-    const { backendAPI } = config;
-
-    try {
-        const response = await Axios.post(`${backendAPI}/functions`, functionData, {
-            params,
-        });
-        return response.data;
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
-}
-
 async function saveEvents(events) {
     const { backendAPI } = config;
 
     try {
         await Axios.post(`${backendAPI}/events`, events);
     } catch (errorData) {
-        throw generateError(errorData);
-    }
-}
-
-async function callFunction(funId, body) {
-    const { backendAPI } = config;
-
-    try {
-        const response = await Axios.post(`${backendAPI}/functions/${funId}/run`, body);
-        return response.data;
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
-}
-
-async function getFunctionsRequests() {
-    const { backendAPI } = config;
-
-    try {
-        const response = await Axios.get(`${backendAPI}/functions/requests/`);
-        return response.data;
-    } catch (errorData) {
-        if (errorData.response.status === 404) {
-            return [];
-        }
         throw generateError(errorData);
     }
 }
@@ -2241,19 +2110,6 @@ export default Object.freeze({
         run: runLambdaRequest,
         call: callLambdaFunction,
         cancel: cancelLambdaRequest,
-    }),
-
-    functions: Object.freeze({
-        list: getFunctions,
-        status: getFunctionRequestStatus,
-        requests: getFunctionsRequests,
-        run: runFunctionRequest,
-        call: callFunction,
-        create: createFunction,
-        providers: getFunctionProviders,
-        delete: deleteFunction,
-        cancel: cancelFunctionRequest,
-        getPreview: getFunctionPreview,
     }),
 
     issues: Object.freeze({

@@ -29,6 +29,12 @@ const defaultState: PluginsState = {
             topBar: {
                 items: [],
             },
+            deployedModelItem: {
+                menu: {
+                    items: [],
+                },
+                icon: [],
+            },
         },
         router: [],
         loggedInModals: [],

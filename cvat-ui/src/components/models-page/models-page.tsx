@@ -7,7 +7,7 @@ import './styles.scss';
 import React, { useEffect } from 'react';
 import { useHistory } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
-import { getModelProvidersAsync, getModelsAsync } from 'actions/models-actions';
+import { getModelsAsync } from 'actions/models-actions';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import Spin from 'antd/lib/spin';
 import notification from 'antd/lib/notification';
@@ -41,7 +41,6 @@ function ModelsPageComponent(): JSX.Element {
 
     const pageOutOfBounds = totalCount && updatedQuery.page > Math.ceil(totalCount / PAGE_SIZE);
     useEffect(() => {
-        dispatch(getModelProvidersAsync());
         dispatch(getModelsAsync(updatedQuery));
         if (pageOutOfBounds) {
             notification.error({
