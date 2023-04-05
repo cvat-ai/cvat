@@ -366,7 +366,6 @@ class JobAnnotation:
                 attributeval_set.append(dotdict([
                     ('spec_id', db_attr.spec_id),
                     ('value', db_attr.value),
-                    ('id', None),
                 ]))
 
     def _init_tags_from_db(self):

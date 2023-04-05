@@ -1209,59 +1209,68 @@ class LabeledShapeSerializer(SubLabeledShapeSerializer):
 class LabeledImageSerializerFromDB(serializers.BaseSerializer):
     def to_representation(self, instance):
         def convert_tag(tag):
-            tag['attributes'] = [OrderedDict(attr) for attr in tag['labeledimageattributeval_set']]
-            del tag['labeledimageattributeval_set']
-            if 'parent' in tag:
-                del tag['parent']
-            for attr in tag['attributes']:
-                del attr['id']
+            attr_keys = ['spec_id', 'value']
+            keys = ['id', 'label_id', 'frame', 'group', 'source']
 
-            return OrderedDict(tag)
+            result = OrderedDict([(key, tag.get(key, None)) for key in keys])
+            result['attributes'] = [
+                OrderedDict([(key, attr[key]) for key in attr_keys]) for attr in tag['labeledimageattributeval_set']
+            ]
+
+            return result
 
         return convert_tag(instance)
 
 class LabeledShapeSerializerFromDB(serializers.BaseSerializer):
     def to_representation(self, instance):
         def convert_shape(shape):
-            shape['attributes'] = [OrderedDict(attr) for attr in shape['labeledshapeattributeval_set']]
-            del shape['labeledshapeattributeval_set']
-
-            if 'parent' in shape:
-                if 'elements' in shape and shape['parent'] is not None:
-                    del shape['elements']
-                del shape['parent']
-            for attr in shape['attributes']:
-                del attr['id']
-            if 'elements' in shape:
-                for element in shape['elements']:
-                    convert_shape(element)
-            return OrderedDict(shape)
+            attr_keys = ['spec_id', 'value']
+            keys = [
+                'id', 'label_id', 'type', 'frame', 'group',
+                'source', 'occluded', 'outside', 'z_order',
+                'rotation', 'points',
+            ]
+            result = OrderedDict([(key, shape.get(key, None)) for key in keys])
+            result['attributes'] = [
+                OrderedDict([(key, attr[key]) for key in attr_keys]) for attr in shape['labeledshapeattributeval_set']
+            ]
+            if shape.get('elements', None) is not None and shape['parent'] is None:
+                result['elements'] = [convert_shape(element) for element in shape['elements']]
+            return result
 
         return convert_shape(instance)
 
 class LabeledTrackSerializerFromDB(serializers.BaseSerializer):
     def to_representation(self, instance):
         def convert_track(track):
-            track['shapes'] = [OrderedDict(attr) for attr in track['trackedshape_set']]
-            del track['trackedshape_set']
-            track['attributes'] = [OrderedDict(attr) for attr in track['labeledtrackattributeval_set']]
-            del track['labeledtrackattributeval_set']
-            if 'parent' in track:
-                del track['parent']
-            for attr in track['attributes']:
-                del attr['id']
+            attr_keys = ['spec_id', 'value']
+            keys = [
+                'id', 'label_id', 'frame', 'group', 'source',
+            ]
+            shape_keys = [
+                'id', 'type', 'frame', 'occluded', 'outside', 'z_order',
+                'rotation', 'points', 'trackedshapeattributeval_set',
+            ]
+            result = OrderedDict([(key, track.get(key, None)) for key in keys])
+            result['shapes'] = [
+                OrderedDict([(key, shape[key]) for key in shape_keys]) for shape in track['trackedshape_set']
+            ]
+            result['attributes'] = [
+                OrderedDict([(key, attr[key]) for key in attr_keys]) for attr in track['labeledtrackattributeval_set']
+            ]
 
-            for shape in track['shapes']:
-                shape['attributes'] = [OrderedDict(attr) for attr in shape['trackedshapeattributeval_set']]
-                del shape['trackedshapeattributeval_set']
-                for attr in shape['attributes']:
-                    del attr['id']
+            if track.get('parent', None) is not None:
+                result.pop('elements', None)
+            for shape in result['shapes']:
+                shape['attributes'] = [
+                    OrderedDict([(key, attr[key]) for key in attr_keys]) for attr in shape['trackedshapeattributeval_set']
+                ]
+                shape.pop('trackedshapeattributeval_set', None)
 
-            if 'elements' in track:
-                for element in track['elements']:
-                    convert_track(element)
+            if track.get('elements', None) is not None and track['parent'] is None:
+                result['elements'] = [convert_track(element) for element in track['elements']]
 
-            return OrderedDict(track)
+            return result
 
         return convert_track(instance)
 
