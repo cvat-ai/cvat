@@ -278,8 +278,7 @@ class AnnotationMixin:
             return Response("Format is not specified",status=status.HTTP_400_BAD_REQUEST)
 
         data = get_data(self._object.pk)
-        serializer = LabeledDataSerializer(data=data)
-        return Response(serializer.initial_data)
+        return Response(data)
 
     def import_annotations(self, request, db_obj, import_func, rq_func, rq_id):
         is_tus_request = request.headers.get('Upload-Length', None) is not None or \
