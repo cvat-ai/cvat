@@ -7,7 +7,7 @@ import _cvat from 'cvat-core/src/api';
 import ObjectState from 'cvat-core/src/object-state';
 import Webhook from 'cvat-core/src/webhook';
 import MLModel from 'cvat-core/src/ml-model';
-import { ModelProvider } from 'cvat-core/src/lambda-manager';
+import { ModelProvider, ModelRequestStatus, ModelProxy } from 'cvat-core/src/lambda-manager';
 import {
     Label, Attribute,
 } from 'cvat-core/src/labels';
@@ -55,6 +55,7 @@ export {
     ModelKind,
     ModelProviders,
     ModelReturnType,
+    ModelRequestStatus,
     DimensionType,
     Dumper,
 };
@@ -64,4 +65,5 @@ export type {
     SerializedLabel,
     StorageData,
     ModelProvider,
+    ModelProxy,
 };

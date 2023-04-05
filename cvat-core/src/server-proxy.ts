@@ -535,7 +535,6 @@ async function serverRequest(url: string, data: object): Promise<any> {
 
 async function serverRequestAll(url: string): Promise<any> {
     try {
-        console.log('here');
         const res = await fetchAll(url);
         return res;
     } catch (errorData) {

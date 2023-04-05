@@ -14,7 +14,12 @@ export interface ModelProvider {
     attributes: Record<string, string>;
 }
 
-interface ModelProxy {
+export enum ModelRequestStatus {
+    QUEUED = 'queued',
+    STARTED = 'started',
+}
+
+export interface ModelProxy {
     run: (body: any) => Promise<any>;
     call: (modelID: string | number, body: any) => Promise<any>;
     status: (requestID: string) => Promise<any>;
@@ -24,9 +29,13 @@ interface ModelProxy {
 class LambdaManager {
     private listening: any;
     private cachedList: any;
+    private proxyMap: Record<string, ModelProxy>
 
     constructor() {
         this.listening = {};
+        this.proxyMap = {
+            [ModelProviders.CVAT]: serverProxy.lambda,
+        };
         this.cachedList = null;
     }
 
@@ -50,6 +59,13 @@ class LambdaManager {
         this.cachedList = models;
     }
 
+    setModelProxyMap(proxyMap: Record<string, ModelProxy>): void {
+        this.proxyMap = {
+            ...proxyMap,
+            [ModelProviders.CVAT]: serverProxy.lambda,
+        };
+    }
+
     async run(taskID: number, model: MLModel, args: any) {
         if (!Number.isInteger(taskID) || taskID < 0) {
             throw new ArgumentError(`Argument taskID must be a positive integer. Got "${taskID}"`);
@@ -71,7 +87,7 @@ class LambdaManager {
             function: model.id,
         };
 
-        const result = await LambdaManager.getModelProxy(model).run(body);
+        const result = await this.modelProxy(model)?.run(body);
         return result.id;
     }
 
@@ -84,16 +100,14 @@ class LambdaManager {
             ...args,
             task: taskID,
         };
-
-        const result = await LambdaManager.getModelProxy(model).call(model.id, body);
+        const result = await this.modelProxy(model)?.call(model.id, body);
         return result;
     }
 
     async requests() {
         const lambdaRequests = await serverProxy.lambda.requests();
-        const functionsRequests = await serverProxy.functions.requests();
-        const result = [...lambdaRequests, ...functionsRequests];
-        return result.filter((request) => ['queued', 'started'].includes(request.status));
+        return lambdaRequests
+            .filter((request) => [ModelRequestStatus.QUEUED, ModelRequestStatus.STARTED].includes(request.status));
     }
 
     async cancel(requestID, functionID): Promise<void> {
@@ -110,7 +124,7 @@ class LambdaManager {
             delete this.listening[requestID];
         }
 
-        await LambdaManager.getModelProxy(model).cancel(requestID);
+        await this.modelProxy(model).cancel(requestID);
     }
 
     async listen(requestID, functionID, onUpdate): Promise<void> {
@@ -121,7 +135,7 @@ class LambdaManager {
         const timeoutCallback = async (): Promise<void> => {
             try {
                 this.listening[requestID].timeout = null;
-                const response = await LambdaManager.getModelProxy(model).status(requestID);
+                const response = await this.modelProxy(model)?.status(requestID);
 
                 if (response.status === RQStatus.QUEUED || response.status === RQStatus.STARTED) {
                     onUpdate(response.status, response.progress || 0);
@@ -165,8 +179,8 @@ class LambdaManager {
         return providers;
     }
 
-    private static getModelProxy(model: MLModel): ModelProxy {
-        return model.provider === ModelProviders.CVAT ? serverProxy.lambda : serverProxy.functions;
+    modelProxy(model: MLModel): ModelProxy | undefined {
+        return this.proxyMap[model.provider];
     }
 }
 

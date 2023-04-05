@@ -206,6 +206,10 @@ function build() {
                 const result = await PluginRegistry.apiWrapper(cvat.lambda.providers);
                 return result;
             },
+            async setModelProxyMap(proxyMap) {
+                const result = await PluginRegistry.apiWrapper(cvat.lambda.setModelProxyMap, proxyMap);
+                return result;
+            },
         },
         logger: loggerStorage,
         config: {
