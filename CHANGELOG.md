@@ -38,6 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Points missing when exporting tracked skeleton (<https://github.com/opencv/cvat/issues/5497>)
 - Escaping in the `filter` parameter in generated URLs
   (<https://github.com/opencv/cvat/issues/5566>)
+- Rotation property lost during saving a mutable attribute (<https://github.com/opencv/cvat/pull/5968>)
 - Incorrect calculation of working time in analytics (<https://github.com/opencv/cvat/pull/5973>)
 
 ### Security
