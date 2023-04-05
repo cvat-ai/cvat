@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useCallback, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useHistory } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
 import { getModelProvidersAsync, getModelsAsync } from 'actions/models-actions';
@@ -24,10 +24,6 @@ function ModelsPageComponent(): JSX.Element {
     const fetching = useSelector((state: CombinedState) => state.models.fetching);
     const query = useSelector((state: CombinedState) => state.models.query);
     const totalCount = useSelector((state: CombinedState) => state.models.totalCount);
-
-    const onCreateModel = useCallback(() => {
-        history.push('/models/create');
-    }, []);
 
     const updatedQuery = { ...query };
     const queryParams = new URLSearchParams(history.location.search);
@@ -64,7 +60,6 @@ function ModelsPageComponent(): JSX.Element {
             <TopBar
                 disabled
                 query={updatedQuery}
-                onCreateModel={onCreateModel}
                 onApplySearch={(search: string | null) => {
                     dispatch(
                         getModelsAsync({

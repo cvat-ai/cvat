@@ -26,7 +26,7 @@ const defaultState: PluginsState = {
             loginForm: [],
         },
         modelsPage: {
-            models: {
+            topBar: {
                 items: [],
             },
         },

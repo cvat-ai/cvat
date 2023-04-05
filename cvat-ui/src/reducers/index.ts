@@ -291,8 +291,8 @@ export interface PluginsState {
             loginForm: PluginComponent[];
         },
         modelsPage: {
-            models: {
-                items: PluginComponent[];
+            topBar: {
+                items: PluginComponent[],
             }
         },
         router: PluginComponent[],
