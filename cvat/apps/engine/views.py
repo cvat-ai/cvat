@@ -13,7 +13,6 @@ from distutils.util import strtobool
 from tempfile import mkstemp
 
 from django.db.models.query import Prefetch
-from django.shortcuts import get_object_or_404
 import django_rq
 from django.apps import apps
 from django.conf import settings
@@ -64,6 +63,7 @@ from cvat.apps.engine.serializers import (
     IssueWriteSerializer, CommentReadSerializer, CommentWriteSerializer, CloudStorageWriteSerializer,
     CloudStorageReadSerializer, DatasetFileSerializer,
     ProjectFileSerializer, TaskFileSerializer)
+from cvat.apps.engine.view_utils import get_cloud_storage_for_import_or_export
 
 from utils.dataset_manifest import ImageManifestManager
 from cvat.apps.engine.utils import (
@@ -2292,14 +2292,18 @@ def _import_annotations(request, rq_id, rq_func, db_obj, format_name,
                         for chunk in anno_file.chunks():
                             f.write(chunk)
             else:
-                assert filename, 'The filename was not spesified'
+                assert filename, 'The filename was not specified'
+
                 try:
                     storage_id = location_conf['storage_id']
                 except KeyError:
                     raise serializers.ValidationError(
-                        'Cloud storage location was selected for destination'
+                        'Cloud storage location was selected as the source,'
                         ' but cloud storage id was not specified')
-                db_storage = get_object_or_404(CloudStorageModel, pk=storage_id)
+                db_storage = get_cloud_storage_for_import_or_export(
+                    storage_id=storage_id, request=request,
+                    is_default=location_conf['is_default'])
+
                 key = filename
                 fd, filename = mkstemp(prefix='cvat_{}'.format(db_obj.pk), dir=settings.TMP_FILES_ROOT)
                 dependent_job = configure_dependent_job(
@@ -2398,10 +2402,11 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
                             storage_id = location_conf['storage_id']
                         except KeyError:
                             return HttpResponseBadRequest(
-                                'Cloud storage location was selected for destination'
+                                'Cloud storage location was selected as the destination,'
                                 ' but cloud storage id was not specified')
-
-                        db_storage = get_object_or_404(CloudStorageModel, pk=storage_id)
+                        db_storage = get_cloud_storage_for_import_or_export(
+                            storage_id=storage_id, request=request,
+                            is_default=location_conf['is_default'])
                         storage = db_storage_to_storage_instance(db_storage)
 
                         try:
@@ -2470,14 +2475,17 @@ def _import_project_dataset(request, rq_id, rq_func, db_obj, format_name, filena
                     for chunk in dataset_file.chunks():
                         f.write(chunk)
         elif location == Location.CLOUD_STORAGE:
-            assert filename, 'The filename was not spesified'
+            assert filename, 'The filename was not specified'
             try:
                 storage_id = location_conf['storage_id']
             except KeyError:
                 raise serializers.ValidationError(
-                    'Cloud storage location was selected for destination'
+                    'Cloud storage location was selected as the source,'
                     ' but cloud storage id was not specified')
-            db_storage = get_object_or_404(CloudStorageModel, pk=storage_id)
+            db_storage = get_cloud_storage_for_import_or_export(
+                storage_id=storage_id, request=request,
+                is_default=location_conf['is_default'])
+
             key = filename
             fd, filename = mkstemp(prefix='cvat_{}'.format(db_obj.pk), dir=settings.TMP_FILES_ROOT)
             dependent_job = configure_dependent_job(
