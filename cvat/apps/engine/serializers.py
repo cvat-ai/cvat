@@ -680,7 +680,7 @@ class JobFileMapping(serializers.ListField):
     """
     Represents a file-to-job mapping. Useful to specify a custom job
     configuration during task creation. This option is not compatible with
-    most other job split-related options.
+    most other job split-related options. Files in the jobs must not overlap or repeat.
 
     Example:
     [
@@ -688,8 +688,6 @@ class JobFileMapping(serializers.ListField):
         ["file3.png"], # job #2 files
         ["file4.jpg", "file5.png", "file6.bmp"], # job #3 files
     ]
-
-    Files in the jobs must not overlap and repeat.
     """
 
     def __init__(self, *args, **kwargs):
@@ -700,15 +698,48 @@ class JobFileMapping(serializers.ListField):
 
 
 class DataSerializer(WriteOnceMixin, serializers.ModelSerializer):
-    image_quality = serializers.IntegerField(min_value=0, max_value=100)
-    use_zip_chunks = serializers.BooleanField(default=False)
-    client_files = ClientFileSerializer(many=True, default=[])
-    server_files = ServerFileSerializer(many=True, default=[])
-    remote_files = RemoteFileSerializer(many=True, default=[])
-    use_cache = serializers.BooleanField(default=False)
-    copy_data = serializers.BooleanField(default=False)
-    cloud_storage_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
-    filename_pattern = serializers.CharField(allow_null=True, required=False)
+    """
+    Read more about parameters here:
+    https://opencv.github.io/cvat/docs/manual/basics/create_an_annotation_task/#advanced-configuration
+    """
+
+    image_quality = serializers.IntegerField(min_value=0, max_value=100,
+        help_text="Image quality to use during annotation")
+    use_zip_chunks = serializers.BooleanField(default=False,
+        help_text=textwrap.dedent("""\
+            When true, video chunks will be represented as zip archives with decoded video frames.
+            When false, video chunks are represented as video segments
+        """))
+    client_files = ClientFileSerializer(many=True, default=[],
+        help_text="Uploaded files")
+    server_files = ServerFileSerializer(many=True, default=[],
+        help_text="Paths to files from a file share mounted on the server, or from a cloud storage")
+    remote_files = RemoteFileSerializer(many=True, default=[],
+        help_text="Direct download URLs for files")
+    use_cache = serializers.BooleanField(default=False,
+        help_text=textwrap.dedent("""\
+            Enable or disable task data chunk caching for the task.
+            Read more: https://opencv.github.io/cvat/docs/manual/advanced/data_on_fly/
+        """))
+    copy_data = serializers.BooleanField(default=False, help_text=textwrap.dedent("""\
+            Copy data from the server file share to CVAT during the task creation.
+            This will create a copy of the data, making the server independent from
+            the file share availability
+        """))
+    cloud_storage_id = serializers.IntegerField(write_only=True, allow_null=True, required=False,
+        help_text=textwrap.dedent("""\
+            If not null, the files referenced by server_files will be retrieved
+            from the cloud storage with the specified ID.
+            The cloud storages applicable depend on the context.
+            In the user sandbox, only the user sandbox cloud storages can be used.
+            In an organization, only the organization cloud storages can be used.
+        """))
+    filename_pattern = serializers.CharField(allow_null=True, required=False,
+        help_text=textwrap.dedent("""\
+            A filename filter for cloud storage files
+            listed in the manifest. Supports fnmatch wildcards.
+            Read more: https://docs.python.org/3/library/fnmatch.html
+        """))
     job_file_mapping = JobFileMapping(required=False, write_only=True)
 
     class Meta:
@@ -717,6 +748,17 @@ class DataSerializer(WriteOnceMixin, serializers.ModelSerializer):
             'compressed_chunk_type', 'original_chunk_type', 'client_files', 'server_files', 'remote_files', 'use_zip_chunks',
             'cloud_storage_id', 'use_cache', 'copy_data', 'storage_method', 'storage', 'sorting_method', 'filename_pattern',
             'job_file_mapping')
+        extra_kwargs = {
+            'chunk_size': { 'help_text': "Maximum number of frames per chunk" },
+            'size': { 'help_text': "The number of frames" },
+            'start_frame': { 'help_text': "First frame index" },
+            'stop_frame': { 'help_text': "Last frame index" },
+            'frame_filter': { 'help_text': "Frame filter. The only supported syntax is: 'step=N'" },
+        }
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('help_text', self.__doc__)
+        super().__init__(*args, **kwargs)
 
     # pylint: disable=no-self-use
     def validate_frame_filter(self, value):

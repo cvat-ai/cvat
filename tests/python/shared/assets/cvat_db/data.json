@@ -456,6 +456,28 @@
   }
 },
 {
+  "model": "auth.user",
+  "pk": 21,
+  "fields": {
+    "password": "pbkdf2_sha256$260000$pROH9UgQcjk9vIlTBdUDPD$MdGF+2HcnBv2qI/kuLyBl0oYhMwgvhgKMQgcTsmku8c=",
+    "last_login": "2023-03-30T09:37:31.708Z",
+    "is_superuser": false,
+    "username": "lonely_user",
+    "first_name": "Lonely",
+    "last_name": "User",
+    "email": "lonely_user@cvat.org",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2023-03-30T09:37:31.615Z",
+    "groups": [
+      [
+        "user"
+      ]
+    ],
+    "user_permissions": []
+  }
+},
+{
   "model": "sessions.session",
   "pk": "3p7i7jibc6g827i39r8e0ce5i9f1orzp",
   "fields": {
@@ -676,6 +698,16 @@
   }
 },
 {
+  "model": "authtoken.token",
+  "pk": "7245b803f045dc12002d72473e3479ce6146801c",
+  "fields": {
+    "user": [
+      "lonely_user"
+    ],
+    "created": "2023-03-30T09:37:31.700Z"
+  }
+},
+{
   "model": "sites.site",
   "pk": 1,
   "fields": {
@@ -704,6 +736,18 @@
     ],
     "email": "admin2@cvat.org",
     "verified": true,
+    "primary": true
+  }
+},
+{
+  "model": "account.emailaddress",
+  "pk": 3,
+  "fields": {
+    "user": [
+      "lonely_user"
+    ],
+    "email": "lonely_user@cvat.org",
+    "verified": false,
     "primary": true
   }
 },
@@ -6837,6 +6881,16 @@
   "fields": {
     "user": [
       "user6"
+    ],
+    "rating": 0.0
+  }
+},
+{
+  "model": "engine.profile",
+  "pk": 21,
+  "fields": {
+    "user": [
+      "lonely_user"
     ],
     "rating": 0.0
   }
