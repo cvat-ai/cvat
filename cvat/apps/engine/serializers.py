@@ -1227,7 +1227,7 @@ class LabeledShapeSerializerFromDB(serializers.BaseSerializer):
             del shape['labeledshapeattributeval_set']
 
             if 'parent' in shape:
-                if 'elements' in shape:
+                if 'elements' in shape and shape['parent'] is not None:
                     del shape['elements']
                 del shape['parent']
             for attr in shape['attributes']:
