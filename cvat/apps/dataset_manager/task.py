@@ -409,8 +409,8 @@ class JobAnnotation:
                 self.db_attributes[db_tag.label_id]["all"].values())
 
         def convert_tag(tag):
-            tag['attributes'] = tag['labeledshapeattributeval_set']
-            del tag['labeledshapeattributeval_set']
+            tag['attributes'] = tag['labeledimageattributeval_set']
+            del tag['labeledimageattributeval_set']
 
             _remove_none(tag)
             for attr in tag['attributes']:
