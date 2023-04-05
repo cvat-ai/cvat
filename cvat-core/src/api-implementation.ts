@@ -30,6 +30,7 @@ export default function implementAPI(cvat) {
     cvat.plugins.register.implementation = PluginRegistry.register.bind(cvat);
 
     cvat.lambda.list.implementation = lambdaManager.list.bind(lambdaManager);
+    cvat.lambda.updateModelList.implementation = lambdaManager.updateModelList.bind(lambdaManager);
     cvat.lambda.run.implementation = lambdaManager.run.bind(lambdaManager);
     cvat.lambda.call.implementation = lambdaManager.call.bind(lambdaManager);
     cvat.lambda.cancel.implementation = lambdaManager.cancel.bind(lambdaManager);
@@ -114,6 +115,11 @@ export default function implementAPI(cvat) {
 
     cvat.server.request.implementation = async (url, data) => {
         const result = await serverProxy.server.request(url, data);
+        return result;
+    };
+
+    cvat.server.requestAll.implementation = async (url) => {
+        const result = await serverProxy.server.requestAll(url);
         return result;
     };
 

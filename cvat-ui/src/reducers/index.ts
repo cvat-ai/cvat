@@ -289,7 +289,12 @@ export interface PluginsState {
         },
         loginPage: {
             loginForm: PluginComponent[];
-        }
+        },
+        modelsPage: {
+            models: {
+                items: PluginComponent[];
+            }
+        },
         router: PluginComponent[],
         loggedInModals: PluginComponent[],
     }

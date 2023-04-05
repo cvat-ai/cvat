@@ -483,6 +483,7 @@ async function healthCheck(
     progressCallback: (status: string) => void,
     attempt = 0,
 ): Promise<void> {
+    return true;
     const { backendAPI } = config;
     const url = `${backendAPI}/server/health/?format=json`;
 
@@ -526,6 +527,16 @@ async function healthCheck(
 async function serverRequest(url: string, data: object): Promise<any> {
     try {
         const res = await Axios(url, data);
+        return res;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function serverRequestAll(url: string): Promise<any> {
+    try {
+        console.log('here');
+        const res = await fetchAll(url);
         return res;
     } catch (errorData) {
         throw generateError(errorData);
@@ -2159,6 +2170,7 @@ export default Object.freeze({
         healthCheck,
         register,
         request: serverRequest,
+        requestAll: serverRequestAll,
         userAgreements,
         installedApps,
     }),

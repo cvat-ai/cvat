@@ -12,6 +12,7 @@ import { CombinedState, ModelsQuery } from 'reducers';
 import { MLModel } from 'cvat-core-wrapper';
 import { ModelProviders } from 'cvat-core/src/enums';
 import { getModelsAsync } from 'actions/models-actions';
+import { usePlugins } from 'utils/hooks';
 import DeployedModelItem from './deployed-model-item';
 
 export const PAGE_SIZE = 12;
@@ -42,9 +43,13 @@ export default function DeployedModelsListComponent(props: Props): JSX.Element {
     const models = [...interactors, ...detectors, ...trackers, ...reid, ...classifiers];
     const items = setUpModelsList(models, page)
         .map((model): JSX.Element => <DeployedModelItem key={model.id} model={model} />);
-
+    const plugins = usePlugins((state: CombinedState) => state.plugins.components.modelsPage.models.items, props);
+    console.log('In main app', plugins);
     return (
         <>
+            {plugins.map(({ component: Component, weight }, index) => (
+                [<Component key={index} targetProps={props} />, weight] as [JSX.Element, number]
+            ))}
             <Row justify='center' align='top'>
                 <Col md={22} lg={18} xl={16} xxl={16} className='cvat-models-list'>
                     {items}

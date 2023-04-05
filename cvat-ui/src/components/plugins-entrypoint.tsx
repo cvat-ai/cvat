@@ -48,7 +48,8 @@ function PluginEntrypoint(): null {
             }),
         });
 
-        window.document.dispatchEvent(new CustomEvent('plugins.ready', { bubbles: true }));
+        // window.document.dispatchEvent(new CustomEvent('plugins.ready', { bubbles: true }));
+        setTimeout(() => window.document.dispatchEvent(new CustomEvent('plugins.ready', { bubbles: true })), 500);
     }, []);
 
     return null;

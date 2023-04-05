@@ -118,6 +118,10 @@ function build() {
                 const result = await PluginRegistry.apiWrapper(cvat.server.request, url, data);
                 return result;
             },
+            async requestAll(url) {
+                const result = await PluginRegistry.apiWrapper(cvat.server.requestAll, url);
+                return result;
+            },
             async setAuthData(response) {
                 const result = await PluginRegistry.apiWrapper(cvat.server.setAuthData, response);
                 return result;
@@ -172,6 +176,10 @@ function build() {
         lambda: {
             async list() {
                 const result = await PluginRegistry.apiWrapper(cvat.lambda.list);
+                return result;
+            },
+            async updateModelList(models) {
+                const result = await PluginRegistry.apiWrapper(cvat.lambda.updateModelList, models);
                 return result;
             },
             async run(task, model, args) {

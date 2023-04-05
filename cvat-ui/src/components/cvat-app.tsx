@@ -72,7 +72,6 @@ import EventRecorder from 'utils/controls-logger';
 import EmailConfirmationPage from './email-confirmation-pages/email-confirmed';
 import EmailVerificationSentPage from './email-confirmation-pages/email-verification-sent';
 import IncorrectEmailConfirmationPage from './email-confirmation-pages/incorrect-email-confirmation';
-import CreateModelPage from './create-model-page/create-model-page';
 
 interface CVATAppProps {
     loadFormats: () => void;
@@ -300,12 +299,12 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             loadAbout();
         }
 
-        if (isModelPluginActive && !modelsInitialized && !modelsFetching) {
-            initModels();
-        }
-
         if (!pluginsInitialized && !pluginsFetching) {
             initPlugins();
+        }
+
+        if (isModelPluginActive && !modelsInitialized && !modelsFetching) {
+            initModels();
         }
     }
 
@@ -435,7 +434,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
         const routesToRender = pluginComponents.router
             .filter(({ data: { shouldBeRendered } }) => shouldBeRendered(this.props, this.state))
-            .map(({ component: Component }) => Component());
+            .map(({ component: Component }) => Component);
 
         const loggedInModals = pluginComponents.loggedInModals
             .filter(({ data: { shouldBeRendered } }) => shouldBeRendered(this.props, this.state))
@@ -489,7 +488,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                                 >
                                                     <Switch>
                                                         <Route exact path='/models' component={ModelsPageComponent} />
-                                                        <Route exact path='/models/create' component={CreateModelPage} />
                                                     </Switch>
                                                 </Route>
                                             )}
