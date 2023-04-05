@@ -7385,12 +7385,12 @@ components:
     IssuesSummary:
       type: object
       properties:
-        count:
-          type: integer
-          default: 0
         url:
           type: string
           format: uri
+          readOnly: true
+        count:
+          type: integer
           readOnly: true
     JobAnnotationsUpdateRequest:
       oneOf:
@@ -7825,12 +7825,12 @@ components:
     LabelsSummary:
       type: object
       properties:
-        count:
-          type: integer
-          default: 0
         url:
           type: string
           format: uri
+          readOnly: true
+        count:
+          type: integer
           readOnly: true
     LocationEnum:
       enum:
