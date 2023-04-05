@@ -1206,34 +1206,36 @@ class SubLabeledShapeSerializer(ShapeSerializer, AnnotationSerializer):
 class LabeledShapeSerializer(SubLabeledShapeSerializer):
     elements = SubLabeledShapeSerializer(many=True, required=False)
 
+def _convert_annotation(obj, keys):
+    return OrderedDict([(key, obj[key]) for key in keys])
+
+def _convert_attributes(attr_set):
+    attr_keys = ['spec_id', 'value']
+    return [
+        OrderedDict([(key, attr[key]) for key in attr_keys]) for attr in attr_set
+    ]
+
 class LabeledImageSerializerFromDB(serializers.BaseSerializer):
+    # Use this serializer to export data from the database
+    # Because default DRF serializer is too slow on huge collections
     def to_representation(self, instance):
         def convert_tag(tag):
-            attr_keys = ['spec_id', 'value']
-            keys = ['id', 'label_id', 'frame', 'group', 'source']
-
-            result = OrderedDict([(key, tag[key]) for key in keys])
-            result['attributes'] = [
-                OrderedDict([(key, attr[key]) for key in attr_keys]) for attr in tag['labeledimageattributeval_set']
-            ]
-
+            result = _convert_annotation(tag, ['id', 'label_id', 'frame', 'group', 'source'])
+            result['attributes'] = _convert_attributes(tag['labeledimageattributeval_set'])
             return result
 
         return convert_tag(instance)
 
 class LabeledShapeSerializerFromDB(serializers.BaseSerializer):
+    # Use this serializer to export data from the database
+    # Because default DRF serializer is too slow on huge collections
     def to_representation(self, instance):
         def convert_shape(shape):
-            attr_keys = ['spec_id', 'value']
-            keys = [
-                'id', 'label_id', 'type', 'frame', 'group',
-                'source', 'occluded', 'outside', 'z_order',
-                'rotation', 'points',
-            ]
-            result = OrderedDict([(key, shape[key]) for key in keys])
-            result['attributes'] = [
-                OrderedDict([(key, attr[key]) for key in attr_keys]) for attr in shape['labeledshapeattributeval_set']
-            ]
+            result = _convert_annotation(shape, [
+                'id', 'label_id', 'type', 'frame', 'group', 'source',
+                'occluded', 'outside', 'z_order', 'rotation', 'points',
+            ])
+            result['attributes'] = _convert_attributes(shape['labeledshapeattributeval_set'])
             if shape.get('elements', None) is not None and shape['parent'] is None:
                 result['elements'] = [convert_shape(element) for element in shape['elements']]
             return result
@@ -1241,33 +1243,22 @@ class LabeledShapeSerializerFromDB(serializers.BaseSerializer):
         return convert_shape(instance)
 
 class LabeledTrackSerializerFromDB(serializers.BaseSerializer):
+    # Use this serializer to export data from the database
+    # Because default DRF serializer is too slow on huge collections
     def to_representation(self, instance):
         def convert_track(track):
-            attr_keys = ['spec_id', 'value']
-            keys = [
-                'id', 'label_id', 'frame', 'group', 'source',
-            ]
             shape_keys = [
                 'id', 'type', 'frame', 'occluded', 'outside', 'z_order',
                 'rotation', 'points', 'trackedshapeattributeval_set',
             ]
-            result = OrderedDict([(key, track[key]) for key in keys])
-            result['shapes'] = [
-                OrderedDict([(key, shape[key]) for key in shape_keys]) for shape in track['trackedshape_set']
-            ]
-            result['attributes'] = [
-                OrderedDict([(key, attr[key]) for key in attr_keys]) for attr in track['labeledtrackattributeval_set']
-            ]
-
+            result = _convert_annotation(track, ['id', 'label_id', 'frame', 'group', 'source'])
+            result['shapes'] = [_convert_annotation(shape, shape_keys) for shape in track['trackedshape_set']]
+            result['attributes'] = _convert_attributes(track['labeledtrackattributeval_set'])
             for shape in result['shapes']:
-                shape['attributes'] = [
-                    OrderedDict([(key, attr[key]) for key in attr_keys]) for attr in shape['trackedshapeattributeval_set']
-                ]
+                shape['attributes'] = _convert_attributes(shape['trackedshapeattributeval_set'])
                 shape.pop('trackedshapeattributeval_set', None)
-
             if track.get('elements', None) is not None and track['parent'] is None:
                 result['elements'] = [convert_track(element) for element in track['elements']]
-
             return result
 
         return convert_track(instance)
