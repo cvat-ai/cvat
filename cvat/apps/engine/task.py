@@ -285,11 +285,12 @@ def _validate_url(url):
             raise ValidationError('Cannot resolve IP address for domain \'{}\''.format(parsed_url.hostname))
 
 
-def _fix_extension(filename, file_path):
+def _fix_extension(filename, path):
     name, ext = os.path.splitext(filename)
-    if not ext:
-        ext = imghdr.what(file_path)
-    return f'{name}.{ext}'
+    guess_ext = '.' + imghdr.what(path)
+    if guess_ext != ext:
+        ext = guess_ext
+    return f'{name}{ext}'
 
 
 def _download_data(db_data: models.Data, upload_dir):
@@ -312,6 +313,7 @@ def _download_data(db_data: models.Data, upload_dir):
             output_path = os.path.join(upload_dir, name)
             with open(output_path, 'wb') as output_file:
                 shutil.copyfileobj(response.raw, output_file)
+
             new_name = _fix_extension(name, output_path)
             if new_name != name:
                 name = new_name
