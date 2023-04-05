@@ -37,7 +37,6 @@ export interface SerializedModel {
     return_type?: ModelReturnType;
     owner?: any;
     provider?: string;
-    api_key?: string;
     url?: string;
     help_message?: string;
     animated_gif?: string;

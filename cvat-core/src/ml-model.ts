@@ -3,8 +3,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { isBrowser, isNode } from 'browser-or-node';
-import serverProxy from './server-proxy';
 import PluginRegistry from './plugins';
 import { ModelProviders, ModelKind, ModelReturnType } from './enums';
 import {
@@ -128,14 +126,10 @@ Object.defineProperties(MLModel.prototype.save, {
         writable: false,
         enumerable: false,
         value: async function implementation(): Promise<MLModel> {
-            const modelData = {
-                provider: this.provider,
-                url: this.serialized.url,
-                api_key: this.serialized.api_key,
-            };
-
-            const model = await serverProxy.functions.create(modelData);
-            return new MLModel(model);
+            if (this.provider === ModelProviders.CVAT) {
+                throw Error('Saving built-in models is not available.');
+            }
+            return this;
         },
     },
 });
@@ -145,8 +139,8 @@ Object.defineProperties(MLModel.prototype.delete, {
         writable: false,
         enumerable: false,
         value: async function implementation(): Promise<void> {
-            if (this.isDeletable) {
-                await serverProxy.functions.delete(this.id);
+            if (!this.isDeletable) {
+                throw Error('Deleting built-in models is not available.');
             }
         },
     },
@@ -157,27 +151,7 @@ Object.defineProperties(MLModel.prototype.getPreview, {
         writable: false,
         enumerable: false,
         value: async function implementation(): Promise<string | ArrayBuffer> {
-            if (this.provider === ModelProviders.CVAT) {
-                return '';
-            }
-            return new Promise((resolve, reject) => {
-                serverProxy.functions
-                    .getPreview(this.id)
-                    .then((result) => {
-                        if (isNode) {
-                            resolve(global.Buffer.from(result, 'binary').toString('base64'));
-                        } else if (isBrowser) {
-                            const reader = new FileReader();
-                            reader.onload = () => {
-                                resolve(reader.result);
-                            };
-                            reader.readAsDataURL(result);
-                        }
-                    })
-                    .catch((error) => {
-                        reject(error);
-                    });
-            });
+            return '';
         },
     },
 });
