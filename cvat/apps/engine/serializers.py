@@ -1189,7 +1189,6 @@ class OptimizedFloatListField(serializers.ListField):
 
         raise exceptions.ValidationError(errors)
 
-
 class ShapeSerializer(serializers.Serializer):
     type = serializers.ChoiceField(choices=models.ShapeType.choices())
     occluded = serializers.BooleanField(default=False)
@@ -1206,6 +1205,63 @@ class SubLabeledShapeSerializer(ShapeSerializer, AnnotationSerializer):
 
 class LabeledShapeSerializer(SubLabeledShapeSerializer):
     elements = SubLabeledShapeSerializer(many=True, required=False)
+
+class LabeledImageSerializerFromDB(serializers.BaseSerializer):
+    def to_representation(self, instance):
+        def convert_tag(tag):
+            tag['attributes'] = [OrderedDict(attr) for attr in tag['labeledimageattributeval_set']]
+            del tag['labeledimageattributeval_set']
+            if 'parent' in tag:
+                del tag['parent']
+            for attr in tag['attributes']:
+                del attr['id']
+
+            return OrderedDict(tag)
+
+        return convert_tag(instance)
+
+class LabeledShapeSerializerFromDB(serializers.BaseSerializer):
+    def to_representation(self, instance):
+        def convert_shape(shape):
+            shape['attributes'] = [OrderedDict(attr) for attr in shape['labeledshapeattributeval_set']]
+            del shape['labeledshapeattributeval_set']
+            if 'parent' in shape:
+                del shape['parent']
+            for attr in shape['attributes']:
+                del attr['id']
+            if 'elements' in shape:
+                for element in shape['elements']:
+                    convert_shape(element)
+
+            return OrderedDict(shape)
+
+        return convert_shape(instance)
+
+class LabeledTrackSerializerFromDB(serializers.BaseSerializer):
+    def to_representation(self, instance):
+        def convert_track(track):
+            track['shapes'] = [OrderedDict(attr) for attr in track['trackedshape_set']]
+            del track['trackedshape_set']
+            track['attributes'] = [OrderedDict(attr) for attr in track['labeledtrackattributeval_set']]
+            del track['labeledtrackattributeval_set']
+            if 'parent' in track:
+                del track['parent']
+            for attr in track['attributes']:
+                del attr['id']
+
+            for shape in track['shapes']:
+                shape['attributes'] = [OrderedDict(attr) for attr in shape['trackedshapeattributeval_set']]
+                del shape['trackedshapeattributeval_set']
+                for attr in shape['attributes']:
+                    del attr['id']
+
+            if 'elements' in track:
+                for element in track['elements']:
+                    convert_track(element)
+
+            return OrderedDict(track)
+
+        return convert_track(instance)
 
 class TrackedShapeSerializer(ShapeSerializer):
     id = serializers.IntegerField(default=None, allow_null=True)

@@ -12,7 +12,7 @@ from django.db import transaction
 from django.db.models.query import Prefetch
 from django.utils import timezone
 
-from cvat.apps.engine import models
+from cvat.apps.engine import models, serializers
 from cvat.apps.engine.plugins import plugin_decorator
 from cvat.apps.profiler import silk_profile
 
@@ -407,17 +407,8 @@ class JobAnnotation:
             self._extend_attributes(db_tag.labeledimageattributeval_set,
                 self.db_attributes[db_tag.label_id]["all"].values())
 
-        def convert_tag(tag):
-            tag['attributes'] = [OrderedDict(attr) for attr in tag['labeledimageattributeval_set']]
-            del tag['labeledimageattributeval_set']
-
-            _transform_object(tag)
-            for attr in tag['attributes']:
-                del attr['id']
-
-            return OrderedDict(tag)
-
-        self.ir_data.tags = [convert_tag(value) for value in db_tags]
+        serializer = serializers.LabeledImageSerializerFromDB(db_tags, many=True)
+        self.ir_data.tags = serializer.data
 
     def _init_shapes_from_db(self):
         db_shapes = self.db_job.labeledshape_set.prefetch_related(
@@ -470,20 +461,8 @@ class JobAnnotation:
         for shape_id, shape_elements in elements.items():
             shapes[shape_id].elements = shape_elements
 
-        def convert_shape(shape):
-            shape['attributes'] = [OrderedDict(attr) for attr in shape['labeledshapeattributeval_set']]
-            del shape['labeledshapeattributeval_set']
-            _transform_object(shape)
-            for attr in shape['attributes']:
-                del attr['id']
-
-            if 'elements' in shape:
-                for element in shape['elements']:
-                    convert_shape(element)
-
-            return OrderedDict(shape)
-
-        self.ir_data.shapes = [convert_shape(value) for value in shapes.values()]
+        serializer = serializers.LabeledShapeSerializerFromDB(list(shapes.values()), many=True)
+        self.ir_data.shapes = serializer.data
 
     def _init_tracks_from_db(self):
         db_tracks = self.db_job.labeledtrack_set.prefetch_related(
@@ -576,29 +555,8 @@ class JobAnnotation:
         for track_id, track_elements in elements.items():
             tracks[track_id].elements = track_elements
 
-        def convert_track(track):
-            track['shapes'] = [OrderedDict(attr) for attr in track['trackedshape_set']]
-            del track['trackedshape_set']
-            track['attributes'] = [OrderedDict(attr) for attr in track['labeledtrackattributeval_set']]
-            del track['labeledtrackattributeval_set']
-            _transform_object(track)
-            for attr in track['attributes']:
-                del attr['id']
-
-            for shape in track['shapes']:
-                _transform_object(shape)
-                shape['attributes'] = [OrderedDict(attr) for attr in shape['trackedshapeattributeval_set']]
-                del shape['trackedshapeattributeval_set']
-                for attr in shape['attributes']:
-                    del attr['id']
-
-            if 'elements' in track:
-                for element in track['elements']:
-                    convert_track(element)
-
-            return OrderedDict(track)
-
-        self.ir_data.tracks = [convert_track(value) for value in tracks.values()]
+        serializer = serializers.LabeledTrackSerializerFromDB(list(tracks.values()), many=True)
+        self.ir_data.tracks = serializer.data
 
     def _init_version_from_db(self):
         self.ir_data.version = 0 # FIXME: should be removed in the future
