@@ -513,7 +513,6 @@ class JobAnnotation:
         tracks = {}
         elements = {}
         for db_track in db_tracks:
-            db_track['elements'] = []
             db_track["trackedshape_set"] = _merge_table_rows(db_track["trackedshape_set"], {
                 'trackedshapeattributeval_set': [
                     'trackedshapeattributeval__value',
