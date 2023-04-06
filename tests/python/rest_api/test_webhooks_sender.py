@@ -117,25 +117,6 @@ class TestWebhookProjectEvents:
             == {}
         )
 
-    def test_webhook_add_project_labels(self):
-        response = post_method("admin1", "projects", {"name": "project"})
-        assert response.status_code == HTTPStatus.CREATED
-        project = response.json()
-
-        events = ["create:label"]
-        webhook = create_webhook(events, "project", project["id"])
-
-        labels = {"labels": [{"name": "label_0", "color": "#aabbcc"}]}
-        response = patch_method("admin1", f"projects/{project['id']}", labels)
-        assert response.status_code == HTTPStatus.OK
-
-        deliveries, payload = get_deliveries(webhook["id"])
-
-        assert deliveries["count"] == 1
-
-        assert payload["event"] == events[0]
-        assert payload["label"]["name"] == labels["labels"][0]["name"]
-
     def test_webhook_create_and_delete_project_in_organization(self, organizations):
         org_id = list(organizations)[0]["id"]
         events = ["create:project", "delete:project"]
@@ -318,27 +299,6 @@ class TestWebhookTaskEvents:
         assert deliveries["count"] == 1
         assert payload["before_update"]["assignee"]["id"] == tasks[task_id]["assignee"]["id"]
         assert payload["task"]["assignee"]["id"] == assignee_id
-
-    def test_webhook_update_task_label(self, tasks):
-        task_id, org_id = next(
-            (
-                (task["id"], task["organization"])
-                for task in tasks
-                if task["project_id"] is None and task["organization"] is not None
-            )
-        )
-
-        webhook_id = create_webhook(["create:label"], "organization", org_id=org_id)["id"]
-
-        labels = {"labels": [{"name": "new_label"}]}
-        response = patch_method("admin1", f"tasks/{task_id}", labels, org_id=org_id)
-        assert response.status_code == HTTPStatus.OK
-
-        deliveries, payload = get_deliveries(webhook_id=webhook_id)
-
-        assert deliveries["count"] == 1
-        assert payload["label"]["task_id"] == task_id
-        assert payload["label"]["name"] == labels["labels"][0]["name"]
 
     def test_webhook_create_and_delete_task(self, organizations):
         org_id = list(organizations)[0]["id"]

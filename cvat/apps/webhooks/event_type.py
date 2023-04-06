@@ -14,7 +14,6 @@ class Events:
         "project": ["create", "update", "delete"],
         "task": ["create", "update", "delete"],
         "job": ["create", "update", "delete"],
-        "label": ["create", "update", "delete"],
         "issue": ["create", "update", "delete"],
         "comment": ["create", "update", "delete"],
         "organization": ["update", "delete"],

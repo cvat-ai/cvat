@@ -16,7 +16,7 @@ from django.db.models.signals import (post_delete, post_save, pre_delete,
                                       pre_save)
 from django.dispatch import Signal, receiver
 
-from cvat.apps.engine.models import Comment, Issue, Job, Label, Project, Task
+from cvat.apps.engine.models import Comment, Issue, Job, Project, Task
 from cvat.apps.engine.serializers import BasicUserSerializer
 from cvat.apps.events.handlers import (get_request, get_serializer, get_user,
                                        get_instance_diff, organization_id,
@@ -128,7 +128,6 @@ def get_sender(instance):
 @receiver(pre_save, sender=Project, dispatch_uid=__name__ + ":project:pre_save")
 @receiver(pre_save, sender=Task, dispatch_uid=__name__ + ":task:pre_save")
 @receiver(pre_save, sender=Job, dispatch_uid=__name__ + ":job:pre_save")
-@receiver(pre_save, sender=Label, dispatch_uid=__name__ + ":label:pre_save")
 @receiver(pre_save, sender=Issue, dispatch_uid=__name__ + ":issue:pre_save")
 @receiver(pre_save, sender=Comment, dispatch_uid=__name__ + ":comment:pre_save")
 @receiver(pre_save, sender=Organization, dispatch_uid=__name__ + ":organization:pre_save")
@@ -158,7 +157,6 @@ def pre_save_resource_event(sender, instance, **kwargs):
 @receiver(post_save, sender=Project, dispatch_uid=__name__ + ":project:post_save")
 @receiver(post_save, sender=Task, dispatch_uid=__name__ + ":task:post_save")
 @receiver(post_save, sender=Job, dispatch_uid=__name__ + ":job:post_save")
-@receiver(post_save, sender=Label, dispatch_uid=__name__ + ":label:post_save")
 @receiver(post_save, sender=Issue, dispatch_uid=__name__ + ":issue:post_save")
 @receiver(post_save, sender=Comment, dispatch_uid=__name__ + ":comment:post_save")
 @receiver(post_save, sender=Organization, dispatch_uid=__name__ + ":organization:post_save")
@@ -193,7 +191,6 @@ def post_save_resource_event(sender, instance, created, **kwargs):
 @receiver(pre_delete, sender=Project, dispatch_uid=__name__ + ":project:pre_delete")
 @receiver(pre_delete, sender=Task, dispatch_uid=__name__ + ":task:pre_delete")
 @receiver(pre_delete, sender=Job, dispatch_uid=__name__ + ":job:pre_delete")
-@receiver(pre_delete, sender=Label, dispatch_uid=__name__ + ":label:pre_delete")
 @receiver(pre_delete, sender=Issue, dispatch_uid=__name__ + ":issue:pre_delete")
 @receiver(pre_delete, sender=Comment, dispatch_uid=__name__ + ":comment:pre_delete")
 @receiver(pre_delete, sender=Organization, dispatch_uid=__name__ + ":organization:pre_delete")
@@ -214,7 +211,6 @@ def pre_delete_resource_event(sender, instance, **kwargs):
 @receiver(post_delete, sender=Project, dispatch_uid=__name__ + ":project:post_delete")
 @receiver(post_delete, sender=Task, dispatch_uid=__name__ + ":task:post_delete")
 @receiver(post_delete, sender=Job, dispatch_uid=__name__ + ":job:post_delete")
-@receiver(post_delete, sender=Label, dispatch_uid=__name__ + ":label:post_delete")
 @receiver(post_delete, sender=Issue, dispatch_uid=__name__ + ":issue:post_delete")
 @receiver(post_delete, sender=Comment, dispatch_uid=__name__ + ":comment:post_delete")
 @receiver(post_delete, sender=Organization, dispatch_uid=__name__ + ":organization:post_delete")
@@ -231,7 +227,7 @@ def post_delete_resource_event(sender, instance, **kwargs):
 
     data = {
         "event": event_type,
-        resource_name: getattr(instance, "_deleted_object", {}),
+        resource_name: getattr(instance, "_deleted_object"),
         "sender": get_sender(instance),
     }
 
