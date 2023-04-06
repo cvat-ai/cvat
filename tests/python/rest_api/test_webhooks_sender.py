@@ -729,7 +729,7 @@ class TestWebhookRedelivery:
         response = post_method(
             "admin1", f"webhooks/{webhook_id}/deliveries/{delivery_id}/redelivery", {}
         )
-        assert response.status_code == HTTPStatus.CREATED
+        assert response.status_code == HTTPStatus.OK
 
         deliveries_2, payload_2 = get_deliveries(webhook_id)
 
