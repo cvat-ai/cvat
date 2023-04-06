@@ -43,10 +43,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Escaping in the `filter` parameter in generated URLs
   (<https://github.com/opencv/cvat/issues/5566>)
 - Rotation property lost during saving a mutable attribute (<https://github.com/opencv/cvat/pull/5968>)
-- Incorrect calculation of working time in analytics (<https://github.com/opencv/cvat/pull/5973>)
 
 ### Security
 - TDB
+
+## \[2.4.1] - 2023-04-05
+### Fixed
+- Optimized annotation fetching up to 10 times (<https://github.com/opencv/cvat/pull/5974>)
+- Incorrect calculation of working time in analytics (<https://github.com/opencv/cvat/pull/5973>)
 
 ## \[2.4.0] - 2023-03-16
 ### Added
