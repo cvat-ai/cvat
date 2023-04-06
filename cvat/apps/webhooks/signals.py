@@ -125,15 +125,15 @@ def get_sender(instance):
     return BasicUserSerializer(user, context={"request": get_request(instance)}).data
 
 
-@receiver(pre_save, sender=Project, dispatch_uid=__name__ + "project:pre_save")
-@receiver(pre_save, sender=Task, dispatch_uid=__name__ + "task:pre_save")
-@receiver(pre_save, sender=Job, dispatch_uid=__name__ + "job:pre_save")
-@receiver(pre_save, sender=Label, dispatch_uid=__name__ + "label:pre_save")
-@receiver(pre_save, sender=Issue, dispatch_uid=__name__ + "issue:pre_save")
-@receiver(pre_save, sender=Comment, dispatch_uid=__name__ + "comment:pre_save")
-@receiver(pre_save, sender=Organization, dispatch_uid=__name__ + "organization:pre_save")
-@receiver(pre_save, sender=Invitation, dispatch_uid=__name__ + "invitation:pre_save")
-@receiver(pre_save, sender=Membership, dispatch_uid=__name__ + "membership:pre_save")
+@receiver(pre_save, sender=Project, dispatch_uid=__name__ + ":project:pre_save")
+@receiver(pre_save, sender=Task, dispatch_uid=__name__ + ":task:pre_save")
+@receiver(pre_save, sender=Job, dispatch_uid=__name__ + ":job:pre_save")
+@receiver(pre_save, sender=Label, dispatch_uid=__name__ + ":label:pre_save")
+@receiver(pre_save, sender=Issue, dispatch_uid=__name__ + ":issue:pre_save")
+@receiver(pre_save, sender=Comment, dispatch_uid=__name__ + ":comment:pre_save")
+@receiver(pre_save, sender=Organization, dispatch_uid=__name__ + ":organization:pre_save")
+@receiver(pre_save, sender=Invitation, dispatch_uid=__name__ + ":invitation:pre_save")
+@receiver(pre_save, sender=Membership, dispatch_uid=__name__ + ":membership:pre_save")
 def pre_save_resource_event(sender, instance, **kwargs):
     try:
         old_instance = sender.objects.get(pk=instance.pk)
@@ -155,15 +155,15 @@ def pre_save_resource_event(sender, instance, **kwargs):
     instance._before_update = before_update
 
 
-@receiver(post_save, sender=Project, dispatch_uid=__name__ + "project:post_save")
-@receiver(post_save, sender=Task, dispatch_uid=__name__ + "task:post_save")
-@receiver(post_save, sender=Job, dispatch_uid=__name__ + "job:post_save")
-@receiver(post_save, sender=Label, dispatch_uid=__name__ + "label:post_save")
-@receiver(post_save, sender=Issue, dispatch_uid=__name__ + "issue:post_save")
-@receiver(post_save, sender=Comment, dispatch_uid=__name__ + "comment:post_save")
-@receiver(post_save, sender=Organization, dispatch_uid=__name__ + "organization:post_save")
-@receiver(post_save, sender=Invitation, dispatch_uid=__name__ + "invitation:post_save")
-@receiver(post_save, sender=Membership, dispatch_uid=__name__ + "membership:post_save")
+@receiver(post_save, sender=Project, dispatch_uid=__name__ + ":project:post_save")
+@receiver(post_save, sender=Task, dispatch_uid=__name__ + ":task:post_save")
+@receiver(post_save, sender=Job, dispatch_uid=__name__ + ":job:post_save")
+@receiver(post_save, sender=Label, dispatch_uid=__name__ + ":label:post_save")
+@receiver(post_save, sender=Issue, dispatch_uid=__name__ + ":issue:post_save")
+@receiver(post_save, sender=Comment, dispatch_uid=__name__ + ":comment:post_save")
+@receiver(post_save, sender=Organization, dispatch_uid=__name__ + ":organization:post_save")
+@receiver(post_save, sender=Invitation, dispatch_uid=__name__ + ":invitation:post_save")
+@receiver(post_save, sender=Membership, dispatch_uid=__name__ + ":membership:post_save")
 def post_save_resource_event(sender, instance, created, **kwargs):
     resource_name = instance.__class__.__name__.lower()
 
@@ -190,15 +190,15 @@ def post_save_resource_event(sender, instance, created, **kwargs):
     batch_add_to_queue(filtered_webhooks, data)
 
 
-@receiver(pre_delete, sender=Project, dispatch_uid=__name__ + "project:pre_delete")
-@receiver(pre_delete, sender=Task, dispatch_uid=__name__ + "task:pre_delete")
-@receiver(pre_delete, sender=Job, dispatch_uid=__name__ + "job:pre_delete")
-@receiver(pre_delete, sender=Label, dispatch_uid=__name__ + "label:pre_delete")
-@receiver(pre_delete, sender=Issue, dispatch_uid=__name__ + "issue:pre_delete")
-@receiver(pre_delete, sender=Comment, dispatch_uid=__name__ + "comment:pre_delete")
-@receiver(pre_delete, sender=Organization, dispatch_uid=__name__ + "organization:pre_delete")
-@receiver(pre_delete, sender=Invitation, dispatch_uid=__name__ + "invitation:pre_delete")
-@receiver(pre_delete, sender=Membership, dispatch_uid=__name__ + "membership:pre_delete")
+@receiver(pre_delete, sender=Project, dispatch_uid=__name__ + ":project:pre_delete")
+@receiver(pre_delete, sender=Task, dispatch_uid=__name__ + ":task:pre_delete")
+@receiver(pre_delete, sender=Job, dispatch_uid=__name__ + ":job:pre_delete")
+@receiver(pre_delete, sender=Label, dispatch_uid=__name__ + ":label:pre_delete")
+@receiver(pre_delete, sender=Issue, dispatch_uid=__name__ + ":issue:pre_delete")
+@receiver(pre_delete, sender=Comment, dispatch_uid=__name__ + ":comment:pre_delete")
+@receiver(pre_delete, sender=Organization, dispatch_uid=__name__ + ":organization:pre_delete")
+@receiver(pre_delete, sender=Invitation, dispatch_uid=__name__ + ":invitation:pre_delete")
+@receiver(pre_delete, sender=Membership, dispatch_uid=__name__ + ":membership:pre_delete")
 def pre_delete_resource_event(sender, instance, **kwargs):
     resource_name = instance.__class__.__name__.lower()
 
@@ -211,15 +211,15 @@ def pre_delete_resource_event(sender, instance, **kwargs):
     instance._related_webhooks = related_webhooks
 
 
-@receiver(post_delete, sender=Project, dispatch_uid=__name__ + "project:post_delete")
-@receiver(post_delete, sender=Task, dispatch_uid=__name__ + "task:post_delete")
-@receiver(post_delete, sender=Job, dispatch_uid=__name__ + "job:post_delete")
-@receiver(post_delete, sender=Label, dispatch_uid=__name__ + "label:post_delete")
-@receiver(post_delete, sender=Issue, dispatch_uid=__name__ + "issue:post_delete")
-@receiver(post_delete, sender=Comment, dispatch_uid=__name__ + "comment:post_delete")
-@receiver(post_delete, sender=Organization, dispatch_uid=__name__ + "organization:post_delete")
-@receiver(post_delete, sender=Invitation, dispatch_uid=__name__ + "invitation:post_delete")
-@receiver(post_delete, sender=Membership, dispatch_uid=__name__ + "membership:post_delete")
+@receiver(post_delete, sender=Project, dispatch_uid=__name__ + ":project:post_delete")
+@receiver(post_delete, sender=Task, dispatch_uid=__name__ + ":task:post_delete")
+@receiver(post_delete, sender=Job, dispatch_uid=__name__ + ":job:post_delete")
+@receiver(post_delete, sender=Label, dispatch_uid=__name__ + ":label:post_delete")
+@receiver(post_delete, sender=Issue, dispatch_uid=__name__ + ":issue:post_delete")
+@receiver(post_delete, sender=Comment, dispatch_uid=__name__ + ":comment:post_delete")
+@receiver(post_delete, sender=Organization, dispatch_uid=__name__ + ":organization:post_delete")
+@receiver(post_delete, sender=Invitation, dispatch_uid=__name__ + ":invitation:post_delete")
+@receiver(post_delete, sender=Membership, dispatch_uid=__name__ + ":membership:post_delete")
 def post_delete_resource_event(sender, instance, **kwargs):
     resource_name = instance.__class__.__name__.lower()
 
