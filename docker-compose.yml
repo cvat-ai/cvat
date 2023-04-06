@@ -231,7 +231,7 @@ services:
     command:
       - run
       - --server
-      - --set=decision_logs.console=true
+      - --log-level=error
       - --set=services.cvat.url=http://cvat-server:8080
       - --set=bundles.cvat.service=cvat
       - --set=bundles.cvat.resource=/api/auth/rules
