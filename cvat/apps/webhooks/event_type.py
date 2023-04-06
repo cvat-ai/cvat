@@ -18,7 +18,7 @@ class Events:
         "issue": ["create", "update", "delete"],
         "comment": ["create", "update", "delete"],
         "organization": ["update", "delete"],
-        "invitation": ["create", "update", "delete"],
+        "invitation": ["create", "delete"],
         "membership": ["create", "update", "delete"],
     }
 
