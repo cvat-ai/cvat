@@ -11,16 +11,16 @@ RUN apt-get update && \
         apache2-dev \
         build-essential \
         curl \
+        git \
         libgeos-dev \
         libldap2-dev \
         libsasl2-dev \
         nasm \
-        git \
         pkg-config \
         python3-dev \
         python3-pip \
-        python3-venv && \
-    rm -rf /var/lib/apt/lists/*
+        python3-venv \
+    && rm -rf /var/lib/apt/lists/*
 
 # Compile Openh264 and FFmpeg
 ARG PREFIX=/opt/ffmpeg
@@ -82,23 +82,23 @@ RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends install -yq \
         apache2 \
         ca-certificates \
-        libapache2-mod-xsendfile \
-        libgeos-dev \
-        libgomp1 \
-        libgl1 \
-        supervisor \
-        libldap-2.4-2 \
-        libsasl2-2 \
-        libpython3-dev \
-        tzdata \
-        python3-distutils \
-        p7zip-full \
+        curl \
         git \
         git-lfs \
+        libapache2-mod-xsendfile \
+        libgeos-dev \
+        libgl1 \
+        libgomp1 \
+        libldap-2.4-2 \
+        libpython3-dev \
+        libsasl2-2 \
+        p7zip-full \
         poppler-utils \
+        python3-distutils \
         ssh \
-        curl && \
-    ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime && \
+        supervisor \
+        tzdata \
+    && ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime && \
     dpkg-reconfigure -f noninteractive tzdata && \
     rm -rf /var/lib/apt/lists/* && \
     echo 'application/wasm wasm' >> /etc/mime.types
