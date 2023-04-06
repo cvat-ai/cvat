@@ -181,7 +181,7 @@ class WebhookViewSet(viewsets.ModelViewSet):
     def redelivery(self, request, pk, delivery_id):
         delivery = WebhookDelivery.objects.get(webhook_id=pk, id=delivery_id)
         signal_redelivery.send(sender=self, data=delivery.request)
-        return Response({}, status=status.HTTP_201_CREATED)
+        return Response({}, status=status.HTTP_200_OK)
 
     @extend_schema(
         summary="Method send ping webhook",

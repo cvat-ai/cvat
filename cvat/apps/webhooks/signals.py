@@ -18,7 +18,7 @@ from django.dispatch import Signal, receiver
 
 from cvat.apps.engine.models import Comment, Issue, Job, Label, Project, Task
 from cvat.apps.engine.serializers import BasicUserSerializer
-from cvat.apps.events.handlers import (_get_current_request, _get_serializer,
+from cvat.apps.events.handlers import (get_request, get_serializer, get_user,
                                        get_instance_diff, organization_id,
                                        project_id)
 from cvat.apps.organizations.models import Invitation, Membership, Organization
@@ -87,9 +87,10 @@ def add_to_queue(webhook, payload, redelivery=False):
 
 
 def batch_add_to_queue(webhooks, data):
+    payload = deepcopy(data)
     for webhook in webhooks:
-        data.update({"webhook_id": webhook.id})
-        add_to_queue(webhook, data)
+        payload["webhook_id"] = webhook.id
+        add_to_queue(webhook, payload)
 
 
 def select_webhooks(instance, event):
@@ -118,8 +119,10 @@ def select_webhooks(instance, event):
 
 
 def get_sender(instance):
-    request = _get_current_request(instance)
-    return BasicUserSerializer(request.user, context={"request": request}).data
+    user = _get_current_user(instance)
+    if isinstance(user, dict):
+        return user
+    return BasicUserSerializer(user, context={"request": _get_current_request(instance)}).data
 
 
 @receiver(pre_save, sender=Project, dispatch_uid=__name__ + "project:pre_save")
@@ -137,8 +140,8 @@ def pre_save_resource_event(sender, instance, **kwargs):
     except ObjectDoesNotExist:
         return
 
-    old_serializer = _get_serializer(instance=old_instance)
-    serializer = _get_serializer(instance=instance)
+    old_serializer = get_serializer(instance=old_instance)
+    serializer = get_serializer(instance=instance)
     diff = get_instance_diff(old_data=old_serializer.data, data=serializer.data)
 
     if not diff:
@@ -149,7 +152,7 @@ def pre_save_resource_event(sender, instance, **kwargs):
         for attr, value in diff.items()
     }
 
-    setattr(instance, "_before_update", before_update)
+    instance._before_update = before_update
 
 
 @receiver(post_save, sender=Project, dispatch_uid=__name__ + "project:post_save")
@@ -164,7 +167,7 @@ def pre_save_resource_event(sender, instance, **kwargs):
 def post_save_resource_event(sender, instance, created, **kwargs):
     resource_name = instance.__class__.__name__.lower()
 
-    event_type = event_name("create" * created + "update" * (not created), resource_name)
+    event_type = event_name("create" if created else "update", resource_name)
     if event_type not in map(lambda a: a[0], EventTypeChoice.choices()):
         return
 
@@ -174,14 +177,15 @@ def post_save_resource_event(sender, instance, created, **kwargs):
 
     data = {
         "event": event_type,
-        resource_name: _get_serializer(instance=instance).data,
+        resource_name: get_serializer(instance=instance).data,
         "sender": get_sender(instance),
     }
 
-    if not created and not getattr(instance, "_before_update", None):
-        return
-    elif not created and (before_update := getattr(instance, "_before_update", None)):
-        data["before_update"] = before_update
+    if not created:
+        if before_update := getattr(instance, "_before_update", None):
+            data["before_update"] = before_update
+        else:
+            return
 
     batch_add_to_queue(filtered_webhooks, data)
 
@@ -199,14 +203,12 @@ def pre_delete_resource_event(sender, instance, **kwargs):
     resource_name = instance.__class__.__name__.lower()
 
     related_webhooks = []
-    if resource_name == "project":
-        related_webhooks = Webhook.objects.filter(project_id=instance.id)
-    elif resource_name == "organization":
-        related_webhooks = Webhook.objects.filter(organization_id=instance.id)
+    if resource_name in ["project", "organization"]:
+        related_webhooks = select_webhooks(instance, event_name("delete", resource_name))
 
-    serializer = _get_serializer(instance=deepcopy(instance))
-    setattr(instance, "_deleted_object", dict(serializer.data))
-    setattr(instance, "_related_webhooks", list(related_webhooks))
+    serializer = get_serializer(instance=deepcopy(instance))
+    instance._deleted_object = dict(serializer.data)
+    instance._related_webhooks = related_webhooks
 
 
 @receiver(post_delete, sender=Project, dispatch_uid=__name__ + "project:post_delete")
@@ -234,7 +236,8 @@ def post_delete_resource_event(sender, instance, **kwargs):
     }
 
     batch_add_to_queue(filtered_webhooks, data)
-    batch_add_to_queue(getattr(instance, "_related_webhooks", []), data)
+    related_webhooks = [webhook for webhook in getattr(instance, "_related_webhooks", []) if webhook.id not in map(lambda a: a.id, filtered_webhooks)]
+    batch_add_to_queue(related_webhooks, data)
 
 
 @receiver(signal_redelivery)

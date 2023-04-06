@@ -89,7 +89,7 @@ def job_id(instance):
     except Exception:
         return None
 
-def _get_current_user(instance=None):
+def get_user(instance=None):
     # Try to get current user from request
     user = get_current_user()
     if user is not None:
@@ -108,7 +108,7 @@ def _get_current_user(instance=None):
 
     return None
 
-def _get_current_request(instance=None):
+def get_request(instance=None):
     request = get_current_request()
     if request is not None:
         return request
@@ -131,19 +131,19 @@ def _get_value(obj, key):
     return None
 
 def request_id(instance=None):
-    request = _get_current_request(instance)
+    request = get_request(instance)
     return _get_value(request, "uuid")
 
 def user_id(instance=None):
-    current_user = _get_current_user(instance)
+    current_user = get_user(instance)
     return _get_value(current_user, "id")
 
 def user_name(instance=None):
-    current_user = _get_current_user(instance)
+    current_user = get_user(instance)
     return _get_value(current_user, "username")
 
 def user_email(instance=None):
-    current_user = _get_current_user(instance)
+    current_user = get_user(instance)
     return _get_value(current_user, "email")
 
 def organization_slug(instance):
@@ -228,7 +228,7 @@ def _get_object_name(instance):
 
     return None
 
-def _get_serializer(instance):
+def get_serializer(instance):
     context = {
         "request": get_current_request()
     }
@@ -259,8 +259,8 @@ def _get_serializer(instance):
 
     return serializer
 
-def get_serializer(instance):
-    serializer = _get_serializer(instance)
+def get_serializer_without_url(instance):
+    serializer = get_serializer(instance)
     if serializer:
         serializer.fields.pop("url", None)
     return serializer
@@ -285,7 +285,7 @@ def handle_create(scope, instance, **kwargs):
     uname = user_name(instance)
     uemail = user_email(instance)
 
-    serializer = get_serializer(instance=instance)
+    serializer = get_serializer_without_url(instance=instance)
     try:
         payload = serializer.data
     except Exception:
@@ -321,8 +321,8 @@ def handle_update(scope, instance, old_instance, **kwargs):
     uname = user_name(instance)
     uemail = user_email(instance)
 
-    old_serializer = get_serializer(instance=old_instance)
-    serializer = get_serializer(instance=instance)
+    old_serializer = get_serializer_without_url(instance=old_instance)
+    serializer = get_serializer_without_url(instance=instance)
     diff = get_instance_diff(old_data=old_serializer.data, data=serializer.data)
 
     timestamp = str(datetime.now(timezone.utc).timestamp())
