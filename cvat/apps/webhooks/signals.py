@@ -119,10 +119,10 @@ def select_webhooks(instance, event):
 
 
 def get_sender(instance):
-    user = _get_current_user(instance)
+    user = get_user(instance)
     if isinstance(user, dict):
         return user
-    return BasicUserSerializer(user, context={"request": _get_current_request(instance)}).data
+    return BasicUserSerializer(user, context={"request": get_request(instance)}).data
 
 
 @receiver(pre_save, sender=Project, dispatch_uid=__name__ + "project:pre_save")
