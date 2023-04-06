@@ -2238,53 +2238,6 @@ paths:
       responses:
         '204':
           description: The annotation has been deleted
-  /api/jobs/{id}/annotations/{file_id}:
-    patch:
-      operationId: jobs_partial_update_annotations_file
-      summary: Allows to upload an annotation file chunk. Implements TUS file uploading
-        protocol.
-      parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
-      - in: path
-        name: file_id
-        schema:
-          type: string
-          pattern: ^\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b$
-        required: true
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this job.
-        required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
-      tags:
-      - jobs
-      requestBody:
-        content:
-          application/offset+octet-stream:
-            schema:
-              type: string
-              format: binary
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses: {}
   /api/jobs/{id}/data:
     get:
       operationId: jobs_retrieve_data
@@ -4026,52 +3979,6 @@ paths:
           description: Failed to import dataset
         '405':
           description: Format is not available
-  /api/projects/{id}/dataset/{file_id}:
-    patch:
-      operationId: projects_partial_update_dataset_file
-      summary: Allows to upload a file chunk. Implements TUS file uploading protocol.
-      parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
-      - in: path
-        name: file_id
-        schema:
-          type: string
-          pattern: ^\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b$
-        required: true
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this project.
-        required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
-      tags:
-      - projects
-      requestBody:
-        content:
-          application/offset+octet-stream:
-            schema:
-              type: string
-              format: binary
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses: {}
   /api/projects/{id}/preview:
     get:
       operationId: projects_retrieve_preview
@@ -4169,46 +4076,6 @@ paths:
           description: The project has been imported
         '202':
           description: Importing a backup file has been started
-  /api/projects/backup/{file_id}:
-    patch:
-      operationId: projects_partial_update_backup_file
-      summary: Allows to upload a file chunk. Implements TUS file uploading protocol.
-      parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
-      - in: path
-        name: file_id
-        schema:
-          type: string
-          pattern: ^\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b$
-        required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
-      tags:
-      - projects
-      requestBody:
-        content:
-          application/offset+octet-stream:
-            schema:
-              type: string
-              format: binary
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses: {}
   /api/schema/:
     get:
       operationId: schema_retrieve
@@ -5113,53 +4980,6 @@ paths:
       responses:
         '204':
           description: The annotation has been deleted
-  /api/tasks/{id}/annotations/{file_id}:
-    patch:
-      operationId: tasks_partial_update_annotations_file
-      summary: Allows to upload an annotation file chunk. Implements TUS file uploading
-        protocol.
-      parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
-      - in: path
-        name: file_id
-        schema:
-          type: string
-          pattern: ^\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b$
-        required: true
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this task.
-        required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
-      tags:
-      - tasks
-      requestBody:
-        content:
-          application/offset+octet-stream:
-            schema:
-              type: string
-              format: binary
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses: {}
   /api/tasks/{id}/backup:
     get:
       operationId: tasks_retrieve_backup
@@ -5352,52 +5172,6 @@ paths:
       responses:
         '202':
           description: No response body
-  /api/tasks/{id}/data/{file_id}:
-    patch:
-      operationId: tasks_partial_update_data_file
-      summary: Allows to upload a file chunk. Implements TUS file uploading protocol.
-      parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
-      - in: path
-        name: file_id
-        schema:
-          type: string
-          pattern: ^\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b$
-        required: true
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this task.
-        required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
-      tags:
-      - tasks
-      requestBody:
-        content:
-          application/offset+octet-stream:
-            schema:
-              type: string
-              format: binary
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses: {}
   /api/tasks/{id}/data/meta:
     get:
       operationId: tasks_retrieve_data_meta
@@ -5713,46 +5487,6 @@ paths:
           description: The task has been imported
         '202':
           description: Importing a backup file has been started
-  /api/tasks/backup/{file_id}:
-    patch:
-      operationId: tasks_partial_update_backup_file
-      summary: Allows to upload a file chunk. Implements TUS file uploading protocol.
-      parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
-      - in: path
-        name: file_id
-        schema:
-          type: string
-          pattern: ^\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b$
-        required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
-      tags:
-      - tasks
-      requestBody:
-        content:
-          application/offset+octet-stream:
-            schema:
-              type: string
-              format: binary
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses: {}
   /api/users:
     get:
       operationId: users_list
