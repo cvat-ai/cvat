@@ -25,7 +25,7 @@ from cvat.apps.engine.utils import parse_specific_attributes
 
 from drf_spectacular.utils import OpenApiExample, extend_schema_field, extend_schema_serializer
 
-from cvat.apps.engine.view_utils import build_field_filter_params, get_list_view_name, reverse
+from cvat.apps.engine.utils import build_field_filter_params, get_list_view_name, reverse
 
 @extend_schema_field(serializers.URLField)
 class HyperlinkedEndpointSerializer(serializers.Serializer):
