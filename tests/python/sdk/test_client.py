@@ -160,6 +160,49 @@ def test_can_check_server_version_in_method(fxt_logger: Tuple[Logger, io.StringI
     assert "Server version '0' is not compatible with SDK version" in logger_stream.getvalue()
 
 
+@pytest.mark.parametrize(
+    "server_version, supported_version",
+    [
+        ("3.2", "2"),
+        ("2", "2.1"),
+        ("2.1", "2.1"),
+        ("2.1.1", "2.1"),
+        ("2.2", "2.1"),
+        ("2.2", "2.3"),
+        ("2.1.0.dev123", "2.1.post2"),
+        ("1!1.3", "2.1"),
+        ("1!1.1.dev12", "1!1.1"),
+    ],
+)
+def test_can_check_server_version_compatibility(
+    fxt_logger: Tuple[Logger, io.StringIO],
+    monkeypatch: pytest.MonkeyPatch,
+    server_version: str,
+    supported_version: str,
+):
+    logger, _ = fxt_logger
+
+    supported_v = pv.Version(supported_version)
+    server_v = pv.Version(server_version)
+
+    # Currently, it is ~=, as defined in https://peps.python.org/pep-0440/
+    expected_true = (
+        supported_v
+        <= server_v
+        < pv.Version(f"{supported_v.epoch}{supported_v.major}.{supported_v.minor + 1}")
+    )
+
+    monkeypatch.setattr(Client, "get_server_version", lambda _: server_v)
+    monkeypatch.setattr(Client, "SUPPORTED_SERVER_VERSIONS", [supported_v])
+    config = Config(allow_unsupported_server=False)
+
+    with ExitStack() as es:
+        if not expected_true:
+            es.enter_context(pytest.raises(IncompatibleVersionException))
+
+        Client(url=BASE_URL, logger=logger, config=config, check_server_version=True)
+
+
 @pytest.mark.parametrize("verify", [True, False])
 def test_can_control_ssl_verification_with_config(verify: bool):
     config = Config(verify_ssl=verify)
