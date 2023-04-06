@@ -12,6 +12,7 @@ from typing import Optional
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.files.storage import FileSystemStorage
+from django.core.exceptions import ValidationError
 from django.db import IntegrityError, models
 from django.db.models.fields import FloatField
 from drf_spectacular.types import OpenApiTypes
@@ -473,16 +474,52 @@ class RelatedFile(models.Model):
         default_permissions = ()
         unique_together = ("data", "path")
 
+
+class SegmentType(str, Enum):
+    RANGE = 'range'
+    SPECIFIC_FRAMES = 'specific_frames'
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+    def __str__(self):
+        return self.value
+
+
 class Segment(models.Model):
+    # Common fields
     task = models.ForeignKey(Task, on_delete=models.CASCADE)
     start_frame = models.IntegerField()
     stop_frame = models.IntegerField()
+    type = models.CharField(choices=SegmentType.choices(), default=SegmentType.RANGE, max_length=32)
+
+    # SegmentType.SPECIFIC_FRAMES fields
+    frames = IntArrayField(store_sorted=True, unique_values=True, null=True)
 
     def contains_frame(self, idx: int) -> bool:
-        return self.start_frame <= idx and idx <= self.stop_frame
+        if self.type == SegmentType.RANGE:
+            return self.start_frame <= idx and idx <= self.stop_frame
+        elif self.type == SegmentType.SPECIFIC_FRAMES:
+            return idx in self.frames
+        else:
+            assert False
+
+    def save(self, *args, **kwargs) -> None:
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def clean(self) -> None:
+        if not (self.type == SegmentType.RANGE) ^ bool(self.frames):
+            raise ValidationError(
+                f"frames and type == {SegmentType.SPECIFIC_FRAMES} can only be used together"
+            )
+
+        return super().clean()
 
     class Meta:
         default_permissions = ()
+
 
 class Job(models.Model):
     segment = models.ForeignKey(Segment, on_delete=models.CASCADE)
@@ -535,6 +572,22 @@ class Job(models.Model):
 
     class Meta:
         default_permissions = ()
+
+
+    def save(self, *args, **kwargs) -> None:
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def clean(self) -> None:
+        if not (self.type == JobType.GROUND_TRUTH) ^ (self.segment.type == SegmentType.RANGE):
+            raise ValidationError(
+                f"job type == {JobType.GROUND_TRUTH} and "
+                f"segment type == {SegmentType.SPECIFIC_FRAMES} "
+                "can only be used together"
+            )
+
+        return super().clean()
+
 
 class InvalidLabel(ValueError):
     pass

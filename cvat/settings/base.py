@@ -606,6 +606,7 @@ SPECTACULAR_SETTINGS = {
         'StorageMethod': 'cvat.apps.engine.models.StorageMethodChoice',
         'JobStatus': 'cvat.apps.engine.models.StatusChoice',
         'JobStage': 'cvat.apps.engine.models.StageChoice',
+        'JobType': 'cvat.apps.engine.models.JobType',
         'StorageType': 'cvat.apps.engine.models.StorageChoice',
         'SortingMethod': 'cvat.apps.engine.models.SortingMethod',
         'WebhookType': 'cvat.apps.webhooks.models.WebhookTypeChoice',

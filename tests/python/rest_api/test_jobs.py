@@ -57,19 +57,25 @@ def filter_jobs(jobs, tasks, org):
 class TestPostJobs:
     def _test_create_job_ok(self, user: str, data: Dict[str, Any], **kwargs):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.jobs_api.create(models.JobWriteRequest(**data), **kwargs)
-            assert response.status == HTTPStatus.OK
-            assert (
-                DeepDiff(
-                    data,
-                    json.loads(response.data),
-                    exclude_paths="root['updated_date']",
-                    ignore_order=True,
-                )
-                == {}
+            (_, response) = api_client.jobs_api.create(
+                models.JobWriteRequest(**deepcopy(data)), **kwargs
             )
+            assert response.status == HTTPStatus.CREATED
+        return response
 
-    @pytest.mark.parametrize("task_mode", ["annotation", "interpolation"])
+    @pytest.mark.parametrize(
+        "task_mode",
+        [
+            "annotation",
+            pytest.param(
+                "interpolation",
+                marks=pytest.mark.xfail(
+                    raises=IndexError,
+                    reason="Meta info can't represent skipped frame info for video",
+                ),
+            ),
+        ],
+    )
     def test_can_create_gt_job_with_manual_frames(self, admin_user, tasks, task_mode):
         user = admin_user
         job_frame_count = 4
@@ -82,13 +88,110 @@ class TestPostJobs:
             and t["size"] > job_frame_count
         )
         task_id = task["id"]
+        with make_api_client(user) as api_client:
+            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+            frame_step = int(task_meta.frame_filter.split("=")[-1]) if task_meta.frame_filter else 1
+
+        job_frame_ids = list(range(task_meta.start_frame, task_meta.stop_frame, frame_step))[
+            :job_frame_count
+        ]
+        job_spec = {
+            "task_id": task_id,
+            "type": "ground_truth",
+            "frame_selection_method": "manual",
+            "frames": job_frame_ids,
+        }
+
+        response = self._test_create_job_ok(user, job_spec)
+        job_id = json.loads(response.data)["id"]
+
+        with make_api_client(user) as api_client:
+            (job_meta, _) = api_client.jobs_api.retrieve_data_meta(job_id)
+            assert [f.name for f in job_meta.frames] == [
+                task_meta.frames[i].name for i in job_frame_ids
+            ]
+
+    @pytest.mark.parametrize(
+        "task_mode",
+        [
+            "annotation",
+            pytest.param(
+                "interpolation",
+                marks=pytest.mark.xfail(
+                    raises=AssertionError,
+                    reason="Meta info can't represent skipped frame info for video",
+                ),
+            ),
+        ],
+    )
+    def test_can_create_gt_job_with_random_frames(self, admin_user, tasks, task_mode):
+        user = admin_user
+        required_task_frame_count = 4
+        task = next(
+            t
+            for t in tasks
+            if not t["project_id"]
+            and not t["organization"]
+            and t["mode"] == task_mode
+            and t["size"] > required_task_frame_count
+        )
+        task_id = task["id"]
 
         job_spec = {
             "task_id": task_id,
             "type": "ground_truth",
+            "frame_selection_method": "random_uniform",
+            "count": required_task_frame_count - 1,
+            "seed": 42,  # make the test reproducible
+        }
+
+        response = self._test_create_job_ok(user, job_spec)
+        job_id = json.loads(response.data)["id"]
+
+        with make_api_client(user) as api_client:
+            (job_meta, _) = api_client.jobs_api.retrieve_data_meta(job_id)
+            assert [f.name for f in job_meta.frames] == ["0.png", "1.png", "5.png"]
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+class TestDeleteJobs:
+    def _test_destroy_job_ok(self, user, job_id):
+        with make_api_client(user) as api_client:
+            (_, response) = api_client.jobs_api.destroy(job_id)
+            assert response.status == HTTPStatus.NO_CONTENT
+
+    def _test_destroy_job_fails(self, user, job_id, *, expected_status):
+        with make_api_client(user) as api_client:
+            (_, response) = api_client.jobs_api.destroy(
+                job_id, _check_status=False, _parse_response=False
+            )
+            assert response.status == expected_status
+        return response
+
+    def test_can_destroy_gt_job(self, admin_user, tasks):
+        user = admin_user
+        job_frame_count = 4
+        task = next(
+            t
+            for t in tasks
+            if not t["project_id"] and not t["organization"] and t["size"] > job_frame_count
+        )
+        task_id = task["id"]
+
+        job_spec = {
+            "task_id": task_id,
+            "type": "ground_truth",
+            "frame_selection_method": "manual",
             "frames": list(range(job_frame_count)),
         }
-        self._test_create_job_ok(user, job_spec)
+        with make_api_client(user) as api_client:
+            (job, _) = api_client.jobs_api.create(models.JobWriteRequest(**job_spec))
+
+        self._test_destroy_job_ok(user, job.id)
+
+    def test_cannot_destroy_normal_job(self, admin_user, jobs):
+        job_id = next(j for j in jobs if j["type"] == "normal")["id"]
+        self._test_destroy_job_fails(admin_user, job_id, expected_status=HTTPStatus.BAD_REQUEST)
 
 
 @pytest.mark.usefixtures("restore_db_per_class")

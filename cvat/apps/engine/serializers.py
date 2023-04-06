@@ -555,26 +555,37 @@ class JobReadSerializer(serializers.ModelSerializer):
         fields = ('url', 'id', 'task_id', 'project_id', 'assignee',
             'dimension', 'bug_tracker', 'status', 'stage', 'state', 'mode',
             'start_frame', 'stop_frame', 'data_chunk_size', 'data_compressed_chunk_type',
-            'updated_date', 'issues', 'labels')
+            'updated_date', 'issues', 'labels', 'type')
         read_only_fields = fields
 
 
 class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     assignee = serializers.IntegerField(allow_null=True, required=False)
 
-    type = serializers.ChoiceField(choices=models.JobType.choices())
+    # NOTE: It can be expressed using serializer inheritance, but it is
+    # harder to use then: we need to make a manual switch in get_serializer_class()
+    # and create an extra serializer type in the API schema.
+    # Need to investigate how it can be simplified.
+    type = serializers.ChoiceField(choices=(
+        (models.JobType.GROUND_TRUTH.value, models.JobType.GROUND_TRUTH.name),
+    ))
+
     task_id = serializers.IntegerField()
     frame_selection_method = serializers.ChoiceField(
         choices=models.JobFrameSelectionMethod.choices(), required=False)
 
-    # Random selection fields
     count = serializers.IntegerField(min_value=0, required=False,
         help_text=textwrap.dedent("""\
             The number of frames included in the job.
             Applicable only to the random frame selection
         """))
+    seed = serializers.IntegerField(min_value=0, required=False,
+        help_text=textwrap.dedent("""\
+            The seed value for the random number generator.
+            The same value will produce the same frame sets.
+            Applicable only to the random frame selection
+        """))
 
-    # Manual selection fields
     frames = serializers.ListField(child=serializers.IntegerField(min_value=0),
         required=False, help_text=textwrap.dedent("""\
             The list of frame ids. Applicable only to the manual frame selection
@@ -582,7 +593,10 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
     class Meta:
         model = models.Job
-        write_once_fields = ('type', 'task_id', 'frame_selection_method', 'count', 'frames')
+        random_selection_params = ('count', 'seed',)
+        manual_selection_params = ('frames',)
+        write_once_fields = ('type', 'task_id', 'frame_selection_method',) \
+            + random_selection_params + manual_selection_params
         fields = ('assignee', 'stage', 'state', ) + write_once_fields
 
     def to_representation(self, instance):
@@ -594,13 +608,63 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         task_id = validated_data.pop('task_id')
         task = models.Task.objects.get(pk=task_id)
 
-        if not task.data:
-            raise serializers.ValidationError(
-                "This task has no data yet. Please set up the task data and try again"
-            )
-        size = task.data.size
+        # TODO: extract to separate functions
+        if validated_data["type"] == models.JobType.GROUND_TRUTH:
+            if not task.data:
+                raise serializers.ValidationError(
+                    "This task has no data attached yet. Please set up task data and try again"
+                )
+            if task.dimension != models.DimensionType.DIM_2D:
+                raise serializers.ValidationError(
+                    "Ground Truth jobs can only be added in 2d tasks"
+                )
 
-        segment = models.Segment.objects.create(start_frame=0, stop_frame=size, task=task)
+            size = task.data.size
+            step = task.data.get_frame_step()
+            valid_frame_ids = range(task.data.start_frame, task.data.stop_frame, step)
+
+            frame_selection_method = validated_data.pop("frame_selection_method", None)
+            if frame_selection_method == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
+                count = validated_data.pop("count")
+                if size <= count:
+                    raise serializers.ValidationError(
+                        f"The number of frames requested ({count}) must be lesser than "
+                        f"the number of the task frames ({size})"
+                    )
+
+                seed = validated_data.pop("seed", None)
+
+                import random
+                # NOTE: the RNG backend must not change to provide reproducible results
+                rng = random.Random(seed)
+                frames = rng.sample(valid_frame_ids, k=count)
+            elif frame_selection_method == models.JobFrameSelectionMethod.MANUAL:
+                frames = validated_data.pop("frames")
+
+                unique_frames = set(frames)
+                if len(unique_frames) != len(frames):
+                    raise serializers.ValidationError(f"Frames must not repeat")
+
+                invalid_ids = unique_frames.difference(valid_frame_ids)
+                if invalid_ids:
+                    raise serializers.ValidationError(
+                        "The following frames are not included "
+                        f"in the task: {','.join(invalid_ids)}"
+                    )
+            else:
+                raise serializers.ValidationError(
+                    f"Unexpected frame selection method '{frame_selection_method}'"
+                )
+
+            segment = models.Segment.objects.create(
+                start_frame=task.data.start_frame,
+                stop_frame=task.data.stop_frame,
+                frames=frames,
+                task=task,
+                type=models.SegmentType.SPECIFIC_FRAMES,
+            )
+        else:
+            raise serializers.ValidationError(f"Unexpected job type '{validated_data['type']}'")
 
         validated_data['segment'] = segment
         return super().create(validated_data)

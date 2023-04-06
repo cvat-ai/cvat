@@ -7552,6 +7552,10 @@ components:
           $ref: '#/components/schemas/IssuesSummary'
         labels:
           $ref: '#/components/schemas/LabelsSummary'
+        type:
+          allOf:
+          - $ref: '#/components/schemas/JobType'
+          readOnly: true
       required:
       - issues
       - labels
@@ -7566,6 +7570,11 @@ components:
       - annotation
       - validation
       - completed
+      type: string
+    JobType:
+      enum:
+      - normal
+      - ground_truth
       type: string
     JobWriteRequest:
       type: object
@@ -7588,20 +7597,26 @@ components:
           minimum: 0
           description: |
             The number of frames included in the job.
-            Applicable only to the random frame selection.
+            Applicable only to the random frame selection
+        seed:
+          type: integer
+          minimum: 0
+          description: |
+            The seed value for the random number generator.
+            The same value will produce the same frame sets.
+            Applicable only to the random frame selection
         frames:
           type: array
           items:
             type: integer
             minimum: 0
           description: |
-            The list of frame ids. Applicable only to the manual frame selection.
+            The list of frame ids. Applicable only to the manual frame selection
       required:
       - task_id
       - type
     JobWriteTypeEnum:
       enum:
-      - normal
       - ground_truth
       type: string
     JobsSummary:
@@ -8449,17 +8464,9 @@ components:
     PatchedIssueWriteRequest:
       type: object
       properties:
-        position:
-          type: array
-          items:
-            type: number
-            format: double
         assignee:
           type: integer
           nullable: true
-        message:
-          type: string
-          minLength: 1
         resolved:
           type: boolean
     PatchedJobWriteRequest:
@@ -8593,13 +8600,6 @@ components:
           type: string
           minLength: 1
           maxLength: 256
-        project_id:
-          type: integer
-          nullable: true
-        owner_id:
-          type: integer
-          writeOnly: true
-          nullable: true
         assignee_id:
           type: integer
           writeOnly: true
@@ -8607,10 +8607,6 @@ components:
         bug_tracker:
           type: string
           maxLength: 2000
-        labels:
-          type: array
-          items:
-            $ref: '#/components/schemas/PatchedLabelRequest'
         subset:
           type: string
           maxLength: 64
@@ -8681,10 +8677,6 @@ components:
           type: boolean
         enable_ssl:
           type: boolean
-        project_id:
-          type: integer
-          writeOnly: true
-          nullable: true
         events:
           type: array
           items:

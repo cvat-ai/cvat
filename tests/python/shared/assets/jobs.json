@@ -26,6 +26,7 @@
       "status": "annotation",
       "stop_frame": 9,
       "task_id": 21,
+      "type": "normal",
       "updated_date": "2023-03-27T19:08:40.166000Z",
       "url": "http://localhost:8080/api/jobs/26"
     },
@@ -52,6 +53,7 @@
       "status": "annotation",
       "stop_frame": 5,
       "task_id": 21,
+      "type": "normal",
       "updated_date": "2023-03-27T19:08:27.216000Z",
       "url": "http://localhost:8080/api/jobs/25"
     },
@@ -78,6 +80,7 @@
       "status": "annotation",
       "stop_frame": 1,
       "task_id": 20,
+      "type": "normal",
       "updated_date": "2023-03-10T11:57:49.019000Z",
       "url": "http://localhost:8080/api/jobs/24"
     },
@@ -104,6 +107,7 @@
       "status": "annotation",
       "stop_frame": 1,
       "task_id": 19,
+      "type": "normal",
       "updated_date": "2023-03-10T11:56:55.066000Z",
       "url": "http://localhost:8080/api/jobs/23"
     },
@@ -130,6 +134,7 @@
       "status": "annotation",
       "stop_frame": 1,
       "task_id": 18,
+      "type": "normal",
       "updated_date": "2023-03-01T15:36:38.114000Z",
       "url": "http://localhost:8080/api/jobs/22"
     },
@@ -156,6 +161,7 @@
       "status": "annotation",
       "stop_frame": 4,
       "task_id": 17,
+      "type": "normal",
       "updated_date": "2023-02-10T14:05:26.022000Z",
       "url": "http://localhost:8080/api/jobs/21"
     },
@@ -182,6 +188,7 @@
       "status": "annotation",
       "stop_frame": 24,
       "task_id": 15,
+      "type": "normal",
       "updated_date": "2022-12-01T12:53:35.354000Z",
       "url": "http://localhost:8080/api/jobs/19"
     },
@@ -208,6 +215,7 @@
       "status": "annotation",
       "stop_frame": 7,
       "task_id": 14,
+      "type": "normal",
       "updated_date": "2022-09-23T11:57:02.302000Z",
       "url": "http://localhost:8080/api/jobs/18"
     },
@@ -234,6 +242,7 @@
       "status": "annotation",
       "stop_frame": 4,
       "task_id": 13,
+      "type": "normal",
       "updated_date": "2022-12-05T07:47:01.633000Z",
       "url": "http://localhost:8080/api/jobs/17"
     },
@@ -266,6 +275,7 @@
       "status": "annotation",
       "stop_frame": 10,
       "task_id": 11,
+      "type": "normal",
       "updated_date": "2022-06-22T09:18:45.296000Z",
       "url": "http://localhost:8080/api/jobs/16"
     },
@@ -292,6 +302,7 @@
       "status": "annotation",
       "stop_frame": 19,
       "task_id": 9,
+      "type": "normal",
       "updated_date": "2022-11-03T13:57:26.346000Z",
       "url": "http://localhost:8080/api/jobs/14"
     },
@@ -318,6 +329,7 @@
       "status": "validation",
       "stop_frame": 14,
       "task_id": 9,
+      "type": "normal",
       "updated_date": "2022-06-22T09:18:45.296000Z",
       "url": "http://localhost:8080/api/jobs/13"
     },
@@ -344,6 +356,7 @@
       "status": "validation",
       "stop_frame": 9,
       "task_id": 9,
+      "type": "normal",
       "updated_date": "2022-06-22T09:18:45.296000Z",
       "url": "http://localhost:8080/api/jobs/12"
     },
@@ -376,6 +389,7 @@
       "status": "annotation",
       "stop_frame": 4,
       "task_id": 9,
+      "type": "normal",
       "updated_date": "2022-06-22T09:18:45.296000Z",
       "url": "http://localhost:8080/api/jobs/11"
     },
@@ -408,6 +422,7 @@
       "status": "annotation",
       "stop_frame": 13,
       "task_id": 8,
+      "type": "normal",
       "updated_date": "2022-06-22T09:18:45.296000Z",
       "url": "http://localhost:8080/api/jobs/10"
     },
@@ -434,6 +449,7 @@
       "status": "annotation",
       "stop_frame": 10,
       "task_id": 7,
+      "type": "normal",
       "updated_date": "2022-06-22T09:18:45.296000Z",
       "url": "http://localhost:8080/api/jobs/9"
     },
@@ -460,6 +476,7 @@
       "status": "annotation",
       "stop_frame": 0,
       "task_id": 6,
+      "type": "normal",
       "updated_date": "2022-06-22T09:18:45.296000Z",
       "url": "http://localhost:8080/api/jobs/8"
     },
@@ -492,6 +509,7 @@
       "status": "annotation",
       "stop_frame": 24,
       "task_id": 5,
+      "type": "normal",
       "updated_date": "2022-06-22T09:18:45.296000Z",
       "url": "http://localhost:8080/api/jobs/7"
     },
@@ -524,6 +542,7 @@
       "status": "annotation",
       "stop_frame": 22,
       "task_id": 2,
+      "type": "normal",
       "updated_date": "2022-06-22T09:18:45.296000Z",
       "url": "http://localhost:8080/api/jobs/2"
     }

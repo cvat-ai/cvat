@@ -1659,10 +1659,13 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         if hasattr(db_data, 'video'):
             media = [db_data.video]
         else:
-            media = list(db_data.images.filter(
-                frame__gte=data_start_frame,
-                frame__lte=data_stop_frame,
-            ).all())
+            media = [f
+                for f in db_data.images.filter(
+                    frame__gte=data_start_frame,
+                    frame__lte=data_stop_frame,
+                ).all()
+                if db_job.segment.contains_frame(f.frame)
+            ]
 
         # Filter data with segment size
         # Should data.size also be cropped by segment size?
