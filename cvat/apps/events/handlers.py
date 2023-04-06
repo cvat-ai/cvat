@@ -38,6 +38,7 @@ from cvat.apps.organizations.serializers import OrganizationReadSerializer, Memb
 from cvat.apps.engine.log import vlogger
 
 from .event import event_scope, create_event
+from .cache import get_cache
 
 def project_id(instance):
     if isinstance(instance, Project):
@@ -351,12 +352,36 @@ def handle_update(scope, instance, old_instance, **kwargs):
         message = JSONRenderer().render(event).decode('UTF-8')
         vlogger.info(message)
 
-def handle_delete(scope, instance, **kwargs):
-    oid = organization_id(instance)
-    oslug = organization_slug(instance)
-    pid = project_id(instance)
-    tid = task_id(instance)
-    jid = job_id(instance)
+def handle_delete(scope, instance, store_in_deletion_cache=False, **kwargs):
+    deletion_cache = get_cache()
+    if store_in_deletion_cache:
+        deletion_cache.set(
+            instance.__class__,
+            instance.id,
+            {
+                "oid": organization_id(instance),
+                "oslug": organization_slug(instance),
+                "pid": project_id(instance),
+                "tid": task_id(instance),
+                "jid": job_id(instance),
+            },
+        )
+        return
+
+    instance_meta_info = deletion_cache.pop(instance.__class__, instance.id)
+    if instance_meta_info:
+        oid = instance_meta_info["oid"]
+        oslug = instance_meta_info["oslug"]
+        pid = instance_meta_info["pid"]
+        tid = instance_meta_info["tid"]
+        jid = instance_meta_info["jid"]
+    else:
+        oid = organization_id(instance)
+        oslug = organization_slug(instance)
+        pid = project_id(instance)
+        tid = task_id(instance)
+        jid = job_id(instance)
+
     uid = user_id(instance)
     uname = user_name(instance)
     uemail = user_email(instance)

@@ -22,9 +22,13 @@ This method of working with data allows:
 - reduce the task creation time.
 - store data in a cache of the limited size with a policy of evicting less popular items.
 
-Unfortunately, this method will not work for all videos with a valid manifest file. If there are not enough keyframes
-in the video for smooth video decoding, the task will be created in another way. Namely, all chunks will be prepared
-during task creation, which may take some time.
+Unfortunately, this method has several drawbacks:
+- The first access to the data will take more time.
+- It will not work for some videos, even if they have a valid manifest file.
+  If there are not enough keyframes in the video for smooth video decoding,
+  the task data chunks will be created with the default method, i.e. during the task creation.
+- If the data has not been cached yet, and is not reachable during the access time,
+  it cannot be retrieved.
 
 #### Uploading a manifest with data
 

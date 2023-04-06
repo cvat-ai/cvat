@@ -22,7 +22,7 @@ function updateHistoryFromQuery(query: Indexable): string {
         ...(query.page ? { page: `${query.page}` } : {}),
     });
 
-    return decodeURIComponent(search.toString());
+    return search.toString();
 }
 
 export {
