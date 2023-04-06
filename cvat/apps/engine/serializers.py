@@ -46,36 +46,23 @@ class WriteOnceMixin:
     Inspired by http://stackoverflow.com/a/37487134/627411.
     """
 
-    def get_extra_kwargs(self):
-        extra_kwargs = super().get_extra_kwargs()
-
-        # We're only interested in PATCH/PUT.
-        if 'update' in getattr(self.context.get('view'), 'action', ''):
-            extra_kwargs = self._set_write_once_fields(extra_kwargs)
-
-        return extra_kwargs
-
     def get_fields(self):
         fields = super().get_fields()
 
-        extra_kwargs = self.get_extra_kwargs()
-
-        for field_name, field_extra_kwargs in extra_kwargs.items():
-            field = fields.get(field_name)
-            read_only = field_extra_kwargs.get('read_only')
-            if read_only:
-                setattr(field, 'read_only', read_only)
+        # We're only interested in PATCH and PUT.
+        if 'update' in getattr(self.context.get('view'), 'action', ''):
+            fields = self._update_write_once_fields(fields)
 
         return fields
 
-    def _set_write_once_fields(self, extra_kwargs):
+    def _update_write_once_fields(self, fields):
         """
         Set all fields in `Meta.write_once_fields` to read_only.
         """
 
         write_once_fields = getattr(self.Meta, 'write_once_fields', None)
         if not write_once_fields:
-            return extra_kwargs
+            return fields
 
         if not isinstance(write_once_fields, (list, tuple)):
             raise TypeError(
@@ -84,11 +71,9 @@ class WriteOnceMixin:
             )
 
         for field_name in write_once_fields:
-            kwargs = extra_kwargs.get(field_name, {})
-            kwargs['read_only'] = True
-            extra_kwargs[field_name] = kwargs
+            fields[field_name].read_only = True
 
-        return extra_kwargs
+        return fields
 
 
 @extend_schema_field(serializers.URLField)
