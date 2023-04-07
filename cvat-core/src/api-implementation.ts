@@ -32,6 +32,7 @@ export default function implementAPI(cvat) {
     cvat.lambda.list.implementation = lambdaManager.list.bind(lambdaManager);
     cvat.lambda.updateModelList.implementation = lambdaManager.updateModelList.bind(lambdaManager);
     cvat.lambda.setModelProxyMap.implementation = lambdaManager.setModelProxyMap.bind(lambdaManager);
+    cvat.lambda.getCachedList.implementation = lambdaManager.getCachedList.bind(lambdaManager);
     cvat.lambda.run.implementation = lambdaManager.run.bind(lambdaManager);
     cvat.lambda.call.implementation = lambdaManager.call.bind(lambdaManager);
     cvat.lambda.cancel.implementation = lambdaManager.cancel.bind(lambdaManager);

@@ -178,6 +178,10 @@ function build() {
                 const result = await PluginRegistry.apiWrapper(cvat.lambda.list);
                 return result;
             },
+            async getCachedList() {
+                const result = await PluginRegistry.apiWrapper(cvat.lambda.getCachedList);
+                return result;
+            },
             async updateModelList(models) {
                 const result = await PluginRegistry.apiWrapper(cvat.lambda.updateModelList, models);
                 return result;

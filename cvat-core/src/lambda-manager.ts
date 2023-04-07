@@ -28,15 +28,15 @@ export interface ModelProxy {
 
 class LambdaManager {
     private listening: any;
-    private cachedList: any;
-    private proxyMap: Record<string, ModelProxy>
+    private proxyMap: Record<string, ModelProxy>;
+    private cachedList: MLModel[];
 
     constructor() {
         this.listening = {};
         this.proxyMap = {
             [ModelProviders.CVAT]: serverProxy.lambda,
         };
-        this.cachedList = null;
+        this.cachedList = [];
     }
 
     async list(): Promise<{ models: MLModel[], count: number }> {
@@ -57,6 +57,10 @@ class LambdaManager {
 
     updateModelList(models: MLModel[] = []): void {
         this.cachedList = models;
+    }
+
+    getCachedList(): MLModel[] {
+        return this.cachedList;
     }
 
     setModelProxyMap(proxyMap: Record<string, ModelProxy>): void {
