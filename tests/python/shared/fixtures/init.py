@@ -357,7 +357,7 @@ def local_start(start, stop, dumpdb, cleanup, rebuild, cvat_root_dir, cvat_db_di
 
     if not any(
         [cn in [f"{PREFIX}_cvat_server_1", f"{PREFIX}_cvat_db_1"] for cn in running_containers()]
-    ):
+    ) or rebuild:
         start_services(dc_files, rebuild, cvat_root_dir)
 
     docker_restore_data_volumes()
