@@ -485,7 +485,8 @@ class Job(models.Model):
         task = self.segment.task
         return task.id if task else None
 
-    def get_organization_id(self):
+    @property
+    def organization_id(self):
         return self.segment.task.organization_id
 
     def get_organization_slug(self):
@@ -705,7 +706,8 @@ class Issue(models.Model):
     def get_project_id(self):
         return self.job.get_project_id()
 
-    def get_organization_id(self):
+    @property
+    def organization_id(self):
         return self.job.get_organization_id()
 
     def get_organization_slug(self):
@@ -728,7 +730,8 @@ class Comment(models.Model):
     def get_project_id(self):
         return self.issue.get_project_id()
 
-    def get_organization_id(self):
+    @property
+    def organization_id(self):
         return self.issue.get_organization_id()
 
     def get_organization_slug(self):
