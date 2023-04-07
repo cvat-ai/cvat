@@ -2,10 +2,6 @@ ARG PIP_VERSION=22.0.2
 
 FROM ubuntu:20.04 as build-image
 
-ARG http_proxy
-ARG https_proxy
-ARG no_proxy="nuclio,${no_proxy}"
-ARG socks_proxy
 ARG DJANGO_CONFIGURATION="production"
 
 RUN apt-get update && \
