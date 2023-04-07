@@ -1828,7 +1828,7 @@ def _validate_existence_of_cloud_storage(cloud_storage_id):
         raise serializers.ValidationError(f'The specified cloud storage {cloud_storage_id} does not exist.')
 
 
-class ConflictsReportSerializer(serializers.ModelSerializer):
+class AnnotationConflictsReportSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.AnnotationConflictsReport
         fields = ('job_id',)

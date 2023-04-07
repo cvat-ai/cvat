@@ -1,8 +1,9 @@
-
 # Copyright (C) 2019-2022 Intel Corporation
 # Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
+
+from __future__ import annotations
 
 import os.path as osp
 import sys
@@ -10,7 +11,7 @@ from collections import namedtuple
 from functools import reduce
 from pathlib import Path
 from types import SimpleNamespace
-from typing import (Any, Callable, DefaultDict, Dict, List, Literal, Mapping,
+from typing import (Any, Callable, DefaultDict, Dict, Iterable, List, Literal, Mapping,
                     NamedTuple, OrderedDict, Set, Tuple, Union)
 
 import datumaro as dm
@@ -177,7 +178,7 @@ class CommonData(InstanceLabelData):
     Tag.__new__.__defaults__ = (0, )
     Frame = namedtuple(
         'Frame', 'idx, id, frame, name, width, height, labeled_shapes, tags, shapes, labels')
-    Labels = namedtuple('Label', 'id, name, color, type')
+    Label = namedtuple('Label', 'id, name, color, type')
 
     def __init__(self, annotation_ir, db_task, host='', create_callback=None) -> None:
         self._dimension = annotation_ir.dimension
@@ -352,7 +353,7 @@ class CommonData(InstanceLabelData):
 
     @staticmethod
     def _export_label(label):
-        return CommonData.Labels(
+        return CommonData.Label(
             id=label.id,
             name=label.name,
             color=label.color,
@@ -1201,8 +1202,10 @@ class ProjectData(InstanceLabelData):
         self._project_annotation.add_task(task, files, self)
 
 class CVATDataExtractorMixin:
-    def __init__(self, media_type=dm.Image):
-        super().__init__()
+    def __init__(self, *,
+        convert_annotations: Callable = None
+    ):
+        self.convert_annotations = convert_annotations or convert_cvat_anno_to_dm
 
     def categories(self) -> dict:
         raise NotImplementedError()
@@ -1253,7 +1256,7 @@ class CVATDataExtractorMixin:
             for _, label in labels
         }
 
-        return convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label)
+        return self.convert_annotations(cvat_frame_anno, label_attrs, map_label)
 
 
 class CvatTaskOrJobDataExtractor(dm.SourceExtractor, CVATDataExtractorMixin):
@@ -1351,7 +1354,8 @@ class CvatTaskOrJobDataExtractor(dm.SourceExtractor, CVATDataExtractorMixin):
             for _, label in labels
         }
 
-        return convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label, self._format_type, self._dimension)
+        return self.convert_annotations(cvat_frame_anno,
+            label_attrs, map_label, self._format_type, self._dimension)
 
 class CVATProjectDataExtractor(dm.Extractor, CVATDataExtractorMixin):
     def __init__(self, project_data: ProjectData, include_images: bool = False, format_type: str = None, dimension: DimensionType = DimensionType.DIM_2D):
@@ -1508,14 +1512,30 @@ def get_defaulted_subset(subset: str, subsets: List[str]) -> str:
             raise Exception('Cannot find default name for subset')
 
 
-def convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label, format_name=None, dimension=DimensionType.DIM_2D):
-    item_anno = []
+class CvatToDmAnnotationConverter:
+    def __init__(self,
+        cvat_frame_anno: CommonData.Frame,
+        *,
+        label_attrs,
+        map_label,
+        format_name=None,
+        dimension: DimensionType = DimensionType.DIM_2D
+    ) -> None:
+        self.cvat_frame_anno = cvat_frame_anno
+        self.label_attrs = label_attrs
+        self.map_label = map_label
+        self.format_name = format_name
+        self.dimension = dimension
+        self.item_anno = []
+        self.num_of_tracks = None
 
-    def convert_attrs(label, cvat_attrs):
+    def _convert_attrs(self, label: CommonData.Label, cvat_attrs: CommonData.Attribute):
         cvat_attrs = {a.name: a.value for a in cvat_attrs}
+
         dm_attr = dict()
-        for _, a_desc in label_attrs[label]:
+        for _, a_desc in self.label_attrs[label]:
             a_name = a_desc['name']
+
             a_value = cvat_attrs.get(a_name, a_desc['default_value'])
             try:
                 if a_desc['input_type'] == AttributeType.NUMBER:
@@ -1527,105 +1547,148 @@ def convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label, format_name
                 raise Exception(
                     "Failed to convert attribute '%s'='%s': %s" %
                     (a_name, a_value, e))
+
         return dm_attr
 
-    for tag_obj in cvat_frame_anno.tags:
-        anno_group = tag_obj.group or 0
-        anno_label = map_label(tag_obj.label)
-        anno_attr = convert_attrs(tag_obj.label, tag_obj.attributes)
+    def _convert_tag(self, tag: CommonData.Tag) -> Iterable[dm.Annotation]:
+        anno_group = tag.group or 0
+        anno_label = self.map_label(tag.label)
+        anno_attr = self._convert_attrs(tag.label, tag.attributes)
+        return [dm.Label(label=anno_label, attributes=anno_attr, group=anno_group)]
 
-        anno = dm.Label(label=anno_label,
-            attributes=anno_attr, group=anno_group)
-        item_anno.append(anno)
+    def _convert_tags(self, tags) -> Iterable[dm.Annotation]:
+        return map(self._convert_tag, tags)
 
-    num_of_tracks = reduce(lambda a, x: a + (1 if getattr(x, 'track_id', None) is not None else 0), cvat_frame_anno.labeled_shapes, 0)
-    for index, shape_obj in enumerate(cvat_frame_anno.labeled_shapes):
-        anno_group = shape_obj.group or 0
-        anno_label = map_label(shape_obj.label)
-        anno_attr = convert_attrs(shape_obj.label, shape_obj.attributes)
-        anno_attr['occluded'] = shape_obj.occluded
-        if shape_obj.type == ShapeType.RECTANGLE:
-            anno_attr['rotation'] = shape_obj.rotation
+    def _convert_shape(self,
+        shape: CommonData.LabeledShape, *, index: int
+    ) -> Iterable[dm.Annotation]:
+        dm_group = shape.group or 0
+        dm_label = self.map_label(shape.label)
 
-        if hasattr(shape_obj, 'track_id'):
-            anno_attr['track_id'] = shape_obj.track_id
-            anno_attr['keyframe'] = shape_obj.keyframe
+        dm_attr = self._convert_attrs(shape.label, shape.attributes)
+        dm_attr['occluded'] = shape.occluded
 
-        anno_points = shape_obj.points
-        if shape_obj.type == ShapeType.POINTS:
-            anno = dm.Points(anno_points,
-                label=anno_label, attributes=anno_attr, group=anno_group,
-                z_order=shape_obj.z_order)
-        elif shape_obj.type == ShapeType.ELLIPSE:
+        if shape.type == ShapeType.RECTANGLE:
+            dm_attr['rotation'] = shape.rotation
+
+        if hasattr(shape, 'track_id'):
+            dm_attr['track_id'] = shape.track_id
+            dm_attr['keyframe'] = shape.keyframe
+
+        dm_points = shape.points
+
+        if shape.type == ShapeType.POINTS:
+            anno = dm.Points(dm_points,
+                label=dm_label, attributes=dm_attr, group=dm_group,
+                z_order=shape.z_order)
+        elif shape.type == ShapeType.ELLIPSE:
             # TODO: for now Datumaro does not support ellipses
             # so, we convert an ellipse to RLE mask here
             # instead of applying transformation in directly in formats
             anno = EllipsesToMasks.convert_ellipse(SimpleNamespace(**{
-                "points": shape_obj.points,
-                "label": anno_label,
-                "z_order": shape_obj.z_order,
-                "rotation": shape_obj.rotation,
-                "group": anno_group,
-                "attributes": anno_attr,
-            }), cvat_frame_anno.height, cvat_frame_anno.width)
-        elif shape_obj.type == ShapeType.MASK:
+                "points": shape.points,
+                "label": dm_label,
+                "z_order": shape.z_order,
+                "rotation": shape.rotation,
+                "group": dm_group,
+                "attributes": dm_attr,
+            }), self.cvat_frame_anno.height, self.cvat_frame_anno.width)
+        elif shape.type == ShapeType.MASK:
             anno = CVATRleToCOCORle.convert_mask(SimpleNamespace(**{
-                "points": shape_obj.points,
-                "label": anno_label,
-                "z_order": shape_obj.z_order,
-                "rotation": shape_obj.rotation,
-                "group": anno_group,
-                "attributes": anno_attr,
-            }), cvat_frame_anno.height, cvat_frame_anno.width)
-        elif shape_obj.type == ShapeType.POLYLINE:
-            anno = dm.PolyLine(anno_points,
-                label=anno_label, attributes=anno_attr, group=anno_group,
-                z_order=shape_obj.z_order)
-        elif shape_obj.type == ShapeType.POLYGON:
-            anno = dm.Polygon(anno_points,
-                label=anno_label, attributes=anno_attr, group=anno_group,
-                z_order=shape_obj.z_order)
-        elif shape_obj.type == ShapeType.RECTANGLE:
-            x0, y0, x1, y1 = anno_points
+                "points": shape.points,
+                "label": dm_label,
+                "z_order": shape.z_order,
+                "rotation": shape.rotation,
+                "group": dm_group,
+                "attributes": dm_attr,
+            }), self.cvat_frame_anno.height, self.cvat_frame_anno.width)
+        elif shape.type == ShapeType.POLYLINE:
+            anno = dm.PolyLine(dm_points,
+                label=dm_label, attributes=dm_attr, group=dm_group,
+                z_order=shape.z_order)
+        elif shape.type == ShapeType.POLYGON:
+            anno = dm.Polygon(dm_points,
+                label=dm_label, attributes=dm_attr, group=dm_group,
+                z_order=shape.z_order)
+        elif shape.type == ShapeType.RECTANGLE:
+            x0, y0, x1, y1 = dm_points
             anno = dm.Bbox(x0, y0, x1 - x0, y1 - y0,
-                label=anno_label, attributes=anno_attr, group=anno_group,
-                z_order=shape_obj.z_order)
-        elif shape_obj.type == ShapeType.CUBOID:
-            if dimension == DimensionType.DIM_3D:
-                anno_id = getattr(shape_obj, 'track_id', None)
+                label=dm_label, attributes=dm_attr, group=dm_group,
+                z_order=shape.z_order)
+        elif shape.type == ShapeType.CUBOID:
+            if self.dimension == DimensionType.DIM_3D:
+                anno_id = getattr(shape, 'track_id', None)
                 if anno_id is None:
-                    anno_id = num_of_tracks + index
-                position, rotation, scale = anno_points[0:3], anno_points[3:6], anno_points[6:9]
+                    anno_id = self.num_of_tracks + index
+                position, rotation, scale = dm_points[0:3], dm_points[3:6], dm_points[6:9]
                 anno = dm.Cuboid3d(
                     id=anno_id, position=position, rotation=rotation, scale=scale,
-                    label=anno_label, attributes=anno_attr, group=anno_group
+                    label=dm_label, attributes=dm_attr, group=dm_group
                 )
-            else:
-                continue
-        elif shape_obj.type == ShapeType.SKELETON:
+        elif shape.type == ShapeType.SKELETON:
             elements = []
-            for element in shape_obj.elements:
-                element_attr = convert_attrs(shape_obj.label + element.label, element.attributes)
+            for element in shape.elements:
+                element_attr = self._convert_attrs(
+                    shape.label + element.label, element.attributes)
 
                 if hasattr(element, 'track_id'):
                     element_attr['track_id'] = element.track_id
                     element_attr['keyframe'] = element.keyframe
+
                 element_vis = dm.Points.Visibility.visible
                 if element.outside:
                     element_vis = dm.Points.Visibility.absent
                 elif element.occluded:
                     element_vis = dm.Points.Visibility.hidden
+
                 elements.append(dm.Points(element.points, [element_vis],
-                    label=map_label(element.label, shape_obj.label), attributes=element_attr))
+                    label=self.map_label(element.label, shape.label),
+                    attributes=element_attr))
 
-            anno = dm.Skeleton(elements, label=anno_label,
-                attributes=anno_attr, group=anno_group, z_order=shape_obj.z_order)
+            anno = dm.Skeleton(elements, label=dm_label,
+                attributes=dm_attr, group=dm_group, z_order=shape.z_order)
         else:
-            raise Exception("Unknown shape type '%s'" % shape_obj.type)
+            raise Exception("Unknown shape type '%s'" % shape.type)
 
-        item_anno.append(anno)
+        return [anno]
 
-    return item_anno
+    def _convert_shapes(self, shapes) -> Iterable[dm.Annotation]:
+        dm_anno = []
+
+        self.num_of_tracks = reduce(
+            lambda a, x: a + (1 if getattr(x, 'track_id', None) is not None else 0),
+            shapes,
+            0
+        )
+
+        for index, shape in enumerate(shapes):
+            dm_anno.append(shape, index=index)
+
+        return dm_anno
+
+    def convert(self) -> List[dm.Annotation]:
+        dm_anno = []
+        dm_anno.extend(self._convert_tags(self.cvat_frame_anno.tags))
+        dm_anno.extend(self._convert_shapes(self.cvat_frame_anno.labeled_shapes))
+        return dm_anno
+
+
+def convert_cvat_anno_to_dm(
+    cvat_frame_anno,
+    label_attrs,
+    map_label,
+    format_name=None,
+    dimension=DimensionType.DIM_2D
+) -> List[dm.Annotation]:
+    converter = CvatToDmAnnotationConverter(
+        cvat_frame_anno=cvat_frame_anno,
+        label_attrs=label_attrs,
+        map_label=map_label,
+        format_name=format_name,
+        dimension=dimension
+    )
+    return converter.convert()
+
 
 def match_dm_item(item, instance_data, root_hint=None):
     is_video = instance_data.meta[instance_data.META_FIELD]['mode'] == 'interpolation'

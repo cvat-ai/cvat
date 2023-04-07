@@ -57,7 +57,7 @@ from cvat.apps.engine.models import CloudStorage as CloudStorageModel
 from cvat.apps.engine.parsers import TusUploadParser
 from cvat.apps.engine import quality_control
 from cvat.apps.engine.serializers import (
-    AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
+    AboutSerializer, AnnotationConflictsReportSerializer, AnnotationFileSerializer, BasicUserSerializer,
     DataMetaReadSerializer, DataMetaWriteSerializer, DataSerializer,
     FileInfoSerializer, JobReadSerializer, JobWriteSerializer, LabelSerializer,
     LabeledDataSerializer,
@@ -1720,9 +1720,18 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
                 "The ground truth job is not set up for this task. Please create it and try again"
             )
 
-        conflicts_report = quality_control.conflicts.find_gt_conflicts(this_job, gt_job)
+        frame_id = request.query_params.get('frame_id', None)
+        if frame_id is not None:
+            if not this_job.segment.contains_frame(frame_id):
+                raise ValidationError("This frame does not belong to this job")
 
-        return Response(conflicts_report, status=status.HTTP_200_OK)
+            if not gt_job.segment.contains_frame(frame_id):
+                raise ValidationError("This frame does not belong to the Ground Truth job")
+
+        report = quality_control.conflicts.find_gt_conflicts(this_job, gt_job, frame_id=frame_id)
+
+        report_serializer = AnnotationConflictsReportSerializer(report)
+        return Response(report_serializer.data, status=status.HTTP_200_OK)
 
 @extend_schema(tags=['issues'])
 @extend_schema_view(

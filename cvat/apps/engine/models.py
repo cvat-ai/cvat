@@ -955,15 +955,16 @@ class AnnotationConflictType(quality_control.models.AnnotationConflictType):
     def choices(cls):
         return tuple((x.value, x.name) for x in cls)
 
+class AnnotationConflictsReport(models.Model):
+    job = models.ForeignKey(Job,
+        on_delete=models.CASCADE, related_name='annotation_conflict_reports')
+    job_last_updated = models.DateTimeField()
+    gt_job_last_updated = models.DateTimeField()
+
 class AnnotationConflict(models.Model):
-    conflicts = models.ForeignKey('ConflictReport',
-        on_delete=models.CASCADE, related_name='annotation_conflicts')
+    report = models.ForeignKey(AnnotationConflictsReport,
+        on_delete=models.CASCADE, related_name='conflicts')
     frame_id = models.IntegerField()
     type = models.CharField(max_length=32, choices=AnnotationConflictType.choices())
     message = models.CharField(max_length=1024, blank=True, default="")
     data = models.JSONField()
-
-class AnnotationConflictsReport(models.Model):
-    job = models.ForeignKey(Job, on_delete=models.CASCADE, related_name='annotation_conflict_reports')
-    job_last_updated = models.DateTimeField()
-    gt_job_last_updated = models.DateTimeField()

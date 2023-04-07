@@ -5,7 +5,7 @@
 from datetime import datetime
 from enum import Enum
 from typing import List
-from attrs import define, field
+from attrs import asdict, define, field
 
 
 class AnnotationConflictType(str, Enum):
@@ -16,11 +16,17 @@ class AnnotationConflictType(str, Enum):
     def __str__(self) -> str:
         return self.value
 
+
 @define(kw_only=True)
 class AnnotationId:
     # TODO: think if uuids can be provided
     type: str
-    index: int
+    id: int
+    job_id: int
+
+    def to_dict(self) -> dict:
+        return asdict(self)
+
 
 @define(kw_only=True)
 class AnnotationConflict:
@@ -29,6 +35,9 @@ class AnnotationConflict:
     annotation_ids: List[AnnotationId] = field(factory=list)
     message: str
 
+    def to_dict(self) -> dict:
+        return asdict(self)
+
 
 @define(kw_only=True)
 class AnnotationConflictsReport:
@@ -36,3 +45,6 @@ class AnnotationConflictsReport:
     job_last_updated: datetime
     gt_job_last_updated: datetime
     conflicts: List[AnnotationConflict]
+
+    def to_dict(self) -> dict:
+        return asdict(self)
