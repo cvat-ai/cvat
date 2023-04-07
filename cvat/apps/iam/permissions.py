@@ -33,6 +33,49 @@ class PermissionResult:
     allow: bool
     reasons: List[str] = field(factory=list)
 
+def get_organization(request, obj):
+    if obj is not None:
+        try:
+            return Organization.objects.get(id=obj.organization_id)
+        except Organization.DoesNotExist:
+            return None
+
+    org_slug = request.query_params.get('org')
+    org_id = request.query_params.get('org_id')
+
+    if org_id is not None and org_slug is not None:
+        raise ValidationError('You cannot specify "org_id" query parameter with '
+            '"org" query parameter at the same time.')
+
+    org_filter = {}
+    if org_slug:
+        org_filter["slug"] = org_slug
+    elif org_id:
+        org_filter["id"] = org_id
+
+    if org_filter:
+        try:
+            return Organization.objects.get(**org_filter)
+        except Organization.DoesNotExist:
+            raise PermissionDenied(f"Cannot find organization with {org_filter}")
+
+    return None
+
+def get_privilege(request):
+    # TO-DO: refactor it
+    IAM_ROLES = {role:priority for priority, role in enumerate(settings.IAM_ROLES)}
+    groups = list(request.user.groups.filter(name__in=list(IAM_ROLES.keys())))
+    groups.sort(key=lambda group: IAM_ROLES[group.name])
+    return groups[0] if groups else None
+
+def get_membership(request, organization):
+    return Membership.objects.filter(
+        organization=organization,
+        user=request.user,
+        is_active=True
+    ).first()
+
+
 class OpenPolicyAgentPermission(metaclass=ABCMeta):
     url: str
     user_id: int
@@ -53,17 +96,20 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
         return cls(
             scope=scope,
             obj=obj,
-            **cls.unpack_context(request), **kwargs)
+            **cls.unpack_context(request, obj), **kwargs)
 
     @classmethod
     def create_scope_list(cls, request):
         return cls(**cls.unpack_context(request), scope='list')
 
     @staticmethod
-    def unpack_context(request):
-        privilege = request.iam_context['privilege']
-        organization = request.iam_context['organization']
-        membership = request.iam_context['membership']
+    def unpack_context(request, obj=None):
+        privilege = get_privilege(request)
+        organization = get_organization(request, obj)
+        membership = get_membership(request, organization)
+
+        if organization and not request.user.is_superuser and membership is None:
+            raise PermissionDenied({"message": "You should be an active member in the organization"})
 
         return {
             'user_id': request.user.id,
