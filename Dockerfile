@@ -29,12 +29,13 @@ ENV FFMPEG_VERSION=4.3.1 \
 WORKDIR /tmp/openh264
 RUN curl -sL https://github.com/cisco/openh264/archive/v${OPENH264_VERSION}.tar.gz --output openh264-${OPENH264_VERSION}.tar.gz && \
     tar -zx --strip-components=1 -f openh264-${OPENH264_VERSION}.tar.gz && \
-    make -j5 && make install PREFIX=${PREFIX} && make clean
+    make -j5 && make install-shared PREFIX=${PREFIX} && make clean
 
 WORKDIR /tmp/ffmpeg
 RUN curl -sL https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.bz2 --output - | \
     tar -jx --strip-components=1 && \
-    ./configure --disable-nonfree --disable-gpl --enable-libopenh264 --enable-shared --disable-static --prefix="${PREFIX}" && \
+    ./configure --disable-nonfree --disable-gpl --enable-libopenh264 \
+        --enable-shared --disable-static --disable-doc --disable-programs --prefix="${PREFIX}" && \
     # make clean keeps the configuration files that let to know how the original sources were used to create the binary
     make -j5 && make install && make clean && \
     tar -zcf "/tmp/ffmpeg-$FFMPEG_VERSION.tar.gz" . && mv "/tmp/ffmpeg-$FFMPEG_VERSION.tar.gz" .
@@ -149,7 +150,7 @@ RUN --mount=type=bind,from=build-image,source=/tmp/wheelhouse,target=/mnt/wheelh
     python -m pip install --no-index /mnt/wheelhouse/*.whl
 
 ENV NUMPROCS=1
-COPY --from=build-image /opt/ffmpeg /usr
+COPY --from=build-image /opt/ffmpeg/lib /usr/lib
 
 # These variables are required for supervisord substitutions in files
 # This library allows remote python debugging with VS Code
