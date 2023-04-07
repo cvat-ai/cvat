@@ -16,8 +16,7 @@ from rest_framework.response import Response
 
 from cvat.apps.engine.models import Location
 from cvat.apps.engine.location import StorageType, get_location_configuration
-from cvat.apps.engine.serializers import DataSerializer, LabeledDataSerializer
-from cvat.apps.webhooks.signals import signal_update, signal_create, signal_delete
+from cvat.apps.engine.serializers import DataSerializer
 
 class TusFile:
     _tus_cache_timeout = 3600
@@ -278,9 +277,7 @@ class AnnotationMixin:
             return Response("Format is not specified",status=status.HTTP_400_BAD_REQUEST)
 
         data = get_data(self._object.pk)
-        serializer = LabeledDataSerializer(data=data)
-        if serializer.is_valid(raise_exception=True):
-            return Response(serializer.data)
+        return Response(data)
 
     def import_annotations(self, request, db_obj, import_func, rq_func, rq_id):
         is_tus_request = request.headers.get('Upload-Length', None) is not None or \
@@ -336,11 +333,6 @@ class SerializeMixin:
         return self.upload_data(request)
 
 
-class CreateModelMixin(mixins.CreateModelMixin):
-    def perform_create(self, serializer, **kwargs):
-        serializer.save(**kwargs)
-        signal_create.send(self, instance=serializer.instance)
-
 class PartialUpdateModelMixin:
     """
     Update fields of a model instance.
@@ -353,26 +345,8 @@ class PartialUpdateModelMixin:
         return mixins.UpdateModelMixin.update(self, request, *args, **kwargs)
 
     def perform_update(self, serializer):
-        instance = serializer.instance
-        data = serializer.to_representation(instance)
-        old_values = {
-            attr: data[attr] if attr in data else getattr(instance, attr, None)
-            for attr in self.request.data.keys()
-        }
-
         mixins.UpdateModelMixin.perform_update(self, serializer=serializer)
-
-        if getattr(serializer.instance, '_prefetched_objects_cache', None):
-            serializer.instance._prefetched_objects_cache = {}
-
-        signal_update.send(self, instance=serializer.instance, old_values=old_values)
 
     def partial_update(self, request, *args, **kwargs):
         with mock.patch.object(self, 'update', new=self._update, create=True):
             return mixins.UpdateModelMixin.partial_update(self, request=request, *args, **kwargs)
-
-
-class DestroyModelMixin(mixins.DestroyModelMixin):
-    def perform_destroy(self, instance):
-        signal_delete.send(self, instance=instance)
-        super().perform_destroy(instance)

@@ -25,7 +25,56 @@ from cvat.apps.engine.utils import parse_specific_attributes
 
 from drf_spectacular.utils import OpenApiExample, extend_schema_field, extend_schema_serializer
 
-from cvat.apps.engine.view_utils import build_field_filter_params, get_list_view_name, reverse
+from cvat.apps.engine.utils import build_field_filter_params, get_list_view_name, reverse
+
+
+class WriteOnceMixin:
+    """
+    Adds support for write once fields to serializers.
+
+    To use it, specify a list of fields as `write_once_fields` on the
+    serializer's Meta:
+    ```
+    class Meta:
+        model = SomeModel
+        fields = '__all__'
+        write_once_fields = ('collection', )
+    ```
+
+    Now the fields in `write_once_fields` can be set during POST (create),
+    but cannot be changed afterwards via PUT or PATCH (update).
+    Inspired by http://stackoverflow.com/a/37487134/627411.
+    """
+
+    def get_fields(self):
+        fields = super().get_fields()
+
+        # We're only interested in PATCH and PUT.
+        if 'update' in getattr(self.context.get('view'), 'action', ''):
+            fields = self._update_write_once_fields(fields)
+
+        return fields
+
+    def _update_write_once_fields(self, fields):
+        """
+        Set all fields in `Meta.write_once_fields` to read_only.
+        """
+
+        write_once_fields = getattr(self.Meta, 'write_once_fields', None)
+        if not write_once_fields:
+            return fields
+
+        if not isinstance(write_once_fields, (list, tuple)):
+            raise TypeError(
+                'The `write_once_fields` option must be a list or tuple. '
+                'Got {}.'.format(type(write_once_fields).__name__)
+            )
+
+        for field_name in write_once_fields:
+            fields[field_name].read_only = True
+
+        return fields
+
 
 @extend_schema_field(serializers.URLField)
 class HyperlinkedEndpointSerializer(serializers.Serializer):
@@ -615,55 +664,6 @@ class RqStatusSerializer(serializers.Serializer):
     message = serializers.CharField(allow_blank=True, default="")
     progress = serializers.FloatField(max_value=100, default=0)
 
-class WriteOnceMixin:
-    """
-    Adds support for write once fields to serializers.
-
-    To use it, specify a list of fields as `write_once_fields` on the
-    serializer's Meta:
-    ```
-    class Meta:
-        model = SomeModel
-        fields = '__all__'
-        write_once_fields = ('collection', )
-    ```
-
-    Now the fields in `write_once_fields` can be set during POST (create),
-    but cannot be changed afterwards via PUT or PATCH (update).
-    Inspired by http://stackoverflow.com/a/37487134/627411.
-    """
-
-    def get_extra_kwargs(self):
-        extra_kwargs = super().get_extra_kwargs()
-
-        # We're only interested in PATCH/PUT.
-        if 'update' in getattr(self.context.get('view'), 'action', ''):
-            extra_kwargs = self._set_write_once_fields(extra_kwargs)
-
-        return extra_kwargs
-
-    def _set_write_once_fields(self, extra_kwargs):
-        """
-        Set all fields in `Meta.write_once_fields` to read_only.
-        """
-
-        write_once_fields = getattr(self.Meta, 'write_once_fields', None)
-        if not write_once_fields:
-            return extra_kwargs
-
-        if not isinstance(write_once_fields, (list, tuple)):
-            raise TypeError(
-                'The `write_once_fields` option must be a list or tuple. '
-                'Got {}.'.format(type(write_once_fields).__name__)
-            )
-
-        for field_name in write_once_fields:
-            kwargs = extra_kwargs.get(field_name, {})
-            kwargs['read_only'] = True
-            extra_kwargs[field_name] = kwargs
-
-        return extra_kwargs
-
 
 class JobFiles(serializers.ListField):
     """
@@ -697,7 +697,7 @@ class JobFileMapping(serializers.ListField):
         super().__init__(*args, **kwargs)
 
 
-class DataSerializer(WriteOnceMixin, serializers.ModelSerializer):
+class DataSerializer(serializers.ModelSerializer):
     """
     Read more about parameters here:
     https://opencv.github.io/cvat/docs/manual/basics/create_an_annotation_task/#advanced-configuration
@@ -899,7 +899,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             'bug_tracker', 'overlap', 'segment_size', 'labels', 'subset',
             'target_storage', 'source_storage',
         )
-        write_once_fields = ('overlap', 'segment_size', 'project_id', 'owner_id', 'labels')
+        write_once_fields = ('overlap', 'segment_size')
 
     def to_representation(self, instance):
         serializer = TaskReadSerializer(instance, context=self.context)
@@ -1257,7 +1257,6 @@ class OptimizedFloatListField(serializers.ListField):
 
         raise exceptions.ValidationError(errors)
 
-
 class ShapeSerializer(serializers.Serializer):
     type = serializers.ChoiceField(choices=models.ShapeType.choices())
     occluded = serializers.BooleanField(default=False)
@@ -1274,6 +1273,63 @@ class SubLabeledShapeSerializer(ShapeSerializer, AnnotationSerializer):
 
 class LabeledShapeSerializer(SubLabeledShapeSerializer):
     elements = SubLabeledShapeSerializer(many=True, required=False)
+
+def _convert_annotation(obj, keys):
+    return OrderedDict([(key, obj[key]) for key in keys])
+
+def _convert_attributes(attr_set):
+    attr_keys = ['spec_id', 'value']
+    return [
+        OrderedDict([(key, attr[key]) for key in attr_keys]) for attr in attr_set
+    ]
+
+class LabeledImageSerializerFromDB(serializers.BaseSerializer):
+    # Use this serializer to export data from the database
+    # Because default DRF serializer is too slow on huge collections
+    def to_representation(self, instance):
+        def convert_tag(tag):
+            result = _convert_annotation(tag, ['id', 'label_id', 'frame', 'group', 'source'])
+            result['attributes'] = _convert_attributes(tag['labeledimageattributeval_set'])
+            return result
+
+        return convert_tag(instance)
+
+class LabeledShapeSerializerFromDB(serializers.BaseSerializer):
+    # Use this serializer to export data from the database
+    # Because default DRF serializer is too slow on huge collections
+    def to_representation(self, instance):
+        def convert_shape(shape):
+            result = _convert_annotation(shape, [
+                'id', 'label_id', 'type', 'frame', 'group', 'source',
+                'occluded', 'outside', 'z_order', 'rotation', 'points',
+            ])
+            result['attributes'] = _convert_attributes(shape['labeledshapeattributeval_set'])
+            if shape.get('elements', None) is not None and shape['parent'] is None:
+                result['elements'] = [convert_shape(element) for element in shape['elements']]
+            return result
+
+        return convert_shape(instance)
+
+class LabeledTrackSerializerFromDB(serializers.BaseSerializer):
+    # Use this serializer to export data from the database
+    # Because default DRF serializer is too slow on huge collections
+    def to_representation(self, instance):
+        def convert_track(track):
+            shape_keys = [
+                'id', 'type', 'frame', 'occluded', 'outside', 'z_order',
+                'rotation', 'points', 'trackedshapeattributeval_set',
+            ]
+            result = _convert_annotation(track, ['id', 'label_id', 'frame', 'group', 'source'])
+            result['shapes'] = [_convert_annotation(shape, shape_keys) for shape in track['trackedshape_set']]
+            result['attributes'] = _convert_attributes(track['labeledtrackattributeval_set'])
+            for shape in result['shapes']:
+                shape['attributes'] = _convert_attributes(shape['trackedshapeattributeval_set'])
+                shape.pop('trackedshapeattributeval_set', None)
+            if track.get('elements', None) is not None and track['parent'] is None:
+                result['elements'] = [convert_track(element) for element in track['elements']]
+            return result
+
+        return convert_track(instance)
 
 class TrackedShapeSerializer(ShapeSerializer):
     id = serializers.IntegerField(default=None, allow_null=True)
@@ -1335,9 +1391,7 @@ class CommentWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
     class Meta:
         model = models.Comment
-        fields = ('id', 'issue', 'owner', 'message', 'created_date',
-            'updated_date')
-        read_only_fields = ('id', 'created_date', 'updated_date', 'owner')
+        fields = ('issue', 'message')
         write_once_fields = ('issue', )
 
 
@@ -1377,18 +1431,10 @@ class IssueWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             message=message, owner=db_issue.owner)
         return db_issue
 
-    def update(self, instance, validated_data):
-        message = validated_data.pop('message', None)
-        if message:
-            raise NotImplementedError('Check https://github.com/cvat-ai/cvat/issues/122')
-        return super().update(instance, validated_data)
-
     class Meta:
         model = models.Issue
-        fields = ('id', 'frame', 'position', 'job', 'owner', 'assignee',
-            'created_date', 'updated_date', 'message', 'resolved')
-        read_only_fields = ('id', 'owner', 'created_date', 'updated_date')
-        write_once_fields = ('frame', 'position', 'job', 'message', 'owner')
+        fields = ('frame', 'position', 'job', 'assignee', 'message', 'resolved')
+        write_once_fields = ('frame', 'job', 'message')
 
 class ManifestSerializer(serializers.ModelSerializer):
     class Meta:

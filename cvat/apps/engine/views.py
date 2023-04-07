@@ -52,7 +52,6 @@ from cvat.apps.engine.models import (
     CloudProviderChoice, Location
 )
 from cvat.apps.engine.models import CloudStorage as CloudStorageModel
-from cvat.apps.engine.parsers import TusUploadParser
 from cvat.apps.engine.serializers import (
     AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
     DataMetaReadSerializer, DataMetaWriteSerializer, DataSerializer,
@@ -71,7 +70,7 @@ from cvat.apps.engine.utils import (
     av_scan_paths, process_failed_job, configure_dependent_job, parse_exception_message, get_rq_job_meta
 )
 from cvat.apps.engine import backup
-from cvat.apps.engine.mixins import PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin, DestroyModelMixin, CreateModelMixin
+from cvat.apps.engine.mixins import PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
 from cvat.apps.engine.location import get_location_configuration, StorageType
 
 from . import models, task
@@ -81,6 +80,8 @@ from cvat.apps.iam.permissions import (CloudStoragePermission,
     TaskPermission, UserPermission)
 from cvat.apps.engine.cache import MediaCache
 from cvat.apps.events.handlers import handle_annotations_patch
+from cvat.apps.engine.view_utils import tus_chunk_action
+
 
 _UPLOAD_PARSER_CLASSES = api_settings.DEFAULT_PARSER_CLASSES + [MultiPartParser]
 
@@ -221,7 +222,7 @@ class ServerViewSet(viewsets.ViewSet):
         })
 )
 class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
-    mixins.RetrieveModelMixin, CreateModelMixin, DestroyModelMixin,
+    mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
     PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
 ):
     queryset = models.Project.objects.select_related(
@@ -259,8 +260,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         return queryset
 
     def perform_create(self, serializer, **kwargs):
-        super().perform_create(
-            serializer,
+        serializer.save(
             owner=self.request.user,
             organization=self.request.iam_context['organization']
         )
@@ -366,18 +366,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                     callback=dm.views.export_project_as_dataset
                 )
 
-    @extend_schema(methods=['PATCH'],
-        operation_id='projects_partial_update_dataset_file',
-        summary="Allows to upload a file chunk. "
-            "Implements TUS file uploading protocol.",
-        request=OpenApiTypes.BINARY,
-        responses={}
-    )
-    @extend_schema(methods=['HEAD'],
-        summary="Implements TUS file uploading protocol."
-    )
-    @action(detail=True, methods=['HEAD', 'PATCH'], url_path='dataset/'+UploadMixin.file_id_regex,
-        parser_classes=[TusUploadParser])
+    @tus_chunk_action(detail=True, suffix_base="dataset")
     def append_dataset_chunk(self, request, pk, file_id):
         self._object = self.get_object()
         return self.append_tus_chunk(request, file_id)
@@ -514,18 +503,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def import_backup(self, request, pk=None):
         return self.deserialize(request, backup.import_project)
 
-    @extend_schema(methods=['PATCH'],
-        operation_id='projects_partial_update_backup_file',
-        summary="Allows to upload a file chunk. "
-            "Implements TUS file uploading protocol.",
-        request=OpenApiTypes.BINARY,
-        responses={}
-    )
-    @extend_schema(methods=['HEAD'],
-        summary="Implements TUS file uploading protocol."
-    )
-    @action(detail=False, methods=['HEAD', 'PATCH'], url_path='backup/'+UploadMixin.file_id_regex,
-        serializer_class=None, parser_classes=[TusUploadParser])
+    @tus_chunk_action(detail=False, suffix_base="backup")
     def append_backup_chunk(self, request, file_id):
         return self.append_tus_chunk(request, file_id)
 
@@ -677,7 +655,7 @@ class DataChunkGetter:
         })
 )
 class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
-    mixins.RetrieveModelMixin, CreateModelMixin, DestroyModelMixin,
+    mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
     PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
 ):
     queryset = Task.objects.select_related(
@@ -752,18 +730,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def import_backup(self, request, pk=None):
         return self.deserialize(request, backup.import_task)
 
-    @extend_schema(methods=['PATCH'],
-        operation_id='tasks_partial_update_backup_file',
-        summary="Allows to upload a file chunk. "
-            "Implements TUS file uploading protocol.",
-        request=OpenApiTypes.BINARY,
-        responses={}
-    )
-    @extend_schema(methods=['HEAD'],
-        summary="Implements TUS file uploading protocol."
-    )
-    @action(detail=False, methods=['HEAD', 'PATCH'], url_path='backup/'+UploadMixin.file_id_regex,
-        parser_classes=[TusUploadParser])
+    @tus_chunk_action(detail=False, suffix_base="backup")
     def append_backup_chunk(self, request, file_id):
         return self.append_tus_chunk(request, file_id)
 
@@ -805,8 +772,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             updated_instance.project.save()
 
     def perform_create(self, serializer, **kwargs):
-        super().perform_create(
-            serializer,
+        serializer.save(
             owner=self.request.user,
             organization=self.request.iam_context['organization']
         )
@@ -954,18 +920,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return data_getter(request, self._object.data.start_frame,
                 self._object.data.stop_frame, self._object.data)
 
-    @extend_schema(methods=['PATCH'],
-        operation_id='tasks_partial_update_data_file',
-        summary="Allows to upload a file chunk. "
-            "Implements TUS file uploading protocol.",
-        request=OpenApiTypes.BINARY,
-        responses={}
-    )
-    @extend_schema(methods=['HEAD'],
-        summary="Implements TUS file uploading protocol."
-    )
-    @action(detail=True, methods=['HEAD', 'PATCH'], url_path='data/'+UploadMixin.file_id_regex,
-        parser_classes=[TusUploadParser])
+    @tus_chunk_action(detail=True, suffix_base="data")
     def append_data_chunk(self, request, pk, file_id):
         self._object = self.get_object()
         return self.append_tus_chunk(request, file_id)
@@ -1115,19 +1070,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
                 return Response(data)
 
-    @extend_schema(methods=['PATCH'],
-        operation_id='tasks_partial_update_annotations_file',
-        summary="Allows to upload an annotation file chunk. "
-            "Implements TUS file uploading protocol.",
-        request=OpenApiTypes.BINARY,
-        responses={}
-    )
-    @extend_schema(methods=['HEAD'],
-        operation_id='tasks_annotations_file_retrieve_status',
-        summary="Implements TUS file uploading protocol."
-    )
-    @action(detail=True, methods=['HEAD', 'PATCH'], url_path='annotations/'+UploadMixin.file_id_regex,
-        parser_classes=[TusUploadParser])
+    @tus_chunk_action(detail=True, suffix_base="annotations")
     def append_annotations_chunk(self, request, pk, file_id):
         self._object = self.get_object()
         return self.append_tus_chunk(request, file_id)
@@ -1516,18 +1459,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 return Response(data)
 
 
-    @extend_schema(methods=['PATCH'],
-        operation_id='jobs_partial_update_annotations_file',
-        summary="Allows to upload an annotation file chunk. "
-            "Implements TUS file uploading protocol.",
-        request=OpenApiTypes.BINARY,
-        responses={}
-    )
-    @extend_schema(methods=['HEAD'],
-        summary="Implements TUS file uploading protocol."
-    )
-    @action(detail=True, methods=['HEAD', 'PATCH'], url_path='annotations/'+UploadMixin.file_id_regex,
-        parser_classes=[TusUploadParser])
+    @tus_chunk_action(detail=True, suffix_base="annotations")
     def append_annotations_chunk(self, request, pk, file_id):
         self._object = self.get_object()
         return self.append_tus_chunk(request, file_id)
@@ -1718,7 +1650,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         })
 )
 class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
-    mixins.RetrieveModelMixin, CreateModelMixin, DestroyModelMixin,
+    mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
     PartialUpdateModelMixin
 ):
     queryset = Issue.objects.prefetch_related(
@@ -1755,7 +1687,7 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return IssueWriteSerializer
 
     def perform_create(self, serializer, **kwargs):
-        super().perform_create(serializer, owner=self.request.user)
+        serializer.save(owner=self.request.user)
 
 @extend_schema(tags=['comments'])
 @extend_schema_view(
@@ -1788,7 +1720,7 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         })
 )
 class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
-    mixins.RetrieveModelMixin, CreateModelMixin, DestroyModelMixin,
+    mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
     PartialUpdateModelMixin
 ):
     queryset = Comment.objects.prefetch_related(
@@ -1824,7 +1756,7 @@ class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return CommentWriteSerializer
 
     def perform_create(self, serializer, **kwargs):
-        super().perform_create(serializer, owner=self.request.user)
+        serializer.save(owner=self.request.user)
 
 
 @extend_schema(tags=['labels'])
