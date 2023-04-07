@@ -1,3 +1,5 @@
+ARG PIP_VERSION=22.0.2
+
 FROM ubuntu:20.04 as build-image
 
 ARG http_proxy
@@ -19,7 +21,6 @@ RUN apt-get update && \
         pkg-config \
         python3-dev \
         python3-pip \
-        python3-venv \
     && rm -rf /var/lib/apt/lists/*
 
 # Compile Openh264 and FFmpeg
@@ -42,19 +43,19 @@ RUN curl -sL https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.bz2 --outp
     make -j5 && make install && make clean && \
     tar -zcf "/tmp/ffmpeg-$FFMPEG_VERSION.tar.gz" . && mv "/tmp/ffmpeg-$FFMPEG_VERSION.tar.gz" .
 
-# Install requirements
-RUN python3 -m venv /opt/venv
-ENV PATH="/opt/venv/bin:${PATH}"
-RUN python3 -m pip install --no-cache-dir -U pip==22.0.2 setuptools==60.6.0 wheel==0.37.1
+# Build wheels for all dependencies
+ARG PIP_VERSION
+RUN python3 -m pip install -U pip==${PIP_VERSION}
 COPY cvat/requirements/ /tmp/requirements/
 COPY utils/dataset_manifest/ /tmp/dataset_manifest/
 
 # The server implementation depends on the dataset_manifest utility
-# so we need to install its dependencies too
+# so we need to build its dependencies too
 # https://github.com/opencv/cvat/issues/5096
-RUN DATUMARO_HEADLESS=1 python3 -m pip install --no-cache-dir \
+RUN DATUMARO_HEADLESS=1 python3 -m pip wheel --no-cache-dir \
     -r /tmp/requirements/${DJANGO_CONFIGURATION}.txt \
-    -r /tmp/dataset_manifest/requirements.txt
+    -r /tmp/dataset_manifest/requirements.txt \
+    -w /tmp/wheelhouse
 
 FROM ubuntu:20.04
 
@@ -95,6 +96,7 @@ RUN apt-get update && \
         p7zip-full \
         poppler-utils \
         python3-distutils \
+        python3-venv \
         ssh \
         supervisor \
         tzdata \
@@ -142,9 +144,14 @@ RUN if [ "$INSTALL_SOURCES" = "yes" ]; then \
     fi
 COPY --from=build-image /tmp/openh264/openh264*.tar.gz /tmp/ffmpeg/ffmpeg*.tar.gz ${HOME}/sources/
 
-# Copy python virtual environment and FFmpeg binaries from build-image
-COPY --from=build-image /opt/venv /opt/venv
+# Install wheels from the build image
+RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:${PATH}"
+ARG PIP_VERSION
+RUN python -m pip install -U pip==${PIP_VERSION}
+RUN --mount=type=bind,from=build-image,source=/tmp/wheelhouse,target=/mnt/wheelhouse \
+    python -m pip install --no-index /mnt/wheelhouse/*.whl
+
 ENV NUMPROCS=1
 COPY --from=build-image /opt/ffmpeg /usr
 
