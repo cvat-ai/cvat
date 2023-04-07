@@ -13,12 +13,12 @@ class Events:
     RESOURCES = {
         "project": ["create", "update", "delete"],
         "task": ["create", "update", "delete"],
+        "job": ["create", "update", "delete"],
         "issue": ["create", "update", "delete"],
         "comment": ["create", "update", "delete"],
-        "invitation": ["create", "delete"],  # TO-DO: implement invitation_updated,
-        "membership": ["update", "delete"],
-        "job": ["update"],
-        "organization": ["update"],
+        "organization": ["update", "delete"],
+        "invitation": ["create", "delete"],
+        "membership": ["create", "update", "delete"],
     }
 
     @classmethod
@@ -47,12 +47,9 @@ class AllEvents:
 
 class ProjectEvents:
     webhook_type = WebhookTypeChoice.PROJECT
-    events = [event_name("update", "project")] \
-        + Events.select(["job", "task", "issue", "comment"])
+    events = [*Events.select(["task", "job", "label", "issue", "comment"]), event_name("update", "project"), event_name("delete", "project")]
 
 
 class OrganizationEvents:
     webhook_type = WebhookTypeChoice.ORGANIZATION
-    events = [event_name("update", "organization")] \
-        + Events.select(["membership", "invitation", "project"]) \
-        + ProjectEvents.events
+    events = AllEvents.events

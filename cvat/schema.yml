@@ -6947,12 +6947,16 @@ components:
       - create:comment
       - create:invitation
       - create:issue
+      - create:job
+      - create:membership
       - create:project
       - create:task
       - delete:comment
       - delete:invitation
       - delete:issue
+      - delete:job
       - delete:membership
+      - delete:organization
       - delete:project
       - delete:task
       - update:comment
