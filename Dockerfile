@@ -7,12 +7,13 @@ ARG DJANGO_CONFIGURATION="production"
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends install -yq \
         apache2-dev \
-        build-essential \
         curl \
+        g++ \
+        gcc \
         git \
-        libgeos-dev \
         libldap2-dev \
         libsasl2-dev \
+        make \
         nasm \
         pkg-config \
         python3-dev \
@@ -84,14 +85,14 @@ RUN apt-get update && \
         git \
         git-lfs \
         libapache2-mod-xsendfile \
-        libgeos-dev \
         libgl1 \
         libgomp1 \
         libldap-2.4-2 \
-        libpython3-dev \
+        libpython3.8 \
         libsasl2-2 \
         p7zip-full \
         poppler-utils \
+        python3 \
         python3-distutils \
         python3-venv \
         ssh \
