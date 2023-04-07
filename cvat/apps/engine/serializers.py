@@ -122,7 +122,7 @@ class LabelsSummarySerializer(BasicSummarySerializer):
             query_params={ filter_key: instance.id })
 
     def get_count(self, instance):
-        return getattr(instance, 'task_labels_count', 0) + instance.proj_labels_count
+        return getattr(instance, 'task_labels_count', 0) + getattr(instance, 'proj_labels_count', 0)
 
 class IssuesSummarySerializer(BasicSummarySerializer):
     def get_url(self, request, instance):
@@ -130,7 +130,7 @@ class IssuesSummarySerializer(BasicSummarySerializer):
             query_params={ 'job_id': instance.id })
 
     def get_count(self, instance):
-        return instance.issues__count
+        return getattr(instance, 'issues__count', 0)
 
 class BasicUserSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
