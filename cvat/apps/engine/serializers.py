@@ -1018,6 +1018,10 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         _update_related_storages(instance, validated_data)
 
         instance.save()
+        instance.task_labels_count = instance.label_set.filter(
+            parent__isnull=True).count()
+        instance.proj_labels_count = instance.project.label_set.filter(
+            parent__isnull=True).count() if instance.project else 0
         return instance
 
     def validate(self, attrs):
@@ -1156,6 +1160,9 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
         _update_related_storages(instance, validated_data)
 
         instance.save()
+        instance.proj_labels_count = instance.label_set.filter(
+            parent__isnull=True).count()
+
         return instance
 
 class AboutSerializer(serializers.Serializer):
