@@ -3,10 +3,13 @@
 #
 # SPDX-License-Identifier: MIT
 
+from __future__ import annotations
+
 import os
 import re
 import shutil
 from enum import Enum
+from functools import cached_property
 from typing import Optional
 
 from django.conf import settings
@@ -18,6 +21,7 @@ from django.db.models.fields import FloatField
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
 
+from cvat.apps.engine import quality_control
 from cvat.apps.engine.utils import parse_specific_attributes
 from cvat.apps.organizations.models import Organization
 from cvat.apps.events.utils import cache_deleted
@@ -414,6 +418,13 @@ class Task(models.Model):
 
     def get_tmp_dirname(self):
         return os.path.join(self.get_dirname(), "tmp")
+
+    @cached_property
+    def gt_job(self) -> Optional[Job]:
+        try:
+            return Job.objects.get(task=self, type=JobType.GROUND_TRUTH)
+        except Job.DoesNotExist:
+            return None
 
     def __str__(self):
         return self.name
@@ -937,3 +948,22 @@ class Storage(models.Model):
 
     class Meta:
         default_permissions = ()
+
+
+class AnnotationConflictType(quality_control.models.AnnotationConflictType):
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+class AnnotationConflict(models.Model):
+    conflicts = models.ForeignKey('ConflictReport',
+        on_delete=models.CASCADE, related_name='annotation_conflicts')
+    frame_id = models.IntegerField()
+    type = models.CharField(max_length=32, choices=AnnotationConflictType.choices())
+    message = models.CharField(max_length=1024, blank=True, default="")
+    data = models.JSONField()
+
+class AnnotationConflictsReport(models.Model):
+    job = models.ForeignKey(Job, on_delete=models.CASCADE, related_name='annotation_conflict_reports')
+    job_last_updated = models.DateTimeField()
+    gt_job_last_updated = models.DateTimeField()

@@ -7,6 +7,7 @@ import io
 import os
 import os.path as osp
 import textwrap
+from typing import cast
 import pytz
 import traceback
 from datetime import datetime
@@ -54,6 +55,7 @@ from cvat.apps.engine.models import (
 )
 from cvat.apps.engine.models import CloudStorage as CloudStorageModel
 from cvat.apps.engine.parsers import TusUploadParser
+from cvat.apps.engine import quality_control
 from cvat.apps.engine.serializers import (
     AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
     DataMetaReadSerializer, DataMetaWriteSerializer, DataSerializer,
@@ -1270,6 +1272,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         return data_getter(request, self._object.data.start_frame,
             self._object.data.stop_frame, self._object.data)
 
+
 @extend_schema(tags=['jobs'])
 @extend_schema_view(
     create=extend_schema(
@@ -1705,6 +1708,21 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
 
         return data_getter(request, self._object.segment.start_frame,
            self._object.segment.stop_frame, self._object.segment.task.data)
+
+    @action(detail=True, methods=['GET'], url_path='gt_conflicts', serializer_class=None)
+    def gt_conflicts(self, request, pk):
+        # TODO: add automatic type inference to get_object
+        this_job = cast(Job, self.get_object()) # call check_object_permissions as well
+
+        gt_job = this_job.segment.task.gt_job
+        if not gt_job:
+            raise ValidationError(
+                "The ground truth job is not set up for this task. Please create it and try again"
+            )
+
+        conflicts_report = quality_control.conflicts.find_gt_conflicts(this_job, gt_job)
+
+        return Response(conflicts_report, status=status.HTTP_200_OK)
 
 @extend_schema(tags=['issues'])
 @extend_schema_view(
