@@ -482,7 +482,6 @@ async function healthCheck(
     progressCallback: (status: string) => void,
     attempt = 0,
 ): Promise<void> {
-    return true;
     const { backendAPI } = config;
     const url = `${backendAPI}/server/health/?format=json`;
 
