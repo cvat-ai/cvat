@@ -542,6 +542,13 @@ class Label(models.Model):
         except IntegrityError:
             raise InvalidLabel("All label names must be unique")
 
+    def get_organization_id(self):
+        if self.project is not None:
+            return self.project.organization.id
+        if self.task is not None:
+            return self.task.organization.id
+        return None
+
     class Meta:
         default_permissions = ()
         constraints = [
