@@ -4,7 +4,6 @@
 // SPDX-License-Identifier: MIT
 
 import { PluginsActionTypes, PluginActions } from 'actions/plugins-actions';
-import { registerGitPlugin } from 'utils/git-utils';
 import { PluginComponent, PluginsState } from '.';
 
 const defaultState: PluginsState = {
@@ -73,10 +72,14 @@ export default function (state: PluginsState = defaultState, action: PluginActio
             };
         }
         case PluginsActionTypes.GET_PLUGINS_SUCCESS: {
-            const { list } = action.payload;
+            const { list, pluginsRegistrar } = action.payload;
+            const { gitPlugin, modelsPlugin } = pluginsRegistrar;
 
             if (!state.list.GIT_INTEGRATION && list.GIT_INTEGRATION) {
-                registerGitPlugin();
+                gitPlugin();
+            }
+            if (!state.list.MODELS && list.MODELS) {
+                modelsPlugin();
             }
 
             return {

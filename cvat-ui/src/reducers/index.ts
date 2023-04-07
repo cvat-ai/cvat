@@ -263,6 +263,11 @@ export type PluginsList = {
     [name in SupportedPlugins]: boolean;
 };
 
+export interface PluginsRegistrar {
+    modelsPlugin: () => void;
+    gitPlugin: () => void;
+}
+
 export interface PluginComponent {
     component: any;
     data: {
