@@ -299,12 +299,12 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             loadAbout();
         }
 
-        if (!pluginsInitialized && !pluginsFetching) {
-            initPlugins();
-        }
-
         if (isModelPluginActive && !modelsInitialized && !modelsFetching) {
             initModels();
+        }
+
+        if (!pluginsInitialized && !pluginsFetching) {
+            initPlugins();
         }
     }
 
@@ -434,7 +434,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
         const routesToRender = pluginComponents.router
             .filter(({ data: { shouldBeRendered } }) => shouldBeRendered(this.props, this.state))
-            .map(({ component: Component }) => Component);
+            .map(({ component: Component }) => Component());
 
         const loggedInModals = pluginComponents.loggedInModals
             .filter(({ data: { shouldBeRendered } }) => shouldBeRendered(this.props, this.state))
