@@ -15,7 +15,7 @@ django-rq==2.3.2
 EasyProcess==0.3
 Pillow==9.3.0
 numpy==1.22.0
-python-ldap==3.4.0
+python-ldap==3.4.3
 pytz==2020.1
 pyunpack==0.2.1
 rcssmin==1.0.6
@@ -43,7 +43,7 @@ h5py==3.6.0
 django-cors-headers==3.5.0
 furl==2.1.0
 av==9.2.0 --no-binary=av
-tensorflow==2.10.1 # Optional requirement of Datumaro. Use tensorflow-macos==2.8.0 for Mac M1
+tensorflow==2.11.1 # Optional requirement of Datumaro. Use tensorflow-macos==2.8.0 for Mac M1
 # The package is used by pyunpack as a command line tool to support multiple
 # archives. Don't use as a python module because it has GPL license.
 patool==1.12

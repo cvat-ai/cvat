@@ -28,10 +28,6 @@ export interface SplitData {
     enabled: boolean;
 }
 
-export interface Configuration {
-    resetZoom?: boolean;
-}
-
 export interface Image {
     renderWidth: number;
     renderHeight: number;
@@ -90,7 +86,6 @@ export enum UpdateReasons {
     MERGE = 'merge',
     SPLIT = 'split',
     FITTED_CANVAS = 'fitted_canvas',
-    CONFIG_UPDATED = 'config_updated',
     SHAPES_CONFIG_UPDATED = 'shapes_config_updated',
 }
 
@@ -119,7 +114,6 @@ export interface Canvas3dDataModel {
     groupData: GroupData;
     mergeData: MergeData;
     splitData: SplitData;
-    configuration: Configuration;
     isFrameUpdating: boolean;
     nextSetupRequest: {
         frameData: any;
@@ -133,7 +127,6 @@ export interface Canvas3dModel {
     readonly imageIsDeleted: boolean;
     readonly groupData: GroupData;
     readonly mergeData: MergeData;
-    readonly configuration: Configuration;
     readonly objects: ObjectState[];
     setup(frameData: any, objectStates: ObjectState[]): void;
     isAbleToChangeFrame(): boolean;
@@ -142,7 +135,6 @@ export interface Canvas3dModel {
     dragCanvas(enable: boolean): void;
     activate(clientID: string | null, attributeID: number | null): void;
     configureShapes(shapeProperties: ShapeProperties): void;
-    configure(configuration: Configuration): void;
     fit(): void;
     group(groupData: GroupData): void;
     split(splitData: SplitData): void;
@@ -195,9 +187,6 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
                 outlineColor: '#000000',
                 selectedOpacity: 60,
                 colorBy: 'Label',
-            },
-            configuration: {
-                resetZoom: false,
             },
             isFrameUpdating: false,
             nextSetupRequest: null,
@@ -388,14 +377,6 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
         this.notify(UpdateReasons.MERGE);
     }
 
-    public configure(configuration: Configuration): void {
-        if (typeof configuration.resetZoom === 'boolean') {
-            this.data.configuration.resetZoom = configuration.resetZoom;
-        }
-
-        this.notify(UpdateReasons.CONFIG_UPDATED);
-    }
-
     public configureShapes(shapeProperties: ShapeProperties): void {
         if (typeof shapeProperties.opacity === 'number') {
             this.data.shapeProperties.opacity = Math.max(0, Math.min(shapeProperties.opacity, 100));
@@ -422,10 +403,6 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
 
     public fit(): void {
         this.notify(UpdateReasons.FITTED_CANVAS);
-    }
-
-    public get configuration(): Configuration {
-        return { ...this.data.configuration };
     }
 
     public get groupData(): GroupData {

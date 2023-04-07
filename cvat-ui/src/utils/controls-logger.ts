@@ -5,6 +5,7 @@
 import { getCore } from 'cvat-core-wrapper';
 import { LogType } from 'cvat-logger';
 import config from 'config';
+import { platformInfo } from 'utils/platform-checker';
 
 const core = getCore();
 const { CONTROLS_LOGS_INTERVAL } = config;
@@ -16,7 +17,10 @@ class EventRecorder {
     #savingInterval: number | null;
     public constructor() {
         this.#savingInterval = null;
-        core.logger.log(LogType.loadTool, { location: window.location.pathname + window.location.search });
+        core.logger.log(LogType.loadTool, {
+            location: window.location.pathname + window.location.search,
+            platform: platformInfo(),
+        });
     }
 
     public log(event: MouseEvent): void {

@@ -1102,7 +1102,7 @@ export class Track extends Drawn {
                     this.shapes[frame].attributes[attrID] !== attributes[attrID];
             }
         }
-        let redoShape;
+        let redoShape: TrackedShape | undefined;
         if (mutableAttributesUpdated) {
             if (wasKeyframe) {
                 redoShape = {
@@ -1112,14 +1112,7 @@ export class Track extends Drawn {
                     },
                 };
             } else {
-                redoShape = {
-                    frame,
-                    zOrder: current.zOrder,
-                    points: current.points,
-                    outside: current.outside,
-                    occluded: current.occluded,
-                    attributes: {},
-                };
+                redoShape = copyShape(current);
             }
         }
 

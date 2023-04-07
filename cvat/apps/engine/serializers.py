@@ -25,7 +25,56 @@ from cvat.apps.engine.utils import parse_specific_attributes
 
 from drf_spectacular.utils import OpenApiExample, extend_schema_field, extend_schema_serializer
 
-from cvat.apps.engine.view_utils import build_field_filter_params, get_list_view_name, reverse
+from cvat.apps.engine.utils import build_field_filter_params, get_list_view_name, reverse
+
+
+class WriteOnceMixin:
+    """
+    Adds support for write once fields to serializers.
+
+    To use it, specify a list of fields as `write_once_fields` on the
+    serializer's Meta:
+    ```
+    class Meta:
+        model = SomeModel
+        fields = '__all__'
+        write_once_fields = ('collection', )
+    ```
+
+    Now the fields in `write_once_fields` can be set during POST (create),
+    but cannot be changed afterwards via PUT or PATCH (update).
+    Inspired by http://stackoverflow.com/a/37487134/627411.
+    """
+
+    def get_fields(self):
+        fields = super().get_fields()
+
+        # We're only interested in PATCH and PUT.
+        if 'update' in getattr(self.context.get('view'), 'action', ''):
+            fields = self._update_write_once_fields(fields)
+
+        return fields
+
+    def _update_write_once_fields(self, fields):
+        """
+        Set all fields in `Meta.write_once_fields` to read_only.
+        """
+
+        write_once_fields = getattr(self.Meta, 'write_once_fields', None)
+        if not write_once_fields:
+            return fields
+
+        if not isinstance(write_once_fields, (list, tuple)):
+            raise TypeError(
+                'The `write_once_fields` option must be a list or tuple. '
+                'Got {}.'.format(type(write_once_fields).__name__)
+            )
+
+        for field_name in write_once_fields:
+            fields[field_name].read_only = True
+
+        return fields
+
 
 @extend_schema_field(serializers.URLField)
 class HyperlinkedEndpointSerializer(serializers.Serializer):
@@ -595,55 +644,6 @@ class RqStatusSerializer(serializers.Serializer):
     message = serializers.CharField(allow_blank=True, default="")
     progress = serializers.FloatField(max_value=100, default=0)
 
-class WriteOnceMixin:
-    """
-    Adds support for write once fields to serializers.
-
-    To use it, specify a list of fields as `write_once_fields` on the
-    serializer's Meta:
-    ```
-    class Meta:
-        model = SomeModel
-        fields = '__all__'
-        write_once_fields = ('collection', )
-    ```
-
-    Now the fields in `write_once_fields` can be set during POST (create),
-    but cannot be changed afterwards via PUT or PATCH (update).
-    Inspired by http://stackoverflow.com/a/37487134/627411.
-    """
-
-    def get_extra_kwargs(self):
-        extra_kwargs = super().get_extra_kwargs()
-
-        # We're only interested in PATCH/PUT.
-        if 'update' in getattr(self.context.get('view'), 'action', ''):
-            extra_kwargs = self._set_write_once_fields(extra_kwargs)
-
-        return extra_kwargs
-
-    def _set_write_once_fields(self, extra_kwargs):
-        """
-        Set all fields in `Meta.write_once_fields` to read_only.
-        """
-
-        write_once_fields = getattr(self.Meta, 'write_once_fields', None)
-        if not write_once_fields:
-            return extra_kwargs
-
-        if not isinstance(write_once_fields, (list, tuple)):
-            raise TypeError(
-                'The `write_once_fields` option must be a list or tuple. '
-                'Got {}.'.format(type(write_once_fields).__name__)
-            )
-
-        for field_name in write_once_fields:
-            kwargs = extra_kwargs.get(field_name, {})
-            kwargs['read_only'] = True
-            extra_kwargs[field_name] = kwargs
-
-        return extra_kwargs
-
 
 class JobFiles(serializers.ListField):
     """
@@ -660,7 +660,7 @@ class JobFileMapping(serializers.ListField):
     """
     Represents a file-to-job mapping. Useful to specify a custom job
     configuration during task creation. This option is not compatible with
-    most other job split-related options.
+    most other job split-related options. Files in the jobs must not overlap or repeat.
 
     Example:
     [
@@ -668,8 +668,6 @@ class JobFileMapping(serializers.ListField):
         ["file3.png"], # job #2 files
         ["file4.jpg", "file5.png", "file6.bmp"], # job #3 files
     ]
-
-    Files in the jobs must not overlap and repeat.
     """
 
     def __init__(self, *args, **kwargs):
@@ -679,16 +677,49 @@ class JobFileMapping(serializers.ListField):
         super().__init__(*args, **kwargs)
 
 
-class DataSerializer(WriteOnceMixin, serializers.ModelSerializer):
-    image_quality = serializers.IntegerField(min_value=0, max_value=100)
-    use_zip_chunks = serializers.BooleanField(default=False)
-    client_files = ClientFileSerializer(many=True, default=[])
-    server_files = ServerFileSerializer(many=True, default=[])
-    remote_files = RemoteFileSerializer(many=True, default=[])
-    use_cache = serializers.BooleanField(default=False)
-    copy_data = serializers.BooleanField(default=False)
-    cloud_storage_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
-    filename_pattern = serializers.CharField(allow_null=True, required=False)
+class DataSerializer(serializers.ModelSerializer):
+    """
+    Read more about parameters here:
+    https://opencv.github.io/cvat/docs/manual/basics/create_an_annotation_task/#advanced-configuration
+    """
+
+    image_quality = serializers.IntegerField(min_value=0, max_value=100,
+        help_text="Image quality to use during annotation")
+    use_zip_chunks = serializers.BooleanField(default=False,
+        help_text=textwrap.dedent("""\
+            When true, video chunks will be represented as zip archives with decoded video frames.
+            When false, video chunks are represented as video segments
+        """))
+    client_files = ClientFileSerializer(many=True, default=[],
+        help_text="Uploaded files")
+    server_files = ServerFileSerializer(many=True, default=[],
+        help_text="Paths to files from a file share mounted on the server, or from a cloud storage")
+    remote_files = RemoteFileSerializer(many=True, default=[],
+        help_text="Direct download URLs for files")
+    use_cache = serializers.BooleanField(default=False,
+        help_text=textwrap.dedent("""\
+            Enable or disable task data chunk caching for the task.
+            Read more: https://opencv.github.io/cvat/docs/manual/advanced/data_on_fly/
+        """))
+    copy_data = serializers.BooleanField(default=False, help_text=textwrap.dedent("""\
+            Copy data from the server file share to CVAT during the task creation.
+            This will create a copy of the data, making the server independent from
+            the file share availability
+        """))
+    cloud_storage_id = serializers.IntegerField(write_only=True, allow_null=True, required=False,
+        help_text=textwrap.dedent("""\
+            If not null, the files referenced by server_files will be retrieved
+            from the cloud storage with the specified ID.
+            The cloud storages applicable depend on the context.
+            In the user sandbox, only the user sandbox cloud storages can be used.
+            In an organization, only the organization cloud storages can be used.
+        """))
+    filename_pattern = serializers.CharField(allow_null=True, required=False,
+        help_text=textwrap.dedent("""\
+            A filename filter for cloud storage files
+            listed in the manifest. Supports fnmatch wildcards.
+            Read more: https://docs.python.org/3/library/fnmatch.html
+        """))
     job_file_mapping = JobFileMapping(required=False, write_only=True)
 
     class Meta:
@@ -697,6 +728,17 @@ class DataSerializer(WriteOnceMixin, serializers.ModelSerializer):
             'compressed_chunk_type', 'original_chunk_type', 'client_files', 'server_files', 'remote_files', 'use_zip_chunks',
             'cloud_storage_id', 'use_cache', 'copy_data', 'storage_method', 'storage', 'sorting_method', 'filename_pattern',
             'job_file_mapping')
+        extra_kwargs = {
+            'chunk_size': { 'help_text': "Maximum number of frames per chunk" },
+            'size': { 'help_text': "The number of frames" },
+            'start_frame': { 'help_text': "First frame index" },
+            'stop_frame': { 'help_text': "Last frame index" },
+            'frame_filter': { 'help_text': "Frame filter. The only supported syntax is: 'step=N'" },
+        }
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('help_text', self.__doc__)
+        super().__init__(*args, **kwargs)
 
     # pylint: disable=no-self-use
     def validate_frame_filter(self, value):
@@ -837,7 +879,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             'bug_tracker', 'overlap', 'segment_size', 'labels', 'subset',
             'target_storage', 'source_storage',
         )
-        write_once_fields = ('overlap', 'segment_size', 'project_id', 'owner_id', 'labels')
+        write_once_fields = ('overlap', 'segment_size')
 
     def to_representation(self, instance):
         serializer = TaskReadSerializer(instance, context=self.context)
@@ -1189,7 +1231,6 @@ class OptimizedFloatListField(serializers.ListField):
 
         raise exceptions.ValidationError(errors)
 
-
 class ShapeSerializer(serializers.Serializer):
     type = serializers.ChoiceField(choices=models.ShapeType.choices())
     occluded = serializers.BooleanField(default=False)
@@ -1206,6 +1247,63 @@ class SubLabeledShapeSerializer(ShapeSerializer, AnnotationSerializer):
 
 class LabeledShapeSerializer(SubLabeledShapeSerializer):
     elements = SubLabeledShapeSerializer(many=True, required=False)
+
+def _convert_annotation(obj, keys):
+    return OrderedDict([(key, obj[key]) for key in keys])
+
+def _convert_attributes(attr_set):
+    attr_keys = ['spec_id', 'value']
+    return [
+        OrderedDict([(key, attr[key]) for key in attr_keys]) for attr in attr_set
+    ]
+
+class LabeledImageSerializerFromDB(serializers.BaseSerializer):
+    # Use this serializer to export data from the database
+    # Because default DRF serializer is too slow on huge collections
+    def to_representation(self, instance):
+        def convert_tag(tag):
+            result = _convert_annotation(tag, ['id', 'label_id', 'frame', 'group', 'source'])
+            result['attributes'] = _convert_attributes(tag['labeledimageattributeval_set'])
+            return result
+
+        return convert_tag(instance)
+
+class LabeledShapeSerializerFromDB(serializers.BaseSerializer):
+    # Use this serializer to export data from the database
+    # Because default DRF serializer is too slow on huge collections
+    def to_representation(self, instance):
+        def convert_shape(shape):
+            result = _convert_annotation(shape, [
+                'id', 'label_id', 'type', 'frame', 'group', 'source',
+                'occluded', 'outside', 'z_order', 'rotation', 'points',
+            ])
+            result['attributes'] = _convert_attributes(shape['labeledshapeattributeval_set'])
+            if shape.get('elements', None) is not None and shape['parent'] is None:
+                result['elements'] = [convert_shape(element) for element in shape['elements']]
+            return result
+
+        return convert_shape(instance)
+
+class LabeledTrackSerializerFromDB(serializers.BaseSerializer):
+    # Use this serializer to export data from the database
+    # Because default DRF serializer is too slow on huge collections
+    def to_representation(self, instance):
+        def convert_track(track):
+            shape_keys = [
+                'id', 'type', 'frame', 'occluded', 'outside', 'z_order',
+                'rotation', 'points', 'trackedshapeattributeval_set',
+            ]
+            result = _convert_annotation(track, ['id', 'label_id', 'frame', 'group', 'source'])
+            result['shapes'] = [_convert_annotation(shape, shape_keys) for shape in track['trackedshape_set']]
+            result['attributes'] = _convert_attributes(track['labeledtrackattributeval_set'])
+            for shape in result['shapes']:
+                shape['attributes'] = _convert_attributes(shape['trackedshapeattributeval_set'])
+                shape.pop('trackedshapeattributeval_set', None)
+            if track.get('elements', None) is not None and track['parent'] is None:
+                result['elements'] = [convert_track(element) for element in track['elements']]
+            return result
+
+        return convert_track(instance)
 
 class TrackedShapeSerializer(ShapeSerializer):
     id = serializers.IntegerField(default=None, allow_null=True)
@@ -1267,9 +1365,7 @@ class CommentWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
     class Meta:
         model = models.Comment
-        fields = ('id', 'issue', 'owner', 'message', 'created_date',
-            'updated_date')
-        read_only_fields = ('id', 'created_date', 'updated_date', 'owner')
+        fields = ('issue', 'message')
         write_once_fields = ('issue', )
 
 
@@ -1309,18 +1405,10 @@ class IssueWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             message=message, owner=db_issue.owner)
         return db_issue
 
-    def update(self, instance, validated_data):
-        message = validated_data.pop('message', None)
-        if message:
-            raise NotImplementedError('Check https://github.com/cvat-ai/cvat/issues/122')
-        return super().update(instance, validated_data)
-
     class Meta:
         model = models.Issue
-        fields = ('id', 'frame', 'position', 'job', 'owner', 'assignee',
-            'created_date', 'updated_date', 'message', 'resolved')
-        read_only_fields = ('id', 'owner', 'created_date', 'updated_date')
-        write_once_fields = ('frame', 'position', 'job', 'message', 'owner')
+        fields = ('frame', 'position', 'job', 'assignee', 'message', 'resolved')
+        write_once_fields = ('frame', 'job', 'message')
 
 class ManifestSerializer(serializers.ModelSerializer):
     class Meta:
@@ -1354,6 +1442,8 @@ class CloudStorageReadSerializer(serializers.ModelSerializer):
                 'resource': 'somebucket',
                 'display_name': 'Bucket',
                 'credentials_type': models.CredentialsTypeChoice.KEY_SECRET_KEY_PAIR,
+                'key': 'XXX',
+                'secret_key': 'XXX',
                 'specific_attributes': 'region=eu-central-1',
                 'description': 'Some description',
                 'manifests': [
@@ -1415,13 +1505,14 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
     key_file = serializers.FileField(required=False)
     account_name = serializers.CharField(max_length=24, allow_blank=True, required=False)
     manifests = ManifestSerializer(many=True, default=[])
+    connection_string = serializers.CharField(max_length=440, allow_blank=True, required=False)
 
     class Meta:
         model = models.CloudStorage
         fields = (
             'provider_type', 'resource', 'display_name', 'owner', 'credentials_type',
             'created_date', 'updated_date', 'session_token', 'account_name', 'key',
-            'secret_key', 'key_file', 'specific_attributes', 'description', 'id',
+            'secret_key', 'connection_string', 'key_file', 'specific_attributes', 'description', 'id',
             'manifests', 'organization'
         )
         read_only_fields = ('created_date', 'updated_date', 'owner', 'organization')
@@ -1439,8 +1530,8 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         provider_type = attrs.get('provider_type')
         if provider_type == models.CloudProviderChoice.AZURE_CONTAINER:
-            if not attrs.get('account_name', ''):
-                raise serializers.ValidationError('Account name for Azure container was not specified')
+            if not attrs.get('account_name', '') and not attrs.get('connection_string', ''):
+                raise serializers.ValidationError('Account name or connection string for Azure container was not specified')
         return attrs
 
     @staticmethod
@@ -1465,7 +1556,7 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
 
         key_file = validated_data.pop('key_file', None)
         # we need to save it to temporary file to check the granted permissions
-        temporary_file = ''
+        temporary_file = None
         if key_file:
             with NamedTemporaryFile(mode='wb', prefix='cvat', delete=False) as temp_key:
                 temp_key.write(key_file.read())
@@ -1478,7 +1569,8 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
             secret_key=validated_data.pop('secret_key', ''),
             session_token=validated_data.pop('session_token', ''),
             key_file_path=temporary_file,
-            credentials_type = validated_data.get('credentials_type')
+            credentials_type = validated_data.get('credentials_type'),
+            connection_string = validated_data.pop('connection_string', '')
         )
         details = {
             'resource': validated_data.get('resource'),
@@ -1546,7 +1638,7 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
         }}
 
         key_file = validated_data.pop('key_file', None)
-        temporary_file = ''
+        temporary_file = None
         if key_file:
             with NamedTemporaryFile(mode='wb', prefix='cvat', delete=False) as temp_key:
                 temp_key.write(key_file.read())

@@ -9,7 +9,7 @@ import operator
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 from enum import Enum
-from typing import Any, List, Optional, Sequence, cast
+from typing import Any, Dict, List, Optional, Sequence, Union, cast
 
 from attrs import define, field
 from django.conf import settings
@@ -18,7 +18,7 @@ from rest_framework.exceptions import ValidationError, PermissionDenied
 from rest_framework.permissions import BasePermission
 
 from cvat.apps.organizations.models import Membership, Organization
-from cvat.apps.engine.models import Label, Project, Task, Job, Issue
+from cvat.apps.engine.models import CloudStorage, Label, Project, Task, Job, Issue
 from cvat.apps.webhooks.models import WebhookTypeChoice
 from cvat.utils.http import make_requests_session
 
@@ -26,6 +26,23 @@ from cvat.utils.http import make_requests_session
 class StrEnum(str, Enum):
     def __str__(self) -> str:
         return self.value
+
+def _get_key(d: Dict[str, Any], key_path: Union[str, Sequence[str]]) -> Optional[Any]:
+    """
+    Like dict.get(), but supports nested fields. If the field is missing, returns None.
+    """
+
+    if isinstance(key_path, str):
+        key_path = [key_path]
+    else:
+        assert key_path
+
+    for key_part in key_path:
+        d = d.get(key_part)
+        if d is None:
+            return d
+
+    return d
 
 
 @define
@@ -611,6 +628,15 @@ class CloudStoragePermission(OpenPolicyAgentPermission):
 
         return permissions
 
+    @classmethod
+    def create_scope_view(cls, request, storage_id):
+        try:
+            obj = CloudStorage.objects.get(id=storage_id)
+        except CloudStorage.DoesNotExist as ex:
+            raise ValidationError(str(ex))
+
+        return cls(**cls.unpack_context(request), obj=obj, scope=__class__.Scopes.VIEW)
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.url = settings.IAM_OPA_DATA_URL + '/cloudstorages/allow'
@@ -689,6 +715,19 @@ class ProjectPermission(OpenPolicyAgentPermission):
             if assignee_id:
                 perm = UserPermission.create_scope_view(request, assignee_id)
                 permissions.append(perm)
+
+            for field_source, field in [
+                # from ProjectWriteSerializer used in create and partial update endpoints
+                (request.data, 'source_storage.cloud_storage_id'),
+                (request.data, 'target_storage.cloud_storage_id'),
+
+                # from /backup, /annotations and /dataset endpoints
+                (request.query_params, 'cloud_storage_id'),
+            ]:
+                field_path = field.split('.')
+                if cloud_storage_id := _get_key(field_source, field_path):
+                    permissions.append(CloudStoragePermission.create_scope_view(
+                        request=request, storage_id=cloud_storage_id))
 
         return permissions
 
@@ -831,6 +870,7 @@ class TaskPermission(OpenPolicyAgentPermission):
             project_id = request.data.get('project_id') or request.data.get('project')
             assignee_id = request.data.get('assignee_id') or request.data.get('assignee')
             owner = request.data.get('owner_id') or request.data.get('owner')
+
             for scope in cls.get_scopes(request, view, obj):
                 params = { 'project_id': project_id, 'assignee_id': assignee_id }
 
@@ -862,6 +902,22 @@ class TaskPermission(OpenPolicyAgentPermission):
                 perm = ProjectPermission.create_scope_view(request, project_id)
                 permissions.append(perm)
 
+            for field_source, field in [
+                # from TaskWriteSerializer being used in the create and partial_update endpoints
+                (request.data, 'source_storage.cloud_storage_id'),
+                (request.data, 'target_storage.cloud_storage_id'),
+
+                # from DataSerializer being used in the /data endpoint
+                (request.data, 'cloud_storage_id'),
+
+                # from /backup, /annotations and /dataset endpoints
+                (request.query_params, 'cloud_storage_id'),
+            ]:
+                field_path = field.split('.')
+                if cloud_storage_id := _get_key(field_source, field_path):
+                    permissions.append(CloudStoragePermission.create_scope_view(
+                        request=request, storage_id=cloud_storage_id))
+
         return permissions
 
     def __init__(self, **kwargs):
@@ -869,7 +925,7 @@ class TaskPermission(OpenPolicyAgentPermission):
         self.url = settings.IAM_OPA_DATA_URL + '/tasks/allow'
 
     @staticmethod
-    def get_scopes(request, view, obj) -> Scopes:
+    def get_scopes(request, view, obj) -> List[Scopes]:
         Scopes = __class__.Scopes
         scope = {
             ('list', 'GET'): Scopes.LIST,
@@ -1154,6 +1210,15 @@ class JobPermission(OpenPolicyAgentPermission):
             if assignee_id:
                 perm = UserPermission.create_scope_view(request, assignee_id)
                 permissions.append(perm)
+
+            for field_source, field in [
+                # from /annotations and /dataset endpoints
+                (request.query_params, 'cloud_storage_id'),
+            ]:
+                field_path = field.split('.')
+                if cloud_storage_id := _get_key(field_source, field_path):
+                    permissions.append(CloudStoragePermission.create_scope_view(
+                        request=request, storage_id=cloud_storage_id))
 
         return permissions
 

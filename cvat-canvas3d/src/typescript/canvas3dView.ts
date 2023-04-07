@@ -458,9 +458,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 viewType.rayCaster.renderer.setFromCamera(viewType.rayCaster.mouseVector, viewType.camera);
                 const intersects = viewType.rayCaster.renderer.intersectObjects(this.getAllVisibleCuboids(), false);
                 if (!intersects.length) {
-                    const { x, y, z } = this.action.frameCoordinates;
-                    this.positionAllViews(x, y, z, true);
-                    this.updateCameraFrustrumPlane();
+                    this.fitCanvas(true);
                 }
                 return;
             }
@@ -604,6 +602,12 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         });
 
         model.subscribe(this);
+    }
+
+    private fitCanvas(animation: boolean): void {
+        const { x, y, z } = this.action.frameCoordinates;
+        this.positionAllViews(x, y, z, animation);
+        this.updateCameraFrustrumPlane();
     }
 
     private getAllVisibleCuboids(view: ViewType = ViewType.PERSPECTIVE): THREE.Mesh[] {
@@ -1155,6 +1159,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                     model.updateCanvasObjects();
                 } finally {
                     model.unlockFrameUpdating();
+                    this.dispatchEvent(new CustomEvent('canvas.setup'));
                 }
             };
 
@@ -1192,6 +1197,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                             canvasContext.strokeText('IMAGE REMOVED', width / 2, height / 2);
                             canvasContext.fillStyle = 'black';
                             canvasContext.fillText('IMAGE REMOVED', width / 2, height / 2);
+                            this.dispatchEvent(new CustomEvent('canvas.setup'));
                         } finally {
                             model.unlockFrameUpdating();
                         }
@@ -1202,8 +1208,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                             overlay.remove();
                         }
                     }
-
-                    this.dispatchEvent(new CustomEvent('canvas.setup'));
                 } finally {
                     URL.revokeObjectURL(objectURL);
                 }
@@ -1322,6 +1326,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             this.mode = Mode.IDLE;
             this.dispatchEvent(new CustomEvent('canvas.canceled'));
         } else if (reason === UpdateReasons.FITTED_CANVAS) {
+            this.fitCanvas(false);
             this.dispatchEvent(new CustomEvent('canvas.fit'));
         } else if (reason === UpdateReasons.GROUP) {
             if (!model.groupData.enabled && this.statesToBeGrouped.length) {
@@ -1459,18 +1464,11 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         const material = points.material.clone();
         if (!this.views.perspective.camera) return;
 
-        if (this.model.configuration.resetZoom) {
-            points.geometry.computeBoundingBox();
-            this.cameraSettings.perspective.position = getCameraSettingsToFitScene(
-                this.views.perspective.camera as THREE.PerspectiveCamera, points.geometry.boundingBox,
-            );
-            this.positionAllViews(
-                this.action.frameCoordinates.x,
-                this.action.frameCoordinates.y,
-                this.action.frameCoordinates.z,
-                false,
-            );
-        }
+        // updating correct camera settings
+        points.geometry.computeBoundingBox();
+        this.cameraSettings.perspective.position = getCameraSettingsToFitScene(
+            this.views.perspective.camera as THREE.PerspectiveCamera, points.geometry.boundingBox,
+        );
 
         this.sceneBBox = new THREE.Box3().setFromObject(points);
         this.views.perspective.scene.add(points.clone());
