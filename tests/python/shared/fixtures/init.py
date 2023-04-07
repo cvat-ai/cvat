@@ -357,7 +357,7 @@ def local_start(start, stop, dumpdb, cleanup, rebuild, cvat_root_dir, cvat_db_di
         pytest.exit("All testing containers are stopped", returncode=0)
 
     if (
-        not any(set(running_containers) & {f"{PREFIX}_cvat_server_1", f"{PREFIX}_cvat_db_1"})
+        not any(set(running_containers()) & {f"{PREFIX}_cvat_server_1", f"{PREFIX}_cvat_db_1"})
         or rebuild
     ):
         start_services(dc_files, rebuild, cvat_root_dir)
