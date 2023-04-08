@@ -13,6 +13,7 @@ from time import sleep
 from typing import Any, Dict, Iterator, Optional, Sequence, Tuple, TypeVar
 
 import attrs
+import packaging.specifiers as specifiers
 import packaging.version as pv
 import platformdirs
 import urllib3
@@ -270,8 +271,10 @@ class Client:
     def _is_version_compatible(self, current: pv.Version, target: pv.Version) -> bool:
         # Check for (major, minor) compatibility.
         # Micro releases and fixes do not affect API compatibility in general.
-        upper_bound = pv.Version(f"{target.epoch}{target.major}.{target.minor + 1}")
-        return target <= current < upper_bound
+        epoch = f"{target.epoch}!" if target.epoch else ""  # 1.0 ~= 0!1.0 is false
+        return current in specifiers.Specifier(
+            f"~= {epoch}{target.major}.{target.minor}.{target.micro}"
+        )
 
     def get_server_version(self) -> pv.Version:
         (about, _) = self.api_client.server_api.retrieve_about()
