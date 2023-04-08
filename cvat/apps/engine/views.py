@@ -675,7 +675,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         task_labels_count=Count('label',
             filter=Q(label__parent__isnull=True), distinct=True),
         proj_labels_count=Count('project__label',
-            filter=Q(project_label__parent__isnull=True), distinct=True)
+            filter=Q(project__label__parent__isnull=True), distinct=True)
     ).all()
 
     lookup_fields = {
