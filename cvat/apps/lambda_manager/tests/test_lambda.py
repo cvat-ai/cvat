@@ -126,9 +126,30 @@ class _LambdaTestCaseBase(APITestCase):
             ]
         elif type_function == "detector":
             data = [
-                {'confidence': '0.9959098', 'label': 'car', 'points': [3, 3, 15, 15], 'type': 'rectangle'},
-                {'confidence': '0.89535173', 'label': 'car', 'points': [20, 25, 30, 35], 'type': 'rectangle'},
-                {'confidence': '0.59464583', 'label': 'car', 'points': [12.17, 45.0, 69.80, 18.99], 'type': 'polygon'},
+                {
+                    "confidence": "0.9959098",
+                    "label": "car",
+                    "points": [3, 3, 15, 15],
+                    "type": "rectangle",
+                },
+                {
+                    "confidence": "0.89535173",
+                    "label": "car",
+                    "points": [20, 25, 30, 35],
+                    "type": "rectangle",
+                },
+                {
+                    "confidence": "0.59464583",
+                    "label": "car",
+                    "points": [12.17, 45.0, 69.80, 18.99],
+                    "type": "polygon",
+                },
+                {
+                    "confidence": "0.59464583",
+                    "label": "car",
+                    "mask": [255, 255, 0, 0, 255, 255, 0, 0, 255, 255, 0, 0, 0, 0, 2, 3],
+                    "type": "mask",
+                },
             ]
 
         return data
@@ -856,6 +877,35 @@ class LambdaTestCases(_LambdaTestCaseBase):
 
         response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_api_v2_lambda_functions_convert_mask_to_rle(self):
+        data_main_task = {
+            "function": id_function_detector,
+            "task": self.main_task["id"],
+            "cleanup": True,
+            "quality": "original",
+            "mapping": {
+                "car": { "name": "car" },
+            },
+        }
+        response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data_main_task)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        id_request = response.data["id"]
+
+        request_status = "started"
+        while request_status != "finished" and request_status != "failed":
+            response = self._get_request(f'{LAMBDA_REQUESTS_PATH}/{id_request}', self.admin)
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            request_status = response.json().get("status")
+        self.assertEqual(request_status, "finished")
+
+        response = self._get_request(f'/api/tasks/{self.main_task["id"]}/annotations', self.admin)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        masks = [shape for shape in response.json().get("shapes", []) if shape["type"] == "mask"]
+
+        # [1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0] -> [0, 2, 2, 2, 2, 2, 2]
+        self.assertEqual(masks[0].get("points"), [0, 2, 2, 2, 2, 2, 2, 0, 0, 2, 3])
 
 
     def test_api_v2_lambda_functions_create_empty_data(self):

@@ -15,7 +15,7 @@ from time import sleep
 import pytest
 from dateutil import parser as datetime_parser
 
-from shared.utils.config import make_api_client, server_get
+from shared.utils.config import delete_method, make_api_client, server_get
 from shared.utils.helpers import generate_image_files
 
 from .utils import create_task
@@ -111,6 +111,9 @@ class TestGetAuditEvents:
 
         assert all(req_id is not None for req_id in expected_request_ids)
 
+        self._wait_for_request_ids(expected_request_ids)
+
+    def _wait_for_request_ids(self, expected_request_ids):
         MAX_RETRIES = 5
         SLEEP_INTERVAL = 2
         while MAX_RETRIES > 0:
@@ -121,6 +124,8 @@ class TestGetAuditEvents:
                 break
             MAX_RETRIES -= 1
             sleep(SLEEP_INTERVAL)
+        else:
+            assert False, "Could not wait for expected request IDs"
 
     @staticmethod
     def _export_events(endpoint, *, max_retries: int = 20, interval: float = 0.1, **kwargs):
@@ -247,3 +252,25 @@ class TestGetAuditEvents:
             request_id = payload["request"]["id"]
             assert request_id
             uuid.UUID(request_id)
+
+    def test_delete_project(self):
+        response = delete_method("admin1", f"projects/{self.project_id}")
+        assert response.status_code == HTTPStatus.NO_CONTENT
+
+        self._wait_for_request_ids([response.headers.get("X-Request-Id")])
+
+        query_params = {
+            "project_id": self.project_id,
+        }
+
+        data = self._test_get_audit_logs_as_csv(**query_params)
+        events = self._csv_to_dict(data)
+
+        filtered_events = self._filter_events(events, {"project_id": str(self.project_id)})
+        assert len(filtered_events)
+        assert len(events) == len(filtered_events)
+
+        event_count = Counter([e["scope"] for e in filtered_events])
+        assert event_count["delete:project"] == 1
+        assert event_count["delete:task"] == 2
+        assert event_count["delete:job"] == 4

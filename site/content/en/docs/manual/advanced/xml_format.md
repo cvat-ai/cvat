@@ -20,6 +20,8 @@ The both formats have a common part which is described below. From the previous 
 Also `original_size` tag was added for interpolation mode to specify frame size.
 In annotation mode each image tag has `width` and `height` attributes for the same purpose.
 
+For what is `rle`, see [Run-length encoding](https://en.wikipedia.org/wiki/Run-length_encoding)
+
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
 <annotations>
@@ -86,6 +88,8 @@ to draw objects properly when they are intersected (if `z_order` is bigger the o
 In previous versions of the format only `box` shape was available.
 In later releases `mask`, `polygon`, `polyline`, `points`, `skeletons` and `tags` were added.
 Please see below for more details:
+
+
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>

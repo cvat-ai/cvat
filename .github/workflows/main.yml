@@ -98,7 +98,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - uses: actions/setup-python@v3
+      - uses: actions/setup-python@v4
         with:
           python-version: '3.8'
 
@@ -325,6 +325,8 @@ jobs:
         if: failure()
         run: |
             docker logs cvat_server > ${{ github.workspace }}/tests/cvat_${{ matrix.specs }}.log
+            docker logs cvat_worker_export > ${{ github.workspace }}/tests/cvat_worker_export_${{ matrix.specs }}.log
+            docker logs cvat_worker_import > ${{ github.workspace }}/tests/cvat_worker_import_${{ matrix.specs }}.log
 
       - name: Uploading "cvat" container logs as an artifact
         if: failure()

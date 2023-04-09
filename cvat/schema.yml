@@ -47,15 +47,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/LoginSerializerExRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/LoginSerializerExRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/LoginSerializerExRequest'
-          application/offset+octet-stream:
-            schema:
-              $ref: '#/components/schemas/LoginSerializerExRequest'
         required: true
       security:
       - sessionAuth: []
@@ -140,15 +131,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PasswordChangeRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PasswordChangeRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PasswordChangeRequest'
-          application/offset+octet-stream:
-            schema:
-              $ref: '#/components/schemas/PasswordChangeRequest'
         required: true
       security:
       - sessionAuth: []
@@ -191,15 +173,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/PasswordResetSerializerExRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PasswordResetSerializerExRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PasswordResetSerializerExRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/PasswordResetSerializerExRequest'
         required: true
@@ -249,15 +222,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PasswordResetConfirmRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PasswordResetConfirmRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PasswordResetConfirmRequest'
-          application/offset+octet-stream:
-            schema:
-              $ref: '#/components/schemas/PasswordResetConfirmRequest'
         required: true
       security:
       - sessionAuth: []
@@ -296,15 +260,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/RegisterSerializerExRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/RegisterSerializerExRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/RegisterSerializerExRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/RegisterSerializerExRequest'
         required: true
@@ -373,15 +328,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/SigningRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/SigningRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/SigningRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/SigningRequest'
         required: true
@@ -535,6 +481,8 @@ paths:
                   resource: somebucket
                   display_name: Bucket
                   credentials_type: KEY_SECRET_KEY_PAIR
+                  key: XXX
+                  secret_key: XXX
                   specific_attributes: region=eu-central-1
                   description: Some description
                   manifests:
@@ -570,13 +518,7 @@ paths:
                   manifests:
                   - manifest.jsonl
                 summary: Create GCS
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/CloudStorageWriteRequest'
           multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/CloudStorageWriteRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/CloudStorageWriteRequest'
         required: true
@@ -671,6 +613,8 @@ paths:
                   resource: somebucket
                   display_name: Bucket
                   credentials_type: KEY_SECRET_KEY_PAIR
+                  key: XXX
+                  secret_key: XXX
                   specific_attributes: region=eu-central-1
                   description: Some description
                   manifests:
@@ -706,13 +650,7 @@ paths:
                   manifests:
                   - manifest.jsonl
                 summary: Create GCS
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedCloudStorageWriteRequest'
           multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedCloudStorageWriteRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/PatchedCloudStorageWriteRequest'
       security:
@@ -1043,15 +981,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/CommentWriteRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/CommentWriteRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/CommentWriteRequest'
-          application/offset+octet-stream:
-            schema:
-              $ref: '#/components/schemas/CommentWriteRequest'
         required: true
       security:
       - sessionAuth: []
@@ -1135,15 +1064,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedCommentWriteRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedCommentWriteRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedCommentWriteRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/PatchedCommentWriteRequest'
       security:
@@ -1307,15 +1227,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ClientEventsRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/ClientEventsRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/ClientEventsRequest'
-          application/offset+octet-stream:
-            schema:
-              $ref: '#/components/schemas/ClientEventsRequest'
         required: true
       security:
       - sessionAuth: []
@@ -1425,15 +1336,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/InvitationWriteRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/InvitationWriteRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/InvitationWriteRequest'
-          application/offset+octet-stream:
-            schema:
-              $ref: '#/components/schemas/InvitationWriteRequest'
         required: true
       security:
       - sessionAuth: []
@@ -1517,15 +1419,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedInvitationWriteRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedInvitationWriteRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedInvitationWriteRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/PatchedInvitationWriteRequest'
       security:
@@ -1698,15 +1591,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/IssueWriteRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/IssueWriteRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/IssueWriteRequest'
-          application/offset+octet-stream:
-            schema:
-              $ref: '#/components/schemas/IssueWriteRequest'
         required: true
       security:
       - sessionAuth: []
@@ -1790,15 +1674,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedIssueWriteRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedIssueWriteRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedIssueWriteRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/PatchedIssueWriteRequest'
       security:
@@ -2041,15 +1916,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PatchedJobWriteRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedJobWriteRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedJobWriteRequest'
-          application/offset+octet-stream:
-            schema:
-              $ref: '#/components/schemas/PatchedJobWriteRequest'
       security:
       - sessionAuth: []
         csrfAuth: []
@@ -2213,13 +2079,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/AnnotationFileRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/AnnotationFileRequest'
           multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/AnnotationFileRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/AnnotationFileRequest'
         required: true
@@ -2275,13 +2135,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/JobAnnotationsUpdateRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/JobAnnotationsUpdateRequest'
           multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/JobAnnotationsUpdateRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/JobAnnotationsUpdateRequest'
       security:
@@ -2337,13 +2191,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PatchedLabeledDataRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedLabeledDataRequest'
           multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedLabeledDataRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/PatchedLabeledDataRequest'
       security:
@@ -2390,65 +2238,6 @@ paths:
       responses:
         '204':
           description: The annotation has been deleted
-  /api/jobs/{id}/annotations/{file_id}:
-    patch:
-      operationId: jobs_partial_update_annotations_file
-      summary: Allows to upload an annotation file chunk. Implements TUS file uploading
-        protocol.
-      parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
-      - in: path
-        name: file_id
-        schema:
-          type: string
-          pattern: ^\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b$
-        required: true
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this job.
-        required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
-      tags:
-      - jobs
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: string
-              format: binary
-          application/x-www-form-urlencoded:
-            schema:
-              type: string
-              format: binary
-          multipart/form-data:
-            schema:
-              type: string
-              format: binary
-          application/offset+octet-stream:
-            schema:
-              type: string
-              format: binary
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses: {}
   /api/jobs/{id}/data:
     get:
       operationId: jobs_retrieve_data
@@ -2583,15 +2372,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedDataMetaWriteRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedDataMetaWriteRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedDataMetaWriteRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/PatchedDataMetaWriteRequest'
       security:
@@ -2920,15 +2700,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PatchedLabelRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedLabelRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedLabelRequest'
-          application/offset+octet-stream:
-            schema:
-              $ref: '#/components/schemas/PatchedLabelRequest'
       security:
       - sessionAuth: []
         csrfAuth: []
@@ -3085,15 +2856,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/OnlineFunctionCallRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/OnlineFunctionCallRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/OnlineFunctionCallRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/OnlineFunctionCallRequest'
       security:
@@ -3352,15 +3114,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PatchedMembershipWriteRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedMembershipWriteRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedMembershipWriteRequest'
-          application/offset+octet-stream:
-            schema:
-              $ref: '#/components/schemas/PatchedMembershipWriteRequest'
       security:
       - sessionAuth: []
         csrfAuth: []
@@ -3515,15 +3268,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/OrganizationWriteRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/OrganizationWriteRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/OrganizationWriteRequest'
-          application/offset+octet-stream:
-            schema:
-              $ref: '#/components/schemas/OrganizationWriteRequest'
         required: true
       security:
       - sessionAuth: []
@@ -3607,15 +3351,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedOrganizationWriteRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedOrganizationWriteRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedOrganizationWriteRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/PatchedOrganizationWriteRequest'
       security:
@@ -3782,15 +3517,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ProjectWriteRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/ProjectWriteRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/ProjectWriteRequest'
-          application/offset+octet-stream:
-            schema:
-              $ref: '#/components/schemas/ProjectWriteRequest'
         required: true
       security:
       - sessionAuth: []
@@ -3874,15 +3600,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedProjectWriteRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedProjectWriteRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedProjectWriteRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/PatchedProjectWriteRequest'
       security:
@@ -4246,13 +3963,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/DatasetWriteRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/DatasetWriteRequest'
           multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/DatasetWriteRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/DatasetWriteRequest'
       security:
@@ -4268,64 +3979,6 @@ paths:
           description: Failed to import dataset
         '405':
           description: Format is not available
-  /api/projects/{id}/dataset/{file_id}:
-    patch:
-      operationId: projects_partial_update_dataset_file
-      summary: Allows to upload a file chunk. Implements TUS file uploading protocol.
-      parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
-      - in: path
-        name: file_id
-        schema:
-          type: string
-          pattern: ^\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b$
-        required: true
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this project.
-        required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
-      tags:
-      - projects
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: string
-              format: binary
-          application/x-www-form-urlencoded:
-            schema:
-              type: string
-              format: binary
-          multipart/form-data:
-            schema:
-              type: string
-              format: binary
-          application/offset+octet-stream:
-            schema:
-              type: string
-              format: binary
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses: {}
   /api/projects/{id}/preview:
     get:
       operationId: projects_retrieve_preview
@@ -4409,13 +4062,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/BackupWriteRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/BackupWriteRequest'
           multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/BackupWriteRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/BackupWriteRequest'
       security:
@@ -4429,58 +4076,6 @@ paths:
           description: The project has been imported
         '202':
           description: Importing a backup file has been started
-  /api/projects/backup/{file_id}:
-    patch:
-      operationId: projects_partial_update_backup_file
-      summary: Allows to upload a file chunk. Implements TUS file uploading protocol.
-      parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
-      - in: path
-        name: file_id
-        schema:
-          type: string
-          pattern: ^\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b$
-        required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
-      tags:
-      - projects
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: string
-              format: binary
-          application/x-www-form-urlencoded:
-            schema:
-              type: string
-              format: binary
-          multipart/form-data:
-            schema:
-              type: string
-              format: binary
-          application/offset+octet-stream:
-            schema:
-              type: string
-              format: binary
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses: {}
   /api/schema/:
     get:
       operationId: schema_retrieve
@@ -4937,15 +4532,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/TaskWriteRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/TaskWriteRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/TaskWriteRequest'
-          application/offset+octet-stream:
-            schema:
-              $ref: '#/components/schemas/TaskWriteRequest'
         required: true
       security:
       - sessionAuth: []
@@ -5029,15 +4615,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedTaskWriteRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedTaskWriteRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedTaskWriteRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/PatchedTaskWriteRequest'
       security:
@@ -5241,13 +4818,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/TaskAnnotationsWriteRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/TaskAnnotationsWriteRequest'
           multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/TaskAnnotationsWriteRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/TaskAnnotationsWriteRequest'
       security:
@@ -5302,13 +4873,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/TaskAnnotationsUpdateRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/TaskAnnotationsUpdateRequest'
           multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/TaskAnnotationsUpdateRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/TaskAnnotationsUpdateRequest'
       security:
@@ -5364,13 +4929,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PatchedLabeledDataRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedLabeledDataRequest'
           multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedLabeledDataRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/PatchedLabeledDataRequest'
       security:
@@ -5421,65 +4980,6 @@ paths:
       responses:
         '204':
           description: The annotation has been deleted
-  /api/tasks/{id}/annotations/{file_id}:
-    patch:
-      operationId: tasks_partial_update_annotations_file
-      summary: Allows to upload an annotation file chunk. Implements TUS file uploading
-        protocol.
-      parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
-      - in: path
-        name: file_id
-        schema:
-          type: string
-          pattern: ^\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b$
-        required: true
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this task.
-        required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
-      tags:
-      - tasks
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: string
-              format: binary
-          application/x-www-form-urlencoded:
-            schema:
-              type: string
-              format: binary
-          multipart/form-data:
-            schema:
-              type: string
-              format: binary
-          application/offset+octet-stream:
-            schema:
-              type: string
-              format: binary
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses: {}
   /api/tasks/{id}/backup:
     get:
       operationId: tasks_retrieve_backup
@@ -5710,13 +5210,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/DataRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/DataRequest'
           multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/DataRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/DataRequest'
         required: true
@@ -5729,64 +5223,6 @@ paths:
       responses:
         '202':
           description: No response body
-  /api/tasks/{id}/data/{file_id}:
-    patch:
-      operationId: tasks_partial_update_data_file
-      summary: Allows to upload a file chunk. Implements TUS file uploading protocol.
-      parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
-      - in: path
-        name: file_id
-        schema:
-          type: string
-          pattern: ^\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b$
-        required: true
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this task.
-        required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
-      tags:
-      - tasks
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: string
-              format: binary
-          application/x-www-form-urlencoded:
-            schema:
-              type: string
-              format: binary
-          multipart/form-data:
-            schema:
-              type: string
-              format: binary
-          application/offset+octet-stream:
-            schema:
-              type: string
-              format: binary
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses: {}
   /api/tasks/{id}/data/meta:
     get:
       operationId: tasks_retrieve_data_meta
@@ -5858,15 +5294,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedDataMetaWriteRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedDataMetaWriteRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedDataMetaWriteRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/PatchedDataMetaWriteRequest'
       security:
@@ -6096,13 +5523,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/TaskFileRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/TaskFileRequest'
           multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/TaskFileRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/TaskFileRequest'
         required: true
@@ -6117,58 +5538,6 @@ paths:
           description: The task has been imported
         '202':
           description: Importing a backup file has been started
-  /api/tasks/backup/{file_id}:
-    patch:
-      operationId: tasks_partial_update_backup_file
-      summary: Allows to upload a file chunk. Implements TUS file uploading protocol.
-      parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
-      - in: path
-        name: file_id
-        schema:
-          type: string
-          pattern: ^\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b$
-        required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
-      tags:
-      - tasks
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: string
-              format: binary
-          application/x-www-form-urlencoded:
-            schema:
-              type: string
-              format: binary
-          multipart/form-data:
-            schema:
-              type: string
-              format: binary
-          application/offset+octet-stream:
-            schema:
-              type: string
-              format: binary
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses: {}
   /api/users:
     get:
       operationId: users_list
@@ -6325,15 +5694,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedUserRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedUserRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedUserRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/PatchedUserRequest'
       security:
@@ -6535,15 +5895,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/WebhookWriteRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/WebhookWriteRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/WebhookWriteRequest'
-          application/offset+octet-stream:
-            schema:
-              $ref: '#/components/schemas/WebhookWriteRequest'
         required: true
       security:
       - sessionAuth: []
@@ -6629,15 +5980,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/WebhookWriteRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/WebhookWriteRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/WebhookWriteRequest'
-          application/offset+octet-stream:
-            schema:
-              $ref: '#/components/schemas/WebhookWriteRequest'
         required: true
       security:
       - sessionAuth: []
@@ -6681,15 +6023,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedWebhookWriteRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedWebhookWriteRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedWebhookWriteRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/PatchedWebhookWriteRequest'
       security:
@@ -7351,30 +6684,39 @@ components:
       - image_quality
     DataRequest:
       type: object
+      description: |-
+        Read more about parameters here:
+        https://opencv.github.io/cvat/docs/manual/basics/create_an_annotation_task/#advanced-configuration
       properties:
         chunk_size:
           type: integer
           maximum: 2147483647
           minimum: 0
           nullable: true
+          description: Maximum number of frames per chunk
         size:
           type: integer
           maximum: 2147483647
           minimum: 0
+          description: The number of frames
         image_quality:
           type: integer
           maximum: 100
           minimum: 0
+          description: Image quality to use during annotation
         start_frame:
           type: integer
           maximum: 2147483647
           minimum: 0
+          description: First frame index
         stop_frame:
           type: integer
           maximum: 2147483647
           minimum: 0
+          description: Last frame index
         frame_filter:
           type: string
+          description: 'Frame filter. The only supported syntax is: ''step=N'''
           maxLength: 256
         compressed_chunk_type:
           $ref: '#/components/schemas/ChunkType'
@@ -7386,6 +6728,7 @@ components:
             type: string
             format: binary
           default: []
+          description: Uploaded files
         server_files:
           type: array
           items:
@@ -7393,6 +6736,8 @@ components:
             minLength: 1
             maxLength: 1024
           default: []
+          description: Paths to files from a file share mounted on the server, or
+            from a cloud storage
         remote_files:
           type: array
           items:
@@ -7400,19 +6745,36 @@ components:
             minLength: 1
             maxLength: 1024
           default: []
+          description: Direct download URLs for files
         use_zip_chunks:
           type: boolean
           default: false
+          description: |
+            When true, video chunks will be represented as zip archives with decoded video frames.
+            When false, video chunks are represented as video segments
         cloud_storage_id:
           type: integer
           writeOnly: true
           nullable: true
+          description: |
+            If not null, the files referenced by server_files will be retrieved
+            from the cloud storage with the specified ID.
+            The cloud storages applicable depend on the context.
+            In the user sandbox, only the user sandbox cloud storages can be used.
+            In an organization, only the organization cloud storages can be used.
         use_cache:
           type: boolean
           default: false
+          description: |
+            Enable or disable task data chunk caching for the task.
+            Read more: https://opencv.github.io/cvat/docs/manual/advanced/data_on_fly/
         copy_data:
           type: boolean
           default: false
+          description: |
+            Copy data from the server file share to CVAT during the task creation.
+            This will create a copy of the data, making the server independent from
+            the file share availability
         storage_method:
           $ref: '#/components/schemas/StorageMethod'
         storage:
@@ -7423,6 +6785,10 @@ components:
           type: string
           nullable: true
           minLength: 1
+          description: |
+            A filename filter for cloud storage files
+            listed in the manifest. Supports fnmatch wildcards.
+            Read more: https://docs.python.org/3/library/fnmatch.html
         job_file_mapping:
           type: array
           items:
@@ -7436,7 +6802,7 @@ components:
 
             Represents a file-to-job mapping. Useful to specify a custom job
             configuration during task creation. This option is not compatible with
-            most other job split-related options.
+            most other job split-related options. Files in the jobs must not overlap or repeat.
 
             Example:
             [
@@ -7444,8 +6810,6 @@ components:
                 ["file3.png"], # job #2 files
                 ["file4.jpg", "file5.png", "file6.bmp"], # job #3 files
             ]
-
-            Files in the jobs must not overlap and repeat.
         upload_file_order:
           type: array
           items:
@@ -7650,12 +7014,16 @@ components:
       - create:comment
       - create:invitation
       - create:issue
+      - create:job
+      - create:membership
       - create:project
       - create:task
       - delete:comment
       - delete:invitation
       - delete:issue
+      - delete:job
       - delete:membership
+      - delete:organization
       - delete:project
       - delete:task
       - update:comment
@@ -8775,9 +8143,6 @@ components:
         assignee:
           type: integer
           nullable: true
-        message:
-          type: string
-          minLength: 1
         resolved:
           type: boolean
     PatchedJobWriteRequest:
@@ -8999,10 +8364,6 @@ components:
           type: boolean
         enable_ssl:
           type: boolean
-        project_id:
-          type: integer
-          writeOnly: true
-          nullable: true
         events:
           type: array
           items:

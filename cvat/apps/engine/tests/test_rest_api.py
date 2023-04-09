@@ -722,7 +722,7 @@ class UserGetAPITestCase(UserAPITestCase):
 class UserPartialUpdateAPITestCase(UserAPITestCase):
     def _run_api_v2_users_id(self, user, user_id, data):
         with ForceLogin(user, self.client):
-            response = self.client.patch('/api/users/{}'.format(user_id), data=data)
+            response = self.client.patch('/api/users/{}'.format(user_id), data=data, format='json')
 
         return response
 

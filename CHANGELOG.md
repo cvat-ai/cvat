@@ -19,7 +19,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TDB
 
 ### Removed
-- TDB
+- Cloud storage unique_together limitation (<https://github.com/opencv/cvat/pull/5855>)
+- Support for redundant request media types in the API
+  (<https://github.com/opencv/cvat/pull/5874>)
+- Static URLs and direct SDK support for the tus chunk endpoints.
+  Clients must use the `Location` header from the response to the `Upload-Length` request,
+  as per the tus creation protocol
+  (<https://github.com/opencv/cvat/pull/5961>)
 
 ### Fixed
 - \[Server API\] The `predefined` sorting method for task data uploads (<https://github.com/opencv/cvat/pull/5083>)
@@ -35,9 +41,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Make empty previews responsive to page resize <https://github.com/opencv/cvat/pull/5925>
 - Nuclio function invocations when deployed via the Helm chart
   (<https://github.com/opencv/cvat/issues/5626>)
+- Export of a job from a task with multiple jobs (<https://github.com/opencv/cvat/pull/5928>)
+- Points missing when exporting tracked skeleton (<https://github.com/opencv/cvat/issues/5497>)
+- Escaping in the `filter` parameter in generated URLs
+  (<https://github.com/opencv/cvat/issues/5566>)
+- Rotation property lost during saving a mutable attribute (<https://github.com/opencv/cvat/pull/5968>)
+- Server micro version support check in SDK/CLI (<https://github.com/opencv/cvat/pull/5991>)
 
 ### Security
 - TDB
+
+## \[2.4.1] - 2023-04-05
+### Fixed
+- Optimized annotation fetching up to 10 times (<https://github.com/opencv/cvat/pull/5974>)
+- Incorrect calculation of working time in analytics (<https://github.com/opencv/cvat/pull/5973>)
 
 ## \[2.4.0] - 2023-03-16
 ### Added
