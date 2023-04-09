@@ -43,6 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Escaping in the `filter` parameter in generated URLs
   (<https://github.com/opencv/cvat/issues/5566>)
 - Rotation property lost during saving a mutable attribute (<https://github.com/opencv/cvat/pull/5968>)
+- Server micro version support check in SDK/CLI (<https://github.com/opencv/cvat/pull/5991>)
 
 ### Security
 - TDB
