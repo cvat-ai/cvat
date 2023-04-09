@@ -44,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/opencv/cvat/issues/5566>)
 - Rotation property lost during saving a mutable attribute (<https://github.com/opencv/cvat/pull/5968>)
 - Optimized /api/jobs request (<https://github.com/opencv/cvat/pull/5962>)
+- Server micro version support check in SDK/CLI (<https://github.com/opencv/cvat/pull/5991>)
 
 ### Security
 - TDB
