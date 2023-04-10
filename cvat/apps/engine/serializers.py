@@ -1091,7 +1091,7 @@ class ProjectReadSerializer(serializers.ModelSerializer):
         fields = ('url', 'id', 'name', 'owner', 'assignee',
             'bug_tracker', 'task_subsets', 'created_date', 'updated_date', 'status',
             'dimension', 'organization', 'target_storage', 'source_storage',
-            'tasks', 'labels'
+            'tasks', 'labels',
         )
         read_only_fields = fields
         extra_kwargs = { 'organization': { 'allow_null': True } }
