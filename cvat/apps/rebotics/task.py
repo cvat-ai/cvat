@@ -84,6 +84,22 @@ class ShapesImporter:
 
         return label
 
+    # TODO: remove this, once fix for
+    #  https://retech.atlassian.net/browse/REB3-11338
+    #  is deployed.
+    def _filter_price_tags(self, items: list) -> list:
+        filtered = {}
+        for item in items:
+            box = (item['lowerx'], item['lowery'], item['upperx'], item['uppery'])
+            if any(value is None for value in box):
+                slogger.glob.warning(f'Phantom price tag skipped.')
+                continue
+            if box in filtered:
+                slogger.glob.warning(f'Duplicate price tag skipped.')
+                continue
+            filtered[box] = item
+        return list(filtered.values())
+
     def _get_spec(self, label: Label, text: str) -> AttributeSpec:
         if label.name in self.specs:
             specs = self.specs[label.name]
@@ -188,7 +204,7 @@ class ShapesImporter:
             self._next_job(frame)
             for item in file.meta['items']:
                 self._import_item(item, frame, 0, image_size)
-            for item in file.meta['price_tags']:
+            for item in self._filter_price_tags(file.meta['price_tags']):
                 self._import_price_tag(item, frame, 1, image_size)
 
         self._save()
@@ -259,7 +275,11 @@ def create(data: dict, retailer: User):
         remote_files = []
         for image_data in images:
             url = image_data.pop('image')
-            image_data['name'] = _get_file_name(url)
+            filename = _get_file_name(url)
+            scan_id = image_data.get('processing_action_id')
+            if scan_id is not None:
+                filename = f'scan_{scan_id}_id_{filename}'
+            image_data['name'] = filename
             remote_files.append(RemoteFile(
                 data=db_data,
                 file=url,
