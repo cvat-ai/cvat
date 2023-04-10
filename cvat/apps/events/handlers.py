@@ -58,10 +58,7 @@ def organization_id(instance):
         return instance.id
 
     try:
-        oid = getattr(instance, "organization_id", None)
-        if oid is None:
-            return instance.get_organization_id()
-        return oid
+        return getattr(instance, "organization_id", None)
     except Exception:
         return None
 
