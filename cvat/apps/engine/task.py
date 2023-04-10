@@ -285,11 +285,20 @@ def _validate_url(url):
             raise ValidationError('Cannot resolve IP address for domain \'{}\''.format(parsed_url.hostname))
 
 
-def _fix_extension(filename, path):
+def fix_filename(filename, file_path, db_file):
     name, ext = os.path.splitext(filename)
-    guess_ext = '.' + imghdr.what(path)
-    if guess_ext != ext:
-        ext = guess_ext
+
+    guess_ext = imghdr.what(file_path)
+    if guess_ext is not None:
+        guess_ext = '.' + guess_ext
+        if guess_ext != ext:
+            ext = guess_ext
+
+    if db_file.meta is not None:
+        scan_id = db_file.meta.get('processing_action_id')
+        if scan_id is not None:
+            name = f'{scan_id}_{name}'
+
     return f'{name}{ext}'
 
 
@@ -314,18 +323,17 @@ def _download_data(db_data: models.Data, upload_dir):
             with open(output_path, 'wb') as output_file:
                 shutil.copyfileobj(response.raw, output_file)
 
-            new_name = _fix_extension(name, output_path)
+            new_name = fix_filename(name, output_path, file)
             if new_name != name:
-                name = new_name
-                new_path = os.path.join(upload_dir, name)
+                new_path = os.path.join(upload_dir, new_name)
                 os.rename(output_path, new_path)
         else:
             raise Exception("Failed to download " + url)
 
-        local_files[name] = True
-        file.file = name
+        local_files[name] = new_name
+        file.file = new_name
     models.RemoteFile.objects.bulk_update(remote_files, fields=('file',))
-    return list(local_files.keys())
+    return list(local_files.values())
 
 
 def _get_manifest_frame_indexer(start_frame=0, frame_step=1):
