@@ -219,11 +219,19 @@ def create(data: dict, retailer: User):
         else:
             organization = Organization.objects.get(slug=workspace)
 
-        project, _ = Project.objects.get_or_create(
+        projects = Project.objects.filter(
             owner=retailer,
             organization=organization,
             name=f'Import from: {retailer_name}',
         )
+        if len(projects) > 0:
+            project = projects[0]
+        else:
+            project = Project.objects.create(
+                owner=retailer,
+                organization=organization,
+                name=f'Import from: {retailer_name}',
+            )
 
         image_quality = data.pop('image_quality')
         segment_size = data.pop('segment_size')
