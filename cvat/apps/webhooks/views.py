@@ -99,7 +99,7 @@ class WebhookViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(
             owner=self.request.user,
-            organization=self.request.iam_context["organization"],
+            organization=self.request.organization,
         )
 
     @extend_schema(

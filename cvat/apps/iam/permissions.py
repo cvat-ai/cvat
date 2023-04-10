@@ -62,26 +62,7 @@ def get_organization(request, obj):
                 return None
         return None
 
-    org_slug = request.query_params.get('org')
-    org_id = request.query_params.get('org_id')
-
-    if org_id is not None and org_slug is not None:
-        raise ValidationError('You cannot specify "org_id" query parameter with '
-            '"org" query parameter at the same time.')
-
-    org_filter = {}
-    if org_slug:
-        org_filter["slug"] = org_slug
-    elif org_id:
-        org_filter["id"] = org_id
-
-    if org_filter:
-        try:
-            return Organization.objects.get(**org_filter)
-        except Organization.DoesNotExist:
-            raise PermissionDenied(f"Cannot find organization with {org_filter}")
-
-    return None
+    return request.organization
 
 def get_privilege(request):
     # TO-DO: refactor it
@@ -795,18 +776,14 @@ class ProjectPermission(OpenPolicyAgentPermission):
     def create_scope_create(cls, request, org_id):
         organization = None
         membership = None
-        privilege = request.iam_context['privilege']
+        privilege = get_privilege(request)
         if org_id:
             try:
                 organization = Organization.objects.get(id=org_id)
             except Organization.DoesNotExist as ex:
                 raise ValidationError(str(ex))
 
-            try:
-                membership = Membership.objects.filter(
-                    organization=organization, user=request.user).first()
-            except Membership.DoesNotExist:
-                membership = None
+            membership = get_membership(request, organization)
 
         return cls(
             user_id=request.user.id,
