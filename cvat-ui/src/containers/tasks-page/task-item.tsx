@@ -5,7 +5,9 @@
 
 import { connect } from 'react-redux';
 
-import { TasksQuery, CombinedState, ActiveInference } from 'reducers';
+import {
+    TasksQuery, CombinedState, ActiveInference, PluginComponent,
+} from 'reducers';
 
 import TaskItemComponent from 'components/tasks-page/task-item';
 
@@ -17,6 +19,7 @@ interface StateToProps {
     hidden: boolean;
     taskInstance: any;
     activeInference: ActiveInference | null;
+    taskNamePlugins: PluginComponent[];
 }
 
 interface DispatchToProps {
@@ -39,6 +42,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         deleted: id in deletes ? deletes[id] === true : false,
         taskInstance: task,
         activeInference: state.models.inferences[id] || null,
+        taskNamePlugins: state.plugins.components.taskItem.name,
     };
 }
 

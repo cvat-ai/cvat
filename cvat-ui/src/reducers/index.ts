@@ -280,24 +280,27 @@ export interface PluginsState {
             destructor: CallableFunction;
             globalStateDidUpdate?: CallableFunction;
         };
-    },
+    };
     components: {
         header: {
             userMenu: {
                 items: PluginComponent[],
-            },
-        },
+            };
+        };
         loginPage: {
             loginForm: PluginComponent[];
-        }
+        };
         projectActions: {
-            items: PluginComponent[],
-        }
+            items: PluginComponent[];
+        };
         taskActions: {
-            items: PluginComponent[],
-        },
-        router: PluginComponent[],
-        loggedInModals: PluginComponent[],
+            items: PluginComponent[];
+        };
+        taskItem: {
+            name: PluginComponent[];
+        };
+        router: PluginComponent[];
+        loggedInModals: PluginComponent[];
     }
 }
 
