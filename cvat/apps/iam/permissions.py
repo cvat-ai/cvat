@@ -51,11 +51,16 @@ class PermissionResult:
     reasons: List[str] = field(factory=list)
 
 def get_organization(request, obj):
-    if obj is not None:
-        try:
-            return Organization.objects.get(id=obj.organization_id)
-        except Organization.DoesNotExist:
-            return None
+    if obj is not None and isinstance(obj, Organization):
+        return obj
+
+    if obj:
+        if organization_id := getattr(obj, "organization_id", None):
+            try:
+                return Organization.objects.get(id=organization_id)
+            except Organization.DoesNotExist:
+                return None
+        return None
 
     org_slug = request.query_params.get('org')
     org_id = request.query_params.get('org_id')
