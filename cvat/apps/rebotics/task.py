@@ -275,7 +275,11 @@ def create(data: dict, retailer: User):
         remote_files = []
         for image_data in images:
             url = image_data.pop('image')
-            image_data['name'] = _get_file_name(url)
+            filename = _get_file_name(url)
+            scan_id = image_data.get('processing_action_id')
+            if scan_id is not None:
+                filename = f'scan_{scan_id}_id_{filename}'
+            image_data['name'] = filename
             remote_files.append(RemoteFile(
                 data=db_data,
                 file=url,
