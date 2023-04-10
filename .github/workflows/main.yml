@@ -56,6 +56,7 @@ jobs:
           context: .
           file: Dockerfile
           tags: cvat/server
+          load: true
           outputs: type=docker,dest=/tmp/cvat_server/image.tar
 
       - name: CVAT UI. Build and push
