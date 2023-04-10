@@ -297,7 +297,7 @@ def fix_filename(filename, file_path, db_file):
     if db_file.meta is not None:
         scan_id = db_file.meta.get('processing_action_id')
         if scan_id is not None:
-            name = f'scan_{scan_id}_id_{name}'
+            name = f'scan_{scan_id}_{name}'
 
     return f'{name}{ext}'
 
