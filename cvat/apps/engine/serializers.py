@@ -560,7 +560,8 @@ class JobReadSerializer(serializers.ModelSerializer):
         fields = ('url', 'id', 'task_id', 'project_id', 'assignee',
             'dimension', 'bug_tracker', 'status', 'stage', 'state', 'mode',
             'start_frame', 'stop_frame', 'data_chunk_size', 'data_compressed_chunk_type',
-            'updated_date', 'issues', 'labels')
+            'updated_date', 'issues', 'labels'
+        )
         read_only_fields = fields
 
 class JobWriteSerializer(serializers.ModelSerializer):

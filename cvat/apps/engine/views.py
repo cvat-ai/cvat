@@ -1243,11 +1243,14 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, PartialUpdateModelMixin, UploadMixin, AnnotationMixin
 ):
     queryset = Job.objects.select_related('assignee', 'segment__task__data',
-        'segment__task__project').annotate(Count('issues', distinct=True),
+        'segment__task__project'
+    ).annotate(
+        Count('issues', distinct=True),
         task_labels_count=Count('segment__task__label',
             filter=Q(segment__task__label__parent__isnull=True), distinct=True),
         proj_labels_count=Count('segment__task__project__label',
-            filter=Q(segment__task__project__label__parent__isnull=True), distinct=True)).all()
+            filter=Q(segment__task__project__label__parent__isnull=True), distinct=True)
+    ).all()
 
     iam_organization_field = 'segment__task__organization'
     search_fields = ('task_name', 'project_name', 'assignee', 'state', 'stage')
