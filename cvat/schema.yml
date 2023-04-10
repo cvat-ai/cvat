@@ -2599,6 +2599,49 @@ paths:
           description: Exporting has been started
         '405':
           description: Format is not available
+  /api/jobs/{id}/gt_conflicts:
+    get:
+      operationId: jobs_retrieve_gt_conflicts
+      parameters:
+      - in: header
+        name: X-Organization
+        schema:
+          type: string
+      - in: query
+        name: frame_id
+        schema:
+          type: integer
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this job.
+        required: true
+      - in: query
+        name: org
+        schema:
+          type: string
+        description: Organization unique slug
+      - in: query
+        name: org_id
+        schema:
+          type: integer
+        description: Organization identifier
+      tags:
+      - jobs
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/AnnotationConflictsReport'
+          description: ''
   /api/jobs/{id}/preview:
     get:
       operationId: jobs_retrieve_preview
@@ -6621,6 +6664,50 @@ components:
       - description
       - name
       - version
+    AnnotationConflict:
+      type: object
+      properties:
+        frame_id:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        type:
+          $ref: '#/components/schemas/AnnotationConflictTypeEnum'
+        message:
+          type: string
+          maxLength: 1024
+        data:
+          type: object
+          additionalProperties: {}
+      required:
+      - data
+      - frame_id
+      - type
+    AnnotationConflictTypeEnum:
+      enum:
+      - missing_annotation
+      - extra_annotation
+      - mismatching_annotation
+      type: string
+    AnnotationConflictsReport:
+      type: object
+      properties:
+        job_id:
+          type: integer
+          readOnly: true
+        job_last_updated:
+          type: string
+          format: date-time
+          readOnly: true
+        gt_job_last_updated:
+          type: string
+          format: date-time
+          readOnly: true
+        conflicts:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnnotationConflict'
+          default: []
     AnnotationFileRequest:
       type: object
       properties:

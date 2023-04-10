@@ -9,6 +9,7 @@ import os.path as osp
 import sys
 from collections import namedtuple
 from functools import reduce
+from operator import add
 from pathlib import Path
 from types import SimpleNamespace
 from typing import (Any, Callable, DefaultDict, Dict, Iterable, List, Literal, Mapping,
@@ -167,14 +168,14 @@ class InstanceLabelData:
 class CommonData(InstanceLabelData):
     Shape = namedtuple("Shape", 'id, label_id')  # 3d
     LabeledShape = namedtuple(
-        'LabeledShape', 'type, frame, label, points, occluded, attributes, source, rotation, group, z_order, elements, outside')
+        'LabeledShape', 'id, type, frame, label, points, occluded, attributes, source, rotation, group, z_order, elements, outside')
     LabeledShape.__new__.__defaults__ = (0, 0, 0, [], False)
     TrackedShape = namedtuple(
-        'TrackedShape', 'type, frame, points, occluded, outside, keyframe, attributes, rotation, source, group, z_order, label, track_id, elements')
+        'TrackedShape', 'id, type, frame, points, occluded, outside, keyframe, attributes, rotation, source, group, z_order, label, track_id, elements')
     TrackedShape.__new__.__defaults__ = (0, 'manual', 0, 0, None, 0, [])
-    Track = namedtuple('Track', 'label, group, source, shapes, elements')
+    Track = namedtuple('Track', 'id, label, group, source, shapes, elements')
     Track.__new__.__defaults__ = ([], )
-    Tag = namedtuple('Tag', 'frame, label, attributes, source, group')
+    Tag = namedtuple('Tag', 'id, frame, label, attributes, source, group')
     Tag.__new__.__defaults__ = (0, )
     Frame = namedtuple(
         'Frame', 'idx, id, frame, name, width, height, labeled_shapes, tags, shapes, labels')
@@ -284,6 +285,7 @@ class CommonData(InstanceLabelData):
 
     def _export_tracked_shape(self, shape):
         return CommonData.TrackedShape(
+            id=shape["id"],
             type=shape["type"],
             frame=self.abs_frame_id(shape["frame"]),
             label=self._get_label_name(shape["label_id"]),
@@ -302,6 +304,7 @@ class CommonData(InstanceLabelData):
 
     def _export_labeled_shape(self, shape):
         return CommonData.LabeledShape(
+            id=shape["id"],
             type=shape["type"],
             label=self._get_label_name(shape["label_id"]),
             frame=self.abs_frame_id(shape["frame"]),
@@ -324,6 +327,7 @@ class CommonData(InstanceLabelData):
 
     def _export_tag(self, tag):
         return CommonData.Tag(
+            id=tag["id"],
             frame=self.abs_frame_id(tag["frame"]),
             label=self._get_label_name(tag["label_id"]),
             group=tag.get("group", 0),
@@ -343,6 +347,7 @@ class CommonData(InstanceLabelData):
             tracked_shape["label_id"] = track["label_id"]
 
         return CommonData.Track(
+            id=track["id"],
             label=self._get_label_name(track["label_id"]),
             group=track["group"],
             source=track["source"],
@@ -1260,8 +1265,18 @@ class CVATDataExtractorMixin:
 
 
 class CvatTaskOrJobDataExtractor(dm.SourceExtractor, CVATDataExtractorMixin):
-    def __init__(self, instance_data: CommonData, include_images=False, format_type=None, dimension=DimensionType.DIM_2D):
+    def __init__(
+        self,
+        instance_data: CommonData,
+        *,
+        include_images: bool = False,
+        format_type: str = None,
+        dimension: DimensionType = DimensionType.DIM_2D,
+        **kwargs
+    ):
         super().__init__(media_type=dm.Image if dimension == DimensionType.DIM_2D else PointCloud)
+        CVATDataExtractorMixin.__init__(self, **kwargs)
+
         instance_meta = instance_data.meta[instance_data.META_FIELD]
         self._categories = self._load_categories(instance_meta['labels'])
         self._user = self._load_user_info(instance_meta) if dimension == DimensionType.DIM_3D else {}
@@ -1358,8 +1373,18 @@ class CvatTaskOrJobDataExtractor(dm.SourceExtractor, CVATDataExtractorMixin):
             label_attrs, map_label, self._format_type, self._dimension)
 
 class CVATProjectDataExtractor(dm.Extractor, CVATDataExtractorMixin):
-    def __init__(self, project_data: ProjectData, include_images: bool = False, format_type: str = None, dimension: DimensionType = DimensionType.DIM_2D):
+    def __init__(
+        self,
+        project_data: ProjectData,
+        *,
+        include_images: bool = False,
+        format_type: str = None,
+        dimension: DimensionType = DimensionType.DIM_2D,
+        **kwargs
+    ):
         super().__init__(media_type=dm.Image if dimension == DimensionType.DIM_2D else PointCloud)
+        CVATDataExtractorMixin.__init__(self, **kwargs)
+
         self._categories = self._load_categories(project_data.meta[project_data.META_FIELD]['labels'])
         self._user = self._load_user_info(project_data.meta[project_data.META_FIELD]) if dimension == DimensionType.DIM_3D else {}
         self._dimension = dimension
@@ -1467,11 +1492,17 @@ def GetCVATDataExtractor(
     include_images: bool = False,
     format_type: str = None,
     dimension: DimensionType = DimensionType.DIM_2D,
+    **kwargs
 ):
+    kwargs.update({
+        'include_images': include_images,
+        'format_type': format_type,
+        'dimension': dimension,
+    })
     if isinstance(instance_data, ProjectData):
-        return CVATProjectDataExtractor(instance_data, include_images, format_type, dimension)
+        return CVATProjectDataExtractor(instance_data, **kwargs)
     else:
-        return CvatTaskOrJobDataExtractor(instance_data, include_images, format_type, dimension)
+        return CvatTaskOrJobDataExtractor(instance_data, **kwargs)
 
 class CvatImportError(Exception):
     pass
@@ -1515,7 +1546,6 @@ def get_defaulted_subset(subset: str, subsets: List[str]) -> str:
 class CvatToDmAnnotationConverter:
     def __init__(self,
         cvat_frame_anno: CommonData.Frame,
-        *,
         label_attrs,
         map_label,
         format_name=None,
@@ -1557,7 +1587,7 @@ class CvatToDmAnnotationConverter:
         return [dm.Label(label=anno_label, attributes=anno_attr, group=anno_group)]
 
     def _convert_tags(self, tags) -> Iterable[dm.Annotation]:
-        return map(self._convert_tag, tags)
+        return reduce(add, map(self._convert_tag, tags), [])
 
     def _convert_shape(self,
         shape: CommonData.LabeledShape, *, index: int
@@ -1652,7 +1682,7 @@ class CvatToDmAnnotationConverter:
 
         return [anno]
 
-    def _convert_shapes(self, shapes) -> Iterable[dm.Annotation]:
+    def _convert_shapes(self, shapes: List[CommonData.LabeledShape]) -> Iterable[dm.Annotation]:
         dm_anno = []
 
         self.num_of_tracks = reduce(
@@ -1662,7 +1692,7 @@ class CvatToDmAnnotationConverter:
         )
 
         for index, shape in enumerate(shapes):
-            dm_anno.append(shape, index=index)
+            dm_anno.extend(self._convert_shape(shape, index=index))
 
         return dm_anno
 

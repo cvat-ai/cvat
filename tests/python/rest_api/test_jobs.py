@@ -194,6 +194,52 @@ class TestDeleteJobs:
         self._test_destroy_job_fails(admin_user, job_id, expected_status=HTTPStatus.BAD_REQUEST)
 
 
+@pytest.mark.usefixtures("restore_db_per_function")
+class TestGtComparison:
+    def test_can_compare_normal_with_gt_job(self, admin_user, tasks, jobs):
+        user = admin_user
+        job_frame_count = 4
+        task = next(
+            t
+            for t in tasks
+            if not t["project_id"]
+            and not t["organization"]
+            and t["mode"] == "annotation"
+            and t["size"] > job_frame_count
+        )
+        task_id = task["id"]
+        with make_api_client(user) as api_client:
+            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+            frame_step = int(task_meta.frame_filter.split("=")[-1]) if task_meta.frame_filter else 1
+
+        job_frame_ids = list(range(task_meta.start_frame, task_meta.stop_frame, frame_step))[
+            :job_frame_count
+        ]
+        job_spec = {
+            "task_id": task_id,
+            "type": "ground_truth",
+            "frame_selection_method": "manual",
+            "frames": job_frame_ids,
+        }
+
+        with make_api_client(user) as api_client:
+            (gt_job, _) = api_client.jobs_api.create(job_write_request=job_spec)
+
+        normal_job = next(
+            j
+            for j in jobs
+            if j["task_id"] == task_id
+            and j["type"] == "normal"
+            and set(job_frame_ids) & set(range(j["start_frame"], j["stop_frame"]))
+        )
+
+        with make_api_client(user) as api_client:
+            (report, response) = api_client.jobs_api.retrieve_gt_conflicts(normal_job["id"])
+            assert response.status == HTTPStatus.OK
+
+        assert len(report.conflicts) > 0
+
+
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetJobs:
     def _test_get_job_200(self, user, jid, data, **kwargs):

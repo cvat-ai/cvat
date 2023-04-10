@@ -649,7 +649,7 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 if invalid_ids:
                     raise serializers.ValidationError(
                         "The following frames are not included "
-                        f"in the task: {','.join(invalid_ids)}"
+                        f"in the task: {','.join(map(str, invalid_ids))}"
                     )
             else:
                 raise serializers.ValidationError(
@@ -1828,8 +1828,15 @@ def _validate_existence_of_cloud_storage(cloud_storage_id):
         raise serializers.ValidationError(f'The specified cloud storage {cloud_storage_id} does not exist.')
 
 
+class AnnotationConflictSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.AnnotationConflict
+        fields = ('frame_id', 'type', 'message', 'data')
+
 class AnnotationConflictsReportSerializer(serializers.ModelSerializer):
+    conflicts = AnnotationConflictSerializer(many=True, default=[])
+
     class Meta:
         model = models.AnnotationConflictsReport
-        fields = ('job_id',)
+        fields = ('job_id', 'job_last_updated', 'gt_job_last_updated', 'conflicts')
         read_only_fields = fields

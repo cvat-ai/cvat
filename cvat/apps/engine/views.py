@@ -43,6 +43,7 @@ from django_sendfile import sendfile
 
 import cvat.apps.dataset_manager as dm
 import cvat.apps.dataset_manager.views  # pylint: disable=unused-import
+import cvat.apps.engine.quality_control as qc
 from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
 from cvat.apps.dataset_manager.bindings import CvatImportError
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
@@ -55,7 +56,6 @@ from cvat.apps.engine.models import (
 )
 from cvat.apps.engine.models import CloudStorage as CloudStorageModel
 from cvat.apps.engine.parsers import TusUploadParser
-from cvat.apps.engine import quality_control
 from cvat.apps.engine.serializers import (
     AboutSerializer, AnnotationConflictsReportSerializer, AnnotationFileSerializer, BasicUserSerializer,
     DataMetaReadSerializer, DataMetaWriteSerializer, DataSerializer,
@@ -1709,6 +1709,10 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         return data_getter(request, self._object.segment.start_frame,
            self._object.segment.stop_frame, self._object.segment.task.data)
 
+    @extend_schema(
+        parameters=[OpenApiParameter('frame_id', OpenApiTypes.INT)],
+        responses=AnnotationConflictsReportSerializer
+    )
     @action(detail=True, methods=['GET'], url_path='gt_conflicts', serializer_class=None)
     def gt_conflicts(self, request, pk):
         # TODO: add automatic type inference to get_object
@@ -1722,13 +1726,15 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
 
         frame_id = request.query_params.get('frame_id', None)
         if frame_id is not None:
+            frame_id = int(frame_id)
+
             if not this_job.segment.contains_frame(frame_id):
                 raise ValidationError("This frame does not belong to this job")
 
             if not gt_job.segment.contains_frame(frame_id):
                 raise ValidationError("This frame does not belong to the Ground Truth job")
 
-        report = quality_control.conflicts.find_gt_conflicts(this_job, gt_job, frame_id=frame_id)
+        report = qc.find_gt_conflicts(this_job, gt_job, frame_id=frame_id)
 
         report_serializer = AnnotationConflictsReportSerializer(report)
         return Response(report_serializer.data, status=status.HTTP_200_OK)

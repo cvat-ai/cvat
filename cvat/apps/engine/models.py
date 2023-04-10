@@ -10,7 +10,7 @@ import re
 import shutil
 from enum import Enum
 from functools import cached_property
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -21,7 +21,6 @@ from django.db.models.fields import FloatField
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
 
-from cvat.apps.engine import quality_control
 from cvat.apps.engine.utils import parse_specific_attributes
 from cvat.apps.organizations.models import Organization
 from cvat.apps.events.utils import cache_deleted
@@ -422,7 +421,7 @@ class Task(models.Model):
     @cached_property
     def gt_job(self) -> Optional[Job]:
         try:
-            return Job.objects.get(task=self, type=JobType.GROUND_TRUTH)
+            return Job.objects.get(segment__task=self, type=JobType.GROUND_TRUTH)
         except Job.DoesNotExist:
             return None
 
@@ -506,7 +505,7 @@ class Segment(models.Model):
     type = models.CharField(choices=SegmentType.choices(), default=SegmentType.RANGE, max_length=32)
 
     # SegmentType.SPECIFIC_FRAMES fields
-    frames = IntArrayField(store_sorted=True, unique_values=True, null=True)
+    frames = IntArrayField(store_sorted=True, unique_values=True, default='', blank=True)
 
     def contains_frame(self, idx: int) -> bool:
         if self.type == SegmentType.RANGE:
@@ -950,10 +949,29 @@ class Storage(models.Model):
         default_permissions = ()
 
 
-class AnnotationConflictType(quality_control.models.AnnotationConflictType):
+class AnnotationConflictType(str, Enum):
+    MISSING_ANNOTATION = 'missing_annotation'
+    EXTRA_ANNOTATION = 'extra_annotation'
+    MISMATCHING_ANNOTATION = 'mismatching_annotation'
+
+    def __str__(self) -> str:
+        return self.value
+
     @classmethod
     def choices(cls):
         return tuple((x.value, x.name) for x in cls)
+
+class MismatchingAnnotationKind(str, Enum):
+    ATTRIBUTE = 'attribute'
+    LABEL = 'label'
+
+    def __str__(self) -> str:
+        return self.value
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
 
 class AnnotationConflictsReport(models.Model):
     job = models.ForeignKey(Job,
@@ -961,10 +979,88 @@ class AnnotationConflictsReport(models.Model):
     job_last_updated = models.DateTimeField()
     gt_job_last_updated = models.DateTimeField()
 
+
 class AnnotationConflict(models.Model):
     report = models.ForeignKey(AnnotationConflictsReport,
         on_delete=models.CASCADE, related_name='conflicts')
-    frame_id = models.IntegerField()
+    frame_id = models.PositiveIntegerField()
     type = models.CharField(max_length=32, choices=AnnotationConflictType.choices())
     message = models.CharField(max_length=1024, blank=True, default="")
     data = models.JSONField()
+
+    def clean(self):
+        class _AnnotationType(str, Enum):
+            TAG = 'tag'
+
+            def __str__(self) -> str:
+                return self.value
+
+            @classmethod
+            def choices(cls):
+                return tuple((x.value, x.name) for x in cls) + ShapeType.choices()
+
+        class _MismatchingAnnotationConflict(models.Model):
+            kind = models.CharField(max_length=32, choices=MismatchingAnnotationKind.choices())
+            expected = models.CharField(max_length=64, blank=True, null=True)
+            actual = models.CharField(max_length=64, blank=True, null=True)
+
+            # KIND = ATTRIBUTE fields
+            attribute = models.CharField(max_length=64, null=True, blank=True, default=None)
+
+            def clean(self) -> None:
+                if self.kind != MismatchingAnnotationKind.ATTRIBUTE:
+                    if self.attribute is not None:
+                        raise ValidationError(
+                            "The 'attribute' field can only be used "
+                            f"with the '{MismatchingAnnotationKind.ATTRIBUTE}' kind"
+                        )
+                else:
+                    if not isinstance(self.attribute, str):
+                        raise ValidationError("The 'attribute' field is required")
+
+                    if not self.attribute:
+                        raise ValidationError("The 'attribute' field can not be empty")
+
+        class _AnnotationId(models.Model):
+            my_id = models.AutoField(primary_key=True) # avoid name collision
+            id = models.PositiveIntegerField()
+            job_id = models.PositiveIntegerField()
+            type = models.CharField(max_length=32, choices=_AnnotationType.choices())
+
+        def _validate_annotation_ids(extra_data: Dict[str, Any], *, required_count: int):
+            annotation_ids = extra_data.pop('annotation_ids', None)
+            if annotation_ids is None:
+                raise ValidationError("Annotation ids must be provided")
+            elif not isinstance(annotation_ids, list):
+                raise ValidationError("Annotation ids must be a list")
+            else:
+                if len(annotation_ids) != required_count:
+                    raise ValidationError(f"Expected exactly {required_count} annotation ids")
+
+                for ann_id in annotation_ids:
+                    if not isinstance(ann_id, dict):
+                        raise ValidationError("Annotation ids must be a list of dicts")
+                    _AnnotationId(**ann_id).full_clean()
+
+            return annotation_ids
+
+        if self.type == AnnotationConflictType.MISMATCHING_ANNOTATION:
+            if self.data is None:
+                raise ValidationError(f"Extra info must be provided in the 'data' field")
+            extra_data = self.data.copy()
+
+            _validate_annotation_ids(extra_data, required_count=2)
+
+            _MismatchingAnnotationConflict(**extra_data).full_clean()
+
+        elif self.type in [
+            AnnotationConflictType.EXTRA_ANNOTATION, AnnotationConflictType.MISSING_ANNOTATION
+        ]:
+            if self.data is None:
+                raise ValidationError(f"Extra info must be provided in the 'data' field")
+            extra_data = self.data.copy()
+
+            _validate_annotation_ids(extra_data, required_count=1)
+
+        else:
+            raise ValidationError(f"Unknown conflict type {self.type}")
