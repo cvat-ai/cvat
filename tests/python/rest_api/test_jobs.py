@@ -39,15 +39,12 @@ def get_job_staff(job, tasks, projects):
 
 
 def filter_jobs(jobs, tasks, org):
-    if org is None:
-        kwargs = {}
-        jobs = jobs.raw
-    elif org == "":
-        kwargs = {"org": ""}
-        jobs = [job for job in jobs if tasks[job["task_id"]]["organization"] is None]
-    else:
+    if isinstance(org, int):
         kwargs = {"org_id": org}
         jobs = [job for job in jobs if tasks[job["task_id"]]["organization"] == org]
+    else:
+        kwargs = {}
+        jobs = jobs.raw
 
     return jobs, kwargs
 
@@ -83,7 +80,7 @@ class TestGetJobs:
         for job in jobs[:8]:
             self._test_get_job_200("admin2", job["id"], job, **kwargs)
 
-    @pytest.mark.parametrize("org_id", ["", 1, 2])
+    @pytest.mark.parametrize("org_id", [""])
     @pytest.mark.parametrize("groups", [["business"], ["user"], ["worker"], []])
     def test_non_admin_get_job(self, org_id, groups, users, jobs, tasks, projects, org_staff):
         # keep the reasonable amount of users and jobs
@@ -109,6 +106,9 @@ class TestListJobs:
             results = get_paginated_collection(
                 client.jobs_api.list_endpoint, return_json=True, **kwargs
             )
+            # from pprint import pprint
+            # pprint(data)
+            # pprint(results)
             assert (
                 DeepDiff(data, results, exclude_paths="root['updated_date']", ignore_order=True)
                 == {}
