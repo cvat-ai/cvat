@@ -25,6 +25,12 @@ const defaultState: PluginsState = {
         loginPage: {
             loginForm: [],
         },
+        projectActions: {
+            items: [],
+        },
+        taskActions: {
+            items: [],
+        },
         router: [],
         loggedInModals: [],
     },

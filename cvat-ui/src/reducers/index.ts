@@ -290,6 +290,12 @@ export interface PluginsState {
         loginPage: {
             loginForm: PluginComponent[];
         }
+        projectActions: {
+            items: PluginComponent[],
+        }
+        taskActions: {
+            items: PluginComponent[],
+        },
         router: PluginComponent[],
         loggedInModals: PluginComponent[],
     }
