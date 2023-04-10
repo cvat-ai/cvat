@@ -20,7 +20,7 @@ from drf_spectacular.utils import extend_schema_field
 
 from cvat.apps.engine.utils import parse_specific_attributes
 from cvat.apps.organizations.models import Organization
-
+from cvat.apps.events.utils import cache_deleted
 
 class SafeCharField(models.CharField):
     def get_prep_value(self, value):
@@ -327,6 +327,10 @@ class Project(models.Model):
     def get_log_path(self):
         return os.path.join(self.get_project_logs_dirname(), "project.log")
 
+    @cache_deleted
+    def delete(self, using=None, keep_parents=False):
+        super().delete(using, keep_parents)
+
     # Extend default permission model
     class Meta:
         default_permissions = ()
@@ -423,6 +427,10 @@ class Task(models.Model):
 
     def __str__(self):
         return self.name
+
+    @cache_deleted
+    def delete(self, using=None, keep_parents=False):
+        super().delete(using, keep_parents)
 
 # Redefined a couple of operation for FileSystemStorage to avoid renaming
 # or other side effects.
@@ -566,6 +574,13 @@ class Label(models.Model):
             return cls.objects.create(**kwargs)
         except IntegrityError:
             raise InvalidLabel("All label names must be unique")
+
+    def get_organization_id(self):
+        if self.project is not None:
+            return self.project.organization.id
+        if self.task is not None:
+            return self.task.organization.id
+        return None
 
     class Meta:
         default_permissions = ()

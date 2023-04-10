@@ -13,7 +13,6 @@ from distutils.util import strtobool
 from tempfile import mkstemp
 
 from django.db.models.query import Prefetch
-from django.shortcuts import get_object_or_404
 import django_rq
 from django.apps import apps
 from django.conf import settings
@@ -32,8 +31,10 @@ from drf_spectacular.plumbing import build_array_type, build_basic_type
 from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import APIException, NotFound, ValidationError, PermissionDenied
+from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import SAFE_METHODS
 from rest_framework.response import Response
+from rest_framework.settings import api_settings
 from django_sendfile import sendfile
 
 import cvat.apps.dataset_manager as dm
@@ -60,13 +61,14 @@ from cvat.apps.engine.serializers import (
     IssueWriteSerializer, CommentReadSerializer, CommentWriteSerializer, CloudStorageWriteSerializer,
     CloudStorageReadSerializer, DatasetFileSerializer,
     ProjectFileSerializer, TaskFileSerializer)
+from cvat.apps.engine.view_utils import get_cloud_storage_for_import_or_export
 
 from utils.dataset_manifest import ImageManifestManager
 from cvat.apps.engine.utils import (
     av_scan_paths, process_failed_job, configure_dependent_job, parse_exception_message, get_rq_job_meta
 )
 from cvat.apps.engine import backup
-from cvat.apps.engine.mixins import PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin, DestroyModelMixin, CreateModelMixin
+from cvat.apps.engine.mixins import PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
 from cvat.apps.engine.location import get_location_configuration, StorageType
 
 from . import models, task
@@ -76,6 +78,10 @@ from cvat.apps.iam.permissions import (CloudStoragePermission,
     TaskPermission, UserPermission)
 from cvat.apps.engine.cache import MediaCache
 from cvat.apps.events.handlers import handle_annotations_patch
+from cvat.apps.engine.view_utils import tus_chunk_action
+
+
+_UPLOAD_PARSER_CLASSES = api_settings.DEFAULT_PARSER_CLASSES + [MultiPartParser]
 
 @extend_schema(tags=['server'])
 class ServerViewSet(viewsets.ViewSet):
@@ -214,7 +220,7 @@ class ServerViewSet(viewsets.ViewSet):
         })
 )
 class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
-    mixins.RetrieveModelMixin, CreateModelMixin, DestroyModelMixin,
+    mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
     PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
 ):
     queryset = models.Project.objects.select_related(
@@ -249,8 +255,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         return queryset
 
     def perform_create(self, serializer, **kwargs):
-        super().perform_create(
-            serializer,
+        serializer.save(
             owner=self.request.user,
             organization=self.request.iam_context['organization']
         )
@@ -305,7 +310,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '405': OpenApiResponse(description='Format is not available'),
         })
     @action(detail=True, methods=['GET', 'POST', 'OPTIONS'], serializer_class=None,
-        url_path=r'dataset/?$')
+        url_path=r'dataset/?$', parser_classes=_UPLOAD_PARSER_CLASSES)
     def dataset(self, request, pk):
         self._object = self.get_object() # force call of check_object_permissions()
         rq_id = f"import:dataset-for-project.id{pk}-by-{request.user}"
@@ -356,17 +361,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                     callback=dm.views.export_project_as_dataset
                 )
 
-    @extend_schema(methods=['PATCH'],
-        operation_id='projects_partial_update_dataset_file',
-        summary="Allows to upload a file chunk. "
-            "Implements TUS file uploading protocol.",
-        request=OpenApiTypes.BINARY,
-        responses={}
-    )
-    @extend_schema(methods=['HEAD'],
-        summary="Implements TUS file uploading protocol."
-    )
-    @action(detail=True, methods=['HEAD', 'PATCH'], url_path='dataset/'+UploadMixin.file_id_regex)
+    @tus_chunk_action(detail=True, suffix_base="dataset")
     def append_dataset_chunk(self, request, pk, file_id):
         self._object = self.get_object()
         return self.append_tus_chunk(request, file_id)
@@ -498,22 +493,12 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '202': OpenApiResponse(description='Importing a backup file has been started'),
         })
     @action(detail=False, methods=['OPTIONS', 'POST'], url_path=r'backup/?$',
-        serializer_class=ProjectFileSerializer(required=False))
+        serializer_class=ProjectFileSerializer(required=False),
+        parser_classes=_UPLOAD_PARSER_CLASSES)
     def import_backup(self, request, pk=None):
         return self.deserialize(request, backup.import_project)
 
-    @extend_schema(methods=['PATCH'],
-        operation_id='projects_partial_update_backup_file',
-        summary="Allows to upload a file chunk. "
-            "Implements TUS file uploading protocol.",
-        request=OpenApiTypes.BINARY,
-        responses={}
-    )
-    @extend_schema(methods=['HEAD'],
-        summary="Implements TUS file uploading protocol."
-    )
-    @action(detail=False, methods=['HEAD', 'PATCH'], url_path='backup/'+UploadMixin.file_id_regex,
-        serializer_class=None)
+    @tus_chunk_action(detail=False, suffix_base="backup")
     def append_backup_chunk(self, request, file_id):
         return self.append_tus_chunk(request, file_id)
 
@@ -665,7 +650,7 @@ class DataChunkGetter:
         })
 )
 class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
-    mixins.RetrieveModelMixin, CreateModelMixin, DestroyModelMixin,
+    mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
     PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
 ):
     queryset = Task.objects.select_related(
@@ -725,21 +710,13 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '201': OpenApiResponse(description='The task has been imported'), # or better specify {id: task_id}
             '202': OpenApiResponse(description='Importing a backup file has been started'),
         })
-    @action(detail=False, methods=['OPTIONS', 'POST'], url_path=r'backup/?$', serializer_class=TaskFileSerializer(required=False))
+    @action(detail=False, methods=['OPTIONS', 'POST'], url_path=r'backup/?$',
+        serializer_class=TaskFileSerializer(required=False),
+        parser_classes=_UPLOAD_PARSER_CLASSES)
     def import_backup(self, request, pk=None):
         return self.deserialize(request, backup.import_task)
 
-    @extend_schema(methods=['PATCH'],
-        operation_id='tasks_partial_update_backup_file',
-        summary="Allows to upload a file chunk. "
-            "Implements TUS file uploading protocol.",
-        request=OpenApiTypes.BINARY,
-        responses={}
-    )
-    @extend_schema(methods=['HEAD'],
-        summary="Implements TUS file uploading protocol."
-    )
-    @action(detail=False, methods=['HEAD', 'PATCH'], url_path='backup/'+UploadMixin.file_id_regex)
+    @tus_chunk_action(detail=False, suffix_base="backup")
     def append_backup_chunk(self, request, file_id):
         return self.append_tus_chunk(request, file_id)
 
@@ -781,8 +758,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             updated_instance.project.save()
 
     def perform_create(self, serializer, **kwargs):
-        super().perform_create(
-            serializer,
+        serializer.save(
             owner=self.request.user,
             organization=self.request.iam_context['organization']
         )
@@ -903,7 +879,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         responses={
             '200': OpenApiResponse(description='Data of a specific type'),
         })
-    @action(detail=True, methods=['OPTIONS', 'POST', 'GET'], url_path=r'data/?$')
+    @action(detail=True, methods=['OPTIONS', 'POST', 'GET'], url_path=r'data/?$',
+        parser_classes=_UPLOAD_PARSER_CLASSES)
     def data(self, request, pk):
         self._object = self.get_object() # call check_object_permissions as well
         if request.method == 'POST' or request.method == 'OPTIONS':
@@ -929,17 +906,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return data_getter(request, self._object.data.start_frame,
                 self._object.data.stop_frame, self._object.data)
 
-    @extend_schema(methods=['PATCH'],
-        operation_id='tasks_partial_update_data_file',
-        summary="Allows to upload a file chunk. "
-            "Implements TUS file uploading protocol.",
-        request=OpenApiTypes.BINARY,
-        responses={}
-    )
-    @extend_schema(methods=['HEAD'],
-        summary="Implements TUS file uploading protocol."
-    )
-    @action(detail=True, methods=['HEAD', 'PATCH'], url_path='data/'+UploadMixin.file_id_regex)
+    @tus_chunk_action(detail=True, suffix_base="data")
     def append_data_chunk(self, request, pk, file_id):
         self._object = self.get_object()
         return self.append_tus_chunk(request, file_id)
@@ -1026,7 +993,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '204': OpenApiResponse(description='The annotation has been deleted'),
         })
     @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH', 'POST', 'OPTIONS'], url_path=r'annotations/?$',
-        serializer_class=None)
+        serializer_class=None, parser_classes=_UPLOAD_PARSER_CLASSES)
     def annotations(self, request, pk):
         self._object = self.get_object() # force call of check_object_permissions()
         if request.method == 'GET':
@@ -1089,18 +1056,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
                 return Response(data)
 
-    @extend_schema(methods=['PATCH'],
-        operation_id='tasks_partial_update_annotations_file',
-        summary="Allows to upload an annotation file chunk. "
-            "Implements TUS file uploading protocol.",
-        request=OpenApiTypes.BINARY,
-        responses={}
-    )
-    @extend_schema(methods=['HEAD'],
-        operation_id='tasks_annotations_file_retrieve_status',
-        summary="Implements TUS file uploading protocol."
-    )
-    @action(detail=True, methods=['HEAD', 'PATCH'], url_path='annotations/'+UploadMixin.file_id_regex)
+    @tus_chunk_action(detail=True, suffix_base="annotations")
     def append_annotations_chunk(self, request, pk, file_id):
         self._object = self.get_object()
         return self.append_tus_chunk(request, file_id)
@@ -1422,7 +1378,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '204': OpenApiResponse(description='The annotation has been deleted'),
         })
     @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH', 'POST', 'OPTIONS'], url_path=r'annotations/?$',
-        serializer_class=LabeledDataSerializer)
+        serializer_class=LabeledDataSerializer, parser_classes=_UPLOAD_PARSER_CLASSES)
     def annotations(self, request, pk):
         self._object = self.get_object() # force call of check_object_permissions()
         if request.method == 'GET':
@@ -1490,17 +1446,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 return Response(data)
 
 
-    @extend_schema(methods=['PATCH'],
-        operation_id='jobs_partial_update_annotations_file',
-        summary="Allows to upload an annotation file chunk. "
-            "Implements TUS file uploading protocol.",
-        request=OpenApiTypes.BINARY,
-        responses={}
-    )
-    @extend_schema(methods=['HEAD'],
-        summary="Implements TUS file uploading protocol."
-    )
-    @action(detail=True, methods=['HEAD', 'PATCH'], url_path='annotations/'+UploadMixin.file_id_regex)
+    @tus_chunk_action(detail=True, suffix_base="annotations")
     def append_annotations_chunk(self, request, pk, file_id):
         self._object = self.get_object()
         return self.append_tus_chunk(request, file_id)
@@ -1691,7 +1637,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         })
 )
 class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
-    mixins.RetrieveModelMixin, CreateModelMixin, DestroyModelMixin,
+    mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
     PartialUpdateModelMixin
 ):
     queryset = Issue.objects.prefetch_related(
@@ -1728,7 +1674,7 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return IssueWriteSerializer
 
     def perform_create(self, serializer, **kwargs):
-        super().perform_create(serializer, owner=self.request.user)
+        serializer.save(owner=self.request.user)
 
 @extend_schema(tags=['comments'])
 @extend_schema_view(
@@ -1761,7 +1707,7 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         })
 )
 class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
-    mixins.RetrieveModelMixin, CreateModelMixin, DestroyModelMixin,
+    mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
     PartialUpdateModelMixin
 ):
     queryset = Comment.objects.prefetch_related(
@@ -1797,7 +1743,7 @@ class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return CommentWriteSerializer
 
     def perform_create(self, serializer, **kwargs):
-        super().perform_create(serializer, owner=self.request.user)
+        serializer.save(owner=self.request.user)
 
 
 @extend_schema(tags=['labels'])
@@ -2071,6 +2017,10 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     lookup_fields = {'owner': 'owner__username', 'name': 'display_name'}
     iam_organization_field = 'organization'
 
+    # Multipart support is necessary here, as CloudStorageWriteSerializer
+    # contains a file field (key_file).
+    parser_classes = _UPLOAD_PARSER_CLASSES
+
     def get_serializer_class(self):
         if self.request.method in ('POST', 'PATCH'):
             return CloudStorageWriteSerializer
@@ -2268,14 +2218,18 @@ def _import_annotations(request, rq_id, rq_func, db_obj, format_name,
                         for chunk in anno_file.chunks():
                             f.write(chunk)
             else:
-                assert filename, 'The filename was not spesified'
+                assert filename, 'The filename was not specified'
+
                 try:
                     storage_id = location_conf['storage_id']
                 except KeyError:
                     raise serializers.ValidationError(
-                        'Cloud storage location was selected for destination'
+                        'Cloud storage location was selected as the source,'
                         ' but cloud storage id was not specified')
-                db_storage = get_object_or_404(CloudStorageModel, pk=storage_id)
+                db_storage = get_cloud_storage_for_import_or_export(
+                    storage_id=storage_id, request=request,
+                    is_default=location_conf['is_default'])
+
                 key = filename
                 fd, filename = mkstemp(prefix='cvat_{}'.format(db_obj.pk), dir=settings.TMP_FILES_ROOT)
                 dependent_job = configure_dependent_job(
@@ -2374,10 +2328,11 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
                             storage_id = location_conf['storage_id']
                         except KeyError:
                             return HttpResponseBadRequest(
-                                'Cloud storage location was selected for destination'
+                                'Cloud storage location was selected as the destination,'
                                 ' but cloud storage id was not specified')
-
-                        db_storage = get_object_or_404(CloudStorageModel, pk=storage_id)
+                        db_storage = get_cloud_storage_for_import_or_export(
+                            storage_id=storage_id, request=request,
+                            is_default=location_conf['is_default'])
                         storage = db_storage_to_storage_instance(db_storage)
 
                         try:
@@ -2446,14 +2401,17 @@ def _import_project_dataset(request, rq_id, rq_func, db_obj, format_name, filena
                     for chunk in dataset_file.chunks():
                         f.write(chunk)
         elif location == Location.CLOUD_STORAGE:
-            assert filename, 'The filename was not spesified'
+            assert filename, 'The filename was not specified'
             try:
                 storage_id = location_conf['storage_id']
             except KeyError:
                 raise serializers.ValidationError(
-                    'Cloud storage location was selected for destination'
+                    'Cloud storage location was selected as the source,'
                     ' but cloud storage id was not specified')
-            db_storage = get_object_or_404(CloudStorageModel, pk=storage_id)
+            db_storage = get_cloud_storage_for_import_or_export(
+                storage_id=storage_id, request=request,
+                is_default=location_conf['is_default'])
+
             key = filename
             fd, filename = mkstemp(prefix='cvat_{}'.format(db_obj.pk), dir=settings.TMP_FILES_ROOT)
             dependent_job = configure_dependent_job(

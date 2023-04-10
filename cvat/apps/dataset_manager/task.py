@@ -140,7 +140,6 @@ class JobAnnotation:
 
                 for shape in shapes:
                     shape_attributes = shape.pop("attributes", [])
-                    shape_elements = shape.pop("elements", [])
                     # FIXME: need to clamp points (be sure that all of them inside the image)
                     # Should we check here or implement a validator?
                     db_shape = models.TrackedShape(**shape)
@@ -155,12 +154,12 @@ class JobAnnotation:
 
                     db_shapes.append(db_shape)
                     shape["attributes"] = shape_attributes
-                    shape["elements"] = shape_elements
 
                 db_tracks.append(db_track)
                 track["attributes"] = track_attributes
                 track["shapes"] = shapes
-                track["elements"] = elements
+                if elements or parent_track is None:
+                    track["elements"] = elements
 
             db_tracks = bulk_create(
                 db_model=models.LabeledTrack,
@@ -200,7 +199,7 @@ class JobAnnotation:
                 for shape in track["shapes"]:
                     shape["id"] = db_shapes[shape_idx].id
                     shape_idx += 1
-                create_tracks(track["elements"], db_track)
+                create_tracks(track.get("elements", []), db_track)
 
         create_tracks(tracks)
 
@@ -230,7 +229,8 @@ class JobAnnotation:
 
                 db_shapes.append(db_shape)
                 shape["attributes"] = attributes
-                shape["elements"] = shape_elements
+                if shape_elements or parent_shape is None:
+                    shape["elements"] = shape_elements
 
             db_shapes = bulk_create(
                 db_model=models.LabeledShape,
@@ -249,7 +249,7 @@ class JobAnnotation:
 
             for shape, db_shape in zip(shapes, db_shapes):
                 shape["id"] = db_shape.id
-                create_shapes(shape["elements"], db_shape)
+                create_shapes(shape.get("elements", []), db_shape)
 
         create_shapes(shapes)
 
@@ -399,7 +399,7 @@ class JobAnnotation:
             self._extend_attributes(db_tag.labeledimageattributeval_set,
                 self.db_attributes[db_tag.label_id]["all"].values())
 
-        serializer = serializers.LabeledImageSerializer(db_tags, many=True)
+        serializer = serializers.LabeledImageSerializerFromDB(db_tags, many=True)
         self.ir_data.tags = serializer.data
 
     def _init_shapes_from_db(self):
@@ -453,7 +453,7 @@ class JobAnnotation:
         for shape_id, shape_elements in elements.items():
             shapes[shape_id].elements = shape_elements
 
-        serializer = serializers.LabeledShapeSerializer(list(shapes.values()), many=True)
+        serializer = serializers.LabeledShapeSerializerFromDB(list(shapes.values()), many=True)
         self.ir_data.shapes = serializer.data
 
     def _init_tracks_from_db(self):
@@ -546,7 +546,7 @@ class JobAnnotation:
         for track_id, track_elements in elements.items():
             tracks[track_id].elements = track_elements
 
-        serializer = serializers.LabeledTrackSerializer(list(tracks.values()), many=True)
+        serializer = serializers.LabeledTrackSerializerFromDB(list(tracks.values()), many=True)
         self.ir_data.tracks = serializer.data
 
     def _init_version_from_db(self):

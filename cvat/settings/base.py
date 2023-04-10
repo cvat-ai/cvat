@@ -147,9 +147,6 @@ SITE_ID = 1
 REST_FRAMEWORK = {
     'DEFAULT_PARSER_CLASSES': [
         'rest_framework.parsers.JSONParser',
-        'rest_framework.parsers.FormParser',
-        'rest_framework.parsers.MultiPartParser',
-        'cvat.apps.engine.parsers.TusUploadParser',
     ],
     'DEFAULT_RENDERER_CLASSES': [
         'cvat.apps.engine.renderers.CVATAPIRenderer',
@@ -296,6 +293,7 @@ class CVAT_QUEUES(Enum):
     EXPORT_DATA = 'export'
     AUTO_ANNOTATION = 'annotation'
     WEBHOOKS = 'webhooks'
+    NOTIFICATIONS = 'notifications'
 
 RQ_QUEUES = {
     CVAT_QUEUES.IMPORT_DATA.value: {
@@ -321,7 +319,13 @@ RQ_QUEUES = {
         'PORT': 6379,
         'DB': 0,
         'DEFAULT_TIMEOUT': '1h'
-    }
+    },
+    CVAT_QUEUES.NOTIFICATIONS.value: {
+        'HOST': 'localhost',
+        'PORT': 6379,
+        'DB': 0,
+        'DEFAULT_TIMEOUT': '1h'
+    },
 }
 
 NUCLIO = {

@@ -9,10 +9,16 @@ import hashlib
 import importlib
 import sys
 import traceback
+from typing import Any, Dict, Optional
 import subprocess
 import os
 import urllib.parse
+
+from django.http.request import HttpRequest
 from django.utils import timezone
+from django.utils.http import urlencode
+
+from rest_framework.reverse import reverse as _reverse
 
 from av import VideoFrame
 from PIL import Image
@@ -175,4 +181,38 @@ def get_rq_job_meta(request, db_obj):
         'project_id': pid,
         'task_id': tid,
         'job_id': jid,
+    }
+
+def reverse(viewname, *, args=None, kwargs=None,
+    query_params: Optional[Dict[str, str]] = None,
+    request: Optional[HttpRequest] = None,
+) -> str:
+    """
+    The same as rest_framework's reverse(), but adds custom query params support.
+    The original request can be passed in the 'request' parameter to
+    return absolute URLs.
+    """
+
+    url = _reverse(viewname, args, kwargs, request)
+
+    if query_params:
+        return f'{url}?{urlencode(query_params)}'
+
+    return url
+
+def build_field_filter_params(field: str, value: Any) -> Dict[str, str]:
+    """
+    Builds a collection filter query params for a single field and value.
+    """
+    return { field: value }
+
+def get_list_view_name(model):
+    # Implemented after
+    # rest_framework/utils/field_mapping.py.get_detail_view_name()
+    """
+    Given a model class, return the view name to use for URL relationships
+    that refer to instances of the model.
+    """
+    return '%(model_name)s-list' % {
+        'model_name': model._meta.object_name.lower()
     }
