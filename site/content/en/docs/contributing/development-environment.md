@@ -173,13 +173,13 @@ description: 'Installing a development environment for different operating syste
 
 - Pull and run PostgreSQL docker image:
 
-```bash
-docker run --name cvat_debug_db -e POSTGRES_HOST_AUTH_METHOD=trust -e POSTGRES_USER=root \
--e POSTGRES_DB=cvat -p 5432:5432 -d postgres
-```
+  ```bash
+  docker run --name cvat_debug_db -e POSTGRES_HOST_AUTH_METHOD=trust -e POSTGRES_USER=root \
+  -e POSTGRES_DB=cvat -p 5432:5432 -d postgres
+  ```
 
-Note: use `docker start/stop cvat_debug_db` commands to start and stop the container.
-If it is removed, data will be removed together with the container.
+  Note: use `docker start/stop cvat_debug_db` commands to start and stop the container.
+  If it is removed, data will be removed together with the container.
 
 ### Run CVAT
 - Start npm UI debug server (run the following command from CVAT root directory):
