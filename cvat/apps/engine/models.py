@@ -543,7 +543,8 @@ class Label(models.Model):
         except IntegrityError:
             raise InvalidLabel("All label names must be unique")
 
-    def get_organization_id(self):
+    @property
+    def organization_id(self):
         if self.project is not None:
             return self.project.organization.id
         if self.task is not None:
@@ -723,7 +724,7 @@ class Issue(models.Model):
 
     @property
     def organization_id(self):
-        return self.job.get_organization_id()
+        return self.job.organization_id
 
     def get_organization_slug(self):
         return self.job.get_organization_slug()
@@ -747,7 +748,7 @@ class Comment(models.Model):
 
     @property
     def organization_id(self):
-        return self.issue.get_organization_id()
+        return self.issue.organization_id
 
     def get_organization_slug(self):
         return self.issue.get_organization_slug()
