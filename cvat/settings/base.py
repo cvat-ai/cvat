@@ -392,9 +392,10 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 os.makedirs(STATIC_ROOT, exist_ok=True)
 
-# Make sure to update other config files when upading these directories
+# Make sure to update other config files when updating these directories
 DATA_ROOT = os.path.join(BASE_DIR, 'data')
-EVENTS_LOCAL_DB = os.path.join(DATA_ROOT,'events.db')
+
+EVENTS_LOCAL_DB = os.path.join(DATA_ROOT, 'events.db')
 os.makedirs(DATA_ROOT, exist_ok=True)
 if not os.path.exists(EVENTS_LOCAL_DB):
     open(EVENTS_LOCAL_DB, 'w').close()
