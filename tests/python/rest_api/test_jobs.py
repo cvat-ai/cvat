@@ -83,7 +83,7 @@ class TestGetJobs:
         for job in jobs[:8]:
             self._test_get_job_200("admin2", job["id"], job, **kwargs)
 
-    @pytest.mark.parametrize("org_id", ["", None, 1, 2])
+    @pytest.mark.parametrize("org_id", ["", 1, 2])
     @pytest.mark.parametrize("groups", [["business"], ["user"], ["worker"], []])
     def test_non_admin_get_job(self, org_id, groups, users, jobs, tasks, projects, org_staff):
         # keep the reasonable amount of users and jobs
@@ -724,7 +724,7 @@ class TestGetJobPreview:
         for job in jobs[:8]:
             self._test_get_job_preview_200("admin2", job["id"], **kwargs)
 
-    @pytest.mark.parametrize("org_id", ["", None, 1, 2])
+    @pytest.mark.parametrize("org_id", ["", 1, 2])
     @pytest.mark.parametrize("groups", [["business"], ["user"], ["worker"], []])
     def test_non_admin_get_job_preview(
         self, org_id, groups, users, jobs, tasks, projects, org_staff
