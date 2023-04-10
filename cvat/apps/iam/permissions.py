@@ -1615,18 +1615,3 @@ class PolicyEnforcer(BasePermission):
     def is_metadata_request(request, view):
         return request.method == 'OPTIONS' \
             or (request.method == 'POST' and view.action == 'metadata' and len(request.data) == 0)
-
-class IsMemberInOrganization(BasePermission):
-    message = 'You should be an active member in the organization.'
-
-    # pylint: disable=no-self-use
-    def has_permission(self, request, view):
-        user = request.user
-        organization = request.iam_context['organization']
-        membership = request.iam_context['membership']
-
-        if organization and not user.is_superuser:
-            return membership is not None
-
-        return True
-
