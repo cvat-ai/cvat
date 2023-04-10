@@ -1,6 +1,7 @@
 FROM cvat/server:local
 
 ENV DJANGO_CONFIGURATION=testing
+ENV CVAT_POSTGRES_HOST=cvat_db
 USER root
 
 RUN apt-get update && \
