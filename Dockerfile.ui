@@ -7,6 +7,7 @@ ARG socks_proxy
 ARG WA_PAGE_VIEW_HIT
 ARG UI_APP_CONFIG
 ARG CLIENT_PLUGINS
+ARG REACT_APP_CVAT_BILLING_URL
 
 ENV TERM=xterm \
     http_proxy=${http_proxy}   \
@@ -35,7 +36,7 @@ COPY cvat-core/ /tmp/cvat-core/
 COPY cvat-canvas3d/ /tmp/cvat-canvas3d/
 COPY cvat-canvas/ /tmp/cvat-canvas/
 COPY cvat-ui/ /tmp/cvat-ui/
-RUN CLIENT_PLUGINS="${CLIENT_PLUGINS}" UI_APP_CONFIG="${UI_APP_CONFIG}" yarn run build:cvat-ui
+RUN CLIENT_PLUGINS="${CLIENT_PLUGINS}" UI_APP_CONFIG="${UI_APP_CONFIG}" REACT_APP_CVAT_BILLING_URL="${REACT_APP_CVAT_BILLING_URL}" yarn run build:cvat-ui
 
 FROM nginx:mainline-alpine
 # Replace default.conf configuration to remove unnecessary rules
