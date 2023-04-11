@@ -74,6 +74,22 @@ jobs:
 
           cp -r cvat-sdk/* /tmp/cvat_sdk/
 
+      - name: Verify API schema
+        id: verify_schema
+        run: |
+          docker load --input /tmp/cvat_server/image.tar
+          docker run --rm --entrypoint /bin/bash cvat/server \
+            -c 'python manage.py spectacular' > cvat/schema-expected.yml
+
+          if ! git diff --no-index cvat/schema.yml cvat/schema-expected.yml; then
+            echo
+            echo 'API schema has changed! Please update cvat/schema.yml:'
+            echo
+            echo '  docker run --rm --entrypoint /bin/bash cvat/server:dev \'
+            echo "    -c 'python manage.py spectacular' > cvat/schema.yml"
+            exit 1
+          fi
+
       - name: Upload CVAT server artifact
         uses: actions/upload-artifact@v3
         with:
@@ -128,20 +144,6 @@ jobs:
           docker tag cvat/ui:latest cvat/ui:${CVAT_VERSION}
           docker image ls -a
 
-      - name: Verify API schema
-        id: verify_schema
-        run: |
-          docker run --rm --entrypoint /bin/bash cvat/server:${CVAT_VERSION} \
-            -c 'python manage.py spectacular' > cvat/schema-expected.yml
-
-          if ! git diff --no-index cvat/schema.yml cvat/schema-expected.yml; then
-            echo
-            echo 'API schema has changed! Please update cvat/schema.yml:'
-            echo
-            echo '  docker run --rm --entrypoint /bin/bash cvat/server:dev \'
-            echo "    -c 'python manage.py spectacular' > cvat/schema.yml"
-            exit 1
-          fi
 
       - name: Upload expected schema as an artifact
         if: failure() && steps.verify_schema.conclusion == 'failure'
