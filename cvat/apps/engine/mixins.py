@@ -49,20 +49,24 @@ class TusFile:
 
         def save(self):
             if self._meta is not None:
+                os.makedirs(os.path.dirname(self._path), exist_ok=True)
                 with open(self._path, "w") as fp:
                     json.dump(asdict(self._meta), fp)
 
-        def is_exists(self):
-            return self._meta is not None
+        def is_exist(self):
+            return os.path.exists(self._path)
 
         def delete(self):
             os.remove(self._path)
 
-    def __init__(self, file_id, upload_dir):
+    def __init__(self, file_id, upload_dir, meta=None):
         self.file_id = file_id
         self.upload_dir = upload_dir
         self.file_path = os.path.join(self.upload_dir, self.file_id)
         self.meta_file = self.TusMetaFile(self._get_tus_meta_file_path(file_id, upload_dir))
+        if meta is not None:
+            self.meta_file.meta = meta
+            self.meta_file.save()
 
     @property
     def filename(self):
@@ -75,6 +79,9 @@ class TusFile:
     @property
     def offset(self):
         return self.meta_file.meta.offset
+
+    def is_exist(self):
+        return self.meta_file.is_exist()
 
     @staticmethod
     def _get_tus_meta_file_path(file_id, upload_dir):
@@ -112,26 +119,21 @@ class TusFile:
         self.meta_file.delete()
 
     @staticmethod
-    def get_tusfile(file_id, upload_dir):
-        tus_meta_file = TusFile.TusMetaFile(TusFile._get_tus_meta_file_path(file_id, upload_dir))
-        if tus_meta_file.is_exists():
-            return TusFile(file_id, upload_dir)
-        return None
-
-    @staticmethod
     def create_file(metadata, file_size, upload_dir):
         file_id = str(uuid.uuid4())
         filename = metadata.get("filename")
-        tus_meta_file = TusFile.TusMetaFile(TusFile._get_tus_meta_file_path(file_id, upload_dir))
-        tus_meta_file.meta = TusFile.TusMeta(
-            filename=filename,
-            file_size=file_size,
-            offset=0,
-        )
-        tus_meta_file.save()
 
-        tus_file = TusFile(file_id, upload_dir)
+        tus_file = TusFile(
+            file_id,
+            upload_dir,
+            TusFile.TusMeta(
+                filename=filename,
+                file_size=file_size,
+                offset=0,
+            ),
+        )
         tus_file.init_file()
+
         return tus_file
 
 class TusChunk:
@@ -238,15 +240,14 @@ class UploadMixin:
                                'Upload-Filename': tus_file.filename})
 
     def append_tus_chunk(self, request, file_id):
+        tus_file = TusFile(str(file_id), self.get_upload_dir())
         if request.method == 'HEAD':
-            tus_file = TusFile.get_tusfile(str(file_id), self.get_upload_dir())
-            if tus_file:
+            if tus_file.is_exist():
                 return self._tus_response(status=status.HTTP_200_OK, extra_headers={
                                'Upload-Offset': tus_file.offset,
                                'Upload-Length': tus_file.file_size})
             return self._tus_response(status=status.HTTP_404_NOT_FOUND)
 
-        tus_file = TusFile.get_tusfile(str(file_id), self.get_upload_dir())
         chunk = TusChunk(request)
 
         if chunk.offset != tus_file.offset:
