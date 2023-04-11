@@ -1,5 +1,5 @@
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -7,9 +7,10 @@ import os
 import base64
 from unittest import mock
 import uuid
+import json
+from dataclasses import dataclass, asdict
 
 from django.conf import settings
-from django.core.cache import cache
 from distutils.util import strtobool
 from rest_framework import status, mixins
 from rest_framework.response import Response
@@ -19,15 +20,64 @@ from cvat.apps.engine.location import StorageType, get_location_configuration
 from cvat.apps.engine.serializers import DataSerializer
 
 class TusFile:
-    _tus_cache_timeout = 3600
+    @dataclass
+    class TusMeta:
+        filename: str = ""
+        file_size: int = 0
+        offset: int = 0
+
+    class TusMetaFile():
+        def __init__(self, path) -> None:
+            self._path = path
+            self._meta = None
+            if os.path.exists(self._path):
+                self._meta = self._read()
+
+        @property
+        def meta(self):
+            return self._meta
+
+        @meta.setter
+        def meta(self, meta):
+            self._meta = meta
+
+        def _read(self):
+            with open(self._path, "r") as fp:
+                data = json.load(fp)
+            return TusFile.TusMeta(**data)
+
+        def save(self):
+            if self._meta is not None:
+                with open(self._path, "w") as fp:
+                    json.dump(asdict(self._meta), fp)
+
+        def is_exists(self):
+            return self._meta is not None
+
+        def delete(self):
+            os.remove(self._path)
+
     def __init__(self, file_id, upload_dir):
         self.file_id = file_id
         self.upload_dir = upload_dir
         self.file_path = os.path.join(self.upload_dir, self.file_id)
-        self.filename = cache.get("tus-uploads/{}/filename".format(file_id))
-        self.file_size = int(cache.get("tus-uploads/{}/file_size".format(file_id)))
-        self.metadata = cache.get("tus-uploads/{}/metadata".format(file_id))
-        self.offset = cache.get("tus-uploads/{}/offset".format(file_id))
+        self.meta_file = self.TusMetaFile(self._get_tus_meta_file_path(file_id, upload_dir))
+
+    @property
+    def filename(self):
+        return self.meta_file.meta.filename
+
+    @property
+    def file_size(self):
+        return self.meta_file.meta.file_size
+
+    @property
+    def offset(self):
+        return self.meta_file.meta.offset
+
+    @staticmethod
+    def _get_tus_meta_file_path(file_id, upload_dir):
+        return os.path.join(upload_dir, f"{file_id}.meta")
 
     def init_file(self):
         os.makedirs(self.upload_dir, exist_ok=True)
@@ -40,36 +90,30 @@ class TusFile:
         with open(self.file_path, 'r+b') as file:
             file.seek(chunk.offset)
             file.write(chunk.content)
-        self.offset = cache.incr("tus-uploads/{}/offset".format(self.file_id), chunk.size)
+        self.meta_file.meta.offset += chunk.size
+        self.meta_file.save()
 
     def is_complete(self):
         return self.offset == self.file_size
 
     def rename(self):
-        file_id_path = os.path.join(self.upload_dir, self.file_id)
         file_path = os.path.join(self.upload_dir, self.filename)
-        file_exists = os.path.lexists(os.path.join(self.upload_dir, self.filename))
-        if file_exists:
+        if os.path.lexists(file_path):
             original_file_name, extension = os.path.splitext(self.filename)
             file_amount = 1
             while os.path.lexists(os.path.join(self.upload_dir, self.filename)):
-                self.filename = "{}_{}{}".format(original_file_name, file_amount, extension)
+                self.meta_file.meta.filename = "{}_{}{}".format(original_file_name, file_amount, extension)
                 file_path = os.path.join(self.upload_dir, self.filename)
                 file_amount += 1
-        os.rename(file_id_path, file_path)
+        os.rename(self.file_path, file_path)
 
     def clean(self):
-        cache.delete_many([
-            "tus-uploads/{}/file_size".format(self.file_id),
-            "tus-uploads/{}/filename".format(self.file_id),
-            "tus-uploads/{}/offset".format(self.file_id),
-            "tus-uploads/{}/metadata".format(self.file_id),
-        ])
+        self.meta_file.delete()
 
     @staticmethod
     def get_tusfile(file_id, upload_dir):
-        file_exists = cache.get("tus-uploads/{}/filename".format(file_id), None) is not None
-        if file_exists:
+        tus_meta_file = TusFile.TusMetaFile(TusFile._get_tus_meta_file_path(file_id, upload_dir))
+        if tus_meta_file.is_exists():
             return TusFile(file_id, upload_dir)
         return None
 
@@ -77,10 +121,13 @@ class TusFile:
     def create_file(metadata, file_size, upload_dir):
         file_id = str(uuid.uuid4())
         filename = metadata.get("filename")
-        cache.add("tus-uploads/{}/filename".format(file_id), "{}".format(filename), TusFile._tus_cache_timeout)
-        cache.add("tus-uploads/{}/file_size".format(file_id), file_size, TusFile._tus_cache_timeout)
-        cache.add("tus-uploads/{}/offset".format(file_id), 0, TusFile._tus_cache_timeout)
-        cache.add("tus-uploads/{}/metadata".format(file_id), metadata, TusFile._tus_cache_timeout)
+        tus_meta_file = TusFile.TusMetaFile(TusFile._get_tus_meta_file_path(file_id, upload_dir))
+        tus_meta_file.meta = TusFile.TusMeta(
+            filename=filename,
+            file_size=file_size,
+            offset=0,
+        )
+        tus_meta_file.save()
 
         tus_file = TusFile(file_id, upload_dir)
         tus_file.init_file()
@@ -197,25 +244,25 @@ class UploadMixin:
                                'Upload-Offset': tus_file.offset,
                                'Upload-Length': tus_file.file_size})
             return self._tus_response(status=status.HTTP_404_NOT_FOUND)
-        else:
-            tus_file = TusFile.get_tusfile(str(file_id), self.get_upload_dir())
-            chunk = TusChunk(request)
 
-            if chunk.offset != tus_file.offset:
-                return self._tus_response(status=status.HTTP_409_CONFLICT)
+        tus_file = TusFile.get_tusfile(str(file_id), self.get_upload_dir())
+        chunk = TusChunk(request)
 
-            if chunk.offset > tus_file.file_size:
-                return self._tus_response(status=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE)
+        if chunk.offset != tus_file.offset:
+            return self._tus_response(status=status.HTTP_409_CONFLICT)
 
-            tus_file.write_chunk(chunk)
+        if chunk.offset > tus_file.file_size:
+            return self._tus_response(status=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE)
 
-            if tus_file.is_complete():
-                tus_file.rename()
-                tus_file.clean()
+        tus_file.write_chunk(chunk)
 
-            return self._tus_response(status=status.HTTP_204_NO_CONTENT,
-                                      extra_headers={'Upload-Offset': tus_file.offset,
-                                                     'Upload-Filename': tus_file.filename})
+        if tus_file.is_complete():
+            tus_file.rename()
+            tus_file.clean()
+
+        return self._tus_response(status=status.HTTP_204_NO_CONTENT,
+                                    extra_headers={'Upload-Offset': tus_file.offset,
+                                                    'Upload-Filename': tus_file.filename})
 
     def validate_filename(self, filename):
         upload_dir = self.get_upload_dir()
