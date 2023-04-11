@@ -49,7 +49,9 @@ def get_organization(request):
     except Organization.DoesNotExist:
         raise NotFound(f'{org_slug or org_id} organization does not exist.')
 
-    return {"organization": organization}
+    context = {"organization": organization}
+
+    return context
 
 class ContextMiddleware:
     def __init__(self, get_response):
@@ -59,7 +61,6 @@ class ContextMiddleware:
 
         # https://stackoverflow.com/questions/26240832/django-and-middleware-which-uses-request-user-is-always-anonymous
         request.iam_context = SimpleLazyObject(lambda: get_organization(request))
-        # request.organization = get_organization(request)
 
         return self.get_response(request)
 
