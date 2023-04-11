@@ -42,6 +42,9 @@ def filter_jobs(jobs, tasks, org):
     if isinstance(org, int):
         kwargs = {"org_id": org}
         jobs = [job for job in jobs if tasks[job["task_id"]]["organization"] == org]
+    elif org == "":
+        kwargs = {"org": ""}
+        jobs = [job for job in jobs if tasks[job["task_id"]]["organization"] is None]
     else:
         kwargs = {}
         jobs = jobs.raw

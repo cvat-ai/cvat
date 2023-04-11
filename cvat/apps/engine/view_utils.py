@@ -79,7 +79,7 @@ def list_action(serializer_class: Type[Serializer], **kwargs):
 def get_cloud_storage_for_import_or_export(
     storage_id: int, *, request, is_default: bool = False
 ) -> CloudStorageModel:
-    perm = CloudStoragePermission.create_scope_view(request=request, storage_id=storage_id)
+    perm = CloudStoragePermission.create_scope_view(None, storage_id=storage_id, request=request)
     result = perm.check_access()
     if not result.allow:
         if is_default:
