@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## \[2.5.0] - Unreleased
 ### Added
 - Add support for Azure Blob Storage connection string authentication(<https://github.com/openvinotoolkit/cvat/pull/4649>)
+- Added Segment Anything interactor for CPU/GPU (<https://github.com/opencv/cvat/pull/6008>)
 
 ### Changed
 - Moving a task from a project to another project is disabled (<https://github.com/opencv/cvat/pull/5901>)
