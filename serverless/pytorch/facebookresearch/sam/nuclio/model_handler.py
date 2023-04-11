@@ -3,7 +3,6 @@ import cv2
 import torch
 from segment_anything import sam_model_registry, SamPredictor
 
-
 def convert_mask_to_polygon(mask):
     contours = None
     if int(cv2.__version__.split('.')[0]) > 3:
