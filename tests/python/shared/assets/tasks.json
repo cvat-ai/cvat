@@ -17,7 +17,8 @@
       "jobs": {
         "completed": 0,
         "count": 2,
-        "url": "http://localhost:8080/api/jobs?task_id=21"
+        "url": "http://localhost:8080/api/jobs?task_id=21",
+        "validation": 0
       },
       "labels": {
         "count": 2,
