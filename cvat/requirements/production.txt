@@ -1,3 +1,2 @@
 -r base.txt
-psycopg2-binary==2.9.5
 mod-wsgi==4.9.4

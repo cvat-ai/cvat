@@ -163,13 +163,23 @@ description: 'Installing a development environment for different operating syste
 
 - Install [Docker Engine](https://docs.docker.com/engine/install/ubuntu/) and [Docker-Compose](https://docs.docker.com/compose/install/)
 
-- Pull and run OpenPolicyAgent Docker image:
+- Pull and run Open Policy Agent docker image:
 
   ```bash
    docker run -d --rm --name cvat_opa_debug -p 8181:8181 openpolicyagent/opa:0.45.0-rootless \
    run --server --set=decision_logs.console=true --set=services.cvat.url=http://host.docker.internal:7000 \
    --set=bundles.cvat.service=cvat --set=bundles.cvat.resource=/api/auth/rules
   ```
+
+- Pull and run PostgreSQL docker image:
+
+  ```bash
+  docker run --name cvat_db_debug -e POSTGRES_HOST_AUTH_METHOD=trust -e POSTGRES_USER=root \
+  -e POSTGRES_DB=cvat -p 5432:5432 -d postgres
+  ```
+
+  Note: use `docker start/stop cvat_db_debug` commands to start and stop the container.
+  If it is removed, data will be removed together with the container.
 
 ### Run CVAT
 - Start npm UI debug server (run the following command from CVAT root directory):
