@@ -25,72 +25,41 @@ def convert_mask_to_polygon(mask):
 
 class ModelHandler:
     def __init__(self):
-        sam_weights = "/opt/nuclio/sam/sam_vit_h_4b8939.pth"
-        device = "cuda"
-        model_type = "default"
-        sam_model = sam_model_registry[model_type](checkpoint=sam_weights)
-        sam_model.to(device=device)
-        self.predictor = SamPredictor
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.sam_checkpoint = "/opt/nuclio/sam/sam_vit_h_4b8939.pth"
+        self.model_type = "vit_h"
+        self.latest_image = None
+        self.latest_low_res_masks = None
+        sam_model = sam_model_registry[self.model_type](checkpoint=self.sam_checkpoint)
+        sam_model.to(device=self.device)
+        self.predictor = SamPredictor(sam_model)
 
     def handle(self, image, pos_points, neg_points):
-        self.predictor.set_image(image)
+        # latest image is kept in memory because function is always run-time after startup
+        # we use to avoid computing emeddings twice for the same image
+        is_the_same_image = self.latest_image is not None and np.array_equal(np.array(image), self.latest_image)
+        if not is_the_same_image:
+            self.latest_low_res_masks = None
+            numpy_image = np.array(image)
+            self.predictor.set_image(numpy_image)
+            self.latest_image = numpy_image
         # we assume that pos_points and neg_points are of type:
         # np.array[[x, y], [x, y], ...]
-        pos_points = np.array(pos_points)
-        neg_points = np.array(neg_points)
-        assert type(pos_points) == np.ndarray, f"found {type(pos_points)}"
-        assert type(neg_points) == np.ndarray, f"found {type(neg_points)}"
-        # the pos_points get label 1, the neg_points get label 0. Labels in input_labels must be in same order as points in input_points
+        input_points = np.array(pos_points)
+        input_labels = np.array([1] * len(pos_points))
 
-        input_points = np.concatenate([pos_points, neg_points], axis=0)
-        input_labels = np.concatenate([np.array([1]*len(pos_points)), np.array([0]*len(neg_points))])
-        masks, _, _ = self.predictor.predict(point_coords=input_points, point_labels=input_labels, multimask_output=False)
-        polygon = convert_mask_to_polygon(masks)
-        return masks, polygon
+        if len(neg_points):
+            input_points = np.concatenate([input_points, neg_points], axis=0)
+            input_labels = np.concatenate([input_labels, np.array([0] * len(neg_points))], axis=0)
 
-
-
-        # with torch.no_grad():
-        #     # Create IOG image
-        #     pos_gt = np.zeros(shape=input_crop.shape[:2], dtype=np.float64)
-        #     neg_gt = np.zeros(shape=input_crop.shape[:2], dtype=np.float64)
-        #     for p in pos_points:
-        #         pos_gt = np.maximum(pos_gt, helpers.make_gaussian(pos_gt.shape, center=p))
-        #     for p in neg_points:
-        #         neg_gt = np.maximum(neg_gt, helpers.make_gaussian(neg_gt.shape, center=p))
-        #     iog_image = np.stack((pos_gt, neg_gt), axis=2).astype(dtype=input_crop.dtype)
-
-        #     # Convert iog_image to an image (0-255 values)
-        #     cv2.normalize(iog_image, iog_image, 0, 255, cv2.NORM_MINMAX)
-
-        #     # Concatenate input crop and IOG image
-        #     input_blob = np.concatenate((input_crop, iog_image), axis=2)
-
-        #     # numpy image: H x W x C
-        #     # torch image: C X H X W
-        #     input_blob = input_blob.transpose((2, 0, 1))
-        #     # batch size is 1
-        #     input_blob = np.array([input_blob])
-        #     input_tensor = torch.from_numpy(input_blob)
-
-        #     input_tensor = input_tensor.to(self.device)
-        #     output_mask = self.net.forward(input_tensor)[4]
-        #     output_mask = output_mask.to(self.device)
-        #     pred = np.transpose(output_mask.data.numpy()[0, :, :, :], (1, 2, 0))
-        #     pred = pred > threshold
-        #     pred = np.squeeze(pred)
-
-        #     # Convert a mask to a polygon
-        #     pred = np.array(pred, dtype=np.uint8)
-        #     pred = cv2.resize(pred, dsize=(crop_shape[0], crop_shape[1]),
-        #         interpolation=cv2.INTER_CUBIC)
-        #     cv2.normalize(pred, pred, 0, 255, cv2.NORM_MINMAX)
-
-        #     mask = np.zeros((image.height, image.width), dtype=np.uint8)
-        #     x = int(crop_bbox[0])
-        #     y = int(crop_bbox[1])
-        #     mask[y : y + crop_shape[1], x : x + crop_shape[0]] = pred
-
-        #     polygon = convert_mask_to_polygon(mask)
-
-        #     return mask, polygon
+        masks, _, low_res_masks = self.predictor.predict(
+            point_coords=input_points,
+            point_labels=input_labels,
+            mask_input = self.latest_low_res_masks,
+            multimask_output=False
+        )
+        self.latest_low_res_masks = low_res_masks
+        object_mask = np.array(masks[0], dtype=np.uint8)
+        cv2.normalize(object_mask, object_mask, 0, 255, cv2.NORM_MINMAX)
+        polygon = convert_mask_to_polygon(object_mask)
+        return object_mask, polygon
