@@ -3,21 +3,22 @@
 #
 # SPDX-License-Identifier: MIT
 
-import os
 import base64
-from unittest import mock
-import uuid
 import json
-from dataclasses import dataclass, asdict
+import os
+import uuid
+from dataclasses import asdict, dataclass
+from distutils.util import strtobool
+from unittest import mock
 
 from django.conf import settings
-from distutils.util import strtobool
-from rest_framework import status, mixins
+from rest_framework import mixins, status
 from rest_framework.response import Response
 
-from cvat.apps.engine.models import Location
 from cvat.apps.engine.location import StorageType, get_location_configuration
+from cvat.apps.engine.models import Location
 from cvat.apps.engine.serializers import DataSerializer
+
 
 class TusFile:
     @dataclass
