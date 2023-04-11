@@ -107,6 +107,16 @@ spec:
         - kind: WORKDIR
           value: /opt/nuclio
         - kind: RUN
+          value: apt-get install gcc
+        - kind: RUN
+          value: apt-get install wget
+        - kind: RUN
+          value: rm /etc/apt/sources.list.d/cuda.list
+        - kind: RUN
+          value: apt-key del 7fa2af80 && distribution=$(. /etc/os-release;echo $ID$VERSION_ID | sed -e 's/\.//g') && wget https://developer.download.nvidia.com/compute/cuda/repos/$distribution/x86_64/cuda-keyring_1.0-1_all.deb
+        - kind: RUN
+          value: dpkg -i cuda-keyring_1.0-1_all.deb
+        - kind: RUN
           value: apt update && apt install --no-install-recommends -y git curl
         - kind: RUN
           value: git clone --depth 1 https://github.com/matterport/Mask_RCNN.git
