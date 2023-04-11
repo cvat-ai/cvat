@@ -522,18 +522,24 @@ async function healthCheck(
         });
 }
 
-async function serverRequest(url: string, data: object): Promise<any> {
-    try {
-        const res = await Axios(url, data);
-        return res;
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
+export interface ServerRequestConfig {
+    fetchAll: boolean,
 }
-
-async function serverRequestAll(url: string): Promise<any> {
+const defaultRequestConfig = {
+    fetchAll: false,
+};
+async function serverRequest(
+    url: string, data: object,
+    requestConfig: ServerRequestConfig = defaultRequestConfig,
+): Promise<any> {
     try {
-        const res = await fetchAll(url);
+        let res = null;
+        const { fetchAll: useFetchAll } = requestConfig;
+        if (useFetchAll) {
+            res = await fetchAll(url);
+        } else {
+            res = await Axios(url, data);
+        }
         return res;
     } catch (errorData) {
         throw generateError(errorData);
@@ -2037,7 +2043,6 @@ export default Object.freeze({
         healthCheck,
         register,
         request: serverRequest,
-        requestAll: serverRequestAll,
         userAgreements,
         installedApps,
     }),

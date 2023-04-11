@@ -114,13 +114,8 @@ export default function implementAPI(cvat) {
         return result;
     };
 
-    cvat.server.request.implementation = async (url, data) => {
-        const result = await serverProxy.server.request(url, data);
-        return result;
-    };
-
-    cvat.server.requestAll.implementation = async (url) => {
-        const result = await serverProxy.server.requestAll(url);
+    cvat.server.request.implementation = async (url, data, requestConfig) => {
+        const result = await serverProxy.server.request(url, data, requestConfig);
         return result;
     };
 

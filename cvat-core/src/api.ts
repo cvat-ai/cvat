@@ -114,12 +114,8 @@ function build() {
                 );
                 return result;
             },
-            async request(url, data) {
-                const result = await PluginRegistry.apiWrapper(cvat.server.request, url, data);
-                return result;
-            },
-            async requestAll(url) {
-                const result = await PluginRegistry.apiWrapper(cvat.server.requestAll, url);
+            async request(url, data, requestConfig) {
+                const result = await PluginRegistry.apiWrapper(cvat.server.request, url, data, requestConfig);
                 return result;
             },
             async setAuthData(response) {
