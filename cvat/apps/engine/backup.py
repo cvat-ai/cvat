@@ -897,7 +897,7 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
     rq_job = queue.fetch_job(rq_id)
 
     if not rq_job:
-        org_id = getattr(request.iam_context["organization"], 'id', None)
+        org_id = getattr(request.iam_context['organization'], 'id', None)
         fd = None
         dependent_job = None
 

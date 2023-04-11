@@ -262,7 +262,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def perform_create(self, serializer, **kwargs):
         serializer.save(
             owner=self.request.user,
-            organization=self.request.iam_context["organization"]
+            organization=self.request.iam_context['organization']
         )
 
     @extend_schema(methods=['GET'], summary='Export project as a dataset in a specific format',
@@ -774,7 +774,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def perform_create(self, serializer, **kwargs):
         serializer.save(
             owner=self.request.user,
-            organization=self.request.iam_context["organization"]
+            organization=self.request.iam_context['organization']
         )
         if serializer.instance.project:
             db_project = serializer.instance.project
@@ -2060,7 +2060,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def perform_create(self, serializer):
         serializer.save(
             owner=self.request.user,
-            organization=self.request.iam_context["organization"])
+            organization=self.request.iam_context['organization'])
 
     def create(self, request, *args, **kwargs):
         try:
