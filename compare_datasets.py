@@ -22,6 +22,14 @@ class AnnotationConflictType(str, Enum):
         return self.value
 
 
+class MismatchingAnnotationKind(str, Enum):
+    ATTRIBUTE = 'attribute'
+    LABEL = 'label'
+
+    def __str__(self) -> str:
+        return self.value
+
+
 @define(kw_only=True)
 class AnnotationId:
     # TODO: think if uuids can be provided
@@ -127,7 +135,7 @@ class DatasetComparator:
             for merged_field, field in zip(merged_results, frame_results[shape_type]):
                 merged_field.extend(field)
 
-        _, mispred, gt_unmatched, this_unmatched = merged_results
+        matches, mismatches, gt_unmatched, this_unmatched = merged_results
 
         for unmatched_ann in gt_unmatched:
             conflicts.append(AnnotationConflict(
@@ -151,7 +159,7 @@ class DatasetComparator:
                 },
             ))
 
-        for gt_ann, this_ann in mispred:
+        for gt_ann, this_ann in mismatches:
             conflicts.append(AnnotationConflict(
                 frame_id=frame_id,
                 type=AnnotationConflictType.MISMATCHING_ANNOTATION,
@@ -159,32 +167,74 @@ class DatasetComparator:
                     'annotation_ids': [
                         self._dm_ann_to_ann_id(this_ann, this_item, self._this_dataset),
                         self._dm_ann_to_ann_id(gt_ann, gt_item, self._gt_dataset),
-                        ],
-                    'kind': 'mismatching_label',
-                    'value1': gt_ann.label,
-                    'value2': this_ann.label,
+                    ],
+                    'kind': MismatchingAnnotationKind.LABEL,
+                    'expected': gt_ann.label,
+                    'actual': this_ann.label,
                 },
             ))
 
-        # TODO: Need to check for mismatching attributes
-        # for gt_ann, this_ann in matches:
-        #
-        #     conflicts.append(AnnotationConflict(
-        #         frame_id=gt_job_data_provider.dm_item_id_to_frame_id(error.item_id),
-        #         type=AnnotationConflictType.MISMATCHING_ANNOTATION,
-        #         data={
-        #             'kind': 'mismatching_shape_attribute',
-        #             'attribute': error.key,
-        #             'value1': error.a,
-        #             'value2': error.b,
-        #         },
-        #         message=str(error)
-        #     ))
+        for gt_ann, this_ann in matches:
+            # Datumaro wont match attributes
+            _, attr_mismatches, attr_gt_extra, attr_this_extra = \
+                self._comparator.match_attrs(gt_ann, this_ann)
+
+            for mismatched_attr in attr_mismatches:
+                conflicts.append(AnnotationConflict(
+                    frame_id=frame_id,
+                    type=AnnotationConflictType.MISMATCHING_ANNOTATION,
+                    data={
+                        'annotation_ids': [
+                            self._dm_ann_to_ann_id(this_ann, this_item, self._this_dataset),
+                            self._dm_ann_to_ann_id(gt_ann, gt_item, self._gt_dataset),
+                        ],
+                        'kind': MismatchingAnnotationKind.ATTRIBUTE,
+                        'attribute': mismatched_attr,
+                        'expected': gt_ann.attributes[mismatched_attr],
+                        'actual': this_ann.attributes[mismatched_attr],
+                    },
+                ))
+
+            for extra_attr in attr_gt_extra:
+                conflicts.append(AnnotationConflict(
+                    frame_id=frame_id,
+                    type=AnnotationConflictType.MISMATCHING_ANNOTATION,
+                    data={
+                        'annotation_ids': [
+                            self._dm_ann_to_ann_id(this_ann, this_item, self._this_dataset),
+                            self._dm_ann_to_ann_id(gt_ann, gt_item, self._gt_dataset),
+                        ],
+                        'kind': MismatchingAnnotationKind.ATTRIBUTE,
+                        'attribute': mismatched_attr,
+                        'expected': gt_ann.attributes[extra_attr],
+                        'actual': None,
+                    },
+                ))
+
+            for extra_attr in attr_this_extra:
+                conflicts.append(AnnotationConflict(
+                    frame_id=frame_id,
+                    type=AnnotationConflictType.MISMATCHING_ANNOTATION,
+                    data={
+                        'annotation_ids': [
+                            self._dm_ann_to_ann_id(this_ann, this_item, self._this_dataset),
+                            self._dm_ann_to_ann_id(gt_ann, gt_item, self._gt_dataset),
+                        ],
+                        'kind': MismatchingAnnotationKind.ATTRIBUTE,
+                        'attribute': mismatched_attr,
+                        'expected': None,
+                        'actual': this_ann.attributes[extra_attr],
+                    },
+                ))
+
 
         return conflicts
 
 def main(args=None):
     parser = argparse.ArgumentParser()
+    parser.add_argument('gt_dataset', '--gt')
+    parser.add_argument('this_dataset', '--ds')
+    parser.add_argument('output_file', '-o')
     args = parser.parse_args(args)
 
     this_dataset = dm.Dataset.import_from(args.this_dataset)
