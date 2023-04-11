@@ -7,7 +7,6 @@
 services:
   cvat_ci:
     image: cvat_ci
-    network_mode: host
     build:
       context: .
       dockerfile: Dockerfile.ci
@@ -24,3 +23,5 @@ services:
       GITHUB_RUN_ID:
     volumes:
       - ${HOST_COVERAGE_DATA_DIR}:${CONTAINER_COVERAGE_DATA_DIR}
+    networks:
+      - cvat
