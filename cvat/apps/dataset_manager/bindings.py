@@ -168,15 +168,15 @@ class InstanceLabelData:
 class CommonData(InstanceLabelData):
     Shape = namedtuple("Shape", 'id, label_id')  # 3d
     LabeledShape = namedtuple(
-        'LabeledShape', 'id, type, frame, label, points, occluded, attributes, source, rotation, group, z_order, elements, outside')
-    LabeledShape.__new__.__defaults__ = (0, 0, 0, [], False)
+        'LabeledShape', 'type, frame, label, points, occluded, attributes, source, rotation, group, z_order, elements, outside, id')
+    LabeledShape.__new__.__defaults__ = (0, 0, 0, [], False, None)
     TrackedShape = namedtuple(
-        'TrackedShape', 'id, type, frame, points, occluded, outside, keyframe, attributes, rotation, source, group, z_order, label, track_id, elements')
-    TrackedShape.__new__.__defaults__ = (0, 'manual', 0, 0, None, 0, [])
+        'TrackedShape', 'type, frame, points, occluded, outside, keyframe, attributes, rotation, source, group, z_order, label, track_id, elements, id')
+    TrackedShape.__new__.__defaults__ = (0, 'manual', 0, 0, None, 0, [], None)
     Track = namedtuple('Track', 'id, label, group, source, shapes, elements')
     Track.__new__.__defaults__ = ([], )
-    Tag = namedtuple('Tag', 'id, frame, label, attributes, source, group')
-    Tag.__new__.__defaults__ = (0, )
+    Tag = namedtuple('Tag', 'frame, label, attributes, source, group, id')
+    Tag.__new__.__defaults__ = (0, None)
     Frame = namedtuple(
         'Frame', 'idx, id, frame, name, width, height, labeled_shapes, tags, shapes, labels')
     Label = namedtuple('Label', 'id, name, color, type')
