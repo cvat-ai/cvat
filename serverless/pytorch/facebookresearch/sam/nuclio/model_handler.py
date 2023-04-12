@@ -1,3 +1,7 @@
+# Copyright (C) 2023 CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
+
 import numpy as np
 import cv2
 import torch

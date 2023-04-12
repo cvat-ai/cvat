@@ -1,3 +1,7 @@
+# Copyright (C) 2023 CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
+
 import json
 import base64
 from PIL import Image
