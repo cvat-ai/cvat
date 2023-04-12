@@ -35,6 +35,15 @@ const defaultState: PluginsState = {
                 icon: [],
             },
         },
+        projectActions: {
+            items: [],
+        },
+        taskActions: {
+            items: [],
+        },
+        taskItem: {
+            name: [],
+        },
         router: [],
         loggedInModals: [],
     },

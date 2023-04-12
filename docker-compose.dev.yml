@@ -6,6 +6,10 @@
 #
 
 services:
+  cvat_db:
+    ports:
+      - '5432:5432'
+
   cvat_server:
     build:
       context: .

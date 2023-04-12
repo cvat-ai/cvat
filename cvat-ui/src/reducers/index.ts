@@ -285,16 +285,16 @@ export interface PluginsState {
             destructor: CallableFunction;
             globalStateDidUpdate?: CallableFunction;
         };
-    },
+    };
     components: {
         header: {
             userMenu: {
                 items: PluginComponent[],
-            },
-        },
+            };
+        };
         loginPage: {
             loginForm: PluginComponent[];
-        },
+        };
         modelsPage: {
             topBar: {
                 items: PluginComponent[],
@@ -305,9 +305,18 @@ export interface PluginsState {
                 },
                 icon: PluginComponent[],
             }
-        },
-        router: PluginComponent[],
-        loggedInModals: PluginComponent[],
+        };
+        projectActions: {
+            items: PluginComponent[];
+        };
+        taskActions: {
+            items: PluginComponent[];
+        };
+        taskItem: {
+            name: PluginComponent[];
+        };
+        router: PluginComponent[];
+        loggedInModals: PluginComponent[];
     }
 }
 

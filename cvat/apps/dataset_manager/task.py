@@ -399,7 +399,7 @@ class JobAnnotation:
             self._extend_attributes(db_tag.labeledimageattributeval_set,
                 self.db_attributes[db_tag.label_id]["all"].values())
 
-        serializer = serializers.LabeledImageSerializer(db_tags, many=True)
+        serializer = serializers.LabeledImageSerializerFromDB(db_tags, many=True)
         self.ir_data.tags = serializer.data
 
     def _init_shapes_from_db(self):
@@ -453,7 +453,7 @@ class JobAnnotation:
         for shape_id, shape_elements in elements.items():
             shapes[shape_id].elements = shape_elements
 
-        serializer = serializers.LabeledShapeSerializer(list(shapes.values()), many=True)
+        serializer = serializers.LabeledShapeSerializerFromDB(list(shapes.values()), many=True)
         self.ir_data.shapes = serializer.data
 
     def _init_tracks_from_db(self):
@@ -546,7 +546,7 @@ class JobAnnotation:
         for track_id, track_elements in elements.items():
             tracks[track_id].elements = track_elements
 
-        serializer = serializers.LabeledTrackSerializer(list(tracks.values()), many=True)
+        serializer = serializers.LabeledTrackSerializerFromDB(list(tracks.values()), many=True)
         self.ir_data.tracks = serializer.data
 
     def _init_version_from_db(self):

@@ -2238,53 +2238,6 @@ paths:
       responses:
         '204':
           description: The annotation has been deleted
-  /api/jobs/{id}/annotations/{file_id}:
-    patch:
-      operationId: jobs_partial_update_annotations_file
-      summary: Allows to upload an annotation file chunk. Implements TUS file uploading
-        protocol.
-      parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
-      - in: path
-        name: file_id
-        schema:
-          type: string
-          pattern: ^\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b$
-        required: true
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this job.
-        required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
-      tags:
-      - jobs
-      requestBody:
-        content:
-          application/offset+octet-stream:
-            schema:
-              type: string
-              format: binary
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses: {}
   /api/jobs/{id}/data:
     get:
       operationId: jobs_retrieve_data
@@ -4026,52 +3979,6 @@ paths:
           description: Failed to import dataset
         '405':
           description: Format is not available
-  /api/projects/{id}/dataset/{file_id}:
-    patch:
-      operationId: projects_partial_update_dataset_file
-      summary: Allows to upload a file chunk. Implements TUS file uploading protocol.
-      parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
-      - in: path
-        name: file_id
-        schema:
-          type: string
-          pattern: ^\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b$
-        required: true
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this project.
-        required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
-      tags:
-      - projects
-      requestBody:
-        content:
-          application/offset+octet-stream:
-            schema:
-              type: string
-              format: binary
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses: {}
   /api/projects/{id}/preview:
     get:
       operationId: projects_retrieve_preview
@@ -4169,46 +4076,6 @@ paths:
           description: The project has been imported
         '202':
           description: Importing a backup file has been started
-  /api/projects/backup/{file_id}:
-    patch:
-      operationId: projects_partial_update_backup_file
-      summary: Allows to upload a file chunk. Implements TUS file uploading protocol.
-      parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
-      - in: path
-        name: file_id
-        schema:
-          type: string
-          pattern: ^\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b$
-        required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
-      tags:
-      - projects
-      requestBody:
-        content:
-          application/offset+octet-stream:
-            schema:
-              type: string
-              format: binary
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses: {}
   /api/schema/:
     get:
       operationId: schema_retrieve
@@ -5113,53 +4980,6 @@ paths:
       responses:
         '204':
           description: The annotation has been deleted
-  /api/tasks/{id}/annotations/{file_id}:
-    patch:
-      operationId: tasks_partial_update_annotations_file
-      summary: Allows to upload an annotation file chunk. Implements TUS file uploading
-        protocol.
-      parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
-      - in: path
-        name: file_id
-        schema:
-          type: string
-          pattern: ^\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b$
-        required: true
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this task.
-        required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
-      tags:
-      - tasks
-      requestBody:
-        content:
-          application/offset+octet-stream:
-            schema:
-              type: string
-              format: binary
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses: {}
   /api/tasks/{id}/backup:
     get:
       operationId: tasks_retrieve_backup
@@ -5352,52 +5172,6 @@ paths:
       responses:
         '202':
           description: No response body
-  /api/tasks/{id}/data/{file_id}:
-    patch:
-      operationId: tasks_partial_update_data_file
-      summary: Allows to upload a file chunk. Implements TUS file uploading protocol.
-      parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
-      - in: path
-        name: file_id
-        schema:
-          type: string
-          pattern: ^\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b$
-        required: true
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this task.
-        required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
-      tags:
-      - tasks
-      requestBody:
-        content:
-          application/offset+octet-stream:
-            schema:
-              type: string
-              format: binary
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses: {}
   /api/tasks/{id}/data/meta:
     get:
       operationId: tasks_retrieve_data_meta
@@ -5713,46 +5487,6 @@ paths:
           description: The task has been imported
         '202':
           description: Importing a backup file has been started
-  /api/tasks/backup/{file_id}:
-    patch:
-      operationId: tasks_partial_update_backup_file
-      summary: Allows to upload a file chunk. Implements TUS file uploading protocol.
-      parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
-      - in: path
-        name: file_id
-        schema:
-          type: string
-          pattern: ^\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b$
-        required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
-      tags:
-      - tasks
-      requestBody:
-        content:
-          application/offset+octet-stream:
-            schema:
-              type: string
-              format: binary
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses: {}
   /api/users:
     get:
       operationId: users_list
@@ -6899,30 +6633,39 @@ components:
       - image_quality
     DataRequest:
       type: object
+      description: |-
+        Read more about parameters here:
+        https://opencv.github.io/cvat/docs/manual/basics/create_an_annotation_task/#advanced-configuration
       properties:
         chunk_size:
           type: integer
           maximum: 2147483647
           minimum: 0
           nullable: true
+          description: Maximum number of frames per chunk
         size:
           type: integer
           maximum: 2147483647
           minimum: 0
+          description: The number of frames
         image_quality:
           type: integer
           maximum: 100
           minimum: 0
+          description: Image quality to use during annotation
         start_frame:
           type: integer
           maximum: 2147483647
           minimum: 0
+          description: First frame index
         stop_frame:
           type: integer
           maximum: 2147483647
           minimum: 0
+          description: Last frame index
         frame_filter:
           type: string
+          description: 'Frame filter. The only supported syntax is: ''step=N'''
           maxLength: 256
         compressed_chunk_type:
           $ref: '#/components/schemas/ChunkType'
@@ -6934,6 +6677,7 @@ components:
             type: string
             format: binary
           default: []
+          description: Uploaded files
         server_files:
           type: array
           items:
@@ -6941,6 +6685,8 @@ components:
             minLength: 1
             maxLength: 1024
           default: []
+          description: Paths to files from a file share mounted on the server, or
+            from a cloud storage
         remote_files:
           type: array
           items:
@@ -6948,19 +6694,36 @@ components:
             minLength: 1
             maxLength: 1024
           default: []
+          description: Direct download URLs for files
         use_zip_chunks:
           type: boolean
           default: false
+          description: |
+            When true, video chunks will be represented as zip archives with decoded video frames.
+            When false, video chunks are represented as video segments
         cloud_storage_id:
           type: integer
           writeOnly: true
           nullable: true
+          description: |
+            If not null, the files referenced by server_files will be retrieved
+            from the cloud storage with the specified ID.
+            The cloud storages applicable depend on the context.
+            In the user sandbox, only the user sandbox cloud storages can be used.
+            In an organization, only the organization cloud storages can be used.
         use_cache:
           type: boolean
           default: false
+          description: |
+            Enable or disable task data chunk caching for the task.
+            Read more: https://opencv.github.io/cvat/docs/manual/advanced/data_on_fly/
         copy_data:
           type: boolean
           default: false
+          description: |
+            Copy data from the server file share to CVAT during the task creation.
+            This will create a copy of the data, making the server independent from
+            the file share availability
         storage_method:
           $ref: '#/components/schemas/StorageMethod'
         storage:
@@ -6971,6 +6734,10 @@ components:
           type: string
           nullable: true
           minLength: 1
+          description: |
+            A filename filter for cloud storage files
+            listed in the manifest. Supports fnmatch wildcards.
+            Read more: https://docs.python.org/3/library/fnmatch.html
         job_file_mapping:
           type: array
           items:
@@ -6984,7 +6751,7 @@ components:
 
             Represents a file-to-job mapping. Useful to specify a custom job
             configuration during task creation. This option is not compatible with
-            most other job split-related options.
+            most other job split-related options. Files in the jobs must not overlap or repeat.
 
             Example:
             [
@@ -6992,8 +6759,6 @@ components:
                 ["file3.png"], # job #2 files
                 ["file4.jpg", "file5.png", "file6.bmp"], # job #3 files
             ]
-
-            Files in the jobs must not overlap and repeat.
       required:
       - image_quality
     DatasetFileRequest:
@@ -7182,12 +6947,16 @@ components:
       - create:comment
       - create:invitation
       - create:issue
+      - create:job
+      - create:membership
       - create:project
       - create:task
       - delete:comment
       - delete:invitation
       - delete:issue
+      - delete:job
       - delete:membership
+      - delete:organization
       - delete:project
       - delete:task
       - update:comment
@@ -7354,12 +7123,12 @@ components:
     IssuesSummary:
       type: object
       properties:
-        count:
-          type: integer
-          default: 0
         url:
           type: string
           format: uri
+          readOnly: true
+        count:
+          type: integer
           readOnly: true
     JobAnnotationsUpdateRequest:
       oneOf:
@@ -7794,12 +7563,12 @@ components:
     LabelsSummary:
       type: object
       properties:
-        count:
-          type: integer
-          default: 0
         url:
           type: string
           format: uri
+          readOnly: true
+        count:
+          type: integer
           readOnly: true
     LocationEnum:
       enum:
@@ -8307,9 +8076,6 @@ components:
         assignee:
           type: integer
           nullable: true
-        message:
-          type: string
-          minLength: 1
         resolved:
           type: boolean
     PatchedJobWriteRequest:
@@ -8531,10 +8297,6 @@ components:
           type: boolean
         enable_ssl:
           type: boolean
-        project_id:
-          type: integer
-          writeOnly: true
-          nullable: true
         events:
           type: array
           items:

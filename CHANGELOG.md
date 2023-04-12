@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## \[2.5.0] - Unreleased
 ### Added
 - Add support for Azure Blob Storage connection string authentication(<https://github.com/openvinotoolkit/cvat/pull/4649>)
+- Added Segment Anything interactor for CPU/GPU (<https://github.com/opencv/cvat/pull/6008>)
 
 ### Changed
 - Moving a task from a project to another project is disabled (<https://github.com/opencv/cvat/pull/5901>)
@@ -20,6 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cloud storage unique_together limitation (<https://github.com/opencv/cvat/pull/5855>)
 - Support for redundant request media types in the API
   (<https://github.com/opencv/cvat/pull/5874>)
+- Static URLs and direct SDK support for the tus chunk endpoints.
+  Clients must use the `Location` header from the response to the `Upload-Length` request,
+  as per the tus creation protocol
+  (<https://github.com/opencv/cvat/pull/5961>)
 
 ### Fixed
 - An invalid project/org handling in webhooks (<https://github.com/opencv/cvat/pull/5707>)
@@ -38,9 +43,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Points missing when exporting tracked skeleton (<https://github.com/opencv/cvat/issues/5497>)
 - Escaping in the `filter` parameter in generated URLs
   (<https://github.com/opencv/cvat/issues/5566>)
+- Rotation property lost during saving a mutable attribute (<https://github.com/opencv/cvat/pull/5968>)
+- Optimized /api/jobs request (<https://github.com/opencv/cvat/pull/5962>)
+- Server micro version support check in SDK/CLI (<https://github.com/opencv/cvat/pull/5991>)
+- \[SDK\] Compatibility with upcoming urllib 2.1.0
+  (<https://github.com/opencv/cvat/pull/6002>)
 
 ### Security
 - TDB
+
+## \[2.4.1] - 2023-04-05
+### Fixed
+- Optimized annotation fetching up to 10 times (<https://github.com/opencv/cvat/pull/5974>)
+- Incorrect calculation of working time in analytics (<https://github.com/opencv/cvat/pull/5973>)
 
 ## \[2.4.0] - 2023-03-16
 ### Added
