@@ -50,7 +50,7 @@ export default function DeployedModelItem(props: Props): JSX.Element {
     const menuItems: [JSX.Element, number][] = [];
 
     const plugins = usePlugins(
-        (state: CombinedState) => state.plugins.components.modelsPage.deployedModelItem.menu.items, props,
+        (state: CombinedState) => state.plugins.components.modelsPage.modelItem.menu.items, props,
     );
 
     menuItems.push(

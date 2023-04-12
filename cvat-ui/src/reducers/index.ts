@@ -299,7 +299,7 @@ export interface PluginsState {
             topBar: {
                 items: PluginComponent[],
             },
-            deployedModelItem: {
+            modelItem: {
                 menu: {
                     items: PluginComponent[],
                 },

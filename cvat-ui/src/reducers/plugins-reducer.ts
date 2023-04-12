@@ -28,7 +28,7 @@ const defaultState: PluginsState = {
             topBar: {
                 items: [],
             },
-            deployedModelItem: {
+            modelItem: {
                 menu: {
                     items: [],
                 },

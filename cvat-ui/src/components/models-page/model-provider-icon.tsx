@@ -13,7 +13,7 @@ interface Props {
 export default function ModelProviderIcon(props: Props): JSX.Element | null {
     let icon: JSX.Element | null = null;
     const plugins = usePlugins(
-        (state: CombinedState) => state.plugins.components.modelsPage.deployedModelItem.icon, props,
+        (state: CombinedState) => state.plugins.components.modelsPage.modelItem.icon, props,
     );
 
     if (plugins.length) {
