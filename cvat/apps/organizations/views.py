@@ -133,8 +133,11 @@ class MembershipViewSet(mixins.RetrieveModelMixin, mixins.DestroyModelMixin,
     def get_queryset(self):
         queryset = super().get_queryset()
 
-        permission = MembershipPermission.create_scope_list(self.request)
-        return permission.filter(queryset)
+        if self.action == 'list':
+            permission = MembershipPermission.create_scope_list(self.request)
+            queryset = permission.filter(queryset)
+
+        return queryset
 
 @extend_schema(tags=['invitations'])
 @extend_schema_view(
