@@ -32,7 +32,7 @@ export function useIsMounted(): () => boolean {
     return useCallback(() => ref.current, []);
 }
 
-type Plugin = {
+export type Plugin = {
     component: CallableFunction;
     weight: number;
 };
