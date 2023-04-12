@@ -18,7 +18,7 @@ services:
 
   cvat_redis:
     container_name: cvat_redis
-    image: redis:4.0-alpine
+    image: redis:7.0-alpine
     restart: always
     networks:
       - cvat
