@@ -23,8 +23,9 @@ from cvat.apps.engine.serializers import DataSerializer
 class TusFile:
     @dataclass
     class TusMeta:
-        filename: str = ""
-        file_size: int = 0
+        metadata: dict
+        filename: str
+        file_size: int
         offset: int = 0
 
     class TusMetaFile():
@@ -53,7 +54,7 @@ class TusFile:
                 with open(self._path, "w") as fp:
                     json.dump(asdict(self._meta), fp)
 
-        def is_exist(self):
+        def exists(self):
             return os.path.exists(self._path)
 
         def delete(self):
@@ -80,8 +81,8 @@ class TusFile:
     def offset(self):
         return self.meta_file.meta.offset
 
-    def is_exist(self):
-        return self.meta_file.is_exist()
+    def exists(self):
+        return self.meta_file.exists()
 
     @staticmethod
     def _get_tus_meta_file_path(file_id, upload_dir):
@@ -130,6 +131,7 @@ class TusFile:
                 filename=filename,
                 file_size=file_size,
                 offset=0,
+                metadata=metadata,
             ),
         )
         tus_file.init_file()
@@ -242,7 +244,7 @@ class UploadMixin:
     def append_tus_chunk(self, request, file_id):
         tus_file = TusFile(str(file_id), self.get_upload_dir())
         if request.method == 'HEAD':
-            if tus_file.is_exist():
+            if tus_file.exists():
                 return self._tus_response(status=status.HTTP_200_OK, extra_headers={
                                'Upload-Offset': tus_file.offset,
                                'Upload-Length': tus_file.file_size})
