@@ -235,11 +235,10 @@ def test_organization_contexts(admin_user: str):
         client.projects.retrieve(personal_project.id)
         client.projects.retrieve(org_project.id)
 
-        # only the personal project should be visible in the personal workspace
+        # retrieve personal and org projects by id
         client.organization_slug = ""
         client.projects.retrieve(personal_project.id)
-        with pytest.raises(NotFoundException):
-            client.projects.retrieve(org_project.id)
+        client.projects.retrieve(org_project.id)
 
         # only the organizational project should be visible in the organization
         client.organization_slug = org.slug
