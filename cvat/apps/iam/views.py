@@ -37,10 +37,17 @@ def get_organization(request):
     try:
         org_slug = request.GET.get('org')
         org_id = request.GET.get('org_id')
+        org_header = request.headers.get('X-Organization')
 
-        if org_id is not None and org_slug is not None:
+        if org_id is not None and (org_slug is not None or org_header is not None):
             raise ValidationError('You cannot specify "org_id" query parameter with '
-                '"org" query parameter at the same time.')
+                '"org" query parameter or "X-Organization" HTTP header at the same time.')
+
+        if org_slug is not None and org_header is not None and org_slug != org_header:
+            raise ValidationError('You cannot specify "org" query parameter and '
+                '"X-Organization" HTTP header with different values.')
+
+        org_slug = org_slug if org_slug is not None else org_header
 
         if org_slug:
             organization = Organization.objects.get(slug=org_slug)
