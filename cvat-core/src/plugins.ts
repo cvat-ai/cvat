@@ -9,11 +9,18 @@ export default class PluginRegistry {
     static async apiWrapper(wrappedFunc, ...args) {
         // I have to optimize the wrapper
         const pluginList = await PluginRegistry.list();
+        let aggregatedOptions = {
+            preventMethodCall: false,
+        };
+
         for (const plugin of pluginList) {
             const pluginDecorators = plugin.functions.filter((obj) => obj.callback === wrappedFunc)[0];
             if (pluginDecorators && pluginDecorators.enter) {
                 try {
-                    await pluginDecorators.enter.call(this, plugin, ...args);
+                    const options = await pluginDecorators.enter.call(this, plugin, ...args);
+                    if (options?.preventMethodCall) {
+                        aggregatedOptions.preventMethodCall = true;
+                    }
                 } catch (exception) {
                     if (exception instanceof PluginError) {
                         throw exception;
@@ -24,7 +31,10 @@ export default class PluginRegistry {
             }
         }
 
-        let result = await wrappedFunc.implementation.call(this, ...args);
+        let result = null;
+        if (!aggregatedOptions.preventMethodCall) {
+            result = await wrappedFunc.implementation.call(this, ...args);
+        }
 
         for (const plugin of pluginList) {
             const pluginDecorators = plugin.functions.filter((obj) => obj.callback === wrappedFunc)[0];

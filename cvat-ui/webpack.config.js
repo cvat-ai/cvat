@@ -56,6 +56,12 @@ module.exports = (env) => {
             static: {
                 directory: path.join(__dirname, 'dist'),
             },
+            headers: {
+                // to enable SharedArrayBuffer and ONNX multithreading
+                // https://cloudblogs.microsoft.com/opensource/2021/09/02/onnx-runtime-web-running-your-machine-learning-model-in-browser/
+                'Cross-Origin-Opener-Policy': 'same-origin',
+                'Cross-Origin-Embedder-Policy': 'credentialless',
+            },
             proxy: [
                 {
                     context: (param) =>
@@ -190,6 +196,10 @@ module.exports = (env) => {
                     {
                         from: '../cvat-data/src/ts/3rdparty/avc.wasm',
                         to: 'assets/3rdparty/',
+                    },
+                    {
+                        from: "../node_modules/onnxruntime-web/dist/*.wasm",
+                        to  : "assets/[name][ext]",
                     },
                 ],
             }),
