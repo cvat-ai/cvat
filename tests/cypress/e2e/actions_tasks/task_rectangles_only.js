@@ -80,7 +80,7 @@ context('Creating a task with only bounding boxes', () => {
             cy.wait('@taskPost').then((interception) => {
                 taskID = interception.response.body.id;
                 expect(interception.response.statusCode).to.be.equal(201);
-                cy.intercept(`/api/tasks/${taskID}?**`).as('getTask');
+                cy.intercept(`/api/tasks/${taskID}`).as('getTask');
                 cy.wait('@getTask', { timeout: 10000 });
                 cy.get('.cvat-task-jobs-table-row').should('exist').and('be.visible');
                 cy.openJob();
