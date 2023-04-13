@@ -44,14 +44,16 @@ RUN curl -sL https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.bz2 --outp
 # Build wheels for all dependencies
 ARG PIP_VERSION
 ARG PIP_DISABLE_PIP_VERSION_CHECK=1
-RUN python3 -m pip install -U pip==${PIP_VERSION}
+RUN --mount=type=cache,target=/root/.cache/pip/http \
+    python3 -m pip install -U pip==${PIP_VERSION}
 COPY cvat/requirements/ /tmp/requirements/
 COPY utils/dataset_manifest/ /tmp/dataset_manifest/
 
 # The server implementation depends on the dataset_manifest utility
 # so we need to build its dependencies too
 # https://github.com/opencv/cvat/issues/5096
-RUN DATUMARO_HEADLESS=1 python3 -m pip wheel --no-cache-dir \
+RUN --mount=type=cache,target=/root/.cache/pip/http \
+    DATUMARO_HEADLESS=1 python3 -m pip wheel \
     -r /tmp/requirements/${DJANGO_CONFIGURATION}.txt \
     -r /tmp/dataset_manifest/requirements.txt \
     -w /tmp/wheelhouse
