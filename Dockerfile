@@ -1,6 +1,7 @@
 ARG PIP_VERSION=22.0.2
+ARG BASE_IMAGE=ubuntu:22.04
 
-FROM ubuntu:20.04 as build-image
+FROM ${BASE_IMAGE} as build-image
 
 ARG DJANGO_CONFIGURATION="production"
 
@@ -11,6 +12,7 @@ RUN apt-get update && \
         g++ \
         gcc \
         git \
+        libgeos-dev \
         libldap2-dev \
         libsasl2-dev \
         make \
@@ -55,7 +57,7 @@ RUN DATUMARO_HEADLESS=1 python3 -m pip wheel --no-cache-dir \
     -r /tmp/dataset_manifest/requirements.txt \
     -w /tmp/wheelhouse
 
-FROM ubuntu:20.04
+FROM ${BASE_IMAGE}
 
 ARG http_proxy
 ARG https_proxy
@@ -85,10 +87,11 @@ RUN apt-get update && \
         git \
         git-lfs \
         libapache2-mod-xsendfile \
+        libgeos-c1v5 \
         libgl1 \
         libgomp1 \
-        libldap-2.4-2 \
-        libpython3.8 \
+        libldap-2.5-0 \
+        libpython3.10 \
         libsasl2-2 \
         p7zip-full \
         poppler-utils \
