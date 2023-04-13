@@ -20,7 +20,7 @@ T = TypeVar('T')
 
 
 @contextmanager
-def disable_logging():
+def logging_disabled():
     old_level = logging.getLogger().manager.disable
 
     try:
@@ -48,6 +48,7 @@ class ForceLogin:
 
 class ApiTestBase(APITestCase):
     def setUp(self):
+        super().setUp()
         self.client = APIClient()
 
     def tearDown(self):
@@ -64,6 +65,9 @@ class ApiTestBase(APITestCase):
 
 
 def generate_image_file(filename, size=(100, 100)):
+    assert os.path.splitext(filename)[-1].lower() in ['', '.jpg', '.jpeg'], \
+        "This function supports only jpeg images. Please add the .jpg extension to the file name"
+
     f = BytesIO()
     image = Image.new('RGB', size=size)
     image.save(f, 'jpeg')

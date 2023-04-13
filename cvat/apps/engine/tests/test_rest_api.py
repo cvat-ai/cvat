@@ -39,7 +39,7 @@ from cvat.apps.engine.media_extractors import ValidateDimension, sort
 from cvat.apps.engine.tests.utils import get_paginated_collection
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 
-from cvat.apps.engine.tests.utils import ApiTestBase, ForceLogin, disable_logging, generate_video_file
+from cvat.apps.engine.tests.utils import ApiTestBase, ForceLogin, logging_disabled, generate_video_file
 from cvat.apps.engine.tests.utils import generate_image_file as _generate_image_file
 
 #supress av warnings
@@ -4026,7 +4026,7 @@ class TaskDataAPITestCase(ApiTestBase):
             ))
 
             # Suppress stacktrace spam from another thread from the expected error
-            es.enter_context(disable_logging())
+            es.enter_context(logging_disabled())
 
             task_spec = task_spec_common.copy()
             task_spec['name'] = task_spec['name'] + f' mismatching file order'
