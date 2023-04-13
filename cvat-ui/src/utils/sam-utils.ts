@@ -24,6 +24,7 @@ interface SAMPlugin {
         modelID: string;
         modelURL: string;
         embeddings: Record<string, Tensor | null>;
+        lowResMasks: Record<string, Tensor | null>;
         session: InferenceSession | null;
     };
     callbacks: {
@@ -62,7 +63,7 @@ export function registerSAMPlugin(): void {
                         }
                     },
 
-                    async leave(plugin: SAMPlugin, result: any, taskID: number, model: any, { frame, pos_points }: { frame: number }) {
+                    async leave(plugin: SAMPlugin, result: any, taskID: number, model: any, { frame, pos_points, neg_points }: { frame: number, pos_points: number[][], neg_points: number[][] }) {
                         if (model.id !== plugin.data.modelID) return;
                         const key = `${taskID}_${frame}`;
                         // let finalRes =
@@ -119,14 +120,13 @@ export function registerSAMPlugin(): void {
                             if (pointCoordsTensor === undefined || pointLabelsTensor === undefined)
                               return;
 
-                            // There is no previous mask, so default to an empty tensor
-                            const maskInput = new Tensor(
+                            const maskInput = plugin.data.lowResMasks[key] || new Tensor(
                               "float32",
                               new Float32Array(256 * 256),
                               [1, 1, 256, 256]
                             );
-                            // There is no previous mask, so default to 0
-                            const hasMaskInput = new Tensor("float32", [0]);
+
+                            const hasMaskInput = new Tensor("float32", [key in plugin.data.lowResMasks ? 1 : 0]);
 
                             return {
                               image_embeddings: imageEmbedding,
@@ -156,9 +156,10 @@ export function registerSAMPlugin(): void {
                             samScale: samScale, // scaling factor for image which has been resized to longest side 1024
                           };
 
+
                         const feeds = modelData({
-                            clicks: pos_points.map(([x, y]) => ({
-                                clickType: 1,
+                            clicks: [...pos_points, ...neg_points].map(([x, y], index) => ({
+                                clickType: index < pos_points.length ? 1 : 0,
                                 height: null,
                                 width: null,
                                 x: x,
@@ -187,8 +188,10 @@ export function registerSAMPlugin(): void {
                             return toImageData(input, width, height);
                           }
 
-                        const { masks } = await (plugin.data.session as InferenceSession).run(feeds);
+                        const data = await (plugin.data.session as InferenceSession).run(feeds);
+                        const { masks, low_res_masks } = data;
                         const imageData = rleToImage(masks.data, masks.dims[3], masks.dims[2])
+                        plugin.data.lowResMasks[key] = low_res_masks;
 
                         return {
                             mask: imageData,
@@ -203,6 +206,7 @@ export function registerSAMPlugin(): void {
             modelID: 'pth.facebookresearch.sam.vit_h',
             modelURL: '/api/lambda/sam_detector.onnx',
             embeddings: {},
+            lowResMasks: {},
             session: null,
         },
         callbacks: {
