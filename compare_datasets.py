@@ -10,7 +10,7 @@ import sys
 from collections import OrderedDict
 from enum import Enum
 from glob import glob
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Callable, Dict, List, Optional, cast
 
 import datumaro as dm
 import numpy as np
@@ -718,10 +718,10 @@ class AnnotationConflictsReport:
     estimated_dataset_error_count: int
     estimated_dataset_invalid_annotations_count: int
     estimated_dataset_invalid_attributes_count: int
-    this_comparable_annotations_count: int
-    this_annotations_count: int
-    this_total_annotations_count: int
-    this_attributes_count: int
+    ds_comparable_annotations_count: int
+    ds_annotations_count: int
+    ds_total_annotations_count: int
+    ds_attributes_count: int
     intersection_gt_annotations_count: int
     intersection_frame_count: int
     intersection_frame_share: float
@@ -787,13 +787,19 @@ class _DistanceComparator(dm.ops.DistanceComparator):
         categories: dm.CategoriesInfo,
         *,
         included_ann_types: Optional[List[dm.AnnotationType]] = None,
+        return_distances: bool = False,
         **kwargs,
     ):
         super().__init__(**kwargs)
         self.categories = categories
         self._skeleton_info = {}
+        self.included_ann_types = included_ann_types
+        self.return_distances = return_distances
 
     def _match_ann_type(self, t, *args):
+        if t not in self.included_ann_types:
+            return None
+
         # pylint: disable=no-value-for-parameter
         if t == dm.AnnotationType.label:
             return self.match_labels(*args)
@@ -813,13 +819,70 @@ class _DistanceComparator(dm.ops.DistanceComparator):
         else:
             return None
 
+    def _match_segments(self, t, item_a, item_b, *,
+        distance: Callable = dm.ops.segment_iou
+    ):
+        a_objs = self._get_ann_type(t, item_a)
+        b_objs = self._get_ann_type(t, item_b)
+        if not a_objs and not b_objs:
+            return [], [], [], []
+
+        if self.return_distances:
+            distance, distances = self._make_memoizing_distance(distance)
+
+        returned_values = dm.ops.match_segments(a_objs, b_objs,
+            distance=distance, dist_thresh=self.iou_threshold)
+
+        if self.return_distances:
+            returned_values = returned_values + (distances, )
+
+        return returned_values
+
+    def match_boxes(self, item_a, item_b):
+        return self._match_segments(AnnotationType.bbox, item_a, item_b)
+
+    def match_polygons(self, item_a, item_b):
+        return self._match_segments(AnnotationType.polygon, item_a, item_b)
+
+    def match_masks(self, item_a, item_b):
+        return self._match_segments(AnnotationType.mask, item_a, item_b)
+
+    def match_lines(self, item_a, item_b):
+        matcher = dm.ops.LineMatcher()
+        return self._match_segments(AnnotationType.polyline, item_a, item_b,
+            distance=matcher.distance)
+
     def match_points(self, item_a, item_b):
-        a_points = self._get_ann_type(dm.AnnotationType.points, item_a)
-        b_points = self._get_ann_type(dm.AnnotationType.points, item_b)
+        a_points = self._get_ann_type(AnnotationType.points, item_a)
+        b_points = self._get_ann_type(AnnotationType.points, item_b)
         if not a_points and not b_points:
             return [], [], [], []
 
-        return super().match_points(item_a, item_b)
+        instance_map = {}
+        for s in [item_a.annotations, item_b.annotations]:
+            s_instances = dm.ops.find_instances(s)
+            for inst in s_instances:
+                inst_bbox = dm.ops.max_bbox(inst)
+                for ann in inst:
+                    instance_map[id(ann)] = [inst, inst_bbox]
+        matcher = _PointsMatcher(instance_map=instance_map)
+
+        distance = matcher.distance
+
+        if self.return_distances:
+            distance, distances = self._make_memoizing_distance(distance)
+
+        returned_values = dm.ops.match_segments(
+            a_points,
+            b_points,
+            dist_thresh=self.iou_threshold,
+            distance=distance,
+        )
+
+        if self.return_distances:
+            returned_values = returned_values + (distances, )
+
+        return returned_values
 
     def _get_skeleton_info(self, skeleton_label_id: int):
         label_cat = cast(dm.LabelCategories, self.categories[dm.AnnotationType.label])
@@ -903,12 +966,16 @@ class _DistanceComparator(dm.ops.DistanceComparator):
 
         matcher = _PointsMatcher(instance_map=instance_map)
 
-        # unpack to validate returned data format
+        distance = matcher.distance
+
+        if self.return_distances:
+            distance, distances = self._make_memoizing_distance(distance)
+
         matched, mismatched, a_extra, b_extra = dm.ops.match_segments(
             a_points,
             b_points,
             dist_thresh=self.iou_threshold,
-            distance=matcher.distance,
+            distance=distance,
         )
 
         matched = [(points_map[id(p_a)], points_map[id(p_b)]) for (p_a, p_b) in matched]
@@ -918,7 +985,38 @@ class _DistanceComparator(dm.ops.DistanceComparator):
         a_extra = [points_map[id(p_a)] for p_a in a_extra]
         b_extra = [points_map[id(p_b)] for p_b in b_extra]
 
-        return matched, mismatched, a_extra, b_extra
+        # Map points back to skeletons
+        if self.return_distances:
+            for (p_a_id, p_b_id) in list(distances.keys()):
+                dist = distances.pop((p_a_id, p_b_id))
+                distances[(
+                    id(points_map[p_a_id]),
+                    id(points_map[p_b_id])
+                )] = dist
+
+        returned_values = (matched, mismatched, a_extra, b_extra)
+
+        if self.return_distances:
+            returned_values = returned_values + (distances, )
+
+        return returned_values
+
+    @classmethod
+    def _make_memoizing_distance(cls, distance_function):
+        distances = {}
+        notfound = object()
+
+        def memoizing_distance(a, b):
+            key = (id(a), id(b))
+            dist = distances.get(key, notfound)
+
+            if dist is notfound:
+                dist = distance_function(a, b)
+                distances[key] = dist
+
+            return dist
+
+        return memoizing_distance, distances
 
 
 class _Comparator:
@@ -938,7 +1036,7 @@ class _Comparator:
             dm.AnnotationType.skeleton,
         ]
         self._annotation_comparator = _DistanceComparator(
-            categories, included_ann_types=self.included_ann_types
+            categories, included_ann_types=self.included_ann_types, return_distances=True,
         )
 
     def match_attrs(self, ann_a: dm.Annotation, ann_b: dm.Annotation):
@@ -974,19 +1072,19 @@ class _Comparator:
 
 
 class DatasetComparator:
-    def __init__(self, this_dataset: dm.Dataset, gt_dataset: dm.Dataset) -> None:
-        self._this_dataset = this_dataset
+    def __init__(self, ds_dataset: dm.Dataset, gt_dataset: dm.Dataset) -> None:
+        self._ds_dataset = ds_dataset
         self._gt_dataset = gt_dataset
         self._comparator = _Comparator(gt_dataset.categories())
 
-        self._per_frame_results = {}
-        self._common_results = {"this_annotations_count": 0}
+        self._frame_results = {}
+        self._common_results = {"ds_annotations_count": 0}
 
     def _dm_ann_to_ann_id(
         self, ann: dm.Annotation, item: dm.DatasetItem, dataset: dm.Dataset
     ):
-        if dataset is self._this_dataset:
-            source = "this"
+        if dataset is self._ds_dataset:
+            source = "ds"
         else:
             source = "gt"
 
@@ -995,40 +1093,68 @@ class DatasetComparator:
         return AnnotationId(source=source, id=ann_idx, type=ann.type.name)
 
     def _find_gt_conflicts(self) -> List[AnnotationConflict]:
-        this_job_dataset = self._this_dataset
+        ds_job_dataset = self._ds_dataset
         gt_job_dataset = self._gt_dataset
 
         for gt_item in gt_job_dataset:
-            this_item = this_job_dataset.get(gt_item.id)
-            if not this_item:
+            ds_item = ds_job_dataset.get(gt_item.id)
+            if not ds_item:
                 continue  # we need to compare only intersecting frames
 
-            self._process_frame(this_item, gt_item)
+            self._process_frame(ds_item, gt_item)
 
-    def _process_frame(self, this_item, gt_item):
-        frame_id = this_item.id
-        frame_results = self._comparator.match_annotations(gt_item, this_item)
-        self._per_frame_results.setdefault(frame_id, {})
+    def _process_frame(self, ds_item, gt_item):
+        frame_id = ds_item.id
+        frame_results = self._comparator.match_annotations(gt_item, ds_item)
+        self._frame_results.setdefault(frame_id, {})
 
         self._generate_frame_annotation_conflicts(
-            frame_id, frame_results, this_item, gt_item
+            frame_id, frame_results, ds_item, gt_item
         )
 
     def _generate_frame_annotation_conflicts(
         self,
         frame_id,
         frame_results,
-        this_item: dm.DatasetItem,
+        ds_item: dm.DatasetItem,
         gt_item: dm.DatasetItem,
     ) -> List[AnnotationConflict]:
         conflicts = []
 
-        merged_results = [[], [], [], []]
+        merged_results = [[], [], [], [], {}]
         for shape_type in self._comparator.included_ann_types:
-            for merged_field, field in zip(merged_results, frame_results[shape_type]):
+            for merged_field, field in zip(merged_results, frame_results[shape_type][:-1]):
                 merged_field.extend(field)
 
-        matches, mismatches, gt_unmatched, this_unmatched = merged_results
+            merged_results[-1].update(frame_results[shape_type][-1])
+
+        matches, mismatches, gt_unmatched, ds_unmatched, pairwise_distances = merged_results
+
+        def _distance(gt_obj, ds_obj):
+            return pairwise_distances.get((id(gt_obj), id(ds_obj)))
+
+        _matched_shapes = set(
+            id(shape)
+            for shape_pair in itertools.chain(matches, mismatches)
+            for shape in shape_pair
+        )
+        def _find_best_unmatched_distance(shape):
+            this_shape_id = id(shape)
+
+            this_shape_distances = []
+
+            for (gt_shape_id, ds_shape_id), dist in pairwise_distances.items():
+                if gt_shape_id == this_shape_id:
+                    other_shape_id = ds_shape_id
+                elif ds_shape_id == this_shape_id:
+                    other_shape_id = gt_shape_id
+                else:
+                    continue
+
+                this_shape_distances.append((other_shape_id, dist))
+
+            matched_ann, distance = max(this_shape_distances, key=lambda v: v[1], default=(None, 0))
+            return matched_ann, distance
 
         for unmatched_ann in gt_unmatched:
             conflicts.append(
@@ -1045,7 +1171,7 @@ class DatasetComparator:
                 )
             )
 
-        for unmatched_ann in this_unmatched:
+        for unmatched_ann in ds_unmatched:
             conflicts.append(
                 AnnotationConflict(
                     frame_id=frame_id,
@@ -1053,14 +1179,14 @@ class DatasetComparator:
                     data={
                         "annotation_ids": [
                             self._dm_ann_to_ann_id(
-                                unmatched_ann, this_item, self._this_dataset
+                                unmatched_ann, ds_item, self._ds_dataset
                             )
                         ]
                     },
                 )
             )
 
-        for gt_ann, this_ann in mismatches:
+        for gt_ann, matched_ann_id in mismatches:
             conflicts.append(
                 AnnotationConflict(
                     frame_id=frame_id,
@@ -1068,28 +1194,56 @@ class DatasetComparator:
                     data={
                         "annotation_ids": [
                             self._dm_ann_to_ann_id(
-                                this_ann, this_item, self._this_dataset
+                                matched_ann_id, ds_item, self._ds_dataset
                             ),
                             self._dm_ann_to_ann_id(gt_ann, gt_item, self._gt_dataset),
                         ],
                         "kind": MismatchingAnnotationKind.LABEL,
                         "expected": gt_ann.label,
-                        "actual": this_ann.label,
+                        "actual": matched_ann_id.label,
                     },
                 )
             )
 
-        valid_annotations_count = 0
+        resulting_distances = [
+            _distance(gt_ann, ds_ann)
+            for gt_ann, ds_ann in itertools.chain(matches, mismatches)
+        ]
+
+        for unmatched_ann in itertools.chain(gt_unmatched, ds_unmatched):
+            matched_ann_id, distance = _find_best_unmatched_distance(unmatched_ann)
+            if matched_ann_id is not None:
+                _matched_shapes.add(matched_ann_id)
+            resulting_distances.append(distance)
+
+        mean_iou = np.mean(resulting_distances)
+
+        valid_shapes_count = len(matches) + len(mismatches)
+        missing_shapes_count = len(gt_unmatched)
+        extra_shapes_count = len(ds_unmatched)
+        total_shapes_count = len(matches) + len(mismatches) + len(gt_unmatched) + len(ds_unmatched)
+        ds_shapes_count = len(matches) + len(mismatches) + len(ds_unmatched)
+        gt_shapes_count = len(matches) + len(mismatches) + len(gt_unmatched)
+
+        valid_labels_count = len(matches)
+        invalid_labels_count = len(mismatches)
+        total_labels_count = valid_labels_count + invalid_labels_count
+
         valid_attributes_count = 0
-        compared_attributes_count = 0
-        for gt_ann, this_ann in matches:
+        invalid_attributes_count = 0
+        missing_attributes_count = 0
+        extra_attributes_count = 0
+        total_attributes_count = 0
+        ds_attributes_count = 0
+        gt_attributes_count = 0
+        for gt_ann, matched_ann_id in matches:
             # Datumaro wont match attributes
             (
                 attr_matches,
                 attr_mismatches,
                 attr_gt_extra,
-                attr_this_extra,
-            ) = self._comparator.match_attrs(gt_ann, this_ann)
+                attr_ds_extra,
+            ) = self._comparator.match_attrs(gt_ann, matched_ann_id)
 
             for mismatched_attr in attr_mismatches:
                 conflicts.append(
@@ -1099,7 +1253,7 @@ class DatasetComparator:
                         data={
                             "annotation_ids": [
                                 self._dm_ann_to_ann_id(
-                                    this_ann, this_item, self._this_dataset
+                                    matched_ann_id, ds_item, self._ds_dataset
                                 ),
                                 self._dm_ann_to_ann_id(
                                     gt_ann, gt_item, self._gt_dataset
@@ -1108,7 +1262,7 @@ class DatasetComparator:
                             "kind": MismatchingAnnotationKind.ATTRIBUTE,
                             "attribute": mismatched_attr,
                             "expected": gt_ann.attributes[mismatched_attr],
-                            "actual": this_ann.attributes[mismatched_attr],
+                            "actual": matched_ann_id.attributes[mismatched_attr],
                         },
                     )
                 )
@@ -1121,7 +1275,7 @@ class DatasetComparator:
                         data={
                             "annotation_ids": [
                                 self._dm_ann_to_ann_id(
-                                    this_ann, this_item, self._this_dataset
+                                    matched_ann_id, ds_item, self._ds_dataset
                                 ),
                                 self._dm_ann_to_ann_id(
                                     gt_ann, gt_item, self._gt_dataset
@@ -1135,7 +1289,7 @@ class DatasetComparator:
                     )
                 )
 
-            for extra_attr in attr_this_extra:
+            for extra_attr in attr_ds_extra:
                 conflicts.append(
                     AnnotationConflict(
                         frame_id=frame_id,
@@ -1143,7 +1297,7 @@ class DatasetComparator:
                         data={
                             "annotation_ids": [
                                 self._dm_ann_to_ann_id(
-                                    this_ann, this_item, self._this_dataset
+                                    matched_ann_id, ds_item, self._ds_dataset
                                 ),
                                 self._dm_ann_to_ann_id(
                                     gt_ann, gt_item, self._gt_dataset
@@ -1152,44 +1306,58 @@ class DatasetComparator:
                             "kind": MismatchingAnnotationKind.ATTRIBUTE,
                             "attribute": mismatched_attr,
                             "expected": None,
-                            "actual": this_ann.attributes[extra_attr],
+                            "actual": matched_ann_id.attributes[extra_attr],
                         },
                     )
                 )
 
             valid_attributes_count += len(attr_matches)
-            compared_attributes_count += (
+            invalid_attributes_count += len(attr_mismatches)
+            missing_attributes_count += len(attr_gt_extra)
+            extra_attributes_count += len(attr_ds_extra)
+            total_attributes_count += (
                 len(attr_matches)
                 + len(attr_mismatches)
                 + len(attr_gt_extra)
-                + len(attr_this_extra)
+                + len(attr_ds_extra)
             )
-            valid_annotations_count += 0 == (
-                len(attr_mismatches) + len(attr_gt_extra) + len(attr_this_extra)
-            )
+            ds_attributes_count += len(attr_matches) + len(attr_mismatches) + len(attr_ds_extra)
+            gt_attributes_count += len(attr_matches) + len(attr_mismatches) + len(attr_gt_extra)
 
-        compared_annotations_count = (
-            len(matches) + len(mismatches) + len(gt_unmatched) + len(this_unmatched)
-        )
-
-        self._per_frame_results.setdefault(frame_id, {}).update(
+        self._frame_results.setdefault(frame_id, {}).update(
             {
-                "valid_attributes_count": valid_attributes_count,
-                "compared_attributes_count": compared_attributes_count,
-                "valid_annotations_count": valid_annotations_count,
-                "compared_annotations_count": compared_annotations_count,
-                "gt_annotations_count": len(gt_item.annotations),
-                "this_annotations_count": len(this_item.annotations),
-                "attribute_accuracy": valid_attributes_count
-                / compared_attributes_count,
-                "annotation_accuracy": valid_annotations_count
-                / compared_annotations_count,
-                "overall_accuracy": (valid_attributes_count + valid_annotations_count)
-                / ((compared_annotations_count + compared_attributes_count) or 1),
-                "error_count": len(
+                "annotation_kind": {
+                    'shape': {
+                        'valid_count': valid_shapes_count,
+                        'missing_count': missing_shapes_count,
+                        'extra_count': extra_shapes_count,
+                        'total_count': total_shapes_count,
+                        'ds_count': ds_shapes_count,
+                        'gt_count': gt_shapes_count,
+                        'mean_iou': mean_iou,
+                        'accuracy': valid_shapes_count / (total_shapes_count or 1),
+                    },
+                    'label': {
+                        'valid_count': valid_labels_count,
+                        'invalid_count': invalid_labels_count,
+                        'total_count': total_labels_count,
+                        'accuracy': valid_labels_count / (total_labels_count or 1),
+                    },
+                    'attribute': {
+                        'valid_count': valid_attributes_count,
+                        'invalid_count': invalid_attributes_count,
+                        'missing_count': missing_attributes_count,
+                        'extra_count': extra_attributes_count,
+                        'total_count': total_attributes_count,
+                        'ds_count': ds_attributes_count,
+                        'gt_count': gt_attributes_count,
+                        'accuracy': valid_attributes_count / (total_attributes_count or 1),
+                    },
+                },
+                "errors_count": len(
                     conflicts
                 ),  # assuming no more than 1 error per annotation
-                "conflicts": conflicts.copy(),
+                "errors": conflicts.copy(),
             }
         )
 
@@ -1198,81 +1366,134 @@ class DatasetComparator:
     def prepare_report(self) -> AnnotationConflictsReport:
         self._find_gt_conflicts()
 
-        this_annotations_count = 0
-        this_attributes_count = 0
-        this_total_annotations_count = 0
-        for item in self._this_dataset:
-            this_total_annotations_count += len(item.annotations)
+        def _get_nested_key(d, path):
+            for k in path:
+                d = d[k]
+            return d
 
+        def _set_nested_key(d, path, value):
+            for k in path[:-1]:
+                d = d.setdefault(k, {})
+            d[path[-1]] = value
+            return d
+
+        full_ds_comparable_shapes_count = 0
+        full_ds_comparable_attributes_count = 0
+        for item in self._ds_dataset:
             for ann in item.annotations:
                 if ann.type not in self._comparator.included_ann_types:
                     continue
 
-                this_attributes_count += len(
+                full_ds_comparable_attributes_count += len(
                     set(ann.attributes).difference(self._comparator.ignored_attrs)
                 )
-                this_annotations_count += 1
+                full_ds_comparable_shapes_count += 1
 
-        this_comparable_annotations_count = this_annotations_count + this_attributes_count
+        full_ds_comparable_labels_count = full_ds_comparable_shapes_count
 
         intersection_frames = []
-        valid_attributes_count = 0
-        valid_annotations_count = 0
-        compared_attributes_count = 0
-        compared_annotations_count = 0
-        intersection_gt_annotations_count = 0
-        error_count = 0
-
-        for frame_id, frame_result in self._per_frame_results.items():
+        summary_stats = {}
+        mean_ious = []
+        for frame_id, frame_result in self._frame_results.items():
             intersection_frames.append(frame_id)
-            valid_attributes_count += frame_result["valid_attributes_count"]
-            valid_annotations_count += frame_result["valid_annotations_count"]
-            compared_attributes_count += frame_result["compared_attributes_count"]
-            compared_annotations_count += frame_result["compared_annotations_count"]
-            error_count += frame_result["error_count"]
-            intersection_gt_annotations_count += frame_result["gt_annotations_count"]
 
-        mean_accuracy = (valid_attributes_count + valid_annotations_count) / (
-            (compared_attributes_count + compared_annotations_count) or 1
+            for path in [
+                ["annotation_kind", "shape", "valid_count"],
+                ["annotation_kind", "shape", "missing_count"],
+                ["annotation_kind", "shape", "extra_count"],
+                ["annotation_kind", "shape", "total_count"],
+                ["annotation_kind", "shape", "ds_count"],
+                ["annotation_kind", "shape", "gt_count"],
+
+                ["annotation_kind", "label", "valid_count"],
+                ["annotation_kind", "label", "invalid_count"],
+                ["annotation_kind", "label", "total_count"],
+
+                ["annotation_kind", "attribute", "valid_count"],
+                ["annotation_kind", "attribute", "invalid_count"],
+                ["annotation_kind", "attribute", "missing_count"],
+                ["annotation_kind", "attribute", "extra_count"],
+                ["annotation_kind", "attribute", "total_count"],
+                ["annotation_kind", "attribute", "ds_count"],
+                ["annotation_kind", "attribute", "gt_count"],
+                ["errors_count"],
+            ]:
+                frame_value = _get_nested_key(frame_result, path)
+                try:
+                    summary_value = _get_nested_key(summary_stats, path)
+                    _set_nested_key(summary_stats, path, frame_value + summary_value)
+                except KeyError:
+                    _set_nested_key(summary_stats, path, frame_value)
+
+            mean_ious.append(frame_result["annotation_kind"]["shape"]["mean_iou"])
+
+        mean_shape_accuracy = _get_nested_key(summary_stats, ["annotation_kind", "shape", "valid_count"]) / (_get_nested_key(summary_stats, ["annotation_kind", "shape", "total_count"]) or 1)
+        mean_label_accuracy = _get_nested_key(summary_stats, ["annotation_kind", "label", "valid_count"]) / (_get_nested_key(summary_stats, ["annotation_kind", "label", "total_count"]) or 1)
+        mean_attribute_accuracy = _get_nested_key(summary_stats, ["annotation_kind", "attribute", "valid_count"]) / (_get_nested_key(summary_stats, ["annotation_kind", "attribute", "total_count"]) or 1)
+        mean_error_count = summary_stats["errors_count"] / len(intersection_frames)
+
+        estimated_ds_invalid_shapes_count = int(
+            (1 - mean_shape_accuracy) * full_ds_comparable_shapes_count
+        )
+        estimated_ds_invalid_labels_count = int(
+            (1 - mean_label_accuracy) * full_ds_comparable_labels_count
+        )
+        estimated_ds_invalid_attributes_count = int(
+            (1 - mean_attribute_accuracy) * full_ds_comparable_attributes_count
         )
 
-        mean_attribute_accuracy = valid_attributes_count / (
-            compared_attributes_count or 1
-        )
-        mean_annotation_accuracy = valid_annotations_count / (
-            compared_annotations_count or 1
-        )
-
-        estimated_dataset_error_count = int((1 - mean_accuracy) * this_comparable_annotations_count)
-        estimated_dataset_invalid_annotations_count = int(
-            (1 - mean_annotation_accuracy) * this_annotations_count
-        )
-        estimated_dataset_invalid_attributes_count = int(
-            (1 - mean_attribute_accuracy) * this_attributes_count
-        )
-
-        return AnnotationConflictsReport(
+        return dict(
             included_annotation_types=[t.name for t in self._comparator.included_ann_types],
             ignored_attributes=self._comparator.ignored_attrs,
-            mean_accuracy=mean_accuracy,
-            mean_annotation_accuracy=mean_annotation_accuracy,
-            mean_attribute_accuracy=mean_attribute_accuracy,
-            error_count=error_count,
-            mean_error_count=error_count / len(intersection_frames),
-            annotation_errors_count=compared_annotations_count - valid_annotations_count,
-            attribute_errors_count=compared_attributes_count - valid_attributes_count,
-            estimated_dataset_error_count=estimated_dataset_error_count,
-            estimated_dataset_invalid_annotations_count=estimated_dataset_invalid_annotations_count,
-            estimated_dataset_invalid_attributes_count=estimated_dataset_invalid_attributes_count,
-            this_comparable_annotations_count=this_comparable_annotations_count,
-            this_annotations_count=this_annotations_count,
-            this_total_annotations_count=this_total_annotations_count,
-            this_attributes_count=this_attributes_count,
-            intersection_gt_annotations_count=intersection_gt_annotations_count,
-            intersection_frame_count=len(intersection_frames),
-            intersection_frame_share=len(intersection_frames) / len(self._this_dataset),
-            intersection_frames=intersection_frames,
-            frame_results=self._per_frame_results,
+
+            intersection_results=dict(
+                frame_count=len(intersection_frames),
+                frame_share_percent=len(intersection_frames) / len(self._ds_dataset),
+                frames=intersection_frames,
+
+                error_count=summary_stats["errors_count"],
+                mean_error_count=mean_error_count,
+                annotation_kind={
+                    'shape': {
+                        'valid_count': _get_nested_key(summary_stats, ["annotation_kind", "shape", "valid_count"]),
+                        'missing_count': _get_nested_key(summary_stats, ["annotation_kind", "shape", "missing_count"]),
+                        'extra_count': _get_nested_key(summary_stats, ["annotation_kind", "shape", "extra_count"]),
+                        'total_count': _get_nested_key(summary_stats, ["annotation_kind", "shape", "total_count"]),
+                        'ds_count': _get_nested_key(summary_stats, ["annotation_kind", "shape", "ds_count"]),
+                        'gt_count': _get_nested_key(summary_stats, ["annotation_kind", "shape", "gt_count"]),
+                        'mean_iou': np.mean(mean_ious),
+                        'accuracy': mean_shape_accuracy,
+                    },
+                    'label': {
+                        'valid_count': _get_nested_key(summary_stats, ["annotation_kind", "label", "valid_count"]),
+                        'invalid_count': _get_nested_key(summary_stats, ["annotation_kind", "label", "invalid_count"]),
+                        'total_count': _get_nested_key(summary_stats, ["annotation_kind", "label", "total_count"]),
+                        'accuracy': mean_label_accuracy,
+                    },
+                    'attribute': {
+                        'valid_count': _get_nested_key(summary_stats, ["annotation_kind", "attribute", "valid_count"]),
+                        'invalid_count': _get_nested_key(summary_stats, ["annotation_kind", "attribute", "invalid_count"]),
+                        'missing_count': _get_nested_key(summary_stats, ["annotation_kind", "attribute", "missing_count"]),
+                        'extra_count': _get_nested_key(summary_stats, ["annotation_kind", "attribute", "extra_count"]),
+                        'total_count': _get_nested_key(summary_stats, ["annotation_kind", "attribute", "total_count"]),
+                        'ds_count': _get_nested_key(summary_stats, ["annotation_kind", "attribute", "ds_count"]),
+                        'gt_count': _get_nested_key(summary_stats, ["annotation_kind", "attribute", "gt_count"]),
+                        'accuracy': mean_attribute_accuracy,
+                    },
+                },
+            ),
+
+            full_dataset=dict(
+                frame_count=len(self._ds_dataset),
+                shapes_count=full_ds_comparable_shapes_count,
+                attributes_count=full_ds_comparable_attributes_count,
+
+                estimated_invalid_shapes_count=estimated_ds_invalid_shapes_count,
+                estimated_invalid_labels_count=estimated_ds_invalid_labels_count,
+                estimated_invalid_attributes_count=estimated_ds_invalid_attributes_count,
+            ),
+
+            frame_results=self._frame_results,
         )
 
 
@@ -1286,9 +1507,9 @@ def main(args=None):
     args = parser.parse_args(args)
 
     gt_dataset = dm.Dataset.import_from(args.gt, format=args.gtf, env=dm_env)
-    this_dataset = dm.Dataset.import_from(args.ds, format=args.dsf, env=dm_env)
+    ds_dataset = dm.Dataset.import_from(args.ds, format=args.dsf, env=dm_env)
 
-    comparator = DatasetComparator(this_dataset, gt_dataset)
+    comparator = DatasetComparator(ds_dataset, gt_dataset)
     # comparator._comparator.included_ann_types = [dm.AnnotationType.bbox]
     report = comparator.prepare_report()
 
