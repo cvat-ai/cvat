@@ -43,6 +43,7 @@ RUN curl -sL https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.bz2 --outp
 
 # Build wheels for all dependencies
 ARG PIP_VERSION
+ARG PIP_DISABLE_PIP_VERSION_CHECK=1
 RUN python3 -m pip install -U pip==${PIP_VERSION}
 COPY cvat/requirements/ /tmp/requirements/
 COPY utils/dataset_manifest/ /tmp/dataset_manifest/
@@ -146,6 +147,8 @@ COPY --from=build-image /tmp/openh264/openh264*.tar.gz /tmp/ffmpeg/ffmpeg*.tar.g
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:${PATH}"
 ARG PIP_VERSION
+ARG PIP_DISABLE_PIP_VERSION_CHECK=1
+
 RUN python -m pip install -U pip==${PIP_VERSION}
 RUN --mount=type=bind,from=build-image,source=/tmp/wheelhouse,target=/mnt/wheelhouse \
     python -m pip install --no-index /mnt/wheelhouse/*.whl
