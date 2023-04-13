@@ -35,6 +35,14 @@ export enum SortingMethod {
     RANDOM = 'random',
 }
 
+export enum Priority {
+    LOWEST = 0,
+    LOW = 1,
+    MEDIUM = 2,
+    HIGH = 3,
+    HIGHEST = 4,
+}
+
 export interface AdvancedConfiguration {
     bugTracker?: string;
     imageQuality?: number;
@@ -51,6 +59,7 @@ export interface AdvancedConfiguration {
     useCache: boolean;
     copyData?: boolean;
     sortingMethod: SortingMethod;
+    priority: Priority;
     useProjectSourceStorage: boolean;
     useProjectTargetStorage: boolean;
     sourceStorage: StorageData;
@@ -64,6 +73,7 @@ const initialValues: AdvancedConfiguration = {
     useCache: true,
     copyData: false,
     sortingMethod: SortingMethod.LEXICOGRAPHICAL,
+    priority: Priority.MEDIUM,
     useProjectSourceStorage: true,
     useProjectTargetStorage: true,
 
@@ -273,6 +283,29 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                         Predefined
                     </Radio.Button>
                     <Radio.Button value={SortingMethod.RANDOM} key={SortingMethod.RANDOM}>Random</Radio.Button>
+                </Radio.Group>
+            </Form.Item>
+        );
+    }
+
+    private renderPriorityRadio(): JSX.Element {
+        return (
+            <Form.Item
+                label='Priority'
+                name='priority'
+                rules={[
+                    {
+                        required: true,
+                        message: 'The field is required.',
+                    },
+                ]}
+            >
+                <Radio.Group buttonStyle='solid'>
+                    <Radio.Button value={Priority.LOWEST} key={Priority.LOWEST}>Lowest</Radio.Button>
+                    <Radio.Button value={Priority.LOW} key={Priority.LOW}>Low</Radio.Button>
+                    <Radio.Button value={Priority.MEDIUM} key={Priority.MEDIUM}>Medium</Radio.Button>
+                    <Radio.Button value={Priority.HIGH} key={Priority.HIGH}>High</Radio.Button>
+                    <Radio.Button value={Priority.HIGHEST} key={Priority.HIGHEST}>Highest</Radio.Button>
                 </Radio.Group>
             </Form.Item>
         );
@@ -548,6 +581,9 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         const { installedGit, activeFileManagerTab } = this.props;
         return (
             <Form initialValues={initialValues} ref={this.formRef} layout='vertical'>
+                <Row>
+                    <Col>{this.renderPriorityRadio()}</Col>
+                </Row>
                 <Row>
                     <Col>{this.renderSortingMethodRadio()}</Col>
                 </Row>

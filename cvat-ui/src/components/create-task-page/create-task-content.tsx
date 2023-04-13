@@ -30,7 +30,8 @@ import BasicConfigurationForm, { BaseConfiguration } from './basic-configuration
 import ProjectSearchField from './project-search-field';
 import ProjectSubsetField from './project-subset-field';
 import MultiTasksProgress from './multi-task-progress';
-import AdvancedConfigurationForm, { AdvancedConfiguration, SortingMethod } from './advanced-configuration-form';
+import AdvancedConfigurationForm, { AdvancedConfiguration, SortingMethod, Priority }
+    from './advanced-configuration-form';
 
 type TabName = 'local' | 'share' | 'remote' | 'cloudStorage';
 const core = getCore();
@@ -74,6 +75,7 @@ const defaultState: State = {
         useZipChunks: true,
         useCache: true,
         sortingMethod: SortingMethod.LEXICOGRAPHICAL,
+        priority: Priority.MEDIUM,
         sourceStorage: {
             location: StorageLocation.LOCAL,
             cloudStorageId: undefined,

@@ -162,6 +162,7 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
             use_zip_chunks: data.advanced.useZipChunks,
             use_cache: data.advanced.useCache,
             sorting_method: data.advanced.sortingMethod,
+            priority: data.advanced.priority,
             source_storage: new Storage(data.advanced.sourceStorage || { location: StorageLocation.LOCAL }).toJSON(),
             target_storage: new Storage(data.advanced.targetStorage || { location: StorageLocation.LOCAL }).toJSON(),
         };
