@@ -49,7 +49,7 @@ class Downloader:
         )
         with closing(response):
             try:
-                file_size = int(response.getheader("Content-Length", 0))
+                file_size = int(response.headers.get("Content-Length", 0))
             except ValueError:
                 file_size = None
 

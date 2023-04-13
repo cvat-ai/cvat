@@ -21,6 +21,7 @@ from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseNotFound, HttpResponseBadRequest
 from django.utils import timezone
 import django.db.models as dj_models
+from django.db.models import Count, Q
 
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
@@ -229,6 +230,9 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     ).prefetch_related(
         'tasks', 'label_set__sublabels__attributespec_set',
         'label_set__attributespec_set'
+    ).annotate(
+        proj_labels_count=Count('label',
+            filter=Q(label__parent__isnull=True), distinct=True)
     ).all()
 
     # NOTE: The search_fields attribute should be a list of names of text
@@ -667,7 +671,11 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         completed_jobs_count=dj_models.Count(
             'segment__job',
             filter=dj_models.Q(segment__job__state=models.StateChoice.COMPLETED.value)
-        )
+        ),
+        task_labels_count=Count('label',
+            filter=Q(label__parent__isnull=True), distinct=True),
+        proj_labels_count=Count('project__label',
+            filter=Q(project__label__parent__isnull=True), distinct=True)
     ).all()
 
     lookup_fields = {
@@ -1234,12 +1242,14 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, PartialUpdateModelMixin, UploadMixin, AnnotationMixin
 ):
-    queryset = Job.objects.select_related('segment__task__data').prefetch_related(
-        'segment__task__label_set', 'segment__task__project__label_set',
-        'segment__task__label_set__sublabels__attributespec_set',
-        'segment__task__project__label_set__sublabels__attributespec_set',
-        'segment__task__label_set__attributespec_set',
-        'segment__task__project__label_set__attributespec_set'
+    queryset = Job.objects.select_related('assignee', 'segment__task__data',
+        'segment__task__project'
+    ).annotate(
+        Count('issues', distinct=True),
+        task_labels_count=Count('segment__task__label',
+            filter=Q(segment__task__label__parent__isnull=True), distinct=True),
+        proj_labels_count=Count('segment__task__project__label',
+            filter=Q(segment__task__project__label__parent__isnull=True), distinct=True)
     ).all()
 
     iam_organization_field = 'segment__task__organization'
