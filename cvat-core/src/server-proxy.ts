@@ -956,6 +956,133 @@ class ServerProxy {
             return wait();
         }
 
+        async function waitTask(id, onUpdate) {
+            const { backendAPI, proxy } = config;
+            const params = enableOrganization();
+
+            return new Promise((resolve, reject) => {
+                async function checkStatus() {
+                    try {
+                        const response = await Axios.get(
+                            `${backendAPI}/tasks/${id}/status`,
+                            {
+                                proxy,
+                                params,
+                            },
+                        );
+                        if (['Queued', 'Started'].includes(response.data.state)) {
+                            if (response.data.message !== '') {
+                                onUpdate(response.data.message, response.data.progress || 0);
+                            }
+                            setTimeout(checkStatus, 1000);
+                        } else if (response.data.state === 'Finished') {
+                            resolve();
+                        } else if (response.data.state === 'Failed') {
+                            // If request has been successful, but task hasn't been created
+                            // Then passed data is wrong and we can pass code 400
+                            const message = `
+                                Could not create the task on the server. ${response.data.message}.
+                            `;
+                            reject(new ServerError(message, 400));
+                        } else {
+                            // If server has another status, it is unexpected
+                            // Therefore it is server error and we can pass code 500
+                            reject(
+                                new ServerError(
+                                    `Unknown task state has been received: ${response.data.state}`,
+                                    500,
+                                ),
+                            );
+                        }
+                    } catch (errorData) {
+                        reject(generateError(errorData));
+                    }
+                }
+
+                setTimeout(checkStatus, 1000);
+            });
+        }
+
+        async function createS3Task(taskSpec, taskDataSpec, onUpdate) {
+            const { backendAPI, proxy } = config;
+            const params = enableOrganization();
+
+            const clientFiles = taskDataSpec.client_files;
+            taskDataSpec.client_files = clientFiles.map((file) => file.name);
+
+            const taskData = prepareData(taskDataSpec);
+
+            let response = null;
+            onUpdate('The task is being created on the server..', null);
+
+            // post task details
+            try {
+                response = await Axios.post(
+                    `${backendAPI}/tasks/s3`,
+                    JSON.stringify(taskSpec),
+                    {
+                        proxy,
+                        params,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    },
+                );
+            } catch (errorData) {
+                throw generateError(errorData);
+            }
+
+            const s3Urls = response.data.urls;
+            onUpdate('The data are being uploaded to s3..', null);
+
+            try {
+                // upload data to s3
+                for (let i = 0; i < s3Urls.length; i++) {
+                    await Axios.post(
+                        s3Urls[i],
+                        clientFiles[i],
+                        {
+                            headers: {
+                                'Content-Type': clientFiles[i].type,
+                            },
+                        },
+                    );
+
+                    const percentage = (i + 1) / clientFiles.length;
+                    onUpdate('The data are being uploaded to s3', percentage);
+                }
+
+                // post data details and finish upload
+                await Axios.post(
+                    `${backendAPI}/tasks/${response.data.id}/data/s3`,
+                    taskData,
+                    {
+                        proxy: config.proxy,
+                        params,
+                    },
+                );
+            } catch (errorData) {
+                try {
+                    await deleteTask(response.data.id, params.org || null);
+                } catch (e) {
+                    console.log('Error deleting task');
+                    console.log(e);
+                }
+                throw generateError(errorData);
+            }
+
+            try {
+                await waitTask(response.data.id, onUpdate);
+            } catch (createException) {
+                await deleteTask(response.data.id, params.org || null);
+                throw createException;
+            }
+
+            // to be able to get the task after it was created, pass frozen params
+            const createdTask = await getTasks({ id: response.data.id, ...params });
+            return createdTask[0];
+        }
+
         async function createTask(taskSpec, taskDataSpec, onUpdate) {
             const { backendAPI, origin } = config;
             // keep current default params to 'freeze" them during this request
@@ -2230,6 +2357,7 @@ class ServerProxy {
                         get: getTasks,
                         save: saveTask,
                         create: createTask,
+                        createS3: createS3Task,
                         delete: deleteTask,
                         exportDataset: exportDataset('tasks'),
                         backup: backupTask,
