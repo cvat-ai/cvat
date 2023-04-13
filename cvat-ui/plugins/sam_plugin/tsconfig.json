@@ -1,0 +1,13 @@
+{
+    "compilerOptions": {
+      "target": "es2020",
+      "baseUrl": ".",
+      "paths": {
+          "@modules/*": ["../../../cvat/node_modules/*"],
+          "@root/*": ["../../../cvat/cvat-ui/src/*"]
+      },
+      "moduleResolution": "node",
+      "lib": ["dom", "dom.iterable", "esnext"],
+      "jsx": "react",
+    }
+}
