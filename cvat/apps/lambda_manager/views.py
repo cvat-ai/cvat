@@ -7,6 +7,8 @@ import base64
 import json
 import os
 import textwrap
+import glob
+from django_sendfile import sendfile
 from copy import deepcopy
 from enum import Enum
 from functools import wraps
@@ -846,3 +848,12 @@ class RequestViewSet(viewsets.ViewSet):
         queue = LambdaQueue()
         job = queue.fetch_job(pk)
         job.delete()
+
+
+def ONNXDetector(request):
+    dirname = os.path.join(settings.STATIC_ROOT, 'lambda_manager')
+    pattern = os.path.join(dirname, 'decoder.onnx')
+    path = glob.glob(pattern)[0]
+    response = sendfile(request, path)
+    response['Cache-Control'] = "public, max-age=604800"
+    return response

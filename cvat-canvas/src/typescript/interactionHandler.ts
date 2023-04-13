@@ -313,6 +313,11 @@ export class InteractionHandlerImpl implements InteractionHandler {
                 'shape-rendering': 'geometricprecision',
                 'pointer-events': 'none',
                 opacity: 0.5,
+
+                // always fit masks to background size
+                // in general mask can be smaller what is useful in optimization purposes
+                'width': geometry.image.width,
+                'height': geometry.image.height,
             }).addClass('cvat_canvas_interact_intermediate_shape');
             image.move(this.geometry.offset, this.geometry.offset);
             this.drawnIntermediateShape = image;

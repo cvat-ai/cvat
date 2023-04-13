@@ -46,6 +46,9 @@ module.exports = (env) => {
             publicPath: '/',
         },
         devServer: {
+            devMiddleware: {
+                writeToDisk: true,
+            },
             compress: false,
             host: process.env.CVAT_UI_HOST || 'localhost',
             client: {
@@ -198,8 +201,8 @@ module.exports = (env) => {
                         to: 'assets/3rdparty/',
                     },
                     {
-                        from: "../node_modules/onnxruntime-web/dist/*.wasm",
-                        to  : "assets/[name][ext]",
+                        from: '../node_modules/onnxruntime-web/dist/*.wasm',
+                        to  : 'assets/[name][ext]',
                     },
                 ],
             }),

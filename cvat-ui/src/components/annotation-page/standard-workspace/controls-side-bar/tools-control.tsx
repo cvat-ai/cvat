@@ -211,6 +211,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         latestResponse: {
             mask: number[][],
             points: number[][],
+            orig_size?: number[],
         };
         lastestApproximatedPoints: number[][];
         latestRequest: null | {
@@ -383,10 +384,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     return;
                 }
 
-                this.interaction.latestResponse = {
-                    mask: response.mask,
-                    points: response.points,
-                };
+                this.interaction.latestResponse = response;
                 this.interaction.lastestApproximatedPoints = approximated;
 
                 this.setState({ pointsReceived: !!response.points.length });
@@ -830,7 +828,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         }
     }
 
-    private constructFromPoints(points: number[][]): void {
+    private async constructFromPoints(points: number[][]): Promise<void> {
         const { convertMasksToPolygons } = this.state;
         const {
             frame, labels, curZOrder, jobInstance, activeLabelID, createAnnotations,
@@ -852,6 +850,66 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             const height = this.interaction.latestResponse.mask.length;
             const width = this.interaction.latestResponse.mask[0].length;
             const maskPoints = this.interaction.latestResponse.mask.flat();
+
+            async function resizeImage(
+                data: number[],
+                compressedWidth: number,
+                compressedHeight: number,
+                targetWidth: number,
+                targetHeight: number,
+            ) {
+                const imageData = new ImageData(compressedWidth, compressedHeight);
+                for (let i = 0; i < data.length; i ++) {
+                    const row = Math.ceil(i / compressedWidth);
+                    const col = i % compressedWidth;
+                    if (data[i]) {
+                        imageData.data[row * width * 4 + col * 4 + 0] = 255;
+                        imageData.data[row * width * 4 + col * 4 + 1] = 255;
+                        imageData.data[row * width * 4 + col * 4 + 2] = 255;
+                        imageData.data[row * width * 4 + col * 4 + 3] = 255;
+                    }
+                }
+
+                const bitmap = await createImageBitmap(imageData, 0, 0, compressedWidth, compressedHeight, { resizeHeight: targetHeight, resizeWidth: targetWidth, resizeQuality: 'medium' });
+                const offscreen = new OffscreenCanvas(targetWidth, targetHeight);
+                const context = offscreen.getContext('2d') as OffscreenCanvasRenderingContext2D;
+                context.drawImage(bitmap, 0, 0);
+
+                const resizedMask = [];
+                const resized = context.getImageData(0, 0, targetWidth, targetHeight);
+                for (let i = 0; i < resized.data.length; i += 4) {
+                    if (resized.data[i]) {
+                        resizedMask.push(255);
+                    } else {
+                        resizedMask.push(0);
+                    }
+                }
+
+                resizedMask.push(0, 0, targetWidth - 1, targetHeight - 1);
+                return resizedMask;
+            }
+
+
+            if (this.interaction.latestResponse.orig_size) {
+                const [originalWidth, originalHeight] = this.interaction.latestResponse.orig_size;
+                resizeImage(maskPoints, width, height, originalWidth, originalHeight).then((points) => {
+                    const object = new core.classes.ObjectState({
+                        frame,
+                        objectType: ObjectType.SHAPE,
+                        label: labels.length ? labels.filter((label: any) => label.id === activeLabelID)[0] : null,
+                        shapeType: ShapeType.MASK,
+                        points,
+                        occluded: false,
+                        zOrder: curZOrder,
+                    });
+
+                    createAnnotations(jobInstance, frame, [object]);
+                })
+
+                return;
+            }
+
+
             maskPoints.push(0, 0, width - 1, height - 1);
             const object = new core.classes.ObjectState({
                 frame,
