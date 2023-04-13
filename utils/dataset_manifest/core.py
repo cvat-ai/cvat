@@ -368,6 +368,10 @@ class _ManifestManager(ABC):
         self._reader = None
         self._create_index = create_index
 
+    @property
+    def reader(self):
+        return self._reader
+
     def _parse_line(self, line):
         """ Getting a random line from the manifest file """
         with open(self._manifest.path, 'r') as manifest_file:

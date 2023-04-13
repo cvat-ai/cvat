@@ -717,8 +717,8 @@ def _create_thread(
                         manifest.create()
                         _update_status('A manifest had been created')
 
-                        all_frames = len(manifest._reader)
-                        video_size = manifest._reader.resolution
+                        all_frames = len(manifest.reader)
+                        video_size = manifest.reader.resolution
                         manifest_is_prepared = True
 
                     db_data.size = len(range(db_data.start_frame, min(data['stop_frame'] + 1 \
