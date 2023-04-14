@@ -156,6 +156,19 @@ class SortingMethod(str, Enum):
     def __str__(self):
         return self.value
 
+class Priority(int, Enum):
+    LOWEST = 10
+    LOW = 20
+    MEDIUM = 30
+    HIGH = 40
+    HIGHEST = 50
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+    def __str__(self):
+        return self.name.capitalize()
 
 class ModeChoice(str, Enum):
     ANNOTATION = 'annotation'
@@ -435,6 +448,7 @@ class Task(models.Model):
     target_storage = models.ForeignKey('Storage', null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name='+')
     meta = models.JSONField(null=True, blank=True)
+    priority = models.IntegerField(choices=Priority.choices(), default=Priority.MEDIUM)
 
     # Extend default permission model
     class Meta:
