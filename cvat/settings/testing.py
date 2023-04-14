@@ -5,6 +5,13 @@
 from .development import *
 import tempfile
 
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+    },
+}
+
 _temp_dir = tempfile.TemporaryDirectory(dir=BASE_DIR, suffix="cvat")
 BASE_DIR = _temp_dir.name
 

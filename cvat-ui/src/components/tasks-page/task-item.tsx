@@ -16,7 +16,7 @@ import moment from 'moment';
 
 import ActionsMenuContainer from 'containers/actions-menu/actions-menu';
 import Preview from 'components/common/preview';
-import { ActiveInference } from 'reducers';
+import { ActiveInference, PluginComponent } from 'reducers';
 import AutomaticAnnotationProgress from './automatic-annotation-progress';
 
 export interface TaskItemProps {
@@ -24,6 +24,7 @@ export interface TaskItemProps {
     deleted: boolean;
     hidden: boolean;
     activeInference: ActiveInference | null;
+    taskNamePlugins: PluginComponent[];
     cancelAutoAnnotation(): void;
 }
 
@@ -45,7 +46,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
 
     private renderDescription(): JSX.Element {
         // Task info
-        const { taskInstance } = this.props;
+        const { taskInstance, taskNamePlugins } = this.props;
         const { id } = taskInstance;
         const owner = taskInstance.owner ? taskInstance.owner.username : null;
         const updated = moment(taskInstance.updatedDate).fromNow();
@@ -60,6 +61,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                 <Text strong className='cvat-item-task-name'>
                     {name}
                 </Text>
+                { taskNamePlugins.map(({ component: Component }, index) => <Component key={index} />) }
                 <br />
                 {owner && (
                     <>
@@ -105,7 +107,6 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
         }
 
         const jobsProgress = numOfCompleted / numOfJobs;
-
         return (
             <Col span={6}>
                 <Row justify='space-between' align='top'>
