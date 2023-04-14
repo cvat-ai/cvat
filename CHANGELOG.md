@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## \[2.5.0] - Unreleased
 ### Added
+- TDB
+
+### Changed
+- TDB
+
+### Deprecated
+- TDB
+
+### Removed
+- TDB
+
+### Fixed
+- TDB
+
+### Security
+- TDB
+
+## \[2.4.2] - 2023-04-14
+### Added
 - Support for Azure Blob Storage connection string authentication(<https://github.com/openvinotoolkit/cvat/pull/4649>)
 - Segment Anything interactor for CPU/GPU (<https://github.com/opencv/cvat/pull/6008>)
 
