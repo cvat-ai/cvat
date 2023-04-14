@@ -3026,7 +3026,7 @@ def generate_random_image_file(filename):
     gen = random.SystemRandom()
     width = gen.randint(100, 800)
     height = gen.randint(100, 800)
-    f = _generate_image_file(filename, size=(width, height))
+    f = generate_image_file(filename, size=(width, height))
     return (width, height), f
 
 def generate_random_image_files(*filenames):
