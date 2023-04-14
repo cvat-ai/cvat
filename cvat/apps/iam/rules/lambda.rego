@@ -2,7 +2,7 @@ package lambda
 import data.utils
 
 # input: {
-#     "scope": <"list"|"view"|"call:online"|"call:offline"> or null,
+#     "scope": <"list"|"view"|"call:online"|"call:offline"|"list:offline"> or null,
 #     "auth": {
 #         "user": {
 #             "id": <num>,
@@ -34,6 +34,6 @@ allow {
 }
 
 allow {
-    { utils.CALL_ONLINE, utils.CALL_OFFLINE }[input.scope]
+    { utils.CALL_ONLINE, utils.CALL_OFFLINE, utils.LIST_OFFLINE }[input.scope]
     utils.has_perm(utils.WORKER)
 }
