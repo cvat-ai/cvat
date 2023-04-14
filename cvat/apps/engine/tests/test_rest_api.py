@@ -39,7 +39,8 @@ from cvat.apps.engine.media_extractors import ValidateDimension, sort
 from cvat.apps.engine.tests.utils import get_paginated_collection
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 
-from cvat.apps.engine.tests.utils import ApiTestBase, ForceLogin, logging_disabled, generate_video_file
+from cvat.apps.engine.tests.utils import (ApiTestBase, ForceLogin, logging_disabled,
+    generate_video_file)
 from cvat.apps.engine.tests.utils import generate_image_file as _generate_image_file
 
 #supress av warnings
@@ -1297,7 +1298,7 @@ class ProjectBackupAPITestCase(ApiTestBase):
             filename = imagename_pattern.format(i)
             path = os.path.join(settings.SHARE_ROOT, filename)
             cls.media['files'].append(path)
-            _, data = generate_image_file(filename)
+            _, data = generate_random_image_file(filename)
             with open(path, "wb") as image:
                 image.write(data.read())
 
@@ -1385,9 +1386,9 @@ class ProjectBackupAPITestCase(ApiTestBase):
         cls.media_data.extend([
             # image list local
             {
-                "client_files[0]": generate_image_file("test_1.jpg")[1],
-                "client_files[1]": generate_image_file("test_2.jpg")[1],
-                "client_files[2]": generate_image_file("test_3.jpg")[1],
+                "client_files[0]": generate_random_image_file("test_1.jpg")[1],
+                "client_files[1]": generate_random_image_file("test_2.jpg")[1],
+                "client_files[2]": generate_random_image_file("test_3.jpg")[1],
                 "image_quality": 75,
             },
             # video local
@@ -1729,7 +1730,10 @@ class ProjectImportExportAPITestCase(ApiTestBase):
         cls.media_data = [
             {
                 **{
-                   **{"client_files[{}]".format(i): generate_image_file("test_{}.jpg".format(i))[1] for i in range(10)},
+                   **{
+                        f"client_files[{i}]": generate_random_image_file(f"test_{i}.jpg")[1]
+                        for i in range(10)
+                    },
                 },
                 **{
                     "image_quality": 75,
@@ -1737,7 +1741,10 @@ class ProjectImportExportAPITestCase(ApiTestBase):
             },
             {
                 **{
-                   **{"client_files[{}]".format(i): generate_image_file("test_{}.jpg".format(i))[1] for i in range(10)},
+                   **{
+                        f"client_files[{i}]": generate_random_image_file(f"test_{i}.jpg")[1]
+                        for i in range(10)
+                    },
                 },
                 "image_quality": 75,
             },
@@ -2632,7 +2639,7 @@ class TaskImportExportAPITestCase(ApiTestBase):
         for i in range(image_count):
             filename = imagename_pattern.format(i)
             path = os.path.join(settings.SHARE_ROOT, filename)
-            _, data = generate_image_file(filename)
+            _, data = generate_random_image_file(filename)
             with open(path, "wb") as image:
                 image.write(data.read())
 
@@ -2757,10 +2764,10 @@ class TaskImportExportAPITestCase(ApiTestBase):
         )
 
         data = {
-            "client_files[0]": generate_image_file("test_1.jpg")[1],
-            "client_files[1]": generate_image_file("test_2.jpg")[1],
-            "client_files[2]": generate_image_file("test_10.jpg")[1],
-            "client_files[3]": generate_image_file("test_3.jpg")[1],
+            "client_files[0]": generate_random_image_file("test_1.jpg")[1],
+            "client_files[1]": generate_random_image_file("test_2.jpg")[1],
+            "client_files[2]": generate_random_image_file("test_10.jpg")[1],
+            "client_files[3]": generate_random_image_file("test_3.jpg")[1],
             "image_quality": 75,
         }
         use_cache_data = {
@@ -3016,18 +3023,18 @@ class TaskImportExportAPITestCase(ApiTestBase):
     def test_api_v2_tasks_id_export_no_auth(self):
         self._run_api_v2_tasks_id_export_import(None)
 
-def generate_image_file(filename):
+def generate_random_image_file(filename):
     gen = random.SystemRandom()
     width = gen.randint(100, 800)
     height = gen.randint(100, 800)
     f = _generate_image_file(filename, size=(width, height))
     return (width, height), f
 
-def generate_image_files(*filenames):
+def generate_random_image_files(*filenames):
     images = []
     image_sizes = []
     for image_name in filenames:
-        img_size, image = generate_image_file(image_name)
+        img_size, image = generate_random_image_file(image_name)
         image_sizes.append(img_size)
         images.append(image)
 
@@ -3039,7 +3046,7 @@ def generate_zip_archive_file(filename, count):
     with zipfile.ZipFile(zip_buf, 'w') as zip_chunk:
         for idx in range(count):
             image_name = "image_{:6d}.jpg".format(idx)
-            size, image_buf = generate_image_file(image_name)
+            size, image_buf = generate_random_image_file(image_name)
             image_sizes.append(size)
             zip_chunk.writestr(image_name, image_buf.getvalue())
 
@@ -3118,7 +3125,7 @@ class TaskDataAPITestCase(ApiTestBase):
             "subdir2/subdir3/test_zxc.jpg", "data/test_3.jpg"
         ]:
             path = os.path.join(settings.SHARE_ROOT, filename)
-            img_size, data = generate_image_file(filename)
+            img_size, data = generate_random_image_file(filename)
             os.makedirs(os.path.dirname(path), exist_ok=True)
             with open(path, "wb") as image:
                 image.write(data.read())
@@ -3240,7 +3247,7 @@ class TaskDataAPITestCase(ApiTestBase):
         generate_manifest_file(data_type='images', manifest_path=os.path.join(settings.SHARE_ROOT, 'manifest.jsonl'),
             sources=[os.path.join(settings.SHARE_ROOT, f'test_{i}.jpg') for i in range(1,4)])
 
-        image_sizes, images = generate_image_files("test_1.jpg", "test_2.jpg", "test_3.jpg")
+        image_sizes, images = generate_random_image_files("test_1.jpg", "test_2.jpg", "test_3.jpg")
         cls._client_images = {
             'images': images,
             'image_sizes': image_sizes,
@@ -4337,15 +4344,15 @@ class JobAnnotationAPITestCase(ApiTestBase):
             tid = response.data["id"]
 
             images = {
-                "client_files[0]": generate_image_file("test_1.jpg")[1],
-                "client_files[1]": generate_image_file("test_2.jpg")[1],
-                "client_files[2]": generate_image_file("test_3.jpg")[1],
-                "client_files[4]": generate_image_file("test_4.jpg")[1],
-                "client_files[5]": generate_image_file("test_5.jpg")[1],
-                "client_files[6]": generate_image_file("test_6.jpg")[1],
-                "client_files[7]": generate_image_file("test_7.jpg")[1],
-                "client_files[8]": generate_image_file("test_8.jpg")[1],
-                "client_files[9]": generate_image_file("test_9.jpg")[1],
+                "client_files[0]": generate_random_image_file("test_1.jpg")[1],
+                "client_files[1]": generate_random_image_file("test_2.jpg")[1],
+                "client_files[2]": generate_random_image_file("test_3.jpg")[1],
+                "client_files[4]": generate_random_image_file("test_4.jpg")[1],
+                "client_files[5]": generate_random_image_file("test_5.jpg")[1],
+                "client_files[6]": generate_random_image_file("test_6.jpg")[1],
+                "client_files[7]": generate_random_image_file("test_7.jpg")[1],
+                "client_files[8]": generate_random_image_file("test_8.jpg")[1],
+                "client_files[9]": generate_random_image_file("test_9.jpg")[1],
                 "image_quality": 75,
                 "frame_filter": "step=3",
             }
