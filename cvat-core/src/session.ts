@@ -1217,6 +1217,7 @@ export class Task extends Session {
             dimension: undefined,
             cloud_storage_id: undefined,
             sorting_method: undefined,
+            priority: undefined,
             source_storage: undefined,
             target_storage: undefined,
         };
@@ -1751,15 +1752,25 @@ export class Task extends Session {
                 cloudStorageId: {
                     get: () => data.cloud_storage_id,
                 },
+                /**
+                 * @name sortingMethod
+                 * @type {module:API.cvat.enums.SortingMethod}
+                 * @memberof module:API.cvat.classes.Task
+                 * @instance
+                 * @readonly
+                 */
                 sortingMethod: {
-                    /**
-                     * @name sortingMethod
-                     * @type {module:API.cvat.enums.SortingMethod}
-                     * @memberof module:API.cvat.classes.Task
-                     * @instance
-                     * @readonly
-                     */
                     get: () => data.sorting_method,
+                },
+                /**
+                 * @name priority
+                 * @type {module:API.cvat.enums.Priority}
+                 * @memberof module: API.cvat.classes.Task
+                 * @instance
+                 * @readonly
+                 */
+                priority: {
+                    get: () => data.priority,
                 },
                 /**
                  * Source storage for import resources.
@@ -2360,6 +2371,7 @@ Task.prototype.save.implementation = async function (onUpdate) {
     const taskSpec: any = {
         name: this.name,
         labels: this.labels.map((el) => el.toJSON()),
+        priority: this.priority,
     };
 
     if (typeof this.bugTracker !== 'undefined') {

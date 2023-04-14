@@ -426,6 +426,26 @@ export enum SortingMethod {
 }
 
 /**
+ * Priorities
+ * @enum {number}
+ * @name Priority
+ * @memberof module:API.cvat.enums
+ * @property {number} LOWEST 10
+ * @property {number} LOW 20
+ * @property {number} MEDIUM 30
+ * @property {number} HIGH 40
+ * @property {number} HIGHEST 50
+ * @readonly
+*/
+export enum Priority {
+    LOWEST = 10,
+    LOW = 20,
+    MEDIUM = 30,
+    HIGH = 40,
+    HIGHEST = 50,
+}
+
+/**
  * Types of storage locations
  * @enum {string}
  * @name StorageLocation
