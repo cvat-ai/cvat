@@ -16,7 +16,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.files.storage import FileSystemStorage
 from django.core.exceptions import ValidationError
-from django.db import IntegrityError, models
+from django.db import IntegrityError, models, transaction
 from django.db.models.fields import FloatField
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
@@ -531,6 +531,11 @@ class Segment(models.Model):
         default_permissions = ()
 
 
+class TaskGroundTruthJobsLimitError(ValidationError):
+    def __init__(self) -> None:
+        super().__init__("A task can have only 1 ground truth job")
+
+
 class Job(models.Model):
     segment = models.ForeignKey(Segment, on_delete=models.CASCADE)
     assignee = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
@@ -583,8 +588,15 @@ class Job(models.Model):
     class Meta:
         default_permissions = ()
 
-
+    @transaction.atomic
     def save(self, *args, **kwargs) -> None:
+        # Constraints can't be set on the related model fields
+        # This method requires the save operation to be called as a transaction
+        if self.type == JobType.GROUND_TRUTH and Job.objects.filter(
+            segment__task=self.segment.task, type=JobType.GROUND_TRUTH.value
+        ).count() != 0:
+            raise TaskGroundTruthJobsLimitError()
+
         self.full_clean()
         return super().save(*args, **kwargs)
 

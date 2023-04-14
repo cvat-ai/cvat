@@ -63,6 +63,16 @@ class TestPostJobs:
             assert response.status == HTTPStatus.CREATED
         return response
 
+    def _test_create_job_fails(self, user: str, data: Dict[str, Any], *, expected_status):
+        with make_api_client(user) as api_client:
+            (_, response) = api_client.jobs_api.create(
+                models.JobWriteRequest(**deepcopy(data)),
+                _check_status=False,
+                _parse_response=False,
+            )
+            assert response.status == expected_status
+        return response
+
     @pytest.mark.parametrize(
         "task_mode",
         [
@@ -152,6 +162,22 @@ class TestPostJobs:
             (job_meta, _) = api_client.jobs_api.retrieve_data_meta(job_id)
             assert [f.name for f in job_meta.frames] == ["0.png", "1.png", "5.png"]
 
+    def test_can_create_no_more_than_1_gt_job(self, admin_user, jobs):
+        user = admin_user
+        task_id = next(j for j in jobs if j["type"] == "ground_truth")["task_id"]
+
+        job_spec = {
+            "task_id": task_id,
+            "type": "ground_truth",
+            "frame_selection_method": "random_uniform",
+            "count": 1,
+        }
+
+        response = self._test_create_job_fails(
+            user, job_spec, expected_status=HTTPStatus.BAD_REQUEST
+        )
+        assert b"A task can have only 1 ground truth job" in response.data
+
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestDeleteJobs:
@@ -175,7 +201,9 @@ class TestDeleteJobs:
         if allow:
             self._test_destroy_job_ok(admin_user, job["id"])
         else:
-            self._test_destroy_job_fails(admin_user, job["id"], expected_status=HTTPStatus.BAD_REQUEST)
+            self._test_destroy_job_fails(
+                admin_user, job["id"], expected_status=HTTPStatus.BAD_REQUEST
+            )
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -340,6 +368,7 @@ class TestJobsListFilters(CollectionSimpleFilterTestBase):
             "stage",
             "task_id",
             "project_id",
+            "type",
         ),
     )
     def test_can_use_simple_filter_for_object_list(self, field):
@@ -467,6 +496,13 @@ class TestGetAnnotations:
             )
         else:
             self._test_get_job_annotations_403(username, job_id, **kwargs)
+
+    @pytest.mark.parametrize("job_type", ("ground_truth", "normal"))
+    def test_can_get_annotations(self, admin_user, jobs, annotations, job_type):
+        job = next(j for j in jobs if j["type"] == job_type)
+        self._test_get_job_annotations_200(
+            admin_user, job["id"], annotations["job"][str(job["id"])]
+        )
 
 
 @pytest.mark.usefixtures("restore_db_per_function")

@@ -27,7 +27,7 @@
       "stop_frame": 10,
       "task_id": 22,
       "type": "ground_truth",
-      "updated_date": "2023-04-14T15:03:25.984688Z",
+      "updated_date": "2023-04-14T15:03:25.984000Z",
       "url": "http://localhost:8080/api/jobs/32"
     },
     {
@@ -54,7 +54,7 @@
       "stop_frame": 10,
       "task_id": 22,
       "type": "normal",
-      "updated_date": "2023-04-14T14:58:50.944345Z",
+      "updated_date": "2023-04-14T14:58:50.944000Z",
       "url": "http://localhost:8080/api/jobs/27"
     },
     {

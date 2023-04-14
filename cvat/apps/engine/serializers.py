@@ -672,7 +672,11 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             raise serializers.ValidationError(f"Unexpected job type '{validated_data['type']}'")
 
         validated_data['segment'] = segment
-        return super().create(validated_data)
+
+        try:
+            return super().create(validated_data)
+        except models.TaskGroundTruthJobsLimitError as ex:
+            raise serializers.ValidationError(ex.message) from ex
 
     def update(self, instance, validated_data):
         state = validated_data.get('state')

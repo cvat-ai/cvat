@@ -1751,7 +1751,7 @@ paths:
         in: query
         description: 'A filter term. Available filter_fields: [''task_name'', ''project_name'',
           ''assignee'', ''state'', ''stage'', ''id'', ''task_id'', ''project_id'',
-          ''updated_date'', ''dimension'']'
+          ''updated_date'', ''dimension'', ''type'']'
         schema:
           type: string
       - in: query
@@ -1798,7 +1798,7 @@ paths:
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
           [''task_name'', ''project_name'', ''assignee'', ''state'', ''stage'', ''id'',
-          ''task_id'', ''project_id'', ''updated_date'', ''dimension'']'
+          ''task_id'', ''project_id'', ''updated_date'', ''dimension'', ''type'']'
         schema:
           type: string
       - name: stage
@@ -1830,6 +1830,14 @@ paths:
         description: A simple equality filter for the task_name field
         schema:
           type: string
+      - name: type
+        in: query
+        description: A simple equality filter for the type field
+        schema:
+          type: string
+          enum:
+          - normal
+          - ground_truth
       tags:
       - jobs
       security:
@@ -8289,6 +8297,11 @@ components:
     PatchedIssueWriteRequest:
       type: object
       properties:
+        position:
+          type: array
+          items:
+            type: number
+            format: double
         assignee:
           type: integer
           nullable: true
@@ -8425,6 +8438,13 @@ components:
           type: string
           minLength: 1
           maxLength: 256
+        project_id:
+          type: integer
+          nullable: true
+        owner_id:
+          type: integer
+          writeOnly: true
+          nullable: true
         assignee_id:
           type: integer
           writeOnly: true
@@ -8432,6 +8452,10 @@ components:
         bug_tracker:
           type: string
           maxLength: 2000
+        labels:
+          type: array
+          items:
+            $ref: '#/components/schemas/PatchedLabelRequest'
         subset:
           type: string
           maxLength: 64
