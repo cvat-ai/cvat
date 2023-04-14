@@ -94,6 +94,7 @@ jobs:
         kubectl logs $(kubectl get pods -l component=worker-import -o 'jsonpath={.items[0].metadata.name}') >${LOGS_DIR}/cvat_worker_import.log
         kubectl logs $(kubectl get pods -l component=worker-export -o 'jsonpath={.items[0].metadata.name}') >${LOGS_DIR}/cvat_worker_export.log
         kubectl logs $(kubectl get pods -l component=worker-webhooks -o 'jsonpath={.items[0].metadata.name}') >${LOGS_DIR}/cvat_worker_webhooks.log
+        kubectl logs $(kubectl get pods -l component=app.kubernetes.io/name=traefik -o 'jsonpath={.items[0].metadata.name}') >${LOGS_DIR}/traefik.log
 
     - name: Uploading "cvat" container logs as an artifact
       if: failure()

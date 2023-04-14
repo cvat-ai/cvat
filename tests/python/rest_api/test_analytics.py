@@ -186,7 +186,6 @@ class TestGetAuditEvents:
         for event in events:
             event_timestamp = datetime_parser.isoparse(event["timestamp"])
             assert from_datetime <= event_timestamp <= to_datetime
-        assert False, "Dummy assert"
 
     def test_filter_by_project(self):
         query_params = {
