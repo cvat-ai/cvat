@@ -26,11 +26,12 @@ import {
     getFileNameFromPath,
 } from 'utils/files';
 
+import { Priority } from 'enums';
 import BasicConfigurationForm, { BaseConfiguration } from './basic-configuration-form';
 import ProjectSearchField from './project-search-field';
 import ProjectSubsetField from './project-subset-field';
 import MultiTasksProgress from './multi-task-progress';
-import AdvancedConfigurationForm, { AdvancedConfiguration, SortingMethod, Priority }
+import AdvancedConfigurationForm, { AdvancedConfiguration, SortingMethod }
     from './advanced-configuration-form';
 
 type TabName = 'local' | 'share' | 'remote' | 'cloudStorage';

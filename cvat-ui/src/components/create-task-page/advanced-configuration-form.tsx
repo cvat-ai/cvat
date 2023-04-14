@@ -23,6 +23,7 @@ import SourceStorageField from 'components/storage/source-storage-field';
 import TargetStorageField from 'components/storage/target-storage-field';
 
 import { getCore, Storage, StorageData } from 'cvat-core-wrapper';
+import { Priority } from 'enums';
 
 const core = getCore();
 
@@ -33,14 +34,6 @@ export enum SortingMethod {
     NATURAL = 'natural',
     PREDEFINED = 'predefined',
     RANDOM = 'random',
-}
-
-export enum Priority {
-    LOWEST = 10,
-    LOW = 20,
-    MEDIUM = 30,
-    HIGH = 40,
-    HIGHEST = 50,
 }
 
 export interface AdvancedConfiguration {
