@@ -357,7 +357,7 @@
             "python": "${command:python.interpreterPath}",
             "program": "${workspaceFolder}/cvat-sdk/gen/postprocess.py",
             "args": [
-                "--schema", "${workspaceFolder}/cvat-sdk/schema/schema.yml",
+                "--schema", "${workspaceFolder}/cvat/schema.yml",
                 "--input-path", "${workspaceFolder}/cvat-sdk/cvat_sdk/"
             ],
             "cwd": "${workspaceFolder}",
@@ -389,11 +389,11 @@
             "args": [
                 "spectacular",
                 "--file",
-                "schema.yml"
+                "${workspaceFolder}/cvat/schema.yml"
             ],
             "django": true,
             "cwd": "${workspaceFolder}",
-            "env": {},
+            "env": {"DJANGO_CONFIGURATION": "production"},
             "console": "internalConsole"
         },
         {

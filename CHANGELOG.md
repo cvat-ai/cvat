@@ -5,6 +5,56 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## \[2.4.2] - 2023-04-14
+### Added
+- Support for Azure Blob Storage connection string authentication(<https://github.com/openvinotoolkit/cvat/pull/4649>)
+- Segment Anything interactor for CPU/GPU (<https://github.com/opencv/cvat/pull/6008>)
+
+### Changed
+- The capability to transfer a task from one project to another project has been disabled (<https://github.com/opencv/cvat/pull/5901>)
+- The bounding rectangle in the skeleton annotation is visible solely when the skeleton is active (<https://github.com/opencv/cvat/pull/5911>)
+- Base backend image upgraded from ubuntu:20.04 to ubuntu:22.04 (<https://github.com/opencv/cvat/pull/6021>)
+
+### Deprecated
+- TDB
+
+### Removed
+- Cloud storage `unique_together` limitation (<https://github.com/opencv/cvat/pull/5855>)
+- Support for redundant request media types in the API
+  (<https://github.com/opencv/cvat/pull/5874>)
+- Static URLs and direct SDK support for the tus chunk endpoints.
+  Clients must use the `Location` header from the response to the `Upload-Length` request,
+  as per the tus creation protocol
+  (<https://github.com/opencv/cvat/pull/5961>)
+
+### Fixed
+- An invalid project/org handling in webhooks (<https://github.com/opencv/cvat/pull/5707>)
+- Warning `key` is undefined on project page (<https://github.com/opencv/cvat/pull/5876>)
+- An invalid mask detected when performing automatic annotation on a task (<https://github.com/opencv/cvat/pull/5883>)
+- The 'Reset zoom' option now retains the user's preferences upon reloading CVAT (<https://github.com/opencv/cvat/pull/5908>)
+- Cloud storage content listing when the manifest name contains special characters
+  (<https://github.com/opencv/cvat/pull/5873>)
+- Width and height in CVAT dataset format mask annotations (<https://github.com/opencv/cvat/pull/5905>)
+- Empty list of export formats for a project without tasks (<https://github.com/opencv/cvat/pull/5899>)
+- Downgraded NumPy used by HRNet because `np.int` is no longer available (<https://github.com/opencv/cvat/pull/5574>)
+- Empty previews responsive to page resize (<https://github.com/opencv/cvat/pull/5925>)
+- Nuclio function invocations when deployed via the Helm chart
+  (<https://github.com/opencv/cvat/issues/5626>)
+- Export of a job from a task with multiple jobs (<https://github.com/opencv/cvat/pull/5928>)
+- Points missing when exporting tracked skeleton (<https://github.com/opencv/cvat/issues/5497>)
+- Escaping in the `filter` parameter in generated URLs
+  (<https://github.com/opencv/cvat/issues/5566>)
+- Rotation property lost during saving a mutable attribute (<https://github.com/opencv/cvat/pull/5968>)
+- Optimized /api/jobs request (<https://github.com/opencv/cvat/pull/5962>)
+- Server micro version support check in SDK/CLI (<https://github.com/opencv/cvat/pull/5991>)
+- \[SDK\] Compatibility with upcoming urllib 2.1.0
+  (<https://github.com/opencv/cvat/pull/6002>)
+- Fix TUS file uploading if multiple apache processes are used (<https://github.com/opencv/cvat/pull/6006>)
+- The issue related to webhook events not being sent has been resolved (<https://github.com/opencv/cvat/pull/5916>)
+
+### Security
+- TDB
+
 ## \[2.4.1] - 2023-04-05
 ### Fixed
 - Optimized annotation fetching up to 10 times (<https://github.com/opencv/cvat/pull/5974>)
@@ -88,7 +138,6 @@ Tracks can be exported/imported to/from Datumaro and Sly Pointcloud formats (<ht
 - Fixed error in dataset export when parsing skeleton sublabels containing spaces (<https://github.com/opencv/cvat/pull/5794>)
 - Added missing `CVAT_BASE_URL` in docker-compose.yml (<https://github.com/opencv/cvat/pull/5792>)
 - Create cloud storage button size and models pagination (<https://github.com/opencv/cvat/pull/5858>)
-
 
 ### Security
 - Fixed vulnerability with social authentication (<https://github.com/opencv/cvat/pull/5521>)

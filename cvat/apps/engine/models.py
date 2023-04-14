@@ -19,7 +19,7 @@ from drf_spectacular.utils import extend_schema_field
 
 from cvat.apps.engine.utils import parse_specific_attributes
 from cvat.apps.organizations.models import Organization
-
+from cvat.apps.events.utils import cache_deleted
 
 class SafeCharField(models.CharField):
     def get_prep_value(self, value):
@@ -326,6 +326,10 @@ class Project(models.Model):
     def get_log_path(self):
         return os.path.join(self.get_project_logs_dirname(), "project.log")
 
+    @cache_deleted
+    def delete(self, using=None, keep_parents=False):
+        super().delete(using, keep_parents)
+
     # Extend default permission model
     class Meta:
         default_permissions = ()
@@ -390,6 +394,10 @@ class Task(models.Model):
 
     def __str__(self):
         return self.name
+
+    @cache_deleted
+    def delete(self, using=None, keep_parents=False):
+        super().delete(using, keep_parents)
 
 # Redefined a couple of operation for FileSystemStorage to avoid renaming
 # or other side effects.
@@ -533,6 +541,13 @@ class Label(models.Model):
             return cls.objects.create(**kwargs)
         except IntegrityError:
             raise InvalidLabel("All label names must be unique")
+
+    def get_organization_id(self):
+        if self.project is not None:
+            return self.project.organization.id
+        if self.task is not None:
+            return self.task.organization.id
+        return None
 
     class Meta:
         default_permissions = ()
@@ -763,6 +778,7 @@ class CredentialsTypeChoice(str, Enum):
     ACCOUNT_NAME_TOKEN_PAIR = 'ACCOUNT_NAME_TOKEN_PAIR' # nosec
     KEY_FILE_PATH = 'KEY_FILE_PATH'
     ANONYMOUS_ACCESS = 'ANONYMOUS_ACCESS'
+    CONNECTION_STRING = 'CONNECTION_STRING'
 
     @classmethod
     def choices(cls):
@@ -817,7 +833,7 @@ class CloudStorage(models.Model):
         on_delete=models.SET_NULL, related_name="cloud_storages")
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
-    credentials = models.CharField(max_length=500)
+    credentials = models.CharField(max_length=500, null=True, blank=True)
     credentials_type = models.CharField(max_length=29, choices=CredentialsTypeChoice.choices())#auth_type
     specific_attributes = models.CharField(max_length=1024, blank=True)
     description = models.TextField(blank=True)
@@ -826,7 +842,6 @@ class CloudStorage(models.Model):
 
     class Meta:
         default_permissions = ()
-        unique_together = ('provider_type', 'resource', 'credentials')
 
     def __str__(self):
         return "{} {} {}".format(self.provider_type, self.display_name, self.id)

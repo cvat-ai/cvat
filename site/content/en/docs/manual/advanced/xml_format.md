@@ -20,6 +20,8 @@ The both formats have a common part which is described below. From the previous 
 Also `original_size` tag was added for interpolation mode to specify frame size.
 In annotation mode each image tag has `width` and `height` attributes for the same purpose.
 
+For what is `rle`, see [Run-length encoding](https://en.wikipedia.org/wiki/Run-length_encoding)
+
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
 <annotations>
@@ -38,7 +40,7 @@ In annotation mode each image tag has `width` and `height` attributes for the sa
       <labels>
         <label>
           <name>String: name of the label (e.g. car, person)</name>
-          <type>String: any, bbox, cuboid, cuboid_3d, ellipse, polygon, polyline, points, skeleton, tag</type>
+          <type>String: any, bbox, cuboid, cuboid_3d, ellipse, mask, polygon, polyline, points, skeleton, tag</type>
           <attributes>
             <attribute>
               <name>String: attribute name</name>
@@ -84,7 +86,10 @@ On each image it is possible to have many different objects. Each object can hav
 If an annotation task is created with `z_order` flag then each object will have `z_order` attribute which is used
 to draw objects properly when they are intersected (if `z_order` is bigger the object is closer to camera).
 In previous versions of the format only `box` shape was available.
-In later releases `polygon`, `polyline`, `points`, `skeletons` and `tags` were added. Please see below for more details:
+In later releases `mask`, `polygon`, `polyline`, `points`, `skeletons` and `tags` were added.
+Please see below for more details:
+
+
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -128,6 +133,8 @@ In later releases `polygon`, `polyline`, `points`, `skeletons` and `tags` were a
       <attribute name="String: an attribute name">String: the attribute value</attribute>
       ...
     </skeleton>
+    <mask label="String: the associated label" source="manual or auto" occluded="Number: 0 - False, 1 - True" rle="RLE mask" left="Number: left coordinate of the image where the mask begins" top="Number: top coordinate of the image where the mask begins" width="Number: width of the mask" height="Number: height of the mask" z_order="Number: z-order of the object">
+    </mask>
     ...
   </image>
   ...
@@ -237,6 +244,8 @@ Example:
       <points label="3" occluded="0" source="manual" outside="0" points="125.87,62.85">
       </points>
     </skeleton>
+    <mask label="car" source="manual" occluded="0" rle="3, 5, 7, 7, 5, 9, 3, 11, 2, 11, 2, 12, 1, 12, 1, 26, 1, 12, 1, 12, 2, 11, 3, 9, 5, 7, 7, 5, 3" left="707" top="888" width="13" height="15" z_order="0">
+    </mask>
   </image>
 </annotations>
 ```
@@ -267,6 +276,8 @@ cloned for each location (a known redundancy).
     <points frame="Number: frame" points="x0,y0;x1,y1;..." outside="Number: 0 - False, 1 - True" occluded="Number: 0 - False, 1 - True" keyframe="Number: 0 - False, 1 - True">
       <attribute name="String: an attribute name">String: the attribute value</attribute>
     </points>
+    <mask frame="Number: frame" outside="Number: 0 - False, 1 - True" occluded="Number: 0 - False, 1 - True" rle="RLE mask" left="Number: left coordinate of the image where the mask begins" top="Number: top coordinate of the image where the mask begins" width="Number: width of the mask" height="Number: height of the mask" z_order="Number: z-order of the object">
+    </mask>
     ...
   </track>
   <track id="Number: id of the track (doesn't have any special meeting)" label="String: the associated label" source="manual or auto">

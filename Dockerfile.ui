@@ -1,17 +1,10 @@
 FROM node:lts-slim AS cvat-ui
 
-ARG http_proxy
-ARG https_proxy
-ARG no_proxy
-ARG socks_proxy
 ARG WA_PAGE_VIEW_HIT
 ARG UI_APP_CONFIG
+ARG CLIENT_PLUGINS
 
 ENV TERM=xterm \
-    http_proxy=${http_proxy}   \
-    https_proxy=${https_proxy} \
-    no_proxy=${no_proxy} \
-    socks_proxy=${socks_proxy} \
     LANG='C.UTF-8'  \
     LC_ALL='C.UTF-8'
 
@@ -34,7 +27,7 @@ COPY cvat-core/ /tmp/cvat-core/
 COPY cvat-canvas3d/ /tmp/cvat-canvas3d/
 COPY cvat-canvas/ /tmp/cvat-canvas/
 COPY cvat-ui/ /tmp/cvat-ui/
-RUN UI_APP_CONFIG="${UI_APP_CONFIG}" yarn run build:cvat-ui
+RUN CLIENT_PLUGINS="${CLIENT_PLUGINS}" UI_APP_CONFIG="${UI_APP_CONFIG}" yarn run build:cvat-ui
 
 FROM nginx:mainline-alpine
 # Replace default.conf configuration to remove unnecessary rules

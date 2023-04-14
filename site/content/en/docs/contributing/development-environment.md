@@ -11,7 +11,7 @@ description: 'Installing a development environment for different operating syste
   Ubuntu 18.04
 
   ```bash
-  sudo apt-get update && sudo apt-get --no-install-recommends install -y build-essential curl git redis-server python3-dev python3-pip python3-venv python3-tk libldap2-dev libsasl2-dev pkg-config libavformat-dev libavcodec-dev libavdevice-dev libavutil-dev libswscale-dev libswresample-dev libavfilter-dev
+  sudo apt-get update && sudo apt-get --no-install-recommends install -y build-essential curl git redis-server python3-dev python3-pip python3-venv python3-tk libldap2-dev libsasl2-dev pkg-config libavformat-dev libavcodec-dev libavdevice-dev libavutil-dev libswscale-dev libswresample-dev libavfilter-dev apache2-dev
   ```
 
   ```bash
@@ -24,7 +24,7 @@ description: 'Installing a development environment for different operating syste
   MacOS 10.15
 
   ```bash
-  brew install git python pyenv redis curl openssl node sqlite3 geos
+  brew install git python pyenv redis curl openssl node sqlite3 geos httpd
   ```
 
   Arch Linux
@@ -36,7 +36,7 @@ description: 'Installing a development environment for different operating syste
 
   ```bash
   # Install the required dependencies:
-  sudo pacman -S base-devel curl git redis cmake gcc python python-pip tk libldap libsasl pkgconf ffmpeg geos openldap python-lda
+  sudo pacman -S base-devel curl git redis cmake gcc python python-pip tk libldap libsasl pkgconf ffmpeg geos openldap apache
   ```
 
   ```bash
@@ -79,7 +79,10 @@ description: 'Installing a development environment for different operating syste
   python3 -m venv .env
   . .env/bin/activate
   pip install -U pip wheel setuptools
-  pip install -r cvat/requirements/development.txt -r utils/dataset_manifest/requirements.txt
+  pip install \
+      -r cvat/requirements/development.txt \
+      -r cvat/requirements/production.txt \
+      -r utils/dataset_manifest/requirements.txt
   python manage.py migrate
   python manage.py collectstatic
   ```
@@ -132,19 +135,11 @@ description: 'Installing a development environment for different operating syste
 
   > Note for Arch Linux users:
   >
-  > In order to build `python-ldap`, the `gcc` compiler needs to be pointed to the right file,
-  > since lib name has been changed from `libldap_r` to `libldap`, otherwise wheels
-  > for `python-ldap` won't be built and the install will fail. You need to create
-  > a symlink between the newer and older `ldap` libraries:
-  > ```
-  > sudo ln -s /usr/lib/libldap.so /usr/lib/libldap_r.so
-  > ```
-  >
   > Because PyAV as of version 10.0.0 already [works](https://github.com/PyAV-Org/PyAV/pull/910)
   > with FFMPEG5, you may consider changing the `av` version requirement
   > in `/cvat/cvat/requirements/base.txt` to 10.0.0 or higher.
   >
-  > Perform these actions before installing cvat requirements from the list mentioned above.
+  > Perform this action before installing cvat requirements from the list mentioned above.
 
 - Create a super user for CVAT:
 
@@ -168,13 +163,23 @@ description: 'Installing a development environment for different operating syste
 
 - Install [Docker Engine](https://docs.docker.com/engine/install/ubuntu/) and [Docker-Compose](https://docs.docker.com/compose/install/)
 
-- Pull and run OpenPolicyAgent Docker image:
+- Pull and run Open Policy Agent docker image:
 
   ```bash
    docker run -d --rm --name cvat_opa_debug -p 8181:8181 openpolicyagent/opa:0.45.0-rootless \
    run --server --set=decision_logs.console=true --set=services.cvat.url=http://host.docker.internal:7000 \
    --set=bundles.cvat.service=cvat --set=bundles.cvat.resource=/api/auth/rules
   ```
+
+- Pull and run PostgreSQL docker image:
+
+  ```bash
+  docker run --name cvat_db_debug -e POSTGRES_HOST_AUTH_METHOD=trust -e POSTGRES_USER=root \
+  -e POSTGRES_DB=cvat -p 5432:5432 -d postgres
+  ```
+
+  Note: use `docker start/stop cvat_db_debug` commands to start and stop the container.
+  If it is removed, data will be removed together with the container.
 
 ### Run CVAT
 - Start npm UI debug server (run the following command from CVAT root directory):

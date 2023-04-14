@@ -11,12 +11,23 @@
 # the global owner(s) will be requested for a review.
 
 # Component: Server
-/cvat/          @nmanovic
+/cvat/           @Marishka17
+
+# Component: CVAT SDK/CLI
+/cvat-sdk/       @SpecLad
+/cvat/schema.yml @SpecLad
+/cvat-cli/       @SpecLad
+
+# Component: Documentation
+/site/          @mdacoca
+/CHANGELOG.md   @mdacoca
+/README.md      @mdacoca
 
 # Component: CVAT UI
 /cvat-ui/       @bsekachev
 /cvat-data/     @azhavoro
 /cvat-canvas/   @bsekachev
+/cvat-canvas3d/ @bsekachev
 /cvat-core/     @bsekachev
 
 # Component: Datumaro
@@ -25,6 +36,12 @@
 
 # Advanced components (e.g. analytics)
 /components/    @azhavoro
+
+# Component: Tests
+/tests/         @yasakova-anastasia
+
+# Component: Serverless functions
+/serverless/    @yasakova-anastasia
 
 # Infrastructure
 Dockerfile*     @azhavoro
@@ -36,4 +53,5 @@ docker-compose* @azhavoro
 /tests/         @azhavoro
 /utils/         @azhavoro
 /LICENSE        @nmanovic
-/.github/       @nmanovic
+/.github/       @kirill-sizov
+/helm-chart/    @azhavoro

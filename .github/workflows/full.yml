@@ -14,6 +14,7 @@ on:
 env:
   WORKFLOW_RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
   CYPRESS_VERIFY_TIMEOUT: 180000 # https://docs.cypress.io/guides/guides/command-line#cypress-verify
+  CVAT_VERSION: "local"
 
 jobs:
   search_cache:
@@ -41,10 +42,6 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
-        with:
-          # we specify version of buildkit due to issue that occurs in latest version
-          # https://github.com/moby/buildkit/issues/2631
-          driver-opts: image=moby/buildkit:v0.10.0
 
       - name: Create artifact directories
         run: |
@@ -72,10 +69,6 @@ jobs:
 
       - name: CVAT SDK. Build
         run: |
-          docker load --input /tmp/cvat_server/image.tar
-          docker run --rm -v ${PWD}/cvat-sdk/schema/:/transfer \
-            --entrypoint /bin/bash -u root cvat/server \
-            -c 'python manage.py spectacular --file /transfer/schema.yml'
           pip3 install --user -r cvat-sdk/gen/requirements.txt
           ./cvat-sdk/gen/generate.sh
 
@@ -99,7 +92,7 @@ jobs:
           name: cvat_sdk
           path: /tmp/cvat_sdk/
 
-  rest_api:
+  rest_api_testing:
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -107,12 +100,9 @@ jobs:
         with:
           ref: ${{ inputs.ref }}
 
-      - uses: actions/setup-python@v3
+      - uses: actions/setup-python@v4
         with:
           python-version: '3.8'
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@master
 
       - name: Download CVAT server image
         uses: actions/download-artifact@v3
@@ -136,21 +126,44 @@ jobs:
         run: |
           docker load --input /tmp/cvat_server/image.tar
           docker load --input /tmp/cvat_ui/image.tar
-          docker tag cvat/server:latest cvat/server:dev
-          docker tag cvat/ui:latest cvat/ui:dev
+          docker tag cvat/server:latest cvat/server:${CVAT_VERSION}
+          docker tag cvat/ui:latest cvat/ui:${CVAT_VERSION}
           docker image ls -a
 
+      - name: Verify API schema
+        id: verify_schema
+        run: |
+          docker run --rm --entrypoint /bin/bash cvat/server:${CVAT_VERSION} \
+            -c 'python manage.py spectacular' > cvat/schema-expected.yml
+
+          if ! git diff --no-index cvat/schema.yml cvat/schema-expected.yml; then
+            echo
+            echo 'API schema has changed! Please update cvat/schema.yml:'
+            echo
+            echo '  docker run --rm --entrypoint /bin/bash cvat/server:dev \'
+            echo "    -c 'python manage.py spectacular' > cvat/schema.yml"
+            exit 1
+          fi
+
+      - name: Upload expected schema as an artifact
+        if: failure() && steps.verify_schema.conclusion == 'failure'
+        uses: actions/upload-artifact@v3.1.2
+        with:
+          name: expected_schema
+          path: cvat/schema-expected.yml
+
       - name: Running REST API and SDK tests
+        id: run_tests
         run: |
           pip3 install --user '/tmp/cvat_sdk/[pytorch]'
           pip3 install --user cvat-cli/
           pip3 install --user -r tests/python/requirements.txt
-          pytest tests/python -s -v
+          pytest tests/python/ -s -v
 
       - name: Creating a log file from cvat containers
-        if: failure()
+        if: failure() && steps.run_tests.conclusion == 'failure'
         env:
-          LOGS_DIR: "${{ github.workspace }}/rest_api"
+          LOGS_DIR: "${{ github.workspace }}/rest_api_testing"
         run: |
             mkdir $LOGS_DIR
             docker logs test_cvat_server_1 > $LOGS_DIR/cvat_server.log
@@ -159,11 +172,11 @@ jobs:
             docker logs test_cvat_opa_1 2> $LOGS_DIR/cvat_opa.log
 
       - name: Uploading "cvat" container logs as an artifact
-        if: failure()
-        uses: actions/upload-artifact@v3.1.1
+        if: failure() && steps.run_tests.conclusion == 'failure'
+        uses: actions/upload-artifact@v3.1.2
         with:
           name: rest_api_container_logs
-          path: "${{ github.workspace }}/rest_api"
+          path: "${{ github.workspace }}/rest_api_testing"
 
   unit_testing:
     needs: build
@@ -173,19 +186,16 @@ jobs:
         with:
           ref: ${{ inputs.ref }}
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@master
-
       - name: Download CVAT server image
         uses: actions/download-artifact@v3
         with:
           name: cvat_server
           path: /tmp/cvat_server/
 
-      - name: Load Docker images
+      - name: Load Docker server image
         run: |
           docker load --input /tmp/cvat_server/image.tar
-          docker tag cvat/server:latest cvat/server:dev
+          docker tag cvat/server:latest cvat/server:${CVAT_VERSION}
           docker image ls -a
 
       - name: Running OPA tests
@@ -202,7 +212,8 @@ jobs:
           HOST_COVERAGE_DATA_DIR: ${{ github.workspace }}
           CONTAINER_COVERAGE_DATA_DIR: "/coverage_data"
         run: |
-          docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d cvat_opa cvat_server
+          docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d cvat_opa cvat_server cvat_db
+
           max_tries=12
           while [[  $(curl -s -o /dev/null -w "%{http_code}" localhost:8181/health?bundles) != "200" && max_tries -gt 0 ]]; do (( max_tries-- )); sleep 5; done
 
@@ -247,9 +258,6 @@ jobs:
         with:
             node-version: '16.x'
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@master
-
       - name: Download CVAT server image
         uses: actions/download-artifact@v3
         with:
@@ -266,8 +274,8 @@ jobs:
         run: |
           docker load --input /tmp/cvat_server/image.tar
           docker load --input /tmp/cvat_ui/image.tar
-          docker tag cvat/server:latest cvat/server:dev
-          docker tag cvat/ui:latest cvat/ui:dev
+          docker tag cvat/server:latest cvat/server:${CVAT_VERSION}
+          docker tag cvat/ui:latest cvat/ui:${CVAT_VERSION}
           docker image ls -a
 
       - name: Run CVAT instance
@@ -289,6 +297,7 @@ jobs:
           do
             echo Number of attempts left: $max_tries
             echo Status code of response: $status_code
+
             sleep 5
             status_code=$(curl -s -o /tmp/server_response -w "%{http_code}" ${API_ABOUT_PAGE})
             (( max_tries-- ))
@@ -304,7 +313,6 @@ jobs:
           cd ./tests
           yarn --frozen-lockfile
 
-          shopt -s extglob
           if [[ ${{ matrix.specs }} == canvas3d_* ]]; then
             npx cypress run \
               --headed \

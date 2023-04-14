@@ -135,13 +135,15 @@
 
     .cvat-project-item-loading-preview,
     .cvat-project-item-empty-preview {
-        .ant-spin {
-            position: inherit;
-        }
+        @extend .cvat-base-preview;
 
-        font-size: $grid-unit-size * 15;
-        text-align: center;
-        height: $grid-unit-size * 24;
+        &:hover {
+            cursor: pointer;
+        }
+    }
+
+    .cvat-project-item-loading-preview {
+        padding-top: $grid-unit-size * 3;
     }
 
     .cvat-projects-project-item-title {

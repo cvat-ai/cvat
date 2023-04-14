@@ -140,7 +140,6 @@ class JobAnnotation:
 
                 for shape in shapes:
                     shape_attributes = shape.pop("attributes", [])
-                    shape_elements = shape.pop("elements", [])
                     # FIXME: need to clamp points (be sure that all of them inside the image)
                     # Should we check here or implement a validator?
                     db_shape = models.TrackedShape(**shape)
@@ -155,12 +154,12 @@ class JobAnnotation:
 
                     db_shapes.append(db_shape)
                     shape["attributes"] = shape_attributes
-                    shape["elements"] = shape_elements
 
                 db_tracks.append(db_track)
                 track["attributes"] = track_attributes
                 track["shapes"] = shapes
-                track["elements"] = elements
+                if elements or parent_track is None:
+                    track["elements"] = elements
 
             db_tracks = bulk_create(
                 db_model=models.LabeledTrack,
@@ -200,7 +199,7 @@ class JobAnnotation:
                 for shape in track["shapes"]:
                     shape["id"] = db_shapes[shape_idx].id
                     shape_idx += 1
-                create_tracks(track["elements"], db_track)
+                create_tracks(track.get("elements", []), db_track)
 
         create_tracks(tracks)
 
@@ -230,7 +229,8 @@ class JobAnnotation:
 
                 db_shapes.append(db_shape)
                 shape["attributes"] = attributes
-                shape["elements"] = shape_elements
+                if shape_elements or parent_shape is None:
+                    shape["elements"] = shape_elements
 
             db_shapes = bulk_create(
                 db_model=models.LabeledShape,
@@ -249,7 +249,7 @@ class JobAnnotation:
 
             for shape, db_shape in zip(shapes, db_shapes):
                 shape["id"] = db_shape.id
-                create_shapes(shape["elements"], db_shape)
+                create_shapes(shape.get("elements", []), db_shape)
 
         create_shapes(shapes)
 
