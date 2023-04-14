@@ -1,8 +1,49 @@
 {
-  "count": 16,
+  "count": 17,
   "next": null,
   "previous": null,
   "results": [
+    {
+      "assignee": null,
+      "bug_tracker": "",
+      "created_date": "2023-04-14T14:40:10.333007Z",
+      "data": 21,
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "data_original_chunk_type": "imageset",
+      "dimension": "2d",
+      "id": 22,
+      "image_quality": 70,
+      "jobs": {
+        "completed": 0,
+        "count": 6,
+        "url": "http://localhost:8080/api/jobs?task_id=22"
+      },
+      "labels": {
+        "count": 3,
+        "url": "http://localhost:8080/api/labels?task_id=22"
+      },
+      "mode": "annotation",
+      "name": "task3_with_gt_job",
+      "organization": 2,
+      "overlap": 0,
+      "owner": {
+        "first_name": "User",
+        "id": 3,
+        "last_name": "Second",
+        "url": "http://localhost:8080/api/users/3",
+        "username": "user2"
+      },
+      "project_id": null,
+      "segment_size": 11,
+      "size": 11,
+      "source_storage": null,
+      "status": "annotation",
+      "subset": "Train",
+      "target_storage": null,
+      "updated_date": "2023-04-14T15:03:25.969578Z",
+      "url": "http://localhost:8080/api/tasks/22"
+    },
     {
       "assignee": null,
       "bug_tracker": "",
