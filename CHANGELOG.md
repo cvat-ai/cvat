@@ -7,18 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## \[2.5.0] - Unreleased
 ### Added
-- Add support for Azure Blob Storage connection string authentication(<https://github.com/openvinotoolkit/cvat/pull/4649>)
-- Added Segment Anything interactor for CPU/GPU (<https://github.com/opencv/cvat/pull/6008>)
+- TDB
 
 ### Changed
-- Moving a task from a project to another project is disabled (<https://github.com/opencv/cvat/pull/5901>)
-- In skeleton annotation wrapping rectangle is visible only when a skeleton is activated (<https://github.com/opencv/cvat/pull/5911>)
+- TDB
 
 ### Deprecated
 - TDB
 
 ### Removed
-- Cloud storage unique_together limitation (<https://github.com/opencv/cvat/pull/5855>)
+- TDB
+
+### Fixed
+- TDB
+
+### Security
+- TDB
+
+## \[2.4.2] - 2023-04-14
+### Added
+- Support for Azure Blob Storage connection string authentication(<https://github.com/openvinotoolkit/cvat/pull/4649>)
+- Segment Anything interactor for CPU/GPU (<https://github.com/opencv/cvat/pull/6008>)
+
+### Changed
+- The capability to transfer a task from one project to another project has been disabled (<https://github.com/opencv/cvat/pull/5901>)
+- The bounding rectangle in the skeleton annotation is visible solely when the skeleton is active (<https://github.com/opencv/cvat/pull/5911>)
+- Base backend image upgraded from ubuntu:20.04 to ubuntu:22.04 (<https://github.com/opencv/cvat/pull/6021>)
+
+### Deprecated
+- TDB
+
+### Removed
+- Cloud storage `unique_together` limitation (<https://github.com/opencv/cvat/pull/5855>)
 - Support for redundant request media types in the API
   (<https://github.com/opencv/cvat/pull/5874>)
 - Static URLs and direct SDK support for the tus chunk endpoints.
@@ -29,14 +49,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - An invalid project/org handling in webhooks (<https://github.com/opencv/cvat/pull/5707>)
 - Warning `key` is undefined on project page (<https://github.com/opencv/cvat/pull/5876>)
-- Invalid mask when running automatic annotation on a task (<https://github.com/opencv/cvat/pull/5883>)
-- Option 'Reset zoom' now restored as user specified when reload CVAT (<https://github.com/opencv/cvat/pull/5908>)
+- An invalid mask detected when performing automatic annotation on a task (<https://github.com/opencv/cvat/pull/5883>)
+- The 'Reset zoom' option now retains the user's preferences upon reloading CVAT (<https://github.com/opencv/cvat/pull/5908>)
 - Cloud storage content listing when the manifest name contains special characters
   (<https://github.com/opencv/cvat/pull/5873>)
 - Width and height in CVAT dataset format mask annotations (<https://github.com/opencv/cvat/pull/5905>)
 - Empty list of export formats for a project without tasks (<https://github.com/opencv/cvat/pull/5899>)
-- Downgrade NumPy used by HRNet because `np.int` is no longer available (<https://github.com/opencv/cvat/pull/5574>)
-- Make empty previews responsive to page resize <https://github.com/opencv/cvat/pull/5925>
+- Downgraded NumPy used by HRNet because `np.int` is no longer available (<https://github.com/opencv/cvat/pull/5574>)
+- Empty previews responsive to page resize (<https://github.com/opencv/cvat/pull/5925>)
 - Nuclio function invocations when deployed via the Helm chart
   (<https://github.com/opencv/cvat/issues/5626>)
 - Export of a job from a task with multiple jobs (<https://github.com/opencv/cvat/pull/5928>)
@@ -49,6 +69,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - \[SDK\] Compatibility with upcoming urllib 2.1.0
   (<https://github.com/opencv/cvat/pull/6002>)
 - Fix TUS file uploading if multiple apache processes are used (<https://github.com/opencv/cvat/pull/6006>)
+- The issue related to webhook events not being sent has been resolved (<https://github.com/opencv/cvat/pull/5916>)
 
 ### Security
 - TDB
