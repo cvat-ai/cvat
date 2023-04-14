@@ -36,11 +36,11 @@ export enum SortingMethod {
 }
 
 export enum Priority {
-    LOWEST = 0,
-    LOW = 1,
-    MEDIUM = 2,
-    HIGH = 3,
-    HIGHEST = 4,
+    LOWEST = 10,
+    LOW = 20,
+    MEDIUM = 30,
+    HIGH = 40,
+    HIGHEST = 50,
 }
 
 export interface AdvancedConfiguration {

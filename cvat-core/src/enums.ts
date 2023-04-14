@@ -430,19 +430,19 @@ export enum SortingMethod {
  * @enum {number}
  * @name Priority
  * @memberof module:API.cvat.enums
- * @property {number} LOWEST 0
- * @property {number} LOW 1
- * @property {number} MEDIUM 2
- * @property {number} HIGH 3
- * @property {number} HIGHEST 4
+ * @property {number} LOWEST 10
+ * @property {number} LOW 20
+ * @property {number} MEDIUM 30
+ * @property {number} HIGH 40
+ * @property {number} HIGHEST 50
  * @readonly
 */
 export enum Priority {
-    LOWEST = 0,
-    LOW = 1,
-    MEDIUM = 2,
-    HIGH = 3,
-    HIGHEST = 4,
+    LOWEST = 10,
+    LOW = 20,
+    MEDIUM = 30,
+    HIGH = 40,
+    HIGHEST = 50,
 }
 
 /**
