@@ -17,16 +17,6 @@ ALLOWED_HOSTS.append('testserver')
 # https://github.com/moggers87/django-sendfile2
 SENDFILE_BACKEND = 'django_sendfile.backends.development'
 
-# Database
-# https://docs.djangoproject.com/en/2.0/ref/settings/#databases
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    },
-}
-
 # Cross-Origin Resource Sharing settings for CVAT UI
 UI_SCHEME = os.environ.get('UI_SCHEME', 'http')
 UI_HOST = os.environ.get('UI_HOST', 'localhost')
@@ -67,3 +57,7 @@ SILKY_MAX_REQUEST_BODY_SIZE = 1024
 SILKY_MAX_RESPONSE_BODY_SIZE = 1024
 SILKY_IGNORE_PATHS = ['/admin', '/documentation', '/django-rq', '/auth']
 SILKY_MAX_RECORDED_REQUESTS = 10**4
+
+# Database
+# https://docs.djangoproject.com/en/3.2/ref/settings/#databases
+DATABASES['default']['HOST'] = os.getenv('CVAT_POSTGRES_HOST', 'localhost')

@@ -293,6 +293,7 @@ class CVAT_QUEUES(Enum):
     EXPORT_DATA = 'export'
     AUTO_ANNOTATION = 'annotation'
     WEBHOOKS = 'webhooks'
+    NOTIFICATIONS = 'notifications'
 
 RQ_QUEUES = {
     CVAT_QUEUES.IMPORT_DATA.value: {
@@ -318,7 +319,13 @@ RQ_QUEUES = {
         'PORT': 6379,
         'DB': 0,
         'DEFAULT_TIMEOUT': '1h'
-    }
+    },
+    CVAT_QUEUES.NOTIFICATIONS.value: {
+        'HOST': 'localhost',
+        'PORT': 6379,
+        'DB': 0,
+        'DEFAULT_TIMEOUT': '1h'
+    },
 }
 
 NUCLIO = {
@@ -638,5 +645,18 @@ CLICKHOUSE = {
         'PORT': os.getenv('CLICKHOUSE_PORT', 8123),
         'USER': os.getenv('CLICKHOUSE_USER', 'user'),
         'PASSWORD': os.getenv('CLICKHOUSE_PASSWORD', 'user'),
+    }
+}
+
+# Database
+# https://docs.djangoproject.com/en/3.2/ref/settings/#databases
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'HOST': os.getenv('CVAT_POSTGRES_HOST', 'cvat_db'),
+        'NAME': os.getenv('CVAT_POSTGRES_DBNAME', 'cvat'),
+        'USER': os.getenv('CVAT_POSTGRES_USER', 'root'),
+        'PASSWORD': os.getenv('CVAT_POSTGRES_PASSWORD', ''),
+        'PORT': os.getenv('CVAT_POSTGRES_PORT', 5432),
     }
 }
