@@ -536,7 +536,31 @@ class TaskGroundTruthJobsLimitError(ValidationError):
         super().__init__("A task can have only 1 ground truth job")
 
 
+class JobQuerySet(models.QuerySet):
+    @transaction.atomic
+    def create(self, **kwargs: Any):
+        self._validate_constraints(kwargs)
+
+        return super().create(**kwargs)
+
+    @transaction.atomic
+    def get_or_create(self, *args, **kwargs: Any):
+        self._validate_constraints(kwargs)
+
+        return super().get_or_create(*args, **kwargs)
+
+    def _validate_constraints(self, obj: Dict[str, Any]):
+        # Constraints can't be set on the related model fields
+        # This method requires the save operation to be called as a transaction
+        if obj['type'] == JobType.GROUND_TRUTH and self.filter(
+            segment__task=obj['segment'].task, type=JobType.GROUND_TRUTH.value
+        ).count() != 0:
+            raise TaskGroundTruthJobsLimitError()
+
+
 class Job(models.Model):
+    objects = JobQuerySet.as_manager()
+
     segment = models.ForeignKey(Segment, on_delete=models.CASCADE)
     assignee = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
     updated_date = models.DateTimeField(auto_now=True)
@@ -590,13 +614,6 @@ class Job(models.Model):
 
     @transaction.atomic
     def save(self, *args, **kwargs) -> None:
-        # Constraints can't be set on the related model fields
-        # This method requires the save operation to be called as a transaction
-        if self.type == JobType.GROUND_TRUTH and Job.objects.filter(
-            segment__task=self.segment.task, type=JobType.GROUND_TRUTH.value
-        ).count() != 0:
-            raise TaskGroundTruthJobsLimitError()
-
         self.full_clean()
         return super().save(*args, **kwargs)
 

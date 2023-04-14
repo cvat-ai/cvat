@@ -507,7 +507,7 @@ class TestGetAnnotations:
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestPatchJobAnnotations:
-    def _check_respone(self, username, jid, expect_success, data=None, org=None):
+    def _check_response(self, username, jid, expect_success, data=None, org=None):
         kwargs = {}
         if org is not None:
             if isinstance(org, str):
@@ -583,7 +583,7 @@ class TestPatchJobAnnotations:
         username, jid = find_job_staff_user(filtered_jobs, users, job_staff)
 
         data = request_data(jid)
-        self._check_respone(username, jid, expect_success, data, org=org)
+        self._check_response(username, jid, expect_success, data, org=org)
 
     @pytest.mark.parametrize("org", [2])
     @pytest.mark.parametrize(
@@ -607,7 +607,7 @@ class TestPatchJobAnnotations:
         username, jid = find_job_staff_user(filtered_jobs, users, False)
 
         data = request_data(jid)
-        self._check_respone(username, jid, expect_success, data, org=org)
+        self._check_response(username, jid, expect_success, data, org=org)
 
     @pytest.mark.parametrize("org", [""])
     @pytest.mark.parametrize(
@@ -641,7 +641,13 @@ class TestPatchJobAnnotations:
         username, jid = find_job_staff_user(filtered_jobs, users, job_staff)
 
         data = request_data(jid)
-        self._check_respone(username, jid, expect_success, data, org=org)
+        self._check_response(username, jid, expect_success, data, org=org)
+
+    @pytest.mark.parametrize("job_type", ("ground_truth", "normal"))
+    def test_can_update_annotations(self, admin_user, jobs, request_data, job_type):
+        job = next(j for j in jobs if j["type"] == job_type)
+        data = request_data(job["id"])
+        self._check_response(admin_user, job["id"], True, data)
 
 
 @pytest.mark.usefixtures("restore_db_per_function")

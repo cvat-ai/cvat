@@ -6,7 +6,7 @@
     {
       "assignee": null,
       "bug_tracker": "",
-      "created_date": "2023-04-14T14:40:10.333007Z",
+      "created_date": "2023-04-14T14:40:10.333000Z",
       "data": 21,
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
@@ -39,9 +39,9 @@
       "size": 11,
       "source_storage": null,
       "status": "annotation",
-      "subset": "Train",
+      "subset": "",
       "target_storage": null,
-      "updated_date": "2023-04-14T15:03:25.969578Z",
+      "updated_date": "2023-04-14T15:03:25.969000Z",
       "url": "http://localhost:8080/api/tasks/22"
     },
     {
