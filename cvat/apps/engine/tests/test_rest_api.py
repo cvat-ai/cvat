@@ -40,8 +40,7 @@ from cvat.apps.engine.tests.utils import get_paginated_collection
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 
 from cvat.apps.engine.tests.utils import (ApiTestBase, ForceLogin, logging_disabled,
-    generate_video_file)
-from cvat.apps.engine.tests.utils import generate_image_file as _generate_image_file
+    generate_image_file, generate_video_file)
 
 #supress av warnings
 logging.getLogger('libav').setLevel(logging.ERROR)
