@@ -168,35 +168,19 @@ class TestDeleteJobs:
             assert response.status == expected_status
         return response
 
-    def test_can_destroy_gt_job(self, admin_user, tasks):
-        user = admin_user
-        job_frame_count = 4
-        task = next(
-            t
-            for t in tasks
-            if not t["project_id"] and not t["organization"] and t["size"] > job_frame_count
-        )
-        task_id = task["id"]
+    @pytest.mark.parametrize("job_type, allow", (("ground_truth", True), ("normal", False)))
+    def test_can_destroy_job(self, admin_user, jobs, job_type, allow):
+        job = next(j for j in jobs if j["type"] == job_type)
 
-        job_spec = {
-            "task_id": task_id,
-            "type": "ground_truth",
-            "frame_selection_method": "manual",
-            "frames": list(range(job_frame_count)),
-        }
-        with make_api_client(user) as api_client:
-            (job, _) = api_client.jobs_api.create(models.JobWriteRequest(**job_spec))
-
-        self._test_destroy_job_ok(user, job.id)
-
-    def test_cannot_destroy_normal_job(self, admin_user, jobs):
-        job_id = next(j for j in jobs if j["type"] == "normal")["id"]
-        self._test_destroy_job_fails(admin_user, job_id, expected_status=HTTPStatus.BAD_REQUEST)
+        if allow:
+            self._test_destroy_job_ok(admin_user, job["id"])
+        else:
+            self._test_destroy_job_fails(admin_user, job["id"], expected_status=HTTPStatus.BAD_REQUEST)
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestGtComparison:
-    def test_can_compare_normal_with_gt_job(self, admin_user, tasks, jobs):
+    def test_can_compare_normal_and_gt_job(self, admin_user, tasks, jobs):
         user = admin_user
         job_frame_count = 4
         task = next(
