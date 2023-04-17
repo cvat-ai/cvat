@@ -706,15 +706,16 @@ class SimpleJobSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Job
-        fields = ('url', 'id', 'assignee', 'status', 'stage', 'state')
+        fields = ('url', 'id', 'assignee', 'status', 'stage', 'state', 'type')
         read_only_fields = fields
 
 class SegmentSerializer(serializers.ModelSerializer):
     jobs = SimpleJobSerializer(many=True, source='job_set')
+    frames = serializers.ListSerializer(child=serializers.IntegerField(), allow_empty=True)
 
     class Meta:
         model = models.Segment
-        fields = ('start_frame', 'stop_frame', 'jobs')
+        fields = ('start_frame', 'stop_frame', 'jobs', 'type', 'frames')
         read_only_fields = fields
 
 class ClientFileSerializer(serializers.ModelSerializer):

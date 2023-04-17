@@ -504,6 +504,7 @@ class Segment(models.Model):
     stop_frame = models.IntegerField()
     type = models.CharField(choices=SegmentType.choices(), default=SegmentType.RANGE, max_length=32)
 
+    # TODO: try to reuse this field for custom task segments (aka job_file_mapping)
     # SegmentType.SPECIFIC_FRAMES fields
     frames = IntArrayField(store_sorted=True, unique_values=True, default='', blank=True)
 

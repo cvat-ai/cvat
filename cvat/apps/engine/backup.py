@@ -31,7 +31,8 @@ from distutils.util import strtobool
 import cvat.apps.dataset_manager as dm
 from cvat.apps.engine import models
 from cvat.apps.engine.log import slogger
-from cvat.apps.engine.serializers import (AttributeSerializer, DataSerializer, LabelSerializer,
+from cvat.apps.engine.serializers import (AttributeSerializer, DataSerializer,
+    JobWriteSerializer, LabelSerializer,
     LabeledDataSerializer, SegmentSerializer, SimpleJobSerializer, TaskReadSerializer,
     ProjectReadSerializer, ProjectFileSerializer, TaskFileSerializer)
 from cvat.apps.engine.utils import av_scan_paths, process_failed_job, configure_dependent_job, get_rq_job_meta
@@ -146,6 +147,7 @@ class _TaskBackupBase(_BackupBase):
     def _prepare_job_meta(self, job):
         allowed_fields = {
             'status',
+            'type',
         }
         return self._prepare_meta(allowed_fields, job)
 
@@ -330,12 +332,13 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                 job_serializer.fields.pop(field)
             job_data = self._prepare_job_meta(job_serializer.data)
 
-            segment_serailizer = SegmentSerializer(db_segment)
-            segment_serailizer.fields.pop('jobs')
-            segment = segment_serailizer.data
+            segment_serializer = SegmentSerializer(db_segment)
+            segment_serializer.fields.pop('jobs')
+            segment = segment_serializer.data
+            segment_type = segment.pop("type")
             segment.update(job_data)
 
-            if self._db_task.segment_size == 0:
+            if self._db_task.segment_size == 0 and segment_type == models.SegmentType.RANGE:
                 segment.update(serialize_custom_file_mapping(db_segment))
 
             return segment
@@ -509,6 +512,8 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
 
     @staticmethod
     def _calculate_segment_size(jobs):
+        jobs = [j for j in jobs if j["type"] == models.JobType.NORMAL]
+
         segment_size = jobs[0]['stop_frame'] - jobs[0]['start_frame'] + 1
         overlap = 0 if len(jobs) == 1 else jobs[0]['stop_frame'] - jobs[1]['start_frame'] + 1
 
@@ -611,9 +616,35 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         db_data.storage = StorageChoice.LOCAL
         db_data.save(update_fields=['start_frame', 'stop_frame', 'frame_filter', 'storage', 'deleted_frames'])
 
+        # Recreate Ground Truth jobs (they won't be created automatically)
+        self._import_gt_jobs(jobs)
+
         for db_job, job in zip(self._get_db_jobs(), jobs):
             db_job.status = job['status']
             db_job.save()
+
+    def _import_gt_jobs(self, jobs):
+        for job in jobs:
+            # The type field will be missing in backups create before the GT jobs were introduced
+            try:
+                raw_job_type = job.get("type", models.JobType.NORMAL.value)
+                job_type = models.JobType(raw_job_type)
+            except ValueError:
+                raise ValidationError(f"Unexpected job type {raw_job_type}")
+
+            if job_type == models.JobType.GROUND_TRUTH:
+                job_serializer = JobWriteSerializer(data={
+                    'task_id': self._db_task.id,
+                    'type': job_type.value,
+                    'frame_selection_method': models.JobFrameSelectionMethod.MANUAL.value,
+                    'frames': job['frames']
+                })
+                job_serializer.is_valid(raise_exception=True)
+                job_serializer.save()
+            elif job_type == models.JobType.NORMAL:
+                continue
+            else:
+                assert False
 
     def _import_annotations(self):
         db_jobs = self._get_db_jobs()

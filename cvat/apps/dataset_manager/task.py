@@ -647,6 +647,9 @@ class TaskAnnotation:
         self.reset()
 
         for db_job in self.db_jobs:
+            if db_job.type != models.JobType.NORMAL:
+                continue
+
             annotation = JobAnnotation(db_job.id, is_prefetched=True)
             annotation.init_from_db()
             if annotation.ir_data.version > self.ir_data.version:

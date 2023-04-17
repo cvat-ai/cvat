@@ -25,9 +25,9 @@ from django.utils import timezone
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine.frame_provider import FrameProvider
-from cvat.apps.engine.models import AttributeSpec, AttributeType, DimensionType
+from cvat.apps.engine.models import (AttributeSpec, AttributeType, DimensionType, JobType,
+                                     Label, LabelType, Project, ShapeType, Task)
 from cvat.apps.engine.models import Image as Img
-from cvat.apps.engine.models import Label, LabelType, Project, ShapeType, Task
 
 from .annotation import AnnotationIR, AnnotationManager, TrackManager
 from .formats.transformations import CVATRleToCOCORle, EllipsesToMasks
@@ -706,8 +706,10 @@ class TaskData(CommonData):
                     ("start", str(db_segment.start_frame)),
                     ("stop", str(db_segment.stop_frame)),
                     ("url", "{}/api/jobs/{}".format(
-                        host, db_segment.job_set.all()[0].id))]
-                )) for db_segment in db_segments
+                        host, db_segment.job_set.first().id))]
+                ))
+                for db_segment in db_segments
+                if db_segment.job_set.first().type == JobType.NORMAL
             ]),
 
             ("owner", OrderedDict([

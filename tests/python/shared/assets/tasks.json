@@ -16,7 +16,7 @@
       "image_quality": 70,
       "jobs": {
         "completed": 0,
-        "count": 6,
+        "count": 2,
         "url": "http://localhost:8080/api/jobs?task_id=22"
       },
       "labels": {
