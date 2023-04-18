@@ -40,8 +40,8 @@ from cvat.apps.engine.media_extractors import ValidateDimension, sort
 from cvat.apps.engine.tests.utils import get_paginated_collection
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 
-from cvat.apps.engine.tests.utils import ApiTestBase, ForceLogin, disable_logging, generate_video_file
-from cvat.apps.engine.tests.utils import generate_image_file as _generate_image_file
+from cvat.apps.engine.tests.utils import (ApiTestBase, ForceLogin, logging_disabled,
+    generate_image_file, generate_video_file)
 
 #supress av warnings
 logging.getLogger('libav').setLevel(logging.ERROR)
@@ -922,6 +922,28 @@ class ProjectDeleteAPITestCase(ApiTestBase):
     def test_api_v2_projects_id_no_auth(self):
         self._check_api_v2_projects_id(None)
 
+    def test_api_v2_projects_delete_project_data_after_delete_project(self):
+        tasks = {}
+        for project in self.projects:
+            tasks[project.name] = create_dummy_db_tasks(self.__class__, project)
+
+            project_dir = project.get_dirname()
+            self.assertTrue(os.path.exists(project_dir))
+
+            for task in tasks[project.name]:
+                task_dir = task.get_dirname()
+                self.assertTrue(os.path.exists(task_dir))
+
+        self._check_api_v2_projects_id(self.admin)
+
+        for project in self.projects:
+            project_dir = project.get_dirname()
+            self.assertFalse(os.path.exists(project_dir))
+
+            for task in tasks[project.name]:
+                task_dir = task.get_dirname()
+                self.assertFalse(os.path.exists(task_dir))
+
 class ProjectCreateAPITestCase(ApiTestBase):
     @classmethod
     def setUpTestData(cls):
@@ -1276,7 +1298,7 @@ class ProjectBackupAPITestCase(ApiTestBase):
             filename = imagename_pattern.format(i)
             path = os.path.join(settings.SHARE_ROOT, filename)
             cls.media['files'].append(path)
-            _, data = generate_image_file(filename)
+            _, data = generate_random_image_file(filename)
             with open(path, "wb") as image:
                 image.write(data.read())
 
@@ -1364,9 +1386,9 @@ class ProjectBackupAPITestCase(ApiTestBase):
         cls.media_data.extend([
             # image list local
             {
-                "client_files[0]": generate_image_file("test_1.jpg")[1],
-                "client_files[1]": generate_image_file("test_2.jpg")[1],
-                "client_files[2]": generate_image_file("test_3.jpg")[1],
+                "client_files[0]": generate_random_image_file("test_1.jpg")[1],
+                "client_files[1]": generate_random_image_file("test_2.jpg")[1],
+                "client_files[2]": generate_random_image_file("test_3.jpg")[1],
                 "image_quality": 75,
             },
             # video local
@@ -1708,7 +1730,10 @@ class ProjectImportExportAPITestCase(ApiTestBase):
         cls.media_data = [
             {
                 **{
-                   **{"client_files[{}]".format(i): generate_image_file("test_{}.jpg".format(i))[1] for i in range(10)},
+                   **{
+                        f"client_files[{i}]": generate_random_image_file(f"test_{i}.jpg")[1]
+                        for i in range(10)
+                    },
                 },
                 **{
                     "image_quality": 75,
@@ -1716,7 +1741,10 @@ class ProjectImportExportAPITestCase(ApiTestBase):
             },
             {
                 **{
-                   **{"client_files[{}]".format(i): generate_image_file("test_{}.jpg".format(i))[1] for i in range(10)},
+                   **{
+                        f"client_files[{i}]": generate_random_image_file(f"test_{i}.jpg")[1]
+                        for i in range(10)
+                    },
                 },
                 "image_quality": 75,
             },
@@ -2611,7 +2639,7 @@ class TaskImportExportAPITestCase(ApiTestBase):
         for i in range(image_count):
             filename = imagename_pattern.format(i)
             path = os.path.join(settings.SHARE_ROOT, filename)
-            _, data = generate_image_file(filename)
+            _, data = generate_random_image_file(filename)
             with open(path, "wb") as image:
                 image.write(data.read())
 
@@ -2736,10 +2764,10 @@ class TaskImportExportAPITestCase(ApiTestBase):
         )
 
         data = {
-            "client_files[0]": generate_image_file("test_1.jpg")[1],
-            "client_files[1]": generate_image_file("test_2.jpg")[1],
-            "client_files[2]": generate_image_file("test_10.jpg")[1],
-            "client_files[3]": generate_image_file("test_3.jpg")[1],
+            "client_files[0]": generate_random_image_file("test_1.jpg")[1],
+            "client_files[1]": generate_random_image_file("test_2.jpg")[1],
+            "client_files[2]": generate_random_image_file("test_10.jpg")[1],
+            "client_files[3]": generate_random_image_file("test_3.jpg")[1],
             "image_quality": 75,
         }
         use_cache_data = {
@@ -2995,18 +3023,18 @@ class TaskImportExportAPITestCase(ApiTestBase):
     def test_api_v2_tasks_id_export_no_auth(self):
         self._run_api_v2_tasks_id_export_import(None)
 
-def generate_image_file(filename):
+def generate_random_image_file(filename):
     gen = random.SystemRandom()
     width = gen.randint(100, 800)
     height = gen.randint(100, 800)
-    f = _generate_image_file(filename, size=(width, height))
+    f = generate_image_file(filename, size=(width, height))
     return (width, height), f
 
-def generate_image_files(*filenames):
+def generate_random_image_files(*filenames):
     images = []
     image_sizes = []
     for image_name in filenames:
-        img_size, image = generate_image_file(image_name)
+        img_size, image = generate_random_image_file(image_name)
         image_sizes.append(img_size)
         images.append(image)
 
@@ -3018,7 +3046,7 @@ def generate_zip_archive_file(filename, count):
     with zipfile.ZipFile(zip_buf, 'w') as zip_chunk:
         for idx in range(count):
             image_name = "image_{:6d}.jpg".format(idx)
-            size, image_buf = generate_image_file(image_name)
+            size, image_buf = generate_random_image_file(image_name)
             image_sizes.append(size)
             zip_chunk.writestr(image_name, image_buf.getvalue())
 
@@ -3097,7 +3125,7 @@ class TaskDataAPITestCase(ApiTestBase):
             "subdir2/subdir3/test_zxc.jpg", "data/test_3.jpg"
         ]:
             path = os.path.join(settings.SHARE_ROOT, filename)
-            img_size, data = generate_image_file(filename)
+            img_size, data = generate_random_image_file(filename)
             os.makedirs(os.path.dirname(path), exist_ok=True)
             with open(path, "wb") as image:
                 image.write(data.read())
@@ -3223,7 +3251,7 @@ class TaskDataAPITestCase(ApiTestBase):
                 f.write(os.path.join(settings.SHARE_ROOT, fn), fn)
         cls._share_files.append(filename)
 
-        image_sizes, images = generate_image_files("test_1.jpg", "test_2.jpg", "test_3.jpg")
+        image_sizes, images = generate_random_image_files("test_1.jpg", "test_2.jpg", "test_3.jpg")
         cls._client_images = {
             'images': images,
             'image_sizes': image_sizes,
@@ -3726,8 +3754,8 @@ class TaskDataAPITestCase(ApiTestBase):
         with self.subTest(current_function_name() + " with copy"):
             task_spec.update([('name', 'cached video task #15')])
             task_data.update([('copy_data', True)])
-            self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO, self.ChunkType.VIDEO,
-                                             image_sizes, StorageMethodChoice.CACHE, StorageChoice.LOCAL)
+            self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO,
+                self.ChunkType.VIDEO, image_sizes, StorageMethodChoice.CACHE, StorageChoice.LOCAL)
 
     def _test_api_v2_tasks_id_data_create_can_use_cached_server_images(self, user):
         task_spec = {
@@ -4009,7 +4037,33 @@ class TaskDataAPITestCase(ApiTestBase):
             ))
 
             # Suppress stacktrace spam from another thread from the expected error
-            es.enter_context(disable_logging())
+            es.enter_context(logging_disabled())
+
+            task_spec = task_spec_common.copy()
+            task_spec['name'] = task_spec['name'] + f' mismatching file order'
+            task_data_copy = task_data.copy()
+            task_data_copy[f'server_files[{len(images)}]'] = "images_manifest.jsonl"
+            self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data_copy,
+                self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+                image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE)
+
+        for copy_data in [True, False]:
+            with self.subTest(current_function_name(), copy=copy_data):
+                task_spec = task_spec_common.copy()
+                task_spec['name'] = task_spec['name'] + f' copy={copy_data}'
+                task_data['copy_data'] = copy_data
+                self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data,
+                    self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+                    image_sizes, StorageMethodChoice.CACHE,
+                    StorageChoice.LOCAL if copy_data else StorageChoice.SHARE)
+
+        with self.subTest(current_function_name() + ' file order mismatch'), ExitStack() as es:
+            es.enter_context(self.assertRaisesMessage(Exception,
+                "Incorrect file mapping to manifest content"
+            ))
+
+            # Suppress stacktrace spam from another thread from the expected error
+            es.enter_context(logging_disabled())
 
             task_spec = task_spec_common.copy()
             task_spec['name'] = task_spec['name'] + f' mismatching file order'
@@ -4025,7 +4079,7 @@ class TaskDataAPITestCase(ApiTestBase):
             ))
 
             # Suppress stacktrace spam from another thread from the expected error
-            es.enter_context(disable_logging())
+            es.enter_context(logging_disabled())
 
             def _send_callback(*args, **kwargs):
                 response = self._run_api_v2_tasks_id_data_post(*args, **kwargs)
@@ -4106,7 +4160,7 @@ class TaskDataAPITestCase(ApiTestBase):
         }
 
         with TestDir() as test_dir:
-            image_sizes, image_files = generate_image_files(
+            image_sizes, image_files = generate_random_image_files(
                 "test_1.jpg", "test_3.jpg", "test_5.jpg", "test_4.jpg", "test_2.jpg"
             )
             image_paths = []
@@ -4210,7 +4264,7 @@ class TaskDataAPITestCase(ApiTestBase):
                     ))
 
                     # Suppress stacktrace spam from another thread from the expected error
-                    es.enter_context(disable_logging())
+                    es.enter_context(logging_disabled())
 
                 self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data,
                     self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
@@ -4228,7 +4282,7 @@ class TaskDataAPITestCase(ApiTestBase):
         }
 
         with TestDir() as test_dir:
-            image_sizes, image_files = generate_image_files(
+            image_sizes, image_files = generate_random_image_files(
                 "test_1.jpg", "test_3.jpg", "test_5.jpg", "test_4.jpg", "test_2.jpg"
             )
             image_paths = []
@@ -4280,7 +4334,7 @@ class TaskDataAPITestCase(ApiTestBase):
                         ))
 
                         # Suppress stacktrace spam from another thread from the expected error
-                        es.enter_context(disable_logging())
+                        es.enter_context(logging_disabled())
 
                     self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data,
                         self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
@@ -4440,7 +4494,7 @@ class TaskDataAPITestCase(ApiTestBase):
             ),
         ):
             with self.subTest(current_function_name() + ' ' + name):
-                image_sizes, images = generate_image_files(*filenames)
+                image_sizes, images = generate_random_image_files(*filenames)
 
                 task_data = task_data_common.copy()
                 task_data.update((f"client_files[{i}]", f) for i, f in enumerate(images))
@@ -4453,7 +4507,7 @@ class TaskDataAPITestCase(ApiTestBase):
         with self.subTest(current_function_name() + ' mismatching file sets - extra files'):
             upload_info = [filenames[0]]
             file_groups = [[ 0, 1 ]]
-            image_sizes, images = generate_image_files(*filenames[:2])
+            image_sizes, images = generate_random_image_files(*filenames[:2])
 
             task_data = task_data_common.copy()
             task_data.update((f"client_files[{i}]", f) for i, f in enumerate(images))
@@ -4467,7 +4521,7 @@ class TaskDataAPITestCase(ApiTestBase):
         with self.subTest(current_function_name() + ' mismatching file sets - missing files'):
             upload_info = filenames[0:3]
             file_groups = [[ 0, 1 ]]
-            image_sizes, images = generate_image_files(*upload_info)
+            image_sizes, images = generate_random_image_files(*upload_info)
 
             task_data = task_data_common.copy()
             task_data.update((f"client_files[{i}]", f) for i, f in enumerate(images))
@@ -4683,15 +4737,15 @@ class JobAnnotationAPITestCase(ApiTestBase):
             tid = response.data["id"]
 
             images = {
-                "client_files[0]": generate_image_file("test_1.jpg")[1],
-                "client_files[1]": generate_image_file("test_2.jpg")[1],
-                "client_files[2]": generate_image_file("test_3.jpg")[1],
-                "client_files[4]": generate_image_file("test_4.jpg")[1],
-                "client_files[5]": generate_image_file("test_5.jpg")[1],
-                "client_files[6]": generate_image_file("test_6.jpg")[1],
-                "client_files[7]": generate_image_file("test_7.jpg")[1],
-                "client_files[8]": generate_image_file("test_8.jpg")[1],
-                "client_files[9]": generate_image_file("test_9.jpg")[1],
+                "client_files[0]": generate_random_image_file("test_1.jpg")[1],
+                "client_files[1]": generate_random_image_file("test_2.jpg")[1],
+                "client_files[2]": generate_random_image_file("test_3.jpg")[1],
+                "client_files[4]": generate_random_image_file("test_4.jpg")[1],
+                "client_files[5]": generate_random_image_file("test_5.jpg")[1],
+                "client_files[6]": generate_random_image_file("test_6.jpg")[1],
+                "client_files[7]": generate_random_image_file("test_7.jpg")[1],
+                "client_files[8]": generate_random_image_file("test_8.jpg")[1],
+                "client_files[9]": generate_random_image_file("test_9.jpg")[1],
                 "image_quality": 75,
                 "frame_filter": "step=3",
             }

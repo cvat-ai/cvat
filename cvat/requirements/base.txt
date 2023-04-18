@@ -62,3 +62,4 @@ psutil==5.9.4
 clickhouse-connect==0.5.10
 django-crum==0.7.9
 wheel>=0.38.0 # not directly required, pinned by Snyk to avoid a vulnerability
+psycopg2-binary==2.9.5

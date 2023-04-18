@@ -136,12 +136,6 @@ class _CollectionSummarySerializer(serializers.Serializer):
     def get_attribute(self, instance):
         return instance
 
-
-class LabelsSummarySerializer(_CollectionSummarySerializer):
-    def __init__(self, *, model=models.Label, url_filter_key, source='get_labels', **kwargs):
-        super().__init__(model=model, url_filter_key=url_filter_key, source=source, **kwargs)
-
-
 class JobsSummarySerializer(_CollectionSummarySerializer):
     completed = serializers.IntegerField(source='completed_jobs_count', default=0)
 
@@ -156,10 +150,36 @@ class TasksSummarySerializer(_CollectionSummarySerializer):
 class CommentsSummarySerializer(_CollectionSummarySerializer):
     pass
 
+class BasicSummarySerializer(serializers.Serializer):
+    url = serializers.URLField(read_only=True)
+    count = serializers.IntegerField(read_only=True)
 
-class IssuesSummarySerializer(_CollectionSummarySerializer):
-    pass
+    def to_representation(self, instance):
+        request = self.context.get('request')
+        if not request:
+            return None
 
+        return {
+            'url': self.get_url(request, instance),
+            'count': self.get_count(instance)
+        }
+
+class LabelsSummarySerializer(BasicSummarySerializer):
+    def get_url(self, request, instance):
+        filter_key = instance.__class__.__name__.lower() + '_id'
+        return reverse('label-list', request=request,
+            query_params={ filter_key: instance.id })
+
+    def get_count(self, instance):
+        return getattr(instance, 'task_labels_count', 0) + getattr(instance, 'proj_labels_count', 0)
+
+class IssuesSummarySerializer(BasicSummarySerializer):
+    def get_url(self, request, instance):
+        return reverse('issue-list', request=request,
+            query_params={ 'job_id': instance.id })
+
+    def get_count(self, instance):
+        return getattr(instance, 'issues__count', 0)
 
 class BasicUserSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
@@ -532,15 +552,16 @@ class JobReadSerializer(serializers.ModelSerializer):
     mode = serializers.ReadOnlyField(source='segment.task.mode')
     bug_tracker = serializers.CharField(max_length=2000, source='get_bug_tracker',
         allow_null=True, read_only=True)
-    labels = LabelsSummarySerializer(url_filter_key='job_id')
-    issues = IssuesSummarySerializer(models.Issue, url_filter_key='job_id')
+    labels = LabelsSummarySerializer(source='*')
+    issues = IssuesSummarySerializer(source='*')
 
     class Meta:
         model = models.Job
         fields = ('url', 'id', 'task_id', 'project_id', 'assignee',
             'dimension', 'bug_tracker', 'status', 'stage', 'state', 'mode',
             'start_frame', 'stop_frame', 'data_chunk_size', 'data_compressed_chunk_type',
-            'updated_date', 'issues', 'labels')
+            'updated_date', 'issues', 'labels'
+        )
         read_only_fields = fields
 
 class JobWriteSerializer(serializers.ModelSerializer):
@@ -872,7 +893,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
     target_storage = StorageSerializer(required=False, allow_null=True)
     source_storage = StorageSerializer(required=False, allow_null=True)
     jobs = JobsSummarySerializer(url_filter_key='task_id', source='segment_set')
-    labels = LabelsSummarySerializer(url_filter_key='task_id')
+    labels = LabelsSummarySerializer(source='*')
 
     class Meta:
         model = models.Task
@@ -1022,6 +1043,10 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         _update_related_storages(instance, validated_data)
 
         instance.save()
+        instance.task_labels_count = instance.label_set.filter(
+            parent__isnull=True).count()
+        instance.proj_labels_count = instance.project.label_set.filter(
+            parent__isnull=True).count() if instance.project else 0
         return instance
 
     def validate(self, attrs):
@@ -1083,7 +1108,7 @@ class ProjectReadSerializer(serializers.ModelSerializer):
     target_storage = StorageSerializer(required=False, allow_null=True, read_only=True)
     source_storage = StorageSerializer(required=False, allow_null=True, read_only=True)
     tasks = TasksSummarySerializer(models.Task, url_filter_key='project_id')
-    labels = LabelsSummarySerializer(url_filter_key='project_id')
+    labels = LabelsSummarySerializer(source='*')
 
     class Meta:
         model = models.Project
@@ -1161,6 +1186,9 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
         _update_related_storages(instance, validated_data)
 
         instance.save()
+        instance.proj_labels_count = instance.label_set.filter(
+            parent__isnull=True).count()
+
         return instance
 
 class AboutSerializer(serializers.Serializer):

@@ -184,6 +184,7 @@ up to 10x. Here is a list of the algorithms we support, and the platforms they c
 
 | Name                                                                                                    | Type       | Framework  | CPU | GPU |
 | ------------------------------------------------------------------------------------------------------- | ---------- | ---------- | --- | --- |
+| [Segment Anything](/serverless/pytorch/facebookresearch/sam/nuclio/)                                    | interactor | PyTorch    | ✔️  | ✔️ |
 | [Deep Extreme Cut](/serverless/openvino/dextr/nuclio)                                                   | interactor | OpenVINO   | ✔️  |     |
 | [Faster RCNN](/serverless/openvino/omz/public/faster_rcnn_inception_v2_coco/nuclio)                     | detector   | OpenVINO   | ✔️  |     |
 | [Mask RCNN](/serverless/openvino/omz/public/mask_rcnn_inception_resnet_v2_atrous_coco/nuclio)           | detector   | OpenVINO   | ✔️  |     |
