@@ -464,6 +464,7 @@ export interface NotificationsState {
         jobs: {
             updating: null | ErrorState;
             fetching: null | ErrorState;
+            creating: null | ErrorState;
         };
         formats: {
             fetching: null | ErrorState;

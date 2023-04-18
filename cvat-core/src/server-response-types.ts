@@ -4,7 +4,7 @@
 
 import {
     ChunkType,
-    DimensionType, JobStage, JobState, ProjectStatus,
+    DimensionType, JobStage, JobState, JobType, ProjectStatus,
     ShareFileType, TaskMode, TaskStatus,
 } from 'enums';
 import { SerializedModel } from 'core-types';
@@ -117,6 +117,7 @@ export interface SerializedJob {
     project_id: number | null;
     stage: JobStage;
     state: JobState;
+    type: JobType;
     startFrame: number;
     stopFrame: number;
     task_id: number;
