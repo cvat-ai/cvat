@@ -839,7 +839,7 @@ class TestPostTaskData:
             assert False
 
         with pytest.raises(exceptions.ApiException) as capture:
-            _test_create_task(user, task_spec, data_spec, content_type="application/json")
+            create_task(user, task_spec, data_spec)
 
         assert capture.value.status == HTTPStatus.FORBIDDEN
 
@@ -1505,9 +1505,7 @@ class TestPatchTask:
             "use_cache": True,
             "server_files": ["images/image_1.jpg"],
         }
-        (task_id, _) = _test_create_task(
-            user, task_spec, data_spec, content_type="application/json"
-        )
+        (task_id, _) = create_task(user, task_spec, data_spec)
 
         updated_fields = {
             field: {
