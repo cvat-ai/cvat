@@ -1127,6 +1127,7 @@ class WebhookPermission(OpenPolicyAgentPermission):
 
 class JobPermission(OpenPolicyAgentPermission):
     class Scopes(StrEnum):
+        CREATE = 'create'
         LIST = 'list'
         VIEW = 'view'
         UPDATE = 'update'
@@ -1192,10 +1193,10 @@ class JobPermission(OpenPolicyAgentPermission):
     def get_scopes(request, view, obj):
         Scopes = __class__.Scopes
         scope = {
-            ('list', 'GET'): Scopes.LIST, # TODO: need to add the method
+            ('list', 'GET'): Scopes.LIST,
+            ('create', 'POST'): Scopes.CREATE,
             ('retrieve', 'GET'): Scopes.VIEW,
             ('partial_update', 'PATCH'): Scopes.UPDATE,
-            ('update', 'PUT'): Scopes.UPDATE, # TODO: do we need the method?
             ('destroy', 'DELETE'): Scopes.DELETE,
             ('annotations', 'GET'): Scopes.VIEW_ANNOTATIONS,
             ('annotations', 'PATCH'): Scopes.UPDATE_ANNOTATIONS,
@@ -1271,6 +1272,27 @@ class JobPermission(OpenPolicyAgentPermission):
                     "owner": { "id": getattr(self.obj.segment.task.project.owner, 'id', None) },
                     "assignee": { "id": getattr(self.obj.segment.task.project.assignee, 'id', None) }
                 } if self.obj.segment.task.project else None
+            }
+        elif self.scope == self.Scopes.CREATE:
+            task = Task.objects.get(id=self.task_id)
+
+            if task.project:
+                organization = task.project.organization
+            else:
+                organization = task.organization
+
+            data = {
+                'organization': {
+                    "id": getattr(organization, 'id', None)
+                },
+                "task": {
+                    "owner": { "id": getattr(task.owner, 'id', None) },
+                    "assignee": { "id": getattr(task.assignee, 'id', None) }
+                },
+                "project": {
+                    "owner": { "id": getattr(task.project.owner, 'id', None) },
+                    "assignee": { "id": getattr(task.project.assignee, 'id', None) }
+                } if task.project else None
             }
 
         return data
