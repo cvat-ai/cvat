@@ -9,7 +9,7 @@ import zipfile
 from copy import deepcopy
 from http import HTTPStatus
 from io import BytesIO
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import pytest
 from cvat_sdk import models
@@ -63,10 +63,13 @@ class TestPostJobs:
             assert response.status == HTTPStatus.CREATED
         return response
 
-    def _test_create_job_fails(self, user: str, data: Dict[str, Any], *, expected_status):
+    def _test_create_job_fails(
+        self, user: str, data: Dict[str, Any], *, expected_status: int, **kwargs
+    ):
         with make_api_client(user) as api_client:
             (_, response) = api_client.jobs_api.create(
                 models.JobWriteRequest(**deepcopy(data)),
+                **kwargs,
                 _check_status=False,
                 _parse_response=False,
             )
@@ -178,24 +181,93 @@ class TestPostJobs:
         )
         assert b"A task can have only 1 ground truth job" in response.data
 
+    def test_can_create_gt_job_in_sandbox_task(self, tasks, jobs, users):
+        task = next(
+            t
+            for t in tasks
+            if t["organization"] is None
+            and all(j["type"] != "ground_truth" for j in jobs if j["task_id"] == t["id"])
+            and not users[t["owner"]["id"]]["is_superuser"]
+        )
+        user = task["owner"]["username"]
+
+        job_spec = {
+            "task_id": task["id"],
+            "type": "ground_truth",
+            "frame_selection_method": "random_uniform",
+            "count": 1,
+        }
+
+        self._test_create_job_ok(user, job_spec)
+
+    @pytest.mark.parametrize(
+        "org_role, is_staff, allow",
+        [
+            ("owner", True, True),
+            ("owner", False, True),
+            ("maintainer", True, True),
+            ("maintainer", False, True),
+            ("supervisor", True, True),
+            ("supervisor", False, False),
+            ("worker", True, False),
+            ("worker", False, False),
+        ],
+    )
+    def test_create_gt_job_in_org_task(
+        self, tasks, jobs, users, is_org_member, is_task_staff, org_role, is_staff, allow
+    ):
+        for user in users:
+            task = next(
+                (
+                    t
+                    for t in tasks
+                    if t["organization"] is not None
+                    and all(j["type"] != "ground_truth" for j in jobs if j["task_id"] == t["id"])
+                    and is_task_staff(user["id"], t["id"]) == is_staff
+                    and is_org_member(user["id"], t["organization"], role=org_role)
+                ),
+                None,
+            )
+            if task is not None:
+                break
+
+        assert task
+
+        org_id = task["organization"]
+        extra_kwargs = {"org_id": org_id}
+
+        job_spec = {
+            "task_id": task["id"],
+            "type": "ground_truth",
+            "frame_selection_method": "random_uniform",
+            "count": 1,
+        }
+
+        if allow:
+            self._test_create_job_ok(user["username"], job_spec, **extra_kwargs)
+        else:
+            self._test_create_job_fails(
+                user["username"], job_spec, expected_status=HTTPStatus.FORBIDDEN, **extra_kwargs
+            )
+
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestDeleteJobs:
-    def _test_destroy_job_ok(self, user, job_id):
+    def _test_destroy_job_ok(self, user, job_id, **kwargs):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.jobs_api.destroy(job_id)
+            (_, response) = api_client.jobs_api.destroy(job_id, **kwargs)
             assert response.status == HTTPStatus.NO_CONTENT
 
-    def _test_destroy_job_fails(self, user, job_id, *, expected_status):
+    def _test_destroy_job_fails(self, user, job_id, *, expected_status: int, **kwargs):
         with make_api_client(user) as api_client:
             (_, response) = api_client.jobs_api.destroy(
-                job_id, _check_status=False, _parse_response=False
+                job_id, **kwargs, _check_status=False, _parse_response=False
             )
             assert response.status == expected_status
         return response
 
     @pytest.mark.parametrize("job_type, allow", (("ground_truth", True), ("normal", False)))
-    def test_can_destroy_job(self, admin_user, jobs, job_type, allow):
+    def test_destroy_job(self, admin_user, jobs, job_type, allow):
         job = next(j for j in jobs if j["type"] == job_type)
 
         if allow:
@@ -203,6 +275,90 @@ class TestDeleteJobs:
         else:
             self._test_destroy_job_fails(
                 admin_user, job["id"], expected_status=HTTPStatus.BAD_REQUEST
+            )
+
+    def test_can_destroy_gt_job_in_sandbox_task(self, tasks, jobs, users, admin_user):
+        task = next(
+            t
+            for t in tasks
+            if t["organization"] is None
+            and all(j["type"] != "ground_truth" for j in jobs if j["task_id"] == t["id"])
+            and not users[t["owner"]["id"]]["is_superuser"]
+        )
+        user = task["owner"]["username"]
+
+        job_spec = {
+            "task_id": task["id"],
+            "type": "ground_truth",
+            "frame_selection_method": "random_uniform",
+            "count": 1,
+        }
+
+        with make_api_client(admin_user) as api_client:
+            (job, _) = api_client.jobs_api.create(job_spec)
+
+        self._test_destroy_job_ok(user, job.id)
+
+    @pytest.mark.parametrize(
+        "org_role, is_staff, allow",
+        [
+            ("owner", True, True),
+            ("owner", False, True),
+            ("maintainer", True, True),
+            ("maintainer", False, True),
+            ("supervisor", True, True),
+            ("supervisor", False, False),
+            ("worker", True, False),
+            ("worker", False, False),
+        ],
+    )
+    def test_destroy_gt_job_in_org_task(
+        self,
+        tasks,
+        jobs,
+        users,
+        is_org_member,
+        is_task_staff,
+        org_role,
+        is_staff,
+        allow,
+        admin_user,
+    ):
+        for user in users:
+            task = next(
+                (
+                    t
+                    for t in tasks
+                    if t["organization"] is not None
+                    and all(j["type"] != "ground_truth" for j in jobs if j["task_id"] == t["id"])
+                    and is_task_staff(user["id"], t["id"]) == is_staff
+                    and is_org_member(user["id"], t["organization"], role=org_role)
+                ),
+                None,
+            )
+            if task is not None:
+                break
+
+        assert task
+
+        org_id = task["organization"]
+        extra_kwargs = {"org_id": org_id}
+
+        job_spec = {
+            "task_id": task["id"],
+            "type": "ground_truth",
+            "frame_selection_method": "random_uniform",
+            "count": 1,
+        }
+
+        with make_api_client(admin_user) as api_client:
+            (job, _) = api_client.jobs_api.create(job_spec, **extra_kwargs)
+
+        if allow:
+            self._test_destroy_job_ok(user["username"], job.id, **extra_kwargs)
+        else:
+            self._test_destroy_job_fails(
+                user["username"], job.id, expected_status=HTTPStatus.FORBIDDEN, **extra_kwargs
             )
 
 
@@ -254,19 +410,21 @@ class TestGtComparison:
 
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetJobs:
-    def _test_get_job_200(self, user, jid, data, **kwargs):
+    def _test_get_job_200(self, user, jid, *, expected_data: Optional[Dict[str, Any]], **kwargs):
         with make_api_client(user) as client:
             (_, response) = client.jobs_api.retrieve(jid, **kwargs)
             assert response.status == HTTPStatus.OK
-            assert (
-                DeepDiff(
-                    data,
-                    json.loads(response.data),
-                    exclude_paths="root['updated_date']",
-                    ignore_order=True,
+
+            if expected_data is not None:
+                assert (
+                    DeepDiff(
+                        expected_data,
+                        json.loads(response.data),
+                        exclude_paths="root['updated_date']",
+                        ignore_order=True,
+                    )
+                    == {}
                 )
-                == {}
-            )
 
     def _test_get_job_403(self, user, jid, **kwargs):
         with make_api_client(user) as client:
@@ -281,7 +439,7 @@ class TestGetJobs:
 
         # keep only the reasonable amount of jobs
         for job in jobs[:8]:
-            self._test_get_job_200("admin2", job["id"], job, **kwargs)
+            self._test_get_job_200("admin2", job["id"], expected_data=job, **kwargs)
 
     @pytest.mark.parametrize("org_id", ["", None, 1, 2])
     @pytest.mark.parametrize("groups", [["business"], ["user"], ["worker"], []])
@@ -297,9 +455,93 @@ class TestGetJobs:
             # check if the specific user in job_staff to see the job
             for user in users:
                 if user["id"] in job_staff | org_staff:
-                    self._test_get_job_200(user["username"], job["id"], job, **kwargs)
+                    self._test_get_job_200(user["username"], job["id"], expected_data=job, **kwargs)
                 else:
                     self._test_get_job_403(user["username"], job["id"], **kwargs)
+
+    @pytest.mark.usefixtures("restore_db_per_function")
+    def test_can_get_gt_job_in_sandbox_task(self, tasks, jobs, users, admin_user):
+        task = next(
+            t
+            for t in tasks
+            if t["organization"] is None
+            and all(j["type"] != "ground_truth" for j in jobs if j["task_id"] == t["id"])
+            and not users[t["owner"]["id"]]["is_superuser"]
+        )
+        user = task["owner"]["username"]
+
+        job_spec = {
+            "task_id": task["id"],
+            "type": "ground_truth",
+            "frame_selection_method": "random_uniform",
+            "count": 1,
+        }
+
+        with make_api_client(admin_user) as api_client:
+            (job, _) = api_client.jobs_api.create(job_spec)
+
+        self._test_get_job_200(user, job.id, expected_data=None)
+
+    @pytest.mark.usefixtures("restore_db_per_function")
+    @pytest.mark.parametrize(
+        "org_role, is_staff, allow",
+        [
+            ("owner", True, True),
+            ("owner", False, True),
+            ("maintainer", True, True),
+            ("maintainer", False, True),
+            ("supervisor", True, True),
+            ("supervisor", False, False),
+            ("worker", True, True),
+            ("worker", False, False),
+        ],
+    )
+    def test_get_gt_job_in_org_task(
+        self,
+        tasks,
+        jobs,
+        users,
+        is_org_member,
+        is_task_staff,
+        org_role,
+        is_staff,
+        allow,
+        admin_user,
+    ):
+        for user in users:
+            task = next(
+                (
+                    t
+                    for t in tasks
+                    if t["organization"] is not None
+                    and all(j["type"] != "ground_truth" for j in jobs if j["task_id"] == t["id"])
+                    and is_task_staff(user["id"], t["id"]) == is_staff
+                    and is_org_member(user["id"], t["organization"], role=org_role)
+                ),
+                None,
+            )
+            if task is not None:
+                break
+
+        assert task
+
+        org_id = task["organization"]
+        extra_kwargs = {"org_id": org_id}
+
+        job_spec = {
+            "task_id": task["id"],
+            "type": "ground_truth",
+            "frame_selection_method": "random_uniform",
+            "count": 1,
+        }
+
+        with make_api_client(admin_user) as api_client:
+            (job, _) = api_client.jobs_api.create(job_spec, **extra_kwargs)
+
+        if allow:
+            self._test_get_job_200(user["username"], job.id, expected_data=None, **extra_kwargs)
+        else:
+            self._test_get_job_403(user["username"], job.id, **extra_kwargs)
 
 
 @pytest.mark.usefixtures("restore_db_per_class")

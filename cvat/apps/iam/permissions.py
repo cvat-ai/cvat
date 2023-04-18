@@ -874,6 +874,15 @@ class TaskPermission(OpenPolicyAgentPermission):
 
         return permissions
 
+    @classmethod
+    def create_scope_view(cls, request, task_id: int):
+        try:
+            obj = Task.objects.get(id=task_id)
+        except Task.DoesNotExist as ex:
+            raise ValidationError(str(ex))
+
+        return cls(**cls.unpack_context(request), obj=obj, scope=__class__.Scopes.VIEW)
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.url = settings.IAM_OPA_DATA_URL + '/tasks/allow'
@@ -1126,6 +1135,8 @@ class WebhookPermission(OpenPolicyAgentPermission):
         return data
 
 class JobPermission(OpenPolicyAgentPermission):
+    task_id: Optional[int]
+
     class Scopes(StrEnum):
         CREATE = 'create'
         LIST = 'list'
@@ -1153,8 +1164,17 @@ class JobPermission(OpenPolicyAgentPermission):
     def create(cls, request, view, obj):
         permissions = []
         if view.basename == 'job':
+            task_id = request.data.get('task_id')
             for scope in cls.get_scopes(request, view, obj):
-                self = cls.create_base_perm(request, view, scope, obj)
+                scope_params = {}
+
+                if scope == __class__.Scopes.CREATE:
+                    scope_params['task_id'] = task_id
+
+                    if task_id:
+                        permissions.append(TaskPermission.create_scope_view(request, task_id))
+
+                self = cls.create_base_perm(request, view, scope, obj, **scope_params)
                 permissions.append(self)
 
             if view.action == 'issues':
@@ -1186,6 +1206,7 @@ class JobPermission(OpenPolicyAgentPermission):
         return cls(**cls.unpack_context(request), obj=obj, scope='view:data')
 
     def __init__(self, **kwargs):
+        self.task_id = kwargs.pop('task_id', None)
         super().__init__(**kwargs)
         self.url = settings.IAM_OPA_DATA_URL + '/jobs/allow'
 
@@ -1273,7 +1294,9 @@ class JobPermission(OpenPolicyAgentPermission):
                     "assignee": { "id": getattr(self.obj.segment.task.project.assignee, 'id', None) }
                 } if self.obj.segment.task.project else None
             }
-        elif self.scope == self.Scopes.CREATE:
+        elif self.scope == __class__.Scopes.CREATE:
+            if self.task_id is None:
+                raise ValidationError("task_id is not specified")
             task = Task.objects.get(id=self.task_id)
 
             if task.project:
