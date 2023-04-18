@@ -61,6 +61,7 @@ const defaultState: NotificationsState = {
         jobs: {
             updating: null,
             fetching: null,
+            creating: null,
         },
         formats: {
             fetching: null,
@@ -1552,7 +1553,23 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         fetching: {
                             message: 'Could not fetch a list of jobs',
                             reason: action.payload.error.toString(),
-                            className: 'cvat-notification-notice-update-organization-membership-failed',
+                            className: 'cvat-notification-notice-update-get-jobs-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case JobsActionTypes.CREATE_JOB_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    jobs: {
+                        ...state.errors.jobs,
+                        creating: {
+                            message: 'Could not create job',
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-create-job-failed',
                         },
                     },
                 },

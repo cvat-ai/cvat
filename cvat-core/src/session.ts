@@ -6,7 +6,7 @@
 import _ from 'lodash';
 import {
     ChunkType, DimensionType, JobStage,
-    JobState, StorageLocation, TaskMode, TaskStatus,
+    JobState, JobType, StorageLocation, TaskMode, TaskStatus,
 } from './enums';
 import { Storage } from './storage';
 
@@ -318,6 +318,8 @@ export class Job extends Session {
     public readonly bugTracker: string | null;
     public readonly mode: TaskMode;
     public readonly labels: Label[];
+    public readonly type: JobType;
+    public readonly frameSelectionMethod: JobType;
 
     public annotations: {
         get: CallableFunction;
@@ -368,6 +370,7 @@ export class Job extends Session {
             assignee: null,
             stage: undefined,
             state: undefined,
+            type: JobType.NORMAL,
             start_frame: undefined,
             stop_frame: undefined,
             project_id: null,
@@ -386,10 +389,6 @@ export class Job extends Session {
             if (Object.prototype.hasOwnProperty.call(data, property)) {
                 if (property in initialData) {
                     data[property] = initialData[property];
-                }
-
-                if (data[property] === undefined) {
-                    throw new ArgumentError(`Job field "${property}" was not initialized`);
                 }
             }
         }
@@ -466,6 +465,9 @@ export class Job extends Session {
                         updateTrigger.update('state');
                         data.state = state;
                     },
+                },
+                type: {
+                    get: () => data.type,
                 },
                 startFrame: {
                     get: () => data.start_frame,
@@ -549,8 +551,8 @@ export class Job extends Session {
         };
     }
 
-    async save() {
-        const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.save);
+    async save(additionalData = {}) {
+        const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.save, additionalData);
         return result;
     }
 
@@ -721,28 +723,29 @@ export class Task extends Session {
 
         if (Array.isArray(initialData.jobs)) {
             for (const job of initialData.jobs) {
-                const jobInstance = new Job({
-                    url: job.url,
-                    id: job.id,
-                    assignee: job.assignee,
-                    state: job.state,
-                    stage: job.stage,
-                    start_frame: job.start_frame,
-                    stop_frame: job.stop_frame,
+                if (job.type === JobType.NORMAL) {
+                    const jobInstance = new Job({
+                        url: job.url,
+                        id: job.id,
+                        assignee: job.assignee,
+                        state: job.state,
+                        stage: job.stage,
+                        start_frame: job.start_frame,
+                        stop_frame: job.stop_frame,
 
-                    // following fields also returned when doing API request /jobs/<id>
-                    // here we know them from task and append to constructor
-                    task_id: data.id,
-                    project_id: data.project_id,
-                    labels: data.labels,
-                    bug_tracker: data.bug_tracker,
-                    mode: data.mode,
-                    dimension: data.dimension,
-                    data_compressed_chunk_type: data.data_compressed_chunk_type,
-                    data_chunk_size: data.data_chunk_size,
-                });
-
-                data.jobs.push(jobInstance);
+                        // following fields also returned when doing API request /jobs/<id>
+                        // here we know them from task and append to constructor
+                        task_id: data.id,
+                        project_id: data.project_id,
+                        labels: data.labels,
+                        bug_tracker: data.bug_tracker,
+                        mode: data.mode,
+                        dimension: data.dimension,
+                        data_compressed_chunk_type: data.data_compressed_chunk_type,
+                        data_chunk_size: data.data_chunk_size,
+                    });
+                    data.jobs.push(jobInstance);
+                }
             }
         }
 

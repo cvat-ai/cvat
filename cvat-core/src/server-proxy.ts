@@ -1351,6 +1351,19 @@ async function saveJob(id: number, jobData: Partial<SerializedJob>): Promise<Ser
     return response.data;
 }
 
+async function createJob(jobData: Partial<SerializedJob>): Promise<SerializedJob> {
+    const { backendAPI } = config;
+
+    let response = null;
+    try {
+        response = await Axios.post(`${backendAPI}/jobs`, jobData);
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+
+    return response.data;
+}
+
 async function getUsers(filter = { page_size: 'all' }) {
     const { backendAPI } = config;
 
@@ -2197,6 +2210,7 @@ export default Object.freeze({
         get: getJobs,
         getPreview: getPreview('jobs'),
         save: saveJob,
+        create: createJob,
         exportDataset: exportDataset('jobs'),
     }),
 

@@ -1,0 +1,45 @@
+// Copyright (C) 2023 CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import '../../base.scss';
+
+.cvat-create-job-page {
+    width: 100%;
+    height: 100%;
+    padding-top: $grid-unit-size * 5;
+
+    .cvat-title {
+        font-size: 36px;
+    }
+}
+
+.cvat-create-job-form-wrapper {
+    margin-top: $grid-unit-size * 3;
+    height: auto;
+    border: 1px solid $border-color-1;
+    border-radius: 3px;
+    padding: $grid-unit-size * 3;
+    background: $background-color-1;
+    text-align: initial;
+
+    .ant-input-number {
+        width: $grid-unit-size * 25;
+    }
+}
+
+.cvat-create-job-frames-tip {
+    display: flex;
+    align-items: center;
+    margin-left: $grid-unit-size * 2;
+    margin-top: $grid-unit-size;
+}
+
+.cvat-create-job-actions {
+    margin-top: $grid-unit-size * 10;
+
+    button {
+        min-width: $grid-unit-size * 15;
+        margin-left: $grid-unit-size;
+    }
+}

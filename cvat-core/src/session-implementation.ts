@@ -61,7 +61,7 @@ async function restoreFrameWrapper(jobID, frame) {
 }
 
 export function implementJob(Job) {
-    Job.prototype.save.implementation = async function () {
+    Job.prototype.save.implementation = async function (additionalData: any) {
         if (this.id) {
             const jobData = this._updateTrigger.getUpdated(this);
             if (jobData.assignee) {
@@ -73,7 +73,15 @@ export function implementJob(Job) {
             return new Job(data);
         }
 
-        throw new ArgumentError('Could not save job without id');
+        const jobSpec = {
+            ...(this.assignee ? { assignee: this.assignee.id } : {}),
+            ...(this.stage ? { stage: this.stage } : {}),
+            ...(this.state ? { stage: this.state } : {}),
+            type: this.type,
+            task_id: this.taskId,
+        };
+        const job = await serverProxy.jobs.create({ ...jobSpec, ...additionalData });
+        return new Job(job);
     };
 
     Job.prototype.issues.implementation = async function () {
