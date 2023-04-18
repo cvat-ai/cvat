@@ -1547,7 +1547,9 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         responses={
             '200': OpenApiResponse(OpenApiTypes.BINARY, description='Data of a specific type'),
         })
-    @action(detail=True, methods=['GET'])
+    @action(detail=True, methods=['GET'],
+        simple_filters=[] # type query parameter conflicts with the filter
+    )
     def data(self, request, pk):
         db_job = self.get_object() # call check_object_permissions as well
         data_type = request.query_params.get('type', None)

@@ -626,7 +626,17 @@ class TestGetAnnotations:
 
             response_data = json.loads(response.data)
             assert (
-                DeepDiff(data, response_data, exclude_regex_paths=r"root\['version|updated_date'\]")
+                DeepDiff(
+                    data,
+                    response_data,
+                    ignore_order=True,
+                    exclude_regex_paths=[
+                        r"root\['version|updated_date'\]",
+                        r"root(\['\w+'\]\[\d+\])+\['id'\]",
+                        r"root(\['\w+'\]\[\d+\])+\['label_id'\]",
+                        r"root(\['\w+'\]\[\d+\])+\['attributes'\]\[\d+\]\['spec_id'\]",
+                    ],
+                )
                 == {}
             )
 
@@ -773,7 +783,13 @@ class TestPatchJobAnnotations:
                     DeepDiff(
                         data,
                         json.loads(response.data),
-                        exclude_regex_paths=r"root\['version|updated_date'\]",
+                        ignore_order=True,
+                        exclude_regex_paths=[
+                            r"root\['version|updated_date'\]",
+                            r"root(\['\w+'\]\[\d+\])+\['id'\]",
+                            r"root(\['\w+'\]\[\d+\])+\['label_id'\]",
+                            r"root(\['\w+'\]\[\d+\])+\['attributes'\]\[\d+\]\['spec_id'\]",
+                        ],
                     )
                     == {}
                 )

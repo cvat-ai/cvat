@@ -151,11 +151,7 @@ def _save_task_to_db(db_task: models.Task, *, job_file_mapping: Optional[JobFile
 
         db_job = models.Job(segment=db_segment)
         db_job.save()
-
-        job_path = db_job.get_dirname()
-        if os.path.isdir(job_path):
-            shutil.rmtree(job_path)
-        os.makedirs(job_path)
+        db_job.make_dirs()
 
     db_task.data.save()
     db_task.save()

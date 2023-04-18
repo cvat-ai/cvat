@@ -628,6 +628,12 @@ class Job(models.Model):
 
         return super().clean()
 
+    def make_dirs(self):
+        job_path = self.get_dirname()
+        if os.path.isdir(job_path):
+            shutil.rmtree(job_path)
+        os.makedirs(job_path)
+
 
 class InvalidLabel(ValueError):
     pass

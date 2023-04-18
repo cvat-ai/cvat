@@ -674,7 +674,9 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         validated_data['segment'] = segment
 
         try:
-            return super().create(validated_data)
+            job = super().create(validated_data)
+            job.make_dirs()
+            return job
         except models.TaskGroundTruthJobsLimitError as ex:
             raise serializers.ValidationError(ex.message) from ex
 

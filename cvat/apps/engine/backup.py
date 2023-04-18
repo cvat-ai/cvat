@@ -512,7 +512,8 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
 
     @staticmethod
     def _calculate_segment_size(jobs):
-        jobs = [j for j in jobs if j["type"] == models.JobType.NORMAL]
+        # The type field will be missing in backups create before the GT jobs were introduced
+        jobs = [j for j in jobs if j.get("type", models.JobType.NORMAL) == models.JobType.NORMAL]
 
         segment_size = jobs[0]['stop_frame'] - jobs[0]['start_frame'] + 1
         overlap = 0 if len(jobs) == 1 else jobs[0]['stop_frame'] - jobs[1]['start_frame'] + 1
