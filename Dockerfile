@@ -1,5 +1,5 @@
 ARG PIP_VERSION=22.0.2
-ARG BASE_IMAGE=ubuntu:22.04
+ARG BASE_IMAGE=ubuntu:kinetic
 
 FROM ${BASE_IMAGE} as build-image
 
