@@ -19,7 +19,7 @@ cvat:
 traefik:
   logs:
     general:
-      level: INFO
+      level: DEBUG
     access:
       enabled: true
   service:
