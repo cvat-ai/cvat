@@ -20,7 +20,7 @@ from PIL import Image
 
 from shared.utils.config import make_api_client
 
-from .utils import CollectionSimpleFilterTestBase, export_dataset
+from .utils import CollectionSimpleFilterTestBase, compare_annotations, export_dataset
 
 
 def get_job_staff(job, tasks, projects):
@@ -266,6 +266,7 @@ class TestDeleteJobs:
             assert response.status == expected_status
         return response
 
+    @pytest.mark.usefixtures("restore_cvat_data")
     @pytest.mark.parametrize("job_type, allow", (("ground_truth", True), ("normal", False)))
     def test_destroy_job(self, admin_user, jobs, job_type, allow):
         job = next(j for j in jobs if j["type"] == job_type)
@@ -416,15 +417,7 @@ class TestGetJobs:
             assert response.status == HTTPStatus.OK
 
             if expected_data is not None:
-                assert (
-                    DeepDiff(
-                        expected_data,
-                        json.loads(response.data),
-                        exclude_paths="root['updated_date']",
-                        ignore_order=True,
-                    )
-                    == {}
-                )
+                assert compare_annotations(expected_data, json.loads(response.data)) == {}
 
     def _test_get_job_403(self, user, jid, **kwargs):
         with make_api_client(user) as client:
@@ -551,10 +544,7 @@ class TestListJobs:
             results = get_paginated_collection(
                 client.jobs_api.list_endpoint, return_json=True, **kwargs
             )
-            assert (
-                DeepDiff(data, results, exclude_paths="root['updated_date']", ignore_order=True)
-                == {}
-            )
+            assert compare_annotations(data, results) == {}
 
     def _test_list_jobs_403(self, user, **kwargs):
         with make_api_client(user) as client:
@@ -623,22 +613,7 @@ class TestGetAnnotations:
         with make_api_client(user) as client:
             (_, response) = client.jobs_api.retrieve_annotations(jid, **kwargs)
             assert response.status == HTTPStatus.OK
-
-            response_data = json.loads(response.data)
-            assert (
-                DeepDiff(
-                    data,
-                    response_data,
-                    ignore_order=True,
-                    exclude_regex_paths=[
-                        r"root\['version|updated_date'\]",
-                        r"root(\['\w+'\]\[\d+\])+\['id'\]",
-                        r"root(\['\w+'\]\[\d+\])+\['label_id'\]",
-                        r"root(\['\w+'\]\[\d+\])+\['attributes'\]\[\d+\]\['spec_id'\]",
-                    ],
-                )
-                == {}
-            )
+            assert compare_annotations(data, json.loads(response.data)) == {}
 
     def _test_get_job_annotations_403(self, user, jid, **kwargs):
         with make_api_client(user) as client:
@@ -779,20 +754,7 @@ class TestPatchJobAnnotations:
 
             if expect_success:
                 assert response.status == HTTPStatus.OK
-                assert (
-                    DeepDiff(
-                        data,
-                        json.loads(response.data),
-                        ignore_order=True,
-                        exclude_regex_paths=[
-                            r"root\['version|updated_date'\]",
-                            r"root(\['\w+'\]\[\d+\])+\['id'\]",
-                            r"root(\['\w+'\]\[\d+\])+\['label_id'\]",
-                            r"root(\['\w+'\]\[\d+\])+\['attributes'\]\[\d+\]\['spec_id'\]",
-                        ],
-                    )
-                    == {}
-                )
+                assert compare_annotations(data, json.loads(response.data)) == {}
             else:
                 assert response.status == HTTPStatus.FORBIDDEN
 

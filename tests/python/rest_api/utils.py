@@ -171,3 +171,21 @@ def _test_create_task(username, spec, data, content_type, **kwargs):
         assert status.state.value == "Finished"
 
     return task.id, response_.headers.get("X-Request-Id")
+
+
+def compare_annotations(a, b):
+    def _exclude_cb(obj, path):
+        return path.endswith("['elements']") and not obj
+
+    return DeepDiff(
+        a,
+        b,
+        ignore_order=True,
+        exclude_obj_callback=_exclude_cb,
+        exclude_regex_paths=[
+            r"root\['version|updated_date'\]",
+            r"root(\['\w+'\]\[\d+\])+\['id'\]",
+            r"root(\['\w+'\]\[\d+\])+\['label_id'\]",
+            r"root(\['\w+'\]\[\d+\])+\['attributes'\]\[\d+\]\['spec_id'\]",
+        ],
+    )

@@ -39,6 +39,7 @@ from shared.utils.helpers import generate_image_files
 from .utils import (
     CollectionSimpleFilterTestBase,
     _test_create_task,
+    compare_annotations,
     export_dataset,
     wait_until_task_is_created,
 )
@@ -343,7 +344,7 @@ class TestPatchTaskAnnotations:
     def _test_check_response(self, is_allow, response, data=None):
         if is_allow:
             assert response.status == HTTPStatus.OK
-            assert DeepDiff(data, json.loads(response.data), exclude_paths="root['version']") == {}
+            assert compare_annotations(data, json.loads(response.data)) == {}
         else:
             assert response.status == HTTPStatus.FORBIDDEN
 

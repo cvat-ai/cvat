@@ -596,7 +596,9 @@ class TaskAnnotation:
         ).get(id=pk)
 
         # Postgres doesn't guarantee an order by default without explicit order_by
-        self.db_jobs = models.Job.objects.select_related("segment").filter(segment__task_id=pk).order_by('id')
+        self.db_jobs = models.Job.objects.select_related("segment").filter(
+            segment__task_id=pk, type=models.JobType.NORMAL.value,
+        ).order_by('id')
         self.ir_data = AnnotationIR(self.db_task.dimension)
 
     def reset(self):
