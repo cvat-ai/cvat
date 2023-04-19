@@ -76,7 +76,7 @@ class TestPostJobs:
             assert response.status == expected_status
         return response
 
-    @pytest.mark.parametrize("task_mode", [ "annotation", "interpolation" ])
+    @pytest.mark.parametrize("task_mode", ["annotation", "interpolation"])
     def test_can_create_gt_job_with_manual_frames(self, admin_user, tasks, task_mode):
         user = admin_user
         job_frame_count = 4
@@ -120,7 +120,7 @@ class TestPostJobs:
         else:
             assert False
 
-    @pytest.mark.parametrize("task_mode", [ "annotation", "interpolation" ])
+    @pytest.mark.parametrize("task_mode", ["annotation", "interpolation"])
     def test_can_create_gt_job_with_random_frames(self, admin_user, tasks, task_mode):
         user = admin_user
         job_frame_count = 3
