@@ -50,7 +50,7 @@ COPY cvat/requirements/ /tmp/cvat/requirements/
 COPY utils/dataset_manifest/requirements.txt /tmp/utils/dataset_manifest/requirements.txt
 
 RUN --mount=type=cache,target=/root/.cache/pip/http \
-    DATUMARO_HEADLESS=1 python3 -m pip wheel \
+    DATUMARO_HEADLESS=1 python3 -m pip wheel --no-deps \
     -r /tmp/cvat/requirements/${DJANGO_CONFIGURATION}.txt \
     -w /tmp/wheelhouse
 
