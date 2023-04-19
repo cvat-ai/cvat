@@ -30,8 +30,8 @@ ENV FFMPEG_VERSION=4.3.1 \
     OPENH264_VERSION=2.1.1
 
 WORKDIR /tmp/openh264
-RUN curl -sL https://github.com/cisco/openh264/archive/v${OPENH264_VERSION}.tar.gz --output openh264-${OPENH264_VERSION}.tar.gz && \
-    tar -zx --strip-components=1 -f openh264-${OPENH264_VERSION}.tar.gz && \
+RUN curl -sL https://github.com/cisco/openh264/archive/v${OPENH264_VERSION}.tar.gz --output - | \
+    tar -zx --strip-components=1 && \
     make -j5 && make install-shared PREFIX=${PREFIX} && make clean
 
 WORKDIR /tmp/ffmpeg
@@ -39,9 +39,7 @@ RUN curl -sL https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.bz2 --outp
     tar -jx --strip-components=1 && \
     ./configure --disable-nonfree --disable-gpl --enable-libopenh264 \
         --enable-shared --disable-static --disable-doc --disable-programs --prefix="${PREFIX}" && \
-    # make clean keeps the configuration files that let to know how the original sources were used to create the binary
-    make -j5 && make install && make clean && \
-    tar -zcf "/tmp/ffmpeg-$FFMPEG_VERSION.tar.gz" . && mv "/tmp/ffmpeg-$FFMPEG_VERSION.tar.gz" .
+    make -j5 && make install && make clean
 
 # Build wheels for all dependencies
 ARG PIP_VERSION
@@ -131,23 +129,6 @@ RUN if [ "$CLAM_AV" = "yes" ]; then \
         chown -R ${USER}:${USER} /var/lib/clamav && \
         rm -rf /var/lib/apt/lists/*; \
     fi
-
-ARG INSTALL_SOURCES='no'
-WORKDIR ${HOME}/sources
-RUN if [ "$INSTALL_SOURCES" = "yes" ]; then \
-        sed -Ei 's/^# deb-src /deb-src /' /etc/apt/sources.list && \
-        apt-get update && \
-        dpkg --get-selections | while read -r line; do        \
-            package=$(echo "$line" | awk '{print $1}');       \
-            mkdir "$package";                                 \
-            (                                                 \
-                cd "$package";                                \
-                apt-get -q --download-only source "$package"; \
-            )                                                 \
-            done &&                                           \
-        rm -rf /var/lib/apt/lists/*;                          \
-    fi
-COPY --from=build-image /tmp/openh264/openh264*.tar.gz /tmp/ffmpeg/ffmpeg*.tar.gz ${HOME}/sources/
 
 # Install wheels from the build image
 RUN python3 -m venv /opt/venv
