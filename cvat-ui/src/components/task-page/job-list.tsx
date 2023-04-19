@@ -15,7 +15,7 @@ import Text from 'antd/lib/typography/Text';
 import moment from 'moment';
 import copy from 'copy-to-clipboard';
 
-import { Task, Job } from 'cvat-core-wrapper';
+import { Task, Job, JobType } from 'cvat-core-wrapper';
 import { JobStage } from 'reducers';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import UserSelector, { User } from './user-selector';
@@ -89,7 +89,9 @@ function JobListComponent(props: Props): JSX.Element {
     } = props;
 
     const history = useHistory();
-    const { jobs, id: taskId } = taskInstance;
+    const { id: taskId } = taskInstance;
+    let { jobs } = taskInstance;
+    jobs = jobs.filter((job: Job) => job.type === JobType.NORMAL);
 
     function sorter(path: string) {
         return (obj1: any, obj2: any): number => {
