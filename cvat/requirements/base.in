@@ -1,4 +1,4 @@
--r ../../utils/dataset_manifest/requirements.txt
+-r ../../utils/dataset_manifest/requirements.in
 
 attrs==21.4.0
 click==8.1.3

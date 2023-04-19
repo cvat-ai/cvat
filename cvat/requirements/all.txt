@@ -1,3 +1,0 @@
--r development.txt
--r production.txt
--r testing.txt
