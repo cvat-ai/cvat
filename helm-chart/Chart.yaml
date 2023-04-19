@@ -56,6 +56,6 @@ dependencies:
     condition: analytics.enabled
 
   - name: traefik
-    version: 10.24.0
+    version: 22.1.0
     repository: https://helm.traefik.io/traefik
     condition: ingress.enabled

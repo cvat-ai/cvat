@@ -22,7 +22,7 @@ jobs:
     - uses: actions/checkout@v3
 
     - name: Start minikube
-      uses: medyagh/setup-minikube@master
+      uses: medyagh/setup-minikube@latest
       with:
         cpus: max
         memory: max
