@@ -10,7 +10,7 @@ import re
 import shutil
 from enum import Enum
 from functools import cached_property
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Sequence
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -509,10 +509,21 @@ class Segment(models.Model):
     frames = IntArrayField(store_sorted=True, unique_values=True, default='', blank=True)
 
     def contains_frame(self, idx: int) -> bool:
+        return idx in self.frame_set
+
+    @property
+    def frame_count(self) -> int:
+        return len(self.frame_set)
+
+    @property
+    def frame_set(self) -> Sequence[int]:
+        step = self.task.data.get_frame_step()
+        frame_range = range(self.start_frame, self.stop_frame + 1, step)
+
         if self.type == SegmentType.RANGE:
-            return self.start_frame <= idx and idx <= self.stop_frame
+            return frame_range
         elif self.type == SegmentType.SPECIFIC_FRAMES:
-            return idx in self.frames
+            return set(frame_range).intersection(self.frames or [])
         else:
             assert False
 
@@ -525,6 +536,9 @@ class Segment(models.Model):
             raise ValidationError(
                 f"frames and type == {SegmentType.SPECIFIC_FRAMES} can only be used together"
             )
+
+        if self.stop_frame < self.start_frame:
+            raise ValidationError("stop_frame cannot be lesser than start_frame")
 
         return super().clean()
 

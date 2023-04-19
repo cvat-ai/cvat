@@ -1299,6 +1299,12 @@ class DataMetaReadSerializer(serializers.ModelSerializer):
     frames = FrameMetaSerializer(many=True, allow_null=True)
     image_quality = serializers.IntegerField(min_value=0, max_value=100)
     deleted_frames = serializers.ListField(child=serializers.IntegerField(min_value=0))
+    included_frames = serializers.ListField(
+        child=serializers.IntegerField(min_value=0), allow_null=True, required=False,
+        help_text=textwrap.dedent("""\
+        A list of valid frame ids. The None value means all frames are included.
+        Only applicable for video data.
+        """))
 
     class Meta:
         model = models.Data
@@ -1311,8 +1317,16 @@ class DataMetaReadSerializer(serializers.ModelSerializer):
             'frame_filter',
             'frames',
             'deleted_frames',
+            'included_frames',
         )
         read_only_fields = fields
+        extra_kwargs = {
+            'size': {
+                'help_text': textwrap.dedent("""\
+                    The number of frames included. Deleted frames do not affect this value.
+                """)
+            }
+        }
 
 class DataMetaWriteSerializer(serializers.ModelSerializer):
     deleted_frames = serializers.ListField(child=serializers.IntegerField(min_value=0))

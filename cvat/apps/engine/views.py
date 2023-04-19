@@ -1607,6 +1607,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
 
         if hasattr(db_data, 'video'):
             media = [db_data.video]
+            db_data.included_frames = db_job.segment.frames or None
         else:
             media = [f
                 for f in db_data.images.filter(
@@ -1624,6 +1625,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         )
         db_data.start_frame = data_start_frame
         db_data.stop_frame = data_stop_frame
+        db_data.size = db_job.segment.frame_count
 
         frame_meta = [{
             'width': item.width,

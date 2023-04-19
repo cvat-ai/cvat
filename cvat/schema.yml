@@ -6776,6 +6776,8 @@ components:
         size:
           type: integer
           readOnly: true
+          description: |
+            The number of frames included. Deleted frames do not affect this value.
         image_quality:
           type: integer
           maximum: 100
@@ -6799,6 +6801,15 @@ components:
           items:
             type: integer
             minimum: 0
+        included_frames:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+          nullable: true
+          description: |
+            A list of valid frame ids. The None value means all frames are included.
+            Only applicable for video data.
       required:
       - deleted_frames
       - frames

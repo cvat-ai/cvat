@@ -76,19 +76,7 @@ class TestPostJobs:
             assert response.status == expected_status
         return response
 
-    @pytest.mark.parametrize(
-        "task_mode",
-        [
-            "annotation",
-            pytest.param(
-                "interpolation",
-                marks=pytest.mark.xfail(
-                    raises=IndexError,
-                    reason="Meta info can't represent skipped frame info for video",
-                ),
-            ),
-        ],
-    )
+    @pytest.mark.parametrize("task_mode", [ "annotation", "interpolation" ])
     def test_can_create_gt_job_with_manual_frames(self, admin_user, tasks, task_mode):
         user = admin_user
         job_frame_count = 4
@@ -119,27 +107,24 @@ class TestPostJobs:
         job_id = json.loads(response.data)["id"]
 
         with make_api_client(user) as api_client:
-            (job_meta, _) = api_client.jobs_api.retrieve_data_meta(job_id)
-            assert [f.name for f in job_meta.frames] == [
+            (gt_job_meta, _) = api_client.jobs_api.retrieve_data_meta(job_id)
+
+        assert job_frame_count == gt_job_meta.size
+
+        if task_mode == "annotation":
+            assert [f.name for f in gt_job_meta.frames] == [
                 task_meta.frames[i].name for i in job_frame_ids
             ]
+        elif task_mode == "interpolation":
+            assert gt_job_meta.included_frames == job_frame_ids
+        else:
+            assert False
 
-    @pytest.mark.parametrize(
-        "task_mode",
-        [
-            "annotation",
-            pytest.param(
-                "interpolation",
-                marks=pytest.mark.xfail(
-                    raises=AssertionError,
-                    reason="Meta info can't represent skipped frame info for video",
-                ),
-            ),
-        ],
-    )
+    @pytest.mark.parametrize("task_mode", [ "annotation", "interpolation" ])
     def test_can_create_gt_job_with_random_frames(self, admin_user, tasks, task_mode):
         user = admin_user
-        required_task_frame_count = 4
+        job_frame_count = 3
+        required_task_frame_count = job_frame_count + 1
         task = next(
             t
             for t in tasks
@@ -154,7 +139,7 @@ class TestPostJobs:
             "task_id": task_id,
             "type": "ground_truth",
             "frame_selection_method": "random_uniform",
-            "count": required_task_frame_count - 1,
+            "count": job_frame_count,
             "seed": 42,  # make the test reproducible
         }
 
@@ -162,8 +147,16 @@ class TestPostJobs:
         job_id = json.loads(response.data)["id"]
 
         with make_api_client(user) as api_client:
-            (job_meta, _) = api_client.jobs_api.retrieve_data_meta(job_id)
-            assert [f.name for f in job_meta.frames] == ["0.png", "1.png", "5.png"]
+            (gt_job_meta, _) = api_client.jobs_api.retrieve_data_meta(job_id)
+
+        assert job_frame_count == gt_job_meta.size
+
+        if task_mode == "annotation":
+            assert [f.name for f in gt_job_meta.frames] == ["0.png", "1.png", "5.png"]
+        elif task_mode == "interpolation":
+            assert gt_job_meta.included_frames == [0, 3, 20]
+        else:
+            assert False
 
     def test_can_create_no_more_than_1_gt_job(self, admin_user, jobs):
         user = admin_user
