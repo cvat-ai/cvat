@@ -4579,6 +4579,7 @@
     "assignee": [
       "worker1"
     ],
+    "created_date": "2021-12-14T18:50:29.458Z",
     "updated_date": "2022-06-22T09:18:45.296Z",
     "status": "annotation",
     "stage": "annotation",
@@ -4594,6 +4595,7 @@
     "assignee": [
       "worker4"
     ],
+    "created_date": "2022-02-16T06:25:48.168Z",
     "updated_date": "2022-06-22T09:18:45.296Z",
     "status": "annotation",
     "stage": "annotation",
@@ -4607,6 +4609,7 @@
   "fields": {
     "segment": 8,
     "assignee": null,
+    "created_date": "2022-02-16T06:26:54.631Z",
     "updated_date": "2022-06-22T09:18:45.296Z",
     "status": "annotation",
     "stage": "annotation",
@@ -4620,6 +4623,7 @@
   "fields": {
     "segment": 9,
     "assignee": null,
+    "created_date": "2022-02-21T10:31:52.429Z",
     "updated_date": "2022-06-22T09:18:45.296Z",
     "status": "annotation",
     "stage": "annotation",
@@ -4635,6 +4639,7 @@
     "assignee": [
       "admin1"
     ],
+    "created_date": "2022-03-05T08:30:48.612Z",
     "updated_date": "2022-06-22T09:18:45.296Z",
     "status": "annotation",
     "stage": "annotation",
@@ -4650,6 +4655,7 @@
     "assignee": [
       "worker4"
     ],
+    "created_date": "2022-03-05T09:33:10.420Z",
     "updated_date": "2022-06-22T09:18:45.296Z",
     "status": "annotation",
     "stage": "annotation",
@@ -4663,6 +4669,7 @@
   "fields": {
     "segment": 12,
     "assignee": null,
+    "created_date": "2022-03-05T09:33:10.420Z",
     "updated_date": "2022-06-22T09:18:45.296Z",
     "status": "validation",
     "stage": "validation",
@@ -4676,6 +4683,7 @@
   "fields": {
     "segment": 13,
     "assignee": null,
+    "created_date": "2022-03-05T09:33:10.420Z",
     "updated_date": "2022-06-22T09:18:45.296Z",
     "status": "validation",
     "stage": "acceptance",
@@ -4689,6 +4697,7 @@
   "fields": {
     "segment": 14,
     "assignee": null,
+    "created_date": "2022-03-05T09:33:10.420Z",
     "updated_date": "2022-11-03T13:57:26.346Z",
     "status": "annotation",
     "stage": "annotation",
@@ -4704,6 +4713,7 @@
     "assignee": [
       "worker2"
     ],
+    "created_date": "2022-03-05T10:32:19.149Z",
     "updated_date": "2022-06-22T09:18:45.296Z",
     "status": "annotation",
     "stage": "annotation",
@@ -4717,6 +4727,7 @@
   "fields": {
     "segment": 17,
     "assignee": null,
+    "created_date": "2022-06-08T08:33:06.505Z",
     "updated_date": "2022-12-05T07:47:01.633Z",
     "status": "annotation",
     "stage": "annotation",
@@ -4730,6 +4741,7 @@
   "fields": {
     "segment": 18,
     "assignee": null,
+    "created_date": "2022-09-22T14:22:25.820Z",
     "updated_date": "2022-09-23T11:57:02.302Z",
     "status": "annotation",
     "stage": "annotation",
@@ -4743,6 +4755,7 @@
   "fields": {
     "segment": 19,
     "assignee": null,
+    "created_date": "2022-12-01T12:53:10.425Z",
     "updated_date": "2022-12-01T12:53:35.354Z",
     "status": "annotation",
     "stage": "annotation",
@@ -4756,6 +4769,7 @@
   "fields": {
     "segment": 21,
     "assignee": null,
+    "created_date": "2023-02-10T14:05:25.947Z",
     "updated_date": "2023-02-10T14:05:26.022Z",
     "status": "annotation",
     "stage": "annotation",
@@ -4769,6 +4783,7 @@
   "fields": {
     "segment": 22,
     "assignee": null,
+    "created_date": "2023-03-01T15:36:26.668Z",
     "updated_date": "2023-03-01T15:36:38.114Z",
     "status": "annotation",
     "stage": "annotation",
@@ -4782,6 +4797,7 @@
   "fields": {
     "segment": 23,
     "assignee": null,
+    "created_date": "2023-03-10T11:56:33.757Z",
     "updated_date": "2023-03-10T11:56:55.066Z",
     "status": "annotation",
     "stage": "annotation",
@@ -4795,6 +4811,7 @@
   "fields": {
     "segment": 24,
     "assignee": null,
+    "created_date": "2023-03-10T11:57:31.614Z",
     "updated_date": "2023-03-10T11:57:49.019Z",
     "status": "annotation",
     "stage": "annotation",
@@ -4808,6 +4825,7 @@
   "fields": {
     "segment": 25,
     "assignee": null,
+    "created_date": "2023-03-27T19:08:07.649Z",
     "updated_date": "2023-03-27T19:08:27.216Z",
     "status": "annotation",
     "stage": "annotation",
@@ -4821,6 +4839,7 @@
   "fields": {
     "segment": 26,
     "assignee": null,
+    "created_date": "2023-03-27T19:08:07.649Z",
     "updated_date": "2023-03-27T19:08:40.166Z",
     "status": "annotation",
     "stage": "annotation",
@@ -4834,6 +4853,7 @@
   "fields": {
     "segment": 27,
     "assignee": null,
+    "created_date": "2023-04-14T14:40:10.333Z",
     "updated_date": "2023-04-14T14:58:50.944Z",
     "status": "annotation",
     "stage": "annotation",
@@ -4847,6 +4867,7 @@
   "fields": {
     "segment": 28,
     "assignee": null,
+    "created_date": "2023-04-14T14:40:10.333Z",
     "updated_date": "2023-04-14T15:03:25.984Z",
     "status": "annotation",
     "stage": "annotation",
