@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import './styles.scss';
+import '../styles.scss';
 
 import React from 'react';
 import { Link } from 'react-router-dom';

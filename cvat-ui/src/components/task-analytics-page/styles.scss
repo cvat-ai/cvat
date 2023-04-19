@@ -20,3 +20,20 @@
     align-items: center;
     height: $grid-unit-size * 68;
 }
+
+.cvat-task-mean-annotaion-quality {
+    .ant-statistic {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+}
+
+.cvat-analytics-time-hint {
+    font-size: 10px;
+    color: gray !important;
+    position: absolute;
+    bottom: 0;
+    right: $grid-unit-size;
+}

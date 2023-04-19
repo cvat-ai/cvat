@@ -2,11 +2,13 @@
 //
 // SPDX-License-Identifier: MIT
 
-import './styles.scss';
+import '../styles.scss';
 
 import React from 'react';
 import { Job, JobType, Task } from 'cvat-core-wrapper';
+import { Row } from 'antd/lib/grid';
 import EmptyQuality from './empty-quality';
+import MeanQuality from './mean-quality';
 
 interface Props {
     task: Task,
@@ -21,7 +23,11 @@ function TaskQualityComponent(props: Props): JSX.Element {
     }
 
     return (
-        <div className='cvat-task-quality-page'>hello</div>
+        <div className='cvat-task-quality-page'>
+            <Row>
+                <MeanQuality />
+            </Row>
+        </div>
     );
 }
 
