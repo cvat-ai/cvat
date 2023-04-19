@@ -81,8 +81,7 @@ description: 'Installing a development environment for different operating syste
   pip install -U pip wheel setuptools
   pip install \
       -r cvat/requirements/development.txt \
-      -r cvat/requirements/production.txt \
-      -r utils/dataset_manifest/requirements.txt
+      -r cvat/requirements/production.txt
   python manage.py migrate
   python manage.py collectstatic
   ```
