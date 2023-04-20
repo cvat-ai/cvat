@@ -44,7 +44,7 @@ jobs:
 
     - name: Deploy to minikube
       run: |
-        printf "traefik:\n  service:\n    externalIPs:\n      - $(minikube ip)\n" >> tests/values.test.yaml
+        printf "  service:\n    externalIPs:\n      - $(minikube ip)\n" >> tests/values.test.yaml
         cd helm-chart
         helm dependency update
         cd ..

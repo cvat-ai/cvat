@@ -22,6 +22,3 @@ traefik:
       level: DEBUG
     access:
       enabled: true
-  service:
-    externalIPs:
-      - 192.168.49.2
