@@ -10,11 +10,11 @@ description: 'Installing a development environment for different operating syste
 
   Ubuntu 18.04
 
-  ```bash
+  ```shell
   sudo apt-get update && sudo apt-get --no-install-recommends install -y build-essential curl git redis-server python3-dev python3-pip python3-venv python3-tk libldap2-dev libsasl2-dev pkg-config libavformat-dev libavcodec-dev libavdevice-dev libavutil-dev libswscale-dev libswresample-dev libavfilter-dev apache2-dev
   ```
 
-  ```bash
+  ```shell
   # Install Node.js 16 and yarn
   curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
   sudo apt-get install -y nodejs
@@ -23,28 +23,28 @@ description: 'Installing a development environment for different operating syste
 
   MacOS 10.15
 
-  ```bash
+  ```shell
   brew install git python pyenv redis curl openssl node sqlite3 geos httpd
   ```
 
   Arch Linux
-  ```bash
+  ```shell
   # Update the system and AUR (you can use any other AUR helper of choice) first:
   sudo pacman -Syyu
   pikaur -Syu
   ```
 
-  ```bash
+  ```shell
   # Install the required dependencies:
   sudo pacman -S base-devel curl git redis cmake gcc python python-pip tk libldap libsasl pkgconf ffmpeg geos openldap apache
   ```
 
-  ```bash
+  ```shell
   # CVAT supports only Python 3.9, so install it if you don’t have it:
   pikaur -S python39
   ```
 
-  ```bash
+  ```shell
   # Install Node.js 16, yarn and npm
   sudo pacman -S nodejs-lts-gallium yarn npm
   ```
@@ -73,7 +73,7 @@ description: 'Installing a development environment for different operating syste
 
 - Install CVAT on your local host:
 
-  ```bash
+  ```shell
   git clone https://github.com/cvat-ai/cvat
   cd cvat && mkdir logs keys
   python3 -m venv .env
@@ -99,7 +99,7 @@ description: 'Installing a development environment for different operating syste
   >
   > Homebrew will install FFMpeg 5.0 by default, which does not work, so you should install 4.X.
   > You can install older 4.X FFMpeg using Homebrew like that:
-  > ```
+  > ```shell
   >  cd "$(brew --repo homebrew/core)"
   >  git checkout addd616edc9134f057e33694c420f4900be59db8
   >  brew unlink ffmpeg
@@ -108,7 +108,7 @@ description: 'Installing a development environment for different operating syste
   > ```
   > if you are still facing error `Running setup.py install for av ... error`, you may
   > try more radical variant
-  > ```
+  > ```shell
   >  cd "$(brew --repo homebrew/core)"
   >  git checkout addd616edc9134f057e33694c420f4900be59db8
   >  brew uninstall ffmpeg --force
@@ -117,7 +117,7 @@ description: 'Installing a development environment for different operating syste
   > ```
   >
   > If you faced with error `Failed building wheel for h5py`, you may need install `hdf5`
-  > ```
+  > ```shell
   > brew install hdf5
   > export HDF5_DIR="$(brew --prefix hdf5)"
   > pip install --no-binary=h5py h5py
@@ -125,7 +125,7 @@ description: 'Installing a development environment for different operating syste
   > If you faced with error
   > `OSError: Could not find library geos_c or load any of its variants ['libgeos_c.so.1', 'libgeos_c.so']`.
   > You may fix this using
-  > ```
+  > ```shell
   > sudo ln -s /opt/homebrew/lib/libgeos_c.dylib /usr/local/lib
   > ```
   > On Mac with Apple Silicon (M1) in order to install TensorFlow you will have
@@ -143,13 +143,13 @@ description: 'Installing a development environment for different operating syste
 
 - Create a super user for CVAT:
 
-  ```bash
+  ```shell
   python manage.py createsuperuser
   ```
 
 - Install npm packages for UI (run the following command from CVAT root directory):
 
-  ```bash
+  ```shell
   yarn --frozen-lockfile
   ```
 
@@ -165,7 +165,7 @@ description: 'Installing a development environment for different operating syste
 
 - Pull and run Open Policy Agent docker image:
 
-  ```bash
+  ```shell
    docker run -d --rm --name cvat_opa_debug -p 8181:8181 openpolicyagent/opa:0.45.0-rootless \
    run --server --set=decision_logs.console=true --set=services.cvat.url=http://host.docker.internal:7000 \
    --set=bundles.cvat.service=cvat --set=bundles.cvat.resource=/api/auth/rules
@@ -173,7 +173,7 @@ description: 'Installing a development environment for different operating syste
 
 - Pull and run PostgreSQL docker image:
 
-  ```bash
+  ```shell
   docker run --name cvat_db_debug -e POSTGRES_HOST_AUTH_METHOD=trust -e POSTGRES_USER=root \
   -e POSTGRES_DB=cvat -p 5432:5432 -d postgres
   ```
@@ -184,17 +184,17 @@ description: 'Installing a development environment for different operating syste
 ### Run CVAT
 - Start npm UI debug server (run the following command from CVAT root directory):
   - If you want to run CVAT in localhost:
-    ```sh
+    ```shell
     yarn run start:cvat-ui
      ```
   - If you want to access CVAT from outside of your host:
-    ```sh
+    ```shell
     CVAT_UI_HOST='<YOUR_HOST_IP>' yarn run start:cvat-ui
     ```
 - Open a new terminal window.
 - Run VScode from the virtual environment (run the following command from CVAT root directory):
 
-  ```sh
+  ```shell
   source .env/bin/activate && code
   ```
 
@@ -205,9 +205,111 @@ description: 'Installing a development environment for different operating syste
 - If you choose to run CVAT in localhost: Select `server: chrome` configuration and run it (F5) to open CVAT in Chrome
 - Alternative: If you changed CVAT_UI_HOST just enter ```<YOUR_HOST_IP>:3000``` in your browser.
 
-
 You have done! Now it is possible to insert breakpoints and debug server and client of the tool.
 Instructions for running tests locally are available [here](/site/content/en/docs/contributing/running-tests.md).
+
+## Run Analytics
+To use `Analytics` in the development environment, you must have the Clickhouse, Vector and Grafana containers running.
+You can create a `docker-compose.debug.yml` with the following content and run all services
+with `docker-compose -f docker-compose.debug.yml up -d` command. Grafana will be available at `http://localhost:3001`.
+Note that the example below does not contain a volume definition,
+so Clickhouse database data will be lost if the containers are removed.
+```yaml
+services:
+  cvat_clickhouse_debug:
+    container_name: cvat_clickhouse_debug
+    image: clickhouse/clickhouse-server:22.3-alpine
+    restart: always
+    environment:
+      - CLICKHOUSE_DB=cvat
+      - CLICKHOUSE_USER=user
+      - CLICKHOUSE_PASSWORD=user
+    networks:
+      cvat_debug:
+        aliases:
+          - clickhouse
+    volumes:
+      - ./components/analytics/clickhouse/init.sh:/docker-entrypoint-initdb.d/init.sh:ro
+    ports:
+      - "8123:8123"
+
+  cvat_vector_debug:
+    container_name: cvat_vector_debug
+    image: timberio/vector:0.26.0-alpine
+    restart: always
+    depends_on:
+      - cvat_clickhouse_debug
+    environment:
+      - CLICKHOUSE_DB=cvat
+      - CLICKHOUSE_USER=user
+      - CLICKHOUSE_PASSWORD=user
+      - CLICKHOUSE_HOST=clickhouse
+    networks:
+      cvat_debug:
+        aliases:
+          - vector
+    volumes:
+      - ./components/analytics/vector/vector.toml:/etc/vector/vector.toml:ro
+    ports:
+      - "8282:80"
+
+  cvat_grafana_debug:
+    image: grafana/grafana-oss:9.3.6
+    container_name: cvat_grafana_debug
+    environment:
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+      - GF_AUTH_BASIC_ENABLED=false
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+      - GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=grafana-clickhouse-datasource
+      - GF_SERVER_ROOT_URL=http://localhost
+      - GF_INSTALL_PLUGINS=https://github.com/grafana/clickhouse-datasource/releases/download/v2.0.7/grafana-clickhouse-datasource-2.0.7.linux_amd64.zip;grafana-clickhouse-datasource
+      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/var/lib/grafana/dashboards/all_events.json
+    volumes:
+      - ./components/analytics/grafana/dashboards/:/var/lib/grafana/dashboards/:ro
+    entrypoint:
+      - sh
+      - -euc
+      - |
+        mkdir -p /etc/grafana/provisioning/datasources
+        cat <<EOF > /etc/grafana/provisioning/datasources/ds.yaml
+        apiVersion: 1
+        datasources:
+          - name: ClickHouse
+            type: grafana-clickhouse-datasource
+            isDefault: true
+            jsonData:
+              defaultDatabase: cvat
+              port: 9000
+              server: clickhouse
+              username: user
+              tlsSkipVerify: false
+            secureJsonData:
+              password: user
+            editable: true
+        EOF
+        mkdir -p /etc/grafana/provisioning/dashboards
+        cat <<EOF > /etc/grafana/provisioning/dashboards/dashboard.yaml
+        apiVersion: 1
+        providers:
+          - name: cvat-logs
+            type: file
+            updateIntervalSeconds: 30
+            options:
+              path:  /var/lib/grafana/dashboards
+              foldersFromFilesStructure: true
+        EOF
+        exec /run.sh
+    networks:
+      cvat_debug:
+        aliases:
+          - grafana
+    ports:
+      - "3001:3000"
+networks:
+  cvat_debug:
+```
 
 ## Note for Windows users
 
@@ -235,7 +337,7 @@ Alternatively you can also use a redis docker image instead of using the redis-s
 
 ## Note for Arch Linux users
 - You need to start `redis` and `docker` services manually in order to begin debugging/running tests:
-  ```bash
+  ```shell
   sudo systemctl start redis.service
   sudo systemctl start docker.service
   ```
