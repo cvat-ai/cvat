@@ -46,16 +46,12 @@ ARG PIP_VERSION
 ARG PIP_DISABLE_PIP_VERSION_CHECK=1
 RUN --mount=type=cache,target=/root/.cache/pip/http \
     python3 -m pip install -U pip==${PIP_VERSION}
-COPY cvat/requirements/ /tmp/requirements/
-COPY utils/dataset_manifest/ /tmp/dataset_manifest/
+COPY cvat/requirements/ /tmp/cvat/requirements/
+COPY utils/dataset_manifest/requirements.txt /tmp/utils/dataset_manifest/requirements.txt
 
-# The server implementation depends on the dataset_manifest utility
-# so we need to build its dependencies too
-# https://github.com/opencv/cvat/issues/5096
 RUN --mount=type=cache,target=/root/.cache/pip/http \
-    DATUMARO_HEADLESS=1 python3 -m pip wheel \
-    -r /tmp/requirements/${DJANGO_CONFIGURATION}.txt \
-    -r /tmp/dataset_manifest/requirements.txt \
+    DATUMARO_HEADLESS=1 python3 -m pip wheel --no-deps \
+    -r /tmp/cvat/requirements/${DJANGO_CONFIGURATION}.txt \
     -w /tmp/wheelhouse
 
 FROM ${BASE_IMAGE}
