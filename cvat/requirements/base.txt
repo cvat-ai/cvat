@@ -95,7 +95,7 @@ django==3.2.18
     #   django-sendfile2
     #   djangorestframework
     #   drf-spectacular
-django-allauth==0.52.0
+django-allauth==0.54.0
     # via
     #   -r cvat/requirements/base.in
     #   dj-rest-auth
@@ -436,3 +436,4 @@ setuptools==65.5.1
     #   limits
     #   tensorboard
     #   tensorflow
+numpy>=1.22.2 # not directly required, pinned by Snyk to avoid a vulnerability
