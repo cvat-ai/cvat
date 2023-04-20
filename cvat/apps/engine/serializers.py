@@ -1912,10 +1912,34 @@ class AnnotationConflictSerializer(serializers.ModelSerializer):
         model = models.AnnotationConflict
         fields = ('frame_id', 'type', 'message', 'data')
 
-class AnnotationConflictsReportSerializer(serializers.ModelSerializer):
-    conflicts = AnnotationConflictSerializer(many=True, default=[])
+
+class QualityReportSummarySerializer(serializers.Serializer):
+    frame_count = serializers.IntegerField()
+    frame_share_percent = serializers.FloatField()
+    conflicts_count = serializers.IntegerField()
+
+    # This set is enough for basic characteristics, such as
+    # A_extra, B_extra, accuracy, precision and recall
+    valid_count = serializers.IntegerField()
+    ds_count = serializers.IntegerField()
+    gt_count = serializers.IntegerField()
+
+class QualityReportParametersSerializer(serializers.Serializer):
+    iou_threshold = serializers.FloatField()
+
+class QualityReportSerializer(serializers.ModelSerializer):
+    target = serializers.ChoiceField(models.QualityReportTarget.choices())
+    summary = QualityReportSummarySerializer()
+    parameters = QualityReportParametersSerializer()
 
     class Meta:
-        model = models.AnnotationConflictsReport
-        fields = ('job_id', 'job_last_updated', 'gt_job_last_updated', 'conflicts')
+        model = models.QualityReport
+        fields = ('job_id', 'task_id', 'parent_id', 'target', 'summary', 'parameters',
+            'created_date', 'target_last_updated', 'gt_last_updated',
+        )
         read_only_fields = fields
+
+    def to_representation(self, instance):
+        instance.summary = instance.data["intersection_results"]
+        instance.parameters = instance.data["parameters"]
+        return super().to_representation(instance)

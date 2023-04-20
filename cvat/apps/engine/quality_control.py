@@ -14,7 +14,7 @@ from cvat.apps.dataset_manager.bindings import (CommonData, CvatToDmAnnotationCo
 from cvat.apps.dataset_manager.formats.registry import dm_env
 from cvat.apps.profiler import silk_profile
 
-from .models import (AnnotationConflictsReport, AnnotationConflict,
+from .models import (QualityReport, AnnotationConflict,
     AnnotationConflictType, Job, MismatchingAnnotationKind)
 
 
@@ -99,8 +99,8 @@ class _MemoizingAnnotationConverter(CvatToDmAnnotationConverter):
 
 @transaction.atomic
 def _save_report_to_db(
-    report: AnnotationConflictsReport, conflicts: List[AnnotationConflict]
-)-> AnnotationConflictsReport:
+    report: QualityReport, conflicts: List[AnnotationConflict]
+)-> QualityReport:
     report.full_clean()
     report.save()
 
@@ -328,7 +328,7 @@ class DatasetComparator:
 @silk_profile()
 def find_gt_conflicts(
     this_job: Job, gt_job: Job, *, frame_id: Optional[int] = None
-) -> AnnotationConflictsReport:
+) -> QualityReport:
     this_job_data_provider = _JobDataProvider(this_job.pk)
     gt_job_data_provider = _JobDataProvider(gt_job.pk)
 
@@ -338,7 +338,7 @@ def find_gt_conflicts(
     else:
         conflicts = comparator.find_gt_conflicts()
 
-    report = AnnotationConflictsReport(
+    report = QualityReport(
         job=this_job,
         job_last_updated=this_job.updated_date,
         gt_job_last_updated=gt_job.updated_date,

@@ -50,13 +50,13 @@ from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.media_extractors import get_mime
 from cvat.apps.engine.models import (
-    Job, JobType, Label, Task, Project, Issue, Data,
+    Job, JobType, Label, QualityReport, Task, Project, Issue, Data,
     Comment, StorageMethodChoice, StorageChoice,
     CloudProviderChoice, Location
 )
 from cvat.apps.engine.models import CloudStorage as CloudStorageModel
 from cvat.apps.engine.serializers import (
-    AboutSerializer, AnnotationConflictsReportSerializer, AnnotationFileSerializer, BasicUserSerializer,
+    AboutSerializer, AnnotationConflictSerializer, AnnotationFileSerializer, BasicUserSerializer,
     DataMetaReadSerializer, DataMetaWriteSerializer, DataSerializer,
     FileInfoSerializer, JobReadSerializer, JobWriteSerializer, LabelSerializer,
     LabeledDataSerializer,
@@ -65,7 +65,7 @@ from cvat.apps.engine.serializers import (
     UserSerializer, PluginsSerializer, IssueReadSerializer,
     IssueWriteSerializer, CommentReadSerializer, CommentWriteSerializer, CloudStorageWriteSerializer,
     CloudStorageReadSerializer, DatasetFileSerializer,
-    ProjectFileSerializer, TaskFileSerializer)
+    ProjectFileSerializer, TaskFileSerializer, QualityReportSerializer)
 from cvat.apps.engine.view_utils import get_cloud_storage_for_import_or_export
 
 from utils.dataset_manifest import ImageManifestManager
@@ -79,7 +79,7 @@ from cvat.apps.engine.location import get_location_configuration, StorageType
 from . import models, task
 from .log import slogger
 from cvat.apps.iam.permissions import (CloudStoragePermission,
-    CommentPermission, IssuePermission, JobPermission, LabelPermission, ProjectPermission,
+    CommentPermission, IssuePermission, JobPermission, LabelPermission, ProjectPermission, QualityReportPermission,
     TaskPermission, UserPermission)
 from cvat.apps.engine.cache import MediaCache
 from cvat.apps.events.handlers import handle_annotations_patch
@@ -1658,11 +1658,15 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
            self._object.segment.stop_frame, self._object.segment.task.data)
 
     @extend_schema(
+        operation_id="jobs_check_conflicts",
         parameters=[OpenApiParameter('frame_id', OpenApiTypes.INT)],
-        responses=AnnotationConflictsReportSerializer
+        request=None,
+        responses=AnnotationConflictSerializer(many=True)
     )
-    @action(detail=True, methods=['GET'], url_path='gt_conflicts', serializer_class=None)
-    def gt_conflicts(self, request, pk):
+    @action(detail=True, methods=['POST'], url_path='conflicts', serializer_class=None,
+        simple_filters=None, filter_fields=None, search_fields=None,
+        pagination_class=None, ordering_fields=None)
+    def conflicts(self, request, pk):
         # TODO: add automatic type inference to get_object
         this_job = cast(Job, self.get_object()) # call check_object_permissions as well
 
@@ -1684,7 +1688,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
 
         report = qc.find_gt_conflicts(this_job, gt_job, frame_id=frame_id)
 
-        report_serializer = AnnotationConflictsReportSerializer(report)
+        report_serializer = AnnotationConflictSerializer(report.conflicts, many=True)
         return Response(report_serializer.data, status=status.HTTP_200_OK)
 
 @extend_schema(tags=['issues'])
@@ -2253,6 +2257,83 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         except Exception as ex:
             msg = str(ex)
             return HttpResponseBadRequest(msg)
+
+
+@extend_schema(tags=['quality_reports'])
+@extend_schema_view(
+    retrieve=extend_schema(
+        summary='Method returns details of a quality report',
+        responses={
+            '200': QualityReportSerializer,
+        }),
+    list=extend_schema(
+        summary='Method returns a paginated list of quality_reports',
+        parameters=[
+            # These filters are implemented differently from others
+            OpenApiParameter('task_id', type=OpenApiTypes.INT,
+                description='A simple equality filter for task id'),
+            OpenApiParameter('target', type=OpenApiTypes.STR,
+                description='A simple equality filter for target'),
+        ],
+        responses={
+            '200': QualityReportSerializer(many=True),
+        }),
+)
+class QualityReportViewSet(viewsets.GenericViewSet,
+    mixins.ListModelMixin, mixins.RetrieveModelMixin
+):
+    queryset = QualityReport.objects.prefetch_related(
+        'job__segment__task'
+        'task',
+        'task__project'
+    ).all()
+
+    # NOTE: This filter works incorrectly for this view
+    # it requires task__organization OR project__organization check.
+    # Thus, we rely on permission-based filtering
+    iam_organization_field = None
+
+    search_fields = []
+    filter_fields = list(search_fields) + [
+        'id', 'job_id', 'created_date',
+        'gt_last_updated', 'target_last_updated', 'parent_id'
+    ]
+    simple_filters = list(set(filter_fields) - {
+        'id', 'created_date', 'gt_last_updated', 'target_last_updated'
+    })
+    ordering_fields = list(filter_fields)
+    ordering = 'id'
+    serializer_class = QualityReportSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+
+        if self.action == 'list':
+            if task_id := self.request.GET.get('task_id', None):
+                # NOTE: This filter is too complex to be implemented by other means
+                task = Task.objects.get(id=task_id)
+                self.check_object_permissions(self.request, task)
+                queryset = queryset.filter(Q(job__segment__task__id=task_id) | Q(task__id=task_id))
+            else:
+                # In other cases permissions are checked already
+                perm = QualityReportPermission.create_scope_list(self.request)
+                queryset = perm.filter(queryset)
+
+            if target := self.request.GET.get('target', None):
+                if target == models.QualityReportTarget.JOB:
+                    queryset = queryset.filter(job__isnull=False)
+                elif target == models.QualityReportTarget.TASK:
+                    queryset = queryset.filter(task__isnull=False)
+                else:
+                    raise ValidationError(
+                        "Unexpected 'target' filter value '{}'. Valid values are: {}".format(
+                            target,
+                            ', '.join(m[0] for m in models.QualityReportTarget.choices())
+                        )
+                    )
+
+        return queryset
+
 
 def rq_exception_handler(rq_job, exc_type, exc_value, tb):
     rq_job.exc_info = "".join(

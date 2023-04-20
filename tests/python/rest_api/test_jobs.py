@@ -396,10 +396,10 @@ class TestGtComparison:
         )
 
         with make_api_client(user) as api_client:
-            (report, response) = api_client.jobs_api.retrieve_gt_conflicts(normal_job["id"])
+            (conflicts, response) = api_client.jobs_api.check_conflicts(normal_job["id"])
             assert response.status == HTTPStatus.OK
 
-        assert len(report.conflicts) > 0
+        assert len(conflicts) > 0
 
 
 @pytest.mark.usefixtures("restore_db_per_class")

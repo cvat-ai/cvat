@@ -2323,6 +2323,70 @@ paths:
       responses:
         '204':
           description: The annotation has been deleted
+  /api/jobs/{id}/conflicts:
+    post:
+      operationId: jobs_check_conflicts
+      parameters:
+      - in: header
+        name: X-Organization
+        schema:
+          type: string
+      - name: filter
+        required: false
+        in: query
+        description: 'A filter term. Available filter_fields: None'
+        schema:
+          type: string
+      - in: query
+        name: frame_id
+        schema:
+          type: integer
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this job.
+        required: true
+      - in: query
+        name: org
+        schema:
+          type: string
+        description: Organization unique slug
+      - in: query
+        name: org_id
+        schema:
+          type: integer
+        description: Organization identifier
+      - name: search
+        required: false
+        in: query
+        description: 'A search term. Available search_fields: None'
+        schema:
+          type: string
+      - name: sort
+        required: false
+        in: query
+        description: 'Which field to use when ordering the results. Available ordering_fields:
+          None'
+        schema:
+          type: string
+      tags:
+      - jobs
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AnnotationConflict'
+          description: ''
   /api/jobs/{id}/data:
     get:
       operationId: jobs_retrieve_data
@@ -2560,49 +2624,6 @@ paths:
           description: Exporting has been started
         '405':
           description: Format is not available
-  /api/jobs/{id}/gt_conflicts:
-    get:
-      operationId: jobs_retrieve_gt_conflicts
-      parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
-      - in: query
-        name: frame_id
-        schema:
-          type: integer
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this job.
-        required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
-      tags:
-      - jobs
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses:
-        '200':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                $ref: '#/components/schemas/AnnotationConflictsReport'
-          description: ''
   /api/jobs/{id}/preview:
     get:
       operationId: jobs_retrieve_preview
@@ -4204,6 +4225,133 @@ paths:
           description: The project has been imported
         '202':
           description: Importing a backup file has been started
+  /api/quality_reports:
+    get:
+      operationId: quality_reports_list
+      summary: Method returns a paginated list of quality_reports
+      parameters:
+      - in: header
+        name: X-Organization
+        schema:
+          type: string
+      - name: filter
+        required: false
+        in: query
+        description: 'A filter term. Available filter_fields: [''id'', ''job_id'',
+          ''created_date'', ''gt_last_updated'', ''target_last_updated'', ''parent_id'']'
+        schema:
+          type: string
+      - name: job_id
+        in: query
+        description: A simple equality filter for the job_id field
+        schema:
+          type: integer
+      - in: query
+        name: org
+        schema:
+          type: string
+        description: Organization unique slug
+      - in: query
+        name: org_id
+        schema:
+          type: integer
+        description: Organization identifier
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: parent_id
+        in: query
+        description: A simple equality filter for the parent_id field
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: 'A search term. Available search_fields: []'
+        schema:
+          type: string
+      - name: sort
+        required: false
+        in: query
+        description: 'Which field to use when ordering the results. Available ordering_fields:
+          [''id'', ''job_id'', ''created_date'', ''gt_last_updated'', ''target_last_updated'',
+          ''parent_id'']'
+        schema:
+          type: string
+      - in: query
+        name: target
+        schema:
+          type: string
+        description: A simple equality filter for target
+      - in: query
+        name: task_id
+        schema:
+          type: integer
+        description: A simple equality filter for task id
+      tags:
+      - quality_reports
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/PaginatedQualityReportList'
+          description: ''
+  /api/quality_reports/{id}:
+    get:
+      operationId: quality_reports_retrieve
+      summary: Method returns details of a quality report
+      parameters:
+      - in: header
+        name: X-Organization
+        schema:
+          type: string
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this quality report.
+        required: true
+      - in: query
+        name: org
+        schema:
+          type: string
+        description: Organization unique slug
+      - in: query
+        name: org_id
+        schema:
+          type: integer
+        description: Organization identifier
+      tags:
+      - quality_reports
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/QualityReport'
+          description: ''
   /api/schema/:
     get:
       operationId: schema_retrieve
@@ -6431,25 +6579,6 @@ components:
       - extra_annotation
       - mismatching_annotation
       type: string
-    AnnotationConflictsReport:
-      type: object
-      properties:
-        job_id:
-          type: integer
-          readOnly: true
-        job_last_updated:
-          type: string
-          format: date-time
-          readOnly: true
-        gt_job_last_updated:
-          type: string
-          format: date-time
-          readOnly: true
-        conflicts:
-          type: array
-          items:
-            $ref: '#/components/schemas/AnnotationConflict'
-          default: []
     AnnotationFileRequest:
       type: object
       properties:
@@ -7388,6 +7517,10 @@ components:
           allOf:
           - $ref: '#/components/schemas/ChunkType'
           readOnly: true
+        created_date:
+          type: string
+          format: date-time
+          readOnly: true
         updated_date:
           type: string
           format: date-time
@@ -8123,6 +8256,26 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ProjectRead'
+    PaginatedQualityReportList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/QualityReport'
     PaginatedTaskReadList:
       type: object
       properties:
@@ -8680,6 +8833,79 @@ components:
       - AZURE_CONTAINER
       - GOOGLE_DRIVE
       - GOOGLE_CLOUD_STORAGE
+      type: string
+    QualityReport:
+      type: object
+      properties:
+        job_id:
+          type: integer
+          nullable: true
+          readOnly: true
+        task_id:
+          type: integer
+          nullable: true
+          readOnly: true
+        parent_id:
+          type: integer
+          nullable: true
+          readOnly: true
+        target:
+          $ref: '#/components/schemas/QualityReportTarget'
+        summary:
+          $ref: '#/components/schemas/QualityReportSummary'
+        parameters:
+          $ref: '#/components/schemas/QualityReportParameters'
+        created_date:
+          type: string
+          format: date-time
+          readOnly: true
+        target_last_updated:
+          type: string
+          format: date-time
+          readOnly: true
+        gt_last_updated:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - parameters
+      - summary
+      - target
+    QualityReportParameters:
+      type: object
+      properties:
+        iou_threshold:
+          type: number
+          format: double
+      required:
+      - iou_threshold
+    QualityReportSummary:
+      type: object
+      properties:
+        frame_count:
+          type: integer
+        frame_share_percent:
+          type: number
+          format: double
+        conflicts_count:
+          type: integer
+        valid_count:
+          type: integer
+        ds_count:
+          type: integer
+        gt_count:
+          type: integer
+      required:
+      - conflicts_count
+      - ds_count
+      - frame_count
+      - frame_share_percent
+      - gt_count
+      - valid_count
+    QualityReportTarget:
+      enum:
+      - job
+      - task
       type: string
     RegisterSerializerEx:
       type: object

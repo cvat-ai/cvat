@@ -1034,15 +1034,59 @@ class MismatchingAnnotationKind(str, Enum):
         return tuple((x.value, x.name) for x in cls)
 
 
-class AnnotationConflictsReport(models.Model):
-    job = models.ForeignKey(Job,
-        on_delete=models.CASCADE, related_name='annotation_conflict_reports')
-    job_last_updated = models.DateTimeField()
-    gt_job_last_updated = models.DateTimeField()
+class QualityReportTarget(str, Enum):
+    JOB = 'job'
+    TASK = 'task'
+
+    def __str__(self) -> str:
+        return self.value
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+
+class QualityReport(models.Model):
+    job = models.ForeignKey(Job, on_delete=models.CASCADE,
+        related_name='quality_reports', null=True, blank=True)
+    task = models.ForeignKey(Task, on_delete=models.CASCADE,
+        related_name='quality_reports', null=True, blank=True)
+
+    parent = models.ForeignKey('self', on_delete=models.CASCADE,
+        related_name='children', null=True, blank=True)
+
+    created_date = models.DateTimeField(auto_now_add=True)
+    target_last_updated = models.DateTimeField()
+    gt_last_updated = models.DateTimeField()
+
+    data = models.JSONField()
+
+    @property
+    def target(self) -> QualityReportTarget:
+        if self.job:
+            return QualityReportTarget.JOB
+        elif self.task:
+            return QualityReportTarget.TASK
+        else:
+            assert False
+
+    def get_task(self) -> Task:
+        if self.task is not None:
+            return self.task
+        else:
+            return self.job.segment.task
+
+    def save(self, *args, **kwargs) -> None:
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def clean(self):
+        if not (self.job is not None) ^ (self.task is not None):
+            raise ValidationError("One of the 'job' and 'task' fields must be set")
 
 
 class AnnotationConflict(models.Model):
-    report = models.ForeignKey(AnnotationConflictsReport,
+    report = models.ForeignKey(QualityReport,
         on_delete=models.CASCADE, related_name='conflicts')
     frame_id = models.PositiveIntegerField()
     type = models.CharField(max_length=32, choices=AnnotationConflictType.choices())
