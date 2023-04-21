@@ -28,7 +28,7 @@ const cvat: any = _cvat;
 
 cvat.config.backendAPI = '/api';
 cvat.config.origin = window.location.origin;
-cvat.config.uploadChunkSize = 100;
+cvat.config.uploadChunkSize = 2;
 (globalThis as any).cvat = cvat;
 
 function getCore(): any {
