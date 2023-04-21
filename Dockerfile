@@ -1,9 +1,7 @@
 ARG PIP_VERSION=22.0.2
 ARG BASE_IMAGE=ubuntu:22.04
 
-FROM ${BASE_IMAGE} as build-image
-
-ARG DJANGO_CONFIGURATION="production"
+FROM ${BASE_IMAGE} as build-image-base
 
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends install -yq \
@@ -21,6 +19,15 @@ RUN apt-get update && \
         python3-dev \
         python3-pip \
     && rm -rf /var/lib/apt/lists/*
+
+ARG PIP_VERSION
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1
+RUN --mount=type=cache,target=/root/.cache/pip/http \
+    python3 -m pip install -U pip==${PIP_VERSION}
+
+# We build OpenH264, FFmpeg and PyAV in a separate build stage,
+# because this way Docker can do it in parallel to all the other packages.
+FROM build-image-base AS build-image-av
 
 # Compile Openh264 and FFmpeg
 ARG PREFIX=/opt/ffmpeg
@@ -41,13 +48,30 @@ RUN curl -sL https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.bz2 --outp
         --enable-shared --disable-static --disable-doc --disable-programs --prefix="${PREFIX}" && \
     make -j5 && make install && make clean
 
-# Build wheels for all dependencies
-ARG PIP_VERSION
-ARG PIP_DISABLE_PIP_VERSION_CHECK=1
+COPY utils/dataset_manifest/requirements.txt /tmp/utils/dataset_manifest/requirements.txt
+
+# Since we're using pip-compile-multi, each dependency can only be listed in
+# one requirements file. In the case of PyAV, that should be
+# `dataset_manifest/requirements.txt`. Make sure it's actually there,
+# and then remove everything else.
+RUN grep -q '^av==' /tmp/utils/dataset_manifest/requirements.txt
+RUN sed -i '/^av==/!d' /tmp/utils/dataset_manifest/requirements.txt
+
 RUN --mount=type=cache,target=/root/.cache/pip/http \
-    python3 -m pip install -U pip==${PIP_VERSION}
+    python3 -m pip wheel \
+    -r /tmp/utils/dataset_manifest/requirements.txt \
+    -w /tmp/wheelhouse
+
+# This stage builds wheels for all dependencies (except PyAV)
+FROM build-image-base AS build-image
+
 COPY cvat/requirements/ /tmp/cvat/requirements/
 COPY utils/dataset_manifest/requirements.txt /tmp/utils/dataset_manifest/requirements.txt
+
+# Exclude av from the requirements file
+RUN sed -i '/^av==/d' /tmp/utils/dataset_manifest/requirements.txt
+
+ARG DJANGO_CONFIGURATION="production"
 
 RUN --mount=type=cache,target=/root/.cache/pip/http \
     DATUMARO_HEADLESS=1 python3 -m pip wheel --no-deps \
@@ -134,10 +158,11 @@ ARG PIP_DISABLE_PIP_VERSION_CHECK=1
 
 RUN python -m pip install -U pip==${PIP_VERSION}
 RUN --mount=type=bind,from=build-image,source=/tmp/wheelhouse,target=/mnt/wheelhouse \
-    python -m pip install --no-index /mnt/wheelhouse/*.whl
+    --mount=type=bind,from=build-image-av,source=/tmp/wheelhouse,target=/mnt/wheelhouse-av \
+    python -m pip install --no-index /mnt/wheelhouse/*.whl /mnt/wheelhouse-av/*.whl
 
 ENV NUMPROCS=1
-COPY --from=build-image /opt/ffmpeg/lib /usr/lib
+COPY --from=build-image-av /opt/ffmpeg/lib /usr/lib
 
 # These variables are required for supervisord substitutions in files
 # This library allows remote python debugging with VS Code
