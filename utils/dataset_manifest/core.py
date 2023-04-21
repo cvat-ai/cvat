@@ -239,9 +239,31 @@ class Dataset3DImagesReader(DatasetImagesReader):
                 img_name = os.path.relpath(image, self._data_dir) if self._data_dir \
                     else os.path.basename(image)
                 name, extension = os.path.splitext(img_name)
+                # Set a default width and height
+                width, height = 0, 0
+                # Try to read PCD file to obtain width and height
+                try:
+                    with open(image) as pcd_file:
+                        for line in pcd_file:
+                            if "WIDTH" in line:
+                                width = int(line.split(" ")[-1].rstrip())
+                                continue
+                            if "HEIGHT" in line:
+                                height = int(line.split(" ")[-1].rstrip())
+                                # As of PCD version 0.7, the header entries must be specified
+                                # precisely in order, meaning breaking here should be OK
+                                break
+                            if "DATA" in line:
+                                # Fallback breakout just in case
+                                break
+                except:
+                    # A PCD file probably wasn't provided
+                    pass
                 image_properties = {
-                    'name': name,
-                    'extension': extension,
+                    "name": name,
+                    "extension": extension,
+                    "width": width,
+                    "height": height,
                 }
                 if self._meta and img_name in self._meta:
                     image_properties['meta'] = self._meta[img_name]

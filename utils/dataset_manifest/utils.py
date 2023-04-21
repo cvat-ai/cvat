@@ -39,6 +39,8 @@ def is_video(media_file):
 
 def is_image(media_file):
     data_type = _define_data_type(media_file)
+    if '.pcd' in media_file:
+        return True
     return data_type is not None and data_type.startswith('image') and \
         not data_type.startswith('image/svg')
 

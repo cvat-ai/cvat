@@ -66,11 +66,14 @@ def main():
 
         related_images = detect_related_images(sources, abs_root)
         meta = { k: {'related_images': related_images[k] } for k in related_images }
+        data_are_type_3D = False
+        if os.path.splitext(list(meta.keys())[0])[1].lower() == '.pcd':
+            data_are_type_3D = True
         try:
             assert len(sources), 'A images was not found'
             manifest = ImageManifestManager(manifest_path=manifest_directory)
             manifest.link(sources=sources, meta=meta, sorting_method=args.sorting,
-                    use_image_hash=True, data_dir=data_dir)
+                    use_image_hash=True, data_dir=data_dir, DIM_3D=data_are_type_3D)
             manifest.create(_tqdm=tqdm)
         except Exception as ex:
             sys.exit(str(ex))
