@@ -36,3 +36,13 @@
     bottom: 0;
     right: $grid-unit-size;
 }
+
+.cvat-analytics-page {
+    height: 100%;
+}
+
+.cvat-analytics-wrapper {
+    overflow-y: auto;
+    height: 90%;
+    width: 100%;
+}

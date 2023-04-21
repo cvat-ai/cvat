@@ -11,14 +11,26 @@ import Statistic from 'antd/lib/statistic';
 import Card from 'antd/lib/card';
 import moment from 'moment';
 import { getColor } from 'utils/quality-color';
+import { QualityReport, Task } from 'cvat-core-wrapper';
+import { useSelector } from 'react-redux';
+import { CombinedState } from 'reducers';
 
-function MeanQuality(): JSX.Element {
+interface Props {
+    task: Task;
+}
+
+function MeanQuality(props: Props): JSX.Element {
+    const { task } = props;
     const data = {
         lastUpdatedTime: moment().fromNow(),
         summary: {
             meanAccuracy: 85,
         },
     };
+    const tasksReports: QualityReport[] = useSelector((state: CombinedState) => state.analytics.quality.tasksReports);
+    const taskReport = tasksReports.find((report: QualityReport) => report.taskId === task.id);
+    console.log(taskReport?.summary.meanAccuracy);
+
     return (
         <Col span={8}>
             <Card className='cvat-task-mean-annotaion-quality'>

@@ -13,6 +13,7 @@ import {
     SerializedAbout, SerializedShare, SerializedUserAgreement,
     SerializedRegister, JobsFilter, SerializedJob,
 } from 'server-response-types';
+import QualityReport from 'quality-report';
 import { Storage } from './storage';
 import { StorageLocation, WebhookSourceType } from './enums';
 import { isEmail } from './common';
@@ -2156,6 +2157,25 @@ async function receiveWebhookEvents(type: WebhookSourceType): Promise<string[]> 
     }
 }
 
+async function getQualityReports(filter, pageSize = 10): Promise<QualityReport[]> {
+    const params = enableOrganization();
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.get(`${backendAPI}/quality_reports`, {
+            params: {
+                ...params,
+                ...filter,
+                page_size: pageSize,
+            },
+        });
+
+        return response.data.results;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
 export default Object.freeze({
     server: Object.freeze({
         setAuthData,
@@ -2299,5 +2319,11 @@ export default Object.freeze({
         delete: deleteWebhook,
         ping: pingWebhook,
         events: receiveWebhookEvents,
+    }),
+
+    analytics: Object.freeze({
+        quality: Object.freeze({
+            get: getQualityReports,
+        }),
     }),
 });
