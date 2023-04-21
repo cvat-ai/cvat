@@ -74,12 +74,20 @@ class MediaCache:
 
         return item
 
+    def get_chunk_context_images(self, db_data, chunk_number, quality):
+        item = self._get_or_set_cache_item(
+            key=f'context_image_{db_data.id}_{chunk_number}',
+            create_function=lambda: self._prepare_chunk_buff(db_data, quality, chunk_number, get_context_images=True),
+        )
+
+        return item
+
     @staticmethod
     def _get_frame_provider():
         from cvat.apps.engine.frame_provider import FrameProvider # TODO: remove circular dependency
         return FrameProvider
 
-    def _prepare_chunk_buff(self, db_data, quality, chunk_number):
+    def _prepare_chunk_buff(self, db_data, quality, chunk_number, get_context_images=False):
         FrameProvider = self._get_frame_provider()
 
         writer_classes = {
@@ -131,18 +139,19 @@ class MediaCache:
                 }
                 cloud_storage_instance = get_cloud_storage_instance(cloud_provider=db_cloud_storage.provider_type, **details)
                 for item in reader:
-                    file_name = f"{item['name']}{item['extension']}"
-                    with NamedTemporaryFile(mode='w+b', prefix='cvat', suffix=file_name.replace(os.path.sep, '#'), delete=False) as temp_file:
-                        source_path = temp_file.name
-                        buf = cloud_storage_instance.download_fileobj(file_name)
-                        temp_file.write(buf.getvalue())
-                        temp_file.flush()
-                        checksum = item.get('checksum', None)
-                        if not checksum:
-                            slogger.cloud_storage[db_cloud_storage.id].warning('A manifest file does not contain checksum for image {}'.format(item.get('name')))
-                        if checksum and not md5_hash(source_path) == checksum:
-                            slogger.cloud_storage[db_cloud_storage.id].warning('Hash sums of files {} do not match'.format(file_name))
-                        images.append((source_path, source_path, None))
+                    file_name_list = [f"{item['name']}{item['extension']}"] if not get_context_images else item['meta']['related_images']
+                    for file_name in file_name_list:
+                        with NamedTemporaryFile(mode='w+b', prefix='cvat', suffix=file_name.replace(os.path.sep, '#'), delete=False) as temp_file:
+                            source_path = temp_file.name
+                            buf = cloud_storage_instance.download_fileobj(file_name)
+                            temp_file.write(buf.getvalue())
+                            temp_file.flush()
+                            checksum = item.get('checksum', None)
+                            if not checksum:
+                                slogger.cloud_storage[db_cloud_storage.id].warning('A manifest file does not contain checksum for image {}'.format(item.get('name')))
+                            if checksum and not md5_hash(source_path) == checksum:
+                                slogger.cloud_storage[db_cloud_storage.id].warning('Hash sums of files {} do not match'.format(file_name))
+                            images.append((source_path, source_path, None))
             else:
                 for item in reader:
                     source_path = os.path.join(upload_dir, f"{item['name']}{item['extension']}")

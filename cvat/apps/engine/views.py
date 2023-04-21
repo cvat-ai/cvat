@@ -610,10 +610,14 @@ class DataChunkGetter:
             elif self.type == 'context_image':
                 if start <= self.number <= stop:
                     cache = MediaCache(self.dimension)
-                    buff, mime = cache.get_frame_context_images(db_data, self.number)
+                    if db_data.cloud_storage:
+                        buff, mime = cache.get_chunk_context_images(db_data, self.number, self.quality)
+                    else:
+                        buff, mime = cache.get_frame_context_images(db_data, self.number)
                     if not buff:
                         return HttpResponseNotFound()
-                    return HttpResponse(io.BytesIO(buff), content_type=mime)
+                    buff_ret = io.BytesIO(buff) if not db_data.cloud_storage else buff.getvalue()
+                    return HttpResponse(buff_ret, content_type=mime)
                 raise ValidationError('The frame number should be in ' +
                     f'[{start}, {stop}] range')
             else:
