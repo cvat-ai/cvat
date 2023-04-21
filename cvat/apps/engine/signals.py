@@ -10,6 +10,9 @@ from django.dispatch import receiver
 from .models import (CloudStorage, Data, Job, Profile, Project,
     StatusChoice, Task)
 
+from cvat.apps.engine import quality_control as qc
+
+
 # TODO: need to log any problems reported by shutil.rmtree when the new
 # analytics feature is available. Now the log system can write information
 # into a file inside removed directory.
@@ -32,6 +35,12 @@ def __save_job_handler(instance, created, **kwargs):
     if status != db_task.status:
         db_task.status = status
         db_task.save()
+
+@receiver(post_save, sender=Job,
+    dispatch_uid=__name__ + ".save_job_handler-update_quality_stats")
+def __save_job_handler__update_quality_metrics(instance, created, **kwargs):
+    qc.QueueJobManager().schedule_quality_check_job(instance.segment.task)
+
 
 @receiver(post_save, sender=User,
     dispatch_uid=__name__ + ".save_user_handler")

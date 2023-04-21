@@ -1940,6 +1940,15 @@ class QualityReportSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     def to_representation(self, instance):
-        instance.summary = instance.data["intersection_results"]
-        instance.parameters = instance.data["parameters"]
+        instance.summary = dict(
+            frame_count=0,
+            frame_share_percent=0,
+            conflicts_count=0,
+            valid_count=0,
+            ds_count=0,
+            gt_count=0,
+        )
+        instance.parameters = dict(
+            iou_threshold=0
+        )
         return super().to_representation(instance)

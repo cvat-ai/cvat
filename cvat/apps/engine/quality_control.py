@@ -2,10 +2,13 @@
 #
 # SPDX-License-Identifier: MIT
 
+from datetime import datetime, timedelta
 from typing import Hashable, Iterator, List, Optional, Union
 
 from attrs import asdict, define
 import datumaro as dm
+from django.conf import settings
+import django_rq
 from django.db import transaction
 
 from cvat.apps.dataset_manager.task import JobAnnotation
@@ -14,8 +17,8 @@ from cvat.apps.dataset_manager.bindings import (CommonData, CvatToDmAnnotationCo
 from cvat.apps.dataset_manager.formats.registry import dm_env
 from cvat.apps.profiler import silk_profile
 
-from .models import (QualityReport, AnnotationConflict,
-    AnnotationConflictType, Job, MismatchingAnnotationKind)
+from .models import (JobType, QualityReport, AnnotationConflict,
+    AnnotationConflictType, Job, MismatchingAnnotationKind, Task)
 
 
 @define(kw_only=True)
@@ -344,3 +347,108 @@ def find_gt_conflicts(
         gt_job_last_updated=gt_job.updated_date,
     )
     return _save_report_to_db(report, conflicts)
+
+
+class QueueJobManager:
+    TASK_QUALITY_CHECK_JOB_DELAY = timedelta(hours=1)
+    _QUEUE_JOB_PREFIX = "update-quality-stats-task-"
+
+    def _get_scheduler(self):
+        return django_rq.get_scheduler(settings.CVAT_QUEUES.QUALITY_REPORTS.value)
+
+    def _make_initial_queue_job_id(self, task: Task) -> str:
+        return f'{self._QUEUE_JOB_PREFIX}{task.id}-initial'
+
+    def _make_regular_queue_job_id(self, task: Task, start_time: datetime) -> str:
+        return f'{self._QUEUE_JOB_PREFIX}{task.id}-{start_time.timestamp()}'
+
+    def _get_last_report_time(self, task: Task) -> Optional[datetime]:
+        report = QualityReport.objects.filter(task=task).order_by('-created_date').first()
+        if report:
+            return report.created_date
+        return None
+
+    def schedule_quality_check_job(self, task: Task):
+        # This function schedules a report computing job in the queue
+        # The queue work algorithm is lock-free. It has and should keep the following properties:
+        # - job names are stable between potential writers
+        # - if multiple simultaneous writes can happen, the objects written must be the same
+        # - once a job is created, it can only be updated by the scheduler and the handling worker
+
+        if not task.gt_job:
+            # Nothing to compute
+            return
+
+        last_update_time = self._get_last_report_time(task)
+        if last_update_time is None:
+            # Report has never been computed
+            queue_job_id = self._make_initial_queue_job_id(task)
+        elif (
+            next_update_time := last_update_time + self.TASK_QUALITY_CHECK_JOB_DELAY
+        ) <= task.updated_date:
+            queue_job_id = self._make_regular_queue_job_id(task, next_update_time)
+        else:
+            queue_job_id = None
+
+        scheduler = self._get_scheduler()
+        if queue_job_id not in scheduler:
+            scheduler.enqueue_at(
+                task.updated_date + self.TASK_QUALITY_CHECK_JOB_DELAY,
+                self._update_task_quality_metrics_callback,
+                kwargs=dict(task_id=task.id),
+                job_id=queue_job_id,
+            )
+
+    @classmethod
+    def _update_task_quality_metrics_callback(cls, task_id: int):
+        with transaction.atomic():
+            # The task could have been deleted during scheduling
+            try:
+                task = Task.objects.prefetch_related('segment__job').get(id=task_id)
+            except Task.DoesNotExist:
+                return
+
+            # The GT job could have been removed during scheduling
+            if not task.gt_job:
+                return
+
+            # TODO: Decide if all the task and job metrics must be updated here
+            # Probably, need to have this:
+            # task updated (the gt job, frame set or labels changed) -> everything is computed
+            # job updated -> job report is computed
+
+            # Preload all the data for computations
+            gt_job = task.gt_job
+            gt_job_data_provider = _JobDataProvider(gt_job)
+
+            jobs = task.segment_set.job_set.filter(type=JobType.NORMAL).all()
+            job_data_providers = { job.id: _JobDataProvider(job) for job in jobs }
+
+        job_reports = {}
+        for job in jobs:
+            job_data_provider = job_data_providers[job.id]
+            comparator = DatasetComparator(job_data_provider, gt_job_data_provider)
+            conflicts = comparator.find_gt_conflicts()
+            report = QualityReport(
+                job=job,
+                job_last_updated=job.updated_date,
+                gt_job_last_updated=gt_job.updated_date,
+            )
+            job_reports[job.id] = (report, conflicts)
+
+        # TODO: is it a separate report (the task dataset can be different from any jobs' dataset
+        # because of frame overlaps) or a combined summary report?
+        task_report = QualityReport()
+        task_conflicts = [AnnotationConflict()]
+
+        with transaction.atomic():
+            # The task could have been deleted
+            try:
+                Task.objects.get(id=task_id)
+            except Task.DoesNotExist:
+                return
+
+            for job_report, job_conflicts in job_reports.values():
+                _save_report_to_db(job_report, job_conflicts)
+
+            _save_report_to_db(task_report, task_conflicts)
