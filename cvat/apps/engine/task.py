@@ -531,6 +531,8 @@ def _create_thread(
                 db_data.storage = models.StorageChoice.LOCAL
             if media_type != 'video':
                 details['sorting_method'] = data['sorting_method']
+            if '.pcd' in source_paths[0]:
+                details['dimension'] = models.DimensionType.DIM_3D
             extractor = MEDIA_TYPES[media_type]['extractor'](**details)
 
     validate_dimension = ValidateDimension()
@@ -564,10 +566,18 @@ def _create_thread(
             dimension=models.DimensionType.DIM_3D,
         )
 
+    if extractor._dimension == models.DimensionType.DIM_3D:
+        db_task.dimension = models.DimensionType.DIM_3D
+
     related_images = {}
     if isinstance(extractor, MEDIA_TYPES['image']['extractor']):
-        extractor.filter(lambda x: not re.search(r'(^|{0})related_images{0}'.format(os.sep), x))
-        related_images = detect_related_images(extractor.absolute_source_paths, upload_dir)
+        if is_data_in_cloud:
+            # Manually generate related_images using manifest file
+            _, content = manifest.get_subset(sorted_media)
+            related_images = {f"{item_content['name']}{item_content['extension']}" : item_content['meta']['related_images'] for item_content in content}
+        else:
+            extractor.filter(lambda x: not re.search(r'(^|{0})related_images{0}'.format(os.sep), x))
+            related_images = detect_related_images(extractor.absolute_source_paths, upload_dir)
 
     # Sort the files
     if (isBackupRestore and (
@@ -755,9 +765,9 @@ def _create_thread(
                         # check mapping
                         if not chunk_path.endswith(f"{properties['name']}{properties['extension']}"):
                             raise Exception('Incorrect file mapping to manifest content')
-                        if db_task.dimension == models.DimensionType.DIM_2D:
+                        try:
                             resolution = (properties['width'], properties['height'])
-                        else:
+                        except KeyError:
                             resolution = extractor.get_image_size(frame_id)
                         img_sizes.append(resolution)
 
@@ -803,7 +813,7 @@ def _create_thread(
         created_images = models.Image.objects.filter(data_id=db_data.id)
 
         db_related_files = [
-            models.RelatedFile(data=image.data, primary_image=image, path=os.path.join(upload_dir, related_file_path))
+            models.RelatedFile(data=image.data, primary_image=image, path=related_file_path if is_data_in_cloud else os.path.join(upload_dir, related_file_path))
             for image in created_images
             for related_file_path in related_images.get(image.path, [])
         ]
