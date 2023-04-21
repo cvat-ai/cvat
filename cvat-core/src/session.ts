@@ -320,6 +320,8 @@ export class Job extends Session {
     public readonly labels: Label[];
     public readonly type: JobType;
     public readonly frameSelectionMethod: JobType;
+    public readonly createdDate: string;
+    public readonly updatedDate: string;
 
     public annotations: {
         get: CallableFunction;
@@ -381,6 +383,8 @@ export class Job extends Session {
             data_chunk_size: undefined,
             bug_tracker: null,
             mode: undefined,
+            created_date: undefined,
+            updated_date: undefined,
         };
 
         const updateTrigger = new FieldUpdateTrigger();
@@ -498,6 +502,12 @@ export class Job extends Session {
                 },
                 bugTracker: {
                     get: () => data.bug_tracker,
+                },
+                createdDate: {
+                    get: () => data.created_date,
+                },
+                updatedDate: {
+                    get: () => data.updated_date,
                 },
                 _updateTrigger: {
                     get: () => updateTrigger,
@@ -732,6 +742,8 @@ export class Task extends Session {
                     type: job.type,
                     start_frame: job.start_frame,
                     stop_frame: job.stop_frame,
+                    created_date: job.created_date,
+                    updated_date: job.updated_date,
 
                     // following fields also returned when doing API request /jobs/<id>
                     // here we know them from task and append to constructor

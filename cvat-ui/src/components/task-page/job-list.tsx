@@ -15,10 +15,12 @@ import Text from 'antd/lib/typography/Text';
 import moment from 'moment';
 import copy from 'copy-to-clipboard';
 
-import { Task, Job, JobType } from 'cvat-core-wrapper';
+import {
+    Task, Job, JobType, User,
+} from 'cvat-core-wrapper';
 import { JobStage } from 'reducers';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import UserSelector, { User } from './user-selector';
+import UserSelector from './user-selector';
 
 interface Props {
     task: Task;

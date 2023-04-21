@@ -30,7 +30,7 @@ function MeanQuality(): JSX.Element {
                     suffix='%'
                 />
                 <div className='cvat-analytics-time-hint'>
-                    <Text>{data.lastUpdatedTime}</Text>
+                    <Text type='secondary'>{data.lastUpdatedTime}</Text>
                 </div>
             </Card>
         </Col>

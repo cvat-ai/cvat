@@ -13,7 +13,7 @@ import Spin from 'antd/lib/spin';
 import Button from 'antd/lib/button';
 import { Task } from 'reducers';
 import { notification } from 'antd';
-import { getCore } from 'cvat-core-wrapper';
+import { Job, getCore } from 'cvat-core-wrapper';
 import { LeftOutlined } from '@ant-design/icons/lib/icons';
 import TaskQualityComponent from './quality/task-quality-component';
 
@@ -26,7 +26,8 @@ function TaskAnalyticsPage(): JSX.Element {
     const history = useHistory();
 
     const id = +useParams<{ id: string }>().id;
-    useEffect((): void => {
+
+    const receieveTask = (): void => {
         if (Number.isInteger(id)) {
             core.tasks.get({ id })
                 .then(([task]: Task[]) => {
@@ -35,7 +36,7 @@ function TaskAnalyticsPage(): JSX.Element {
                     }
                 }).catch((error: Error) => {
                     notification.error({
-                        message: 'Could not fetch requested task from the server',
+                        message: 'Could not receive the requested project from the server',
                         description: error.toString(),
                     });
                 }).finally(() => {
@@ -48,7 +49,26 @@ function TaskAnalyticsPage(): JSX.Element {
             });
             setFetchingTask(false);
         }
+    };
+
+    const onJobUpdate = (job: Job): void => {
+        setFetchingTask(true);
+        job.save().then(() => {
+            receieveTask();
+        }).catch((error: Error) => {
+            notification.error({
+                message: 'Could not update the job',
+                description: error.toString(),
+            });
+        }).finally(() => {
+            setFetchingTask(false);
+        });
+    };
+
+    useEffect((): void => {
+        receieveTask();
     }, []);
+
     return (
         <div className='cvat-task-analytics-page'>
             {
@@ -83,7 +103,7 @@ function TaskAnalyticsPage(): JSX.Element {
                                     )}
                                     key='quality'
                                 >
-                                    <TaskQualityComponent task={taskInstance} />
+                                    <TaskQualityComponent task={taskInstance} onJobUpdate={onJobUpdate} />
                                 </Tabs.TabPane>
                             </Tabs>
                         </Col>
