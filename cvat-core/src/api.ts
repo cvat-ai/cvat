@@ -264,6 +264,14 @@ function build() {
                 return result;
             },
         },
+        analytics: {
+            quality: {
+                async get(filter: any) {
+                    const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.get, filter);
+                    return result;
+                },
+            },
+        },
         classes: {
             User,
             Project: implementProject(Project),
@@ -295,6 +303,7 @@ function build() {
     cvat.enums = Object.freeze(cvat.enums);
     cvat.cloudStorages = Object.freeze(cvat.cloudStorages);
     cvat.organizations = Object.freeze(cvat.organizations);
+    cvat.analytics = Object.freeze(cvat.analytics);
 
     const implemented = Object.freeze(implementAPI(cvat));
     return implemented;

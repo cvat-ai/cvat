@@ -15,6 +15,7 @@ import {
     checkFilter,
     checkExclusiveFields,
     checkObjectType,
+    filterFieldsToSnakeCase,
 } from './common';
 
 import User from './user';
@@ -328,26 +329,24 @@ export default function implementAPI(cvat) {
         });
 
         checkExclusiveFields(filter, ['id', 'projectId'], ['page']);
-        const searchParams = {};
-        for (const key of Object.keys(filter)) {
-            if (['page', 'id', 'filter', 'search', 'sort'].includes(key)) {
-                searchParams[key] = filter[key];
-            }
-        }
 
-        if (filter.projectId) {
-            if (searchParams.filter) {
-                const parsed = JSON.parse(searchParams.filter);
-                searchParams.filter = JSON.stringify({ and: [parsed, { '==': [{ var: 'project_id' }, filter.projectId] }] });
-            } else {
-                searchParams.filter = JSON.stringify({ and: [{ '==': [{ var: 'project_id' }, filter.projectId] }] });
-            }
-        }
+        const searchParams = filterFieldsToSnakeCase(filter, ['projectId']);
 
         const webhooksData = await serverProxy.webhooks.get(searchParams);
         const webhooks = webhooksData.map((webhookData) => new Webhook(webhookData));
         webhooks.count = webhooksData.count;
         return webhooks;
+    };
+
+    cvat.analytics.quality.get.implementation = async (filter) => {
+        checkFilter(filter, {
+            taskId: isInteger,
+            parentId: isInteger,
+        });
+
+        const searchParams = filterFieldsToSnakeCase(filter, ['taskId', 'parentId']);
+        const reportsData = await serverProxy.analytics.quality.get(searchParams);
+        return reportsData;
     };
 
     return cvat;
