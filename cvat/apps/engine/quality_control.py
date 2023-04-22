@@ -3,13 +3,15 @@
 # SPDX-License-Identifier: MIT
 
 from datetime import datetime, timedelta
-from typing import Hashable, Iterator, List, Optional, Union
+import itertools
+from typing import Callable, Hashable, Iterator, List, Optional, Union, cast
 
 from attrs import asdict, define
 import datumaro as dm
 from django.conf import settings
 import django_rq
 from django.db import transaction
+import numpy as np
 
 from cvat.apps.dataset_manager.task import JobAnnotation
 from cvat.apps.dataset_manager.bindings import (CommonData, CvatToDmAnnotationConverter,
@@ -32,7 +34,7 @@ class AnnotationId:
         return asdict(self)
 
 
-class _JobDataProvider:
+class JobDataProvider:
     @transaction.atomic
     def __init__(self, job_id: int) -> None:
         self.job_id = job_id
@@ -119,10 +121,323 @@ def _save_report_to_db(
     return report
 
 
+def OKS(a, b, sigma=None, bbox=None, scale=None, visibility=None):
+    """
+    Object Keypoint Similarity metric.
+    https://cocodataset.org/#keypoints-eval
+    """
+
+    p1 = np.array(a.points).reshape((-1, 2))
+    p2 = np.array(b.points).reshape((-1, 2))
+    if len(p1) != len(p2):
+        return 0
+
+    if visibility is None:
+        visibility = np.ones(len(p1))
+    else:
+        visibility = np.asarray(visibility, dtype=float)
+
+    if not sigma:
+        sigma = 0.1
+    else:
+        assert len(sigma) == len(p1)
+
+    if not scale:
+        if bbox is None:
+            bbox = dm.ops.mean_bbox([a, b])
+        scale = bbox[2] * bbox[3]
+
+    dists = np.linalg.norm(p1 - p2, axis=1)
+    return np.sum(
+        visibility * np.exp(-(dists**2) / (2 * scale * (2 * sigma) ** 2))
+    ) / np.sum(visibility)
+
+
+@define(kw_only=True)
+class _PointsMatcher(dm.ops.PointsMatcher):
+    def distance(self, a, b):
+        a_bbox = self.instance_map[id(a)][1]
+        b_bbox = self.instance_map[id(b)][1]
+        if dm.ops.bbox_iou(a_bbox, b_bbox) <= 0:
+            return 0
+        bbox = dm.ops.mean_bbox([a_bbox, b_bbox])
+        return OKS(
+            a,
+            b,
+            sigma=self.sigma,
+            bbox=bbox,
+            visibility=[v == dm.Points.Visibility.visible for v in a.visibility],
+        )
+
+
 class _DistanceComparator(dm.ops.DistanceComparator):
+    def __init__(
+        self,
+        categories: dm.CategoriesInfo,
+        *,
+        included_ann_types: Optional[List[dm.AnnotationType]] = None,
+        return_distances: bool = False,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.categories = categories
+        self._skeleton_info = {}
+        self.included_ann_types = included_ann_types
+        self.return_distances = return_distances
+
+    def _match_ann_type(self, t, *args):
+        if t not in self.included_ann_types:
+            return None
+
+        # pylint: disable=no-value-for-parameter
+        if t == dm.AnnotationType.label:
+            return self.match_labels(*args)
+        elif t == dm.AnnotationType.bbox:
+            return self.match_boxes(*args)
+        elif t == dm.AnnotationType.polygon:
+            return self.match_polygons(*args)
+        elif t == dm.AnnotationType.mask:
+            return self.match_masks(*args)
+        elif t == dm.AnnotationType.points:
+            return self.match_points(*args)
+        elif t == dm.AnnotationType.skeleton:
+            return self.match_skeletons(*args)
+        elif t == dm.AnnotationType.polyline:
+            return self.match_lines(*args)
+        # pylint: enable=no-value-for-parameter
+        else:
+            return None
+
+    def _match_segments(self, t, item_a, item_b, *,
+        distance: Callable = dm.ops.segment_iou
+    ):
+        a_objs = self._get_ann_type(t, item_a)
+        b_objs = self._get_ann_type(t, item_b)
+        if not a_objs and not b_objs:
+            return [], [], [], []
+
+        if self.return_distances:
+            distance, distances = self._make_memoizing_distance(distance)
+
+        returned_values = dm.ops.match_segments(a_objs, b_objs,
+            distance=distance, dist_thresh=self.iou_threshold)
+
+        if self.return_distances:
+            returned_values = returned_values + (distances, )
+
+        return returned_values
+
+    def match_boxes(self, item_a, item_b):
+        return self._match_segments(dm.AnnotationType.bbox, item_a, item_b)
+
+    def match_polygons(self, item_a, item_b):
+        return self._match_segments(dm.AnnotationType.polygon, item_a, item_b)
+
+    def match_masks(self, item_a, item_b):
+        return self._match_segments(dm.AnnotationType.mask, item_a, item_b)
+
+    def match_lines(self, item_a, item_b):
+        matcher = dm.ops.LineMatcher()
+        return self._match_segments(dm.AnnotationType.polyline, item_a, item_b,
+            distance=matcher.distance)
+
+    def match_points(self, item_a, item_b):
+        a_points = self._get_ann_type(dm.AnnotationType.points, item_a)
+        b_points = self._get_ann_type(dm.AnnotationType.points, item_b)
+        if not a_points and not b_points:
+            return [], [], [], []
+
+        instance_map = {}
+        for s in [item_a.annotations, item_b.annotations]:
+            s_instances = dm.ops.find_instances(s)
+            for instance_group in s_instances:
+                instance_bbox = dm.ops.max_bbox(
+                    a.get_bbox() if isinstance(a, dm.Skeleton) else a
+                    for a in instance_group
+                    if hasattr(a, 'get_bbox')
+                )
+
+                for ann in instance_group:
+                    instance_map[id(ann)] = [instance_group, instance_bbox]
+        matcher = _PointsMatcher(instance_map=instance_map)
+
+        distance = matcher.distance
+
+        if self.return_distances:
+            distance, distances = self._make_memoizing_distance(distance)
+
+        returned_values = dm.ops.match_segments(
+            a_points,
+            b_points,
+            dist_thresh=self.iou_threshold,
+            distance=distance,
+        )
+
+        if self.return_distances:
+            returned_values = returned_values + (distances, )
+
+        return returned_values
+
+    def _get_skeleton_info(self, skeleton_label_id: int):
+        label_cat = cast(dm.LabelCategories, self.categories[dm.AnnotationType.label])
+        skeleton_info = self._skeleton_info.get(skeleton_label_id)
+
+        if skeleton_info is None:
+            skeleton_label_name = label_cat[skeleton_label_id].name
+
+            # Build a sorted list of sublabels to arrange skeleton points during comparison
+            skeleton_info = sorted(
+                idx
+                for idx, label in enumerate(label_cat)
+                if label.parent == skeleton_label_name
+            )
+            self._skeleton_info[skeleton_label_id] = skeleton_info
+
+        return skeleton_info
+
+    def match_skeletons(self, item_a, item_b):
+        a_skeletons = self._get_ann_type(dm.AnnotationType.skeleton, item_a)
+        b_skeletons = self._get_ann_type(dm.AnnotationType.skeleton, item_b)
+        if not a_skeletons and not b_skeletons:
+            return [], [], [], []
+
+        # Convert skeletons to point lists for comparison
+        # This is required to compute correct per-instance distance
+        # It is assumed that labels are the same in the datasets
+        skeleton_infos = {}
+        points_map = {}
+        skeleton_map = {}
+        a_points = []
+        b_points = []
+        for source, source_points in [(a_skeletons, a_points), (b_skeletons, b_points)]:
+            for skeleton in source:
+                skeleton_info = skeleton_infos.setdefault(
+                    skeleton.label, self._get_skeleton_info(skeleton.label)
+                )
+
+                # Merge skeleton points into a single list
+                # The list is ordered by skeleton_info
+                skeleton_points = [
+                    next((p for p in skeleton.elements if p.label == sublabel), None)
+                    for sublabel in skeleton_info
+                ]
+
+                # Build a single Points object for further comparisons
+                merged_points = dm.Points(
+                    points=list(
+                        itertools.chain.from_iterable(
+                            p.points if p else [0, 0] for p in skeleton_points
+                        )
+                    ),
+                    visibility=list(
+                        itertools.chain.from_iterable(
+                            p.visibility if p else [dm.Points.Visibility.absent]
+                            for p in skeleton_points
+                        )
+                    ),
+                    label=skeleton.label
+                    # no per-point attributes currently in CVAT
+                )
+
+                points_map[id(merged_points)] = skeleton
+                skeleton_map[id(skeleton)] = merged_points
+                source_points.append(merged_points)
+
+        instance_map = {}
+        for source in [item_a.annotations, item_b.annotations]:
+            for instance_group in dm.ops.find_instances(source):
+                instance_bbox = dm.ops.max_bbox(
+                    a.get_bbox() if isinstance(a, dm.Skeleton) else a
+                    for a in instance_group
+                    if hasattr(a, 'get_bbox')
+                )
+
+                instance_group = [
+                    skeleton_map[id(a)] if isinstance(a, dm.Skeleton) else a
+                    for a in instance_group
+                ]
+                for ann in instance_group:
+                    instance_map[id(ann)] = [instance_group, instance_bbox]
+
+        matcher = _PointsMatcher(instance_map=instance_map)
+
+        distance = matcher.distance
+
+        if self.return_distances:
+            distance, distances = self._make_memoizing_distance(distance)
+
+        matched, mismatched, a_extra, b_extra = dm.ops.match_segments(
+            a_points,
+            b_points,
+            dist_thresh=self.iou_threshold,
+            distance=distance,
+        )
+
+        matched = [(points_map[id(p_a)], points_map[id(p_b)]) for (p_a, p_b) in matched]
+        mismatched = [
+            (points_map[id(p_a)], points_map[id(p_b)]) for (p_a, p_b) in mismatched
+        ]
+        a_extra = [points_map[id(p_a)] for p_a in a_extra]
+        b_extra = [points_map[id(p_b)] for p_b in b_extra]
+
+        # Map points back to skeletons
+        if self.return_distances:
+            for (p_a_id, p_b_id) in list(distances.keys()):
+                dist = distances.pop((p_a_id, p_b_id))
+                distances[(
+                    id(points_map[p_a_id]),
+                    id(points_map[p_b_id])
+                )] = dist
+
+        returned_values = (matched, mismatched, a_extra, b_extra)
+
+        if self.return_distances:
+            returned_values = returned_values + (distances, )
+
+        return returned_values
+
+    @classmethod
+    def _make_memoizing_distance(cls, distance_function):
+        distances = {}
+        notfound = object()
+
+        def memoizing_distance(a, b):
+            key = (id(a), id(b))
+            dist = distances.get(key, notfound)
+
+            if dist is notfound:
+                dist = distance_function(a, b)
+                distances[key] = dist
+
+            return dist
+
+        return memoizing_distance, distances
+
+class _Comparator:
+    def __init__(self, categories: dm.CategoriesInfo):
+        self.ignored_attrs = [
+            "track_id",  # changes from task to task, can't be defined manually with the same name
+            "keyframe",  # indicates the way annotation obtained, meaningless to compare
+            "z_order",  # TODO: compare relative or 'visible' z_order
+            "group",  # TODO: changes from task to task. But must be compared for existence
+        ]
+        self.included_ann_types = [
+            dm.AnnotationType.bbox,
+            dm.AnnotationType.mask,
+            dm.AnnotationType.points,
+            dm.AnnotationType.polygon,
+            dm.AnnotationType.polyline,
+            dm.AnnotationType.skeleton,
+        ]
+        self._annotation_comparator = _DistanceComparator(
+            categories, included_ann_types=self.included_ann_types, return_distances=False,
+        )
+
     def match_attrs(self, ann_a: dm.Annotation, ann_b: dm.Annotation):
         a_attrs = ann_a.attributes
         b_attrs = ann_b.attributes
+
+        keys_to_match = (a_attrs.keys() | b_attrs.keys()).difference(self.ignored_attrs)
 
         matches = []
         mismatches = []
@@ -131,7 +446,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
 
         notfound = object()
 
-        for k in a_attrs.keys() | b_attrs.keys():
+        for k in keys_to_match:
             a_attr = a_attrs.get(k, notfound)
             b_attr = b_attrs.get(k, notfound)
 
@@ -147,46 +462,22 @@ class _DistanceComparator(dm.ops.DistanceComparator):
         return matches, mismatches, a_extra, b_extra
 
     def match_annotations(self, item_a, item_b):
-        return {t: self._match_ann_type(t, item_a, item_b) for t in dm.AnnotationType}
-
-    def _match_ann_type(self, t, *args):
-        # pylint: disable=no-value-for-parameter
-        if t == dm.AnnotationType.label:
-            return self.match_labels(*args)
-        elif t == dm.AnnotationType.bbox:
-            return self.match_boxes(*args)
-        elif t == dm.AnnotationType.polygon:
-            return self.match_polygons(*args)
-        elif t == dm.AnnotationType.mask:
-            return self.match_masks(*args)
-        elif t == dm.AnnotationType.points:
-            # TODO: test and fix point comparison
-            a_points = self._get_ann_type(dm.AnnotationType.points, args[0])
-            b_points = self._get_ann_type(dm.AnnotationType.points, args[1])
-            if not a_points and not b_points:
-                return [], [], [], []
-            return self.match_points(*args)
-        elif t == dm.AnnotationType.polyline:
-            return self.match_lines(*args)
-        # pylint: enable=no-value-for-parameter
-        else:
-            return None
+        return self._annotation_comparator.match_annotations(item_a, item_b)
 
 class DatasetComparator:
     def __init__(self,
-        this_job_data_provider: _JobDataProvider,
-        gt_job_data_provider: _JobDataProvider
+        this_job_data_provider: JobDataProvider,
+        gt_job_data_provider: JobDataProvider
     ) -> None:
         self._this_job_data_provider = this_job_data_provider
         self._gt_job_data_provider = gt_job_data_provider
-        self._comparator = _DistanceComparator()
+        self._this_job_dataset = self._this_job_data_provider.dm_dataset
+        self._gt_job_dataset = self._gt_job_data_provider.dm_dataset
+        self._comparator = _Comparator(self._gt_job_dataset.categories())
 
     def _iterate_datasets(self) -> Iterator:
-        this_job_dataset = self._this_job_data_provider.dm_dataset
-        gt_job_dataset = self._gt_job_data_provider.dm_dataset
-
-        for gt_item in gt_job_dataset:
-            this_item = this_job_dataset.get(gt_item.id)
+        for gt_item in self._gt_job_dataset:
+            this_item = self._this_job_dataset.get(gt_item.id)
             if not this_item:
                 continue # we need to compare only intersecting frames
 
@@ -328,12 +619,37 @@ class DatasetComparator:
         return conflicts
 
 
+def _create_report(this_job: Job, gt_job: Job, conflicts: List[AnnotationConflict]):
+    report = QualityReport(
+        job=this_job,
+        target_last_updated=this_job.updated_date,
+        gt_last_updated=gt_job.updated_date,
+
+        # TODO: refactor, add real data
+        data=dict(
+            parameters=dict(),
+
+            intersection_results=dict(
+                frame_count=0,
+                frame_share_percent=0,
+                frames=[],
+
+                error_count=len(conflicts),
+                mean_error_count=0,
+                mean_accuracy=0,
+            )
+        )
+    )
+
+    return report
+
+
 @silk_profile()
 def find_gt_conflicts(
     this_job: Job, gt_job: Job, *, frame_id: Optional[int] = None
 ) -> QualityReport:
-    this_job_data_provider = _JobDataProvider(this_job.pk)
-    gt_job_data_provider = _JobDataProvider(gt_job.pk)
+    this_job_data_provider = JobDataProvider(this_job.pk)
+    gt_job_data_provider = JobDataProvider(gt_job.pk)
 
     comparator = DatasetComparator(this_job_data_provider, gt_job_data_provider)
     if frame_id is not None:
@@ -341,17 +657,13 @@ def find_gt_conflicts(
     else:
         conflicts = comparator.find_gt_conflicts()
 
-    report = QualityReport(
-        job=this_job,
-        job_last_updated=this_job.updated_date,
-        gt_job_last_updated=gt_job.updated_date,
-    )
+    report = _create_report(this_job, gt_job, conflicts)
     return _save_report_to_db(report, conflicts)
 
 
 class QueueJobManager:
-    TASK_QUALITY_CHECK_JOB_DELAY = timedelta(hours=1)
-    _QUEUE_JOB_PREFIX = "update-quality-stats-task-"
+    TASK_QUALITY_CHECK_JOB_DELAY = timedelta(seconds=5) # TODO: 1h
+    _QUEUE_JOB_PREFIX = "update-quality-metrics-task-"
 
     def _get_scheduler(self):
         return django_rq.get_scheduler(settings.CVAT_QUEUES.QUALITY_REPORTS.value)
@@ -395,16 +707,16 @@ class QueueJobManager:
             scheduler.enqueue_at(
                 task.updated_date + self.TASK_QUALITY_CHECK_JOB_DELAY,
                 self._update_task_quality_metrics_callback,
-                kwargs=dict(task_id=task.id),
+                task_id=task.id,
                 job_id=queue_job_id,
             )
 
     @classmethod
-    def _update_task_quality_metrics_callback(cls, task_id: int):
+    def _update_task_quality_metrics_callback(cls, *, task_id: int):
         with transaction.atomic():
             # The task could have been deleted during scheduling
             try:
-                task = Task.objects.prefetch_related('segment__job').get(id=task_id)
+                task = Task.objects.prefetch_related('segment_set__job_set').get(id=task_id)
             except Task.DoesNotExist:
                 return
 
@@ -412,37 +724,55 @@ class QueueJobManager:
             if not task.gt_job:
                 return
 
-            # TODO: Decide if all the task and job metrics must be updated here
-            # Probably, need to have this:
-            # task updated (the gt job, frame set or labels changed) -> everything is computed
-            # job updated -> job report is computed
+            # TODO: Probably, can be optimized to this:
+            # - task updated (the gt job, frame set or labels changed) -> everything is computed
+            # - job updated -> job report is computed
+            #   old reports can be reused in this case (need to add M-1 relationship in reports)
 
-            # Preload all the data for computations
+            # Preload all the data for the computations
             gt_job = task.gt_job
-            gt_job_data_provider = _JobDataProvider(gt_job)
+            gt_job_data_provider = JobDataProvider(gt_job.id)
 
-            jobs = task.segment_set.job_set.filter(type=JobType.NORMAL).all()
-            job_data_providers = { job.id: _JobDataProvider(job) for job in jobs }
+            jobs = [
+                s.job_set.first()
+                for s in task.segment_set.filter(job__type=JobType.NORMAL).all()
+            ]
+            job_data_providers = { job.id: JobDataProvider(job.id) for job in jobs }
 
         job_reports = {}
         for job in jobs:
             job_data_provider = job_data_providers[job.id]
             comparator = DatasetComparator(job_data_provider, gt_job_data_provider)
             conflicts = comparator.find_gt_conflicts()
-            report = QualityReport(
-                job=job,
-                job_last_updated=job.updated_date,
-                gt_job_last_updated=gt_job.updated_date,
-            )
+            report = _create_report(job, gt_job, conflicts)
             job_reports[job.id] = (report, conflicts)
 
         # TODO: is it a separate report (the task dataset can be different from any jobs' dataset
         # because of frame overlaps) or a combined summary report?
-        task_report = QualityReport()
-        task_conflicts = [AnnotationConflict()]
+        task_report = QualityReport(
+            task=task,
+            target_last_updated=task.updated_date,
+            gt_last_updated=gt_job.updated_date,
+
+            # TODO: refactor, add real data
+            data=dict(
+                parameters=dict(),
+
+                intersection_results=dict(
+                    frame_count=0,
+                    frame_share_percent=0,
+                    frames=[],
+
+                    error_count=len(conflicts),
+                    mean_error_count=0,
+                    mean_accuracy=0,
+                )
+            )
+        )
+        task_conflicts = []
 
         with transaction.atomic():
-            # The task could have been deleted
+            # The task could have been deleted during processing
             try:
                 Task.objects.get(id=task_id)
             except Task.DoesNotExist:

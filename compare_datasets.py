@@ -15,12 +15,7 @@ from typing import Any, Callable, Dict, List, Optional, cast
 import datumaro as dm
 import numpy as np
 from attrs import asdict, define
-from datumaro.components.annotation import (AnnotationType, Bbox, Label,
-                                            LabelCategories, Points, Polygon,
-                                            PolyLine, Skeleton)
-from datumaro.components.dataset import DatasetItem
-from datumaro.components.extractor import (DEFAULT_SUBSET_NAME, Extractor,
-                                           Importer)
+from datumaro.components.extractor import DEFAULT_SUBSET_NAME
 from datumaro.util.image import Image
 from defusedxml import ElementTree
 from scipy.stats import gmean
@@ -34,7 +29,7 @@ class CvatPath:
     BUILTIN_ATTRS = {"occluded", "outside", "keyframe", "track_id"}
 
 
-class CvatExtractor(Extractor):
+class CvatExtractor(dm.Extractor):
     _SUPPORTED_SHAPES = ("box", "polygon", "polyline", "points", "skeleton")
 
     def __init__(self, path, subsets=None):
@@ -96,7 +91,7 @@ class CvatExtractor(Extractor):
             for file in sorted(glob(image_dir), key=osp.basename):
                 name, ext = osp.splitext(osp.basename(file))
                 if ext.lower() in CvatPath.MEDIA_EXTS:
-                    items[(subset, name)] = DatasetItem(
+                    items[(subset, name)] = dm.DatasetItem(
                         id=name,
                         annotations=[],
                         image=Image(path=file),
@@ -252,14 +247,14 @@ class CvatExtractor(Extractor):
                             shape_element["points"].extend(map(float, pair.split(",")))
 
                     if el.tag == "points" and el.attrib.get("occluded") == "1":
-                        shape_element["visibility"] = [Points.Visibility.hidden] * (
+                        shape_element["visibility"] = [dm.Points.Visibility.hidden] * (
                             len(shape_element["points"]) // 2
                         )
                     else:
                         shape_element["occluded"] = el.attrib.get("occluded") == "1"
 
                     if el.tag == "points" and el.attrib.get("outside") == "1":
-                        shape_element["visibility"] = [Points.Visibility.absent] * (
+                        shape_element["visibility"] = [dm.Points.Visibility.absent] * (
                             len(shape_element["points"]) // 2
                         )
                     else:
@@ -503,7 +498,7 @@ class CvatExtractor(Extractor):
             common_attrs.append("outside")
             common_attrs.append("track_id")
 
-        label_cat = LabelCategories(attributes=common_attrs)
+        label_cat = dm.LabelCategories(attributes=common_attrs)
         attribute_types = {}
         for label, params in labels.items():
             attrs = {v["name"]: v for v in params["attributes"]}
@@ -517,7 +512,7 @@ class CvatExtractor(Extractor):
             for attr_name, attr_params in attrs.items():
                 attribute_types[attr_name] = attr_params["input_type"]
 
-        categories[AnnotationType.label] = label_cat
+        categories[dm.AnnotationType.label] = label_cat
         return categories, tasks_info, attribute_types
 
     @classmethod
@@ -526,7 +521,7 @@ class CvatExtractor(Extractor):
         ann_type = ann["type"]
 
         attributes = ann.get("attributes") or {}
-        if "occluded" in categories[AnnotationType.label].attributes:
+        if "occluded" in categories[dm.AnnotationType.label].attributes:
             attributes["occluded"] = ann.get("occluded", False)
         if "outside" in ann:
             attributes["outside"] = ann["outside"]
@@ -540,7 +535,7 @@ class CvatExtractor(Extractor):
         group = ann.get("group")
 
         label = ann.get("label")
-        label_id = categories[AnnotationType.label].find(
+        label_id = categories[dm.AnnotationType.label].find(
             label, parent=parent_label or ""
         )[0]
         if label_id is None:
@@ -553,7 +548,7 @@ class CvatExtractor(Extractor):
         points = ann.get("points", [])
 
         if ann_type == "polyline":
-            return PolyLine(
+            return dm.PolyLine(
                 points,
                 label=label_id,
                 z_order=z_order,
@@ -563,7 +558,7 @@ class CvatExtractor(Extractor):
             )
 
         elif ann_type == "polygon":
-            return Polygon(
+            return dm.Polygon(
                 points,
                 label=label_id,
                 z_order=z_order,
@@ -574,7 +569,7 @@ class CvatExtractor(Extractor):
 
         elif ann_type == "points":
             visibility = ann.get("visibility", None)
-            return Points(
+            return dm.Points(
                 points,
                 visibility,
                 label=label_id,
@@ -587,7 +582,7 @@ class CvatExtractor(Extractor):
         elif ann_type == "box":
             x, y = points[0], points[1]
             w, h = points[2] - x, points[3] - y
-            return Bbox(
+            return dm.Bbox(
                 x,
                 y,
                 w,
@@ -608,7 +603,7 @@ class CvatExtractor(Extractor):
                     )
                 )
 
-            return Skeleton(
+            return dm.Skeleton(
                 elements,
                 label=label_id,
                 z_order=z_order,
@@ -623,10 +618,10 @@ class CvatExtractor(Extractor):
     @classmethod
     def _parse_tag_ann(cls, ann, categories):
         label = ann.get("label")
-        label_id = categories[AnnotationType.label].find(label)[0]
+        label_id = categories[dm.AnnotationType.label].find(label)[0]
         group = ann.get("group")
         attributes = ann.get("attributes")
-        return Label(label_id, attributes=attributes, group=group)
+        return dm.Label(label_id, attributes=attributes, group=group)
 
     def _load_items(self, parsed, image_items):
         for (subset, frame_id), item_desc in parsed.items():
@@ -641,7 +636,7 @@ class CvatExtractor(Extractor):
                 image = Image(path=image, size=tuple(map(int, image_size)))
             di = image_items.get(
                 (subset, osp.splitext(name)[0]),
-                DatasetItem(
+                dm.DatasetItem(
                     id=name,
                     annotations=[],
                 ),
@@ -658,7 +653,7 @@ dm_env = dm.Environment()
 dm_env.extractors.register("cvat", CvatExtractor)
 
 
-class CvatImporter(Importer):
+class CvatImporter(dm.Importer):
     @classmethod
     def find_sources(cls, path):
         return cls._find_sources_recursive(path, ".xml", "cvat")
@@ -840,32 +835,37 @@ class _DistanceComparator(dm.ops.DistanceComparator):
         return returned_values
 
     def match_boxes(self, item_a, item_b):
-        return self._match_segments(AnnotationType.bbox, item_a, item_b)
+        return self._match_segments(dm.AnnotationType.bbox, item_a, item_b)
 
     def match_polygons(self, item_a, item_b):
-        return self._match_segments(AnnotationType.polygon, item_a, item_b)
+        return self._match_segments(dm.AnnotationType.polygon, item_a, item_b)
 
     def match_masks(self, item_a, item_b):
-        return self._match_segments(AnnotationType.mask, item_a, item_b)
+        return self._match_segments(dm.AnnotationType.mask, item_a, item_b)
 
     def match_lines(self, item_a, item_b):
         matcher = dm.ops.LineMatcher()
-        return self._match_segments(AnnotationType.polyline, item_a, item_b,
+        return self._match_segments(dm.AnnotationType.polyline, item_a, item_b,
             distance=matcher.distance)
 
     def match_points(self, item_a, item_b):
-        a_points = self._get_ann_type(AnnotationType.points, item_a)
-        b_points = self._get_ann_type(AnnotationType.points, item_b)
+        a_points = self._get_ann_type(dm.AnnotationType.points, item_a)
+        b_points = self._get_ann_type(dm.AnnotationType.points, item_b)
         if not a_points and not b_points:
             return [], [], [], []
 
         instance_map = {}
         for s in [item_a.annotations, item_b.annotations]:
             s_instances = dm.ops.find_instances(s)
-            for inst in s_instances:
-                inst_bbox = dm.ops.max_bbox(inst)
-                for ann in inst:
-                    instance_map[id(ann)] = [inst, inst_bbox]
+            for instance_group in s_instances:
+                instance_bbox = dm.ops.max_bbox(
+                    a.get_bbox() if isinstance(a, dm.Skeleton) else a
+                    for a in instance_group
+                    if hasattr(a, 'get_bbox')
+                )
+
+                for ann in instance_group:
+                    instance_map[id(ann)] = [instance_group, instance_bbox]
         matcher = _PointsMatcher(instance_map=instance_map)
 
         distance = matcher.distance

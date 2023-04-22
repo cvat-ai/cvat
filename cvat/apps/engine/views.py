@@ -7,7 +7,6 @@ import io
 import os
 import os.path as osp
 import textwrap
-from typing import cast
 import pytz
 import traceback
 from datetime import datetime
@@ -1667,8 +1666,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         simple_filters=None, filter_fields=None, search_fields=None,
         pagination_class=None, ordering_fields=None)
     def conflicts(self, request, pk):
-        # TODO: add automatic type inference to get_object
-        this_job = cast(Job, self.get_object()) # call check_object_permissions as well
+        this_job = Job.objects.get(pk=pk) # call check_object_permissions as well
 
         gt_job = this_job.segment.task.gt_job
         if not gt_job:
@@ -2283,7 +2281,7 @@ class QualityReportViewSet(viewsets.GenericViewSet,
     mixins.ListModelMixin, mixins.RetrieveModelMixin
 ):
     queryset = QualityReport.objects.prefetch_related(
-        'job__segment__task'
+        'job__segment__task',
         'task',
         'task__project'
     ).all()

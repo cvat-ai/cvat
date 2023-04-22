@@ -1,4 +1,5 @@
 # Copyright (C) 2019-2022 Intel Corporation
+# Copyright (C) 2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 import shutil
@@ -35,12 +36,6 @@ def __save_job_handler(instance, created, **kwargs):
     if status != db_task.status:
         db_task.status = status
         db_task.save()
-
-@receiver(post_save, sender=Job,
-    dispatch_uid=__name__ + ".save_job_handler-update_quality_stats")
-def __save_job_handler__update_quality_metrics(instance, created, **kwargs):
-    qc.QueueJobManager().schedule_quality_check_job(instance.segment.task)
-
 
 @receiver(post_save, sender=User,
     dispatch_uid=__name__ + ".save_user_handler")
@@ -83,3 +78,16 @@ def __delete_data_handler(instance, **kwargs):
     dispatch_uid=__name__ + ".delete_cloudstorage_handler")
 def __delete_cloudstorage_handler(instance, **kwargs):
     shutil.rmtree(instance.get_storage_dirname(), ignore_errors=True)
+
+
+# TODO: handle nested field updates (e.g. labels, annotations, import, export, etc.)
+
+@receiver(post_save, sender=Job,
+    dispatch_uid=__name__ + ".save_job_handler-update_quality_metrics")
+def __save_job_handler__update_quality_metrics(instance, created, **kwargs):
+    qc.QueueJobManager().schedule_quality_check_job(instance.segment.task)
+
+@receiver(post_save, sender=Task,
+    dispatch_uid=__name__ + ".save_task_handler-update_quality_metrics")
+def __save_task_handler__update_quality_metrics(instance, created, **kwargs):
+    qc.QueueJobManager().schedule_quality_check_job(instance)

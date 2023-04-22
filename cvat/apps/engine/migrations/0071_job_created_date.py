@@ -28,5 +28,10 @@ class Migration(migrations.Migration):
             field=models.DateTimeField(auto_now_add=True, default=timezone.now, null=True),
             preserve_default=False,
         ),
-        migrations.RunPython(add_created_date_to_existing_jobs)
+        migrations.RunPython(add_created_date_to_existing_jobs),
+        migrations.AlterField(
+            model_name='job',
+            name='created_date',
+            field=models.DateTimeField(auto_now_add=True),
+        ),
     ]

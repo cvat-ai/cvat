@@ -1609,6 +1609,8 @@ class CvatToDmAnnotationConverter:
 
         dm_points = shape.points
 
+        anno = None
+
         if shape.type == ShapeType.POINTS:
             anno = dm.Points(dm_points,
                 label=dm_label, attributes=dm_attr, group=dm_group,
@@ -1682,7 +1684,12 @@ class CvatToDmAnnotationConverter:
         else:
             raise Exception("Unknown shape type '%s'" % shape.type)
 
-        return [anno]
+        results = []
+
+        if anno:
+            results.append(anno)
+
+        return results
 
     def _convert_shapes(self, shapes: List[CommonData.LabeledShape]) -> Iterable[dm.Annotation]:
         dm_anno = []
