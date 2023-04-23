@@ -10,7 +10,7 @@ import { Col } from 'antd/lib/grid';
 import Statistic from 'antd/lib/statistic';
 import Card from 'antd/lib/card';
 import moment from 'moment';
-import { getColor } from 'utils/quality-color';
+import { getQualityColor } from 'utils/quality-color';
 import { QualityReport, Task } from 'cvat-core-wrapper';
 import { useSelector } from 'react-redux';
 import { CombinedState } from 'reducers';
@@ -38,7 +38,7 @@ function MeanQuality(props: Props): JSX.Element {
                     title='Mean annotaion quality'
                     value={data.summary.meanAccuracy}
                     precision={2}
-                    valueStyle={{ color: getColor(data.summary.meanAccuracy) }}
+                    valueStyle={{ color: getQualityColor(data.summary.meanAccuracy) }}
                     suffix='%'
                 />
                 <div className='cvat-analytics-time-hint'>
