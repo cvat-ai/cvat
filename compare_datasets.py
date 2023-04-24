@@ -10,7 +10,7 @@ import sys
 from collections import OrderedDict
 from enum import Enum
 from glob import glob
-from typing import Any, Callable, Dict, List, Optional, cast
+from typing import Any, Callable, Dict, List, Optional, Sequence, cast
 
 import datumaro as dm
 import numpy as np
@@ -18,7 +18,7 @@ from attrs import asdict, define
 from datumaro.components.extractor import DEFAULT_SUBSET_NAME
 from datumaro.util.image import Image
 from defusedxml import ElementTree
-from scipy.stats import gmean
+# from scipy.stats import gmean
 
 
 class CvatPath:
@@ -777,6 +777,11 @@ class _PointsMatcher(dm.ops.PointsMatcher):
         )
 
 
+def arr_div(a_arr: np.ndarray, b_arr: np.ndarray):
+    divisor = b_arr.copy()
+    divisor[b_arr == 0] = 1
+    return a_arr / divisor
+
 class _DistanceComparator(dm.ops.DistanceComparator):
     def __init__(
         self,
@@ -791,6 +796,22 @@ class _DistanceComparator(dm.ops.DistanceComparator):
         self._skeleton_info = {}
         self.included_ann_types = included_ann_types
         self.return_distances = return_distances
+
+    def _instance_bbox(self, instance_anns: Sequence[dm.Annotation]):
+        return dm.ops.max_bbox(
+            a.get_bbox() if isinstance(a, dm.Skeleton) else a
+            for a in instance_anns
+            if hasattr(a, 'get_bbox')
+            and not a.attributes.get('outside', False)
+        )
+
+    @staticmethod
+    def _get_ann_type(t, item):
+        return [
+            a for a in item.annotations
+            if a.type == t
+            and not a.attributes.get('outside', False)
+        ]
 
     def _match_ann_type(self, t, *args):
         if t not in self.included_ann_types:
@@ -858,11 +879,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
         for s in [item_a.annotations, item_b.annotations]:
             s_instances = dm.ops.find_instances(s)
             for instance_group in s_instances:
-                instance_bbox = dm.ops.max_bbox(
-                    a.get_bbox() if isinstance(a, dm.Skeleton) else a
-                    for a in instance_group
-                    if hasattr(a, 'get_bbox')
-                )
+                instance_bbox = self._instance_bbox(instance_group)
 
                 for ann in instance_group:
                     instance_map[id(ann)] = [instance_group, instance_bbox]
@@ -946,6 +963,11 @@ class _DistanceComparator(dm.ops.DistanceComparator):
                     # no per-point attributes currently in CVAT
                 )
 
+                if all(v == dm.Points.Visibility.absent for v in merged_points.visibility):
+                    # The whole skeleton is outside, exclude it
+                    skeleton_map[id(skeleton)] = None
+                    continue
+
                 points_map[id(merged_points)] = skeleton
                 skeleton_map[id(skeleton)] = merged_points
                 source_points.append(merged_points)
@@ -953,14 +975,12 @@ class _DistanceComparator(dm.ops.DistanceComparator):
         instance_map = {}
         for source in [item_a.annotations, item_b.annotations]:
             for instance_group in dm.ops.find_instances(source):
-                instance_bbox = dm.ops.max_bbox(
-                    a.get_bbox() if isinstance(a, dm.Skeleton) else a
-                    for a in instance_group
-                )
+                instance_bbox = self._instance_bbox(instance_group)
 
                 instance_group = [
                     skeleton_map[id(a)] if isinstance(a, dm.Skeleton) else a
                     for a in instance_group
+                    if not isinstance(a, dm.Skeleton) or skeleton_map[id(a)] is not None
                 ]
                 for ann in instance_group:
                     instance_map[id(ann)] = [instance_group, instance_bbox]
@@ -1027,6 +1047,8 @@ class _Comparator:
             "keyframe",  # indicates the way annotation obtained, meaningless to compare
             "z_order",  # TODO: compare relative or 'visible' z_order
             "group",  # TODO: changes from task to task. But must be compared for existence
+            "rotation",  # should be handled by other means
+            "outside",  # should be handled by other means
         ]
         self.included_ann_types = [
             dm.AnnotationType.bbox,
@@ -1080,6 +1102,7 @@ class DatasetComparator:
 
         self._frame_results = {}
         self._common_results = {"ds_annotations_count": 0}
+        self._ignored_frames = []
 
     def _dm_ann_to_ann_id(
         self, ann: dm.Annotation, item: dm.DatasetItem, dataset: dm.Dataset
@@ -1102,6 +1125,9 @@ class DatasetComparator:
             if not ds_item:
                 continue  # we need to compare only intersecting frames
 
+            if gt_item.id in self._ignored_frames:
+                continue
+
             self._process_frame(ds_item, gt_item)
 
     def _process_frame(self, ds_item, gt_item):
@@ -1122,14 +1148,16 @@ class DatasetComparator:
     ) -> List[AnnotationConflict]:
         conflicts = []
 
-        shape_confusion_matrix_labels = {
-            t.name: i for i, t in enumerate(self._comparator.included_ann_types)
-        }
-        shape_confusion_matrix_labels[None] = len(shape_confusion_matrix_labels)
-        shape_confusion_matrix_label_count = len(shape_confusion_matrix_labels)
-        shape_confusion_matrix = np.zeros(
-            (shape_confusion_matrix_label_count, shape_confusion_matrix_label_count), dtype=int
-        )
+        # TODO: try to use PDJ for per-keypoint results
+        # shape_confusion_matrix_labels = {
+        #     t: t.name for t in self._comparator.included_ann_types
+        # }
+        # shape_confusion_matrix_labels[None] = 'unmatched'
+        # shape_confusion_matrix_labels_rmap = { k: i for i, k in enumerate(shape_confusion_matrix_labels.keys()) }
+        # shape_confusion_matrix_label_count = len(shape_confusion_matrix_labels)
+        # shape_confusion_matrix = np.zeros(
+        #     (shape_confusion_matrix_label_count, shape_confusion_matrix_label_count), dtype=int
+        # )
 
         merged_results = [[], [], [], [], {}]
         for shape_type in self._comparator.included_ann_types:
@@ -1138,16 +1166,17 @@ class DatasetComparator:
 
             merged_results[-1].update(frame_results[shape_type][-1])
 
-            matches, mismatches, gt_unmatched, ds_unmatched = frame_results[shape_type][:-1]
-            for gt_ann, ds_ann in itertools.chain(
-                matches,
-                mismatches,
-                itertools.zip_longest(ds_unmatched, itertools.repeat(None)),
-                itertools.zip_longest(itertools.repeat(None), gt_unmatched)
-            ):
-                ds_label_idx = shape_confusion_matrix_labels[ds_ann.type if ds_ann else ds_ann]
-                gt_label_idx = shape_confusion_matrix_labels[gt_ann.type if gt_ann else gt_ann]
-                shape_confusion_matrix[ds_label_idx][gt_label_idx] += 1
+            # matches, mismatches, gt_unmatched, ds_unmatched = frame_results[shape_type][:4]
+            # for gt_ann, ds_ann in itertools.chain(
+            #     matches,
+            #     mismatches,
+            #     zip(itertools.repeat(None), ds_unmatched),
+            #     zip(gt_unmatched, itertools.repeat(None))
+            # ):
+            #     # TODO: separate keys and displayed labels
+            #     ds_label_idx = shape_confusion_matrix_labels_rmap[ds_ann.type if ds_ann else ds_ann]
+            #     gt_label_idx = shape_confusion_matrix_labels_rmap[gt_ann.type if gt_ann else gt_ann]
+            #     shape_confusion_matrix[ds_label_idx][gt_label_idx] += 1
 
         matches, mismatches, gt_unmatched, ds_unmatched, pairwise_distances = merged_results
 
@@ -1250,140 +1279,152 @@ class DatasetComparator:
         invalid_labels_count = len(mismatches)
         total_labels_count = valid_labels_count + invalid_labels_count
 
-        matched_anns = []
-        mismatched_anns = []
-        valid_attributes_count = 0
-        invalid_attributes_count = 0
-        missing_attributes_count = 0
-        extra_attributes_count = 0
-        total_attributes_count = 0
-        ds_attributes_count = 0
-        gt_attributes_count = 0
-        for gt_ann, ds_ann in matches:
-            # Datumaro wont match attributes
-            (
-                attr_matches,
-                attr_mismatches,
-                attr_gt_extra,
-                attr_ds_extra,
-            ) = self._comparator.match_attrs(gt_ann, ds_ann)
+        # matched_anns = []
+        # mismatched_anns = []
+        # valid_attributes_count = 0
+        # invalid_attributes_count = 0
+        # missing_attributes_count = 0
+        # extra_attributes_count = 0
+        # total_attributes_count = 0
+        # ds_attributes_count = 0
+        # gt_attributes_count = 0
+        # for gt_ann, ds_ann in matches:
+        #     # Datumaro wont match attributes
+        #     (
+        #         attr_matches,
+        #         attr_mismatches,
+        #         attr_gt_extra,
+        #         attr_ds_extra,
+        #     ) = self._comparator.match_attrs(gt_ann, ds_ann)
 
-            for mismatched_attr in attr_mismatches:
-                conflicts.append(
-                    AnnotationConflict(
-                        frame_id=frame_id,
-                        type=AnnotationConflictType.MISMATCHING_ANNOTATION,
-                        data={
-                            "annotation_ids": [
-                                self._dm_ann_to_ann_id(
-                                    ds_ann, ds_item, self._ds_dataset
-                                ),
-                                self._dm_ann_to_ann_id(
-                                    gt_ann, gt_item, self._gt_dataset
-                                ),
-                            ],
-                            "kind": MismatchingAnnotationKind.ATTRIBUTE,
-                            "attribute": mismatched_attr,
-                            "expected": gt_ann.attributes[mismatched_attr],
-                            "actual": ds_ann.attributes[mismatched_attr],
-                        },
-                    )
-                )
+        #     for mismatched_attr in attr_mismatches:
+        #         conflicts.append(
+        #             AnnotationConflict(
+        #                 frame_id=frame_id,
+        #                 type=AnnotationConflictType.MISMATCHING_ANNOTATION,
+        #                 data={
+        #                     "annotation_ids": [
+        #                         self._dm_ann_to_ann_id(
+        #                             ds_ann, ds_item, self._ds_dataset
+        #                         ),
+        #                         self._dm_ann_to_ann_id(
+        #                             gt_ann, gt_item, self._gt_dataset
+        #                         ),
+        #                     ],
+        #                     "kind": MismatchingAnnotationKind.ATTRIBUTE,
+        #                     "attribute": mismatched_attr,
+        #                     "expected": gt_ann.attributes[mismatched_attr],
+        #                     "actual": ds_ann.attributes[mismatched_attr],
+        #                 },
+        #             )
+        #         )
 
-            for extra_attr in attr_gt_extra:
-                conflicts.append(
-                    AnnotationConflict(
-                        frame_id=frame_id,
-                        type=AnnotationConflictType.MISMATCHING_ANNOTATION,
-                        data={
-                            "annotation_ids": [
-                                self._dm_ann_to_ann_id(
-                                    ds_ann, ds_item, self._ds_dataset
-                                ),
-                                self._dm_ann_to_ann_id(
-                                    gt_ann, gt_item, self._gt_dataset
-                                ),
-                            ],
-                            "kind": MismatchingAnnotationKind.ATTRIBUTE,
-                            "attribute": mismatched_attr,
-                            "expected": gt_ann.attributes[extra_attr],
-                            "actual": None,
-                        },
-                    )
-                )
+        #     for extra_attr in attr_gt_extra:
+        #         conflicts.append(
+        #             AnnotationConflict(
+        #                 frame_id=frame_id,
+        #                 type=AnnotationConflictType.MISMATCHING_ANNOTATION,
+        #                 data={
+        #                     "annotation_ids": [
+        #                         self._dm_ann_to_ann_id(
+        #                             ds_ann, ds_item, self._ds_dataset
+        #                         ),
+        #                         self._dm_ann_to_ann_id(
+        #                             gt_ann, gt_item, self._gt_dataset
+        #                         ),
+        #                     ],
+        #                     "kind": MismatchingAnnotationKind.ATTRIBUTE,
+        #                     "attribute": mismatched_attr,
+        #                     "expected": gt_ann.attributes[extra_attr],
+        #                     "actual": None,
+        #                 },
+        #             )
+        #         )
 
-            for extra_attr in attr_ds_extra:
-                conflicts.append(
-                    AnnotationConflict(
-                        frame_id=frame_id,
-                        type=AnnotationConflictType.MISMATCHING_ANNOTATION,
-                        data={
-                            "annotation_ids": [
-                                self._dm_ann_to_ann_id(
-                                    ds_ann, ds_item, self._ds_dataset
-                                ),
-                                self._dm_ann_to_ann_id(
-                                    gt_ann, gt_item, self._gt_dataset
-                                ),
-                            ],
-                            "kind": MismatchingAnnotationKind.ATTRIBUTE,
-                            "attribute": mismatched_attr,
-                            "expected": None,
-                            "actual": ds_ann.attributes[extra_attr],
-                        },
-                    )
-                )
+        #     for extra_attr in attr_ds_extra:
+        #         conflicts.append(
+        #             AnnotationConflict(
+        #                 frame_id=frame_id,
+        #                 type=AnnotationConflictType.MISMATCHING_ANNOTATION,
+        #                 data={
+        #                     "annotation_ids": [
+        #                         self._dm_ann_to_ann_id(
+        #                             ds_ann, ds_item, self._ds_dataset
+        #                         ),
+        #                         self._dm_ann_to_ann_id(
+        #                             gt_ann, gt_item, self._gt_dataset
+        #                         ),
+        #                     ],
+        #                     "kind": MismatchingAnnotationKind.ATTRIBUTE,
+        #                     "attribute": mismatched_attr,
+        #                     "expected": None,
+        #                     "actual": ds_ann.attributes[extra_attr],
+        #                 },
+        #             )
+        #         )
 
-            attrs_match = (0 == len(attr_mismatches) + len(attr_gt_extra) + len(attr_ds_extra))
-            if attrs_match:
-                matched_anns.append((gt_ann, ds_ann))
-            else:
-                mismatched_anns.append((gt_ann, ds_ann))
+        #     attrs_match = (0 == (len(attr_mismatches) + len(attr_gt_extra) + len(attr_ds_extra)))
+        #     if attrs_match:
+        #         matched_anns.append((gt_ann, ds_ann))
+        #     else:
+        #         mismatched_anns.append((gt_ann, ds_ann))
 
-            valid_attributes_count += len(attr_matches)
-            invalid_attributes_count += len(attr_mismatches)
-            missing_attributes_count += len(attr_gt_extra)
-            extra_attributes_count += len(attr_ds_extra)
-            total_attributes_count += (
-                len(attr_matches)
-                + len(attr_mismatches)
-                + len(attr_gt_extra)
-                + len(attr_ds_extra)
-            )
-            ds_attributes_count += len(attr_matches) + len(attr_mismatches) + len(attr_ds_extra)
-            gt_attributes_count += len(attr_matches) + len(attr_mismatches) + len(attr_gt_extra)
+        #     valid_attributes_count += len(attr_matches)
+        #     invalid_attributes_count += len(attr_mismatches)
+        #     missing_attributes_count += len(attr_gt_extra)
+        #     extra_attributes_count += len(attr_ds_extra)
+        #     total_attributes_count += (
+        #         len(attr_matches)
+        #         + len(attr_mismatches)
+        #         + len(attr_gt_extra)
+        #         + len(attr_ds_extra)
+        #     )
+        #     ds_attributes_count += len(attr_matches) + len(attr_mismatches) + len(attr_ds_extra)
+        #     gt_attributes_count += len(attr_matches) + len(attr_mismatches) + len(attr_gt_extra)
 
 
         confusion_matrix_labels = {
-            label.name: i
+            i: label.name
             for i, label in enumerate(self._gt_dataset.categories()[dm.AnnotationType.label])
+            if not label.parent
         }
-        confusion_matrix_labels[None] = len(confusion_matrix_labels)
+        confusion_matrix_labels[None] = 'unmatched'
+        confusion_matrix_labels_rmap = {
+            k: i for i, k in enumerate(confusion_matrix_labels.keys())
+        }
         confusion_matrix_label_count = len(confusion_matrix_labels)
         confusion_matrix = np.zeros(
             (confusion_matrix_label_count, confusion_matrix_label_count), dtype=int
         )
         for gt_ann, ds_ann in itertools.chain(
             # fully matched annotations - shape, label, attributes
-            matched_anns,
-            mismatched_anns,
-            itertools.zip_longest(ds_unmatched, itertools.repeat(None)),
-            itertools.zip_longest(itertools.repeat(None), gt_unmatched)
+            matches,
+            mismatches,
+            zip(itertools.repeat(None), ds_unmatched),
+            zip(gt_unmatched, itertools.repeat(None)),
         ):
-            ds_label_idx = confusion_matrix_labels[ds_ann.label if ds_ann else ds_ann]
-            gt_label_idx = confusion_matrix_labels[gt_ann.label if gt_ann else gt_ann]
-            confusion_matrix[ds_label_idx][gt_label_idx] += 1
+            # TODO: separate keys and displayed labels
+            ds_label_idx = confusion_matrix_labels_rmap[ds_ann.label if ds_ann else ds_ann]
+            gt_label_idx = confusion_matrix_labels_rmap[gt_ann.label if gt_ann else gt_ann]
+            confusion_matrix[ds_label_idx, gt_label_idx] += 1
+
+        # matched_shape_counts = np.diag(shape_confusion_matrix)
+        # ds_shape_counts = np.sum(shape_confusion_matrix, axis=1)
+        # gt_shape_counts = np.sum(shape_confusion_matrix, axis=0)
+        # shape_accuracies = arr_div(matched_shape_counts, ds_shape_counts + gt_shape_counts - matched_shape_counts)
+        # shape_precisions = arr_div(matched_shape_counts, ds_shape_counts)
+        # shape_recalls = arr_div(matched_shape_counts, gt_shape_counts)
 
         matched_ann_counts = np.diag(confusion_matrix)
         ds_ann_counts = np.sum(confusion_matrix, axis=1)
         gt_ann_counts = np.sum(confusion_matrix, axis=0)
-        label_accuracies = matched_ann_counts / ((ds_ann_counts + gt_ann_counts - matched_ann_counts) or 1)
-        label_precisions = matched_ann_counts / (ds_ann_counts or 1)
-        label_recalls = matched_ann_counts / (gt_ann_counts or 1)
+        label_accuracies = arr_div(matched_ann_counts, ds_ann_counts + gt_ann_counts - matched_ann_counts)
+        label_precisions = arr_div(matched_ann_counts, ds_ann_counts)
+        label_recalls = arr_div(matched_ann_counts, gt_ann_counts)
 
-        valid_annotations_count = np,sum(matched_ann_counts)
-        missing_annotations_count = np.sum(confusion_matrix[:, confusion_matrix_labels[None]])
-        extra_annotations_count = np.sum(confusion_matrix[confusion_matrix_labels[None], :])
+        valid_annotations_count = np.sum(matched_ann_counts)
+        missing_annotations_count = np.sum(confusion_matrix[:, confusion_matrix_labels_rmap[None]])
+        extra_annotations_count = np.sum(confusion_matrix[confusion_matrix_labels_rmap[None], :])
         total_annotations_count = np.sum(confusion_matrix)
         ds_annotations_count = np.sum(ds_ann_counts)
         gt_annotations_count = np.sum(gt_ann_counts)
@@ -1401,7 +1442,7 @@ class DatasetComparator:
                 precision=valid_annotations_count / (ds_annotations_count or 1),
                 recall=valid_annotations_count / (gt_annotations_count or 1),
                 confusion_matrix=dict(
-                    labels=confusion_matrix_labels,
+                    labels=list(confusion_matrix_labels.values()),
                     axes=dict(
                         cols='gt',
                         rows='ds'
@@ -1422,8 +1463,18 @@ class DatasetComparator:
                     gt_count=gt_shapes_count,
                     accuracy=valid_shapes_count / (total_shapes_count or 1),
                     mean_iou=mean_iou,
-                    # add per type stats
-                    shape_confusion_matrix=shape_confusion_matrix,
+                    # TODO: add per type stats (OKS, PDJ, ...)
+                    # shape_confusion_matrix=dict(
+                    #     labels=list(shape_confusion_matrix_labels.values()),
+                    #     axes=dict(
+                    #         cols='gt',
+                    #         rows='ds'
+                    #     ),
+                    #     rows=shape_confusion_matrix,
+                    #     precision=shape_precisions,
+                    #     recall=shape_recalls,
+                    #     accuracy=shape_accuracies,
+                    # )
                 ),
                 label=dict(
                     valid_count=valid_labels_count,
@@ -1431,17 +1482,19 @@ class DatasetComparator:
                     total_count=total_labels_count,
                     accuracy=valid_labels_count / (total_labels_count or 1),
                 ),
-                attribute=dict(
-                    valid_count=valid_attributes_count,
-                    invalid_count=invalid_attributes_count,
-                    missing_count=missing_attributes_count,
-                    extra_count=extra_attributes_count,
-                    total_count=total_attributes_count,
-                    ds_count=ds_attributes_count,
-                    gt_count=gt_attributes_count,
-                    accuracy=valid_attributes_count / (total_attributes_count or 1),
-                    # add confusion matrix / per label stats
-                ),
+                # TODO: add attribute confusion matrix and decouple it
+                # with the label and full confusion matrices
+                # attribute=dict(
+                #     valid_count=valid_attributes_count,
+                #     invalid_count=invalid_attributes_count,
+                #     missing_count=missing_attributes_count,
+                #     extra_count=extra_attributes_count,
+                #     total_count=total_attributes_count,
+                #     ds_count=ds_attributes_count,
+                #     gt_count=gt_attributes_count,
+                #     accuracy=valid_attributes_count / (total_attributes_count or 1),
+                #     # TODO: add confusion matrix / per label stats
+                # ),
             ),
             errors=conflicts.copy(),
         )
@@ -1474,6 +1527,7 @@ class DatasetComparator:
                 )
                 full_ds_comparable_shapes_count += 1
 
+        # accumulate stats
         intersection_frames = []
         summary_stats = {}
         mean_ious = []
@@ -1487,18 +1541,21 @@ class DatasetComparator:
                 ["annotation_element", "shape", "total_count"],
                 ["annotation_element", "shape", "ds_count"],
                 ["annotation_element", "shape", "gt_count"],
+                # ["annotation_element", "shape", "shape_confusion_matrix", "rows"],
 
                 ["annotation_element", "label", "valid_count"],
                 ["annotation_element", "label", "invalid_count"],
                 ["annotation_element", "label", "total_count"],
 
-                ["annotation_element", "attribute", "valid_count"],
-                ["annotation_element", "attribute", "invalid_count"],
-                ["annotation_element", "attribute", "missing_count"],
-                ["annotation_element", "attribute", "extra_count"],
-                ["annotation_element", "attribute", "total_count"],
-                ["annotation_element", "attribute", "ds_count"],
-                ["annotation_element", "attribute", "gt_count"],
+                # ["annotation_element", "attribute", "valid_count"],
+                # ["annotation_element", "attribute", "invalid_count"],
+                # ["annotation_element", "attribute", "missing_count"],
+                # ["annotation_element", "attribute", "extra_count"],
+                # ["annotation_element", "attribute", "total_count"],
+                # ["annotation_element", "attribute", "ds_count"],
+                # ["annotation_element", "attribute", "gt_count"],
+
+                ["annotations", "confusion_matrix", "rows"],
                 ["errors_count"],
             ]:
                 frame_value = _get_nested_key(frame_result, path)
@@ -1510,16 +1567,56 @@ class DatasetComparator:
 
             mean_ious.append(frame_result["annotation_element"]["shape"]["mean_iou"])
 
+        # shape_confusion_matrix_labels = {
+        #     t: t.name for t in self._comparator.included_ann_types
+        # }
+        # shape_confusion_matrix_labels[None] = 'unmatched'
+        # shape_confusion_matrix = _get_nested_key(summary_stats, ["annotation_element", "shape", "shape_confusion_matrix", "rows"])
+        # matched_shape_counts = np.diag(shape_confusion_matrix)
+        # ds_shape_counts = np.sum(shape_confusion_matrix, axis=1)
+        # gt_shape_counts = np.sum(shape_confusion_matrix, axis=0)
+        # shape_accuracies = arr_div(matched_shape_counts, ds_shape_counts + gt_shape_counts - matched_shape_counts)
+        # shape_precisions = arr_div(matched_shape_counts, ds_shape_counts)
+        # shape_recalls = arr_div(matched_shape_counts, gt_shape_counts)
+
+        confusion_matrix_labels = {
+            i: label.name
+            for i, label in enumerate(self._gt_dataset.categories()[dm.AnnotationType.label])
+            if not label.parent
+        }
+        confusion_matrix_labels[None] = 'unmatched'
+        confusion_matrix_labels_rmap = {
+            k: i for i, k in enumerate(confusion_matrix_labels.keys())
+        }
+        confusion_matrix = _get_nested_key(summary_stats, ["annotations", "confusion_matrix", "rows"])
+        matched_ann_counts = np.diag(confusion_matrix)
+        ds_ann_counts = np.sum(confusion_matrix, axis=1)
+        gt_ann_counts = np.sum(confusion_matrix, axis=0)
+        label_accuracies = arr_div(matched_ann_counts, ds_ann_counts + gt_ann_counts - matched_ann_counts)
+        label_precisions = arr_div(matched_ann_counts, ds_ann_counts)
+        label_recalls = arr_div(matched_ann_counts, gt_ann_counts)
+
+        valid_annotations_count = np.sum(matched_ann_counts)
+        missing_annotations_count = np.sum(confusion_matrix[:, confusion_matrix_labels_rmap[None]])
+        extra_annotations_count = np.sum(confusion_matrix[confusion_matrix_labels_rmap[None], :])
+        total_annotations_count = np.sum(confusion_matrix)
+        ds_annotations_count = np.sum(ds_ann_counts)
+        gt_annotations_count = np.sum(gt_ann_counts)
+
         mean_shape_accuracy = _get_nested_key(summary_stats, ["annotation_element", "shape", "valid_count"]) / (_get_nested_key(summary_stats, ["annotation_element", "shape", "total_count"]) or 1)
         mean_label_accuracy = _get_nested_key(summary_stats, ["annotation_element", "label", "valid_count"]) / (_get_nested_key(summary_stats, ["annotation_element", "label", "total_count"]) or 1)
-        mean_attribute_accuracy = _get_nested_key(summary_stats, ["annotation_element", "attribute", "valid_count"]) / (_get_nested_key(summary_stats, ["annotation_element", "attribute", "total_count"]) or 1)
+        # mean_attribute_accuracy = _get_nested_key(summary_stats, ["annotation_element", "attribute", "valid_count"]) / (_get_nested_key(summary_stats, ["annotation_element", "attribute", "total_count"]) or 1)
+        # TODO: this parameter is questionable and is hard to understand
+        # mean_accuracy = gmean([mean_shape_accuracy, mean_label_accuracy,
+        #    mean_attribute_accuracy
+        # ])
+
         mean_error_count = summary_stats["errors_count"] / len(intersection_frames)
-        mean_accuracy = gmean([mean_shape_accuracy, mean_label_accuracy, mean_attribute_accuracy])
 
         return dict(
             parameters=dict(
                 included_annotation_types=[t.name for t in self._comparator.included_ann_types],
-                ignored_attributes=self._comparator.ignored_attrs,
+                # ignored_attributes=self._comparator.ignored_attrs,
                 iou_threshold=self._comparator._annotation_comparator.iou_threshold,
             ),
 
@@ -1530,41 +1627,76 @@ class DatasetComparator:
 
                 error_count=summary_stats["errors_count"],
                 mean_error_count=mean_error_count,
-                mean_accuracy=mean_accuracy,
-                annotation_element={
-                    'shape': {
-                        'valid_count': _get_nested_key(summary_stats, ["annotation_element", "shape", "valid_count"]),
-                        'missing_count': _get_nested_key(summary_stats, ["annotation_element", "shape", "missing_count"]),
-                        'extra_count': _get_nested_key(summary_stats, ["annotation_element", "shape", "extra_count"]),
-                        'total_count': _get_nested_key(summary_stats, ["annotation_element", "shape", "total_count"]),
-                        'ds_count': _get_nested_key(summary_stats, ["annotation_element", "shape", "ds_count"]),
-                        'gt_count': _get_nested_key(summary_stats, ["annotation_element", "shape", "gt_count"]),
-                        'mean_iou': np.mean(mean_ious),
-                        'accuracy': mean_shape_accuracy,
-                    },
-                    'label': {
-                        'valid_count': _get_nested_key(summary_stats, ["annotation_element", "label", "valid_count"]),
-                        'invalid_count': _get_nested_key(summary_stats, ["annotation_element", "label", "invalid_count"]),
-                        'total_count': _get_nested_key(summary_stats, ["annotation_element", "label", "total_count"]),
-                        'accuracy': mean_label_accuracy,
-                    },
-                    'attribute': {
-                        'valid_count': _get_nested_key(summary_stats, ["annotation_element", "attribute", "valid_count"]),
-                        'invalid_count': _get_nested_key(summary_stats, ["annotation_element", "attribute", "invalid_count"]),
-                        'missing_count': _get_nested_key(summary_stats, ["annotation_element", "attribute", "missing_count"]),
-                        'extra_count': _get_nested_key(summary_stats, ["annotation_element", "attribute", "extra_count"]),
-                        'total_count': _get_nested_key(summary_stats, ["annotation_element", "attribute", "total_count"]),
-                        'ds_count': _get_nested_key(summary_stats, ["annotation_element", "attribute", "ds_count"]),
-                        'gt_count': _get_nested_key(summary_stats, ["annotation_element", "attribute", "gt_count"]),
-                        'accuracy': mean_attribute_accuracy,
-                    },
-                },
+                # mean_accuracy=mean_accuracy,
+
+                annotations=dict(
+                    valid_count=valid_annotations_count,
+                    missing_count=missing_annotations_count,
+                    extra_count=extra_annotations_count,
+                    total_count=total_annotations_count,
+                    ds_count=ds_annotations_count,
+                    gt_count=gt_annotations_count,
+                    accuracy=valid_annotations_count / (total_annotations_count or 1),
+                    precision=valid_annotations_count / (ds_annotations_count or 1),
+                    recall=valid_annotations_count / (gt_annotations_count or 1),
+                    confusion_matrix=dict(
+                        labels=list(confusion_matrix_labels.values()),
+                        axes=dict(
+                            cols='gt',
+                            rows='ds'
+                        ),
+                        rows=confusion_matrix,
+                        precision=label_precisions,
+                        recall=label_recalls,
+                        accuracy=label_accuracies,
+                    )
+                ),
+
+                annotation_element=dict(
+                    shape=dict(
+                        valid_count=_get_nested_key(summary_stats, ["annotation_element", "shape", "valid_count"]),
+                        missing_count=_get_nested_key(summary_stats, ["annotation_element", "shape", "missing_count"]),
+                        extra_count=_get_nested_key(summary_stats, ["annotation_element", "shape", "extra_count"]),
+                        total_count=_get_nested_key(summary_stats, ["annotation_element", "shape", "total_count"]),
+                        ds_count=_get_nested_key(summary_stats, ["annotation_element", "shape", "ds_count"]),
+                        gt_count=_get_nested_key(summary_stats, ["annotation_element", "shape", "gt_count"]),
+                        mean_iou=np.mean(mean_ious),
+                        accuracy=mean_shape_accuracy,
+                        # shape_confusion_matrix=dict(
+                        #     labels=list(shape_confusion_matrix_labels.values()),
+                        #     axes=dict(
+                        #         cols='gt',
+                        #         rows='ds'
+                        #     ),
+                        #     # rows=shape_confusion_matrix,
+                        #     precision=shape_precisions,
+                        #     recall=shape_recalls,
+                        #     accuracy=shape_accuracies,
+                        # )
+                    ),
+                    label=dict(
+                        valid_count=_get_nested_key(summary_stats, ["annotation_element", "label", "valid_count"]),
+                        invalid_count=_get_nested_key(summary_stats, ["annotation_element", "label", "invalid_count"]),
+                        total_count=_get_nested_key(summary_stats, ["annotation_element", "label", "total_count"]),
+                        accuracy=mean_label_accuracy,
+                    ),
+                    # attribute=dict(
+                    #     valid_count=_get_nested_key(summary_stats, ["annotation_element", "attribute", "valid_count"]),
+                    #     invalid_count=_get_nested_key(summary_stats, ["annotation_element", "attribute", "invalid_count"]),
+                    #     missing_count=_get_nested_key(summary_stats, ["annotation_element", "attribute", "missing_count"]),
+                    #     extra_count=_get_nested_key(summary_stats, ["annotation_element", "attribute", "extra_count"]),
+                    #     total_count=_get_nested_key(summary_stats, ["annotation_element", "attribute", "total_count"]),
+                    #     ds_count=_get_nested_key(summary_stats, ["annotation_element", "attribute", "ds_count"]),
+                    #     gt_count=_get_nested_key(summary_stats, ["annotation_element", "attribute", "gt_count"]),
+                    #     accuracy=mean_attribute_accuracy,
+                    # ),
+                ),
             ),
 
             full_dataset=dict(
                 frame_count=len(self._ds_dataset),
                 shapes_count=full_ds_comparable_shapes_count,
-                attributes_count=full_ds_comparable_attributes_count,
+                # attributes_count=full_ds_comparable_attributes_count,
             ),
 
             frame_results=self._frame_results,
@@ -1584,7 +1716,10 @@ def main(args=None):
     ds_dataset = dm.Dataset.import_from(args.ds, format=args.dsf, env=dm_env)
 
     comparator = DatasetComparator(ds_dataset, gt_dataset)
+    comparator._comparator._annotation_comparator.iou_threshold = 0.5
+    comparator._ignored_frames = ["frame_{:06d}.PNG".format(i + 1) for i in [23, 50, 100, 104, 111, 118, 151, 165, 170, 184, 200, 222, 223, 232, 236, 237, 253, 293, 302, 314, 359, 372, 379, 409, 438, 469, 470, 500, 502, 554, 557, 615, 631, 664, 687, 729, 736, 778, 781, 797, 842, 874, 894, 895, 917, 919, 952, 1001, 1023, 1025, 1028, 1030, 1040, 1077, 1083, 1098, 1104, 1129, 1166, 1251, 1252, 1253, 1258, 1263, 1264, 1271, 1294, 1308, 1328, 1334, 1352, 1408, 1432, 1489, 1495, 1511, 1570, 1574, 1594, 1625, 1651, 1710, 1716, 1720, 1721, 1730, 1751, 1765, 1794, 1798]]
     # comparator._comparator.included_ann_types = [dm.AnnotationType.bbox]
+    # comparator._comparator.ignored_attrs.append('object_id')
     report = comparator.prepare_report()
 
     class JsonConverter(json.JSONEncoder):
@@ -1593,6 +1728,8 @@ def main(args=None):
                 o, (AnnotationConflict, AnnotationConflictsReport, AnnotationId)
             ):
                 return o.to_dict()
+            elif isinstance(o, (np.ndarray, np.number)):
+                return o.tolist()
             else:
                 return super().default(o)
 
