@@ -171,6 +171,7 @@ COPY --chown=${USER} ssh ${HOME}/.ssh
 COPY --chown=${USER} mod_wsgi.conf wait-for-it.sh manage.py ${HOME}/
 COPY --chown=${USER} utils/ ${HOME}/utils
 COPY --chown=${USER} cvat/ ${HOME}/cvat
+COPY --chown=${USER} rqscheduler.py ${HOME}
 
 # RUN all commands below as 'django' user
 USER ${USER}
