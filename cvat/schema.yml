@@ -237,46 +237,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/RestAuthDetail'
           description: ''
-  /api/auth/register:
-    post:
-      operationId: auth_create_register
-      parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
-      tags:
-      - auth
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RegisterSerializerExRequest'
-        required: true
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      - {}
-      responses:
-        '201':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                $ref: '#/components/schemas/RegisterSerializerEx'
-          description: ''
   /api/auth/rules:
     get:
       operationId: auth_retrieve_rules

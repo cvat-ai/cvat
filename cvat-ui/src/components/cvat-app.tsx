@@ -180,9 +180,9 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                     className: 'cvat-modal-cannot-connect-server',
                     closable: false,
                     content:
-    <Text>
-        {SERVER_UNAVAILABLE_COMPONENT}
-    </Text>,
+                        <Text>
+                            {SERVER_UNAVAILABLE_COMPONENT}
+                        </Text>,
                 });
             });
 
@@ -482,7 +482,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                             <Route exact path='/webhooks/create' component={CreateWebhookPage} />
                                             <Route exact path='/webhooks/update/:id' component={UpdateWebhookPage} />
                                             <Route exact path='/organization' component={OrganizationPage} />
-                                            { routesToRender }
+                                            {routesToRender}
                                             {isModelPluginActive && (
                                                 <Route
                                                     path='/models'
@@ -504,7 +504,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                     <ExportBackupModal />
                                     <ImportDatasetModal />
                                     <ImportBackupModal />
-                                    { loggedInModals.map((Component, idx) => (
+                                    {loggedInModals.map((Component, idx) => (
                                         <Component key={idx} targetProps={this.props} targetState={this.state} />
                                     ))}
                                     {/* eslint-disable-next-line */}
@@ -519,7 +519,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             return (
                 <GlobalErrorBoundary>
                     <Switch>
-                        <Route exact path='/auth/register' component={RegisterPageContainer} />
                         <Route exact path='/auth/email-verification-sent' component={EmailVerificationSentPage} />
                         <Route exact path='/auth/incorrect-email-confirmation' component={IncorrectEmailConfirmationPage} />
                         <Route exact path='/auth/login' component={LoginPageContainer} />
@@ -536,7 +535,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                         />
 
                         <Route exact path='/auth/email-confirmation' component={EmailConfirmationPage} />
-                        { routesToRender }
+                        {routesToRender}
                         <Redirect
                             to={location.pathname.length > 1 ? `/auth/login?next=${location.pathname}` : '/auth/login'}
                         />
