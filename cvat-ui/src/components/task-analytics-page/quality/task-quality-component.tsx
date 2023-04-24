@@ -39,7 +39,7 @@ function TaskQualityComponent(props: Props): JSX.Element {
             <Row>
                 <MeanQuality task={task} />
             </Row>
-            <Row>
+            <Row style={{ marginTop: '16px' }}>
                 <JobItem job={gtJob} onJobUpdate={onJobUpdate} />
             </Row>
             <Row>

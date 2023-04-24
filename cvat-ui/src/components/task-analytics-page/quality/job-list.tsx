@@ -19,6 +19,7 @@ import {
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { CombinedState } from 'reducers';
 import { useSelector } from 'react-redux';
+import { getQualityColor } from 'utils/quality-color';
 
 interface Props {
     task: Task;
@@ -148,7 +149,13 @@ function JobListComponent(props: Props): JSX.Element {
             key: 'quality',
             className: 'cvat-job-item-quality',
             render: (jobInstance: Job): JSX.Element => (
-                <Text>{jobsReports[jobInstance.id] ? jobsReports[jobInstance.id].summary.meanAccuracy : 0}</Text>
+                <Text
+                    style={{
+                        color: getQualityColor(jobsReports[jobInstance.id]?.summary?.meanAccuracy),
+                    }}
+                >
+                    {jobsReports[jobInstance.id] ? jobsReports[jobInstance.id].summary.meanAccuracy : 'N/A'}
+                </Text>
             ),
         },
     ];
