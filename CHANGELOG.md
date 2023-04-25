@@ -5,12 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## \[2.4.3] - 2023-04-24
+## \[2.5.0] - Unreleased
+### Added
+- TDB
+
 ### Changed
-- Docker images no longer include Ubuntu package sources or FFmpeg/OpenH264 sources
-  (<https://github.com/opencv/cvat/pull/6040>)
-- TUS chunk size changed from 100 MB to 2 MB
-  (<https://github.com/opencv/cvat/pull/6058>)
+- TDB
+
+### Deprecated
+- TDB
+
+### Removed
+- TDB
+
+### Fixed
+- TDB
+
+### Security
+- TDB
 
 ## \[2.4.2] - 2023-04-14
 ### Added
