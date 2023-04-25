@@ -98,7 +98,7 @@ Create an environment and install the necessary python modules:
 python3 -m venv .env
 . .env/bin/activate
 pip install -U pip
-pip install -r utils/dataset_manifest/requirements.txt
+pip install -r utils/dataset_manifest/requirements.in
 ```
 
 > Please note that if used with video this way, the results may be different from what

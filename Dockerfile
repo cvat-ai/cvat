@@ -1,9 +1,7 @@
 ARG PIP_VERSION=22.0.2
 ARG BASE_IMAGE=ubuntu:22.04
 
-FROM ${BASE_IMAGE} as build-image
-
-ARG DJANGO_CONFIGURATION="production"
+FROM ${BASE_IMAGE} as build-image-base
 
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends install -yq \
@@ -22,6 +20,15 @@ RUN apt-get update && \
         python3-pip \
     && rm -rf /var/lib/apt/lists/*
 
+ARG PIP_VERSION
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1
+RUN --mount=type=cache,target=/root/.cache/pip/http \
+    python3 -m pip install -U pip==${PIP_VERSION}
+
+# We build OpenH264, FFmpeg and PyAV in a separate build stage,
+# because this way Docker can do it in parallel to all the other packages.
+FROM build-image-base AS build-image-av
+
 # Compile Openh264 and FFmpeg
 ARG PREFIX=/opt/ffmpeg
 ARG PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig
@@ -30,8 +37,8 @@ ENV FFMPEG_VERSION=4.3.1 \
     OPENH264_VERSION=2.1.1
 
 WORKDIR /tmp/openh264
-RUN curl -sL https://github.com/cisco/openh264/archive/v${OPENH264_VERSION}.tar.gz --output openh264-${OPENH264_VERSION}.tar.gz && \
-    tar -zx --strip-components=1 -f openh264-${OPENH264_VERSION}.tar.gz && \
+RUN curl -sL https://github.com/cisco/openh264/archive/v${OPENH264_VERSION}.tar.gz --output - | \
+    tar -zx --strip-components=1 && \
     make -j5 && make install-shared PREFIX=${PREFIX} && make clean
 
 WORKDIR /tmp/ffmpeg
@@ -39,22 +46,36 @@ RUN curl -sL https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.bz2 --outp
     tar -jx --strip-components=1 && \
     ./configure --disable-nonfree --disable-gpl --enable-libopenh264 \
         --enable-shared --disable-static --disable-doc --disable-programs --prefix="${PREFIX}" && \
-    # make clean keeps the configuration files that let to know how the original sources were used to create the binary
-    make -j5 && make install && make clean && \
-    tar -zcf "/tmp/ffmpeg-$FFMPEG_VERSION.tar.gz" . && mv "/tmp/ffmpeg-$FFMPEG_VERSION.tar.gz" .
+    make -j5 && make install && make clean
 
-# Build wheels for all dependencies
-ARG PIP_VERSION
-RUN python3 -m pip install -U pip==${PIP_VERSION}
-COPY cvat/requirements/ /tmp/requirements/
-COPY utils/dataset_manifest/ /tmp/dataset_manifest/
+COPY utils/dataset_manifest/requirements.txt /tmp/utils/dataset_manifest/requirements.txt
 
-# The server implementation depends on the dataset_manifest utility
-# so we need to build its dependencies too
-# https://github.com/opencv/cvat/issues/5096
-RUN DATUMARO_HEADLESS=1 python3 -m pip wheel --no-cache-dir \
-    -r /tmp/requirements/${DJANGO_CONFIGURATION}.txt \
-    -r /tmp/dataset_manifest/requirements.txt \
+# Since we're using pip-compile-multi, each dependency can only be listed in
+# one requirements file. In the case of PyAV, that should be
+# `dataset_manifest/requirements.txt`. Make sure it's actually there,
+# and then remove everything else.
+RUN grep -q '^av==' /tmp/utils/dataset_manifest/requirements.txt
+RUN sed -i '/^av==/!d' /tmp/utils/dataset_manifest/requirements.txt
+
+RUN --mount=type=cache,target=/root/.cache/pip/http \
+    python3 -m pip wheel \
+    -r /tmp/utils/dataset_manifest/requirements.txt \
+    -w /tmp/wheelhouse
+
+# This stage builds wheels for all dependencies (except PyAV)
+FROM build-image-base AS build-image
+
+COPY cvat/requirements/ /tmp/cvat/requirements/
+COPY utils/dataset_manifest/requirements.txt /tmp/utils/dataset_manifest/requirements.txt
+
+# Exclude av from the requirements file
+RUN sed -i '/^av==/d' /tmp/utils/dataset_manifest/requirements.txt
+
+ARG DJANGO_CONFIGURATION="production"
+
+RUN --mount=type=cache,target=/root/.cache/pip/http \
+    DATUMARO_HEADLESS=1 python3 -m pip wheel --no-deps \
+    -r /tmp/cvat/requirements/${DJANGO_CONFIGURATION}.txt \
     -w /tmp/wheelhouse
 
 FROM ${BASE_IMAGE}
@@ -129,33 +150,19 @@ RUN if [ "$CLAM_AV" = "yes" ]; then \
         rm -rf /var/lib/apt/lists/*; \
     fi
 
-ARG INSTALL_SOURCES='no'
-WORKDIR ${HOME}/sources
-RUN if [ "$INSTALL_SOURCES" = "yes" ]; then \
-        sed -Ei 's/^# deb-src /deb-src /' /etc/apt/sources.list && \
-        apt-get update && \
-        dpkg --get-selections | while read -r line; do        \
-            package=$(echo "$line" | awk '{print $1}');       \
-            mkdir "$package";                                 \
-            (                                                 \
-                cd "$package";                                \
-                apt-get -q --download-only source "$package"; \
-            )                                                 \
-            done &&                                           \
-        rm -rf /var/lib/apt/lists/*;                          \
-    fi
-COPY --from=build-image /tmp/openh264/openh264*.tar.gz /tmp/ffmpeg/ffmpeg*.tar.gz ${HOME}/sources/
-
 # Install wheels from the build image
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:${PATH}"
 ARG PIP_VERSION
+ARG PIP_DISABLE_PIP_VERSION_CHECK=1
+
 RUN python -m pip install -U pip==${PIP_VERSION}
 RUN --mount=type=bind,from=build-image,source=/tmp/wheelhouse,target=/mnt/wheelhouse \
-    python -m pip install --no-index /mnt/wheelhouse/*.whl
+    --mount=type=bind,from=build-image-av,source=/tmp/wheelhouse,target=/mnt/wheelhouse-av \
+    python -m pip install --no-index /mnt/wheelhouse/*.whl /mnt/wheelhouse-av/*.whl
 
 ENV NUMPROCS=1
-COPY --from=build-image /opt/ffmpeg/lib /usr/lib
+COPY --from=build-image-av /opt/ffmpeg/lib /usr/lib
 
 # These variables are required for supervisord substitutions in files
 # This library allows remote python debugging with VS Code

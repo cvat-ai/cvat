@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## \[2.4.3] - 2023-04-24
+### Changed
+- Docker images no longer include Ubuntu package sources or FFmpeg/OpenH264 sources
+  (<https://github.com/opencv/cvat/pull/6040>)
+- TUS chunk size changed from 100 MB to 2 MB
+  (<https://github.com/opencv/cvat/pull/6058>)
+
 ## \[2.4.2] - 2023-04-14
 ### Added
 - Support for Azure Blob Storage connection string authentication(<https://github.com/openvinotoolkit/cvat/pull/4649>)
@@ -53,7 +60,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The issue related to webhook events not being sent has been resolved (<https://github.com/opencv/cvat/pull/5916>)
 
 ### Security
-- TDB
+- Updated Redis (in the Compose file) to 7.0.x, and redis-py to 4.5.4
+  (<https://github.com/opencv/cvat/pull/6016>)
 
 ## \[2.4.1] - 2023-04-05
 ### Fixed
