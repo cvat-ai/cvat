@@ -51,6 +51,7 @@ export interface SerializedData {
     keyframe?: boolean;
     rotation?: number;
     descriptions?: string[];
+    isGroundTruth?: boolean;
     keyframes?: {
         prev: number | null;
         next: number | null;
@@ -80,6 +81,7 @@ export default class ObjectState {
     public readonly parentID: number | null;
     public readonly updated: number;
     public readonly group: { color: string; id: number; } | null;
+    public readonly isGroundTruth: boolean;
     public readonly keyframes: {
         first: number | null;
         prev: number | null;
@@ -166,6 +168,7 @@ export default class ObjectState {
             hidden: false,
             pinned: false,
             source: Source.MANUAL,
+            isGroundTruth: serialized.isGroundTruth || false,
             keyframes: serialized.keyframes || null,
             group: serialized.group || null,
             updated: serialized.updated || Date.now(),
@@ -197,7 +200,10 @@ export default class ObjectState {
                     get: () => data.shapeType,
                 },
                 source: {
-                    get: () => data.source,
+                    get: () => (data.isGroundTruth ? 'Ground truth' : data.source),
+                },
+                isGroundTruth: {
+                    get: () => data.isGroundTruth,
                 },
                 clientID: {
                     get: () => data.clientID,
@@ -216,7 +222,7 @@ export default class ObjectState {
                     },
                 },
                 color: {
-                    get: () => data.color,
+                    get: () => (this.isGroundTruth ? '#ffffff' : data.color),
                     set: (color) => {
                         data.updateFlags.color = true;
                         data.color = color;

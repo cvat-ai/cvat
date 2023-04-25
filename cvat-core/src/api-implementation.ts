@@ -344,8 +344,15 @@ export default function implementAPI(cvat) {
             parentId: isInteger,
         });
 
-        const searchParams = filterFieldsToSnakeCase(filter, ['taskId', 'parentId']);
-        const reportsData = await serverProxy.analytics.quality.get(searchParams);
+        // const searchParams = filterFieldsToSnakeCase(filter, ['taskId', 'parentId']);
+        // TMP solution aka filters disabled
+        let updatedParams: Record<string, string> = {};
+        if ('taskId' in filter) {
+            updatedParams = {
+                task_id: filter.taskId,
+            };
+        }
+        const reportsData = await serverProxy.analytics.quality.get(updatedParams);
         return reportsData;
     };
 

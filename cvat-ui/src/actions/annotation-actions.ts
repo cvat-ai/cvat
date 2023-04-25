@@ -12,7 +12,9 @@ import { CanvasMode as Canvas3DMode } from 'cvat-canvas3d-wrapper';
 import {
     RectDrawingMethod, CuboidDrawingMethod, Canvas, CanvasMode as Canvas2DMode,
 } from 'cvat-canvas-wrapper';
-import { getCore, MLModel, DimensionType } from 'cvat-core-wrapper';
+import {
+    getCore, MLModel, DimensionType, JobType, Job,
+} from 'cvat-core-wrapper';
 import logger, { LogType } from 'cvat-logger';
 import { getCVATStore } from 'cvat-store';
 
@@ -593,6 +595,11 @@ export function changeFrameAsync(
                 visible: statisticsVisible,
             },
         } = state.annotation;
+        const {
+            shapes: {
+                showGroundTruth,
+            },
+        } = state.settings;
         const { filters, frame, showAllInterpolationTracks } = receiveAnnotationsParameters();
 
         try {
@@ -612,6 +619,7 @@ export function changeFrameAsync(
                         delay: currentState.annotation.player.frame.delay,
                         changeTime: currentState.annotation.player.frame.changeTime,
                         states: currentState.annotation.annotations.states,
+                        groundTruthStates: currentState.annotation.annotations.groundTruthStates,
                         minZ: currentState.annotation.annotations.zLayer.min,
                         maxZ: currentState.annotation.annotations.zLayer.max,
                         curZ: currentState.annotation.annotations.zLayer.cur,
@@ -632,7 +640,9 @@ export function changeFrameAsync(
             }
 
             const data = await job.frames.get(toFrame, fillBuffer, frameStep);
-            const states = await job.annotations.get(toFrame, showAllInterpolationTracks, filters);
+            let states = await job.annotations.get(toFrame, showAllInterpolationTracks, filters);
+            const groundTruthStates = states.filter((_state: any) => _state.isGroundTruth);
+            if (!showGroundTruth) states = states.filter((_state: any) => !_state.isGroundTruth);
 
             if (!isAbleToChangeFrame() || statisticsVisible || propagateVisible) {
                 // while doing async actions above, canvas can become used by a user in another way
@@ -677,6 +687,7 @@ export function changeFrameAsync(
                     filename: data.filename,
                     relatedFiles: data.relatedFiles,
                     states,
+                    groundTruthStates,
                     minZ,
                     maxZ,
                     curZ: maxZ,
@@ -877,10 +888,12 @@ export function getJobAsync(
         try {
             const state = getState();
             const filters = initialFilters;
+
             const {
                 settings: {
                     workspace: { showAllInterpolationTracks },
                     player: { showDeletedFrames },
+                    shapes: { showGroundTruth },
                 },
             } = state;
 
@@ -905,6 +918,12 @@ export function getJobAsync(
             );
 
             const [job] = await cvat.jobs.get({ jobID: jid });
+            let gtJob = null;
+            if (job.type === JobType.NORMAL) {
+                const [task] = await cvat.tasks.get({ id: tid });
+                [gtJob] = task.jobs.filter((_job: Job) => _job.type === JobType.GROUND_TRUTH);
+            }
+
             // navigate to correct first frame according to setup
             let frameNumber;
             if (initialFrame === null && !showDeletedFrames) {
@@ -928,7 +947,14 @@ export function getJobAsync(
                     },
                 });
             }
-            const states = await job.annotations.get(frameNumber, showAllInterpolationTracks, filters);
+
+            const GTAnnotaionsSource = gtJob ? gtJob.id : null;
+            let states = await job.annotations.get(
+                frameNumber, showAllInterpolationTracks, filters, GTAnnotaionsSource,
+            );
+            const groundTruthStates = states.filter((_state: any) => _state.isGroundTruth);
+            if (!showGroundTruth) states = states.filter((_state: any) => !_state.isGroundTruth);
+
             const issues = await job.issues();
             const [minZ, maxZ] = computeZRange(states);
             const colors = [...cvat.enums.colors];
@@ -943,6 +969,7 @@ export function getJobAsync(
                     job,
                     issues,
                     states,
+                    groundTruthStates,
                     frameNumber,
                     frameFilename: frameData.filename,
                     relatedFiles: frameData.relatedFiles,

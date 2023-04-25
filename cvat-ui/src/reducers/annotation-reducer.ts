@@ -12,6 +12,7 @@ import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { DimensionType } from 'cvat-core-wrapper';
 import { clamp } from 'utils/math';
 
+import { SettingsActionTypes } from 'actions/settings-actions';
 import {
     ActiveControl,
     AnnotationState,
@@ -90,6 +91,7 @@ const defaultState: AnnotationState = {
         collapsed: {},
         collapsedAll: true,
         states: [],
+        groundTruthStates: [],
         filters: [],
         resetGroupFlag: false,
         history: {
@@ -139,6 +141,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             const {
                 job,
                 states,
+                groundTruthStates,
                 openTime,
                 frameNumber: number,
                 frameFilename: filename,
@@ -183,6 +186,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 annotations: {
                     ...state.annotations,
                     states,
+                    groundTruthStates,
                     filters,
                     zLayer: {
                         min: minZ,
@@ -261,13 +265,13 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 filename,
                 relatedFiles,
                 states,
+                groundTruthStates,
                 minZ,
                 maxZ,
                 curZ,
                 delay,
                 changeTime,
             } = action.payload;
-
             return {
                 ...state,
                 player: {
@@ -286,6 +290,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     ...state.annotations,
                     activatedStateID: updateActivatedStateID(states, activatedStateID),
                     states,
+                    groundTruthStates,
                     zLayer: {
                         min: minZ,
                         max: maxZ,
@@ -1091,6 +1096,11 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 return state;
             }
 
+            let newStates = state.annotations.states;
+            if (workspace !== Workspace.REVIEW_WORKSPACE) {
+                newStates = state.annotations.states.filter((_state: any) => !_state.isGroundTruth);
+            }
+
             return {
                 ...state,
                 workspace,
@@ -1098,6 +1108,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     ...state.annotations,
                     activatedStateID: null,
                     activatedAttributeID: null,
+                    states: newStates,
                 },
             };
         }
@@ -1173,6 +1184,24 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 canvas: {
                     ...state.canvas,
                     ready: true,
+                },
+            };
+        }
+        case SettingsActionTypes.CHANGE_SHOW_GROUND_TRUTH: {
+            if (action.payload.showGroundTruth) {
+                return {
+                    ...state,
+                    annotations: {
+                        ...state.annotations,
+                        states: [...state.annotations.states, ...state.annotations.groundTruthStates],
+                    },
+                };
+            }
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    states: state.annotations.states.filter((_state: any) => !_state.isGroundTruth),
                 },
             };
         }

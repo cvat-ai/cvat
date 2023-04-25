@@ -14,7 +14,7 @@ import Button from 'antd/lib/button';
 
 import ColorPicker from 'components/annotation-page/standard-workspace/objects-side-bar/color-picker';
 import { ColorizeIcon } from 'icons';
-import { ColorBy, CombinedState } from 'reducers';
+import { ColorBy, CombinedState, Workspace } from 'reducers';
 import { DimensionType } from 'cvat-core-wrapper';
 import { collapseAppearance as collapseAppearanceAction } from 'actions/annotation-actions';
 import {
@@ -24,6 +24,7 @@ import {
     changeShapesOutlinedBorders as changeShapesOutlinedBordersAction,
     changeShowBitmap as changeShowBitmapAction,
     changeShowProjections as changeShowProjectionsAction,
+    changeShowGroundTruth as changeShowGroundTruthAction,
 } from 'actions/settings-actions';
 
 interface StateToProps {
@@ -35,6 +36,8 @@ interface StateToProps {
     outlineColor: string;
     showBitmap: boolean;
     showProjections: boolean;
+    showGroundTruth: boolean;
+    workspace: Workspace;
     jobInstance: any;
 }
 
@@ -42,6 +45,7 @@ interface DispatchToProps {
     collapseAppearance(): void;
     changeShapesColorBy(event: RadioChangeEvent): void;
     changeShapesOpacity(value: number): void;
+    changeShowGroundTruth(event: CheckboxChangeEvent): void;
     changeSelectedShapesOpacity(value: number): void;
     changeShapesOutlinedBorders(outlined: boolean, color: string): void;
     changeShowBitmap(event: CheckboxChangeEvent): void;
@@ -52,11 +56,13 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const {
         annotation: {
             appearanceCollapsed,
+            workspace,
             job: { instance: jobInstance },
         },
         settings: {
             shapes: {
                 colorBy, opacity, selectedOpacity, outlined, outlineColor, showBitmap, showProjections,
+                showGroundTruth,
             },
         },
     } = state;
@@ -70,6 +76,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
         outlineColor,
         showBitmap,
         showProjections,
+        showGroundTruth,
+        workspace,
         jobInstance,
     };
 }
@@ -81,6 +89,9 @@ function mapDispatchToProps(dispatch: Dispatch<AnyAction>): DispatchToProps {
         },
         changeShapesColorBy(event: RadioChangeEvent): void {
             dispatch(changeShapesColorByAction(event.target.value));
+        },
+        changeShowGroundTruth(event: CheckboxChangeEvent): void {
+            dispatch(changeShowGroundTruthAction(event.target.checked));
         },
         changeShapesOpacity(value: number): void {
             dispatch(changeShapesOpacityAction(value));
@@ -112,8 +123,11 @@ function AppearanceBlock(props: Props): JSX.Element {
         outlineColor,
         showBitmap,
         showProjections,
+        showGroundTruth,
+        workspace,
         collapseAppearance,
         changeShapesColorBy,
+        changeShowGroundTruth,
         changeShapesOpacity,
         changeSelectedShapesOpacity,
         changeShapesOutlinedBorders,
@@ -200,6 +214,15 @@ function AppearanceBlock(props: Props): JSX.Element {
                             checked={showProjections}
                         >
                             Show projections
+                        </Checkbox>
+                    )}
+                    {is2D && workspace === Workspace.REVIEW_WORKSPACE && (
+                        <Checkbox
+                            className='cvat-appearance-show-ground-ttuth-checkbox'
+                            onChange={changeShowGroundTruth}
+                            checked={showGroundTruth}
+                        >
+                            Show ground truth annotations
                         </Checkbox>
                     )}
                 </div>

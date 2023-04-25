@@ -713,6 +713,7 @@ export interface AnnotationState {
         collapsed: Record<number, boolean>;
         collapsedAll: boolean;
         states: any[];
+        groundTruthStates: any[];
         filters: any[];
         resetGroupFlag: boolean;
         history: {
@@ -821,6 +822,7 @@ export interface ShapesSettingsState {
     outlineColor: string;
     showBitmap: boolean;
     showProjections: boolean;
+    showGroundTruth: boolean;
 }
 
 export interface SettingsState {

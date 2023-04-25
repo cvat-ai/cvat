@@ -63,6 +63,7 @@ class Annotation {
     public label: Label;
     public frame: number;
     private _removed: boolean;
+    protected isGroundTruth: boolean;
     public lock: boolean;
     protected readOnlyFields: string[];
     protected color: string;
@@ -86,6 +87,7 @@ class Annotation {
         this.label = this.taskLabels[data.label_id];
         this.frame = data.frame;
         this._removed = false;
+        this.isGroundTruth = data.is_gt || false;
         this.lock = false;
         this.readOnlyFields = injection.readOnlyFields || [];
         this.color = color;
@@ -580,6 +582,7 @@ export class Shape extends Drawn {
             hidden: this.hidden,
             updated: this.updated,
             pinned: this.pinned,
+            isGroundTruth: this.isGroundTruth,
             frame,
             source: this.source,
             ...this.withContext(frame),
@@ -946,6 +949,7 @@ export class Track extends Drawn {
             },
             frame,
             source: this.source,
+            isGroundTruth: this.isGroundTruth,
             ...this.withContext(frame),
         };
     }
@@ -1473,6 +1477,7 @@ export class Tag extends Annotation {
             updated: this.updated,
             frame,
             source: this.source,
+            isGroundTruth: this.isGroundTruth,
             ...this.withContext(frame),
         };
     }

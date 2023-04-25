@@ -322,10 +322,10 @@ function getFrameMeta(jobID, frame): FramesMetaData['frames'][0] {
         [size] = meta.frames;
     } else if (mode === 'annotation') {
         if (frame >= meta.size) {
-            throw new ArgumentError(`Meta information about frame ${frame} can't be received from the server`);
-        } else {
-            size = meta.frames[frame - startFrame];
+            return null;
+            // throw new ArgumentError(`Meta information about frame ${frame} can't be received from the server`);
         }
+        size = meta.frames[frame - startFrame];
     } else {
         throw new DataError(`Invalid mode is specified ${mode}`);
     }
@@ -751,8 +751,11 @@ export async function findNotDeletedFrame(jobID, frameFrom, frameTo, offset) {
     const update = sign > 0 ? (frame) => frame + 1 : (frame) => frame - 1;
     let framesCounter = 0;
     let lastUndeletedFrame = null;
+    const check = (frame): boolean => (meta.included_frames ?
+        (meta.included_frames.includes(frame)) && !(frame in meta.deleted_frames) :
+        !(frame in meta.deleted_frames));
     for (let frame = frameFrom; predicate(frame); frame = update(frame)) {
-        if (!(frame in meta.deleted_frames)) {
+        if (check(frame)) {
             lastUndeletedFrame = frame;
             framesCounter++;
             if (framesCounter === offset) {

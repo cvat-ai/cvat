@@ -148,6 +148,10 @@ polyline.cvat_canvas_shape_splitting {
     stroke-dasharray: 5;
 }
 
+.cvat_canvas_ground_truth {
+    stroke-dasharray: 45;
+}
+
 .cvat_canvas_shape_occluded_point {
     stroke-dasharray: 1 !important;
     stroke: white;

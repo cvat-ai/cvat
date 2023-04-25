@@ -29,12 +29,23 @@ function getCache(sessionType) {
     throw new ScriptingError(`Unknown session type was received ${sessionType}`);
 }
 
-async function getAnnotationsFromServer(session) {
+async function getAnnotationsFromServer(session, GTAnnotaionsSource) {
     const sessionType = session instanceof Task ? 'task' : 'job';
     const cache = getCache(sessionType);
 
     if (!cache.has(session)) {
-        const rawAnnotations = await serverProxy.annotations.getAnnotations(sessionType, session.id);
+        let rawAnnotations = await serverProxy.annotations.getAnnotations(sessionType, session.id);
+        if (GTAnnotaionsSource) {
+            const gtAnnotations = await serverProxy.annotations.getAnnotations(sessionType, GTAnnotaionsSource);
+            gtAnnotations.shapes.forEach(annotation => { annotation.is_gt = true; });
+            gtAnnotations.tracks.forEach(annotation => { annotation.is_gt = true; });
+            gtAnnotations.tags.forEach(annotation => { annotation.is_gt = true; });
+            rawAnnotations = {
+                shapes: [...rawAnnotations.shapes, ...gtAnnotations.shapes],
+                tracks: [...rawAnnotations.tracks, ...gtAnnotations.tracks],
+                tags: [...rawAnnotations.tags, ...gtAnnotations.tags],
+            };
+        }
 
         // Get meta information about frames
         const startFrame = sessionType === 'job' ? session.startFrame : 0;
@@ -70,7 +81,7 @@ export async function clearCache(session) {
     }
 }
 
-export async function getAnnotations(session, frame, allTracks, filters) {
+export async function getAnnotations(session, frame, allTracks, filters, GTAnnotaionsSource) {
     const sessionType = session instanceof Task ? 'task' : 'job';
     const cache = getCache(sessionType);
 
@@ -78,7 +89,7 @@ export async function getAnnotations(session, frame, allTracks, filters) {
         return cache.get(session).collection.get(frame, allTracks, filters);
     }
 
-    await getAnnotationsFromServer(session);
+    await getAnnotationsFromServer(session, GTAnnotaionsSource);
     return cache.get(session).collection.get(frame, allTracks, filters);
 }
 

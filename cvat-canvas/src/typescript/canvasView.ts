@@ -2705,6 +2705,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
             rect.addClass('cvat_canvas_hidden');
         }
 
+        if (state.isGroundTruth) {
+            rect.addClass('cvat_canvas_ground_truth');
+        }
+
         return rect;
     }
 
@@ -2727,6 +2731,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         if (state.hidden || state.outside || this.isInnerHidden(state.clientID)) {
             polygon.addClass('cvat_canvas_hidden');
+        }
+
+        if (state.isGroundTruth) {
+            polygon.addClass('cvat_canvas_ground_truth');
         }
 
         return polygon;
@@ -2753,6 +2761,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
             polyline.addClass('cvat_canvas_hidden');
         }
 
+        if (state.isGroundTruth) {
+            polyline.addClass('cvat_canvas_ground_truth');
+        }
+
         return polyline;
     }
 
@@ -2776,6 +2788,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         if (state.hidden || state.outside || this.isInnerHidden(state.clientID)) {
             cube.addClass('cvat_canvas_hidden');
+        }
+
+        if (state.isGroundTruth) {
+            cube.addClass('cvat_canvas_ground_truth');
         }
 
         return cube;
@@ -3352,6 +3368,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
             rect.addClass('cvat_canvas_hidden');
         }
 
+        if (state.isGroundTruth) {
+            rect.addClass('cvat_canvas_ground_truth');
+        }
+
         return rect;
     }
 
@@ -3376,6 +3396,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         if (state.occluded) {
             group.addClass('cvat_canvas_shape_occluded');
+        }
+
+        if (state.isGroundTruth) {
+            group.addClass('cvat_canvas_ground_truth');
         }
 
         shape.remove = (): SVG.PolyLine => {
