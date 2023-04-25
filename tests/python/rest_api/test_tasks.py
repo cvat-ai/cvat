@@ -13,7 +13,7 @@ from http import HTTPStatus
 from itertools import chain, product
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import List
+from typing import List, Optional
 
 import pytest
 from cvat_sdk import Client, Config, exceptions
@@ -44,11 +44,11 @@ from .utils import (
 )
 
 
-def get_cloud_storage_content(username, cloud_storage_id, manifest):
+def get_cloud_storage_content(username: str, cloud_storage_id: int, manifest: Optional[str] = None):
     with make_api_client(username) as api_client:
-        (data, _) = api_client.cloudstorages_api.retrieve_content(
-            cloud_storage_id, manifest_path=manifest
-        )
+        kwargs = {"manifest_path": manifest} if manifest else {}
+
+        (data, _) = api_client.cloudstorages_api.retrieve_content(cloud_storage_id, **kwargs)
         return data
 
 
@@ -714,14 +714,23 @@ class TestPostTaskData:
 
     @pytest.mark.with_external_services
     @pytest.mark.parametrize(
-        "cloud_storage_id, manifest, use_bucket_content, org",
+        "use_cache, cloud_storage_id, manifest, use_bucket_content, org",
         [
-            (1, "manifest.jsonl", False, ""),  # public bucket
-            (2, "sub/manifest.jsonl", True, "org2"),  # private bucket
+            (True, 1, "manifest.jsonl", False, ""),  # public bucket
+            (True, 2, "sub/manifest.jsonl", True, "org2"),  # private bucket
+            (True, 1, None, False, ""),
+            (True, 2, None, True, "org2"),
+            (False, 1, None, False, ""),
+            (False, 2, None, True, "org2"),
         ],
     )
     def test_create_task_with_cloud_storage_files(
-        self, cloud_storage_id, manifest, use_bucket_content, org
+        self,
+        use_cache: bool,
+        cloud_storage_id: int,
+        manifest: str,
+        use_bucket_content: bool,
+        org: str,
     ):
         if use_bucket_content:
             cloud_storage_content = get_cloud_storage_content(
@@ -729,7 +738,8 @@ class TestPostTaskData:
             )
         else:
             cloud_storage_content = ["image_case_65_1.png", "image_case_65_2.png"]
-        cloud_storage_content.append(manifest)
+        if manifest:
+            cloud_storage_content.append(manifest)
 
         task_spec = {
             "name": f"Task with files from cloud storage {cloud_storage_id}",
@@ -742,7 +752,7 @@ class TestPostTaskData:
 
         data_spec = {
             "image_quality": 75,
-            "use_cache": True,
+            "use_cache": use_cache,
             "cloud_storage_id": cloud_storage_id,
             "server_files": cloud_storage_content,
         }
