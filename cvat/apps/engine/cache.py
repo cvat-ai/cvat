@@ -27,7 +27,7 @@ from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
 from cvat.apps.engine.mime_types import mimetypes
 from utils.dataset_manifest import ImageManifestManager
 
-from typing import Tuple, Union, Optional
+from typing import Tuple, Optional
 
 
 class MediaCache:
