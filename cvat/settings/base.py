@@ -507,6 +507,7 @@ DATA_UPLOAD_MAX_NUMBER_FIELDS = None   # this django check disabled
 DATA_UPLOAD_MAX_NUMBER_FILES = None
 LOCAL_LOAD_MAX_FILES_COUNT = 500
 LOCAL_LOAD_MAX_FILES_SIZE = 512 * 1024 * 1024  # 512 MB
+CLOUD_STORAGE_MAX_FILES_COUNT = LOCAL_LOAD_MAX_FILES_COUNT
 
 RESTRICTIONS = {
     # allow access to analytics component to users with business role

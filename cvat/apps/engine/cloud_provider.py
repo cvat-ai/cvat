@@ -3,36 +3,33 @@
 #
 # SPDX-License-Identifier: MIT
 
-import os
-import boto3
 import functools
 import json
 import multiprocessing as mp
-import itertools
-from multiprocessing.pool import ThreadPool
-
+import os
 from abc import ABC, abstractmethod, abstractproperty
 from enum import Enum
 from io import BytesIO
-from rest_framework.exceptions import PermissionDenied, NotFound, ValidationError
-from PIL import Image, ImageFile
+from multiprocessing.pool import ThreadPool
+from typing import List, Optional
 
+import boto3
+from azure.core.exceptions import HttpResponseError, ResourceExistsError
+from azure.storage.blob import BlobServiceClient, ContainerClient, PublicAccess
 from boto3.s3.transfer import TransferConfig
 from botocore.exceptions import ClientError
 from botocore.handlers import disable_signing
-
-from azure.storage.blob import BlobServiceClient, ContainerClient
-from azure.core.exceptions import ResourceExistsError, HttpResponseError
-from azure.storage.blob import PublicAccess
-
+from django.conf import settings
 from google.cloud import storage
-from google.cloud.exceptions import NotFound as GoogleCloudNotFound, Forbidden as GoogleCloudForbidden
+from google.cloud.exceptions import Forbidden as GoogleCloudForbidden
+from google.cloud.exceptions import NotFound as GoogleCloudNotFound
+from PIL import Image, ImageFile
+from rest_framework.exceptions import (NotFound, PermissionDenied,
+                                       ValidationError)
 
 from cvat.apps.engine.log import slogger
-from cvat.apps.engine.models import CredentialsTypeChoice, CloudProviderChoice
 from cvat.apps.engine.media_extractors import _is_image
-
-from typing import Optional, List, Tuple
+from cvat.apps.engine.models import CloudProviderChoice, CredentialsTypeChoice
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -372,7 +369,7 @@ class AWS_S3(_CloudStorage):
 
     def initialize_content(self):
         """Initialize bucket content, filter list with files and keep only files with supported type."""
-        files = self._bucket.objects.all()
+        files = self._bucket.objects.limit(settings.CLOUD_STORAGE_MAX_FILES_COUNT)
         self._files = [{
             'name': item.key,
         } for item in files if _is_image(item.key)]
@@ -572,7 +569,7 @@ class AzureBlobContainer(_CloudStorage):
     #     pass
 
     def initialize_content(self):
-        files = self._container_client.list_blobs()
+        files = self._container_client.list_blobs(maxresults=settings.CLOUD_STORAGE_MAX_FILES_COUNT)
         self._files = [{
             'name': item.name
         } for item in files if _is_image(item.name)]
@@ -665,7 +662,7 @@ class GoogleCloudStorage(_CloudStorage):
                 'name': blob.name
             }
             for blob in self._storage_client.list_blobs(
-                self.bucket, prefix=self._prefix
+                self.bucket, prefix=self._prefix, max_results=settings.CLOUD_STORAGE_MAX_FILES_COUNT
             ) if _is_image(blob.name)
         ]
 

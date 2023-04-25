@@ -16,6 +16,7 @@ from typing import Any, Dict, Iterable, Optional, OrderedDict, Union
 from rest_framework import serializers, exceptions
 from django.contrib.auth.models import User, Group
 from django.db import transaction
+from django.conf import settings
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine import models
@@ -795,6 +796,12 @@ class DataSerializer(serializers.ModelSerializer):
             and attrs['start_frame'] > attrs['stop_frame']:
             raise serializers.ValidationError('Stop frame must be more or equal start frame')
 
+        if (
+            (server_files := attrs.get('server_files'))
+            and attrs.get('cloud_storage_id')
+            and len(list(filter(lambda x: not x.endswith('.jsonl'), server_files))) > settings.CLOUD_STORAGE_MAX_FILES_COUNT
+        ):
+            raise serializers.ValidationError('The maximum number of the cloud storage attached files is {settings.CLOUD_STORAGE_MAX_FILES_COUNT}')
         return attrs
 
     def create(self, validated_data):
