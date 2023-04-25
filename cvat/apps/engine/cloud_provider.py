@@ -168,6 +168,36 @@ class _CloudStorage(ABC):
     def _download_range_of_bytes(self, key: str, stop_byte: int, start_byte: int):
         pass
 
+    def optimally_image_download(self, key: str, chunk_size: int = 16384) -> BytesIO:
+        """
+        Method downloads image by the following approach:
+        Firstly we try to download the first N bytes of image which will be enough for determining image properties.
+        If for some reason we cannot identify the required properties then we will download all file.
+
+        Args:
+            key (str): File on the bucket
+            chunk_size (int, optional): The number of first bytes to download. Defaults to 16384 (16kB).
+
+        Returns:
+            BytesIO: Buffer with image
+        """
+        image_parser=ImageFile.Parser()
+
+        chunk = self.download_range_of_bytes(key, chunk_size - 1)
+        image_parser.feed(chunk)
+
+        if image_parser.image:
+            buff = BytesIO(chunk)
+        else:
+            buff = self.download_fileobj(key)
+            image_size_in_bytes = len(buff.getvalue())
+            slogger.glob.warning(
+                f'The {chunk_size} bytes were not enough to parse "{key}" image. '
+                f'Image size was {image_size_in_bytes} bytes. Image resolution was {Image.open(buff).size}. '
+                f'Downloaded percent was {round(min(chunk_size, image_size_in_bytes) / image_size_in_bytes * 100)}')
+        buff.filename = key
+        return buff
+
     @abstractmethod
     def upload_fileobj(self, file_obj, file_name):
         pass
@@ -388,37 +418,6 @@ class AWS_S3(_CloudStorage):
             for f, path in args:
                 self.download_file(f, path)
 
-    def optimally_image_download(self, key: str, chunk_size: int = 16384) -> Image.Image:
-        """
-        Method downloads image by the following approach:
-        Firstly we try to download the first N bytes of image which will be enough for determining image properties.
-        If for some reason we cannot identify the required properties then we will download all file.
-
-        Args:
-            key (str): File on the bucket
-            chunk_size (int, optional): The number of first bytes to download. Defaults to 16384 (16kB).
-
-        Returns:
-            Image.Image: PIL image.
-        """
-        image_parser=ImageFile.Parser()
-
-        chunk = self.download_range_of_bytes(key, chunk_size - 1)
-        image_parser.feed(chunk)
-
-        if image_parser.image:
-            image = image_parser.image
-        else:
-            with self.download_fileobj(key) as buff:
-                image_size_in_bytes = len(buff.getvalue())
-                image = Image.open(buff)
-                slogger.glob.warning(
-                    f'The {chunk_size} bytes were not enough to parse "{key}" image. '
-                    f'Image size was {image_size_in_bytes} bytes. Image resolution was {image.size}. '
-                    f'Downloaded percent was {round(chunk_size / image_size_in_bytes * 100)}')
-        image.filename = key
-        return image
-
     @validate_file_status
     @validate_bucket_status
     def _download_range_of_bytes(self, key: str, stop_byte: int, start_byte: int) -> bytes:
@@ -576,7 +575,7 @@ class AzureBlobContainer(_CloudStorage):
         files = self._container_client.list_blobs()
         self._files = [{
             'name': item.name
-        } for item in files]
+        } for item in files if _is_image(item.key)]
 
     @validate_file_status
     @validate_bucket_status
@@ -667,7 +666,7 @@ class GoogleCloudStorage(_CloudStorage):
             }
             for blob in self._storage_client.list_blobs(
                 self.bucket, prefix=self._prefix
-            )
+            ) if _is_image(blob.name)
         ]
 
     @validate_file_status

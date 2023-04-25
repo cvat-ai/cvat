@@ -13,6 +13,7 @@ from contextlib import closing
 from tempfile import NamedTemporaryFile
 from PIL import Image
 from json.decoder import JSONDecodeError
+from io import BytesIO
 
 from .utils import SortingMethod, md5_hash, rotate_image, sort
 
@@ -150,7 +151,7 @@ class KeyFramesVideoStreamReader(VideoStreamReader):
 
 class DatasetImagesReader:
     def __init__(self,
-                sources: Union[List[str], List[Image.Image]],
+                sources: Union[List[str], List[BytesIO]],
                 meta=None,
                 sorting_method=SortingMethod.PREDEFINED,
                 use_image_hash=False,
@@ -159,8 +160,8 @@ class DatasetImagesReader:
                 stop = None,
                 *args,
                 **kwargs):
-        self._are_images_opened = not isinstance(sources[0], str)
-        func = lambda x: x.filename if self._are_images_opened else None
+        self._raw_data_used = not isinstance(sources[0], str)
+        func = (lambda x: x.filename) if self._raw_data_used else None
         self._sources = sort(sources, sorting_method, func=func)
         self._meta = meta
         self._data_dir = kwargs.get('data_dir', None)
@@ -198,14 +199,10 @@ class DatasetImagesReader:
         for idx in range(self._stop):
             if idx in self.range_:
                 image = next(sources)
-                if self._are_images_opened:
-                    img = image
-                    image = image.filename
-                else:
-                    img = Image.open(image, mode='r')
+                img = Image.open(image, mode='r')
                 orientation = img.getexif().get(274, 1)
                 img_name = os.path.relpath(image, self._data_dir) if self._data_dir \
-                    else os.path.basename(image) if not self._are_images_opened else image
+                    else os.path.basename(image) if not self._raw_data_used else image.filename
                 name, extension = os.path.splitext(img_name)
                 width, height = img.width, img.height
                 if orientation > 4:
