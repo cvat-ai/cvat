@@ -195,6 +195,35 @@ class _CloudStorage(ABC):
         buff.filename = key
         return buff
 
+    def bulk_download_to_memory(
+        self,
+        files: List[str],
+        threads_number: int = mp.cpu_count() // 2,
+
+    ) -> List[BytesIO]:
+        if threads_number > 1:
+            with ThreadPool(threads_number) as pool:
+                return pool.map(self.download_fileobj, files)
+        else:
+            slogger.glob.warning('Download files to memory in series in one thread.')
+            return [self.download_fileobj(f) for f in files]
+
+    def bulk_download_to_dir(
+        self,
+        files: List[str],
+        upload_dir: str,
+        threads_number: int = mp.cpu_count() // 2,
+
+    ):
+        args = zip(files, [os.path.join(upload_dir, f) for f in files])
+        if threads_number > 1:
+            with ThreadPool(threads_number) as pool:
+                return pool.map(lambda x: self.download_file(*x), args)
+        else:
+            slogger.glob.warning(f'Download files to {upload_dir} directory in series in one thread.')
+            for f, path in args:
+                self.download_file(f, path)
+
     @abstractmethod
     def upload_fileobj(self, file_obj, file_name):
         pass
@@ -385,35 +414,6 @@ class AWS_S3(_CloudStorage):
         )
         buf.seek(0)
         return buf
-
-    def bulk_download_to_memory(
-        self,
-        files: List[str],
-        threads_number: int = mp.cpu_count() // 2,
-
-    ) -> List[BytesIO]:
-        if threads_number > 1:
-            with ThreadPool(threads_number) as pool:
-                return pool.map(self.download_fileobj, files)
-        else:
-            slogger.glob.warning('Download files to memory in series in one thread.')
-            return [self.download_fileobj(f) for f in files]
-
-    def bulk_download_to_dir(
-        self,
-        files: List[str],
-        upload_dir: str,
-        threads_number: int = mp.cpu_count() // 2,
-
-    ):
-        args = zip(files, [os.path.join(upload_dir, f) for f in files])
-        if threads_number > 1:
-            with ThreadPool(threads_number) as pool:
-                return pool.map(lambda x: self.download_file(*x), args)
-        else:
-            slogger.glob.warning(f'Download files to {upload_dir} directory in series in one thread.')
-            for f, path in args:
-                self.download_file(f, path)
 
     @validate_file_status
     @validate_bucket_status
