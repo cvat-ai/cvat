@@ -575,7 +575,7 @@ class AzureBlobContainer(_CloudStorage):
         files = self._container_client.list_blobs()
         self._files = [{
             'name': item.name
-        } for item in files if _is_image(item.key)]
+        } for item in files if _is_image(item.name)]
 
     @validate_file_status
     @validate_bucket_status
