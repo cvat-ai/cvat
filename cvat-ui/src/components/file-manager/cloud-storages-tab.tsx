@@ -9,6 +9,7 @@ import Form from 'antd/lib/form';
 import Select from 'antd/lib/select';
 import { CloudStorage } from 'reducers';
 import SelectCloudStorage from 'components/select-cloud-storage/select-cloud-storage';
+import config from 'config';
 import CloudStorageFiles from './cloud-storages-files';
 
 interface Props {
@@ -22,8 +23,6 @@ interface Props {
 }
 
 const { Option } = Select;
-
-const BUCKET_CONTENT_KEY = 'bucket content';
 
 export default function CloudStorageTab(props: Props): JSX.Element {
     const { searchPhrase, setSearchPhrase } = props;
@@ -39,7 +38,9 @@ export default function CloudStorageTab(props: Props): JSX.Element {
     }, [cloudStorage?.id]);
 
     useEffect(() => {
-        if (cloudStorage) cloudStorage.manifestPath = selectedSource;
+        if (cloudStorage) {
+            cloudStorage.manifestPath = (selectedSource !== config.BUCKET_CONTENT_KEY) ? selectedSource : null;
+        }
     }, [selectedSource]);
 
     return (
@@ -61,7 +62,7 @@ export default function CloudStorageTab(props: Props): JSX.Element {
                     <Select
                         onSelect={(value: string) => setSelectedSource(value)}
                     >
-                        {cloudStorage.manifests.concat([BUCKET_CONTENT_KEY]).map(
+                        {cloudStorage.manifests.concat([config.BUCKET_CONTENT_KEY]).map(
                             (manifest: string): JSX.Element => (
                                 <Option key={manifest} value={manifest}>
                                     {manifest}

@@ -15,6 +15,7 @@ import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
 import Divider from 'antd/lib/divider';
 import { CloudStorage, CombinedState } from 'reducers';
 import { loadCloudStorageContentAsync } from 'actions/cloud-storage-actions';
+import config from '../../config';
 
 interface Props {
     cloudStorage: CloudStorage;
@@ -175,7 +176,9 @@ export default function CloudStorageFiles(props: Props): JSX.Element {
     const onChangeCheckedAll = (checked: boolean): void => {
         setCheckedAll(checked);
         if (checked) {
-            onSelectFiles((source !== 'bucket content') ? (content as string[]).concat([source]) : content as string[]);
+            onSelectFiles(
+                (source !== config.BUCKET_CONTENT_KEY) ? (content as string[]).concat([source]) : content as string[],
+            );
         } else {
             onSelectFiles([]);
         }
@@ -223,7 +226,9 @@ export default function CloudStorageFiles(props: Props): JSX.Element {
                             } else if (checkedAll) {
                                 setCheckedAll(false);
                             }
-                            onSelectFiles((source !== 'bucket content') ? checkedFiles.concat([source]) : checkedFiles);
+                            onSelectFiles(
+                                (source !== config.BUCKET_CONTENT_KEY) ? checkedFiles.concat([source]) : checkedFiles,
+                            );
                         }}
                         loadData={(event: EventDataNode): Promise<void> => onLoadData(event.key.toLocaleString())}
                         treeData={treeData}

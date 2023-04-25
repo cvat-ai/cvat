@@ -1868,7 +1868,7 @@ async function getCloudStorageContent(id: number, manifestPath?: string) {
         const url = `${backendAPI}/cloudstorages/${id}/content`;
         response = await Axios.get(url, {
             params: {
-                ...(manifestPath && manifestPath !== 'bucket content' ? { manifest_path: manifestPath } : {}),
+                ...(manifestPath ? { manifest_path: manifestPath } : {}),
             },
         });
     } catch (errorData) {
