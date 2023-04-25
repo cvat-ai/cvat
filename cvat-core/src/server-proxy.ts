@@ -1368,7 +1368,7 @@ async function getUsers(filter = { page_size: 'all' }) {
     return response.data.results;
 }
 
-function getPreview(instance) {
+function getPreview(instance: 'projects' | 'tasks' | 'jobs' | 'cloudstorages') {
     return async function (id: number) {
         const { backendAPI } = config;
 
@@ -1383,7 +1383,7 @@ function getPreview(instance) {
             throw new ServerError(`Could not get preview for "${instance}/${id}"`, code);
         }
 
-        return response.data;
+        return (response.status === 200) ? response.data : '';
     };
 }
 
@@ -1860,7 +1860,7 @@ async function getCloudStorages(filter = {}) {
     return response.data.results;
 }
 
-async function getCloudStorageContent(id, manifestPath) {
+async function getCloudStorageContent(id: number, manifestPath?: string) {
     const { backendAPI } = config;
 
     let response = null;
@@ -1868,7 +1868,7 @@ async function getCloudStorageContent(id, manifestPath) {
         const url = `${backendAPI}/cloudstorages/${id}/content`;
         response = await Axios.get(url, {
             params: {
-                ...(manifestPath ? { manifest_path: manifestPath } : {}),
+                ...(manifestPath && manifestPath !== 'bucket content' ? { manifest_path: manifestPath } : {}),
             },
         });
     } catch (errorData) {

@@ -22,6 +22,7 @@ from django.http import HttpResponse, HttpResponseNotFound, HttpResponseBadReque
 from django.utils import timezone
 import django.db.models as dj_models
 from django.db.models import Count, Q
+from http import HTTPStatus
 
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
@@ -2092,20 +2093,21 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         try:
             db_storage = self.get_object()
             storage = db_storage_to_storage_instance(db_storage)
-            if not db_storage.manifests.count():
-                raise ValidationError('There is no manifest file')
-            manifest_path = request.query_params.get('manifest_path', db_storage.manifests.first().filename)
-            manifest_prefix = os.path.dirname(manifest_path)
+            if (manifest_path := request.query_params.get('manifest_path')):
+                manifest_prefix = os.path.dirname(manifest_path)
 
-            full_manifest_path = os.path.join(db_storage.get_storage_dirname(), manifest_path)
-            if not os.path.exists(full_manifest_path) or \
-                    datetime.utcfromtimestamp(os.path.getmtime(full_manifest_path)).replace(tzinfo=pytz.UTC) < storage.get_file_last_modified(manifest_path):
-                storage.download_file(manifest_path, full_manifest_path)
-            manifest = ImageManifestManager(full_manifest_path, db_storage.get_storage_dirname())
-            # need to update index
-            manifest.set_index()
-            manifest_files = [os.path.join(manifest_prefix, f) for f in manifest.data]
-            return Response(data=manifest_files, content_type="text/plain")
+                full_manifest_path = os.path.join(db_storage.get_storage_dirname(), manifest_path)
+                if not os.path.exists(full_manifest_path) or \
+                        datetime.utcfromtimestamp(os.path.getmtime(full_manifest_path)).replace(tzinfo=pytz.UTC) < storage.get_file_last_modified(manifest_path):
+                    storage.download_file(manifest_path, full_manifest_path)
+                manifest = ImageManifestManager(full_manifest_path, db_storage.get_storage_dirname())
+                # need to update index
+                manifest.set_index()
+                content = [os.path.join(manifest_prefix, f) for f in manifest.data]
+            else:
+                storage.initialize_content()
+                content = storage.content
+            return Response(data=content, content_type="text/plain")
 
         except CloudStorageModel.DoesNotExist:
             message = f"Storage {pk} does not exist"
@@ -2132,6 +2134,15 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         try:
             db_storage = self.get_object()
             cache = MediaCache()
+
+            # The idea is try to define real manifest preview only for the storages that have related manifests
+            # because otherwise it can lead to extra calls to a bucket, that are usually not free.
+            if not db_storage.has_at_least_one_manifest:
+                result = cache.get_cloud_preview_with_mime(db_storage, just_check=True)
+                if not result:
+                    return HttpResponse(status=HTTPStatus.NO_CONTENT)
+                return HttpResponse(result[0], result[1])
+
             preview, mime = cache.get_cloud_preview_with_mime(db_storage)
             return HttpResponse(preview, mime)
         except CloudStorageModel.DoesNotExist:

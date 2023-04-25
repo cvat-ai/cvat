@@ -18,7 +18,7 @@ import { loadCloudStorageContentAsync } from 'actions/cloud-storage-actions';
 
 interface Props {
     cloudStorage: CloudStorage;
-    selectedManifest: string;
+    source: string;
     onSelectFiles: (checkedKeysValue: string[]) => void;
     selectedFiles: string[];
 }
@@ -46,7 +46,7 @@ type Files =
 
 export default function CloudStorageFiles(props: Props): JSX.Element {
     const {
-        cloudStorage, selectedManifest, selectedFiles, onSelectFiles,
+        cloudStorage, source, selectedFiles, onSelectFiles,
     } = props;
     const dispatch = useDispatch();
     const isFetching = useSelector((state: CombinedState) => state.cloudStorages.activities.contentLoads.fetching);
@@ -63,7 +63,7 @@ export default function CloudStorageFiles(props: Props): JSX.Element {
 
     useEffect(() => {
         dispatch(loadCloudStorageContentAsync(cloudStorage));
-    }, [cloudStorage.id, selectedManifest]);
+    }, [cloudStorage.id, source]);
 
     const parseContent = (mass: string[], root = ''): Map<string, DataStructure> => {
         const data: Map<string, DataStructure> = new Map();
@@ -175,7 +175,7 @@ export default function CloudStorageFiles(props: Props): JSX.Element {
     const onChangeCheckedAll = (checked: boolean): void => {
         setCheckedAll(checked);
         if (checked) {
-            onSelectFiles((content as string[]).concat([selectedManifest]));
+            onSelectFiles((source !== 'bucket content') ? (content as string[]).concat([source]) : content as string[]);
         } else {
             onSelectFiles([]);
         }
@@ -223,7 +223,7 @@ export default function CloudStorageFiles(props: Props): JSX.Element {
                             } else if (checkedAll) {
                                 setCheckedAll(false);
                             }
-                            onSelectFiles(checkedFiles.concat([selectedManifest]));
+                            onSelectFiles((source !== 'bucket content') ? checkedFiles.concat([source]) : checkedFiles);
                         }}
                         loadData={(event: EventDataNode): Promise<void> => onLoadData(event.key.toLocaleString())}
                         treeData={treeData}

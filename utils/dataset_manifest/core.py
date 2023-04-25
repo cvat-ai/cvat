@@ -1,4 +1,5 @@
 # Copyright (C) 2021-2022 Intel Corporation
+# Copyright (C) 2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -14,6 +15,8 @@ from PIL import Image
 from json.decoder import JSONDecodeError
 
 from .utils import SortingMethod, md5_hash, rotate_image, sort
+
+from typing import List, Union
 
 class VideoStreamReader:
     def __init__(self, source_path, chunk_size, force):
@@ -147,7 +150,7 @@ class KeyFramesVideoStreamReader(VideoStreamReader):
 
 class DatasetImagesReader:
     def __init__(self,
-                sources,
+                sources: Union[List[str], List[Image.Image]],
                 meta=None,
                 sorting_method=SortingMethod.PREDEFINED,
                 use_image_hash=False,
@@ -156,7 +159,9 @@ class DatasetImagesReader:
                 stop = None,
                 *args,
                 **kwargs):
-        self._sources = sort(sources, sorting_method)
+        self._are_images_opened = not isinstance(sources[0], str)
+        func = lambda x: x.filename if self._are_images_opened else None
+        self._sources = sort(sources, sorting_method, func=func)
         self._meta = meta
         self._data_dir = kwargs.get('data_dir', None)
         self._use_image_hash = use_image_hash
@@ -193,10 +198,14 @@ class DatasetImagesReader:
         for idx in range(self._stop):
             if idx in self.range_:
                 image = next(sources)
-                img = Image.open(image, mode='r')
+                if self._are_images_opened:
+                    img = image
+                    image = image.filename
+                else:
+                    img = Image.open(image, mode='r')
                 orientation = img.getexif().get(274, 1)
                 img_name = os.path.relpath(image, self._data_dir) if self._data_dir \
-                    else os.path.basename(image)
+                    else os.path.basename(image) if not self._are_images_opened else image
                 name, extension = os.path.splitext(img_name)
                 width, height = img.width, img.height
                 if orientation > 4:
@@ -348,7 +357,7 @@ class _ManifestManager(ABC):
     }
 
     def _json_item_is_valid(self, **state):
-        for item in self._requared_item_attributes:
+        for item in self._required_item_attributes:
             if state.get(item, None) is None:
                 raise Exception(f"Invalid '{self.manifest.name} file structure': '{item}' is required, but not found")
 
@@ -446,8 +455,12 @@ class _ManifestManager(ABC):
     def get_subset(self, subset_names):
         pass
 
+    @property
+    def exists(self):
+        return os.path.exists(self._manifest.path)
+
 class VideoManifestManager(_ManifestManager):
-    _requared_item_attributes = {'number', 'pts'}
+    _required_item_attributes = {'number', 'pts'}
 
     def __init__(self, manifest_path, create_index=True):
         super().__init__(manifest_path, create_index)
@@ -567,7 +580,7 @@ class VideoManifestValidator(VideoManifestManager):
                 return
 
 class ImageManifestManager(_ManifestManager):
-    _requared_item_attributes = {'name', 'extension'}
+    _required_item_attributes = {'name', 'extension'}
 
     def __init__(self, manifest_path, upload_dir=None, create_index=True):
         super().__init__(manifest_path, create_index, upload_dir)

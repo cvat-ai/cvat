@@ -27,6 +27,8 @@ from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
 from cvat.apps.engine.mime_types import mimetypes
 from utils.dataset_manifest import ImageManifestManager
 
+from typing import Tuple, Union, Optional
+
 
 class MediaCache:
     def __init__(self, dimension=DimensionType.DIM_2D):
@@ -58,11 +60,19 @@ class MediaCache:
 
         return item
 
-    def get_cloud_preview_with_mime(self, db_storage):
-        item = self._get_or_set_cache_item(
-            key=f'cloudstorage_{db_storage.id}_preview',
-            create_function=lambda: self._prepare_cloud_preview(db_storage)
-        )
+    def get_cloud_preview_with_mime(
+        self,
+        db_storage,
+        just_check: bool = False
+    ) -> Optional[Tuple[io.BytesIO, str]]:
+        key = f'cloudstorage_{db_storage.id}_preview'
+
+        if just_check:
+            item = self._cache.get(key)
+        else:
+            item = self._get_or_set_cache_item(
+                key, create_function=lambda: self._prepare_cloud_preview(db_storage)
+            )
 
         return item
 

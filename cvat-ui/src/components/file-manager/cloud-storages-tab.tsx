@@ -23,24 +23,24 @@ interface Props {
 
 const { Option } = Select;
 
+const BUCKET_CONTENT_KEY = 'bucket content';
+
 export default function CloudStorageTab(props: Props): JSX.Element {
     const { searchPhrase, setSearchPhrase } = props;
     const {
         formRef, cloudStorage, selectedFiles, onSelectFiles, onSelectCloudStorage,
     } = props;
-    const [selectedManifest, setSelectedManifest] = useState<string | null>(null);
+    const [selectedSource, setSelectedSource] = useState<string | null>(null);
 
     useEffect(() => {
         if (cloudStorage) {
-            setSelectedManifest(cloudStorage.manifests[0]);
+            setSelectedSource(cloudStorage.manifests[0]);
         }
-    }, [cloudStorage]);
+    }, [cloudStorage?.id]);
 
     useEffect(() => {
-        if (selectedManifest) {
-            cloudStorage.manifestPath = selectedManifest;
-        }
-    }, [selectedManifest]);
+        if (cloudStorage) cloudStorage.manifestPath = selectedSource;
+    }, [selectedSource]);
 
     return (
         <Form ref={formRef} className='cvat-create-task-page-cloud-storages-tab-form' layout='vertical'>
@@ -53,15 +53,15 @@ export default function CloudStorageTab(props: Props): JSX.Element {
             />
             {cloudStorage ? (
                 <Form.Item
-                    label='Select manifest file'
+                    label='Select data source'
                     name='manifestSelect'
-                    rules={[{ required: true, message: 'Please, specify a manifest file' }]}
-                    initialValue={cloudStorage.manifests[0]}
+                    rules={[{ required: true, message: 'Please, specify a data source' }]}
+                    initialValue={(cloudStorage.manifests?.length) ? cloudStorage.manifests[0] : null}
                 >
                     <Select
-                        onSelect={(value: string) => setSelectedManifest(value)}
+                        onSelect={(value: string) => setSelectedSource(value)}
                     >
-                        {cloudStorage.manifests.map(
+                        {cloudStorage.manifests.concat([BUCKET_CONTENT_KEY]).map(
                             (manifest: string): JSX.Element => (
                                 <Option key={manifest} value={manifest}>
                                     {manifest}
@@ -72,7 +72,7 @@ export default function CloudStorageTab(props: Props): JSX.Element {
                 </Form.Item>
             ) : null}
 
-            {cloudStorage && selectedManifest ? (
+            {cloudStorage && selectedSource ? (
                 <Form.Item
                     label='Files'
                     name='cloudStorageFiles'
@@ -80,7 +80,7 @@ export default function CloudStorageTab(props: Props): JSX.Element {
                 >
                     <CloudStorageFiles
                         cloudStorage={cloudStorage}
-                        selectedManifest={selectedManifest}
+                        source={selectedSource}
                         selectedFiles={selectedFiles}
                         onSelectFiles={onSelectFiles}
                     />

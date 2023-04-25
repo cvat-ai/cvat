@@ -81,7 +81,7 @@ function SelectCloudStorage(props: Props): JSX.Element {
                 const potentialStorage = potentialStorages[0];
                 setSearchPhrase(potentialStorage.displayName);
                 // eslint-disable-next-line prefer-destructuring
-                potentialStorage.manifestPath = potentialStorage.manifests[0];
+                potentialStorage.manifestPath = (potentialStorage.manifests?.length) ? potentialStorage.manifests[0] : '';
                 onSelectCloudStorage(potentialStorage);
             }
         }
@@ -122,7 +122,9 @@ function SelectCloudStorage(props: Props): JSX.Element {
                     const selectedCloudStorage =
                     list.filter((_cloudStorage: CloudStorage) => _cloudStorage.id === +value)[0] || null;
                     // eslint-disable-next-line prefer-destructuring
-                    [selectedCloudStorage.manifestPath] = selectedCloudStorage.manifests;
+                    if (selectedCloudStorage.manifests?.length) {
+                        [selectedCloudStorage.manifestPath] = selectedCloudStorage.manifests;
+                    }
                     onSelectCloudStorage(selectedCloudStorage);
                     setSearchPhrase(selectedCloudStorage?.displayName || '');
                 }}

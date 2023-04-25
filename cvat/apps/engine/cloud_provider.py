@@ -1,4 +1,5 @@
 # Copyright (C) 2021-2023 Intel Corporation
+# Copyright (C) 2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -6,11 +7,15 @@ import os
 import boto3
 import functools
 import json
+import multiprocessing as mp
+import itertools
+from multiprocessing.pool import ThreadPool
 
 from abc import ABC, abstractmethod, abstractproperty
 from enum import Enum
 from io import BytesIO
 from rest_framework.exceptions import PermissionDenied, NotFound, ValidationError
+from PIL import Image, ImageFile
 
 from boto3.s3.transfer import TransferConfig
 from botocore.exceptions import ClientError
@@ -25,8 +30,11 @@ from google.cloud.exceptions import NotFound as GoogleCloudNotFound, Forbidden a
 
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.models import CredentialsTypeChoice, CloudProviderChoice
+from cvat.apps.engine.media_extractors import _is_image
 
-from typing import Optional
+from typing import Optional, List, Tuple
+
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 class Status(str, Enum):
     AVAILABLE = 'AVAILABLE'
@@ -137,6 +145,29 @@ class _CloudStorage(ABC):
         else:
             raise NotImplementedError("Unsupported type {} was found".format(type(file_obj)))
 
+    def download_range_of_bytes(self, key: str, stop_byte: int, start_byte: int = 0) -> bytes:
+        """Method downloads the required bytes range of the file.
+
+        Args:
+            key (str): File on the bucket
+            stop_byte (int): Stop byte
+            start_byte (int, optional): Start byte. Defaults to 0.
+
+        Raises:
+            ValidationError: If start_byte > stop_byte
+
+        Returns:
+            bytes: Range with bytes
+        """
+
+        if start_byte > stop_byte:
+            raise ValidationError(f'Incorrect bytes range was received: {start_byte}-{stop_byte}')
+        return self._download_range_of_bytes(key, stop_byte, start_byte)
+
+    @abstractmethod
+    def _download_range_of_bytes(self, key: str, stop_byte: int, start_byte: int):
+        pass
+
     @abstractmethod
     def upload_fileobj(self, file_obj, file_name):
         pass
@@ -239,7 +270,7 @@ class AWS_S3(_CloudStorage):
         if not any([access_key_id, secret_key, session_token]):
             self._s3 = boto3.resource('s3', region_name=region, endpoint_url=endpoint_url)
             self._s3.meta.client.meta.events.register('choose-signer.s3.*', disable_signing)
-        self._client_s3 = self._s3.meta.client
+        self._client = self._s3.meta.client
         self._bucket = self._s3.Bucket(bucket)
         self.region = region
 
@@ -252,10 +283,10 @@ class AWS_S3(_CloudStorage):
         return self._bucket.name
 
     def _head(self):
-        return self._client_s3.head_bucket(Bucket=self.name)
+        return self._client.head_bucket(Bucket=self.name)
 
     def _head_file(self, key):
-        return self._client_s3.head_object(Bucket=self.name, Key=key)
+        return self._client.head_object(Bucket=self.name, Key=key)
 
     def get_status(self):
         # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.head_object
@@ -310,10 +341,11 @@ class AWS_S3(_CloudStorage):
             raise Exception(msg)
 
     def initialize_content(self):
+        """Initialize bucket content, filter list with files and keep only files with supported type."""
         files = self._bucket.objects.all()
         self._files = [{
             'name': item.key,
-        } for item in files]
+        } for item in files if _is_image(item.key)]
 
     @validate_file_status
     @validate_bucket_status
@@ -327,9 +359,74 @@ class AWS_S3(_CloudStorage):
         buf.seek(0)
         return buf
 
+    def bulk_download_to_memory(
+        self,
+        files: List[str],
+        threads_number: int = mp.cpu_count() // 2,
+
+    ) -> List[BytesIO]:
+        if threads_number > 1:
+            with ThreadPool(threads_number) as pool:
+                return pool.map(self.download_fileobj, files)
+        else:
+            slogger.glob.warning('Download files to memory in series in one thread.')
+            return [self.download_fileobj(f) for f in files]
+
+    def bulk_download_to_dir(
+        self,
+        files: List[str],
+        upload_dir: str,
+        threads_number: int = mp.cpu_count() // 2,
+
+    ):
+        args = zip(files, [os.path.join(upload_dir, f) for f in files])
+        if threads_number > 1:
+            with ThreadPool(threads_number) as pool:
+                return pool.map(lambda x: self.download_file(*x), args)
+        else:
+            slogger.glob.warning(f'Download files to {upload_dir} directory in series in one thread.')
+            for f, path in args:
+                self.download_file(f, path)
+
+    def optimally_image_download(self, key: str, chunk_size: int = 16384) -> Image.Image:
+        """
+        Method downloads image by the following approach:
+        Firstly we try to download the first N bytes of image which will be enough for determining image properties.
+        If for some reason we cannot identify the required properties then we will download all file.
+
+        Args:
+            key (str): File on the bucket
+            chunk_size (int, optional): The number of first bytes to download. Defaults to 16384 (16kB).
+
+        Returns:
+            Image.Image: PIL image.
+        """
+        image_parser=ImageFile.Parser()
+
+        chunk = self.download_range_of_bytes(key, chunk_size - 1)
+        image_parser.feed(chunk)
+
+        if image_parser.image:
+            image = image_parser.image
+        else:
+            with self.download_fileobj(key) as buff:
+                image_size_in_bytes = len(buff.getvalue())
+                image = Image.open(buff)
+                slogger.glob.warning(
+                    f'The {chunk_size} bytes were not enough to parse "{key}" image. '
+                    f'Image size was {image_size_in_bytes} bytes. Image resolution was {image.size}. '
+                    f'Downloaded percent was {round(chunk_size / image_size_in_bytes * 100)}')
+        image.filename = key
+        return image
+
+    @validate_file_status
+    @validate_bucket_status
+    def _download_range_of_bytes(self, key: str, stop_byte: int, start_byte: int) -> bytes:
+        return self._client.get_object(Bucket=self.bucket.name, Key=key, Range=f'bytes={start_byte}-{stop_byte}')['Body'].read()
+
     def create(self):
         try:
-            responce = self._bucket.create(
+            response = self._bucket.create(
                 ACL='private',
                 CreateBucketConfiguration={
                     'LocationConstraint': self.region,
@@ -339,7 +436,7 @@ class AWS_S3(_CloudStorage):
             slogger.glob.info(
                 'Bucket {} has been created on {} region'.format(
                     self.name,
-                    responce['Location']
+                    response['Location']
                 ))
         except Exception as ex:
             msg = str(ex)
@@ -348,7 +445,7 @@ class AWS_S3(_CloudStorage):
 
     def delete_file(self, file_name: str):
         try:
-            self._client_s3.delete_object(Bucket=self.name, Key=file_name)
+            self._client.delete_object(Bucket=self.name, Key=file_name)
         except Exception as ex:
             msg = str(ex)
             slogger.glob.info(msg)
@@ -494,6 +591,11 @@ class AzureBlobContainer(_CloudStorage):
         buf.seek(0)
         return buf
 
+    @validate_file_status
+    @validate_bucket_status
+    def _download_range_of_bytes(self, key: str, stop_byte: int, start_byte: int) -> bytes:
+        return self._container_client.download_blob(blob=key, offset=start_byte, length=stop_byte).read()
+
     @property
     def supported_actions(self):
         pass
@@ -576,6 +678,15 @@ class GoogleCloudStorage(_CloudStorage):
         self._storage_client.download_blob_to_file(blob, buf)
         buf.seek(0)
         return buf
+
+    @validate_file_status
+    @validate_bucket_status
+    def _download_range_of_bytes(self, key: str, stop_byte: int, start_byte: int) -> bytes:
+        with BytesIO() as buff:
+            blob = self.bucket.blob(key)
+            self._storage_client.download_blob_to_file(blob, buff, start_byte, stop_byte)
+            buff.seek(0)
+            return buff.getvalue()
 
     @validate_bucket_status
     def upload_fileobj(self, file_obj, file_name):

@@ -1,6 +1,6 @@
 
 # Copyright (C) 2018-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -281,7 +281,13 @@ def _validate_job_file_mapping(
 
     return job_file_mapping
 
-def _validate_manifest(manifests, root_dir, is_in_cloud, db_cloud_storage, data_storage_method):
+def _validate_manifest(
+    manifests: List[str],
+    root_dir: str,
+    is_in_cloud: bool,
+    db_cloud_storage: models.CloudStorage,
+    data_storage_method: str,
+) -> Optional[str]:
     if manifests:
         if len(manifests) != 1:
             raise ValidationError('Only one manifest file can be attached to data')
@@ -299,7 +305,6 @@ def _validate_manifest(manifests, root_dir, is_in_cloud, db_cloud_storage, data_
                 raise ValidationError("Manifest file can be uploaded only if 'Use cache' option is also selected")
             return manifest_file
         raise ValidationError('Invalid manifest was uploaded')
-    return None
 
 def _validate_url(url):
     def _validate_ip_address(ip_address):
@@ -366,14 +371,22 @@ def _download_data(urls, upload_dir):
 
     return list(local_files.keys())
 
+def _download_data_from_cloud_storage(
+    db_storage: models.CloudStorage,
+    files: List[str],
+    upload_dir: str,
+):
+    cloud_storage_instance = db_storage_to_storage_instance(db_storage)
+    cloud_storage_instance.bulk_download_to_dir(files, upload_dir)
+
 def _get_manifest_frame_indexer(start_frame=0, frame_step=1):
     return lambda frame_id: start_frame + frame_id * frame_step
 
 def _create_task_manifest_based_on_cloud_storage_manifest(
-    sorted_media,
-    cloud_storage_manifest_prefix,
-    cloud_storage_manifest,
-    manifest
+    sorted_media: List[str],
+    cloud_storage_manifest_prefix: str,
+    cloud_storage_manifest: ImageManifestManager,
+    manifest: ImageManifestManager,
 ):
     if cloud_storage_manifest_prefix:
         sorted_media_without_manifest_prefix = [
@@ -392,6 +405,18 @@ def _create_task_manifest_based_on_cloud_storage_manifest(
                             'in the request with the contents of the bucket')
     sorted_content = (i[1] for i in sorted(zip(sequence, content)))
     manifest.create(sorted_content)
+
+def _create_task_manifest_from_cloud_data(
+    db_storage: models.CloudStorage,
+    sorted_media: List[str],
+    manifest: ImageManifestManager,
+    dimension: models.DimensionType = models.DimensionType.DIM_2D,
+):
+    cloud_storage_instance = db_storage_to_storage_instance(db_storage)
+    content = [cloud_storage_instance.optimally_image_download(key) for key in sorted_media]
+
+    manifest.link(sources=content, DIM_3D=dimension == models.DimensionType.DIM_3D)
+    manifest.create()
 
 @transaction.atomic
 def _create_thread(
@@ -435,15 +460,26 @@ def _create_thread(
 
     if is_data_in_cloud:
         manifest = ImageManifestManager(db_data.get_manifest_path())
-        cloud_storage_manifest = ImageManifestManager(
-            os.path.join(db_data.cloud_storage.get_storage_dirname(), manifest_file),
-            db_data.cloud_storage.get_storage_dirname()
-        )
-        cloud_storage_manifest.set_index()
-        cloud_storage_manifest_prefix = os.path.dirname(manifest_file)
+        if db_data.cloud_storage.has_at_least_one_manifest and manifest_file:
+            cloud_storage_manifest = ImageManifestManager(
+                os.path.join(db_data.cloud_storage.get_storage_dirname(), manifest_file),
+                db_data.cloud_storage.get_storage_dirname()
+            )
+            cloud_storage_manifest.set_index()
+            cloud_storage_manifest_prefix = os.path.dirname(manifest_file)
+        if db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM or not settings.USE_CACHE:
+            _download_data_from_cloud_storage(db_data.cloud_storage, data['server_files'], upload_dir)
+            is_data_in_cloud = False
+            db_data.storage = models.StorageChoice.LOCAL
 
     # update list with server files if task creation approach with pattern and manifest file is used
     if is_data_in_cloud and data['filename_pattern']:
+        if not db_data.cloud_storage.has_at_least_one_manifest:
+            raise ValidationError(
+                "Using a filename_pattern is only supported with manifest file, "
+                "but specified cloud storage doesn't linked with a manifest."
+            )
+
         if 1 != len(data['server_files']):
             l = len(data['server_files']) - 1
             raise ValidationError(
@@ -468,7 +504,8 @@ def _create_thread(
         raise ValidationError("job_file_mapping can't be used with sequence-based data like videos")
 
     if data['server_files']:
-        if db_data.storage == models.StorageChoice.LOCAL:
+        if db_data.storage == models.StorageChoice.LOCAL and not db_data.cloud_storage:
+            # this means that the data has not been downloaded from the storage to the host
             _copy_data_from_source(data['server_files'], upload_dir, data.get('server_files_path'))
         elif is_data_in_cloud:
             if job_file_mapping is not None:
@@ -476,10 +513,14 @@ def _create_thread(
             else:
                 sorted_media = sort(media['image'], data['sorting_method'])
 
-            # Define task manifest content based on cloud storage manifest content and uploaded files
-            _create_task_manifest_based_on_cloud_storage_manifest(
-                sorted_media, cloud_storage_manifest_prefix,
-                cloud_storage_manifest, manifest)
+            if db_data.cloud_storage.has_at_least_one_manifest and manifest:
+                # Define task manifest content based on cloud storage manifest content and uploaded files
+                _create_task_manifest_based_on_cloud_storage_manifest(
+                    sorted_media, cloud_storage_manifest_prefix,
+                    cloud_storage_manifest, manifest)
+            else: # without manifest file but with use_cache option
+                # Define task manifest content based on list with uploaded files
+                _create_task_manifest_from_cloud_data(db_data.cloud_storage, sorted_media, manifest)
 
     av_scan_paths(upload_dir)
 
@@ -734,7 +775,8 @@ def _create_thread(
             else: # images, archive, pdf
                 db_data.size = len(extractor)
                 manifest = ImageManifestManager(db_data.get_manifest_path())
-                if not manifest_file:
+
+                if not manifest.exists:
                     manifest.link(
                         sources=extractor.absolute_source_paths,
                         meta={ k: {'related_images': related_images[k] } for k in related_images },

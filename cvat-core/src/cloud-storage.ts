@@ -164,7 +164,6 @@ export default class CloudStorage {
                 manifestPath: {
                     get: () => data.manifest_path,
                     set: (value) => {
-                        validateNotEmptyString(value);
                         data.manifest_path = value;
                     },
                 },
@@ -376,7 +375,7 @@ Object.defineProperties(CloudStorage.prototype.getPreview, {
             return new Promise((resolve, reject) => {
                 serverProxy.cloudStorages
                     .getPreview(this.id)
-                    .then((result) => decodePreview(result))
+                    .then((result) => ((result) ? decodePreview(result) : Promise.resolve(result)))
                     .then((decoded) => resolve(decoded))
                     .catch((error) => {
                         reject(error);
