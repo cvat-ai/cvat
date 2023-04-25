@@ -15,7 +15,18 @@ export interface Segmentation {
     intelligentScissorsFactory: (onChangeToolsBlockerState:(event:string)=>void) => IntelligentScissors;
 }
 
+export interface MatSpace {
+    empty: () => any;
+    fromData: (width: number, height: number, type: MatType, data: number[]) => any;
+    resize: (mat: any, targetWidth: number, targetHeight: number, method?: any) => Uint8Array;
+}
+
+export interface MatVectorSpace {
+    empty: () => any;
+}
+
 export interface Contours {
+    findContours: (src: any, contours: any) => number[][];
     approxPoly: (points: number[] | any, threshold: number, closed?: boolean) => number[][];
 }
 
@@ -25,6 +36,12 @@ export interface ImgProc {
 
 export interface Tracking {
     trackerMIL: OpenCVTracker;
+}
+
+export enum MatType {
+    CV_8UC1,
+    CV_8UC3,
+    CV_8UC4,
 }
 
 export class OpenCVWrapper {
@@ -109,6 +126,55 @@ export class OpenCVWrapper {
         return !!this.injectionProcess;
     }
 
+    public get mat(): MatSpace {
+        if (!this.initialized) {
+            throw new Error('Need to initialize OpenCV first');
+        }
+
+        const { cv } = this;
+        return {
+            empty: () => new cv.Mat(),
+
+            fromData: (width: number, height: number, type: MatType, data: number[]) => {
+                const typeToCVType = {
+                    [MatType.CV_8UC1]: cv.CV_8UC1,
+                    [MatType.CV_8UC3]: cv.CV_8UC3,
+                    [MatType.CV_8UC4]: cv.CV_8UC4,
+                };
+
+                const mat = cv.matFromArray(height, width, typeToCVType[type], data);
+                return mat;
+            },
+
+            resize: (mat: any, targetWidth: number, targetHeight: number): Uint8Array => {
+                const dst = new cv.Mat();
+                const size = new cv.Size(targetWidth, targetHeight);
+
+                try {
+                    cv.resize(mat, dst, size, 0, 0, cv.INTER_LINEAR);
+                    if ([cv.CV_8UC1, cv.CV_8UC3, cv.CV_8UC4].includes(mat.type())) {
+                        return dst.data;
+                    }
+
+                    throw new Error('Unsupported type to resize');
+                } finally {
+                    dst.delete();
+                }
+            },
+        };
+    }
+
+    public get matVector(): MatVectorSpace {
+        if (!this.initialized) {
+            throw new Error('Need to initialize OpenCV first');
+        }
+
+        const { cv } = this;
+        return {
+            empty: () => new cv.MatVector(),
+        };
+    }
+
     public get contours(): Contours {
         if (!this.initialized) {
             throw new Error('Need to initialize OpenCV first');
@@ -116,6 +182,24 @@ export class OpenCVWrapper {
 
         const { cv } = this;
         return {
+            findContours: (src: any, contours: any): number[][] => {
+                const jsContours: number[][] = [];
+                const hierarchy = new cv.Mat();
+                try {
+                    cv.findContours(src, contours, hierarchy, cv.RETR_CCOMP, cv.CHAIN_APPROX_SIMPLE);
+                    for (let i = 0; i < contours.size(); i++) {
+                        const contour = contours.get(i);
+                        jsContours.push(Array.from(contour.data32S));
+                        contour.delete();
+                    }
+                } finally {
+                    hierarchy.delete();
+                }
+
+                const longest = jsContours.sort((arr1, arr2) => arr2.length - arr1.length)[0];
+                return [longest];
+            },
+
             approxPoly: (points: number[] | number[][], threshold: number, closed = true): number[][] => {
                 const isArrayOfArrays = Array.isArray(points[0]);
                 if (points.length < 3) {

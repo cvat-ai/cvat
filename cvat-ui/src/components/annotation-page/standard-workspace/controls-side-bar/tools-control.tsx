@@ -30,7 +30,7 @@ import { Canvas, convertShapesForInteractor } from 'cvat-canvas-wrapper';
 import {
     getCore, Attribute, Label, MLModel,
 } from 'cvat-core-wrapper';
-import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
+import openCVWrapper, { MatType } from 'utils/opencv-wrapper/opencv-wrapper';
 import {
     CombinedState, ActiveControl, ObjectType, ShapeType, ToolsBlockerState, ModelAttribute,
 } from 'reducers';
@@ -375,6 +375,15 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 this.setState({ fetching: true });
                 const response = await core.lambda.call(jobInstance.taskId, interactor,
                     { ...data, job: jobInstance.id });
+
+                // if only mask presented, let's receive points
+                if (response.mask && !response.points) {
+                    const originalWidth = response.orig_size ? response.orig_size[0] : response.mask[0].length;
+                    const originalHeight = response.orig_size ? response.orig_size[1] : response.mask.length;
+                    response.points = await this.receivePointsFromMask(
+                        response.mask, originalWidth, originalHeight,
+                    );
+                }
 
                 // approximation with cv.approxPolyDP
                 const approximated = await this.approximateResponsePoints(response.points);
@@ -849,68 +858,16 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         } else {
             const height = this.interaction.latestResponse.mask.length;
             const width = this.interaction.latestResponse.mask[0].length;
-            const maskPoints = this.interaction.latestResponse.mask.flat();
-
-            async function resizeImage(
-                data: number[],
-                compressedWidth: number,
-                compressedHeight: number,
-                targetWidth: number,
-                targetHeight: number,
-            ) {
-                const imageData = new ImageData(compressedWidth, compressedHeight);
-                for (let i = 0; i < data.length; i ++) {
-                    const row = Math.ceil(i / compressedWidth);
-                    const col = i % compressedWidth;
-                    if (data[i]) {
-                        imageData.data[row * width * 4 + col * 4 + 0] = 255;
-                        imageData.data[row * width * 4 + col * 4 + 1] = 255;
-                        imageData.data[row * width * 4 + col * 4 + 2] = 255;
-                        imageData.data[row * width * 4 + col * 4 + 3] = 255;
-                    }
-                }
-
-                const bitmap = await createImageBitmap(imageData, 0, 0, compressedWidth, compressedHeight, { resizeHeight: targetHeight, resizeWidth: targetWidth, resizeQuality: 'medium' });
-                const offscreen = new OffscreenCanvas(targetWidth, targetHeight);
-                const context = offscreen.getContext('2d') as OffscreenCanvasRenderingContext2D;
-                context.drawImage(bitmap, 0, 0);
-
-                const resizedMask = [];
-                const resized = context.getImageData(0, 0, targetWidth, targetHeight);
-                for (let i = 0; i < resized.data.length; i += 4) {
-                    if (resized.data[i]) {
-                        resizedMask.push(255);
-                    } else {
-                        resizedMask.push(0);
-                    }
-                }
-
-                resizedMask.push(0, 0, targetWidth - 1, targetHeight - 1);
-                return resizedMask;
-            }
-
+            let maskPoints = this.interaction.latestResponse.mask.flat();
 
             if (this.interaction.latestResponse.orig_size) {
                 const [originalWidth, originalHeight] = this.interaction.latestResponse.orig_size;
-                resizeImage(maskPoints, width, height, originalWidth, originalHeight).then((points) => {
-                    const object = new core.classes.ObjectState({
-                        frame,
-                        objectType: ObjectType.SHAPE,
-                        label: labels.length ? labels.filter((label: any) => label.id === activeLabelID)[0] : null,
-                        shapeType: ShapeType.MASK,
-                        points,
-                        occluded: false,
-                        zOrder: curZOrder,
-                    });
-
-                    createAnnotations(jobInstance, frame, [object]);
-                })
-
-                return;
+                maskPoints = await this.resizeMask(this.interaction.latestResponse.mask, originalWidth, originalHeight);
+                maskPoints.push(0, 0, originalWidth - 1, originalHeight - 1);
+            } else {
+                maskPoints.push(0, 0, width - 1, height - 1);
             }
 
-
-            maskPoints.push(0, 0, width - 1, height - 1);
             const object = new core.classes.ObjectState({
                 frame,
                 objectType: ObjectType.SHAPE,
@@ -925,23 +882,68 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         }
     }
 
+    private async initializeOpenCV(): Promise<void> {
+        if (!openCVWrapper.isInitialized) {
+            const hide = message.loading('OpenCV client initialization..', 0);
+            try {
+                await openCVWrapper.initialize(() => {});
+            } finally {
+                hide();
+            }
+        }
+    }
+
+    private async receivePointsFromMask(
+        mask: number[][],
+        originalWidth: number,
+        originalHeight: number,
+    ): Promise<number[]> {
+        const scaleX = originalWidth / mask[0].length;
+        const scaleY = originalHeight / mask.length;
+        await this.initializeOpenCV();
+
+        const src = openCVWrapper.mat.fromData(mask[0].length, mask.length, MatType.CV_8UC1, mask.flat());
+        const contours = openCVWrapper.matVector.empty();
+        try {
+            const polygons = openCVWrapper.contours.findContours(src, contours);
+            return polygons[0].map((val: number, idx: number) => {
+                if (idx % 2) {
+                    return val * scaleY;
+                }
+
+                return val * scaleX;
+            });
+        } finally {
+            src.delete();
+            contours.delete();
+        }
+    }
+
     private async approximateResponsePoints(points: number[][]): Promise<number[][]> {
         const { approxPolyAccuracy } = this.state;
         if (points.length > 3) {
-            if (!openCVWrapper.isInitialized) {
-                const hide = message.loading('OpenCV.js initialization..', 0);
-                try {
-                    await openCVWrapper.initialize(() => {});
-                } finally {
-                    hide();
-                }
-            }
-
+            await this.initializeOpenCV();
             const threshold = thresholdFromAccuracy(approxPolyAccuracy);
             return openCVWrapper.contours.approxPoly(points, threshold);
         }
 
         return points;
+    }
+
+    private async resizeMask(data: number[][], originalWidth: number, originalHeight: number): Promise<number[]> {
+        await this.initializeOpenCV();
+        const mat = openCVWrapper.mat.fromData(data[0].length, data.length, MatType.CV_8UC1, data.flat());
+        try {
+            const resized = openCVWrapper.mat.resize(mat, originalWidth, originalHeight);
+            const normMask = resized.reduce((acc, val, idx) => {
+                acc[idx] = val > 0 ? 255 : 0;
+                return acc;
+            }, Array(resized.length));
+
+            return normMask;
+        } finally {
+            mat.delete();
+        }
     }
 
     private renderMasksConvertingBlock(): JSX.Element {

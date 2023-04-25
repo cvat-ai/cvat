@@ -16,7 +16,7 @@ interface SAMPlugin {
                     taskID: number,
                     model: any,
                     args: any,
-                ) => Promise<void | { preventMethodCall: boolean }>;
+                ) => Promise<null | { preventMethodCall: boolean }>;
                 leave: (
                     plugin: SAMPlugin,
                     result: any,
@@ -122,7 +122,7 @@ function modelData(
 
 const samPlugin: SAMPlugin = {
     name: 'Segmeny Anything',
-    description: 'Plugin handles non-default SAM model output',
+    description: 'Plugin handles non-default SAM serverless function output',
     cvat: {
         lambda: {
             call: {
@@ -130,18 +130,19 @@ const samPlugin: SAMPlugin = {
                     plugin: SAMPlugin,
                     taskID: number,
                     model: any, { frame }: { frame: number },
-                ): Promise<void | { preventMethodCall: boolean }> {
-                    if (model.id !== plugin.data.modelID) return;
-                    if (!plugin.data.session) {
-                        throw new Error('SAM plugin is not ready, session was not initialized');
+                ): Promise<null | { preventMethodCall: boolean }> {
+                    if (model.id === plugin.data.modelID) {
+                        if (!plugin.data.session) {
+                            throw new Error('SAM plugin is not ready, session was not initialized');
+                        }
+
+                        const key = `${taskID}_${frame}`;
+                        if (key in plugin.data.embeddings) {
+                            return { preventMethodCall: true };
+                        }
                     }
 
-                    const key = `${taskID}_${frame}`;
-                    if (key in plugin.data.embeddings) {
-                        return {
-                            preventMethodCall: true,
-                        };
-                    }
+                    return null;
                 },
 
                 async leave(
@@ -152,7 +153,7 @@ const samPlugin: SAMPlugin = {
                     { frame, pos_points, neg_points }: {
                         frame: number, pos_points: number[][], neg_points: number[][],
                     },
-                ): Promise<{ mask: number[][]; points: number[]; orig_size: [number, number]; }> {
+                ): Promise<{ mask: number[][]; orig_size: [number, number]; }> {
                     const key = `${taskID}_${frame}`;
                     if (model.id !== plugin.data.modelID) {
                         return result;
@@ -210,7 +211,6 @@ const samPlugin: SAMPlugin = {
 
                     return {
                         mask: imageData,
-                        points: [0, 0, 10, 10, 20, 20],
                         orig_size: [modelScale.width, modelScale.height],
                     };
                 },
@@ -238,14 +238,14 @@ const SAMModelPlugin: ComponentBuilder = ({ core }) => {
     return {
         name: 'Segment Anything model',
         destructor: () => {},
-    }
-}
+    };
+};
 
-function register() {
+function register(): void {
     if (Object.prototype.hasOwnProperty.call(window, 'cvatUI')) {
         (window as any as { cvatUI: { registerComponent: PluginEntryPoint } })
             .cvatUI.registerComponent(SAMModelPlugin);
     }
-};
+}
 
 window.addEventListener('plugins.ready', register, { once: true });
