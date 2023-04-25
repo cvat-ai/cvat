@@ -479,11 +479,12 @@ class TaskReadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Task
-        fields = ('url', 'id', 'name', 'project_id', 'mode', 'owner', 'assignee',
+        fields = (
+            'url', 'id', 'name', 'project_id', 'mode', 'owner', 'assignee',
             'bug_tracker', 'created_date', 'updated_date', 'overlap', 'segment_size',
             'status', 'labels', 'segments', 'data_chunk_size', 'data_compressed_chunk_type',
             'data_original_chunk_type', 'size', 'image_quality', 'data', 'dimension',
-            'subset', 'organization', 'target_storage', 'source_storage',
+            'subset', 'organization', 'target_storage', 'source_storage', 'priority',
         )
         read_only_fields = fields
         extra_kwargs = {
@@ -507,11 +508,12 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
     class Meta:
         model = models.Task
-        fields = ('url', 'id', 'name', 'project_id', 'owner_id', 'assignee_id',
+        fields = (
+            'url', 'id', 'name', 'project_id', 'owner_id', 'assignee_id',
             'bug_tracker', 'overlap', 'segment_size', 'labels', 'subset',
-            'target_storage', 'source_storage',
+            'target_storage', 'source_storage', 'priority',
         )
-        write_once_fields = ('overlap', 'segment_size', 'project_id', 'owner_id', 'labels')
+        write_once_fields = ('overlap', 'segment_size', 'project_id', 'owner_id', 'labels', 'priority')
 
     def to_representation(self, instance):
         serializer = TaskReadSerializer(instance, context=self.context)

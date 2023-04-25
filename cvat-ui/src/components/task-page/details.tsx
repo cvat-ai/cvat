@@ -6,6 +6,7 @@ import React from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Tag from 'antd/lib/tag';
 import { CheckCircleOutlined, ExclamationCircleOutlined, LoadingOutlined } from '@ant-design/icons';
+import { grey } from '@ant-design/colors';
 import Modal from 'antd/lib/modal';
 import notification from 'antd/lib/notification';
 import Text from 'antd/lib/typography/Text';
@@ -20,6 +21,7 @@ import { ActiveInference } from 'reducers';
 import AutomaticAnnotationProgress from 'components/tasks-page/automatic-annotation-progress';
 import Descriptions from 'antd/lib/descriptions';
 import Space from 'antd/lib/space';
+import { Priority, PriorityColors } from 'enums';
 import UserSelector, { User } from './user-selector';
 import BugTrackerEditor from './bug-tracker-editor';
 import LabelsEditorComponent from '../labels-editor/labels-editor';
@@ -401,6 +403,24 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
         );
     }
 
+    private renderPriority(): JSX.Element {
+        const { taskInstance } = this.props;
+
+        const priorityText = Priority[taskInstance.priority] || 'None';
+        const priorityColor = PriorityColors.get(taskInstance.priority) || grey.primary;
+
+        return (
+            <Row>
+                <Col span={24}>
+                    <Text className='cvat-text-color'>Priority:</Text>
+                </Col>
+                <Col span={24}>
+                    <Text style={{ color: priorityColor }}>{ priorityText }</Text>
+                </Col>
+            </Row>
+        );
+    }
+
     public render(): JSX.Element {
         const {
             activeInference, cancelAutoAnnotation, taskInstance, onTaskUpdate,
@@ -442,6 +462,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
                         {this.renderDatasetRepository()}
                         {!taskInstance.projectId && this.renderLabelsEditor()}
                         {taskInstance.projectId && this.renderSubsetField()}
+                        {this.renderPriority()}
                     </Col>
                 </Row>
             </div>

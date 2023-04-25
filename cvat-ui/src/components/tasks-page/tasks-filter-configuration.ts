@@ -72,6 +72,20 @@ export const config: Partial<Config> = {
             fieldSettings: { min: 0 },
             valueSources: ['value'],
         },
+        priority: {
+            label: 'Priority',
+            type: 'select',
+            valueSources: ['value'],
+            fieldSettings: {
+                listValues: [
+                    { value: 10, title: 'Lowest' },
+                    { value: 20, title: 'Low' },
+                    { value: 30, title: 'Medium' },
+                    { value: 40, title: 'High' },
+                    { value: 50, title: 'Highest' },
+                ],
+            },
+        },
         project_id: {
             label: 'Project ID',
             type: 'number',

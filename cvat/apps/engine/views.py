@@ -747,7 +747,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             "segment_set__job_set")
     lookup_fields = {'project_name': 'project__name', 'owner': 'owner__username', 'assignee': 'assignee__username'}
     search_fields = ('project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension')
-    filter_fields = list(search_fields) + ['id', 'project_id', 'updated_date']
+    filter_fields = list(search_fields) + ['id', 'project_id', 'updated_date', 'priority']
     ordering_fields = filter_fields
     ordering = "-id"
     iam_organization_field = 'organization'

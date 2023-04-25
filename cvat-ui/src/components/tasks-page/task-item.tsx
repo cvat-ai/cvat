@@ -9,12 +9,14 @@ import Text from 'antd/lib/typography/Text';
 import { Row, Col } from 'antd/lib/grid';
 import Button from 'antd/lib/button';
 import { MoreOutlined } from '@ant-design/icons';
+import { grey } from '@ant-design/colors';
 import Dropdown from 'antd/lib/dropdown';
 import Progress from 'antd/lib/progress';
 import moment from 'moment';
 
 import ActionsMenuContainer from 'containers/actions-menu/actions-menu';
 import { ActiveInference } from 'reducers';
+import { Priority, PriorityColors } from 'enums';
 import AutomaticAnnotationProgress from './automatic-annotation-progress';
 
 export interface TaskItemProps {
@@ -101,6 +103,9 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
 
         const jobsProgress = numOfCompleted / numOfJobs;
 
+        const priorityText = Priority[taskInstance.priority] || 'None';
+        const priorityColor = PriorityColors.get(taskInstance.priority) || grey.primary;
+
         return (
             <Col span={6}>
                 <Row justify='space-between' align='top'>
@@ -124,6 +129,14 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                             strokeWidth={5}
                             size='small'
                         />
+                    </Col>
+                </Row>
+                <Row>
+                    <Col>
+                        {'Priority: '}
+                        <Text style={{ color: priorityColor }}>
+                            {priorityText}
+                        </Text>
                     </Col>
                 </Row>
                 <AutomaticAnnotationProgress
