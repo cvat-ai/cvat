@@ -799,9 +799,9 @@ class DataSerializer(serializers.ModelSerializer):
         if (
             (server_files := attrs.get('server_files'))
             and attrs.get('cloud_storage_id')
-            and len(list(filter(lambda x: not x.endswith('.jsonl'), server_files))) > settings.CLOUD_STORAGE_MAX_FILES_COUNT
+            and len(list(filter(lambda x: not x['file'].endswith('.jsonl'), server_files))) > settings.CLOUD_STORAGE_MAX_FILES_COUNT
         ):
-            raise serializers.ValidationError('The maximum number of the cloud storage attached files is {settings.CLOUD_STORAGE_MAX_FILES_COUNT}')
+            raise serializers.ValidationError(f'The maximum number of the cloud storage attached files is {settings.CLOUD_STORAGE_MAX_FILES_COUNT}')
         return attrs
 
     def create(self, validated_data):

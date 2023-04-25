@@ -590,7 +590,7 @@ class AzureBlobContainer(_CloudStorage):
     @validate_file_status
     @validate_bucket_status
     def _download_range_of_bytes(self, key: str, stop_byte: int, start_byte: int) -> bytes:
-        return self._container_client.download_blob(blob=key, offset=start_byte, length=stop_byte).read()
+        return self._container_client.download_blob(blob=key, offset=start_byte, length=stop_byte).readall()
 
     @property
     def supported_actions(self):
