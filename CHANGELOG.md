@@ -10,10 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TDB
 
 ### Changed
-- Docker images no longer include Ubuntu package sources or FFmpeg/OpenH264 sources
-  (<https://github.com/opencv/cvat/pull/6040>)
-- TUS chunk size changed from 100 MB to 2 MB
-  (<https://github.com/opencv/cvat/pull/6058>)
+- TDB
 
 ### Deprecated
 - TDB
