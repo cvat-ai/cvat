@@ -1730,6 +1730,17 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
         slogger.glob.error(message)
         raise serializers.ValidationError({field: message})
 
+class CloudStorageFileSerializer(serializers.Serializer):
+    key = serializers.CharField(required=True)
+
+class CloudStorageCommonPrefixSerializer(serializers.Serializer):
+    prefix = serializers.CharField(required=True)
+
+class CloudStorageContentSerializer(serializers.Serializer):
+    continuation_token = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    common_prefixes = CloudStorageCommonPrefixSerializer(many=True)
+    contents = CloudStorageFileSerializer(many=True)
+
 class RelatedFileSerializer(serializers.ModelSerializer):
 
     class Meta:

@@ -11,11 +11,11 @@ from abc import ABC, abstractmethod, abstractproperty
 from enum import Enum
 from io import BytesIO
 from multiprocessing.pool import ThreadPool
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import boto3
 from azure.core.exceptions import HttpResponseError, ResourceExistsError
-from azure.storage.blob import BlobServiceClient, ContainerClient, PublicAccess
+from azure.storage.blob import BlobServiceClient, ContainerClient, PublicAccess, _list_blobs_helper
 from boto3.s3.transfer import TransferConfig
 from botocore.exceptions import ClientError
 from botocore.handlers import disable_signing
@@ -93,6 +93,7 @@ def validate_file_status(func):
     return wrapper
 
 class _CloudStorage(ABC):
+    PAGE_SIZE = 500
 
     def __init__(self):
         self._files = []
@@ -230,6 +231,15 @@ class _CloudStorage(ABC):
 
     @abstractmethod
     def upload_file(self, file_path, file_name=None):
+        pass
+
+    @abstractmethod
+    def list_files(
+        self,
+        prefix: Optional[str] = None,
+        delimiter: Optional[str] = None,
+        next_token: Optional[str] = None,
+    ) -> Dict:
         pass
 
     def __contains__(self, file_name):
@@ -403,6 +413,37 @@ class AWS_S3(_CloudStorage):
             'name': item.key,
         } for item in files if _is_image(item.key)]
 
+    def list_files(
+        self,
+        prefix: Optional[str] = None,
+        delimiter: Optional[str] = None,
+        next_token: Optional[str] = None,
+    ) -> Dict:
+        kwargs = {
+            'Bucket': self.name,
+            'MaxKeys': self.PAGE_SIZE,
+        }
+        if delimiter:
+            kwargs['Delimiter'] = delimiter
+        if prefix:
+            kwargs['Prefix'] = prefix
+        if next_token:
+            kwargs['ContinuationToken'] = next_token
+
+        # The structure of response looks like this:
+        # {
+        #    'CommonPrefixes': [{'Prefix': 'sub/'}],
+        #    'Contents': [{'ETag': '', 'Key': 'test.jpg', ..., 'Size': 1024}],
+        #    ...
+        #    'ContinuationToken': 'str'
+        # }
+        response = self._client.list_objects_v2(**kwargs)
+        return {
+            'contents': [{'key': f['Key']} for f in response.get('Contents', [])],
+            'common_prefixes': [{'prefix': p['Prefix']} for p in response.get('CommonPrefixes', [])],
+            'continuation_token': response.get('ContinuationToken', None),
+        }
+
     @validate_file_status
     @validate_bucket_status
     def download_fileobj(self, key):
@@ -493,15 +534,15 @@ class AzureBlobContainer(_CloudStorage):
             self._blob_service_client = BlobServiceClient(account_url=self.account_url, credential=sas_token)
         else:
             self._blob_service_client = BlobServiceClient(account_url=self.account_url)
-        self._container_client = self._blob_service_client.get_container_client(container)
+        self._client = self._blob_service_client.get_container_client(container)
 
     @property
     def container(self) -> ContainerClient:
-        return self._container_client
+        return self._client
 
     @property
     def name(self) -> str:
-        return self._container_client.container_name
+        return self._client.container_name
 
     @property
     def account_url(self) -> Optional[str]:
@@ -511,19 +552,19 @@ class AzureBlobContainer(_CloudStorage):
 
     def create(self):
         try:
-            self._container_client.create_container(
+            self._client.create_container(
                metadata={
                    'type' : 'created by CVAT',
                },
                public_access=PublicAccess.OFF
             )
         except ResourceExistsError:
-            msg = f"{self._container_client.container_name} already exists"
+            msg = f"{self._client.container_name} already exists"
             slogger.glob.info(msg)
             raise Exception(msg)
 
     def _head(self):
-        return self._container_client.get_container_properties()
+        return self._client.get_container_properties()
 
     def _head_file(self, key):
         blob_client = self.container.get_blob_client(key)
@@ -556,7 +597,7 @@ class AzureBlobContainer(_CloudStorage):
 
     @validate_bucket_status
     def upload_fileobj(self, file_obj, file_name):
-        self._container_client.upload_blob(name=file_name, data=file_obj)
+        self._client.upload_blob(name=file_name, data=file_obj)
 
     def upload_file(self, file_path, file_name=None):
         if not file_name:
@@ -569,16 +610,48 @@ class AzureBlobContainer(_CloudStorage):
     #     pass
 
     def initialize_content(self):
-        files = self._container_client.list_blobs(maxresults=settings.CLOUD_STORAGE_MAX_FILES_COUNT)
+        files = self._client.list_blobs(maxresults=settings.CLOUD_STORAGE_MAX_FILES_COUNT)
         self._files = [{
             'name': item.name
         } for item in files if _is_image(item.name)]
+
+    def list_files(
+        self,
+        prefix: Optional[str] = None,
+        delimiter: Optional[str] = None,
+        next_token: Optional[str] = None
+    ) -> Dict:
+        kwargs = {
+            'maxresults': self.PAGE_SIZE,
+            'results_per_page': self.PAGE_SIZE,
+        }
+        if delimiter:
+            kwargs['delimiter'] = delimiter
+        if prefix:
+            kwargs['prefix'] = prefix
+
+        page = self._client.walk_blobs(**kwargs).by_page(continuation_token=next_token)
+        all_files = list(next(page))
+        continuation_token = page.continuation_token
+
+        prefixes, files = [], []
+        for f in all_files:
+            if isinstance(f, _list_blobs_helper.BlobPrefix):
+                prefixes.append({'prefix': f.prefix})
+            else:
+                files.append({'key': f.name})
+
+        return {
+            'contents': files,
+            'common_prefixes': prefixes,
+            'continuation_token': continuation_token,
+        }
 
     @validate_file_status
     @validate_bucket_status
     def download_fileobj(self, key):
         buf = BytesIO()
-        storage_stream_downloader = self._container_client.download_blob(
+        storage_stream_downloader = self._client.download_blob(
             blob=key,
             offset=None,
             length=None,
@@ -590,7 +663,7 @@ class AzureBlobContainer(_CloudStorage):
     @validate_file_status
     @validate_bucket_status
     def _download_range_of_bytes(self, key: str, stop_byte: int, start_byte: int) -> bytes:
-        return self._container_client.download_blob(blob=key, offset=start_byte, length=stop_byte).readall()
+        return self._client.download_blob(blob=key, offset=start_byte, length=stop_byte).readall()
 
     @property
     def supported_actions(self):
@@ -621,15 +694,15 @@ class GoogleCloudStorage(_CloudStorage):
     def __init__(self, bucket_name, prefix=None, service_account_json=None, anonymous_access=False, project=None, location=None):
         super().__init__()
         if service_account_json:
-            self._storage_client = storage.Client.from_service_account_json(service_account_json)
+            self._client = storage.Client.from_service_account_json(service_account_json)
         elif anonymous_access:
-            self._storage_client = storage.Client.create_anonymous_client()
+            self._client = storage.Client.create_anonymous_client()
         else:
             # If no credentials were provided when constructing the client, the
             # client library will look for credentials in the environment.
-            self._storage_client = storage.Client()
+            self._client = storage.Client()
 
-        self._bucket = self._storage_client.bucket(bucket_name, user_project=project)
+        self._bucket = self._client.bucket(bucket_name, user_project=project)
         self._bucket_location = location
         self._prefix = prefix
 
@@ -642,11 +715,11 @@ class GoogleCloudStorage(_CloudStorage):
         return self._bucket.name
 
     def _head(self):
-        return self._storage_client.get_bucket(bucket_or_name=self.name)
+        return self._client.get_bucket(bucket_or_name=self.name)
 
     def _head_file(self, key):
         blob = self.bucket.blob(key)
-        return self._storage_client._get_resource(blob.path)
+        return self._client._get_resource(blob.path)
 
     @_define_gcs_status
     def get_status(self):
@@ -661,17 +734,48 @@ class GoogleCloudStorage(_CloudStorage):
             {
                 'name': blob.name
             }
-            for blob in self._storage_client.list_blobs(
+            for blob in self._client.list_blobs(
                 self.bucket, prefix=self._prefix, max_results=settings.CLOUD_STORAGE_MAX_FILES_COUNT
             ) if _is_image(blob.name)
         ]
+
+    def list_files(
+        self,
+        prefix: Optional[str] = None,
+        delimiter: Optional[str] = None,
+        next_token: Optional[str] = None
+    ) -> Dict:
+        kwargs = {
+            'bucket_or_name': self.name,
+            'max_results': self.PAGE_SIZE,
+            'page_size': self.PAGE_SIZE,
+            # https://cloud.google.com/storage/docs/json_api/v1/parameters#fields
+            'fields': 'items(name),nextPageToken,prefixes',
+        }
+        if delimiter:
+            kwargs['delimiter'] = delimiter
+        if prefix:
+            kwargs['prefix'] = prefix
+        if next_token:
+            kwargs['page_token'] = next_token
+
+        # NOTE: we should firstly iterate and only then we can define common prefixes
+        iterator = self._client.list_blobs(**kwargs)
+        files = [f for f in iterator]
+        prefixes = iterator.prefixes
+
+        return {
+            'contents': [{'key': f.name} for f in files],
+            'common_prefixes': [{'prefix': p} for p in prefixes],
+            'continuation_token': iterator.next_page_token,
+        }
 
     @validate_file_status
     @validate_bucket_status
     def download_fileobj(self, key):
         buf = BytesIO()
         blob = self.bucket.blob(key)
-        self._storage_client.download_blob_to_file(blob, buf)
+        self._client.download_blob_to_file(blob, buf)
         buf.seek(0)
         return buf
 
@@ -680,7 +784,7 @@ class GoogleCloudStorage(_CloudStorage):
     def _download_range_of_bytes(self, key: str, stop_byte: int, start_byte: int) -> bytes:
         with BytesIO() as buff:
             blob = self.bucket.blob(key)
-            self._storage_client.download_blob_to_file(blob, buff, start_byte, stop_byte)
+            self._client.download_blob_to_file(blob, buff, start_byte, stop_byte)
             buff.seek(0)
             return buff.getvalue()
 
@@ -696,7 +800,7 @@ class GoogleCloudStorage(_CloudStorage):
 
     def create(self):
         try:
-            self._bucket = self._storage_client.create_bucket(
+            self._bucket = self._client.create_bucket(
                 self.bucket,
                 location=self._bucket_location
             )

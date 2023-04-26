@@ -63,7 +63,7 @@ from cvat.apps.engine.serializers import (
     UserSerializer, PluginsSerializer, IssueReadSerializer,
     IssueWriteSerializer, CommentReadSerializer, CommentWriteSerializer, CloudStorageWriteSerializer,
     CloudStorageReadSerializer, DatasetFileSerializer,
-    ProjectFileSerializer, TaskFileSerializer)
+    ProjectFileSerializer, TaskFileSerializer, CloudStorageContentSerializer)
 from cvat.apps.engine.view_utils import get_cloud_storage_for_import_or_export
 
 from utils.dataset_manifest import ImageManifestManager
@@ -2083,11 +2083,17 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         parameters=[
             OpenApiParameter('manifest_path', description='Path to the manifest file in a cloud storage',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
+            OpenApiParameter('prefix', description='Prefix to filter data',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
+            OpenApiParameter('delimiter', description='The character you use to group keys',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
+            OpenApiParameter('next_token', description='Used to continue listing files in the bucket',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
         ],
         responses={
-            '200': OpenApiResponse(response=build_array_type(build_basic_type(OpenApiTypes.STR)), description='A manifest content'),
+            '200': OpenApiResponse(response=CloudStorageContentSerializer, description='A manifest content'),
         })
-    @action(detail=True, methods=['GET'], url_path='content')
+    @action(detail=True, methods=['GET'], url_path='content', serializer_class=CloudStorageContentSerializer)
     def content(self, request, pk):
         storage = None
         try:
@@ -2103,11 +2109,18 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 manifest = ImageManifestManager(full_manifest_path, db_storage.get_storage_dirname())
                 # need to update index
                 manifest.set_index()
+                # TODO: don't forget to update the implementation with manifest's content too
                 content = [os.path.join(manifest_prefix, f) for f in manifest.data]
             else:
-                storage.initialize_content()
-                content = storage.content
-            return Response(data=content, content_type="text/plain")
+                prefix = request.query_params.get('prefix')
+                delimiter = request.query_params.get('delimiter', '/')
+                next_token = request.query_params.get('next_token')
+
+                content = storage.list_files(prefix, delimiter, next_token)
+                serializer = CloudStorageContentSerializer(data=content)
+                serializer.is_valid(raise_exception=True)
+                content = serializer.data
+            return Response(data=content)
 
         except CloudStorageModel.DoesNotExist:
             message = f"Storage {pk} does not exist"
