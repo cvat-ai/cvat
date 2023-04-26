@@ -57,6 +57,12 @@ export class OpenCVWrapper {
         this.injectionProcess = null;
     }
 
+    private checkInitialization() {
+        if (!this.initialized) {
+            throw new Error('Need to initialize OpenCV first');
+        }
+    }
+
     private async inject(): Promise<void> {
         const response = await fetch(`${baseURL}/opencv/opencv.js`);
         if (response.status !== 200) {
@@ -127,10 +133,7 @@ export class OpenCVWrapper {
     }
 
     public get mat(): MatSpace {
-        if (!this.initialized) {
-            throw new Error('Need to initialize OpenCV first');
-        }
-
+        this.checkInitialization();
         const { cv } = this;
         return {
             empty: () => new cv.Mat(),
@@ -165,10 +168,7 @@ export class OpenCVWrapper {
     }
 
     public get matVector(): MatVectorSpace {
-        if (!this.initialized) {
-            throw new Error('Need to initialize OpenCV first');
-        }
-
+        this.checkInitialization();
         const { cv } = this;
         return {
             empty: () => new cv.MatVector(),
@@ -176,17 +176,14 @@ export class OpenCVWrapper {
     }
 
     public get contours(): Contours {
-        if (!this.initialized) {
-            throw new Error('Need to initialize OpenCV first');
-        }
-
+        this.checkInitialization();
         const { cv } = this;
         return {
             findContours: (src: any, contours: any): number[][] => {
                 const jsContours: number[][] = [];
                 const hierarchy = new cv.Mat();
                 try {
-                    cv.findContours(src, contours, hierarchy, cv.RETR_CCOMP, cv.CHAIN_APPROX_SIMPLE);
+                    cv.findContours(src, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE);
                     for (let i = 0; i < contours.size(); i++) {
                         const contour = contours.get(i);
                         jsContours.push(Array.from(contour.data32S));
@@ -227,10 +224,7 @@ export class OpenCVWrapper {
     }
 
     public get segmentation(): Segmentation {
-        if (!this.initialized) {
-            throw new Error('Need to initialize OpenCV first');
-        }
-
+        this.checkInitialization();
         return {
             intelligentScissorsFactory:
             (onChangeToolsBlockerState:
@@ -239,18 +233,14 @@ export class OpenCVWrapper {
     }
 
     public get imgproc(): ImgProc {
-        if (!this.initialized) {
-            throw new Error('Need to initialize OpenCV first');
-        }
+        this.checkInitialization();
         return {
             hist: () => new HistogramEqualizationImplementation(this.cv),
         };
     }
 
     public get tracking(): Tracking {
-        if (!this.initialized) {
-            throw new Error('Need to initialize OpenCV first');
-        }
+        this.checkInitialization();
         return {
             trackerMIL: {
                 model: () => new TrackerMImplementation(this.cv),
