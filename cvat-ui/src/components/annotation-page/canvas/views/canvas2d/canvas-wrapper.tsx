@@ -512,6 +512,10 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         if (prevProps.frameAngle !== frameAngle) {
             canvasInstance.rotate(frameAngle);
+            if (prevProps.frameData === frameData) {
+                // explicitly rotated, not a new frame
+                canvasInstance.fit();
+            }
         }
 
         if (prevProps.workspace !== workspace) {

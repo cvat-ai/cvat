@@ -161,6 +161,7 @@ export enum UpdateReasons {
     IMAGE_ZOOMED = 'image_zoomed',
     IMAGE_FITTED = 'image_fitted',
     IMAGE_MOVED = 'image_moved',
+    IMAGE_ROTATED = 'image_rotated',
     GRID_UPDATED = 'grid_updated',
 
     ISSUE_REGIONS_UPDATED = 'issue_regions_updated',
@@ -586,7 +587,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     public rotate(rotationAngle: number): void {
         if (this.data.angle !== rotationAngle && !this.data.imageIsDeleted) {
             this.data.angle = (360 + Math.floor(rotationAngle / 90) * 90) % 360;
-            this.fit();
+            this.notify(UpdateReasons.IMAGE_ROTATED);
         }
     }
 

@@ -1466,6 +1466,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
         } else if ([UpdateReasons.IMAGE_ZOOMED, UpdateReasons.IMAGE_FITTED].includes(reason)) {
             this.moveCanvas();
             this.transformCanvas();
+        } else if (reason === UpdateReasons.IMAGE_ROTATED) {
+            this.transformCanvas();
         } else if (reason === UpdateReasons.IMAGE_MOVED) {
             this.moveCanvas();
         } else if (reason === UpdateReasons.OBJECTS_UPDATED) {
