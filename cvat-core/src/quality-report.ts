@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-interface RawQualityReportData {
+export interface RawQualityReportData {
     id?: number;
     parent_id?: number;
     task_id?: number;
@@ -11,13 +11,24 @@ interface RawQualityReportData {
     created_date?: string;
     gt_last_updated?: string;
     summary?: {
-        mean_accuracy: number;
+        frame_count: number,
+        frame_share_percent: number,
+        conflicts_count: number,
+        valid_count: number,
+        ds_count: number,
+        gt_count: number
     };
     parameters?: object;
 }
 
 export interface QualitySummary {
-    meanAccuracy: number;
+    frameCount: number;
+    frameSharePercent: number;
+    conflictsCount: number;
+    validCount: number;
+    dsCount: number;
+    gtCount: number;
+    accuracy: number;
 }
 
 export default class QualityReport {
@@ -73,7 +84,14 @@ export default class QualityReport {
                 },
                 summary: {
                     get: () => ({
-                        meanAccuracy: data.summary.mean_accuracy,
+                        frameCount: data.summary.frame_count,
+                        frameSharePercent: data.summary.frame_share_percent,
+                        conflictsCount: data.summary.conflicts_count,
+                        validCount: data.summary.valid_count,
+                        dsCount: data.summary.ds_count,
+                        gtCount: data.summary.gt_count,
+                        accuracy: data.summary.valid_count /
+                            (data.summary.ds_count + data.summary.gt_count - data.summary.valid_count),
                     }),
                 },
                 parameters: {

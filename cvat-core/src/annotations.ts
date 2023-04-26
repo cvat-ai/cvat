@@ -29,6 +29,18 @@ function getCache(sessionType) {
     throw new ScriptingError(`Unknown session type was received ${sessionType}`);
 }
 
+function processGroundTruthAnnotations(rawAnnotations, groundTruthAnnotations) {
+    groundTruthAnnotations.shapes.forEach((annotation) => { annotation.is_gt = true; });
+    groundTruthAnnotations.tracks.forEach((annotation) => { annotation.is_gt = true; });
+    groundTruthAnnotations.tags.forEach((annotation) => { annotation.is_gt = true; });
+    const result = {
+        shapes: [...rawAnnotations.shapes, ...groundTruthAnnotations.shapes],
+        tracks: [...rawAnnotations.tracks, ...groundTruthAnnotations.tracks],
+        tags: [...rawAnnotations.tags, ...groundTruthAnnotations.tags],
+    };
+    return result;
+}
+
 async function getAnnotationsFromServer(session, GTAnnotaionsSource) {
     const sessionType = session instanceof Task ? 'task' : 'job';
     const cache = getCache(sessionType);
@@ -37,14 +49,7 @@ async function getAnnotationsFromServer(session, GTAnnotaionsSource) {
         let rawAnnotations = await serverProxy.annotations.getAnnotations(sessionType, session.id);
         if (GTAnnotaionsSource) {
             const gtAnnotations = await serverProxy.annotations.getAnnotations(sessionType, GTAnnotaionsSource);
-            gtAnnotations.shapes.forEach(annotation => { annotation.is_gt = true; });
-            gtAnnotations.tracks.forEach(annotation => { annotation.is_gt = true; });
-            gtAnnotations.tags.forEach(annotation => { annotation.is_gt = true; });
-            rawAnnotations = {
-                shapes: [...rawAnnotations.shapes, ...gtAnnotations.shapes],
-                tracks: [...rawAnnotations.tracks, ...gtAnnotations.tracks],
-                tags: [...rawAnnotations.tags, ...gtAnnotations.tags],
-            };
+            rawAnnotations = processGroundTruthAnnotations(rawAnnotations, gtAnnotations);
         }
 
         // Get meta information about frames
