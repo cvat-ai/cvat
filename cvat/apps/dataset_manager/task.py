@@ -128,7 +128,7 @@ class JobAnnotation:
                 shapes = track.pop("shapes")
                 elements = track.pop("elements", [])
                 db_track = models.LabeledTrack(job=self.db_job, parent=parent_track, **track)
-                track_frame = db_track["frame"]
+                track_frame = db_track.frame
                 if db_track.label_id not in self.db_labels:
                     raise AttributeError("label_id `{}` is invalid".format(db_track.label_id))
 
@@ -157,10 +157,21 @@ class JobAnnotation:
                     db_shapes.append(db_shape)
                     shape["attributes"] = shape_attributes
 
+                if parent_track is not None and track_frame < parent_track.frame:
+                    parent_tracked_shapes = parent_track.trackedshape_set
+                    if parent_tracked_shapes.count() == 1 and parent_tracked_shapes.first().type == "skeleton":
+                        skeleton_shape = parent_tracked_shapes.first()
+                        skeleton_shape.frame = track_frame
+                        skeleton_shape.save()
+
+                    parent_track.frame = track_frame
+                    parent_track.save()
+
                 db_track.frame = track_frame
                 db_tracks.append(db_track)
                 track["attributes"] = track_attributes
                 track["shapes"] = shapes
+
 
                 if elements or parent_track is None:
                     track["elements"] = elements
