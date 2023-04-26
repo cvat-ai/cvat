@@ -19,7 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TDB
 
 ### Fixed
-- TDB
+- Tracking of multiple objects (30 and more) with TransT tracker
+  (<https://github.com/opencv/cvat/pull/6073>)
 
 ### Security
 - TDB
