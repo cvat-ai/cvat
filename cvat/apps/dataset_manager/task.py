@@ -128,6 +128,7 @@ class JobAnnotation:
                 shapes = track.pop("shapes")
                 elements = track.pop("elements", [])
                 db_track = models.LabeledTrack(job=self.db_job, parent=parent_track, **track)
+                track_frame = db_track["frame"]
                 if db_track.label_id not in self.db_labels:
                     raise AttributeError("label_id `{}` is invalid".format(db_track.label_id))
 
@@ -139,6 +140,7 @@ class JobAnnotation:
                     db_track_attrvals.append(db_attrval)
 
                 for shape in shapes:
+                    track_frame = shape["frame"] if shape["frame"] < track_frame else track_frame
                     shape_attributes = shape.pop("attributes", [])
                     # FIXME: need to clamp points (be sure that all of them inside the image)
                     # Should we check here or implement a validator?
@@ -155,9 +157,11 @@ class JobAnnotation:
                     db_shapes.append(db_shape)
                     shape["attributes"] = shape_attributes
 
+                db_track.frame = track_frame
                 db_tracks.append(db_track)
                 track["attributes"] = track_attributes
                 track["shapes"] = shapes
+
                 if elements or parent_track is None:
                     track["elements"] = elements
 
