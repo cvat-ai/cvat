@@ -37,10 +37,10 @@ class S3Client:
 
     def upload_from_io(self, io: IOBase, key: str) -> bool:
         io.seek(0)
-        with SpooledTemporaryFile() as c:
-            c.write(io.read())
-            c.seek(0)
-            response = self._client.upload_fileobj(c, self.bucket, self._key(key))
+        with SpooledTemporaryFile() as tmp:
+            tmp.write(io.read())
+            tmp.seek(0)
+            response = self._client.upload_fileobj(tmp, self.bucket, self._key(key))
         return response
 
     def download_to_path(self, key: str, path: str) -> None:
