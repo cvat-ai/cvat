@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TDB
 
 ### Changed
-- TDB
+- Cloud storage manifest file is optional (<https://github.com/opencv/cvat/pull/6074>)
 
 ### Deprecated
 - TDB
