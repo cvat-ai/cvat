@@ -1105,6 +1105,9 @@ class QualityReport(models.Model):
         else:
             return self.job.segment.task
 
+    def get_json_report(self) -> str:
+        return self.data
+
     def clean(self):
         if not (self.job is not None) ^ (self.task is not None):
             raise ValidationError("One of the 'job' and 'task' fields must be set")
