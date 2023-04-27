@@ -1945,7 +1945,7 @@ class QualityReportSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.QualityReport
-        fields = ('job_id', 'task_id', 'parent_id', 'target', 'summary', 'parameters',
+        fields = ('id', 'job_id', 'task_id', 'parent_id', 'target', 'summary', 'parameters',
             'created_date', 'target_last_updated', 'gt_last_updated',
         )
         read_only_fields = fields

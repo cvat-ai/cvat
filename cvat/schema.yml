@@ -8895,6 +8895,9 @@ components:
     QualityReport:
       type: object
       properties:
+        id:
+          type: integer
+          readOnly: true
         job_id:
           type: integer
           nullable: true
