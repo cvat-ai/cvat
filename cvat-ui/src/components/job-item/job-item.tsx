@@ -37,7 +37,7 @@ function JobItem(props: Props): JSX.Element {
                     <Col span={1} className='cvat-job-item-icon'>
                         {job.type === JobType.GROUND_TRUTH ? <FundProjectionScreenOutlined /> : null }
                     </Col>
-                    <Col span={11}>
+                    <Col xs={{ span: 6 }} xxl={{ span: 11 }}>
                         <Row>
                             <Col>
                                 <Link to={`/tasks/${job.taskId}/jobs/${job.id}`}>{`Job #${job.id}`}</Link>
@@ -50,7 +50,7 @@ function JobItem(props: Props): JSX.Element {
                             <Col>
                                 <Text type='secondary'>{`Started on ${created.format('MMMM Do YYYY HH:MM')}`}</Text>
                             </Col>
-                            <Col offset={4}>
+                            <Col xxl={{ offset: 4 }}>
                                 <Text type='secondary'>{`Duration: ${moment.duration(now.diff(created)).humanize()}`}</Text>
                             </Col>
                         </Row>

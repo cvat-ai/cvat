@@ -26,7 +26,7 @@ function TaskQualityComponent(props: Props): JSX.Element {
     const query = useSelector((state: CombinedState) => state.analytics.quality.query);
 
     useEffect(() => {
-        dispatch(getQualityReportsAsync({ ...query, taskId: task.id }));
+        dispatch(getQualityReportsAsync(task, { ...query, taskId: task.id }));
     }, []);
 
     const gtJob = task.jobs.find((job: Job) => job.type === JobType.GROUND_TRUTH);

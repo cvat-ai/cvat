@@ -25,6 +25,7 @@ import Project from './project';
 import CloudStorage from './cloud-storage';
 import Organization from './organization';
 import Webhook from './webhook';
+import QualityReport from './quality-report';
 
 export default function implementAPI(cvat) {
     cvat.plugins.list.implementation = PluginRegistry.list;
@@ -339,10 +340,10 @@ export default function implementAPI(cvat) {
     };
 
     cvat.analytics.quality.get.implementation = async (filter) => {
-        checkFilter(filter, {
-            taskId: isInteger,
-            parentId: isInteger,
-        });
+        // checkFilter(filter, {
+        //     taskId: isInteger,
+        //     parentId: isInteger,
+        // });
 
         // const searchParams = filterFieldsToSnakeCase(filter, ['taskId', 'parentId']);
         // TMP solution aka filters disabled
@@ -350,10 +351,13 @@ export default function implementAPI(cvat) {
         if ('taskId' in filter) {
             updatedParams = {
                 task_id: filter.taskId,
+                sort: '-created_date',
+                target: filter.target,
             };
         }
         const reportsData = await serverProxy.analytics.quality.get(updatedParams);
-        return reportsData;
+
+        return reportsData.map((report) => new QualityReport({ ...report }));
     };
 
     return cvat;

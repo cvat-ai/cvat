@@ -13,7 +13,7 @@ import {
     SerializedAbout, SerializedShare, SerializedUserAgreement,
     SerializedRegister, JobsFilter, SerializedJob,
 } from 'server-response-types';
-import QualityReport from 'quality-report';
+import { RawQualityReportData } from 'quality-report';
 import { Storage } from './storage';
 import { StorageLocation, WebhookSourceType } from './enums';
 import { isEmail } from './common';
@@ -2157,7 +2157,7 @@ async function receiveWebhookEvents(type: WebhookSourceType): Promise<string[]> 
     }
 }
 
-async function getQualityReports(filter, pageSize = 10): Promise<QualityReport[]> {
+async function getQualityReports(filter): Promise<RawQualityReportData[]> {
     const params = enableOrganization();
     const { backendAPI } = config;
 
@@ -2166,7 +2166,6 @@ async function getQualityReports(filter, pageSize = 10): Promise<QualityReport[]
             params: {
                 ...params,
                 ...filter,
-                page_size: pageSize,
             },
         });
 

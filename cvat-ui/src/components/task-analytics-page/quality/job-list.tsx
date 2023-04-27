@@ -148,18 +148,21 @@ function JobListComponent(props: Props): JSX.Element {
             dataIndex: 'quality',
             key: 'quality',
             className: 'cvat-job-item-quality',
-            render: (jobInstance: Job): JSX.Element => (
-                <Text
-                    style={{
-                        color: getQualityColor(jobsReports[jobInstance.id]?.summary?.meanAccuracy),
-                    }}
-                >
-                    {jobsReports[jobInstance.id] ? jobsReports[jobInstance.id].summary.meanAccuracy : 'N/A'}
-                </Text>
-            ),
+            render: (jobInstance: Job): JSX.Element => {
+                const meanAccuracy = jobsReports[jobInstance.id]?.summary?.accuracy;
+                return (
+                    <Text
+                        style={{
+                            color: getQualityColor(meanAccuracy),
+                        }}
+                    >
+                        {meanAccuracy || 'N/A'}
+                    </Text>
+                );
+            },
         },
     ];
-    const data = jobs.reduce((acc: any[], job: any) => {
+    const data = renderedJobs.reduce((acc: any[], job: any) => {
         acc.push({
             key: job.id,
             job: job.id,
