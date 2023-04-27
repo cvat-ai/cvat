@@ -857,6 +857,8 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             if (activatedState && activatedState.objectType !== ObjectType.TAG) {
                 canvasInstance.activate(activatedStateID, activatedAttributeID);
             }
+        } else if (workspace === Workspace.ATTRIBUTE_ANNOTATION) {
+            canvasInstance.fit();
         }
     }
 
