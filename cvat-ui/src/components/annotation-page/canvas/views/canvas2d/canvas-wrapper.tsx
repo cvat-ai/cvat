@@ -903,13 +903,11 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                 `brightness(${brightnessLevel}) contrast(${contrastLevel}) saturate(${saturationLevel})`,
         });
 
-        // Events
+        canvasInstance.fitCanvas();
         canvasInstance.html().addEventListener(
             'canvas.setup',
             () => {
                 const { activatedStateID, activatedAttributeID } = this.props;
-                canvasInstance.fitCanvas();
-                canvasInstance.fit();
                 canvasInstance.activate(activatedStateID, activatedAttributeID);
             },
             { once: true },
