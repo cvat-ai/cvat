@@ -68,10 +68,10 @@ class S3Client:
             Params={"Bucket": self.bucket, "Key": self._key(key)},
             ExpiresIn=expires,
         )
-        if settings.ENVIRONMENT == 'local':
-            hostname = url.split('/')[2]
-            if 'minio' in hostname:
-                url = url.replace('minio', 'localhost', 1)
+
+        if settings.ENVIRONMENT == 'local' and 'minio' in url[:15]:
+            url = url.replace('minio', 'localhost', 1)
+
         return url
 
     def get_presigned_post(self, key: str) -> dict:
@@ -80,10 +80,8 @@ class S3Client:
             key,
         )
 
-        if settings.ENVIRONMENT == 'local':
-            hostname = dest['url'].split('/')[2]
-            if 'minio' in hostname:
-                dest['url'] = dest['url'].replace('minio', 'localhost', 1)
+        if settings.ENVIRONMENT == 'local' and 'minio' in dest['url'][:15]:
+            dest['url'] = dest['url'].replace('minio', 'localhost', 1)
 
         return dest
 

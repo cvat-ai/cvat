@@ -61,10 +61,7 @@ class CustomAWSMediaStorage(BaseS3StorageWithPathMixin, S3Boto3Storage):
         # Preserve the trailing slash after normalizing the path.
         # TODO: Handle force_http=not self.secure_urls like in s3boto
         name = self._normalize_name(self._clean_name(name))
-        url = self.get_presigned_url(name, parameters, expire)
-        if settings.ENVIRONMENT == 'local' and 'minio' in url:
-            url = url.replace('minio', 'localhost', 1)
-        return url
+        return self.get_presigned_url(name, parameters, expire)
 
     def get_presigned_url(self, name, parameters=None, expire=None):
         if expire is None:
@@ -75,6 +72,10 @@ class CustomAWSMediaStorage(BaseS3StorageWithPathMixin, S3Boto3Storage):
         params['Key'] = self._clean_name(name)
         url = self.bucket.meta.client.generate_presigned_url('get_object', Params=params,
                                                              ExpiresIn=expire)
+
+        if settings.ENVIRONMENT == 'local' and 'minio' in url[:15]:
+            url = url.replace('minio', 'localhost', 1)
+
         if self.querystring_auth:
             return url
 
@@ -89,10 +90,15 @@ def create_pre_signed_post(file_field):
         # you cant create a presigned_post for non S3 compatible storage API
         return None
 
-    return file_field.storage.bucket.meta.client.generate_presigned_post(
+    dest = file_field.storage.bucket.meta.client.generate_presigned_post(
         file_field.storage.bucket.name,
         file_field.path
     )
+
+    if settings.ENVIRONMENT == 'local' and 'minio' in dest['url'][:15]:
+        dest['url'] = dest['url'].replace('minio', 'localhost', 1)
+
+    return dest
 
 
 def send_file_to_pre_signed_destination(file_io, destination, filename=None):
