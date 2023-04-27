@@ -65,7 +65,8 @@ spec:
       kind: 'http'
       workerAvailabilityTimeoutMilliseconds: 10000
       attributes:
-        maxRequestBodySize: 33554432 # 32MB
+        # Set value from the calculation of tracking of 100 objects at the same time on a 4k image
+        maxRequestBodySize: 268435456 # 256MB
 
   resources:
     limits:
