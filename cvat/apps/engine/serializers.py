@@ -1364,7 +1364,7 @@ class LabeledDataSerializer(serializers.Serializer):
 class FileInfoSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=1024)
     type = serializers.ChoiceField(choices=["REG", "DIR"])
-    mime_type = serializers.CharField(max_length=255)
+    mime_type = serializers.CharField(max_length=255, required=False)
 
 class AnnotationFileSerializer(serializers.Serializer):
     annotation_file = serializers.FileField()
@@ -1730,16 +1730,10 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
         slogger.glob.error(message)
         raise serializers.ValidationError({field: message})
 
-class CloudStorageFileSerializer(serializers.Serializer):
-    key = serializers.CharField(required=True)
-
-class CloudStorageCommonPrefixSerializer(serializers.Serializer):
-    prefix = serializers.CharField(required=True)
 
 class CloudStorageContentSerializer(serializers.Serializer):
-    continuation_token = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    common_prefixes = CloudStorageCommonPrefixSerializer(many=True)
-    contents = CloudStorageFileSerializer(many=True)
+    next = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    content = FileInfoSerializer(many=True)
 
 class RelatedFileSerializer(serializers.ModelSerializer):
 

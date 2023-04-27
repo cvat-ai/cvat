@@ -438,10 +438,12 @@ class AWS_S3(_CloudStorage):
         #    'ContinuationToken': 'str'
         # }
         response = self._client.list_objects_v2(**kwargs)
+        content = [{'name': f['Key'], 'type': 'REG'} for f in response.get('Contents', [])]
+        content.extend([{'name': p['Prefix'], 'type': 'DIR'} for p in response.get('CommonPrefixes', [])])
+
         return {
-            'contents': [{'key': f['Key']} for f in response.get('Contents', [])],
-            'common_prefixes': [{'prefix': p['Prefix']} for p in response.get('CommonPrefixes', [])],
-            'continuation_token': response.get('ContinuationToken', None),
+            'content': content,
+            'next': response.get('ContinuationToken', None),
         }
 
     @validate_file_status
@@ -632,19 +634,15 @@ class AzureBlobContainer(_CloudStorage):
 
         page = self._client.walk_blobs(**kwargs).by_page(continuation_token=next_token)
         all_files = list(next(page))
-        continuation_token = page.continuation_token
-
-        prefixes, files = [], []
-        for f in all_files:
-            if isinstance(f, _list_blobs_helper.BlobPrefix):
-                prefixes.append({'prefix': f.prefix})
-            else:
-                files.append({'key': f.name})
+        content = list(
+            map(lambda x: {'name': x.name, 'type': 'REG'} if not isinstance(x, _list_blobs_helper.BlobPrefix) else {'name': x.prefix, 'type': 'DIR'},
+                all_files
+        ))
+        next_token = page.continuation_token
 
         return {
-            'contents': files,
-            'common_prefixes': prefixes,
-            'continuation_token': continuation_token,
+            'content': content,
+            'next': next_token,
         }
 
     @validate_file_status
@@ -764,10 +762,12 @@ class GoogleCloudStorage(_CloudStorage):
         files = [f for f in iterator]
         prefixes = iterator.prefixes
 
+        content = [{'name': f.name, 'type': 'REG'} for f in files]
+        content.extend([{'name': p, 'type': 'DIR'} for p in prefixes])
+
         return {
-            'contents': [{'key': f.name} for f in files],
-            'common_prefixes': [{'prefix': p} for p in prefixes],
-            'continuation_token': iterator.next_page_token,
+            'content': content,
+            'next': iterator.next_page_token,
         }
 
     @validate_file_status
