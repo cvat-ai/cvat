@@ -1303,7 +1303,6 @@ class DataMetaReadSerializer(serializers.ModelSerializer):
         child=serializers.IntegerField(min_value=0), allow_null=True, required=False,
         help_text=textwrap.dedent("""\
         A list of valid frame ids. The None value means all frames are included.
-        Only applicable for video data.
         """))
 
     class Meta:
