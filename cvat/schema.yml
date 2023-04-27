@@ -7602,7 +7602,7 @@ components:
         state:
           $ref: '#/components/schemas/OperationStatus'
         type:
-          $ref: '#/components/schemas/JobWriteTypeEnum'
+          $ref: '#/components/schemas/JobType'
         task_id:
           type: integer
         frame_selection_method:
@@ -7630,10 +7630,6 @@ components:
       required:
       - task_id
       - type
-    JobWriteTypeEnum:
-      enum:
-      - ground_truth
-      type: string
     JobsSummary:
       type: object
       properties:

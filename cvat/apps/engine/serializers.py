@@ -567,13 +567,11 @@ class JobReadSerializer(serializers.ModelSerializer):
 class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     assignee = serializers.IntegerField(allow_null=True, required=False)
 
-    # NOTE: It can be expressed using serializer inheritance, but it is
+    # NOTE: Field variations can be expressed using serializer inheritance, but it is
     # harder to use then: we need to make a manual switch in get_serializer_class()
     # and create an extra serializer type in the API schema.
     # Need to investigate how it can be simplified.
-    type = serializers.ChoiceField(choices=(
-        (models.JobType.GROUND_TRUTH.value, models.JobType.GROUND_TRUTH.name),
-    ))
+    type = serializers.ChoiceField(choices=models.JobType.choices())
 
     task_id = serializers.IntegerField()
     frame_selection_method = serializers.ChoiceField(
@@ -613,7 +611,6 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         task_id = validated_data.pop('task_id')
         task = models.Task.objects.get(pk=task_id)
 
-        # TODO: extract to separate functions
         if validated_data["type"] == models.JobType.GROUND_TRUTH:
             if not task.data:
                 raise serializers.ValidationError(
