@@ -4378,6 +4378,41 @@ paths:
               schema:
                 $ref: '#/components/schemas/QualityReport'
           description: ''
+  /api/quality_reports/{id}/data:
+    get:
+      operationId: quality_reports_retrieve_data
+      parameters:
+      - in: header
+        name: X-Organization
+        schema:
+          type: string
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this quality report.
+        required: true
+      - in: query
+        name: org
+        schema:
+          type: string
+        description: Organization unique slug
+      - in: query
+        name: org_id
+        schema:
+          type: integer
+        description: Organization identifier
+      tags:
+      - quality_reports
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/schema/:
     get:
       operationId: schema_retrieve
