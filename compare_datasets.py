@@ -777,10 +777,11 @@ class _PointsMatcher(dm.ops.PointsMatcher):
         )
 
 
-def arr_div(a_arr: np.ndarray, b_arr: np.ndarray):
+def _arr_div(a_arr: np.ndarray, b_arr: np.ndarray):
     divisor = b_arr.copy()
     divisor[b_arr == 0] = 1
     return a_arr / divisor
+
 
 class _DistanceComparator(dm.ops.DistanceComparator):
     def __init__(
@@ -1236,7 +1237,7 @@ class DatasetComparator:
                 )
             )
 
-        for gt_ann, matched_ann_id in mismatches:
+        for gt_ann, ds_ann in mismatches:
             conflicts.append(
                 AnnotationConflict(
                     frame_id=frame_id,
@@ -1244,13 +1245,13 @@ class DatasetComparator:
                     data={
                         "annotation_ids": [
                             self._dm_ann_to_ann_id(
-                                matched_ann_id, ds_item, self._ds_dataset
+                                ds_ann, ds_item, self._ds_dataset
                             ),
                             self._dm_ann_to_ann_id(gt_ann, gt_item, self._gt_dataset),
                         ],
                         "kind": MismatchingAnnotationKind.LABEL,
                         "expected": gt_ann.label,
-                        "actual": matched_ann_id.label,
+                        "actual": ds_ann.label,
                     },
                 )
             )
@@ -1418,9 +1419,9 @@ class DatasetComparator:
         matched_ann_counts = np.diag(confusion_matrix)
         ds_ann_counts = np.sum(confusion_matrix, axis=1)
         gt_ann_counts = np.sum(confusion_matrix, axis=0)
-        label_accuracies = arr_div(matched_ann_counts, ds_ann_counts + gt_ann_counts - matched_ann_counts)
-        label_precisions = arr_div(matched_ann_counts, ds_ann_counts)
-        label_recalls = arr_div(matched_ann_counts, gt_ann_counts)
+        label_accuracies = _arr_div(matched_ann_counts, ds_ann_counts + gt_ann_counts - matched_ann_counts)
+        label_precisions = _arr_div(matched_ann_counts, ds_ann_counts)
+        label_recalls = _arr_div(matched_ann_counts, gt_ann_counts)
 
         valid_annotations_count = np.sum(matched_ann_counts)
         missing_annotations_count = np.sum(confusion_matrix[:, confusion_matrix_labels_rmap[None]])
@@ -1592,9 +1593,9 @@ class DatasetComparator:
         matched_ann_counts = np.diag(confusion_matrix)
         ds_ann_counts = np.sum(confusion_matrix, axis=1)
         gt_ann_counts = np.sum(confusion_matrix, axis=0)
-        label_accuracies = arr_div(matched_ann_counts, ds_ann_counts + gt_ann_counts - matched_ann_counts)
-        label_precisions = arr_div(matched_ann_counts, ds_ann_counts)
-        label_recalls = arr_div(matched_ann_counts, gt_ann_counts)
+        label_accuracies = _arr_div(matched_ann_counts, ds_ann_counts + gt_ann_counts - matched_ann_counts)
+        label_precisions = _arr_div(matched_ann_counts, ds_ann_counts)
+        label_recalls = _arr_div(matched_ann_counts, gt_ann_counts)
 
         valid_annotations_count = np.sum(matched_ann_counts)
         missing_annotations_count = np.sum(confusion_matrix[:, confusion_matrix_labels_rmap[None]])

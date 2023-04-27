@@ -23,6 +23,7 @@ router.register('comments', views.CommentViewSet)
 router.register('labels', views.LabelViewSet)
 router.register('cloudstorages', views.CloudStorageViewSet)
 router.register('quality_reports', views.QualityReportViewSet)
+router.register('conflicts', views.ConflictsViewSet)
 
 urlpatterns = [
     # Entry point for a client

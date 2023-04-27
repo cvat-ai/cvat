@@ -559,10 +559,22 @@ class JobQuerySet(models.QuerySet):
         return super().create(**kwargs)
 
     @transaction.atomic
+    def update(self, **kwargs: Any) -> int:
+        self._validate_constraints(kwargs)
+
+        return super().update(**kwargs)
+
+    @transaction.atomic
     def get_or_create(self, *args, **kwargs: Any):
         self._validate_constraints(kwargs)
 
         return super().get_or_create(*args, **kwargs)
+
+    @transaction.atomic
+    def update_or_create(self, *args, **kwargs: Any):
+        self._validate_constraints(kwargs)
+
+        return super().update_or_create(*args, **kwargs)
 
     def _validate_constraints(self, obj: Dict[str, Any]):
         # Constraints can't be set on the related model fields
@@ -1013,7 +1025,7 @@ class Storage(models.Model):
 class AnnotationConflictType(str, Enum):
     MISSING_ANNOTATION = 'missing_annotation'
     EXTRA_ANNOTATION = 'extra_annotation'
-    MISMATCHING_ANNOTATION = 'mismatching_annotation'
+    MISMATCHING_LABEL = 'mismatching_label'
 
     def __str__(self) -> str:
         return self.value
@@ -1054,12 +1066,15 @@ class QualityReport(models.Model):
 
     parent = models.ForeignKey('self', on_delete=models.CASCADE,
         related_name='children', null=True, blank=True)
+    children: Sequence[QualityReport]
 
     created_date = models.DateTimeField(auto_now_add=True)
     target_last_updated = models.DateTimeField()
     gt_last_updated = models.DateTimeField()
 
     data = models.JSONField()
+
+    conflicts: Sequence[AnnotationConflict]
 
     @property
     def target(self) -> QualityReportTarget:
@@ -1070,102 +1085,72 @@ class QualityReport(models.Model):
         else:
             assert False
 
+    def _parse_report(self):
+        from cvat.apps.engine.quality_control import ComparisonReport
+        return ComparisonReport.from_json(self.data)
+
+    @property
+    def parameters(self):
+        report = self._parse_report()
+        return report.parameters
+
+    @property
+    def summary(self):
+        report = self._parse_report()
+        return report.comparison_summary
+
     def get_task(self) -> Task:
         if self.task is not None:
             return self.task
         else:
             return self.job.segment.task
 
-    def save(self, *args, **kwargs) -> None:
-        self.full_clean()
-        return super().save(*args, **kwargs)
-
     def clean(self):
         if not (self.job is not None) ^ (self.task is not None):
             raise ValidationError("One of the 'job' and 'task' fields must be set")
 
-
 class AnnotationConflict(models.Model):
     report = models.ForeignKey(QualityReport,
         on_delete=models.CASCADE, related_name='conflicts')
-    frame_id = models.PositiveIntegerField()
+    frame = models.PositiveIntegerField()
     type = models.CharField(max_length=32, choices=AnnotationConflictType.choices())
-    message = models.CharField(max_length=1024, blank=True, default="")
-    data = models.JSONField()
 
-    def clean(self):
-        class _AnnotationType(str, Enum):
-            TAG = 'tag'
+    annotation_ids: Sequence[AnnotationId]
 
-            def __str__(self) -> str:
-                return self.value
+    # def clean(self) -> None:
+    #     def _validate_annotation_ids(annotation_ids: List[AnnotationId], *, required_count: int):
+    #         if annotation_ids is None:
+    #             raise ValueError("Annotation ids must be provided")
+    #         elif not isinstance(annotation_ids, list):
+    #             raise ValueError("Annotation ids must be a list")
+    #         else:
+    #             if len(annotation_ids) != required_count:
+    #                 raise ValueError(f"Expected exactly {required_count} annotation ids")
 
-            @classmethod
-            def choices(cls):
-                return tuple((x.value, x.name) for x in cls) + ShapeType.choices()
+    #             for ann_id in annotation_ids:
+    #                 if not isinstance(ann_id, dict):
+    #                     raise ValueError("Annotation ids must be a list of dicts")
+    #                 AnnotationId(data=ann_id).full_clean()
 
-        class _MismatchingAnnotationConflict(models.Model):
-            kind = models.CharField(max_length=32, choices=MismatchingAnnotationKind.choices())
-            expected = models.CharField(max_length=64, blank=True, null=True)
-            actual = models.CharField(max_length=64, blank=True, null=True)
+    #         return annotation_ids
 
-            # KIND = ATTRIBUTE fields
-            attribute = models.CharField(max_length=64, null=True, blank=True, default=None)
+    #     if self.type == AnnotationConflictType.MISMATCHING_LABEL:
+    #         _validate_annotation_ids(list(self.annotation_ids), required_count=2)
 
-            def clean(self) -> None:
-                if self.kind != MismatchingAnnotationKind.ATTRIBUTE:
-                    if self.attribute is not None:
-                        raise ValidationError(
-                            "The 'attribute' field can only be used "
-                            f"with the '{MismatchingAnnotationKind.ATTRIBUTE}' kind"
-                        )
-                else:
-                    if not isinstance(self.attribute, str):
-                        raise ValidationError("The 'attribute' field is required")
+    #     elif self.type in [
+    #         AnnotationConflictType.EXTRA_ANNOTATION, AnnotationConflictType.MISSING_ANNOTATION
+    #     ]:
+    #         _validate_annotation_ids(list(self.annotation_ids), required_count=1)
 
-                    if not self.attribute:
-                        raise ValidationError("The 'attribute' field can not be empty")
+    #     else:
+    #         raise ValueError(f"Unknown conflict type {self.type}")
 
-        class _AnnotationId(models.Model):
-            my_id = models.AutoField(primary_key=True) # avoid name collision
-            id = models.PositiveIntegerField()
-            job_id = models.PositiveIntegerField()
-            type = models.CharField(max_length=32, choices=_AnnotationType.choices())
+    #     return super().clean()
 
-        def _validate_annotation_ids(extra_data: Dict[str, Any], *, required_count: int):
-            annotation_ids = extra_data.pop('annotation_ids', None)
-            if annotation_ids is None:
-                raise ValidationError("Annotation ids must be provided")
-            elif not isinstance(annotation_ids, list):
-                raise ValidationError("Annotation ids must be a list")
-            else:
-                if len(annotation_ids) != required_count:
-                    raise ValidationError(f"Expected exactly {required_count} annotation ids")
+class AnnotationId(models.Model):
+    conflict = models.ForeignKey(AnnotationConflict,
+        on_delete=models.CASCADE, related_name='annotation_ids', blank=False)
 
-                for ann_id in annotation_ids:
-                    if not isinstance(ann_id, dict):
-                        raise ValidationError("Annotation ids must be a list of dicts")
-                    _AnnotationId(**ann_id).full_clean()
-
-            return annotation_ids
-
-        if self.type == AnnotationConflictType.MISMATCHING_ANNOTATION:
-            if self.data is None:
-                raise ValidationError(f"Extra info must be provided in the 'data' field")
-            extra_data = self.data.copy()
-
-            _validate_annotation_ids(extra_data, required_count=2)
-
-            _MismatchingAnnotationConflict(**extra_data).full_clean()
-
-        elif self.type in [
-            AnnotationConflictType.EXTRA_ANNOTATION, AnnotationConflictType.MISSING_ANNOTATION
-        ]:
-            if self.data is None:
-                raise ValidationError(f"Extra info must be provided in the 'data' field")
-            extra_data = self.data.copy()
-
-            _validate_annotation_ids(extra_data, required_count=1)
-
-        else:
-            raise ValidationError(f"Unknown conflict type {self.type}")
+    obj_id = models.PositiveIntegerField()
+    job_id = models.PositiveIntegerField()
+    type = models.CharField(max_length=32, choices=ShapeType.choices())

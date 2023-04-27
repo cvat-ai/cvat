@@ -1114,6 +1114,96 @@ paths:
       responses:
         '204':
           description: The comment has been deleted
+  /api/conflicts:
+    get:
+      operationId: conflicts_list
+      summary: Method returns a paginated list of annotation conflicts
+      parameters:
+      - in: header
+        name: X-Organization
+        schema:
+          type: string
+      - name: filter
+        required: false
+        in: query
+        description: 'A filter term. Available filter_fields: [''id'', ''report_id'',
+          ''frame'', ''type'', ''job_id'']'
+        schema:
+          type: string
+      - name: frame
+        in: query
+        description: A simple equality filter for the frame field
+        schema:
+          type: integer
+      - name: job_id
+        in: query
+        description: A simple equality filter for the job_id field
+        schema:
+          type: integer
+      - in: query
+        name: org
+        schema:
+          type: string
+        description: Organization unique slug
+      - in: query
+        name: org_id
+        schema:
+          type: integer
+        description: Organization identifier
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: report_id
+        in: query
+        description: A simple equality filter for the report_id field
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: 'A search term. Available search_fields: []'
+        schema:
+          type: string
+      - name: sort
+        required: false
+        in: query
+        description: 'Which field to use when ordering the results. Available ordering_fields:
+          [''id'', ''report_id'', ''frame'', ''type'', ''job_id'']'
+        schema:
+          type: string
+      - name: type
+        in: query
+        description: A simple equality filter for the type field
+        schema:
+          type: string
+          enum:
+          - missing_annotation
+          - extra_annotation
+          - mismatching_label
+      tags:
+      - conflicts
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAnnotationConflictList'
+          description: ''
   /api/events:
     get:
       operationId: events_list
@@ -2323,70 +2413,6 @@ paths:
       responses:
         '204':
           description: The annotation has been deleted
-  /api/jobs/{id}/conflicts:
-    post:
-      operationId: jobs_check_conflicts
-      parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
-      - name: filter
-        required: false
-        in: query
-        description: 'A filter term. Available filter_fields: None'
-        schema:
-          type: string
-      - in: query
-        name: frame_id
-        schema:
-          type: integer
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this job.
-        required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
-      - name: search
-        required: false
-        in: query
-        description: 'A search term. Available search_fields: None'
-        schema:
-          type: string
-      - name: sort
-        required: false
-        in: query
-        description: 'Which field to use when ordering the results. Available ordering_fields:
-          None'
-        schema:
-          type: string
-      tags:
-      - jobs
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses:
-        '200':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/AnnotationConflict'
-          description: ''
   /api/jobs/{id}/data:
     get:
       operationId: jobs_retrieve_data
@@ -6557,27 +6583,27 @@ components:
     AnnotationConflict:
       type: object
       properties:
-        frame_id:
+        frame:
           type: integer
-          maximum: 2147483647
-          minimum: 0
+          readOnly: true
         type:
-          $ref: '#/components/schemas/AnnotationConflictTypeEnum'
-        message:
-          type: string
-          maxLength: 1024
-        data:
-          type: object
-          additionalProperties: {}
+          allOf:
+          - $ref: '#/components/schemas/AnnotationConflictTypeEnum'
+          readOnly: true
+        annotation_ids:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnnotationId'
+        report_id:
+          type: integer
+          readOnly: true
       required:
-      - data
-      - frame_id
-      - type
+      - annotation_ids
     AnnotationConflictTypeEnum:
       enum:
       - missing_annotation
       - extra_annotation
-      - mismatching_annotation
+      - mismatching_label
       type: string
     AnnotationFileRequest:
       type: object
@@ -6587,6 +6613,19 @@ components:
           format: binary
       required:
       - annotation_file
+    AnnotationId:
+      type: object
+      properties:
+        obj_id:
+          type: integer
+          readOnly: true
+        job_id:
+          type: integer
+          readOnly: true
+        type:
+          allOf:
+          - $ref: '#/components/schemas/ShapeType'
+          readOnly: true
     AnnotationsRead:
       oneOf:
       - $ref: '#/components/schemas/LabeledData'
@@ -6938,7 +6977,6 @@ components:
           nullable: true
           description: |
             A list of valid frame ids. The None value means all frames are included.
-            Only applicable for video data.
       required:
       - deleted_frames
       - frames
@@ -8056,6 +8094,26 @@ components:
           additionalProperties: {}
       required:
       - slug
+    PaginatedAnnotationConflictList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnnotationConflict'
     PaginatedCloudStorageReadList:
       type: object
       properties:

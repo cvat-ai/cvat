@@ -42,14 +42,13 @@ from django_sendfile import sendfile
 
 import cvat.apps.dataset_manager as dm
 import cvat.apps.dataset_manager.views  # pylint: disable=unused-import
-import cvat.apps.engine.quality_control as qc
 from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
 from cvat.apps.dataset_manager.bindings import CvatImportError
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.media_extractors import get_mime
 from cvat.apps.engine.models import (
-    Job, JobType, Label, QualityReport, Task, Project, Issue, Data,
+    AnnotationConflict, Job, JobType, Label, QualityReport, Task, Project, Issue, Data,
     Comment, StorageMethodChoice, StorageChoice,
     CloudProviderChoice, Location
 )
@@ -78,8 +77,8 @@ from cvat.apps.engine.location import get_location_configuration, StorageType
 from . import models, task
 from .log import slogger
 from cvat.apps.iam.permissions import (CloudStoragePermission,
-    CommentPermission, IssuePermission, JobPermission, LabelPermission, ProjectPermission, QualityReportPermission,
-    TaskPermission, UserPermission)
+    CommentPermission, IssuePermission, JobPermission, LabelPermission,
+    ProjectPermission, QualityReportPermission, TaskPermission, UserPermission)
 from cvat.apps.engine.cache import MediaCache
 from cvat.apps.events.handlers import handle_annotations_patch
 from cvat.apps.engine.view_utils import tus_chunk_action
@@ -1655,38 +1654,6 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         return data_getter(request, self._object.segment.start_frame,
            self._object.segment.stop_frame, self._object.segment.task.data)
 
-    @extend_schema(
-        operation_id="jobs_check_conflicts",
-        parameters=[OpenApiParameter('frame_id', OpenApiTypes.INT)],
-        request=None,
-        responses=AnnotationConflictSerializer(many=True)
-    )
-    @action(detail=True, methods=['POST'], url_path='conflicts', serializer_class=None,
-        simple_filters=None, filter_fields=None, search_fields=None,
-        pagination_class=None, ordering_fields=None)
-    def conflicts(self, request, pk):
-        this_job = Job.objects.get(pk=pk) # call check_object_permissions as well
-
-        gt_job = this_job.segment.task.gt_job
-        if not gt_job:
-            raise ValidationError(
-                "The ground truth job is not set up for this task. Please create it and try again"
-            )
-
-        frame_id = request.query_params.get('frame_id', None)
-        if frame_id is not None:
-            frame_id = int(frame_id)
-
-            if not this_job.segment.contains_frame(frame_id):
-                raise ValidationError("This frame does not belong to this job")
-
-            if not gt_job.segment.contains_frame(frame_id):
-                raise ValidationError("This frame does not belong to the Ground Truth job")
-
-        report = qc.find_gt_conflicts(this_job, gt_job, frame_id=frame_id)
-
-        report_serializer = AnnotationConflictSerializer(report.conflicts, many=True)
-        return Response(report_serializer.data, status=status.HTTP_200_OK)
 
 @extend_schema(tags=['issues'])
 @extend_schema_view(
@@ -2254,6 +2221,34 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         except Exception as ex:
             msg = str(ex)
             return HttpResponseBadRequest(msg)
+
+
+@extend_schema(tags=['conflicts'])
+@extend_schema_view(
+    list=extend_schema(
+        summary='Method returns a paginated list of annotation conflicts',
+        responses={
+            '200': AnnotationConflictSerializer(many=True),
+        }),
+)
+class ConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
+    queryset = AnnotationConflict.objects.prefetch_related('report').all()
+
+    # NOTE: This filter works incorrectly for this view
+    # it requires task__organization OR project__organization check.
+    # Thus, we rely on permission-based filtering
+    iam_organization_field = None
+
+    search_fields = []
+    filter_fields = list(search_fields) + ['id', 'report_id', 'frame', 'type', 'job_id']
+    simple_filters = set(filter_fields) - {'id'}
+    lookup_fields = {
+        'report_id': 'report__id',
+        'job_id': 'report__job__id',
+    }
+    ordering_fields = list(filter_fields)
+    ordering = 'id'
+    serializer_class = AnnotationConflictSerializer
 
 
 @extend_schema(tags=['quality_reports'])

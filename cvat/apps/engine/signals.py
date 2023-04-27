@@ -8,7 +8,7 @@ from django.contrib.auth.models import User
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 
-from .models import (CloudStorage, Data, Job, Profile, Project,
+from .models import (Annotation, CloudStorage, Data, Job, Profile, Project,
     StatusChoice, Task)
 
 from cvat.apps.engine import quality_control as qc
@@ -81,13 +81,20 @@ def __delete_cloudstorage_handler(instance, **kwargs):
 
 
 # TODO: handle nested field updates (e.g. labels, annotations, import, export, etc.)
-
 @receiver(post_save, sender=Job,
-    dispatch_uid=__name__ + ".save_job_handler-update_quality_metrics")
-def __save_job_handler__update_quality_metrics(instance, created, **kwargs):
-    qc.QueueJobManager().schedule_quality_check_job(instance.segment.task)
-
+    dispatch_uid=__name__ + ".save_job-update_quality_metrics")
 @receiver(post_save, sender=Task,
-    dispatch_uid=__name__ + ".save_task_handler-update_quality_metrics")
-def __save_task_handler__update_quality_metrics(instance, created, **kwargs):
-    qc.QueueJobManager().schedule_quality_check_job(instance)
+    dispatch_uid=__name__ + ".save_task-update_quality_metrics")
+@receiver(post_save, sender=Annotation,
+    dispatch_uid=__name__ + ".save_annotation-update_quality_metrics")
+def __save_job__update_quality_metrics(instance, created, **kwargs):
+    if isinstance(instance, Task):
+        task = instance
+    elif isinstance(instance, Job):
+        task = instance.segment.task
+    elif isinstance(instance, Annotation):
+        task = instance.job.segment.task
+    else:
+        assert False
+
+    qc.QueueJobManager().schedule_quality_check_job(task)

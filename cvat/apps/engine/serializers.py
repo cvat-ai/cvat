@@ -1906,25 +1906,37 @@ def _validate_existence_of_cloud_storage(cloud_storage_id):
         raise serializers.ValidationError(f'The specified cloud storage {cloud_storage_id} does not exist.')
 
 
+class AnnotationIdSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.AnnotationId
+        fields = ('obj_id', 'job_id', 'type')
+        read_only_fields = fields
+
+
 class AnnotationConflictSerializer(serializers.ModelSerializer):
+    annotation_ids = AnnotationIdSerializer(many=True)
+
     class Meta:
         model = models.AnnotationConflict
-        fields = ('frame_id', 'type', 'message', 'data')
+        fields = ('frame', 'type', 'annotation_ids', 'report_id')
+        read_only_fields = fields
 
 
 class QualityReportSummarySerializer(serializers.Serializer):
     frame_count = serializers.IntegerField()
     frame_share_percent = serializers.FloatField()
-    conflicts_count = serializers.IntegerField()
+    conflicts_count = serializers.IntegerField(source='conflict_count')
 
     # This set is enough for basic characteristics, such as
-    # A_extra, B_extra, accuracy, precision and recall
-    valid_count = serializers.IntegerField()
-    ds_count = serializers.IntegerField()
-    gt_count = serializers.IntegerField()
+    # DS_unmatched, GT_unmatched, accuracy, precision and recall
+    valid_count = serializers.IntegerField(source='annotations.valid_count')
+    ds_count = serializers.IntegerField(source='annotations.ds_count')
+    gt_count = serializers.IntegerField(source='annotations.gt_count')
+
 
 class QualityReportParametersSerializer(serializers.Serializer):
     iou_threshold = serializers.FloatField()
+
 
 class QualityReportSerializer(serializers.ModelSerializer):
     target = serializers.ChoiceField(models.QualityReportTarget.choices())
@@ -1937,17 +1949,3 @@ class QualityReportSerializer(serializers.ModelSerializer):
             'created_date', 'target_last_updated', 'gt_last_updated',
         )
         read_only_fields = fields
-
-    def to_representation(self, instance):
-        instance.summary = dict(
-            frame_count=0,
-            frame_share_percent=0,
-            conflicts_count=0,
-            valid_count=0,
-            ds_count=0,
-            gt_count=0,
-        )
-        instance.parameters = dict(
-            iou_threshold=0
-        )
-        return super().to_representation(instance)
