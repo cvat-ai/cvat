@@ -95,7 +95,7 @@ The procedure is the same for both **Pro** and **Team** plans.
 If for some reason you want to change your plan, you need to:
 
 1. Unsubscribe from the previous plan.
-2. If you need a refund, contact us at accounting@cvat.ai.
+2. If you need a refund, contact us at <accounting@cvat.ai>.
 3. Subscribe to a new plan.
 
 ## Can I subscribe to several plans?
