@@ -66,7 +66,7 @@ export default function ConflictAggregatorComponent(): JSX.Element | null {
             }).filter((el) => !Array.isArray(el));
             setMapping(newMapping);
         }
-    }, [geometry]);
+    }, [geometry, objectStates]);
 
     if (!(canvasInstance instanceof Canvas) || !canvasIsReady || !geometry) {
         return null;
