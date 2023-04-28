@@ -26,6 +26,7 @@ import CloudStorage from './cloud-storage';
 import Organization from './organization';
 import Webhook from './webhook';
 import QualityReport from './quality-report';
+import QualityConflict from './quality-conflict';
 
 export default function implementAPI(cvat) {
     cvat.plugins.list.implementation = PluginRegistry.list;
@@ -339,7 +340,7 @@ export default function implementAPI(cvat) {
         return webhooks;
     };
 
-    cvat.analytics.quality.get.implementation = async (filter) => {
+    cvat.analytics.quality.reports.implementation = async (filter) => {
         // checkFilter(filter, {
         //     taskId: isInteger,
         //     parentId: isInteger,
@@ -355,9 +356,26 @@ export default function implementAPI(cvat) {
                 target: filter.target,
             };
         }
-        const reportsData = await serverProxy.analytics.quality.get(updatedParams);
+        if ('jobId' in filter) {
+            updatedParams = {
+                job_id: filter.jobId,
+                sort: '-created_date',
+                target: filter.target,
+            };
+        }
+        const reportsData = await serverProxy.analytics.quality.reports(updatedParams);
 
         return reportsData.map((report) => new QualityReport({ ...report }));
+    };
+
+    cvat.analytics.quality.conflicts.implementation = async (filter) => {
+        let updatedParams: Record<string, string> = {};
+        updatedParams = {
+            report_id: filter.reportId,
+        };
+        const reportsData = await serverProxy.analytics.quality.conflicts(updatedParams);
+
+        return reportsData.map((conflict) => new QualityConflict({ ...conflict }));
     };
 
     return cvat;

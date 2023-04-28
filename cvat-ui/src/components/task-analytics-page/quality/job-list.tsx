@@ -156,7 +156,7 @@ function JobListComponent(props: Props): JSX.Element {
                             color: getQualityColor(meanAccuracy),
                         }}
                     >
-                        {meanAccuracy || 'N/A'}
+                        {Number.isNaN(meanAccuracy) ? 'N/A' : `${meanAccuracy}%`}
                     </Text>
                 );
             },

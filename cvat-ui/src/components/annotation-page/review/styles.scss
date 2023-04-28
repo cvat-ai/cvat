@@ -37,6 +37,31 @@
     }
 }
 
+.cvat-conflict-label {
+    position: absolute;
+    min-width: 2 * $grid-unit-size;
+    opacity: 0.8;
+    z-index: 100;
+    transition: none;
+    pointer-events: auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border-radius: 0;
+    transform-origin: top left;
+    background: none;
+    border: none;
+
+    &:hover {
+        opacity: 1;
+    }
+
+    svg {
+        fill: red;
+        width: 1.5em;
+        height: 1.5em;
+    }
+}
+
 .cvat-issue-dialog {
     width: $grid-unit-size * 35;
     position: absolute;

@@ -57,6 +57,7 @@ class Annotation {
     protected history: any;
     protected groupColors: Record<number, string>;
     public serverID: number | null;
+    protected jobID: number;
     protected parentID: number | null;
     protected dimension: DimensionType;
     public group: number;
@@ -81,6 +82,7 @@ class Annotation {
         this.groupColors = injection.groupColors;
         this.clientID = clientID;
         this.serverID = data.id || null;
+        this.jobID = data.job_id;
         this.parentID = injection.parentID || null;
         this.dimension = injection.dimension;
         this.group = data.group;
@@ -568,6 +570,7 @@ export class Shape extends Drawn {
             shapeType: this.shapeType,
             clientID: this.clientID,
             serverID: this.serverID,
+            jobID: this.jobID,
             parentID: this.parentID,
             occluded: this.occluded,
             lock: this.lock,
@@ -934,6 +937,7 @@ export class Track extends Drawn {
             shapeType: this.shapeType,
             clientID: this.clientID,
             serverID: this.serverID,
+            jobID: this.jobID,
             parentID: this.parentID,
             lock: this.lock,
             color: this.color,
@@ -1469,6 +1473,7 @@ export class Tag extends Annotation {
             objectType: ObjectType.TAG,
             clientID: this.clientID,
             serverID: this.serverID,
+            jobID: this.jobID,
             lock: this.lock,
             attributes: { ...this.attributes },
             label: this.label,
@@ -1993,9 +1998,11 @@ export class SkeletonShape extends Shape {
             shapeType: this.shapeType,
             clientID: this.clientID,
             serverID: this.serverID,
+            jobID: this.jobID,
             points: this.points,
             zOrder: this.zOrder,
             rotation: 0,
+            isGroundTruth: this.isGroundTruth,
             attributes: { ...this.attributes },
             descriptions: [...this.descriptions],
             elements,
@@ -2901,6 +2908,8 @@ export class SkeletonTrack extends Track {
             shapeType: this.shapeType,
             clientID: this.clientID,
             serverID: this.serverID,
+            jobID: this.jobID,
+            isGroundTruth: this.isGroundTruth,
             color: this.color,
             updated: Math.max(this.updated, ...this.elements.map((element) => element.updated)),
             label: this.label,

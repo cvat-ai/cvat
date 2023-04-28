@@ -56,6 +56,7 @@ const defaultState: AnnotationState = {
         openTime: null,
         labels: [],
         requestedId: null,
+        groundTruthJobId: null,
         instance: null,
         attributes: {},
         fetching: false,
@@ -90,8 +91,8 @@ const defaultState: AnnotationState = {
         },
         collapsed: {},
         collapsedAll: true,
+        statesSources: [],
         states: [],
-        groundTruthStates: [],
         filters: [],
         resetGroupFlag: false,
         history: {
@@ -141,7 +142,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             const {
                 job,
                 states,
-                groundTruthStates,
                 openTime,
                 frameNumber: number,
                 frameFilename: filename,
@@ -151,6 +151,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 frameData: data,
                 minZ,
                 maxZ,
+                groundTruthJobId,
             } = action.payload;
 
             const isReview = job.stage === JobStage.REVIEW;
@@ -182,17 +183,18 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                             acc[label.id] = label.attributes;
                             return acc;
                         }, {}),
+                    groundTruthJobId,
                 },
                 annotations: {
                     ...state.annotations,
                     states,
-                    groundTruthStates,
                     filters,
                     zLayer: {
                         min: minZ,
                         max: maxZ,
                         cur: maxZ,
                     },
+                    statesSources: [job.id],
                 },
                 player: {
                     ...state.player,
@@ -265,7 +267,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 filename,
                 relatedFiles,
                 states,
-                groundTruthStates,
                 minZ,
                 maxZ,
                 curZ,
@@ -290,7 +291,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     ...state.annotations,
                     activatedStateID: updateActivatedStateID(states, activatedStateID),
                     states,
-                    groundTruthStates,
                     zLayer: {
                         min: minZ,
                         max: maxZ,
@@ -1096,9 +1096,9 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 return state;
             }
 
-            let newStates = state.annotations.states;
+            let { statesSources } = state.annotations;
             if (workspace !== Workspace.REVIEW_WORKSPACE) {
-                newStates = state.annotations.states.filter((_state: any) => !_state.isGroundTruth);
+                statesSources = [state.job.instance.id];
             }
 
             return {
@@ -1108,7 +1108,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     ...state.annotations,
                     activatedStateID: null,
                     activatedAttributeID: null,
-                    states: newStates,
+                    statesSources,
                 },
             };
         }
@@ -1193,7 +1193,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     ...state,
                     annotations: {
                         ...state.annotations,
-                        states: [...state.annotations.states, ...state.annotations.groundTruthStates],
+                        statesSources: [
+                            state.job.instance.id,
+                            state.job.groundTruthJobId,
+                        ],
                     },
                 };
             }
@@ -1201,7 +1204,9 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 ...state,
                 annotations: {
                     ...state.annotations,
-                    states: state.annotations.states.filter((_state: any) => !_state.isGroundTruth),
+                    statesSources: [
+                        state.job.instance.id,
+                    ],
                 },
             };
         }

@@ -2709,6 +2709,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
             rect.addClass('cvat_canvas_ground_truth');
         }
 
+        if (state.conflict) {
+            rect.addClass('cvat_canvas_conflicted');
+        }
+
         return rect;
     }
 
@@ -2735,6 +2739,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         if (state.isGroundTruth) {
             polygon.addClass('cvat_canvas_ground_truth');
+        }
+
+        if (state.conflict) {
+            polygon.addClass('cvat_canvas_conflicted');
         }
 
         return polygon;
@@ -2765,6 +2773,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
             polyline.addClass('cvat_canvas_ground_truth');
         }
 
+        if (state.conflict) {
+            polyline.addClass('cvat_canvas_conflicted');
+        }
+
         return polyline;
     }
 
@@ -2792,6 +2804,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         if (state.isGroundTruth) {
             cube.addClass('cvat_canvas_ground_truth');
+        }
+
+        if (state.conflict) {
+            cube.addClass('cvat_canvas_conflicted');
         }
 
         return cube;
@@ -3372,6 +3388,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
             rect.addClass('cvat_canvas_ground_truth');
         }
 
+        if (state.conflict) {
+            rect.addClass('cvat_canvas_conflicted');
+        }
+
         return rect;
     }
 
@@ -3400,6 +3420,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         if (state.isGroundTruth) {
             group.addClass('cvat_canvas_ground_truth');
+        }
+
+        if (state.conflict) {
+            group.addClass('cvat_canvas_conflicted');
         }
 
         shape.remove = (): SVG.PolyLine => {

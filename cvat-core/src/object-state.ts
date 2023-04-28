@@ -35,6 +35,7 @@ export interface SerializedData {
     shapeType?: ShapeType;
     clientID?: number;
     serverID?: number;
+    jobID?: number;
     parentID?: number;
     lock?: boolean;
     hidden?: boolean;
@@ -78,10 +79,12 @@ export default class ObjectState {
     public readonly source: Source;
     public readonly clientID: number | null;
     public readonly serverID: number | null;
+    public readonly jobID: number | null;
     public readonly parentID: number | null;
     public readonly updated: number;
     public readonly group: { color: string; id: number; } | null;
     public readonly isGroundTruth: boolean;
+    public conflict: { description: string } | null;
     public readonly keyframes: {
         first: number | null;
         prev: number | null;
@@ -169,12 +172,14 @@ export default class ObjectState {
             pinned: false,
             source: Source.MANUAL,
             isGroundTruth: serialized.isGroundTruth || false,
+            conflict: null,
             keyframes: serialized.keyframes || null,
             group: serialized.group || null,
             updated: serialized.updated || Date.now(),
 
             clientID: serialized.clientID || null,
             serverID: serialized.serverID || null,
+            jobID: serialized.jobID || null,
             parentID: serialized.parentID || null,
 
             frame: serialized.frame,
@@ -210,6 +215,9 @@ export default class ObjectState {
                 },
                 serverID: {
                     get: () => data.serverID,
+                },
+                jobID: {
+                    get: () => data.jobID,
                 },
                 parentID: {
                     get: () => data.parentID,
@@ -455,6 +463,12 @@ export default class ObjectState {
                             return [...data.elements];
                         }
                         return [];
+                    },
+                },
+                conflict: {
+                    get: () => data.conflict,
+                    set: (conflict) => {
+                        data.conflict = conflict;
                     },
                 },
             }),

@@ -21,6 +21,7 @@ import config from './config';
 import DownloadWorker from './download.worker';
 import { ServerError } from './exceptions';
 import { FunctionsResponseBody } from './server-response-types';
+import { RawQualityConflictData } from './quality-conflict';
 
 type Params = {
     org: number | string,
@@ -2175,6 +2176,24 @@ async function getQualityReports(filter): Promise<RawQualityReportData[]> {
     }
 }
 
+async function getQualityConflicts(filter): Promise<RawQualityConflictData[]> {
+    const params = enableOrganization();
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.get(`${backendAPI}/conflicts`, {
+            params: {
+                ...params,
+                ...filter,
+            },
+        });
+
+        return response.data.results;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
 export default Object.freeze({
     server: Object.freeze({
         setAuthData,
@@ -2322,7 +2341,8 @@ export default Object.freeze({
 
     analytics: Object.freeze({
         quality: Object.freeze({
-            get: getQualityReports,
+            reports: getQualityReports,
+            conflicts: getQualityConflicts,
         }),
     }),
 });

@@ -30,10 +30,10 @@ function MeanQuality(props: Props): JSX.Element {
             <Card className='cvat-task-mean-annotaion-quality'>
                 <Statistic
                     title='Mean annotaion quality'
-                    value={meanAccuracy || 'N/A'}
+                    value={Number.isNaN(meanAccuracy) ? 'N/A' : meanAccuracy}
                     precision={2}
                     valueStyle={{ color: getQualityColor(meanAccuracy) }}
-                    suffix={meanAccuracy ? '%' : ''}
+                    suffix={Number.isNaN(meanAccuracy) ? '' : '%'}
                 />
                 <div className='cvat-analytics-time-hint'>
                     <Text type='secondary'>{taskReport?.createdDate ? moment(taskReport?.createdDate).fromNow() : ''}</Text>

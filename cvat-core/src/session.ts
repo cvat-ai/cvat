@@ -67,14 +67,14 @@ function buildDuplicatedAPI(prototype) {
                     return result;
                 },
 
-                async get(frame, allTracks = false, filters = [], GTAnnotaionsSource = null) {
+                async get(frame, allTracks = false, filters = [], groundTruthJobId = null) {
                     const result = await PluginRegistry.apiWrapper.call(
                         this,
                         prototype.annotations.get,
                         frame,
                         allTracks,
                         filters,
-                        GTAnnotaionsSource,
+                        groundTruthJobId,
                     );
                     return result;
                 },
