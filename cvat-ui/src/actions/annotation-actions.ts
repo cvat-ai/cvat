@@ -913,8 +913,11 @@ export function getJobAsync(
             const [job] = await cvat.jobs.get({ jobID: jid });
             let gtJob = null;
             if (job.type === JobType.NORMAL) {
-                const [task] = await cvat.tasks.get({ id: tid });
-                [gtJob] = task.jobs.filter((_job: Job) => _job.type === JobType.GROUND_TRUTH);
+                try {
+                    const [task] = await cvat.tasks.get({ id: tid });
+                    [gtJob] = task.jobs.filter((_job: Job) => _job.type === JobType.GROUND_TRUTH);
+                // eslint-disable-next-line no-empty
+                } catch (e) {}
             }
 
             // navigate to correct first frame according to setup
