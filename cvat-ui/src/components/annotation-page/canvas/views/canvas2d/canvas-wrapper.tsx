@@ -898,7 +898,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                 }
             });
             const finalAnnotations = filteredAnnotations.filter((objectState: ObjectState) => (
-                shownAnnotations.includes(objectState) || objectState.conflict
+                shownAnnotations.includes(objectState)
             ));
             canvasInstance.setup(
                 frameData,
