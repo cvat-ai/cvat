@@ -68,7 +68,7 @@ filter = [] { # Django Q object to filter list of entries
     qobject := [
         {"job__segment__task__organization": org.id},
         {"job__segment__task__project__organization": org.id}, "|",
-        {"task__organization": org.id},
+        {"task__organization": org.id}, "|",
         {"task__project__organization": org.id}, "|",
     ]
 } else = qobject {
