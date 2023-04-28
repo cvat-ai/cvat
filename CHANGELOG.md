@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Tracking of multiple objects (30 and more) with TransT tracker
   (<https://github.com/opencv/cvat/pull/6073>)
+  - The issue azure.core.exceptions.ResourceExistsError: The specified blob already exists (<https://github.com/opencv/cvat/pull/6082>)
 
 ### Security
 - TDB
