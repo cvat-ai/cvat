@@ -144,6 +144,20 @@ function JobListComponent(props: Props): JSX.Element {
             ) === value,
         },
         {
+            title: 'Conflicts',
+            dataIndex: 'conflicts',
+            key: 'conflicts',
+            className: 'cvat-job-item-conflicts',
+            render: (jobInstance: Job): JSX.Element => {
+                const conflicts = jobsReports[jobInstance.id]?.summary?.conflictsCount;
+                return (
+                    <Text>
+                        {Number.isNaN(conflicts) ? 'N/A' : conflicts}
+                    </Text>
+                );
+            },
+        },
+        {
             title: 'Quality',
             dataIndex: 'quality',
             key: 'quality',
@@ -169,6 +183,7 @@ function JobListComponent(props: Props): JSX.Element {
             stage: job,
             assignee: job,
             quality: job,
+            conflicts: job,
         });
 
         return acc;

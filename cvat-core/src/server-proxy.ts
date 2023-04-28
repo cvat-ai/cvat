@@ -2181,14 +2181,12 @@ async function getQualityConflicts(filter): Promise<RawQualityConflictData[]> {
     const { backendAPI } = config;
 
     try {
-        const response = await Axios.get(`${backendAPI}/conflicts`, {
-            params: {
-                ...params,
-                ...filter,
-            },
+        const response = await fetchAll(`${backendAPI}/conflicts`, {
+            ...params,
+            ...filter,
         });
 
-        return response.data.results;
+        return response.results;
     } catch (errorData) {
         throw generateError(errorData);
     }

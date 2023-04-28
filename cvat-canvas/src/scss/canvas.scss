@@ -149,12 +149,12 @@ polyline.cvat_canvas_shape_splitting {
 }
 
 .cvat_canvas_ground_truth {
-    stroke-dasharray: 45;
+    stroke-dasharray: 15;
 }
 
 .cvat_canvas_conflicted {
     stroke: red;
-    stroke-dasharray: 45;
+    stroke-dasharray: 15;
 }
 
 .cvat_canvas_shape_occluded_point {
