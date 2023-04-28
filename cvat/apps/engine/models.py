@@ -1026,6 +1026,7 @@ class AnnotationConflictType(str, Enum):
     MISSING_ANNOTATION = 'missing_annotation'
     EXTRA_ANNOTATION = 'extra_annotation'
     MISMATCHING_LABEL = 'mismatching_label'
+    LOW_OVERLAP = 'low_overlap'
 
     def __str__(self) -> str:
         return self.value

@@ -802,6 +802,8 @@ class _DatasetComparator:
         self._frame_results = {}
 
         self.comparator = _Comparator(self._gt_dataset.categories())
+        self.comparator._annotation_comparator.iou_threshold = 0
+        self.overlap_threshold = 0.5
         self.included_frames = gt_data_provider.job_data._db_job.segment.frame_set
 
     def _dm_item_to_frame_id(self, item: dm.DatasetItem) -> int:
@@ -852,7 +854,7 @@ class _DatasetComparator:
 
         matches, mismatches, gt_unmatched, ds_unmatched, pairwise_distances = merged_results
 
-        def _get_distance(gt_ann: dm.Annotation, ds_ann: dm.Annotation) -> Optional[float]:
+        def _get_overlap(gt_ann: dm.Annotation, ds_ann: dm.Annotation) -> Optional[float]:
             return pairwise_distances.get((id(gt_ann), id(ds_ann)))
 
         _matched_shapes = set(
@@ -878,6 +880,18 @@ class _DatasetComparator:
 
             matched_ann, distance = max(this_shape_distances, key=lambda v: v[1], default=(None, 0))
             return matched_ann, distance
+
+        for gt_ann, ds_ann in list(matches + mismatches):
+            overlap = _get_overlap(gt_ann, ds_ann)
+            if overlap and overlap < self.overlap_threshold:
+                conflicts.append(AnnotationConflict(
+                    frame_id=frame_id,
+                    type=AnnotationConflictType.LOW_OVERLAP,
+                    annotation_ids=[
+                        self._dm_ann_to_ann_id(ds_ann, self._ds_dataset),
+                        self._dm_ann_to_ann_id(gt_ann, self._gt_dataset),
+                    ]
+                ))
 
         for unmatched_ann in gt_unmatched:
             conflicts.append(
@@ -914,15 +928,15 @@ class _DatasetComparator:
             )
 
         resulting_distances = [
-            _get_distance(gt_ann, ds_ann)
+            _get_overlap(gt_ann, ds_ann)
             for gt_ann, ds_ann in itertools.chain(matches, mismatches)
         ]
 
         for unmatched_ann in itertools.chain(gt_unmatched, ds_unmatched):
-            matched_ann_id, distance = _find_closest_unmatched_shape(unmatched_ann)
+            matched_ann_id, overlap = _find_closest_unmatched_shape(unmatched_ann)
             if matched_ann_id is not None:
                 _matched_shapes.add(matched_ann_id)
-            resulting_distances.append(distance)
+            resulting_distances.append(overlap)
 
         mean_iou = np.mean(resulting_distances)
 
