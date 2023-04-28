@@ -6,12 +6,15 @@ import config from 'config';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
 import { ReviewActionTypes } from 'actions/review-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
+import { QualityConflict } from 'cvat-core-wrapper';
 import { ReviewState } from '.';
 
 const defaultState: ReviewState = {
     issues: [],
     latestComments: [],
     frameIssues: [], // saved on the server and not saved on the server
+    conflicts: [],
+    frameConflicts: [],
     newIssuePosition: null,
     issuesHidden: false,
     issuesResolvedHidden: false,
@@ -26,14 +29,18 @@ export default function (state: ReviewState = defaultState, action: any): Review
         case AnnotationActionTypes.GET_JOB_SUCCESS: {
             const {
                 issues,
+                conflicts,
                 frameData: { number: frame },
             } = action.payload;
             const frameIssues = issues.filter((issue: any): boolean => issue.frame === frame);
+            const frameConflicts = conflicts.filter((conflict: QualityConflict): boolean => conflict.frame === frame);
 
             return {
                 ...state,
                 issues,
                 frameIssues,
+                conflicts,
+                frameConflicts,
             };
         }
         case AnnotationActionTypes.CHANGE_FRAME: {
@@ -81,6 +88,7 @@ export default function (state: ReviewState = defaultState, action: any): Review
             return {
                 ...state,
                 frameIssues: state.issues.filter((issue: any): boolean => issue.frame === frame),
+                frameConflicts: state.conflicts.filter((conflict: any): boolean => conflict.frame === frame),
             };
         }
         case ReviewActionTypes.START_ISSUE: {

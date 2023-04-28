@@ -41,17 +41,31 @@ function processGroundTruthAnnotations(rawAnnotations, groundTruthAnnotations) {
     return result;
 }
 
-async function getAnnotationsFromServer(session, GTAnnotaionsSource) {
+function addJobId(rawAnnotations, jobID) {
+    rawAnnotations.shapes.forEach((annotation) => { annotation.job_id = jobID; });
+    rawAnnotations.tracks.forEach((annotation) => { annotation.job_id = jobID; });
+    rawAnnotations.tags.forEach((annotation) => { annotation.job_id = jobID; });
+    const result = {
+        shapes: [...rawAnnotations.shapes],
+        tracks: [...rawAnnotations.tracks],
+        tags: [...rawAnnotations.tags],
+    };
+    return result;
+}
+
+async function getAnnotationsFromServer(session, groundTruthJobId) {
     const sessionType = session instanceof Task ? 'task' : 'job';
     const cache = getCache(sessionType);
 
     if (!cache.has(session)) {
         let rawAnnotations = await serverProxy.annotations.getAnnotations(sessionType, session.id);
-        if (GTAnnotaionsSource) {
-            const gtAnnotations = await serverProxy.annotations.getAnnotations(sessionType, GTAnnotaionsSource);
+        rawAnnotations = addJobId(rawAnnotations, session.id);
+        if (groundTruthJobId) {
+            let gtAnnotations = await serverProxy.annotations.getAnnotations(sessionType, groundTruthJobId);
+            gtAnnotations = addJobId(gtAnnotations, groundTruthJobId);
             rawAnnotations = processGroundTruthAnnotations(rawAnnotations, gtAnnotations);
         }
-
+        console.log(rawAnnotations);
         // Get meta information about frames
         const startFrame = sessionType === 'job' ? session.startFrame : 0;
         const stopFrame = sessionType === 'job' ? session.stopFrame : session.size - 1;
@@ -86,7 +100,7 @@ export async function clearCache(session) {
     }
 }
 
-export async function getAnnotations(session, frame, allTracks, filters, GTAnnotaionsSource) {
+export async function getAnnotations(session, frame, allTracks, filters, groundTruthJobId) {
     const sessionType = session instanceof Task ? 'task' : 'job';
     const cache = getCache(sessionType);
 
@@ -94,7 +108,7 @@ export async function getAnnotations(session, frame, allTracks, filters, GTAnnot
         return cache.get(session).collection.get(frame, allTracks, filters);
     }
 
-    await getAnnotationsFromServer(session, GTAnnotaionsSource);
+    await getAnnotationsFromServer(session, groundTruthJobId);
     return cache.get(session).collection.get(frame, allTracks, filters);
 }
 

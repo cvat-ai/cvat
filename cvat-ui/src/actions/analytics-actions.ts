@@ -6,7 +6,7 @@ import { getCore, QualityReport, Task } from 'cvat-core-wrapper';
 import { Dispatch, ActionCreator } from 'redux';
 import { QualityQuery } from 'reducers';
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
-import { filterNull } from 'utils/filter-null';
+// import { filterNull } from 'utils/filter-null';
 
 const cvat = getCore();
 
@@ -34,8 +34,8 @@ export const getQualityReportsAsync = (task: Task, query: QualityQuery): ThunkAc
 
         try {
             // reports are returned in order -created_date
-            const [taskReport] = await cvat.analytics.quality.get({ taskId: task.id, target: 'task' });
-            const jobReports = await cvat.analytics.quality.get({ taskId: task.id, target: 'job' });
+            const [taskReport] = await cvat.analytics.quality.reports({ taskId: task.id, target: 'task' });
+            const jobReports = await cvat.analytics.quality.reports({ taskId: task.id, target: 'job' });
             const jobIds = task.jobs.map((job) => job.id);
             const relevantReports: QualityReport[] = [];
             jobIds.forEach((jobId: number) => {

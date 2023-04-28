@@ -6,7 +6,7 @@
 import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 import {
-    Webhook, MLModel, ModelProvider, Organization, QualityReport,
+    Webhook, MLModel, ModelProvider, Organization, QualityReport, QualityConflict,
 } from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap } from 'utils/mousetrap-react';
@@ -677,6 +677,7 @@ export interface AnnotationState {
         openTime: null | number;
         labels: any[];
         requestedId: number | null;
+        groundTruthJobId: number | null;
         instance: any | null | undefined;
         attributes: Record<number, any[]>;
         fetching: boolean;
@@ -712,8 +713,8 @@ export interface AnnotationState {
         activatedAttributeID: number | null;
         collapsed: Record<number, boolean>;
         collapsedAll: boolean;
+        statesSources: number[];
         states: any[];
-        groundTruthStates: any[];
         filters: any[];
         resetGroupFlag: boolean;
         history: {
@@ -856,6 +857,8 @@ export interface ReviewState {
     newIssuePosition: number[] | null;
     issuesHidden: boolean;
     issuesResolvedHidden: boolean;
+    conflicts: QualityConflict[];
+    frameConflicts: QualityConflict[];
     fetching: {
         jobId: number | null;
         issueId: number | null;
@@ -893,6 +896,7 @@ export interface WebhooksState {
 
 export interface QualityQuery {
     taskId: number | null;
+    jobId: number | null;
     parentId: number | null;
 }
 

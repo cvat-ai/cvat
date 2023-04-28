@@ -12,6 +12,7 @@ const defaultState: AnalyticsState = {
         jobsReports: [],
         query: {
             taskId: null,
+            jobId: null,
             parentId: null,
         },
     },

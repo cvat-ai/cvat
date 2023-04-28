@@ -69,6 +69,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 activatedStateID,
                 activatedElementID,
                 zLayer: { min: minZLayer, max: maxZLayer },
+                statesSources,
             },
             job: { instance: jobInstance },
             player: {
@@ -84,8 +85,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
     let statesHidden = true;
     let statesLocked = true;
-
-    objectStates.forEach((objectState: ObjectState) => {
+    const filteredStates = objectStates.filter((e) => !e.jobID || statesSources.includes(e.jobID));
+    filteredStates.forEach((objectState: ObjectState) => {
         const { lock } = objectState;
         if (!lock) {
             if (objectState.objectType !== ObjectType.TAG) {
@@ -106,7 +107,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         statesLocked,
         statesCollapsedAll: collapsedAll,
         collapsedStates: collapsed,
-        objectStates,
+        objectStates: filteredStates,
         frameNumber,
         jobInstance,
         annotationsFilters,

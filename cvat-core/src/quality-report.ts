@@ -90,8 +90,8 @@ export default class QualityReport {
                         validCount: data.summary.valid_count,
                         dsCount: data.summary.ds_count,
                         gtCount: data.summary.gt_count,
-                        accuracy: data.summary.valid_count /
-                            (data.summary.ds_count + data.summary.gt_count - data.summary.valid_count),
+                        accuracy: (data.summary.valid_count /
+                            (data.summary.ds_count + data.summary.gt_count - data.summary.valid_count)) * 100,
                     }),
                 },
                 parameters: {

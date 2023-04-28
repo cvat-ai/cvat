@@ -195,7 +195,7 @@ export function implementJob(Job) {
     };
 
     // TODO: Check filter for annotations
-    Job.prototype.annotations.get.implementation = async function (frame, allTracks, filters, GTAnnotaionsSource) {
+    Job.prototype.annotations.get.implementation = async function (frame, allTracks, filters, groundTruthJobId) {
         if (!Array.isArray(filters)) {
             throw new ArgumentError('Filters must be an array');
         }
@@ -208,7 +208,7 @@ export function implementJob(Job) {
             throw new ArgumentError(`Frame ${frame} does not exist in the job`);
         }
 
-        const annotationsData = await getAnnotations(this, frame, allTracks, filters, GTAnnotaionsSource);
+        const annotationsData = await getAnnotations(this, frame, allTracks, filters, groundTruthJobId);
         const deletedFrames = await getDeletedFrames('job', this.id);
         if (frame in deletedFrames) {
             return [];

@@ -266,8 +266,12 @@ function build() {
         },
         analytics: {
             quality: {
-                async get(filter: any) {
-                    const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.get, filter);
+                async reports(filter: any) {
+                    const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.reports, filter);
+                    return result;
+                },
+                async conflicts(filter: any) {
+                    const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.conflicts, filter);
                     return result;
                 },
             },
