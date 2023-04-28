@@ -973,8 +973,8 @@ class _DatasetComparator:
         missing_annotations_count = np.sum(confusion_matrix[:, confusion_matrix_labels_rmap[None]])
         extra_annotations_count = np.sum(confusion_matrix[confusion_matrix_labels_rmap[None], :])
         total_annotations_count = np.sum(confusion_matrix)
-        ds_annotations_count = np.sum(ds_ann_counts)
-        gt_annotations_count = np.sum(gt_ann_counts)
+        ds_annotations_count = np.sum(ds_ann_counts) - ds_ann_counts[confusion_matrix_labels_rmap[None]]
+        gt_annotations_count = np.sum(gt_ann_counts) - gt_ann_counts[confusion_matrix_labels_rmap[None]]
 
         self._frame_results.setdefault(frame_id, {}).update(
             error_count=len(conflicts),
@@ -1101,8 +1101,8 @@ class _DatasetComparator:
         missing_annotations_count = np.sum(confusion_matrix[:, confusion_matrix_labels_rmap[None]])
         extra_annotations_count = np.sum(confusion_matrix[confusion_matrix_labels_rmap[None], :])
         total_annotations_count = np.sum(confusion_matrix)
-        ds_annotations_count = np.sum(ds_ann_counts)
-        gt_annotations_count = np.sum(gt_ann_counts)
+        ds_annotations_count = np.sum(ds_ann_counts) - ds_ann_counts[confusion_matrix_labels_rmap[None]]
+        gt_annotations_count = np.sum(gt_ann_counts) - gt_ann_counts[confusion_matrix_labels_rmap[None]]
 
         mean_error_count = summary["error_count"] / len(intersection_frames)
 
