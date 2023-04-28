@@ -251,11 +251,11 @@ class ComparisonReportAnnotationLabelSummary(_Serializable):
         )
 
 @define(kw_only=True)
-class QualityReportAnnotationComponentsSummary(_Serializable):
+class ComparisonReportAnnotationComponentsSummary(_Serializable):
     shape: ComparisonReportAnnotationShapeSummary
     label: ComparisonReportAnnotationLabelSummary
 
-    def accumulate(self, other: QualityReportAnnotationComponentsSummary):
+    def accumulate(self, other: ComparisonReportAnnotationComponentsSummary):
         self.shape.accumulate(other.shape)
         self.label.accumulate(other.label)
 
@@ -276,7 +276,7 @@ class ComparisonReportComparisonSummary(_Serializable):
     mean_conflict_count: float
 
     annotations: ComparisonReportAnnotationsSummary
-    annotation_components: QualityReportAnnotationComponentsSummary
+    annotation_components: ComparisonReportAnnotationComponentsSummary
 
     @property
     def frame_count(self) -> int:
@@ -297,7 +297,8 @@ class ComparisonReportComparisonSummary(_Serializable):
             conflict_count=d['conflict_count'],
             mean_conflict_count=d['mean_conflict_count'],
             annotations=ComparisonReportAnnotationsSummary.from_dict(d['annotations']),
-            annotation_components=QualityReportAnnotationComponentsSummary.from_dict(d['annotation_components']),
+            annotation_components=ComparisonReportAnnotationComponentsSummary.from_dict(
+                d['annotation_components']),
         )
 
 
@@ -315,22 +316,34 @@ class ComparisonReportDatasetSummary(_Serializable):
 
 
 @define(kw_only=True)
+class ComparisonReportFrameSummary(_Serializable):
+    conflict_count: int
+    conflicts: List[AnnotationConflict]
+
+    annotations: ComparisonReportAnnotationsSummary
+    annotation_components: ComparisonReportAnnotationComponentsSummary
+
+    @classmethod
+    def from_dict(cls, d):
+        return cls(
+            conflict_count=d['conflict_count'],
+            conflicts=[AnnotationConflict.from_dict(v) for v in d['conflicts']],
+            annotations=ComparisonReportAnnotationsSummary.from_dict(d['annotations']),
+            annotation_components=ComparisonReportAnnotationComponentsSummary.from_dict(
+                d['annotation_components']),
+        )
+
+
+@define(kw_only=True)
 class ComparisonReport(_Serializable):
     parameters: ComparisonReportParameters
     comparison_summary: ComparisonReportComparisonSummary
     dataset_summary: ComparisonReportDatasetSummary
-    conflicts: List[AnnotationConflict]
+    frame_results: Dict[int, ComparisonReportFrameSummary]
 
     @property
-    def conflicts_count(self) -> int:
-        return len(self.conflicts)
-
-    def to_dict(self) -> dict:
-        result = super().to_dict()
-        result.update(**{
-            k: getattr(self, k) for k in ['conflicts_count']
-        })
-        return result
+    def conflicts(self) -> List[AnnotationConflict]:
+        return list(itertools.chain.from_iterable(r.conflicts for r in self.frame_results.values()))
 
     @classmethod
     def from_dict(cls, d: Dict[str, Any]) -> ComparisonReport:
@@ -338,7 +351,10 @@ class ComparisonReport(_Serializable):
             parameters=ComparisonReportParameters.from_dict(d['parameters']),
             comparison_summary=ComparisonReportComparisonSummary.from_dict(d['comparison_summary']),
             dataset_summary=ComparisonReportDatasetSummary.from_dict(d['dataset_summary']),
-            conflicts=list(AnnotationConflict.from_dict(v) for v in d['conflicts']),
+            frame_results={
+                k: ComparisonReportFrameSummary.from_dict(v)
+                for k, v in d['frame_results'].items()
+            }
         )
 
     def to_json(self) -> str:
@@ -349,7 +365,7 @@ class ComparisonReport(_Serializable):
                 else:
                     return super().default(o)
 
-        return json.dumps(self.to_dict(), cls=_JSONEncoder)
+        return json.dumps(self.to_dict(), cls=_JSONEncoder, indent=2)
 
     @classmethod
     def from_json(cls, data: str) -> ComparisonReport:
@@ -799,11 +815,11 @@ class _DatasetComparator:
         self._ds_dataset = self._ds_data_provider.dm_dataset
         self._gt_dataset = self._gt_data_provider.dm_dataset
 
-        self._frame_results = {}
+        self._frame_results: Dict[int, ComparisonReportFrameSummary] = {}
 
         self.comparator = _Comparator(self._gt_dataset.categories())
-        self.comparator._annotation_comparator.iou_threshold = 0
-        self.overlap_threshold = 0.5
+        self.comparator._annotation_comparator.iou_threshold = 0.2
+        self.overlap_threshold = 0.8
         self.included_frames = gt_data_provider.job_data._db_job.segment.frame_set
 
     def _dm_item_to_frame_id(self, item: dm.DatasetItem) -> int:
@@ -971,7 +987,6 @@ class _DatasetComparator:
             zip(itertools.repeat(None), ds_unmatched),
             zip(gt_unmatched, itertools.repeat(None)),
         ):
-            # TODO: separate keys and displayed labels
             ds_label_idx = confusion_matrix_labels_rmap[ds_ann.label if ds_ann else ds_ann]
             gt_label_idx = confusion_matrix_labels_rmap[gt_ann.label if gt_ann else gt_ann]
             confusion_matrix[ds_label_idx, gt_label_idx] += 1
@@ -990,66 +1005,46 @@ class _DatasetComparator:
         ds_annotations_count = np.sum(ds_ann_counts) - ds_ann_counts[confusion_matrix_labels_rmap[None]]
         gt_annotations_count = np.sum(gt_ann_counts) - gt_ann_counts[confusion_matrix_labels_rmap[None]]
 
-        self._frame_results.setdefault(frame_id, {}).update(
-            error_count=len(conflicts),
-            annotations=dict(
+        self._frame_results[frame_id] = ComparisonReportFrameSummary(
+            conflict_count=len(conflicts),
+            annotations=ComparisonReportAnnotationsSummary(
                 valid_count=valid_annotations_count,
                 missing_count=missing_annotations_count,
                 extra_count=extra_annotations_count,
                 total_count=total_annotations_count,
                 ds_count=ds_annotations_count,
                 gt_count=gt_annotations_count,
-                accuracy=valid_annotations_count / (total_annotations_count or 1),
-                precision=valid_annotations_count / (ds_annotations_count or 1),
-                recall=valid_annotations_count / (gt_annotations_count or 1),
-                confusion_matrix=dict(
+                confusion_matrix=ConfusionMatrix(
                     labels=list(confusion_matrix_labels.values()),
-                    axes=dict(
-                        cols='gt',
-                        rows='ds'
-                    ),
                     rows=confusion_matrix,
                     precision=label_precisions,
                     recall=label_recalls,
                     accuracy=label_accuracies,
                 )
             ),
-            annotation_element=dict(
-                shape=dict(
+            annotation_components=ComparisonReportAnnotationComponentsSummary(
+                shape=ComparisonReportAnnotationShapeSummary(
                     valid_count=valid_shapes_count,
                     missing_count=missing_shapes_count,
                     extra_count=extra_shapes_count,
                     total_count=total_shapes_count,
                     ds_count=ds_shapes_count,
                     gt_count=gt_shapes_count,
-                    accuracy=valid_shapes_count / (total_shapes_count or 1),
                     mean_iou=mean_iou,
                 ),
-                label=dict(
+                label=ComparisonReportAnnotationLabelSummary(
                     valid_count=valid_labels_count,
                     invalid_count=invalid_labels_count,
                     total_count=total_labels_count,
-                    accuracy=valid_labels_count / (total_labels_count or 1),
                 ),
             ),
-            errors=conflicts.copy(),
+            conflicts=conflicts.copy(),
         )
 
         return conflicts
 
     def generate_report(self) -> ComparisonReport:
         self._find_gt_conflicts()
-
-        def _get_nested_key(d, path):
-            for k in path:
-                d = d[k]
-            return d
-
-        def _set_nested_key(d, path, value):
-            for k in path[:-1]:
-                d = d.setdefault(k, {})
-            d[path[-1]] = value
-            return d
 
         full_ds_comparable_shapes_count = 0
         full_ds_comparable_attributes_count = 0
@@ -1065,34 +1060,26 @@ class _DatasetComparator:
 
         # accumulate stats
         intersection_frames = []
-        summary = {}
+        conflict_count = 0
+        annotations = None
+        annotation_components = None
         mean_ious = []
+        confusion_matrices = []
         for frame_id, frame_result in self._frame_results.items():
             intersection_frames.append(frame_id)
+            conflict_count += frame_result.conflict_count
 
-            for path in [
-                ["annotation_element", "shape", "valid_count"],
-                ["annotation_element", "shape", "missing_count"],
-                ["annotation_element", "shape", "extra_count"],
-                ["annotation_element", "shape", "total_count"],
-                ["annotation_element", "shape", "ds_count"],
-                ["annotation_element", "shape", "gt_count"],
+            if annotations is None:
+                annotations = deepcopy(frame_result.annotations)
+            else:
+                annotations.accumulate(frame_result.annotations)
+            confusion_matrices.append(frame_result.annotations.confusion_matrix.rows)
 
-                ["annotation_element", "label", "valid_count"],
-                ["annotation_element", "label", "invalid_count"],
-                ["annotation_element", "label", "total_count"],
-
-                ["annotations", "confusion_matrix", "rows"],
-                ["error_count"],
-            ]:
-                frame_value = _get_nested_key(frame_result, path)
-                try:
-                    summary_value = _get_nested_key(summary, path)
-                    _set_nested_key(summary, path, frame_value + summary_value)
-                except KeyError:
-                    _set_nested_key(summary, path, frame_value)
-
-            mean_ious.append(frame_result["annotation_element"]["shape"]["mean_iou"])
+            if annotation_components is None:
+                annotation_components = deepcopy(frame_result.annotation_components)
+            else:
+                annotation_components.accumulate(frame_result.annotation_components)
+            mean_ious.append(frame_result.annotation_components.shape.mean_iou)
 
         confusion_matrix_labels = {
             i: label.name
@@ -1103,7 +1090,12 @@ class _DatasetComparator:
         confusion_matrix_labels_rmap = {
             k: i for i, k in enumerate(confusion_matrix_labels.keys())
         }
-        confusion_matrix = _get_nested_key(summary, ["annotations", "confusion_matrix", "rows"])
+        if confusion_matrices:
+            confusion_matrix = np.sum(confusion_matrices, axis=0)
+        else:
+            confusion_matrix = np.zeros(
+                (len(confusion_matrix_labels), len(confusion_matrix_labels)), dtype=int
+            )
         matched_ann_counts = np.diag(confusion_matrix)
         ds_ann_counts = np.sum(confusion_matrix, axis=1)
         gt_ann_counts = np.sum(confusion_matrix, axis=0)
@@ -1118,7 +1110,7 @@ class _DatasetComparator:
         ds_annotations_count = np.sum(ds_ann_counts) - ds_ann_counts[confusion_matrix_labels_rmap[None]]
         gt_annotations_count = np.sum(gt_ann_counts) - gt_ann_counts[confusion_matrix_labels_rmap[None]]
 
-        mean_error_count = summary["error_count"] / len(intersection_frames)
+        mean_conflict_count = conflict_count / (len(intersection_frames) or 1)
 
         return ComparisonReport(
             parameters=ComparisonReportParameters(
@@ -1131,8 +1123,8 @@ class _DatasetComparator:
                 frame_share_percent=len(intersection_frames) / (len(self._ds_dataset) or 1),
                 frames=intersection_frames,
 
-                conflict_count=summary["error_count"],
-                mean_conflict_count=mean_error_count,
+                conflict_count=conflict_count,
+                mean_conflict_count=mean_conflict_count,
 
                 annotations=ComparisonReportAnnotationsSummary(
                     valid_count=valid_annotations_count,
@@ -1150,20 +1142,20 @@ class _DatasetComparator:
                     )
                 ),
 
-                annotation_components=QualityReportAnnotationComponentsSummary(
+                annotation_components=ComparisonReportAnnotationComponentsSummary(
                     shape=ComparisonReportAnnotationShapeSummary(
-                        valid_count=_get_nested_key(summary, ["annotation_element", "shape", "valid_count"]),
-                        missing_count=_get_nested_key(summary, ["annotation_element", "shape", "missing_count"]),
-                        extra_count=_get_nested_key(summary, ["annotation_element", "shape", "extra_count"]),
-                        total_count=_get_nested_key(summary, ["annotation_element", "shape", "total_count"]),
-                        ds_count=_get_nested_key(summary, ["annotation_element", "shape", "ds_count"]),
-                        gt_count=_get_nested_key(summary, ["annotation_element", "shape", "gt_count"]),
+                        valid_count=annotation_components.shape.valid_count,
+                        missing_count=annotation_components.shape.missing_count,
+                        extra_count=annotation_components.shape.extra_count,
+                        total_count=annotation_components.shape.total_count,
+                        ds_count=annotation_components.shape.ds_count,
+                        gt_count=annotation_components.shape.gt_count,
                         mean_iou=np.mean(mean_ious),
                     ),
                     label=ComparisonReportAnnotationLabelSummary(
-                        valid_count=_get_nested_key(summary, ["annotation_element", "label", "valid_count"]),
-                        invalid_count=_get_nested_key(summary, ["annotation_element", "label", "invalid_count"]),
-                        total_count=_get_nested_key(summary, ["annotation_element", "label", "total_count"]),
+                        valid_count=annotation_components.label.valid_count,
+                        invalid_count=annotation_components.label.invalid_count,
+                        total_count=annotation_components.label.total_count,
                     ),
                 ),
             ),
@@ -1173,9 +1165,7 @@ class _DatasetComparator:
                 shape_count=full_ds_comparable_shapes_count,
             ),
 
-            conflicts=list(itertools.chain.from_iterable(
-                r["errors"] for r in self._frame_results.values()
-            ))
+            frame_results=self._frame_results
         )
 
 
@@ -1215,6 +1205,7 @@ class QueueJobManager:
             # Report has never been computed
             queue_job_id = self._make_initial_queue_job_id(task)
         else:
+            # TODO: fix enqueuing if the job is just scheduled
             # Ensure there is an updating job in the queue
             next_update_time = last_update_time + self.TASK_QUALITY_CHECK_JOB_DELAY
             queue_job_id = self._make_regular_queue_job_id(task, next_update_time)
@@ -1309,7 +1300,7 @@ class QueueJobManager:
                 shape_count=task_shapes_count
             ),
 
-            conflicts=task_conflicts
+            frame_results={},
         )
 
         with transaction.atomic():
@@ -1345,7 +1336,7 @@ class QueueJobManager:
                 target_last_updated=task.updated_date,
                 gt_last_updated=gt_job.updated_date,
                 data=task_report_data.to_json(),
-                conflicts=[c.to_dict() for c in task_report_data.conflicts],
+                conflicts=[], # the task doesn't have own conflicts
                 children=list(job_quality_reports.values()),
             )
 
