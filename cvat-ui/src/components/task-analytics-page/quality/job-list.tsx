@@ -144,6 +144,20 @@ function JobListComponent(props: Props): JSX.Element {
             ) === value,
         },
         {
+            title: 'Frame intersection',
+            dataIndex: 'frame_intersection',
+            key: 'frame_intersection',
+            className: 'cvat-job-item-frame-intersection',
+            render: (jobInstance: Job): JSX.Element => {
+                const frameSharePercent = jobsReports[jobInstance.id]?.summary?.frameSharePercent;
+                return (
+                    <Text>
+                        {Number.isNaN(frameSharePercent) ? 'N/A' : `${Math.round(frameSharePercent * 100)}%`}
+                    </Text>
+                );
+            },
+        },
+        {
             title: 'Conflicts',
             dataIndex: 'conflicts',
             key: 'conflicts',
@@ -184,6 +198,7 @@ function JobListComponent(props: Props): JSX.Element {
             assignee: job,
             quality: job,
             conflicts: job,
+            frame_intersection: job,
         });
 
         return acc;
