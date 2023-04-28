@@ -18,7 +18,7 @@ from rest_framework.exceptions import ValidationError, PermissionDenied
 from rest_framework.permissions import BasePermission
 
 from cvat.apps.organizations.models import Membership, Organization
-from cvat.apps.engine.models import CloudStorage, Label, Project, QualityReport, Task, Job, Issue
+from cvat.apps.engine.models import AnnotationConflict, CloudStorage, Label, Project, QualityReport, Task, Job, Issue
 from cvat.apps.webhooks.models import WebhookTypeChoice
 from cvat.utils.http import make_requests_session
 
@@ -1638,6 +1638,7 @@ class QualityReportPermission(OpenPolicyAgentPermission):
         return [{
             'list': Scopes.LIST,
             'retrieve': Scopes.VIEW,
+            'data': Scopes.VIEW,
         }.get(view.action, None)]
 
     def get_resource(self):
@@ -1666,6 +1667,41 @@ class QualityReportPermission(OpenPolicyAgentPermission):
             }
 
         return data
+
+class AnnotationConflictPermission(OpenPolicyAgentPermission):
+    obj: Optional[AnnotationConflict]
+
+    class Scopes(StrEnum):
+        LIST = 'list'
+
+    @classmethod
+    def create(cls, request, view, obj):
+        Scopes = __class__.Scopes
+
+        permissions = []
+        if view.basename == 'conflict':
+            for scope in cls.get_scopes(request, view, obj):
+                if scope == Scopes.LIST and isinstance(obj, Task):
+                    permissions.append(TaskPermission.create_base_perm(request, view,
+                        scope=TaskPermission.Scopes.VIEW, obj=obj))
+                else:
+                    permissions.append(cls.create_base_perm(request, view, scope, obj))
+
+        return permissions
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.url = settings.IAM_OPA_DATA_URL + '/conflicts/allow'
+
+    @staticmethod
+    def get_scopes(request, view, obj):
+        Scopes = __class__.Scopes
+        return [{
+            'list': Scopes.LIST,
+        }.get(view.action, None)]
+
+    def get_resource(self):
+        return None
 
 
 class PolicyEnforcer(BasePermission):

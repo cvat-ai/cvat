@@ -76,7 +76,7 @@ from cvat.apps.engine.location import get_location_configuration, StorageType
 
 from . import models, task
 from .log import slogger
-from cvat.apps.iam.permissions import (CloudStoragePermission,
+from cvat.apps.iam.permissions import (AnnotationConflictPermission, CloudStoragePermission,
     CommentPermission, IssuePermission, JobPermission, LabelPermission,
     ProjectPermission, QualityReportPermission, TaskPermission, UserPermission)
 from cvat.apps.engine.cache import MediaCache
@@ -2227,6 +2227,11 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 @extend_schema_view(
     list=extend_schema(
         summary='Method returns a paginated list of annotation conflicts',
+        parameters=[
+            # These filters are implemented differently from others
+            OpenApiParameter('task_id', type=OpenApiTypes.INT,
+                description='A simple equality filter for task id'),
+        ],
         responses={
             '200': AnnotationConflictSerializer(many=True),
         }),
@@ -2249,6 +2254,24 @@ class ConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
     ordering_fields = list(filter_fields)
     ordering = 'id'
     serializer_class = AnnotationConflictSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+
+        if self.action == 'list':
+            if task_id := self.request.GET.get('task_id', None):
+                # NOTE: This filter is too complex to be implemented by other means
+                task = Task.objects.get(id=task_id)
+                self.check_object_permissions(self.request, task)
+                queryset = queryset.filter(
+                    Q(report__job__segment__task__id=task_id) | Q(report__task__id=task_id)
+                )
+            else:
+                # In other cases permissions are checked already
+                perm = AnnotationConflictPermission.create_scope_list(self.request)
+                queryset = perm.filter(queryset)
+
+        return queryset
 
 
 @extend_schema(tags=['quality_reports'])
