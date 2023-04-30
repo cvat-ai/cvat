@@ -1001,8 +1001,8 @@ class _DatasetComparator:
         label_recalls = _arr_div(matched_ann_counts, gt_ann_counts)
 
         valid_annotations_count = np.sum(matched_ann_counts)
-        missing_annotations_count = np.sum(confusion_matrix[:, confusion_matrix_labels_rmap[None]])
-        extra_annotations_count = np.sum(confusion_matrix[confusion_matrix_labels_rmap[None], :])
+        missing_annotations_count = np.sum(confusion_matrix[confusion_matrix_labels_rmap[None], :])
+        extra_annotations_count = np.sum(confusion_matrix[:, confusion_matrix_labels_rmap[None]])
         total_annotations_count = np.sum(confusion_matrix)
         ds_annotations_count = np.sum(ds_ann_counts) - ds_ann_counts[confusion_matrix_labels_rmap[None]]
         gt_annotations_count = np.sum(gt_ann_counts) - gt_ann_counts[confusion_matrix_labels_rmap[None]]
@@ -1106,8 +1106,8 @@ class _DatasetComparator:
         label_recalls = _arr_div(matched_ann_counts, gt_ann_counts)
 
         valid_annotations_count = np.sum(matched_ann_counts)
-        missing_annotations_count = np.sum(confusion_matrix[:, confusion_matrix_labels_rmap[None]])
-        extra_annotations_count = np.sum(confusion_matrix[confusion_matrix_labels_rmap[None], :])
+        missing_annotations_count = np.sum(confusion_matrix[confusion_matrix_labels_rmap[None], :])
+        extra_annotations_count = np.sum(confusion_matrix[:, confusion_matrix_labels_rmap[None]])
         total_annotations_count = np.sum(confusion_matrix)
         ds_annotations_count = np.sum(ds_ann_counts) - ds_ann_counts[confusion_matrix_labels_rmap[None]]
         gt_annotations_count = np.sum(gt_ann_counts) - gt_ann_counts[confusion_matrix_labels_rmap[None]]
