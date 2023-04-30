@@ -460,7 +460,11 @@ class TrackManager(ObjectManager):
 
                 # TODO: think if the whole shape can be filtered out if all elements are outside
                 # and outside shapes are not required
-                # if not include_outside_frames:
+                if not include_outside_frames:
+                    track_shapes = {
+                        k: v for k, v in track_shapes.items()
+                        if any(not elem["outside"] for elem in v["elements"])
+                    }
 
             shapes.extend(track_shapes.values())
         return shapes
@@ -576,7 +580,8 @@ class TrackManager(ObjectManager):
                 ) * offset + 360) % 360
                 points = shape0["points"] + diff * offset
 
-                shapes.append(copy_shape(shape0, frame, points, rotation))
+                if included_frames is None or frame in included_frames:
+                    shapes.append(copy_shape(shape0, frame, points, rotation))
 
             return shapes
 
@@ -603,7 +608,8 @@ class TrackManager(ObjectManager):
             else:
                 shapes = []
                 for frame in range(shape0["frame"] + 1, shape1["frame"]):
-                    shapes.append(copy_shape(shape0, frame))
+                    if included_frames is None or frame in included_frames:
+                        shapes.append(copy_shape(shape0, frame))
 
             return shapes
 
@@ -818,7 +824,8 @@ class TrackManager(ObjectManager):
                 offset = (frame - shape0["frame"]) / distance
                 points = interpolate_position(shape0, shape1, offset)
 
-                shapes.append(copy_shape(shape0, frame, points))
+                if included_frames is None or frame in included_frames:
+                    shapes.append(copy_shape(shape0, frame, points))
 
             if is_polygon:
                 # Remove the extra point added
@@ -909,7 +916,7 @@ class TrackManager(ObjectManager):
             # After interpolation there can be a finishing frame
             # outside of the task boundaries. Filter it out to avoid errors.
             # https://github.com/openvinotoolkit/cvat/issues/2827
-            if track["frame"] < shape["frame"] < end_frame
+            if track["frame"] <= shape["frame"] < end_frame
 
             if not shape["outside"] or include_outside_frames
             if included_frames is None or shape["frame"] in included_frames
