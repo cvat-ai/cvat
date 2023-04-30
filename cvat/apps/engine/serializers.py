@@ -622,8 +622,7 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 )
 
             size = task.data.size
-            step = task.data.get_frame_step()
-            valid_frame_ids = range(task.data.start_frame, task.data.stop_frame, step)
+            valid_frame_ids = task.data.get_valid_frame_indices()
 
             frame_selection_method = validated_data.pop("frame_selection_method", None)
             if frame_selection_method == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
@@ -642,6 +641,9 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 frames = rng.sample(valid_frame_ids, k=count)
             elif frame_selection_method == models.JobFrameSelectionMethod.MANUAL:
                 frames = validated_data.pop("frames")
+
+                if not frames:
+                    raise serializers.ValidationError("The list of frames cannot be empty")
 
                 unique_frames = set(frames)
                 if len(unique_frames) != len(frames):

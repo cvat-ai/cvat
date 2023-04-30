@@ -5,9 +5,9 @@
 from __future__ import annotations
 from copy import deepcopy
 from datetime import timedelta
+from functools import cached_property
 
 import itertools
-import json
 from typing import Any, Callable, Dict, Hashable, List, Optional, Sequence, Union, cast
 
 from attrs import asdict, define, has as is_attrs_type
@@ -21,9 +21,13 @@ import numpy as np
 from cvat.apps.dataset_manager.task import JobAnnotation
 from cvat.apps.dataset_manager.bindings import (CommonData, CvatToDmAnnotationConverter,
     GetCVATDataExtractor, JobData)
+from cvat.apps.dataset_manager.util import bulk_create
 from cvat.apps.dataset_manager.formats.registry import dm_env
 from cvat.apps.engine import models
 from cvat.apps.engine.models import AnnotationConflictType, ShapeType
+from cvat.apps.profiler import silk_profile
+
+from datumaro.util import dump_json, parse_json
 
 
 class _Serializable:
@@ -352,30 +356,29 @@ class ComparisonReport(_Serializable):
             comparison_summary=ComparisonReportComparisonSummary.from_dict(d['comparison_summary']),
             dataset_summary=ComparisonReportDatasetSummary.from_dict(d['dataset_summary']),
             frame_results={
-                k: ComparisonReportFrameSummary.from_dict(v)
+                int(k): ComparisonReportFrameSummary.from_dict(v)
                 for k, v in d['frame_results'].items()
             }
         )
 
     def to_json(self) -> str:
-        class _JSONEncoder(json.JSONEncoder):
-            def default(self, o: Any) -> Any:
-                if isinstance(o, (np.ndarray, np.number)):
-                    return o.tolist()
-                else:
-                    return super().default(o)
-
-        return json.dumps(self.to_dict(), cls=_JSONEncoder, indent=2)
+        d = self.to_dict()
+        d["frame_results"] = {str(k): v for k, v in d['frame_results'].items()}
+        return dump_json(d, indent=True, append_newline=True).decode()
 
     @classmethod
     def from_json(cls, data: str) -> ComparisonReport:
-        return cls.from_dict(json.loads(data))
+        return cls.from_dict(parse_json(data))
 
 class JobDataProvider:
+    @classmethod
+    def add_prefetch_info(cls, queryset):
+        return JobAnnotation.add_prefetch_info(queryset)
+
     @transaction.atomic
-    def __init__(self, job_id: int) -> None:
+    def __init__(self, job_id: int, *, queryset=None) -> None:
         self.job_id = job_id
-        self.job_annotation = JobAnnotation(job_id)
+        self.job_annotation = JobAnnotation(job_id, queryset=queryset)
         self.job_annotation.init_from_db()
         self.job_data = JobData(
             annotation_ir=self.job_annotation.ir_data,
@@ -383,9 +386,12 @@ class JobDataProvider:
         )
 
         self._annotation_memo = _MemoizingAnnotationConverterFactory()
+
+    @cached_property
+    def dm_dataset(self):
         extractor = GetCVATDataExtractor(self.job_data,
             convert_annotations=self._annotation_memo)
-        self.dm_dataset = dm.Dataset.from_extractors(extractor, env=dm_env)
+        return dm.Dataset.from_extractors(extractor, env=dm_env)
 
     def dm_item_id_to_frame_id(self, item_id: str) -> int:
         return self.job_data.match_frame(item_id)
@@ -478,6 +484,7 @@ class _PointsMatcher(dm.ops.PointsMatcher):
         b_bbox = self.instance_map[id(b)][1]
         if dm.ops.bbox_iou(a_bbox, b_bbox) <= 0:
             return 0
+
         bbox = dm.ops.mean_bbox([a_bbox, b_bbox])
         return _OKS(
             a,
@@ -658,21 +665,16 @@ class _DistanceComparator(dm.ops.DistanceComparator):
                 ]
 
                 # Build a single Points object for further comparisons
-                merged_points = dm.Points(
-                    points=list(
-                        itertools.chain.from_iterable(
-                            p.points if p else [0, 0] for p in skeleton_points
-                        )
-                    ),
-                    visibility=list(
-                        itertools.chain.from_iterable(
-                            p.visibility if p else [dm.Points.Visibility.absent]
-                            for p in skeleton_points
-                        )
-                    ),
-                    label=skeleton.label
-                    # no per-point attributes currently in CVAT
-                )
+                merged_points = dm.Points()
+                merged_points.points = np.ravel([
+                    p.points if p else [0, 0] for p in skeleton_points
+                ])
+                merged_points.visibility = np.ravel([
+                    p.visibility if p else [dm.Points.Visibility.absent]
+                    for p in skeleton_points
+                ])
+                merged_points.label = skeleton.label
+                # no per-point attributes currently in CVAT
 
                 if all(v == dm.Points.Visibility.absent for v in merged_points.visibility):
                     # The whole skeleton is outside, exclude it
@@ -818,7 +820,7 @@ class _DatasetComparator:
         self._frame_results: Dict[int, ComparisonReportFrameSummary] = {}
 
         self.comparator = _Comparator(self._gt_dataset.categories())
-        self.comparator._annotation_comparator.iou_threshold = 0.2
+        self.comparator._annotation_comparator.iou_threshold = 0.4
         self.overlap_threshold = 0.8
         self.included_frames = gt_data_provider.job_data._db_job.segment.frame_set
 
@@ -1220,16 +1222,26 @@ class QueueJobManager:
             )
 
     @classmethod
+    @silk_profile()
     def _update_task_quality_metrics(cls, *, task_id: int):
         with transaction.atomic():
             # The task could have been deleted during scheduling
             try:
-                task = models.Task.objects.prefetch_related('segment_set__job_set').get(id=task_id)
+                task = models.Task.objects.select_related('data').get(id=task_id)
             except models.Task.DoesNotExist:
                 return
 
-            # The GT job could have been removed during scheduling
-            if not task.gt_job:
+            # Try to use shared queryset to minimize DB requests
+            job_queryset = models.Job.objects.prefetch_related('segment')
+            job_queryset = JobDataProvider.add_prefetch_info(job_queryset)
+            job_queryset = job_queryset.filter(segment__task_id=task_id).all()
+
+            # The GT job could have been removed during scheduling, so we need to check it exists
+            gt_job: models.Job = next(
+                (job for job in job_queryset if job.type == models.JobType.GROUND_TRUTH),
+                None
+            )
+            if gt_job is None:
                 return
 
             # TODO: Probably, can be optimized to this:
@@ -1238,20 +1250,29 @@ class QueueJobManager:
             #   old reports can be reused in this case (need to add M-1 relationship in reports)
 
             # Preload all the data for the computations
-            gt_job = task.gt_job
-            gt_job_data_provider = JobDataProvider(gt_job.id)
+            # It must be done in a single transaction and before all the remaining computations
+            # because the task and jobs can be changed after the beginning,
+            # which will lead to inconsistent results
+            gt_job_data_provider = JobDataProvider(gt_job.id, queryset=job_queryset)
 
             jobs: List[models.Job] = [
-                s.job_set.first()
-                for s in task.segment_set.filter(job__type=models.JobType.NORMAL).all()
+                j
+                for j in job_queryset
+                if j.type == models.JobType.NORMAL
             ]
-            job_data_providers = { job.id: JobDataProvider(job.id) for job in jobs }
+            job_data_providers = {
+                job.id: JobDataProvider(job.id, queryset=job_queryset)
+                for job in jobs
+            }
 
         job_comparison_reports: Dict[int, ComparisonReport] = {}
         for job in jobs:
             job_data_provider = job_data_providers[job.id]
             comparator = _DatasetComparator(job_data_provider, gt_job_data_provider)
             job_comparison_reports[job.id] = comparator.generate_report()
+
+            # Release resources
+            del job_data_provider.dm_dataset
 
         # The task dataset can be different from any jobs' dataset because of frame overlaps
         # between jobs, from which annotations are merged to get the task annotations.
@@ -1321,7 +1342,7 @@ class QueueJobManager:
             job_quality_reports = {}
             for job in jobs:
                 job_comparison_report = job_comparison_reports[job.id]
-                job_report = cls._save_report(
+                job_report = dict(
                     job=job,
                     target_last_updated=job.updated_date,
                     gt_last_updated=gt_job.updated_date,
@@ -1331,42 +1352,74 @@ class QueueJobManager:
 
                 job_quality_reports[job.id] = job_report
 
-            cls._save_report(
-                task=task,
-                target_last_updated=task.updated_date,
-                gt_last_updated=gt_job.updated_date,
-                data=task_report_data.to_json(),
-                conflicts=[], # the task doesn't have own conflicts
-                children=list(job_quality_reports.values()),
+            cls._save_reports(
+                task_report=dict(
+                    task=task,
+                    target_last_updated=task.updated_date,
+                    gt_last_updated=gt_job.updated_date,
+                    data=task_report_data.to_json(),
+                    conflicts=[], # the task doesn't have own conflicts
+                ),
+                job_reports=list(job_quality_reports.values())
             )
+
 
     @classmethod
-    def _save_report(cls, **params) -> models.QualityReport:
-        conflicts = params.pop('conflicts')
-        children = params.pop('children', [])
+    def _save_reports(cls, *, task_report, job_reports) -> models.QualityReport:
+        db_task_report = models.QualityReport.objects.create(
+            task=task_report['task'],
+            target_last_updated=task_report['target_last_updated'],
+            gt_last_updated=task_report['gt_last_updated'],
+            data=task_report['data'],
+        )
 
-        db_report = models.QualityReport(**params)
-        db_report.save()
+        db_job_reports = bulk_create(
+            db_model=models.QualityReport,
+            objects=[
+                models.QualityReport(
+                    parent=db_task_report,
+                    job=job_report['job'],
+                    target_last_updated=job_report['target_last_updated'],
+                    gt_last_updated=job_report['gt_last_updated'],
+                    data=job_report['data'],
+                )
+                for job_report in job_reports
+            ],
+            flt_param={}
+        )
 
-        for conflict in conflicts:
-            db_conflict = db_report.conflicts.create(
-                type=conflict['type'],
-                frame=conflict['frame_id'],
-            )
+        db_report_iter = itertools.chain([db_task_report], db_job_reports)
+        report_iter = itertools.chain([task_report], job_reports)
+        db_conflicts = bulk_create(
+            db_model=models.AnnotationConflict,
+            objects=[
+                models.AnnotationConflict(
+                    report=db_report,
+                    type=conflict['type'],
+                    frame=conflict['frame_id'],
+                )
+                for db_report, report in zip(db_report_iter, report_iter)
+                for conflict in report['conflicts']
+            ],
+            flt_param={}
+        )
 
-            for ann_id in conflict['annotation_ids']:
-                db_ann_id = db_conflict.annotation_ids.create(
+        report_iter = itertools.chain([task_report], job_reports)
+        db_conflicts_iter = iter(db_conflicts)
+        bulk_create(
+            db_model=models.AnnotationId,
+            objects=[
+                models.AnnotationId(
+                    conflict=db_conflict,
                     job_id=ann_id['job_id'],
                     obj_id=ann_id['obj_id'],
                     type=ann_id['type'],
                 )
-                db_ann_id.full_clean()
+                for report in report_iter
+                for db_conflict, conflict in zip(db_conflicts_iter, report['conflicts'])
+                for ann_id in conflict['annotation_ids']
+            ],
+            flt_param={}
+        )
 
-            db_conflict.full_clean()
-
-        db_report.full_clean()
-
-        for child in children:
-            db_report.children.add(child)
-
-        return db_report
+        # TODO: add validation

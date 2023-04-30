@@ -73,6 +73,7 @@ from cvat.apps.engine.utils import (
 from cvat.apps.engine import backup
 from cvat.apps.engine.mixins import PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
 from cvat.apps.engine.location import get_location_configuration, StorageType
+from cvat.apps.profiler import silk_profile
 
 from . import models, task
 from .log import slogger
@@ -2298,9 +2299,11 @@ class QualityReportViewSet(viewsets.GenericViewSet,
     mixins.ListModelMixin, mixins.RetrieveModelMixin
 ):
     queryset = QualityReport.objects.prefetch_related(
+        'job',
+        'job__segment',
         'job__segment__task',
         'task',
-        'task__project'
+        'task__project',
     ).all()
 
     # NOTE: This filter works incorrectly for this view
@@ -2354,6 +2357,16 @@ class QualityReportViewSet(viewsets.GenericViewSet,
         report = self.get_object() # check permissions
         json_report = report.get_json_report()
         return HttpResponse(json_report.encode())
+
+    @extend_schema(parameters=[
+        OpenApiParameter('task_id', type=OpenApiTypes.INT)
+    ])
+    @action(detail=False, methods=['GET'], url_path='debug', serializer_class=None)
+    @silk_profile()
+    def debug(self, request):
+        from .quality_control import QueueJobManager
+        QueueJobManager._update_task_quality_metrics(task_id=request.GET.get('task_id'))
+        return HttpResponse({})
 
 
 def rq_exception_handler(rq_job, exc_type, exc_value, tb):

@@ -21,12 +21,14 @@ import numpy as np
 import rq
 from attr import attrib, attrs
 from datumaro.components.media import PointCloud
+from django.db.models import QuerySet
 from django.utils import timezone
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
+from cvat.apps.dataset_manager.util import add_prefetch_fields
 from cvat.apps.engine.frame_provider import FrameProvider
-from cvat.apps.engine.models import (AttributeSpec, AttributeType, DimensionType, JobType,
-                                     Label, LabelType, Project, ShapeType, Task)
+from cvat.apps.engine.models import (AttributeSpec, AttributeType, DimensionType, Job, JobType,
+                                     Label, LabelType, Project, SegmentType, ShapeType, Task)
 from cvat.apps.engine.models import Image as Img
 
 from .annotation import AnnotationIR, AnnotationManager, TrackManager
@@ -37,15 +39,27 @@ CVAT_INTERNAL_ATTRIBUTES = {'occluded', 'outside', 'keyframe', 'track_id', 'rota
 class InstanceLabelData:
     Attribute = NamedTuple('Attribute', [('name', str), ('value', Any)])
 
+    @classmethod
+    def add_prefetch_info(cls, queryset: QuerySet):
+        assert issubclass(queryset.model, Label)
+
+        return add_prefetch_fields(queryset, [
+            'skeleton',
+            'parent',
+            'attributespec_set',
+            'sublabels',
+        ])
+
     def __init__(self, instance: Union[Task, Project]) -> None:
         instance = instance.project if isinstance(instance, Task) and instance.project_id is not None else instance
 
-        db_labels = instance.label_set.all().prefetch_related('attributespec_set').order_by('pk')
+        db_labels = self.add_prefetch_info(instance.label_set.all())
 
         # If this flag is set to true, create attribute within anntations import
         self._soft_attribute_import = False
         self._label_mapping = OrderedDict[int, Label](
-            ((db_label.id, db_label) for db_label in db_labels),
+            (db_label.id, db_label)
+            for db_label in sorted(db_labels, key=lambda v: v.pk)
         )
 
         self._attribute_mapping = {db_label.id: {
@@ -227,6 +241,9 @@ class CommonData(InstanceLabelData):
 
     def _init_frame_info(self):
         self._deleted_frames = { k: True for k in self._db_data.deleted_frames }
+
+        self._excluded_frames = set()
+
         if hasattr(self._db_data, 'video'):
             self._frame_info = {
                 frame: {
@@ -385,29 +402,35 @@ class CommonData(InstanceLabelData):
                 )
             return frames[frame]
 
+        included_frames = set(
+            i for i in self.rel_range
+            if not self._is_frame_deleted(i)
+            and not self._is_frame_excluded(i)
+        )
+
         if include_empty:
-            for idx in self._frame_info:
-                if not self._is_frame_deleted(idx):
-                    get_frame(idx)
+            for idx in sorted(set(self._frame_info) & included_frames):
+                get_frame(idx)
 
         anno_manager = AnnotationManager(self._annotation_ir)
-        for shape in sorted(anno_manager.to_shapes(self.stop, self._annotation_ir.dimension),
-                key=lambda shape: shape.get("z_order", 0)):
+        for shape in sorted(
+            anno_manager.to_shapes(self.stop, self._annotation_ir.dimension,
+                # Also we skipped deleted and excluded frames here
+                included_frames=included_frames,
+                include_outside_frames=False
+            ),
+            key=lambda shape: shape.get("z_order", 0)
+        ):
             shape_data = ''
-            if shape['frame'] not in self._frame_info or self._is_frame_deleted(shape['frame']):
-                # After interpolation there can be a finishing frame
-                # outside of the task boundaries. Filter it out to avoid errors.
-                # https://github.com/openvinotoolkit/cvat/issues/2827
-                # Also we skipped deleted frames here
-                continue
+
             if 'track_id' in shape:
-                if shape['outside']:
-                    continue
                 exported_shape = self._export_tracked_shape(shape)
             else:
                 exported_shape = self._export_labeled_shape(shape)
                 shape_data = self._export_shape(shape)
+
             get_frame(shape['frame']).labeled_shapes.append(exported_shape)
+
             if shape_data:
                 get_frame(shape['frame']).shapes.append(shape_data)
                 for label in self._label_mapping.values():
@@ -429,6 +452,9 @@ class CommonData(InstanceLabelData):
 
     def _is_frame_deleted(self, frame):
         return frame in self._deleted_frames
+
+    def _is_frame_excluded(self, frame):
+        return frame in self._excluded_frames
 
     @property
     def tracks(self):
@@ -641,12 +667,21 @@ class JobData(CommonData):
                 ("height", str(self._db_data.video.height))
             ])
 
+    def _init_frame_info(self):
+        super()._init_frame_info()
+
+        if self.db_instance.segment.type == SegmentType.SPECIFIC_FRAMES:
+            self._excluded_frames.update(
+                frame for frame in self.rel_range
+                if self.abs_frame_id(frame) not in self.db_instance.segment.frame_set
+            )
+
     def __len__(self):
         segment = self._db_job.segment
         return segment.stop_frame - segment.start_frame + 1
 
     def _get_queryset(self):
-        return self._db_data.images.filter(frame__in=self.abs_range)
+        return (image for image in self._db_data.images.all() if image.frame in self.abs_range)
 
     @property
     def abs_range(self):
@@ -654,7 +689,6 @@ class JobData(CommonData):
         step = self._frame_step
         start_frame = self._db_data.start_frame + segment.start_frame * step
         stop_frame = self._db_data.start_frame + segment.stop_frame * step + 1
-
         return range(start_frame, stop_frame, step)
 
     @property
@@ -675,6 +709,7 @@ class JobData(CommonData):
     @property
     def db_instance(self):
         return self._db_job
+
 
 class TaskData(CommonData):
     META_FIELD = "task"
@@ -1794,6 +1829,15 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
     for item in dm_dataset:
         frame_number = instance_data.abs_frame_id(
             match_dm_item(item, instance_data, root_hint=root_hint))
+
+        if (isinstance(instance_data.db_instance, Job)
+            and instance_data.db_instance.type == JobType.GROUND_TRUTH
+            and frame_number not in instance_data.db_instance.segment.frame_set
+        ):
+            # Given there is a dataset with annotated frames,
+            # it would be very hard to create annotations with frame skips for users,
+            # so we just skip such annotations. We still need to match the frames.
+            continue
 
         # do not store one-item groups
         group_map = {0: 0}

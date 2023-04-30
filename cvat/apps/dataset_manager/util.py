@@ -5,8 +5,11 @@
 
 import inspect
 import os, os.path as osp
+from typing import Sequence
 import zipfile
+
 from django.conf import settings
+from django.db.models import QuerySet
 
 
 def current_function_name(depth=1):
@@ -35,3 +38,13 @@ def bulk_create(db_model, objects, flt_param):
             return db_model.objects.bulk_create(objects)
 
     return []
+
+def is_prefetched(queryset: QuerySet, field: str) -> bool:
+    return field in queryset._prefetch_related_lookups
+
+def add_prefetch_fields(queryset: QuerySet, fields: Sequence[str]) -> QuerySet:
+    for field in fields:
+        if not is_prefetched(queryset, field):
+            queryset = queryset.prefetch_related(field)
+
+    return queryset

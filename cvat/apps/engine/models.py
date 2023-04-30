@@ -239,6 +239,9 @@ class Data(models.Model):
         match = re.search(r"step\s*=\s*([1-9]\d*)", self.frame_filter)
         return int(match.group(1)) if match else 1
 
+    def get_valid_frame_indices(self):
+        return range(self.start_frame, self.stop_frame, self.get_frame_step())
+
     def get_data_dirname(self):
         return os.path.join(settings.MEDIA_DATA_ROOT, str(self.id))
 
