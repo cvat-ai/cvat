@@ -1860,7 +1860,7 @@ async function getCloudStorages(filter = {}) {
     return response.data.results;
 }
 
-async function getCloudStorageContent(id: number, manifestPath?: string) {
+async function getCloudStorageContent(id: number, path: string, nextToken?: string, manifestPath?: string) {
     const { backendAPI } = config;
 
     let response = null;
@@ -1868,6 +1868,8 @@ async function getCloudStorageContent(id: number, manifestPath?: string) {
         const url = `${backendAPI}/cloudstorages/${id}/content`;
         response = await Axios.get(url, {
             params: {
+                prefix: path,
+                ...(nextToken ? { next_token: nextToken } : {}),
                 ...(manifestPath ? { manifest_path: manifestPath } : {}),
             },
         });
