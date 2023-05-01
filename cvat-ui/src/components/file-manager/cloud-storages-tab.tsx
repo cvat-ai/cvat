@@ -77,7 +77,7 @@ export default function CloudStorageTab(props: Props): JSX.Element {
                     name='cloudStorageFiles'
                     rules={[{ required: true, message: 'Please, select a files' }]}
                 >
-                    <CloudStorageBrowser cloudStorage={cloudStorage} onSelectFiles={onSelectFiles} />
+                    <CloudStorageBrowser resource={cloudStorage} onSelectFiles={onSelectFiles} />
                 </Form.Item>
             ) : null}
         </Form>

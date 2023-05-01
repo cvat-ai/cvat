@@ -8,8 +8,8 @@
 .cvat-remote-browser-nav-breadcrumb {
     transition: all 0.5s;
     border-radius: 2px;
-    padding-left: $grid-unit-size / 2;
-    padding-right: $grid-unit-size / 2;
+    padding-left: $grid-unit-size * 0.5;
+    padding-right: $grid-unit-size * 0.5;
     opacity: 0.8;
     cursor: pointer;
 
@@ -27,8 +27,6 @@
 }
 
 .cvat-remote-browser-table-wrapper {
-    overflow-y: auto;
-
     .ant-table-wrapper {
         height: $grid-unit-size * 64;
         overflow: auto;
@@ -44,19 +42,18 @@
         margin-top: $grid-unit-size;
 
         .ant-pagination-next {
-            display: none;
-        }
-
-        .ant-pagination-prev {
-            display: none;
-        }
-
-        .cvat-remote-browser-receive-more-btn {
-            margin-left: $grid-unit-size * 2;
-            margin-right: $grid-unit-size * 2;
-            pointer-events: all;
             display: flex;
             align-items: center;
+
+            .cvat-remote-browser-receive-more-btn {
+                color: rgba(0, 0, 0, 0.85) !important;
+                cursor: pointer !important;
+                border: none;
+
+                > span {
+                    pointer-events: all;
+                }
+            }
         }
     }
 

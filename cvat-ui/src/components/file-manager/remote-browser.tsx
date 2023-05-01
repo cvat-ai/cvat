@@ -24,10 +24,11 @@ interface Node {
     key: string;
     type: RemoteFileType;
     mime_type?: string;
+    nextToken?: string | null;
 }
 
 interface Props {
-    cloudStorage: CloudStorage | 'share';
+    resource: CloudStorage | 'share';
     manifestPath?: string;
     onSelectFiles: (checkedKeysValue: { key: string, type: RemoteFileType, mime_type?: string }[]) => void;
 }
@@ -36,12 +37,11 @@ const core = getCore();
 
 function RemoteBrowser(props: Props): JSX.Element {
     const { SHARE_MOUNT_GUIDE_URL } = config;
-    const { cloudStorage, manifestPath, onSelectFiles } = props;
+    const { resource, manifestPath, onSelectFiles } = props;
     const isMounted = useIsMounted();
     const [currentPath, setCurrentPath] = useState(['root']);
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(300);
-    const [nextToken, setNextToken] = useState<string | null>(null);
     const [isFetching, setFetching] = useState(false);
     const [content, setContent] = useState<Node>({
         name: 'root',
@@ -49,6 +49,7 @@ function RemoteBrowser(props: Props): JSX.Element {
         children: [],
         type: 'DIR',
         initialized: false,
+        nextToken: null,
     });
 
     const updateContent = (): void => {
@@ -58,11 +59,11 @@ function RemoteBrowser(props: Props): JSX.Element {
             target = child as Node;
         }
 
-        if (!target.initialized || nextToken) {
+        if (!target.initialized || target.nextToken) {
             const isRoot = (): boolean => currentPath.slice(1).length === 0;
             const path = `${currentPath.slice(1).join('/')}/`;
             setFetching(true);
-            if (cloudStorage === 'share') {
+            if (resource === 'share') {
                 core.server.share(path).then((files: (Omit<Node, 'key' | 'children'>)[]) => {
                     if (isMounted()) {
                         const converted = files.map((child) => ({
@@ -82,10 +83,11 @@ function RemoteBrowser(props: Props): JSX.Element {
                     }
                 });
             } else {
-                cloudStorage.getContent(path, nextToken, manifestPath).then((response: { next: string | null, content: Omit<Node, 'key' | 'children'>[] }) => {
+                resource.getContent(path, target.nextToken, manifestPath).then((response: { next: string | null, content: Omit<Node, 'key' | 'children'>[] }) => {
                     const { next, content: children } = response;
                     if (isMounted()) {
                         target.initialized = true;
+                        target.nextToken = next;
                         target.children = target.children.concat(children.map((child) => ({
                             ...child,
                             key: isRoot() ? child.name : `${path}${child.name}`,
@@ -94,7 +96,6 @@ function RemoteBrowser(props: Props): JSX.Element {
                         })));
 
                         setContent({ ...content });
-                        setNextToken(next);
                     }
                 }).finally(() => {
                     if (isMounted()) {
@@ -111,14 +112,16 @@ function RemoteBrowser(props: Props): JSX.Element {
 
     useEffect(() => {
         onSelectFiles([]);
-    }, [cloudStorage]);
+    }, [resource]);
 
     useEffect(() => {
-        const pagesContainer = window.document.getElementsByClassName('cvat-remote-browser-pages')[0];
-        const anchor = window.document.querySelectorAll('.cvat-remote-browser-pages .ant-pagination-next')[0];
         const button = window.document.getElementsByClassName('cvat-remote-browser-receive-more-btn')[0];
-        if (pagesContainer && button && anchor) {
-            pagesContainer.insertBefore(button, anchor);
+        if (button) {
+            if (isFetching) {
+                button.setAttribute('disabled', '');
+            } else {
+                button.removeAttribute('disabled');
+            }
         }
     });
 
@@ -145,7 +148,7 @@ function RemoteBrowser(props: Props): JSX.Element {
         dataSource = child as Node;
     }
 
-    if (content.initialized && !content.children.length && cloudStorage === 'share') {
+    if (content.initialized && !content.children.length && resource === 'share') {
         return (
             <>
                 <Empty />
@@ -202,6 +205,7 @@ function RemoteBrowser(props: Props): JSX.Element {
                 <Pagination
                     className='cvat-remote-browser-pages'
                     pageSize={pageSize}
+                    showQuickJumper
                     size='small'
                     total={dataSource.children.length}
                     onChange={(newPage: number, newPageSize: number) => {
@@ -212,31 +216,33 @@ function RemoteBrowser(props: Props): JSX.Element {
                     showPrevNextJumpers={false}
                     current={currentPage}
                     itemRender={(_, type, originalElement) => {
-                        if (type === 'prev') {
-                            return null;
-                        }
-
                         if (type === 'next') {
-                            return null;
+                            if (dataSource.nextToken) {
+                                return (
+                                    <button
+                                        type='button'
+                                        className='cvat-remote-browser-receive-more-btn ant-pagination-item-link'
+                                    >
+                                        <RightOutlined onClick={(evt: MouseEvent) => {
+                                            const totalPages = Math.ceil(dataSource.children.length / pageSize);
+                                            if (currentPage === totalPages) {
+                                                if (!isFetching) {
+                                                    evt.stopPropagation();
+                                                    updateContent();
+                                                }
+                                            } else {
+                                                setCurrentPage(currentPage + 1);
+                                            }
+                                        }}
+                                        />
+                                    </button>
+                                );
+                            }
                         }
 
                         return originalElement;
                     }}
                 />
-                {
-                    !!nextToken && (
-                        <RightOutlined
-                            className='cvat-remote-browser-receive-more-btn'
-                            disabled={!nextToken}
-                            onClick={(evt: MouseEvent) => {
-                                if (!isFetching) {
-                                    evt.stopPropagation();
-                                    updateContent();
-                                }
-                            }}
-                        />
-                    )
-                }
             </div>
         </div>
     );

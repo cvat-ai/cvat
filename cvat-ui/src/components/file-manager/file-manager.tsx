@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -35,7 +35,7 @@ interface Props {
     onChangeActiveKey(key: string): void;
     onUploadLocalFiles(files: File[]): void;
     onUploadRemoteFiles(urls: string[]): void;
-    onUploadShareFiles(files: { key: string, type: RemoteFileType, mime_type?: string }[]): Promise<void>;
+    onUploadShareFiles(files: { key: string, type: RemoteFileType, mime_type: string }[]): Promise<void>;
     onUploadCloudStorageFiles(cloudStorageFiles: string[]): void;
 }
 
@@ -75,7 +75,7 @@ export class FileManager extends React.PureComponent<Props, State> {
     };
 
     private handleUploadSharedStorageFiles = (
-        shareFiles: { key: string, type: RemoteFileType, mime_type?: string }[],
+        shareFiles: { key: string, type: RemoteFileType, mime_type: string }[],
     ): void => {
         const { files } = this.state;
         const { onUploadShareFiles } = this.props;
@@ -149,7 +149,7 @@ export class FileManager extends React.PureComponent<Props, State> {
         return (
             <Tabs.TabPane key='share' tab='Connected file share'>
                 <RemoteBrowser
-                    cloudStorage='share'
+                    resource='share'
                     onSelectFiles={this.handleUploadSharedStorageFiles}
                 />
             </Tabs.TabPane>
