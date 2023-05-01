@@ -39,6 +39,22 @@
         display: flex;
         justify-content: center;
         margin-top: $grid-unit-size;
+
+        .ant-pagination-next {
+            display: none;
+        }
+
+        .ant-pagination-prev {
+            display: none;
+        }
+
+        .cvat-cloud-storage-browser-receive-more-btn {
+            margin-left: $grid-unit-size * 2;
+            margin-right: $grid-unit-size * 2;
+            pointer-events: all;
+            display: flex;
+            align-items: center;
+        }
     }
 
     button {

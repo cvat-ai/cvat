@@ -30,6 +30,7 @@ function RemoteBrowser(props: Props): JSX.Element {
     const isMounted = useIsMounted();
     const [currentPath, setCurrentPath] = useState(['root']);
     const [currentPage, setCurrentPage] = useState(1);
+    const [pageSize, setPageSize] = useState(300);
     const [nextToken, setNextToken] = useState<string | null>(null);
     const [isFetching, setFetching] = useState(false);
     const [content, setContent] = useState<Node>({
@@ -55,12 +56,12 @@ function RemoteBrowser(props: Props): JSX.Element {
                 const { next, content: children } = response;
                 if (isMounted()) {
                     target.initialized = true;
-                    target.children = children.map((child) => ({
+                    target.children = target.children.concat(children.map((child) => ({
                         ...child,
                         key: isRoot() ? child.name : `${path}${child.name}`,
                         initialized: false,
                         children: child.children || [],
-                    }));
+                    })));
 
                     setContent({ ...content });
                     setNextToken(next);
@@ -76,6 +77,19 @@ function RemoteBrowser(props: Props): JSX.Element {
     useEffect(() => {
         updateContent();
     }, [currentPath]);
+
+    useEffect(() => {
+        onSelectFiles([]);
+    }, [cloudStorage]);
+
+    useEffect(() => {
+        const pagesContainer = window.document.getElementsByClassName('cvat-cloud-storage-browser-pages')[0];
+        const anchor = window.document.querySelectorAll('.cvat-cloud-storage-browser-pages .ant-pagination-next')[0];
+        const button = window.document.getElementsByClassName('cvat-cloud-storage-browser-receive-more-btn')[0];
+        if (pagesContainer && button && anchor) {
+            pagesContainer.insertBefore(button, anchor);
+        }
+    });
 
     const columns = [
         {
@@ -100,7 +114,6 @@ function RemoteBrowser(props: Props): JSX.Element {
         dataSource = child as Node;
     }
 
-    const PAGE_SIZE = 300;
     return (
         <div>
             <Breadcrumb>
@@ -134,7 +147,7 @@ function RemoteBrowser(props: Props): JSX.Element {
                     size='small'
                     columns={columns}
                     pagination={{
-                        pageSize: PAGE_SIZE,
+                        pageSize,
                         current: currentPage,
                         showPrevNextJumpers: false,
                     }}
@@ -142,12 +155,14 @@ function RemoteBrowser(props: Props): JSX.Element {
                 />
                 <Pagination
                     className='cvat-cloud-storage-browser-pages'
-                    pageSize={PAGE_SIZE}
+                    pageSize={pageSize}
                     size='small'
                     total={dataSource.children.length}
-                    onChange={(val: number) => {
-                        setCurrentPage(val);
+                    onChange={(newPage: number, newPageSize: number) => {
+                        setCurrentPage(newPage);
+                        setPageSize(newPageSize);
                     }}
+                    pageSizeOptions={[10, 100, 300, 500]}
                     showPrevNextJumpers={false}
                     current={currentPage}
                     itemRender={(_, type, originalElement) => {
@@ -156,29 +171,32 @@ function RemoteBrowser(props: Props): JSX.Element {
                         }
 
                         if (type === 'next') {
-                            if (nextToken) {
-                                return (
-                                    <Button
-                                        className='ant-pagination-item-link'
-                                        onClick={(evt: MouseEvent) => {
-                                            evt.stopPropagation();
-                                            updateContent();
-                                        }}
-                                    >
-                                        <RightOutlined />
-                                    </Button>
-                                );
-                            }
-
                             return null;
                         }
 
                         return originalElement;
                     }}
                 />
+                {
+                    !!nextToken && (
+                        <RightOutlined
+                            className='cvat-cloud-storage-browser-receive-more-btn'
+                            disabled={!nextToken}
+                            onClick={(evt: MouseEvent) => {
+                                if (!isFetching) {
+                                    evt.stopPropagation();
+                                    updateContent();
+                                }
+                            }}
+                        />
+                    )
+                }
             </div>
         </div>
     );
 }
 
 export default React.memo(RemoteBrowser);
+
+// переписать шару на эту же логику
+// multi videos creating
