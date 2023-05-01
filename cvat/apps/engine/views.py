@@ -2100,6 +2100,10 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             db_storage = self.get_object()
             storage = db_storage_to_storage_instance(db_storage)
             prefix = request.query_params.get('prefix')
+
+            # make api identical to share api
+            if prefix and prefix.startswith('/'):
+                prefix = prefix[1:]
             delimiter = request.query_params.get('delimiter', '/')
             next_token = request.query_params.get('next_token')
 
