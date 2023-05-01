@@ -545,6 +545,10 @@ class Segment(models.Model):
 
         return super().clean()
 
+    @cache_deleted
+    def delete(self, using=None, keep_parents=False):
+        super().delete(using, keep_parents)
+
     class Meta:
         default_permissions = ()
 
@@ -660,6 +664,13 @@ class Job(models.Model):
             )
 
         return super().clean()
+
+    @cache_deleted
+    def delete(self, using=None, keep_parents=False):
+        if self.segment:
+            self.segment.delete(using=using, keep_parents=keep_parents)
+
+        super().delete(using, keep_parents)
 
     def make_dirs(self):
         job_path = self.get_dirname()
