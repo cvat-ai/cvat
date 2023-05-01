@@ -671,7 +671,7 @@ class ImageManifestManager(_ManifestManager):
 
         level_in_hierarchical_structure = list(
             map(
-                lambda x: {'name': x, 'type': 'DIR' if x.endswith('/') else 'REG'},
+                lambda x: {'name': x.strip('/'), 'type': 'DIR' if x.endswith('/') else 'REG'},
                 set(f.split(os.path.sep)[0] if f == f.split(os.path.sep)[0] else f'{f.split(os.path.sep)[0]}/' for f in content)
             )
         )
