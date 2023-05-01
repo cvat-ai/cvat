@@ -115,63 +115,49 @@ class JobAnnotation:
     def reset(self):
         self.ir_data.reset()
 
+    def _validate_attribute_for_existence(self, db_attr_val, label_id, attr_type):
+        if db_attr_val.spec_id not in self.db_attributes[label_id][attr_type]:
+            raise AttributeError("spec_id `{}` is invalid".format(db_attr_val.spec_id))
+
+    def _validate_label_for_existence(self, label_id):
+        if label_id not in self.db_labels:
+            raise AttributeError("label_id `{}` is invalid".format(label_id))
+
     def _save_tracks_to_db(self, tracks):
 
         def create_tracks(tracks, parent_track=None):
             db_tracks = []
-            db_track_attrvals = []
+            db_track_attr_vals = []
             db_shapes = []
-            db_shape_attrvals = []
+            db_shape_attr_vals = []
 
             for track in tracks:
-                track_attributes = track.pop("attributes", [])
-                shapes = track.pop("shapes")
                 elements = track.pop("elements", [])
+
                 db_track = models.LabeledTrack(job=self.db_job, parent=parent_track, **track)
-                track_frame = db_track.frame
-                if db_track.label_id not in self.db_labels:
-                    raise AttributeError("label_id `{}` is invalid".format(db_track.label_id))
 
-                for attr in track_attributes:
-                    db_attrval = models.LabeledTrackAttributeVal(**attr)
-                    if db_attrval.spec_id not in self.db_attributes[db_track.label_id]["immutable"]:
-                        raise AttributeError("spec_id `{}` is invalid".format(db_attrval.spec_id))
-                    db_attrval.track_id = len(db_tracks)
-                    db_track_attrvals.append(db_attrval)
+                self._validate_label_for_existence(db_track.label_id)
 
-                for shape in shapes:
-                    track_frame = shape["frame"] if shape["frame"] < track_frame else track_frame
-                    shape_attributes = shape.pop("attributes", [])
-                    # FIXME: need to clamp points (be sure that all of them inside the image)
-                    # Should we check here or implement a validator?
-                    db_shape = models.TrackedShape(**shape)
-                    db_shape.track_id = len(db_tracks)
 
-                    for attr in shape_attributes:
-                        db_attrval = models.TrackedShapeAttributeVal(**attr)
-                        if db_attrval.spec_id not in self.db_attributes[db_track.label_id]["mutable"]:
-                            raise AttributeError("spec_id `{}` is invalid".format(db_attrval.spec_id))
-                        db_attrval.shape_id = len(db_shapes)
-                        db_shape_attrvals.append(db_attrval)
+                for attr in track.get("attributes", []):
+                    db_attr_val = models.LabeledTrackAttributeVal(**attr, track_id=len(db_tracks))
 
+                    self._validate_attribute_for_existence(db_attr_val, db_track.label_id, "immutable")
+
+                    db_track_attr_vals.append(db_attr_val)
+
+                for shape in track.get("shapes"):
+                    db_shape = models.TrackedShape(**shape, track_id=len(db_tracks))
                     db_shapes.append(db_shape)
-                    shape["attributes"] = shape_attributes
 
-                if parent_track is not None and track_frame < parent_track.frame:
-                    parent_tracked_shapes = parent_track.trackedshape_set
-                    if parent_tracked_shapes.count() == 1 and parent_tracked_shapes.first().type == "skeleton":
-                        skeleton_shape = parent_tracked_shapes.first()
-                        skeleton_shape.frame = track_frame
-                        skeleton_shape.save()
+                    for attr in shape.get("attributes", []):
+                        db_attr_val = models.TrackedShapeAttributeVal(**attr, shape_id=len(db_shapes))
 
-                    parent_track.frame = track_frame
-                    parent_track.save()
+                        self._validate_attribute_for_existence(db_attr_val, db_track.label_id, "mutable")
 
-                db_track.frame = track_frame
+                        db_shape_attr_vals.append(db_attr_val)
+
                 db_tracks.append(db_track)
-                track["attributes"] = track_attributes
-                track["shapes"] = shapes
-
 
                 if elements or parent_track is None:
                     track["elements"] = elements
@@ -182,11 +168,12 @@ class JobAnnotation:
                 flt_param={"job_id": self.db_job.id}
             )
 
-            for db_attrval in db_track_attrvals:
-                db_attrval.track_id = db_tracks[db_attrval.track_id].id
+            for db_attr_val in db_track_attr_vals:
+                db_attr_val.track_id = db_tracks[db_attr_val.track_id].id
+
             bulk_create(
                 db_model=models.LabeledTrackAttributeVal,
-                objects=db_track_attrvals,
+                objects=db_track_attr_vals,
                 flt_param={}
             )
 
@@ -199,12 +186,12 @@ class JobAnnotation:
                 flt_param={"track__job_id": self.db_job.id}
             )
 
-            for db_attrval in db_shape_attrvals:
-                db_attrval.shape_id = db_shapes[db_attrval.shape_id].id
+            for db_attr_val in db_shape_attr_vals:
+                db_attr_val.shape_id = db_shapes[db_attr_val.shape_id].id
 
             bulk_create(
                 db_model=models.TrackedShapeAttributeVal,
-                objects=db_shape_attrvals,
+                objects=db_shape_attr_vals,
                 flt_param={}
             )
 
@@ -223,7 +210,7 @@ class JobAnnotation:
     def _save_shapes_to_db(self, shapes):
         def create_shapes(shapes, parent_shape=None):
             db_shapes = []
-            db_attrvals = []
+            db_attr_vals = []
 
             for shape in shapes:
                 attributes = shape.pop("attributes", [])
@@ -231,16 +218,15 @@ class JobAnnotation:
                 # FIXME: need to clamp points (be sure that all of them inside the image)
                 # Should we check here or implement a validator?
                 db_shape = models.LabeledShape(job=self.db_job, parent=parent_shape, **shape)
-                if db_shape.label_id not in self.db_labels:
-                    raise AttributeError("label_id `{}` is invalid".format(db_shape.label_id))
+
+                self._validate_label_for_existence(db_shape.label_id)
 
                 for attr in attributes:
-                    db_attrval = models.LabeledShapeAttributeVal(**attr)
-                    if db_attrval.spec_id not in self.db_attributes[db_shape.label_id]["all"]:
-                        raise AttributeError("spec_id `{}` is invalid".format(db_attrval.spec_id))
+                    db_attr_val = models.LabeledShapeAttributeVal(**attr, shape_id = len(db_shapes))
 
-                    db_attrval.shape_id = len(db_shapes)
-                    db_attrvals.append(db_attrval)
+                    self._validate_attribute_for_existence(db_attr_val, db_shape.label_id, "all")
+
+                    db_attr_vals.append(db_attr_val)
 
                 db_shapes.append(db_shape)
                 shape["attributes"] = attributes
@@ -253,12 +239,12 @@ class JobAnnotation:
                 flt_param={"job_id": self.db_job.id}
             )
 
-            for db_attrval in db_attrvals:
-                db_attrval.shape_id = db_shapes[db_attrval.shape_id].id
+            for db_attr_val in db_attr_vals:
+                db_attr_val.shape_id = db_shapes[db_attr_val.shape_id].id
 
             bulk_create(
                 db_model=models.LabeledShapeAttributeVal,
-                objects=db_attrvals,
+                objects=db_attr_vals,
                 flt_param={}
             )
 
@@ -272,20 +258,21 @@ class JobAnnotation:
 
     def _save_tags_to_db(self, tags):
         db_tags = []
-        db_attrvals = []
+        db_attr_vals = []
 
         for tag in tags:
             attributes = tag.pop("attributes", [])
             db_tag = models.LabeledImage(job=self.db_job, **tag)
-            if db_tag.label_id not in self.db_labels:
-                raise AttributeError("label_id `{}` is invalid".format(db_tag.label_id))
+
+            self._validate_label_for_existence(db_tag.label_id)
 
             for attr in attributes:
-                db_attrval = models.LabeledImageAttributeVal(**attr)
-                if db_attrval.spec_id not in self.db_attributes[db_tag.label_id]["all"]:
-                    raise AttributeError("spec_id `{}` is invalid".format(db_attrval.spec_id))
-                db_attrval.tag_id = len(db_tags)
-                db_attrvals.append(db_attrval)
+                db_attr_val = models.LabeledImageAttributeVal(**attr)
+
+                self._validate_attribute_for_existence(db_attr_val, db_tag.label_id, "all")
+
+                db_attr_val.tag_id = len(db_tags)
+                db_attr_vals.append(db_attr_val)
 
             db_tags.append(db_tag)
             tag["attributes"] = attributes
@@ -296,12 +283,12 @@ class JobAnnotation:
             flt_param={"job_id": self.db_job.id}
         )
 
-        for db_attrval in db_attrvals:
-            db_attrval.image_id = db_tags[db_attrval.tag_id].id
+        for db_attr_val in db_attr_vals:
+            db_attr_val.image_id = db_tags[db_attr_val.tag_id].id
 
         bulk_create(
             db_model=models.LabeledImageAttributeVal,
-            objects=db_attrvals,
+            objects=db_attr_vals,
             flt_param={}
         )
 
