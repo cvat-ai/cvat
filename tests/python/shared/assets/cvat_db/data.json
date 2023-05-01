@@ -234,7 +234,7 @@
   "pk": 10,
   "fields": {
     "password": "pbkdf2_sha256$260000$X4F89IRqnBtojZuHidrwQG$j1+EpXfyvMesHdod4N+dNUfF4WKS2NWFfeGDec/43as=",
-    "last_login": "2022-09-28T12:17:51.373Z",
+    "last_login": "2023-05-01T08:42:48.130Z",
     "is_superuser": false,
     "username": "business1",
     "first_name": "Business",
@@ -678,6 +678,14 @@
   }
 },
 {
+  "model": "sessions.session",
+  "pk": "y0gqgy87qj5rzdymhcrm5cilkbzmmmdi",
+  "fields": {
+    "session_data": ".eJxVjEEOwiAQRe_C2hCmdCi4dN8zkIEBqZqSlHZlvLtt0oVu_3vvv4WnbS1-a2nxE4urACUuv2Og-EzzQfhB873KWOd1mYI8FHnSJsfK6XU73b-DQq3sdbbUJaNz4MToIvfEoBBwQDDKoYXOaZNcwH4nGYGGAGQtdho4Rg3i8wUMbDfM:1ptP7Q:QohmTMRYLohe_xym4-jZdnDdhEcDBLoWmnf-6tnNuAY",
+    "expire_date": "2023-05-15T08:42:48.134Z"
+  }
+},
+{
   "model": "authtoken.token",
   "pk": "2dcf8d2ff5032c3cf7d276549af3a50edb4f11c8",
   "fields": {
@@ -705,6 +713,16 @@
       "lonely_user"
     ],
     "created": "2023-03-30T09:37:31.700Z"
+  }
+},
+{
+  "model": "authtoken.token",
+  "pk": "c051fe19df24a0ac4c6bec5e635034271c9549dc",
+  "fields": {
+    "user": [
+      "business1"
+    ],
+    "created": "2023-05-01T08:42:48.127Z"
   }
 },
 {
@@ -955,6 +973,19 @@
   }
 },
 {
+  "model": "organizations.membership",
+  "pk": 15,
+  "fields": {
+    "user": [
+      "worker4"
+    ],
+    "organization": 2,
+    "is_active": true,
+    "joined_date": "2023-05-01T08:43:38.306Z",
+    "role": "maintainer"
+  }
+},
+{
   "model": "organizations.invitation",
   "pk": "5FjIXya6fTGvlRpauFvi2QN1wDOqo1V9REB5rJinDR8FZO9gr0qmtWpghsCte8Y1",
   "fields": {
@@ -1073,6 +1104,17 @@
       "business1"
     ],
     "membership": 8
+  }
+},
+{
+  "model": "organizations.invitation",
+  "pk": "qGhinYFQYi6ZX1TTgMB0DsKhHTMUhyzyCCMFXExOiwUbVedvEdRmvMIBf3tOP4LX",
+  "fields": {
+    "created_date": "2023-05-01T08:43:38.306Z",
+    "owner": [
+      "business1"
+    ],
+    "membership": 15
   }
 },
 {

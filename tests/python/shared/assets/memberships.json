@@ -1,8 +1,23 @@
 {
-  "count": 13,
+  "count": 14,
   "next": null,
   "previous": null,
   "results": [
+    {
+      "id": 15,
+      "invitation": "qGhinYFQYi6ZX1TTgMB0DsKhHTMUhyzyCCMFXExOiwUbVedvEdRmvMIBf3tOP4LX",
+      "is_active": true,
+      "joined_date": "2023-05-01T08:43:38.306000Z",
+      "organization": 2,
+      "role": "maintainer",
+      "user": {
+        "first_name": "Worker",
+        "id": 9,
+        "last_name": "Fourth",
+        "url": "http://localhost:8080/api/users/9",
+        "username": "worker4"
+      }
+    },
     {
       "id": 13,
       "invitation": "hIH9RB3QqZLFwdUDmufaSPc2H8uS5cNjcG6pk8gfAIQ4jg6nJZZWDIQHMN1gFMk9",
