@@ -1187,7 +1187,7 @@ class AnnotationType(str, Enum):
 
 class AnnotationId(models.Model):
     conflict = models.ForeignKey(AnnotationConflict,
-        on_delete=models.CASCADE, related_name='annotation_ids', blank=False)
+        on_delete=models.CASCADE, related_name='annotation_ids')
 
     obj_id = models.PositiveIntegerField()
     job_id = models.PositiveIntegerField()

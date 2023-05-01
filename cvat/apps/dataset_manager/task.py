@@ -110,7 +110,7 @@ class JobAnnotation:
             ).select_for_update().get(id=pk)
         else:
             try:
-                self.db_job: models.Job = next(job for job in queryset if job.pk == pk)
+                self.db_job: models.Job = next(job for job in queryset if job.pk == int(pk))
             except StopIteration as ex:
                 raise models.Job.DoesNotExist from ex
 

@@ -2238,7 +2238,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         }),
 )
 class ConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
-    queryset = AnnotationConflict.objects.prefetch_related('report').all()
+    queryset = AnnotationConflict.objects.prefetch_related('report', 'annotation_ids').all()
 
     # NOTE: This filter works incorrectly for this view
     # it requires task__organization OR project__organization check.
