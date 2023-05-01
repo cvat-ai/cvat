@@ -83,23 +83,40 @@ class TestGetJobs:
         for job in jobs[:8]:
             self._test_get_job_200("admin2", job["id"], job, **kwargs)
 
-    @pytest.mark.parametrize("org_id", [""])
-    @pytest.mark.parametrize("groups", [["business"], ["user"], ["worker"], []])
-    def test_non_admin_get_job(self, org_id, groups, users, jobs, tasks, projects, org_staff):
-        # keep the reasonable amount of users and jobs
-        users = [u for u in users if u["groups"] == groups][:4]
-        jobs, kwargs = filter_jobs(jobs, tasks, org_id)
-        org_staff = org_staff(org_id)
+    @pytest.mark.parametrize("groups, allow", [(["business"], True), (["user"], True), (["worker"], False)])
+    def test_non_admin_org_staff_can_get_job(self, groups, allow, users, organizations, org_staff, jobs_by_org):
+        user, org_id = next(
+            (user, org["id"])
+            for user in users
+            for org in organizations
+            if user["groups"] == groups and user["id"] in org_staff(org["id"])
+        )
+        job = jobs_by_org[org_id][0]
+        if allow:
+            self._test_get_job_200(user["username"], job["id"], job)
+        else:
+            self._test_get_job_403(user["username"], job["id"])
 
-        for job in jobs[:8]:
-            job_staff = get_job_staff(job, tasks, projects)
+    @pytest.mark.parametrize("groups", [["business"], ["user"], ["worker"]])
+    def test_non_admin_job_staff_can_get_job(self, groups, users, jobs, is_job_staff):
+        user, job = next(
+            (user, job)
+            for user in users
+            for job in jobs
+            if user["groups"] == groups and is_job_staff(user["id"], job["id"])
+        )
+        self._test_get_job_200(user["username"], job["id"], job)
 
-            # check if the specific user in job_staff to see the job
-            for user in users:
-                if user["id"] in job_staff | org_staff:
-                    self._test_get_job_200(user["username"], job["id"], job, **kwargs)
-                else:
-                    self._test_get_job_403(user["username"], job["id"], **kwargs)
+    @pytest.mark.parametrize("groups", [["business"], ["user"], ["worker"]])
+    def test_non_admin_non_job_staff_non_org_staff_cannot_get_job(self, groups, users, organizations, org_staff, jobs, is_job_staff):
+        user, job_id = next(
+            (user, job["id"])
+            for user in users
+            for org in organizations
+            for job in jobs
+            if user["groups"] == groups and user["id"] not in org_staff(org["id"]) and not is_job_staff(user["id"], job["id"])
+        )
+        self._test_get_job_403(user["username"], job_id)
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
