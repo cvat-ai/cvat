@@ -10,14 +10,13 @@ import Select from 'antd/lib/select';
 import { CloudStorage } from 'reducers';
 import SelectCloudStorage from 'components/select-cloud-storage/select-cloud-storage';
 import config from 'config';
-import CloudStorageFiles from './cloud-storages-files';
+import CloudStorageBrowser from './remote-browser';
 
 interface Props {
     formRef: any;
     cloudStorage: CloudStorage | null;
     searchPhrase: string;
     setSearchPhrase: (searchPhrase: string) => void;
-    selectedFiles: string[];
     onSelectFiles: (files: string[]) => void;
     onSelectCloudStorage: (cloudStorageId: number | null) => void;
 }
@@ -27,7 +26,7 @@ const { Option } = Select;
 export default function CloudStorageTab(props: Props): JSX.Element {
     const { searchPhrase, setSearchPhrase } = props;
     const {
-        formRef, cloudStorage, selectedFiles, onSelectFiles, onSelectCloudStorage,
+        formRef, cloudStorage, onSelectFiles, onSelectCloudStorage,
     } = props;
     const [selectedSource, setSelectedSource] = useState<string | null>(null);
 
@@ -79,12 +78,7 @@ export default function CloudStorageTab(props: Props): JSX.Element {
                     name='cloudStorageFiles'
                     rules={[{ required: true, message: 'Please, select a files' }]}
                 >
-                    <CloudStorageFiles
-                        cloudStorage={cloudStorage}
-                        source={selectedSource}
-                        selectedFiles={selectedFiles}
-                        onSelectFiles={onSelectFiles}
-                    />
+                    <CloudStorageBrowser cloudStorage={cloudStorage} onSelectFiles={onSelectFiles} />
                 </Form.Item>
             ) : null}
         </Form>
