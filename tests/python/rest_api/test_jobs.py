@@ -109,9 +109,6 @@ class TestListJobs:
             results = get_paginated_collection(
                 client.jobs_api.list_endpoint, return_json=True, **kwargs
             )
-            # from pprint import pprint
-            # pprint(data)
-            # pprint(results)
             assert (
                 DeepDiff(data, results, exclude_paths="root['updated_date']", ignore_order=True)
                 == {}
