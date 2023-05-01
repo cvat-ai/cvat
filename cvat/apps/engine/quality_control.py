@@ -24,7 +24,7 @@ from cvat.apps.dataset_manager.bindings import (CommonData, CvatToDmAnnotationCo
 from cvat.apps.dataset_manager.util import bulk_create
 from cvat.apps.dataset_manager.formats.registry import dm_env
 from cvat.apps.engine import models
-from cvat.apps.engine.models import AnnotationConflictType, ShapeType
+from cvat.apps.engine.models import AnnotationConflictType, AnnotationType
 from cvat.apps.profiler import silk_profile
 
 from datumaro.util import dump_json, parse_json
@@ -49,10 +49,10 @@ class _Serializable:
 class AnnotationId(_Serializable):
     obj_id: int
     job_id: int
-    type: ShapeType
+    type: AnnotationType
 
     def _value_serializer(self, t, attr, v):
-        if isinstance(v, ShapeType):
+        if isinstance(v, AnnotationType):
             return str(v)
         else:
             return super()._value_serializer(t, attr, v)
@@ -62,7 +62,7 @@ class AnnotationId(_Serializable):
         return cls(
             obj_id=d['obj_id'],
             job_id=d['job_id'],
-            type=ShapeType(d['type']),
+            type=AnnotationType(d['type']),
         )
 
 @define(kw_only=True)
@@ -398,8 +398,18 @@ class JobDataProvider:
 
     def dm_ann_to_ann_id(self, ann: dm.Annotation) -> AnnotationId:
         source_ann = self._annotation_memo.get_source_ann(ann)
-        ann_type = ShapeType(source_ann.type)
-        return AnnotationId(obj_id=source_ann.id, type=ann_type, job_id=self.job_id)
+        if 'track_id' in ann.attributes:
+            source_ann_id = ann.attributes["track_id"]
+            ann_type = 'track'
+        else:
+            if isinstance(source_ann, CommonData.LabeledShape):
+                ann_type = AnnotationType(source_ann.type)
+            elif isinstance(source_ann, CommonData.Tag):
+                ann_type = AnnotationType.TAG
+
+            source_ann_id = source_ann.id
+
+        return AnnotationId(obj_id=source_ann_id, type=ann_type, job_id=self.job_id)
 
 
 class _MemoizingAnnotationConverterFactory:

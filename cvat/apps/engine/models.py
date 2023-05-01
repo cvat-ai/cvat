@@ -1154,10 +1154,30 @@ class AnnotationConflict(models.Model):
 
     #     return super().clean()
 
+class AnnotationType(str, Enum):
+    TAG = 'tag'
+    TRACK = 'track'
+    RECTANGLE = 'rectangle'
+    POLYGON = 'polygon'
+    POLYLINE = 'polyline'
+    POINTS = 'points'
+    ELLIPSE = 'ellipse'
+    CUBOID = 'cuboid'
+    MASK = 'mask'
+    SKELETON = 'skeleton'
+
+    def __str__(self) -> str:
+        return self.value
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+
 class AnnotationId(models.Model):
     conflict = models.ForeignKey(AnnotationConflict,
         on_delete=models.CASCADE, related_name='annotation_ids', blank=False)
 
     obj_id = models.PositiveIntegerField()
     job_id = models.PositiveIntegerField()
-    type = models.CharField(max_length=32, choices=ShapeType.choices())
+    type = models.CharField(max_length=32, choices=AnnotationType.choices())

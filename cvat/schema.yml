@@ -1180,6 +1180,11 @@ paths:
           [''id'', ''report_id'', ''frame'', ''type'', ''job_id'']'
         schema:
           type: string
+      - in: query
+        name: task_id
+        schema:
+          type: integer
+        description: A simple equality filter for task id
       - name: type
         in: query
         description: A simple equality filter for the type field
@@ -1189,6 +1194,7 @@ paths:
           - missing_annotation
           - extra_annotation
           - mismatching_label
+          - low_overlap
       tags:
       - conflicts
       security:
@@ -6639,6 +6645,7 @@ components:
       - missing_annotation
       - extra_annotation
       - mismatching_label
+      - low_overlap
       type: string
     AnnotationFileRequest:
       type: object
@@ -6659,8 +6666,21 @@ components:
           readOnly: true
         type:
           allOf:
-          - $ref: '#/components/schemas/ShapeType'
+          - $ref: '#/components/schemas/AnnotationIdTypeEnum'
           readOnly: true
+    AnnotationIdTypeEnum:
+      enum:
+      - tag
+      - track
+      - rectangle
+      - polygon
+      - polyline
+      - points
+      - ellipse
+      - cuboid
+      - mask
+      - skeleton
+      type: string
     AnnotationsRead:
       oneOf:
       - $ref: '#/components/schemas/LabeledData'
