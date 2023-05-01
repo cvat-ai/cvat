@@ -51,7 +51,7 @@ function RemoteBrowser(props: Props): JSX.Element {
         nextToken: null,
     });
 
-    const updateContent = (): void => {
+    const updateContent = async (): Promise<void> => {
         let target = content;
         for (const subpath of currentPath.slice(1)) {
             const child = target.children.find((item) => item.name === subpath);
@@ -61,46 +61,37 @@ function RemoteBrowser(props: Props): JSX.Element {
         if (!target.initialized || target.nextToken) {
             const isRoot = (): boolean => currentPath.slice(1).length === 0;
             const path = `${currentPath.slice(1).join('/')}/`;
+            const convertChildren = (children: Omit<Node, 'key' | 'children'>[]): Node[] => (
+                children.map((child) => ({
+                    ...child,
+                    key: isRoot() ? child.name : `${path}${child.name}`,
+                    initialized: false,
+                    children: [],
+                }))
+            );
             setFetching(true);
-            if (resource === 'share') {
-                core.server.share(path).then((files: (Omit<Node, 'key' | 'children'>)[]) => {
-                    if (isMounted()) {
-                        const converted = files.map((child) => ({
-                            ...child,
-                            key: isRoot() ? child.name : `${path}${child.name}`,
-                            initialized: false,
-                            children: [],
-                        }));
+            try {
+                let nodes: Node[] = [];
+                if (resource === 'share') {
+                    const files: (Omit<Node, 'key' | 'children'>)[] = await core.server.share(path);
+                    nodes = convertChildren(files);
+                } else {
+                    const response: { next: string | null, content: Omit<Node, 'key' | 'children'>[] } =
+                        await resource.getContent(path, target.nextToken, manifestPath);
+                    const { next, content: files } = response;
+                    target.nextToken = next;
+                    nodes = convertChildren(files);
+                }
 
-                        target.initialized = true;
-                        target.children = target.children.concat(converted);
-                        setContent({ ...content });
-                    }
-                }).finally(() => {
-                    if (isMounted()) {
-                        setFetching(false);
-                    }
-                });
-            } else {
-                resource.getContent(path, target.nextToken, manifestPath).then((response: { next: string | null, content: Omit<Node, 'key' | 'children'>[] }) => {
-                    const { next, content: children } = response;
-                    if (isMounted()) {
-                        target.initialized = true;
-                        target.nextToken = next;
-                        target.children = target.children.concat(children.map((child) => ({
-                            ...child,
-                            key: isRoot() ? child.name : `${path}${child.name}`,
-                            initialized: false,
-                            children: [],
-                        })));
-
-                        setContent({ ...content });
-                    }
-                }).finally(() => {
-                    if (isMounted()) {
-                        setFetching(false);
-                    }
-                });
+                target.children = target.children.concat(nodes);
+                target.initialized = true;
+                if (isMounted()) {
+                    setContent({ ...content });
+                }
+            } finally {
+                if (isMounted()) {
+                    setFetching(false);
+                }
             }
         }
     };
@@ -228,7 +219,9 @@ function RemoteBrowser(props: Props): JSX.Element {
                                             if (currentPage === totalPages) {
                                                 if (!isFetching) {
                                                     evt.stopPropagation();
-                                                    updateContent();
+                                                    updateContent().then(() => {
+                                                        setCurrentPage(currentPage + 1);
+                                                    });
                                                 }
                                             } else {
                                                 setCurrentPage(currentPage + 1);
