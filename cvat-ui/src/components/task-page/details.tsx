@@ -25,7 +25,7 @@ import { getReposData, syncRepos, changeRepo } from 'utils/git-utils';
 import AutomaticAnnotationProgress from 'components/tasks-page/automatic-annotation-progress';
 import Preview from 'components/common/preview';
 import { cancelInferenceAsync } from 'actions/models-actions';
-import { CombinedState, ActiveInference } from 'reducers';
+import { CombinedState, ActiveInference, PluginComponent } from 'reducers';
 import UserSelector, { User } from './user-selector';
 import BugTrackerEditor from './bug-tracker-editor';
 import LabelsEditorComponent from '../labels-editor/labels-editor';
@@ -40,6 +40,7 @@ interface StateToProps {
     activeInference: ActiveInference | null;
     installedGit: boolean;
     projectSubsets: string[];
+    taskNamePlugins: PluginComponent[];
     dumpers: any[];
     user: any;
 }
@@ -58,6 +59,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps & Ow
         user: state.auth.user,
         installedGit: list.GIT_INTEGRATION,
         activeInference: state.models.inferences[own.task.id] || null,
+        taskNamePlugins: state.plugins.components.taskItem.name,
         projectSubsets: taskProject ?
             ([
                 ...new Set(taskProject.subsets),
@@ -205,24 +207,27 @@ class DetailsComponent extends React.PureComponent<Props, State> {
 
     private renderTaskName(): JSX.Element {
         const { name } = this.state;
-        const { task: taskInstance, onUpdateTask } = this.props;
+        const { task: taskInstance, taskNamePlugins, onUpdateTask } = this.props;
 
         return (
-            <Title
-                level={4}
-                editable={{
-                    onChange: (value: string): void => {
-                        this.setState({
-                            name: value,
-                        });
+            <Title level={4}>
+                <Text
+                    editable={{
+                        onChange: (value: string): void => {
+                            this.setState({
+                                name: value,
+                            });
 
-                        taskInstance.name = value;
-                        onUpdateTask(taskInstance);
-                    },
-                }}
-                className='cvat-text-color'
-            >
-                {name}
+                            taskInstance.name = value;
+                            onUpdateTask(taskInstance);
+                        },
+                    }}
+                    className='cvat-text-color'
+                >
+                    {name}
+                </Text>
+                { taskNamePlugins
+                    .map(({ component: Component }, index) => <Component key={index} />) }
             </Title>
         );
     }
@@ -386,7 +391,11 @@ class DetailsComponent extends React.PureComponent<Props, State> {
 
     private renderSubsetField(): JSX.Element {
         const { subset } = this.state;
-        const { task: taskInstance, projectSubsets, onUpdateTask } = this.props;
+        const {
+            task: taskInstance,
+            projectSubsets,
+            onUpdateTask,
+        } = this.props;
 
         return (
             <Row>
@@ -416,7 +425,10 @@ class DetailsComponent extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element {
         const {
-            activeInference, cancelAutoAnnotation, task: taskInstance, onUpdateTask,
+            activeInference,
+            task: taskInstance,
+            cancelAutoAnnotation,
+            onUpdateTask,
         } = this.props;
 
         return (

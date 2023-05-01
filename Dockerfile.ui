@@ -1,18 +1,10 @@
 FROM node:lts-slim AS cvat-ui
 
-ARG http_proxy
-ARG https_proxy
-ARG no_proxy
-ARG socks_proxy
 ARG WA_PAGE_VIEW_HIT
 ARG UI_APP_CONFIG
 ARG CLIENT_PLUGINS
 
 ENV TERM=xterm \
-    http_proxy=${http_proxy}   \
-    https_proxy=${https_proxy} \
-    no_proxy=${no_proxy} \
-    socks_proxy=${socks_proxy} \
     LANG='C.UTF-8'  \
     LC_ALL='C.UTF-8'
 

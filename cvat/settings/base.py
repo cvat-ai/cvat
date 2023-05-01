@@ -391,9 +391,10 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 os.makedirs(STATIC_ROOT, exist_ok=True)
 
-# Make sure to update other config files when upading these directories
+# Make sure to update other config files when updating these directories
 DATA_ROOT = os.path.join(BASE_DIR, 'data')
-EVENTS_LOCAL_DB = os.path.join(DATA_ROOT,'events.db')
+
+EVENTS_LOCAL_DB = os.path.join(DATA_ROOT, 'events.db')
 os.makedirs(DATA_ROOT, exist_ok=True)
 if not os.path.exists(EVENTS_LOCAL_DB):
     open(EVENTS_LOCAL_DB, 'w').close()
@@ -643,5 +644,18 @@ CLICKHOUSE = {
         'PORT': os.getenv('CLICKHOUSE_PORT', 8123),
         'USER': os.getenv('CLICKHOUSE_USER', 'user'),
         'PASSWORD': os.getenv('CLICKHOUSE_PASSWORD', 'user'),
+    }
+}
+
+# Database
+# https://docs.djangoproject.com/en/3.2/ref/settings/#databases
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'HOST': os.getenv('CVAT_POSTGRES_HOST', 'cvat_db'),
+        'NAME': os.getenv('CVAT_POSTGRES_DBNAME', 'cvat'),
+        'USER': os.getenv('CVAT_POSTGRES_USER', 'root'),
+        'PASSWORD': os.getenv('CVAT_POSTGRES_PASSWORD', ''),
+        'PORT': os.getenv('CVAT_POSTGRES_PORT', 5432),
     }
 }

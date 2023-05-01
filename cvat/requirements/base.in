@@ -1,0 +1,67 @@
+-r ../../utils/dataset_manifest/requirements.in
+
+attrs==21.4.0
+click==8.1.3
+Django==3.2.18
+django-appconf==1.0.4
+django-auth-ldap==2.2.0
+django-compressor==2.4
+# dj-rest-auth[with_social] includes django-allauth but with version range: >=0.40.0,<0.53.0
+# This does not suit us in the case when one of the previous allauth version was installed.
+# Despite direct indication allauth in requirements we should keep 'with_social' for dj-rest-auth
+# to avoid possible further versions conflicts (we use registration functionality)
+# https://dj-rest-auth.readthedocs.io/en/latest/installation.html#registration-optional
+django-allauth>=0.52.0
+dj-rest-auth[with_social]==2.2.7
+django-rq==2.3.2
+EasyProcess==0.3
+Pillow==9.3.0
+numpy==1.22.0
+python-ldap==3.4.3
+pytz==2020.1
+pyunpack==0.2.1
+rcssmin==1.0.6
+redis==4.5.4
+rjsmin==1.1.0
+requests==2.26.0
+rq==1.5.2
+rq-scheduler==0.10.0
+sqlparse==0.4.2
+django-sendfile2==0.7.0
+dj-pagination==2.5.0
+python-logstash-async==2.5.0
+rules==2.2
+GitPython==3.1.30
+coreapi==2.3.3
+django-filter==2.4.0
+Markdown==3.2.2
+djangorestframework==3.12.4
+Pygments==2.7.4
+drf-spectacular==0.22.1
+Shapely==1.7.1
+pdf2image==1.14.0
+opencv-python-headless==4.5.5.62
+h5py==3.6.0
+django-cors-headers==3.5.0
+furl==2.1.0
+av==9.2.0 --no-binary=av
+tensorflow==2.11.1 # Optional requirement of Datumaro. Use tensorflow-macos==2.8.0 for Mac M1
+# The package is used by pyunpack as a command line tool to support multiple
+# archives. Don't use as a python module because it has GPL license.
+patool==1.12
+diskcache==5.4.0
+boto3==1.17.61
+azure-storage-blob==12.13.0
+google-cloud-storage==1.42.0
+git+https://github.com/cvat-ai/datumaro.git@0817144ade1ddc514e182ca1835e322cb9af00a0
+urllib3>=1.26.5 # not directly required, pinned by Snyk to avoid a vulnerability
+natsort==8.0.0
+mistune>=2.0.1 # not directly required, pinned by Snyk to avoid a vulnerability
+dnspython==2.2.0
+setuptools==65.5.1
+django-health-check==3.17.0
+psutil==5.9.4
+clickhouse-connect==0.5.10
+django-crum==0.7.9
+wheel>=0.38.0 # not directly required, pinned by Snyk to avoid a vulnerability
+psycopg2-binary==2.9.5
