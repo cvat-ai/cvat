@@ -195,7 +195,14 @@ class CommonData(InstanceLabelData):
         'Frame', 'idx, id, frame, name, width, height, labeled_shapes, tags, shapes, labels')
     Label = namedtuple('Label', 'id, name, color, type')
 
-    def __init__(self, annotation_ir, db_task, host='', create_callback=None) -> None:
+    def __init__(self,
+        annotation_ir,
+        db_task,
+        *,
+        host='',
+        create_callback=None,
+        use_server_track_ids: bool = False
+    ) -> None:
         self._dimension = annotation_ir.dimension
         self._annotation_ir = annotation_ir
         self._host = host
@@ -205,6 +212,7 @@ class CommonData(InstanceLabelData):
         self._frame_mapping = {}
         self._frame_step = db_task.data.get_frame_step()
         self._db_data = db_task.data
+        self._use_server_track_ids = use_server_track_ids
 
         super().__init__(db_task)
 
@@ -358,7 +366,7 @@ class CommonData(InstanceLabelData):
             track, 0, self.stop, self._annotation_ir.dimension)
         for tracked_shape in tracked_shapes:
             tracked_shape["attributes"] += track["attributes"]
-            tracked_shape["track_id"] = idx
+            tracked_shape["track_id"] = track["track_id"] if self._use_server_track_ids else idx
             tracked_shape["group"] = track["group"]
             tracked_shape["source"] = track["source"]
             tracked_shape["label_id"] = track["label_id"]
@@ -416,7 +424,9 @@ class CommonData(InstanceLabelData):
         for shape in sorted(
             anno_manager.to_shapes(self.stop, self._annotation_ir.dimension,
                 # Skip outside, deleted and excluded frames
-                included_frames=included_frames, include_outside=False
+                included_frames=included_frames,
+                include_outside=False,
+                use_server_track_ids=self._use_server_track_ids
             ),
             key=lambda shape: shape.get("z_order", 0)
         ):
@@ -616,11 +626,11 @@ class CommonData(InstanceLabelData):
 
 class JobData(CommonData):
     META_FIELD = "job"
-    def __init__(self, annotation_ir, db_job, host='', create_callback=None):
+    def __init__(self, annotation_ir, db_job, **kwargs):
         self._db_job = db_job
         self._db_task = db_job.segment.task
 
-        super().__init__(annotation_ir, self._db_task, host, create_callback)
+        super().__init__(annotation_ir, self._db_task, **kwargs)
 
     def _init_meta(self):
         db_segment = self._db_job.segment
@@ -712,9 +722,9 @@ class JobData(CommonData):
 
 class TaskData(CommonData):
     META_FIELD = "task"
-    def __init__(self, annotation_ir, db_task, host='', create_callback=None):
+    def __init__(self, annotation_ir, db_task, **kwargs):
         self._db_task = db_task
-        super().__init__(annotation_ir, db_task, host, create_callback)
+        super().__init__(annotation_ir, db_task, **kwargs)
 
     @staticmethod
     def meta_for_task(db_task, host, label_mapping=None):
@@ -860,7 +870,15 @@ class ProjectData(InstanceLabelData):
         task_id: int = attrib(default=None)
         subset: str = attrib(default=None)
 
-    def __init__(self, annotation_irs: Mapping[str, AnnotationIR], db_project: Project, host: str = '', task_annotations: Mapping[int, Any] = None, project_annotation=None):
+    def __init__(self,
+        annotation_irs: Mapping[str, AnnotationIR],
+        db_project: Project,
+        host: str = '',
+        task_annotations: Mapping[int, Any] = None,
+        project_annotation=None,
+        *,
+        use_server_track_ids: bool = False
+    ):
         self._annotation_irs = annotation_irs
         self._db_project = db_project
         self._task_annotations = task_annotations
@@ -873,6 +891,7 @@ class ProjectData(InstanceLabelData):
         self._frame_mapping: Dict[Tuple[str, str], Tuple[int, int]] = dict()
         self._frame_steps: Dict[int, int] = {}
         self.new_tasks: Set[int] = set()
+        self._use_server_track_ids = use_server_track_ids
 
         InstanceLabelData.__init__(self, db_project)
         self.init()
@@ -1060,7 +1079,7 @@ class ProjectData(InstanceLabelData):
         )
         for tracked_shape in tracked_shapes:
             tracked_shape["attributes"] += track["attributes"]
-            tracked_shape["track_id"] = idx
+            tracked_shape["track_id"] = track["track_id"] if self._use_server_track_ids else idx
             tracked_shape["group"] = track["group"]
             tracked_shape["source"] = track["source"]
             tracked_shape["label_id"] = track["label_id"]
@@ -1103,10 +1122,17 @@ class ProjectData(InstanceLabelData):
 
         for task in self._db_tasks.values():
             anno_manager = AnnotationManager(self._annotation_irs[task.id])
-            for shape in sorted(anno_manager.to_shapes(task.data.size, self._annotation_irs[task.id].dimension),
-                    key=lambda shape: shape.get("z_order", 0)):
+            for shape in sorted(
+                anno_manager.to_shapes(
+                    task.data.size, self._annotation_irs[task.id].dimension,
+                    include_outside=False,
+                    use_server_track_ids=self._use_server_track_ids
+                ),
+                key=lambda shape: shape.get("z_order", 0)
+            ):
                 if (task.id, shape['frame']) not in self._frame_info or (task.id, shape['frame']) in self._deleted_frames:
                     continue
+
                 if 'track_id' in shape:
                     if shape['outside']:
                         continue

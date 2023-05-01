@@ -166,7 +166,8 @@ class AnnotationManager:
         dimension: DimensionType,
         *,
         included_frames: Optional[Sequence[int]] = None,
-        include_outside: bool = False
+        include_outside: bool = False,
+        use_server_track_ids: bool = False
     ):
         shapes = self.data.shapes
         tracks = TrackManager(self.data.tracks, dimension)
@@ -175,7 +176,8 @@ class AnnotationManager:
             shapes = [s for s in shapes if s["frame"] in included_frames]
 
         return shapes + tracks.to_shapes(end_frame,
-            included_frames=included_frames, include_outside=include_outside
+            included_frames=included_frames, include_outside=include_outside,
+            use_server_track_ids=use_server_track_ids
         )
 
     def to_tracks(self):
@@ -423,9 +425,11 @@ class TrackManager(ObjectManager):
     def to_shapes(self, end_frame: int, *,
         included_frames: Optional[Sequence[int]] = None,
         include_outside: bool = False,
+        use_server_track_ids: bool = False
     ):
         shapes = []
         for idx, track in enumerate(self.objects):
+            track_id = track["id"] if use_server_track_ids else idx
             track_shapes = {}
 
             for shape in TrackManager.get_interpolated_shapes(
@@ -438,7 +442,7 @@ class TrackManager(ObjectManager):
             ):
                 shape["label_id"] = track["label_id"]
                 shape["group"] = track["group"]
-                shape["track_id"] = idx
+                shape["track_id"] = track_id
                 shape["attributes"] += track["attributes"]
                 shape["elements"] = []
 
@@ -452,7 +456,8 @@ class TrackManager(ObjectManager):
                 track_elements = TrackManager(track["elements"], self._dimension)
                 element_shapes = track_elements.to_shapes(end_frame,
                     included_frames=set(track_shapes.keys()) & (included_frames or []),
-                    include_outside=True # elements are controlled by the parent shape
+                    include_outside=True, # elements are controlled by the parent shape
+                    use_server_track_ids=use_server_track_ids
                 )
 
                 for shape in element_shapes:

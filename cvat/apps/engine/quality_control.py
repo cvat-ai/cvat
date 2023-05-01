@@ -382,7 +382,8 @@ class JobDataProvider:
         self.job_annotation.init_from_db()
         self.job_data = JobData(
             annotation_ir=self.job_annotation.ir_data,
-            db_job=self.job_annotation.db_job
+            db_job=self.job_annotation.db_job,
+            use_server_track_ids=True
         )
 
         self._annotation_memo = _MemoizingAnnotationConverterFactory()
@@ -390,7 +391,8 @@ class JobDataProvider:
     @cached_property
     def dm_dataset(self):
         extractor = GetCVATDataExtractor(self.job_data,
-            convert_annotations=self._annotation_memo)
+            convert_annotations=self._annotation_memo
+        )
         return dm.Dataset.from_extractors(extractor, env=dm_env)
 
     def dm_item_id_to_frame_id(self, item_id: str) -> int:
@@ -399,7 +401,7 @@ class JobDataProvider:
     def dm_ann_to_ann_id(self, ann: dm.Annotation) -> AnnotationId:
         source_ann = self._annotation_memo.get_source_ann(ann)
         if 'track_id' in ann.attributes:
-            source_ann_id = ann.attributes["track_id"]
+            source_ann_id = source_ann.track_id
             ann_type = 'track'
         else:
             if isinstance(source_ann, CommonData.LabeledShape):
