@@ -66,7 +66,6 @@ def get_organization(request, obj):
     return request.iam_context["organization"]
 
 def get_privilege(request):
-    # TO-DO: refactor it
     IAM_ROLES = {role:priority for priority, role in enumerate(settings.IAM_ROLES)}
     groups = list(request.user.groups.filter(name__in=list(IAM_ROLES.keys())))
     groups.sort(key=lambda group: IAM_ROLES[group.name])
