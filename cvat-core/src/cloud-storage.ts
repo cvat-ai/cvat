@@ -244,8 +244,8 @@ export default class CloudStorage {
         return result;
     }
 
-    public async getContent(): Promise<any> {
-        const result = await PluginRegistry.apiWrapper.call(this, CloudStorage.prototype.getContent);
+    public async getContent(path: string, nextToken?: string): Promise<any> {
+        const result = await PluginRegistry.apiWrapper.call(this, CloudStorage.prototype.getContent, path, nextToken);
         return result;
     }
 
@@ -360,8 +360,8 @@ Object.defineProperties(CloudStorage.prototype.getContent, {
     implementation: {
         writable: false,
         enumerable: false,
-        value: async function implementation(): Promise<any> {
-            const result = await serverProxy.cloudStorages.getContent(this.id, this.manifestPath);
+        value: async function implementation(path: string, nextToken?: string): Promise<any> {
+            const result = await serverProxy.cloudStorages.getContent(this.id, path, nextToken, this.manifestPath);
             return result;
         },
     },
