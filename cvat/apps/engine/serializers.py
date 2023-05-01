@@ -1917,7 +1917,7 @@ class AnnotationConflictSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.AnnotationConflict
-        fields = ('frame', 'type', 'annotation_ids', 'report_id')
+        fields = ('id', 'frame', 'type', 'annotation_ids', 'report_id')
         read_only_fields = fields
 
 
