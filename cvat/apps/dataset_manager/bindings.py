@@ -13,7 +13,7 @@ from operator import add
 from pathlib import Path
 from types import SimpleNamespace
 from typing import (Any, Callable, DefaultDict, Dict, Iterable, List, Literal, Mapping,
-                    NamedTuple, OrderedDict, Set, Tuple, Union)
+                    NamedTuple, Optional, OrderedDict, Sequence, Set, Tuple, Union)
 
 import datumaro as dm
 import defusedxml.ElementTree as ET
@@ -201,7 +201,8 @@ class CommonData(InstanceLabelData):
         *,
         host='',
         create_callback=None,
-        use_server_track_ids: bool = False
+        use_server_track_ids: bool = False,
+        included_frames: Optional[Sequence[int]] = None
     ) -> None:
         self._dimension = annotation_ir.dimension
         self._annotation_ir = annotation_ir
@@ -213,6 +214,7 @@ class CommonData(InstanceLabelData):
         self._frame_step = db_task.data.get_frame_step()
         self._db_data = db_task.data
         self._use_server_track_ids = use_server_track_ids
+        self._required_frames = included_frames
 
         super().__init__(db_task)
 
@@ -410,11 +412,7 @@ class CommonData(InstanceLabelData):
                 )
             return frames[frame]
 
-        included_frames = set(
-            i for i in self.rel_range
-            if not self._is_frame_deleted(i)
-            and not self._is_frame_excluded(i)
-        )
+        included_frames = self.get_included_frames()
 
         if include_empty:
             for idx in sorted(set(self._frame_info) & included_frames):
@@ -459,11 +457,22 @@ class CommonData(InstanceLabelData):
             if not self._is_frame_deleted(shape["frame"]):
                 yield self._export_labeled_shape(shape)
 
+    def get_included_frames(self):
+        return set(
+            i for i in self.rel_range
+            if not self._is_frame_deleted(i)
+            and not self._is_frame_excluded(i)
+            and self._is_frame_required(i)
+        )
+
     def _is_frame_deleted(self, frame):
         return frame in self._deleted_frames
 
     def _is_frame_excluded(self, frame):
         return frame in self._excluded_frames
+
+    def _is_frame_required(self, frame):
+        return self._required_frames is None or frame in self._required_frames
 
     @property
     def tracks(self):
@@ -683,6 +692,13 @@ class JobData(CommonData):
             self._excluded_frames.update(
                 frame for frame in self.rel_range
                 if self.abs_frame_id(frame) not in self.db_instance.segment.frame_set
+            )
+
+        if self._required_frames:
+            abs_range = self.abs_range
+            self._required_frames = set(
+                self.abs_frame_id(frame) for frame in self._required_frames
+                if frame in abs_range
             )
 
     def __len__(self):

@@ -376,14 +376,15 @@ class JobDataProvider:
         return JobAnnotation.add_prefetch_info(queryset)
 
     @transaction.atomic
-    def __init__(self, job_id: int, *, queryset=None) -> None:
+    def __init__(self, job_id: int, *, queryset=None, included_frames=None) -> None:
         self.job_id = job_id
         self.job_annotation = JobAnnotation(job_id, queryset=queryset)
         self.job_annotation.init_from_db()
         self.job_data = JobData(
             annotation_ir=self.job_annotation.ir_data,
             db_job=self.job_annotation.db_job,
-            use_server_track_ids=True
+            use_server_track_ids=True,
+            included_frames=included_frames,
         )
 
         self._annotation_memo = _MemoizingAnnotationConverterFactory()
@@ -1266,6 +1267,7 @@ class QueueJobManager:
             # because the task and jobs can be changed after the beginning,
             # which will lead to inconsistent results
             gt_job_data_provider = JobDataProvider(gt_job.id, queryset=job_queryset)
+            gt_job_frames = gt_job_data_provider.job_data.get_included_frames()
 
             jobs: List[models.Job] = [
                 j
@@ -1273,7 +1275,8 @@ class QueueJobManager:
                 if j.type == models.JobType.NORMAL
             ]
             job_data_providers = {
-                job.id: JobDataProvider(job.id, queryset=job_queryset)
+                job.id: JobDataProvider(job.id, queryset=job_queryset,
+                    included_frames=gt_job_frames)
                 for job in jobs
             }
 

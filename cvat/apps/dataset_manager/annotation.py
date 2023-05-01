@@ -14,6 +14,7 @@ from shapely import geometry
 
 from cvat.apps.engine.models import ShapeType, DimensionType
 from cvat.apps.engine.serializers import LabeledDataSerializer
+from cvat.apps.dataset_manager.util import deepcopy_simple
 
 
 class AnnotationIR:
@@ -461,7 +462,6 @@ class TrackManager(ObjectManager):
                 )
 
                 for shape in element_shapes:
-                    assert shape["frame"] in set(track_shapes.keys()) & (included_frames or [])
                     track_shapes[shape["frame"]]["elements"].append(shape)
 
                 # The whole shape can be filtered out, if all its elements are outside,
@@ -469,7 +469,7 @@ class TrackManager(ObjectManager):
                 if not include_outside:
                     track_shapes = {
                         k: v for k, v in track_shapes.items()
-                        if any(not elem["outside"] for elem in v["elements"])
+                        if not v['elements'] or not all(elem["outside"] for elem in v["elements"])
                     }
 
             shapes.extend(track_shapes.values())
@@ -546,19 +546,9 @@ class TrackManager(ObjectManager):
         included_frames: Optional[Sequence[int]] = None,
         include_outside: bool = False,
     ):
-        def my_deepcopy(v):
-            if isinstance(v, dict):
-                return {k: my_deepcopy(vv) for k, vv in v.items()}
-            elif isinstance(v, (list, tuple, set)):
-                return type(v)(my_deepcopy(vv) for vv in v)
-            elif isinstance(v, (int, float, str, bool, type(None))):
-                return v
-            else:
-                return deepcopy(v)
-
         def copy_shape(source, frame, points=None, rotation=None):
             copied = source.copy()
-            copied["attributes"] = my_deepcopy(source["attributes"])
+            copied["attributes"] = deepcopy_simple(source["attributes"])
 
             copied["keyframe"] = False
             copied["frame"] = frame
@@ -673,7 +663,7 @@ class TrackManager(ObjectManager):
             def match_right_left(left_curve, right_curve, left_right_matching):
                 matched_right_points = list(chain.from_iterable(left_right_matching.values()))
                 unmatched_right_points = filter(lambda x: x not in matched_right_points, range(len(right_curve)))
-                updated_matching = my_deepcopy(left_right_matching)
+                updated_matching = deepcopy_simple(left_right_matching)
 
                 for right_point in unmatched_right_points:
                     left_point = find_nearest_pair(right_curve[right_point], left_curve)
@@ -914,7 +904,7 @@ class TrackManager(ObjectManager):
                 # Propagate attributes
                 for attr in prev_shape["attributes"]:
                     if attr["spec_id"] not in map(lambda el: el["spec_id"], shape["attributes"]):
-                        shape["attributes"].append(my_deepcopy(attr))
+                        shape["attributes"].append(deepcopy_simple(attr))
 
                 if not prev_shape["outside"] or include_outside:
                     shapes.extend(interpolate(prev_shape, shape))
