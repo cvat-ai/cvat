@@ -29,7 +29,6 @@
 .cvat-remote-browser-table-wrapper {
     .ant-table-wrapper {
         height: $grid-unit-size * 64;
-        overflow: auto;
 
         .ant-pagination {
             display: none;

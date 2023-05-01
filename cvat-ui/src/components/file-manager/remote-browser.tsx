@@ -41,7 +41,6 @@ function RemoteBrowser(props: Props): JSX.Element {
     const isMounted = useIsMounted();
     const [currentPath, setCurrentPath] = useState(['root']);
     const [currentPage, setCurrentPage] = useState(1);
-    const [pageSize, setPageSize] = useState(300);
     const [isFetching, setFetching] = useState(false);
     const [content, setContent] = useState<Node>({
         name: 'root',
@@ -163,6 +162,7 @@ function RemoteBrowser(props: Props): JSX.Element {
         );
     }
 
+    const PAGE_SIZE = 500;
     return (
         <div>
             <Breadcrumb>
@@ -184,6 +184,7 @@ function RemoteBrowser(props: Props): JSX.Element {
             </Breadcrumb>
             <div className='cvat-remote-browser-table-wrapper'>
                 <Table
+                    scroll={{ y: 472 }}
                     rowSelection={{
                         type: 'checkbox',
                         onChange: (_, selectedRows) => {
@@ -196,7 +197,7 @@ function RemoteBrowser(props: Props): JSX.Element {
                     size='small'
                     columns={columns}
                     pagination={{
-                        pageSize,
+                        pageSize: PAGE_SIZE,
                         current: currentPage,
                         showPrevNextJumpers: false,
                     }}
@@ -204,15 +205,14 @@ function RemoteBrowser(props: Props): JSX.Element {
                 />
                 <Pagination
                     className='cvat-remote-browser-pages'
-                    pageSize={pageSize}
+                    pageSize={PAGE_SIZE}
                     showQuickJumper
+                    showSizeChanger={false}
                     size='small'
                     total={dataSource.children.length}
-                    onChange={(newPage: number, newPageSize: number) => {
+                    onChange={(newPage: number) => {
                         setCurrentPage(newPage);
-                        setPageSize(newPageSize);
                     }}
-                    pageSizeOptions={[10, 100, 300, 500]}
                     showPrevNextJumpers={false}
                     current={currentPage}
                     itemRender={(_, type, originalElement) => {
@@ -224,7 +224,7 @@ function RemoteBrowser(props: Props): JSX.Element {
                                         className='cvat-remote-browser-receive-more-btn ant-pagination-item-link'
                                     >
                                         <RightOutlined onClick={(evt: MouseEvent) => {
-                                            const totalPages = Math.ceil(dataSource.children.length / pageSize);
+                                            const totalPages = Math.ceil(dataSource.children.length / PAGE_SIZE);
                                             if (currentPage === totalPages) {
                                                 if (!isFetching) {
                                                     evt.stopPropagation();
