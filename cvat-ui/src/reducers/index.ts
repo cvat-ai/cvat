@@ -329,16 +329,18 @@ export interface UserAgreementsState {
     initialized: boolean;
 }
 
+export type RemoteFileType = 'DIR' | 'REG';
+
 export interface ShareFileInfo {
     // get this data from cvat-core
     name: string;
-    type: 'DIR' | 'REG';
+    type: RemoteFileType
     mime_type: string;
 }
 
 export interface ShareItem {
     name: string;
-    type: 'DIR' | 'REG';
+    type: RemoteFileType
     mime_type: string;
     children: ShareItem[];
 }

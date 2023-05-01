@@ -16,9 +16,8 @@ import Alert from 'antd/lib/alert';
 import { ValidateErrorEntity } from 'rc-field-form/lib/interface';
 import { StorageLocation } from 'reducers';
 import { getCore, Storage } from 'cvat-core-wrapper';
-import ConnectedFileManager from 'containers/file-manager/file-manager';
 import LabelsEditor from 'components/labels-editor/labels-editor';
-import { Files } from 'components/file-manager/file-manager';
+import FileManagerComponent, { Files } from 'components/file-manager/file-manager';
 import { getFileContentType, getContentTypeRemoteFile, getFileNameFromPath } from 'utils/files';
 
 import BasicConfigurationForm, { BaseConfiguration } from './basic-configuration-form';
@@ -103,7 +102,7 @@ const UploadFileErrorMessages = {
 class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps, State> {
     private basicConfigurationComponent: RefObject<BasicConfigurationForm>;
     private advancedConfigurationComponent: RefObject<AdvancedConfigurationForm>;
-    private fileManagerContainer: any;
+    private fileManagerComponent: any;
 
     public constructor(props: Props & RouteComponentProps) {
         super(props);
@@ -137,7 +136,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         this.basicConfigurationComponent.current?.resetFields();
         this.advancedConfigurationComponent.current?.resetFields();
 
-        this.fileManagerContainer.reset();
+        this.fileManagerComponent.reset();
 
         this.setState((state) => ({
             ...defaultState,
@@ -155,7 +154,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
 
         if (activeFileManagerTab === 'cloudStorage') {
             this.setState({
-                cloudStorageId: this.fileManagerContainer.getCloudStorageId(),
+                cloudStorageId: this.fileManagerComponent.getCloudStorageId(),
             });
         }
         const totalLen = Object.keys(files).reduce((acc, key: string) => acc + files[(key as TabName)].length, 0);
@@ -758,15 +757,15 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                 <Col span={24}>
                     <Text type='danger'>* </Text>
                     <Text className='cvat-text-color'>Select files</Text>
-                    <ConnectedFileManager
+                    <FileManagerComponent
                         many={many}
                         onChangeActiveKey={this.changeFileManagerTab}
                         onUploadLocalFiles={this.handleUploadLocalFiles}
                         onUploadRemoteFiles={this.handleUploadRemoteFiles}
                         onUploadShareFiles={this.handleUploadShareFiles}
                         onUploadCloudStorageFiles={this.handleUploadCloudStorageFiles}
-                        ref={(container: any): void => {
-                            this.fileManagerContainer = container;
+                        ref={(component): void => {
+                            this.fileManagerComponent = component;
                         }}
                     />
                 </Col>

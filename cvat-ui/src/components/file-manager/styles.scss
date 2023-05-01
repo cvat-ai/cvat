@@ -5,11 +5,7 @@
 
 @import '../../base.scss';
 
-.cvat-share-tree-initialization {
-    height: 32 * $grid-unit-size;
-}
-
-.cvat-cloud-storage-browser-nav-breadcrumb {
+.cvat-remote-browser-nav-breadcrumb {
     transition: all 0.5s;
     border-radius: 2px;
     padding-left: $grid-unit-size / 2;
@@ -23,7 +19,14 @@
     }
 }
 
-.cvat-cloud-storage-browser-table-wrapper {
+.cvat-remote-browser-empty {
+    text-align: center;
+    width: 50%;
+    margin-left: 25%;
+    margin-top: $grid-unit-size * 4;
+}
+
+.cvat-remote-browser-table-wrapper {
     overflow-y: auto;
 
     .ant-table-wrapper {
@@ -35,7 +38,7 @@
         }
     }
 
-    .cvat-cloud-storage-browser-pages {
+    .cvat-remote-browser-pages {
         display: flex;
         justify-content: center;
         margin-top: $grid-unit-size;
@@ -48,7 +51,7 @@
             display: none;
         }
 
-        .cvat-cloud-storage-browser-receive-more-btn {
+        .cvat-remote-browser-receive-more-btn {
             margin-left: $grid-unit-size * 2;
             margin-right: $grid-unit-size * 2;
             pointer-events: all;
@@ -62,18 +65,6 @@
     }
 }
 
-.cvat-share-tree {
-    @extend .cvat-share-tree-initialization;
-}
-
-.cvat-empty-share-tree {
-    @extend .cvat-share-tree-initialization;
-
-    > .ant-typography {
-        margin-top: 10px;
-    }
-}
-
 .cvat-file-manager-local-tab {
     > span:nth-child(1) {
         display: block;
@@ -83,22 +74,4 @@
 .cvat-create-task-page-cloud-storages-tab {
     display: flex;
     justify-content: space-between;
-}
-
-.cvat-create-task-page-cloud-storages-tab-form {
-    .cvat-empty-cloud-storages-tree {
-        background-color: $background-color-2;
-        border: 1px;
-        box-sizing: border-box;
-        border-radius: $grid-unit-size * 0.5;
-        text-align: center;
-
-        > .ant-typography {
-            margin-top: $grid-unit-size * 1.25;
-        }
-
-        > .cvat-cloud-storage-icon {
-            font-size: $grid-unit-size * 20;
-        }
-    }
 }

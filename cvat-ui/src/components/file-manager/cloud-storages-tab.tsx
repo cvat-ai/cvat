@@ -7,7 +7,7 @@ import './styles.scss';
 import React, { useEffect, useState } from 'react';
 import Form from 'antd/lib/form';
 import Select from 'antd/lib/select';
-import { CloudStorage } from 'reducers';
+import { CloudStorage, RemoteFileType } from 'reducers';
 import SelectCloudStorage from 'components/select-cloud-storage/select-cloud-storage';
 import config from 'config';
 import CloudStorageBrowser from './remote-browser';
@@ -17,7 +17,7 @@ interface Props {
     cloudStorage: CloudStorage | null;
     searchPhrase: string;
     setSearchPhrase: (searchPhrase: string) => void;
-    onSelectFiles: (files: string[]) => void;
+    onSelectFiles: (files: { key: string, type: RemoteFileType }[]) => void;
     onSelectCloudStorage: (cloudStorageId: number | null) => void;
 }
 
@@ -43,8 +43,7 @@ export default function CloudStorageTab(props: Props): JSX.Element {
     }, [selectedSource]);
 
     return (
-        <Form ref={formRef} className='cvat-create-task-page-cloud-storages-tab-form' layout='vertical'>
-
+        <Form ref={formRef} layout='vertical'>
             <SelectCloudStorage
                 searchPhrase={searchPhrase}
                 cloudStorage={cloudStorage}

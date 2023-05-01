@@ -7,25 +7,35 @@ import Breadcrumb from 'antd/lib/breadcrumb';
 import Button from 'antd/lib/button';
 import Pagination from 'antd/lib/pagination';
 import Table from 'antd/lib/table';
-import { CloudStorage } from 'reducers';
+import Paragraph from 'antd/lib/typography/Paragraph';
+import Text from 'antd/lib/typography/Text';
+
+import config from 'config';
+import { CloudStorage, RemoteFileType } from 'reducers';
 import { useIsMounted } from 'utils/hooks';
 import { RightOutlined } from '@ant-design/icons';
+import { getCore } from 'cvat-core-wrapper';
+import { Empty } from 'antd';
 
 interface Node {
     children: Node[];
     initialized: boolean;
     name: string;
     key: string;
-    type: 'REG' | 'DIR';
+    type: RemoteFileType;
+    mime_type?: string;
 }
 
 interface Props {
-    cloudStorage: CloudStorage;
+    cloudStorage: CloudStorage | 'share';
     manifestPath?: string;
-    onSelectFiles: (checkedKeysValue: string[]) => void;
+    onSelectFiles: (checkedKeysValue: { key: string, type: RemoteFileType, mime_type?: string }[]) => void;
 }
 
+const core = getCore();
+
 function RemoteBrowser(props: Props): JSX.Element {
+    const { SHARE_MOUNT_GUIDE_URL } = config;
     const { cloudStorage, manifestPath, onSelectFiles } = props;
     const isMounted = useIsMounted();
     const [currentPath, setCurrentPath] = useState(['root']);
@@ -52,25 +62,46 @@ function RemoteBrowser(props: Props): JSX.Element {
             const isRoot = (): boolean => currentPath.slice(1).length === 0;
             const path = `${currentPath.slice(1).join('/')}/`;
             setFetching(true);
-            cloudStorage.getContent(path, nextToken, manifestPath).then((response: { next: string | null, content: Omit<Node, 'key'>[] }) => {
-                const { next, content: children } = response;
-                if (isMounted()) {
-                    target.initialized = true;
-                    target.children = target.children.concat(children.map((child) => ({
-                        ...child,
-                        key: isRoot() ? child.name : `${path}${child.name}`,
-                        initialized: false,
-                        children: child.children || [],
-                    })));
+            if (cloudStorage === 'share') {
+                core.server.share(path).then((files: (Omit<Node, 'key' | 'children'>)[]) => {
+                    if (isMounted()) {
+                        const converted = files.map((child) => ({
+                            ...child,
+                            key: isRoot() ? child.name : `${path}${child.name}`,
+                            initialized: false,
+                            children: [],
+                        }));
 
-                    setContent({ ...content });
-                    setNextToken(next);
-                }
-            }).finally(() => {
-                if (isMounted()) {
-                    setFetching(false);
-                }
-            });
+                        target.initialized = true;
+                        target.children = target.children.concat(converted);
+                        setContent({ ...content });
+                    }
+                }).finally(() => {
+                    if (isMounted()) {
+                        setFetching(false);
+                    }
+                });
+            } else {
+                cloudStorage.getContent(path, nextToken, manifestPath).then((response: { next: string | null, content: Omit<Node, 'key' | 'children'>[] }) => {
+                    const { next, content: children } = response;
+                    if (isMounted()) {
+                        target.initialized = true;
+                        target.children = target.children.concat(children.map((child) => ({
+                            ...child,
+                            key: isRoot() ? child.name : `${path}${child.name}`,
+                            initialized: false,
+                            children: [],
+                        })));
+
+                        setContent({ ...content });
+                        setNextToken(next);
+                    }
+                }).finally(() => {
+                    if (isMounted()) {
+                        setFetching(false);
+                    }
+                });
+            }
         }
     };
 
@@ -83,9 +114,9 @@ function RemoteBrowser(props: Props): JSX.Element {
     }, [cloudStorage]);
 
     useEffect(() => {
-        const pagesContainer = window.document.getElementsByClassName('cvat-cloud-storage-browser-pages')[0];
-        const anchor = window.document.querySelectorAll('.cvat-cloud-storage-browser-pages .ant-pagination-next')[0];
-        const button = window.document.getElementsByClassName('cvat-cloud-storage-browser-receive-more-btn')[0];
+        const pagesContainer = window.document.getElementsByClassName('cvat-remote-browser-pages')[0];
+        const anchor = window.document.querySelectorAll('.cvat-remote-browser-pages .ant-pagination-next')[0];
+        const button = window.document.getElementsByClassName('cvat-remote-browser-receive-more-btn')[0];
         if (pagesContainer && button && anchor) {
             pagesContainer.insertBefore(button, anchor);
         }
@@ -114,12 +145,27 @@ function RemoteBrowser(props: Props): JSX.Element {
         dataSource = child as Node;
     }
 
+    if (content.initialized && !content.children.length && cloudStorage === 'share') {
+        return (
+            <>
+                <Empty />
+                <Paragraph className='cvat-remote-browser-empty'>
+                    Please, be sure you had
+                    <Text strong>
+                        <a href={SHARE_MOUNT_GUIDE_URL}> mounted </a>
+                    </Text>
+                    share before you built CVAT and the shared storage contains files
+                </Paragraph>
+            </>
+        );
+    }
+
     return (
         <div>
             <Breadcrumb>
                 {currentPath.map((segment: string) => (
                     <Breadcrumb.Item
-                        className='cvat-cloud-storage-browser-nav-breadcrumb'
+                        className='cvat-remote-browser-nav-breadcrumb'
                         onClick={() => {
                             if (segment !== currentPath[currentPath.length - 1]) {
                                 setCurrentPath(
@@ -133,12 +179,12 @@ function RemoteBrowser(props: Props): JSX.Element {
                     </Breadcrumb.Item>
                 ))}
             </Breadcrumb>
-            <div className='cvat-cloud-storage-browser-table-wrapper'>
+            <div className='cvat-remote-browser-table-wrapper'>
                 <Table
                     rowSelection={{
                         type: 'checkbox',
-                        onChange: (selectedRowKeys) => {
-                            onSelectFiles(selectedRowKeys.map((key) => key.toLocaleString()));
+                        onChange: (_, selectedRows) => {
+                            onSelectFiles(selectedRows);
                         },
                         preserveSelectedRowKeys: true,
                     }}
@@ -154,7 +200,7 @@ function RemoteBrowser(props: Props): JSX.Element {
                     dataSource={dataSource.children}
                 />
                 <Pagination
-                    className='cvat-cloud-storage-browser-pages'
+                    className='cvat-remote-browser-pages'
                     pageSize={pageSize}
                     size='small'
                     total={dataSource.children.length}
@@ -180,7 +226,7 @@ function RemoteBrowser(props: Props): JSX.Element {
                 {
                     !!nextToken && (
                         <RightOutlined
-                            className='cvat-cloud-storage-browser-receive-more-btn'
+                            className='cvat-remote-browser-receive-more-btn'
                             disabled={!nextToken}
                             onClick={(evt: MouseEvent) => {
                                 if (!isFetching) {
@@ -197,6 +243,3 @@ function RemoteBrowser(props: Props): JSX.Element {
 }
 
 export default React.memo(RemoteBrowser);
-
-// переписать шару на эту же логику
-// multi videos creating
