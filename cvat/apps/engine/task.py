@@ -213,7 +213,10 @@ def _count_files(data):
 def _find_manifest_files(data):
     manifest_files = []
     for files in ['client_files', 'server_files', 'remote_files']:
-        manifest_files.extend(list(filter(lambda x: x.endswith('.jsonl'), data[files])))
+        current_manifest_files = list(filter(lambda x: x.endswith('.jsonl'), data[files]))
+        if current_manifest_files:
+            manifest_files.extend(current_manifest_files)
+            data[files] = [f for f in data[files] if f not in current_manifest_files]
     return manifest_files
 
 def _validate_data(counter, manifest_files=None):
@@ -460,7 +463,7 @@ def _create_thread(
 
     if is_data_in_cloud:
         manifest = ImageManifestManager(db_data.get_manifest_path())
-        if db_data.cloud_storage.has_at_least_one_manifest and manifest_file:
+        if manifest_file:
             cloud_storage_manifest = ImageManifestManager(
                 os.path.join(db_data.cloud_storage.get_storage_dirname(), manifest_file),
                 db_data.cloud_storage.get_storage_dirname()
@@ -474,7 +477,7 @@ def _create_thread(
 
     # update list with server files if task creation approach with pattern and manifest file is used
     if is_data_in_cloud and data['filename_pattern']:
-        if not db_data.cloud_storage.has_at_least_one_manifest:
+        if not manifest or not db_data.cloud_storage.has_at_least_one_manifest:
             raise ValidationError(
                 "Using a filename_pattern is only supported with manifest file, "
                 "but specified cloud storage doesn't linked with a manifest."
@@ -508,12 +511,26 @@ def _create_thread(
             # this means that the data has not been downloaded from the storage to the host
             _copy_data_from_source(data['server_files'], upload_dir, data.get('server_files_path'))
         elif is_data_in_cloud:
+            # check if the directories are in the list
+            if (dirs:= list(filter(lambda x: x.endswith('/'), data['server_files']))):
+                additional_files = []
+                cloud_storage_instance = db_storage_to_storage_instance(db_data.cloud_storage)
+                number_of_files = len(data['server_files']) - len(dirs)
+                for directory in dirs:
+                    additional_files.extend(cloud_storage_instance.list_files(prefix=directory))
+                    data['server_files'].pop(directory)
+                    if (len(additional_files) + number_of_files) > settings.CLOUD_STORAGE_MAX_FILES_COUNT:
+                        raise ValidationError(
+                            'The maximum number of the cloud storage attached files '
+                            f'is {settings.CLOUD_STORAGE_MAX_FILES_COUNT}')
+                data['server_files'].extend(additional_files)
+                del additional_files
             if job_file_mapping is not None:
                 sorted_media = list(itertools.chain.from_iterable(job_file_mapping))
             else:
                 sorted_media = sort(media['image'], data['sorting_method'])
 
-            if db_data.cloud_storage.has_at_least_one_manifest and manifest:
+            if manifest:
                 # Define task manifest content based on cloud storage manifest content and uploaded files
                 _create_task_manifest_based_on_cloud_storage_manifest(
                     sorted_media, cloud_storage_manifest_prefix,

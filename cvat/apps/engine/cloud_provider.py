@@ -234,13 +234,30 @@ class _CloudStorage(ABC):
         pass
 
     @abstractmethod
-    def list_files(
+    def list_files_on_one_page(
         self,
         prefix: Optional[str] = None,
-        delimiter: Optional[str] = None,
+        delimiter: Optional[str] = '/',
         next_token: Optional[str] = None,
     ) -> Dict:
         pass
+
+    def list_files(
+        self,
+        prefix: Optional[str] = None,
+        delimiter: Optional[str] = '/',
+    ) -> List[str]:
+        all_files = []
+        next_token = None
+        while True:
+            batch = self.list_files_on_one_page(prefix, delimiter, next_token)
+            all_files.extend(batch['content'])
+            next_token = batch['next']
+            if not next_token:
+                break
+
+        return all_files
+
 
     def __contains__(self, file_name):
         return file_name in (item['name'] for item in self._files)
@@ -413,10 +430,10 @@ class AWS_S3(_CloudStorage):
             'name': item.key,
         } for item in files if _is_image(item.key)]
 
-    def list_files(
+    def list_files_on_one_page(
         self,
         prefix: Optional[str] = None,
-        delimiter: Optional[str] = None,
+        delimiter: Optional[str] = '/',
         next_token: Optional[str] = None,
     ) -> Dict:
         kwargs = {
@@ -435,15 +452,19 @@ class AWS_S3(_CloudStorage):
         #    'CommonPrefixes': [{'Prefix': 'sub/'}],
         #    'Contents': [{'ETag': '', 'Key': 'test.jpg', ..., 'Size': 1024}],
         #    ...
-        #    'ContinuationToken': 'str'
+        #    'NextContinuationToken': 'str'
         # }
         response = self._client.list_objects_v2(**kwargs)
         content = [{'name': f['Key'], 'type': 'REG'} for f in response.get('Contents', [])]
-        content.extend([{'name': p['Prefix'], 'type': 'DIR'} for p in response.get('CommonPrefixes', [])])
+        content.extend([{'name': p['Prefix'].strip('/'), 'type': 'DIR'} for p in response.get('CommonPrefixes', [])])
+
+        if prefix:
+            for f in content:
+                f['name'] = f['name'][len(prefix):]
 
         return {
             'content': content,
-            'next': response.get('ContinuationToken', None),
+            'next': response.get('NextContinuationToken', None),
         }
 
     @validate_file_status
@@ -617,10 +638,10 @@ class AzureBlobContainer(_CloudStorage):
             'name': item.name
         } for item in files if _is_image(item.name)]
 
-    def list_files(
+    def list_files_on_one_page(
         self,
         prefix: Optional[str] = None,
-        delimiter: Optional[str] = None,
+        delimiter: Optional[str] = '/',
         next_token: Optional[str] = None
     ) -> Dict:
         kwargs = {
@@ -634,10 +655,14 @@ class AzureBlobContainer(_CloudStorage):
 
         page = self._client.walk_blobs(**kwargs).by_page(continuation_token=next_token)
         all_files = list(next(page))
+
         content = list(
-            map(lambda x: {'name': x.name, 'type': 'REG'} if not isinstance(x, _list_blobs_helper.BlobPrefix) else {'name': x.prefix, 'type': 'DIR'},
+            map(lambda x: {'name': x.name, 'type': 'REG'} if not isinstance(x, _list_blobs_helper.BlobPrefix) else {'name': x.prefix.strip('/'), 'type': 'DIR'},
                 all_files
         ))
+        if prefix:
+            for f in content:
+                f['name'] = f['name'][len(prefix):]
         next_token = page.continuation_token
 
         return {
@@ -737,10 +762,10 @@ class GoogleCloudStorage(_CloudStorage):
             ) if _is_image(blob.name)
         ]
 
-    def list_files(
+    def list_files_on_one_page(
         self,
         prefix: Optional[str] = None,
-        delimiter: Optional[str] = None,
+        delimiter: Optional[str] = '/',
         next_token: Optional[str] = None
     ) -> Dict:
         kwargs = {
@@ -763,7 +788,11 @@ class GoogleCloudStorage(_CloudStorage):
         prefixes = iterator.prefixes
 
         content = [{'name': f.name, 'type': 'REG'} for f in files]
-        content.extend([{'name': p, 'type': 'DIR'} for p in prefixes])
+        content.extend([{'name': p.strip('/'), 'type': 'DIR'} for p in prefixes])
+
+        if prefix:
+            for f in content:
+                f['name'] = f['name'][len(prefix):]
 
         return {
             'content': content,

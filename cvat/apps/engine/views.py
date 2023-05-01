@@ -2099,6 +2099,10 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         try:
             db_storage = self.get_object()
             storage = db_storage_to_storage_instance(db_storage)
+            prefix = request.query_params.get('prefix')
+            delimiter = request.query_params.get('delimiter', '/')
+            next_token = request.query_params.get('next_token')
+
             if (manifest_path := request.query_params.get('manifest_path')):
                 manifest_prefix = os.path.dirname(manifest_path)
 
@@ -2109,17 +2113,13 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 manifest = ImageManifestManager(full_manifest_path, db_storage.get_storage_dirname())
                 # need to update index
                 manifest.set_index()
-                # TODO: don't forget to update the implementation with manifest's content too
-                content = [os.path.join(manifest_prefix, f) for f in manifest.data]
+                # TODO: fix problem with manifest_prefix
+                content = manifest.emulate_hierarchical_structure(manifest_prefix, prefix)
             else:
-                prefix = request.query_params.get('prefix')
-                delimiter = request.query_params.get('delimiter', '/')
-                next_token = request.query_params.get('next_token')
-
-                content = storage.list_files(prefix, delimiter, next_token)
-                serializer = CloudStorageContentSerializer(data=content)
-                serializer.is_valid(raise_exception=True)
-                content = serializer.data
+                content = storage.list_files_on_one_page(prefix, delimiter, next_token)
+            serializer = CloudStorageContentSerializer(data=content)
+            serializer.is_valid(raise_exception=True)
+            content = serializer.data
             return Response(data=content)
 
         except CloudStorageModel.DoesNotExist:

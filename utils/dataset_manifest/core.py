@@ -391,7 +391,7 @@ class _ManifestManager(ABC):
                 offset = self._index[line]
                 manifest_file.seek(offset)
                 properties = manifest_file.readline()
-                parsed_properties = json.loads(properties)
+                parsed_properties = ImageProperties(json.loads(properties))
                 self._json_item_is_valid(**parsed_properties)
                 return parsed_properties
 
@@ -432,7 +432,7 @@ class _ManifestManager(ABC):
             for idx, line_start in enumerate(self._index):
                 manifest_file.seek(line_start)
                 line = manifest_file.readline()
-                item = json.loads(line)
+                item = ImageProperties(json.loads(line))
                 self._json_item_is_valid(**item)
                 yield (idx, item)
 
@@ -583,6 +583,11 @@ class VideoManifestValidator(VideoManifestManager):
                 assert frames == self.video_length, "The uploaded manifest does not match the video"
                 return
 
+class ImageProperties(dict):
+    @property
+    def full_name(self):
+        return f"{self['name']}{self['extension']}"
+
 class ImageManifestManager(_ManifestManager):
     _required_item_attributes = {'name', 'extension'}
 
@@ -627,13 +632,13 @@ class ImageManifestManager(_ManifestManager):
 
     @property
     def data(self):
-        return (f"{image['name']}{image['extension']}" for _, image in self)
+        return (f"{image.full_name}" for _, image in self)
 
     def get_subset(self, subset_names):
         index_list = []
         subset = []
         for _, image in self:
-            image_name = f"{image['name']}{image['extension']}"
+            image_name = f"{image.full_name}"
             if image_name in subset_names:
                 index_list.append(subset_names.index(image_name))
                 properties = {
@@ -649,6 +654,31 @@ class ImageManifestManager(_ManifestManager):
                 subset.append(properties)
         return index_list, subset
 
+    def emulate_hierarchical_structure(
+        self,
+        manifest_prefix: Optional[str],
+        prefix: Optional[str] = None,
+        next_token: Optional[str] = None
+    ) -> Dict:
+
+        content = list(map(lambda x: x[1].full_name, self))
+        if manifest_prefix:
+            content = [os.path.join(manifest_prefix, f) for f in content]
+        if prefix:
+            content = list(filter(lambda x: x.startswith(prefix), content))
+            if prefix.endswith('/'):
+                content = [f[len(prefix):] for f in content]
+
+        level_in_hierarchical_structure = list(
+            map(
+                lambda x: {'name': x, 'type': 'DIR' if x.endswith('/') else 'REG'},
+                set(f.split(os.path.sep)[0] if f == f.split(os.path.sep)[0] else f'{f.split(os.path.sep)[0]}/' for f in content)
+            )
+        )
+        return {
+            'content': level_in_hierarchical_structure,
+            'next': None,
+        }
 
 class _BaseManifestValidator(ABC):
     def __init__(self, full_manifest_path):
