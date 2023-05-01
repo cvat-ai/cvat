@@ -382,7 +382,7 @@ class CommonData(InstanceLabelData):
             type=label.type
         )
 
-    def group_by_frame(self, include_empty=False):
+    def group_by_frame(self, include_empty: bool = False):
         frames = {}
         def get_frame(idx):
             frame_info = self._frame_info[idx]
@@ -415,9 +415,8 @@ class CommonData(InstanceLabelData):
         anno_manager = AnnotationManager(self._annotation_ir)
         for shape in sorted(
             anno_manager.to_shapes(self.stop, self._annotation_ir.dimension,
-                # Also we skipped deleted and excluded frames here
-                included_frames=included_frames,
-                include_outside_frames=False
+                # Skip outside, deleted and excluded frames
+                included_frames=included_frames, include_outside=False
             ),
             key=lambda shape: shape.get("z_order", 0)
         ):
@@ -438,7 +437,7 @@ class CommonData(InstanceLabelData):
                     get_frame(shape['frame']).labels.update({label.id: label})
 
         for tag in self._annotation_ir.tags:
-            if tag['frame'] not in self._frame_info or tag['frame'] in self._deleted_frames:
+            if tag['frame'] not in included_frames:
                 continue
             get_frame(tag['frame']).tags.append(self._export_tag(tag))
 

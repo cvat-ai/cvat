@@ -161,9 +161,12 @@ class AnnotationManager:
         tracks = TrackManager(self.data.tracks, dimension)
         tracks.merge(data.tracks, start_frame, overlap, dimension)
 
-    def to_shapes(self, end_frame, dimension, *,
+    def to_shapes(self,
+        end_frame: int,
+        dimension: DimensionType,
+        *,
         included_frames: Optional[Sequence[int]] = None,
-        include_outside_frames: bool = False
+        include_outside: bool = False
     ):
         shapes = self.data.shapes
         tracks = TrackManager(self.data.tracks, dimension)
@@ -172,7 +175,8 @@ class AnnotationManager:
             shapes = [s for s in shapes if s["frame"] in included_frames]
 
         return shapes + tracks.to_shapes(end_frame,
-            included_frames=included_frames, include_outside_frames=include_outside_frames)
+            included_frames=included_frames, include_outside=include_outside
+        )
 
     def to_tracks(self):
         tracks = self.data.tracks
@@ -418,7 +422,7 @@ class TrackManager(ObjectManager):
 
     def to_shapes(self, end_frame: int, *,
         included_frames: Optional[Sequence[int]] = None,
-        include_outside_frames: bool = False,
+        include_outside: bool = False,
     ):
         shapes = []
         for idx, track in enumerate(self.objects):
@@ -429,12 +433,9 @@ class TrackManager(ObjectManager):
                 0,
                 end_frame,
                 self._dimension,
-                include_outside_frames=include_outside_frames,
+                include_outside=include_outside,
                 included_frames=included_frames,
             ):
-                if included_frames is not None and shape["frame"] not in included_frames:
-                    continue
-
                 shape["label_id"] = track["label_id"]
                 shape["group"] = track["group"]
                 shape["track_id"] = idx
@@ -451,16 +452,16 @@ class TrackManager(ObjectManager):
                 track_elements = TrackManager(track["elements"], self._dimension)
                 element_shapes = track_elements.to_shapes(end_frame,
                     included_frames=set(track_shapes.keys()) & (included_frames or []),
-                    include_outside_frames=True # elements are controlled by the parent shape
+                    include_outside=True # elements are controlled by the parent shape
                 )
 
                 for shape in element_shapes:
                     assert shape["frame"] in set(track_shapes.keys()) & (included_frames or [])
                     track_shapes[shape["frame"]]["elements"].append(shape)
 
-                # TODO: think if the whole shape can be filtered out if all elements are outside
-                # and outside shapes are not required
-                if not include_outside_frames:
+                # The whole shape can be filtered out, if all its elements are outside,
+                # and outside shapes are not requested.
+                if not include_outside:
                     track_shapes = {
                         k: v for k, v in track_shapes.items()
                         if any(not elem["outside"] for elem in v["elements"])
@@ -532,7 +533,8 @@ class TrackManager(ObjectManager):
     @staticmethod
     def get_interpolated_shapes(
         track, start_frame, end_frame, dimension, *,
-        include_outside_frames=False, included_frames=None
+        included_frames: Optional[Sequence[int]] = None,
+        include_outside: bool = False,
     ):
         def my_deepcopy(v):
             if isinstance(v, dict):
@@ -898,14 +900,14 @@ class TrackManager(ObjectManager):
                     if attr["spec_id"] not in map(lambda el: el["spec_id"], shape["attributes"]):
                         shape["attributes"].append(my_deepcopy(attr))
 
-                if not prev_shape["outside"] or include_outside_frames:
+                if not prev_shape["outside"] or include_outside:
                     shapes.extend(interpolate(prev_shape, shape))
 
             shape["keyframe"] = True
             shapes.append(shape)
             prev_shape = shape
 
-        if prev_shape and (not prev_shape["outside"] or include_outside_frames):
+        if prev_shape and (not prev_shape["outside"] or include_outside):
             # When the latest keyframe of a track is less than the end_frame
             # and it is not outside, need to propagate
             shapes.extend(propagate(prev_shape, end_frame, included_frames=included_frames))
@@ -918,7 +920,7 @@ class TrackManager(ObjectManager):
             # https://github.com/openvinotoolkit/cvat/issues/2827
             if track["frame"] <= shape["frame"] < end_frame
 
-            if not shape["outside"] or include_outside_frames
+            if not shape["outside"] or include_outside
             if included_frames is None or shape["frame"] in included_frames
         ]
 
