@@ -480,6 +480,9 @@ class TrackManager(ObjectManager):
         # Just for unification. All tracks are assigned on the same frame
         objects_by_frame = {0: []}
         for obj in objects:
+            if not obj["shapes"]:
+                continue
+
             shape = obj["shapes"][-1] # optimization for old tracks
             if shape["frame"] >= start_frame or not shape["outside"]:
                 objects_by_frame[0].append(obj)
@@ -502,9 +505,11 @@ class TrackManager(ObjectManager):
             end_frame = start_frame + overlap
             obj0_shapes = TrackManager.get_interpolated_shapes(obj0, start_frame, end_frame, dimension)
             obj1_shapes = TrackManager.get_interpolated_shapes(obj1, start_frame, end_frame, dimension)
+            if not obj0_shapes or not obj1_shapes:
+                return 0
+
             obj0_shapes_by_frame = {shape["frame"]:shape for shape in obj0_shapes}
             obj1_shapes_by_frame = {shape["frame"]:shape for shape in obj1_shapes}
-            assert obj0_shapes_by_frame and obj1_shapes_by_frame
 
             count, error = 0, 0
             for frame in range(start_frame, end_frame):
