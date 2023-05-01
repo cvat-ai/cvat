@@ -83,8 +83,12 @@ class TestGetJobs:
         for job in jobs[:8]:
             self._test_get_job_200("admin2", job["id"], job, **kwargs)
 
-    @pytest.mark.parametrize("groups, allow", [(["business"], True), (["user"], True), (["worker"], False)])
-    def test_non_admin_org_staff_can_get_job(self, groups, allow, users, organizations, org_staff, jobs_by_org):
+    @pytest.mark.parametrize(
+        "groups, allow", [(["business"], True), (["user"], True), (["worker"], False)]
+    )
+    def test_non_admin_org_staff_can_get_job(
+        self, groups, allow, users, organizations, org_staff, jobs_by_org
+    ):
         user, org_id = next(
             (user, org["id"])
             for user in users
@@ -108,13 +112,17 @@ class TestGetJobs:
         self._test_get_job_200(user["username"], job["id"], job)
 
     @pytest.mark.parametrize("groups", [["business"], ["user"], ["worker"]])
-    def test_non_admin_non_job_staff_non_org_staff_cannot_get_job(self, groups, users, organizations, org_staff, jobs, is_job_staff):
+    def test_non_admin_non_job_staff_non_org_staff_cannot_get_job(
+        self, groups, users, organizations, org_staff, jobs, is_job_staff
+    ):
         user, job_id = next(
             (user, job["id"])
             for user in users
             for org in organizations
             for job in jobs
-            if user["groups"] == groups and user["id"] not in org_staff(org["id"]) and not is_job_staff(user["id"], job["id"])
+            if user["groups"] == groups
+            and user["id"] not in org_staff(org["id"])
+            and not is_job_staff(user["id"], job["id"])
         )
         self._test_get_job_403(user["username"], job_id)
 
