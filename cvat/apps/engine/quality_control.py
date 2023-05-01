@@ -1376,60 +1376,70 @@ class QueueJobManager:
 
     @classmethod
     def _save_reports(cls, *, task_report, job_reports) -> models.QualityReport:
-        db_task_report = models.QualityReport.objects.create(
+        # TODO: add full validation (e.g. ann id count for different types of conflicts)
+
+        db_task_report = models.QualityReport(
             task=task_report['task'],
             target_last_updated=task_report['target_last_updated'],
             gt_last_updated=task_report['gt_last_updated'],
             data=task_report['data'],
         )
+        db_task_report.full_clean()
+        db_task_report.save()
+
+        db_job_reports = []
+        for job_report in job_reports:
+            db_job_report = models.QualityReport(
+                parent=db_task_report,
+                job=job_report['job'],
+                target_last_updated=job_report['target_last_updated'],
+                gt_last_updated=job_report['gt_last_updated'],
+                data=job_report['data'],
+            )
+            db_job_report.full_clean()
+            db_job_reports.append(db_job_report)
 
         db_job_reports = bulk_create(
             db_model=models.QualityReport,
-            objects=[
-                models.QualityReport(
-                    parent=db_task_report,
-                    job=job_report['job'],
-                    target_last_updated=job_report['target_last_updated'],
-                    gt_last_updated=job_report['gt_last_updated'],
-                    data=job_report['data'],
-                )
-                for job_report in job_reports
-            ],
+            objects=db_job_reports,
             flt_param={}
         )
 
+        db_conflicts = []
         db_report_iter = itertools.chain([db_task_report], db_job_reports)
         report_iter = itertools.chain([task_report], job_reports)
-        db_conflicts = bulk_create(
-            db_model=models.AnnotationConflict,
-            objects=[
-                models.AnnotationConflict(
+        for report, db_report in zip(report_iter, db_report_iter):
+            for conflict in report['conflicts']:
+                db_conflict = models.AnnotationConflict(
                     report=db_report,
                     type=conflict['type'],
                     frame=conflict['frame_id'],
                 )
-                for db_report, report in zip(db_report_iter, report_iter)
-                for conflict in report['conflicts']
-            ],
+                db_conflict.full_clean()
+                db_conflicts.append(db_conflict)
+
+        db_conflicts = bulk_create(
+            db_model=models.AnnotationConflict,
+            objects=db_conflicts,
             flt_param={}
         )
 
-        report_iter = itertools.chain([task_report], job_reports)
+        db_ann_ids = []
         db_conflicts_iter = iter(db_conflicts)
-        bulk_create(
+        for report in itertools.chain([task_report], job_reports):
+            for conflict, db_conflict in zip(report['conflicts'], db_conflicts_iter):
+                for ann_id in conflict['annotation_ids']:
+                    db_ann_id = models.AnnotationId(
+                        conflict=db_conflict,
+                        job_id=ann_id['job_id'],
+                        obj_id=ann_id['obj_id'],
+                        type=ann_id['type'],
+                    )
+                    db_ann_id.full_clean()
+                    db_ann_ids.append(db_ann_id)
+
+        db_ann_ids = bulk_create(
             db_model=models.AnnotationId,
-            objects=[
-                models.AnnotationId(
-                    conflict=db_conflict,
-                    job_id=ann_id['job_id'],
-                    obj_id=ann_id['obj_id'],
-                    type=ann_id['type'],
-                )
-                for report in report_iter
-                for db_conflict, conflict in zip(db_conflicts_iter, report['conflicts'])
-                for ann_id in conflict['annotation_ids']
-            ],
+            objects=db_ann_ids,
             flt_param={}
         )
-
-        # TODO: add validation
