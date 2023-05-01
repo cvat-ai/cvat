@@ -878,18 +878,24 @@ class TrackManager(ObjectManager):
             curr_frame = shape["frame"]
             if prev_shape and end_frame <= curr_frame:
                 # If we exceed the end_frame and there was a previous shape,
-                # we need to interpolate up to the next keyframe,
+                # we still need to interpolate up to the next keyframe,
                 # but keep the results only up to the end_frame:
                 #        vvvvvvv
                 # ---- | ------- | ----- | ----->
                 #     prev      end   cur kf
                 interpolated = interpolate(prev_shape, shape)
+                interpolated.append(shape)
 
                 for shape in sorted(interpolated, key=lambda shape: shape["frame"]):
                     if shape["frame"] < end_frame:
                         shapes.append(shape)
                     else:
                         break
+
+                # Update the last added shape
+                shape["keyframe"] = True
+                prev_shape = shape
+
                 break # The track finishes here
 
             if prev_shape:
