@@ -70,9 +70,6 @@ const defaultState: NotificationsState = {
         about: {
             fetching: null,
         },
-        share: {
-            fetching: null,
-        },
         models: {
             starting: null,
             fetching: null,

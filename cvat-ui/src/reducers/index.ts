@@ -331,26 +331,6 @@ export interface UserAgreementsState {
 
 export type RemoteFileType = 'DIR' | 'REG';
 
-export interface ShareFileInfo {
-    // get this data from cvat-core
-    name: string;
-    type: RemoteFileType
-    mime_type: string;
-}
-
-export interface ShareItem {
-    name: string;
-    type: RemoteFileType
-    mime_type: string;
-    children: ShareItem[];
-}
-
-export interface ShareState {
-    root: ShareItem;
-    fetching: boolean;
-    initialized: boolean;
-}
-
 export interface ModelAttribute {
     name: string;
     values: string[];
@@ -474,9 +454,6 @@ export interface NotificationsState {
             fetching: null | ErrorState;
         };
         about: {
-            fetching: null | ErrorState;
-        };
-        share: {
             fetching: null | ErrorState;
         };
         models: {
@@ -896,7 +873,6 @@ export interface CombinedState {
     jobs: JobsState;
     tasks: TasksState;
     about: AboutState;
-    share: ShareState;
     formats: FormatsState;
     userAgreements: UserAgreementsState;
     plugins: PluginsState;
