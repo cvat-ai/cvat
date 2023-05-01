@@ -55,17 +55,12 @@ function RemoteBrowser(props: Props): JSX.Element {
                 const { next, content: children } = response;
                 if (isMounted()) {
                     target.initialized = true;
-                    target.children = children.map((child) => {
-                        const splittedName = child.name.split('/');
-                        const name = splittedName[child.type === 'REG' ? splittedName.length - 1 : splittedName.length - 2].replaceAll(/\//g, '');
-                        return ({
-                            ...child,
-                            name,
-                            key: isRoot() ? name : `${path}${name}`,
-                            initialized: false,
-                            children: child.children || [],
-                        });
-                    });
+                    target.children = children.map((child) => ({
+                        ...child,
+                        key: isRoot() ? child.name : `${path}${child.name}`,
+                        initialized: false,
+                        children: child.children || [],
+                    }));
 
                     setContent({ ...content });
                     setNextToken(next);
