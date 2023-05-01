@@ -1378,7 +1378,7 @@ class QueueJobManager:
 
     @classmethod
     def _save_reports(cls, *, task_report, job_reports) -> models.QualityReport:
-        # TODO: add full validation (e.g. ann id count for different types of conflicts)
+        # TODO: add validation (e.g. ann id count for different types of conflicts)
 
         db_task_report = models.QualityReport(
             task=task_report['task'],
@@ -1386,7 +1386,6 @@ class QueueJobManager:
             gt_last_updated=task_report['gt_last_updated'],
             data=task_report['data'],
         )
-        db_task_report.full_clean()
         db_task_report.save()
 
         db_job_reports = []
@@ -1398,7 +1397,6 @@ class QueueJobManager:
                 gt_last_updated=job_report['gt_last_updated'],
                 data=job_report['data'],
             )
-            db_job_report.full_clean()
             db_job_reports.append(db_job_report)
 
         db_job_reports = bulk_create(
@@ -1417,7 +1415,6 @@ class QueueJobManager:
                     type=conflict['type'],
                     frame=conflict['frame_id'],
                 )
-                db_conflict.full_clean()
                 db_conflicts.append(db_conflict)
 
         db_conflicts = bulk_create(
@@ -1437,7 +1434,6 @@ class QueueJobManager:
                         obj_id=ann_id['obj_id'],
                         type=ann_id['type'],
                     )
-                    db_ann_id.full_clean()
                     db_ann_ids.append(db_ann_id)
 
         db_ann_ids = bulk_create(
