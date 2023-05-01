@@ -458,7 +458,7 @@ class AWS_S3(_CloudStorage):
         content = [{'name': f['Key'], 'type': 'REG'} for f in response.get('Contents', [])]
         content.extend([{'name': p['Prefix'].strip('/'), 'type': 'DIR'} for p in response.get('CommonPrefixes', [])])
 
-        if prefix:
+        if prefix and prefix.endswith('/'):
             for f in content:
                 f['name'] = f['name'][len(prefix):]
 
@@ -660,7 +660,7 @@ class AzureBlobContainer(_CloudStorage):
             map(lambda x: {'name': x.name, 'type': 'REG'} if not isinstance(x, _list_blobs_helper.BlobPrefix) else {'name': x.prefix.strip('/'), 'type': 'DIR'},
                 all_files
         ))
-        if prefix:
+        if prefix and prefix.endswith('/'):
             for f in content:
                 f['name'] = f['name'][len(prefix):]
         next_token = page.continuation_token
@@ -790,7 +790,7 @@ class GoogleCloudStorage(_CloudStorage):
         content = [{'name': f.name, 'type': 'REG'} for f in files]
         content.extend([{'name': p.strip('/'), 'type': 'DIR'} for p in prefixes])
 
-        if prefix:
+        if prefix and prefix.endswith('/'):
             for f in content:
                 f['name'] = f['name'][len(prefix):]
 
