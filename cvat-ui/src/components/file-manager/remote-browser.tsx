@@ -2,7 +2,9 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { MouseEvent, useEffect, useState } from 'react';
+import React, {
+    MouseEvent, useEffect, useState, useRef,
+} from 'react';
 import Breadcrumb from 'antd/lib/breadcrumb';
 import Button from 'antd/lib/button';
 import Pagination from 'antd/lib/pagination';
@@ -28,28 +30,33 @@ interface Node {
 }
 
 interface Props {
-    resource: CloudStorage | 'share';
+    resource: 'share' | CloudStorage;
     manifestPath?: string;
     onSelectFiles: (checkedKeysValue: { key: string, type: RemoteFileType, mime_type?: string }[]) => void;
 }
 
 const core = getCore();
 
+const defaultPath = ['root'];
+const defaultRoot: Node = {
+    name: 'root',
+    key: 'root',
+    children: [],
+    type: 'DIR',
+    initialized: false,
+    nextToken: null,
+};
+
 function RemoteBrowser(props: Props): JSX.Element {
     const { SHARE_MOUNT_GUIDE_URL } = config;
     const { resource, manifestPath, onSelectFiles } = props;
     const isMounted = useIsMounted();
-    const [currentPath, setCurrentPath] = useState(['root']);
+    const resourceRef = useRef<Props['resource']>(resource);
+    const manifestPathRef = useRef<string | undefined>(manifestPath);
+    const [currentPath, setCurrentPath] = useState([...defaultPath]);
     const [currentPage, setCurrentPage] = useState(1);
     const [isFetching, setFetching] = useState(false);
-    const [content, setContent] = useState<Node>({
-        name: 'root',
-        key: 'root',
-        children: [],
-        type: 'DIR',
-        initialized: false,
-        nextToken: null,
-    });
+    const [content, setContent] = useState<Node>({ ...defaultRoot });
 
     const updateContent = async (): Promise<void> => {
         let target = content;
@@ -70,6 +77,15 @@ function RemoteBrowser(props: Props): JSX.Element {
                 }))
             );
             setFetching(true);
+            const currentResource = resourceRef.current;
+            const currentManifest = manifestPathRef.current;
+            const isRelevant = (): boolean => (
+                // check if component is still relevant after async request, and resource & share are the same
+                // if not, results are not valid anymore
+                isMounted() &&
+                currentResource === resourceRef.current &&
+                currentManifest === manifestPathRef.current
+            );
             try {
                 let nodes: Node[] = [];
                 if (resource === 'share') {
@@ -85,16 +101,18 @@ function RemoteBrowser(props: Props): JSX.Element {
 
                 target.children = target.children.concat(nodes);
                 target.initialized = true;
-                if (isMounted()) {
+                if (isRelevant()) {
                     setContent({ ...content });
                 }
             } catch (error: any) {
-                notification.error({
-                    message: 'Storage content fetching failed',
-                    description: error.toString(),
-                });
+                if (isRelevant()) {
+                    notification.error({
+                        message: 'Storage content fetching failed',
+                        description: error.toString(),
+                    });
+                }
             } finally {
-                if (isMounted()) {
+                if (isRelevant()) {
                     setFetching(false);
                 }
             }
@@ -102,12 +120,20 @@ function RemoteBrowser(props: Props): JSX.Element {
     };
 
     useEffect(() => {
-        updateContent();
-    }, [currentPath]);
+        if (resourceRef.current !== resource || manifestPathRef.current !== manifestPath) {
+            setContent({ ...defaultRoot });
+            setCurrentPage(1);
+            setFetching(false);
+            setCurrentPath([...defaultPath]);
+            onSelectFiles([]);
+            resourceRef.current = resource;
+            manifestPathRef.current = manifestPath;
+        }
+    }, [resource, manifestPath]);
 
     useEffect(() => {
-        onSelectFiles([]);
-    }, [resource]);
+        updateContent();
+    }, [currentPath]);
 
     useEffect(() => {
         const button = window.document.getElementsByClassName('cvat-remote-browser-receive-more-btn')[0];
@@ -172,21 +198,20 @@ function RemoteBrowser(props: Props): JSX.Element {
     return (
         <div>
             <Breadcrumb>
-                {currentPath.map((segment: string) => (
-                    <Breadcrumb.Item
-                        className='cvat-remote-browser-nav-breadcrumb'
-                        onClick={() => {
-                            if (segment !== currentPath[currentPath.length - 1]) {
-                                setCurrentPath(
-                                    currentPath.slice(0, currentPath.findIndex((val) => val === segment) + 1),
-                                );
-                            }
-                        }}
-                        key={segment}
-                    >
-                        {segment}
-                    </Breadcrumb.Item>
-                ))}
+                {currentPath.map((segment: string, idx: number) => {
+                    const key = currentPath.slice(0, idx + 1).join('/');
+                    return (
+                        <Breadcrumb.Item
+                            className='cvat-remote-browser-nav-breadcrumb'
+                            onClick={() => {
+                                setCurrentPath(key.split('/'));
+                            }}
+                            key={key}
+                        >
+                            {segment}
+                        </Breadcrumb.Item>
+                    );
+                })}
             </Breadcrumb>
             <div className='cvat-remote-browser-table-wrapper'>
                 <Table

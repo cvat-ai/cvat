@@ -32,7 +32,9 @@ export default function CloudStorageTab(props: Props): JSX.Element {
 
     useEffect(() => {
         if (cloudStorage) {
-            setSelectedSource(cloudStorage.manifests[0]);
+            const source = cloudStorage.manifests[0] || config.BUCKET_CONTENT_KEY;
+            setSelectedSource(source);
+            formRef.current.setFieldsValue({ manifestSelect: source });
         }
     }, [cloudStorage?.id]);
 
@@ -77,7 +79,11 @@ export default function CloudStorageTab(props: Props): JSX.Element {
                     name='cloudStorageFiles'
                     rules={[{ required: true, message: 'Please, select a files' }]}
                 >
-                    <CloudStorageBrowser resource={cloudStorage} onSelectFiles={onSelectFiles} />
+                    <CloudStorageBrowser
+                        resource={cloudStorage}
+                        manifestPath={selectedSource === config.BUCKET_CONTENT_KEY ? undefined : selectedSource}
+                        onSelectFiles={onSelectFiles}
+                    />
                 </Form.Item>
             ) : null}
         </Form>

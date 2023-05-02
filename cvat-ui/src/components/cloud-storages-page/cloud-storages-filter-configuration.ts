@@ -46,8 +46,8 @@ export const config: Partial<Config> = {
             valueSources: ['value'],
             operators: ['like'],
         },
-        display_name: {
-            label: 'Display name',
+        name: {
+            label: 'Name',
             type: 'text',
             valueSources: ['value'],
             operators: ['like'],
