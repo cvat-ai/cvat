@@ -531,9 +531,7 @@ class TestGetLabels(_TestLabelsPermissionsBase):
             self._test_get_denied(user["username"], label["id"])
 
     def test_regular_user_get_org_label(self, user_org_case):
-        label, user, is_staff = get_attrs(
-            user_org_case, ["label", "user", "is_staff"]
-        )
+        label, user, is_staff = get_attrs(user_org_case, ["label", "user", "is_staff"])
 
         if is_staff:
             self._test_get_ok(user["username"], label["id"], label)
