@@ -290,7 +290,6 @@ class TestPatchCloudStorage:
     def test_sandbox_user_update_cloud_storage(
         self, storage_id, group, is_owner, is_allow, users, cloud_storages
     ):
-        org = ""
         cloud_storage = cloud_storages[storage_id]
         username = (
             cloud_storage["owner"]["username"]
