@@ -246,6 +246,15 @@ function RemoteBrowser(props: Props): JSX.Element {
                         onChange: (_selectedRowKeys) => {
                             let copy = _selectedRowKeys.slice(0);
 
+                            // select parent if all children have been selected
+                            if (!copy.includes(dataSource.key)) {
+                                const baseLength = dataSource.key.split('/').length;
+                                const levelKeys = copy.filter((key) => key.toLocaleString().split('/').length === baseLength + 1);
+                                if (levelKeys.length === dataSource.children.length) {
+                                    copy.push(dataSource.key);
+                                }
+                            }
+
                             // deselect children if parent was deselected
                             const deselectedKeys = selectedRowKeys.filter((key) => !_selectedRowKeys.includes(key));
                             for (const key of deselectedKeys) {
@@ -255,9 +264,6 @@ function RemoteBrowser(props: Props): JSX.Element {
                             // deselect parent if a child was deselected
                             copy = copy.filter((key) => !deselectedKeys
                                 .some((_key) => _key.toLocaleString().startsWith(key.toLocaleString())));
-
-                            // select parent if all children have been selected
-                            // todo?
 
                             // select all children if parent was selected
                             const selectChildren = (node: Node): void => {
