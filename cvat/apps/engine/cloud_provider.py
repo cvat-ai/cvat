@@ -620,7 +620,7 @@ class AzureBlobContainer(_CloudStorage):
 
     @validate_bucket_status
     def upload_fileobj(self, file_obj, file_name):
-        self._client.upload_blob(name=file_name, data=file_obj)
+        self._client.upload_blob(name=file_name, data=file_obj, overwrite=True)
 
     def upload_file(self, file_path, file_name=None):
         if not file_name:
