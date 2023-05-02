@@ -1364,7 +1364,7 @@ class LabeledDataSerializer(serializers.Serializer):
 class FileInfoSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=1024)
     type = serializers.ChoiceField(choices=["REG", "DIR"])
-    mime_type = serializers.CharField(max_length=255, required=False)
+    mime_type = serializers.CharField(max_length=255, required=False, allow_null=True)
 
 class AnnotationFileSerializer(serializers.Serializer):
     annotation_file = serializers.FileField()
