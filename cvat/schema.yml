@@ -229,6 +229,10 @@ paths:
       operationId: cloudstorages_list
       summary: Returns a paginated list of storages
       parameters:
+      - in: header
+        name: X-Organization
+        schema:
+          type: string
       - name: credentials_type
         in: query
         description: A simple equality filter for the credentials_type field
@@ -261,7 +265,7 @@ paths:
       - in: query
         name: org_id
         schema:
-          type: string
+          type: int
         description: Organization identifier
       - name: owner
         in: query
@@ -653,6 +657,10 @@ paths:
       operationId: comments_list
       summary: Method returns a paginated list of comments
       parameters:
+      - in: header
+        name: X-Organization
+        schema:
+          type: string
       - name: filter
         required: false
         in: query
@@ -683,7 +691,7 @@ paths:
       - in: query
         name: org_id
         schema:
-          type: string
+          type: int
         description: Organization identifier
       - name: owner
         in: query
@@ -928,6 +936,21 @@ paths:
       operationId: events_create
       description: Sends logs to the Clickhouse if it is connected
       summary: Method saves logs from a client on the server
+      parameters:
+      - in: header
+        name: X-Organization
+        schema:
+          type: string
+      - in: query
+        name: org
+        schema:
+          type: string
+        description: Organization unique slug
+      - in: query
+        name: org_id
+        schema:
+          type: integer
+        description: Organization identifier
       tags:
       - events
       requestBody:
@@ -954,6 +977,10 @@ paths:
       operationId: invitations_list
       summary: Method returns a paginated list of invitations
       parameters:
+      - in: header
+        name: X-Organization
+        schema:
+          type: string
       - name: filter
         required: false
         in: query
@@ -968,7 +995,7 @@ paths:
       - in: query
         name: org_id
         schema:
-          type: string
+          type: int
         description: Organization identifier
       - name: owner
         in: query
@@ -1136,6 +1163,10 @@ paths:
       operationId: issues_list
       summary: Method returns a paginated list of issues
       parameters:
+      - in: header
+        name: X-Organization
+        schema:
+          type: string
       - name: assignee
         in: query
         description: A simple equality filter for the assignee field
@@ -1166,7 +1197,7 @@ paths:
       - in: query
         name: org_id
         schema:
-          type: string
+          type: int
         description: Organization identifier
       - name: owner
         in: query
@@ -1345,6 +1376,10 @@ paths:
       operationId: jobs_list
       summary: Method returns a paginated list of jobs
       parameters:
+      - in: header
+        name: X-Organization
+        schema:
+          type: string
       - name: assignee
         in: query
         description: A simple equality filter for the assignee field
@@ -1374,7 +1409,7 @@ paths:
       - in: query
         name: org_id
         schema:
-          type: string
+          type: int
         description: Organization identifier
       - name: page
         required: false
@@ -1960,6 +1995,10 @@ paths:
       operationId: labels_list
       summary: Method returns a paginated list of labels
       parameters:
+      - in: header
+        name: X-Organization
+        schema:
+          type: string
       - name: color
         in: query
         description: A simple equality filter for the color field
@@ -1990,7 +2029,7 @@ paths:
       - in: query
         name: org_id
         schema:
-          type: string
+          type: int
         description: Organization identifier
       - name: page
         required: false
@@ -2293,6 +2332,10 @@ paths:
       operationId: memberships_list
       summary: Method returns a paginated list of memberships
       parameters:
+      - in: header
+        name: X-Organization
+        schema:
+          type: string
       - name: filter
         required: false
         in: query
@@ -2308,7 +2351,7 @@ paths:
       - in: query
         name: org_id
         schema:
-          type: string
+          type: int
         description: Organization identifier
       - name: page
         required: false
@@ -2447,6 +2490,10 @@ paths:
       operationId: organizations_list
       summary: Method returns a paginated list of organizations
       parameters:
+      - in: header
+        name: X-Organization
+        schema:
+          type: string
       - name: filter
         required: false
         in: query
@@ -2467,7 +2514,7 @@ paths:
       - in: query
         name: org_id
         schema:
-          type: string
+          type: int
         description: Organization identifier
       - name: owner
         in: query
@@ -2625,6 +2672,10 @@ paths:
       operationId: projects_list
       summary: Returns a paginated list of projects
       parameters:
+      - in: header
+        name: X-Organization
+        schema:
+          type: string
       - name: assignee
         in: query
         description: A simple equality filter for the assignee field
@@ -2650,7 +2701,7 @@ paths:
       - in: query
         name: org_id
         schema:
-          type: string
+          type: int
         description: Organization identifier
       - name: owner
         in: query
@@ -3414,6 +3465,10 @@ paths:
       operationId: tasks_list
       summary: Returns a paginated list of tasks
       parameters:
+      - in: header
+        name: X-Organization
+        schema:
+          type: string
       - name: assignee
         in: query
         description: A simple equality filter for the assignee field
@@ -3453,7 +3508,7 @@ paths:
       - in: query
         name: org_id
         schema:
-          type: string
+          type: int
         description: Organization identifier
       - name: owner
         in: query
@@ -4294,6 +4349,10 @@ paths:
       operationId: users_list
       summary: Method returns a paginated list of users
       parameters:
+      - in: header
+        name: X-Organization
+        schema:
+          type: string
       - name: filter
         required: false
         in: query
@@ -4324,7 +4383,7 @@ paths:
       - in: query
         name: org_id
         schema:
-          type: string
+          type: int
         description: Organization identifier
       - name: page
         required: false
@@ -4474,6 +4533,10 @@ paths:
       operationId: webhooks_list
       summary: Method returns a paginated list of webhook according to query parameters
       parameters:
+      - in: header
+        name: X-Organization
+        schema:
+          type: string
       - name: filter
         required: false
         in: query
@@ -4489,7 +4552,7 @@ paths:
       - in: query
         name: org_id
         schema:
-          type: string
+          type: int
         description: Organization identifier
       - name: owner
         in: query
@@ -4708,6 +4771,10 @@ paths:
       operationId: webhooks_list_deliveries
       summary: Method return a list of deliveries for a specific webhook
       parameters:
+      - in: header
+        name: X-Organization
+        schema:
+          type: string
       - name: filter
         required: false
         in: query
@@ -4728,7 +4795,7 @@ paths:
       - in: query
         name: org_id
         schema:
-          type: string
+          type: int
         description: Organization identifier
       - name: page
         required: false

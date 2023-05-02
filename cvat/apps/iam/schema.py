@@ -35,6 +35,12 @@ class OrganizationFilterExtension(OpenApiFilterExtension):
                 required=False,
                 location=OpenApiParameter.QUERY,
                 description=self.target.organization_id_description,
+                schema={'type': 'int'},
+            ),
+            build_parameter_type(
+                name='X-Organization',
+                required=False,
+                location=OpenApiParameter.HEADER,
                 schema={'type': 'string'},
             )
         ]
