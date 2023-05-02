@@ -30,6 +30,7 @@ import cvat.apps.dataset_manager as dm
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.models import Job, ShapeType, SourceType, Task
 from cvat.apps.engine.serializers import LabeledDataSerializer
+from cvat.apps.engine.schema import OrganizationOpenApiParameters
 from cvat.utils.http import make_requests_session
 
 
@@ -794,9 +795,10 @@ class FunctionViewSet(viewsets.ViewSet):
         summary='Method returns a list of requests'),
     #TODO
     create=extend_schema(
-        summary='Method calls the function'),
-    delete=extend_schema(
-        summary='Method cancels the request')
+        parameters=OrganizationOpenApiParameters,
+        summary='Method calls the function'
+    ),
+    delete=extend_schema(summary='Method cancels the request')
 )
 class RequestViewSet(viewsets.ViewSet):
     iam_organization_field = None

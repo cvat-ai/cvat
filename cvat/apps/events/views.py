@@ -13,6 +13,7 @@ from rest_framework.renderers import JSONRenderer
 from cvat.apps.iam.permissions import EventsPermission
 from cvat.apps.events.serializers import ClientEventsSerializer
 from cvat.apps.engine.log import vlogger
+from cvat.apps.engine.schema import OrganizationOpenApiParameters
 from .export import export
 
 class EventsViewSet(viewsets.ViewSet):
@@ -21,6 +22,7 @@ class EventsViewSet(viewsets.ViewSet):
     @extend_schema(summary='Method saves logs from a client on the server',
         methods=['POST'],
         description='Sends logs to the Clickhouse if it is connected',
+        parameters=OrganizationOpenApiParameters,
         request=ClientEventsSerializer(),
         responses={
             '201': ClientEventsSerializer(),

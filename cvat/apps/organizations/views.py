@@ -9,6 +9,7 @@ from django.utils.crypto import get_random_string
 
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
 from cvat.apps.engine.mixins import PartialUpdateModelMixin
+from cvat.apps.engine.schema import OrganizationOpenApiParameters
 
 from cvat.apps.iam.permissions import (
     InvitationPermission, MembershipPermission, OrganizationPermission)
@@ -160,6 +161,7 @@ class MembershipViewSet(mixins.RetrieveModelMixin, mixins.DestroyModelMixin,
     create=extend_schema(
         summary='Method creates an invitation',
         request=InvitationWriteSerializer,
+        parameters=OrganizationOpenApiParameters,
         responses={
             '201': InvitationReadSerializer, # check InvitationWriteSerializer.to_representation
         }),

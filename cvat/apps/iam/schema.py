@@ -112,30 +112,6 @@ class CustomAutoSchema(AutoSchema):
     Adds organization context parameters to all endpoints
     """
 
-    def get_override_parameters(self):
-        return [
-            OpenApiParameter(
-                name='org',
-                type=str,
-                required=False,
-                location=OpenApiParameter.QUERY,
-                description="Organization unique slug",
-            ),
-            OpenApiParameter(
-                name='org_id',
-                type=int,
-                required=False,
-                location=OpenApiParameter.QUERY,
-                description="Organization identifier",
-            ),
-            OpenApiParameter(
-                name='X-Organization',
-                type=str,
-                required=False,
-                location=OpenApiParameter.HEADER
-            ),
-        ]
-
     def get_operation_id(self):
         tokenized_path = self._tokenize_path()
         # replace dashes as they can be problematic later in code generation
