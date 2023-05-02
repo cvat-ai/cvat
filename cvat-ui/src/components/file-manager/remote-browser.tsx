@@ -53,6 +53,7 @@ function RemoteBrowser(props: Props): JSX.Element {
     const isMounted = useIsMounted();
     const resourceRef = useRef<Props['resource']>(resource);
     const manifestPathRef = useRef<string | undefined>(manifestPath);
+    const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
     const [currentPath, setCurrentPath] = useState([...defaultPath]);
     const [currentPage, setCurrentPage] = useState(1);
     const [isFetching, setFetching] = useState(false);
@@ -102,6 +103,15 @@ function RemoteBrowser(props: Props): JSX.Element {
                 target.children = target.children.concat(nodes);
                 target.initialized = true;
                 if (isRelevant()) {
+                    // select all new children if parent was selected
+                    if (selectedRowKeys.includes(target.key)) {
+                        const copy = selectedRowKeys.slice(0);
+                        for (const child of nodes) {
+                            copy.push(child.key);
+                        }
+                        setSelectedRowKeys(copy);
+                    }
+
                     setContent({ ...content });
                 }
             } catch (error: any) {
@@ -125,7 +135,7 @@ function RemoteBrowser(props: Props): JSX.Element {
             setCurrentPage(1);
             setFetching(false);
             setCurrentPath([...defaultPath]);
-            onSelectFiles([]);
+            setSelectedRowKeys([]);
             resourceRef.current = resource;
             manifestPathRef.current = manifestPath;
         }
@@ -134,6 +144,20 @@ function RemoteBrowser(props: Props): JSX.Element {
     useEffect(() => {
         updateContent();
     }, [currentPath]);
+
+    useEffect(() => {
+        const nodes: Node[] = [];
+        const collectNodes = (node: Node): void => {
+            for (const child of node.children) {
+                if (selectedRowKeys.includes(child.key)) {
+                    nodes.push(child);
+                }
+                collectNodes(child);
+            }
+        };
+        collectNodes(content);
+        onSelectFiles(nodes);
+    }, [selectedRowKeys]);
 
     useEffect(() => {
         const button = window.document.getElementsByClassName('cvat-remote-browser-receive-more-btn')[0];
@@ -218,10 +242,58 @@ function RemoteBrowser(props: Props): JSX.Element {
                     scroll={{ y: 472 }}
                     rowSelection={{
                         type: 'checkbox',
-                        onChange: (_, selectedRows) => {
-                            onSelectFiles(selectedRows);
+                        selectedRowKeys,
+                        onChange: (_selectedRowKeys) => {
+                            let copy = _selectedRowKeys.slice(0);
+                            const deselectedKeys = selectedRowKeys.filter((key) => !_selectedRowKeys.includes(key));
+                            for (const key of deselectedKeys) {
+                                // deselect children if parent was deselected
+                                copy = copy.filter((_key) => !_key.toLocaleString().startsWith(key.toLocaleString()));
+                            }
+
+                            // deselect parent if a child was deselected
+                            copy = copy.filter((key) => !deselectedKeys
+                                .some((_key) => _key.toLocaleString().startsWith(key.toLocaleString())));
+
+                            // select parent if all children have been selected
+                            // todo?
+
+                            // select all children if parent was selected
+                            const selectChildren = (node: Node): void => {
+                                for (const child of node.children) {
+                                    if (!copy.includes(child.key)) {
+                                        copy.push(child.key);
+                                        selectChildren(child);
+                                    }
+                                }
+                            };
+                            const listenedNodes = dataSource.children;
+                            for (const node of listenedNodes) {
+                                if (copy.includes(node.key)) {
+                                    selectChildren(node);
+                                }
+                            }
+
+                            setSelectedRowKeys(copy);
                         },
                         preserveSelectedRowKeys: true,
+                        getCheckboxProps: (record: Node) => {
+                            const strKeys = selectedRowKeys.map((key) => key.toLocaleString());
+                            const subkeys = strKeys.filter((key: string) => (
+                                key.startsWith(record.key) && key.length > record.key.length
+                            ));
+
+                            const some = !!subkeys.length;
+                            const every = strKeys.includes(record.key);
+
+                            if (some && !every) {
+                                return {
+                                    indeterminate: true,
+                                };
+                            }
+
+                            return {};
+                        },
                     }}
                     childrenColumnName='$children'
                     loading={isFetching}
