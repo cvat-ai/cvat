@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: '2.5'
+  version: 2.5
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -746,6 +746,7 @@ paths:
   /api/cloudstorages/{id}/content:
     get:
       operationId: cloudstorages_retrieve_content
+      description: This method was deprecated. Please use the new version of API.
       summary: Method returns a manifest content
       parameters:
       - in: header
@@ -781,6 +782,7 @@ paths:
         tokenAuth: []
       - signatureAuth: []
       - basicAuth: []
+      deprecated: true
       responses:
         '200':
           content:
@@ -789,6 +791,66 @@ paths:
                 type: array
                 items:
                   type: string
+          description: A manifest content
+  /api/cloudstorages/{id}/content-v2:
+    get:
+      operationId: cloudstorages_retrieve_content_v2
+      summary: Method returns the content of the cloud storage
+      parameters:
+      - in: header
+        name: X-Organization
+        schema:
+          type: string
+      - in: query
+        name: delimiter
+        schema:
+          type: string
+        description: The character you use to group keys
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this cloud storage.
+        required: true
+      - in: query
+        name: manifest_path
+        schema:
+          type: string
+        description: Path to the manifest file in a cloud storage
+      - in: query
+        name: next_token
+        schema:
+          type: string
+        description: Used to continue listing files in the bucket
+      - in: query
+        name: org
+        schema:
+          type: string
+        description: Organization unique slug
+      - in: query
+        name: org_id
+        schema:
+          type: integer
+        description: Organization identifier
+      - in: query
+        name: prefix
+        schema:
+          type: string
+        description: Prefix to filter data
+      tags:
+      - cloudstorages
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/CloudStorageContent'
           description: A manifest content
   /api/cloudstorages/{id}/preview:
     get:
@@ -6445,6 +6507,18 @@ components:
           format: date-time
       required:
       - timestamp
+    CloudStorageContent:
+      type: object
+      properties:
+        next:
+          type: string
+          nullable: true
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/FileInfo'
+      required:
+      - content
     CloudStorageRead:
       type: object
       properties:
@@ -6977,9 +7051,9 @@ components:
           $ref: '#/components/schemas/FileInfoTypeEnum'
         mime_type:
           type: string
+          nullable: true
           maxLength: 255
       required:
-      - mime_type
       - name
       - type
     FileInfoTypeEnum:
