@@ -10,8 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TDB
 
 ### Changed
-- Docker images no longer include Ubuntu package sources or FFmpeg/OpenH264 sources
-  (<https://github.com/opencv/cvat/pull/6040>)
+- TDB
 
 ### Deprecated
 - TDB
@@ -20,7 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TDB
 
 ### Fixed
-- TDB
+- Tracking of multiple objects (30 and more) with TransT tracker
+  (<https://github.com/opencv/cvat/pull/6073>)
+- The issue azure.core.exceptions.ResourceExistsError: The specified blob already exists (<https://github.com/opencv/cvat/pull/6082>)
+- Image scaling when moving between images with different resolution (<https://github.com/opencv/cvat/pull/6081>)
 
 ### Security
 - TDB
