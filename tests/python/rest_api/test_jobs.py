@@ -129,6 +129,13 @@ class TestListJobs:
             results = get_paginated_collection(
                 client.jobs_api.list_endpoint, return_json=True, **kwargs
             )
+            import json
+            f = open('response.json', 'w')
+            json.dump(results, f, indent=4, sort_keys=True)
+            f.close()
+            f = open('data.json', 'w')
+            json.dump(data, f, indent=4, sort_keys=True)
+            f.close()
             assert (
                 DeepDiff(data, results, exclude_paths="root['updated_date']", ignore_order=True)
                 == {}

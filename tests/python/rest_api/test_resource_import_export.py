@@ -270,9 +270,9 @@ class TestImportResourceFromS3(_S3ResourceTest):
     @pytest.mark.parametrize(
         "obj, resource, expected_status",
         [
-            ("projects", "dataset", HTTPStatus.NOT_FOUND),
-            ("tasks", "annotations", HTTPStatus.NOT_FOUND),
-            ("jobs", "annotations", HTTPStatus.NOT_FOUND),
+            ("projects", "dataset", HTTPStatus.FORBIDDEN),
+            ("tasks", "annotations", HTTPStatus.FORBIDDEN),
+            ("jobs", "annotations", HTTPStatus.FORBIDDEN),
             ("tasks", "backup", HTTPStatus.FORBIDDEN),
             ("projects", "backup", HTTPStatus.FORBIDDEN),
         ],

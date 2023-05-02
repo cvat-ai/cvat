@@ -240,11 +240,10 @@ def test_organization_contexts(admin_user: str):
         client.projects.retrieve(personal_project.id)
         client.projects.retrieve(org_project.id)
 
-        # only the organizational project should be visible in the organization
+        # org context doesn't make sense for detailed request
         client.organization_slug = org.slug
         client.projects.retrieve(org_project.id)
-        with pytest.raises(NotFoundException):
-            client.projects.retrieve(personal_project.id)
+        client.projects.retrieve(personal_project.id)
 
 
 def test_organization_context_manager():
