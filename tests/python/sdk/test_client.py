@@ -10,7 +10,6 @@ from typing import List, Tuple
 import packaging.version as pv
 import pytest
 from cvat_sdk import Client, models
-from cvat_sdk.api_client.exceptions import NotFoundException
 from cvat_sdk.core.client import Config, make_client
 from cvat_sdk.core.exceptions import IncompatibleVersionException, InvalidHostException
 from cvat_sdk.exceptions import ApiException
