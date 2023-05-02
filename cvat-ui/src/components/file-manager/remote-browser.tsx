@@ -246,24 +246,49 @@ function RemoteBrowser(props: Props): JSX.Element {
                         onChange: (_selectedRowKeys) => {
                             let copy = _selectedRowKeys.slice(0);
 
-                            // select parent if all children have been selected
                             if (!copy.includes(dataSource.key)) {
-                                const baseLength = dataSource.key.split('/').length;
-                                const levelKeys = copy.filter((key) => key.toLocaleString().split('/').length === baseLength + 1);
-                                if (levelKeys.length === dataSource.children.length) {
+                                // select parent if all children have been selected
+                                if (dataSource.children.every((child) => copy.includes(child.key))) {
                                     copy.push(dataSource.key);
+
+                                    // also update all the parents recoursively
+                                    const traverse = (node: Node, selectedKeys: React.Key[]): boolean => {
+                                        if (dataSource === node) {
+                                            return true;
+                                        }
+
+                                        for (const child of node.children) {
+                                            // true if target node is a descendant and it was added to keys
+                                            const val = traverse(child, selectedKeys);
+                                            if (val) {
+                                                // check and update ancestor if necessary
+                                                if (node.children
+                                                    .every((_child) => selectedKeys.includes(_child.key))) {
+                                                    selectedKeys.push(node.key);
+                                                    return true;
+                                                }
+                                            }
+                                        }
+
+                                        return false;
+                                    };
+
+                                    for (const child of content.children) {
+                                        traverse(child, copy);
+                                    }
                                 }
                             }
 
                             // deselect children if parent was deselected
                             const deselectedKeys = selectedRowKeys.filter((key) => !_selectedRowKeys.includes(key));
                             for (const key of deselectedKeys) {
-                                copy = copy.filter((_key) => !_key.toLocaleString().startsWith(key.toLocaleString()));
+                                copy = copy.filter((_key) => !_key.toLocaleString()
+                                    .startsWith(`${key.toLocaleString()}/`));
                             }
 
                             // deselect parent if a child was deselected
                             copy = copy.filter((key) => !deselectedKeys
-                                .some((_key) => _key.toLocaleString().startsWith(key.toLocaleString())));
+                                .some((_key) => _key.toLocaleString().startsWith(`${key.toLocaleString()}/`)));
 
                             // select all children if parent was selected
                             const selectChildren = (node: Node): void => {
@@ -287,7 +312,7 @@ function RemoteBrowser(props: Props): JSX.Element {
                         getCheckboxProps: (record: Node) => {
                             const strKeys = selectedRowKeys.map((key) => key.toLocaleString());
                             const subkeys = strKeys.filter((key: string) => (
-                                key.startsWith(record.key) && key.length > record.key.length
+                                key.startsWith(`${record.key}/`) && key.length > record.key.length
                             ));
 
                             const some = !!subkeys.length;
