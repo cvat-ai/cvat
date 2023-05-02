@@ -245,9 +245,10 @@ function RemoteBrowser(props: Props): JSX.Element {
                         selectedRowKeys,
                         onChange: (_selectedRowKeys) => {
                             let copy = _selectedRowKeys.slice(0);
+
+                            // deselect children if parent was deselected
                             const deselectedKeys = selectedRowKeys.filter((key) => !_selectedRowKeys.includes(key));
                             for (const key of deselectedKeys) {
-                                // deselect children if parent was deselected
                                 copy = copy.filter((_key) => !_key.toLocaleString().startsWith(key.toLocaleString()));
                             }
 

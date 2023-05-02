@@ -30,6 +30,10 @@
     .ant-table-wrapper {
         height: $grid-unit-size * 64;
 
+        .ant-table-body {
+            overflow-y: auto !important;
+        }
+
         .ant-pagination {
             display: none;
         }
