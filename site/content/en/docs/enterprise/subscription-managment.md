@@ -38,15 +38,22 @@ See:
 This section describes the billing model and gives short a
 description of limitations for each plan.
 
+For more information,
+see: [Pricing Plans](https://www.cvat.ai/post/new-pricing-plans)
+
 ### Pro plan
 
-**Account/Month**: Set price. You cannot collaborate with team members.
-**For personal use only.**
+**Account/Month**: The **Pro** plan has a fixed price and is
+designed for personal use only.  It doesn't allow collaboration with team members,
+but removes all the other limits of the **Free** plan.
+
 
 ### Team plan
 
-**Member/ month**: Monthly payment depends on the number of members you’ve added.
-**You can collaborate with team members**. Works within one organization.
+**Member/ month**: The **Team** plan allows you to create
+an organization and add team members who can collaborate on projects.
+The **monthly payment for the plan depends on the number of team members you've added**.
+All limits of the **Free** plan will be removed.
 
 ## Change payment method
 

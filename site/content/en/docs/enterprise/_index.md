@@ -9,7 +9,7 @@ We provide a variety of premium features exclusively for our paying customers.
 
 For further details, please visit:
 
-- [Tailored Cloud Plans for individuals and teams](https://www.cvat.ai/pricing/on-prem)
+- [Tailored Cloud Plans for individuals and teams](https://www.cvat.ai/pricing/cloud)
   to explore paid plans on [CVAT.ai](https://app.cvat.ai/).
 - [Self-hosted Pricing Plans](https://www.cvat.ai/pricing/on-prem) to
   discover pricing options for community and enterprise self-hosted solutions.
