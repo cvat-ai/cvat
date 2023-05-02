@@ -129,13 +129,6 @@ class TestListJobs:
             results = get_paginated_collection(
                 client.jobs_api.list_endpoint, return_json=True, **kwargs
             )
-            import json
-            f = open('response.json', 'w')
-            json.dump(results, f, indent=4, sort_keys=True)
-            f.close()
-            f = open('data.json', 'w')
-            json.dump(data, f, indent=4, sort_keys=True)
-            f.close()
             assert (
                 DeepDiff(data, results, exclude_paths="root['updated_date']", ignore_order=True)
                 == {}
@@ -770,3 +763,19 @@ class TestGetJobPreview:
                     self._test_get_job_preview_200(user["username"], job["id"], **kwargs)
                 else:
                     self._test_get_job_preview_403(user["username"], job["id"], **kwargs)
+
+
+@pytest.mark.usefixtures("restore_db_per_class")
+class TestGetJobDataMeta:
+    def test_admin_can_get_job_meta(self, jobs):
+        with make_api_client("admin1") as client:
+            job_id = jobs.raw[0]["id"]
+
+            client.organization_slug = None
+            client.jobs_api.retrieve_data_meta(job_id)
+
+            client.organization_slug = ""
+            client.jobs_api.retrieve_data_meta(job_id)
+
+            client.organization_slug = "org1"
+            client.jobs_api.retrieve_data_meta(job_id)
