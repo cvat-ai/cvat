@@ -466,8 +466,7 @@ class TestGetTaskDataset:
         response = self._test_export_task(admin_user, tid, format=format_name)
         assert response.data
 
-    @pytest.mark.skip()
-    @pytest.mark.parametrize("tid", [21])
+    @pytest.mark.parametrize("tid", [8])
     def test_can_export_task_to_coco_format(self, admin_user, tid):
         annotations = {
             "version": 0,
@@ -475,7 +474,7 @@ class TestGetTaskDataset:
             "shapes": [],
             "tracks": [
                 {
-                    "label_id": 65,
+                    "label_id": 63,
                     "frame": 0,
                     "group": 0,
                     "source": "manual",
@@ -494,7 +493,7 @@ class TestGetTaskDataset:
                     "attributes": [],
                     "elements": [
                         {
-                            "label_id": 66,
+                            "label_id": 64,
                             "frame": 0,
                             "group": 0,
                             "source": "manual",
@@ -506,24 +505,24 @@ class TestGetTaskDataset:
                                     "outside": True,
                                     "z_order": 0,
                                     "rotation": 0,
-                                    "points": [115.0427502186576, 97.39402001244889],
+                                    "points": [74.14935096036425, 79.09960455479086],
                                     "attributes": [],
                                 },
                                 {
                                     "type": "points",
-                                    "frame": 8,
+                                    "frame": 7,
                                     "occluded": False,
                                     "outside": False,
                                     "z_order": 0,
                                     "rotation": 0,
-                                    "points": [115.0427502186576, 97.39402001244889],
+                                    "points": [74.14935096036425, 79.09960455479086],
                                     "attributes": [],
                                 },
                             ],
                             "attributes": [],
                         },
                         {
-                            "label_id": 67,
+                            "label_id": 65,
                             "frame": 0,
                             "group": 0,
                             "source": "manual",
@@ -535,7 +534,7 @@ class TestGetTaskDataset:
                                     "outside": False,
                                     "z_order": 0,
                                     "rotation": 0,
-                                    "points": [463.7127859999053, 340.60213139072664],
+                                    "points": [285.07319976630424, 353.51583641966175],
                                     "attributes": [],
                                 }
                             ],
@@ -545,8 +544,10 @@ class TestGetTaskDataset:
                 }
             ],
         }
-        response = post_method(admin_user, f"tasks/{tid}/annotations", data=annotations)
-        assert response.status_code == HTTPStatus.CREATED
+        response = patch_method(
+            admin_user, f"tasks/{tid}/annotations", annotations, action="update"
+        )
+        assert response.status_code == HTTPStatus.OK
 
         response = self._test_export_task(admin_user, tid, format="COCO Keypoints 1.0")
         assert response.data
