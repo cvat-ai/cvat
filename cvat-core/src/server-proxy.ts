@@ -1865,7 +1865,7 @@ async function getCloudStorageContent(id: number, path: string, nextToken?: stri
 
     let response = null;
     try {
-        const url = `${backendAPI}/cloudstorages/${id}/content`;
+        const url = `${backendAPI}/cloudstorages/${id}/content-v2`;
         response = await Axios.get(url, {
             params: {
                 prefix: path,
