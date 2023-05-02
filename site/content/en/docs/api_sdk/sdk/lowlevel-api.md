@@ -483,3 +483,70 @@ while True:
 with open('output_file', 'wb') as output_file:
     output_file.write(response.data)
 ```
+### Different versions of API Endpoints
+#### The cloudstorages/id/content REST API Endpoint
+
+> **Warning:** The GET /cloudstorages/id/content REST API Endpoint is deprecated.
+> We recommend that you use `retrieve_content_v2` method that matches to revised API for application development.
+> For backward compatibility, we continue to support the prior version of this API until version 2.5.0 is released.
+
+Here you can find the examples how to get the bucket content with 2 versions.
+
+```python
+import os
+from pprint import pprint
+
+from cvat_sdk.api_client import ApiClient, Configuration
+
+# get the content of the bucket using old version of REST API Endpoint
+
+with ApiClient(
+    configuration=Configuration(host=BASE_URL, username=user, password=password)
+) as api_client:
+    data, response = api_client.cloudstorages_api.retrieve_content(
+        cloud_storage_id, manifest_path=manifest_path
+    )
+    print(data) # ['sub/image_1.jpg', 'image_2.jpg']
+
+# get the content of the bucket using new version of REST API Endpoint
+
+next_token = None
+files, prefixes = [], []
+prefix = ""
+
+with ApiClient(
+    configuration=Configuration(host=BASE_URL, username=user, password=password)
+) as api_client:
+    while True:
+        data, response = api_client.cloudstorages_api.retrieve_content_v2(
+            cloud_storage_id,
+            **({"prefix": prefix} if prefix else {}),
+            **({"next_token": next_token} if next_token else {}),
+        )
+        files.extend(
+            [
+                os.path.join(prefix, f["name"])
+                for f in data["content"]
+                if str(f["type"]) == "REG"
+            ]
+        )
+        prefixes.extend(
+            [
+                os.path.join(prefix, f["name"])
+                for f in data["content"]
+                if str(f["type"]) == "DIR"
+            ]
+        )
+        next_token = data["next"]
+        if next_token:
+            continue
+        if not len(prefixes):
+            break
+        prefix = f"{prefixes.pop()}/"
+    pprint(data)
+    # {'content': [
+    #     {'mime_type': None, 'name': 'sub/image_1.jpg', 'type': 'REG'},
+    #     {'mime_type': None, 'name': 'image_2.jpg', 'type': 'REG'},
+    #  'next': None}
+
+```
