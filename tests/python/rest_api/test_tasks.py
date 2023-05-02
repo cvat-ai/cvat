@@ -396,7 +396,6 @@ class TestPatchTaskAnnotations:
             (_, response) = api_client.tasks_api.partial_update_annotations(
                 id=tid,
                 action="update",
-                org=org,
                 patched_labeled_data_request=deepcopy(data),
                 _parse_response=False,
                 _check_status=False,
@@ -437,7 +436,6 @@ class TestPatchTaskAnnotations:
         with make_api_client(username) as api_client:
             (_, response) = api_client.tasks_api.partial_update_annotations(
                 id=tid,
-                org_id=org,
                 action="update",
                 patched_labeled_data_request=deepcopy(data),
                 _parse_response=False,
@@ -748,7 +746,7 @@ class TestPostTaskData:
         }
 
         _test_create_task(
-            self._USERNAME, task_spec, data_spec, content_type="application/json", org=org
+            self._USERNAME, task_spec, data_spec, content_type="application/json"
         )
 
     @pytest.mark.with_external_services
@@ -917,11 +915,11 @@ class TestPostTaskData:
 
         if task_size:
             task_id, _ = _test_create_task(
-                self._USERNAME, task_spec, data_spec, content_type="application/json", org=org
+                self._USERNAME, task_spec, data_spec, content_type="application/json"
             )
 
             with make_api_client(self._USERNAME) as api_client:
-                (task, response) = api_client.tasks_api.retrieve(task_id, org=org)
+                (task, response) = api_client.tasks_api.retrieve(task_id)
                 assert response.status == HTTPStatus.OK
                 assert task.size == task_size
         else:
@@ -1215,7 +1213,7 @@ class TestWorkWithTask:
         }
 
         task_id, _ = _test_create_task(
-            self._USERNAME, task_spec, data_spec, content_type="application/json", org=org
+            self._USERNAME, task_spec, data_spec, content_type="application/json"
         )
 
         # save image from the "public" bucket and remove it temporary
@@ -1293,7 +1291,7 @@ class TestGetTaskPreview:
         tasks = list(filter(lambda x: x["project_id"] == project_id and x["assignee"], tasks))
         assert len(tasks)
 
-        self._test_assigned_users_to_see_task_preview(tasks, users, is_task_staff, org=org["slug"])
+        self._test_assigned_users_to_see_task_preview(tasks, users, is_task_staff)
 
     @pytest.mark.parametrize("project_id, groups", [(1, "user")])
     def test_task_unassigned_cannot_see_task_preview(
