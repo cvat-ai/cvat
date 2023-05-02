@@ -5,7 +5,7 @@
 from __future__ import annotations
 from copy import deepcopy
 from datetime import timedelta
-from functools import cached_property
+from functools import cached_property, partial
 
 import itertools
 from typing import Any, Callable, Dict, Hashable, List, Optional, Sequence, Union, cast
@@ -342,7 +342,7 @@ class ComparisonReportFrameSummary(_Serializable):
 class ComparisonReport(_Serializable):
     parameters: ComparisonReportParameters
     comparison_summary: ComparisonReportComparisonSummary
-    dataset_summary: ComparisonReportDatasetSummary
+    # dataset_summary: ComparisonReportDatasetSummary
     frame_results: Dict[int, ComparisonReportFrameSummary]
 
     @property
@@ -354,7 +354,8 @@ class ComparisonReport(_Serializable):
         return cls(
             parameters=ComparisonReportParameters.from_dict(d['parameters']),
             comparison_summary=ComparisonReportComparisonSummary.from_dict(d['comparison_summary']),
-            dataset_summary=ComparisonReportDatasetSummary.from_dict(d['dataset_summary']),
+            # TODO: Not computed because of optimizations. Need to think if it is really needed
+            # dataset_summary=ComparisonReportDatasetSummary.from_dict(d['dataset_summary']),
             frame_results={
                 int(k): ComparisonReportFrameSummary.from_dict(v)
                 for k, v in d['frame_results'].items()
@@ -477,7 +478,7 @@ def _OKS(a, b, sigma=None, bbox=None, scale=None, visibility=None):
     if not sigma:
         sigma = 0.1
     else:
-        assert len(sigma) == len(p1)
+        assert isinstance(sigma, (int, float, np.number)) or len(sigma) == len(p1)
 
     if not scale:
         if bbox is None:
@@ -513,6 +514,33 @@ def _arr_div(a_arr: np.ndarray, b_arr: np.ndarray) -> np.ndarray:
     divisor[b_arr == 0] = 1
     return a_arr / divisor
 
+def _segment_iou(a, b, *, img_h, img_w):
+    """
+    Generic IoU computation with masks and polygons.
+    Returns -1 if no intersection, [0; 1] otherwise
+    """
+    # Comparing to the dm version, this fixes the comparison for segments,
+    # as the images size are required for correct decoding.
+    # Boxes are not included, because they are not needed
+
+    from pycocotools import mask as mask_utils
+
+    def _to_rle(ann):
+        if ann.type == dm.AnnotationType.polygon:
+            return mask_utils.frPyObjects([ann.points], img_h, img_w)
+        elif isinstance(ann, dm.RleMask):
+            return [ann.rle]
+        elif ann.type == dm.AnnotationType.mask:
+            return [mask_utils.encode(ann.image)]
+        else:
+            raise TypeError("Unexpected arguments: %s, %s" % (a, b))
+
+    a = _to_rle(a)
+    b = _to_rle(b)
+
+    # Note that mask_utils.iou expects (dt, gt). Check this if the 3rd param is True
+    return float(mask_utils.iou(b, a, [0]))
+
 class _DistanceComparator(dm.ops.DistanceComparator):
     def __init__(
         self,
@@ -527,6 +555,10 @@ class _DistanceComparator(dm.ops.DistanceComparator):
         self._skeleton_info = {}
         self.included_ann_types = included_ann_types
         self.return_distances = return_distances
+
+        # % of the shape area, halved
+        # https://github.com/cocodataset/cocoapi/blob/8c9bcc3cf640524c4c20a9c40e89cb6a2f2fa0e9/PythonAPI/pycocotools/cocoeval.py#L523
+        self.oks_sigma = 0.09
 
     def _instance_bbox(self, instance_anns: Sequence[dm.Annotation]):
         return dm.ops.max_bbox(
@@ -554,9 +586,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
         elif t == dm.AnnotationType.bbox:
             return self.match_boxes(*args)
         elif t == dm.AnnotationType.polygon:
-            return self.match_polygons(*args)
-        elif t == dm.AnnotationType.mask:
-            return self.match_masks(*args)
+            return self.match_segmentations(*args)
         elif t == dm.AnnotationType.points:
             return self.match_points(*args)
         elif t == dm.AnnotationType.skeleton:
@@ -568,10 +598,14 @@ class _DistanceComparator(dm.ops.DistanceComparator):
             return None
 
     def _match_segments(self, t, item_a, item_b, *,
-        distance: Callable = dm.ops.segment_iou
+        distance: Callable = dm.ops.segment_iou,
+        a_objs: Optional[Sequence[dm.Annotation]] = None,
+        b_objs: Optional[Sequence[dm.Annotation]] = None,
     ):
-        a_objs = self._get_ann_type(t, item_a)
-        b_objs = self._get_ann_type(t, item_b)
+        if a_objs is None:
+            a_objs = self._get_ann_type(t, item_a)
+        if b_objs is None:
+            b_objs = self._get_ann_type(t, item_b)
         if not a_objs and not b_objs:
             return [], [], [], []
 
@@ -589,11 +623,16 @@ class _DistanceComparator(dm.ops.DistanceComparator):
     def match_boxes(self, item_a, item_b):
         return self._match_segments(dm.AnnotationType.bbox, item_a, item_b)
 
-    def match_polygons(self, item_a, item_b):
-        return self._match_segments(dm.AnnotationType.polygon, item_a, item_b)
+    def match_segmentations(self, item_a, item_b):
+        def _get_anns(item):
+            return self._get_ann_type(dm.AnnotationType.polygon, item) + \
+                   self._get_ann_type(dm.AnnotationType.mask, item)
 
-    def match_masks(self, item_a, item_b):
-        return self._match_segments(dm.AnnotationType.mask, item_a, item_b)
+        img_h, img_w = item_a.image.size
+        return self._match_segments(dm.AnnotationType.polygon, item_a, item_b,
+            a_objs=_get_anns(item_a), b_objs=_get_anns(item_b),
+            distance=partial(_segment_iou, img_h=img_h, img_w=img_w)
+        )
 
     def match_lines(self, item_a, item_b):
         matcher = dm.ops.LineMatcher()
@@ -614,7 +653,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
 
                 for ann in instance_group:
                     instance_map[id(ann)] = [instance_group, instance_bbox]
-        matcher = _PointsMatcher(instance_map=instance_map)
+        matcher = _PointsMatcher(instance_map=instance_map, sigma=self.oks_sigma)
 
         distance = matcher.distance
 
@@ -711,7 +750,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
                 for ann in instance_group:
                     instance_map[id(ann)] = [instance_group, instance_bbox]
 
-        matcher = _PointsMatcher(instance_map=instance_map)
+        matcher = _PointsMatcher(instance_map=instance_map, sigma=self.oks_sigma)
 
         distance = matcher.distance
 
@@ -778,8 +817,7 @@ class _Comparator:
         ]
         self.included_ann_types = [
             dm.AnnotationType.bbox,
-            dm.AnnotationType.mask,
-            dm.AnnotationType.points,
+            dm.AnnotationType.points, # masks are compared together with polygons
             dm.AnnotationType.polygon,
             dm.AnnotationType.polyline,
             dm.AnnotationType.skeleton,
@@ -817,7 +855,21 @@ class _Comparator:
         return matches, mismatches, a_extra, b_extra
 
     def match_annotations(self, item_a, item_b):
-        return self._annotation_comparator.match_annotations(item_a, item_b)
+        per_type_results = self._annotation_comparator.match_annotations(item_a, item_b)
+
+        merged_results = [[], [], [], [], {}]
+        for shape_type in self.included_ann_types:
+            for merged_field, field in zip(merged_results, per_type_results[shape_type][:-1]):
+                merged_field.extend(field)
+
+            merged_results[-1].update(per_type_results[shape_type][-1])
+
+        return merged_results
+
+    def get_distance(self,
+        pairwise_distances, gt_ann: dm.Annotation, ds_ann: dm.Annotation
+    ) -> Optional[float]:
+        return pairwise_distances.get((id(gt_ann), id(ds_ann)))
 
 
 class _DatasetComparator:
@@ -833,8 +885,12 @@ class _DatasetComparator:
         self._frame_results: Dict[int, ComparisonReportFrameSummary] = {}
 
         self.comparator = _Comparator(self._gt_dataset.categories())
+
+        # iou_threshold is used for distinction between matched / unmatched shapes
+        # overlap_threshold is used for distinction between strong / weak (low_overlap) matches
         self.comparator._annotation_comparator.iou_threshold = 0.4
         self.overlap_threshold = 0.8
+
         self.included_frames = gt_data_provider.job_data._db_job.segment.frame_set
 
     def _dm_item_to_frame_id(self, item: dm.DatasetItem) -> int:
@@ -876,17 +932,10 @@ class _DatasetComparator:
     ) -> List[AnnotationConflict]:
         conflicts = []
 
-        merged_results = [[], [], [], [], {}]
-        for shape_type in self.comparator.included_ann_types:
-            for merged_field, field in zip(merged_results, frame_results[shape_type][:-1]):
-                merged_field.extend(field)
-
-            merged_results[-1].update(frame_results[shape_type][-1])
-
-        matches, mismatches, gt_unmatched, ds_unmatched, pairwise_distances = merged_results
+        matches, mismatches, gt_unmatched, ds_unmatched, pairwise_distances = frame_results
 
         def _get_overlap(gt_ann: dm.Annotation, ds_ann: dm.Annotation) -> Optional[float]:
-            return pairwise_distances.get((id(gt_ann), id(ds_ann)))
+            return self.comparator.get_distance(pairwise_distances, gt_ann, ds_ann)
 
         _matched_shapes = set(
             id(shape)
@@ -969,7 +1018,7 @@ class _DatasetComparator:
                 _matched_shapes.add(matched_ann_id)
             resulting_distances.append(overlap)
 
-        mean_iou = np.mean(resulting_distances)
+        mean_iou = np.mean(resulting_distances) if resulting_distances else 0
 
         valid_shapes_count = len(matches) + len(mismatches)
         missing_shapes_count = len(gt_unmatched)
@@ -1061,17 +1110,17 @@ class _DatasetComparator:
     def generate_report(self) -> ComparisonReport:
         self._find_gt_conflicts()
 
-        full_ds_comparable_shapes_count = 0
-        full_ds_comparable_attributes_count = 0
-        for item in self._ds_dataset:
-            for ann in item.annotations:
-                if ann.type not in self.comparator.included_ann_types:
-                    continue
+        # full_ds_comparable_shapes_count = 0
+        # full_ds_comparable_attributes_count = 0
+        # for item in self._ds_dataset:
+        #     for ann in item.annotations:
+        #         if ann.type not in self.comparator.included_ann_types:
+        #             continue
 
-                full_ds_comparable_attributes_count += len(
-                    set(ann.attributes).difference(self.comparator.ignored_attrs)
-                )
-                full_ds_comparable_shapes_count += 1
+        #         full_ds_comparable_attributes_count += len(
+        #             set(ann.attributes).difference(self.comparator.ignored_attrs)
+        #         )
+        #         full_ds_comparable_shapes_count += 1
 
         # accumulate stats
         intersection_frames = []
@@ -1175,10 +1224,10 @@ class _DatasetComparator:
                 ),
             ),
 
-            dataset_summary=ComparisonReportDatasetSummary(
-                frame_count=len(self._ds_dataset),
-                shape_count=full_ds_comparable_shapes_count,
-            ),
+            # dataset_summary=ComparisonReportDatasetSummary(
+            #     frame_count=len(self._ds_dataset),
+            #     shape_count=full_ds_comparable_shapes_count,
+            # ),
 
             frame_results=self._frame_results
         )
@@ -1295,14 +1344,14 @@ class QueueJobManager:
         # compute combined summary for job reports.
         task_intersection_frames = set()
         task_conflicts = []
-        task_shapes_count = 0
+        # task_shapes_count = 0
         task_annotations_summary = None
         task_ann_components_summary = None
         task_mean_shape_ious = []
         for r in job_comparison_reports.values():
             task_intersection_frames.update(r.comparison_summary.frames)
             task_conflicts.extend(r.conflicts)
-            task_shapes_count += r.dataset_summary.shape_count
+            # task_shapes_count += r.dataset_summary.shape_count
 
             if task_annotations_summary:
                 task_annotations_summary.accumulate(r.comparison_summary.annotations)
@@ -1331,10 +1380,10 @@ class QueueJobManager:
                 annotation_components=task_ann_components_summary,
             ),
 
-            dataset_summary=ComparisonReportDatasetSummary(
-                frame_count=task.data.size,
-                shape_count=task_shapes_count
-            ),
+            # dataset_summary=ComparisonReportDatasetSummary(
+            #     frame_count=task.data.size,
+            #     shape_count=task_shapes_count
+            # ),
 
             frame_results={},
         )
