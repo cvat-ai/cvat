@@ -473,84 +473,78 @@ class TestGetTaskDataset:
             "version": 0,
             "tags": [],
             "shapes": [],
-            "tracks": [{
-                "label_id": 65,
-                "frame": 0,
-                "group": 0,
-                "source": "manual",
-                "shapes": [{
-                    "type": "skeleton",
-                    "frame": 0,
-                    "occluded": False,
-                    "outside": False,
-                    "z_order": 0,
-                    "rotation": 0,
-                    "points": [],
-                    "attributes": []
-                }],
-                "attributes": [],
-                "elements": [
-                    {
-                        "label_id": 66,
-                        "frame": 0,
-                        "group": 0,
-                        "source": "manual",
-                        "shapes": [
-                            {
-                            "type": "points",
-                            "frame": 0,
-                            "occluded": False,
-                            "outside": True,
-                            "z_order": 0,
-                            "rotation": 0,
-                            "points": [
-                                115.0427502186576,
-                                97.39402001244889
-                            ],
-                            "attributes": []
-                            },
-                            {
-                            "type": "points",
-                            "frame": 8,
-                            "occluded": False,
-                            "outside": False,
-                            "z_order": 0,
-                            "rotation": 0,
-                            "points": [
-                                115.0427502186576,
-                                97.39402001244889
-                            ],
-                            "attributes": []
-                            }
-                        ],
-                        "attributes": []
-                    },
-                    {
-                    "label_id": 67,
+            "tracks": [
+                {
+                    "label_id": 65,
                     "frame": 0,
                     "group": 0,
                     "source": "manual",
                     "shapes": [
                         {
-                        "type": "points",
-                        "frame": 0,
-                        "occluded": False,
-                        "outside": False,
-                        "z_order": 0,
-                        "rotation": 0,
-                        "points": [
-                            463.7127859999053,
-                            340.60213139072664
-                        ],
-                        "attributes": []
+                            "type": "skeleton",
+                            "frame": 0,
+                            "occluded": False,
+                            "outside": False,
+                            "z_order": 0,
+                            "rotation": 0,
+                            "points": [],
+                            "attributes": [],
                         }
                     ],
-                    "attributes": []
-                    }
-                ]
+                    "attributes": [],
+                    "elements": [
+                        {
+                            "label_id": 66,
+                            "frame": 0,
+                            "group": 0,
+                            "source": "manual",
+                            "shapes": [
+                                {
+                                    "type": "points",
+                                    "frame": 0,
+                                    "occluded": False,
+                                    "outside": True,
+                                    "z_order": 0,
+                                    "rotation": 0,
+                                    "points": [115.0427502186576, 97.39402001244889],
+                                    "attributes": [],
+                                },
+                                {
+                                    "type": "points",
+                                    "frame": 8,
+                                    "occluded": False,
+                                    "outside": False,
+                                    "z_order": 0,
+                                    "rotation": 0,
+                                    "points": [115.0427502186576, 97.39402001244889],
+                                    "attributes": [],
+                                },
+                            ],
+                            "attributes": [],
+                        },
+                        {
+                            "label_id": 67,
+                            "frame": 0,
+                            "group": 0,
+                            "source": "manual",
+                            "shapes": [
+                                {
+                                    "type": "points",
+                                    "frame": 0,
+                                    "occluded": False,
+                                    "outside": False,
+                                    "z_order": 0,
+                                    "rotation": 0,
+                                    "points": [463.7127859999053, 340.60213139072664],
+                                    "attributes": [],
+                                }
+                            ],
+                            "attributes": [],
+                        },
+                    ],
                 }
-            ]
-            }
+            ],
+        }
         response = post_method(admin_user, f"tasks/{tid}/annotations", data=annotations)
         response.status_code == HTTPStatus.CREATED
 
