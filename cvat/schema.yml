@@ -265,7 +265,7 @@ paths:
       - in: query
         name: org_id
         schema:
-          type: int
+          type: integer
         description: Organization identifier
       - name: owner
         in: query
@@ -691,7 +691,7 @@ paths:
       - in: query
         name: org_id
         schema:
-          type: int
+          type: integer
         description: Organization identifier
       - name: owner
         in: query
@@ -995,7 +995,7 @@ paths:
       - in: query
         name: org_id
         schema:
-          type: int
+          type: integer
         description: Organization identifier
       - name: owner
         in: query
@@ -1197,7 +1197,7 @@ paths:
       - in: query
         name: org_id
         schema:
-          type: int
+          type: integer
         description: Organization identifier
       - name: owner
         in: query
@@ -1409,7 +1409,7 @@ paths:
       - in: query
         name: org_id
         schema:
-          type: int
+          type: integer
         description: Organization identifier
       - name: page
         required: false
@@ -2029,7 +2029,7 @@ paths:
       - in: query
         name: org_id
         schema:
-          type: int
+          type: integer
         description: Organization identifier
       - name: page
         required: false
@@ -2351,7 +2351,7 @@ paths:
       - in: query
         name: org_id
         schema:
-          type: int
+          type: integer
         description: Organization identifier
       - name: page
         required: false
@@ -2514,7 +2514,7 @@ paths:
       - in: query
         name: org_id
         schema:
-          type: int
+          type: integer
         description: Organization identifier
       - name: owner
         in: query
@@ -2701,7 +2701,7 @@ paths:
       - in: query
         name: org_id
         schema:
-          type: int
+          type: integer
         description: Organization identifier
       - name: owner
         in: query
@@ -3508,7 +3508,7 @@ paths:
       - in: query
         name: org_id
         schema:
-          type: int
+          type: integer
         description: Organization identifier
       - name: owner
         in: query
@@ -4383,7 +4383,7 @@ paths:
       - in: query
         name: org_id
         schema:
-          type: int
+          type: integer
         description: Organization identifier
       - name: page
         required: false
@@ -4552,7 +4552,7 @@ paths:
       - in: query
         name: org_id
         schema:
-          type: int
+          type: integer
         description: Organization identifier
       - name: owner
         in: query
@@ -4795,7 +4795,7 @@ paths:
       - in: query
         name: org_id
         schema:
-          type: int
+          type: integer
         description: Organization identifier
       - name: page
         required: false

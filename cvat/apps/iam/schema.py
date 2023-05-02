@@ -35,7 +35,7 @@ class OrganizationFilterExtension(OpenApiFilterExtension):
                 required=False,
                 location=OpenApiParameter.QUERY,
                 description=self.target.organization_id_description,
-                schema={'type': 'int'},
+                schema={'type': 'integer'},
             ),
             build_parameter_type(
                 name='X-Organization',
@@ -113,11 +113,6 @@ class CookieAuthenticationScheme(SessionScheme):
         return [sessionid_schema, csrftoken_schema]
 
 class CustomAutoSchema(AutoSchema):
-    """
-    https://github.com/tfranzel/drf-spectacular/issues/111
-    Adds organization context parameters to all endpoints
-    """
-
     def get_operation_id(self):
         tokenized_path = self._tokenize_path()
         # replace dashes as they can be problematic later in code generation
