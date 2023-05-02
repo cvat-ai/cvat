@@ -2,7 +2,9 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { MouseEvent, useEffect, useState } from 'react';
+import React, {
+    MouseEvent, useEffect, useState, useRef,
+} from 'react';
 import Breadcrumb from 'antd/lib/breadcrumb';
 import Button from 'antd/lib/button';
 import Pagination from 'antd/lib/pagination';
@@ -13,9 +15,9 @@ import Text from 'antd/lib/typography/Text';
 import config from 'config';
 import { CloudStorage, RemoteFileType } from 'reducers';
 import { useIsMounted } from 'utils/hooks';
-import { RightOutlined } from '@ant-design/icons';
+import { FileOutlined, FolderOutlined, RightOutlined } from '@ant-design/icons';
 import { getCore } from 'cvat-core-wrapper';
-import { Empty } from 'antd';
+import { Empty, notification } from 'antd';
 
 interface Node {
     children: Node[];
@@ -28,28 +30,34 @@ interface Node {
 }
 
 interface Props {
-    resource: CloudStorage | 'share';
+    resource: 'share' | CloudStorage;
     manifestPath?: string;
     onSelectFiles: (checkedKeysValue: { key: string, type: RemoteFileType, mime_type?: string }[]) => void;
 }
 
 const core = getCore();
 
+const defaultPath = ['root'];
+const defaultRoot: Node = {
+    name: 'root',
+    key: 'root',
+    children: [],
+    type: 'DIR',
+    initialized: false,
+    nextToken: null,
+};
+
 function RemoteBrowser(props: Props): JSX.Element {
     const { SHARE_MOUNT_GUIDE_URL } = config;
     const { resource, manifestPath, onSelectFiles } = props;
     const isMounted = useIsMounted();
-    const [currentPath, setCurrentPath] = useState(['root']);
+    const resourceRef = useRef<Props['resource']>(resource);
+    const manifestPathRef = useRef<string | undefined>(manifestPath);
+    const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+    const [currentPath, setCurrentPath] = useState([...defaultPath]);
     const [currentPage, setCurrentPage] = useState(1);
     const [isFetching, setFetching] = useState(false);
-    const [content, setContent] = useState<Node>({
-        name: 'root',
-        key: 'root',
-        children: [],
-        type: 'DIR',
-        initialized: false,
-        nextToken: null,
-    });
+    const [content, setContent] = useState<Node>({ ...defaultRoot });
 
     const updateContent = async (): Promise<void> => {
         let target = content;
@@ -70,6 +78,15 @@ function RemoteBrowser(props: Props): JSX.Element {
                 }))
             );
             setFetching(true);
+            const currentResource = resourceRef.current;
+            const currentManifest = manifestPathRef.current;
+            const isRelevant = (): boolean => (
+                // check if component is still relevant after async request, and resource & share are the same
+                // if not, results are not valid anymore
+                isMounted() &&
+                currentResource === resourceRef.current &&
+                currentManifest === manifestPathRef.current
+            );
             try {
                 let nodes: Node[] = [];
                 if (resource === 'share') {
@@ -85,11 +102,27 @@ function RemoteBrowser(props: Props): JSX.Element {
 
                 target.children = target.children.concat(nodes);
                 target.initialized = true;
-                if (isMounted()) {
+                if (isRelevant()) {
+                    // select all new children if parent was selected
+                    if (selectedRowKeys.includes(target.key)) {
+                        const copy = selectedRowKeys.slice(0);
+                        for (const child of nodes) {
+                            copy.push(child.key);
+                        }
+                        setSelectedRowKeys(copy);
+                    }
+
                     setContent({ ...content });
                 }
+            } catch (error: any) {
+                if (isRelevant()) {
+                    notification.error({
+                        message: 'Storage content fetching failed',
+                        description: error.toString(),
+                    });
+                }
             } finally {
-                if (isMounted()) {
+                if (isRelevant()) {
                     setFetching(false);
                 }
             }
@@ -97,12 +130,34 @@ function RemoteBrowser(props: Props): JSX.Element {
     };
 
     useEffect(() => {
+        if (resourceRef.current !== resource || manifestPathRef.current !== manifestPath) {
+            setContent({ ...defaultRoot });
+            setCurrentPage(1);
+            setFetching(false);
+            setCurrentPath([...defaultPath]);
+            setSelectedRowKeys([]);
+            resourceRef.current = resource;
+            manifestPathRef.current = manifestPath;
+        }
+    }, [resource, manifestPath]);
+
+    useEffect(() => {
         updateContent();
     }, [currentPath]);
 
     useEffect(() => {
-        onSelectFiles([]);
-    }, [resource]);
+        const nodes: Node[] = [];
+        const collectNodes = (node: Node): void => {
+            for (const child of node.children) {
+                if (selectedRowKeys.includes(child.key)) {
+                    nodes.push(child);
+                }
+                collectNodes(child);
+            }
+        };
+        collectNodes(content);
+        onSelectFiles(nodes);
+    }, [selectedRowKeys]);
 
     useEffect(() => {
         const button = window.document.getElementsByClassName('cvat-remote-browser-receive-more-btn')[0];
@@ -123,11 +178,21 @@ function RemoteBrowser(props: Props): JSX.Element {
             render: (name: string, node: Node) => {
                 if (node.type === 'DIR') {
                     return (
-                        <Button size='small' type='link' onClick={() => setCurrentPath([...currentPath, name])}>{name}</Button>
+                        <>
+                            <Button size='small' type='link' onClick={() => setCurrentPath([...currentPath, name])}>
+                                <FolderOutlined />
+                                {name}
+                            </Button>
+                        </>
                     );
                 }
 
-                return name;
+                return (
+                    <>
+                        <FileOutlined className='cvat-remote-browser-file-icon' />
+                        {name}
+                    </>
+                );
             },
         },
     ];
@@ -157,31 +222,85 @@ function RemoteBrowser(props: Props): JSX.Element {
     return (
         <div>
             <Breadcrumb>
-                {currentPath.map((segment: string) => (
-                    <Breadcrumb.Item
-                        className='cvat-remote-browser-nav-breadcrumb'
-                        onClick={() => {
-                            if (segment !== currentPath[currentPath.length - 1]) {
-                                setCurrentPath(
-                                    currentPath.slice(0, currentPath.findIndex((val) => val === segment) + 1),
-                                );
-                            }
-                        }}
-                        key={segment}
-                    >
-                        {segment}
-                    </Breadcrumb.Item>
-                ))}
+                {currentPath.map((segment: string, idx: number) => {
+                    const key = currentPath.slice(0, idx + 1).join('/');
+                    return (
+                        <Breadcrumb.Item
+                            className='cvat-remote-browser-nav-breadcrumb'
+                            onClick={() => {
+                                setCurrentPath(key.split('/'));
+                            }}
+                            key={key}
+                        >
+                            {segment}
+                        </Breadcrumb.Item>
+                    );
+                })}
             </Breadcrumb>
             <div className='cvat-remote-browser-table-wrapper'>
                 <Table
                     scroll={{ y: 472 }}
                     rowSelection={{
                         type: 'checkbox',
-                        onChange: (_, selectedRows) => {
-                            onSelectFiles(selectedRows);
+                        selectedRowKeys,
+                        onChange: (_selectedRowKeys) => {
+                            let copy = _selectedRowKeys.slice(0);
+
+                            // select parent if all children have been selected
+                            if (!copy.includes(dataSource.key)) {
+                                const baseLength = dataSource.key.split('/').length;
+                                const levelKeys = copy.filter((key) => key.toLocaleString().split('/').length === baseLength + 1);
+                                if (levelKeys.length === dataSource.children.length) {
+                                    copy.push(dataSource.key);
+                                }
+                            }
+
+                            // deselect children if parent was deselected
+                            const deselectedKeys = selectedRowKeys.filter((key) => !_selectedRowKeys.includes(key));
+                            for (const key of deselectedKeys) {
+                                copy = copy.filter((_key) => !_key.toLocaleString().startsWith(key.toLocaleString()));
+                            }
+
+                            // deselect parent if a child was deselected
+                            copy = copy.filter((key) => !deselectedKeys
+                                .some((_key) => _key.toLocaleString().startsWith(key.toLocaleString())));
+
+                            // select all children if parent was selected
+                            const selectChildren = (node: Node): void => {
+                                for (const child of node.children) {
+                                    if (!copy.includes(child.key)) {
+                                        copy.push(child.key);
+                                        selectChildren(child);
+                                    }
+                                }
+                            };
+                            const listenedNodes = dataSource.children;
+                            for (const node of listenedNodes) {
+                                if (copy.includes(node.key)) {
+                                    selectChildren(node);
+                                }
+                            }
+
+                            setSelectedRowKeys(copy);
                         },
                         preserveSelectedRowKeys: true,
+                        getCheckboxProps: (record: Node) => {
+                            const strKeys = selectedRowKeys.map((key) => key.toLocaleString());
+                            const subkeys = strKeys.filter((key: string) => (
+                                key.startsWith(record.key) && key.length > record.key.length
+                            ));
+
+                            const some = !!subkeys.length;
+                            const every = strKeys.includes(record.key);
+
+                            if (some && !every) {
+                                return {
+                                    indeterminate: true,
+                                };
+                            }
+
+                            return {};
+                        },
                     }}
                     childrenColumnName='$children'
                     loading={isFetching}
@@ -199,12 +318,10 @@ function RemoteBrowser(props: Props): JSX.Element {
                     pageSize={PAGE_SIZE}
                     showQuickJumper
                     showSizeChanger={false}
-                    size='small'
                     total={dataSource.children.length}
                     onChange={(newPage: number) => {
                         setCurrentPage(newPage);
                     }}
-                    showPrevNextJumpers={false}
                     current={currentPage}
                     itemRender={(_, type, originalElement) => {
                         if (type === 'next') {

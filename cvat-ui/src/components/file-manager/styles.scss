@@ -30,9 +30,17 @@
     .ant-table-wrapper {
         height: $grid-unit-size * 64;
 
+        .ant-table-body {
+            overflow-y: auto !important;
+        }
+
         .ant-pagination {
             display: none;
         }
+    }
+
+    .cvat-remote-browser-file-icon {
+        margin-right: $grid-unit-size;
     }
 
     .cvat-remote-browser-pages {
@@ -47,10 +55,11 @@
             .cvat-remote-browser-receive-more-btn {
                 color: rgba(0, 0, 0, 0.85) !important;
                 cursor: pointer !important;
-                border: none;
 
                 > span {
                     pointer-events: all;
+                    line-height: $grid-unit-size * 4;
+                    width: 100%;
                 }
             }
         }

@@ -487,7 +487,7 @@ with open('output_file', 'wb') as output_file:
 #### The cloudstorages/id/content REST API Endpoint
 
 > **Warning:** The GET /cloudstorages/id/content REST API Endpoint is deprecated.
-> We recommend that you use `retrieve_content_v2` method that matches to revised API for application development.
+> We recommend that you use `retrieve_content_v2` method that matches to revised API when using SDK.
 > For backward compatibility, we continue to support the prior version of this API until version 2.5.0 is released.
 
 Here you can find the examples how to get the bucket content with 2 versions.
