@@ -13,9 +13,9 @@ import Text from 'antd/lib/typography/Text';
 import config from 'config';
 import { CloudStorage, RemoteFileType } from 'reducers';
 import { useIsMounted } from 'utils/hooks';
-import { RightOutlined } from '@ant-design/icons';
+import { FileOutlined, FolderOutlined, RightOutlined } from '@ant-design/icons';
 import { getCore } from 'cvat-core-wrapper';
-import { Empty } from 'antd';
+import { Empty, notification } from 'antd';
 
 interface Node {
     children: Node[];
@@ -88,6 +88,11 @@ function RemoteBrowser(props: Props): JSX.Element {
                 if (isMounted()) {
                     setContent({ ...content });
                 }
+            } catch (error: any) {
+                notification.error({
+                    message: 'Storage content fetching failed',
+                    description: error.toString(),
+                });
             } finally {
                 if (isMounted()) {
                     setFetching(false);
@@ -123,11 +128,21 @@ function RemoteBrowser(props: Props): JSX.Element {
             render: (name: string, node: Node) => {
                 if (node.type === 'DIR') {
                     return (
-                        <Button size='small' type='link' onClick={() => setCurrentPath([...currentPath, name])}>{name}</Button>
+                        <>
+                            <Button size='small' type='link' onClick={() => setCurrentPath([...currentPath, name])}>
+                                <FolderOutlined />
+                                {name}
+                            </Button>
+                        </>
                     );
                 }
 
-                return name;
+                return (
+                    <>
+                        <FileOutlined className='cvat-remote-browser-file-icon' />
+                        {name}
+                    </>
+                );
             },
         },
     ];
@@ -199,12 +214,10 @@ function RemoteBrowser(props: Props): JSX.Element {
                     pageSize={PAGE_SIZE}
                     showQuickJumper
                     showSizeChanger={false}
-                    size='small'
                     total={dataSource.children.length}
                     onChange={(newPage: number) => {
                         setCurrentPage(newPage);
                     }}
-                    showPrevNextJumpers={false}
                     current={currentPage}
                     itemRender={(_, type, originalElement) => {
                         if (type === 'next') {

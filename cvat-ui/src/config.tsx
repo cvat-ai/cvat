@@ -124,7 +124,7 @@ const RESET_NOTIFICATIONS_PATHS = {
         '/auth',
     ],
 };
-const BUCKET_CONTENT_KEY = 'bucket content';
+const BUCKET_CONTENT_KEY = 'All files';
 
 export default {
     UNDEFINED_ATTRIBUTE_VALUE,
