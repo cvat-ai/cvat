@@ -546,7 +546,7 @@ class TestGetTaskDataset:
             ],
         }
         response = post_method(admin_user, f"tasks/{tid}/annotations", data=annotations)
-        response.status_code == HTTPStatus.CREATED
+        assert response.status_code == HTTPStatus.CREATED
 
         response = self._test_export_task(admin_user, tid, format="COCO Keypoints 1.0")
         assert response.data
