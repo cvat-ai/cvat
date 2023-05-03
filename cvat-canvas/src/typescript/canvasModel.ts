@@ -68,6 +68,7 @@ export interface Configuration {
     textContent?: string;
     undefinedAttrValue?: string;
     showProjections?: boolean;
+    showConflicts?: boolean;
     forceDisableEditing?: boolean;
     intelligentPolygonCrop?: boolean;
     forceFrameUpdate?: boolean;
@@ -347,6 +348,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 autoborders: false,
                 displayAllText: false,
                 showProjections: false,
+                showConflicts: false,
                 forceDisableEditing: false,
                 intelligentPolygonCrop: false,
                 forceFrameUpdate: false,
@@ -824,6 +826,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         }
         if (Object.values(ColorBy).includes(configuration.colorBy)) {
             this.data.configuration.colorBy = configuration.colorBy;
+        }
+
+        if (typeof configuration.showConflicts === 'boolean') {
+            this.data.configuration.showConflicts = configuration.showConflicts;
         }
 
         if (typeof configuration.CSSImageFilter === 'string') {

@@ -10,13 +10,13 @@ import { CombinedState } from 'reducers';
 import { Canvas } from 'cvat-canvas/src/typescript/canvas';
 
 import { AnnotationConflict, ObjectState, QualityConflict } from 'cvat-core-wrapper';
-import { translateToCanvas } from 'cvat-canvas/src/typescript/shared';
 import ConflictLabel from './conflict-label';
 
 export default function ConflictAggregatorComponent(): JSX.Element | null {
-    const qualityConflicts = useSelector((state: CombinedState): any[] => state.review.conflicts);
-    const objectStates = useSelector((state: CombinedState): any[] => state.annotation.annotations.states);
-    const currentFrame = useSelector((state: CombinedState): number => state.annotation.player.frame.number);
+    const qualityConflicts = useSelector((state: CombinedState) => state.review.conflicts);
+    const objectStates = useSelector((state: CombinedState) => state.annotation.annotations.states);
+    const currentFrame = useSelector((state: CombinedState) => state.annotation.player.frame.number);
+    const showConflicts = useSelector((state: CombinedState) => state.settings.shapes.showGroundTruth);
     const frameQualityConflicts = qualityConflicts.filter(
         (conflict: QualityConflict) => conflict.frame === currentFrame,
     );
@@ -50,23 +50,28 @@ export default function ConflictAggregatorComponent(): JSX.Element | null {
     }, [canvasInstance]);
     const [mapping, setMapping] = useState<any>([]);
     useEffect(() => {
-        if (geometry) {
-            const newMapping = conflicts.map((c: AnnotationConflict) => {
-                const state = objectStates.find((s: ObjectState) => s.jobID === c.jobId && s.serverID === c.objId);
-                if (state) {
-                    const points = [state.points[0], state.points[1]];
-                    const [x, y] = translateToCanvas(geometry?.offset, points);
-                    return {
-                        description: c.conflictType,
-                        x,
-                        y,
-                    };
-                }
-                return [];
-            }).filter((el) => !Array.isArray(el));
-            setMapping(newMapping);
-        }
-    }, [geometry, objectStates]);
+        setTimeout(() => {
+            if (geometry && showConflicts) {
+                const newMapping = conflicts.map((c: AnnotationConflict) => {
+                    const state = objectStates.find((s: ObjectState) => s.jobID === c.jobId && s.serverID === c.objId);
+                    if (state && canvasInstance) {
+                        const points = canvasInstance.setupConflictsRegions(state);
+                        if (points) {
+                            return {
+                                description: c.conflictType,
+                                x: points[0],
+                                y: points[1],
+                            };
+                        }
+                    }
+                    return [];
+                }).filter((el) => !Array.isArray(el));
+                setMapping(newMapping);
+            } else {
+                setMapping([]);
+            }
+        });
+    }, [geometry, objectStates, showConflicts, currentFrame]);
 
     if (!(canvasInstance instanceof Canvas) || !canvasIsReady || !geometry) {
         return null;
@@ -75,7 +80,7 @@ export default function ConflictAggregatorComponent(): JSX.Element | null {
     for (const conflict of mapping) {
         conflictLabels.push(
             <ConflictLabel
-                key={Math.trunc(conflict.x)}
+                key={(Math.random() + 1).toString(36).substring(7)}
                 text={conflict.description}
                 top={conflict.y}
                 left={conflict.x}

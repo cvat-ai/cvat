@@ -109,6 +109,7 @@ interface StateToProps {
     keyMap: KeyMap;
     showTagsOnFrame: boolean;
     conflicts: QualityConflict[];
+    showGroundTruth: boolean;
 }
 
 interface DispatchToProps {
@@ -187,7 +188,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 textContent,
             },
             shapes: {
-                opacity, colorBy, selectedOpacity, outlined, outlineColor, showBitmap, showProjections,
+                opacity, colorBy, selectedOpacity, outlined, outlineColor, showBitmap, showProjections, showGroundTruth,
             },
         },
         shortcuts: { keyMap },
@@ -245,6 +246,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
             activeControl === ActiveControl.EDIT,
         statesSources,
         conflicts,
+        showGroundTruth,
     };
 }
 
@@ -367,6 +369,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             colorBy,
             outlined,
             outlineColor,
+            showGroundTruth,
         } = this.props;
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
 
@@ -381,6 +384,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             displayAllText: showObjectsTextAlways,
             autoborders: automaticBordering,
             showProjections,
+            showConflicts: showGroundTruth,
             intelligentPolygonCrop,
             selectedShapeOpacity: selectedOpacity,
             controlPointsSize,
@@ -431,6 +435,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             colorBy,
             onFetchAnnotation,
             statesSources,
+            showGroundTruth,
         } = this.props;
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
 
@@ -448,7 +453,8 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             prevProps.textContent !== textContent ||
             prevProps.colorBy !== colorBy ||
             prevProps.outlineColor !== outlineColor ||
-            prevProps.outlined !== outlined
+            prevProps.outlined !== outlined ||
+            prevProps.showGroundTruth !== showGroundTruth
         ) {
             canvasInstance.configure({
                 undefinedAttrValue: config.UNDEFINED_ATTRIBUTE_VALUE,
@@ -465,6 +471,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                 controlPointsSize,
                 textPosition,
                 textContent,
+                showConflicts: showGroundTruth,
             });
         }
 
@@ -877,7 +884,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             curZLayer, annotations, frameData, canvasInstance, statesSources, conflicts,
             workspace,
         } = this.props;
-        console.log(annotations, conflicts);
         if (frameData !== null && canvasInstance) {
             const filteredAnnotations = annotations.filter((e) => e.objectType !== ObjectType.TAG);
             const shownAnnotations = filteredAnnotations.filter((e) => !e.jobID || statesSources.includes(e.jobID));

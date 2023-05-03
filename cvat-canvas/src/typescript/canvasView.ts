@@ -63,6 +63,7 @@ import {
 
 export interface CanvasView {
     html(): HTMLDivElement;
+    setupConflictsRegions(clientID: number): number[];
 }
 
 export class CanvasViewImpl implements CanvasView, Listener {
@@ -1308,6 +1309,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         (shapeView as any).instance
                             .fill({ color: fill, opacity: fillOpacity })
                             .stroke({ color: stroke });
+                        if (configuration.showConflicts && objectState?.conflict) {
+                            shapeView.classList.add('cvat_canvas_conflicted');
+                        } else if (!configuration.showConflicts && objectState?.conflict) {
+                            shapeView.classList.remove('cvat_canvas_conflicted');
+                        }
                     }
 
                     if (drawnState.elements) {
@@ -1319,7 +1325,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             const withUpdatingShapeViews = configuration.shapeOpacity !== this.configuration.shapeOpacity ||
                 configuration.selectedShapeOpacity !== this.configuration.selectedShapeOpacity ||
                 configuration.outlinedBorders !== this.configuration.outlinedBorders ||
-                configuration.colorBy !== this.configuration.colorBy;
+                configuration.colorBy !== this.configuration.colorBy ||
+                configuration.showConflicts !== this.configuration.showConflicts;
 
             if (configuration.displayAllText && !this.configuration.displayAllText) {
                 for (const i in this.drawnStates) {
@@ -1707,6 +1714,17 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     public html(): HTMLDivElement {
         return this.canvas;
+    }
+
+    public setupConflictsRegions(SShape: any): number[] {
+        let cx = 0;
+        let cy = 0;
+        const shape = this.svgShapes[SShape.clientID];
+        if (!shape) return [];
+        const box = (shape.node as any).getBBox();
+        cx = box.x + (box.x + box.width - box.x) / 2;
+        cy = box.y + (box.y + box.height - box.y) / 2;
+        return [cx, cy];
     }
 
     private redrawBitmap(): void {
@@ -2709,7 +2727,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             rect.addClass('cvat_canvas_ground_truth');
         }
 
-        if (state.conflict) {
+        if (state.conflict && this.configuration.showConflicts) {
             rect.addClass('cvat_canvas_conflicted');
         }
 
@@ -2741,7 +2759,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             polygon.addClass('cvat_canvas_ground_truth');
         }
 
-        if (state.conflict) {
+        if (state.conflict && this.configuration.showConflicts) {
             polygon.addClass('cvat_canvas_conflicted');
         }
 
@@ -2773,7 +2791,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             polyline.addClass('cvat_canvas_ground_truth');
         }
 
-        if (state.conflict) {
+        if (state.conflict && this.configuration.showConflicts) {
             polyline.addClass('cvat_canvas_conflicted');
         }
 
@@ -2806,7 +2824,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             cube.addClass('cvat_canvas_ground_truth');
         }
 
-        if (state.conflict) {
+        if (state.conflict && this.configuration.showConflicts) {
             cube.addClass('cvat_canvas_conflicted');
         }
 
@@ -3388,7 +3406,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             rect.addClass('cvat_canvas_ground_truth');
         }
 
-        if (state.conflict) {
+        if (state.conflict && this.configuration.showConflicts) {
             rect.addClass('cvat_canvas_conflicted');
         }
 
@@ -3422,7 +3440,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             group.addClass('cvat_canvas_ground_truth');
         }
 
-        if (state.conflict) {
+        if (state.conflict && this.configuration.showConflicts) {
             group.addClass('cvat_canvas_conflicted');
         }
 
