@@ -315,6 +315,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         type: string;
         mime_type: string;
     }[]): void => {
+        let filteredFiles = shareFiles;
         const { many } = this.props;
         const { files } = this.state;
 
@@ -324,8 +325,8 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             uploadFileErrorMessage = shareFiles.every((it) => ['image', 'DIR'].includes(it.mime_type)) ?
                 '' : UploadFileErrorMessages.one;
         } else if (many) {
-            uploadFileErrorMessage = shareFiles.every((it) => it.mime_type === 'video') ?
-                '' : UploadFileErrorMessages.multi;
+            filteredFiles = filteredFiles.filter((it) => it.mime_type === 'video');
+            uploadFileErrorMessage = !filteredFiles.length && shareFiles.length ? UploadFileErrorMessages.multi : '';
         }
 
         this.setState({
@@ -336,7 +337,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             this.setState({
                 files: {
                     ...files,
-                    share: shareFiles.map((it) => it.key),
+                    share: filteredFiles.map((it) => it.key),
                 },
             });
         }
