@@ -20,7 +20,7 @@ import numpy as np
 
 from cvat.apps.dataset_manager.task import JobAnnotation
 from cvat.apps.dataset_manager.bindings import (CommonData, CvatToDmAnnotationConverter,
-    GetCVATDataExtractor, JobData)
+    GetCVATDataExtractor, JobData, match_dm_item)
 from cvat.apps.dataset_manager.util import bulk_create
 from cvat.apps.dataset_manager.formats.registry import dm_env
 from cvat.apps.engine import models
@@ -397,8 +397,8 @@ class JobDataProvider:
         )
         return dm.Dataset.from_extractors(extractor, env=dm_env)
 
-    def dm_item_id_to_frame_id(self, item_id: str) -> int:
-        return self.job_data.match_frame(item_id)
+    def dm_item_id_to_frame_id(self, item: dm.DatasetItem) -> int:
+        return match_dm_item(item, self.job_data)
 
     def dm_ann_to_ann_id(self, ann: dm.Annotation) -> AnnotationId:
         source_ann = self._annotation_memo.get_source_ann(ann)
@@ -894,7 +894,7 @@ class _DatasetComparator:
         self.included_frames = gt_data_provider.job_data._db_job.segment.frame_set
 
     def _dm_item_to_frame_id(self, item: dm.DatasetItem) -> int:
-        return self._gt_data_provider.dm_item_id_to_frame_id(item.id)
+        return self._gt_data_provider.dm_item_id_to_frame_id(item)
 
     def _dm_ann_to_ann_id(self, ann: dm.Annotation, dataset: dm.Dataset):
         if dataset is self._ds_dataset:
@@ -1125,8 +1125,22 @@ class _DatasetComparator:
         # accumulate stats
         intersection_frames = []
         conflict_count = 0
-        annotations = None
-        annotation_components = None
+        annotations = ComparisonReportAnnotationsSummary(
+            valid_count=0, missing_count=0,
+            extra_count=0, total_count=0,
+            ds_count=0, gt_count=0,
+            confusion_matrix=None
+        )
+        annotation_components = ComparisonReportAnnotationComponentsSummary(
+            shape=ComparisonReportAnnotationShapeSummary(
+                valid_count=0, missing_count=0,
+                extra_count=0, total_count=0,
+                ds_count=0, gt_count=0, mean_iou=0
+            ),
+            label=ComparisonReportAnnotationLabelSummary(
+                valid_count=0, invalid_count=0, total_count=0,
+            ),
+        )
         mean_ious = []
         confusion_matrices = []
         for frame_id, frame_result in self._frame_results.items():
