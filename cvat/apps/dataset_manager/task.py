@@ -307,10 +307,11 @@ class JobAnnotation:
             self._validate_label_for_existence(db_tag.label_id)
 
             for attr in attributes:
-                db_attr_val = models.LabeledImageAttributeVal(**attr, tag_id=len(db_tags))
+                db_attr_val = models.LabeledImageAttributeVal(**attr)
 
                 self._validate_attribute_for_existence(db_attr_val, db_tag.label_id, "all")
 
+                db_attr_val.tag_id = len(db_tags)
                 db_attr_vals.append(db_attr_val)
 
             db_tags.append(db_tag)
