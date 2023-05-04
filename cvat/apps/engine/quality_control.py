@@ -541,28 +541,31 @@ class _LineMatcher(dm.ops.LineMatcher):
     torso_r: float = 0.25
     oriented: bool = False
     scale: float = None
-    zero_distance_threshold: float = 0.01
-    _approx_cache = None
 
     def distance(self, gt_ann: dm.PolyLine, ds_ann: dm.PolyLine):
-        cached_data = self._load_from_cache(gt_ann, ds_ann)
-        if cached_data:
-            a, b = cached_data
-        else:
-            # Check distances of the very coarse estimates for the curves
-            def _get_bbox_points(bbox):
-                x, y, w, h = bbox
-                return np.array([ (x, y), (x, y + h), (x + w, y), (x + w, y + h) ])
+        # Check distances of the very coarse estimates for the curves
+        def _get_bbox_circle(ann: dm.PolyLine):
+            xs = ann.points[0::2]
+            ys = ann.points[1::2]
+            x0 = min(xs)
+            x1 = max(xs)
+            y0 = min(ys)
+            y1 = max(ys)
+            return (x0 + x1) / 2, (y0 + y1) / 2, (x1 - x0) ** 2 + (y1 - y0) ** 2
 
-            gt_bbox = _get_bbox_points(gt_ann.get_bbox())
-            ds_bbox = _get_bbox_points(ds_ann.get_bbox())
-            if self._compare_lines(gt_bbox, ds_bbox) < self.zero_distance_threshold:
-                return 0
+        gt_center_x, gt_center_y, gt_r2  = _get_bbox_circle(gt_ann)
+        ds_center_x, ds_center_y, ds_r2  = _get_bbox_circle(ds_ann)
+        sigma2_x6 = self.scale * (6 * self.torso_r) ** 2
+        if (
+            (ds_center_x - gt_center_x) ** 2 + (ds_center_y - gt_center_y) ** 2
+        ) > ds_r2 + gt_r2 + sigma2_x6:
+            return 0
 
-        if cached_data is None:
-            # Approximate lines to the same number of points for pointwise comparison
-            a, b = self._get_approximated_lines(gt_ann, ds_ann)
-            self._save_in_cache(gt_ann, ds_ann, (a, b))
+        # Approximate lines to the same number of points for pointwise comparison
+        a, b = self.approximate_points(
+            np.array(gt_ann.points).reshape((-1, 2)),
+            np.array(ds_ann.points).reshape((-1, 2))
+        )
 
         # Compare the direct and, optionally, the reverse variants
         similarities = []
@@ -584,38 +587,9 @@ class _LineMatcher(dm.ops.LineMatcher):
             scale = np.sum(segment_dists) ** 2
 
         # Compute Gaussian for approximated lines similarly to OKS
-        return np.sum(
+        return sum(
             np.exp(-(dists**2) / (2 * scale * (2 * self.torso_r) ** 2))
         ) / len(a)
-
-    def _load_from_cache(self, gt_ann: dm.PolyLine, ds_ann: dm.PolyLine):
-        cached_data = None
-        if self._approx_cache is not None:
-            for is_key_reversed, key in {
-                False: (id(gt_ann), id(ds_ann)), True: (id(ds_ann), id(gt_ann))
-            }.items():
-                cached_data = self._approx_cache.get()
-                if not cached_data:
-                    break
-
-            if cached_data:
-                if is_key_reversed:
-                    key = key[::-1]
-                cached_data = cached_data[::-1]
-
-        return cached_data
-
-    def _save_in_cache(self, gt_ann: dm.PolyLine, ds_ann: dm.PolyLine, cached_data):
-        if self._approx_cache is not None:
-            # Can't cache independently, because the approximation result
-            # depends on both lines
-            self._approx_cache[(id(gt_ann), id(ds_ann))] = cached_data
-
-    def _get_approximated_lines(self, gt_ann: dm.PolyLine, ds_ann: dm.PolyLine):
-        return self.approximate_points(
-            np.array(gt_ann.points).reshape((-1, 2)),
-            np.array(ds_ann.points).reshape((-1, 2))
-        )
 
     @classmethod
     def approximate_points(cls, a: np.ndarray, b: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
@@ -631,14 +605,14 @@ class _LineMatcher(dm.ops.LineMatcher):
         a_segment_count = len(a) - 1
         b_segment_count = len(b) - 1
 
-        a_segment_lengths = list(np.linalg.norm(a[1:] - a[:-1], axis=1))
+        a_segment_lengths = np.linalg.norm(a[1:] - a[:-1], axis=1)
         a_segment_end_dists = [0]
         for l in a_segment_lengths:
             a_segment_end_dists.append(a_segment_end_dists[-1] + l)
         a_segment_end_dists.pop(0)
         a_segment_end_dists.append(a_segment_end_dists[-1]) # duplicate for simpler code
 
-        b_segment_lengths = list(np.linalg.norm(b[1:] - b[:-1], axis=1))
+        b_segment_lengths = np.linalg.norm(b[1:] - b[:-1], axis=1)
         b_segment_end_dists = [0]
         for l in b_segment_lengths:
             b_segment_end_dists.append(b_segment_end_dists[-1] + l)
@@ -658,36 +632,35 @@ class _LineMatcher(dm.ops.LineMatcher):
         b_segment_idx = 0
         while a_segment_idx < a_segment_count or b_segment_idx < b_segment_count:
             # The algorithm is similar to merge sort
-
-            cur_point_idx = a_segment_idx + b_segment_idx
+            next_point_idx = a_segment_idx + b_segment_idx + 1
 
             a_segment_end_pos = a_segment_end_dists[a_segment_idx] / (a_length or 1)
             b_segment_end_pos = b_segment_end_dists[b_segment_idx] / (b_length or 1)
             if a_segment_idx < a_segment_count and a_segment_end_pos <= b_segment_end_pos:
                 if b_segment_idx < b_segment_count:
                     # advance b in a position in the current segment
-                    r = (a_segment_end_pos * b_length - (
-                            b_segment_end_dists[b_segment_idx] - b_segment_lengths[b_segment_idx]
-                        )) / (b_segment_lengths[b_segment_idx] or 1)
-                    b_new_points[cur_point_idx + 1] = \
-                        b[b_segment_idx] * (1 - r) + b[1 + b_segment_idx] * r
+                    q = (
+                            b_segment_end_dists[b_segment_idx] - a_segment_end_pos * b_length
+                        ) / (b_segment_lengths[b_segment_idx] or 1)
+                    b_new_points[next_point_idx] = \
+                        b[b_segment_idx] * q + b[1 + b_segment_idx] * (1 - q)
 
                 # advance a to the end of this segment
-                a_new_points[cur_point_idx + 1] = a[1 + a_segment_idx]
+                a_new_points[next_point_idx] = a[1 + a_segment_idx]
 
                 a_segment_idx += 1
 
             elif b_segment_idx < b_segment_count:
                 if a_segment_idx < a_segment_count:
                     # advance a in a position in the current segment
-                    r = (b_segment_end_pos * a_length - (
-                            a_segment_end_dists[a_segment_idx] - a_segment_lengths[a_segment_idx]
-                        )) / (a_segment_lengths[a_segment_idx] or 1)
-                    a_new_points[cur_point_idx + 1] = \
-                        a[a_segment_idx] * (1 - r) + a[1 + a_segment_idx] * r
+                    q = (
+                            a_segment_end_dists[a_segment_idx] - b_segment_end_pos * a_length
+                        ) / (a_segment_lengths[a_segment_idx] or 1)
+                    a_new_points[next_point_idx] = \
+                        a[a_segment_idx] * q + a[1 + a_segment_idx] * (1 - q)
 
                 # advance b to the end of this segment
-                b_new_points[cur_point_idx + 1] = b[1 + b_segment_idx]
+                b_new_points[next_point_idx] = b[1 + b_segment_idx]
 
                 b_segment_idx += 1
 
@@ -1196,16 +1169,15 @@ class _DatasetComparator:
                 scale=np.prod(gt_item.image.size)
             )
 
-            for gt_ann, ds_ann in zip(gt_item.annotations, ds_item.annotations):
+            for gt_ann, ds_ann in itertools.chain(matches, mismatches):
                 if gt_ann.type != ds_ann.type or gt_ann.type != dm.AnnotationType.polyline:
                     continue
 
                 non_oriented_distance = _get_similarity(gt_ann, ds_ann)
-                if not non_oriented_distance:
-                    continue
-
                 oriented_distance = line_matcher.distance(gt_ann, ds_ann)
-                if oriented_distance < non_oriented_distance:
+
+                # need to filter computation errors from line approximation
+                if non_oriented_distance - oriented_distance > 0.01:
                     conflicts.append(
                         AnnotationConflict(
                             frame_id=frame_id,
@@ -1299,7 +1271,7 @@ class _DatasetComparator:
                     total_count=total_labels_count,
                 ),
             ),
-            conflicts=conflicts.copy(),
+            conflicts=conflicts,
         )
 
         return conflicts
