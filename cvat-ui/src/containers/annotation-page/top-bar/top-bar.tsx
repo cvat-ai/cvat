@@ -46,6 +46,7 @@ interface StateToProps {
     jobInstance: any;
     frameIsDeleted: boolean;
     frameNumber: number;
+    navigationBlocked: boolean;
     frameFilename: string;
     frameStep: number;
     frameSpeed: FrameSpeed;
@@ -91,6 +92,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         annotation: {
             player: {
                 playing,
+                navigationBlocked,
                 frame: {
                     data: { deleted: frameIsDeleted },
                     filename: frameFilename,
@@ -128,6 +130,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         canvasIsReady,
         saving,
         frameNumber,
+        navigationBlocked,
         frameFilename,
         jobInstance,
         undoAction: history.undo.length ? history.undo[history.undo.length - 1][0] : undefined,
@@ -547,9 +550,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
                     if (stillPlaying) {
                         if (isAbleToChangeFrame()) {
                             onChangeFrame(frameNumber + 1 + framesSkipped, stillPlaying, framesSkipped + 1);
-                        } else if (jobInstance.dimension === DimensionType.DIMENSION_2D) {
-                            onSwitchPlay(false);
-                        } else {
+                        } else if (jobInstance.dimension !== DimensionType.DIMENSION_2D) {
                             setTimeout(() => this.play(), frameDelay);
                         }
                     }
