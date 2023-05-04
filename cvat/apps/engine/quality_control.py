@@ -541,11 +541,28 @@ class _LineMatcher(dm.ops.LineMatcher):
     torso_r: float = 0.25
     oriented: bool = False
     scale: float = None
+    zero_distance_threshold: float = 0.01
     _approx_cache = None
 
-    def distance(self, gt_ann, ds_ann):
-        # Approximate lines to the same number of points for pointwise comparison
-        a, b = self.get_approximated_lines(gt_ann, ds_ann)
+    def distance(self, gt_ann: dm.PolyLine, ds_ann: dm.PolyLine):
+        cached_data = self._load_from_cache(gt_ann, ds_ann)
+        if cached_data:
+            a, b = cached_data
+        else:
+            # Check distances of the very coarse estimates for the curves
+            def _get_bbox_points(bbox):
+                x, y, w, h = bbox
+                return np.array([ (x, y), (x, y + h), (x + w, y), (x + w, y + h) ])
+
+            gt_bbox = _get_bbox_points(gt_ann.get_bbox())
+            ds_bbox = _get_bbox_points(ds_ann.get_bbox())
+            if self._compare_lines(gt_bbox, ds_bbox) < self.zero_distance_threshold:
+                return 0
+
+        if cached_data is None:
+            # Approximate lines to the same number of points for pointwise comparison
+            a, b = self._get_approximated_lines(gt_ann, ds_ann)
+            self._save_in_cache(gt_ann, ds_ann, (a, b))
 
         # Compare the direct and, optionally, the reverse variants
         similarities = []
@@ -554,11 +571,11 @@ class _LineMatcher(dm.ops.LineMatcher):
             candidates.append(b[::-1])
 
         for candidate_b in candidates:
-            similarities.append(self.compare(a, candidate_b))
+            similarities.append(self._compare_lines(a, candidate_b))
 
         return max(similarities)
 
-    def compare(self, a: np.ndarray, b: np.ndarray) -> float:
+    def _compare_lines(self, a: np.ndarray, b: np.ndarray) -> float:
         dists = np.linalg.norm(a - b, axis=1)
 
         scale = self.scale
@@ -571,7 +588,7 @@ class _LineMatcher(dm.ops.LineMatcher):
             np.exp(-(dists**2) / (2 * scale * (2 * self.torso_r) ** 2))
         ) / len(a)
 
-    def get_approximated_lines(self, gt_ann: dm.PolyLine, ds_ann: dm.PolyLine):
+    def _load_from_cache(self, gt_ann: dm.PolyLine, ds_ann: dm.PolyLine):
         cached_data = None
         if self._approx_cache is not None:
             for is_key_reversed, key in {
@@ -584,20 +601,21 @@ class _LineMatcher(dm.ops.LineMatcher):
             if cached_data:
                 if is_key_reversed:
                     key = key[::-1]
-                a, b = key
+                cached_data = cached_data[::-1]
 
-        if cached_data is None:
-            a, b = self.approximate_points(
-                np.array(gt_ann.points).reshape((-1, 2)),
-                np.array(ds_ann.points).reshape((-1, 2))
-            )
+        return cached_data
 
+    def _save_in_cache(self, gt_ann: dm.PolyLine, ds_ann: dm.PolyLine, cached_data):
         if self._approx_cache is not None:
             # Can't cache independently, because the approximation result
             # depends on both lines
-            self._approx_cache[(id(gt_ann), id(ds_ann))] = (a, b)
+            self._approx_cache[(id(gt_ann), id(ds_ann))] = cached_data
 
-        return a, b
+    def _get_approximated_lines(self, gt_ann: dm.PolyLine, ds_ann: dm.PolyLine):
+        return self.approximate_points(
+            np.array(gt_ann.points).reshape((-1, 2)),
+            np.array(ds_ann.points).reshape((-1, 2))
+        )
 
     @classmethod
     def approximate_points(cls, a: np.ndarray, b: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
