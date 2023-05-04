@@ -8,7 +8,7 @@ from datetime import timedelta
 from functools import cached_property, partial
 
 import itertools
-from typing import Any, Callable, Dict, Hashable, List, Optional, Sequence, Union, cast
+from typing import Any, Callable, Dict, Hashable, List, Optional, Sequence, Tuple, Union, cast
 
 from attrs import asdict, define, has as is_attrs_type
 import datumaro as dm
@@ -459,7 +459,7 @@ class _MemoizingAnnotationConverter(CvatToDmAnnotationConverter):
         return converted
 
 
-def _OKS(a, b, sigma=None, bbox=None, scale=None, visibility=None):
+def _OKS(a, b, sigma=0.1, bbox=None, scale=None, visibility=None):
     """
     Object Keypoint Similarity metric.
     https://cocodataset.org/#keypoints-eval
@@ -474,11 +474,6 @@ def _OKS(a, b, sigma=None, bbox=None, scale=None, visibility=None):
         visibility = np.ones(len(p1))
     else:
         visibility = np.asarray(visibility, dtype=float)
-
-    if not sigma:
-        sigma = 0.1
-    else:
-        assert isinstance(sigma, (int, float, np.number)) or len(sigma) == len(p1)
 
     if not scale:
         if bbox is None:
@@ -541,6 +536,148 @@ def _segment_iou(a, b, *, img_h, img_w):
     # Note that mask_utils.iou expects (dt, gt). Check this if the 3rd param is True
     return float(mask_utils.iou(b, a, [0]))
 
+@define(kw_only=True)
+class _LineMatcher(dm.ops.LineMatcher):
+    torso_r: float = 0.25
+    oriented: bool = False
+    scale: float = None
+    _approx_cache = None
+
+    def distance(self, gt_ann, ds_ann):
+        # Approximate lines to the same number of points for pointwise comparison
+        a, b = self.get_approximated_lines(gt_ann, ds_ann)
+
+        # Compare the direct and, optionally, the reverse variants
+        similarities = []
+        candidates = [b]
+        if not self.oriented:
+            candidates.append(b[::-1])
+
+        for candidate_b in candidates:
+            similarities.append(self.compare(a, candidate_b))
+
+        return max(similarities)
+
+    def compare(self, a: np.ndarray, b: np.ndarray) -> float:
+        dists = np.linalg.norm(a - b, axis=1)
+
+        scale = self.scale
+        if scale is None:
+            segment_dists = np.linalg.norm(a[1:] - a[:-1], axis=1)
+            scale = np.sum(segment_dists) ** 2
+
+        # Compute Gaussian for approximated lines similarly to OKS
+        return np.sum(
+            np.exp(-(dists**2) / (2 * scale * (2 * self.torso_r) ** 2))
+        ) / len(a)
+
+    def get_approximated_lines(self, gt_ann: dm.PolyLine, ds_ann: dm.PolyLine):
+        cached_data = None
+        if self._approx_cache is not None:
+            for is_key_reversed, key in {
+                False: (id(gt_ann), id(ds_ann)), True: (id(ds_ann), id(gt_ann))
+            }.items():
+                cached_data = self._approx_cache.get()
+                if not cached_data:
+                    break
+
+            if cached_data:
+                if is_key_reversed:
+                    key = key[::-1]
+                a, b = key
+
+        if cached_data is None:
+            a, b = self.approximate_points(
+                np.array(gt_ann.points).reshape((-1, 2)),
+                np.array(ds_ann.points).reshape((-1, 2))
+            )
+
+        if self._approx_cache is not None:
+            # Can't cache independently, because the approximation result
+            # depends on both lines
+            self._approx_cache[(id(gt_ann), id(ds_ann))] = (a, b)
+
+        return a, b
+
+    @classmethod
+    def approximate_points(cls, a: np.ndarray, b: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Creates 2 polylines with the same numbers of points,
+        the points are placed on the original lines with the same step.
+        The step for each point is determined as minimal to the next original
+        point on one of the curves.
+        A simpler, but slower version could be just approximate each curve to
+        some big number of points. The advantage of this algo is that it keeps
+        corners and original points untouched, while adding intermediate points.
+        """
+        a_segment_count = len(a) - 1
+        b_segment_count = len(b) - 1
+
+        a_segment_lengths = list(np.linalg.norm(a[1:] - a[:-1], axis=1))
+        a_segment_end_dists = [0]
+        for l in a_segment_lengths:
+            a_segment_end_dists.append(a_segment_end_dists[-1] + l)
+        a_segment_end_dists.pop(0)
+        a_segment_end_dists.append(a_segment_end_dists[-1]) # duplicate for simpler code
+
+        b_segment_lengths = list(np.linalg.norm(b[1:] - b[:-1], axis=1))
+        b_segment_end_dists = [0]
+        for l in b_segment_lengths:
+            b_segment_end_dists.append(b_segment_end_dists[-1] + l)
+        b_segment_end_dists.pop(0)
+        b_segment_end_dists.append(b_segment_end_dists[-1]) # duplicate for simpler code
+
+        a_length = a_segment_end_dists[-1]
+        b_length = b_segment_end_dists[-1]
+
+        new_points_count = len(a) + len(b) - 1
+        a_new_points = np.empty((new_points_count, 2))
+        b_new_points = np.empty((new_points_count, 2))
+        a_new_points[0] = a[0]
+        b_new_points[0] = b[0]
+
+        a_segment_idx = 0
+        b_segment_idx = 0
+        while a_segment_idx < a_segment_count or b_segment_idx < b_segment_count:
+            # The algorithm is similar to merge sort
+
+            cur_point_idx = a_segment_idx + b_segment_idx
+
+            a_segment_end_pos = a_segment_end_dists[a_segment_idx] / (a_length or 1)
+            b_segment_end_pos = b_segment_end_dists[b_segment_idx] / (b_length or 1)
+            if a_segment_idx < a_segment_count and a_segment_end_pos <= b_segment_end_pos:
+                if b_segment_idx < b_segment_count:
+                    # advance b in a position in the current segment
+                    r = (a_segment_end_pos * b_length - (
+                            b_segment_end_dists[b_segment_idx] - b_segment_lengths[b_segment_idx]
+                        )) / (b_segment_lengths[b_segment_idx] or 1)
+                    b_new_points[cur_point_idx + 1] = \
+                        b[b_segment_idx] * (1 - r) + b[1 + b_segment_idx] * r
+
+                # advance a to the end of this segment
+                a_new_points[cur_point_idx + 1] = a[1 + a_segment_idx]
+
+                a_segment_idx += 1
+
+            elif b_segment_idx < b_segment_count:
+                if a_segment_idx < a_segment_count:
+                    # advance a in a position in the current segment
+                    r = (b_segment_end_pos * a_length - (
+                            a_segment_end_dists[a_segment_idx] - a_segment_lengths[a_segment_idx]
+                        )) / (a_segment_lengths[a_segment_idx] or 1)
+                    a_new_points[cur_point_idx + 1] = \
+                        a[a_segment_idx] * (1 - r) + a[1 + a_segment_idx] * r
+
+                # advance b to the end of this segment
+                b_new_points[cur_point_idx + 1] = b[1 + b_segment_idx]
+
+                b_segment_idx += 1
+
+            else:
+                assert False
+
+        return a_new_points, b_new_points
+
 class _DistanceComparator(dm.ops.DistanceComparator):
     def __init__(
         self,
@@ -556,9 +693,16 @@ class _DistanceComparator(dm.ops.DistanceComparator):
         self.included_ann_types = included_ann_types
         self.return_distances = return_distances
 
-        # % of the shape area, halved
+        # % of the shape area
+        # https://cocodataset.org/#keypoints-eval
         # https://github.com/cocodataset/cocoapi/blob/8c9bcc3cf640524c4c20a9c40e89cb6a2f2fa0e9/PythonAPI/pycocotools/cocoeval.py#L523
         self.oks_sigma = 0.09
+
+        self.oriented_lines = False
+
+        # % of the line length
+        # Here we use a % of image size in pixels, using the image size as the scale
+        self.line_torso_radius = 0.01
 
     def _instance_bbox(self, instance_anns: Sequence[dm.Annotation]):
         return dm.ops.max_bbox(
@@ -635,7 +779,8 @@ class _DistanceComparator(dm.ops.DistanceComparator):
         )
 
     def match_lines(self, item_a, item_b):
-        matcher = dm.ops.LineMatcher()
+        matcher = _LineMatcher(oriented=self.oriented_lines, torso_r=self.line_torso_radius,
+            scale=np.prod(item_a.image.size))
         return self._match_segments(dm.AnnotationType.polyline, item_a, item_b,
             distance=matcher.distance)
 
@@ -823,7 +968,8 @@ class _Comparator:
             dm.AnnotationType.skeleton,
         ]
         self._annotation_comparator = _DistanceComparator(
-            categories, included_ann_types=self.included_ann_types, return_distances=True,
+            categories, included_ann_types=self.included_ann_types,
+            return_distances=True
         )
 
     def match_attrs(self, ann_a: dm.Annotation, ann_b: dm.Annotation):
@@ -891,6 +1037,9 @@ class _DatasetComparator:
         self.comparator._annotation_comparator.iou_threshold = 0.4
         self.overlap_threshold = 0.8
 
+        # Indicates that polylines have direction
+        self.oriented_lines = True
+
         self.included_frames = gt_data_provider.job_data._db_job.segment.frame_set
 
     def _dm_item_to_frame_id(self, item: dm.DatasetItem) -> int:
@@ -925,16 +1074,17 @@ class _DatasetComparator:
         frame_results = self.comparator.match_annotations(gt_item, ds_item)
         self._frame_results.setdefault(frame_id, {})
 
-        self._generate_frame_annotation_conflicts(frame_id, frame_results)
+        self._generate_frame_annotation_conflicts(frame_id, frame_results,
+            gt_item=gt_item, ds_item=ds_item)
 
     def _generate_frame_annotation_conflicts(
-        self, frame_id: str, frame_results,
+        self, frame_id: str, frame_results, *, gt_item: dm.DatasetItem, ds_item: dm.DatasetItem
     ) -> List[AnnotationConflict]:
         conflicts = []
 
         matches, mismatches, gt_unmatched, ds_unmatched, pairwise_distances = frame_results
 
-        def _get_overlap(gt_ann: dm.Annotation, ds_ann: dm.Annotation) -> Optional[float]:
+        def _get_similarity(gt_ann: dm.Annotation, ds_ann: dm.Annotation) -> Optional[float]:
             return self.comparator.get_distance(pairwise_distances, gt_ann, ds_ann)
 
         _matched_shapes = set(
@@ -962,8 +1112,8 @@ class _DatasetComparator:
             return matched_ann, distance
 
         for gt_ann, ds_ann in list(matches + mismatches):
-            overlap = _get_overlap(gt_ann, ds_ann)
-            if overlap and overlap < self.overlap_threshold:
+            similarity = _get_similarity(gt_ann, ds_ann)
+            if similarity and similarity < self.overlap_threshold:
                 conflicts.append(AnnotationConflict(
                     frame_id=frame_id,
                     type=AnnotationConflictType.LOW_OVERLAP,
@@ -1008,17 +1158,46 @@ class _DatasetComparator:
             )
 
         resulting_distances = [
-            _get_overlap(gt_ann, ds_ann)
+            _get_similarity(gt_ann, ds_ann)
             for gt_ann, ds_ann in itertools.chain(matches, mismatches)
         ]
 
         for unmatched_ann in itertools.chain(gt_unmatched, ds_unmatched):
-            matched_ann_id, overlap = _find_closest_unmatched_shape(unmatched_ann)
+            matched_ann_id, similarity = _find_closest_unmatched_shape(unmatched_ann)
             if matched_ann_id is not None:
                 _matched_shapes.add(matched_ann_id)
-            resulting_distances.append(overlap)
+            resulting_distances.append(similarity)
 
         mean_iou = np.mean(resulting_distances) if resulting_distances else 0
+
+        if self.oriented_lines and dm.AnnotationType.polyline in self.comparator.included_ann_types:
+            # Check line directions
+            line_matcher = _LineMatcher(
+                torso_r=self.comparator._annotation_comparator.line_torso_radius,
+                oriented=False,
+                scale=np.prod(gt_item.image.size)
+            )
+
+            for gt_ann, ds_ann in zip(gt_item.annotations, ds_item.annotations):
+                if gt_ann.type != ds_ann.type or gt_ann.type != dm.AnnotationType.polyline:
+                    continue
+
+                non_oriented_distance = _get_similarity(gt_ann, ds_ann)
+                if not non_oriented_distance:
+                    continue
+
+                oriented_distance = line_matcher.distance(gt_ann, ds_ann)
+                if oriented_distance < non_oriented_distance:
+                    conflicts.append(
+                        AnnotationConflict(
+                            frame_id=frame_id,
+                            type=AnnotationConflictType.MISMATCHING_DIRECTION,
+                            annotation_ids=[
+                                self._dm_ann_to_ann_id(ds_ann, self._ds_dataset),
+                                self._dm_ann_to_ann_id(gt_ann, self._gt_dataset),
+                            ]
+                        )
+                    )
 
         valid_shapes_count = len(matches) + len(mismatches)
         missing_shapes_count = len(gt_unmatched)
