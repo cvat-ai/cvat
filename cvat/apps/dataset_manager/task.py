@@ -5,6 +5,7 @@
 
 from collections import OrderedDict
 from enum import Enum
+from copy import deepcopy
 import os
 from tempfile import TemporaryDirectory
 
@@ -123,6 +124,36 @@ class JobAnnotation:
         if label_id not in self.db_labels:
             raise AttributeError("label_id `{}` is invalid".format(label_id))
 
+    def _update_parent_track(self, child_track, parent_track):
+        # parent track cannot have a frame greater than the frame of the child track
+        # so we need to prevent this situation
+        if parent_track is not None and child_track.frame < parent_track.frame:
+            parent_tracked_shapes = parent_track.trackedshape_set
+
+            if parent_tracked_shapes.count() == 1 and parent_tracked_shapes.first().type == "skeleton":
+                skeleton = parent_tracked_shapes.first()
+                skeleton.frame = child_track.frame
+                skeleton.save()
+
+            parent_track.frame = child_track.frame
+            parent_track.save()
+
+    def _add_missing_shape(self, track, shapes):
+        # first shape of track must have the same frame as track
+        first_shape = shapes[0]
+        for shape in shapes:
+            if shape["frame"] < first_shape["frame"]:
+                first_shape = shape
+
+        if track.frame < first_shape["frame"]:
+            missing_shape = deepcopy(first_shape)
+            missing_shape["frame"] = track.frame
+            missing_shape["outside"] = True
+            shapes.append(missing_shape)
+
+        elif track.frame > first_shape["frame"]:
+            track.frame = first_shape["frame"]
+
     def _save_tracks_to_db(self, tracks):
 
         def create_tracks(tracks, parent_track=None):
@@ -132,33 +163,42 @@ class JobAnnotation:
             db_shape_attr_vals = []
 
             for track in tracks:
+                track_attributes = track.pop("attributes", [])
+                shapes = track.pop("shapes")
                 elements = track.pop("elements", [])
-
                 db_track = models.LabeledTrack(job=self.db_job, parent=parent_track, **track)
 
                 self._validate_label_for_existence(db_track.label_id)
 
-
-                for attr in track.get("attributes", []):
+                for attr in track_attributes:
                     db_attr_val = models.LabeledTrackAttributeVal(**attr, track_id=len(db_tracks))
 
                     self._validate_attribute_for_existence(db_attr_val, db_track.label_id, "immutable")
 
                     db_track_attr_vals.append(db_attr_val)
 
-                for shape in track.get("shapes"):
-                    db_shape = models.TrackedShape(**shape, track_id=len(db_tracks))
-                    db_shapes.append(db_shape)
+                self._add_missing_shape(db_track, shapes)
 
-                    for attr in shape.get("attributes", []):
+                for shape_idx, shape in enumerate(shapes):
+                    shape_attributes = shape.pop("attributes", [])
+                    db_shape = models.TrackedShape(**shape, track_id=len(db_tracks))
+
+                    for attr in shape_attributes:
                         db_attr_val = models.TrackedShapeAttributeVal(**attr, shape_id=len(db_shapes))
 
                         self._validate_attribute_for_existence(db_attr_val, db_track.label_id, "mutable")
 
                         db_shape_attr_vals.append(db_attr_val)
 
+                    db_shapes.append(db_shape)
+                    shape["attributes"] = shape_attributes
+
+                self._update_parent_track(db_track, parent_track)
+
                 db_tracks.append(db_track)
 
+                track["attributes"] = track_attributes
+                track["shapes"] = shapes
                 if elements or parent_track is None:
                     track["elements"] = elements
 
@@ -222,7 +262,7 @@ class JobAnnotation:
                 self._validate_label_for_existence(db_shape.label_id)
 
                 for attr in attributes:
-                    db_attr_val = models.LabeledShapeAttributeVal(**attr, shape_id = len(db_shapes))
+                    db_attr_val = models.LabeledShapeAttributeVal(**attr, shape_id=len(db_shapes))
 
                     self._validate_attribute_for_existence(db_attr_val, db_shape.label_id, "all")
 
@@ -267,11 +307,10 @@ class JobAnnotation:
             self._validate_label_for_existence(db_tag.label_id)
 
             for attr in attributes:
-                db_attr_val = models.LabeledImageAttributeVal(**attr)
+                db_attr_val = models.LabeledImageAttributeVal(**attr, tag_id=len(db_tags))
 
                 self._validate_attribute_for_existence(db_attr_val, db_tag.label_id, "all")
 
-                db_attr_val.tag_id = len(db_tags)
                 db_attr_vals.append(db_attr_val)
 
             db_tags.append(db_tag)
