@@ -468,6 +468,8 @@ class TestGetTaskDataset:
 
     @pytest.mark.parametrize("tid", [8])
     def test_can_export_task_to_coco_format(self, admin_user, tid):
+        # these annotations contains incorrect frame numbers
+        # in order to check that server handle such cases
         annotations = {
             "version": 0,
             "tags": [],
@@ -475,13 +477,13 @@ class TestGetTaskDataset:
             "tracks": [
                 {
                     "label_id": 63,
-                    "frame": 0,
+                    "frame": 1,
                     "group": 0,
                     "source": "manual",
                     "shapes": [
                         {
                             "type": "skeleton",
-                            "frame": 0,
+                            "frame": 1,
                             "occluded": False,
                             "outside": False,
                             "z_order": 0,
@@ -500,7 +502,7 @@ class TestGetTaskDataset:
                             "shapes": [
                                 {
                                     "type": "points",
-                                    "frame": 0,
+                                    "frame": 1,
                                     "occluded": False,
                                     "outside": True,
                                     "z_order": 0,
