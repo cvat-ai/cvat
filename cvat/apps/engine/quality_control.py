@@ -551,7 +551,7 @@ class _LineMatcher(dm.ops.LineMatcher):
             x1 = max(xs)
             y0 = min(ys)
             y1 = max(ys)
-            return (x0 + x1) / 2, (y0 + y1) / 2, (x1 - x0) ** 2 + (y1 - y0) ** 2
+            return (x0 + x1) / 2, (y0 + y1) / 2, ((x1 - x0) ** 2 + (y1 - y0) ** 2) / 4
 
         gt_center_x, gt_center_y, gt_r2  = _get_bbox_circle(gt_ann)
         ds_center_x, ds_center_y, ds_r2  = _get_bbox_circle(ds_ann)
