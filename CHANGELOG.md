@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TDB
 
 ### Changed
-- TDB
+- Resource links are opened from any organization/sandbox if available for user (<https://github.com/opencv/cvat/pull/5892>)
 
 ### Deprecated
 - TDB
