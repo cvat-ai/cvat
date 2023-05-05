@@ -6,10 +6,8 @@
 import re
 import textwrap
 from drf_spectacular.openapi import AutoSchema
-from drf_spectacular.extensions import OpenApiFilterExtension, OpenApiAuthenticationExtension
+from drf_spectacular.extensions import OpenApiAuthenticationExtension
 from drf_spectacular.authentication import TokenScheme, SessionScheme
-from drf_spectacular.plumbing import build_parameter_type
-from drf_spectacular.utils import OpenApiParameter
 
 
 class SignatureAuthenticationScheme(OpenApiAuthenticationExtension):
