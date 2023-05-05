@@ -14,7 +14,7 @@ class OrganizationFilterBackend(DjangoFilterBackend):
         # Filter works only for "list" requests and allows to return
         # only non-organization objects if org isn't specified
 
-        if view.detail and not view.iam_organization_field:
+        if view.detail or not view.iam_organization_field:
             return queryset
 
         visibility = None
