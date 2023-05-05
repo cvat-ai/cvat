@@ -743,13 +743,20 @@ class DataSerializer(serializers.ModelSerializer):
             Read more: https://docs.python.org/3/library/fnmatch.html
         """))
     job_file_mapping = JobFileMapping(required=False, write_only=True)
+    files_to_be_excluded = serializers.ListField(allow_null=True, required=False,
+        child=serializers.CharField(max_length=1024),
+        help_text=textwrap.dedent("""\
+            Paths to files and directories from a file share mounted on the server, or from a cloud storage
+            that should be excluded from the directories specified in server_files.
+        """)
+    )
 
     class Meta:
         model = models.Data
         fields = ('chunk_size', 'size', 'image_quality', 'start_frame', 'stop_frame', 'frame_filter',
             'compressed_chunk_type', 'original_chunk_type', 'client_files', 'server_files', 'remote_files', 'use_zip_chunks',
             'cloud_storage_id', 'use_cache', 'copy_data', 'storage_method', 'storage', 'sorting_method', 'filename_pattern',
-            'job_file_mapping')
+            'job_file_mapping', 'files_to_be_excluded')
         extra_kwargs = {
             'chunk_size': { 'help_text': "Maximum number of frames per chunk" },
             'size': { 'help_text': "The number of frames" },

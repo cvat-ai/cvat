@@ -447,6 +447,8 @@ class _ManifestManager(ABC):
             return None
 
     def __getitem__(self, item):
+        if isinstance(item, slice):
+            return [self._parse_line(i) for i in range(item.start or 0, item.stop or len(self), item.step or 1)]
         return self._parse_line(item)
 
     @property
@@ -656,28 +658,45 @@ class ImageManifestManager(_ManifestManager):
 
     def emulate_hierarchical_structure(
         self,
-        manifest_prefix: Optional[str],
+        page_size: int,
+        manifest_prefix: Optional[str] = None,
         prefix: Optional[str] = None,
-        next_token: Optional[str] = None
+        start_index: Optional[int] = None,
     ) -> Dict:
 
-        content = list(map(lambda x: x[1].full_name, self))
+        next_start_index = None
+        # get part of manifest content
+        # generally we cannot rely to slice with manifest content because it may not be sorted.
+        # And then this can lead to incorrect index calculation.
         if manifest_prefix:
-            content = [os.path.join(manifest_prefix, f) for f in content]
-        if prefix:
-            content = list(filter(lambda x: x.startswith(prefix), content))
-            if prefix.endswith('/'):
-                content = [f[len(prefix):] for f in content]
+            content = [os.path.join(manifest_prefix, f[1].full_name) for f in self]
+        else:
+            content = [f[1].full_name for f in self]
 
-        level_in_hierarchical_structure = list(
-            map(
-                lambda x: {'name': x.strip('/'), 'type': 'DIR' if x.endswith('/') else 'REG'},
-                set(f.split(os.path.sep)[0] if f == f.split(os.path.sep)[0] else f'{f.split(os.path.sep)[0]}/' for f in content)
-            )
-        )
+        content = list(filter(lambda x: x.startswith(prefix), content))
+        if prefix.endswith('/'):
+            content = [f[len(prefix):] for f in content]
+
+        files_in_root, files_in_directories = [], []
+
+        for f in content:
+            if os.path.sep in f:
+                files_in_directories.append(f)
+            else:
+                files_in_root.append(f)
+
+        directories = list(set([d.split(os.path.sep)[0] for d in files_in_directories]))
+        level_in_hierarchical_structure = [{'name': d, 'type': 'DIR'} for d in sort(directories, SortingMethod.NATURAL)]
+        level_in_hierarchical_structure.extend([{'name': f, 'type': 'REG'} for f in sort(files_in_root, SortingMethod.NATURAL)])
+
+        level_in_hierarchical_structure = level_in_hierarchical_structure[start_index:]
+        if len(level_in_hierarchical_structure) > page_size:
+            level_in_hierarchical_structure = level_in_hierarchical_structure[:page_size]
+            next_start_index = start_index + page_size
+
         return {
             'content': level_in_hierarchical_structure,
-            'next': None,
+            'next': next_start_index,
         }
 
 class _BaseManifestValidator(ABC):

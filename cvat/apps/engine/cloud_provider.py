@@ -15,7 +15,8 @@ from typing import Dict, List, Optional
 
 import boto3
 from azure.core.exceptions import HttpResponseError, ResourceExistsError
-from azure.storage.blob import BlobServiceClient, ContainerClient, PublicAccess, _list_blobs_helper
+from azure.storage.blob import BlobServiceClient, ContainerClient, PublicAccess
+from azure.storage.blob._list_blobs_helper import BlobPrefix
 from boto3.s3.transfer import TransferConfig
 from botocore.exceptions import ClientError
 from botocore.handlers import disable_signing
@@ -93,7 +94,6 @@ def validate_file_status(func):
     return wrapper
 
 class _CloudStorage(ABC):
-    PAGE_SIZE = 500
 
     def __init__(self):
         self._files = []
@@ -126,9 +126,6 @@ class _CloudStorage(ABC):
     def get_file_last_modified(self, key):
         pass
 
-    @abstractmethod
-    def initialize_content(self):
-        pass
 
     @abstractmethod
     def download_fileobj(self, key):
@@ -234,23 +231,51 @@ class _CloudStorage(ABC):
         pass
 
     @abstractmethod
-    def list_files_on_one_page(
+    def _list_raw_content_on_one_page(
         self,
         prefix: Optional[str] = None,
-        delimiter: Optional[str] = '/',
+        delimiter: str = '/',
         next_token: Optional[str] = None,
     ) -> Dict:
         pass
 
+    def list_files_on_one_page(
+        self,
+        prefix: Optional[str] = None,
+        delimiter: str = '/',
+        next_token: Optional[str] = None,
+        _use_flat_listing: bool = False,
+        _use_sort: bool = False,
+    ) -> Dict:
+        result = self._list_raw_content_on_one_page(prefix, delimiter, next_token)
+
+        if not _use_flat_listing:
+            result['directories'] = [d.strip('/') for d in result['directories']]
+        content = [{'name': f, 'type': 'REG'} for f in result['files']]
+        content.extend([{'name': d, 'type': 'DIR'} for d in result['directories']])
+
+        if not _use_flat_listing and prefix and prefix.endswith('/'):
+            for f in content:
+                f['name'] = f['name'][len(prefix):]
+
+        if _use_sort:
+            content = sorted(content, key=lambda x: x['type'])
+
+        return {
+            'content': content,
+            'next': result['next'],
+        }
+
     def list_files(
         self,
         prefix: Optional[str] = None,
-        delimiter: Optional[str] = '/',
+        delimiter: str = '/',
+        _use_flat_listing: bool = False,
     ) -> List[str]:
         all_files = []
         next_token = None
         while True:
-            batch = self.list_files_on_one_page(prefix, delimiter, next_token)
+            batch = self.list_files_on_one_page(prefix, delimiter, next_token, _use_flat_listing)
             all_files.extend(batch['content'])
             next_token = batch['next']
             if not next_token:
@@ -423,30 +448,13 @@ class AWS_S3(_CloudStorage):
             slogger.glob.error(msg)
             raise Exception(msg)
 
-    def initialize_content(self):
-        """Initialize bucket content, filter list with files and keep only files with supported type."""
-        files = self._bucket.objects.limit(settings.CLOUD_STORAGE_MAX_FILES_COUNT)
-        self._files = [{
-            'name': item.key,
-        } for item in files if _is_image(item.key)]
 
-    def list_files_on_one_page(
+    def _list_raw_content_on_one_page(
         self,
         prefix: Optional[str] = None,
-        delimiter: Optional[str] = '/',
+        delimiter: str = '/',
         next_token: Optional[str] = None,
     ) -> Dict:
-        kwargs = {
-            'Bucket': self.name,
-            'MaxKeys': self.PAGE_SIZE,
-        }
-        if delimiter:
-            kwargs['Delimiter'] = delimiter
-        if prefix:
-            kwargs['Prefix'] = prefix
-        if next_token:
-            kwargs['ContinuationToken'] = next_token
-
         # The structure of response looks like this:
         # {
         #    'CommonPrefixes': [{'Prefix': 'sub/'}],
@@ -454,16 +462,17 @@ class AWS_S3(_CloudStorage):
         #    ...
         #    'NextContinuationToken': 'str'
         # }
-        response = self._client.list_objects_v2(**kwargs)
-        content = [{'name': f['Key'], 'type': 'REG'} for f in response.get('Contents', [])]
-        content.extend([{'name': p['Prefix'].strip('/'), 'type': 'DIR'} for p in response.get('CommonPrefixes', [])])
-
-        if prefix and prefix.endswith('/'):
-            for f in content:
-                f['name'] = f['name'][len(prefix):]
+        response = self._client.list_objects_v2(
+            Bucket=self.name, MaxKeys=settings.BUCKET_CONTENT_PAGE_SIZE, Delimiter=delimiter,
+            **({'Prefix': prefix} if prefix else {}),
+            **({'ContinuationToken': next_token} if next_token else {}),
+        )
+        files = [f['Key'] for f in response.get('Contents', [])]
+        directories = [p['Prefix'] for p in response.get('CommonPrefixes', [])]
 
         return {
-            'content': content,
+            'files': files,
+            'directories': directories,
             'next': response.get('NextContinuationToken', None),
         }
 
@@ -632,42 +641,30 @@ class AzureBlobContainer(_CloudStorage):
     # def multipart_upload(self, file_obj):
     #     pass
 
-    def initialize_content(self):
-        files = self._client.list_blobs(maxresults=settings.CLOUD_STORAGE_MAX_FILES_COUNT)
-        self._files = [{
-            'name': item.name
-        } for item in files if _is_image(item.name)]
 
-    def list_files_on_one_page(
+    def _list_raw_content_on_one_page(
         self,
         prefix: Optional[str] = None,
-        delimiter: Optional[str] = '/',
-        next_token: Optional[str] = None
+        delimiter: str = '/',
+        next_token: Optional[str] = None,
     ) -> Dict:
-        kwargs = {
-            'maxresults': self.PAGE_SIZE,
-            'results_per_page': self.PAGE_SIZE,
-        }
-        if delimiter:
-            kwargs['delimiter'] = delimiter
-        if prefix:
-            kwargs['prefix'] = prefix
-
-        page = self._client.walk_blobs(**kwargs).by_page(continuation_token=next_token)
+        page = self._client.walk_blobs(
+            maxresults=settings.BUCKET_CONTENT_PAGE_SIZE, results_per_page=settings.BUCKET_CONTENT_PAGE_SIZE, delimiter=delimiter,
+            **({'name_starts_with': prefix} if prefix else {})
+        ).by_page(continuation_token=next_token)
         all_files = list(next(page))
 
-        content = list(
-            map(lambda x: {'name': x.name, 'type': 'REG'} if not isinstance(x, _list_blobs_helper.BlobPrefix) else {'name': x.prefix.strip('/'), 'type': 'DIR'},
-                all_files
-        ))
-        if prefix and prefix.endswith('/'):
-            for f in content:
-                f['name'] = f['name'][len(prefix):]
-        next_token = page.continuation_token
+        files, directories = [], []
+        for f in all_files:
+            if not isinstance(f, BlobPrefix):
+                files.append(f.name)
+            else:
+                directories.append(f.prefix)
 
         return {
-            'content': content,
-            'next': next_token,
+            'files': files,
+            'directories': directories,
+            'next': page.continuation_token,
         }
 
     @validate_file_status
@@ -752,50 +749,27 @@ class GoogleCloudStorage(_CloudStorage):
     def get_file_status(self, key):
         self._head_file(key)
 
-    def initialize_content(self):
-        self._files = [
-            {
-                'name': blob.name
-            }
-            for blob in self._client.list_blobs(
-                self.bucket, prefix=self._prefix, max_results=settings.CLOUD_STORAGE_MAX_FILES_COUNT
-            ) if _is_image(blob.name)
-        ]
 
-    def list_files_on_one_page(
+    def _list_raw_content_on_one_page(
         self,
         prefix: Optional[str] = None,
-        delimiter: Optional[str] = '/',
-        next_token: Optional[str] = None
+        delimiter: str = '/',
+        next_token: Optional[str] = None,
     ) -> Dict:
-        kwargs = {
-            'bucket_or_name': self.name,
-            'max_results': self.PAGE_SIZE,
-            'page_size': self.PAGE_SIZE,
-            # https://cloud.google.com/storage/docs/json_api/v1/parameters#fields
-            'fields': 'items(name),nextPageToken,prefixes',
-        }
-        if delimiter:
-            kwargs['delimiter'] = delimiter
-        if prefix:
-            kwargs['prefix'] = prefix
-        if next_token:
-            kwargs['page_token'] = next_token
-
+        iterator = self._client.list_blobs(
+            bucket_or_name=self.name, max_results=settings.BUCKET_CONTENT_PAGE_SIZE, page_size=settings.BUCKET_CONTENT_PAGE_SIZE,
+            fields='items(name),nextPageToken,prefixes', # https://cloud.google.com/storage/docs/json_api/v1/parameters#fields
+            delimiter=delimiter,
+            **({'prefix': prefix} if prefix else {}),
+            **({'page_token': next_token} if next_token else {}),
+        )
         # NOTE: we should firstly iterate and only then we can define common prefixes
-        iterator = self._client.list_blobs(**kwargs)
-        files = [f for f in iterator]
-        prefixes = iterator.prefixes
-
-        content = [{'name': f.name, 'type': 'REG'} for f in files]
-        content.extend([{'name': p.strip('/'), 'type': 'DIR'} for p in prefixes])
-
-        if prefix and prefix.endswith('/'):
-            for f in content:
-                f['name'] = f['name'][len(prefix):]
+        files = [f.name for f in iterator]
+        directories = iterator.prefixes
 
         return {
-            'content': content,
+            'files': files,
+            'directories': directories,
             'next': iterator.next_page_token,
         }
 

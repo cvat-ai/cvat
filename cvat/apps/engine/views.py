@@ -158,7 +158,8 @@ class ServerViewSet(viewsets.ViewSet):
                         "mime_type": entry_mime_type,
                     })
 
-            serializer = FileInfoSerializer(many=True, data=data)
+            # return directories at the top of the list
+            serializer = FileInfoSerializer(many=True, data=sorted(sorted(data, key=lambda x: x['name']), key=lambda x: x['type']))
             if serializer.is_valid(raise_exception=True):
                 return Response(serializer.data)
         else:
@@ -2169,10 +2170,15 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 manifest = ImageManifestManager(full_manifest_path, db_storage.get_storage_dirname())
                 # need to update index
                 manifest.set_index()
+                try:
+                    start_index = int(next_token or '0')
+                except ValueError:
+                    return HttpResponseBadRequest('Wrong value for the next_token parameter was found.')
                 # TODO: fix problem with manifest_prefix
-                content = manifest.emulate_hierarchical_structure(manifest_prefix, prefix)
+                content = manifest.emulate_hierarchical_structure(
+                    settings.BUCKET_CONTENT_PAGE_SIZE, manifest_prefix=manifest_prefix, prefix=prefix, start_index=start_index)
             else:
-                content = storage.list_files_on_one_page(prefix, delimiter, next_token)
+                content = storage.list_files_on_one_page(prefix, delimiter, next_token, _use_sort=True)
             serializer = CloudStorageContentSerializer(data=content)
             serializer.is_valid(raise_exception=True)
             content = serializer.data

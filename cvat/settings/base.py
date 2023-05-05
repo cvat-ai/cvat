@@ -661,3 +661,5 @@ DATABASES = {
         'PORT': os.getenv('CVAT_POSTGRES_PORT', 5432),
     }
 }
+
+BUCKET_CONTENT_PAGE_SIZE =  500

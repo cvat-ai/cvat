@@ -24,6 +24,7 @@ import pytz
 from django.conf import settings
 from django.db import transaction
 from datetime import datetime
+from pathlib import Path
 
 from cvat.apps.engine import models
 from cvat.apps.engine.log import slogger
@@ -61,10 +62,43 @@ class SegmentsParams(NamedTuple):
     segment_size: int
     overlap: int
 
-def _copy_data_from_source(server_files, upload_dir, server_dir=None):
+def _copy_data_from_share_point(
+    server_files: List[str],
+    upload_dir: str,
+    server_dir: Optional[str] = None,
+    data_to_be_excluded: Optional[List[str]] = None,
+):
     job = rq.get_current_job()
     job.meta['status'] = 'Data are being copied from source..'
     job.save_meta()
+
+    # filter data from files/directories that should be excluded
+    if data_to_be_excluded:
+        files_to_be_excluded, directories_to_be_excluded = [], []
+        for f in data_to_be_excluded:
+            if f.endswith(os.path.sep):
+                directories_to_be_excluded.append(f)
+            else:
+                files_to_be_excluded.append(f)
+
+        expanded_server_files = []
+
+        for f in server_files:
+            path = Path(server_dir or settings.SHARE_ROOT) / Path(os.path.normpath(f))
+            if not path.is_dir():
+                expanded_server_files.append(f)
+            else:
+                for root, _, files in os.walk(str(path)):
+                    if files:
+                        expanded_server_files.extend([os.path.join(f, os.path.relpath(root, str(path)), i) for i in files])
+
+        server_files = expanded_server_files
+
+        if files_to_be_excluded:
+            server_files = list(filter(lambda x: x not in files_to_be_excluded, server_files))
+        if directories_to_be_excluded:
+            for d in directories_to_be_excluded:
+                server_files = list(filter(lambda x: not x.startswith(d), server_files))
 
     for path in server_files:
         if server_dir is None:
@@ -282,6 +316,9 @@ def _validate_job_file_mapping(
     if data.get('filename_pattern'):
         raise ValidationError("job_file_mapping cannot be used with filename_pattern")
 
+    if data.get('files_to_be_excluded'):
+        raise ValidationError("job_file_mapping cannot be used with files_to_be_excluded")
+
     return job_file_mapping
 
 def _validate_manifest(
@@ -462,7 +499,6 @@ def _create_thread(
     )
 
     if is_data_in_cloud:
-        manifest = ImageManifestManager(db_data.get_manifest_path())
         if manifest_file:
             cloud_storage_manifest = ImageManifestManager(
                 os.path.join(db_data.cloud_storage.get_storage_dirname(), manifest_file),
@@ -470,14 +506,72 @@ def _create_thread(
             )
             cloud_storage_manifest.set_index()
             cloud_storage_manifest_prefix = os.path.dirname(manifest_file)
+
+        # update the server_files list with files from the specified directories
+        if (dirs:= list(filter(lambda x: x.endswith('/'), data['server_files']))):
+            data['server_files'] = [i for i in data['server_files'] if i not in dirs]
+            additional_files = []
+            if manifest_file:
+                for directory in dirs:
+                    if cloud_storage_manifest_prefix:
+                        # cloud_storage_manifest_prefix is a dirname of manifest, it doesn't end with a slash
+                        directory = directory[len(cloud_storage_manifest_prefix) + 1:]
+                    additional_files.extend(
+                        list(
+                            map(
+                                lambda x: x[1].full_name,
+                                filter(lambda x: x[1].full_name.startswith(directory), cloud_storage_manifest)
+                            )
+                        )
+                    )
+                if cloud_storage_manifest_prefix:
+                    additional_files = [os.path.join(cloud_storage_manifest_prefix, f) for f in additional_files]
+                if len(data['server_files']) + len(additional_files) > settings.CLOUD_STORAGE_MAX_FILES_COUNT:
+                    raise ValidationError(
+                        'The maximum number of the cloud storage attached files '
+                        f'is {settings.CLOUD_STORAGE_MAX_FILES_COUNT}')
+            else:
+                cloud_storage_instance = db_storage_to_storage_instance(db_data.cloud_storage)
+                number_of_files = len(data['server_files']) - len(dirs)
+                while len(dirs):
+                    directory = dirs.pop()
+                    for f in cloud_storage_instance.list_files(prefix=directory, _use_flat_listing=True):
+                        if f['type'] == 'REG':
+                            additional_files.append(f['name'])
+                        else:
+                            dirs.append(f['name'])
+                    # we check the limit of files on each iteration to reduce the number of possible requests to the bucket
+                    if (len(additional_files) + len(dirs) + number_of_files) > settings.CLOUD_STORAGE_MAX_FILES_COUNT:
+                        raise ValidationError(
+                            'The maximum number of the cloud storage attached files '
+                            f'is {settings.CLOUD_STORAGE_MAX_FILES_COUNT}')
+            data['server_files'].extend(additional_files)
+            del additional_files
+
+            if data.get('files_to_be_excluded'):
+                files_to_be_excluded, directories_to_be_excluded = [], []
+                for f in data['files_to_be_excluded']:
+                    if f.endswith(os.path.sep):
+                        directories_to_be_excluded.append(f)
+                    else:
+                        files_to_be_excluded.append(f)
+
+                if files_to_be_excluded:
+                    data['server_files'] = list(filter(lambda x: x not in files_to_be_excluded, data['server_files']))
+                if directories_to_be_excluded:
+                    for d in directories_to_be_excluded:
+                        data['server_files'] = list(filter(lambda x: not x.startswith(d), data['server_files']))
+
         if db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM or not settings.USE_CACHE:
             _download_data_from_cloud_storage(db_data.cloud_storage, data['server_files'], upload_dir)
             is_data_in_cloud = False
             db_data.storage = models.StorageChoice.LOCAL
+        else:
+            manifest = ImageManifestManager(db_data.get_manifest_path())
 
     # update list with server files if task creation approach with pattern and manifest file is used
     if is_data_in_cloud and data['filename_pattern']:
-        if not manifest or not db_data.cloud_storage.has_at_least_one_manifest:
+        if not manifest_file:
             raise ValidationError(
                 "Using a filename_pattern is only supported with manifest file, "
                 "but specified cloud storage doesn't linked with a manifest."
@@ -509,22 +603,8 @@ def _create_thread(
     if data['server_files']:
         if db_data.storage == models.StorageChoice.LOCAL and not db_data.cloud_storage:
             # this means that the data has not been downloaded from the storage to the host
-            _copy_data_from_source(data['server_files'], upload_dir, data.get('server_files_path'))
+            _copy_data_from_share_point(data['server_files'], upload_dir, data.get('server_files_path'), data.get('files_to_be_excluded'))
         elif is_data_in_cloud:
-            # check if the directories are in the list
-            if (dirs:= list(filter(lambda x: x.endswith('/'), data['server_files']))):
-                additional_files = []
-                cloud_storage_instance = db_storage_to_storage_instance(db_data.cloud_storage)
-                number_of_files = len(data['server_files']) - len(dirs)
-                for directory in dirs:
-                    additional_files.extend(cloud_storage_instance.list_files(prefix=directory))
-                    data['server_files'].pop(directory)
-                    if (len(additional_files) + number_of_files) > settings.CLOUD_STORAGE_MAX_FILES_COUNT:
-                        raise ValidationError(
-                            'The maximum number of the cloud storage attached files '
-                            f'is {settings.CLOUD_STORAGE_MAX_FILES_COUNT}')
-                data['server_files'].extend(additional_files)
-                del additional_files
             if job_file_mapping is not None:
                 sorted_media = list(itertools.chain.from_iterable(job_file_mapping))
             else:
@@ -590,6 +670,25 @@ def _create_thread(
             if media_type != 'video':
                 details['sorting_method'] = data['sorting_method']
             extractor = MEDIA_TYPES[media_type]['extractor'](**details)
+
+    # filter server_files from files_to_be_excluded when share point is used and files are not copied to CVAT.
+    # here we exclude the case when the files are copied to CVAT because files are already filtered out.
+    if (
+        data.get('files_to_be_excluded') and
+        data['server_files'] and
+        not is_data_in_cloud and
+        not data['copy_data'] and
+        isinstance(extractor, MEDIA_TYPES['image']['extractor'])
+    ):
+        files_to_be_excluded, dirs_to_be_excluded = [], []
+        for f in data['files_to_be_excluded']:
+            if f.endswith(os.path.sep):
+                dirs_to_be_excluded.append(f)
+            else:
+                files_to_be_excluded.append(f)
+        extractor.filter(lambda x: os.path.relpath(x, upload_dir) not in files_to_be_excluded)
+        for d in dirs_to_be_excluded:
+            extractor.filter(lambda x: not os.path.relpath(x, upload_dir).startswith(d))
 
     validate_dimension = ValidateDimension()
     if isinstance(extractor, MEDIA_TYPES['zip']['extractor']):
