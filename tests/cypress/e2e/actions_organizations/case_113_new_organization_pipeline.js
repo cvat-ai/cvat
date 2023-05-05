@@ -239,9 +239,6 @@ context('New organization pipeline.', () => {
             cy.contains('.cvat-item-task-name', taskName).should('not.exist');
             cy.goToProjectsList();
             cy.contains('.cvat-projects-project-item-title', project.name).should('not.exist');
-            cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
-            cy.get('.cvat-canvas-container').should('exist');
-            cy.get('.cvat-header-menu-user-dropdown-organization').should('have.text', organizationParams.shortName);
         });
 
         it('User can open the job using direct link. Organization is set automatically. Create an object, save annotations.', () => {
