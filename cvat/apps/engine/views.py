@@ -1786,6 +1786,7 @@ class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 description='A simple equality filter for task id'),
             OpenApiParameter('project_id', type=OpenApiTypes.INT,
                 description='A simple equality filter for project id'),
+            *OrganizationOpenApiParameters
         ],
         responses={
             '200': LabelSerializer(many=True),

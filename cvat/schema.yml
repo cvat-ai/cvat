@@ -2000,6 +2000,10 @@ paths:
       operationId: labels_list
       summary: Method returns a paginated list of labels
       parameters:
+      - in: header
+        name: X-Organization
+        schema:
+          type: string
       - name: color
         in: query
         description: A simple equality filter for the color field
@@ -2022,6 +2026,16 @@ paths:
         description: A simple equality filter for the name field
         schema:
           type: string
+      - in: query
+        name: org
+        schema:
+          type: string
+        description: Organization unique slug
+      - in: query
+        name: org_id
+        schema:
+          type: integer
+        description: Organization identifier
       - name: page
         required: false
         in: query
