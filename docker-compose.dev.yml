@@ -18,7 +18,6 @@ services:
         https_proxy:
         socks_proxy:
         CLAM_AV:
-        INSTALL_SOURCES:
         CVAT_DEBUG_ENABLED:
     environment:
       # Use this with CVAT_DEBUG_ENABLED to avoid server response timeouts

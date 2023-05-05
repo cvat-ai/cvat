@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## \[2.5.0] - Unreleased
 ### Added
+- TDB
+
+### Changed
+- TDB
+
+### Deprecated
+- TDB
+
+### Removed
+- TDB
+
+### Fixed
+- Tracking of multiple objects (30 and more) with TransT tracker
+  (<https://github.com/opencv/cvat/pull/6073>)
+- The issue azure.core.exceptions.ResourceExistsError: The specified blob already exists (<https://github.com/opencv/cvat/pull/6082>)
+- Image scaling when moving between images with different resolution (<https://github.com/opencv/cvat/pull/6081>)
+
+### Security
+- TDB
+
+## \[2.4.2] - 2023-04-14
+### Added
 - Support for Azure Blob Storage connection string authentication(<https://github.com/openvinotoolkit/cvat/pull/4649>)
 - Segment Anything interactor for CPU/GPU (<https://github.com/opencv/cvat/pull/6008>)
 
@@ -53,7 +75,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The issue related to webhook events not being sent has been resolved (<https://github.com/opencv/cvat/pull/5916>)
 
 ### Security
-- TDB
+- Updated Redis (in the Compose file) to 7.0.x, and redis-py to 4.5.4
+  (<https://github.com/opencv/cvat/pull/6016>)
 
 ## \[2.4.1] - 2023-04-05
 ### Fixed

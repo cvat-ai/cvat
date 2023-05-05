@@ -81,11 +81,18 @@ description: 'Installing a development environment for different operating syste
   pip install -U pip wheel setuptools
   pip install \
       -r cvat/requirements/development.txt \
-      -r cvat/requirements/production.txt \
-      -r utils/dataset_manifest/requirements.txt
+      -r cvat/requirements/production.txt
   python manage.py migrate
   python manage.py collectstatic
   ```
+
+  Note that the `.txt` files in the `cvat/requirements` directory
+  have pinned dependencies intended for the main target OS/Python version
+  (the one used in the main Dockerfile).
+  If you're unable to install those dependency versions,
+  you can substitute the corresponding `.in` files instead.
+  That way, you're more likely to be able to install the dependencies,
+  but their versions might not correspond to those used in production.
 
   > Note for Mac users
   >
