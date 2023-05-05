@@ -15,6 +15,7 @@ import datumaro as dm
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
+from scipy.optimize import linear_sum_assignment
 import django_rq
 import numpy as np
 
@@ -450,14 +451,60 @@ class _MemoizingAnnotationConverter(CvatToDmAnnotationConverter):
 
     def _convert_tag(self, tag):
         converted = list(super()._convert_tag(tag))
+        for dm_ann in converted:
+            dm_ann.id = tag.id
+
         self._factory.remember_conversion(tag, converted)
         return converted
 
     def _convert_shape(self, shape, *, index):
         converted = list(super()._convert_shape(shape, index=index))
+        for dm_ann in converted:
+            dm_ann.id = shape.id
+
         self._factory.remember_conversion(shape, converted)
         return converted
 
+def _match_segments(
+    a_segms,
+    b_segms,
+    distance=dm.ops.segment_iou,
+    dist_thresh=1.0,
+    label_matcher=lambda a, b: a.label == b.label,
+):
+    assert callable(distance), distance
+    assert callable(label_matcher), label_matcher
+
+    distances = np.array([
+        [
+            1 - distance(a, b)
+            for b in b_segms
+        ]
+        for a in a_segms
+    ])
+    distances[distances > 1 - dist_thresh] = 1
+    a_matches, b_matches = linear_sum_assignment(distances)
+
+    # matches: boxes we succeeded to match completely
+    # mispred: boxes we succeeded to match, having label mismatch
+    matches = []
+    mispred = []
+    # *_umatched: boxes of (*) we failed to match
+    a_unmatched = []
+    b_unmatched = []
+    for a_idx, b_idx in zip(a_matches, b_matches):
+        if distances[a_idx, b_idx] > 1 - dist_thresh:
+            a_unmatched.append(a_segms[a_idx])
+            b_unmatched.append(b_segms[b_idx])
+        else:
+            a_ann = a_segms[a_idx]
+            b_ann = b_segms[b_idx]
+            if label_matcher(a_ann, b_ann):
+                matches.append((a_ann, b_ann))
+            else:
+                mispred.append((a_ann, b_ann))
+
+    return matches, mispred, a_unmatched, b_unmatched
 
 def _OKS(a, b, sigma=0.1, bbox=None, scale=None, visibility=None):
     """
@@ -553,12 +600,12 @@ class _LineMatcher(dm.ops.LineMatcher):
             y1 = max(ys)
             return (x0 + x1) / 2, (y0 + y1) / 2, ((x1 - x0) ** 2 + (y1 - y0) ** 2) / 4
 
-        gt_center_x, gt_center_y, gt_r2  = _get_bbox_circle(gt_ann)
-        ds_center_x, ds_center_y, ds_r2  = _get_bbox_circle(ds_ann)
-        sigma2_x6 = self.scale * (6 * self.torso_r) ** 2
+        gt_center_x, gt_center_y, gt_r2 = _get_bbox_circle(gt_ann)
+        ds_center_x, ds_center_y, ds_r2 = _get_bbox_circle(ds_ann)
+        sigma6_2 = self.scale * (6 * self.torso_r) ** 2
         if (
             (ds_center_x - gt_center_x) ** 2 + (ds_center_y - gt_center_y) ** 2
-        ) > ds_r2 + gt_r2 + sigma2_x6:
+        ) > ds_r2 + gt_r2 + sigma6_2:
             return 0
 
         # Approximate lines to the same number of points for pointwise comparison
@@ -622,50 +669,63 @@ class _LineMatcher(dm.ops.LineMatcher):
         a_length = a_segment_end_dists[-1]
         b_length = b_segment_end_dists[-1]
 
-        new_points_count = len(a) + len(b) - 1
-        a_new_points = np.empty((new_points_count, 2))
-        b_new_points = np.empty((new_points_count, 2))
+        # lines can have lesser number of points in some cases
+        max_points_count = len(a) + len(b) - 1
+        a_new_points = np.zeros((max_points_count, 2))
+        b_new_points = np.zeros((max_points_count, 2))
         a_new_points[0] = a[0]
         b_new_points[0] = b[0]
 
         a_segment_idx = 0
         b_segment_idx = 0
         while a_segment_idx < a_segment_count or b_segment_idx < b_segment_count:
-            # The algorithm is similar to merge sort
             next_point_idx = a_segment_idx + b_segment_idx + 1
 
             a_segment_end_pos = a_segment_end_dists[a_segment_idx] / (a_length or 1)
             b_segment_end_pos = b_segment_end_dists[b_segment_idx] / (b_length or 1)
             if a_segment_idx < a_segment_count and a_segment_end_pos <= b_segment_end_pos:
                 if b_segment_idx < b_segment_count:
-                    # advance b in a position in the current segment
-                    q = (
-                            b_segment_end_dists[b_segment_idx] - a_segment_end_pos * b_length
-                        ) / (b_segment_lengths[b_segment_idx] or 1)
-                    b_new_points[next_point_idx] = \
-                        b[b_segment_idx] * q + b[1 + b_segment_idx] * (1 - q)
+                    # advance b in the current segment to the relative position in a
+                    q = (b_segment_end_pos - a_segment_end_pos) * (
+                        b_length / (b_segment_lengths[b_segment_idx] or 1)
+                    )
+                    if abs(q) <= 0.0000001:
+                        b_new_points[next_point_idx] = b[1 + b_segment_idx]
+                    else:
+                        b_new_points[next_point_idx] = \
+                            b[b_segment_idx] * q + b[1 + b_segment_idx] * (1 - q)
+                elif b_segment_idx == b_segment_count:
+                    b_new_points[next_point_idx] = b[b_segment_idx]
 
-                # advance a to the end of this segment
-                a_new_points[next_point_idx] = a[1 + a_segment_idx]
-
+                # advance a to the end of the current segment
                 a_segment_idx += 1
+                a_new_points[next_point_idx] = a[a_segment_idx]
 
             elif b_segment_idx < b_segment_count:
                 if a_segment_idx < a_segment_count:
-                    # advance a in a position in the current segment
-                    q = (
-                            a_segment_end_dists[a_segment_idx] - b_segment_end_pos * a_length
-                        ) / (a_segment_lengths[a_segment_idx] or 1)
-                    a_new_points[next_point_idx] = \
-                        a[a_segment_idx] * q + a[1 + a_segment_idx] * (1 - q)
+                    # advance a in the current segment to the relative position in b
+                    q = (a_segment_end_pos - b_segment_end_pos) * (
+                        a_length / (a_segment_lengths[a_segment_idx] or 1)
+                    )
+                    if abs(q) <= 0.0000001:
+                        a_new_points[next_point_idx] = a[1 + a_segment_idx]
+                    else:
+                        a_new_points[next_point_idx] = \
+                            a[a_segment_idx] * q + a[1 + a_segment_idx] * (1 - q)
+                elif a_segment_idx == a_segment_count:
+                    a_new_points[next_point_idx] = a[a_segment_idx]
 
-                # advance b to the end of this segment
-                b_new_points[next_point_idx] = b[1 + b_segment_idx]
-
+                # advance b to the end of the current segment
                 b_segment_idx += 1
+                b_new_points[next_point_idx] = b[b_segment_idx]
 
             else:
                 assert False
+
+        # truncate the final values
+        if next_point_idx < max_points_count:
+            a_new_points = a_new_points[:next_point_idx]
+            b_new_points = b_new_points[:next_point_idx]
 
         return a_new_points, b_new_points
 
@@ -747,7 +807,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
         if self.return_distances:
             distance, distances = self._make_memoizing_distance(distance)
 
-        returned_values = dm.ops.match_segments(a_objs, b_objs,
+        returned_values = _match_segments(a_objs, b_objs,
             distance=distance, dist_thresh=self.iou_threshold)
 
         if self.return_distances:
@@ -796,7 +856,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
         if self.return_distances:
             distance, distances = self._make_memoizing_distance(distance)
 
-        returned_values = dm.ops.match_segments(
+        returned_values = _match_segments(
             a_points,
             b_points,
             dist_thresh=self.iou_threshold,
@@ -893,7 +953,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
         if self.return_distances:
             distance, distances = self._make_memoizing_distance(distance)
 
-        matched, mismatched, a_extra, b_extra = dm.ops.match_segments(
+        matched, mismatched, a_extra, b_extra = _match_segments(
             a_points,
             b_points,
             dist_thresh=self.iou_threshold,
@@ -1165,7 +1225,7 @@ class _DatasetComparator:
             # Check line directions
             line_matcher = _LineMatcher(
                 torso_r=self.comparator._annotation_comparator.line_torso_radius,
-                oriented=False,
+                oriented=True,
                 scale=np.prod(gt_item.image.size)
             )
 
@@ -1177,7 +1237,8 @@ class _DatasetComparator:
                 oriented_distance = line_matcher.distance(gt_ann, ds_ann)
 
                 # need to filter computation errors from line approximation
-                if non_oriented_distance - oriented_distance > 0.01:
+                # and (almost) orientation-independent cases
+                if non_oriented_distance - oriented_distance > 0.1:
                     conflicts.append(
                         AnnotationConflict(
                             frame_id=frame_id,
