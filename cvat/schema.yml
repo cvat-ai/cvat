@@ -229,8 +229,9 @@ paths:
       operationId: cloudstorages_list
       summary: Returns a paginated list of storages
       parameters:
-      - in: header
-        name: X-Organization
+      - name: X-Organization
+        in: header
+        description: Organization unique slug
         schema:
           type: string
       - name: credentials_type
@@ -257,16 +258,16 @@ paths:
         description: A simple equality filter for the name field
         schema:
           type: string
-      - in: query
-        name: org
+      - name: org
+        in: query
+        description: Organization unique slug
         schema:
           type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
+      - name: org_id
+        in: query
+        description: Organization identifier
         schema:
           type: integer
-        description: Organization identifier
       - name: owner
         in: query
         description: A simple equality filter for the owner field
@@ -657,8 +658,9 @@ paths:
       operationId: comments_list
       summary: Method returns a paginated list of comments
       parameters:
-      - in: header
-        name: X-Organization
+      - name: X-Organization
+        in: header
+        description: Organization unique slug
         schema:
           type: string
       - name: filter
@@ -683,16 +685,16 @@ paths:
         description: A simple equality filter for the job_id field
         schema:
           type: integer
-      - in: query
-        name: org
+      - name: org
+        in: query
+        description: Organization unique slug
         schema:
           type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
+      - name: org_id
+        in: query
+        description: Organization identifier
         schema:
           type: integer
-        description: Organization identifier
       - name: owner
         in: query
         description: A simple equality filter for the owner field
@@ -977,8 +979,9 @@ paths:
       operationId: invitations_list
       summary: Method returns a paginated list of invitations
       parameters:
-      - in: header
-        name: X-Organization
+      - name: X-Organization
+        in: header
+        description: Organization unique slug
         schema:
           type: string
       - name: filter
@@ -987,16 +990,16 @@ paths:
         description: 'A filter term. Available filter_fields: [''owner'']'
         schema:
           type: string
-      - in: query
-        name: org
+      - name: org
+        in: query
+        description: Organization unique slug
         schema:
           type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
+      - name: org_id
+        in: query
+        description: Organization identifier
         schema:
           type: integer
-        description: Organization identifier
       - name: owner
         in: query
         description: A simple equality filter for the owner field
@@ -1163,8 +1166,9 @@ paths:
       operationId: issues_list
       summary: Method returns a paginated list of issues
       parameters:
-      - in: header
-        name: X-Organization
+      - name: X-Organization
+        in: header
+        description: Organization unique slug
         schema:
           type: string
       - name: assignee
@@ -1189,16 +1193,16 @@ paths:
         description: A simple equality filter for the job_id field
         schema:
           type: integer
-      - in: query
-        name: org
+      - name: org
+        in: query
+        description: Organization unique slug
         schema:
           type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
+      - name: org_id
+        in: query
+        description: Organization identifier
         schema:
           type: integer
-        description: Organization identifier
       - name: owner
         in: query
         description: A simple equality filter for the owner field
@@ -1376,8 +1380,9 @@ paths:
       operationId: jobs_list
       summary: Method returns a paginated list of jobs
       parameters:
-      - in: header
-        name: X-Organization
+      - name: X-Organization
+        in: header
+        description: Organization unique slug
         schema:
           type: string
       - name: assignee
@@ -1401,16 +1406,16 @@ paths:
           ''updated_date'', ''dimension'']'
         schema:
           type: string
-      - in: query
-        name: org
+      - name: org
+        in: query
+        description: Organization unique slug
         schema:
           type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
+      - name: org_id
+        in: query
+        description: Organization identifier
         schema:
           type: integer
-        description: Organization identifier
       - name: page
         required: false
         in: query
@@ -1995,10 +2000,6 @@ paths:
       operationId: labels_list
       summary: Method returns a paginated list of labels
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - name: color
         in: query
         description: A simple equality filter for the color field
@@ -2021,16 +2022,6 @@ paths:
         description: A simple equality filter for the name field
         schema:
           type: string
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       - name: page
         required: false
         in: query
@@ -2332,8 +2323,9 @@ paths:
       operationId: memberships_list
       summary: Method returns a paginated list of memberships
       parameters:
-      - in: header
-        name: X-Organization
+      - name: X-Organization
+        in: header
+        description: Organization unique slug
         schema:
           type: string
       - name: filter
@@ -2343,16 +2335,16 @@ paths:
           ''id'']'
         schema:
           type: string
-      - in: query
-        name: org
+      - name: org
+        in: query
+        description: Organization unique slug
         schema:
           type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
+      - name: org_id
+        in: query
+        description: Organization identifier
         schema:
           type: integer
-        description: Organization identifier
       - name: page
         required: false
         in: query
@@ -2490,10 +2482,6 @@ paths:
       operationId: organizations_list
       summary: Method returns a paginated list of organizations
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - name: filter
         required: false
         in: query
@@ -2506,16 +2494,6 @@ paths:
         description: A simple equality filter for the name field
         schema:
           type: string
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       - name: owner
         in: query
         description: A simple equality filter for the owner field
@@ -2672,8 +2650,9 @@ paths:
       operationId: projects_list
       summary: Returns a paginated list of projects
       parameters:
-      - in: header
-        name: X-Organization
+      - name: X-Organization
+        in: header
+        description: Organization unique slug
         schema:
           type: string
       - name: assignee
@@ -2693,16 +2672,16 @@ paths:
         description: A simple equality filter for the name field
         schema:
           type: string
-      - in: query
-        name: org
+      - name: org
+        in: query
+        description: Organization unique slug
         schema:
           type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
+      - name: org_id
+        in: query
+        description: Organization identifier
         schema:
           type: integer
-        description: Organization identifier
       - name: owner
         in: query
         description: A simple equality filter for the owner field
@@ -3465,8 +3444,9 @@ paths:
       operationId: tasks_list
       summary: Returns a paginated list of tasks
       parameters:
-      - in: header
-        name: X-Organization
+      - name: X-Organization
+        in: header
+        description: Organization unique slug
         schema:
           type: string
       - name: assignee
@@ -3500,16 +3480,16 @@ paths:
         description: A simple equality filter for the name field
         schema:
           type: string
-      - in: query
-        name: org
+      - name: org
+        in: query
+        description: Organization unique slug
         schema:
           type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
+      - name: org_id
+        in: query
+        description: Organization identifier
         schema:
           type: integer
-        description: Organization identifier
       - name: owner
         in: query
         description: A simple equality filter for the owner field
@@ -4349,8 +4329,9 @@ paths:
       operationId: users_list
       summary: Method returns a paginated list of users
       parameters:
-      - in: header
-        name: X-Organization
+      - name: X-Organization
+        in: header
+        description: Organization unique slug
         schema:
           type: string
       - name: filter
@@ -4375,16 +4356,16 @@ paths:
         description: A simple equality filter for the last_name field
         schema:
           type: string
-      - in: query
-        name: org
+      - name: org
+        in: query
+        description: Organization unique slug
         schema:
           type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
+      - name: org_id
+        in: query
+        description: Organization identifier
         schema:
           type: integer
-        description: Organization identifier
       - name: page
         required: false
         in: query
@@ -4533,8 +4514,9 @@ paths:
       operationId: webhooks_list
       summary: Method returns a paginated list of webhook according to query parameters
       parameters:
-      - in: header
-        name: X-Organization
+      - name: X-Organization
+        in: header
+        description: Organization unique slug
         schema:
           type: string
       - name: filter
@@ -4544,16 +4526,16 @@ paths:
           ''type'', ''description'', ''id'', ''project_id'', ''updated_date'']'
         schema:
           type: string
-      - in: query
-        name: org
+      - name: org
+        in: query
+        description: Organization unique slug
         schema:
           type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
+      - name: org_id
+        in: query
+        description: Organization identifier
         schema:
           type: integer
-        description: Organization identifier
       - name: owner
         in: query
         description: A simple equality filter for the owner field
@@ -4771,10 +4753,6 @@ paths:
       operationId: webhooks_list_deliveries
       summary: Method return a list of deliveries for a specific webhook
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - name: filter
         required: false
         in: query
@@ -4787,16 +4765,6 @@ paths:
           type: integer
         description: A unique integer value identifying this webhook.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       - name: page
         required: false
         in: query
