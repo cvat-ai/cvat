@@ -456,7 +456,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             prevProps.colorBy !== colorBy ||
             prevProps.outlineColor !== outlineColor ||
             prevProps.outlined !== outlined ||
-            prevProps.showGroundTruth !== showGroundTruth
+            prevProps.showGroundTruth !== showGroundTruth ||
             prevProps.resetZoom !== resetZoom
         ) {
             canvasInstance.configure({
