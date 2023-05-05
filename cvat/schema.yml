@@ -5884,6 +5884,10 @@ components:
           minimum: 0
           nullable: true
           readOnly: true
+        organization:
+          type: integer
+          readOnly: true
+          nullable: true
         data_compressed_chunk_type:
           allOf:
           - $ref: '#/components/schemas/ChunkType'
