@@ -3,10 +3,9 @@
 #
 # SPDX-License-Identifier: MIT
 
-
+from contextlib import ExitStack
 import io
 import os
-import os.path as osp
 import random
 import shutil
 import tempfile
@@ -15,7 +14,7 @@ import zipfile
 from collections import defaultdict
 from enum import Enum
 from glob import glob
-from io import BytesIO
+from io import BytesIO, IOBase
 from unittest import mock
 import logging
 import copy
@@ -30,15 +29,18 @@ from django.http import HttpResponse
 from PIL import Image
 from pycocotools import coco as coco_loader
 from rest_framework import status
-from rest_framework.test import APIClient, APITestCase
+from rest_framework.test import APIClient
 
-from datumaro.util.test_utils import TestDir
+from datumaro.util.test_utils import current_function_name, TestDir
 from cvat.apps.engine.models import (AttributeSpec, AttributeType, Data, Job,
     Project, Segment, StageChoice, StatusChoice, Task, Label, StorageMethodChoice,
     StorageChoice, DimensionType, SortingMethod)
 from cvat.apps.engine.media_extractors import ValidateDimension, sort
 from cvat.apps.engine.tests.utils import get_paginated_collection
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
+
+from cvat.apps.engine.tests.utils import (ApiTestBase, ForceLogin, logging_disabled,
+    generate_image_file, generate_video_file)
 
 #supress av warnings
 logging.getLogger('libav').setLevel(logging.ERROR)
@@ -239,26 +241,7 @@ def create_dummy_db_projects(obj):
 
     return projects
 
-
-class ForceLogin:
-    def __init__(self, user, client):
-        self.user = user
-        self.client = client
-
-    def __enter__(self):
-        if self.user:
-            self.client.force_login(self.user, backend='django.contrib.auth.backends.ModelBackend')
-
-        return self
-
-    def __exit__(self, exception_type, exception_value, traceback):
-        if self.user:
-            self.client.logout()
-
-class JobGetAPITestCase(APITestCase):
-    def setUp(self):
-        self.client = APIClient()
-
+class JobGetAPITestCase(ApiTestBase):
     @classmethod
     def setUpTestData(cls):
         create_db_users(cls)
@@ -317,9 +300,9 @@ class JobGetAPITestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
-class JobPartialUpdateAPITestCase(APITestCase):
+class JobPartialUpdateAPITestCase(ApiTestBase):
     def setUp(self):
-        self.client = APIClient()
+        super().setUp()
         self.task = create_dummy_db_tasks(self)[0]
         self.job = Job.objects.filter(segment__task_id=self.task.id).first()
         self.job.assignee = self.annotator
@@ -396,9 +379,9 @@ class JobPartialUpdateAPITestCase(APITestCase):
         response = self._run_api_v2_jobs_id(self.job.id, self.owner, data)
         self._check_request(response, data)
 
-class JobUpdateAPITestCase(APITestCase):
+class JobUpdateAPITestCase(ApiTestBase):
     def setUp(self):
-        self.client = APIClient()
+        super().setUp()
         self.task = create_dummy_db_tasks(self)[0]
         self.job = Job.objects.filter(segment__task_id=self.task.id).first()
         self.job.assignee = self.annotator
@@ -424,9 +407,9 @@ class JobUpdateAPITestCase(APITestCase):
         response = self._run_api_v2_jobs_id(self.job.id, self.owner, data)
         self.assertEquals(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED, response)
 
-class JobDataMetaPartialUpdateAPITestCase(APITestCase):
+class JobDataMetaPartialUpdateAPITestCase(ApiTestBase):
     def setUp(self):
-        self.client = APIClient()
+        super().setUp()
         self.task = create_dummy_db_tasks(self)[0]
         self.job = Job.objects.filter(segment__task_id=self.task.id).first()
         self.job.assignee = self.annotator
@@ -467,11 +450,8 @@ class JobDataMetaPartialUpdateAPITestCase(APITestCase):
         }
         self._check_api_v1_jobs_data_meta_id(self.admin, data)
 
-class ServerAboutAPITestCase(APITestCase):
+class ServerAboutAPITestCase(ApiTestBase):
     ACCEPT_HEADER_TEMPLATE = 'application/vnd.cvat+json; version={}'
-
-    def setUp(self):
-        self.client = APIClient()
 
     @classmethod
     def setUpTestData(cls):
@@ -515,10 +495,7 @@ class ServerAboutAPITestCase(APITestCase):
             response = self._run_api_server_about(self.admin, version)
             self._check_response_version(response, version)
 
-class ServerExceptionAPITestCase(APITestCase):
-    def setUp(self):
-        self.client = APIClient()
-
+class ServerExceptionAPITestCase(ApiTestBase):
     @classmethod
     def setUpTestData(cls):
         create_db_users(cls)
@@ -566,10 +543,7 @@ class ServerExceptionAPITestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
-class ServerLogsAPITestCase(APITestCase):
-    def setUp(self):
-        self.client = APIClient()
-
+class ServerLogsAPITestCase(ApiTestBase):
     @classmethod
     def setUpTestData(cls):
         create_db_users(cls)
@@ -619,9 +593,9 @@ class ServerLogsAPITestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
-class UserAPITestCase(APITestCase):
+class UserAPITestCase(ApiTestBase):
     def setUp(self):
-        self.client = APIClient()
+        super().setUp()
         create_db_users(self)
 
     def _check_response(self, user, response, is_full=True):
@@ -829,10 +803,7 @@ class UserDeleteAPITestCase(UserAPITestCase):
         response = self._run_api_v2_users_id(None, self.user.id)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-class ProjectListAPITestCase(APITestCase):
-    def setUp(self):
-        self.client = APIClient()
-
+class ProjectListAPITestCase(ApiTestBase):
     @classmethod
     def setUpTestData(cls):
         create_db_users(cls)
@@ -869,10 +840,7 @@ class ProjectListAPITestCase(APITestCase):
         response = self._run_api_v2_projects(None)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-class ProjectGetAPITestCase(APITestCase):
-    def setUp(self):
-        self.client = APIClient()
-
+class ProjectGetAPITestCase(ApiTestBase):
     @classmethod
     def setUpTestData(cls):
         create_db_users(cls)
@@ -918,10 +886,7 @@ class ProjectGetAPITestCase(APITestCase):
     def test_api_v2_projects_id_no_auth(self):
         self._check_api_v2_projects_id(None)
 
-class ProjectDeleteAPITestCase(APITestCase):
-    def setUp(self):
-        self.client = APIClient()
-
+class ProjectDeleteAPITestCase(ApiTestBase):
     @classmethod
     def setUpTestData(cls):
         create_db_users(cls)
@@ -978,10 +943,7 @@ class ProjectDeleteAPITestCase(APITestCase):
                 task_dir = task.get_dirname()
                 self.assertFalse(os.path.exists(task_dir))
 
-class ProjectCreateAPITestCase(APITestCase):
-    def setUp(self):
-        self.client = APIClient()
-
+class ProjectCreateAPITestCase(ApiTestBase):
     @classmethod
     def setUpTestData(cls):
         create_db_users(cls)
@@ -1079,10 +1041,7 @@ class ProjectCreateAPITestCase(APITestCase):
         }
         self._check_api_v2_projects(None, data)
 
-class ProjectPartialUpdateAPITestCase(APITestCase):
-    def setUp(self):
-        self.client = APIClient()
-
+class ProjectPartialUpdateAPITestCase(ApiTestBase):
     @classmethod
     def setUpTestData(cls):
         create_db_users(cls)
@@ -1165,10 +1124,7 @@ class ProjectPartialUpdateAPITestCase(APITestCase):
         }
         self._check_api_v2_projects_id(None, data)
 
-class UpdateLabelsAPITestCase(APITestCase):
-    def setUp(self):
-        self.client = APIClient()
-
+class UpdateLabelsAPITestCase(ApiTestBase):
     def assertLabelsEqual(self, label1, label2):
         self.assertEqual(label1.get("name", label2.get("name")), label2.get("name"))
         self.assertEqual(label1.get("color", label2.get("color")), label2.get("color"))
@@ -1269,10 +1225,7 @@ class ProjectUpdateLabelsAPITestCase(UpdateLabelsAPITestCase):
         }
         self._check_api_v2_project(data)
 
-class ProjectListOfTasksAPITestCase(APITestCase):
-    def setUp(self):
-        self.client = APIClient()
-
+class ProjectListOfTasksAPITestCase(ApiTestBase):
     @classmethod
     def setUpTestData(cls):
         create_db_users(cls)
@@ -1311,7 +1264,7 @@ class ProjectListOfTasksAPITestCase(APITestCase):
         response = self._run_api_v2_projects_id_tasks(None, project.id)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-class ProjectBackupAPITestCase(APITestCase):
+class ProjectBackupAPITestCase(ApiTestBase):
     @classmethod
     def setUpTestData(cls):
         create_db_users(cls)
@@ -1344,7 +1297,7 @@ class ProjectBackupAPITestCase(APITestCase):
             filename = imagename_pattern.format(i)
             path = os.path.join(settings.SHARE_ROOT, filename)
             cls.media['files'].append(path)
-            _, data = generate_image_file(filename)
+            _, data = generate_random_image_file(filename)
             with open(path, "wb") as image:
                 image.write(data.read())
 
@@ -1432,9 +1385,9 @@ class ProjectBackupAPITestCase(APITestCase):
         cls.media_data.extend([
             # image list local
             {
-                "client_files[0]": generate_image_file("test_1.jpg")[1],
-                "client_files[1]": generate_image_file("test_2.jpg")[1],
-                "client_files[2]": generate_image_file("test_3.jpg")[1],
+                "client_files[0]": generate_random_image_file("test_1.jpg")[1],
+                "client_files[1]": generate_random_image_file("test_2.jpg")[1],
+                "client_files[2]": generate_random_image_file("test_3.jpg")[1],
                 "image_quality": 75,
             },
             # video local
@@ -1692,10 +1645,7 @@ class ProjectBackupAPITestCase(APITestCase):
     def test_api_v2_projects_id_export_no_auth(self):
         self._run_api_v2_projects_id_export_import(None)
 
-class ProjectExportAPITestCase(APITestCase):
-    def setUp(self):
-        self.client = APIClient()
-
+class ProjectExportAPITestCase(ApiTestBase):
     @classmethod
     def setUpTestData(cls):
         create_db_users(cls)
@@ -1744,7 +1694,7 @@ class ProjectExportAPITestCase(APITestCase):
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             zipfile.ZipFile(content).extractall(tmp_dir)
-            xml = osp.join(tmp_dir, 'annotations.xml')
+            xml = os.path.join(tmp_dir, 'annotations.xml')
             self.assertTrue(xml)
             root = ET.parse(xml).getroot()
             tasks = root.findall('meta/project/tasks/task/name')
@@ -1766,9 +1716,9 @@ class ProjectExportAPITestCase(APITestCase):
         self._check_xml(pid, user, 3)
 
 
-class ProjectImportExportAPITestCase(APITestCase):
+class ProjectImportExportAPITestCase(ApiTestBase):
     def setUp(self) -> None:
-        self.client = APIClient()
+        super().setUp()
         self.tasks = []
         self.projects = []
 
@@ -1779,7 +1729,10 @@ class ProjectImportExportAPITestCase(APITestCase):
         cls.media_data = [
             {
                 **{
-                   **{"client_files[{}]".format(i): generate_image_file("test_{}.jpg".format(i))[1] for i in range(10)},
+                   **{
+                        f"client_files[{i}]": generate_random_image_file(f"test_{i}.jpg")[1]
+                        for i in range(10)
+                    },
                 },
                 **{
                     "image_quality": 75,
@@ -1787,7 +1740,10 @@ class ProjectImportExportAPITestCase(APITestCase):
             },
             {
                 **{
-                   **{"client_files[{}]".format(i): generate_image_file("test_{}.jpg".format(i))[1] for i in range(10)},
+                   **{
+                        f"client_files[{i}]": generate_random_image_file(f"test_{i}.jpg")[1]
+                        for i in range(10)
+                    },
                 },
                 "image_quality": 75,
             },
@@ -1914,17 +1870,15 @@ class ProjectImportExportAPITestCase(APITestCase):
         response = self._run_api_v2_projects_id_dataset_import_status(pid_import, self.owner)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-    def tearDown(self) -> None:
+    def tearDown(self):
         for task in self.tasks:
             shutil.rmtree(os.path.join(settings.TASKS_ROOT, str(task["id"])))
             shutil.rmtree(os.path.join(settings.MEDIA_DATA_ROOT, str(task["data_id"])))
         for project in self.projects:
             shutil.rmtree(os.path.join(settings.PROJECTS_ROOT, str(project["id"])))
+        return super().tearDown()
 
-class TaskListAPITestCase(APITestCase):
-    def setUp(self):
-        self.client = APIClient()
-
+class TaskListAPITestCase(ApiTestBase):
     @classmethod
     def setUpTestData(cls):
         create_db_users(cls)
@@ -1961,10 +1915,7 @@ class TaskListAPITestCase(APITestCase):
         response = self._run_api_v2_tasks(None)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-class TaskGetAPITestCase(APITestCase):
-    def setUp(self):
-        self.client = APIClient()
-
+class TaskGetAPITestCase(ApiTestBase):
     @classmethod
     def setUpTestData(cls):
         create_db_users(cls)
@@ -2027,10 +1978,7 @@ class TaskGetAPITestCase(APITestCase):
     def test_api_v2_tasks_id_no_auth(self):
         self._check_api_v2_tasks_id(None)
 
-class TaskDeleteAPITestCase(APITestCase):
-    def setUp(self):
-        self.client = APIClient()
-
+class TaskDeleteAPITestCase(ApiTestBase):
     @classmethod
     def setUpTestData(cls):
         create_db_users(cls)
@@ -2074,10 +2022,7 @@ class TaskDeleteAPITestCase(APITestCase):
             task_dir = task.get_dirname()
             self.assertFalse(os.path.exists(task_dir))
 
-class TaskUpdateAPITestCase(APITestCase):
-    def setUp(self):
-        self.client = APIClient()
-
+class TaskUpdateAPITestCase(ApiTestBase):
     @classmethod
     def setUpTestData(cls):
         create_db_users(cls)
@@ -2114,10 +2059,7 @@ class TaskUpdateAPITestCase(APITestCase):
         data = { "name": "new name for the task" }
         self._check_api_v2_tasks_id(None, data)
 
-class TaskPartialUpdateAPITestCase(APITestCase):
-    def setUp(self):
-        self.client = APIClient()
-
+class TaskPartialUpdateAPITestCase(ApiTestBase):
     @classmethod
     def setUpTestData(cls):
         create_db_users(cls)
@@ -2262,11 +2204,7 @@ class TaskPartialUpdateAPITestCase(APITestCase):
         }
         self._check_api_v2_tasks_id(None, data)
 
-class TaskDataMetaPartialUpdateAPITestCase(APITestCase):
-
-    def setUp(self):
-        self.client = APIClient()
-
+class TaskDataMetaPartialUpdateAPITestCase(ApiTestBase):
     @classmethod
     def setUpTestData(cls):
         create_db_users(cls)
@@ -2378,11 +2316,9 @@ class TaskUpdateLabelsAPITestCase(UpdateLabelsAPITestCase):
         }
         self._check_api_v2_task(data)
 
-class TaskMoveAPITestCase(APITestCase):
-
+class TaskMoveAPITestCase(ApiTestBase):
     def setUp(self):
-        self.client = APIClient()
-
+        super().setUp()
         self._run_api_v2_job_id_annotation(self.task.segment_set.first().job_set.first().id, self.annotation_data)
 
     @classmethod
@@ -2569,9 +2505,9 @@ class TaskMoveAPITestCase(APITestCase):
         }
         self._check_api_v2_tasks(self.task.id, data)
 
-class TaskCreateAPITestCase(APITestCase):
+class TaskCreateAPITestCase(ApiTestBase):
     def setUp(self):
-        self.client = APIClient()
+        super().setUp()
         project = {
             "name": "Project for task creation",
             "owner": self.user,
@@ -2686,10 +2622,9 @@ class TaskCreateAPITestCase(APITestCase):
         }
         self._check_api_v2_tasks(None, data)
 
-class TaskImportExportAPITestCase(APITestCase):
-
+class TaskImportExportAPITestCase(ApiTestBase):
     def setUp(self):
-        self.client = APIClient()
+        super().setUp()
         self.tasks = []
 
     @classmethod
@@ -2703,7 +2638,7 @@ class TaskImportExportAPITestCase(APITestCase):
         for i in range(image_count):
             filename = imagename_pattern.format(i)
             path = os.path.join(settings.SHARE_ROOT, filename)
-            _, data = generate_image_file(filename)
+            _, data = generate_random_image_file(filename)
             with open(path, "wb") as image:
                 image.write(data.read())
 
@@ -2828,10 +2763,10 @@ class TaskImportExportAPITestCase(APITestCase):
         )
 
         data = {
-            "client_files[0]": generate_image_file("test_1.jpg")[1],
-            "client_files[1]": generate_image_file("test_2.jpg")[1],
-            "client_files[2]": generate_image_file("test_10.jpg")[1],
-            "client_files[3]": generate_image_file("test_3.jpg")[1],
+            "client_files[0]": generate_random_image_file("test_1.jpg")[1],
+            "client_files[1]": generate_random_image_file("test_2.jpg")[1],
+            "client_files[2]": generate_random_image_file("test_10.jpg")[1],
+            "client_files[3]": generate_random_image_file("test_3.jpg")[1],
             "image_quality": 75,
         }
         use_cache_data = {
@@ -2890,6 +2825,8 @@ class TaskImportExportAPITestCase(APITestCase):
         for task in self.tasks:
             shutil.rmtree(os.path.join(settings.TASKS_ROOT, str(task["id"])))
             shutil.rmtree(os.path.join(settings.MEDIA_DATA_ROOT, str(task["data_id"])))
+
+        return super().tearDown()
 
     @classmethod
     def tearDownClass(cls):
@@ -3085,62 +3022,22 @@ class TaskImportExportAPITestCase(APITestCase):
     def test_api_v2_tasks_id_export_no_auth(self):
         self._run_api_v2_tasks_id_export_import(None)
 
-def generate_image_file(filename):
-    f = BytesIO()
+def generate_random_image_file(filename):
     gen = random.SystemRandom()
     width = gen.randint(100, 800)
     height = gen.randint(100, 800)
-    image = Image.new('RGB', size=(width, height))
-    image.save(f, 'jpeg')
-    f.name = filename
-    f.seek(0)
-
+    f = generate_image_file(filename, size=(width, height))
     return (width, height), f
 
-def generate_image_files(*args):
+def generate_random_image_files(*filenames):
     images = []
     image_sizes = []
-    for image_name in args:
-        img_size, image = generate_image_file(image_name)
+    for image_name in filenames:
+        img_size, image = generate_random_image_file(image_name)
         image_sizes.append(img_size)
         images.append(image)
 
     return image_sizes, images
-
-def generate_video_file(filename, width=1920, height=1080, duration=1, fps=25, codec_name='mpeg4'):
-    f = BytesIO()
-    total_frames = duration * fps
-    file_ext = os.path.splitext(filename)[1][1:]
-    container = av.open(f, mode='w', format=file_ext)
-
-    stream = container.add_stream(codec_name=codec_name, rate=fps)
-    stream.width = width
-    stream.height = height
-    stream.pix_fmt = 'yuv420p'
-
-    for frame_i in range(total_frames):
-        img = np.empty((stream.width, stream.height, 3))
-        img[:, :, 0] = 0.5 + 0.5 * np.sin(2 * np.pi * (0 / 3 + frame_i / total_frames))
-        img[:, :, 1] = 0.5 + 0.5 * np.sin(2 * np.pi * (1 / 3 + frame_i / total_frames))
-        img[:, :, 2] = 0.5 + 0.5 * np.sin(2 * np.pi * (2 / 3 + frame_i / total_frames))
-
-        img = np.round(255 * img).astype(np.uint8)
-        img = np.clip(img, 0, 255)
-
-        frame = av.VideoFrame.from_ndarray(img, format='rgb24')
-        for packet in stream.encode(frame):
-            container.mux(packet)
-
-    # Flush stream
-    for packet in stream.encode():
-        container.mux(packet)
-
-    # Close the file
-    container.close()
-    f.name = filename
-    f.seek(0)
-
-    return [(width, height)] * total_frames, f
 
 def generate_zip_archive_file(filename, count):
     image_sizes = []
@@ -3148,7 +3045,7 @@ def generate_zip_archive_file(filename, count):
     with zipfile.ZipFile(zip_buf, 'w') as zip_chunk:
         for idx in range(count):
             image_name = "image_{:6d}.jpg".format(idx)
-            size, image_buf = generate_image_file(image_name)
+            size, image_buf = generate_random_image_file(image_name)
             image_sizes.append(size)
             zip_chunk.writestr(image_name, image_buf.getvalue())
 
@@ -3169,27 +3066,34 @@ def generate_pdf_file(filename, page_count=1):
     file_buf.seek(0)
     return image_sizes, file_buf
 
-def generate_manifest_file(data_type, manifest_path, sources):
-    kwargs = {
-        'images': {
-            'sources': sources,
-            'sorting_method': SortingMethod.LEXICOGRAPHICAL,
-        },
-        'video': {
+def generate_manifest_file(data_type, manifest_path, sources, *,
+    sorting_method=SortingMethod.LEXICOGRAPHICAL,
+    root_dir=None,
+):
+    if data_type == 'video':
+        kwargs = {
             'media_file': sources[0],
             'upload_dir': os.path.dirname(sources[0]),
             'force': True
         }
-    }
-
-    if data_type == 'video':
         manifest = VideoManifestManager(manifest_path, create_index=False)
     else:
+        kwargs = {
+            'sources': sources,
+            'sorting_method': sorting_method,
+            'use_image_hash': True,
+            'data_dir': root_dir,
+        }
         manifest = ImageManifestManager(manifest_path, create_index=False)
-    manifest.link(**kwargs[data_type])
+    manifest.link(**kwargs)
     manifest.create()
 
-class TaskDataAPITestCase(APITestCase):
+
+def get_manifest_images_list(manifest_path):
+    return list(ImageManifestManager(manifest_path, create_index=False).data)
+
+
+class TaskDataAPITestCase(ApiTestBase):
     _share_image_sizes = {}
     _client_images = {}
     _client_mp4_video = {}
@@ -3204,9 +3108,6 @@ class TaskDataAPITestCase(APITestCase):
         def __str__(self):
             return self.value
 
-    def setUp(self):
-        self.client = APIClient()
-
     @classmethod
     def setUpTestData(cls):
         create_db_users(cls)
@@ -3214,41 +3115,21 @@ class TaskDataAPITestCase(APITestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        filename = "test_1.jpg"
-        path = os.path.join(settings.SHARE_ROOT, filename)
-        img_size, data = generate_image_file(filename)
-        with open(path, "wb") as image:
-            image.write(data.read())
-        cls._share_image_sizes[filename] = img_size
 
-        filename = "test_2.jpg"
-        path = os.path.join(settings.SHARE_ROOT, filename)
-        img_size, data = generate_image_file(filename)
-        with open(path, "wb") as image:
-            image.write(data.read())
-        cls._share_image_sizes[filename] = img_size
+        cls._share_image_sizes = {}
+        cls._share_files = []
 
-        filename = "test_3.jpg"
-        path = os.path.join(settings.SHARE_ROOT, filename)
-        img_size, data = generate_image_file(filename)
-        with open(path, "wb") as image:
-            image.write(data.read())
-        cls._share_image_sizes[filename] = img_size
-
-        filename = "test_10.jpg"
-        path = os.path.join(settings.SHARE_ROOT, filename)
-        img_size, data = generate_image_file(filename)
-        with open(path, "wb") as image:
-            image.write(data.read())
-        cls._share_image_sizes[filename] = img_size
-
-        filename = os.path.join("data", "test_3.jpg")
-        path = os.path.join(settings.SHARE_ROOT, filename)
-        os.makedirs(os.path.dirname(path))
-        img_size, data = generate_image_file(filename)
-        with open(path, "wb") as image:
-            image.write(data.read())
-        cls._share_image_sizes[filename] = img_size
+        for filename in [
+            "test_1.jpg", "test_2.jpg", "test_3.jpg", "test_10.jpg", "test_qwe.jpg",
+            "subdir2/subdir3/test_zxc.jpg", "data/test_3.jpg"
+        ]:
+            path = os.path.join(settings.SHARE_ROOT, filename)
+            img_size, data = generate_random_image_file(filename)
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            with open(path, "wb") as image:
+                image.write(data.read())
+            cls._share_image_sizes[filename] = img_size
+            cls._share_files.append(filename)
 
         filename = "test_video_1.mp4"
         path = os.path.join(settings.SHARE_ROOT, filename)
@@ -3256,6 +3137,7 @@ class TaskDataAPITestCase(APITestCase):
         with open(path, "wb") as video:
             video.write(data.read())
         cls._share_image_sizes[filename] = img_sizes
+        cls._share_files.append(filename)
 
         filename = "test_rotated_90_video.mp4"
         path = os.path.join(os.path.dirname(__file__), 'assets', 'test_rotated_90_video.mp4')
@@ -3274,6 +3156,7 @@ class TaskDataAPITestCase(APITestCase):
         with open(path, "wb") as video:
             video.write(data.read())
         cls._share_image_sizes[filename] = img_sizes
+        cls._share_files.append(filename)
 
         filename = os.path.join("test_archive_1.zip")
         path = os.path.join(settings.SHARE_ROOT, filename)
@@ -3281,6 +3164,7 @@ class TaskDataAPITestCase(APITestCase):
         with open(path, "wb") as zip_archive:
             zip_archive.write(data.read())
         cls._share_image_sizes[filename] = img_sizes
+        cls._share_files.append(filename)
 
         filename = "test_pointcloud_pcd.zip"
         path = os.path.join(os.path.dirname(__file__), 'assets', filename)
@@ -3297,8 +3181,8 @@ class TaskDataAPITestCase(APITestCase):
         filename = "test_velodyne_points.zip"
         path = os.path.join(os.path.dirname(__file__), 'assets', filename)
         image_sizes = []
-        # create zip instance
 
+        # create zip instance
         zip_file = zipfile.ZipFile(path, mode='a')
 
         source_path = []
@@ -3318,25 +3202,51 @@ class TaskDataAPITestCase(APITestCase):
                 with zip_file.open(info, "r") as file:
                     data = ValidateDimension.get_pcd_properties(file)
                     image_sizes.append((int(data["WIDTH"]), int(data["HEIGHT"])))
-        root_path = os.path.abspath(os.path.join(root_path, filename.split(".")[0]))
 
-        shutil.rmtree(root_path)
+        root_path = os.path.abspath(os.path.join(root_path, filename.split(".")[0]))
+        shutil.rmtree(root_path, ignore_errors=True)
+
         cls._share_image_sizes[filename] = image_sizes
 
-        file_name = 'test_1.pdf'
-        path = os.path.join(settings.SHARE_ROOT, file_name)
-        img_sizes, data = generate_pdf_file(file_name, page_count=5)
+        filename = 'test_1.pdf'
+        path = os.path.join(settings.SHARE_ROOT, filename)
+        img_sizes, data = generate_pdf_file(filename, page_count=5)
         with open(path, "wb") as pdf_file:
             pdf_file.write(data.read())
-        cls._share_image_sizes[file_name] = img_sizes
+        cls._share_image_sizes[filename] = img_sizes
+        cls._share_files.append(filename)
 
-        generate_manifest_file(data_type='video', manifest_path=os.path.join(settings.SHARE_ROOT, 'videos', 'manifest.jsonl'),
+        filename = 'videos/manifest.jsonl'
+        generate_manifest_file(data_type='video',
+            manifest_path=os.path.join(settings.SHARE_ROOT, filename),
             sources=[os.path.join(settings.SHARE_ROOT, 'videos', 'test_video_1.mp4')])
+        cls._share_files.append(filename)
 
+        image_files = [
+            'test_1.jpg', "subdir2/subdir3/test_zxc.jpg", 'test_qwe.jpg',
+            'test_3.jpg', 'test_10.jpg', 'data/test_3.jpg', 'test_2.jpg',
+        ]
+        for ordered in [True, False]:
+            filename = 'images_manifest{}.jsonl'.format(
+                "_sorted" if ordered else ""
+            )
+            generate_manifest_file(data_type='images',
+                manifest_path=os.path.join(settings.SHARE_ROOT, filename),
+                sources=[os.path.join(settings.SHARE_ROOT, fn) for fn in image_files],
+                sorting_method=SortingMethod.LEXICOGRAPHICAL if ordered else SortingMethod.PREDEFINED,
+                root_dir=settings.SHARE_ROOT,
+            )
+            cls._share_files.append(filename)
+
+        filename = "test_archive_2.zip"
+        with zipfile.ZipFile(os.path.join(settings.SHARE_ROOT, filename), 'x') as f:
+            for fn in image_files:
+                f.write(os.path.join(settings.SHARE_ROOT, fn), fn)
+        cls._share_files.append(filename)
         generate_manifest_file(data_type='images', manifest_path=os.path.join(settings.SHARE_ROOT, 'manifest.jsonl'),
             sources=[os.path.join(settings.SHARE_ROOT, f'test_{i}.jpg') for i in range(1,4)])
 
-        image_sizes, images = generate_image_files("test_1.jpg", "test_2.jpg", "test_3.jpg")
+        image_sizes, images = generate_random_image_files("test_1.jpg", "test_2.jpg", "test_3.jpg")
         cls._client_images = {
             'images': images,
             'image_sizes': image_sizes,
@@ -3360,7 +3270,8 @@ class TaskDataAPITestCase(APITestCase):
             'image_sizes': image_sizes
         }
 
-        image_sizes, video = generate_video_file(filename="test_video_1.mxf", width=1280, height=720, codec_name='mpeg2video')
+        image_sizes, video = generate_video_file(filename="test_video_1.mxf",
+            width=1280, height=720, codec_name='mpeg2video')
         cls._client_mxf_video = {
             'video': video,
             'image_sizes': image_sizes,
@@ -3369,41 +3280,21 @@ class TaskDataAPITestCase(APITestCase):
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
-        path = os.path.join(settings.SHARE_ROOT, "test_1.jpg")
-        os.remove(path)
 
-        path = os.path.join(settings.SHARE_ROOT, "test_2.jpg")
-        os.remove(path)
+        dirs = set()
+        for filename in cls._share_files:
+            dirs.add(os.path.dirname(filename))
+            os.remove(os.path.join(settings.SHARE_ROOT, filename))
 
-        path = os.path.join(settings.SHARE_ROOT, "test_3.jpg")
-        os.remove(path)
+        for dirname in sorted(dirs, reverse=True):
+            path = os.path.join(settings.SHARE_ROOT, dirname)
+            if not os.listdir(path):
+                os.rmdir(path)
 
-        path = os.path.join(settings.SHARE_ROOT, "test_10.jpg")
-        os.remove(path)
-
-        path = os.path.join(settings.SHARE_ROOT, "data", "test_3.jpg")
-        os.remove(path)
-
-        path = os.path.join(settings.SHARE_ROOT, "test_video_1.mp4")
-        os.remove(path)
-
-        path = os.path.join(settings.SHARE_ROOT, "videos", "test_video_1.mp4")
-        os.remove(path)
-
-        path = os.path.join(settings.SHARE_ROOT, "videos", "manifest.jsonl")
-        os.remove(path)
-        os.rmdir(os.path.dirname(path))
-
-        path = os.path.join(settings.SHARE_ROOT, "manifest.jsonl")
-        os.remove(path)
-
-        path = os.path.join(settings.SHARE_ROOT, "test_1.pdf")
-        os.remove(path)
-
-    def _run_api_v2_tasks_id_data_post(self, tid, user, data):
+    def _run_api_v2_tasks_id_data_post(self, tid, user, data, *, headers=None):
         with ForceLogin(user, self.client):
             response = self.client.post('/api/tasks/{}/data'.format(tid),
-                data=data)
+                data=data, **{'HTTP_' + k: v for k, v in (headers or {}).items()})
 
         return response
 
@@ -3443,11 +3334,20 @@ class TaskDataAPITestCase(APITestCase):
         return self._run_api_v2_task_id_data_get(tid, user, "frame", "original", number)
 
     @staticmethod
-    def _extract_zip_chunk(chunk_buffer, dimension=DimensionType.DIM_2D):
-        chunk = zipfile.ZipFile(chunk_buffer, mode='r')
+    def _extract_zip_archive(archive, dimension=DimensionType.DIM_2D):
+        chunk = zipfile.ZipFile(archive, mode='r')
         if dimension == DimensionType.DIM_3D:
-            return [BytesIO(chunk.read(f)) for f in sorted(chunk.namelist()) if f.rsplit(".", maxsplit=1)[-1] == "pcd"]
-        return [Image.open(BytesIO(chunk.read(f))) for f in sorted(chunk.namelist())]
+            return [(f, BytesIO(chunk.read(f)))
+                for f in sorted(chunk.namelist())
+                if f.rsplit(".", maxsplit=1)[-1] == "pcd"
+            ]
+        return [(f, Image.open(BytesIO(chunk.read(f))))
+            for f in sorted(chunk.namelist())
+        ]
+
+    @classmethod
+    def _extract_zip_chunk(cls, chunk_buffer, dimension=DimensionType.DIM_2D):
+        return [f[1] for f in cls._extract_zip_archive(chunk_buffer, dimension=dimension)]
 
     @staticmethod
     def _extract_video_chunk(chunk_buffer):
@@ -3455,9 +3355,18 @@ class TaskDataAPITestCase(APITestCase):
         stream = container.streams.video[0]
         return [f.to_image() for f in container.decode(stream)]
 
-    def _test_api_v2_tasks_id_data_spec(self, user, spec, data, expected_compressed_type, expected_original_type, image_sizes,
+    def _test_api_v2_tasks_id_data_spec(self, user, spec, data,
+                                        expected_compressed_type,
+                                        expected_original_type,
+                                        expected_image_sizes,
                                         expected_storage_method=StorageMethodChoice.FILE_SYSTEM,
-                                        expected_uploaded_data_location=StorageChoice.LOCAL, dimension=DimensionType.DIM_2D):
+                                        expected_uploaded_data_location=StorageChoice.LOCAL,
+                                        dimension=DimensionType.DIM_2D,
+                                        *,
+                                        send_data_callback=None):
+        if send_data_callback is None:
+            send_data_callback = self._run_api_v2_tasks_id_data_post
+
         # create task
         response = self._create_task(user, spec)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -3465,8 +3374,8 @@ class TaskDataAPITestCase(APITestCase):
         task_id = response.data["id"]
 
         # post data for the task
-        response = self._run_api_v2_tasks_id_data_post(task_id, user, data)
-        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+        response = send_data_callback(task_id, user, data)
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED, response.reason_phrase)
 
         response = self._get_task(user, task_id)
 
@@ -3480,14 +3389,18 @@ class TaskDataAPITestCase(APITestCase):
             task = response.json()
             self.assertEqual(expected_compressed_type, task["data_compressed_chunk_type"])
             self.assertEqual(expected_original_type, task["data_original_chunk_type"])
-            self.assertEqual(len(image_sizes), task["size"])
+            self.assertEqual(len(expected_image_sizes), task["size"])
             db_data = Task.objects.get(pk=task_id).data
             self.assertEqual(expected_storage_method, db_data.storage_method)
             self.assertEqual(expected_uploaded_data_location, db_data.storage)
             # check if used share without copying inside and files doesn`t exist in ../raw/ and exist in share
             if expected_uploaded_data_location is StorageChoice.SHARE:
-                raw_file_path = os.path.join(db_data.get_upload_dirname(), next(iter(data.values())))
-                share_file_path = os.path.join(settings.SHARE_ROOT, next(iter(data.values())))
+                filename = next(
+                    (v for k, v in data.items() if k.startswith('server_files[') ),
+                    None
+                )
+                raw_file_path = os.path.join(db_data.get_upload_dirname(), filename)
+                share_file_path = os.path.join(settings.SHARE_ROOT, filename)
                 self.assertEqual(False, os.path.exists(raw_file_path))
                 self.assertEqual(True, os.path.exists(share_file_path))
 
@@ -3497,7 +3410,7 @@ class TaskDataAPITestCase(APITestCase):
         if expected_status_code == status.HTTP_200_OK:
             if dimension == DimensionType.DIM_2D:
                 preview = Image.open(io.BytesIO(response.content))
-                self.assertLessEqual(preview.size, image_sizes[0])
+                self.assertLessEqual(preview.size, expected_image_sizes[0])
 
         # check compressed chunk
         response = self._get_compressed_chunk(task_id, user, 0)
@@ -3512,14 +3425,14 @@ class TaskDataAPITestCase(APITestCase):
             else:
                 images = self._extract_video_chunk(compressed_chunk)
 
-            self.assertEqual(len(images), min(task["data_chunk_size"], len(image_sizes)))
+            self.assertEqual(len(images), min(task["data_chunk_size"], len(expected_image_sizes)))
 
-            for image_idx, image in enumerate(images):
+            for image_idx, received_image in enumerate(images):
                 if dimension == DimensionType.DIM_3D:
-                    properties = ValidateDimension.get_pcd_properties(image)
-                    self.assertEqual((int(properties["WIDTH"]),int(properties["HEIGHT"])), image_sizes[image_idx])
+                    properties = ValidateDimension.get_pcd_properties(received_image)
+                    self.assertEqual((int(properties["WIDTH"]),int(properties["HEIGHT"])), expected_image_sizes[image_idx])
                 else:
-                    self.assertEqual(image.size, image_sizes[image_idx])
+                    self.assertEqual(received_image.size, expected_image_sizes[image_idx])
 
         # check original chunk
         response = self._get_original_chunk(task_id, user, 0)
@@ -3534,50 +3447,79 @@ class TaskDataAPITestCase(APITestCase):
             else:
                 images = self._extract_video_chunk(original_chunk)
 
-            for image_idx, image in enumerate(images):
+            for image_idx, received_image in enumerate(images):
                 if dimension == DimensionType.DIM_3D:
-                    properties = ValidateDimension.get_pcd_properties(image)
-                    self.assertEqual((int(properties["WIDTH"]), int(properties["HEIGHT"])), image_sizes[image_idx])
+                    properties = ValidateDimension.get_pcd_properties(received_image)
+                    self.assertEqual((int(properties["WIDTH"]), int(properties["HEIGHT"])), expected_image_sizes[image_idx])
                 else:
-                    self.assertEqual(image.size, image_sizes[image_idx])
+                    self.assertEqual(received_image.size, expected_image_sizes[image_idx])
 
-            self.assertEqual(len(images), min(task["data_chunk_size"], len(image_sizes)))
+            self.assertEqual(len(images), min(task["data_chunk_size"], len(expected_image_sizes)))
 
             if task["data_original_chunk_type"] == self.ChunkType.IMAGESET:
-                server_files = [img for key, img in data.items() if key.startswith("server_files") and not img.endswith("manifest.jsonl")]
+                server_files = [img for key, img in data.items() if key.startswith("server_files")]
                 client_files = [img for key, img in data.items() if key.startswith("client_files")]
 
-                if server_files:
-                    source_files = [os.path.join(settings.SHARE_ROOT, f) for f in sort(server_files, data.get('sorting_method', SortingMethod.LEXICOGRAPHICAL))]
-                else:
-                    source_files = [f for f in sort(client_files, data.get('sorting_method', SortingMethod.LEXICOGRAPHICAL), func=lambda e: e.name)]
+                _name_key = lambda x: getattr(x, 'name', x)
 
-                source_images = []
+                if server_files:
+                    _add_prefix = lambda x: os.path.join(settings.SHARE_ROOT, x)
+                    source_files = server_files
+                else:
+                    _add_prefix = lambda x: x
+                    source_files = client_files
+
+                manifest = next((v for v in source_files if _name_key(v).endswith('.jsonl')), None)
+                source_files = [_add_prefix(f)
+                    for f in source_files if not _name_key(f).endswith('jsonl')]
+
+                # Load images
+                source_images = {}
                 for f in source_files:
                     if zipfile.is_zipfile(f):
-                        source_images.extend(self._extract_zip_chunk(f, dimension=dimension))
+                        for frame_name, frame in self._extract_zip_archive(f, dimension=dimension):
+                            source_images[frame_name] = frame
                     elif isinstance(f, str) and f.endswith('.pdf'):
                         with open(f, 'rb') as pdf_file:
-                            source_images.extend(convert_from_bytes(pdf_file.read(),
-                                fmt='png'))
-                    elif isinstance(f, io.BytesIO) and \
-                            str(getattr(f, 'name', None)).endswith('.pdf'):
-                        source_images.extend(convert_from_bytes(f.getvalue(),
-                            fmt='png'))
-                    else:
-                        source_images.append(Image.open(f))
+                            for i, frame in enumerate(convert_from_bytes(pdf_file.read(), fmt='png')):
+                                source_images[f"frame_{i}"] = frame
+                    elif isinstance(f, IOBase) and getattr(f, 'name', '').endswith('.pdf'):
+                        for i, frame in enumerate(convert_from_bytes(f.getvalue(), fmt='png')):
+                            source_images[f"frame_{i}"] = frame
+                    elif isinstance(f, str) and not f.endswith('.jsonl'):
+                        source_images[f] = Image.open(f)
+                    elif isinstance(f, IOBase) and not f.name.endswith('.jsonl'):
+                        source_images[f.name] = Image.open(f)
 
-                for img_idx, image in enumerate(images):
+                # Apply the requested sorting to the expected results
+                sorting = data.get('sorting_method', SortingMethod.LEXICOGRAPHICAL)
+                if sorting == SortingMethod.PREDEFINED and manifest:
+                    manifest = _add_prefix(_name_key(manifest))
+                    manifest_root = os.path.dirname(manifest)
+                    manifest_files = get_manifest_images_list(manifest)
+                    assert len(manifest_files) == len(source_images)
+                    source_images = [
+                        source_images.get(os.path.join(manifest_root, f)) or source_images[f]
+                        for f in manifest_files
+                    ]
+                else:
+                    source_images = [v[1] for v in sort(
+                        source_images.items(),
+                        sorting_method=sorting,
+                        func=lambda e: _name_key(e[0])
+                    )]
+
+                for (received_image, source_image) in zip(images, source_images):
                     if dimension == DimensionType.DIM_3D:
-                        server_image = np.array(image.getbuffer())
-                        source_image = np.array(source_images[img_idx].getbuffer())
+                        server_image = np.array(received_image.getbuffer())
+                        source_image = np.array(source_image.getbuffer())
                         self.assertTrue(np.array_equal(source_image, server_image))
                     else:
-                        server_image = np.array(image)
-                        source_image = np.array(source_images[img_idx])
+                        server_image = np.array(received_image)
+                        source_image = np.array(source_image)
                         self.assertTrue(np.array_equal(source_image, server_image))
 
-    def _test_api_v2_tasks_id_data(self, user):
+    def _test_api_v2_tasks_id_data_create_can_upload_local_images(self, user):
         task_spec = {
             "name": "my task #1",
             "owner_id": user.id,
@@ -3601,6 +3543,7 @@ class TaskDataAPITestCase(APITestCase):
 
         self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET, image_sizes)
 
+    def _test_api_v2_tasks_id_data_create_can_use_server_images(self, user):
         task_spec = {
             "name": "my task without copying #2",
             "overlap": 0,
@@ -3625,14 +3568,17 @@ class TaskDataAPITestCase(APITestCase):
             self._share_image_sizes[task_data["server_files[2]"]],
         ]
 
-        self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET, image_sizes,
+        with self.subTest(current_function_name() + " no copy"):
+            self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET, image_sizes,
                                              expected_uploaded_data_location=StorageChoice.SHARE)
 
-        task_spec.update([('name', 'my task #3')])
-        task_data.update([('copy_data', True)])
-        self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+        with self.subTest(current_function_name() + " with copy"):
+            task_spec.update([('name', 'my task #3')])
+            task_data.update([('copy_data', True)])
+            self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
                                              image_sizes, expected_uploaded_data_location=StorageChoice.LOCAL)
 
+    def _test_api_v2_tasks_id_data_create_can_use_local_video(self, user):
         task_spec = {
             "name": "my video task #4",
             "overlap": 0,
@@ -3651,6 +3597,7 @@ class TaskDataAPITestCase(APITestCase):
 
         self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO, self.ChunkType.VIDEO, image_sizes)
 
+    def _test_api_v2_tasks_id_data_create_can_use_server_video(self, user):
         task_spec = {
             "name": "my video task without copying #5",
             "overlap": 0,
@@ -3667,14 +3614,17 @@ class TaskDataAPITestCase(APITestCase):
         }
         image_sizes = self._share_image_sizes[task_data["server_files[0]"]]
 
-        self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO, self.ChunkType.VIDEO, image_sizes,
+        with self.subTest(current_function_name() + " no copy"):
+            self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO, self.ChunkType.VIDEO, image_sizes,
                                              expected_uploaded_data_location=StorageChoice.SHARE)
 
-        task_spec.update([('name', 'my video task #6')])
-        task_data.update([('copy_data', True)])
-        self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO, self.ChunkType.VIDEO,
+        with self.subTest(current_function_name() + " with copy"):
+            task_spec.update([('name', 'my video task #6')])
+            task_data.update([('copy_data', True)])
+            self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO, self.ChunkType.VIDEO,
                                              image_sizes, expected_uploaded_data_location=StorageChoice.LOCAL)
 
+    def _test_api_v2_tasks_id_data_create_can_use_server_video_default_segment_size(self, user):
         task_spec = {
             "name": "my video task without copying #7",
             "overlap": 0,
@@ -3690,14 +3640,17 @@ class TaskDataAPITestCase(APITestCase):
         }
         image_sizes = self._share_image_sizes[task_data["server_files[0]"]]
 
-        self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO, self.ChunkType.VIDEO, image_sizes,
+        with self.subTest(current_function_name() + " no copy"):
+            self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO, self.ChunkType.VIDEO, image_sizes,
                                              expected_uploaded_data_location=StorageChoice.SHARE)
 
-        task_spec.update([("name", "my video task #8")])
-        task_data.update([("copy_data", True)])
-        self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO, self.ChunkType.VIDEO,
+        with self.subTest(current_function_name() + " with copy"):
+            task_spec.update([("name", "my video task #8")])
+            task_data.update([("copy_data", True)])
+            self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO, self.ChunkType.VIDEO,
                                              image_sizes, expected_uploaded_data_location=StorageChoice.LOCAL)
 
+    def _test_api_v2_tasks_id_data_create_can_compress_server_video(self, user):
         task_spec = {
             "name": "my video task without copying #9",
             "overlap": 0,
@@ -3715,14 +3668,17 @@ class TaskDataAPITestCase(APITestCase):
         }
         image_sizes = self._share_image_sizes[task_data["server_files[0]"]]
 
-        self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.VIDEO, image_sizes,
+        with self.subTest(current_function_name() + " no copy"):
+            self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.VIDEO, image_sizes,
                                              expected_uploaded_data_location=StorageChoice.SHARE)
 
-        task_spec.update([('name', 'my video task #10')])
-        task_data.update([('copy_data', True)])
-        self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.VIDEO,
+        with self.subTest(current_function_name() + " with copy"):
+            task_spec.update([('name', 'my video task #10')])
+            task_data.update([('copy_data', True)])
+            self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.VIDEO,
                                              image_sizes, expected_uploaded_data_location=StorageChoice.LOCAL)
 
+    def _test_api_v2_tasks_id_data_create_can_use_server_zip_archive(self, user):
         task_spec = {
             "name": "my archive task without copying #11",
             "overlap": 0,
@@ -3738,14 +3694,17 @@ class TaskDataAPITestCase(APITestCase):
         }
         image_sizes = self._share_image_sizes[task_data["server_files[0]"]]
 
-        self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET, image_sizes,
+        with self.subTest(current_function_name() + " no copy"):
+            self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET, image_sizes,
                                              expected_uploaded_data_location=StorageChoice.LOCAL)
 
-        task_spec.update([('name', 'my archive task #12')])
-        task_data.update([('copy_data', True)])
-        self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+        with self.subTest(current_function_name() + " with copy"):
+            task_spec.update([('name', 'my archive task #12')])
+            task_data.update([('copy_data', True)])
+            self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
                                              image_sizes, expected_uploaded_data_location=StorageChoice.LOCAL)
 
+    def _test_api_v2_tasks_id_data_create_can_use_local_archive(self, user):
         task_spec = {
             "name": "my archive task #13",
             "overlap": 0,
@@ -3764,6 +3723,7 @@ class TaskDataAPITestCase(APITestCase):
 
         self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET, image_sizes)
 
+    def _test_api_v2_tasks_id_data_create_can_use_cached_server_video(self, user):
         task_spec = {
             "name": "cached video task without copying #14",
             "overlap": 0,
@@ -3782,14 +3742,17 @@ class TaskDataAPITestCase(APITestCase):
 
         image_sizes = self._share_image_sizes[task_data["server_files[0]"]]
 
-        self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO,
-            self.ChunkType.VIDEO, image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE)
+        with self.subTest(current_function_name() + " no copy"):
+            self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO,
+                self.ChunkType.VIDEO, image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE)
 
-        task_spec.update([('name', 'cached video task #15')])
-        task_data.update([('copy_data', True)])
-        self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO, self.ChunkType.VIDEO,
-                                             image_sizes, StorageMethodChoice.CACHE, StorageChoice.LOCAL)
+        with self.subTest(current_function_name() + " with copy"):
+            task_spec.update([('name', 'cached video task #15')])
+            task_data.update([('copy_data', True)])
+            self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO,
+                self.ChunkType.VIDEO, image_sizes, StorageMethodChoice.CACHE, StorageChoice.LOCAL)
 
+    def _test_api_v2_tasks_id_data_create_can_use_cached_server_images(self, user):
         task_spec = {
             "name": "cached images task with default sorting data and without copying #16",
             "overlap": 0,
@@ -3813,14 +3776,17 @@ class TaskDataAPITestCase(APITestCase):
             self._share_image_sizes[task_data["server_files[1]"]],
         ]
 
-        self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET,
-            self.ChunkType.IMAGESET, image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE)
+        with self.subTest(current_function_name() + " no copy"):
+            self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET,
+                self.ChunkType.IMAGESET, image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE)
 
-        task_spec.update([('name', 'cached images task #17')])
-        task_data.update([('copy_data', True)])
-        self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+        with self.subTest(current_function_name() + " with copy"):
+            task_spec.update([('name', 'cached images task #17')])
+            task_data.update([('copy_data', True)])
+            self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
                                              image_sizes, StorageMethodChoice.CACHE, StorageChoice.LOCAL)
 
+    def _test_api_v2_tasks_id_data_create_can_use_cached_server_zip_archive(self, user):
         task_spec = {
             "name": "my cached zip archive task without copying #18",
             "overlap": 0,
@@ -3839,14 +3805,17 @@ class TaskDataAPITestCase(APITestCase):
 
         image_sizes = self._share_image_sizes[task_data["server_files[0]"]]
 
-        self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET,
-            self.ChunkType.IMAGESET, image_sizes, StorageMethodChoice.CACHE, StorageChoice.LOCAL)
+        with self.subTest(current_function_name() + " no copy"):
+            self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET,
+                self.ChunkType.IMAGESET, image_sizes, StorageMethodChoice.CACHE, StorageChoice.LOCAL)
 
-        task_spec.update([('name', 'my cached zip archive task #19')])
-        task_data.update([('copy_data', True)])
-        self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+        with self.subTest(current_function_name() + " with copy"):
+            task_spec.update([('name', 'my cached zip archive task #19')])
+            task_data.update([('copy_data', True)])
+            self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
                                              image_sizes, StorageMethodChoice.CACHE, StorageChoice.LOCAL)
 
+    def _test_api_v2_tasks_id_data_create_can_use_cached_local_pdf(self, user):
         task_spec = {
             "name": "my cached pdf task #20",
             "overlap": 0,
@@ -3870,6 +3839,7 @@ class TaskDataAPITestCase(APITestCase):
             self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
             image_sizes, StorageMethodChoice.CACHE)
 
+    def _test_api_v2_tasks_id_data_create_can_use_local_pdf(self, user):
         task_spec = {
             "name": "my pdf task #21",
             "overlap": 0,
@@ -3881,6 +3851,7 @@ class TaskDataAPITestCase(APITestCase):
         }
 
         document = copy.deepcopy(self._client_pdf['pdf'])
+        image_sizes = self._client_pdf['image_sizes']
         task_data = {
             "client_files[0]": document,
             "image_quality": 70,
@@ -3889,6 +3860,7 @@ class TaskDataAPITestCase(APITestCase):
         self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data,
             self.ChunkType.IMAGESET, self.ChunkType.IMAGESET, image_sizes)
 
+    def _test_api_v2_tasks_id_data_create_can_use_server_video_with_meta(self, user):
         task_spec = {
             "name": "my video with meta info task without copying #22",
             "overlap": 0,
@@ -3906,15 +3878,18 @@ class TaskDataAPITestCase(APITestCase):
         }
         image_sizes = self._share_image_sizes[task_data['server_files[0]']]
 
-        self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO,
+        with self.subTest(current_function_name() + " no copy"):
+            self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO,
                                             self.ChunkType.VIDEO, image_sizes, StorageMethodChoice.CACHE,
                                             StorageChoice.SHARE)
 
-        task_spec.update([('name', 'my video with meta info task #23')])
-        task_data.update([('copy_data', True)])
-        self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO, self.ChunkType.VIDEO,
+        with self.subTest(current_function_name() + " with copy"):
+            task_spec.update([('name', 'my video with meta info task #23')])
+            task_data.update([('copy_data', True)])
+            self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO, self.ChunkType.VIDEO,
                                              image_sizes, StorageMethodChoice.CACHE, StorageChoice.LOCAL)
 
+    def _test_api_v2_tasks_id_data_create_can_use_chunked_local_video(self, user):
         task_spec = {
             "name": "my cached video task #14",
             "overlap": 0,
@@ -3935,6 +3910,7 @@ class TaskDataAPITestCase(APITestCase):
         self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET,
             self.ChunkType.VIDEO, image_sizes, StorageMethodChoice.FILE_SYSTEM)
 
+    def _test_api_v2_tasks_id_data_create_can_use_chunked_cached_local_video(self, user):
         task_spec = {
             "name": "my video task #15",
             "overlap": 0,
@@ -3956,6 +3932,7 @@ class TaskDataAPITestCase(APITestCase):
         self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET,
             self.ChunkType.VIDEO, image_sizes, StorageMethodChoice.CACHE)
 
+    def _test_api_v2_tasks_id_data_create_can_use_mxf_video(self, user):
         task_spec = {
             "name": "test mxf format",
             "use_zip_chunks": False,
@@ -3974,6 +3951,7 @@ class TaskDataAPITestCase(APITestCase):
 
         self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO, self.ChunkType.VIDEO, image_sizes)
 
+    def _test_api_v2_tasks_id_data_create_can_use_local_pcd_zip(self, user):
         task_spec = {
             "name": "my archive task #24",
             "overlap": 0,
@@ -3993,6 +3971,7 @@ class TaskDataAPITestCase(APITestCase):
                                              self.ChunkType.IMAGESET,
                                              image_sizes, dimension=DimensionType.DIM_3D)
 
+    def _test_api_v2_tasks_id_data_create_can_use_local_pcd_kitti(self, user):
         task_spec = {
             "name": "my archive task #25",
             "overlap": 0,
@@ -4013,8 +3992,9 @@ class TaskDataAPITestCase(APITestCase):
                                              self.ChunkType.IMAGESET,
                                              image_sizes, dimension=DimensionType.DIM_3D)
 
-        task_spec = {
-            "name": "my images+manifest without copying #26",
+    def _test_api_v2_tasks_id_data_create_can_use_server_images_and_manifest(self, user):
+        task_spec_common = {
+            "name": "images+manifest #26",
             "overlap": 0,
             "segment_size": 0,
             "labels": [
@@ -4024,48 +4004,101 @@ class TaskDataAPITestCase(APITestCase):
         }
 
         task_data = {
-            "server_files[0]": "test_1.jpg",
-            "server_files[1]": "test_2.jpg",
-            "server_files[2]": "test_3.jpg",
-            "server_files[3]": "manifest.jsonl",
             "image_quality": 70,
             "use_cache": True
         }
-        image_sizes = [
-            self._share_image_sizes[task_data["server_files[0]"]],
-            self._share_image_sizes[task_data["server_files[1]"]],
-            self._share_image_sizes[task_data["server_files[2]"]],
-        ]
 
-        self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
-            image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE)
+        manifest_name = "images_manifest_sorted.jsonl"
+        images = get_manifest_images_list(os.path.join(settings.SHARE_ROOT, manifest_name))
+        image_sizes = [self._share_image_sizes[fn] for fn in images]
+        task_data.update({
+            f"server_files[{i}]": fn
+            for i, fn in enumerate(images + [manifest_name])
+        })
+
+        for copy_data in [True, False]:
+            with self.subTest(current_function_name(), copy=copy_data):
+                task_spec = task_spec_common.copy()
+                task_spec['name'] = task_spec['name'] + f' copy={copy_data}'
+                task_data['copy_data'] = copy_data
+                self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data,
+                    self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+                    image_sizes, StorageMethodChoice.CACHE,
+                    StorageChoice.LOCAL if copy_data else StorageChoice.SHARE)
+
+        with self.subTest(current_function_name() + ' file order mismatch'), ExitStack() as es:
+            es.enter_context(self.assertRaisesMessage(Exception,
+                "Incorrect file mapping to manifest content"
+            ))
+
+            # Suppress stacktrace spam from another thread from the expected error
+            es.enter_context(logging_disabled())
+
+            task_spec = task_spec_common.copy()
+            task_spec['name'] = task_spec['name'] + f' mismatching file order'
+            task_data_copy = task_data.copy()
+            task_data_copy[f'server_files[{len(images)}]'] = "images_manifest.jsonl"
+            self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data_copy,
+                self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+                image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE)
 
         task_spec.update([('name', 'my images+manifest #27')])
         task_data.update([('copy_data', True)])
         self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
             image_sizes, StorageMethodChoice.CACHE, StorageChoice.LOCAL)
 
-        # test predefined sorting
-        task_spec.update([('name', 'task custom data sequence #28')])
-        task_data = {
-            "server_files[0]": "test_1.jpg",
-            "server_files[1]": "test_3.jpg",
-            "server_files[2]": "test_2.jpg",
+    def _test_api_v2_tasks_id_data_create_can_use_server_images_with_predefined_sorting(self, user):
+        task_spec = {
+            "name": 'task custom data sequence server files #28-1',
+            "overlap": 0,
+            "segment_size": 0,
+            "labels": [
+                {"name": "car"},
+                {"name": "person"},
+            ]
+        }
+
+        task_data_common = {
             "image_quality": 70,
-            "use_cache": True,
             "sorting_method": SortingMethod.PREDEFINED
         }
-        image_sizes = [
-            self._share_image_sizes[task_data["server_files[0]"]],
-            self._share_image_sizes[task_data["server_files[1]"]],
-            self._share_image_sizes[task_data["server_files[2]"]],
-        ]
 
-        self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
-            image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE)
+        manifest_name = "images_manifest.jsonl"
+        images = get_manifest_images_list(os.path.join(settings.SHARE_ROOT, manifest_name))
+        image_sizes = [self._share_image_sizes[v] for v in images]
 
-        # test a natural data sequence
-        task_spec.update([('name', 'task native data sequence #29')])
+        for caching_enabled in [True, False]:
+            with self.subTest(current_function_name(),
+                caching_enabled=caching_enabled,
+            ):
+                task_data = task_data_common.copy()
+
+                task_data["use_cache"] = caching_enabled
+                if caching_enabled:
+                    storage_method = StorageMethodChoice.CACHE
+                else:
+                    storage_method = StorageMethodChoice.FILE_SYSTEM
+
+                task_data.update(
+                    (f"server_files[{i}]", f)
+                    for i, f in enumerate(images)
+                )
+
+                self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data,
+                    self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+                    image_sizes, storage_method, StorageChoice.SHARE)
+
+    def _test_api_v2_tasks_id_data_create_can_use_server_images_with_natural_sorting(self, user):
+        task_spec = {
+            "name": 'task native data sequence #29',
+            "overlap": 0,
+            "segment_size": 0,
+            "labels": [
+                {"name": "car"},
+                {"name": "person"},
+            ]
+        }
+
         task_data = {
             "server_files[0]": "test_10.jpg",
             "server_files[1]": "test_2.jpg",
@@ -4083,7 +4116,17 @@ class TaskDataAPITestCase(APITestCase):
         self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
             image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE)
 
-        task_spec.update([('name', 'task pdf in the shared folder #30')])
+    def _test_api_v2_tasks_id_data_create_can_use_server_pdf(self, user):
+        task_spec = {
+            "name": 'task pdf in the shared folder #30',
+            "overlap": 0,
+            "segment_size": 0,
+            "labels": [
+                {"name": "car"},
+                {"name": "person"},
+            ]
+        }
+
         task_data = {
             "server_files[0]": "test_1.pdf",
             "image_quality": 70,
@@ -4095,14 +4138,25 @@ class TaskDataAPITestCase(APITestCase):
         self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
             image_sizes, StorageMethodChoice.CACHE, StorageChoice.LOCAL)
 
+    def _test_api_v2_tasks_id_data_create(self, user):
+        method_list = {
+            func: getattr(self, func) for func in dir(self)
+            if func.startswith('_test_api_v2_tasks_id_data_create_') and
+            callable(getattr(self, func))
+        }
+        assert method_list
+        for name, func in method_list.items():
+            with self.subTest(name):
+                func(user)
+
     def test_api_v2_tasks_id_data_admin(self):
-        self._test_api_v2_tasks_id_data(self.admin)
+        self._test_api_v2_tasks_id_data_create(self.admin)
 
     def test_api_v2_tasks_id_data_owner(self):
-        self._test_api_v2_tasks_id_data(self.owner)
+        self._test_api_v2_tasks_id_data_create(self.owner)
 
     def test_api_v2_tasks_id_data_user(self):
-        self._test_api_v2_tasks_id_data(self.user)
+        self._test_api_v2_tasks_id_data_create(self.user)
 
     def test_api_v2_tasks_id_data_no_auth(self):
         data = {
@@ -4148,10 +4202,7 @@ def compare_objects(self, obj1, obj2, ignore_keys, fp_tolerance=.001,
         else:
             self.assertEqual(obj1, obj2, msg=current_key)
 
-class JobAnnotationAPITestCase(APITestCase):
-    def setUp(self):
-        self.client = APIClient()
-
+class JobAnnotationAPITestCase(ApiTestBase):
     @classmethod
     def setUpTestData(cls):
         create_db_users(cls)
@@ -4292,15 +4343,15 @@ class JobAnnotationAPITestCase(APITestCase):
             tid = response.data["id"]
 
             images = {
-                "client_files[0]": generate_image_file("test_1.jpg")[1],
-                "client_files[1]": generate_image_file("test_2.jpg")[1],
-                "client_files[2]": generate_image_file("test_3.jpg")[1],
-                "client_files[4]": generate_image_file("test_4.jpg")[1],
-                "client_files[5]": generate_image_file("test_5.jpg")[1],
-                "client_files[6]": generate_image_file("test_6.jpg")[1],
-                "client_files[7]": generate_image_file("test_7.jpg")[1],
-                "client_files[8]": generate_image_file("test_8.jpg")[1],
-                "client_files[9]": generate_image_file("test_9.jpg")[1],
+                "client_files[0]": generate_random_image_file("test_1.jpg")[1],
+                "client_files[1]": generate_random_image_file("test_2.jpg")[1],
+                "client_files[2]": generate_random_image_file("test_3.jpg")[1],
+                "client_files[4]": generate_random_image_file("test_4.jpg")[1],
+                "client_files[5]": generate_random_image_file("test_5.jpg")[1],
+                "client_files[6]": generate_random_image_file("test_6.jpg")[1],
+                "client_files[7]": generate_random_image_file("test_7.jpg")[1],
+                "client_files[8]": generate_random_image_file("test_8.jpg")[1],
+                "client_files[9]": generate_random_image_file("test_9.jpg")[1],
                 "image_quality": 75,
                 "frame_filter": "step=3",
             }
@@ -5904,7 +5955,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
         if format_name in {"CVAT for video 1.1", "CVAT for images 1.1"}:
             with tempfile.TemporaryDirectory() as tmp_dir:
                 zipfile.ZipFile(content).extractall(tmp_dir)
-                xmls = glob(osp.join(tmp_dir, '**', '*.xml'), recursive=True)
+                xmls = glob(os.path.join(tmp_dir, '**', '*.xml'), recursive=True)
                 self.assertTrue(xmls)
                 for xml in xmls:
                     xmlroot = ET.parse(xml).getroot()
@@ -5922,7 +5973,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
         elif format_name in ["COCO 1.0", "COCO Keypoints 1.0"]:
             with tempfile.TemporaryDirectory() as tmp_dir:
                 zipfile.ZipFile(content).extractall(tmp_dir)
-                jsons = glob(osp.join(tmp_dir, '**', '*.json'), recursive=True)
+                jsons = glob(os.path.join(tmp_dir, '**', '*.json'), recursive=True)
                 self.assertTrue(jsons)
                 for json in jsons:
                     coco = coco_loader.COCO(json)
@@ -6019,10 +6070,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
     def test_api_v2_tasks_id_annotations_upload_coco_user(self):
         self._run_coco_annotation_upload_test(self.user)
 
-class ServerShareAPITestCase(APITestCase):
-    def setUp(self):
-        self.client = APIClient()
-
+class ServerShareAPITestCase(ApiTestBase):
     @classmethod
     def setUpTestData(cls):
         create_db_users(cls)
@@ -6137,10 +6185,7 @@ class ServerShareAPITestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
-class ServerShareDifferentTypesAPITestCase(APITestCase):
-    def setUp(self):
-        self.client = APIClient()
-
+class ServerShareDifferentTypesAPITestCase(ApiTestBase):
     @classmethod
     def setUpTestData(cls):
         create_db_users(cls)
@@ -6150,8 +6195,8 @@ class ServerShareDifferentTypesAPITestCase(APITestCase):
         image = Image.new('RGB', size=(100, 50))
         for img in shared_images:
             img_path = os.path.join(settings.SHARE_ROOT, img)
-            if not osp.exists(osp.dirname(img_path)):
-                os.makedirs(osp.dirname(img_path))
+            if not os.path.exists(os.path.dirname(img_path)):
+                os.makedirs(os.path.dirname(img_path))
             image.save(img_path)
 
     def _get_request(self, path):
@@ -6221,9 +6266,9 @@ class ServerShareDifferentTypesAPITestCase(APITestCase):
         self.assertEqual(len(response.data["frames"]), images_count)
 
 
-class TaskAnnotation2DContext(APITestCase):
+class TaskAnnotation2DContext(ApiTestBase):
     def setUp(self):
-        self.client = APIClient()
+        super().setUp()
         self.task = {
             "name": "my archive task without copying #11",
             "overlap": 0,
@@ -6267,13 +6312,13 @@ class TaskAnnotation2DContext(APITestCase):
         with tempfile.TemporaryDirectory() as tmp_dir:
             for img in context_images_info:
                 image = Image.new('RGB', size=(100, 50))
-                image.save(osp.join(tmp_dir, img), 'png')
+                image.save(os.path.join(tmp_dir, img), 'png')
                 if context_images_info[img]:
-                    related_path = osp.join(tmp_dir, "related_images", img.replace(".", "_"))
+                    related_path = os.path.join(tmp_dir, "related_images", img.replace(".", "_"))
                     os.makedirs(related_path)
-                    image.save(osp.join(related_path, f"related_{img}"), 'png')
+                    image.save(os.path.join(related_path, f"related_{img}"), 'png')
 
-            zip_file_path = osp.join(test_dir, file_name)
+            zip_file_path = os.path.join(test_dir, file_name)
             shutil.make_archive(zip_file_path, 'zip', tmp_dir)
         return f"{zip_file_path}.zip"
 
