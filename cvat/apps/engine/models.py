@@ -1042,6 +1042,8 @@ class AnnotationConflictType(str, Enum):
     MISMATCHING_LABEL = 'mismatching_label'
     LOW_OVERLAP = 'low_overlap'
     MISMATCHING_DIRECTION = 'mismatching_direction'
+    MISMATCHING_ATTRIBUTES = 'mismatching_attributes'
+    MISMATCHING_GROUPS = 'mismatching_groups'
 
     def __str__(self) -> str:
         return self.value

@@ -8,6 +8,7 @@ from datetime import timedelta
 from functools import cached_property, partial
 
 import itertools
+import math
 from typing import Any, Callable, Dict, Hashable, List, Optional, Sequence, Tuple, Union, cast
 
 from attrs import asdict, define, has as is_attrs_type
@@ -475,12 +476,13 @@ def _match_segments(
     assert callable(distance), distance
     assert callable(label_matcher), label_matcher
 
+    max_anns = max(len(a_segms), len(b_segms))
     distances = np.array([
         [
-            1 - distance(a, b)
-            for b in b_segms
+            1 - distance(a, b) if a and b else 1
+            for b, _ in itertools.zip_longest(b_segms, range(max_anns), fillvalue=None)
         ]
-        for a in a_segms
+        for a, _ in itertools.zip_longest(a_segms, range(max_anns), fillvalue=None)
     ])
     distances[distances > 1 - dist_thresh] = 1
     a_matches, b_matches = linear_sum_assignment(distances)
@@ -494,8 +496,10 @@ def _match_segments(
     b_unmatched = []
     for a_idx, b_idx in zip(a_matches, b_matches):
         if distances[a_idx, b_idx] > 1 - dist_thresh:
-            a_unmatched.append(a_segms[a_idx])
-            b_unmatched.append(b_segms[b_idx])
+            if a_idx < len(a_segms):
+                a_unmatched.append(a_segms[a_idx])
+            if b_idx < len(b_segms):
+                b_unmatched.append(b_segms[b_idx])
         else:
             a_ann = a_segms[a_idx]
             b_ann = b_segms[b_idx]
@@ -816,7 +820,31 @@ class _DistanceComparator(dm.ops.DistanceComparator):
         return returned_values
 
     def match_boxes(self, item_a, item_b):
-        return self._match_segments(dm.AnnotationType.bbox, item_a, item_b)
+        def _to_polygon(bbox_ann: dm.Bbox):
+            points = bbox_ann.as_polygon()
+            angle = bbox_ann.attributes.get('rotation', 0) / 180 * math.pi
+
+            if angle:
+                points = np.reshape(points, (-1, 2))
+                center = (points[0] + points[2]) / 2
+                rel_points = points - center
+                cos = np.cos(angle)
+                sin = np.sin(angle)
+                rotation_matrix = ((cos, sin), (-sin, cos))
+                points = np.matmul(rel_points, rotation_matrix) + center
+                points = points.flatten()
+
+            return dm.Polygon(points)
+
+        def _bbox_iou(a: dm.Bbox, b: dm.Bbox, *, img_w: int, img_h: int) -> float:
+            if a.attributes.get('rotation', 0) == b.attributes.get('rotation', 0):
+                return dm.ops.bbox_iou(a, b)
+            else:
+                return _segment_iou(_to_polygon(a), _to_polygon(b), img_h=img_h, img_w=img_w)
+
+        img_h, img_w = item_a.image.size
+        return self._match_segments(dm.AnnotationType.bbox, item_a, item_b,
+            distance=partial(_bbox_iou, img_h=img_h, img_w=img_w))
 
     def match_segmentations(self, item_a, item_b):
         def _get_anns(item):
@@ -1051,6 +1079,16 @@ class _Comparator:
 
         return matches, mismatches, a_extra, b_extra
 
+    def find_groups(self, item: dm.DatasetItem) -> Dict[int, List[dm.Annotation]]:
+        grouped_anns = [
+            ann for ann in item.annotations if ann.group and ann.type in self.included_ann_types
+        ]
+        grouped_anns = sorted(grouped_anns, key=lambda a: a.group)
+        return {
+            group: list(anns)
+            for group, anns in itertools.groupby(grouped_anns, lambda a: a.group)
+        }
+
     def match_annotations(self, item_a, item_b):
         per_type_results = self._annotation_comparator.match_annotations(item_a, item_b)
 
@@ -1090,6 +1128,9 @@ class _DatasetComparator:
 
         # Indicates that polylines have direction
         self.oriented_lines = True
+
+        # Checks for mismatching groupings
+        self.compare_groups = True
 
         self.included_frames = gt_data_provider.job_data._db_job.segment.frame_set
 
@@ -1162,7 +1203,7 @@ class _DatasetComparator:
             matched_ann, distance = max(this_shape_distances, key=lambda v: v[1], default=(None, 0))
             return matched_ann, distance
 
-        for gt_ann, ds_ann in list(matches + mismatches):
+        for gt_ann, ds_ann in itertools.chain(matches, mismatches):
             similarity = _get_similarity(gt_ann, ds_ann)
             if similarity and similarity < self.overlap_threshold:
                 conflicts.append(AnnotationConflict(
@@ -1243,6 +1284,37 @@ class _DatasetComparator:
                         AnnotationConflict(
                             frame_id=frame_id,
                             type=AnnotationConflictType.MISMATCHING_DIRECTION,
+                            annotation_ids=[
+                                self._dm_ann_to_ann_id(ds_ann, self._ds_dataset),
+                                self._dm_ann_to_ann_id(gt_ann, self._gt_dataset),
+                            ]
+                        )
+                    )
+
+        for gt_ann, ds_ann in matches:
+            attribute_results = self.comparator.match_attrs(gt_ann, ds_ann)
+            if len(attribute_results[1]) + len(attribute_results[2]) + len(attribute_results[3]):
+                conflicts.append(
+                    AnnotationConflict(
+                        frame_id=frame_id,
+                        type=AnnotationConflictType.MISMATCHING_ATTRIBUTES,
+                        annotation_ids=[
+                            self._dm_ann_to_ann_id(ds_ann, self._ds_dataset),
+                            self._dm_ann_to_ann_id(gt_ann, self._gt_dataset),
+                        ]
+                    )
+                )
+
+        if self.compare_groups:
+            gt_groups = self.comparator.find_groups(gt_item)
+            ds_groups = self.comparator.find_groups(ds_item)
+
+            for gt_ann, ds_ann in itertools.chain(matches, mismatches):
+                if len(gt_groups.get(gt_ann.group, [1])) != len(ds_groups.get(ds_ann.group, [1])):
+                    conflicts.append(
+                        AnnotationConflict(
+                            frame_id=frame_id,
+                            type=AnnotationConflictType.MISMATCHING_GROUPS,
                             annotation_ids=[
                                 self._dm_ann_to_ann_id(ds_ann, self._ds_dataset),
                                 self._dm_ann_to_ann_id(gt_ann, self._gt_dataset),
