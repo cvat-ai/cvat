@@ -1030,9 +1030,44 @@ class _DistanceComparator(dm.ops.DistanceComparator):
 
         return memoizing_distance, distances
 
+    def match_annotations(self, item_a, item_b):
+        return {t: self._match_ann_type(t, item_a, item_b) for t in self.included_ann_types}
+
+def _find_covered_segments(
+    segments, *, img_w: int, img_h: int, tolerance: float = 0.01
+) -> Sequence[int]:
+    from pycocotools import mask as mask_utils
+
+    segments = [[s] for s in segments]
+    input_rles = [mask_utils.frPyObjects(s, img_h, img_w) for s in segments]
+    covered_ids = []
+    for i, bottom_rles in enumerate(input_rles):
+        top_rles = input_rles[i+1:]
+        top_rle = mask_utils.merge(list(itertools.chain.from_iterable(top_rles)))
+        intersection_rle = mask_utils.merge([top_rle] + bottom_rles, intersect=True)
+        union_rle = mask_utils.merge([top_rle] + bottom_rles)
+
+        bottom_area, intersection_area, union_area = mask_utils.area(
+            bottom_rles + [intersection_rle, union_rle]
+        )
+        iou = intersection_area / (union_area or 1)
+
+        if iou == 0:
+            continue
+
+        # Check if the bottom segment is fully covered by the top one
+        if bottom_area / (union_area or 1) - iou < tolerance:
+            covered_ids.append(i)
+
+    return covered_ids
 
 class _Comparator:
-    def __init__(self, categories: dm.CategoriesInfo):
+    def __init__(self,
+        categories: dm.CategoriesInfo,
+        *,
+        iou_threshold: float = 0.5,
+        coverage_threshold: float = 0.05,
+    ):
         self.ignored_attrs = [
             "track_id",  # changes from task to task, can't be defined manually with the same name
             "keyframe",  # indicates the way annotation obtained, meaningless to compare
@@ -1043,15 +1078,22 @@ class _Comparator:
         ]
         self.included_ann_types = [
             dm.AnnotationType.bbox,
-            dm.AnnotationType.points, # masks are compared together with polygons
+            dm.AnnotationType.points,
+            dm.AnnotationType.mask,
             dm.AnnotationType.polygon,
             dm.AnnotationType.polyline,
             dm.AnnotationType.skeleton,
         ]
         self._annotation_comparator = _DistanceComparator(
-            categories, included_ann_types=self.included_ann_types,
+            categories,
+            included_ann_types=set(self.included_ann_types) - {
+                dm.AnnotationType.mask # masks are compared together with polygons
+            },
             return_distances=True
         )
+        self._annotation_comparator.iou_threshold = iou_threshold
+
+        self.coverage_threshold = coverage_threshold
 
     def match_attrs(self, ann_a: dm.Annotation, ann_b: dm.Annotation):
         a_attrs = ann_a.attributes
@@ -1096,44 +1138,36 @@ class _Comparator:
         spatial_types = {
             dm.AnnotationType.polygon, dm.AnnotationType.mask, dm.AnnotationType.bbox
         }.intersection(self.included_ann_types)
-        source_anns = sorted([a for a in item.annotations if a.type in spatial_types],
+        anns = sorted([a for a in item.annotations if a.type in spatial_types],
             key=lambda a: a.z_order)
 
         segms = []
-        for ann in source_anns:
+        for ann in anns:
             if ann.type == dm.AnnotationType.bbox:
                 segms.append(ann.as_polygon())
             elif ann.type == dm.AnnotationType.polygon:
                 segms.append(ann.points)
-            # elif isinstance(ann, dm.RleMask):
-            #     dst_segms.append(ann.image)
             elif ann.type == dm.AnnotationType.mask:
                 segms.append(datumaro.util.mask_tools.mask_to_rle(ann.image))
             else:
                 assert False
 
         img_h, img_w = item.image.size
-        segms = datumaro.util.mask_tools.crop_covered_segments(segms,
-            width=img_w, height=img_h, return_masks=True, ratio_tolerance=0)
-
-        covered = []
-        for mask_data, ann in zip(segms, source_anns):
-            mask = dm.Mask(image=mask_data)
-            ann_to_check = ann
-            if ann.type == dm.AnnotationType.bbox:
-                ann_to_check = dm.Polygon(ann.as_polygon())
-
-            if _segment_iou(ann_to_check, mask, img_h=img_h, img_w=img_w) <= 0:
-                covered.append(ann)
-
-        return covered
+        covered_ids = _find_covered_segments(segms,
+            img_w=img_w, img_h=img_h, tolerance=self.coverage_threshold
+        )
+        return [anns[i] for i in covered_ids]
 
     def match_annotations(self, item_a: dm.DatasetItem, item_b: dm.DatasetItem):
         per_type_results = self._annotation_comparator.match_annotations(item_a, item_b)
 
         merged_results = [[], [], [], [], {}]
         for shape_type in self.included_ann_types:
-            for merged_field, field in zip(merged_results, per_type_results[shape_type][:-1]):
+            shape_type_results = per_type_results.get(shape_type, None)
+            if shape_type_results is None:
+                continue
+
+            for merged_field, field in zip(merged_results, shape_type_results[:-1]):
                 merged_field.extend(field)
 
             merged_results[-1].update(per_type_results[shape_type][-1])
@@ -1158,18 +1192,18 @@ class _DatasetComparator:
 
         self._frame_results: Dict[int, ComparisonReportFrameSummary] = {}
 
-        self.comparator = _Comparator(self._gt_dataset.categories())
+        self.comparator = _Comparator(self._gt_dataset.categories(), iou_threshold=0.4)
 
         # iou_threshold is used for distinction between matched / unmatched shapes
         # overlap_threshold is used for distinction between strong / weak (low_overlap) matches
-        self.comparator._annotation_comparator.iou_threshold = 0.4
         self.overlap_threshold = 0.8
 
         # Indicates that polylines have direction
         self.oriented_lines = True
+        self.line_orientation_threshold = 0.1
 
         # Checks for mismatching groupings
-        self.compare_groups = True
+        self.compare_groups = False
 
         # Check for fully-covered annotations
         self.check_covered_annotations = True
@@ -1307,7 +1341,7 @@ class _DatasetComparator:
         if self.oriented_lines and dm.AnnotationType.polyline in self.comparator.included_ann_types:
             # Check line directions
             line_matcher = _LineMatcher(
-                torso_r=self.comparator._annotation_comparator.line_torso_radius,
+                torso_r=self.line_torso_radius,
                 oriented=True,
                 scale=np.prod(gt_item.image.size)
             )
@@ -1321,7 +1355,7 @@ class _DatasetComparator:
 
                 # need to filter computation errors from line approximation
                 # and (almost) orientation-independent cases
-                if non_oriented_distance - oriented_distance > 0.1:
+                if non_oriented_distance - oriented_distance > self.line_orientation_threshold:
                     conflicts.append(
                         AnnotationConflict(
                             frame_id=frame_id,
