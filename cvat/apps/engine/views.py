@@ -2179,9 +2179,8 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 except ValueError:
                     return HttpResponseBadRequest('Wrong value for the next_token parameter was found.')
                 # TODO: fix problem with manifest_prefix
-                # TODO: add page_size
                 content = manifest.emulate_hierarchical_structure(
-                    settings.BUCKET_CONTENT_PAGE_SIZE, manifest_prefix=manifest_prefix, prefix=prefix, start_index=start_index)
+                    page_size, manifest_prefix=manifest_prefix, prefix=prefix, start_index=start_index)
             else:
                 content = storage.list_files_on_one_page(prefix, delimiter, next_token, page_size,_use_sort=True)
             serializer = CloudStorageContentSerializer(data=content)
