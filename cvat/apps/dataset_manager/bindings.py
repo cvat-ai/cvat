@@ -123,7 +123,9 @@ class InstanceLabelData:
                 if spec.input_type == AttributeType.NUMBER:
                     pass # no extra processing required
                 elif spec.input_type == AttributeType.CHECKBOX:
-                    if isinstance(value, str):
+                    if value == spec.default_value:
+                        pass
+                    elif isinstance(value, str):
                         value = value.lower()
                         assert value in {'true', 'false'}
                     elif isinstance(value, (bool, int, float)):
