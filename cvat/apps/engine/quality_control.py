@@ -1034,7 +1034,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
         return {t: self._match_ann_type(t, item_a, item_b) for t in self.included_ann_types}
 
 def _find_covered_segments(
-    segments, *, img_w: int, img_h: int, tolerance: float = 0.01
+    segments, *, img_w: int, img_h: int, visibility_threshold: float = 0.01
 ) -> Sequence[int]:
     from pycocotools import mask as mask_utils
 
@@ -1056,7 +1056,7 @@ def _find_covered_segments(
             continue
 
         # Check if the bottom segment is fully covered by the top one
-        if bottom_area / (union_area or 1) - iou < tolerance:
+        if 1 - intersection_area / (bottom_area or 1) < visibility_threshold:
             covered_ids.append(i)
 
     return covered_ids
@@ -1154,7 +1154,7 @@ class _Comparator:
 
         img_h, img_w = item.image.size
         covered_ids = _find_covered_segments(segms,
-            img_w=img_w, img_h=img_h, tolerance=self.coverage_threshold
+            img_w=img_w, img_h=img_h, visibility_threshold=self.coverage_threshold
         )
         return [anns[i] for i in covered_ids]
 
@@ -1341,7 +1341,7 @@ class _DatasetComparator:
         if self.oriented_lines and dm.AnnotationType.polyline in self.comparator.included_ann_types:
             # Check line directions
             line_matcher = _LineMatcher(
-                torso_r=self.line_torso_radius,
+                torso_r=self.comparator._annotation_comparator.line_torso_radius,
                 oriented=True,
                 scale=np.prod(gt_item.image.size)
             )
