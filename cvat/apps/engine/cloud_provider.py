@@ -236,6 +236,7 @@ class _CloudStorage(ABC):
         prefix: Optional[str] = None,
         delimiter: str = '/',
         next_token: Optional[str] = None,
+        page_size: int = settings.BUCKET_CONTENT_PAGE_SIZE,
     ) -> Dict:
         pass
 
@@ -244,10 +245,11 @@ class _CloudStorage(ABC):
         prefix: Optional[str] = None,
         delimiter: str = '/',
         next_token: Optional[str] = None,
+        page_size: int = settings.BUCKET_CONTENT_PAGE_SIZE,
         _use_flat_listing: bool = False,
         _use_sort: bool = False,
     ) -> Dict:
-        result = self._list_raw_content_on_one_page(prefix, delimiter, next_token)
+        result = self._list_raw_content_on_one_page(prefix, delimiter, next_token, page_size)
 
         if not _use_flat_listing:
             result['directories'] = [d.strip('/') for d in result['directories']]
@@ -454,6 +456,7 @@ class AWS_S3(_CloudStorage):
         prefix: Optional[str] = None,
         delimiter: str = '/',
         next_token: Optional[str] = None,
+        page_size: int = settings.BUCKET_CONTENT_PAGE_SIZE,
     ) -> Dict:
         # The structure of response looks like this:
         # {
@@ -463,7 +466,7 @@ class AWS_S3(_CloudStorage):
         #    'NextContinuationToken': 'str'
         # }
         response = self._client.list_objects_v2(
-            Bucket=self.name, MaxKeys=settings.BUCKET_CONTENT_PAGE_SIZE, Delimiter=delimiter,
+            Bucket=self.name, MaxKeys=page_size, Delimiter=delimiter,
             **({'Prefix': prefix} if prefix else {}),
             **({'ContinuationToken': next_token} if next_token else {}),
         )
@@ -647,9 +650,10 @@ class AzureBlobContainer(_CloudStorage):
         prefix: Optional[str] = None,
         delimiter: str = '/',
         next_token: Optional[str] = None,
+        page_size: int = settings.BUCKET_CONTENT_PAGE_SIZE,
     ) -> Dict:
         page = self._client.walk_blobs(
-            maxresults=settings.BUCKET_CONTENT_PAGE_SIZE, results_per_page=settings.BUCKET_CONTENT_PAGE_SIZE, delimiter=delimiter,
+            maxresults=page_size, results_per_page=page_size, delimiter=delimiter,
             **({'name_starts_with': prefix} if prefix else {})
         ).by_page(continuation_token=next_token)
         all_files = list(next(page))
@@ -755,9 +759,10 @@ class GoogleCloudStorage(_CloudStorage):
         prefix: Optional[str] = None,
         delimiter: str = '/',
         next_token: Optional[str] = None,
+        page_size: int = settings.BUCKET_CONTENT_PAGE_SIZE,
     ) -> Dict:
         iterator = self._client.list_blobs(
-            bucket_or_name=self.name, max_results=settings.BUCKET_CONTENT_PAGE_SIZE, page_size=settings.BUCKET_CONTENT_PAGE_SIZE,
+            bucket_or_name=self.name, max_results=page_size, page_size=page_size,
             fields='items(name),nextPageToken,prefixes', # https://cloud.google.com/storage/docs/json_api/v1/parameters#fields
             delimiter=delimiter,
             **({'prefix': prefix} if prefix else {}),
