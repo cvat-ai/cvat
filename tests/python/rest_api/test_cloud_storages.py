@@ -472,21 +472,30 @@ class TestGetCloudStorageContent:
         "version, manifest, prefix, page_size, expected_content",
         [
             (
-                SUPPORTED_VERSIONS.V1,
+                SUPPORTED_VERSIONS.V1, # [v1] list all bucket content
                 "sub/manifest.jsonl",
                 None,
                 None,
                 ["sub/image_case_65_1.png", "sub/image_case_65_2.png"],
             ),
-            # (
-            #     SUPPORTED_VERSIONS.V2,
-            #     "sub/manifest.jsonl",
-            #     None,
-            #     None,
-            #     [FileInfo(mime_type=None, name="sub", type="DIR")],
-            # ),
             (
-                SUPPORTED_VERSIONS.V2,
+                SUPPORTED_VERSIONS.V2, # [v2] list the top level of bucket with based on manifest
+                "sub/manifest.jsonl",
+                None,
+                None,
+                [FileInfo(mime_type=None, name="sub", type="DIR")],
+            ),
+            (
+                SUPPORTED_VERSIONS.V2, # [v2] search by some prefix in bucket content based on manifest
+                "sub/manifest.jsonl",
+                "sub/image_case_65_1",
+                None,
+                [
+                    FileInfo(mime_type=None, name="image_case_65_1.png", type="REG"),
+                ],
+            ),
+            (
+                SUPPORTED_VERSIONS.V2, # [v2] list the second layer (directory "sub") of bucket content based on manifest
                 "sub/manifest.jsonl",
                 "sub/",
                 None,
@@ -496,14 +505,14 @@ class TestGetCloudStorageContent:
                 ],
             ),
             (
-                SUPPORTED_VERSIONS.V2,
+                SUPPORTED_VERSIONS.V2, # [v2] list the top layer of real bucket content
                 None,
                 None,
                 None,
                 [FileInfo(mime_type=None, name="sub", type="DIR")],
             ),
             (
-                SUPPORTED_VERSIONS.V2,
+                SUPPORTED_VERSIONS.V2, # [v2] list the second layer (directory "sub") of real bucket content
                 None,
                 "sub/",
                 2,
