@@ -673,9 +673,11 @@ class ImageManifestManager(_ManifestManager):
         else:
             content = [f[1].full_name for f in self]
 
-        content = list(filter(lambda x: x.startswith(prefix), content))
-        if prefix.endswith('/'):
-            content = [f[len(prefix):] for f in content]
+        if prefix:
+            content = list(filter(lambda x: x.startswith(prefix), content))
+            if os.path.sep in prefix:
+                last_dir_symbol = prefix.rindex(os.path.sep)
+                content = [f[last_dir_symbol + 1:] for f in content]
 
         files_in_root, files_in_directories = [], []
 
