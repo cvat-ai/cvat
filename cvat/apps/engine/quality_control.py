@@ -13,6 +13,7 @@ from typing import Any, Callable, Dict, Hashable, List, Optional, Sequence, Tupl
 
 from attrs import asdict, define, has as is_attrs_type
 import datumaro as dm
+import datumaro.util.mask_tools
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
@@ -805,14 +806,16 @@ class _DistanceComparator(dm.ops.DistanceComparator):
             a_objs = self._get_ann_type(t, item_a)
         if b_objs is None:
             b_objs = self._get_ann_type(t, item_b)
-        if not a_objs and not b_objs:
-            return [], [], [], []
 
         if self.return_distances:
             distance, distances = self._make_memoizing_distance(distance)
 
-        returned_values = _match_segments(a_objs, b_objs,
-            distance=distance, dist_thresh=self.iou_threshold)
+        if not a_objs and not b_objs:
+            distances = {}
+            returned_values = [], [], [], []
+        else:
+            returned_values = _match_segments(a_objs, b_objs,
+                distance=distance, dist_thresh=self.iou_threshold)
 
         if self.return_distances:
             returned_values = returned_values + (distances, )
@@ -976,17 +979,16 @@ class _DistanceComparator(dm.ops.DistanceComparator):
 
         matcher = _PointsMatcher(instance_map=instance_map, sigma=self.oks_sigma)
 
-        distance = matcher.distance
-
-        if self.return_distances:
-            distance, distances = self._make_memoizing_distance(distance)
-
-        matched, mismatched, a_extra, b_extra = _match_segments(
-            a_points,
-            b_points,
-            dist_thresh=self.iou_threshold,
-            distance=distance,
+        results = self._match_segments(
+            dm.AnnotationType.points, item_a, item_b,
+            a_objs=a_points,
+            b_objs=b_points,
+            distance=matcher.distance,
         )
+
+        matched, mismatched, a_extra, b_extra = results[:4]
+        if self.return_distances:
+            distances = results[4]
 
         matched = [(points_map[id(p_a)], points_map[id(p_b)]) for (p_a, p_b) in matched]
         mismatched = [
@@ -1089,7 +1091,44 @@ class _Comparator:
             for group, anns in itertools.groupby(grouped_anns, lambda a: a.group)
         }
 
-    def match_annotations(self, item_a, item_b):
+    def find_covered(self, item: dm.DatasetItem) -> List[dm.Annotation]:
+        # Get annotations that can cover or be covered
+        spatial_types = {
+            dm.AnnotationType.polygon, dm.AnnotationType.mask, dm.AnnotationType.bbox
+        }.intersection(self.included_ann_types)
+        source_anns = sorted([a for a in item.annotations if a.type in spatial_types],
+            key=lambda a: a.z_order)
+
+        segms = []
+        for ann in source_anns:
+            if ann.type == dm.AnnotationType.bbox:
+                segms.append(ann.as_polygon())
+            elif ann.type == dm.AnnotationType.polygon:
+                segms.append(ann.points)
+            # elif isinstance(ann, dm.RleMask):
+            #     dst_segms.append(ann.image)
+            elif ann.type == dm.AnnotationType.mask:
+                segms.append(datumaro.util.mask_tools.mask_to_rle(ann.image))
+            else:
+                assert False
+
+        img_h, img_w = item.image.size
+        segms = datumaro.util.mask_tools.crop_covered_segments(segms,
+            width=img_w, height=img_h, return_masks=True, ratio_tolerance=0)
+
+        covered = []
+        for mask_data, ann in zip(segms, source_anns):
+            mask = dm.Mask(image=mask_data)
+            ann_to_check = ann
+            if ann.type == dm.AnnotationType.bbox:
+                ann_to_check = dm.Polygon(ann.as_polygon())
+
+            if _segment_iou(ann_to_check, mask, img_h=img_h, img_w=img_w) <= 0:
+                covered.append(ann)
+
+        return covered
+
+    def match_annotations(self, item_a: dm.DatasetItem, item_b: dm.DatasetItem):
         per_type_results = self._annotation_comparator.match_annotations(item_a, item_b)
 
         merged_results = [[], [], [], [], {}]
@@ -1131,6 +1170,9 @@ class _DatasetComparator:
 
         # Checks for mismatching groupings
         self.compare_groups = True
+
+        # Check for fully-covered annotations
+        self.check_covered_annotations = True
 
         self.included_frames = gt_data_provider.job_data._db_job.segment.frame_set
 
@@ -1290,6 +1332,20 @@ class _DatasetComparator:
                             ]
                         )
                     )
+
+        if self.check_covered_annotations:
+            ds_covered_anns = self.comparator.find_covered(ds_item)
+
+            for ds_ann in ds_covered_anns:
+                conflicts.append(
+                    AnnotationConflict(
+                        frame_id=frame_id,
+                        type=AnnotationConflictType.COVERED_ANNOTATION,
+                        annotation_ids=[
+                            self._dm_ann_to_ann_id(ds_ann, self._ds_dataset),
+                        ]
+                    )
+                )
 
         for gt_ann, ds_ann in matches:
             attribute_results = self.comparator.match_attrs(gt_ann, ds_ann)
