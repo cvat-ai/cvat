@@ -3,22 +3,23 @@
 #
 # SPDX-License-Identifier: MIT
 
-from collections import OrderedDict
-from enum import Enum
-from copy import deepcopy
 import os
+from collections import OrderedDict
+from copy import deepcopy
+from enum import Enum
 from tempfile import TemporaryDirectory
 
 from django.db import transaction
 from django.db.models.query import Prefetch
 from django.utils import timezone
+from rest_framework.exceptions import ValidationError
 
 from cvat.apps.engine import models, serializers
 from cvat.apps.engine.plugins import plugin_decorator
 from cvat.apps.profiler import silk_profile
 
 from .annotation import AnnotationIR, AnnotationManager
-from .bindings import TaskData, JobData
+from .bindings import JobData, TaskData
 from .formats.registry import make_exporter, make_importer
 from .util import bulk_create
 
@@ -118,11 +119,11 @@ class JobAnnotation:
 
     def _validate_attribute_for_existence(self, db_attr_val, label_id, attr_type):
         if db_attr_val.spec_id not in self.db_attributes[label_id][attr_type]:
-            raise AttributeError("spec_id `{}` is invalid".format(db_attr_val.spec_id))
+            raise ValidationError("spec_id `{}` is invalid".format(db_attr_val.spec_id))
 
     def _validate_label_for_existence(self, label_id):
         if label_id not in self.db_labels:
-            raise AttributeError("label_id `{}` is invalid".format(label_id))
+            raise ValidationError("label_id `{}` is invalid".format(label_id))
 
     def _update_parent_track(self, child_track, parent_track):
         # parent track cannot have a frame greater than the frame of the child track
