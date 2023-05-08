@@ -551,8 +551,19 @@ class TestGetTaskDataset:
         )
         assert response.status_code == HTTPStatus.OK
 
+        # check that we can export task
         response = self._test_export_task(admin_user, tid, format="COCO Keypoints 1.0")
-        assert response.data
+        assert response.status == HTTPStatus.OK
+
+        # check that server saved track annotations correctly
+        response = get_method(admin_user, f"tasks/{tid}/annotations")
+        assert response.status_code == HTTPStatus.OK
+
+        annotations = response.json()
+        assert annotations["tracks"][0]["frame"] == 0
+        assert annotations["tracks"][0]["shapes"][0]["frame"] == 0
+        assert annotations["tracks"][0]["elements"][0]["shapes"][0]["frame"] == 0
+
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
