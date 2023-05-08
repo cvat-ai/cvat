@@ -162,7 +162,7 @@ class _CloudStorage(ABC):
     def _download_range_of_bytes(self, key: str, stop_byte: int, start_byte: int):
         pass
 
-    def optimally_image_download(self, key: str, chunk_size: int = 16384) -> BytesIO:
+    def optimally_image_download(self, key: str, chunk_size: int = 65536) -> BytesIO:
         """
         Method downloads image by the following approach:
         Firstly we try to download the first N bytes of image which will be enough for determining image properties.
@@ -170,7 +170,7 @@ class _CloudStorage(ABC):
 
         Args:
             key (str): File on the bucket
-            chunk_size (int, optional): The number of first bytes to download. Defaults to 16384 (16kB).
+            chunk_size (int, optional): The number of first bytes to download. Defaults to 65536 (64kB).
 
         Returns:
             BytesIO: Buffer with image
