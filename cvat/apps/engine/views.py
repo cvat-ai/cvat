@@ -68,7 +68,7 @@ from cvat.apps.engine.serializers import (
     RqStatusSerializer, TaskReadSerializer, TaskWriteSerializer, UserSerializer, PluginsSerializer, IssueReadSerializer,
     IssueWriteSerializer, CommentReadSerializer, CommentWriteSerializer, CloudStorageWriteSerializer,
     CloudStorageReadSerializer, DatasetFileSerializer, JobCommitSerializer,
-    ProjectFileSerializer, TaskFileSerializer)
+    ProjectFileSerializer, TaskFileSerializer, S3DataSerializer)
 
 from utils.dataset_manifest import ImageManifestManager
 from cvat.apps.engine.utils import av_scan_paths, process_failed_job, configure_dependent_job
@@ -84,6 +84,7 @@ from cvat.apps.iam.permissions import (CloudStoragePermission,
     TaskPermission, UserPermission)
 
 from cvat.rebotics.s3_client import s3_client
+from cvat.rebotics.storage import create_pre_signed_post
 
 
 @extend_schema(tags=['server'])
@@ -958,6 +959,63 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return backup.import_task(request)
         return Response(data='Unknown upload was finished',
                         status=status.HTTP_400_BAD_REQUEST)
+
+    @extend_schema(
+        methods=['POST'],
+        summary='Creates a data instance for a task. Provides presigned s3 urls for uploading files',
+        request=S3DataSerializer,
+        responses={
+           '200': OpenApiResponse(description='List of presigned s3 urls for uploading files.'),
+        }
+    )
+    @extend_schema(
+        methods=['PUT'],
+        summary='Starts internal task processing after all files were uploaded to s3.',
+        request=OpenApiTypes.NONE,
+        responses={
+            '202': OpenApiResponse(description='')
+        }
+    )
+    @action(detail=True, methods=['POST', 'PUT'], url_path=r's3-data')
+    def s3_data(self, request):
+        if request.method == 'POST':
+            if self._object.data is None:
+                db_data = Data.objects.create()
+                db_data.make_dirs()
+                self._object.data = db_data
+                self._object.save()
+            else:
+                return Response(data='Adding more data is not supported',
+                                status=status.HTTP_400_BAD_REQUEST)
+
+            serializer = S3DataSerializer(db_data, data=request.data)
+            serializer.is_valid(raise_exception=True)
+            v_data = serializer.validated_data
+            serializer.save()
+
+            if v_data['use_cache']:
+                db_data.storage_method = StorageMethodChoice.CACHE
+                db_data.save(update_fields=['storage_method'])
+            if v_data['server_files'] and not v_data.get('copy_data'):
+                db_data.storage = StorageChoice.SHARE
+                db_data.save(update_fields=['storage'])
+            if db_data.cloud_storage:
+                db_data.storage = StorageChoice.CLOUD_STORAGE
+                db_data.save(update_fields=['storage'])
+
+            data = [
+                create_pre_signed_post(f.file)
+                for f in db_data.s3_files.all()
+            ]
+            return Response(data=data, status=status.HTTP_200_OK)
+        else:
+            serializer = S3DataSerializer(self._object.data)
+            serializer.is_valid(raise_exception=True)
+            data = serializer.data.copy()
+            if 'stop_frame' not in serializer.validated_data:
+                data['stop_frame'] = None
+            task.create(self._object.id, data)
+            return Response(data=serializer.data, status=status.HTTP_202_ACCEPTED)
 
     @extend_schema(methods=['POST'],
         summary='Method permanently attaches images or video to a task. Supports tus uploads, see more https://tus.io/',

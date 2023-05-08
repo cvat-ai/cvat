@@ -8,9 +8,11 @@ import re
 import shutil
 
 from tempfile import NamedTemporaryFile
+from io import BytesIO
 
 from rest_framework import serializers, exceptions
 from django.contrib.auth.models import User, Group
+from django.core.files import File
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine import models
@@ -435,8 +437,6 @@ class DataSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
     # pylint: disable=no-self-use
     def _create_files(self, instance, files):
-        # SAVING FILES: here are no files but already file paths
-        #  files are saved elsewhere
         if 'client_files' in files:
             client_objects = []
             for f in files['client_files']:
@@ -453,6 +453,26 @@ class DataSerializer(WriteOnceMixin, serializers.ModelSerializer):
             for f in files['remote_files']:
                 remote_file = models.RemoteFile(data=instance, **f)
                 remote_file.save()
+
+
+class S3DataSerializer(DataSerializer):
+    def _pop_data(self, validated_data):
+        files = super()._pop_data(validated_data)
+        files['s3_files'] = files['client_files']
+        files['client_files'] = []
+        return files
+
+    def _create_files(self, instance, files):
+        super()._create_files(instance, files)
+
+        if 's3_files' in files:
+            s3_files = [
+                models.S3File(
+                    data=instance,
+                    file=File(BytesIO(), f['file']),
+                ) for f in files['s3_files']
+            ]
+            models.S3File.objects.bulk_create(s3_files)
 
 
 class StorageSerializer(serializers.ModelSerializer):
