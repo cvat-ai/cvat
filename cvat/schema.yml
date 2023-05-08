@@ -833,6 +833,10 @@ paths:
           type: integer
         description: Organization identifier
       - in: query
+        name: page_size
+        schema:
+          type: integer
+      - in: query
         name: prefix
         schema:
           type: string
@@ -6833,6 +6837,16 @@ components:
                 ["file3.png"], # job #2 files
                 ["file4.jpg", "file5.png", "file6.bmp"], # job #3 files
             ]
+        files_to_be_excluded:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 1024
+          nullable: true
+          description: |
+            Paths to files and directories from a file share mounted on the server, or from a cloud storage
+            that should be excluded from the directories specified in server_files.
       required:
       - image_quality
     DatasetFileRequest:
