@@ -18,17 +18,28 @@ Also it is worth to have a real instance with real data inside and tests
 the server calling REST API directly (as it done by users).
 
 ## How to run?
+**Initial steps**
 
-1. After that please look at documentation for [pytest](https://docs.pytest.org/en/6.2.x/).
-   Generally, you have to install requirements and run the following command from
-   the root directory of the cloned CVAT repository:
-
-   ```console
-   pip install -e cvat-sdk/
-   pip install -e cvat-cli/
-   pip install -r tests/python/requirements.txt
-   pytest tests/python/
+1. Follow [this guide](/site/content/en/docs/api_sdk/sdk/developer-guide/) to prepare
+   `cvat-sdk` and `cvat-cli` source code
+1. Install all necessary requirements before running REST API tests:
    ```
+   pip install -r ./tests/python/requirements.txt
+   pip install -e ./cvat-sdk
+   pip install -e ./cvat-cli
+   ```
+1. Stop any other CVAT containers which you run previously. They keep ports
+which are used by containers for the testing system.
+
+**Running tests**
+
+Run all REST API tests:
+
+```
+pytest ./tests/python
+```
+
+This command will automatically start all necessary docker containers.
 
    See the [contributing guide](../../site/content/en/docs/contributing/running-tests.md)
    to get more information about tests running.

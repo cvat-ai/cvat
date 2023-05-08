@@ -69,14 +69,26 @@ class DataSerializerExtension(OpenApiSerializerExtension):
         assert isinstance(instance, serializers.ModelSerializer)
 
         serializer_transformer = _SerializerTransformer(instance)
+        source_client_files = instance.fields['client_files']
+        source_server_files = instance.fields['server_files']
+        source_remote_files = instance.fields['remote_files']
 
         class _Override(self.target_class): # pylint: disable=inherit-non-class
             client_files = serializers.ListField(
-                child=serializer_transformer.make_field('client_files', 'file'), default=[])
+                child=serializer_transformer.make_field('client_files', 'file'),
+                default=source_client_files.default,
+                help_text=source_client_files.help_text,
+            )
             server_files = serializers.ListField(
-                child=serializer_transformer.make_field('server_files', 'file'), default=[])
+                child=serializer_transformer.make_field('server_files', 'file'),
+                default=source_server_files.default,
+                help_text=source_server_files.help_text,
+            )
             remote_files = serializers.ListField(
-                child=serializer_transformer.make_field('remote_files', 'file'), default=[])
+                child=serializer_transformer.make_field('remote_files', 'file'),
+                default=source_remote_files.default,
+                help_text=source_remote_files.help_text,
+            )
 
         return auto_schema._map_serializer(
             _copy_serializer(instance, _new_type=_Override, context={'view': auto_schema.view}),

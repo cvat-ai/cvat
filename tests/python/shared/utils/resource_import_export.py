@@ -3,7 +3,7 @@ import json
 from abc import ABC, abstractstaticmethod
 from contextlib import ExitStack
 from http import HTTPStatus
-from typing import Any, Dict, TypeVar
+from typing import Any, Dict, Optional, TypeVar
 
 import pytest
 
@@ -82,54 +82,83 @@ class _CloudStorageResourceTest(ABC):
         return wrapper
 
     def _export_resource_to_cloud_storage(
-        self, obj_id: int, obj: str, resource: str, *, user: str, **kwargs
+        self,
+        obj_id: int,
+        obj: str,
+        resource: str,
+        *,
+        user: str,
+        _expect_status: Optional[int] = None,
+        **kwargs,
     ):
+        _expect_status = _expect_status or HTTPStatus.OK
+
         response = get_method(user, f"{obj}/{obj_id}/{resource}", **kwargs)
         status = response.status_code
 
-        while status != HTTPStatus.OK:
+        while status != _expect_status:
             assert status in (HTTPStatus.CREATED, HTTPStatus.ACCEPTED)
             response = get_method(user, f"{obj}/{obj_id}/{resource}", action="download", **kwargs)
             status = response.status_code
 
-    def _import_annotations_from_cloud_storage(self, obj_id, obj, *, user, **kwargs):
+    def _import_annotations_from_cloud_storage(
+        self,
+        obj_id,
+        obj,
+        *,
+        user,
+        _expect_status: Optional[int] = None,
+        _check_uploaded: bool = True,
+        **kwargs,
+    ):
+        _expect_status = _expect_status or HTTPStatus.CREATED
+
         url = f"{obj}/{obj_id}/annotations"
         response = post_method(user, url, data=None, **kwargs)
         status = response.status_code
         rq_id = response.json().get("rq_id")
         assert rq_id, "The rq_id was not found in the response"
 
-        while status != HTTPStatus.CREATED:
+        while status != _expect_status:
             assert status == HTTPStatus.ACCEPTED
             response = put_method(user, url, data=None, rq_id=rq_id, **kwargs)
             status = response.status_code
 
-        response = get_method(user, url)
+        if _check_uploaded:
+            response = get_method(user, url)
+            assert response.status_code == HTTPStatus.OK
 
-        assert response.status_code == HTTPStatus.OK
-        annotations = response.json()
+            annotations = response.json()
 
-        assert len(annotations["shapes"])
+            assert len(annotations["shapes"])
 
-    def _import_backup_from_cloud_storage(self, obj_id, obj, *, user, **kwargs):
+    def _import_backup_from_cloud_storage(
+        self, obj_id, obj, *, user, _expect_status: Optional[int] = None, **kwargs
+    ):
+        _expect_status = _expect_status or HTTPStatus.CREATED
+
         url = f"{obj}/backup"
         response = post_method(user, url, data=None, **kwargs)
         status = response.status_code
 
-        while status != HTTPStatus.CREATED:
+        while status != _expect_status:
             assert status == HTTPStatus.ACCEPTED
             data = json.loads(response.content.decode("utf8"))
             response = post_method(user, url, data=data, **kwargs)
             status = response.status_code
 
-    def _import_dataset_from_cloud_storage(self, obj_id, obj, *, user, **kwargs):
+    def _import_dataset_from_cloud_storage(
+        self, obj_id, obj, *, user, _expect_status: Optional[int] = None, **kwargs
+    ):
+        _expect_status = _expect_status or HTTPStatus.CREATED
+
         url = f"{obj}/{obj_id}/dataset"
         response = post_method(user, url, data=None, **kwargs)
         status = response.status_code
         rq_id = response.json().get("rq_id")
         assert rq_id, "The rq_id was not found in the response"
 
-        while status != HTTPStatus.CREATED:
+        while status != _expect_status:
             assert status == HTTPStatus.ACCEPTED
             response = get_method(user, url, action="import_status", rq_id=rq_id)
             status = response.status_code

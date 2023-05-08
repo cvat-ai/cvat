@@ -5,7 +5,8 @@
 /// <reference types="cypress" />
 
 Cypress.Commands.add('createOrganization', (organizationParams) => {
-    cy.get('.cvat-header-menu-user-dropdown').trigger('mouseover');
+    cy.get('.cvat-header-menu-user-dropdown')
+        .should('exist').and('be.visible').trigger('mouseover');
     cy.get('.cvat-header-menu')
         .should('be.visible')
         .find('[role="menuitem"]')
@@ -15,6 +16,7 @@ Cypress.Commands.add('createOrganization', (organizationParams) => {
         .should('be.visible')
         .click();
     cy.url().should('contain', '/organizations/create');
+    const idWrapper = { id: null };
     cy.get('.cvat-create-organization-form').should('be.visible').within(() => {
         cy.get('#slug').type(organizationParams.shortName);
         cy.get('#name').type(organizationParams.fullName);
@@ -24,8 +26,14 @@ Cypress.Commands.add('createOrganization', (organizationParams) => {
         cy.get('#location').type(organizationParams.location);
         cy.intercept('POST', '/api/organizations**').as('createOrganizations');
         cy.get('[type="submit"]').click();
-        cy.wait('@createOrganizations').its('response.statusCode').should('equal', 201);
+        cy.wait('@createOrganizations')
+            .then((interception) => {
+                expect(interception.response.statusCode).to.equal(201);
+                idWrapper.id = interception.response.body.id;
+            });
     });
+
+    return cy.wrap(idWrapper);
 });
 
 Cypress.Commands.add('deleteOrganizations', (authResponse, otrganizationsToDelete) => {

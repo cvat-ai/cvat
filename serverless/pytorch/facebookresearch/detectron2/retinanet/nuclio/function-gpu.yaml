@@ -1,5 +1,5 @@
 metadata:
-  name: pth.facebookresearch.detectron2.retinanet-r101
+  name: pth-facebookresearch-detectron2-retinanet-r101
   namespace: cvat
   annotations:
     name: RetinaNet R101

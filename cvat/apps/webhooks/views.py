@@ -77,10 +77,6 @@ class WebhookViewSet(viewsets.ModelViewSet):
     iam_organization_field = "organization"
 
     def get_serializer_class(self):
-        # Early exit for drf-spectacular compatibility
-        if getattr(self, "swagger_fake_view", False):
-            return WebhookReadSerializer
-
         if self.request.path.endswith("redelivery") or self.request.path.endswith(
             "ping"
         ):
@@ -185,9 +181,7 @@ class WebhookViewSet(viewsets.ModelViewSet):
     def redelivery(self, request, pk, delivery_id):
         delivery = WebhookDelivery.objects.get(webhook_id=pk, id=delivery_id)
         signal_redelivery.send(sender=self, data=delivery.request)
-
-        # Questionable: should we provide a body for this response?
-        return Response({})
+        return Response({}, status=status.HTTP_200_OK)
 
     @extend_schema(
         summary="Method send ping webhook",

@@ -60,7 +60,7 @@ module.exports = (env) => {
                 {
                     context: (param) =>
                         param.match(
-                            /\/api\/.*|git\/.*|opencv\/.*|analytics\/.*|static\/.*|admin(?:\/(.*))?.*|documentation\/.*|django-rq(?:\/(.*))?/gm,
+                            /\/api\/.*|git\/.*|opencv\/.*|analytics\/.*|static\/.*|admin(?:\/(.*))?.*|profiler(?:\/(.*))?.*|documentation\/.*|django-rq(?:\/(.*))?/gm,
                         ),
                     target: env && env.API_URL,
                     secure: false,
@@ -81,7 +81,7 @@ module.exports = (env) => {
                 // and adds 'import React from "react";'
                 // in plugins it leads to errors because they must import '@modules/react'
                 // so, this alias added to fix it
-                react$: '@modules/react',
+                react: '@modules/react',
                 '@root': path.resolve(__dirname, 'src'),
                 '@modules': path.resolve(__dirname, '..', 'node_modules'),
             },
