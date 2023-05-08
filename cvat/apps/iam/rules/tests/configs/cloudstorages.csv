@@ -17,5 +17,5 @@ delete,Storage,Organization,Owner,,DELETE,/cloudstorages/{id},Worker,Worker
 delete,Storage,Organization,None,,DELETE,/cloudstorages/{id},User,Maintainer
 list:content,Storage,Sandbox,None,,GET,"/cloudstorages/{id}/content, /cloudstorages/{id}/content-v2",Admin,N/A
 list:content,Storage,Sandbox,Owner,,GET,"/cloudstorages/{id}/content, /cloudstorages/{id}/content-v2",None,N/A
-list:content,Storage,Organization,Owner,,"/cloudstorages/{id}/content, /cloudstorages/{id}/content-v2",None,Worker
+list:content,Storage,Organization,Owner,,GET,"/cloudstorages/{id}/content, /cloudstorages/{id}/content-v2",None,Worker
 list:content,Storage,Organization,None,,GET,"/cloudstorages/{id}/content, /cloudstorages/{id}/content-v2",User,Supervisor
