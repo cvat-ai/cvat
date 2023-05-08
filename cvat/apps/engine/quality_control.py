@@ -480,7 +480,7 @@ def _match_segments(
     max_anns = max(len(a_segms), len(b_segms))
     distances = np.array([
         [
-            1 - distance(a, b) if a and b else 1
+            1 - distance(a, b) if a is not None and b is not None else 1
             for b, _ in itertools.zip_longest(b_segms, range(max_anns), fillvalue=None)
         ]
         for a, _ in itertools.zip_longest(a_segms, range(max_anns), fillvalue=None)
@@ -805,6 +805,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
 
     def _match_segments(self, t, item_a, item_b, *,
         distance: Callable = dm.ops.segment_iou,
+        label_matcher: Callable = None,
         a_objs: Optional[Sequence[dm.Annotation]] = None,
         b_objs: Optional[Sequence[dm.Annotation]] = None,
     ):
@@ -820,8 +821,13 @@ class _DistanceComparator(dm.ops.DistanceComparator):
             distances = {}
             returned_values = [], [], [], []
         else:
+            extra_args = {}
+            if label_matcher:
+                extra_args['label_matcher'] = label_matcher
+
             returned_values = _match_segments(a_objs, b_objs,
-                distance=distance, dist_thresh=self.iou_threshold)
+                distance=distance, dist_thresh=self.iou_threshold, **extra_args
+            )
 
         if self.return_distances:
             returned_values = returned_values + (distances, )
@@ -856,15 +862,148 @@ class _DistanceComparator(dm.ops.DistanceComparator):
             distance=partial(_bbox_iou, img_h=img_h, img_w=img_w))
 
     def match_segmentations(self, item_a, item_b):
-        def _get_anns(item):
+        def _get_segmentations(item):
             return self._get_ann_type(dm.AnnotationType.polygon, item) + \
                    self._get_ann_type(dm.AnnotationType.mask, item)
 
         img_h, img_w = item_a.image.size
-        return self._match_segments(dm.AnnotationType.polygon, item_a, item_b,
-            a_objs=_get_anns(item_a), b_objs=_get_anns(item_b),
-            distance=partial(_segment_iou, img_h=img_h, img_w=img_w)
+
+        a_anns = _get_segmentations(item_a)
+        b_anns = _get_segmentations(item_b)
+
+        def _find_instances(annotations):
+            # Group instance annotations by label.
+            # Annotations with the same label and group will be merged,
+            # and considered a single object in comparison
+            instances = []
+            instance_map = {} # ann id -> instance id
+            for ann_group in dm.ops.find_instances(annotations):
+                ann_group = sorted(ann_group, key=lambda a: a.label)
+                for _, label_group in itertools.groupby(ann_group, key=lambda a: a.label):
+                    label_group = list(label_group)
+                    instance_id = len(instances)
+                    instances.append(label_group)
+                    for ann in label_group:
+                        instance_map[id(ann)] = instance_id
+
+            return instances, instance_map
+
+        a_instances, a_instance_map = _find_instances(a_anns)
+        b_instances, b_instance_map = _find_instances(b_anns)
+
+        def _get_compiled_mask(
+            anns: Sequence[dm.Annotation],
+            *,
+            instance_ids: Dict[int, int]
+        ) -> dm.CompiledMask:
+            from pycocotools import mask as mask_utils
+
+            if not anns:
+                return None
+
+            def _to_rle(ann):
+                if ann.type == dm.AnnotationType.polygon:
+                    return mask_utils.frPyObjects([ann.points], img_h, img_w)
+                elif isinstance(ann, dm.RleMask):
+                    return [ann.rle]
+                elif ann.type == dm.AnnotationType.mask:
+                    return [mask_utils.encode(ann.image)]
+                else:
+                    assert False
+
+            object_rle_groups = [_to_rle(ann) for ann in anns]
+            object_rles = [mask_utils.merge(g) for g in object_rle_groups]
+            object_masks = mask_utils.decode(object_rles)
+
+            return dm.CompiledMask.from_instance_masks(
+                # need to increment labels and instance ids by 1 to avoid confusion with background
+                instance_masks=(
+                    dm.Mask(image=object_masks[:, :, i], z_order=ann.z_order, label=ann.label + 1)
+                    for i, ann in enumerate(anns)
+                ),
+                instance_ids=(iid + 1 for iid in instance_ids),
+            )
+
+        a_compiled_mask = _get_compiled_mask(
+            list(itertools.chain.from_iterable(a_instances)),
+            instance_ids=[
+                a_instance_map[id(ann)] for ann in itertools.chain.from_iterable(a_instances)
+            ]
         )
+        b_compiled_mask = _get_compiled_mask(
+            list(itertools.chain.from_iterable(b_instances)),
+            instance_ids=[
+                b_instance_map[id(ann)] for ann in itertools.chain.from_iterable(b_instances)
+            ]
+        )
+
+        segment_cache = {}
+        def _get_segment(obj_id: int, compiled_mask: dm.CompiledMask):
+            key = (id(compiled_mask), obj_id)
+            rle = segment_cache.get(key)
+
+            if rle is None:
+                mask = compiled_mask.extract(obj_id + 1)
+
+                from pycocotools import mask as mask_utils
+                rle = mask_utils.encode(mask)
+
+                segment_cache[key] = rle
+
+            return rle
+
+        def _segment_comparator(a_inst_id: int, b_inst_id: int) -> float:
+            a_segm = _get_segment(a_inst_id, a_compiled_mask)
+            b_segm = _get_segment(b_inst_id, b_compiled_mask)
+
+            from pycocotools import mask as mask_utils
+            return float(mask_utils.iou([b_segm], [a_segm], [0])[0])
+
+        def _label_matcher(a_inst_id: int, b_inst_id: int) -> bool:
+            # labels are the same in the instance annotations
+            a = a_instances[a_inst_id][0]
+            b = b_instances[b_inst_id][0]
+            return a.label == b.label
+
+        results = self._match_segments(
+            dm.AnnotationType.polygon, item_a, item_b,
+            a_objs=list(range(len(a_instances))), b_objs=list(range(len(b_instances))),
+            distance=_segment_comparator, label_matcher=_label_matcher
+        )
+
+        # restore results for original annotations
+        matched, mismatched, a_extra, b_extra = results[:4]
+        if self.return_distances:
+            distances = results[4]
+
+        # i_x ~ instance idx in _x
+        # ia_x ~ instance annotation in _x
+        matched = [
+            (ia_a, ia_b)
+            for (i_a, i_b) in matched
+            for (ia_a, ia_b) in itertools.product(a_instances[i_a], b_instances[i_b])
+        ]
+        mismatched = [
+            (ia_a, ia_b)
+            for (i_a, i_b) in mismatched
+            for (ia_a, ia_b) in itertools.product(a_instances[i_a], b_instances[i_b])
+        ]
+        a_extra = [ia_a for i_a in a_extra for ia_a in a_instances[i_a]]
+        b_extra = [ia_b for i_b in b_extra for ia_b in b_instances[i_b]]
+
+        if self.return_distances:
+            for (i_a, i_b) in list(distances.keys()):
+                dist = distances.pop((i_a, i_b))
+
+                for (ia_a, ia_b) in itertools.product(a_instances[i_a], b_instances[i_b]):
+                    distances[(id(ia_a), id(ia_b))] = dist
+
+        returned_values = (matched, mismatched, a_extra, b_extra)
+
+        if self.return_distances:
+            returned_values = returned_values + (distances, )
+
+        return returned_values
 
     def match_lines(self, item_a, item_b):
         matcher = _LineMatcher(oriented=self.oriented_lines, torso_r=self.line_torso_radius,
@@ -1025,7 +1164,11 @@ class _DistanceComparator(dm.ops.DistanceComparator):
         notfound = object()
 
         def memoizing_distance(a, b):
-            key = (id(a), id(b))
+            if isinstance(a, int) and isinstance(b, int):
+                key = (a, b)
+            else:
+                key = (id(a), id(b))
+
             dist = distances.get(key, notfound)
 
             if dist is notfound:
@@ -1066,6 +1209,13 @@ def _find_covered_segments(
             covered_ids.append(i)
 
     return covered_ids
+
+def _find_annotation_groups(annotations: Sequence[dm.Annotation]) -> Dict[int, List[dm.Annotation]]:
+    grouped_anns = sorted(annotations, key=lambda a: a.group)
+    return {
+        group: list(anns)
+        for group, anns in itertools.groupby(grouped_anns, lambda a: a.group)
+    }
 
 class _Comparator:
     def __init__(self,
@@ -1130,14 +1280,9 @@ class _Comparator:
         return matches, mismatches, a_extra, b_extra
 
     def find_groups(self, item: dm.DatasetItem) -> Dict[int, List[dm.Annotation]]:
-        grouped_anns = [
+        return _find_annotation_groups([
             ann for ann in item.annotations if ann.group and ann.type in self.included_ann_types
-        ]
-        grouped_anns = sorted(grouped_anns, key=lambda a: a.group)
-        return {
-            group: list(anns)
-            for group, anns in itertools.groupby(grouped_anns, lambda a: a.group)
-        }
+        ])
 
     def match_groups(self, gt_groups, ds_groups, matched_anns):
         matched_ann_ids = dict((id(a), id(b)) for a, b in matched_anns)
