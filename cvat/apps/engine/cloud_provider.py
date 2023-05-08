@@ -29,7 +29,6 @@ from rest_framework.exceptions import (NotFound, PermissionDenied,
                                        ValidationError)
 
 from cvat.apps.engine.log import slogger
-from cvat.apps.engine.media_extractors import _is_image
 from cvat.apps.engine.models import CloudProviderChoice, CredentialsTypeChoice
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
