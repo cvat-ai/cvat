@@ -486,7 +486,12 @@ def _match_segments(
         for a, _ in itertools.zip_longest(a_segms, range(max_anns), fillvalue=None)
     ])
     distances[distances > 1 - dist_thresh] = 1
-    a_matches, b_matches = linear_sum_assignment(distances)
+
+    if a_segms and b_segms:
+        a_matches, b_matches = linear_sum_assignment(distances)
+    else:
+        a_matches = []
+        b_matches = []
 
     # matches: boxes we succeeded to match completely
     # mispred: boxes we succeeded to match, having label mismatch
@@ -496,7 +501,8 @@ def _match_segments(
     a_unmatched = []
     b_unmatched = []
     for a_idx, b_idx in zip(a_matches, b_matches):
-        if distances[a_idx, b_idx] > 1 - dist_thresh:
+        dist = distances[a_idx, b_idx]
+        if dist > 1 - dist_thresh or dist == 1:
             if a_idx < len(a_segms):
                 a_unmatched.append(a_segms[a_idx])
             if b_idx < len(b_segms):
@@ -1133,6 +1139,34 @@ class _Comparator:
             for group, anns in itertools.groupby(grouped_anns, lambda a: a.group)
         }
 
+    def match_groups(self, gt_groups, ds_groups, matched_anns):
+        matched_ann_ids = dict((id(a), id(b)) for a, b in matched_anns)
+
+        def _group_distance(gt_group_id, ds_group_id):
+            return sum(
+                1
+                for gt_ann in gt_groups[gt_group_id]
+                for ds_ann in ds_groups[ds_group_id]
+                if matched_ann_ids.get(id(gt_ann), None) == id(ds_ann)
+            ) / len(gt_groups[gt_group_id])
+
+        matches, mismatches, gt_unmatched, ds_unmatched = _match_segments(
+            list(gt_groups), list(ds_groups),
+            distance=_group_distance,
+            label_matcher=lambda a, b: _group_distance(a, b) == 1,
+            dist_thresh=0 # any non-zero matches are valid
+        )
+
+        ds_to_gt_groups = {
+            ds_group_id: gt_group_id
+            for gt_group_id, ds_group_id in itertools.chain(
+                matches, mismatches, zip(itertools.repeat(None), ds_unmatched)
+            )
+        }
+        ds_to_gt_groups[None] = gt_unmatched
+
+        return ds_to_gt_groups
+
     def find_covered(self, item: dm.DatasetItem) -> List[dm.Annotation]:
         # Get annotations that can cover or be covered
         spatial_types = {
@@ -1203,7 +1237,7 @@ class _DatasetComparator:
         self.line_orientation_threshold = 0.1
 
         # Checks for mismatching groupings
-        self.compare_groups = False
+        self.compare_groups = True
 
         # Check for fully-covered annotations
         self.check_covered_annotations = True
@@ -1398,9 +1432,21 @@ class _DatasetComparator:
         if self.compare_groups:
             gt_groups = self.comparator.find_groups(gt_item)
             ds_groups = self.comparator.find_groups(ds_item)
+            matched_objects = matches + mismatches
+            ds_to_gt_groups = self.comparator.match_groups(gt_groups, ds_groups, matched_objects)
 
-            for gt_ann, ds_ann in itertools.chain(matches, mismatches):
-                if len(gt_groups.get(gt_ann.group, [1])) != len(ds_groups.get(ds_ann.group, [1])):
+            for gt_ann, ds_ann in matched_objects:
+                gt_group = gt_groups.get(gt_ann.group, [gt_ann])
+                ds_group = ds_groups.get(ds_ann.group, [ds_ann])
+                ds_gt_group = ds_to_gt_groups.get(ds_ann.group, None) or 0
+
+                if (
+                    # Check ungrouped objects
+                    (len(gt_group) == 1 and len(ds_group) != 1) or
+
+                    # Check grouped objects
+                    ds_gt_group != gt_ann.group
+                ):
                     conflicts.append(
                         AnnotationConflict(
                             frame_id=frame_id,
