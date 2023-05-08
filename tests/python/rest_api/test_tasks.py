@@ -565,7 +565,6 @@ class TestGetTaskDataset:
         assert annotations["tracks"][0]["elements"][0]["shapes"][0]["frame"] == 0
 
 
-
 @pytest.mark.usefixtures("restore_db_per_function")
 @pytest.mark.usefixtures("restore_cvat_data")
 class TestPostTaskData:
