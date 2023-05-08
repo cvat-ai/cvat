@@ -277,7 +277,7 @@ class _CloudStorage(ABC):
         all_files = []
         next_token = None
         while True:
-            batch = self.list_files_on_one_page(prefix, delimiter, next_token, _use_flat_listing)
+            batch = self.list_files_on_one_page(prefix, delimiter, next_token, _use_flat_listing=_use_flat_listing)
             all_files.extend(batch['content'])
             next_token = batch['next']
             if not next_token:
@@ -494,7 +494,16 @@ class AWS_S3(_CloudStorage):
     @validate_file_status
     @validate_bucket_status
     def _download_range_of_bytes(self, key: str, stop_byte: int, start_byte: int) -> bytes:
-        return self._client.get_object(Bucket=self.bucket.name, Key=key, Range=f'bytes={start_byte}-{stop_byte}')['Body'].read()
+        try:
+            return self._client.get_object(Bucket=self.bucket.name, Key=key, Range=f'bytes={start_byte}-{stop_byte}')['Body'].read()
+        except ClientError as ex:
+            if 'InvalidRange' in str(ex):
+                if self._head_file(key).get('ContentLength') == 0:
+                    slogger.glob.info(f"Attempt to download empty file '{key}' from the '{self.name}' bucket.")
+                    raise ValidationError(f'The {key} file is empty.')
+                else:
+                    slogger.glob.error(f"{str(ex)}. Key: {key}, bucket: {self.name}")
+            raise
 
     def create(self):
         try:

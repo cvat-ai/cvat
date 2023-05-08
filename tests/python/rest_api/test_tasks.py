@@ -5,6 +5,7 @@
 
 import io
 import json
+import os
 import os.path as osp
 import subprocess
 from copy import deepcopy
@@ -44,12 +45,17 @@ from .utils import (
 )
 
 
-def get_cloud_storage_content(username: str, cloud_storage_id: int, manifest: Optional[str] = None):
+def get_cloud_storage_content(
+    api_version: int, username: str, cloud_storage_id: int, manifest: Optional[str] = None
+):
     with make_api_client(username) as api_client:
         kwargs = {"manifest_path": manifest} if manifest else {}
 
-        (data, _) = api_client.cloudstorages_api.retrieve_content(cloud_storage_id, **kwargs)
-        return data
+        if api_version == 1:
+            (data, _) = api_client.cloudstorages_api.retrieve_content(cloud_storage_id, **kwargs)
+            return data
+        (data, _) = api_client.cloudstorages_api.retrieve_content_v2(cloud_storage_id, **kwargs)
+        return [f"{f['name']}{'/' if str(f['type']) == 'DIR' else ''}" for f in data["content"]]
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -714,14 +720,17 @@ class TestPostTaskData:
 
     @pytest.mark.with_external_services
     @pytest.mark.parametrize(
-        "use_cache, cloud_storage_id, manifest, use_bucket_content, org",
+        "use_cache, cloud_storage_id, manifest, use_bucket_content, content_api_version, org",
         [
-            (True, 1, "manifest.jsonl", False, ""),  # public bucket
-            (True, 2, "sub/manifest.jsonl", True, "org2"),  # private bucket
-            (True, 1, None, False, ""),
-            (True, 2, None, True, "org2"),
-            (False, 1, None, False, ""),
-            (False, 2, None, True, "org2"),
+            (True, 1, "manifest.jsonl", False, None, ""),  # public bucket
+            (True, 2, "sub/manifest.jsonl", True, 1, "org2"),  # private bucket
+            (True, 2, "sub/manifest.jsonl", True, 2, "org2"),  # private bucket
+            (True, 1, None, False, None, ""),
+            (True, 2, None, True, 1, "org2"),
+            (True, 2, None, True, 2, "org2"),
+            (False, 1, None, False, None, ""),
+            (False, 2, None, True, 1, "org2"),
+            (False, 2, None, True, 2, "org2"),
         ],
     )
     def test_create_task_with_cloud_storage_files(
@@ -730,11 +739,12 @@ class TestPostTaskData:
         cloud_storage_id: int,
         manifest: str,
         use_bucket_content: bool,
+        content_api_version: Optional[int],
         org: str,
     ):
         if use_bucket_content:
             cloud_storage_content = get_cloud_storage_content(
-                self._USERNAME, cloud_storage_id, manifest
+                content_api_version, self._USERNAME, cloud_storage_id, manifest
             )
         else:
             cloud_storage_content = ["image_case_65_1.png", "image_case_65_2.png"]
@@ -760,6 +770,126 @@ class TestPostTaskData:
         _test_create_task(
             self._USERNAME, task_spec, data_spec, content_type="application/json", org=org
         )
+
+    @pytest.mark.with_external_services
+    @pytest.mark.parametrize("cloud_storage_id", [2])
+    @pytest.mark.parametrize(
+        "use_cache, use_manifest, server_files, files_to_be_excluded, task_size",
+        [
+            (True, False, ["test/"], None, 6),
+            (True, False, ["test/sub_0/", "test/sub_1/"], None, 6),
+            (True, False, ["test/"], ["test/sub_0/", "test/sub_1/img_1.jpeg"], 2),
+            (True, True, ["test/"], None, 6),
+            (True, True, ["test/sub_0/", "test/sub_1/"], None, 6),
+            (True, True, ["test/"], ["test/sub_0/", "test/sub_1/img_1.jpeg"], 2),
+            (False, False, ["test/"], None, 6),
+            (False, False, ["test/sub_0/", "test/sub_1/"], None, 6),
+            (False, False, ["test/"], ["test/sub_0/", "test/sub_1/img_1.jpeg"], 2),
+        ],
+    )
+    @pytest.mark.parametrize("org", [""])
+    def test_create_task_with_cloud_storage_directories_and_excluded_files(
+        self,
+        cloud_storage_id: int,
+        use_cache: bool,
+        use_manifest: bool,
+        server_files: List[str],
+        files_to_be_excluded: Optional[List[str]],
+        task_size: int,
+        org: str,
+        cloud_storages,
+        request,
+    ):
+        s3_client = s3.make_client()
+        images = generate_image_files(3, prefixes=["img_"] * 3)
+
+        cloud_storage = cloud_storages[cloud_storage_id]
+
+        for image in images:
+            for i in range(2):
+                image.seek(0)
+                s3_client.create_file(
+                    data=image,
+                    bucket=cloud_storage["resource"],
+                    filename=f"test/sub_{i}/{image.name}",
+                )
+                request.addfinalizer(
+                    partial(
+                        s3_client.remove_file,
+                        bucket=cloud_storage["resource"],
+                        filename=f"test/sub_{i}/{image.name}",
+                    )
+                )
+
+        if use_manifest:
+            with TemporaryDirectory() as tmp_dir:
+                manifest_root_path = f"{tmp_dir}/test/"
+                for i in range(2):
+                    path_with_sub_folders = f"{tmp_dir}/test/sub_{i}/"
+                    os.makedirs(path_with_sub_folders)
+                    for image in images:
+                        with open(osp.join(path_with_sub_folders, image.name), "wb") as f:
+                            f.write(image.getvalue())
+
+                command = [
+                    "docker",
+                    "run",
+                    "--rm",
+                    "-u",
+                    "root:root",
+                    "-v",
+                    f"{manifest_root_path}:/local",
+                    "--entrypoint",
+                    "python3",
+                    get_server_image_tag(),
+                    "utils/dataset_manifest/create.py",
+                    "--output-dir",
+                    "/local",
+                    "/local",
+                ]
+                subprocess.check_output(command)
+
+                with open(osp.join(manifest_root_path, "manifest.jsonl"), mode="rb") as m_file:
+                    s3_client.create_file(
+                        data=m_file.read(),
+                        bucket=cloud_storage["resource"],
+                        filename="test/manifest.jsonl",
+                    )
+                    request.addfinalizer(
+                        partial(
+                            s3_client.remove_file,
+                            bucket=cloud_storage["resource"],
+                            filename="test/manifest.jsonl",
+                        )
+                    )
+                server_files.append("test/manifest.jsonl")
+
+        task_spec = {
+            "name": f"Task created from directories from cloud storage {cloud_storage_id}",
+            "labels": [
+                {
+                    "name": "car",
+                }
+            ],
+        }
+
+        data_spec = {
+            "image_quality": 75,
+            "use_cache": use_cache,
+            "cloud_storage_id": cloud_storage_id,
+            "server_files": server_files,
+        }
+        if files_to_be_excluded:
+            data_spec["files_to_be_excluded"] = files_to_be_excluded
+
+        task_id, _ = _test_create_task(
+            self._USERNAME, task_spec, data_spec, content_type="application/json", org=org
+        )
+
+        with make_api_client(self._USERNAME) as api_client:
+            (task, response) = api_client.tasks_api.retrieve(task_id, org=org)
+            assert response.status == HTTPStatus.OK
+            assert task.size == task_size
 
     @pytest.mark.with_external_services
     @pytest.mark.parametrize(

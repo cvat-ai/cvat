@@ -2178,7 +2178,6 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                     start_index = int(next_token or '0')
                 except ValueError:
                     return HttpResponseBadRequest('Wrong value for the next_token parameter was found.')
-                # TODO: fix problem with manifest_prefix
                 content = manifest.emulate_hierarchical_structure(
                     page_size, manifest_prefix=manifest_prefix, prefix=prefix, start_index=start_index)
             else:

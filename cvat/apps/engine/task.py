@@ -577,8 +577,7 @@ def _create_thread(
                 "but specified cloud storage doesn't linked with a manifest."
             )
 
-        if 1 != len(data['server_files']):
-            l = len(data['server_files']) - 1
+        if (l := len(data['server_files'])) > 0:
             raise ValidationError(
                 'Using a filename_pattern is only supported with a manifest file, '
                 f'but others {l} file{"s" if l > 1 else ""} {"were" if l > 1 else "was"} found'
@@ -610,7 +609,7 @@ def _create_thread(
             else:
                 sorted_media = sort(media['image'], data['sorting_method'])
 
-            if manifest:
+            if manifest_file:
                 # Define task manifest content based on cloud storage manifest content and uploaded files
                 _create_task_manifest_based_on_cloud_storage_manifest(
                     sorted_media, cloud_storage_manifest_prefix,
