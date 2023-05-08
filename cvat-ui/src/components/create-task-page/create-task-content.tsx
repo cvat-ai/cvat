@@ -18,6 +18,7 @@ import { StorageLocation } from 'reducers';
 import { getCore, Storage } from 'cvat-core-wrapper';
 import LabelsEditor from 'components/labels-editor/labels-editor';
 import FileManagerComponent, { Files } from 'components/file-manager/file-manager';
+import { RemoteFile } from 'components/file-manager/remote-browser';
 import { getFileContentType, getContentTypeRemoteFile, getFileNameFromPath } from 'utils/files';
 
 import BasicConfigurationForm, { BaseConfiguration } from './basic-configuration-form';
@@ -38,6 +39,12 @@ export interface CreateTaskData {
     files: Files;
     activeFileManagerTab: TabName;
     cloudStorageId: number | null;
+}
+
+enum SupportedShareTypes {
+    IMAGE = 'image',
+    DIR = 'DIR',
+    VIDEO = 'video',
 }
 
 interface Props {
@@ -243,9 +250,13 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         let uploadFileErrorMessage = '';
 
         if (!many && uploadedFiles.length > 1) {
-            uploadFileErrorMessage = uploadedFiles.every((it) => (getFileContentType(it) === 'image' || it.name.endsWith('.jsonl'))) ? '' : UploadFileErrorMessages.one;
+            uploadFileErrorMessage = uploadedFiles.every((it) => (
+                getFileContentType(it) === SupportedShareTypes.IMAGE || it.name.endsWith('.jsonl')
+            )) ? '' : UploadFileErrorMessages.one;
         } else if (many) {
-            uploadFileErrorMessage = uploadedFiles.every((it) => getFileContentType(it) === 'video') ? '' : UploadFileErrorMessages.multi;
+            uploadFileErrorMessage = uploadedFiles.every(
+                (it) => getFileContentType(it) === SupportedShareTypes.VIDEO,
+            ) ? '' : UploadFileErrorMessages.multi;
         }
 
         this.setState({
@@ -310,11 +321,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         }
     };
 
-    private handleUploadShareFiles = (shareFiles: {
-        key: string;
-        type: string;
-        mimeType: string;
-    }[]): void => {
+    private handleUploadShareFiles = (shareFiles: Required<RemoteFile>[]): void => {
         let filteredFiles = shareFiles;
         const { many } = this.props;
         const { files } = this.state;
@@ -322,10 +329,11 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         let uploadFileErrorMessage = '';
 
         if (!many && shareFiles.length > 1) {
-            uploadFileErrorMessage = shareFiles.every((it) => ['image', 'DIR'].includes(it.mimeType)) ?
-                '' : UploadFileErrorMessages.one;
+            uploadFileErrorMessage = shareFiles.every(
+                (it) => it.mimeType === SupportedShareTypes.IMAGE || it.mimeType === SupportedShareTypes.DIR,
+            ) ? '' : UploadFileErrorMessages.one;
         } else if (many) {
-            filteredFiles = filteredFiles.filter((it) => it.mimeType === 'video');
+            filteredFiles = filteredFiles.filter((it) => it.mimeType === SupportedShareTypes.VIDEO);
             uploadFileErrorMessage = !filteredFiles.length && shareFiles.length ? UploadFileErrorMessages.multi : '';
         }
 
