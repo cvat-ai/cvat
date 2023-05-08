@@ -251,11 +251,11 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
 
         const excludedManifests = uploadedFiles.filter((x: File) => !x.name.endsWith('.jsonl'));
         if (!many && excludedManifests.length > 1) {
-            uploadFileErrorMessage = uploadedFiles.every((it) => (
+            uploadFileErrorMessage = excludedManifests.every((it) => (
                 getFileContentType(it) === SupportedShareTypes.IMAGE
             )) ? '' : UploadFileErrorMessages.one;
         } else if (many) {
-            uploadFileErrorMessage = uploadedFiles.every(
+            uploadFileErrorMessage = excludedManifests.every(
                 (it) => getFileContentType(it) === SupportedShareTypes.VIDEO,
             ) ? '' : UploadFileErrorMessages.multi;
         }
@@ -332,8 +332,8 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         const regFiles = shareFiles.filter((file) => file.type === 'REG');
         const excludedManifests = regFiles.filter((file) => !file.key.endsWith('.jsonl'));
         if (!many && excludedManifests.length > 1) {
-            uploadFileErrorMessage = shareFiles.every(
-                (it) => it.mimeType === SupportedShareTypes.IMAGE || it.mimeType === SupportedShareTypes.DIR,
+            uploadFileErrorMessage = excludedManifests.every(
+                (it) => it.mimeType === SupportedShareTypes.IMAGE,
             ) ? '' : UploadFileErrorMessages.one;
         } else if (many) {
             filteredFiles = filteredFiles.filter((it) => it.mimeType === SupportedShareTypes.VIDEO);
