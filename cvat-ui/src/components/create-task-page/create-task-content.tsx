@@ -249,9 +249,9 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
 
         let uploadFileErrorMessage = '';
 
-        if (!many && uploadedFiles.length > 1) {
+        if (!many && uploadedFiles.filter((x: File) => !x.name.endsWith('.jsonl')).length > 1) {
             uploadFileErrorMessage = uploadedFiles.every((it) => (
-                getFileContentType(it) === SupportedShareTypes.IMAGE || it.name.endsWith('.jsonl')
+                getFileContentType(it) === SupportedShareTypes.IMAGE
             )) ? '' : UploadFileErrorMessages.one;
         } else if (many) {
             uploadFileErrorMessage = uploadedFiles.every(
@@ -328,7 +328,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
 
         let uploadFileErrorMessage = '';
 
-        if (!many && shareFiles.length > 1) {
+        if (!many && shareFiles.filter((x: RemoteFile) => !x.key.endsWith('.jsonl')).length > 1) {
             uploadFileErrorMessage = shareFiles.every(
                 (it) => it.mimeType === SupportedShareTypes.IMAGE || it.mimeType === SupportedShareTypes.DIR,
             ) ? '' : UploadFileErrorMessages.one;
