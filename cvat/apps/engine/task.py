@@ -424,6 +424,9 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
     upload_dir = db_data.get_upload_dirname()
     is_data_in_cloud = db_data.storage == models.StorageChoice.CLOUD_STORAGE
 
+    if data['s3_files']:
+        data['remote_files'] = data['s3_files']
+
     if data['remote_files'] and not isDatasetImport:
         data['remote_files'] = _download_data(db_data, upload_dir)
 

@@ -1009,11 +1009,16 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             ]
             return Response(data=data, status=status.HTTP_200_OK)
         else:
-            serializer = S3DataSerializer(self._object.data)
+            db_data: Data = self._object.data
+            serializer = S3DataSerializer(db_data)
             serializer.is_valid(raise_exception=True)
             data = serializer.data.copy()
             if 'stop_frame' not in serializer.validated_data:
                 data['stop_frame'] = None
+            data['s3_files'] = [
+                f.file.url() for f in
+                db_data.s3_files.all()
+            ]
             task.create(self._object.id, data)
             return Response(data=serializer.data, status=status.HTTP_202_ACCEPTED)
 
