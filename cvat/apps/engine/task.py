@@ -602,7 +602,9 @@ def _create_thread(
     if data['server_files']:
         if db_data.storage == models.StorageChoice.LOCAL and not db_data.cloud_storage:
             # this means that the data has not been downloaded from the storage to the host
-            _copy_data_from_share_point(data['server_files'], upload_dir, data.get('server_files_path'), data.get('files_to_be_excluded'))
+            _copy_data_from_share_point(
+                (data['server_files'] + [manifest_file]) if manifest_file else data['server_files'],
+                upload_dir, data.get('server_files_path'), data.get('files_to_be_excluded'))
         elif is_data_in_cloud:
             if job_file_mapping is not None:
                 sorted_media = list(itertools.chain.from_iterable(job_file_mapping))
