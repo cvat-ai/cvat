@@ -102,7 +102,7 @@ const defaultState: State = {
 };
 
 const UploadFileErrorMessages = {
-    one: 'It can not be processed. You can upload an archive with images, a video or multiple images',
+    one: 'It can not be processed. You can upload an archive with images, a video, a pdf file or multiple images',
     multi: 'It can not be processed. You can upload one or more videos',
 };
 
@@ -249,7 +249,8 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
 
         let uploadFileErrorMessage = '';
 
-        if (!many && uploadedFiles.filter((x: File) => !x.name.endsWith('.jsonl')).length > 1) {
+        const excludedManifests = uploadedFiles.filter((x: File) => !x.name.endsWith('.jsonl'));
+        if (!many && excludedManifests.length > 1) {
             uploadFileErrorMessage = uploadedFiles.every((it) => (
                 getFileContentType(it) === SupportedShareTypes.IMAGE
             )) ? '' : UploadFileErrorMessages.one;
@@ -328,7 +329,9 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
 
         let uploadFileErrorMessage = '';
 
-        if (!many && shareFiles.filter((x: RemoteFile) => !x.key.endsWith('.jsonl')).length > 1) {
+        const regFiles = shareFiles.filter((file) => file.type === 'REG');
+        const excludedManifests = regFiles.filter((file) => !file.key.endsWith('.jsonl'));
+        if (!many && excludedManifests.length > 1) {
             uploadFileErrorMessage = shareFiles.every(
                 (it) => it.mimeType === SupportedShareTypes.IMAGE || it.mimeType === SupportedShareTypes.DIR,
             ) ? '' : UploadFileErrorMessages.one;
