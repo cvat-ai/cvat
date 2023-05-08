@@ -25,14 +25,16 @@ interface Node {
     name: string;
     key: string;
     type: RemoteFileType;
-    mime_type?: string;
+    mimeType?: string;
     nextToken?: string | null;
 }
+
+export type RemoteFile = Pick<Node, 'key' | 'type' | 'mimeType'>;
 
 interface Props {
     resource: 'share' | CloudStorage;
     manifestPath?: string;
-    onSelectFiles: (checkedKeysValue: { key: string, type: RemoteFileType, mime_type?: string }[]) => void;
+    onSelectFiles: (checkedKeysValue: RemoteFile[]) => void;
 }
 
 const core = getCore();

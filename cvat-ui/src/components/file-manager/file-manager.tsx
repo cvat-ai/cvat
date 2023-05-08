@@ -11,10 +11,10 @@ import Input from 'antd/lib/input';
 import { RcFile } from 'antd/lib/upload';
 import { FormInstance } from 'antd/lib/form';
 
-import { CloudStorage, RemoteFileType } from 'reducers';
+import { CloudStorage } from 'reducers';
 import CloudStorageTab from './cloud-storages-tab';
 import LocalFiles from './local-files';
-import RemoteBrowser from './remote-browser';
+import RemoteBrowser, { RemoteFile } from './remote-browser';
 
 export interface Files {
     local: File[];
@@ -35,7 +35,7 @@ interface Props {
     onChangeActiveKey(key: string): void;
     onUploadLocalFiles(files: File[]): void;
     onUploadRemoteFiles(urls: string[]): void;
-    onUploadShareFiles(files: { key: string, type: RemoteFileType, mime_type: string }[]): Promise<void>;
+    onUploadShareFiles(files: Required<RemoteFile>[]): void;
     onUploadCloudStorageFiles(cloudStorageFiles: string[]): void;
 }
 
@@ -60,7 +60,7 @@ export class FileManager extends React.PureComponent<Props, State> {
     }
 
     private handleUploadCloudStorageFiles = (
-        cloudStorageFiles: { key: string, type: RemoteFileType, mime_type?: string }[],
+        cloudStorageFiles: RemoteFile[],
     ): void => {
         const { files } = this.state;
         const { onUploadCloudStorageFiles } = this.props;
@@ -75,7 +75,7 @@ export class FileManager extends React.PureComponent<Props, State> {
     };
 
     private handleUploadSharedStorageFiles = (
-        shareFiles: { key: string, type: RemoteFileType, mime_type: string }[],
+        shareFiles: RemoteFile[],
     ): void => {
         const { files } = this.state;
         const { onUploadShareFiles } = this.props;
@@ -85,7 +85,7 @@ export class FileManager extends React.PureComponent<Props, State> {
                 share: shareFiles.map((item) => item.key),
             },
         });
-        onUploadShareFiles(shareFiles);
+        onUploadShareFiles(shareFiles as Required<RemoteFile>[]);
     };
 
     public getCloudStorageId(): number | null {
