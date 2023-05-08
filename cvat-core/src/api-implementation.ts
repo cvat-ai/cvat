@@ -3,6 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import { omit } from 'lodash';
 import config from './config';
 
 import PluginRegistry from './plugins';
@@ -44,7 +45,7 @@ export default function implementAPI(cvat) {
 
     cvat.server.share.implementation = async (directory) => {
         const result = await serverProxy.server.share(directory);
-        return result;
+        return result.map((item) => ({ ...omit(item, 'mime_type'), mimeType: item.mime_type }));
     };
 
     cvat.server.formats.implementation = async () => {
