@@ -716,6 +716,13 @@ class DataSerializer(serializers.ModelSerializer):
         help_text="Uploaded files")
     server_files = ServerFileSerializer(many=True, default=[],
         help_text="Paths to files from a file share mounted on the server, or from a cloud storage")
+    server_files_exclude = serializers.ListField(required=False, default=[],
+        child=serializers.CharField(max_length=1024),
+        help_text=textwrap.dedent("""\
+            Paths to files and directories from a file share mounted on the server, or from a cloud storage
+            that should be excluded from the directories specified in server_files.
+        """)
+    )
     remote_files = RemoteFileSerializer(many=True, default=[],
         help_text="Direct download URLs for files")
     use_cache = serializers.BooleanField(default=False,
@@ -743,20 +750,13 @@ class DataSerializer(serializers.ModelSerializer):
             Read more: https://docs.python.org/3/library/fnmatch.html
         """))
     job_file_mapping = JobFileMapping(required=False, write_only=True)
-    files_to_be_excluded = serializers.ListField(allow_null=True, required=False,
-        child=serializers.CharField(max_length=1024),
-        help_text=textwrap.dedent("""\
-            Paths to files and directories from a file share mounted on the server, or from a cloud storage
-            that should be excluded from the directories specified in server_files.
-        """)
-    )
 
     class Meta:
         model = models.Data
         fields = ('chunk_size', 'size', 'image_quality', 'start_frame', 'stop_frame', 'frame_filter',
-            'compressed_chunk_type', 'original_chunk_type', 'client_files', 'server_files', 'remote_files', 'use_zip_chunks',
+            'compressed_chunk_type', 'original_chunk_type', 'client_files', 'server_files', 'server_files_exclude','remote_files', 'use_zip_chunks',
             'cloud_storage_id', 'use_cache', 'copy_data', 'storage_method', 'storage', 'sorting_method', 'filename_pattern',
-            'job_file_mapping', 'files_to_be_excluded')
+            'job_file_mapping')
         extra_kwargs = {
             'chunk_size': { 'help_text': "Maximum number of frames per chunk" },
             'size': { 'help_text': "The number of frames" },
@@ -1371,7 +1371,7 @@ class LabeledDataSerializer(serializers.Serializer):
 class FileInfoSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=1024)
     type = serializers.ChoiceField(choices=["REG", "DIR"])
-    mime_type = serializers.CharField(max_length=255, required=False, allow_null=True)
+    mime_type = serializers.CharField(max_length=255)
 
 class AnnotationFileSerializer(serializers.Serializer):
     annotation_file = serializers.FileField()
@@ -1739,7 +1739,8 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
 
 
 class CloudStorageContentSerializer(serializers.Serializer):
-    next = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    next = serializers.CharField(required=False, allow_null=True, allow_blank=True,
+        help_text="This token is used to continue listing files in the bucket.")
     content = FileInfoSerializer(many=True)
 
 class RelatedFileSerializer(serializers.ModelSerializer):

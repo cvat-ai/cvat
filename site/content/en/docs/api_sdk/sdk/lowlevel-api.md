@@ -543,7 +543,7 @@ with ApiClient(
         if not len(prefixes):
             break
         prefix = f"{prefixes.pop()}/"
-    pprint(data)
+    pprint(files)
     # {'content': [
     #     {'mime_type': None, 'name': 'sub/image_1.jpg', 'type': 'REG'},
     #     {'mime_type': None, 'name': 'image_2.jpg', 'type': 'REG'},

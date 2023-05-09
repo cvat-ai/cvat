@@ -746,7 +746,8 @@ paths:
   /api/cloudstorages/{id}/content:
     get:
       operationId: cloudstorages_retrieve_content
-      description: This method was deprecated. Please use the new version of API.
+      description: 'This method was deprecated. Please use the new version of API:
+        /cloudstorages/id/content-v2/'
       summary: Method returns a manifest content
       parameters:
       - in: header
@@ -805,7 +806,7 @@ paths:
         name: delimiter
         schema:
           type: string
-        description: The character you use to group keys
+        description: The character you use to group keys in the cloud storage
       - in: path
         name: id
         schema:
@@ -6517,6 +6518,7 @@ components:
         next:
           type: string
           nullable: true
+          description: This token is used to continue listing files in the bucket.
         content:
           type: array
           items:
@@ -6765,6 +6767,16 @@ components:
           default: []
           description: Paths to files from a file share mounted on the server, or
             from a cloud storage
+        server_files_exclude:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 1024
+          default: []
+          description: |
+            Paths to files and directories from a file share mounted on the server, or from a cloud storage
+            that should be excluded from the directories specified in server_files.
         remote_files:
           type: array
           items:
@@ -6837,16 +6849,6 @@ components:
                 ["file3.png"], # job #2 files
                 ["file4.jpg", "file5.png", "file6.bmp"], # job #3 files
             ]
-        files_to_be_excluded:
-          type: array
-          items:
-            type: string
-            minLength: 1
-            maxLength: 1024
-          nullable: true
-          description: |
-            Paths to files and directories from a file share mounted on the server, or from a cloud storage
-            that should be excluded from the directories specified in server_files.
       required:
       - image_quality
     DatasetFileRequest:
@@ -7065,9 +7067,9 @@ components:
           $ref: '#/components/schemas/FileInfoTypeEnum'
         mime_type:
           type: string
-          nullable: true
           maxLength: 255
       required:
+      - mime_type
       - name
       - type
     FileInfoTypeEnum:

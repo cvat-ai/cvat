@@ -235,7 +235,7 @@ class _CloudStorage(ABC):
         prefix: Optional[str] = None,
         delimiter: str = '/',
         next_token: Optional[str] = None,
-        page_size: int = settings.BUCKET_CONTENT_PAGE_SIZE,
+        page_size: int = settings.BUCKET_CONTENT_MAX_PAGE_SIZE,
     ) -> Dict:
         pass
 
@@ -244,7 +244,7 @@ class _CloudStorage(ABC):
         prefix: Optional[str] = None,
         delimiter: str = '/',
         next_token: Optional[str] = None,
-        page_size: int = settings.BUCKET_CONTENT_PAGE_SIZE,
+        page_size: int = settings.BUCKET_CONTENT_MAX_PAGE_SIZE,
         _use_flat_listing: bool = False,
         _use_sort: bool = False,
     ) -> Dict:
@@ -455,7 +455,7 @@ class AWS_S3(_CloudStorage):
         prefix: Optional[str] = None,
         delimiter: str = '/',
         next_token: Optional[str] = None,
-        page_size: int = settings.BUCKET_CONTENT_PAGE_SIZE,
+        page_size: int = settings.BUCKET_CONTENT_MAX_PAGE_SIZE,
     ) -> Dict:
         # The structure of response looks like this:
         # {
@@ -658,7 +658,7 @@ class AzureBlobContainer(_CloudStorage):
         prefix: Optional[str] = None,
         delimiter: str = '/',
         next_token: Optional[str] = None,
-        page_size: int = settings.BUCKET_CONTENT_PAGE_SIZE,
+        page_size: int = settings.BUCKET_CONTENT_MAX_PAGE_SIZE,
     ) -> Dict:
         page = self._client.walk_blobs(
             maxresults=page_size, results_per_page=page_size, delimiter=delimiter,
@@ -767,7 +767,7 @@ class GoogleCloudStorage(_CloudStorage):
         prefix: Optional[str] = None,
         delimiter: str = '/',
         next_token: Optional[str] = None,
-        page_size: int = settings.BUCKET_CONTENT_PAGE_SIZE,
+        page_size: int = settings.BUCKET_CONTENT_MAX_PAGE_SIZE,
     ) -> Dict:
         iterator = self._client.list_blobs(
             bucket_or_name=self.name, max_results=page_size, page_size=page_size,

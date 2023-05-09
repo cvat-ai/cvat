@@ -774,7 +774,7 @@ class TestPostTaskData:
     @pytest.mark.with_external_services
     @pytest.mark.parametrize("cloud_storage_id", [2])
     @pytest.mark.parametrize(
-        "use_cache, use_manifest, server_files, files_to_be_excluded, task_size",
+        "use_cache, use_manifest, server_files, server_files_exclude, task_size",
         [
             (True, False, ["test/"], None, 6),
             (True, False, ["test/sub_0/", "test/sub_1/"], None, 6),
@@ -794,7 +794,7 @@ class TestPostTaskData:
         use_cache: bool,
         use_manifest: bool,
         server_files: List[str],
-        files_to_be_excluded: Optional[List[str]],
+        server_files_exclude: Optional[List[str]],
         task_size: int,
         org: str,
         cloud_storages,
@@ -879,8 +879,8 @@ class TestPostTaskData:
             "cloud_storage_id": cloud_storage_id,
             "server_files": server_files,
         }
-        if files_to_be_excluded:
-            data_spec["files_to_be_excluded"] = files_to_be_excluded
+        if server_files_exclude:
+            data_spec["server_files_exclude"] = server_files_exclude
 
         task_id, _ = _test_create_task(
             self._USERNAME, task_spec, data_spec, content_type="application/json", org=org

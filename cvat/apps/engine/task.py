@@ -316,8 +316,8 @@ def _validate_job_file_mapping(
     if data.get('filename_pattern'):
         raise ValidationError("job_file_mapping cannot be used with filename_pattern")
 
-    if data.get('files_to_be_excluded'):
-        raise ValidationError("job_file_mapping cannot be used with files_to_be_excluded")
+    if data.get('server_files_exclude'):
+        raise ValidationError("job_file_mapping cannot be used with server_files_exclude")
 
     return job_file_mapping
 
@@ -548,9 +548,9 @@ def _create_thread(
             data['server_files'].extend(additional_files)
             del additional_files
 
-            if data.get('files_to_be_excluded'):
+            if data.get('server_files_exclude'):
                 files_to_be_excluded, directories_to_be_excluded = [], []
-                for f in data['files_to_be_excluded']:
+                for f in data['server_files_exclude']:
                     if f.endswith(os.path.sep):
                         directories_to_be_excluded.append(f)
                     else:
@@ -604,7 +604,7 @@ def _create_thread(
             # this means that the data has not been downloaded from the storage to the host
             _copy_data_from_share_point(
                 (data['server_files'] + [manifest_file]) if manifest_file else data['server_files'],
-                upload_dir, data.get('server_files_path'), data.get('files_to_be_excluded'))
+                upload_dir, data.get('server_files_path'), data.get('server_files_exclude'))
         elif is_data_in_cloud:
             if job_file_mapping is not None:
                 sorted_media = list(itertools.chain.from_iterable(job_file_mapping))
@@ -672,17 +672,17 @@ def _create_thread(
                 details['sorting_method'] = data['sorting_method']
             extractor = MEDIA_TYPES[media_type]['extractor'](**details)
 
-    # filter server_files from files_to_be_excluded when share point is used and files are not copied to CVAT.
+    # filter server_files from server_files_exclude when share point is used and files are not copied to CVAT.
     # here we exclude the case when the files are copied to CVAT because files are already filtered out.
     if (
-        data.get('files_to_be_excluded') and
+        data.get('server_files_exclude') and
         data['server_files'] and
         not is_data_in_cloud and
         not data['copy_data'] and
         isinstance(extractor, MEDIA_TYPES['image']['extractor'])
     ):
         files_to_be_excluded, dirs_to_be_excluded = [], []
-        for f in data['files_to_be_excluded']:
+        for f in data['server_files_exclude']:
             if f.endswith(os.path.sep):
                 dirs_to_be_excluded.append(f)
             else:

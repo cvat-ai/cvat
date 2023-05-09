@@ -2089,7 +2089,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '200': OpenApiResponse(response=build_array_type(build_basic_type(OpenApiTypes.STR)), description='A manifest content'),
         },
         deprecated=True,
-        description='This method was deprecated. Please use the new version of API.',
+        description='This method was deprecated. Please use the new version of API: /cloudstorages/id/content-v2/',
     )
     @action(detail=True, methods=['GET'], url_path='content')
     def content(self, request, pk):
@@ -2136,7 +2136,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
             OpenApiParameter('prefix', description='Prefix to filter data',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
-            OpenApiParameter('delimiter', description='The character you use to group keys',
+            OpenApiParameter('delimiter', description='The character you use to group keys in the cloud storage',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
             OpenApiParameter('next_token', description='Used to continue listing files in the bucket',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
@@ -2153,10 +2153,10 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             db_storage = self.get_object()
             storage = db_storage_to_storage_instance(db_storage)
             prefix = request.query_params.get('prefix')
-            page_size = request.query_params.get('page_size', str(settings.BUCKET_CONTENT_PAGE_SIZE))
+            page_size = request.query_params.get('page_size', str(settings.BUCKET_CONTENT_MAX_PAGE_SIZE))
             if not page_size.isnumeric():
                 return HttpResponseBadRequest('Wrong value for page_size was found')
-            page_size = min(int(page_size), settings.BUCKET_CONTENT_PAGE_SIZE)
+            page_size = min(int(page_size), settings.BUCKET_CONTENT_MAX_PAGE_SIZE)
 
             # make api identical to share api
             if prefix and prefix.startswith('/'):
@@ -2182,6 +2182,8 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                     page_size, manifest_prefix=manifest_prefix, prefix=prefix, start_index=start_index)
             else:
                 content = storage.list_files_on_one_page(prefix, delimiter, next_token, page_size,_use_sort=True)
+            for i in content['content']:
+                i['mime_type'] = get_mime(i['name']) if i['type'] != 'DIR' else 'DIR' # identical to share point
             serializer = CloudStorageContentSerializer(data=content)
             serializer.is_valid(raise_exception=True)
             content = serializer.data
