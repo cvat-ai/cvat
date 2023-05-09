@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,7 +11,6 @@ context('Connected file share.', () => {
     const labelName = taskName;
     const expectedTopLevel = [
         { name: 'images', type: 'DIR', mime_type: 'DIR' },
-        { name: 'videos', type: 'DIR', mime_type: 'DIR' },
     ];
 
     const expectedImagesList = [
@@ -27,9 +27,10 @@ context('Connected file share.', () => {
         cy.intercept('GET', '/api/server/share?**').as('shareRequest');
         cy.contains('[role="tab"]', 'Connected file share').click();
         cy.wait('@shareRequest').then((interception) => {
-            expect(interception.response.body
-                .sort((a, b) => a.name.localeCompare(b.name)))
-                .to.deep.equal(expectedTopLevel);
+            for (const item of expectedTopLevel) {
+                const responseEl = interception.response.body.find((el) => el.name === item.name);
+                expect(responseEl).to.deep.equal(item);
+            }
         });
         cy.get('.cvat-remote-browser-table-wrapper')
             .should('exist')

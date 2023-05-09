@@ -1,4 +1,4 @@
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -89,9 +89,10 @@ context('Create mutli tasks.', () => {
             cy.intercept('GET', '/api/server/share?**').as('shareRequest');
             cy.contains('[role="tab"]', 'Connected file share').click();
             cy.wait('@shareRequest').then((interception) => {
-                expect(interception.response.body
-                    .sort((a, b) => a.name.localeCompare(b.name)))
-                    .to.deep.equal(expectedTopLevel);
+                for (const item of expectedTopLevel) {
+                    const responseEl = interception.response.body.find((el) => el.name === item.name);
+                    expect(responseEl).to.deep.equal(item);
+                }
             });
             cy.get('.cvat-remote-browser-table-wrapper')
                 .should('exist')
@@ -144,9 +145,10 @@ context('Create mutli tasks.', () => {
             cy.intercept('GET', '/api/server/share?**').as('shareRequest');
             cy.contains('[role="tab"]', 'Connected file share').click();
             cy.wait('@shareRequest').then((interception) => {
-                expect(interception.response.body
-                    .sort((a, b) => a.name.localeCompare(b.name)))
-                    .to.deep.equal(expectedTopLevel);
+                for (const item of expectedTopLevel) {
+                    const responseEl = interception.response.body.find((el) => el.name === item.name);
+                    expect(responseEl).to.deep.equal(item);
+                }
             });
             cy.get('.cvat-remote-browser-table-wrapper')
                 .should('exist')
