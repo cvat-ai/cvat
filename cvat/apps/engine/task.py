@@ -74,12 +74,6 @@ def _copy_data_from_share_point(
 
     # filter data from files/directories that should be excluded
     if data_to_be_excluded:
-        files_to_be_excluded, directories_to_be_excluded = [], []
-        for f in data_to_be_excluded:
-            if f.endswith(os.path.sep):
-                directories_to_be_excluded.append(f)
-            else:
-                files_to_be_excluded.append(f)
 
         expanded_server_files = []
 
@@ -94,11 +88,10 @@ def _copy_data_from_share_point(
 
         server_files = expanded_server_files
 
-        if files_to_be_excluded:
-            server_files = list(filter(lambda x: x not in files_to_be_excluded, server_files))
-        if directories_to_be_excluded:
-            for d in directories_to_be_excluded:
-                server_files = list(filter(lambda x: not x.startswith(d), server_files))
+        server_files = list(filter(
+            lambda x: x not in data_to_be_excluded and f'{Path(x).parent}/' not in data_to_be_excluded,
+            server_files
+        ))
 
     for path in server_files:
         if server_dir is None:
@@ -427,7 +420,7 @@ def _create_task_manifest_based_on_cloud_storage_manifest(
     cloud_storage_manifest_prefix: str,
     cloud_storage_manifest: ImageManifestManager,
     manifest: ImageManifestManager,
-):
+) -> None:
     if cloud_storage_manifest_prefix:
         sorted_media_without_manifest_prefix = [
             os.path.relpath(i, cloud_storage_manifest_prefix) for i in sorted_media
@@ -451,7 +444,7 @@ def _create_task_manifest_from_cloud_data(
     sorted_media: List[str],
     manifest: ImageManifestManager,
     dimension: models.DimensionType = models.DimensionType.DIM_2D,
-):
+) -> None:
     cloud_storage_instance = db_storage_to_storage_instance(db_storage)
     content = [cloud_storage_instance.optimally_image_download(key) for key in sorted_media]
 
@@ -548,19 +541,11 @@ def _create_thread(
             data['server_files'].extend(additional_files)
             del additional_files
 
-            if data.get('server_files_exclude'):
-                files_to_be_excluded, directories_to_be_excluded = [], []
-                for f in data['server_files_exclude']:
-                    if f.endswith(os.path.sep):
-                        directories_to_be_excluded.append(f)
-                    else:
-                        files_to_be_excluded.append(f)
-
-                if files_to_be_excluded:
-                    data['server_files'] = list(filter(lambda x: x not in files_to_be_excluded, data['server_files']))
-                if directories_to_be_excluded:
-                    for d in directories_to_be_excluded:
-                        data['server_files'] = list(filter(lambda x: not x.startswith(d), data['server_files']))
+            if data_to_be_excluded := data.get('server_files_exclude'):
+                data['server_files'] = list(filter(
+                    lambda x: x not in data_to_be_excluded and f'{Path(x).parent}/' not in data_to_be_excluded,
+                    data['server_files']
+                ))
 
         if db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM or not settings.USE_CACHE:
             _download_data_from_cloud_storage(db_data.cloud_storage, data['server_files'], upload_dir)
@@ -675,21 +660,15 @@ def _create_thread(
     # filter server_files from server_files_exclude when share point is used and files are not copied to CVAT.
     # here we exclude the case when the files are copied to CVAT because files are already filtered out.
     if (
-        data.get('server_files_exclude') and
+        (data_to_be_excluded := data.get('server_files_exclude')) and
         data['server_files'] and
         not is_data_in_cloud and
         not data['copy_data'] and
         isinstance(extractor, MEDIA_TYPES['image']['extractor'])
     ):
-        files_to_be_excluded, dirs_to_be_excluded = [], []
-        for f in data['server_files_exclude']:
-            if f.endswith(os.path.sep):
-                dirs_to_be_excluded.append(f)
-            else:
-                files_to_be_excluded.append(f)
-        extractor.filter(lambda x: os.path.relpath(x, upload_dir) not in files_to_be_excluded)
-        for d in dirs_to_be_excluded:
-            extractor.filter(lambda x: not os.path.relpath(x, upload_dir).startswith(d))
+        extractor.filter(
+            lambda x: os.path.relpath(x, upload_dir) not in data_to_be_excluded and \
+                f'{Path(os.path.relpath(x, upload_dir)).parent}/' not in data_to_be_excluded)
 
     validate_dimension = ValidateDimension()
     if isinstance(extractor, MEDIA_TYPES['zip']['extractor']):
