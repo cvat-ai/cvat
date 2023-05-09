@@ -67,7 +67,7 @@ from cvat.apps.engine.view_utils import get_cloud_storage_for_import_or_export
 
 from utils.dataset_manifest import ImageManifestManager
 from cvat.apps.engine.utils import (
-    av_scan_paths, process_failed_job, configure_dependent_job, parse_exception_message, get_rq_job_meta
+    av_scan_paths, process_failed_job, configure_dependent_job, parse_exception_message, get_rq_job_meta, get_import_rq_id
 )
 from cvat.apps.engine import backup
 from cvat.apps.engine.mixins import PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
@@ -244,7 +244,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     ordering = "-id"
     lookup_fields = {'owner': 'owner__username', 'assignee': 'assignee__username'}
     iam_organization_field = 'organization'
-    IMPORT_RQ_ID_TEMPLATE = settings.COMMON_IMPORT_RQ_ID_TEMPLATE.format('project', {}, 'dataset', {})
+    IMPORT_RQ_ID_TEMPLATE = get_import_rq_id('project', {}, 'dataset', {})
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
@@ -705,7 +705,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     ordering_fields = list(filter_fields)
     ordering = "-id"
     iam_organization_field = 'organization'
-    IMPORT_RQ_ID_TEMPLATE = settings.COMMON_IMPORT_RQ_ID_TEMPLATE.format('task', {}, 'annotations', {})
+    IMPORT_RQ_ID_TEMPLATE = get_import_rq_id('task', {}, 'annotations', {})
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
@@ -1286,7 +1286,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         'project_name': 'segment__task__project__name',
         'assignee': 'assignee__username'
     }
-    IMPORT_RQ_ID_TEMPLATE = settings.COMMON_IMPORT_RQ_ID_TEMPLATE.format('job', {}, 'annotations', {})
+    IMPORT_RQ_ID_TEMPLATE = get_import_rq_id('job', {}, 'annotations', {})
 
     def get_queryset(self):
         queryset = super().get_queryset()

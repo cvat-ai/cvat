@@ -21,6 +21,7 @@ from pathlib import Path
 from cvat.apps.engine.location import StorageType, get_location_configuration
 from cvat.apps.engine.models import Location
 from cvat.apps.engine.serializers import DataSerializer
+from cvat.apps.engine.utils import get_import_rq_id
 
 
 class TusFile:
@@ -238,7 +239,7 @@ class UploadMixin:
                 # check whether the rq_job is in progress or has been finished/failed
                 if import_type != 'backup':
                     object_class_name = self._object.__class__.__name__.lower()
-                    template = settings.COMMON_IMPORT_RQ_ID_TEMPLATE.format(object_class_name, self._object.pk, import_type, request.user)
+                    template = get_import_rq_id(object_class_name, self._object.pk, import_type, request.user)
                     queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
                     finished_job_ids = queue.finished_job_registry.get_job_ids()
                     failed_job_ids = queue.failed_job_registry.get_job_ids()

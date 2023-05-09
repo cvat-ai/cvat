@@ -39,7 +39,7 @@ from cvat.apps.engine.serializers import (AttributeSerializer, DataSerializer, L
     LabeledDataSerializer, SegmentSerializer, SimpleJobSerializer, TaskReadSerializer,
     ProjectReadSerializer, ProjectFileSerializer, TaskFileSerializer)
 from cvat.apps.engine.utils import (
-    av_scan_paths, process_failed_job, configure_dependent_job, get_rq_job_meta
+    av_scan_paths, process_failed_job, configure_dependent_job, get_rq_job_meta, get_import_rq_id
 )
 from cvat.apps.engine.models import (
     StorageChoice, StorageMethodChoice, DataChoice, Task, Project, Location)
@@ -1003,7 +1003,7 @@ def import_project(request, queue_name, filename=None):
     if 'rq_id' in request.data:
         rq_id = request.data['rq_id']
     else:
-        rq_id = settings.COMMON_IMPORT_RQ_ID_TEMPLATE.format('project', uuid.uuid4(), 'backup', request.user)
+        rq_id = get_import_rq_id('project', uuid.uuid4(), 'backup', request.user)
     Serializer = ProjectFileSerializer
     file_field_name = 'project_file'
 
@@ -1029,7 +1029,7 @@ def import_task(request, queue_name, filename=None):
     if 'rq_id' in request.data:
         rq_id = request.data['rq_id']
     else:
-        rq_id = settings.COMMON_IMPORT_RQ_ID_TEMPLATE.format('task', uuid.uuid4(), 'backup', request.user)
+        rq_id = get_import_rq_id('task', uuid.uuid4(), 'backup', request.user)
     Serializer = TaskFileSerializer
     file_field_name = 'task_file'
 
