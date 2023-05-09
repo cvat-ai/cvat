@@ -747,6 +747,15 @@ class _DistanceComparator(dm.ops.DistanceComparator):
         *,
         included_ann_types: Optional[List[dm.AnnotationType]] = None,
         return_distances: bool = False,
+
+        # https://cocodataset.org/#keypoints-eval
+        # https://github.com/cocodataset/cocoapi/blob/8c9bcc3cf640524c4c20a9c40e89cb6a2f2fa0e9/PythonAPI/pycocotools/cocoeval.py#L523
+        oks_sigma: float = 0.09,
+
+        oriented_lines: bool = False,
+        line_torso_radius: float = 0.01,
+        panoptic_comparison: bool = False,
+
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -755,16 +764,18 @@ class _DistanceComparator(dm.ops.DistanceComparator):
         self.included_ann_types = included_ann_types
         self.return_distances = return_distances
 
-        # % of the shape area
-        # https://cocodataset.org/#keypoints-eval
-        # https://github.com/cocodataset/cocoapi/blob/8c9bcc3cf640524c4c20a9c40e89cb6a2f2fa0e9/PythonAPI/pycocotools/cocoeval.py#L523
-        self.oks_sigma = 0.09
+        self.oks_sigma = oks_sigma
+        "% of the shape area"
 
-        self.oriented_lines = False
+        self.oriented_lines = oriented_lines
+        "Whether lines are oriented or not"
 
-        # % of the line length
         # Here we use a % of image size in pixels, using the image size as the scale
-        self.line_torso_radius = 0.01
+        self.line_torso_radius = line_torso_radius
+        "% of the line length at the specified scale"
+
+        self.panoptic_comparison = panoptic_comparison
+        "Compare only the visible parts of polygons and masks"
 
     def _instance_bbox(self, instance_anns: Sequence[dm.Annotation]):
         return dm.ops.max_bbox(
@@ -868,9 +879,6 @@ class _DistanceComparator(dm.ops.DistanceComparator):
 
         img_h, img_w = item_a.image.size
 
-        a_anns = _get_segmentations(item_a)
-        b_anns = _get_segmentations(item_b)
-
         def _find_instances(annotations):
             # Group instance annotations by label.
             # Annotations with the same label and group will be merged,
@@ -888,29 +896,26 @@ class _DistanceComparator(dm.ops.DistanceComparator):
 
             return instances, instance_map
 
-        a_instances, a_instance_map = _find_instances(a_anns)
-        b_instances, b_instance_map = _find_instances(b_anns)
+        def _to_rle(ann):
+            from pycocotools import mask as mask_utils
+            if ann.type == dm.AnnotationType.polygon:
+                return mask_utils.frPyObjects([ann.points], img_h, img_w)
+            elif isinstance(ann, dm.RleMask):
+                return [ann.rle]
+            elif ann.type == dm.AnnotationType.mask:
+                return [mask_utils.encode(ann.image)]
+            else:
+                assert False
 
         def _get_compiled_mask(
             anns: Sequence[dm.Annotation],
             *,
             instance_ids: Dict[int, int]
         ) -> dm.CompiledMask:
-            from pycocotools import mask as mask_utils
-
             if not anns:
                 return None
 
-            def _to_rle(ann):
-                if ann.type == dm.AnnotationType.polygon:
-                    return mask_utils.frPyObjects([ann.points], img_h, img_w)
-                elif isinstance(ann, dm.RleMask):
-                    return [ann.rle]
-                elif ann.type == dm.AnnotationType.mask:
-                    return [mask_utils.encode(ann.image)]
-                else:
-                    assert False
-
+            from pycocotools import mask as mask_utils
             object_rle_groups = [_to_rle(ann) for ann in anns]
             object_rles = [mask_utils.merge(g) for g in object_rle_groups]
             object_masks = mask_utils.decode(object_rles)
@@ -924,37 +929,57 @@ class _DistanceComparator(dm.ops.DistanceComparator):
                 instance_ids=(iid + 1 for iid in instance_ids),
             )
 
-        a_compiled_mask = _get_compiled_mask(
-            list(itertools.chain.from_iterable(a_instances)),
-            instance_ids=[
-                a_instance_map[id(ann)] for ann in itertools.chain.from_iterable(a_instances)
-            ]
-        )
-        b_compiled_mask = _get_compiled_mask(
-            list(itertools.chain.from_iterable(b_instances)),
-            instance_ids=[
-                b_instance_map[id(ann)] for ann in itertools.chain.from_iterable(b_instances)
-            ]
-        )
+        a_anns = _get_segmentations(item_a)
+        b_anns = _get_segmentations(item_b)
+        a_instances, a_instance_map = _find_instances(a_anns)
+        b_instances, b_instance_map = _find_instances(b_anns)
+
+        if self.panoptic_comparison:
+            a_compiled_mask = _get_compiled_mask(
+                list(itertools.chain.from_iterable(a_instances)),
+                instance_ids=[
+                    a_instance_map[id(ann)] for ann in itertools.chain.from_iterable(a_instances)
+                ]
+            )
+            b_compiled_mask = _get_compiled_mask(
+                list(itertools.chain.from_iterable(b_instances)),
+                instance_ids=[
+                    b_instance_map[id(ann)] for ann in itertools.chain.from_iterable(b_instances)
+                ]
+            )
+        else:
+            a_compiled_mask = None
+            b_compiled_mask = None
 
         segment_cache = {}
-        def _get_segment(obj_id: int, compiled_mask: dm.CompiledMask):
-            key = (id(compiled_mask), obj_id)
+        def _get_segment(
+            obj_id: int, *, compiled_mask: Optional[dm.CompiledMask] = None, instances
+        ):
+            key = (id(instances), obj_id)
             rle = segment_cache.get(key)
 
             if rle is None:
-                mask = compiled_mask.extract(obj_id + 1)
-
                 from pycocotools import mask as mask_utils
-                rle = mask_utils.encode(mask)
+                if compiled_mask is not None:
+                    mask = compiled_mask.extract(obj_id + 1)
+
+                    rle = mask_utils.encode(mask)
+                else:
+                    object_anns = instances[obj_id]
+                    object_rle_groups = [_to_rle(ann) for ann in object_anns]
+                    rle = mask_utils.merge(list(itertools.chain.from_iterable(object_rle_groups)))
 
                 segment_cache[key] = rle
 
             return rle
 
         def _segment_comparator(a_inst_id: int, b_inst_id: int) -> float:
-            a_segm = _get_segment(a_inst_id, a_compiled_mask)
-            b_segm = _get_segment(b_inst_id, b_compiled_mask)
+            a_segm = _get_segment(
+                a_inst_id, compiled_mask=a_compiled_mask, instances=a_instances
+            )
+            b_segm = _get_segment(
+                b_inst_id, compiled_mask=b_compiled_mask, instances=b_instances
+            )
 
             from pycocotools import mask as mask_utils
             return float(mask_utils.iou([b_segm], [a_segm], [0])[0])
@@ -967,7 +992,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
 
         results = self._match_segments(
             dm.AnnotationType.polygon, item_a, item_b,
-            a_objs=list(range(len(a_instances))), b_objs=list(range(len(b_instances))),
+            a_objs=range(len(a_instances)), b_objs=range(len(b_instances)),
             distance=_segment_comparator, label_matcher=_label_matcher
         )
 
@@ -1210,19 +1235,13 @@ def _find_covered_segments(
 
     return covered_ids
 
-def _find_annotation_groups(annotations: Sequence[dm.Annotation]) -> Dict[int, List[dm.Annotation]]:
-    grouped_anns = sorted(annotations, key=lambda a: a.group)
-    return {
-        group: list(anns)
-        for group, anns in itertools.groupby(grouped_anns, lambda a: a.group)
-    }
-
 class _Comparator:
     def __init__(self,
         categories: dm.CategoriesInfo,
         *,
         iou_threshold: float = 0.5,
         coverage_threshold: float = 0.05,
+        group_match_threshold = 0.5,
     ):
         self.ignored_attrs = [
             "track_id",  # changes from task to task, can't be defined manually with the same name
@@ -1245,11 +1264,14 @@ class _Comparator:
             included_ann_types=set(self.included_ann_types) - {
                 dm.AnnotationType.mask # masks are compared together with polygons
             },
-            return_distances=True
+            return_distances=True,
+            panoptic_comparison=True
         )
         self._annotation_comparator.iou_threshold = iou_threshold
 
         self.coverage_threshold = coverage_threshold
+
+        self.group_match_threshold = group_match_threshold
 
     def match_attrs(self, ann_a: dm.Annotation, ann_b: dm.Annotation):
         a_attrs = ann_a.attributes
@@ -1279,27 +1301,41 @@ class _Comparator:
 
         return matches, mismatches, a_extra, b_extra
 
-    def find_groups(self, item: dm.DatasetItem) -> Dict[int, List[dm.Annotation]]:
-        return _find_annotation_groups([
-            ann for ann in item.annotations if ann.group and ann.type in self.included_ann_types
+    def find_groups(
+        self, item: dm.DatasetItem
+    ) -> Tuple[Dict[int, List[dm.Annotation]], Dict[int, int]]:
+        ann_groups = dm.ops.find_instances([
+            ann for ann in item.annotations
+            if ann.type in self.included_ann_types
         ])
+
+        groups = {}
+        group_map = {} # ann id -> group id
+        for group_id, group in enumerate(ann_groups):
+            groups[group_id] = group
+            for ann in group:
+                group_map[id(ann)] = group_id
+
+        return groups, group_map
 
     def match_groups(self, gt_groups, ds_groups, matched_anns):
         matched_ann_ids = dict((id(a), id(b)) for a, b in matched_anns)
 
         def _group_distance(gt_group_id, ds_group_id):
-            return sum(
+            intersection = sum(
                 1
                 for gt_ann in gt_groups[gt_group_id]
                 for ds_ann in ds_groups[ds_group_id]
                 if matched_ann_ids.get(id(gt_ann), None) == id(ds_ann)
-            ) / len(gt_groups[gt_group_id])
+            )
+            union = len(gt_groups[gt_group_id]) + len(ds_groups[ds_group_id]) - intersection
+            return intersection / (union or 1)
 
         matches, mismatches, gt_unmatched, ds_unmatched = _match_segments(
             list(gt_groups), list(ds_groups),
             distance=_group_distance,
             label_matcher=lambda a, b: _group_distance(a, b) == 1,
-            dist_thresh=0 # any non-zero matches are valid
+            dist_thresh=self.group_match_threshold
         )
 
         ds_to_gt_groups = {
@@ -1575,22 +1611,22 @@ class _DatasetComparator:
                 )
 
         if self.compare_groups:
-            gt_groups = self.comparator.find_groups(gt_item)
-            ds_groups = self.comparator.find_groups(ds_item)
+            gt_groups, gt_group_map = self.comparator.find_groups(gt_item)
+            ds_groups, ds_group_map = self.comparator.find_groups(ds_item)
             matched_objects = matches + mismatches
             ds_to_gt_groups = self.comparator.match_groups(gt_groups, ds_groups, matched_objects)
 
             for gt_ann, ds_ann in matched_objects:
-                gt_group = gt_groups.get(gt_ann.group, [gt_ann])
-                ds_group = ds_groups.get(ds_ann.group, [ds_ann])
-                ds_gt_group = ds_to_gt_groups.get(ds_ann.group, None) or 0
+                gt_group = gt_groups.get(gt_group_map[id(gt_ann)], [gt_ann])
+                ds_group = ds_groups.get(ds_group_map[id(ds_ann)], [ds_ann])
+                ds_gt_group = ds_to_gt_groups.get(ds_group_map[id(ds_ann)], None)
 
                 if (
                     # Check ungrouped objects
                     (len(gt_group) == 1 and len(ds_group) != 1) or
 
                     # Check grouped objects
-                    ds_gt_group != gt_ann.group
+                    ds_gt_group != gt_group_map[id(gt_ann)]
                 ):
                     conflicts.append(
                         AnnotationConflict(
