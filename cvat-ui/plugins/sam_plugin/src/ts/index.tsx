@@ -218,7 +218,7 @@ const samPlugin: SAMPlugin = {
         },
     },
     data: {
-        modelID: 'pth.facebookresearch.sam.vit_h',
+        modelID: 'pth-facebookresearch-sam-vit-h',
         modelURL: '/api/lambda/sam_detector.onnx',
         embeddings: {},
         lowResMasks: {},
