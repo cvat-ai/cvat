@@ -72,12 +72,15 @@ function RemoteBrowser(props: Props): JSX.Element {
             const isRoot = (): boolean => currentPath.slice(1).length === 0;
             const path = `${currentPath.slice(1).join('/')}/`;
             const convertChildren = (children: Omit<Node, 'key' | 'children'>[]): Node[] => (
-                children.map((child) => ({
-                    ...child,
-                    key: isRoot() ? child.name : `${path}${child.name}`,
-                    initialized: false,
-                    children: [],
-                }))
+                children.map((child) => {
+                    const ending = `${child.type === 'DIR' ? '/' : ''}`;
+                    return {
+                        ...child,
+                        key: isRoot() ? `${child.name}${ending}` : `${path}${child.name}${ending}`,
+                        initialized: false,
+                        children: [],
+                    };
+                })
             );
             setFetching(true);
             const currentResource = resourceRef.current;
