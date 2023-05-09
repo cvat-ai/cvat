@@ -1873,11 +1873,14 @@ class QueueJobManager:
     def _get_scheduler(self):
         return django_rq.get_scheduler(settings.CVAT_QUEUES.QUALITY_REPORTS.value)
 
+    def _make_queue_job_prefix(self, task: models.Task) -> str:
+        return f'{self._QUEUE_JOB_PREFIX}{task.id}-'
+
     def _make_initial_queue_job_id(self, task: models.Task) -> str:
-        return f'{self._QUEUE_JOB_PREFIX}{task.id}-initial'
+        return f'{self._make_queue_job_prefix(task)}initial'
 
     def _make_regular_queue_job_id(self, task: models.Task, start_time: timezone.datetime) -> str:
-        return f'{self._QUEUE_JOB_PREFIX}{task.id}-{start_time.timestamp()}'
+        return f'{self._make_queue_job_prefix(task)}{start_time.timestamp()}'
 
     @classmethod
     def _get_last_report_time(cls, task: models.Task) -> Optional[timezone.datetime]:
@@ -1886,9 +1889,46 @@ class QueueJobManager:
             return report.created_date
         return None
 
+    def _find_next_job_id(
+        self, existing_job_ids: Sequence[str], task: models.Task, *, now: timezone.datetime
+    ) -> str:
+        job_id_prefix = self._make_queue_job_prefix(task)
+
+        def _get_timestamp(job_id: str) -> timezone.datetime:
+            job_timestamp = job_id.split(job_id_prefix, maxsplit=1)[-1]
+            if job_timestamp == 'initial':
+                return timezone.datetime.min
+            else:
+                return timezone.datetime.fromtimestamp(float(job_timestamp), tz=timezone.utc)
+
+        max_job_id = max(
+            (j for j in existing_job_ids if j.startswith(job_id_prefix)),
+            key=_get_timestamp,
+            default=None
+        )
+        max_timestamp = _get_timestamp(max_job_id) if max_job_id else None
+
+        last_update_time = self._get_last_report_time(task)
+        if last_update_time is None:
+            # Report has never been computed, is queued, or is being computed
+            queue_job_id = self._make_initial_queue_job_id(task)
+        elif max_timestamp is not None and now < max_timestamp:
+            # Reuse the existing next job
+            queue_job_id = max_job_id
+        else:
+            # Add an updating job in the queue in the next time frame
+            intervals = max(
+                1,
+                1 + (now - last_update_time) // self.TASK_QUALITY_CHECK_JOB_DELAY
+            )
+            next_update_time = last_update_time + self.TASK_QUALITY_CHECK_JOB_DELAY * intervals
+            queue_job_id = self._make_regular_queue_job_id(task, next_update_time)
+
+        return queue_job_id
+
     def schedule_quality_check_job(self, task: models.Task):
         # This function schedules a report computing job in the queue
-        # The queue work algorithm is lock-free. It has and should keep the following properties:
+        # The queue work algorithm is lock-free. It should keep the following properties:
         # - job names are stable between potential writers
         # - if multiple simultaneous writes can happen, the objects written must be the same
         # - once a job is created, it can only be updated by the scheduler and the handling worker
@@ -1897,20 +1937,17 @@ class QueueJobManager:
             # Nothing to compute
             return
 
-        last_update_time = self._get_last_report_time(task)
-        if last_update_time is None:
-            # Report has never been computed
-            queue_job_id = self._make_initial_queue_job_id(task)
-        else:
-            # TODO: fix enqueuing if the job is just scheduled
-            # Ensure there is an updating job in the queue
-            next_update_time = last_update_time + self.TASK_QUALITY_CHECK_JOB_DELAY
-            queue_job_id = self._make_regular_queue_job_id(task, next_update_time)
-
+        now = timezone.now()
         scheduler = self._get_scheduler()
-        if queue_job_id not in scheduler:
+        existing_job_ids = set(j.id for j in scheduler.get_jobs(
+            until=now.utcnow() + self.TASK_QUALITY_CHECK_JOB_DELAY
+        ))
+
+        queue_job_id = self._find_next_job_id(existing_job_ids, task, now=now)
+
+        if queue_job_id not in existing_job_ids:
             scheduler.enqueue_at(
-                task.updated_date + self.TASK_QUALITY_CHECK_JOB_DELAY,
+                now.utcnow() + self.TASK_QUALITY_CHECK_JOB_DELAY,
                 self._update_task_quality_metrics,
                 task_id=task.id,
                 job_id=queue_job_id,
