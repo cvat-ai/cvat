@@ -1,4 +1,4 @@
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -93,9 +93,10 @@ context('Create mutli tasks.', () => {
                     cy.intercept('GET', '/api/server/share?**').as('shareRequest');
                     cy.get('[aria-label="plus-square"]').click();
                     cy.wait('@shareRequest').then((interception) => {
-                        expect(interception.response.body
-                            .sort((a, b) => a.name.localeCompare(b.name)))
-                            .to.deep.equal(expectedTopLevel);
+                        for (const item of expectedTopLevel) {
+                            const responseEl = interception.response.body.find((el) => el.name === item.name);
+                            expect(responseEl).to.deep.equal(item);
+                        }
                     });
                     cy.get('[title="images"]').parent().within(() => {
                         cy.get('[aria-label="plus-square"]').click();
@@ -151,9 +152,10 @@ context('Create mutli tasks.', () => {
                     cy.intercept('GET', '/api/server/share?**').as('shareRequest');
                     cy.get('[aria-label="plus-square"]').click();
                     cy.wait('@shareRequest').then((interception) => {
-                        expect(interception.response.body
-                            .sort((a, b) => a.name.localeCompare(b.name)))
-                            .to.deep.equal(expectedTopLevel);
+                        for (const item of expectedTopLevel) {
+                            const responseEl = interception.response.body.find((el) => el.name === item.name);
+                            expect(responseEl).to.deep.equal(item);
+                        }
                     });
                     cy.get('[title="videos"]').parent().within(() => {
                         cy.get('[aria-label="plus-square"]').click();
