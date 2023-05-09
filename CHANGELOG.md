@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Support share point/cloud storage files and directories that should be excluded when creating a task (server) (<https://github.com/opencv/cvat/pull/6074>)
 - Support task creation with cloud storage/share directories (<https://github.com/opencv/cvat/pull/6074>)
-- Support task creation with any type of data supported by the server by default from cloud storage without use_cache option (<https://github.com/opencv/cvat/pull/6074>)
+- Support task creation with any type of data supported by the server by default from cloud storage
+without use_cache option (<https://github.com/opencv/cvat/pull/6074>)
 - Support task creation with cloud storage data and without use_cache option (<https://github.com/opencv/cvat/pull/6074>)
 
 ### Changed
