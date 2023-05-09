@@ -2,8 +2,9 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { PluginEntryPoint, ComponentBuilder } from '@root/components/plugins-entrypoint';
+import { PluginEntryPoint, ComponentBuilder } from 'components/plugins-entrypoint';
 import { InferenceSession, Tensor } from 'onnxruntime-web';
+import { LRUCache } from 'lru-cache';
 
 interface SAMPlugin {
     name: string;
@@ -30,8 +31,8 @@ interface SAMPlugin {
     data: {
         modelID: string;
         modelURL: string;
-        embeddings: Record<string, Tensor>;
-        lowResMasks: Record<string, Tensor>;
+        embeddings: LRUCache<string, Tensor>;
+        lowResMasks: LRUCache<string, Tensor>;
         session: InferenceSession | null;
     };
     callbacks: {
@@ -137,7 +138,7 @@ const samPlugin: SAMPlugin = {
                         }
 
                         const key = `${taskID}_${frame}`;
-                        if (key in plugin.data.embeddings) {
+                        if (plugin.data.embeddings.has(key)) {
                             return { preventMethodCall: true };
                         }
                     }
@@ -166,7 +167,7 @@ const samPlugin: SAMPlugin = {
                             uint8Array[i] = bin.charCodeAt(i);
                         }
                         const float32Arr = new Float32Array(uint8Array.buffer);
-                        plugin.data.embeddings[key] = new Tensor('float32', float32Arr, [1, 256, 64, 64]);
+                        plugin.data.embeddings.set(key, new Tensor('float32', float32Arr, [1, 256, 64, 64]));
                     }
 
                     const modelScale = getModelScale();
@@ -180,9 +181,9 @@ const samPlugin: SAMPlugin = {
 
                     const feeds = modelData({
                         clicks: composedClicks,
-                        tensor: plugin.data.embeddings[key],
+                        tensor: plugin.data.embeddings.get(key) as Tensor,
                         modelScale,
-                        maskInput: plugin.data.lowResMasks[key] || null,
+                        maskInput: plugin.data.lowResMasks.has(key) ? plugin.data.lowResMasks.get(key) as Tensor : null,
                     });
 
                     function toMatImage(input: number[], width: number, height: number): number[][] {
@@ -207,7 +208,7 @@ const samPlugin: SAMPlugin = {
                     const data = await (plugin.data.session as InferenceSession).run(feeds);
                     const { masks, low_res_masks: lowResMasks } = data;
                     const imageData = onnxToImage(masks.data, masks.dims[3], masks.dims[2]);
-                    plugin.data.lowResMasks[key] = lowResMasks;
+                    plugin.data.lowResMasks.set(key, lowResMasks);
 
                     return {
                         mask: imageData,
@@ -220,8 +221,18 @@ const samPlugin: SAMPlugin = {
     data: {
         modelID: 'pth-facebookresearch-sam-vit-h',
         modelURL: '/api/lambda/sam_detector.onnx',
-        embeddings: {},
-        lowResMasks: {},
+        embeddings: new LRUCache({
+            // float32 tensor [256, 64, 64] is 4 MB, max 512 MB
+            max: 128,
+            updateAgeOnGet: true,
+            updateAgeOnHas: true,
+        }),
+        lowResMasks: new LRUCache({
+            // float32 tensor [1, 256, 256] is 0.25 MB, max 32 MB
+            max: 128,
+            updateAgeOnGet: true,
+            updateAgeOnHas: true,
+        }),
         session: null,
     },
     callbacks: {
