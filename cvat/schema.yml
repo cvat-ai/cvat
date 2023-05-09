@@ -746,8 +746,8 @@ paths:
   /api/cloudstorages/{id}/content:
     get:
       operationId: cloudstorages_retrieve_content
-      description: 'This method was deprecated. Please use the new version of API:
-        /cloudstorages/id/content-v2/'
+      description: 'This method is deprecated and will be removed in version 2.6.0.
+        Please use the new version of API: /cloudstorages/id/content-v2/'
       summary: Method returns a manifest content
       parameters:
       - in: header
