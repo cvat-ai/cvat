@@ -316,8 +316,8 @@ export class InteractionHandlerImpl implements InteractionHandler {
 
                 // always fit masks to background size
                 // in general mask can be smaller what is useful in optimization purposes
-                'width': geometry.image.width,
-                'height': geometry.image.height,
+                width: geometry.image.width,
+                height: geometry.image.height,
             }).addClass('cvat_canvas_interact_intermediate_shape');
             image.move(this.geometry.offset, this.geometry.offset);
             this.drawnIntermediateShape = image;

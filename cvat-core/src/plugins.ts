@@ -9,7 +9,7 @@ export default class PluginRegistry {
     static async apiWrapper(wrappedFunc, ...args) {
         // I have to optimize the wrapper
         const pluginList = await PluginRegistry.list();
-        let aggregatedOptions = {
+        const aggregatedOptions = {
             preventMethodCall: false,
         };
 
