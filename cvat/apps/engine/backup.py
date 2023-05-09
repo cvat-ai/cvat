@@ -931,8 +931,8 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
                 serializer = Serializer(data=request.data)
                 serializer.is_valid(raise_exception=True)
                 payload_file = serializer.validated_data[file_field_name]
-                filename = NamedTemporaryFile(prefix='cvat_', dir=settings.TMP_FILES_ROOT, delete=False).name
-                with open(filename, 'wb+') as f:
+                with NamedTemporaryFile(prefix='cvat_', dir=settings.TMP_FILES_ROOT, delete=False) as f:
+                    filename = f.name
                     for chunk in payload_file.chunks():
                         f.write(chunk)
         else:
@@ -950,7 +950,8 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
                 is_default=location_conf['is_default'])
 
             key = filename
-            filename = NamedTemporaryFile(prefix='cvat_', dir=settings.TMP_FILES_ROOT, delete=False).name
+            with NamedTemporaryFile(prefix='cvat_', dir=settings.TMP_FILES_ROOT, delete=False) as f:
+                filename = f.name
             dependent_job = configure_dependent_job(
                 queue=queue,
                 rq_id=rq_id,

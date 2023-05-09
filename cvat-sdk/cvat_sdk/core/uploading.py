@@ -281,8 +281,7 @@ class AnnotationUploader(Uploader):
             url, filename, pbar=pbar, query_params=params, meta={"filename": params["filename"]}
         )
 
-        rq_id = json.loads(response.data).get("rq_id")
-        assert rq_id, "The rq_id was not found in the response"
+        assert json.loads(response.data).get("rq_id"), "The rq_id was not found in the response"
 
         self._wait_for_completion(
             url,
