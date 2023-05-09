@@ -20,7 +20,6 @@ from django.contrib.auth.models import User
 from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseNotFound, HttpResponseBadRequest
 from django.utils import timezone
-import django.db.models as dj_models
 from django.db.models import Count, Q
 
 from drf_spectacular.types import OpenApiTypes
@@ -668,9 +667,10 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         'label_set__sublabels__attributespec_set',
         'project__label_set__sublabels__attributespec_set'
     ).annotate(
-        completed_jobs_count=dj_models.Count(
+        completed_jobs_count=Count(
             'segment__job',
-            filter=dj_models.Q(segment__job__state=models.StateChoice.COMPLETED.value)
+            filter=Q(segment__job__state=models.StateChoice.COMPLETED.value),
+            distinct=True
         ),
         task_labels_count=Count('label',
             filter=Q(label__parent__isnull=True), distinct=True),
