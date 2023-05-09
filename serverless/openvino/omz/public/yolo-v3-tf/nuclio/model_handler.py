@@ -4,24 +4,26 @@
 
 import os
 from math import exp
+
+import ngraph
+
 from model_loader import ModelLoader
 
 class YoloParams:
     # ------------------------------------------- Extracting layer parameters ------------------------------------------
     # Magic numbers are copied from yolo samples
     def __init__(self, param, side):
-        self.num = 3 if 'num' not in param else int(param['num'])
-        self.coords = 4 if 'coords' not in param else int(param['coords'])
-        self.classes = 80 if 'classes' not in param else int(param['classes'])
+        self.num = param.get('num', 3)
+        self.coords = param.get('coords', 4)
+        self.classes = param.get('classes', 80)
         self.side = side
-        self.anchors = [10.0, 13.0, 16.0, 30.0, 33.0, 23.0, 30.0, 61.0, 62.0, 45.0, 59.0, 119.0, 116.0, 90.0, 156.0,
-                        198.0,
-                        373.0, 326.0] if 'anchors' not in param else [float(a) for a in param['anchors'].split(',')]
+        self.anchors = param.get('anchors', [
+            10.0, 13.0, 16.0, 30.0, 33.0, 23.0, 30.0, 61.0, 62.0, 45.0, 59.0,
+            119.0, 116.0, 90.0, 156.0, 198.0, 373.0, 326.0])
 
         self.isYoloV3 = False
 
-        if param.get('mask'):
-            mask = [int(idx) for idx in param['mask'].split(',')]
+        if mask := param.get('mask'):
             self.num = len(mask)
 
             maskedAnchors = []
@@ -119,6 +121,19 @@ class ModelHandler:
         self.model = ModelLoader(model_xml, model_bin)
         self.labels = labels
 
+        ng_func = ngraph.function_from_cnn(self.model.network)
+
+        self.output_info = {}
+
+        for node in ng_func.get_ordered_ops():
+            layer_name = node.get_friendly_name()
+            if layer_name not in self.model.network.outputs:
+                continue
+            parent_node = node.inputs()[0].get_source_output().get_node()
+            shape = list(parent_node.shape)
+            yolo_params = YoloParams(node._get_attributes(), shape[2])
+            self.output_info[layer_name] = (shape, yolo_params)
+
     def infer(self, image, threshold):
         output_layer = self.model.infer(image)
 
@@ -126,10 +141,10 @@ class ModelHandler:
         objects = []
         origin_im_size = (image.height, image.width)
         for layer_name, out_blob in output_layer.items():
-            out_blob = out_blob.reshape(self.model.layers[self.model.layers[layer_name].parents[0]].shape)
-            layer_params = YoloParams(self.model.layers[layer_name].params, out_blob.shape[2])
+            shape, yolo_params = self.output_info[layer_name]
+            out_blob = out_blob.reshape(shape)
             objects += parse_yolo_region(out_blob, self.model.input_size(),
-                origin_im_size, layer_params, threshold)
+                origin_im_size, yolo_params, threshold)
 
         # Filtering overlapping boxes (non-maximum suppression)
         IOU_THRESHOLD = 0.4
