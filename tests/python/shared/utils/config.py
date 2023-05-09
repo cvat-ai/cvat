@@ -52,14 +52,14 @@ def post_method(username, endpoint, data, **kwargs):
     return requests.post(get_api_url(endpoint, **kwargs), json=data, auth=(username, USER_PASS))
 
 
-def put_method(username, endpoint, data, **kwargs):
-    return requests.put(get_api_url(endpoint, **kwargs), json=data, auth=(username, USER_PASS))
-
-
 def post_files_method(username, endpoint, data, files, **kwargs):
     return requests.post(
         get_api_url(endpoint, **kwargs), data=data, files=files, auth=(username, USER_PASS)
     )
+
+
+def put_method(username, endpoint, data, **kwargs):
+    return requests.put(get_api_url(endpoint, **kwargs), json=data, auth=(username, USER_PASS))
 
 
 def server_get(username, endpoint, **kwargs):
