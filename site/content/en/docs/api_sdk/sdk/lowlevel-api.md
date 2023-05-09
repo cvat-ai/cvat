@@ -486,29 +486,17 @@ with open('output_file', 'wb') as output_file:
 ### Different versions of API Endpoints
 #### The cloudstorages/id/content REST API Endpoint
 
-> **Warning:** The GET /cloudstorages/id/content REST API Endpoint is deprecated.
-> We recommend that you use `retrieve_content_v2` method that matches to revised API when using SDK.
-> For backward compatibility, we continue to support the prior version of this API until version 2.5.0 is released.
+> **Warning:** The `retrieve_content` method of `cloudstorages_api` will be deprecated in 2.5.0 version.
+> We recommend using `retrieve_content_v2` method that matches to revised API when using SDK.
+> For backward compatibility, we continue to support the prior interface version until version 2.6.0 is released.
 
-Here you can find the examples how to get the bucket content with 2 versions.
+Here you can find the example how to get the bucket content using new method `retrieve_content_v2`.
 
 ```python
 import os
 from pprint import pprint
 
 from cvat_sdk.api_client import ApiClient, Configuration
-
-# get the content of the bucket using old version of REST API Endpoint
-
-with ApiClient(
-    configuration=Configuration(host=BASE_URL, username=user, password=password)
-) as api_client:
-    data, response = api_client.cloudstorages_api.retrieve_content(
-        cloud_storage_id, manifest_path=manifest_path
-    )
-    print(data) # ['sub/image_1.jpg', 'image_2.jpg']
-
-# get the content of the bucket using new version of REST API Endpoint
 
 next_token = None
 files, prefixes = [], []
@@ -545,8 +533,8 @@ with ApiClient(
         prefix = f"{prefixes.pop()}/"
     pprint(files)
     # {'content': [
-    #     {'mime_type': None, 'name': 'sub/image_1.jpg', 'type': 'REG'},
-    #     {'mime_type': None, 'name': 'image_2.jpg', 'type': 'REG'},
+    #     {'mime_type': 'image', 'name': 'sub/image_1.jpg', 'type': 'REG'},
+    #     {'mime_type': 'image', 'name': 'image_2.jpg', 'type': 'REG'},
     #  'next': None}
 
 ```

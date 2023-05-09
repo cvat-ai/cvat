@@ -2089,7 +2089,8 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '200': OpenApiResponse(response=build_array_type(build_basic_type(OpenApiTypes.STR)), description='A manifest content'),
         },
         deprecated=True,
-        description='This method was deprecated. Please use the new version of API: /cloudstorages/id/content-v2/',
+        description="This method is deprecated and will be removed in version 2.6.0. "
+                    "Please use the new version of API: /cloudstorages/id/content-v2/",
     )
     @action(detail=True, methods=['GET'], url_path='content')
     def content(self, request, pk):
