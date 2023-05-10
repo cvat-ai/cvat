@@ -357,8 +357,6 @@ class ComparisonReport(_Serializable):
         return cls(
             parameters=ComparisonReportParameters.from_dict(d['parameters']),
             comparison_summary=ComparisonReportComparisonSummary.from_dict(d['comparison_summary']),
-            # TODO: Not computed because of optimizations. Need to think if it is really needed
-            # dataset_summary=ComparisonReportDatasetSummary.from_dict(d['dataset_summary']),
             frame_results={
                 int(k): ComparisonReportFrameSummary.from_dict(v)
                 for k, v in d['frame_results'].items()
@@ -1729,18 +1727,6 @@ class _DatasetComparator:
     def generate_report(self) -> ComparisonReport:
         self._find_gt_conflicts()
 
-        # full_ds_comparable_shapes_count = 0
-        # full_ds_comparable_attributes_count = 0
-        # for item in self._ds_dataset:
-        #     for ann in item.annotations:
-        #         if ann.type not in self.comparator.included_ann_types:
-        #             continue
-
-        #         full_ds_comparable_attributes_count += len(
-        #             set(ann.attributes).difference(self.comparator.ignored_attrs)
-        #         )
-        #         full_ds_comparable_shapes_count += 1
-
         # accumulate stats
         intersection_frames = []
         conflict_count = 0
@@ -1856,11 +1842,6 @@ class _DatasetComparator:
                     ),
                 ),
             ),
-
-            # dataset_summary=ComparisonReportDatasetSummary(
-            #     frame_count=len(self._ds_dataset),
-            #     shape_count=full_ds_comparable_shapes_count,
-            # ),
 
             frame_results=self._frame_results
         )
@@ -2014,14 +1995,14 @@ class QueueJobManager:
         # compute combined summary for job reports.
         task_intersection_frames = set()
         task_conflicts = []
-        # task_shapes_count = 0
         task_annotations_summary = None
         task_ann_components_summary = None
         task_mean_shape_ious = []
+        task_frame_results = {}
+        task_frame_results_counts = {}
         for r in job_comparison_reports.values():
             task_intersection_frames.update(r.comparison_summary.frames)
             task_conflicts.extend(r.conflicts)
-            # task_shapes_count += r.dataset_summary.shape_count
 
             if task_annotations_summary:
                 task_annotations_summary.accumulate(r.comparison_summary.annotations)
@@ -2033,6 +2014,31 @@ class QueueJobManager:
             else:
                 task_ann_components_summary = deepcopy(r.comparison_summary.annotation_components)
             task_mean_shape_ious.append(task_ann_components_summary.shape.mean_iou)
+
+            for frame_id, job_frame_result in r.frame_results.items():
+                task_frame_result = cast(
+                    Optional[ComparisonReportFrameSummary], task_frame_results.get(frame_id)
+                )
+                frame_results_count = task_frame_results_counts.get(frame_id, 0)
+
+                if task_frame_result is None:
+                    task_frame_result = deepcopy(job_frame_result)
+                else:
+                    task_frame_result.conflicts += job_frame_result.conflicts
+                    task_frame_result.conflict_count = len(task_frame_result.conflicts)
+
+                    task_frame_result.annotations.accumulate(job_frame_result.annotations)
+                    task_frame_result.annotation_components.accumulate(
+                        job_frame_result.annotation_components
+                    )
+
+                    task_frame_result.annotation_components.shape.mean_iou = (
+                        task_frame_result.annotation_components.shape.mean_iou * \
+                        frame_results_count + \
+                        job_frame_result.annotation_components.shape.mean_iou
+                    ) / (frame_results_count + 1)
+
+                task_frame_results_counts[frame_id] = 1 + frame_results_count
 
         task_ann_components_summary.shape.mean_iou = np.mean(task_mean_shape_ious)
 
@@ -2050,12 +2056,7 @@ class QueueJobManager:
                 annotation_components=task_ann_components_summary,
             ),
 
-            # dataset_summary=ComparisonReportDatasetSummary(
-            #     frame_count=task.data.size,
-            #     shape_count=task_shapes_count
-            # ),
-
-            frame_results={},
+            frame_results=task_frame_results,
         )
 
         with transaction.atomic():
