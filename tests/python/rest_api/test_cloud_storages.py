@@ -483,7 +483,7 @@ class TestGetCloudStorageContent:
                 "sub/manifest.jsonl",
                 None,
                 None,
-                [FileInfo(mime_type=None, name="sub", type="DIR")],
+                [FileInfo(mime_type="DIR", name="sub", type="DIR")],
             ),
             (
                 SUPPORTED_VERSIONS.V2,  # [v2] search by some prefix in bucket content based on manifest
@@ -491,7 +491,7 @@ class TestGetCloudStorageContent:
                 "sub/image_case_65_1",
                 None,
                 [
-                    FileInfo(mime_type=None, name="image_case_65_1.png", type="REG"),
+                    FileInfo(mime_type="image", name="image_case_65_1.png", type="REG"),
                 ],
             ),
             (
@@ -500,8 +500,8 @@ class TestGetCloudStorageContent:
                 "sub/",
                 None,
                 [
-                    FileInfo(mime_type=None, name="image_case_65_1.png", type="REG"),
-                    FileInfo(mime_type=None, name="image_case_65_2.png", type="REG"),
+                    FileInfo(mime_type="image", name="image_case_65_1.png", type="REG"),
+                    FileInfo(mime_type="image", name="image_case_65_2.png", type="REG"),
                 ],
             ),
             (
@@ -509,7 +509,7 @@ class TestGetCloudStorageContent:
                 None,
                 None,
                 None,
-                [FileInfo(mime_type=None, name="sub", type="DIR")],
+                [FileInfo(mime_type="DIR", name="sub", type="DIR")],
             ),
             (
                 SUPPORTED_VERSIONS.V2,  # [v2] list the second layer (directory "sub") of real bucket content
@@ -517,8 +517,8 @@ class TestGetCloudStorageContent:
                 "sub/",
                 2,
                 [
-                    FileInfo(mime_type=None, name="demo_manifest.jsonl", type="REG"),
-                    FileInfo(mime_type=None, name="image_case_65_1.png", type="REG"),
+                    FileInfo(mime_type="unknown", name="demo_manifest.jsonl", type="REG"),
+                    FileInfo(mime_type="image", name="image_case_65_1.png", type="REG"),
                 ],
             ),
             (
@@ -527,12 +527,12 @@ class TestGetCloudStorageContent:
                 "/sub/",  # cover case: API is identical to share point API
                 None,
                 [
-                    FileInfo(mime_type=None, name="demo_manifest.jsonl", type="REG"),
-                    FileInfo(mime_type=None, name="image_case_65_1.png", type="REG"),
-                    FileInfo(mime_type=None, name="image_case_65_2.png", type="REG"),
-                    FileInfo(mime_type=None, name="manifest.jsonl", type="REG"),
-                    FileInfo(mime_type=None, name="manifest_1.jsonl", type="REG"),
-                    FileInfo(mime_type=None, name="manifest_2.jsonl", type="REG"),
+                    FileInfo(mime_type="unknown", name="demo_manifest.jsonl", type="REG"),
+                    FileInfo(mime_type="image", name="image_case_65_1.png", type="REG"),
+                    FileInfo(mime_type="image", name="image_case_65_2.png", type="REG"),
+                    FileInfo(mime_type="unknown", name="manifest.jsonl", type="REG"),
+                    FileInfo(mime_type="unknown", name="manifest_1.jsonl", type="REG"),
+                    FileInfo(mime_type="unknown", name="manifest_2.jsonl", type="REG"),
                 ],
             ),
         ],
