@@ -199,7 +199,7 @@
             "console": "internalConsole"
         },
         {
-            "name": "server: RQ - scheduler",
+            "name": "spectr",
             "type": "python",
             "request": "launch",
             "stopOnEntry": false,
@@ -207,9 +207,7 @@
             "python": "${command:python.interpreterPath}",
             "program": "${workspaceRoot}/manage.py",
             "args": [
-                "rqscheduler",
-                "--queue",
-                "export"
+                "spectacular",
             ],
             "django": true,
             "cwd": "${workspaceFolder}",
