@@ -82,4 +82,6 @@ jobs:
       # They are still tested without Helm
       run: |
         kubectl cp tests/mounted_file_share/images $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}'):/home/django/share
+        pytest --timeout 30 --platform=kube -m "not with_external_services" tests/python/rest_api/test_check_objects_integrity.py --log-cli-level DEBUG
+        kubectl exec $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}') -- rm data/cache/*
         pytest --timeout 30 --platform=kube -m "not with_external_services" tests/python --log-cli-level DEBUG
