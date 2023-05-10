@@ -849,7 +849,6 @@ class RequestViewSet(viewsets.ViewSet):
         job = queue.fetch_job(pk)
         job.delete()
 
-
 def ONNXDetector(request):
     dirname = os.path.join(settings.STATIC_ROOT, 'lambda_manager')
     pattern = os.path.join(dirname, 'decoder.onnx')
