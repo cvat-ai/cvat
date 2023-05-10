@@ -18,7 +18,6 @@ export interface Segmentation {
 export interface MatSpace {
     empty: () => any;
     fromData: (width: number, height: number, type: MatType, data: number[]) => any;
-    resize: (mat: any, targetWidth: number, targetHeight: number, method?: any) => Uint8Array;
 }
 
 export interface MatVectorSpace {
@@ -147,22 +146,6 @@ export class OpenCVWrapper {
 
                 const mat = cv.matFromArray(height, width, typeToCVType[type], data);
                 return mat;
-            },
-
-            resize: (mat: any, targetWidth: number, targetHeight: number): Uint8Array => {
-                const dst = new cv.Mat();
-                const size = new cv.Size(targetWidth, targetHeight);
-
-                try {
-                    cv.resize(mat, dst, size, 0, 0, cv.INTER_LINEAR);
-                    if ([cv.CV_8UC1, cv.CV_8UC3, cv.CV_8UC4].includes(mat.type())) {
-                        return dst.data;
-                    }
-
-                    throw new Error('Unsupported type to resize');
-                } finally {
-                    dst.delete();
-                }
             },
         };
     }

@@ -211,7 +211,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         latestResponse: {
             mask: number[][],
             points: number[][],
-            orig_size?: number[],
+            bounds?: [number, number, number, number],
         };
         lastestApproximatedPoints: number[][];
         latestRequest: null | {
@@ -378,11 +378,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
                 // if only mask presented, let's receive points
                 if (response.mask && !response.points) {
-                    const originalWidth = response.orig_size ? response.orig_size[0] : response.mask[0].length;
-                    const originalHeight = response.orig_size ? response.orig_size[1] : response.mask.length;
-                    response.points = await this.receivePointsFromMask(
-                        response.mask, originalWidth, originalHeight,
-                    );
+                    const left = response.bounds ? response.bounds[0] : 0;
+                    const top = response.bounds ? response.bounds[1] : 0;
+                    response.points = await this.receivePointsFromMask(response.mask, left, top);
                 }
 
                 // approximation with cv.approxPolyDP
@@ -407,10 +405,14 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             }
 
             if (this.interaction.lastestApproximatedPoints.length) {
-                const height = this.interaction.latestResponse.mask.length;
-                const width = this.interaction.latestResponse.mask[0].length;
                 const maskPoints = this.interaction.latestResponse.mask.flat();
-                maskPoints.push(0, 0, width - 1, height - 1);
+                if (this.interaction.latestResponse.bounds) {
+                    maskPoints.push(...this.interaction.latestResponse.bounds);
+                } else {
+                    const height = this.interaction.latestResponse.mask.length;
+                    const width = this.interaction.latestResponse.mask[0].length;
+                    maskPoints.push(0, 0, width - 1, height - 1);
+                }
                 canvasInstance.interact({
                     enabled: true,
                     intermediateShape: {
@@ -856,15 +858,12 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
             createAnnotations(jobInstance, frame, [object]);
         } else {
-            const height = this.interaction.latestResponse.mask.length;
-            const width = this.interaction.latestResponse.mask[0].length;
-            let maskPoints = this.interaction.latestResponse.mask.flat();
-
-            if (this.interaction.latestResponse.orig_size) {
-                const [originalWidth, originalHeight] = this.interaction.latestResponse.orig_size;
-                maskPoints = await this.resizeMask(this.interaction.latestResponse.mask, originalWidth, originalHeight);
-                maskPoints.push(0, 0, originalWidth - 1, originalHeight - 1);
+            const maskPoints = this.interaction.latestResponse.mask.flat();
+            if (this.interaction.latestResponse.bounds) {
+                maskPoints.push(...this.interaction.latestResponse.bounds);
             } else {
+                const height = this.interaction.latestResponse.mask.length;
+                const width = this.interaction.latestResponse.mask[0].length;
                 maskPoints.push(0, 0, width - 1, height - 1);
             }
 
@@ -895,11 +894,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     private async receivePointsFromMask(
         mask: number[][],
-        originalWidth: number,
-        originalHeight: number,
+        left: number,
+        top: number,
     ): Promise<number[]> {
-        const scaleX = originalWidth / mask[0].length;
-        const scaleY = originalHeight / mask.length;
         await this.initializeOpenCV();
 
         const src = openCVWrapper.mat.fromData(mask[0].length, mask.length, MatType.CV_8UC1, mask.flat());
@@ -908,10 +905,10 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             const polygons = openCVWrapper.contours.findContours(src, contours);
             return polygons[0].map((val: number, idx: number) => {
                 if (idx % 2) {
-                    return val * scaleY;
+                    return val + top;
                 }
 
-                return val * scaleX;
+                return val + left;
             });
         } finally {
             src.delete();
@@ -928,22 +925,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         }
 
         return points;
-    }
-
-    private async resizeMask(data: number[][], originalWidth: number, originalHeight: number): Promise<number[]> {
-        await this.initializeOpenCV();
-        const mat = openCVWrapper.mat.fromData(data[0].length, data.length, MatType.CV_8UC1, data.flat());
-        try {
-            const resized = openCVWrapper.mat.resize(mat, originalWidth, originalHeight);
-            const normMask = resized.reduce((acc, val, idx) => {
-                acc[idx] = val > 0 ? 255 : 0;
-                return acc;
-            }, Array(resized.length));
-
-            return normMask;
-        } finally {
-            mat.delete();
-        }
     }
 
     private renderMasksConvertingBlock(): JSX.Element {

@@ -154,7 +154,11 @@ const samPlugin: SAMPlugin = {
                     { frame, pos_points, neg_points }: {
                         frame: number, pos_points: number[][], neg_points: number[][],
                     },
-                ): Promise<{ mask: number[][]; orig_size: [number, number]; }> {
+                ): Promise<
+                    {
+                        mask: number[][];
+                        bounds: [number, number, number, number];
+                    }> {
                     const key = `${taskID}_${frame}`;
                     if (model.id !== plugin.data.modelID) {
                         return result;
@@ -195,7 +199,7 @@ const samPlugin: SAMPlugin = {
                         for (let i = 0; i < input.length; i++) {
                             const row = Math.floor(i / width);
                             const col = i % width;
-                            image[row][col] = input[i] > 0.0 ? 255 : 0;
+                            image[row][col] = input[i] * 255;
                         }
 
                         return image;
@@ -210,9 +214,14 @@ const samPlugin: SAMPlugin = {
                     const imageData = onnxToImage(masks.data, masks.dims[3], masks.dims[2]);
                     plugin.data.lowResMasks.set(key, lowResMasks);
 
+                    const xtl = Number(data.xtl.data[0]);
+                    const xbr = Number(data.xbr.data[0]);
+                    const ytl = Number(data.ytl.data[0]);
+                    const ybr = Number(data.ybr.data[0]);
+
                     return {
                         mask: imageData,
-                        orig_size: [modelScale.width, modelScale.height],
+                        bounds: [xtl, ytl, xbr, ybr],
                     };
                 },
             },
