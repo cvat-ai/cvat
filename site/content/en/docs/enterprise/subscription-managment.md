@@ -63,13 +63,13 @@ This section describes how to change or add payment methods.
 
 Access Manage **Pro Plan** > **Manage** and click **+Add Payment Method**
 
-![Payment pro](/images/paymentpro.png)
+![Payment pro](/images/update_payment_pro.png)
 
 ### Team plan
 
 Access **Manage Team Plan** > **Manage** and click **+Add Payment Method**.
 
-![Payment team](/images/paymentteam.png)
+![Payment team](/images/update_payment_team.png)
 
 ## Adding and removing team members
 
@@ -84,7 +84,7 @@ Not available.
 
 Go to the **Manage Team plan** > **Manage** > **Update quantity**.
 
-![Add members](/images/add99.gif)
+![Add members](/images/change_members_number_team.gif)
 
 If you've added a user **before the current billing period ends**,
 the payment will be prorated for the remaining time until the
@@ -138,7 +138,7 @@ Access **Manage Pro Plan** > **Manage** > **Cancel plan**
 
 Please, fill out the feedback form, to help us improve our platform.
 
-![Cancel pro](/images/canc33.gif)
+![Cancel pro](/images/cancel_pro.gif)
 
 ### Team plan
 
@@ -146,7 +146,7 @@ Access **Manage Team plan** > **Manage** -> **Cancel plan**
 
 Please, fill out the feedback form, to help us improve our platform.
 
-![Cancel team](/images/cancel99.gif)
+![Cancel team](/images/cancel_team.gif)
 
 ## Plan renewal
 
