@@ -806,7 +806,7 @@ class DataSerializer(serializers.ModelSerializer):
         if (
             (server_files := attrs.get('server_files'))
             and attrs.get('cloud_storage_id')
-            and len(list(filter(lambda x: not x['file'].endswith('.jsonl'), server_files))) > settings.CLOUD_STORAGE_MAX_FILES_COUNT
+            and sum(1 for f in server_files if not f['file'].endswith('.jsonl')) > settings.CLOUD_STORAGE_MAX_FILES_COUNT
         ):
             raise serializers.ValidationError(f'The maximum number of the cloud storage attached files is {settings.CLOUD_STORAGE_MAX_FILES_COUNT}')
         return attrs
@@ -837,6 +837,7 @@ class DataSerializer(serializers.ModelSerializer):
         remote_files = validated_data.pop('remote_files')
 
         validated_data.pop('job_file_mapping', None) # optional
+        validated_data.pop('server_files_exclude', None) # optional
 
         for extra_key in { 'use_zip_chunks', 'use_cache', 'copy_data' }:
             validated_data.pop(extra_key)

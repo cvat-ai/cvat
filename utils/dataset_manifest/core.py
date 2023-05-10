@@ -152,12 +152,12 @@ class DatasetImagesReader:
     def __init__(self,
                 sources: Union[List[str], List[BytesIO]],
                 *,
-                start = 0,
-                step = 1,
+                start: int = 0,
+                step: int = 1,
                 stop: Optional[int] = None,
-                meta: Optional[Dict[str, List[str]]] =None,
-                sorting_method=SortingMethod.PREDEFINED,
-                use_image_hash=False,
+                meta: Optional[Dict[str, List[str]]] = None,
+                sorting_method: SortingMethod =SortingMethod.PREDEFINED,
+                use_image_hash: bool = False,
                 **kwargs):
         self._raw_data_used = not isinstance(sources[0], str)
         func = (lambda x: x.filename) if self._raw_data_used else None

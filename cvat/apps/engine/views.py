@@ -158,7 +158,7 @@ class ServerViewSet(viewsets.ViewSet):
                     })
 
             # return directories at the top of the list
-            serializer = FileInfoSerializer(many=True, data=sorted(sorted(data, key=lambda x: x['name']), key=lambda x: x['type']))
+            serializer = FileInfoSerializer(many=True, data=sorted(data, key=lambda x: (x['type'], x['name'])))
             if serializer.is_valid(raise_exception=True):
                 return Response(serializer.data)
         else:
@@ -829,8 +829,9 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             self._object.save()
             data = {k: v for k, v in serializer.data.items()}
 
-            if 'job_file_mapping' in serializer.validated_data:
-                data['job_file_mapping'] = serializer.validated_data['job_file_mapping']
+            for optional_field in ['job_file_mapping', 'server_files_exclude']:
+                if optional_field in serializer.validated_data:
+                    data[optional_field] = serializer.validated_data[optional_field]
 
             data['use_zip_chunks'] = serializer.validated_data['use_zip_chunks']
             data['use_cache'] = serializer.validated_data['use_cache']
@@ -2219,12 +2220,12 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             # The idea is try to define real manifest preview only for the storages that have related manifests
             # because otherwise it can lead to extra calls to a bucket, that are usually not free.
             if not db_storage.has_at_least_one_manifest:
-                result = cache.get_cloud_preview_with_mime(db_storage, just_check=True)
+                result = cache.get_cloud_preview_with_mime(db_storage)
                 if not result:
                     return HttpResponse(status=HTTPStatus.NO_CONTENT)
                 return HttpResponse(result[0], result[1])
 
-            preview, mime = cache.get_cloud_preview_with_mime(db_storage)
+            preview, mime = cache.get_or_set_cloud_preview_with_mime(db_storage)
             return HttpResponse(preview, mime)
         except CloudStorageModel.DoesNotExist:
             message = f"Storage {pk} does not exist"

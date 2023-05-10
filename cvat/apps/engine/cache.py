@@ -29,7 +29,7 @@ from cvat.apps.engine.media_extractors import (ImageDatasetManifestReader,
                                                ZipCompressedChunkWriter)
 from cvat.apps.engine.mime_types import mimetypes
 from cvat.apps.engine.models import (DataChoice, DimensionType, Image,
-                                     StorageChoice)
+                                     StorageChoice, CloudStorage)
 from cvat.apps.engine.utils import md5_hash
 from utils.dataset_manifest import ImageManifestManager
 
@@ -66,17 +66,20 @@ class MediaCache:
 
     def get_cloud_preview_with_mime(
         self,
-        db_storage,
-        just_check: bool = False
+        db_storage: CloudStorage,
     ) -> Optional[Tuple[io.BytesIO, str]]:
         key = f'cloudstorage_{db_storage.id}_preview'
+        return self._cache.get(key)
 
-        if just_check:
-            item = self._cache.get(key)
-        else:
-            item = self._get_or_set_cache_item(
-                key, create_function=lambda: self._prepare_cloud_preview(db_storage)
-            )
+    def get_or_set_cloud_preview_with_mime(
+        self,
+        db_storage: CloudStorage,
+    ) -> Tuple[io.BytesIO, str]:
+        key = f'cloudstorage_{db_storage.id}_preview'
+
+        item = self._get_or_set_cache_item(
+            key, create_function=lambda: self._prepare_cloud_preview(db_storage)
+        )
 
         return item
 

@@ -78,13 +78,13 @@ def _copy_data_from_share_point(
         expanded_server_files = []
 
         for f in server_files:
-            path = Path(server_dir or settings.SHARE_ROOT) / Path(os.path.normpath(f))
+            path = Path(server_dir or settings.SHARE_ROOT) / Path(f)
             if not path.is_dir():
                 expanded_server_files.append(f)
             else:
                 for root, _, files in os.walk(str(path)):
                     if files:
-                        expanded_server_files.extend([os.path.join(f, os.path.relpath(root, str(path)), i) for i in files])
+                        expanded_server_files.extend([str(Path(f) / Path(root).relative_to(path) / Path(i)) for i in files])
 
         server_files = expanded_server_files
 
