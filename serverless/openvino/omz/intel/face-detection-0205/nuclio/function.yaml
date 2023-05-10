@@ -1,5 +1,5 @@
 metadata:
-  name: openvino-omz-face-detection-0205
+  name: openvino-omz-intel-face-detection-0205
   namespace: cvat
   annotations:
     name: Attributed face detection
