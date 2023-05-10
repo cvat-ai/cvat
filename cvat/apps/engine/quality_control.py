@@ -11,7 +11,7 @@ import itertools
 import math
 from typing import Any, Callable, Dict, Hashable, List, Optional, Sequence, Tuple, Union, cast
 
-from attrs import asdict, define, has as is_attrs_type
+from attrs import asdict, define, fields_dict, has as is_attrs_type
 import datumaro as dm
 import datumaro.util.mask_tools
 from django.conf import settings
@@ -119,18 +119,65 @@ class AnnotationConflict(_Serializable):
 
 
 @define(kw_only=True)
-class ComparisonReportParameters(_Serializable):
-    included_annotation_types: List[str]
-    ignored_attributes: List[str]
-    iou_threshold: float
+class ComparisonParameters(_Serializable):
+    included_annotation_types: List[dm.AnnotationType] = [
+        dm.AnnotationType.bbox,
+        dm.AnnotationType.points,
+        dm.AnnotationType.mask,
+        dm.AnnotationType.polygon,
+        dm.AnnotationType.polyline,
+        dm.AnnotationType.skeleton,
+    ]
+
+    ignored_attributes: List[str] = []
+
+    iou_threshold: float = 0.4
+    "Used for distinction between matched / unmatched shapes"
+
+    low_overlap_threshold: float = 0.8
+    "Used for distinction between strong / weak (low_overlap) matches"
+
+    oks_sigma: float = 0.09
+    "Like IoU threshold, but for points, % of the bbox area to match a pair of points"
+
+    line_thickness: float = 0.01
+    "Thickness of polylines, relatively to the (image area) ^ 0.5"
+
+    oriented_lines: bool = True
+    "Indicates that polylines have direction"
+
+    line_orientation_threshold: float = 0.1
+    """
+    The minimal gain in the IoU between the given and reversed line directions
+    to count the line inverted
+    """
+
+    compare_groups: bool = True
+    "Checks for mismatching groupings"
+
+    group_match_threshold: float = 0.5
+    "Minimal IoU for groups to be considered matching"
+
+    check_covered_annotations: bool = True
+    "Check for fully-covered annotations"
+
+    object_visibility_threshold: float = 0.05
+    "Minimal visible area % of the spatial annotations"
+
+    panoptic_comparison: bool = True
+    "Use only the visible part of the masks and polygons in comparisons"
+
+
+    def _value_serializer(self, t, attr, v):
+        if isinstance(v, dm.AnnotationType):
+            return str(v.name)
+        else:
+            return super()._value_serializer(t, attr, v)
 
     @classmethod
     def from_dict(cls, d):
-        return cls(
-            included_annotation_types=d['included_annotation_types'],
-            ignored_attributes=d['ignored_attributes'],
-            iou_threshold=d['iou_threshold'],
-        )
+        fields = fields_dict(cls)
+        return cls(**{ field_name: d[field_name] for field_name in fields if field_name in d })
 
 
 @define(kw_only=True)
@@ -411,7 +458,7 @@ class ComparisonReportFrameSummary(_Serializable):
 
 @define(kw_only=True)
 class ComparisonReport(_Serializable):
-    parameters: ComparisonReportParameters
+    parameters: ComparisonParameters
     comparison_summary: ComparisonReportComparisonSummary
     frame_results: Dict[int, ComparisonReportFrameSummary]
 
@@ -422,7 +469,7 @@ class ComparisonReport(_Serializable):
     @classmethod
     def from_dict(cls, d: Dict[str, Any]) -> ComparisonReport:
         return cls(
-            parameters=ComparisonReportParameters.from_dict(d['parameters']),
+            parameters=ComparisonParameters.from_dict(d['parameters']),
             comparison_summary=ComparisonReportComparisonSummary.from_dict(d['comparison_summary']),
             frame_results={
                 int(k): ComparisonReportFrameSummary.from_dict(v)
@@ -663,6 +710,8 @@ def _segment_iou(a: dm.Annotation, b: dm.Annotation, *, img_h: int, img_w: int) 
 
 @define(kw_only=True)
 class _LineMatcher(dm.ops.LineMatcher):
+    EPSILON = 1e-7
+
     torso_r: float = 0.25
     oriented: bool = False
     scale: float = None
@@ -767,7 +816,7 @@ class _LineMatcher(dm.ops.LineMatcher):
                     q = (b_segment_end_pos - a_segment_end_pos) * (
                         b_length / (b_segment_lengths[b_segment_idx] or 1)
                     )
-                    if abs(q) <= 0.0000001:
+                    if abs(q) <= cls.EPSILON:
                         b_new_points[next_point_idx] = b[1 + b_segment_idx]
                     else:
                         b_new_points[next_point_idx] = \
@@ -785,7 +834,7 @@ class _LineMatcher(dm.ops.LineMatcher):
                     q = (a_segment_end_pos - b_segment_end_pos) * (
                         a_length / (a_segment_lengths[a_segment_idx] or 1)
                     )
-                    if abs(q) <= 0.0000001:
+                    if abs(q) <= cls.EPSILON:
                         a_new_points[next_point_idx] = a[1 + a_segment_idx]
                     else:
                         a_new_points[next_point_idx] = \
@@ -815,6 +864,8 @@ class _DistanceComparator(dm.ops.DistanceComparator):
         included_ann_types: Optional[List[dm.AnnotationType]] = None,
         return_distances: bool = False,
 
+        iou_threshold: float = 0.5,
+
         # https://cocodataset.org/#keypoints-eval
         # https://github.com/cocodataset/cocoapi/blob/8c9bcc3cf640524c4c20a9c40e89cb6a2f2fa0e9/PythonAPI/pycocotools/cocoeval.py#L523
         oks_sigma: float = 0.09,
@@ -822,10 +873,8 @@ class _DistanceComparator(dm.ops.DistanceComparator):
         oriented_lines: bool = False,
         line_torso_radius: float = 0.01,
         panoptic_comparison: bool = False,
-
-        **kwargs,
     ):
-        super().__init__(**kwargs)
+        super().__init__(iou_threshold=iou_threshold)
         self.categories = categories
         self._skeleton_info = {}
         self.included_ann_types = included_ann_types
@@ -1305,39 +1354,32 @@ class _Comparator:
     def __init__(self,
         categories: dm.CategoriesInfo,
         *,
-        iou_threshold: float = 0.5,
-        coverage_threshold: float = 0.05,
-        group_match_threshold = 0.5,
+        settings: ComparisonParameters
     ):
-        self.ignored_attrs = [
+        self.ignored_attrs = set(settings.ignored_attributes) | {
             "track_id",  # changes from task to task, can't be defined manually with the same name
             "keyframe",  # indicates the way annotation obtained, meaningless to compare
             "z_order",  # changes from frame to frame, compared by other means
             "group",  # changes from job to job, compared by other means
-            "rotation",  # should be handled by other means
-            "outside",  # should be handled by other means
-        ]
-        self.included_ann_types = [
-            dm.AnnotationType.bbox,
-            dm.AnnotationType.points,
-            dm.AnnotationType.mask,
-            dm.AnnotationType.polygon,
-            dm.AnnotationType.polyline,
-            dm.AnnotationType.skeleton,
-        ]
+            "rotation",  # handled by other means
+            "outside",  # handled by other means
+        }
+        self.included_ann_types = settings.included_annotation_types
         self._annotation_comparator = _DistanceComparator(
             categories,
             included_ann_types=set(self.included_ann_types) - {
                 dm.AnnotationType.mask # masks are compared together with polygons
             },
             return_distances=True,
-            panoptic_comparison=True
+
+            panoptic_comparison=settings.panoptic_comparison,
+            iou_threshold=settings.iou_threshold,
+            oks_sigma=settings.oks_sigma,
+            line_torso_radius=settings.line_thickness,
+            oriented_lines=False # should not be taken from outside, handled differently
         )
-        self._annotation_comparator.iou_threshold = iou_threshold
-
-        self.coverage_threshold = coverage_threshold
-
-        self.group_match_threshold = group_match_threshold
+        self.coverage_threshold = settings.object_visibility_threshold
+        self.group_match_threshold = settings.group_match_threshold
 
     def match_attrs(self, ann_a: dm.Annotation, ann_b: dm.Annotation):
         a_attrs = ann_a.attributes
@@ -1462,10 +1504,18 @@ class _Comparator:
 
 
 class _DatasetComparator:
+    DEFAULT_SETTINGS = ComparisonParameters()
+
     def __init__(self,
         ds_data_provider: JobDataProvider,
         gt_data_provider: JobDataProvider,
+        *,
+        settings: Optional[ComparisonParameters] = None
     ) -> None:
+        if settings is None:
+            settings = self.DEFAULT_SETTINGS
+        self.settings = settings
+
         self._ds_data_provider = ds_data_provider
         self._gt_data_provider = gt_data_provider
         self._ds_dataset = self._ds_data_provider.dm_dataset
@@ -1473,21 +1523,7 @@ class _DatasetComparator:
 
         self._frame_results: Dict[int, ComparisonReportFrameSummary] = {}
 
-        self.comparator = _Comparator(self._gt_dataset.categories(), iou_threshold=0.4)
-
-        # iou_threshold is used for distinction between matched / unmatched shapes
-        # overlap_threshold is used for distinction between strong / weak (low_overlap) matches
-        self.overlap_threshold = 0.8
-
-        # Indicates that polylines have direction
-        self.oriented_lines = True
-        self.line_orientation_threshold = 0.1
-
-        # Checks for mismatching groupings
-        self.compare_groups = True
-
-        # Check for fully-covered annotations
-        self.check_covered_annotations = True
+        self.comparator = _Comparator(self._gt_dataset.categories(), settings=settings)
 
         self.included_frames = gt_data_provider.job_data._db_job.segment.frame_set
 
@@ -1562,7 +1598,7 @@ class _DatasetComparator:
 
         for gt_ann, ds_ann in itertools.chain(matches, mismatches):
             similarity = _get_similarity(gt_ann, ds_ann)
-            if similarity and similarity < self.overlap_threshold:
+            if similarity and similarity < self.settings.low_overlap_threshold:
                 conflicts.append(AnnotationConflict(
                     frame_id=frame_id,
                     type=AnnotationConflictType.LOW_OVERLAP,
@@ -1619,10 +1655,13 @@ class _DatasetComparator:
 
         mean_iou = np.mean(resulting_distances) if resulting_distances else 0
 
-        if self.oriented_lines and dm.AnnotationType.polyline in self.comparator.included_ann_types:
+        if (
+            self.settings.oriented_lines and
+            dm.AnnotationType.polyline in self.comparator.included_ann_types
+        ):
             # Check line directions
             line_matcher = _LineMatcher(
-                torso_r=self.comparator._annotation_comparator.line_torso_radius,
+                torso_r=self.settings.line_thickness,
                 oriented=True,
                 scale=np.prod(gt_item.image.size)
             )
@@ -1636,7 +1675,10 @@ class _DatasetComparator:
 
                 # need to filter computation errors from line approximation
                 # and (almost) orientation-independent cases
-                if non_oriented_distance - oriented_distance > self.line_orientation_threshold:
+                if (
+                    non_oriented_distance - oriented_distance >
+                    self.settings.line_orientation_threshold
+                ):
                     conflicts.append(
                         AnnotationConflict(
                             frame_id=frame_id,
@@ -1648,7 +1690,7 @@ class _DatasetComparator:
                         )
                     )
 
-        if self.check_covered_annotations:
+        if self.settings.check_covered_annotations:
             ds_covered_anns = self.comparator.find_covered(ds_item)
 
             for ds_ann in ds_covered_anns:
@@ -1676,7 +1718,7 @@ class _DatasetComparator:
                     )
                 )
 
-        if self.compare_groups:
+        if self.settings.compare_groups:
             gt_groups, gt_group_map = self.comparator.find_groups(gt_item)
             ds_groups, ds_group_map = self.comparator.find_groups(ds_item)
             matched_objects = matches + mismatches
@@ -1861,11 +1903,7 @@ class _DatasetComparator:
         gt_annotations_count = np.sum(gt_ann_counts) - gt_ann_counts[confusion_matrix_labels_rmap[None]]
 
         return ComparisonReport(
-            parameters=ComparisonReportParameters(
-                included_annotation_types=[t.name for t in self.comparator.included_ann_types],
-                iou_threshold=self.comparator._annotation_comparator.iou_threshold,
-                ignored_attributes=self.comparator.ignored_attrs,
-            ),
+            parameters=self.settings,
 
             comparison_summary=ComparisonReportComparisonSummary(
                 frame_share_percent=len(intersection_frames) / (len(self._ds_dataset) or 1),
