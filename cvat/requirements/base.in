@@ -37,7 +37,7 @@ django-filter==2.4.0
 Markdown==3.2.2
 djangorestframework==3.14.0
 Pygments==2.7.4
-drf-spectacular==0.22.1
+drf-spectacular==0.26.2
 Shapely==1.7.1
 pdf2image==1.14.0
 opencv-python-headless==4.5.5.62
