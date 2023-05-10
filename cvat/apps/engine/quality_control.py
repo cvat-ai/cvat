@@ -129,6 +129,9 @@ class ComparisonParameters(_Serializable):
         dm.AnnotationType.skeleton,
     ]
 
+    compare_attributes: bool = True
+    "Enables or disables attribute checks"
+
     ignored_attributes: List[str] = []
 
     iou_threshold: float = 0.4
@@ -153,7 +156,7 @@ class ComparisonParameters(_Serializable):
     """
 
     compare_groups: bool = True
-    "Checks for mismatching groupings"
+    "Enables or disables group checks"
 
     group_match_threshold: float = 0.5
     "Minimal IoU for groups to be considered matching"
@@ -1503,7 +1506,7 @@ class _Comparator:
         return pairwise_distances.get((id(gt_ann), id(ds_ann)))
 
 
-class _DatasetComparator:
+class DatasetComparator:
     DEFAULT_SETTINGS = ComparisonParameters()
 
     def __init__(self,
@@ -1704,19 +1707,20 @@ class _DatasetComparator:
                     )
                 )
 
-        for gt_ann, ds_ann in matches:
-            attribute_results = self.comparator.match_attrs(gt_ann, ds_ann)
-            if len(attribute_results[1]) + len(attribute_results[2]) + len(attribute_results[3]):
-                conflicts.append(
-                    AnnotationConflict(
-                        frame_id=frame_id,
-                        type=AnnotationConflictType.MISMATCHING_ATTRIBUTES,
-                        annotation_ids=[
-                            self._dm_ann_to_ann_id(ds_ann, self._ds_dataset),
-                            self._dm_ann_to_ann_id(gt_ann, self._gt_dataset),
-                        ]
+        if self.settings.compare_attributes:
+            for gt_ann, ds_ann in matches:
+                attribute_results = self.comparator.match_attrs(gt_ann, ds_ann)
+                if any(attribute_results[1:]):
+                    conflicts.append(
+                        AnnotationConflict(
+                            frame_id=frame_id,
+                            type=AnnotationConflictType.MISMATCHING_ATTRIBUTES,
+                            annotation_ids=[
+                                self._dm_ann_to_ann_id(ds_ann, self._ds_dataset),
+                                self._dm_ann_to_ann_id(gt_ann, self._gt_dataset),
+                            ]
+                        )
                     )
-                )
 
         if self.settings.compare_groups:
             gt_groups, gt_group_map = self.comparator.find_groups(gt_item)
@@ -2088,10 +2092,14 @@ class QueueJobManager:
                 for job in jobs
             }
 
+            quality_params = cls._get_task_quality_params(task)
+
         job_comparison_reports: Dict[int, ComparisonReport] = {}
         for job in jobs:
             job_data_provider = job_data_providers[job.id]
-            comparator = _DatasetComparator(job_data_provider, gt_job_data_provider)
+            comparator = DatasetComparator(
+                job_data_provider, gt_job_data_provider, settings=quality_params
+            )
             job_comparison_reports[job.id] = comparator.generate_report()
 
             # Release resources
@@ -2278,3 +2286,8 @@ class QueueJobManager:
             objects=db_ann_ids,
             flt_param={}
         )
+
+    @classmethod
+    def _get_task_quality_params(cls, task: models.Task) -> Optional[ComparisonParameters]:
+        quality_params, _ = models.QualitySettings.objects.get_or_create(task=task)
+        return ComparisonParameters.from_dict(quality_params.to_dict())

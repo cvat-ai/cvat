@@ -674,10 +674,11 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
         try:
             job = super().create(validated_data)
-            job.make_dirs()
-            return job
         except models.TaskGroundTruthJobsLimitError as ex:
             raise serializers.ValidationError(ex.message) from ex
+
+        job.make_dirs()
+        return job
 
     def update(self, instance, validated_data):
         state = validated_data.get('state')
@@ -981,6 +982,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
             'status', 'data_chunk_size', 'data_compressed_chunk_type',
             'data_original_chunk_type', 'size', 'image_quality', 'data', 'dimension',
             'subset', 'organization', 'target_storage', 'source_storage', 'jobs', 'labels',
+            'quality_settings'
         )
         read_only_fields = fields
         extra_kwargs = {
@@ -1950,3 +1952,43 @@ class QualityReportSerializer(serializers.ModelSerializer):
             'created_date', 'target_last_updated', 'gt_last_updated',
         )
         read_only_fields = fields
+
+
+class QualitySettingsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.QualitySettings
+        fields = (
+            'task',
+
+            'iou_threshold',
+            'oks_sigma',
+            'line_thickness',
+
+            'low_overlap_threshold',
+
+            'oriented_lines',
+            'line_orientation_threshold',
+
+            'compare_groups',
+            'group_match_threshold',
+
+            'check_covered_annotations',
+            'object_visibility_threshold',
+
+            'panoptic_comparison',
+
+            'compare_attributes',
+        )
+        read_only_fields = ('task', )
+        extra_kwargs = {
+            k: {'required': False}
+            for k in fields
+        }
+
+    def validate(self, attrs):
+        for k, v in attrs.items():
+            if k.endswith('_threshold') or k in ['oks_sigma', 'line_thickness']:
+                if not 0 <= v <= 1:
+                    raise serializers.ValidationError(f"{k} must be in the range [0; 1]")
+
+        return super().validate(attrs)

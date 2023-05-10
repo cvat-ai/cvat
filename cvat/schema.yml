@@ -1195,6 +1195,10 @@ paths:
           - extra_annotation
           - mismatching_label
           - low_overlap
+          - mismatching_direction
+          - mismatching_attributes
+          - mismatching_groups
+          - covered_annotation
       tags:
       - conflicts
       security:
@@ -4418,7 +4422,131 @@ paths:
       - basicAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/QualityReport'
+          description: ''
+  /api/quality_reports/debug:
+    get:
+      operationId: quality_reports_retrieve_debug
+      parameters:
+      - in: header
+        name: X-Organization
+        schema:
+          type: string
+      - in: query
+        name: org
+        schema:
+          type: string
+        description: Organization unique slug
+      - in: query
+        name: org_id
+        schema:
+          type: integer
+        description: Organization identifier
+      - in: query
+        name: task_id
+        schema:
+          type: integer
+      tags:
+      - quality_reports
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/QualityReport'
+          description: ''
+  /api/quality_settings/{id}:
+    get:
+      operationId: quality_settings_retrieve
+      summary: Method returns details of a quality settings
+      parameters:
+      - in: header
+        name: X-Organization
+        schema:
+          type: string
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this quality settings.
+        required: true
+      - in: query
+        name: org
+        schema:
+          type: string
+        description: Organization unique slug
+      - in: query
+        name: org_id
+        schema:
+          type: integer
+        description: Organization identifier
+      tags:
+      - quality_settings
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/QualitySettings'
+          description: ''
+    patch:
+      operationId: quality_settings_partial_update
+      parameters:
+      - in: header
+        name: X-Organization
+        schema:
+          type: string
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this quality settings.
+        required: true
+      - in: query
+        name: org
+        schema:
+          type: string
+        description: Organization unique slug
+      - in: query
+        name: org_id
+        schema:
+          type: integer
+        description: Organization identifier
+      tags:
+      - quality_settings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedQualitySettingsRequest'
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/QualitySettings'
+          description: ''
   /api/schema/:
     get:
       operationId: schema_retrieve
@@ -6624,6 +6752,9 @@ components:
     AnnotationConflict:
       type: object
       properties:
+        id:
+          type: integer
+          readOnly: true
         frame:
           type: integer
           readOnly: true
@@ -6638,6 +6769,10 @@ components:
         report_id:
           type: integer
           readOnly: true
+        importance:
+          allOf:
+          - $ref: '#/components/schemas/ImportanceEnum'
+          readOnly: true
       required:
       - annotation_ids
     AnnotationConflictTypeEnum:
@@ -6646,6 +6781,10 @@ components:
       - extra_annotation
       - mismatching_label
       - low_overlap
+      - mismatching_direction
+      - mismatching_attributes
+      - mismatching_groups
+      - covered_annotation
       type: string
     AnnotationFileRequest:
       type: object
@@ -7416,6 +7555,11 @@ components:
       enum:
       - random_uniform
       - manual
+      type: string
+    ImportanceEnum:
+      enum:
+      - warning
+      - error
       type: string
     InputTypeEnum:
       enum:
@@ -8704,6 +8848,40 @@ components:
             type: string
             minLength: 1
           writeOnly: true
+    PatchedQualitySettingsRequest:
+      type: object
+      properties:
+        iou_threshold:
+          type: number
+          format: double
+        oks_sigma:
+          type: number
+          format: double
+        line_thickness:
+          type: number
+          format: double
+        low_overlap_threshold:
+          type: number
+          format: double
+        oriented_lines:
+          type: boolean
+        line_orientation_threshold:
+          type: number
+          format: double
+        compare_groups:
+          type: boolean
+        group_match_threshold:
+          type: number
+          format: double
+        check_covered_annotations:
+          type: boolean
+        object_visibility_threshold:
+          type: number
+          format: double
+        panoptic_comparison:
+          type: boolean
+        compare_attributes:
+          type: boolean
     PatchedTaskWriteRequest:
       type: object
       properties:
@@ -9001,6 +9179,10 @@ components:
           format: double
         conflict_count:
           type: integer
+        warning_count:
+          type: integer
+        error_count:
+          type: integer
         valid_count:
           type: integer
         ds_count:
@@ -9010,15 +9192,54 @@ components:
       required:
       - conflict_count
       - ds_count
+      - error_count
       - frame_count
       - frame_share_percent
       - gt_count
       - valid_count
+      - warning_count
     QualityReportTarget:
       enum:
       - job
       - task
       type: string
+    QualitySettings:
+      type: object
+      properties:
+        task:
+          type: integer
+          readOnly: true
+        iou_threshold:
+          type: number
+          format: double
+        oks_sigma:
+          type: number
+          format: double
+        line_thickness:
+          type: number
+          format: double
+        low_overlap_threshold:
+          type: number
+          format: double
+        oriented_lines:
+          type: boolean
+        line_orientation_threshold:
+          type: number
+          format: double
+        compare_groups:
+          type: boolean
+        group_match_threshold:
+          type: number
+          format: double
+        check_covered_annotations:
+          type: boolean
+        object_visibility_threshold:
+          type: number
+          format: double
+        panoptic_comparison:
+          type: boolean
+        compare_attributes:
+          type: boolean
     RegisterSerializerEx:
       type: object
       properties:
@@ -9490,6 +9711,9 @@ components:
           $ref: '#/components/schemas/JobsSummary'
         labels:
           $ref: '#/components/schemas/LabelsSummary'
+        quality_settings:
+          type: integer
+          readOnly: true
       required:
       - jobs
       - labels

@@ -24,6 +24,7 @@ router.register('labels', views.LabelViewSet)
 router.register('cloudstorages', views.CloudStorageViewSet)
 router.register('quality_reports', views.QualityReportViewSet)
 router.register('conflicts', views.ConflictsViewSet)
+router.register('quality_settings', views.QualitySettingsViewSet)
 
 urlpatterns = [
     # Entry point for a client

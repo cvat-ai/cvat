@@ -47,7 +47,8 @@ from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.media_extractors import get_mime
 from cvat.apps.engine.models import (
-    AnnotationConflict, Job, JobType, Label, QualityReport, Task, Project, Issue, Data,
+    AnnotationConflict, Job, JobType, Label, QualitySettings, QualityReport,
+    Task, Project, Issue, Data,
     Comment, StorageMethodChoice, StorageChoice,
     CloudProviderChoice, Location
 )
@@ -57,7 +58,7 @@ from cvat.apps.engine.serializers import (
     DataMetaReadSerializer, DataMetaWriteSerializer, DataSerializer,
     FileInfoSerializer, JobReadSerializer, JobWriteSerializer, LabelSerializer,
     LabeledDataSerializer,
-    ProjectReadSerializer, ProjectWriteSerializer,
+    ProjectReadSerializer, ProjectWriteSerializer, QualitySettingsSerializer,
     RqStatusSerializer, TaskReadSerializer, TaskWriteSerializer,
     UserSerializer, PluginsSerializer, IssueReadSerializer,
     IssueWriteSerializer, CommentReadSerializer, CommentWriteSerializer, CloudStorageWriteSerializer,
@@ -2321,7 +2322,10 @@ class QualityReportViewSet(viewsets.GenericViewSet,
     })
     ordering_fields = list(filter_fields)
     ordering = 'id'
-    serializer_class = QualityReportSerializer
+
+    def get_serializer_class(self):
+        # a separate method is required for drf-spectacular to work
+        return QualityReportSerializer
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -2367,6 +2371,29 @@ class QualityReportViewSet(viewsets.GenericViewSet,
         from .quality_control import QueueJobManager
         QueueJobManager._update_task_quality_metrics(task_id=request.GET.get('task_id'))
         return HttpResponse({})
+
+
+@extend_schema(tags=['quality_settings'])
+@extend_schema_view(
+    retrieve=extend_schema(
+        summary='Method returns details of a quality settings',
+        responses={
+            '200': QualitySettingsSerializer,
+        }),
+)
+class QualitySettingsViewSet(viewsets.GenericViewSet,
+    mixins.RetrieveModelMixin, PartialUpdateModelMixin
+):
+    queryset = QualitySettings.objects.select_related('task').all()
+
+    iam_organization_field = 'task__organization'
+
+    search_fields = []
+    filter_fields = []
+    ordering_fields = ['id']
+    ordering = 'id'
+
+    serializer_class = QualitySettingsSerializer
 
 
 def rq_exception_handler(rq_job, exc_type, exc_value, tb):

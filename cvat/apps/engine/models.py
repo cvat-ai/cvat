@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 from __future__ import annotations
+from copy import deepcopy
 
 import os
 import re
@@ -1208,3 +1209,45 @@ class AnnotationId(models.Model):
     obj_id = models.PositiveIntegerField()
     job_id = models.PositiveIntegerField()
     type = models.CharField(max_length=32, choices=AnnotationType.choices())
+
+
+class QualitySettings(models.Model):
+    task = models.OneToOneField(Task,
+        on_delete=models.CASCADE, related_name='quality_settings'
+    )
+
+    iou_threshold = models.FloatField()
+    oks_sigma = models.FloatField()
+    line_thickness = models.FloatField()
+
+    low_overlap_threshold = models.FloatField()
+
+    oriented_lines = models.BooleanField()
+    line_orientation_threshold = models.FloatField()
+
+    compare_groups = models.BooleanField()
+    group_match_threshold = models.FloatField()
+
+    check_covered_annotations = models.BooleanField()
+    object_visibility_threshold = models.FloatField()
+
+    panoptic_comparison = models.BooleanField()
+
+    compare_attributes = models.BooleanField()
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        params = deepcopy(self.get_defaults())
+        params.update(kwargs)
+        super().__init__(*args, **params)
+
+    @classmethod
+    def get_defaults(cls) -> dict:
+        import cvat.apps.engine.quality_control as qc
+        default_settings = qc.DatasetComparator.DEFAULT_SETTINGS.to_dict()
+
+        existing_fields = {f.name for f in cls._meta.fields}
+        return {k: v for k, v in default_settings.items() if k in existing_fields}
+
+    def to_dict(self):
+        from django.forms.models import model_to_dict
+        return model_to_dict(self)
