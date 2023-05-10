@@ -27,7 +27,8 @@ from cvat.apps.dataset_manager.bindings import (CommonData, CvatToDmAnnotationCo
 from cvat.apps.dataset_manager.util import bulk_create
 from cvat.apps.dataset_manager.formats.registry import dm_env
 from cvat.apps.engine import models
-from cvat.apps.engine.models import AnnotationConflictType, AnnotationType
+from cvat.apps.engine.models import (AnnotationConflictImportance,
+    AnnotationConflictType, AnnotationType)
 from cvat.apps.profiler import silk_profile
 
 from datumaro.util import dump_json, parse_json
@@ -74,11 +75,39 @@ class AnnotationConflict(_Serializable):
     type: AnnotationConflictType
     annotation_ids: List[AnnotationId]
 
+    @property
+    def importance(self) -> AnnotationConflictImportance:
+        if self.type in [
+            AnnotationConflictType.MISSING_ANNOTATION,
+            AnnotationConflictType.EXTRA_ANNOTATION,
+            AnnotationConflictType.MISMATCHING_LABEL,
+        ]:
+            importance = AnnotationConflictImportance.ERROR
+        elif self.type in [
+            AnnotationConflictType.LOW_OVERLAP,
+            AnnotationConflictType.MISMATCHING_ATTRIBUTES,
+            AnnotationConflictType.MISMATCHING_DIRECTION,
+            AnnotationConflictType.MISMATCHING_GROUPS,
+            AnnotationConflictType.COVERED_ANNOTATION,
+        ]:
+            importance = AnnotationConflictImportance.WARNING
+        else:
+            assert False
+
+        return importance
+
     def _value_serializer(self, t, attr, v):
         if isinstance(v, AnnotationConflictType):
             return str(v)
         else:
             return super()._value_serializer(t, attr, v)
+
+    def to_dict(self) -> dict:
+        result = super().to_dict()
+        result.update(**{
+            k: getattr(self, k) for k in ['importance']
+        })
+        return result
 
     @classmethod
     def from_dict(cls, d):
@@ -279,8 +308,13 @@ class ComparisonReportComparisonSummary(_Serializable):
     frame_share_percent: float
     frames: List[str]
 
+    @property
+    def mean_conflict_count(self) -> float:
+        return self.conflict_count / (len(self.frames) or 1)
+
     conflict_count: int
-    mean_conflict_count: float
+    warning_count: int
+    error_count: int
 
     annotations: ComparisonReportAnnotationsSummary
     annotation_components: ComparisonReportAnnotationComponentsSummary
@@ -292,7 +326,7 @@ class ComparisonReportComparisonSummary(_Serializable):
     def to_dict(self) -> dict:
         result = super().to_dict()
         result.update(**{
-            k: getattr(self, k) for k in ['frame_count']
+            k: getattr(self, k) for k in ['frame_count', 'mean_conflict_count']
         })
         return result
 
@@ -302,7 +336,8 @@ class ComparisonReportComparisonSummary(_Serializable):
             frame_share_percent=d['frame_share_percent'],
             frames=list(d['frames']),
             conflict_count=d['conflict_count'],
-            mean_conflict_count=d['mean_conflict_count'],
+            warning_count=d.get('warning_count', 0),
+            error_count=d.get('error_count', 0),
             annotations=ComparisonReportAnnotationsSummary.from_dict(d['annotations']),
             annotation_components=ComparisonReportAnnotationComponentsSummary.from_dict(
                 d['annotation_components']),
@@ -322,18 +357,51 @@ class ComparisonReportDatasetSummary(_Serializable):
         )
 
 
-@define(kw_only=True)
+@define(kw_only=True, init=False)
 class ComparisonReportFrameSummary(_Serializable):
-    conflict_count: int
     conflicts: List[AnnotationConflict]
+
+    @cached_property
+    def conflict_count(self) -> int:
+        return len(self.conflicts)
+
+    @cached_property
+    def warning_count(self) -> int:
+        return len([
+            c for c in self.conflicts
+            if c.importance == AnnotationConflictImportance.WARNING
+        ])
+
+    @cached_property
+    def error_count(self) -> int:
+        return len([
+            c for c in self.conflicts
+            if c.importance == AnnotationConflictImportance.ERROR
+        ])
 
     annotations: ComparisonReportAnnotationsSummary
     annotation_components: ComparisonReportAnnotationComponentsSummary
 
+    def __init__(self, *args, **kwargs):
+        # these fields are optional, but can be computed on access
+        for field_name in ['conflict_count', 'warning_count', 'error_count']:
+            if field_name in kwargs:
+                setattr(self, field_name, kwargs.pop(field_name))
+
+        self.__attrs_init__(*args, **kwargs)
+
     @classmethod
     def from_dict(cls, d):
         return cls(
-            conflict_count=d['conflict_count'],
+            **dict(
+                conflict_count=d['conflict_count'],
+            ) if 'conflict_count' in d else {},
+            **dict(
+                warning_count=d['warning_count'],
+            ) if 'warning_count' in d else {},
+            **dict(
+                error_count=d['error_count'],
+            ) if 'error_count' in d else {},
             conflicts=[AnnotationConflict.from_dict(v) for v in d['conflicts']],
             annotations=ComparisonReportAnnotationsSummary.from_dict(d['annotations']),
             annotation_components=ComparisonReportAnnotationComponentsSummary.from_dict(
@@ -345,7 +413,6 @@ class ComparisonReportFrameSummary(_Serializable):
 class ComparisonReport(_Serializable):
     parameters: ComparisonReportParameters
     comparison_summary: ComparisonReportComparisonSummary
-    # dataset_summary: ComparisonReportDatasetSummary
     frame_results: Dict[int, ComparisonReportFrameSummary]
 
     @property
@@ -565,7 +632,19 @@ def _arr_div(a_arr: np.ndarray, b_arr: np.ndarray) -> np.ndarray:
     divisor[b_arr == 0] = 1
     return a_arr / divisor
 
-def _segment_iou(a, b, *, img_h, img_w):
+def _to_rle(ann: dm.Annotation, *, img_h: int, img_w: int):
+    from pycocotools import mask as mask_utils
+
+    if ann.type == dm.AnnotationType.polygon:
+        return mask_utils.frPyObjects([ann.points], img_h, img_w)
+    elif isinstance(ann, dm.RleMask):
+        return [ann.rle]
+    elif ann.type == dm.AnnotationType.mask:
+        return [mask_utils.encode(ann.image)]
+    else:
+        assert False
+
+def _segment_iou(a: dm.Annotation, b: dm.Annotation, *, img_h: int, img_w: int) -> float:
     """
     Generic IoU computation with masks and polygons.
     Returns -1 if no intersection, [0; 1] otherwise
@@ -576,18 +655,8 @@ def _segment_iou(a, b, *, img_h, img_w):
 
     from pycocotools import mask as mask_utils
 
-    def _to_rle(ann):
-        if ann.type == dm.AnnotationType.polygon:
-            return mask_utils.frPyObjects([ann.points], img_h, img_w)
-        elif isinstance(ann, dm.RleMask):
-            return [ann.rle]
-        elif ann.type == dm.AnnotationType.mask:
-            return [mask_utils.encode(ann.image)]
-        else:
-            raise TypeError("Unexpected arguments: %s, %s" % (a, b))
-
-    a = _to_rle(a)
-    b = _to_rle(b)
+    a = _to_rle(a, img_h=img_h, img_w=img_w)
+    b = _to_rle(b, img_h=img_h, img_w=img_w)
 
     # Note that mask_utils.iou expects (dt, gt). Check this if the 3rd param is True
     return float(mask_utils.iou(b, a, [0]))
@@ -598,7 +667,7 @@ class _LineMatcher(dm.ops.LineMatcher):
     oriented: bool = False
     scale: float = None
 
-    def distance(self, gt_ann: dm.PolyLine, ds_ann: dm.PolyLine):
+    def distance(self, gt_ann: dm.PolyLine, ds_ann: dm.PolyLine) -> float:
         # Check distances of the very coarse estimates for the curves
         def _get_bbox_circle(ann: dm.PolyLine):
             xs = ann.points[0::2]
@@ -775,7 +844,9 @@ class _DistanceComparator(dm.ops.DistanceComparator):
         self.panoptic_comparison = panoptic_comparison
         "Compare only the visible parts of polygons and masks"
 
-    def _instance_bbox(self, instance_anns: Sequence[dm.Annotation]):
+    def _instance_bbox(
+        self, instance_anns: Sequence[dm.Annotation]
+    ) -> Tuple[float, float, float, float]:
         return dm.ops.max_bbox(
             a.get_bbox() if isinstance(a, dm.Skeleton) else a
             for a in instance_anns
@@ -784,7 +855,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
         )
 
     @staticmethod
-    def _get_ann_type(t, item):
+    def _get_ann_type(t, item: dm.Annotation) -> Sequence[dm.Annotation]:
         return [
             a for a in item.annotations
             if a.type == t
@@ -894,17 +965,6 @@ class _DistanceComparator(dm.ops.DistanceComparator):
 
             return instances, instance_map
 
-        def _to_rle(ann):
-            from pycocotools import mask as mask_utils
-            if ann.type == dm.AnnotationType.polygon:
-                return mask_utils.frPyObjects([ann.points], img_h, img_w)
-            elif isinstance(ann, dm.RleMask):
-                return [ann.rle]
-            elif ann.type == dm.AnnotationType.mask:
-                return [mask_utils.encode(ann.image)]
-            else:
-                assert False
-
         def _get_compiled_mask(
             anns: Sequence[dm.Annotation],
             *,
@@ -914,7 +974,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
                 return None
 
             from pycocotools import mask as mask_utils
-            object_rle_groups = [_to_rle(ann) for ann in anns]
+            object_rle_groups = [_to_rle(ann, img_h=img_h, img_w=img_w) for ann in anns]
             object_rles = [mask_utils.merge(g) for g in object_rle_groups]
             object_masks = mask_utils.decode(object_rles)
 
@@ -963,8 +1023,12 @@ class _DistanceComparator(dm.ops.DistanceComparator):
 
                     rle = mask_utils.encode(mask)
                 else:
+                    # Create merged RLE for the instance shapes
                     object_anns = instances[obj_id]
-                    object_rle_groups = [_to_rle(ann) for ann in object_anns]
+                    object_rle_groups = [
+                        _to_rle(ann, img_h=img_h, img_w=img_w)
+                        for ann in object_anns
+                    ]
                     rle = mask_utils.merge(list(itertools.chain.from_iterable(object_rle_groups)))
 
                 segment_cache[key] = rle
@@ -984,6 +1048,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
 
         def _label_matcher(a_inst_id: int, b_inst_id: int) -> bool:
             # labels are the same in the instance annotations
+            # instances are required to have the same labels in all shapes
             a = a_instances[a_inst_id][0]
             b = b_instances[b_inst_id][0]
             return a.label == b.label
@@ -1029,8 +1094,11 @@ class _DistanceComparator(dm.ops.DistanceComparator):
         return returned_values
 
     def match_lines(self, item_a, item_b):
-        matcher = _LineMatcher(oriented=self.oriented_lines, torso_r=self.line_torso_radius,
-            scale=np.prod(item_a.image.size))
+        matcher = _LineMatcher(
+            oriented=self.oriented_lines,
+            torso_r=self.line_torso_radius,
+            scale=np.prod(item_a.image.size)
+        )
         return self._match_segments(dm.AnnotationType.polyline, item_a, item_b,
             distance=matcher.distance)
 
@@ -1244,8 +1312,8 @@ class _Comparator:
         self.ignored_attrs = [
             "track_id",  # changes from task to task, can't be defined manually with the same name
             "keyframe",  # indicates the way annotation obtained, meaningless to compare
-            "z_order",  # TODO: compare relative or 'visible' z_order
-            "group",  # TODO: changes from task to task. But must be compared for existence
+            "z_order",  # changes from frame to frame, compared by other means
+            "group",  # changes from job to job, compared by other means
             "rotation",  # should be handled by other means
             "outside",  # should be handled by other means
         ]
@@ -1687,7 +1755,6 @@ class _DatasetComparator:
         gt_annotations_count = np.sum(gt_ann_counts) - gt_ann_counts[confusion_matrix_labels_rmap[None]]
 
         self._frame_results[frame_id] = ComparisonReportFrameSummary(
-            conflict_count=len(conflicts),
             annotations=ComparisonReportAnnotationsSummary(
                 valid_count=valid_annotations_count,
                 missing_count=missing_annotations_count,
@@ -1729,7 +1796,7 @@ class _DatasetComparator:
 
         # accumulate stats
         intersection_frames = []
-        conflict_count = 0
+        conflicts = []
         annotations = ComparisonReportAnnotationsSummary(
             valid_count=0, missing_count=0,
             extra_count=0, total_count=0,
@@ -1750,7 +1817,7 @@ class _DatasetComparator:
         confusion_matrices = []
         for frame_id, frame_result in self._frame_results.items():
             intersection_frames.append(frame_id)
-            conflict_count += frame_result.conflict_count
+            conflicts += frame_result.conflicts
 
             if annotations is None:
                 annotations = deepcopy(frame_result.annotations)
@@ -1793,8 +1860,6 @@ class _DatasetComparator:
         ds_annotations_count = np.sum(ds_ann_counts) - ds_ann_counts[confusion_matrix_labels_rmap[None]]
         gt_annotations_count = np.sum(gt_ann_counts) - gt_ann_counts[confusion_matrix_labels_rmap[None]]
 
-        mean_conflict_count = conflict_count / (len(intersection_frames) or 1)
-
         return ComparisonReport(
             parameters=ComparisonReportParameters(
                 included_annotation_types=[t.name for t in self.comparator.included_ann_types],
@@ -1806,8 +1871,13 @@ class _DatasetComparator:
                 frame_share_percent=len(intersection_frames) / (len(self._ds_dataset) or 1),
                 frames=intersection_frames,
 
-                conflict_count=conflict_count,
-                mean_conflict_count=mean_conflict_count,
+                conflict_count=len(conflicts),
+                warning_count=len([
+                    c for c in conflicts if c.importance == AnnotationConflictImportance.WARNING
+                ]),
+                error_count=len([
+                    c for c in conflicts if c.importance == AnnotationConflictImportance.ERROR
+                ]),
 
                 annotations=ComparisonReportAnnotationsSummary(
                     valid_count=valid_annotations_count,
@@ -2025,7 +2095,6 @@ class QueueJobManager:
                     task_frame_result = deepcopy(job_frame_result)
                 else:
                     task_frame_result.conflicts += job_frame_result.conflicts
-                    task_frame_result.conflict_count = len(task_frame_result.conflicts)
 
                     task_frame_result.annotations.accumulate(job_frame_result.annotations)
                     task_frame_result.annotation_components.accumulate(
@@ -2050,7 +2119,14 @@ class QueueJobManager:
                 frames=sorted(task_intersection_frames),
 
                 conflict_count=len(task_conflicts),
-                mean_conflict_count=len(task_conflicts) / (task.data.size or 1),
+                warning_count=len([
+                    c for c in task_conflicts
+                    if c.importance == AnnotationConflictImportance.WARNING
+                ]),
+                error_count=len([
+                    c for c in task_conflicts
+                    if c.importance == AnnotationConflictImportance.ERROR
+                ]),
 
                 annotations=task_annotations_summary,
                 annotation_components=task_ann_components_summary,

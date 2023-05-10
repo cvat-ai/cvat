@@ -8999,7 +8999,7 @@ components:
         frame_share_percent:
           type: number
           format: double
-        conflicts_count:
+        conflict_count:
           type: integer
         valid_count:
           type: integer
@@ -9008,7 +9008,7 @@ components:
         gt_count:
           type: integer
       required:
-      - conflicts_count
+      - conflict_count
       - ds_count
       - frame_count
       - frame_share_percent

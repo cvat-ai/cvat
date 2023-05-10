@@ -1917,14 +1917,16 @@ class AnnotationConflictSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.AnnotationConflict
-        fields = ('id', 'frame', 'type', 'annotation_ids', 'report_id')
+        fields = ('id', 'frame', 'type', 'annotation_ids', 'report_id', 'importance')
         read_only_fields = fields
 
 
 class QualityReportSummarySerializer(serializers.Serializer):
     frame_count = serializers.IntegerField()
     frame_share_percent = serializers.FloatField()
-    conflicts_count = serializers.IntegerField(source='conflict_count')
+    conflict_count = serializers.IntegerField()
+    warning_count = serializers.IntegerField()
+    error_count = serializers.IntegerField()
 
     # This set is enough for basic characteristics, such as
     # DS_unmatched, GT_unmatched, accuracy, precision and recall

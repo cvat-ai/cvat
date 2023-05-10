@@ -13,7 +13,7 @@ export interface RawQualityReportData {
     summary?: {
         frame_count: number,
         frame_share_percent: number,
-        conflicts_count: number,
+        conflict_count: number,
         valid_count: number,
         ds_count: number,
         gt_count: number
@@ -24,7 +24,7 @@ export interface RawQualityReportData {
 export interface QualitySummary {
     frameCount: number;
     frameSharePercent: number;
-    conflictsCount: number;
+    conflictCount: number;
     validCount: number;
     dsCount: number;
     gtCount: number;
@@ -86,7 +86,7 @@ export default class QualityReport {
                     get: () => ({
                         frameCount: data.summary.frame_count,
                         frameSharePercent: data.summary.frame_share_percent,
-                        conflictsCount: data.summary.conflicts_count,
+                        conflictCount: data.summary.conflict_count,
                         validCount: data.summary.valid_count,
                         dsCount: data.summary.ds_count,
                         gtCount: data.summary.gt_count,

@@ -163,7 +163,7 @@ function JobListComponent(props: Props): JSX.Element {
             key: 'conflicts',
             className: 'cvat-job-item-conflicts',
             render: (jobInstance: Job): JSX.Element => {
-                const conflicts = jobsReports[jobInstance.id]?.summary?.conflictsCount;
+                const conflicts = jobsReports[jobInstance.id]?.summary?.conflictCount;
                 return (
                     <Text>
                         {Number.isNaN(conflicts) ? 'N/A' : conflicts}

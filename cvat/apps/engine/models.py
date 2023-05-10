@@ -1053,6 +1053,17 @@ class AnnotationConflictType(str, Enum):
     def choices(cls):
         return tuple((x.value, x.name) for x in cls)
 
+class AnnotationConflictImportance(str, Enum):
+    WARNING = 'warning'
+    ERROR = 'error'
+
+    def __str__(self) -> str:
+        return self.value
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
 class MismatchingAnnotationKind(str, Enum):
     ATTRIBUTE = 'attribute'
     LABEL = 'label'
@@ -1136,6 +1147,7 @@ class AnnotationConflict(models.Model):
         on_delete=models.CASCADE, related_name='conflicts')
     frame = models.PositiveIntegerField()
     type = models.CharField(max_length=32, choices=AnnotationConflictType.choices())
+    importance = models.CharField(max_length=32, choices=AnnotationConflictImportance.choices())
 
     annotation_ids: Sequence[AnnotationId]
 
