@@ -50,7 +50,7 @@ but removes all the other limits of the **Free** plan.
 
 ### Team plan
 
-**Member/ month**: The **Team** plan allows you to create
+**Member/month**: The **Team** plan allows you to create
 an organization and add team members who can collaborate on projects.
 The **monthly payment for the plan depends on the number of team members you've added**.
 All limits of the **Free** plan will be removed.
