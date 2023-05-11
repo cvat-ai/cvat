@@ -660,8 +660,8 @@ def _OKS(a, b, sigma=0.1, bbox=None, scale=None, visibility=None):
 
 
 @define(kw_only=True)
-class _PointsMatcher(dm.ops.PointsMatcher):
-    def distance(self, a, b):
+class _KeypointsMatcher(dm.ops.PointsMatcher):
+    def distance(self, a: dm.Points, b: dm.Points) -> float:
         a_bbox = self.instance_map[id(a)][1]
         b_bbox = self.instance_map[id(b)][1]
         if dm.ops.bbox_iou(a_bbox, b_bbox) <= 0:
@@ -1039,10 +1039,8 @@ class _DistanceComparator(dm.ops.DistanceComparator):
                 instance_ids=(iid + 1 for iid in instance_ids),
             )
 
-        a_anns = _get_segmentations(item_a)
-        b_anns = _get_segmentations(item_b)
-        a_instances, a_instance_map = _find_instances(a_anns)
-        b_instances, b_instance_map = _find_instances(b_anns)
+        a_instances, a_instance_map = _find_instances(_get_segmentations(item_a))
+        b_instances, b_instance_map = _find_instances(_get_segmentations(item_b))
 
         if self.panoptic_comparison:
             a_compiled_mask = _get_compiled_mask(
@@ -1157,35 +1155,77 @@ class _DistanceComparator(dm.ops.DistanceComparator):
     def match_points(self, item_a, item_b):
         a_points = self._get_ann_type(dm.AnnotationType.points, item_a)
         b_points = self._get_ann_type(dm.AnnotationType.points, item_b)
-        if not a_points and not b_points:
-            return [], [], [], []
 
-        instance_map = {}
-        for s in [item_a.annotations, item_b.annotations]:
-            s_instances = dm.ops.find_instances(s)
-            for instance_group in s_instances:
+        instance_map = {} # points id -> (instance group, instance bbox)
+        for source_anns in [item_a.annotations, item_b.annotations]:
+            source_instances = dm.ops.find_instances(source_anns)
+            for instance_group in source_instances:
                 instance_bbox = self._instance_bbox(instance_group)
 
                 for ann in instance_group:
-                    instance_map[id(ann)] = [instance_group, instance_bbox]
-        matcher = _PointsMatcher(instance_map=instance_map, sigma=self.oks_sigma)
+                    if ann.type == dm.AnnotationType.points:
+                        instance_map[id(ann)] = [instance_group, instance_bbox]
 
-        distance = matcher.distance
+        img_h, img_w = item_a.image.size
 
-        if self.return_distances:
-            distance, distances = self._make_memoizing_distance(distance)
+        def _distance(a: dm.Points, b: dm.Points) -> float:
+            a_bbox = instance_map[id(a)][1]
+            b_bbox = instance_map[id(b)][1]
+            a_area = a_bbox[2] * a_bbox[3]
+            b_area = b_bbox[2] * b_bbox[3]
 
-        returned_values = _match_segments(
-            a_points,
-            b_points,
-            dist_thresh=self.iou_threshold,
-            distance=distance,
+            if a_area == 0 and b_area == 0:
+                # Simple case: singular points without bbox
+                # match them in the image space
+                return _OKS(a, b, sigma=self.oks_sigma, scale=img_h * img_w)
+
+            else:
+                # Complex case: multiple points, grouped points, points with a bbox
+                # Try to align points and then return the metric
+                # match them in their bbox space
+
+                if dm.ops.bbox_iou(a_bbox, b_bbox) <= 0:
+                    return 0
+
+                bbox = dm.ops.mean_bbox([a_bbox, b_bbox])
+                scale = bbox[2] * bbox[3]
+
+                a_points = np.reshape(a.points, (-1, 2))
+                b_points = np.reshape(b.points, (-1, 2))
+
+                matches, mismatches, a_extra, b_extra = _match_segments(
+                    range(len(a_points)),
+                    range(len(b_points)),
+                    distance=lambda ai, bi: _OKS(
+                        dm.Points(a_points[ai]), dm.Points(b_points[bi]),
+                        sigma=self.oks_sigma, scale=scale
+                    ),
+                    dist_thresh=self.iou_threshold,
+                    label_matcher=lambda ai, bi: True
+                )
+
+                # the exact array is determined by the label matcher
+                # all the points will have the same match status,
+                # because there is only 1 shared label for all the points
+                matched_points = matches + mismatches
+
+                a_sorting_indices = [ai for ai, _ in matched_points]
+                a_points = a_points[a_sorting_indices]
+
+                b_sorting_indices = [bi for _, bi in matched_points]
+                b_points = b_points[b_sorting_indices]
+
+                # Compute OKS for 2 groups of points, matching points aligned
+                dists = np.linalg.norm(a_points - b_points, axis=1)
+                return np.sum(
+                    np.exp(-(dists**2) / (2 * scale * (2 * self.oks_sigma) ** 2))
+                ) / (len(matched_points) + len(a_extra) + len(b_extra))
+
+        return self._match_segments(dm.AnnotationType.points, item_a, item_b,
+            a_objs=a_points,
+            b_objs=b_points,
+            distance=_distance,
         )
-
-        if self.return_distances:
-            returned_values = returned_values + (distances, )
-
-        return returned_values
 
     def _get_skeleton_info(self, skeleton_label_id: int):
         label_cat = cast(dm.LabelCategories, self.categories[dm.AnnotationType.label])
@@ -1265,7 +1305,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
                 for ann in instance_group:
                     instance_map[id(ann)] = [instance_group, instance_bbox]
 
-        matcher = _PointsMatcher(instance_map=instance_map, sigma=self.oks_sigma)
+        matcher = _KeypointsMatcher(instance_map=instance_map, sigma=self.oks_sigma)
 
         results = self._match_segments(
             dm.AnnotationType.points, item_a, item_b,
