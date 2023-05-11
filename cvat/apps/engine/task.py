@@ -562,7 +562,7 @@ def _create_thread(
                 "but specified cloud storage doesn't linked with a manifest."
             )
 
-        if (l := len(data['server_files'])) > 0:
+        if l := len(data['server_files']):
             raise ValidationError(
                 'Using a filename_pattern is only supported with a manifest file, '
                 f'but others {l} file{"s" if l > 1 else ""} {"were" if l > 1 else "was"} found'
