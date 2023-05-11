@@ -229,7 +229,7 @@ class CloudStorageReadSerializerExtension(_CloudStorageSerializerExtension):
 class CloudStorageWriteSerializerExtension(_CloudStorageSerializerExtension):
     target_class = 'cvat.apps.engine.serializers.CloudStorageWriteSerializer'
 
-OrganizationOpenApiParameters = [
+ORGANIZATION_OPEN_API_PARAMETERS = [
     OpenApiParameter(
         name='org',
         type=str,
