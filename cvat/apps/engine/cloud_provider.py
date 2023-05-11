@@ -5,7 +5,6 @@
 
 import functools
 import json
-import multiprocessing as mp
 import os
 from abc import ABC, abstractmethod, abstractproperty
 from enum import Enum
@@ -30,6 +29,7 @@ from rest_framework.exceptions import (NotFound, PermissionDenied,
 
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.models import CloudProviderChoice, CredentialsTypeChoice
+from cvat.apps.engine.utils import get_cpu_number
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -195,8 +195,7 @@ class _CloudStorage(ABC):
     def bulk_download_to_memory(
         self,
         files: List[str],
-        threads_number: int = mp.cpu_count() // 2,
-
+        threads_number: int = min(get_cpu_number(), 4),
     ) -> List[BytesIO]:
         if threads_number > 1:
             with ThreadPool(threads_number) as pool:
@@ -209,8 +208,7 @@ class _CloudStorage(ABC):
         self,
         files: List[str],
         upload_dir: str,
-        threads_number: int = mp.cpu_count() // 2,
-
+        threads_number: int = min(get_cpu_number(), 4),
     ):
         args = zip(files, [os.path.join(upload_dir, f) for f in files])
         if threads_number > 1:

@@ -13,6 +13,7 @@ from typing import Any, Dict, Optional
 import subprocess
 import os
 import urllib.parse
+import platform
 
 from django.http.request import HttpRequest
 from django.utils import timezone
@@ -22,6 +23,7 @@ from rest_framework.reverse import reverse as _reverse
 
 from av import VideoFrame
 from PIL import Image
+from multiprocessing import cpu_count
 
 from django.core.exceptions import ValidationError
 
@@ -216,3 +218,25 @@ def get_list_view_name(model):
     return '%(model_name)s-list' % {
         'model_name': model._meta.object_name.lower()
     }
+
+
+def get_cpu_number() -> int:
+    try:
+        if platform.system() == 'Linux':
+            # we cannot use just multiprocessing.cpu_count because when it runs
+            # inside a docker container, it will just return the number of CPU cores
+            # for the physical machine the container runs on
+
+            with open("/sys/fs/cgroup/cpu/cpu.cfs_quota_us") as fp:
+                cfs_quota_us = int(fp.read())
+            with open("/sys/fs/cgroup/cpu/cpu.cfs_period_us") as fp:
+                cfs_period_us = int(fp.read())
+            container_cpu_number = cfs_quota_us // cfs_period_us
+            # For physical machine, the `cfs_quota_us` could be '-1'
+            cpu_number = cpu_count() if container_cpu_number < 1 else container_cpu_number
+        else:
+            cpu_number = cpu_count()
+    except NotImplementedError:
+        # the number of cpu cannot be determined
+        cpu_number = 1
+    return cpu_number
