@@ -977,13 +977,15 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         }
     )
     @action(detail=True, methods=['POST', 'PUT'], url_path=r's3-data')
-    def s3_data(self, request):
+    def s3_data(self, request, pk):
+        db_task = self.get_object()
+
         if request.method == 'POST':
-            if self._object.data is None:
+            if db_task.data is None:
                 db_data = Data.objects.create()
                 db_data.make_dirs()
-                self._object.data = db_data
-                self._object.save()
+                db_task.data = db_data
+                db_task.save()
             else:
                 return Response(data='Adding more data is not supported',
                                 status=status.HTTP_400_BAD_REQUEST)
@@ -1009,17 +1011,17 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             ]
             return Response(data=data, status=status.HTTP_200_OK)
         else:
-            db_data: Data = self._object.data
+            db_data: Data = db_task.data
             serializer = S3DataSerializer(db_data)
-            serializer.is_valid(raise_exception=True)
             data = serializer.data.copy()
-            if 'stop_frame' not in serializer.validated_data:
+            if data['stop_frame'] == 0:
                 data['stop_frame'] = None
             data['s3_files'] = [
-                f.file.url() for f in
+                f.file.url for f in
                 db_data.s3_files.all()
             ]
-            task.create(self._object.id, data)
+
+            task.create(db_task.id, data)
             return Response(data=serializer.data, status=status.HTTP_202_ACCEPTED)
 
     @extend_schema(methods=['POST'],
