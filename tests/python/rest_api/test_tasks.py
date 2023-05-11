@@ -745,7 +745,7 @@ class TestPostTaskData:
             "server_files": cloud_storage_content,
         }
 
-        _test_create_task(self._USERNAME, task_spec, data_spec, content_type="application/json")
+        _test_create_task(self._USERNAME, task_spec, data_spec, content_type="application/json", org=org)
 
     @pytest.mark.with_external_services
     @pytest.mark.parametrize(
@@ -824,7 +824,6 @@ class TestPostTaskData:
             ("abc_manifest.jsonl", "[e-z]*.jpeg", False, 0),
         ],
     )
-    @pytest.mark.parametrize("org", [""])
     def test_create_task_with_file_pattern(
         self,
         cloud_storage_id,
@@ -832,7 +831,6 @@ class TestPostTaskData:
         filename_pattern,
         sub_dir,
         task_size,
-        org,
         cloud_storages,
         request,
     ):
@@ -1189,11 +1187,11 @@ class TestWorkWithTask:
 
     @pytest.mark.with_external_services
     @pytest.mark.parametrize(
-        "cloud_storage_id, manifest, org",
-        [(1, "manifest.jsonl", "")],  # public bucket
+        "cloud_storage_id, manifest",
+        [(1, "manifest.jsonl")],  # public bucket
     )
     def test_work_with_task_containing_non_stable_cloud_storage_files(
-        self, cloud_storage_id, manifest, org, cloud_storages, request
+        self, cloud_storage_id, manifest, cloud_storages, request
     ):
         image_name = "image_case_65_1.png"
         cloud_storage_content = [image_name, manifest]
