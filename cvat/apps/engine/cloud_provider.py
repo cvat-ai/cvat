@@ -196,13 +196,15 @@ class _CloudStorage(ABC):
         self,
         files: List[str],
         threads_number: int = min(get_cpu_number(), 4),
+        _use_optimal_downloading: bool = True,
     ) -> List[BytesIO]:
+        func = self.optimally_image_download if _use_optimal_downloading else self.download_fileobj
         if threads_number > 1:
             with ThreadPool(threads_number) as pool:
-                return pool.map(self.download_fileobj, files)
+                return pool.map(func, files)
         else:
             slogger.glob.warning('Download files to memory in series in one thread.')
-            return [self.download_fileobj(f) for f in files]
+            return [func(f) for f in files]
 
     def bulk_download_to_dir(
         self,
