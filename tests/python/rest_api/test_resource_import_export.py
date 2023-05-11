@@ -270,15 +270,15 @@ class TestImportResourceFromS3(_S3ResourceTest):
     @pytest.mark.parametrize(
         "obj, resource, expected_status",
         [
-            ("projects", "dataset", HTTPStatus.FORBIDDEN),
-            ("tasks", "annotations", HTTPStatus.FORBIDDEN),
-            ("jobs", "annotations", HTTPStatus.FORBIDDEN),
-            ("tasks", "backup", HTTPStatus.FORBIDDEN),
-            ("projects", "backup", HTTPStatus.FORBIDDEN),
+            ("projects", "dataset"),
+            ("tasks", "annotations"),
+            ("jobs", "annotations"),
+            ("tasks", "backup"),
+            ("projects", "backup"),
         ],
     )
     def test_user_cannot_import_from_cloud_storage_with_specific_location_without_access(
-        self, storage_id, regular_lonely_user, obj, resource, expected_status, cloud_storages
+        self, storage_id, regular_lonely_user, obj, resource, cloud_storages
     ):
         user = regular_lonely_user
 
@@ -329,6 +329,6 @@ class TestImportResourceFromS3(_S3ResourceTest):
             obj_id,
             obj,
             user=user,
-            _expect_status=expected_status,
+            _expect_status=HTTPStatus.FORBIDDEN,
             **kwargs,
         )
