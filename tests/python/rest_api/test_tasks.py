@@ -745,8 +745,9 @@ class TestPostTaskData:
             "server_files": cloud_storage_content,
         }
 
+        kwargs = {"org": org} if org else {}
         _test_create_task(
-            self._USERNAME, task_spec, data_spec, content_type="application/json", org=org
+            self._USERNAME, task_spec, data_spec, content_type="application/json", **kwargs
         )
 
     @pytest.mark.with_external_services
