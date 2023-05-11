@@ -245,6 +245,7 @@ def test_organization_contexts(admin_user: str):
         client.projects.retrieve(personal_project.id)
 
 
+@pytest.mark.usefixtures("restore_db_per_function")
 def test_organization_filtering(regular_lonely_user: str, fxt_image_file):
     with make_client(BASE_URL, credentials=(regular_lonely_user, USER_PASS)) as client:
         org = client.organizations.create(models.OrganizationWriteRequest(slug="testorg"))
