@@ -9,7 +9,7 @@ from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 
 from .models import (Annotation, CloudStorage, Data, Job, Profile, Project,
-    StatusChoice, Task)
+    StatusChoice, Task, QualitySettings)
 
 from cvat.apps.engine import quality_control as qc
 
@@ -80,21 +80,36 @@ def __delete_cloudstorage_handler(instance, **kwargs):
     shutil.rmtree(instance.get_storage_dirname(), ignore_errors=True)
 
 
-# TODO: handle nested field updates (e.g. labels, annotations, import, export, etc.)
 @receiver(post_save, sender=Job,
     dispatch_uid=__name__ + ".save_job-update_quality_metrics")
 @receiver(post_save, sender=Task,
     dispatch_uid=__name__ + ".save_task-update_quality_metrics")
+@receiver(post_save, sender=Project,
+    dispatch_uid=__name__ + ".save_project-update_quality_metrics")
 @receiver(post_save, sender=Annotation,
     dispatch_uid=__name__ + ".save_annotation-update_quality_metrics")
 def __save_job__update_quality_metrics(instance, created, **kwargs):
-    if isinstance(instance, Task):
-        task = instance
+    tasks = []
+
+    if isinstance(instance, Project):
+        tasks += list(instance.tasks.all())
+    elif isinstance(instance, Task):
+        tasks.append(instance)
     elif isinstance(instance, Job):
-        task = instance.segment.task
+        tasks.append(instance.segment.task)
     elif isinstance(instance, Annotation):
-        task = instance.job.segment.task
+        tasks.append(instance.job.segment.task)
     else:
         assert False
 
-    qc.QueueJobManager().schedule_quality_check_job(task)
+    for task in tasks:
+        qc.QueueJobManager().schedule_quality_check_job(task)
+
+
+@receiver(post_save, sender=Task,
+    dispatch_uid=__name__ + ".save_task-initialize_quality_settings")
+def __save_task__initialize_quality_settings(instance, created, **kwargs):
+    # Initializes default quality settings for the task
+    # this is done here to make the components decoupled
+    if created:
+        QualitySettings.objects.get_or_create(task=instance)
