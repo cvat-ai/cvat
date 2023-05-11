@@ -317,20 +317,19 @@ FrameData.prototype.data.implementation = async function (onServerRequest) {
 
 function getFrameMeta(jobID, frame): FramesMetaData['frames'][0] {
     const { meta, mode, startFrame } = frameDataCache[jobID];
-    let size = null;
+    let frame_meta = null;
     if (mode === 'interpolation') {
-        [size] = meta.frames;
+        [frame_meta] = meta.frames;
     } else if (mode === 'annotation') {
-        if (frame >= meta.size) {
-            return null;
-            // throw new ArgumentError(`Meta information about frame ${frame} can't be received from the server`);
+        if (frame > meta.stop_frame) {
+            throw new ArgumentError(`Meta information about frame ${frame} can't be received from the server`);
         }
-        size = meta.frames[frame - startFrame];
+        frame_meta = meta.frames[frame - startFrame];
     } else {
         throw new DataError(`Invalid mode is specified ${mode}`);
     }
 
-    return size;
+    return frame_meta;
 }
 
 class FrameBuffer {
@@ -685,7 +684,6 @@ export async function getFrame(
             nextChunkRequest: null,
         };
 
-        // relevant only for video chunks
         const frameMeta = getFrameMeta(jobID, frame);
         frameDataCache[jobID].provider.setRenderSize(frameMeta.width, frameMeta.height);
     }
