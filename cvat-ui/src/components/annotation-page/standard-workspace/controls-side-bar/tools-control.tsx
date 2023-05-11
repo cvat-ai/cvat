@@ -886,6 +886,11 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             const hide = message.loading('OpenCV client initialization..', 0);
             try {
                 await openCVWrapper.initialize(() => {});
+            } catch (error: any) {
+                notification.error({
+                    message: 'Could not initialize OpenCV',
+                    description: error.toString(),
+                });
             } finally {
                 hide();
             }
