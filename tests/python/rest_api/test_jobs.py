@@ -711,7 +711,7 @@ class TestGetJobPreview:
 
     def _test_get_job_preview_403(self, username, jid, **kwargs):
         with make_api_client(username) as client:
-            (_, response) = client.jobs_api.retrieve(
+            (_, response) = client.jobs_api.retrieve_preview(
                 jid, **kwargs, _check_status=False, _parse_response=False
             )
             assert response.status == HTTPStatus.FORBIDDEN
