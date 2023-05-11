@@ -5,11 +5,15 @@
 import { PluginError } from './exceptions';
 
 const plugins = [];
+
+export interface APIWrapperEnterOptions {
+    preventMethodCall?: boolean;
+}
+
 export default class PluginRegistry {
     static async apiWrapper(wrappedFunc, ...args) {
-        // I have to optimize the wrapper
         const pluginList = await PluginRegistry.list();
-        const aggregatedOptions = {
+        const aggregatedOptions: APIWrapperEnterOptions = {
             preventMethodCall: false,
         };
 
@@ -17,7 +21,8 @@ export default class PluginRegistry {
             const pluginDecorators = plugin.functions.filter((obj) => obj.callback === wrappedFunc)[0];
             if (pluginDecorators && pluginDecorators.enter) {
                 try {
-                    const options = await pluginDecorators.enter.call(this, plugin, ...args);
+                    const options: APIWrapperEnterOptions | undefined = await pluginDecorators
+                        .enter.call(this, plugin, ...args);
                     if (options?.preventMethodCall) {
                         aggregatedOptions.preventMethodCall = true;
                     }

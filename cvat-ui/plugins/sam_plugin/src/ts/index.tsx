@@ -2,9 +2,9 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { PluginEntryPoint, ComponentBuilder } from 'components/plugins-entrypoint';
 import { InferenceSession, Tensor } from 'onnxruntime-web';
 import { LRUCache } from 'lru-cache';
+import { PluginEntryPoint, APIWrapperEnterOptions, ComponentBuilder } from 'components/plugins-entrypoint';
 
 interface SAMPlugin {
     name: string;
@@ -17,7 +17,7 @@ interface SAMPlugin {
                     taskID: number,
                     model: any,
                     args: any,
-                ) => Promise<null | { preventMethodCall: boolean }>;
+                ) => Promise<null | APIWrapperEnterOptions>;
                 leave: (
                     plugin: SAMPlugin,
                     result: any,
@@ -131,7 +131,7 @@ const samPlugin: SAMPlugin = {
                     plugin: SAMPlugin,
                     taskID: number,
                     model: any, { frame }: { frame: number },
-                ): Promise<null | { preventMethodCall: boolean }> {
+                ): Promise<null | APIWrapperEnterOptions> {
                     if (model.id === plugin.data.modelID) {
                         if (!plugin.data.session) {
                             throw new Error('SAM plugin is not ready, session was not initialized');
