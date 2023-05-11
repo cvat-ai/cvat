@@ -60,7 +60,6 @@ export {
     ModelReturnType,
     DimensionType,
     Dumper,
-    APIWrapperEnterOptions,
 };
 
 export type {
@@ -68,4 +67,5 @@ export type {
     SerializedLabel,
     StorageData,
     ModelProvider,
+    APIWrapperEnterOptions,
 };

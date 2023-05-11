@@ -28,7 +28,7 @@ export type ComponentBuilder = ({
 };
 
 export type PluginEntryPoint = (componentBuilder: ComponentBuilder) => void;
-export {
+export type {
     APIWrapperEnterOptions,
 };
 
