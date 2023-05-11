@@ -15,8 +15,7 @@ from unittest import mock
 from django.conf import settings
 from rest_framework import mixins, status
 from rest_framework.response import Response
-from tempfile import mkdtemp
-from pathlib import Path
+from tempfile import NamedTemporaryFile
 
 from cvat.apps.engine.location import StorageType, get_location_configuration
 from cvat.apps.engine.models import Location
@@ -227,25 +226,24 @@ class UploadMixin:
 
             import_type = request.path.strip('/').split('/')[-1]
             if import_type == 'backup':
-                # we need to create unique temp dir here because
+                # we need to create unique temp file here because
                 # users can try to import backups with the same name at the same time
-                unique_tmp_dir = Path(mkdtemp(prefix='cvat-', suffix='.backup', dir=self.get_upload_dir()))
-                filename = os.path.join(unique_tmp_dir.name, filename)
+                with NamedTemporaryFile(prefix=f'cvat-backup-{filename}-by-{request.user}', suffix='.zip', dir=self.get_upload_dir()) as tmp_file:
+                    filename = tmp_file.name
                 metadata['filename'] = filename
             file_path = os.path.join(self.get_upload_dir(), filename)
-            file_exists = os.path.lexists(file_path)
+            file_exists = os.path.lexists(file_path) and import_type != 'backup'
 
             if file_exists:
                 # check whether the rq_job is in progress or has been finished/failed
-                if import_type != 'backup':
-                    object_class_name = self._object.__class__.__name__.lower()
-                    template = get_import_rq_id(object_class_name, self._object.pk, import_type, request.user)
-                    queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
-                    finished_job_ids = queue.finished_job_registry.get_job_ids()
-                    failed_job_ids = queue.failed_job_registry.get_job_ids()
-                    if template in finished_job_ids or template in failed_job_ids:
-                        os.remove(file_path)
-                        file_exists = False
+                object_class_name = self._object.__class__.__name__.lower()
+                template = get_import_rq_id(object_class_name, self._object.pk, import_type, request.user)
+                queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
+                finished_job_ids = queue.finished_job_registry.get_job_ids()
+                failed_job_ids = queue.failed_job_registry.get_job_ids()
+                if template in finished_job_ids or template in failed_job_ids:
+                    os.remove(file_path)
+                    file_exists = False
 
             if file_exists:
                 return self._tus_response(status=status.HTTP_409_CONFLICT,

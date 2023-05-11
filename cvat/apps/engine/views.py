@@ -40,7 +40,6 @@ from django_sendfile import sendfile
 
 import cvat.apps.dataset_manager as dm
 import cvat.apps.dataset_manager.views  # pylint: disable=unused-import
-from cvat.apps.dataset_manager.views import IMPORT_CACHE_FAILED_TTL, IMPORT_CACHE_SUCCESS_TTL
 from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
 from cvat.apps.dataset_manager.bindings import CvatImportError
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
@@ -67,7 +66,7 @@ from cvat.apps.engine.view_utils import get_cloud_storage_for_import_or_export
 
 from utils.dataset_manifest import ImageManifestManager
 from cvat.apps.engine.utils import (
-    av_scan_paths, process_failed_job, configure_dependent_job, parse_exception_message, get_rq_job_meta, get_import_rq_id
+    av_scan_paths, process_failed_job, configure_dependent_job, parse_exception_message, get_rq_job_meta, get_import_rq_id, with_clean_up_after
 )
 from cvat.apps.engine import backup
 from cvat.apps.engine.mixins import PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
@@ -327,7 +326,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 request=request,
                 db_obj=self._object,
                 import_func=_import_project_dataset,
-                rq_func=dm.project.import_dataset_as_project,
+                rq_func=dm.project.import_dataset_as_project_with_cleaning_up,
                 rq_id_template=self.IMPORT_RQ_ID_TEMPLATE
             )
         else:
@@ -337,6 +336,13 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 rq_id = request.query_params.get('rq_id')
                 if not rq_id:
                     return Response('The rq_id param should be specified in the query parameters', status=status.HTTP_400_BAD_REQUEST)
+
+                # check that used has access to current rq_job
+                # We should not return any status of job including "404 not found" for user that has no access for this rq_job
+
+                if self.IMPORT_RQ_ID_TEMPLATE.format(pk, request.user) != rq_id:
+                    return Response(status=status.HTTP_403_FORBIDDEN)
+
                 rq_job = queue.fetch_job(rq_id)
                 if rq_job is None:
                     return Response(status=status.HTTP_404_NOT_FOUND)
@@ -394,7 +400,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 request=request,
                 filename=uploaded_file,
                 rq_id_template=self.IMPORT_RQ_ID_TEMPLATE,
-                rq_func=dm.project.import_dataset_as_project,
+                rq_func=dm.project.import_dataset_as_project_with_cleaning_up,
                 db_obj=self._object,
                 format_name=format_name,
                 conv_mask_to_poly=conv_mask_to_poly
@@ -2224,10 +2230,16 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
     elif not format_desc.ENABLED:
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    rq_id = request.query_params.get('rq_id', rq_id_template.format(db_obj.pk, request.user))
+    rq_id = request.query_params.get('rq_id')
+    rq_id_should_be_checked = bool(rq_id)
+    if not rq_id:
+        rq_id = rq_id_template.format(db_obj.pk, request.user)
 
     queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
     rq_job = queue.fetch_job(rq_id)
+
+    if rq_id_should_be_checked and rq_id_template.format(db_obj.pk, request.user) != rq_id:
+        return Response(status=status.HTTP_403_FORBIDDEN)
 
     if _is_there_past_non_deleted_job():
         rq_job.delete()
@@ -2272,8 +2284,8 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
                     filename=filename,
                     key=key,
                     request=request,
-                    result_ttl=IMPORT_CACHE_SUCCESS_TTL,
-                    failure_ttl=IMPORT_CACHE_FAILED_TTL
+                    result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL,
+                    failure_ttl=settings.IMPORT_CACHE_FAILED_TTL
                 )
 
         av_scan_paths(filename)
@@ -2281,15 +2293,18 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
             'tmp_file': filename,
         }
         rq_job = queue.enqueue_call(
-            func=rq_func,
-            args=(filename, db_obj.pk, format_name, conv_mask_to_poly),
+            func=with_clean_up_after,
+            args=(rq_func, filename, db_obj.pk, format_name, conv_mask_to_poly),
             job_id=rq_id,
             depends_on=dependent_job,
             meta={**meta, **get_rq_job_meta(request=request, db_obj=db_obj)},
-            result_ttl=IMPORT_CACHE_SUCCESS_TTL,
-            failure_ttl=IMPORT_CACHE_FAILED_TTL
+            result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL,
+            failure_ttl=settings.IMPORT_CACHE_FAILED_TTL
         )
-        return Response({'rq_id': rq_id}, status=status.HTTP_202_ACCEPTED)
+        serializer = RqIdSerializer(data={'rq_id': rq_id})
+        serializer.is_valid(raise_exception=True)
+
+        return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
     else:
         if rq_job.is_finished:
             rq_job.delete()
@@ -2304,7 +2319,7 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
                 exc_info = exc_info.replace(import_error_prefix + ': ', '')
                 return Response(data=exc_info,
                     status=status.HTTP_400_BAD_REQUEST)
-            elif "datumaro.components.errors.DatasetNotFoundError" in exc_info:
+            elif any([i in exc_info for i in ("DatumaroError", "DatasetImportError", "DatasetNotFoundError")]):
                 return Response(data="The uploaded annotations is incorrect", status=status.HTTP_400_BAD_REQUEST)
             else:
                 return Response(data=exc_info,
@@ -2464,8 +2479,8 @@ def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_nam
                 filename=filename,
                 key=key,
                 request=request,
-                result_ttl=IMPORT_CACHE_SUCCESS_TTL,
-                failure_ttl=IMPORT_CACHE_FAILED_TTL
+                result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL,
+                failure_ttl=settings.IMPORT_CACHE_FAILED_TTL
             )
 
         rq_job = queue.enqueue_call(
@@ -2477,10 +2492,13 @@ def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_nam
                 **get_rq_job_meta(request=request, db_obj=db_obj),
             },
             depends_on=dependent_job,
-            result_ttl=IMPORT_CACHE_SUCCESS_TTL,
-            failure_ttl=IMPORT_CACHE_FAILED_TTL
+            result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL,
+            failure_ttl=settings.IMPORT_CACHE_FAILED_TTL
         )
     else:
         return Response(status=status.HTTP_409_CONFLICT, data='Import job already exists')
 
-    return Response({'rq_id': rq_id}, status=status.HTTP_202_ACCEPTED)
+    serializer = RqIdSerializer(data={'rq_id': rq_id})
+    serializer.is_valid(raise_exception=True)
+
+    return Response(serializer.data, status=status.HTTP_202_ACCEPTED)

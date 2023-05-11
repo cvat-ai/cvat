@@ -90,7 +90,7 @@ class _MyTusUploader(_TusUploader):
         headers["upload-length"] = str(self.file_size)
         headers["upload-metadata"] = ",".join(self.encode_metadata())
         resp = self._api_client.rest_client.POST(self.client.url, headers=headers)
-        self.metadata["real_filename"] = resp.headers.get("Upload-Filename")
+        self.real_filename = resp.headers.get("Upload-Filename")
         url = resp.headers.get("location")
         if url is None:
             msg = "Attempt to retrieve create file url with status {}".format(resp.status_code)
@@ -181,10 +181,10 @@ class Uploader:
         assert meta["filename"]
 
         self._tus_start_upload(url, query_params=query_params)
-        metadata = self._upload_file_data_with_tus(
+        real_filename = self._upload_file_data_with_tus(
             url=url, filename=filename, meta=meta, pbar=pbar, logger=logger
         )
-        query_params["filename"] = metadata["real_filename"]
+        query_params["filename"] = real_filename
         return self._tus_finish_upload(url, query_params=query_params, fields=fields)
 
     def _wait_for_completion(
@@ -219,7 +219,7 @@ class Uploader:
 
         return _MyTusUploader(client=client, api_client=api_client, **kwargs)
 
-    def _upload_file_data_with_tus(self, url, filename, *, meta=None, pbar=None, logger=None):
+    def _upload_file_data_with_tus(self, url, filename, *, meta=None, pbar=None, logger=None) -> str:
         file_size = filename.stat().st_size
         if pbar is None:
             pbar = NullProgressReporter()
@@ -236,7 +236,7 @@ class Uploader:
                 log_func=logger,
             )
             tus_uploader.upload()
-            return tus_uploader.metadata
+            return tus_uploader.real_filename
 
     def _tus_start_upload(self, url, *, query_params=None):
         response = self._client.api_client.rest_client.POST(

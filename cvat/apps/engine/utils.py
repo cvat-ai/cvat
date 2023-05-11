@@ -9,6 +9,7 @@ import hashlib
 import importlib
 import sys
 import traceback
+from contextlib import suppress
 from typing import Any, Dict, Optional, Callable
 import subprocess
 import os
@@ -234,5 +235,13 @@ def get_list_view_name(model):
 
 
 def get_import_rq_id(resource_type: str, resource_id: int, subresource_type: str, user: str) -> str:
-    # import:<task|project|job>-<id|uuid>-<annotations|dataset|backup>-by-<user>
-    return f"import:{resource_type}-{resource_id}-{subresource_type}-by-{user}"
+    # import:<task|project|job> <id|uuid> <annotations|dataset|backup> by <user>
+    return f"import:{resource_type} {resource_id} {subresource_type} by {user}"
+
+def with_clean_up_after(func, filename, *args, **kwargs):
+    try:
+        result = func(filename, *args, **kwargs)
+    finally:
+        with suppress(FileNotFoundError):
+            os.remove(filename)
+    return result

@@ -18,7 +18,6 @@ from cvat.apps.dataset_manager.task import TaskAnnotation
 from .annotation import AnnotationIR
 from .bindings import ProjectData, load_dataset_data
 from .formats.registry import make_exporter, make_importer
-from .util import remove_resources
 
 def export_project(project_id, dst_file, format_name,
         server_url=None, save_images=False):
@@ -161,7 +160,6 @@ class ProjectAnnotationAndData:
         raise NotImplementedError()
 
 @transaction.atomic
-@remove_resources
 def import_dataset_as_project(src_file, project_id, format_name, conv_mask_to_poly):
     rq_job = rq.get_current_job()
     rq_job.meta['status'] = 'Dataset import has been started...'

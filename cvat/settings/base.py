@@ -21,6 +21,7 @@ import os
 import shutil
 import subprocess
 import sys
+from datetime import timedelta
 from distutils.util import strtobool
 from enum import Enum
 
@@ -659,3 +660,6 @@ DATABASES = {
         'PORT': os.getenv('CVAT_POSTGRES_PORT', 5432),
     }
 }
+
+IMPORT_CACHE_FAILED_TTL = timedelta(hours=10).total_seconds()
+IMPORT_CACHE_SUCCESS_TTL = timedelta(hours=1).total_seconds()
