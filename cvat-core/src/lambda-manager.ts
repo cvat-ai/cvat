@@ -126,7 +126,7 @@ class LambdaManager {
 
                 if (response.status === RQStatus.QUEUED || response.status === RQStatus.STARTED) {
                     onUpdate(response.status, response.progress || 0);
-                    this.listening[requestID].timeout = setTimeout(timeoutCallback, 2000);
+                    this.listening[requestID].timeout = setTimeout(timeoutCallback, 20000);
                 } else {
                     if (response.status === RQStatus.FINISHED) {
                         onUpdate(response.status, response.progress || 100);
@@ -148,7 +148,7 @@ class LambdaManager {
         this.listening[requestID] = {
             onUpdate,
             functionID,
-            timeout: setTimeout(timeoutCallback, 2000),
+            timeout: setTimeout(timeoutCallback, 20000),
         };
     }
 
