@@ -268,7 +268,7 @@ class TestImportResourceFromS3(_S3ResourceTest):
 
     @pytest.mark.parametrize("storage_id", [3])
     @pytest.mark.parametrize(
-        "obj, resource, expected_status",
+        "obj, resource",
         [
             ("projects", "dataset"),
             ("tasks", "annotations"),
