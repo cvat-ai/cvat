@@ -85,7 +85,7 @@
             "justMyCode": false,
         },
         {
-            "name": "REST API tests: Attach to RQ quality rerports worker",
+            "name": "REST API tests: Attach to RQ quality reports worker",
             "type": "python",
             "request": "attach",
             "connect": {
