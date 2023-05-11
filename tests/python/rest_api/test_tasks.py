@@ -745,7 +745,9 @@ class TestPostTaskData:
             "server_files": cloud_storage_content,
         }
 
-        _test_create_task(self._USERNAME, task_spec, data_spec, content_type="application/json", org=org)
+        _test_create_task(
+            self._USERNAME, task_spec, data_spec, content_type="application/json", org=org
+        )
 
     @pytest.mark.with_external_services
     @pytest.mark.parametrize(
