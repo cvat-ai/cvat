@@ -29,6 +29,8 @@ interface SAMPlugin {
         };
     };
     data: {
+        core: any;
+        task: any;
         modelID: string;
         modelURL: string;
         embeddings: LRUCache<string, Tensor>;
@@ -58,13 +60,11 @@ interface ClickType {
     y: number,
 }
 
-function getModelScale(): { height: number, width: number, samScale: number } {
+function getModelScale(w: number, h: number): number {
     // Input images to SAM must be resized so the longest side is 1024
     const LONG_SIDE_LENGTH = 1024;
-    const w = +window.document.getElementsByClassName('cvat_masks_canvas_wrapper')[0].style.width.slice(0, -2);
-    const h = +window.document.getElementsByClassName('cvat_masks_canvas_wrapper')[0].style.height.slice(0, -2);
     const samScale = LONG_SIDE_LENGTH / Math.max(h, w);
-    return { height: h, width: w, samScale };
+    return samScale;
 }
 
 function modelData(
@@ -73,7 +73,7 @@ function modelData(
     }: {
         clicks: ClickType[];
         tensor: Tensor;
-        modelScale: ReturnType<typeof getModelScale>;
+        modelScale: { height: number; width: number; samScale: number };
         maskInput: Tensor | null;
     },
 ): ONNXInput {
@@ -159,6 +159,10 @@ const samPlugin: SAMPlugin = {
                         mask: number[][];
                         bounds: [number, number, number, number];
                     }> {
+                    if (!plugin.data.task || plugin.data.task.id !== taskID) {
+                        [plugin.data.task] = await plugin.data.core.tasks.get({ id: taskID });
+                    }
+                    const { height: imHeight, width: imWidth } = await plugin.data.task.frames.get(frame);
                     const key = `${taskID}_${frame}`;
                     if (model.id !== plugin.data.modelID) {
                         return result;
@@ -174,7 +178,12 @@ const samPlugin: SAMPlugin = {
                         plugin.data.embeddings.set(key, new Tensor('float32', float32Arr, [1, 256, 64, 64]));
                     }
 
-                    const modelScale = getModelScale();
+                    const modelScale = {
+                        width: imWidth,
+                        height: imHeight,
+                        samScale: getModelScale(imWidth, imHeight),
+                    };
+
                     const composedClicks = [...pos_points, ...neg_points].map(([x, y], index) => ({
                         clickType: index < pos_points.length ? 1 : 0 as 0 | 1 | -1,
                         height: null,
@@ -228,6 +237,8 @@ const samPlugin: SAMPlugin = {
         },
     },
     data: {
+        core: null,
+        task: null,
         modelID: 'pth-facebookresearch-sam-vit-h',
         modelURL: '/api/lambda/sam_detector.onnx',
         embeddings: new LRUCache({
@@ -250,6 +261,7 @@ const samPlugin: SAMPlugin = {
 };
 
 const SAMModelPlugin: ComponentBuilder = ({ core }) => {
+    samPlugin.data.core = core;
     InferenceSession.create(samPlugin.data.modelURL).then((session) => {
         samPlugin.data.session = session;
         core.plugins.register(samPlugin);
