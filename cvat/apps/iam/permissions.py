@@ -18,7 +18,7 @@ from rest_framework.exceptions import ValidationError, PermissionDenied
 from rest_framework.permissions import BasePermission
 
 from cvat.apps.organizations.models import Membership, Organization
-from cvat.apps.engine.models import AnnotationConflict, CloudStorage, Label, Project, QualityReport, Task, Job, Issue
+from cvat.apps.engine.models import AnnotationConflict, CloudStorage, Label, Project, QualityReport, QualitySettings, Task, Job, Issue
 from cvat.apps.webhooks.models import WebhookTypeChoice
 from cvat.utils.http import make_requests_session
 
@@ -1610,7 +1610,7 @@ class QualityReportPermission(OpenPolicyAgentPermission):
         Scopes = __class__.Scopes
 
         permissions = []
-        if view.basename == 'quality_report':
+        if view.basename == 'quality_reports':
             for scope in cls.get_scopes(request, view, obj):
                 if scope == Scopes.VIEW:
                     obj = cast(QualityReport, obj)
@@ -1668,6 +1668,7 @@ class QualityReportPermission(OpenPolicyAgentPermission):
 
         return data
 
+
 class AnnotationConflictPermission(OpenPolicyAgentPermission):
     obj: Optional[AnnotationConflict]
 
@@ -1679,7 +1680,7 @@ class AnnotationConflictPermission(OpenPolicyAgentPermission):
         Scopes = __class__.Scopes
 
         permissions = []
-        if view.basename == 'conflict':
+        if view.basename == 'annotation_conflicts':
             for scope in cls.get_scopes(request, view, obj):
                 if scope == Scopes.LIST and isinstance(obj, Task):
                     permissions.append(TaskPermission.create_base_perm(request, view,
@@ -1702,6 +1703,74 @@ class AnnotationConflictPermission(OpenPolicyAgentPermission):
 
     def get_resource(self):
         return None
+
+
+class QualitySettingPermission(OpenPolicyAgentPermission):
+    obj: Optional[QualitySettings]
+
+    class Scopes(StrEnum):
+        LIST = 'list'
+        VIEW = 'view'
+
+    @classmethod
+    def create(cls, request, view, obj):
+        Scopes = __class__.Scopes
+
+        permissions = []
+        if view.basename == 'quality_settings':
+            for scope in cls.get_scopes(request, view, obj):
+                if scope == Scopes.VIEW:
+                    obj = cast(QualitySettings, obj)
+
+                    # Access rights are the same as in the owning task
+                    # This component doesn't define its own rules in this case
+                    owning_perm = TaskPermission.create_base_perm(request, view,
+                        scope=TaskPermission.Scopes.VIEW, obj=obj.task)
+                    permissions.append(owning_perm)
+                else:
+                    permissions.append(cls.create_base_perm(request, view, scope, obj))
+
+        return permissions
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.url = settings.IAM_OPA_DATA_URL + '/quality_reports/allow'
+
+    @staticmethod
+    def get_scopes(request, view, obj):
+        Scopes = __class__.Scopes
+        return [{
+            'list': Scopes.LIST,
+            'retrieve': Scopes.VIEW,
+            'data': Scopes.VIEW,
+        }.get(view.action, None)]
+
+    def get_resource(self):
+        data = None
+
+        if self.obj:
+            task = self.obj.task
+            if task.project:
+                organization = task.project.organization
+            else:
+                organization = task.organization
+
+            data = {
+                "id": self.obj.id,
+                'organization': {
+                    "id": getattr(organization, 'id', None)
+                },
+                "task": {
+                    "owner": { "id": getattr(task.owner, 'id', None) },
+                    "assignee": { "id": getattr(task.assignee, 'id', None) }
+                } if task else None,
+                "project": {
+                    "owner": { "id": getattr(task.project.owner, 'id', None) },
+                    "assignee": { "id": getattr(task.project.assignee, 'id', None) }
+                } if task.project else None,
+            }
+
+        return data
 
 
 class PolicyEnforcer(BasePermission):
