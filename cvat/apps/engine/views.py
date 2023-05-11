@@ -2115,7 +2115,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return Response(
                 data=manifest_files,
                 content_type='text/plain',
-                headers={'Deprecation': datetime(2023, 7, 1, tzinfo=timezone.get_current_timezone()).strftime('%a, %d %B %Y %H:%M:%S %Z')}
+                headers={'Deprecation': 'true'}
             )
 
         except CloudStorageModel.DoesNotExist:

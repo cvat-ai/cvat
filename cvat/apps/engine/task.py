@@ -338,6 +338,7 @@ def _validate_manifest(
                 raise ValidationError("Manifest file can be uploaded only if 'Use cache' option is also selected")
             return manifest_file
         raise ValidationError('Invalid manifest was uploaded')
+    return None
 
 def _validate_url(url):
     def _validate_ip_address(ip_address):
