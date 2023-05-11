@@ -7,7 +7,7 @@ import { Dispatch, AnyAction } from 'redux';
 import { useDispatch } from 'react-redux';
 
 import { PluginsActionTypes, pluginActions } from 'actions/plugins-actions';
-import { getCore } from 'cvat-core-wrapper';
+import { getCore, APIWrapperEnterOptions } from 'cvat-core-wrapper';
 
 const core = getCore();
 
@@ -28,6 +28,9 @@ export type ComponentBuilder = ({
 };
 
 export type PluginEntryPoint = (componentBuilder: ComponentBuilder) => void;
+export type {
+    APIWrapperEnterOptions,
+};
 
 function PluginEntrypoint(): null {
     const dispatch = useDispatch();
