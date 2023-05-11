@@ -4,11 +4,13 @@
 
 from django_filters.rest_framework import DjangoFilterBackend
 
+
 class OrganizationFilterBackend(DjangoFilterBackend):
     organization_slug = 'org'
     organization_slug_description = 'Organization unique slug'
     organization_id = 'org_id'
     organization_id_description = 'Organization identifier'
+    organization_slug_header = 'X-Organization'
 
     def filter_queryset(self, request, queryset, view):
         # Filter works only for "list" requests and allows to return
@@ -18,12 +20,16 @@ class OrganizationFilterBackend(DjangoFilterBackend):
             return queryset
 
         visibility = None
-        org = request.iam_context["organization"]
+        org = request.iam_context['organization']
 
         if org:
             visibility = {'organization': org.id}
 
-        elif not org and ('org' in request.query_params or 'org_id' in request.query_params):
+        elif not org and (
+            self.organization_slug in request.query_params
+            or self.organization_id in request.query_params
+            or self.organization_slug_header in request.headers
+        ):
             visibility = {'organization': None}
 
         if visibility:
@@ -50,7 +56,7 @@ class OrganizationFilterBackend(DjangoFilterBackend):
                 'schema': {'type': 'integer'},
             },
             {
-                'name': 'X-Organization',
+                'name': self.organization_slug_header,
                 'in': 'header',
                 'description': self.organization_slug_description,
                 'schema': {'type': 'string'},
