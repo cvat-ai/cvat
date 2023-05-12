@@ -235,8 +235,8 @@ def get_list_view_name(model):
 
 
 def get_import_rq_id(resource_type: str, resource_id: int, subresource_type: str, user: str) -> str:
-    # import:<task|project|job> <id|uuid> <annotations|dataset|backup> by <user>
-    return f"import:{resource_type} {resource_id} {subresource_type} by {user}"
+    # import:<task|project|job>-<id|uuid>-<annotations|dataset|backup>-by-<user>
+    return f"import:{resource_type}-{resource_id}-{subresource_type}-by-{user}"
 
 def import_resource_with_clean_up_after(
     func: Union[Callable[[str, int, int], int], Callable[[str, int, str, bool], None]],
