@@ -15,7 +15,7 @@ import {
 } from 'server-response-types';
 import { Storage } from './storage';
 import { StorageLocation, WebhookSourceType } from './enums';
-import { isEmail } from './common';
+import { isEmail, isResourceURL } from './common';
 import config from './config';
 import DownloadWorker from './download.worker';
 import { ServerError } from './exceptions';
@@ -266,7 +266,7 @@ Axios.interceptors.request.use((reqConfig) => {
         return reqConfig;
     }
 
-    if (/\/([0-9]+)$/.test(reqConfig.url)) {
+    if (isResourceURL(reqConfig.url)) {
         return reqConfig;
     }
 
@@ -275,7 +275,7 @@ Axios.interceptors.request.use((reqConfig) => {
 });
 
 Axios.interceptors.response.use((response) => {
-    if (/\/([0-9]+)$/.test(response.config.url)) {
+    if (isResourceURL(response.config.url)) {
         const newOrg = response.data.organization;
         if (newOrg && config.organization.organizationID !== newOrg) {
             config?.onOrganizationChange(newOrg);
