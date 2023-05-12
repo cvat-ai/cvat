@@ -16,7 +16,7 @@ module.exports = (env) => {
     const defaultAppConfig = path.join(__dirname, 'src/config.tsx');
     const defaultPlugins = ['plugins/sam_plugin'];
     const appConfigFile = process.env.UI_APP_CONFIG ? process.env.UI_APP_CONFIG : defaultAppConfig;
-    const pluginsList = process.env.CLIENT_PLUGINS ? [...defaultPlugins, process.env.CLIENT_PLUGINS.split(':')]
+    const pluginsList = process.env.CLIENT_PLUGINS ? [...defaultPlugins, ...process.env.CLIENT_PLUGINS.split(':')]
         .map((s) => s.trim()).filter((s) => !!s) : defaultPlugins
 
     const transformedPlugins = pluginsList
