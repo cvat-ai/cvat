@@ -1,8 +1,12 @@
 #!/bin/bash
 # Sample commands to deploy nuclio functions on CPU
 
+set -eu
+
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 FUNCTIONS_DIR=${1:-$SCRIPT_DIR}
+
+export DOCKER_BUILDKIT=1
 
 docker build -t cvat.openvino.base "$SCRIPT_DIR/openvino/base"
 
