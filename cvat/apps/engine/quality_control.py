@@ -615,6 +615,7 @@ def _match_segments(
     # *_umatched: boxes of (*) we failed to match
     a_unmatched = []
     b_unmatched = []
+
     for a_idx, b_idx in zip(a_matches, b_matches):
         dist = distances[a_idx, b_idx]
         if dist > 1 - dist_thresh or dist == 1:
@@ -629,6 +630,10 @@ def _match_segments(
                 matches.append((a_ann, b_ann))
             else:
                 mispred.append((a_ann, b_ann))
+
+    if not len(a_matches) and not len(b_matches):
+        a_unmatched = list(a_segms)
+        b_unmatched = list(b_segms)
 
     return matches, mispred, a_unmatched, b_unmatched
 
