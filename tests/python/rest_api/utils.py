@@ -162,6 +162,7 @@ def _test_create_task(username, spec, data, content_type, **kwargs):
             data = data.copy()
             del data["client_files"]
 
+        kwargs.pop("org")
         (_, response) = api_client.tasks_api.create_data(
             task.id, data_request=deepcopy(data), _content_type=content_type, **kwargs
         )
