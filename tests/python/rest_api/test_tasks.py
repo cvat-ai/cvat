@@ -11,9 +11,10 @@ from copy import deepcopy
 from functools import partial
 from http import HTTPStatus
 from itertools import chain, product
+from math import ceil
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from time import sleep
+from time import sleep, time
 from typing import List
 
 import pytest
@@ -1501,6 +1502,7 @@ class TestPatchTask:
             )
         assert response.status == HTTPStatus.FORBIDDEN
 
+
 @pytest.mark.usefixtures("restore_db_per_function")
 def test_can_report_correct_completed_jobs_count(tasks, jobs, admin_user):
     # Reproduces https://github.com/opencv/cvat/issues/6098
@@ -1519,6 +1521,7 @@ def test_can_report_correct_completed_jobs_count(tasks, jobs, admin_user):
 
         task, _ = api_client.tasks_api.retrieve(task["id"])
         assert task.jobs.completed == 1
+
 
 class TestImportTaskAnnotations:
     def _make_client(self) -> Client:
@@ -1552,8 +1555,14 @@ class TestImportTaskAnnotations:
 
         filename = self.tmp_dir / f"task_{task_id}_coco.zip"
         task = self.client.tasks.retrieve(task_id)
-        task.export_dataset(self.format, filename)
+        task.export_dataset(self.format, filename, include_images=False)
 
+        self._delete_annotations(task_id)
+
+        # define time required to upload file with annotations
+        start_time = time()
+        task.import_annotations(self.format, filename)
+        required_time = ceil(time() - start_time) * 2
         self._delete_annotations(task_id)
 
         params = {"format": self.format, "filename": filename.name}
@@ -1568,7 +1577,7 @@ class TestImportTaskAnnotations:
 
         rq_id = json.loads(response.data)["rq_id"]
         assert rq_id
-        sleep(3)
+        sleep(required_time)
         self._check_annotations(task_id)
         self._delete_annotations(task_id)
         task.import_annotations(self.format, filename)
