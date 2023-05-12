@@ -134,6 +134,12 @@ function RemoteBrowser(props: Props): JSX.Element {
         }
     };
 
+    let dataSource = content;
+    for (const subpath of currentPath.slice(1)) {
+        const child = (dataSource.children as Node[]).find((item) => item.name === subpath);
+        dataSource = child as Node;
+    }
+
     useEffect(() => {
         if (resourceRef.current !== resource || manifestPathRef.current !== manifestPath) {
             setContent({ ...defaultRoot });
@@ -148,7 +154,9 @@ function RemoteBrowser(props: Props): JSX.Element {
 
     useEffect(() => {
         setCurrentPage(1);
-        updateContent();
+        if (!dataSource.initialized) {
+            updateContent();
+        }
     }, [currentPath]);
 
     useEffect(() => {
@@ -203,12 +211,6 @@ function RemoteBrowser(props: Props): JSX.Element {
         },
     ];
 
-    let dataSource = content;
-    for (const subpath of currentPath.slice(1)) {
-        const child = (dataSource.children as Node[]).find((item) => item.name === subpath);
-        dataSource = child as Node;
-    }
-
     if (content.initialized && !content.children.length && resource === 'share') {
         return (
             <>
@@ -252,8 +254,8 @@ function RemoteBrowser(props: Props): JSX.Element {
                         onChange: (_selectedRowKeys) => {
                             let copy = _selectedRowKeys.slice(0);
 
-                            if (!copy.includes(dataSource.key)) {
-                                // select parent if all children have been selected
+                            if (!copy.includes(dataSource.key) && !dataSource.nextToken) {
+                                // select parent if all children have been fetched and selected
                                 if (dataSource.children.every((child) => copy.includes(child.key))) {
                                     copy.push(dataSource.key);
 
