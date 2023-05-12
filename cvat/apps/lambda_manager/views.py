@@ -1,5 +1,5 @@
 # Copyright (C) 2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -7,6 +7,8 @@ import base64
 import json
 import os
 import textwrap
+import glob
+from django_sendfile import sendfile
 from copy import deepcopy
 from enum import Enum
 from functools import wraps
@@ -31,6 +33,7 @@ from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.models import Job, ShapeType, SourceType, Task
 from cvat.apps.engine.serializers import LabeledDataSerializer
 from cvat.utils.http import make_requests_session
+from cvat.apps.iam.permissions import LambdaPermission
 
 
 class LambdaType(Enum):
@@ -804,8 +807,22 @@ class RequestViewSet(viewsets.ViewSet):
 
     @return_response()
     def list(self, request):
+        queryset = Task.objects.select_related(
+            "assignee",
+            "owner",
+            "organization",
+        ).prefetch_related(
+            "project__owner",
+            "project__assignee",
+            "project__organization",
+        )
+
+        perm = LambdaPermission.create_scope_list(request)
+        queryset = perm.filter(queryset)
+        task_ids = set(queryset.values_list("id", flat=True))
+
         queue = LambdaQueue()
-        return [job.to_dict() for job in queue.get_jobs()]
+        return [job.to_dict() for job in queue.get_jobs() if job.get_task() in task_ids]
 
     @return_response()
     def create(self, request):
@@ -846,3 +863,11 @@ class RequestViewSet(viewsets.ViewSet):
         queue = LambdaQueue()
         job = queue.fetch_job(pk)
         job.delete()
+
+def ONNXDetector(request):
+    dirname = os.path.join(settings.STATIC_ROOT, 'lambda_manager')
+    pattern = os.path.join(dirname, 'decoder.onnx')
+    path = glob.glob(pattern)[0]
+    response = sendfile(request, path)
+    response['Cache-Control'] = "public, max-age=604800"
+    return response
