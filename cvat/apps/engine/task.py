@@ -89,7 +89,7 @@ def _copy_data_from_share_point(
         server_files = expanded_server_files
 
         server_files = list(filter(
-            lambda x: x not in data_to_be_excluded and f'{Path(x).parent}/' not in data_to_be_excluded,
+            lambda x: x not in data_to_be_excluded and all([f'{Path(i)}/' not in data_to_be_excluded for i in Path(x).parents]),
             server_files
         ))
 
@@ -338,6 +338,7 @@ def _validate_manifest(
                 raise ValidationError("Manifest file can be uploaded only if 'Use cache' option is also selected")
             return manifest_file
         raise ValidationError('Invalid manifest was uploaded')
+    return None
 
 def _validate_url(url):
     def _validate_ip_address(ip_address):
@@ -446,8 +447,7 @@ def _create_task_manifest_from_cloud_data(
     dimension: models.DimensionType = models.DimensionType.DIM_2D,
 ) -> None:
     cloud_storage_instance = db_storage_to_storage_instance(db_storage)
-    content = [cloud_storage_instance.optimally_image_download(key) for key in sorted_media]
-
+    content = cloud_storage_instance.bulk_download_to_memory(sorted_media)
     manifest.link(sources=content, DIM_3D=dimension == models.DimensionType.DIM_3D)
     manifest.create()
 
@@ -541,11 +541,11 @@ def _create_thread(
             data['server_files'].extend(additional_files)
             del additional_files
 
-            if data_to_be_excluded := data.get('server_files_exclude'):
-                data['server_files'] = list(filter(
-                    lambda x: x not in data_to_be_excluded and f'{Path(x).parent}/' not in data_to_be_excluded,
-                    data['server_files']
-                ))
+        if data_to_be_excluded := data.get('server_files_exclude'):
+            data['server_files'] = list(filter(
+                lambda x: x not in data_to_be_excluded and all([f'{Path(i)}/' not in data_to_be_excluded for i in Path(x).parents]),
+                data['server_files']
+            ))
 
         if db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM or not settings.USE_CACHE:
             _download_data_from_cloud_storage(db_data.cloud_storage, data['server_files'], upload_dir)
@@ -555,27 +555,31 @@ def _create_thread(
             manifest = ImageManifestManager(db_data.get_manifest_path())
 
     # update list with server files if task creation approach with pattern and manifest file is used
-    if is_data_in_cloud and data['filename_pattern']:
-        if not manifest_file:
-            raise ValidationError(
-                "Using a filename_pattern is only supported with manifest file, "
-                "but specified cloud storage doesn't linked with a manifest."
-            )
+    if is_data_in_cloud:
+        if manifest_file and not data['server_files'] and not data['filename_pattern']: # only manifest file was specified in server files by the user
+            data['filename_pattern'] = '*'
 
-        if l := len(data['server_files']):
-            raise ValidationError(
-                'Using a filename_pattern is only supported with a manifest file, '
-                f'but others {l} file{"s" if l > 1 else ""} {"were" if l > 1 else "was"} found'
-                'Please remove extra files and keep only manifest file in server_files field.'
-            )
+        if data['filename_pattern']:
+            if not manifest_file:
+                raise ValidationError(
+                    "Using a filename_pattern is only supported with manifest file, "
+                    "but specified cloud storage doesn't linked with a manifest."
+                )
 
-        cloud_storage_manifest_data = list(cloud_storage_manifest.data) if not cloud_storage_manifest_prefix \
-            else [os.path.join(cloud_storage_manifest_prefix, f) for f in cloud_storage_manifest.data]
-        if data['filename_pattern'] == '*':
-            server_files = cloud_storage_manifest_data
-        else:
-            server_files = fnmatch.filter(cloud_storage_manifest_data, data['filename_pattern'])
-        data['server_files'].extend(server_files)
+            if l := len(data['server_files']):
+                raise ValidationError(
+                    'Using a filename_pattern is only supported with a manifest file, '
+                    f'but others {l} file{"s" if l > 1 else ""} {"were" if l > 1 else "was"} found'
+                    'Please remove extra files and keep only manifest file in server_files field.'
+                )
+
+            cloud_storage_manifest_data = list(cloud_storage_manifest.data) if not cloud_storage_manifest_prefix \
+                else [os.path.join(cloud_storage_manifest_prefix, f) for f in cloud_storage_manifest.data]
+            if data['filename_pattern'] == '*':
+                server_files = cloud_storage_manifest_data
+            else:
+                server_files = fnmatch.filter(cloud_storage_manifest_data, data['filename_pattern'])
+            data['server_files'].extend(server_files)
 
     # count and validate uploaded files
     media = _count_files(data)
@@ -668,7 +672,8 @@ def _create_thread(
     ):
         extractor.filter(
             lambda x: os.path.relpath(x, upload_dir) not in data_to_be_excluded and \
-                f'{Path(os.path.relpath(x, upload_dir)).parent}/' not in data_to_be_excluded)
+                all([f'{Path(i)}/' not in data_to_be_excluded for i in Path(x).relative_to(upload_dir).parents])
+        )
 
     validate_dimension = ValidateDimension()
     if isinstance(extractor, MEDIA_TYPES['zip']['extractor']):
