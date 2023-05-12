@@ -2194,6 +2194,7 @@ class QueueJobManager:
                     ) / (frame_results_count + 1)
 
                 task_frame_results_counts[frame_id] = 1 + frame_results_count
+                task_frame_results[frame_id] = task_frame_result
 
         task_ann_components_summary.shape.mean_iou = np.mean(task_mean_shape_ious)
 
