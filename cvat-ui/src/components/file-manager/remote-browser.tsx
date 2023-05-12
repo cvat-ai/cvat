@@ -147,6 +147,7 @@ function RemoteBrowser(props: Props): JSX.Element {
     }, [resource, manifestPath]);
 
     useEffect(() => {
+        setCurrentPage(1);
         updateContent();
     }, [currentPath]);
 
@@ -287,13 +288,15 @@ function RemoteBrowser(props: Props): JSX.Element {
                             // deselect children if parent was deselected
                             const deselectedKeys = selectedRowKeys.filter((key) => !_selectedRowKeys.includes(key));
                             for (const key of deselectedKeys) {
-                                copy = copy.filter((_key) => !_key.toLocaleString()
-                                    .startsWith(`${key.toLocaleString()}/`));
+                                if (key.toLocaleString().endsWith('/')) {
+                                    copy = copy.filter((_key) => !_key.toLocaleString()
+                                        .startsWith(`${key.toLocaleString()}`));
+                                }
                             }
 
                             // deselect parent if a child was deselected
-                            copy = copy.filter((key) => !deselectedKeys
-                                .some((_key) => _key.toLocaleString().startsWith(`${key.toLocaleString()}/`)));
+                            copy = copy.filter((key) => !key.toLocaleString().endsWith('/') || !deselectedKeys
+                                .some((_key) => _key.toLocaleString().startsWith(`${key.toLocaleString()}`)));
 
                             // select all children if parent was selected
                             const selectChildren = (node: Node): void => {
@@ -315,9 +318,13 @@ function RemoteBrowser(props: Props): JSX.Element {
                         },
                         preserveSelectedRowKeys: true,
                         getCheckboxProps: (record: Node) => {
+                            if (record.type !== 'DIR') {
+                                return {};
+                            }
+
                             const strKeys = selectedRowKeys.map((key) => key.toLocaleString());
                             const subkeys = strKeys.filter((key: string) => (
-                                key.startsWith(`${record.key}/`) && key.length > record.key.length
+                                key.startsWith(`${record.key}`) && key.length > record.key.length
                             ));
 
                             const some = !!subkeys.length;
