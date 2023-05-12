@@ -524,6 +524,7 @@ class LambdaPermission(OpenPolicyAgentPermission):
         VIEW = 'view'
         CALL_ONLINE = 'call:online'
         CALL_OFFLINE = 'call:offline'
+        LIST_OFFLINE = 'list:offline'
 
     @classmethod
     def create(cls, request, view, obj):
@@ -555,7 +556,7 @@ class LambdaPermission(OpenPolicyAgentPermission):
             ('function', 'retrieve'): Scopes.VIEW,
             ('function', 'call'): Scopes.CALL_ONLINE,
             ('request', 'create'): Scopes.CALL_OFFLINE,
-            ('request', 'list'): Scopes.CALL_OFFLINE,
+            ('request', 'list'): Scopes.LIST_OFFLINE,
             ('request', 'retrieve'): Scopes.CALL_OFFLINE,
             ('request', 'destroy'): Scopes.CALL_OFFLINE,
         }.get((view.basename, view.action), None)]
