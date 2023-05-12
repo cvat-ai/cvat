@@ -1955,7 +1955,9 @@ class DatasetComparator:
             parameters=self.settings,
 
             comparison_summary=ComparisonReportComparisonSummary(
-                frame_share_percent=len(intersection_frames) / (len(self._ds_dataset) or 1),
+                frame_share_percent=(
+                    len(intersection_frames) / (len(self._ds_data_provider.job_data.rel_range) or 1)
+                ),
                 frames=intersection_frames,
 
                 conflict_count=len(conflicts),
