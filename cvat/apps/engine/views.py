@@ -68,11 +68,13 @@ from cvat.apps.engine.view_utils import get_cloud_storage_for_import_or_export
 
 from utils.dataset_manifest import ImageManifestManager
 from cvat.apps.engine.utils import (
-    av_scan_paths, process_failed_job, configure_dependent_job, parse_exception_message, get_rq_job_meta
+    av_scan_paths, get_server_url, process_failed_job, configure_dependent_job,
+    parse_exception_message, get_rq_job_meta
 )
 from cvat.apps.engine import backup
 from cvat.apps.engine.mixins import PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
 from cvat.apps.engine.location import get_location_configuration, StorageType
+from cvat.apps.engine import quality_control as qc
 from cvat.apps.profiler import silk_profile
 
 from . import models, task
@@ -2359,7 +2361,7 @@ class QualityReportViewSet(viewsets.GenericViewSet,
     @action(detail=True, methods=['GET'], url_path='data', serializer_class=None)
     def data(self, request, pk):
         report = self.get_object() # check permissions
-        json_report = report.get_json_report()
+        json_report = qc.prepare_report_for_downloading(report, host=get_server_url(request))
         return HttpResponse(json_report.encode())
 
     @extend_schema(parameters=[
@@ -2368,8 +2370,7 @@ class QualityReportViewSet(viewsets.GenericViewSet,
     @action(detail=False, methods=['GET'], url_path='debug', serializer_class=None)
     @silk_profile()
     def debug(self, request):
-        from .quality_control import QueueJobManager
-        QueueJobManager._update_task_quality_metrics(task_id=request.GET.get('task_id'))
+        qc.QueueJobManager._update_task_quality_metrics(task_id=request.GET.get('task_id'))
         return HttpResponse({})
 
 
