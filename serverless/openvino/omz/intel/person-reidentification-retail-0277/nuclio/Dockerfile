@@ -4,6 +4,7 @@ USER root
 
 RUN omz_downloader \
     --name person-reidentification-retail-0277 \
+    --precisions FP32 \
     -o /opt/nuclio/open_model_zoo
 
 FROM cvat.openvino.base
