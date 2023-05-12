@@ -234,6 +234,14 @@ function buildDuplicatedAPI(prototype) {
                     );
                     return result;
                 },
+                async updateMeta(meta) {
+                    const result = await PluginRegistry.apiWrapper.call(
+                        this,
+                        prototype.frames.updateMeta,
+                        meta,
+                    );
+                    return result;
+                },
             },
             writable: true,
         }),
@@ -323,6 +331,7 @@ export class Job extends Session {
     public readonly frameSelectionMethod: JobType;
     public readonly createdDate: string;
     public readonly updatedDate: string;
+    public frameMeta: { conflictedFrames: number[] };
 
     public annotations: {
         get: CallableFunction;
@@ -360,6 +369,7 @@ export class Job extends Session {
         preview: CallableFunction;
         contextImage: CallableFunction;
         search: CallableFunction;
+        updateMeta: CallableFunction;
     };
 
     public logger: {
@@ -410,6 +420,7 @@ export class Job extends Session {
                 return new Label(labelData);
             }).filter((label) => !label.hasParent);
         }
+        let frameMeta = { conflictedFrames: [] };
 
         Object.defineProperties(
             this,
@@ -510,6 +521,12 @@ export class Job extends Session {
                 updatedDate: {
                     get: () => data.updated_date,
                 },
+                frameMeta: {
+                    get: () => frameMeta,
+                    set: (meta) => {
+                        frameMeta = meta;
+                    },
+                },
                 _updateTrigger: {
                     get: () => updateTrigger,
                 },
@@ -555,6 +572,7 @@ export class Job extends Session {
             preview: Object.getPrototypeOf(this).frames.preview.bind(this),
             search: Object.getPrototypeOf(this).frames.search.bind(this),
             contextImage: Object.getPrototypeOf(this).frames.contextImage.bind(this),
+            updateMeta: Object.getPrototypeOf(this).frames.updateMeta.bind(this),
         };
 
         this.logger = {

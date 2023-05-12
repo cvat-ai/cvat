@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,19 +11,22 @@ import {
 import AntdWidgets from 'react-awesome-query-builder/lib/components/widgets/antd';
 import AntdConfig from 'react-awesome-query-builder/lib/config/antd';
 import 'react-awesome-query-builder/lib/css/styles.css';
-import { DownOutlined } from '@ant-design/icons';
-import Dropdown from 'antd/lib/dropdown';
-import Menu from 'antd/lib/menu';
+// import { DownOutlined } from '@ant-design/icons';
+// import Dropdown from 'antd/lib/dropdown';
+// import Menu from 'antd/lib/menu';
+import Text from 'antd/lib/typography/Text';
 import Button from 'antd/lib/button';
 import Modal from 'antd/lib/modal';
 import { omit } from 'lodash';
 
 import { CombinedState } from 'reducers';
-import { changeAnnotationsFilters, fetchAnnotationsAsync, showFilters } from 'actions/annotation-actions';
+import {
+    changeAnnotationsFilters, changeFrameFiltersAsync, fetchAnnotationsAsync, showFilters,
+} from 'actions/annotation-actions';
 
 const { FieldDropdown } = AntdWidgets;
 
-const FILTERS_HISTORY = 'annotationFiltersHistory';
+// const FILTERS_HISTORY = 'annotationFiltersHistory';
 
 interface StoredFilter {
     id: string;
@@ -32,6 +36,7 @@ interface StoredFilter {
 function FiltersModalComponent(): JSX.Element {
     const labels = useSelector((state: CombinedState) => state.annotation.job.labels);
     const activeFilters = useSelector((state: CombinedState) => state.annotation.annotations.filters);
+    const activePlayerFilters = useSelector((state: CombinedState) => state.annotation.player.filters);
     const visible = useSelector((state: CombinedState) => state.annotation.filtersPanelVisible);
 
     const getConvertedInputType = (inputType: string): string => {
@@ -78,7 +83,7 @@ function FiltersModalComponent(): JSX.Element {
         return subfields;
     };
 
-    const config: Config = {
+    const annotationConfig: Config = {
         ...AntdConfig,
         fields: {
             label: {
@@ -161,64 +166,127 @@ function FiltersModalComponent(): JSX.Element {
         },
     };
 
+    const frameConfig: Config = {
+        ...AntdConfig,
+        fields: {
+            conflicted: {
+                label: 'Has conflicts',
+                type: 'boolean',
+            },
+        },
+        settings: {
+            ...AntdConfig.settings,
+            renderField: (_props: any) => (
+                <FieldDropdown {...omit(_props)} customProps={omit(_props.customProps, 'showSearch')} />
+            ),
+            // using FieldDropdown because we cannot use antd because of antd-related bugs
+            // https://github.com/ukrbublik/react-awesome-query-builder/issues/224
+        },
+    };
+
     const initialState = {
-        tree: QbUtils.checkTree(
-            QbUtils.loadTree({ id: QbUtils.uuid(), type: 'group' }),
-            config as Config,
-        ) as ImmutableTree,
-        config,
+        trees: {
+            annotationTree: QbUtils.checkTree(
+                QbUtils.loadTree({ id: QbUtils.uuid(), type: 'group' }),
+                annotationConfig as Config,
+            ) as ImmutableTree,
+            frameTree: QbUtils.checkTree(
+                QbUtils.loadTree({ id: QbUtils.uuid(), type: 'group' }),
+                frameConfig as Config,
+            ) as ImmutableTree,
+        },
+        configs: {
+            annotationConfig,
+            frameConfig,
+        },
     };
 
     const dispatch = useDispatch();
     const [state, setState] = useState(initialState);
-    const [filters, setFilters] = useState([] as StoredFilter[]);
+    const [annotationFilters, setAnnotationFilters] = useState([] as StoredFilter[]);
+    const [frameFilters, setFrameFilters] = useState([] as StoredFilter[]);
+    // useEffect(() => {
+    //     console.log(state);
+    // });
 
-    useEffect(() => {
-        const filtersHistory = window.localStorage.getItem(FILTERS_HISTORY)?.trim() || '[]';
-        try {
-            setFilters(JSON.parse(filtersHistory));
-        } catch (_) {
-            setFilters([]);
-        }
-    }, []);
+    // useEffect(() => {
+    //     const filtersHistory = window.localStorage.getItem(FILTERS_HISTORY)?.trim() || '[]';
+    //     try {
+    //         setFilters(JSON.parse(filtersHistory));
+    //     } catch (_) {
+    //         setFilters([]);
+    //     }
+    // }, []);
 
-    useEffect(() => {
-        window.localStorage.setItem(FILTERS_HISTORY, JSON.stringify(filters));
-    }, [filters]);
+    // useEffect(() => {
+    //     window.localStorage.setItem(FILTERS_HISTORY, JSON.stringify(filters));
+    // }, [filters]);
 
     useEffect(() => {
         if (visible) {
-            const treeFromActiveFilters = activeFilters.length ?
-                QbUtils.checkTree(QbUtils.loadFromJsonLogic(activeFilters[0], config), config) :
+            const annotationTreeFromActiveFilters = activeFilters.length ?
+                QbUtils.checkTree(QbUtils.loadFromJsonLogic(activeFilters[0], annotationConfig), annotationConfig) :
+                null;
+            const frameTreeFromActiveFilters = activePlayerFilters.length ?
+                QbUtils.checkTree(QbUtils.loadFromJsonLogic(activePlayerFilters[0], frameConfig), frameConfig) :
                 null;
             setState({
-                tree: treeFromActiveFilters || initialState.tree,
-                config,
+                trees: {
+                    annotationTree: annotationTreeFromActiveFilters || initialState.trees.annotationTree,
+                    frameTree: frameTreeFromActiveFilters || initialState.trees.frameTree,
+                },
+                configs: {
+                    annotationConfig,
+                    frameConfig,
+                },
             });
         }
     }, [visible]);
 
-    const applyFilters = (filtersData: any[]): void => {
-        dispatch(changeAnnotationsFilters(filtersData));
-        dispatch(fetchAnnotationsAsync());
+    const applyFilters = (annotationFiltersData: any[], frameFiltersData: any[]): void => {
+        if (annotationFiltersData) {
+            dispatch(changeAnnotationsFilters(annotationFiltersData));
+            dispatch(fetchAnnotationsAsync());
+        }
+        if (frameFiltersData) {
+            dispatch(changeFrameFiltersAsync(frameFiltersData));
+        }
         dispatch(showFilters(false));
     };
 
     const confirmModal = (): void => {
-        const currentFilter: StoredFilter = {
+        let currentFilter: StoredFilter = {
             id: QbUtils.uuid(),
-            logic: QbUtils.jsonLogicFormat(state.tree, config).logic || {},
+            logic: QbUtils.jsonLogicFormat(state.trees.annotationTree, annotationConfig).logic || {},
         };
-        const updatedFilters = filters.filter(
+        let updatedFilters = annotationFilters.filter(
             (filter) => JSON.stringify(filter.logic) !== JSON.stringify(currentFilter.logic),
         );
-        setFilters([currentFilter, ...updatedFilters].slice(0, 10));
-        applyFilters([QbUtils.jsonLogicFormat(state.tree, config).logic]);
+        setAnnotationFilters([currentFilter, ...updatedFilters].slice(0, 10));
+        let { logic } = QbUtils.jsonLogicFormat(state.trees.annotationTree, annotationConfig);
+        if (logic) applyFilters([logic], null);
+
+        currentFilter = {
+            id: QbUtils.uuid(),
+            logic: QbUtils.jsonLogicFormat(state.trees.frameTree, frameConfig).logic || {},
+        };
+        updatedFilters = frameFilters.filter(
+            (filter) => JSON.stringify(filter.logic) !== JSON.stringify(currentFilter.logic),
+        );
+
+        setFrameFilters([currentFilter, ...updatedFilters].slice(0, 10));
+        logic = QbUtils.jsonLogicFormat(state.trees.frameTree, frameConfig).logic;
+        if (logic) {
+            if (logic) applyFilters(null, [logic]);
+        }
+        // todo change frame async
     };
 
-    const isModalConfirmable = (): boolean => (
-        (QbUtils.queryString(state.tree, config) || '').trim().length > 0 && QbUtils.isValidTree(state.tree)
-    );
+    const isModalConfirmable = (): boolean => {
+        const annotations = (QbUtils.queryString(state.trees.annotationTree, annotationConfig) || '').trim().length > 0 && QbUtils.isValidTree(state.trees.annotationTree);
+        const frames = (QbUtils.queryString(state.trees.frameTree, frameConfig) || '').trim().length > 0 && QbUtils.isValidTree(state.trees.frameTree);
+        return annotations || frames;
+    };
 
     const renderBuilder = (builderProps: any): JSX.Element => (
         <div className='query-builder-container'>
@@ -228,32 +296,56 @@ function FiltersModalComponent(): JSX.Element {
         </div>
     );
 
-    const onChange = (tree: ImmutableTree): void => {
-        setState({ tree, config });
+    const onChange = (type: string, tree: ImmutableTree): void => {
+        if (type === 'annotationTree') {
+            setState({
+                trees: {
+                    ...state.trees,
+                    annotationTree: tree,
+                },
+                configs: {
+                    ...state.configs,
+                    annotationConfig,
+                },
+            });
+        } else if (type === 'frameTree') {
+            setState({
+                trees: {
+                    ...state.trees,
+                    frameTree: tree,
+                },
+                configs: {
+                    ...state.configs,
+                    frameConfig,
+                },
+            });
+        }
     };
 
-    const menu = (
-        <Menu>
-            {filters
-                .map((filter: StoredFilter) => {
-                    // if a logic received from local storage does not correspond to current config
-                    // which depends on label specification
-                    // (it can be when history from another task with another specification or when label was removed)
-                    // loadFromJsonLogic() prints a warning to console
-                    // the are not ways to configure this behaviour
+    // TMP disabled
+    // const menu = (
+    //     <Menu>
+    //         {filters
+    //             .map((filter: StoredFilter) => {
+    //                 // if a logic received from local storage does not correspond to current config
+    //                 // which depends on label specification
+    //                 // (it can be when history from another task with
+    // another specification or when label was removed)
+    //                 // loadFromJsonLogic() prints a warning to console
+    //                 // the are not ways to configure this behaviour
 
-                    const tree = QbUtils.loadFromJsonLogic(filter.logic, config);
-                    const queryString = QbUtils.queryString(tree, config);
-                    return { tree, queryString, filter };
-                })
-                .filter(({ queryString }) => !!queryString)
-                .map(({ filter, tree, queryString }) => (
-                    <Menu.Item key={filter.id} onClick={() => setState({ tree, config })}>
-                        {queryString}
-                    </Menu.Item>
-                ))}
-        </Menu>
-    );
+    //                 const tree = QbUtils.loadFromJsonLogic(filter.logic, config);
+    //                 const queryString = QbUtils.queryString(tree, config);
+    //                 return { tree, queryString, filter };
+    //             })
+    //             .filter(({ queryString }) => !!queryString)
+    //             .map(({ filter, tree, queryString }) => (
+    //                 <Menu.Item key={filter.id} onClick={() => setState({ tree, config })}>
+    //                     {queryString}
+    //                 </Menu.Item>
+    //             ))}
+    //     </Menu>
+    // );
 
     return (
         <Modal
@@ -267,8 +359,8 @@ function FiltersModalComponent(): JSX.Element {
             footer={[
                 <Button
                     key='clear'
-                    disabled={!activeFilters.length}
-                    onClick={() => applyFilters([])}
+                    disabled={!activeFilters.length && !activePlayerFilters.length}
+                    onClick={() => applyFilters([], [])}
                     className='cvat-filters-modal-clear-button'
                 >
                     Clear filters
@@ -291,7 +383,7 @@ function FiltersModalComponent(): JSX.Element {
                 </Button>,
             ]}
         >
-            <div
+            {/* <div
                 key='used'
                 className='recently-used-wrapper'
                 style={{ display: filters.length ? 'inline-block' : 'none' }}
@@ -306,8 +398,21 @@ function FiltersModalComponent(): JSX.Element {
                         <DownOutlined />
                     </Button>
                 </Dropdown>
-            </div>
-            <Query {...config} value={state.tree} onChange={onChange} renderBuilder={renderBuilder} />
+            </div> */}
+            <Text>Annotation Filters:</Text>
+            <Query
+                {...annotationConfig}
+                value={state.trees.annotationTree}
+                onChange={(tree) => onChange('annotationTree', tree)}
+                renderBuilder={renderBuilder}
+            />
+            <Text>Frame Filters:</Text>
+            <Query
+                {...frameConfig}
+                value={state.trees.frameTree}
+                onChange={(tree) => onChange('frameTree', tree)}
+                renderBuilder={renderBuilder}
+            />
         </Modal>
     );
 }

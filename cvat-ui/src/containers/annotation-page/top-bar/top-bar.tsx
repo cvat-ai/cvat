@@ -66,6 +66,7 @@ interface StateToProps {
     canvasInstance: Canvas | Canvas3d;
     forceExit: boolean;
     activeControl: ActiveControl;
+    frameFilters: any[];
 }
 
 interface DispatchToProps {
@@ -98,6 +99,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                     delay: frameDelay,
                     fetching: frameFetching,
                 },
+                filters,
             },
             annotations: {
                 saving: { uploading: saving, forceExit },
@@ -142,6 +144,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         canvasInstance,
         forceExit,
         activeControl,
+        frameFilters: filters,
     };
 }
 
@@ -340,13 +343,16 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
     private onPrevFrame = async (): Promise<void> => {
         const { prevButtonType } = this.state;
         const {
-            frameNumber, jobInstance, playing, onSwitchPlay, showDeletedFrames,
+            frameNumber, jobInstance, playing, onSwitchPlay, showDeletedFrames, frameFilters,
         } = this.props;
         const { startFrame } = jobInstance;
 
         const frameFrom = Math.max(jobInstance.startFrame, frameNumber - 1);
-        const newFrame = showDeletedFrames ? frameFrom :
-            await jobInstance.frames.search({ notDeleted: true }, frameFrom, jobInstance.startFrame);
+        const newFrame = await jobInstance.frames.search(
+            { notDeleted: !showDeletedFrames, jsonFilters: frameFilters },
+            frameFrom,
+            jobInstance.startFrame,
+        );
         if (newFrame !== frameNumber && newFrame !== null) {
             if (playing) {
                 onSwitchPlay(false);
@@ -365,13 +371,16 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
     private onNextFrame = async (): Promise<void> => {
         const { nextButtonType } = this.state;
         const {
-            frameNumber, jobInstance, playing, onSwitchPlay, showDeletedFrames,
+            frameNumber, jobInstance, playing, onSwitchPlay, showDeletedFrames, frameFilters,
         } = this.props;
         const { stopFrame } = jobInstance;
 
         const frameFrom = Math.min(jobInstance.stopFrame, frameNumber + 1);
-        const newFrame = showDeletedFrames ? frameFrom :
-            await jobInstance.frames.search({ notDeleted: true }, frameFrom, jobInstance.stopFrame);
+        const newFrame = await jobInstance.frames.search(
+            { notDeleted: !showDeletedFrames, jsonFilters: frameFilters },
+            frameFrom,
+            jobInstance.stopFrame,
+        );
         if (newFrame !== frameNumber && newFrame !== null) {
             if (playing) {
                 onSwitchPlay(false);
