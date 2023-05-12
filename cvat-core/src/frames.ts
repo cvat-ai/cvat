@@ -6,6 +6,7 @@
 import { isBrowser, isNode } from 'browser-or-node';
 
 import * as cvatData from 'cvat-data';
+import jsonLogic from 'json-logic-js';
 import { DimensionType } from 'enums';
 import PluginRegistry from './plugins';
 import serverProxy, { FramesMetaData } from './server-proxy';
@@ -737,21 +738,30 @@ export async function patchMeta(jobID) {
     frameDataCache[jobID].meta.deleted_frames = prevDeletedFrames;
 }
 
-export async function findNotDeletedFrame(jobID, frameFrom, frameTo, offset) {
+export async function findFrame(jobID, frameFrom, frameTo, filters, externalMeta) {
+    const offset = filters.offset || 1;
     let meta;
     if (!frameDataCache[jobID]) {
         meta = await serverProxy.frames.getMeta('job', jobID);
     } else {
         meta = frameDataCache[jobID].meta;
     }
+
     const sign = Math.sign(frameTo - frameFrom);
     const predicate = sign > 0 ? (frame) => frame <= frameTo : (frame) => frame >= frameTo;
     const update = sign > 0 ? (frame) => frame + 1 : (frame) => frame - 1;
     let framesCounter = 0;
     let lastUndeletedFrame = null;
-    const check = (frame): boolean => (meta.included_frames ?
-        (meta.included_frames.includes(frame)) && !(frame in meta.deleted_frames) :
-        !(frame in meta.deleted_frames));
+    const check = (frame): boolean => {
+        if (meta.included_frames) {
+            return (meta.included_frames.includes(frame)) && !(frame in meta.deleted_frames);
+        }
+        if (Array.isArray(filters.jsonFilters) && filters.jsonFilters.length) {
+            const frameConvert = { conflicted: externalMeta.conflictedFrames.includes(frame) };
+            return jsonLogic.apply(filters.jsonFilters[0], frameConvert);
+        }
+        return !(frame in meta.deleted_frames);
+    };
     for (let frame = frameFrom; predicate(frame); frame = update(frame)) {
         if (check(frame)) {
             lastUndeletedFrame = frame;

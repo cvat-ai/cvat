@@ -31,7 +31,9 @@ function RightGroup(props: Props): JSX.Element {
         showFilters,
     } = props;
 
-    const filters = useSelector((state: CombinedState) => state.annotation.annotations.filters);
+    const annotationFilters = useSelector((state: CombinedState) => state.annotation.annotations.filters);
+    const frameFilters = useSelector((state: CombinedState) => state.annotation.player.filters);
+    const filters = annotationFilters.length || frameFilters.length;
 
     return (
         <Col className='cvat-annotation-header-right-group'>
@@ -61,7 +63,7 @@ function RightGroup(props: Props): JSX.Element {
             </Button>
             <Button
                 type='link'
-                className={`cvat-annotation-header-filters-button cvat-annotation-header-button ${filters.length ?
+                className={`cvat-annotation-header-filters-button cvat-annotation-header-button ${filters ?
                     'filters-armed' : ''
                 }`}
                 onClick={showFilters}

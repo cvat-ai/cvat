@@ -75,6 +75,7 @@ const defaultState: AnnotationState = {
         playing: false,
         frameAngles: [],
         navigationBlocked: false,
+        filters: [],
     },
     drawing: {
         activeShapeType: ShapeType.RECTANGLE,
@@ -1010,6 +1011,16 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 ...state,
                 annotations: {
                     ...state.annotations,
+                    filters,
+                },
+            };
+        }
+        case AnnotationActionTypes.CHANGE_FRAME_FILTERS: {
+            const { filters } = action.payload;
+            return {
+                ...state,
+                player: {
+                    ...state.player,
                     filters,
                 },
             };

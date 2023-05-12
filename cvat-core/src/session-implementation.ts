@@ -14,7 +14,7 @@ import {
     restoreFrame,
     getRanges,
     clear as clearFrames,
-    findNotDeletedFrame,
+    findFrame,
     getContextImage,
     patchMeta,
     getDeletedFrames,
@@ -189,8 +189,13 @@ export function implementJob(Job) {
             throw new ArgumentError('The stop frame is out of the job');
         }
         if (filters.notDeleted) {
-            return findNotDeletedFrame(this.id, frameFrom, frameTo, filters.offset || 1);
+            return findFrame(this.id, frameFrom, frameTo, filters, this.frameMeta);
         }
+        return null;
+    };
+
+    Job.prototype.frames.updateMeta.implementation = async function (meta) {
+        this.frameMeta = meta;
         return null;
     };
 

@@ -163,6 +163,7 @@ export enum AnnotationActionTypes {
     SWITCH_PROPAGATE_VISIBILITY = 'SWITCH_PROPAGATE_VISIBILITY',
     SWITCH_SHOWING_STATISTICS = 'SWITCH_SHOWING_STATISTICS',
     SWITCH_SHOWING_FILTERS = 'SWITCH_SHOWING_FILTERS',
+    CHANGE_FRAME_FILTERS = 'CHANGE_FRAME_FILTERS',
     COLLECT_STATISTICS = 'COLLECT_STATISTICS',
     COLLECT_STATISTICS_SUCCESS = 'COLLECT_STATISTICS_SUCCESS',
     COLLECT_STATISTICS_FAILED = 'COLLECT_STATISTICS_FAILED',
@@ -916,9 +917,19 @@ export function getJobAsync(
                 try {
                     const [task] = await cvat.tasks.get({ id: tid });
                     [gtJob] = task.jobs.filter((_job: Job) => _job.type === JobType.GROUND_TRUTH);
-                // eslint-disable-next-line no-empty
-                } catch (e) {}
+                    // eslint-disable-next-line no-empty
+                } catch (e) { }
             }
+
+            const groundTruthJobId = gtJob ? gtJob.id : null;
+            let conflicts: QualityConflict[] = [];
+            if (groundTruthJobId) {
+                const [report] = await cvat.analytics.quality.reports({ jobId: job.id, target: 'job' });
+                if (report) conflicts = await cvat.analytics.quality.conflicts({ reportId: report.id });
+            }
+
+            const conflictedFrames = conflicts.map((conflict: QualityConflict) => conflict.frame);
+            await job.frames.updateMeta({ conflictedFrames: [...new Set(conflictedFrames)] });
 
             // navigate to correct first frame according to setup
             let frameNumber;
@@ -944,16 +955,9 @@ export function getJobAsync(
                 });
             }
 
-            const groundTruthJobId = gtJob ? gtJob.id : null;
             const states = await job.annotations.get(
                 frameNumber, showAllInterpolationTracks, filters, groundTruthJobId,
             );
-
-            let conflicts: QualityConflict[] = [];
-            if (groundTruthJobId) {
-                const [report] = await cvat.analytics.quality.reports({ jobId: job.id, target: 'job' });
-                if (report) conflicts = await cvat.analytics.quality.conflicts({ reportId: report.id });
-            }
 
             const issues = await job.issues();
             const [minZ, maxZ] = computeZRange(states);
@@ -1644,6 +1648,46 @@ export function restoreFrameAsync(frame: number): ThunkAction {
             dispatch({
                 type: AnnotationActionTypes.RESTORE_FRAME_FAILED,
                 payload: { error },
+            });
+        }
+    };
+}
+
+export function changeFrameFiltersAsync(filters: any[]): ThunkAction {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        const state: CombinedState = getStore().getState();
+        const {
+            annotation: {
+                job: {
+                    instance: jobInstance,
+                },
+                player: {
+                    frame: {
+                        number: frame,
+                    },
+                },
+            },
+            settings: {
+                player: { showDeletedFrames },
+            },
+        } = state;
+
+        try {
+            let newFrame = await jobInstance.frames.search(
+                { notDeleted: !showDeletedFrames, jsonFilters: filters }, frame, jobInstance.stopFrame,
+            );
+            if (newFrame === null && jobInstance.startFrame !== frame) {
+                newFrame = await jobInstance.frames.search(
+                    { notDeleted: !showDeletedFrames, jsonFilters: filters }, frame, jobInstance.startFrame,
+                );
+            }
+            if (newFrame !== null) {
+                dispatch(changeFrameAsync(newFrame));
+            }
+        } finally {
+            dispatch({
+                type: AnnotationActionTypes.CHANGE_FRAME_FILTERS,
+                payload: { filters },
             });
         }
     };
