@@ -116,8 +116,13 @@ class _CloudStorageResourceTest(ABC):
         url = f"{obj}/{obj_id}/annotations"
         response = post_method(user, url, data=None, **kwargs)
         status = response.status_code
-        rq_id = response.json().get("rq_id")
-        assert rq_id, "The rq_id was not found in the response"
+
+        # Only the first POST request contains rq_id in response.
+        # Exclude cases with 403 expected status.
+        rq_id = None
+        if status == HTTPStatus.ACCEPTED:
+            rq_id = response.json().get("rq_id")
+            assert rq_id, "The rq_id was not found in the response"
 
         while status != _expect_status:
             assert status == HTTPStatus.ACCEPTED
@@ -155,8 +160,13 @@ class _CloudStorageResourceTest(ABC):
         url = f"{obj}/{obj_id}/dataset"
         response = post_method(user, url, data=None, **kwargs)
         status = response.status_code
-        rq_id = response.json().get("rq_id")
-        assert rq_id, "The rq_id was not found in the response"
+
+        # Only the first POST request contains rq_id in response.
+        # Exclude cases with 403 expected status.
+        rq_id = None
+        if status == HTTPStatus.ACCEPTED:
+            rq_id = response.json().get("rq_id")
+            assert rq_id, "The rq_id was not found in the response"
 
         while status != _expect_status:
             assert status == HTTPStatus.ACCEPTED
