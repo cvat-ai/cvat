@@ -4075,13 +4075,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/BackupWriteRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/BackupWriteRequest'
           multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/BackupWriteRequest'
-          application/offset+octet-stream:
             schema:
               $ref: '#/components/schemas/BackupWriteRequest'
       security:
@@ -4098,65 +4092,6 @@ paths:
             application/vnd.cvat+json:
               schema:
                 $ref: '#/components/schemas/RqId'
-          description: Importing a backup file has been started
-  /api/projects/backup/{file_id}:
-    patch:
-      operationId: projects_partial_update_backup_file
-      summary: Allows to upload a file chunk. Implements TUS file uploading protocol.
-      parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
-      - in: query
-        name: cloud_storage_id
-        schema:
-          type: number
-        description: Storage id
-      - in: query
-        name: filename
-        schema:
-          type: string
-        description: Backup file name
-      - in: query
-        name: location
-        schema:
-          type: string
-          enum:
-          - cloud_storage
-          - local
-          default: local
-        description: Where to import the backup file from
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
-      tags:
-      - projects
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/BackupWriteRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/BackupWriteRequest'
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses:
-        '201':
-          description: The project has been imported
-        '202':
           description: Importing a backup file has been started
   /api/schema/:
     get:
