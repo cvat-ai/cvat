@@ -10,7 +10,8 @@ metadata:
     tier: backend
 spec:
   accessModes:
-    - ReadWriteOnce
+    {{ .Values.cvat.backend.defaultStorage.accessModes | toYaml | nindent 4 }}
+  storageClassName: {{ .Values.cvat.backend.defaultStorage.storageClassName }}
   resources:
     requests:
       storage: {{ .Values.cvat.backend.defaultStorage.size }}
