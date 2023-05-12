@@ -10,7 +10,7 @@ import importlib
 import sys
 import traceback
 from contextlib import suppress
-from typing import Any, Dict, Optional, Callable
+from typing import Any, Dict, Optional, Callable, Union
 import subprocess
 import os
 import urllib.parse
@@ -238,7 +238,12 @@ def get_import_rq_id(resource_type: str, resource_id: int, subresource_type: str
     # import:<task|project|job> <id|uuid> <annotations|dataset|backup> by <user>
     return f"import:{resource_type} {resource_id} {subresource_type} by {user}"
 
-def with_clean_up_after(func, filename, *args, **kwargs):
+def import_resource_with_clean_up_after(
+    func: Union[Callable[[str, int, int], int], Callable[[str, int, str, bool], None]],
+    filename: str,
+    *args,
+    **kwargs,
+) -> Any:
     try:
         result = func(filename, *args, **kwargs)
     finally:

@@ -35,7 +35,7 @@ from cvat.apps.engine.serializers import (AttributeSerializer, DataSerializer, L
     LabeledDataSerializer, SegmentSerializer, SimpleJobSerializer, TaskReadSerializer,
     ProjectReadSerializer, ProjectFileSerializer, TaskFileSerializer, RqIdSerializer)
 from cvat.apps.engine.utils import (
-    av_scan_paths, process_failed_job, configure_dependent_job, get_rq_job_meta, get_import_rq_id, with_clean_up_after
+    av_scan_paths, process_failed_job, configure_dependent_job, get_rq_job_meta, get_import_rq_id, import_resource_with_clean_up_after
 )
 from cvat.apps.engine.models import (
     StorageChoice, StorageMethodChoice, DataChoice, Task, Project, Location)
@@ -944,7 +944,7 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
             )
 
         rq_job = queue.enqueue_call(
-            func=with_clean_up_after,
+            func=import_resource_with_clean_up_after,
             args=(importer, filename, request.user.id, org_id),
             job_id=rq_id,
             meta={

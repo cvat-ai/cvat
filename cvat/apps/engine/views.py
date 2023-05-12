@@ -66,7 +66,7 @@ from cvat.apps.engine.view_utils import get_cloud_storage_for_import_or_export
 
 from utils.dataset_manifest import ImageManifestManager
 from cvat.apps.engine.utils import (
-    av_scan_paths, process_failed_job, configure_dependent_job, parse_exception_message, get_rq_job_meta, get_import_rq_id, with_clean_up_after
+    av_scan_paths, process_failed_job, configure_dependent_job, parse_exception_message, get_rq_job_meta, get_import_rq_id, import_resource_with_clean_up_after
 )
 from cvat.apps.engine import backup
 from cvat.apps.engine.mixins import PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
@@ -2293,7 +2293,7 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
             'tmp_file': filename,
         }
         rq_job = queue.enqueue_call(
-            func=with_clean_up_after,
+            func=import_resource_with_clean_up_after,
             args=(rq_func, filename, db_obj.pk, format_name, conv_mask_to_poly),
             job_id=rq_id,
             depends_on=dependent_job,
@@ -2484,8 +2484,8 @@ def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_nam
             )
 
         rq_job = queue.enqueue_call(
-            func=rq_func,
-            args=(filename, db_obj.pk, format_name, conv_mask_to_poly),
+            func=import_resource_with_clean_up_after,
+            args=(rq_func, filename, db_obj.pk, format_name, conv_mask_to_poly),
             job_id=rq_id,
             meta={
                 'tmp_file': filename,
