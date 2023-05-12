@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TDB
 
 ### Changed
-- TDB
+- Running SAM masks decoder on frontend (<https://github.com/opencv/cvat/pull/6019>)
 
 ### Deprecated
 - TDB
