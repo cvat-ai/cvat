@@ -14,7 +14,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='job',
             name='type',
-            field=models.CharField(choices=[('normal', 'NORMAL'), ('ground_truth', 'GROUND_TRUTH')], default=cvat.apps.engine.models.JobType['NORMAL'], max_length=32),
+            field=models.CharField(choices=[('normal', 'NORMAL'), ('ground_truth', 'GROUND_TRUTH')], default='normal', max_length=32),
         ),
         migrations.AddField(
             model_name='segment',

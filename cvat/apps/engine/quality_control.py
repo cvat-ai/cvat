@@ -2124,7 +2124,7 @@ class QueueJobManager:
             jobs: List[models.Job] = [
                 j
                 for j in job_queryset
-                if j.type == models.JobType.NORMAL
+                if j.type == models.JobType.ANNOTATION
             ]
             job_data_providers = {
                 job.id: JobDataProvider(job.id, queryset=job_queryset,

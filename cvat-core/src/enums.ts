@@ -35,7 +35,7 @@ export enum JobState {
 }
 
 export enum JobType {
-    NORMAL = 'normal',
+    ANNOTATION = 'annotation',
     GROUND_TRUTH = 'ground_truth',
 }
 

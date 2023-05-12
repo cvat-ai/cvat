@@ -160,7 +160,7 @@ class SortingMethod(str, Enum):
         return self.value
 
 class JobType(str, Enum):
-    NORMAL = 'normal'
+    ANNOTATION = 'annotation'
     GROUND_TRUTH = 'ground_truth'
 
     @classmethod
@@ -614,7 +614,7 @@ class Job(models.Model):
         default=StateChoice.NEW)
 
     type = models.CharField(max_length=32, choices=JobType.choices(),
-        default=JobType.NORMAL)
+        default=JobType.ANNOTATION)
 
     def get_dirname(self):
         return os.path.join(settings.JOBS_ROOT, str(self.id))

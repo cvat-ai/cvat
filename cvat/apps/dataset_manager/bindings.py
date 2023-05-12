@@ -771,7 +771,7 @@ class TaskData(CommonData):
                         host, db_segment.job_set.first().id))]
                 ))
                 for db_segment in db_segments
-                if db_segment.job_set.first().type == JobType.NORMAL
+                if db_segment.job_set.first().type == JobType.ANNOTATION
             ]),
 
             ("owner", OrderedDict([

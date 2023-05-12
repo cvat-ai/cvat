@@ -513,7 +513,10 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
     @staticmethod
     def _calculate_segment_size(jobs):
         # The type field will be missing in backups create before the GT jobs were introduced
-        jobs = [j for j in jobs if j.get("type", models.JobType.NORMAL) == models.JobType.NORMAL]
+        jobs = [
+            j for j in jobs
+            if j.get("type", models.JobType.ANNOTATION) == models.JobType.ANNOTATION
+        ]
 
         segment_size = jobs[0]['stop_frame'] - jobs[0]['start_frame'] + 1
         overlap = 0 if len(jobs) == 1 else jobs[0]['stop_frame'] - jobs[1]['start_frame'] + 1
@@ -628,7 +631,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         for job in jobs:
             # The type field will be missing in backups create before the GT jobs were introduced
             try:
-                raw_job_type = job.get("type", models.JobType.NORMAL.value)
+                raw_job_type = job.get("type", models.JobType.ANNOTATION.value)
                 job_type = models.JobType(raw_job_type)
             except ValueError:
                 raise ValidationError(f"Unexpected job type {raw_job_type}")
@@ -642,7 +645,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
                 })
                 job_serializer.is_valid(raise_exception=True)
                 job_serializer.save()
-            elif job_type == models.JobType.NORMAL:
+            elif job_type == models.JobType.ANNOTATION:
                 continue
             else:
                 assert False

@@ -1299,7 +1299,9 @@ class TestWorkWithGtJobs:
             if j["type"] == "ground_truth" and tasks[j["task_id"]]["jobs"]["count"] == 2
         )
         task = tasks[gt_job["task_id"]]
-        normal_job = next(j for j in jobs if j["task_id"] == task["id"] and j["type"] == "normal")
+        annotation_job = next(
+            j for j in jobs if j["task_id"] == task["id"] and j["type"] == "annotation"
+        )
 
         gt_job_source_annotations = annotations["job"][str(gt_job["id"])]
         assert (
@@ -1308,7 +1310,7 @@ class TestWorkWithGtJobs:
             or gt_job_source_annotations["tracks"]
         )
 
-        normal_job_source_annotations = annotations["job"][str(normal_job["id"])]
+        annotation_job_source_annotations = annotations["job"][str(annotation_job["id"])]
 
         with Client(BASE_URL) as client:
             client.config.status_check_period = 0.01
@@ -1325,7 +1327,7 @@ class TestWorkWithGtJobs:
 
         for job_type, source_annotations in {
             gt_job["type"]: gt_job_source_annotations,
-            normal_job["type"]: normal_job_source_annotations,
+            annotation_job["type"]: annotation_job_source_annotations,
         }.items():
             assert (
                 DeepDiff(

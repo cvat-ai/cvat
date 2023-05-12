@@ -93,7 +93,7 @@ function JobListComponent(props: Props): JSX.Element {
     const history = useHistory();
     const { id: taskId } = taskInstance;
     let { jobs } = taskInstance;
-    jobs = jobs.filter((job: Job) => job.type === JobType.NORMAL);
+    jobs = jobs.filter((job: Job) => job.type === JobType.ANNOTATION);
 
     function sorter(path: string) {
         return (obj1: any, obj2: any): number => {

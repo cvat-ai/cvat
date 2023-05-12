@@ -627,7 +627,7 @@ class TaskAnnotation:
 
         # Postgres doesn't guarantee an order by default without explicit order_by
         self.db_jobs = models.Job.objects.select_related("segment").filter(
-            segment__task_id=pk, type=models.JobType.NORMAL.value,
+            segment__task_id=pk, type=models.JobType.ANNOTATION.value,
         ).order_by('id')
         self.ir_data = AnnotationIR(self.db_task.dimension)
 
@@ -679,7 +679,7 @@ class TaskAnnotation:
         self.reset()
 
         for db_job in self.db_jobs:
-            if db_job.type != models.JobType.NORMAL:
+            if db_job.type != models.JobType.ANNOTATION:
                 continue
 
             annotation = JobAnnotation(db_job.id, is_prefetched=True)

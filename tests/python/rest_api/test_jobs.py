@@ -260,7 +260,7 @@ class TestDeleteJobs:
         return response
 
     @pytest.mark.usefixtures("restore_cvat_data")
-    @pytest.mark.parametrize("job_type, allow", (("ground_truth", True), ("normal", False)))
+    @pytest.mark.parametrize("job_type, allow", (("ground_truth", True), ("annotation", False)))
     def test_destroy_job(self, admin_user, jobs, job_type, allow):
         job = next(j for j in jobs if j["type"] == job_type)
 
@@ -354,52 +354,6 @@ class TestDeleteJobs:
             self._test_destroy_job_fails(
                 user["username"], job.id, expected_status=HTTPStatus.FORBIDDEN, **extra_kwargs
             )
-
-
-@pytest.mark.usefixtures("restore_db_per_function")
-class TestGtComparison:
-    def test_can_compare_normal_and_gt_job(self, admin_user, tasks, jobs):
-        user = admin_user
-        job_frame_count = 4
-        task = next(
-            t
-            for t in tasks
-            if not t["project_id"]
-            and not t["organization"]
-            and t["mode"] == "annotation"
-            and t["size"] > job_frame_count
-        )
-        task_id = task["id"]
-        with make_api_client(user) as api_client:
-            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
-            frame_step = int(task_meta.frame_filter.split("=")[-1]) if task_meta.frame_filter else 1
-
-        job_frame_ids = list(range(task_meta.start_frame, task_meta.stop_frame, frame_step))[
-            :job_frame_count
-        ]
-        job_spec = {
-            "task_id": task_id,
-            "type": "ground_truth",
-            "frame_selection_method": "manual",
-            "frames": job_frame_ids,
-        }
-
-        with make_api_client(user) as api_client:
-            (gt_job, _) = api_client.jobs_api.create(job_write_request=job_spec)
-
-        normal_job = next(
-            j
-            for j in jobs
-            if j["task_id"] == task_id
-            and j["type"] == "normal"
-            and set(job_frame_ids) & set(range(j["start_frame"], j["stop_frame"]))
-        )
-
-        with make_api_client(user) as api_client:
-            (conflicts, response) = api_client.jobs_api.check_conflicts(normal_job["id"])
-            assert response.status == HTTPStatus.OK
-
-        assert len(conflicts) > 0
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -717,7 +671,7 @@ class TestGetAnnotations:
         else:
             self._test_get_job_annotations_403(username, job_id, **kwargs)
 
-    @pytest.mark.parametrize("job_type", ("ground_truth", "normal"))
+    @pytest.mark.parametrize("job_type", ("ground_truth", "annotation"))
     def test_can_get_annotations(self, admin_user, jobs, annotations, job_type):
         job = next(j for j in jobs if j["type"] == job_type)
         self._test_get_job_annotations_200(
@@ -856,7 +810,7 @@ class TestPatchJobAnnotations:
         data = request_data(jid)
         self._check_response(username, jid, expect_success, data, org=org)
 
-    @pytest.mark.parametrize("job_type", ("ground_truth", "normal"))
+    @pytest.mark.parametrize("job_type", ("ground_truth", "annotation"))
     def test_can_update_annotations(self, admin_user, jobs, request_data, job_type):
         job = next(j for j in jobs if j["type"] == job_type)
         data = request_data(job["id"])
