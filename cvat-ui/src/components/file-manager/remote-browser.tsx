@@ -157,7 +157,7 @@ function RemoteBrowser(props: Props): JSX.Element {
         if (!dataSource.initialized) {
             updateContent();
         }
-    }, [currentPath]);
+    }, [dataSource]);
 
     useEffect(() => {
         const nodes: Node[] = [];
