@@ -21,7 +21,7 @@ function JobsContentComponent(): JSX.Element {
     return (
         <Row justify='center' align='middle'>
             <Col className='cvat-jobs-page-list' {...dimensions}>
-                {jobs.filter((job: Job) => job.type === JobType.NORMAL).map((job: Job): JSX.Element => (
+                {jobs.filter((job: Job) => job.type === JobType.ANNOTATION).map((job: Job): JSX.Element => (
                     <JobCard job={job} key={job.id} />
                 ))}
             </Col>

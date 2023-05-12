@@ -33,7 +33,7 @@ function JobListComponent(props: Props): JSX.Element {
     const history = useHistory();
     const { id: taskId } = taskInstance;
     const { jobs } = taskInstance;
-    const [renderedJobs] = useState<Job[]>(jobs.filter((job: Job) => job.type === JobType.NORMAL));
+    const [renderedJobs] = useState<Job[]>(jobs.filter((job: Job) => job.type === JobType.ANNOTATION));
     const [jobsReports, setJobsReports] = useState<Record<number, QualityReport>>({});
     const jobReportsFromState: QualityReport[] =
         useSelector((state: CombinedState) => state.analytics.quality.jobsReports);
