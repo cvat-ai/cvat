@@ -326,7 +326,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 request=request,
                 db_obj=self._object,
                 import_func=_import_project_dataset,
-                rq_func=dm.project.import_dataset_as_project_with_cleaning_up,
+                rq_func=dm.project.import_dataset_as_project,
                 rq_id_template=self.IMPORT_RQ_ID_TEMPLATE
             )
         else:
@@ -400,7 +400,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 request=request,
                 filename=uploaded_file,
                 rq_id_template=self.IMPORT_RQ_ID_TEMPLATE,
-                rq_func=dm.project.import_dataset_as_project_with_cleaning_up,
+                rq_func=dm.project.import_dataset_as_project,
                 db_obj=self._object,
                 format_name=format_name,
                 conv_mask_to_poly=conv_mask_to_poly
