@@ -730,7 +730,7 @@ class TestGetJobPreview:
         job_id = next(job["id"] for job in jobs if tasks[job["task_id"]]["organization"])
         self._test_get_job_preview_200("admin2", job_id)
 
-    def test_qqq_business_can_get_job_preview_in_sandbox(self, find_users, jobs, is_job_staff):
+    def test_business_can_get_job_preview_in_sandbox(self, find_users, jobs, is_job_staff):
         username, job_id = next(
             (user["username"], job["id"])
             for user in find_users(privilege="business")
@@ -739,7 +739,7 @@ class TestGetJobPreview:
         )
         self._test_get_job_preview_200(username, job_id)
 
-    def test_qqq_user_can_get_job_preview_in_sandbox(self, find_users, jobs, is_job_staff):
+    def test_user_can_get_job_preview_in_sandbox(self, find_users, jobs, is_job_staff):
         username, job_id = next(
             (user["username"], job["id"])
             for user in find_users(privilege="user")
@@ -748,7 +748,7 @@ class TestGetJobPreview:
         )
         self._test_get_job_preview_200(username, job_id)
 
-    def test_qqq_business_cannot_get_job_preview_in_sandbox(self, find_users, jobs, is_job_staff):
+    def test_business_cannot_get_job_preview_in_sandbox(self, find_users, jobs, is_job_staff):
         username, job_id = next(
             (user["username"], job["id"])
             for user in find_users(privilege="business")
@@ -757,7 +757,7 @@ class TestGetJobPreview:
         )
         self._test_get_job_preview_403(username, job_id)
 
-    def test_qqq_user_cannot_get_job_preview_in_sandbox(self, find_users, jobs, is_job_staff):
+    def test_user_cannot_get_job_preview_in_sandbox(self, find_users, jobs, is_job_staff):
         username, job_id = next(
             (user["username"], job["id"])
             for user in find_users(privilege="user")
@@ -766,7 +766,7 @@ class TestGetJobPreview:
         )
         self._test_get_job_preview_403(username, job_id)
 
-    def test_qqq_org_staff_can_get_job_preview_in_org(
+    def test_org_staff_can_get_job_preview_in_org(
         self, organizations, users, org_staff, jobs_by_org
     ):
         username, job_id = next(
@@ -777,7 +777,7 @@ class TestGetJobPreview:
         )
         self._test_get_job_preview_200(username, job_id)
 
-    def test_qqq_job_staff_can_get_job_preview_in_org(
+    def test_job_staff_can_get_job_preview_in_org(
         self, organizations, users, jobs_by_org, is_job_staff
     ):
         username, job_id = next(
@@ -789,7 +789,7 @@ class TestGetJobPreview:
         )
         self._test_get_job_preview_200(username, job_id)
 
-    def test_qqq_job_staff_can_get_job_preview_in_sandbox(self, users, jobs, tasks, is_job_staff):
+    def test_job_staff_can_get_job_preview_in_sandbox(self, users, jobs, tasks, is_job_staff):
         username, job_id = next(
             (user["username"], job["id"])
             for user in users
@@ -798,7 +798,7 @@ class TestGetJobPreview:
         )
         self._test_get_job_preview_200(username, job_id)
 
-    def test_qqq_non_org_staff_non_job_staff_cannot_get_job_preview_in_org(
+    def test_non_org_staff_non_job_staff_cannot_get_job_preview_in_org(
         self, users, organizations, jobs_by_org, is_job_staff, org_staff
     ):
         username, job_id = next(
