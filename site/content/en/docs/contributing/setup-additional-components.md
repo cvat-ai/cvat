@@ -34,8 +34,8 @@ nuctl get function
 
 ```
   NAMESPACE |                             NAME                              | PROJECT | STATE | NODE PORT | REPLICAS
-  nuclio    | openvino.dextr                                                | cvat    | ready |     55274 | 1/1
-  nuclio    | openvino.omz.public.yolo-v3-tf                                | cvat    | ready |     57308 | 1/1
+  nuclio    | openvino-dextr                                                | cvat    | ready |     55274 | 1/1
+  nuclio    | openvino-omz-public-yolo-v3-tf                                | cvat    | ready |     57308 | 1/1
 ```
 
 </details>
