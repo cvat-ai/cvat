@@ -147,6 +147,7 @@ function RemoteBrowser(props: Props): JSX.Element {
     }, [resource, manifestPath]);
 
     useEffect(() => {
+        setCurrentPage(1);
         updateContent();
     }, [currentPath]);
 
