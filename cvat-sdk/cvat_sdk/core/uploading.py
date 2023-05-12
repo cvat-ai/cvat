@@ -219,7 +219,9 @@ class Uploader:
 
         return _MyTusUploader(client=client, api_client=api_client, **kwargs)
 
-    def _upload_file_data_with_tus(self, url, filename, *, meta=None, pbar=None, logger=None) -> str:
+    def _upload_file_data_with_tus(
+        self, url, filename, *, meta=None, pbar=None, logger=None
+    ) -> str:
         file_size = filename.stat().st_size
         if pbar is None:
             pbar = NullProgressReporter()

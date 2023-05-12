@@ -6,8 +6,6 @@
 import inspect
 import os, os.path as osp
 import zipfile
-import functools
-from contextlib import suppress
 from django.conf import settings
 
 
