@@ -383,7 +383,7 @@ export class Job extends Session {
             assignee: null,
             stage: undefined,
             state: undefined,
-            type: JobType.ANNOTATION,
+            type: JobType.NORMAL,
             start_frame: undefined,
             stop_frame: undefined,
             project_id: null,

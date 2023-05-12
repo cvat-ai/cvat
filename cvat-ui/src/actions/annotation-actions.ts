@@ -913,7 +913,7 @@ export function getJobAsync(
 
             const [job] = await cvat.jobs.get({ jobID: jid });
             let gtJob = null;
-            if (job.type === JobType.ANNOTATION) {
+            if (job.type === JobType.NORMAL) {
                 try {
                     const [task] = await cvat.tasks.get({ id: tid });
                     [gtJob] = task.jobs.filter((_job: Job) => _job.type === JobType.GROUND_TRUTH);
