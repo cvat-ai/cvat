@@ -24,6 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The issue azure.core.exceptions.ResourceExistsError: The specified blob already exists (<https://github.com/opencv/cvat/pull/6082>)
 - Image scaling when moving between images with different resolution (<https://github.com/opencv/cvat/pull/6081>)
 - Invalid completed job count reporting (<https://github.com/opencv/cvat/issues/6098>)
+- HRNet CPU serverless function
+  (<https://github.com/opencv/cvat/pull/6150>)
 
 ### Security
 - TDB
