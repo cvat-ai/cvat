@@ -721,6 +721,16 @@ class DataSerializer(serializers.ModelSerializer):
         help_text=textwrap.dedent("""\
             Paths to files and directories from a file share mounted on the server, or from a cloud storage
             that should be excluded from the directories specified in server_files.
+            This option cannot be used together with filename_pattern.
+            The server_files_exclude parameter cannot be used to exclude a part of dataset from an archive.
+
+            Examples:
+
+            Exclude all files from subfolder 'sub/sub_1/sub_2'and single file 'sub/image.jpg' from specified folder:
+            server_files = ['sub/'], server_files_exclude = ['sub/sub_1/sub_2/', 'sub/image.jpg']
+
+            Exclude all cloud storage files with prefix 'sub' from the content of manifest file:
+            server_files = ['manifest.jsonl'], server_files_exclude = ['sub/']
         """)
     )
     remote_files = RemoteFileSerializer(many=True, default=[],
@@ -809,6 +819,16 @@ class DataSerializer(serializers.ModelSerializer):
             and sum(1 for f in server_files if not f['file'].endswith('.jsonl')) > settings.CLOUD_STORAGE_MAX_FILES_COUNT
         ):
             raise serializers.ValidationError(f'The maximum number of the cloud storage attached files is {settings.CLOUD_STORAGE_MAX_FILES_COUNT}')
+
+        filename_pattern = attrs.get('filename_pattern')
+        server_files_exclude = attrs.get('server_files_exclude')
+
+        if filename_pattern and len(list(filter(lambda x: not x['file'].endswith('.jsonl'), server_files))):
+            raise serializers.ValidationError('The filename_pattern can only be used with specified manifest or without server_files')
+
+        if filename_pattern and server_files_exclude:
+            raise serializers.ValidationError('The filename_pattern and server_files_exclude cannot be used together')
+
         return attrs
 
     def create(self, validated_data):
