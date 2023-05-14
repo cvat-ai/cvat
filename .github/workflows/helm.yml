@@ -78,8 +78,27 @@ jobs:
         pip3 install --user -r tests/python/requirements.txt
 
     - name: REST API and SDK tests
+      id: run_tests
       # We don't have external services in Helm tests, so we ignore corresponding cases
       # They are still tested without Helm
       run: |
         kubectl cp tests/mounted_file_share/images $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}'):/home/django/share
         pytest --timeout 30 --platform=kube -m "not with_external_services" tests/python
+
+    - name: Creating a log file from cvat containers
+      if: failure() && steps.run_tests.conclusion == 'failure'
+      env:
+        LOGS_DIR: "${{ github.workspace }}/testing"
+      run: |
+          mkdir ${LOGS_DIR}
+          for container_name in "test_cvat_server_1" "test_cvat_worker_export_1" "test_cvat_worker_import_1" "test_cvat_opa_1";
+          do
+            docker logs ${container_name} &> ${LOGS_DIR}/${container_name}.log
+          done
+
+    - name: Uploading "cvat" container logs as an artifact
+      if: failure() && steps.run_tests.conclusion == 'failure'
+      uses: actions/upload-artifact@v3.1.2
+      with:
+        name: rest_api_container_logs
+        path: "${{ github.workspace }}/testing"
