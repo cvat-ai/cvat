@@ -495,6 +495,8 @@ def _create_thread(
             )
             cloud_storage_manifest.set_index()
             cloud_storage_manifest_prefix = os.path.dirname(manifest_file)
+        else:
+            cloud_storage_instance = db_storage_to_storage_instance(db_data.cloud_storage)
 
         # update the server_files list with files from the specified directories
         if (dirs:= list(filter(lambda x: x.endswith('/'), data['server_files']))):
@@ -520,7 +522,6 @@ def _create_thread(
                         'The maximum number of the cloud storage attached files '
                         f'is {settings.CLOUD_STORAGE_MAX_FILES_COUNT}')
             else:
-                cloud_storage_instance = db_storage_to_storage_instance(db_data.cloud_storage)
                 number_of_files = len(data['server_files']) - len(dirs)
                 while len(dirs):
                     directory = dirs.pop()
@@ -543,39 +544,48 @@ def _create_thread(
                 data['server_files']
             ))
 
+        if manifest_file and not data['server_files'] and not data['filename_pattern']: # only manifest file was specified in server files by the user
+            data['filename_pattern'] = '*'
+
+        # update list with server files if task creation approach with pattern and manifest file is used
+        if data['filename_pattern']:
+            additional_files = []
+
+            if not manifest_file:
+                # NOTE: we cannot list files with specified pattern on the providers page because they don't provide such function
+                dirs = []
+                prefix = None
+
+                while True:
+                    for f in cloud_storage_instance.list_files(prefix=prefix, _use_flat_listing=True):
+                        if f['type'] == 'REG':
+                            additional_files.append(f['name'])
+                        else:
+                            dirs.append(f['name'])
+                    if not dirs:
+                        break
+                    prefix = dirs.pop()
+
+                if not data['filename_pattern'] == '*':
+                    additional_files = fnmatch.filter(additional_files, data['filename_pattern'])
+            else:
+                additional_files = list(cloud_storage_manifest.data) if not cloud_storage_manifest_prefix \
+                    else [os.path.join(cloud_storage_manifest_prefix, f) for f in cloud_storage_manifest.data]
+                if not data['filename_pattern'] == '*':
+                    additional_files = fnmatch.filter(additional_files, data['filename_pattern'])
+            # we check the limit of files on each iteration to reduce the number of possible requests to the bucket
+            if (len(additional_files)) > settings.CLOUD_STORAGE_MAX_FILES_COUNT:
+                raise ValidationError(
+                    'The maximum number of the cloud storage attached files '
+                    f'is {settings.CLOUD_STORAGE_MAX_FILES_COUNT}')
+            data['server_files'].extend(additional_files)
+
         if db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM or not settings.USE_CACHE:
             _download_data_from_cloud_storage(db_data.cloud_storage, data['server_files'], upload_dir)
             is_data_in_cloud = False
             db_data.storage = models.StorageChoice.LOCAL
         else:
             manifest = ImageManifestManager(db_data.get_manifest_path())
-
-    # update list with server files if task creation approach with pattern and manifest file is used
-    if is_data_in_cloud:
-        if manifest_file and not data['server_files'] and not data['filename_pattern']: # only manifest file was specified in server files by the user
-            data['filename_pattern'] = '*'
-
-        if data['filename_pattern']:
-            if not manifest_file:
-                raise ValidationError(
-                    "Using a filename_pattern is only supported with manifest file, "
-                    "but specified cloud storage doesn't linked with a manifest."
-                )
-
-            if l := len(data['server_files']):
-                raise ValidationError(
-                    'Using a filename_pattern is only supported with a manifest file, '
-                    f'but others {l} file{"s" if l > 1 else ""} {"were" if l > 1 else "was"} found'
-                    'Please remove extra files and keep only manifest file in server_files field.'
-                )
-
-            cloud_storage_manifest_data = list(cloud_storage_manifest.data) if not cloud_storage_manifest_prefix \
-                else [os.path.join(cloud_storage_manifest_prefix, f) for f in cloud_storage_manifest.data]
-            if data['filename_pattern'] == '*':
-                server_files = cloud_storage_manifest_data
-            else:
-                server_files = fnmatch.filter(cloud_storage_manifest_data, data['filename_pattern'])
-            data['server_files'].extend(server_files)
 
     # count and validate uploaded files
     media = _count_files(data)
