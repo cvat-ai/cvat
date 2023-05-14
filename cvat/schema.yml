@@ -2018,7 +2018,8 @@ paths:
           description: Format is not available
     post:
       operationId: jobs_create_annotations
-      summary: Method allows to upload job annotations
+      summary: Method allows to initialize the process of the job annotation upload
+        from a local file or a cloud storage
       parameters:
       - in: header
         name: X-Organization
@@ -2132,6 +2133,11 @@ paths:
         schema:
           type: integer
         description: Organization identifier
+      - in: query
+        name: rq_id
+        schema:
+          type: string
+        description: rq id
       tags:
       - jobs
       requestBody:
@@ -4773,8 +4779,8 @@ paths:
           description: Format is not available
     post:
       operationId: tasks_create_annotations
-      summary: Method allows to upload task annotations from a local file or a cloud
-        storage
+      summary: Method allows to initialize the  process of upload task annotations
+        from a local or a cloud storage file
       parameters:
       - in: header
         name: X-Organization
@@ -4887,6 +4893,11 @@ paths:
         schema:
           type: integer
         description: Organization identifier
+      - in: query
+        name: rq_id
+        schema:
+          type: string
+        description: rq id
       tags:
       - tasks
       requestBody:

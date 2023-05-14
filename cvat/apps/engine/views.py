@@ -975,6 +975,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         parameters=[
             OpenApiParameter('format', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
                 description='Input format name\nYou can get the list of supported formats at:\n/server/annotation/formats'),
+            OpenApiParameter('rq_id', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
+                description='rq id'),
         ],
         request=PolymorphicProxySerializer('TaskAnnotationsUpdate',
             serializers=[LabeledDataSerializer, AnnotationFileSerializer, OpenApiTypes.NONE],
@@ -986,7 +988,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '405': OpenApiResponse(description='Format is not available'),
         })
     @extend_schema(methods=['POST'],
-        summary="Method allows to upload task annotations from a local file or a cloud storage",
+        summary="Method allows to initialize the  process of upload task annotations from a local or a cloud storage file",
         parameters=[
             OpenApiParameter('format', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
                 description='Input format name\nYou can get the list of supported formats at:\n/server/annotation/formats'),
@@ -1040,6 +1042,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 return Response(data="Exporting annotations from a task without data is not allowed",
                     status=status.HTTP_400_BAD_REQUEST)
         elif request.method == 'POST' or request.method == 'OPTIONS':
+            # NOTE: initialization process of annotations import
             format_name = request.query_params.get('format', '')
             return self.import_annotations(
                 request=request,
@@ -1051,6 +1054,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         elif request.method == 'PUT':
             format_name = request.query_params.get('format', '')
             if format_name:
+                # NOTE: continue process of import annotations
                 use_settings = strtobool(str(request.query_params.get('use_default_location', True)))
                 conv_mask_to_poly = strtobool(request.query_params.get('conv_mask_to_poly', 'True'))
                 obj = self._object if use_settings else request.query_params
@@ -1359,7 +1363,8 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '202': OpenApiResponse(description='Exporting has been started'),
             '405': OpenApiResponse(description='Format is not available'),
         })
-    @extend_schema(methods=['POST'], summary='Method allows to upload job annotations',
+    @extend_schema(methods=['POST'],
+        summary='Method allows to initialize the process of the job annotation upload from a local file or a cloud storage',
         parameters=[
             OpenApiParameter('format', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
                 description='Input format name\nYou can get the list of supported formats at:\n/server/annotation/formats'),
@@ -1384,6 +1389,8 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         parameters=[
             OpenApiParameter('format', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
                 description='Input format name\nYou can get the list of supported formats at:\n/server/annotation/formats'),
+            OpenApiParameter('rq_id', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
+                description='rq id'),
         ],
         request=PolymorphicProxySerializer(
             component_name='JobAnnotationsUpdate',
