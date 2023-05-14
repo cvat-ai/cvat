@@ -7,7 +7,6 @@ import io
 import json
 import os
 import os.path as osp
-import subprocess
 from copy import deepcopy
 from functools import partial
 from http import HTTPStatus
@@ -26,7 +25,6 @@ from deepdiff import DeepDiff
 from PIL import Image
 
 import shared.utils.s3 as s3
-from shared.fixtures.init import get_server_image_tag
 from shared.utils.config import (
     BASE_URL,
     USER_PASS,
@@ -35,7 +33,7 @@ from shared.utils.config import (
     patch_method,
     post_method,
 )
-from shared.utils.helpers import generate_image_files
+from shared.utils.helpers import generate_image_files, generate_manifest
 
 from .utils import (
     CollectionSimpleFilterTestBase,
@@ -831,23 +829,7 @@ class TestPostTaskData:
                         with open(osp.join(path_with_sub_folders, image.name), "wb") as f:
                             f.write(image.getvalue())
 
-                command = [
-                    "docker",
-                    "run",
-                    "--rm",
-                    "-u",
-                    "root:root",
-                    "-v",
-                    f"{manifest_root_path}:/local",
-                    "--entrypoint",
-                    "python3",
-                    get_server_image_tag(),
-                    "utils/dataset_manifest/create.py",
-                    "--output-dir",
-                    "/local",
-                    "/local",
-                ]
-                subprocess.check_output(command)
+                generate_manifest(manifest_root_path)
 
                 with open(osp.join(manifest_root_path, "manifest.jsonl"), mode="rb") as m_file:
                     s3_client.create_file(
@@ -966,6 +948,14 @@ class TestPostTaskData:
             ("abc_manifest.jsonl", "[a-c]*.jpeg", False, 2),
             ("abc_manifest.jsonl", "[d]*.jpeg", False, 1),
             ("abc_manifest.jsonl", "[e-z]*.jpeg", False, 0),
+            (None, "*", True, 5),
+            (None, "test/*", True, 3),
+            (None, "test/sub*1.jpeg", True, 1),
+            (None, "*image*.jpeg", True, 3),
+            (None, "wrong_pattern", True, 0),
+            (None, "[a-c]*.jpeg", False, 2),
+            (None, "[d]*.jpeg", False, 1),
+            (None, "[e-z]*.jpeg", False, 0),
         ],
     )
     @pytest.mark.parametrize("org", [""])
@@ -1001,42 +991,27 @@ class TestPostTaskData:
                 )
             )
 
-        with TemporaryDirectory() as tmp_dir:
-            for image in images:
-                with open(osp.join(tmp_dir, image.name), "wb") as f:
-                    f.write(image.getvalue())
+        if manifest:
+            with TemporaryDirectory() as tmp_dir:
+                for image in images:
+                    with open(osp.join(tmp_dir, image.name), "wb") as f:
+                        f.write(image.getvalue())
 
-            command = [
-                "docker",
-                "run",
-                "--rm",
-                "-u",
-                "root:root",
-                "-v",
-                f"{tmp_dir}:/local",
-                "--entrypoint",
-                "python3",
-                get_server_image_tag(),
-                "utils/dataset_manifest/create.py",
-                "--output-dir",
-                "/local",
-                "/local",
-            ]
-            subprocess.check_output(command)
+                generate_manifest(tmp_dir)
 
-            with open(osp.join(tmp_dir, "manifest.jsonl"), mode="rb") as m_file:
-                s3_client.create_file(
-                    data=m_file.read(),
-                    bucket=cloud_storage["resource"],
-                    filename=f"test/sub/{manifest}" if sub_dir else manifest,
-                )
-                request.addfinalizer(
-                    partial(
-                        s3_client.remove_file,
+                with open(osp.join(tmp_dir, "manifest.jsonl"), mode="rb") as m_file:
+                    s3_client.create_file(
+                        data=m_file.read(),
                         bucket=cloud_storage["resource"],
                         filename=f"test/sub/{manifest}" if sub_dir else manifest,
                     )
-                )
+                    request.addfinalizer(
+                        partial(
+                            s3_client.remove_file,
+                            bucket=cloud_storage["resource"],
+                            filename=f"test/sub/{manifest}" if sub_dir else manifest,
+                        )
+                    )
 
         task_spec = {
             "name": f"Task with files from cloud storage {cloud_storage_id}",
@@ -1051,9 +1026,10 @@ class TestPostTaskData:
             "image_quality": 75,
             "use_cache": True,
             "cloud_storage_id": cloud_storage_id,
-            "server_files": [f"test/sub/{manifest}" if sub_dir else manifest],
             "filename_pattern": filename_pattern,
         }
+        if manifest:
+            data_spec["server_files"] = [f"test/sub/{manifest}" if sub_dir else manifest]
 
         if task_size:
             task_id, _ = _test_create_task(
