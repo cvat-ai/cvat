@@ -66,30 +66,26 @@ def _copy_data_from_share_point(
     server_files: List[str],
     upload_dir: str,
     server_dir: Optional[str] = None,
-    data_to_be_excluded: Optional[List[str]] = None,
+    server_files_exclude: Optional[List[str]] = None,
 ):
     job = rq.get_current_job()
     job.meta['status'] = 'Data are being copied from source..'
     job.save_meta()
 
     # filter data from files/directories that should be excluded
-    if data_to_be_excluded:
-
-        expanded_server_files = []
-
+    if server_files_exclude:
         for f in server_files:
             path = Path(server_dir or settings.SHARE_ROOT) / Path(f)
             if not path.is_dir():
-                expanded_server_files.append(f)
+                server_files.append(f)
             else:
+                server_files.remove(f)
                 for root, _, files in os.walk(str(path)):
                     if files:
-                        expanded_server_files.extend([str(Path(f) / Path(root).relative_to(path) / Path(i)) for i in files])
-
-        server_files = expanded_server_files
+                        server_files.extend([str(Path(f) / Path(root).relative_to(path) / Path(i)) for i in files])
 
         server_files = list(filter(
-            lambda x: x not in data_to_be_excluded and all([f'{Path(i)}/' not in data_to_be_excluded for i in Path(x).parents]),
+            lambda x: x not in server_files_exclude and all([f'{Path(i)}/' not in server_files_exclude for i in Path(x).parents]),
             server_files
         ))
 
@@ -541,9 +537,9 @@ def _create_thread(
             data['server_files'].extend(additional_files)
             del additional_files
 
-        if data_to_be_excluded := data.get('server_files_exclude'):
+        if server_files_exclude := data.get('server_files_exclude'):
             data['server_files'] = list(filter(
-                lambda x: x not in data_to_be_excluded and all([f'{Path(i)}/' not in data_to_be_excluded for i in Path(x).parents]),
+                lambda x: x not in server_files_exclude and all([f'{Path(i)}/' not in server_files_exclude for i in Path(x).parents]),
                 data['server_files']
             ))
 
@@ -664,15 +660,15 @@ def _create_thread(
     # filter server_files from server_files_exclude when share point is used and files are not copied to CVAT.
     # here we exclude the case when the files are copied to CVAT because files are already filtered out.
     if (
-        (data_to_be_excluded := data.get('server_files_exclude')) and
+        (server_files_exclude := data.get('server_files_exclude')) and
         data['server_files'] and
         not is_data_in_cloud and
         not data['copy_data'] and
         isinstance(extractor, MEDIA_TYPES['image']['extractor'])
     ):
         extractor.filter(
-            lambda x: os.path.relpath(x, upload_dir) not in data_to_be_excluded and \
-                all([f'{Path(i)}/' not in data_to_be_excluded for i in Path(x).relative_to(upload_dir).parents])
+            lambda x: os.path.relpath(x, upload_dir) not in server_files_exclude and \
+                all([f'{Path(i)}/' not in server_files_exclude for i in Path(x).relative_to(upload_dir).parents])
         )
 
     validate_dimension = ValidateDimension()
