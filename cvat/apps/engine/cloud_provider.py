@@ -233,7 +233,6 @@ class _CloudStorage(ABC):
     def _list_raw_content_on_one_page(
         self,
         prefix: Optional[str] = None,
-        delimiter: str = '/',
         next_token: Optional[str] = None,
         page_size: int = settings.BUCKET_CONTENT_MAX_PAGE_SIZE,
     ) -> Dict:
@@ -242,13 +241,12 @@ class _CloudStorage(ABC):
     def list_files_on_one_page(
         self,
         prefix: Optional[str] = None,
-        delimiter: str = '/',
         next_token: Optional[str] = None,
         page_size: int = settings.BUCKET_CONTENT_MAX_PAGE_SIZE,
         _use_flat_listing: bool = False,
         _use_sort: bool = False,
     ) -> Dict:
-        result = self._list_raw_content_on_one_page(prefix, delimiter, next_token, page_size)
+        result = self._list_raw_content_on_one_page(prefix, next_token, page_size)
 
         if not _use_flat_listing:
             result['directories'] = [d.strip('/') for d in result['directories']]
@@ -270,13 +268,12 @@ class _CloudStorage(ABC):
     def list_files(
         self,
         prefix: Optional[str] = None,
-        delimiter: str = '/',
         _use_flat_listing: bool = False,
     ) -> List[str]:
         all_files = []
         next_token = None
         while True:
-            batch = self.list_files_on_one_page(prefix, delimiter, next_token, _use_flat_listing=_use_flat_listing)
+            batch = self.list_files_on_one_page(prefix, next_token, _use_flat_listing=_use_flat_listing)
             all_files.extend(batch['content'])
             next_token = batch['next']
             if not next_token:
@@ -453,7 +450,6 @@ class AWS_S3(_CloudStorage):
     def _list_raw_content_on_one_page(
         self,
         prefix: Optional[str] = None,
-        delimiter: str = '/',
         next_token: Optional[str] = None,
         page_size: int = settings.BUCKET_CONTENT_MAX_PAGE_SIZE,
     ) -> Dict:
@@ -465,7 +461,7 @@ class AWS_S3(_CloudStorage):
         #    'NextContinuationToken': 'str'
         # }
         response = self._client.list_objects_v2(
-            Bucket=self.name, MaxKeys=page_size, Delimiter=delimiter,
+            Bucket=self.name, MaxKeys=page_size, Delimiter='/',
             **({'Prefix': prefix} if prefix else {}),
             **({'ContinuationToken': next_token} if next_token else {}),
         )
@@ -656,12 +652,11 @@ class AzureBlobContainer(_CloudStorage):
     def _list_raw_content_on_one_page(
         self,
         prefix: Optional[str] = None,
-        delimiter: str = '/',
         next_token: Optional[str] = None,
         page_size: int = settings.BUCKET_CONTENT_MAX_PAGE_SIZE,
     ) -> Dict:
         page = self._client.walk_blobs(
-            maxresults=page_size, results_per_page=page_size, delimiter=delimiter,
+            maxresults=page_size, results_per_page=page_size, delimiter='/',
             **({'name_starts_with': prefix} if prefix else {})
         ).by_page(continuation_token=next_token)
         all_files = list(next(page))
@@ -765,14 +760,13 @@ class GoogleCloudStorage(_CloudStorage):
     def _list_raw_content_on_one_page(
         self,
         prefix: Optional[str] = None,
-        delimiter: str = '/',
         next_token: Optional[str] = None,
         page_size: int = settings.BUCKET_CONTENT_MAX_PAGE_SIZE,
     ) -> Dict:
         iterator = self._client.list_blobs(
             bucket_or_name=self.name, max_results=page_size, page_size=page_size,
             fields='items(name),nextPageToken,prefixes', # https://cloud.google.com/storage/docs/json_api/v1/parameters#fields
-            delimiter=delimiter,
+            delimiter='/',
             **({'prefix': prefix} if prefix else {}),
             **({'page_token': next_token} if next_token else {}),
         )

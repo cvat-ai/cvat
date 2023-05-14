@@ -146,6 +146,8 @@ class ServerViewSet(viewsets.ViewSet):
                 if entry.is_file():
                     entry_type = "REG"
                     entry_mime_type = get_mime(os.path.join(settings.SHARE_ROOT, entry))
+                    if entry_mime_type == 'zip':
+                        entry_mime_type = 'archive'
                 elif entry.is_dir():
                     entry_type = "DIR"
                     entry_mime_type = "DIR"
@@ -2138,8 +2140,6 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
             OpenApiParameter('prefix', description='Prefix to filter data',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
-            OpenApiParameter('delimiter', description='The character you use to group keys in the cloud storage',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
             OpenApiParameter('next_token', description='Used to continue listing files in the bucket',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
             OpenApiParameter('page_size', location=OpenApiParameter.QUERY, type=OpenApiTypes.INT),
@@ -2163,7 +2163,6 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             # make api identical to share api
             if prefix and prefix.startswith('/'):
                 prefix = prefix[1:]
-            delimiter = request.query_params.get('delimiter', '/')
             next_token = request.query_params.get('next_token')
 
             if (manifest_path := request.query_params.get('manifest_path')):
@@ -2183,9 +2182,12 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 content = manifest.emulate_hierarchical_structure(
                     page_size, manifest_prefix=manifest_prefix, prefix=prefix, start_index=start_index)
             else:
-                content = storage.list_files_on_one_page(prefix, delimiter, next_token, page_size,_use_sort=True)
+                content = storage.list_files_on_one_page(prefix, next_token, page_size,_use_sort=True)
             for i in content['content']:
-                i['mime_type'] = get_mime(i['name']) if i['type'] != 'DIR' else 'DIR' # identical to share point
+                mime_type = get_mime(i['name']) if i['type'] != 'DIR' else 'DIR' # identical to share point
+                if mime_type == 'zip':
+                    mime_type = 'archive'
+                i['mime_type'] = mime_type
             serializer = CloudStorageContentSerializer(data=content)
             serializer.is_valid(raise_exception=True)
             content = serializer.data

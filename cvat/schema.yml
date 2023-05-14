@@ -802,11 +802,6 @@ paths:
         name: X-Organization
         schema:
           type: string
-      - in: query
-        name: delimiter
-        schema:
-          type: string
-        description: The character you use to group keys in the cloud storage
       - in: path
         name: id
         schema:
