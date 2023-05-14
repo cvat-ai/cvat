@@ -483,8 +483,8 @@ while True:
 with open('output_file', 'wb') as output_file:
     output_file.write(response.data)
 ```
-### Different versions of API Endpoints
-#### The cloudstorages/id/content REST API Endpoint
+### Different versions of API endpoints
+#### The cloudstorages/id/content REST API endpoint
 
 > **Warning:** The `retrieve_content` method of `cloudstorages_api` will be deprecated in 2.5.0 version.
 > We recommend using `retrieve_content_v2` method that matches to revised API when using SDK.
@@ -493,7 +493,6 @@ with open('output_file', 'wb') as output_file:
 Here you can find the example how to get the bucket content using new method `retrieve_content_v2`.
 
 ```python
-import os
 from pprint import pprint
 
 from cvat_sdk.api_client import ApiClient, Configuration
@@ -511,16 +510,21 @@ with ApiClient(
             **({"prefix": prefix} if prefix else {}),
             **({"next_token": next_token} if next_token else {}),
         )
+        # the data will have the following structure:
+        # {'content': [
+        #     {'mime_type': <image|video|archive|pdf|DIR>, 'name': <name>, 'type': <REG|DIR>},
+        # ],
+        # 'next': <next_token_string|None>}
         files.extend(
             [
-                os.path.join(prefix, f["name"])
+                prefix + f["name"]
                 for f in data["content"]
                 if str(f["type"]) == "REG"
             ]
         )
         prefixes.extend(
             [
-                os.path.join(prefix, f["name"])
+                prefix + f["name"]
                 for f in data["content"]
                 if str(f["type"]) == "DIR"
             ]
@@ -531,10 +535,6 @@ with ApiClient(
         if not len(prefixes):
             break
         prefix = f"{prefixes.pop()}/"
-    pprint(files)
-    # {'content': [
-    #     {'mime_type': 'image', 'name': 'sub/image_1.jpg', 'type': 'REG'},
-    #     {'mime_type': 'image', 'name': 'image_2.jpg', 'type': 'REG'},
-    #  'next': None}
+    pprint(files) # ['sub/image_1.jpg', 'image_2.jpg']
 
 ```
