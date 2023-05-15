@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Running SAM masks decoder on frontend (<https://github.com/opencv/cvat/pull/6019>)
+- Updated Django to 4.2.x version (<https://github.com/opencv/cvat/pull/6122>)
 
 ### Deprecated
 - TDB
