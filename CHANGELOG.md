@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## \[2.5.0] - Unreleased
 ### Added
-- TDB
+- [helm] Added confugurable default storage option to chart
 
 ### Changed
 - Running SAM masks decoder on frontend (<https://github.com/opencv/cvat/pull/6019>)
@@ -18,12 +18,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/opencv/cvat/pull/6129>).
 - OpenVINO-based Nuclio functions now use the OpenVINO 2022.3 runtime
   (<https://github.com/opencv/cvat/pull/6129>).
+- [helm] Moved test-related values to another values.file to separate it from default config
+-
 
 ### Deprecated
 - TDB
 
 ### Removed
-- TDB
+- [helm] Removed hardcoded mandatory traefik ingress usage
 
 ### Fixed
 - Tracking of multiple objects (30 and more) with TransT tracker
@@ -33,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Invalid completed job count reporting (<https://github.com/opencv/cvat/issues/6098>)
 - OpenVINO-based Nuclio functions can now be deployed to Kubernetes
   (<https://github.com/opencv/cvat/pull/6129>).
+- [helm] fixed issue with multiple caches in same RWX volume, which prevents db migration to start
 
 ### Security
 - TDB
