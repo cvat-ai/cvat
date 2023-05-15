@@ -1,24 +1,21 @@
 metadata:
-  name: openvino-omz-intel-text-detection-0004
+  name: openvino-omz-intel-person-reidentification-retail-0277
   namespace: cvat
   annotations:
-    name: Text detection v4
-    type: detector
+    name: Person reidentification
+    type: reid
     framework: openvino
-    spec: |
-      [
-        { "id": 1, "name": "text" }
-      ]
+    spec:
 
 spec:
-  description: Text detector based on PixelLink architecture with MobileNetV2-like as a backbone for indoor/outdoor scenes.
+  description: Person reidentification model for a general scenario
   runtime: 'python:3.8'
   handler: main:handler
   eventTimeout: 30s
 
   build:
-    image: cvat.openvino.omz.intel.text-detection-0004
-    baseImage: cvat.openvino.omz.intel.text-detection-0004.base
+    image: cvat.openvino.omz.intel.person-reidentification-retail-0277
+    baseImage: cvat.openvino.omz.intel.person-reidentification-retail-0277.base
 
   triggers:
     myHttpTrigger:
