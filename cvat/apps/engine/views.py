@@ -1917,7 +1917,7 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 ],
                 resource_type_field_name=None,
                 many=True, # https://github.com/tfranzel/drf-spectacular/issues/910
-                ),
+            ),
         }),
     retrieve=extend_schema(
         summary='Method provides information of a specific user',
