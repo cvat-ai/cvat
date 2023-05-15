@@ -337,7 +337,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 if not rq_id:
                     return Response('The rq_id param should be specified in the query parameters', status=status.HTTP_400_BAD_REQUEST)
 
-                # check that used has access to current rq_job
+                # check that the user has access to the current rq_job
                 # We should not return any status of job including "404 not found" for user that has no access for this rq_job
 
                 if self.IMPORT_RQ_ID_TEMPLATE.format(pk, request.user) != rq_id:
