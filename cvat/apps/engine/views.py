@@ -1929,7 +1929,7 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                     BasicUserSerializer,
                 ],
                 resource_type_field_name=None,
-                ),
+            ),
         }),
     partial_update=extend_schema(
         summary='Method updates chosen fields of a user',
