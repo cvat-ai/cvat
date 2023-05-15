@@ -13,7 +13,7 @@ def init_context(context):
     context.logger.info("Init context...100%")
 
 def handler(context, event):
-    context.logger.info("Run person-reidentification-retail-0300 model")
+    context.logger.info("Run person-reidentification-retail-0277 model")
     data = event.body
     buf0 = io.BytesIO(base64.b64decode(data["image0"]))
     buf1 = io.BytesIO(base64.b64decode(data["image1"]))

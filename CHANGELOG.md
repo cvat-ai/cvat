@@ -11,6 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Running SAM masks decoder on frontend (<https://github.com/opencv/cvat/pull/6019>)
+- The `person-reidentification-retail-0300` and
+  `faster_rcnn_inception_v2_coco` Nuclio functions were replaced with
+  `person-reidentification-retail-0277` and
+  `faster_rcnn_inception_resnet_v2_atrous_coco`, respectively
+  (<https://github.com/opencv/cvat/pull/6129>).
+- OpenVINO-based Nuclio functions now use the OpenVINO 2022.3 runtime
+  (<https://github.com/opencv/cvat/pull/6129>).
 
 ### Deprecated
 - TDB
@@ -24,6 +31,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The issue azure.core.exceptions.ResourceExistsError: The specified blob already exists (<https://github.com/opencv/cvat/pull/6082>)
 - Image scaling when moving between images with different resolution (<https://github.com/opencv/cvat/pull/6081>)
 - Invalid completed job count reporting (<https://github.com/opencv/cvat/issues/6098>)
+- OpenVINO-based Nuclio functions can now be deployed to Kubernetes
+  (<https://github.com/opencv/cvat/pull/6129>).
 
 ### Security
 - TDB
