@@ -19,7 +19,7 @@
     ],
     "npm.exclude": "**/.env/**",
     "licenser.license": "Custom",
-    "licenser.customHeader": "Copyright (C) @YEAR@ Intel Corporation\n\nSPDX-License-Identifier: MIT",
+    "licenser.customHeader": "Copyright (C) @YEAR@ CVAT.ai Corporation\n\nSPDX-License-Identifier: MIT",
     "files.trimTrailingWhitespace": true,
     "sqltools.connections": [
         {
