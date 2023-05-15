@@ -4,7 +4,6 @@
 
 import logging
 import os
-import re
 from http import HTTPStatus
 from pathlib import Path
 from subprocess import PIPE, CalledProcessError, run
