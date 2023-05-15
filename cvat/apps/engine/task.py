@@ -80,9 +80,7 @@ def _copy_data_from_share_point(
                 server_files.append(f)
             else:
                 server_files.remove(f)
-                for root, _, files in os.walk(str(path)):
-                    if files:
-                        server_files.extend([str(Path(f) / Path(root).relative_to(path) / Path(i)) for i in files])
+                server_files.extend([str(f / i.relative_to(path)) for i in path.glob('**/*') if i.is_file()])
 
         server_files = list(filter(
             lambda x: x not in server_files_exclude and all([f'{Path(i)}/' not in server_files_exclude for i in Path(x).parents]),
