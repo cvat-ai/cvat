@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## \[2.5.0] - Unreleased
 ### Added
 - [helm] Added configurable default storage option to chart(<https://github.com/opencv/cvat/pull/6137>)
+- A configuration option to control how Nuclio functions are invoked
+  (<https://github.com/opencv/cvat/pull/6146>)
 
 ### Changed
 - Running SAM masks decoder on frontend (<https://github.com/opencv/cvat/pull/6019>)
@@ -19,7 +21,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - OpenVINO-based Nuclio functions now use the OpenVINO 2022.3 runtime
   (<https://github.com/opencv/cvat/pull/6129>).
 - [helm] Moved test-related values to another values.file to separate it from default config(<https://github.com/opencv/cvat/pull/6137>)
--
 
 ### Deprecated
 - TDB
@@ -36,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - OpenVINO-based Nuclio functions can now be deployed to Kubernetes
   (<https://github.com/opencv/cvat/pull/6129>).
 - [helm] fixed issue with multiple caches in same RWX volume, which prevents db migration to start(<https://github.com/opencv/cvat/pull/6137>)
+- HRNet CPU serverless function
 
 ### Security
 - TDB
