@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from __future__ import annotations
+
 from copy import deepcopy
 from datetime import timedelta
 from functools import cached_property, partial
@@ -14,8 +15,8 @@ from typing import Any, Callable, Dict, Hashable, List, Optional, Sequence, Tupl
 from attrs import asdict, define, fields_dict, has as is_attrs_type
 import datumaro as dm
 import datumaro.util.mask_tools
-from django.conf import settings
 from django.db import transaction
+from django.conf import settings
 from django.utils import timezone
 from scipy.optimize import linear_sum_assignment
 import django_rq
@@ -26,9 +27,14 @@ from cvat.apps.dataset_manager.bindings import (CommonData, CvatToDmAnnotationCo
     GetCVATDataExtractor, JobData, match_dm_item)
 from cvat.apps.dataset_manager.util import bulk_create
 from cvat.apps.dataset_manager.formats.registry import dm_env
-from cvat.apps.engine import models
-from cvat.apps.engine.models import (AnnotationConflictImportance,
-    AnnotationConflictType, AnnotationType, ShapeType)
+
+from cvat.apps.engine.models import Job, JobType, ShapeType, Task
+
+from cvat.apps.quality_control.models import (
+    AnnotationConflictImportance, AnnotationConflictType, AnnotationType,
+)
+from cvat.apps.quality_control import models
+
 from cvat.apps.profiler import silk_profile
 
 from datumaro.util import dump_json, parse_json
@@ -482,6 +488,8 @@ class ComparisonReport(_Serializable):
 
     def to_json(self, *args, **kwargs) -> str:
         d = self.to_dict(*args, **kwargs)
+
+        # String keys are needed for json dumping
         d["frame_results"] = {str(k): v for k, v in d['frame_results'].items()}
         return dump_json(d, indent=True, append_newline=True).decode()
 
@@ -2006,31 +2014,34 @@ class DatasetComparator:
         )
 
 
-class QueueJobManager:
-    TASK_QUALITY_CHECK_JOB_DELAY = timedelta(seconds=5) # TODO: 1h
+class ReportUpdateManager:
     _QUEUE_JOB_PREFIX = "update-quality-metrics-task-"
+
+    @classmethod
+    def _get_quality_check_job_delay(cls) -> timedelta:
+        return timedelta(seconds=settings.QUALITY_CHECK_JOB_DELAY)
 
     def _get_scheduler(self):
         return django_rq.get_scheduler(settings.CVAT_QUEUES.QUALITY_REPORTS.value)
 
-    def _make_queue_job_prefix(self, task: models.Task) -> str:
+    def _make_queue_job_prefix(self, task: Task) -> str:
         return f'{self._QUEUE_JOB_PREFIX}{task.id}-'
 
-    def _make_initial_queue_job_id(self, task: models.Task) -> str:
+    def _make_initial_queue_job_id(self, task: Task) -> str:
         return f'{self._make_queue_job_prefix(task)}initial'
 
-    def _make_regular_queue_job_id(self, task: models.Task, start_time: timezone.datetime) -> str:
+    def _make_regular_queue_job_id(self, task: Task, start_time: timezone.datetime) -> str:
         return f'{self._make_queue_job_prefix(task)}{start_time.timestamp()}'
 
     @classmethod
-    def _get_last_report_time(cls, task: models.Task) -> Optional[timezone.datetime]:
+    def _get_last_report_time(cls, task: Task) -> Optional[timezone.datetime]:
         report = models.QualityReport.objects.filter(task=task).order_by('-created_date').first()
         if report:
             return report.created_date
         return None
 
     def _find_next_job_id(
-        self, existing_job_ids: Sequence[str], task: models.Task, *, now: timezone.datetime
+        self, existing_job_ids: Sequence[str], task: Task, *, now: timezone.datetime
     ) -> str:
         job_id_prefix = self._make_queue_job_prefix(task)
 
@@ -2057,16 +2068,17 @@ class QueueJobManager:
             queue_job_id = max_job_id
         else:
             # Add an updating job in the queue in the next time frame
+            delay = self._get_quality_check_job_delay()
             intervals = max(
                 1,
-                1 + (now - last_update_time) // self.TASK_QUALITY_CHECK_JOB_DELAY
+                1 + (now - last_update_time) // delay
             )
-            next_update_time = last_update_time + self.TASK_QUALITY_CHECK_JOB_DELAY * intervals
+            next_update_time = last_update_time + delay * intervals
             queue_job_id = self._make_regular_queue_job_id(task, next_update_time)
 
         return queue_job_id
 
-    def schedule_quality_check_job(self, task: models.Task):
+    def schedule_quality_check_job(self, task: Task):
         # This function schedules a report computing job in the queue
         # The queue work algorithm is lock-free. It should keep the following properties:
         # - job names are stable between potential writers
@@ -2078,16 +2090,17 @@ class QueueJobManager:
             return
 
         now = timezone.now()
+        delay = self._get_quality_check_job_delay()
+        next_job_time = now.utcnow() + delay
+
         scheduler = self._get_scheduler()
-        existing_job_ids = set(j.id for j in scheduler.get_jobs(
-            until=now.utcnow() + self.TASK_QUALITY_CHECK_JOB_DELAY
-        ))
+        existing_job_ids = set(j.id for j in scheduler.get_jobs(until=next_job_time))
 
         queue_job_id = self._find_next_job_id(existing_job_ids, task, now=now)
 
         if queue_job_id not in existing_job_ids:
             scheduler.enqueue_at(
-                now.utcnow() + self.TASK_QUALITY_CHECK_JOB_DELAY,
+                next_job_time,
                 self._update_task_quality_metrics,
                 task_id=task.id,
                 job_id=queue_job_id,
@@ -2099,18 +2112,18 @@ class QueueJobManager:
         with transaction.atomic():
             # The task could have been deleted during scheduling
             try:
-                task = models.Task.objects.select_related('data').get(id=task_id)
-            except models.Task.DoesNotExist:
+                task = Task.objects.select_related('data').get(id=task_id)
+            except Task.DoesNotExist:
                 return
 
             # Try to use shared queryset to minimize DB requests
-            job_queryset = models.Job.objects.prefetch_related('segment')
+            job_queryset = Job.objects.prefetch_related('segment')
             job_queryset = JobDataProvider.add_prefetch_info(job_queryset)
             job_queryset = job_queryset.filter(segment__task_id=task_id).all()
 
             # The GT job could have been removed during scheduling, so we need to check it exists
-            gt_job: models.Job = next(
-                (job for job in job_queryset if job.type == models.JobType.GROUND_TRUTH),
+            gt_job: Job = next(
+                (job for job in job_queryset if job.type == JobType.GROUND_TRUTH),
                 None
             )
             if gt_job is None:
@@ -2128,10 +2141,10 @@ class QueueJobManager:
             gt_job_data_provider = JobDataProvider(gt_job.id, queryset=job_queryset)
             gt_job_frames = gt_job_data_provider.job_data.get_included_frames()
 
-            jobs: List[models.Job] = [
+            jobs: List[Job] = [
                 j
                 for j in job_queryset
-                if j.type == models.JobType.ANNOTATION
+                if j.type == JobType.ANNOTATION
             ]
             job_data_providers = {
                 job.id: JobDataProvider(job.id, queryset=job_queryset,
@@ -2152,10 +2165,55 @@ class QueueJobManager:
             # Release resources
             del job_data_provider.dm_dataset
 
+        task_comparison_report = cls._compute_task_report(task, job_comparison_reports)
+
+        with transaction.atomic():
+            # The task could have been deleted during processing
+            try:
+                Task.objects.get(id=task_id)
+            except Task.DoesNotExist:
+                return
+
+            last_report_time = cls._get_last_report_time(task)
+            if (last_report_time
+                and timezone.now() < last_report_time + cls._get_quality_check_job_delay()
+            ):
+                # Discard this report as it has probably been computed in parallel
+                # with another one
+                return
+
+            job_quality_reports = {}
+            for job in jobs:
+                job_comparison_report = job_comparison_reports[job.id]
+                job_report = dict(
+                    job=job,
+                    target_last_updated=job.updated_date,
+                    gt_last_updated=gt_job.updated_date,
+                    data=job_comparison_report.to_json(),
+                    conflicts=[c.to_dict() for c in job_comparison_report.conflicts],
+                )
+
+                job_quality_reports[job.id] = job_report
+
+            cls._save_reports(
+                task_report=dict(
+                    task=task,
+                    target_last_updated=task.updated_date,
+                    gt_last_updated=gt_job.updated_date,
+                    data=task_comparison_report.to_json(),
+                    conflicts=[], # the task doesn't have own conflicts
+                ),
+                job_reports=list(job_quality_reports.values())
+            )
+
+    @classmethod
+    def _compute_task_report(
+        cls, task: Task, job_reports: Dict[int, ComparisonReport]
+    ) -> ComparisonReport:
         # The task dataset can be different from any jobs' dataset because of frame overlaps
         # between jobs, from which annotations are merged to get the task annotations.
         # Thus, a separate report could be computed for the task. Instead, here we only
-        # compute combined summary for job reports.
+        # compute the combined summary of the job reports.
         task_intersection_frames = set()
         task_conflicts = []
         task_annotations_summary = None
@@ -2163,7 +2221,7 @@ class QueueJobManager:
         task_mean_shape_ious = []
         task_frame_results = {}
         task_frame_results_counts = {}
-        for r in job_comparison_reports.values():
+        for r in job_reports.values():
             task_intersection_frames.update(r.comparison_summary.frames)
             task_conflicts.extend(r.conflicts)
 
@@ -2206,7 +2264,7 @@ class QueueJobManager:
         task_ann_components_summary.shape.mean_iou = np.mean(task_mean_shape_ious)
 
         task_report_data = ComparisonReport(
-            parameters=next(iter(job_comparison_reports.values())).parameters,
+            parameters=next(iter(job_reports.values())).parameters,
 
             comparison_summary=ComparisonReportComparisonSummary(
                 frame_share_percent=len(task_intersection_frames) / (task.data.size or 1),
@@ -2229,48 +2287,10 @@ class QueueJobManager:
             frame_results=task_frame_results,
         )
 
-        with transaction.atomic():
-            # The task could have been deleted during processing
-            try:
-                models.Task.objects.get(id=task_id)
-            except models.Task.DoesNotExist:
-                return
-
-            last_report_time = cls._get_last_report_time(task)
-            if (last_report_time
-                and timezone.now() < last_report_time + cls.TASK_QUALITY_CHECK_JOB_DELAY
-            ):
-                # Discard this report as it has probably been computed in parallel
-                # with another one
-                return
-
-            job_quality_reports = {}
-            for job in jobs:
-                job_comparison_report = job_comparison_reports[job.id]
-                job_report = dict(
-                    job=job,
-                    target_last_updated=job.updated_date,
-                    gt_last_updated=gt_job.updated_date,
-                    data=job_comparison_report.to_json(),
-                    conflicts=[c.to_dict() for c in job_comparison_report.conflicts],
-                )
-
-                job_quality_reports[job.id] = job_report
-
-            cls._save_reports(
-                task_report=dict(
-                    task=task,
-                    target_last_updated=task.updated_date,
-                    gt_last_updated=gt_job.updated_date,
-                    data=task_report_data.to_json(),
-                    conflicts=[], # the task doesn't have own conflicts
-                ),
-                job_reports=list(job_quality_reports.values())
-            )
-
+        return task_report_data
 
     @classmethod
-    def _save_reports(cls, *, task_report, job_reports) -> models.QualityReport:
+    def _save_reports(cls, *, task_report: Dict, job_reports: List[Dict]) -> models.QualityReport:
         # TODO: add validation (e.g. ann id count for different types of conflicts)
 
         db_task_report = models.QualityReport(
@@ -2336,16 +2356,17 @@ class QueueJobManager:
         )
 
     @classmethod
-    def _get_task_quality_params(cls, task: models.Task) -> Optional[ComparisonParameters]:
+    def _get_task_quality_params(cls, task: Task) -> Optional[ComparisonParameters]:
         quality_params, _ = models.QualitySettings.objects.get_or_create(task=task)
         return ComparisonParameters.from_dict(quality_params.to_dict())
 
 
 def prepare_report_for_downloading(db_report: models.QualityReport, *, host: str) -> str:
+    # Decorate the report with conflicting annotation links like:
+    # <host>/tasks/62/jobs/82?frame=250&type=shape&serverID=33741
+
     comparison_report = ComparisonReport.from_json(db_report.get_json_report())
 
-    # Decorate report with conflicting annotation links like:
-    # <host>/tasks/62/jobs/82?frame=250&type=shape&serverID=33741
     serialized_data = comparison_report.to_dict()
     task_id = db_report.task.id
 
@@ -2364,6 +2385,7 @@ def prepare_report_for_downloading(db_report: models.QualityReport, *, host: str
                     f"&serverID={ann_id['obj_id']}"
                 )
 
+    # String keys are needed for json dumping
     serialized_data["frame_results"] = {
         str(k): v for k, v in serialized_data['frame_results'].items()
     }

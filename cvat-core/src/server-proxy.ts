@@ -2163,7 +2163,7 @@ async function getQualityReports(filter): Promise<RawQualityReportData[]> {
     const { backendAPI } = config;
 
     try {
-        const response = await Axios.get(`${backendAPI}/quality_reports`, {
+        const response = await Axios.get(`${backendAPI}/quality/reports`, {
             params: {
                 ...params,
                 ...filter,
@@ -2181,7 +2181,7 @@ async function getQualityConflicts(filter): Promise<RawQualityConflictData[]> {
     const { backendAPI } = config;
 
     try {
-        const response = await fetchAll(`${backendAPI}/conflicts`, {
+        const response = await fetchAll(`${backendAPI}/quality/conflicts`, {
             ...params,
             ...filter,
         });

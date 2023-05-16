@@ -18,7 +18,8 @@ from rest_framework.exceptions import ValidationError, PermissionDenied
 from rest_framework.permissions import BasePermission
 
 from cvat.apps.organizations.models import Membership, Organization
-from cvat.apps.engine.models import AnnotationConflict, CloudStorage, Label, Project, QualityReport, QualitySettings, Task, Job, Issue
+from cvat.apps.engine.models import CloudStorage, Label, Project, Task, Job, Issue
+from cvat.apps.quality_control.models import AnnotationConflict, QualityReport, QualitySettings
 from cvat.apps.webhooks.models import WebhookTypeChoice
 from cvat.utils.http import make_requests_session
 

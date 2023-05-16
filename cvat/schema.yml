@@ -1114,106 +1114,6 @@ paths:
       responses:
         '204':
           description: The comment has been deleted
-  /api/conflicts:
-    get:
-      operationId: conflicts_list
-      summary: Method returns a paginated list of annotation conflicts
-      parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
-      - name: filter
-        required: false
-        in: query
-        description: 'A filter term. Available filter_fields: [''id'', ''report_id'',
-          ''frame'', ''type'', ''job_id'']'
-        schema:
-          type: string
-      - name: frame
-        in: query
-        description: A simple equality filter for the frame field
-        schema:
-          type: integer
-      - name: job_id
-        in: query
-        description: A simple equality filter for the job_id field
-        schema:
-          type: integer
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
-      - name: page
-        required: false
-        in: query
-        description: A page number within the paginated result set.
-        schema:
-          type: integer
-      - name: page_size
-        required: false
-        in: query
-        description: Number of results to return per page.
-        schema:
-          type: integer
-      - name: report_id
-        in: query
-        description: A simple equality filter for the report_id field
-        schema:
-          type: integer
-      - name: search
-        required: false
-        in: query
-        description: 'A search term. Available search_fields: []'
-        schema:
-          type: string
-      - name: sort
-        required: false
-        in: query
-        description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''id'', ''report_id'', ''frame'', ''type'', ''job_id'']'
-        schema:
-          type: string
-      - in: query
-        name: task_id
-        schema:
-          type: integer
-        description: A simple equality filter for task id
-      - name: type
-        in: query
-        description: A simple equality filter for the type field
-        schema:
-          type: string
-          enum:
-          - missing_annotation
-          - extra_annotation
-          - mismatching_label
-          - low_overlap
-          - mismatching_direction
-          - mismatching_attributes
-          - mismatching_groups
-          - covered_annotation
-      tags:
-      - conflicts
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses:
-        '200':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                $ref: '#/components/schemas/PaginatedAnnotationConflictList'
-          description: ''
   /api/events:
     get:
       operationId: events_list
@@ -1936,7 +1836,7 @@ paths:
         schema:
           type: string
           enum:
-          - normal
+          - annotation
           - ground_truth
       tags:
       - jobs
@@ -4261,10 +4161,110 @@ paths:
           description: The project has been imported
         '202':
           description: Importing a backup file has been started
-  /api/quality_reports:
+  /api/quality/conflicts:
     get:
-      operationId: quality_reports_list
-      summary: Method returns a paginated list of quality_reports
+      operationId: quality_list_conflicts
+      summary: Method returns a paginated list of annotation conflicts
+      parameters:
+      - in: header
+        name: X-Organization
+        schema:
+          type: string
+      - name: filter
+        required: false
+        in: query
+        description: 'A filter term. Available filter_fields: [''id'', ''report_id'',
+          ''frame'', ''type'', ''job_id'']'
+        schema:
+          type: string
+      - name: frame
+        in: query
+        description: A simple equality filter for the frame field
+        schema:
+          type: integer
+      - name: job_id
+        in: query
+        description: A simple equality filter for the job_id field
+        schema:
+          type: integer
+      - in: query
+        name: org
+        schema:
+          type: string
+        description: Organization unique slug
+      - in: query
+        name: org_id
+        schema:
+          type: integer
+        description: Organization identifier
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: report_id
+        in: query
+        description: A simple equality filter for the report_id field
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: 'A search term. Available search_fields: []'
+        schema:
+          type: string
+      - name: sort
+        required: false
+        in: query
+        description: 'Which field to use when ordering the results. Available ordering_fields:
+          [''id'', ''report_id'', ''frame'', ''type'', ''job_id'']'
+        schema:
+          type: string
+      - in: query
+        name: task_id
+        schema:
+          type: integer
+        description: A simple equality filter for task id
+      - name: type
+        in: query
+        description: A simple equality filter for the type field
+        schema:
+          type: string
+          enum:
+          - missing_annotation
+          - extra_annotation
+          - mismatching_label
+          - low_overlap
+          - mismatching_direction
+          - mismatching_attributes
+          - mismatching_groups
+          - covered_annotation
+      tags:
+      - conflicts
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAnnotationConflictList'
+          description: ''
+  /api/quality/reports:
+    get:
+      operationId: quality_list_reports
+      summary: Method returns a paginated list of quality reports
       parameters:
       - in: header
         name: X-Organization
@@ -4334,7 +4334,7 @@ paths:
           type: integer
         description: A simple equality filter for task id
       tags:
-      - quality_reports
+      - reports
       security:
       - sessionAuth: []
         csrfAuth: []
@@ -4348,9 +4348,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedQualityReportList'
           description: ''
-  /api/quality_reports/{id}:
+  /api/quality/reports/{id}:
     get:
-      operationId: quality_reports_retrieve
+      operationId: quality_retrieve_reports
       summary: Method returns details of a quality report
       parameters:
       - in: header
@@ -4374,7 +4374,7 @@ paths:
           type: integer
         description: Organization identifier
       tags:
-      - quality_reports
+      - reports
       security:
       - sessionAuth: []
         csrfAuth: []
@@ -4388,9 +4388,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/QualityReport'
           description: ''
-  /api/quality_reports/{id}/data:
+  /api/quality/reports/{id}/data:
     get:
-      operationId: quality_reports_retrieve_data
+      operationId: quality_retrieve_reports_data
       parameters:
       - in: header
         name: X-Organization
@@ -4413,7 +4413,7 @@ paths:
           type: integer
         description: Organization identifier
       tags:
-      - quality_reports
+      - reports
       security:
       - sessionAuth: []
         csrfAuth: []
@@ -4427,9 +4427,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/QualityReport'
           description: ''
-  /api/quality_reports/debug:
+  /api/quality/reports/debug:
     get:
-      operationId: quality_reports_retrieve_debug
+      operationId: quality_retrieve_reports_debug
       parameters:
       - in: header
         name: X-Organization
@@ -4450,7 +4450,7 @@ paths:
         schema:
           type: integer
       tags:
-      - quality_reports
+      - reports
       security:
       - sessionAuth: []
         csrfAuth: []
@@ -4464,9 +4464,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/QualityReport'
           description: ''
-  /api/quality_settings/{id}:
+  /api/quality/settings/{id}:
     get:
-      operationId: quality_settings_retrieve
+      operationId: quality_retrieve_settings
       summary: Method returns details of a quality settings
       parameters:
       - in: header
@@ -4490,7 +4490,7 @@ paths:
           type: integer
         description: Organization identifier
       tags:
-      - quality_settings
+      - settings
       security:
       - sessionAuth: []
         csrfAuth: []
@@ -4505,7 +4505,7 @@ paths:
                 $ref: '#/components/schemas/QualitySettings'
           description: ''
     patch:
-      operationId: quality_settings_partial_update
+      operationId: quality_partial_update_settings
       parameters:
       - in: header
         name: X-Organization
@@ -4528,7 +4528,7 @@ paths:
           type: integer
         description: Organization identifier
       tags:
-      - quality_settings
+      - settings
       requestBody:
         content:
           application/json:
@@ -7787,7 +7787,7 @@ components:
       type: string
     JobType:
       enum:
-      - normal
+      - annotation
       - ground_truth
       type: string
     JobWriteRequest:

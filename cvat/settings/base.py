@@ -140,6 +140,7 @@ INSTALLED_APPS = [
     'cvat.apps.webhooks',
     'cvat.apps.health',
     'cvat.apps.events',
+    'cvat.apps.quality_control',
 ]
 
 SITE_ID = 1
@@ -622,7 +623,7 @@ SPECTACULAR_SETTINGS = {
         'JobStatus': 'cvat.apps.engine.models.StatusChoice',
         'JobStage': 'cvat.apps.engine.models.StageChoice',
         'JobType': 'cvat.apps.engine.models.JobType',
-        'QualityReportTarget': 'cvat.apps.engine.models.QualityReportTarget',
+        'QualityReportTarget': 'cvat.apps.quality_control.models.QualityReportTarget',
         'StorageType': 'cvat.apps.engine.models.StorageChoice',
         'SortingMethod': 'cvat.apps.engine.models.SortingMethod',
         'WebhookType': 'cvat.apps.webhooks.models.WebhookTypeChoice',

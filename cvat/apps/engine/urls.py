@@ -22,9 +22,6 @@ router.register('issues', views.IssueViewSet)
 router.register('comments', views.CommentViewSet)
 router.register('labels', views.LabelViewSet)
 router.register('cloudstorages', views.CloudStorageViewSet)
-router.register('quality_reports', views.QualityReportViewSet, basename='quality_reports')
-router.register('conflicts', views.ConflictsViewSet, basename='annotation_conflicts')
-router.register('quality_settings', views.QualitySettingsViewSet, basename='quality_settings')
 
 urlpatterns = [
     # Entry point for a client
