@@ -359,6 +359,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             colorBy,
             outlined,
             outlineColor,
+            resetZoom,
         } = this.props;
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
 
@@ -383,6 +384,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             textFontSize,
             textPosition,
             textContent,
+            resetZoom,
         });
 
         this.initialSetup();
@@ -439,7 +441,8 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             prevProps.textContent !== textContent ||
             prevProps.colorBy !== colorBy ||
             prevProps.outlineColor !== outlineColor ||
-            prevProps.outlined !== outlined
+            prevProps.outlined !== outlined ||
+            prevProps.resetZoom !== resetZoom
         ) {
             canvasInstance.configure({
                 undefinedAttrValue: config.UNDEFINED_ATTRIBUTE_VALUE,
@@ -456,6 +459,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                 controlPointsSize,
                 textPosition,
                 textContent,
+                resetZoom,
             });
         }
 
@@ -502,22 +506,16 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             this.updateCanvas();
         }
 
-        if (prevProps.frame !== frameData.number && resetZoom && workspace !== Workspace.ATTRIBUTE_ANNOTATION) {
-            canvasInstance.html().addEventListener(
-                'canvas.setup',
-                () => {
-                    canvasInstance.fit();
-                },
-                { once: true },
-            );
-        }
-
         if (prevProps.showBitmap !== showBitmap) {
             canvasInstance.bitmap(showBitmap);
         }
 
         if (prevProps.frameAngle !== frameAngle) {
             canvasInstance.rotate(frameAngle);
+            if (prevProps.frameData === frameData) {
+                // explicitly rotated, not a new frame
+                canvasInstance.fit();
+            }
         }
 
         if (prevProps.workspace !== workspace) {
@@ -859,6 +857,8 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             if (activatedState && activatedState.objectType !== ObjectType.TAG) {
                 canvasInstance.activate(activatedStateID, activatedAttributeID);
             }
+        } else if (workspace === Workspace.ATTRIBUTE_ANNOTATION) {
+            canvasInstance.fit();
         }
     }
 
@@ -905,13 +905,11 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                 `brightness(${brightnessLevel}) contrast(${contrastLevel}) saturate(${saturationLevel})`,
         });
 
-        // Events
+        canvasInstance.fitCanvas();
         canvasInstance.html().addEventListener(
             'canvas.setup',
             () => {
                 const { activatedStateID, activatedAttributeID } = this.props;
-                canvasInstance.fitCanvas();
-                canvasInstance.fit();
                 canvasInstance.activate(activatedStateID, activatedAttributeID);
             },
             { once: true },
