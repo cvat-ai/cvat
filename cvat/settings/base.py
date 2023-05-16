@@ -333,8 +333,12 @@ NUCLIO = {
     'HOST': os.getenv('CVAT_NUCLIO_HOST', 'localhost'),
     'PORT': int(os.getenv('CVAT_NUCLIO_PORT', 8070)),
     'DEFAULT_TIMEOUT': int(os.getenv('CVAT_NUCLIO_DEFAULT_TIMEOUT', 120)),
-    'FUNCTION_NAMESPACE': os.getenv('CVAT_NUCLIO_FUNCTION_NAMESPACE', 'nuclio')
+    'FUNCTION_NAMESPACE': os.getenv('CVAT_NUCLIO_FUNCTION_NAMESPACE', 'nuclio'),
+    'INVOKE_METHOD': os.getenv('CVAT_NUCLIO_INVOKE_METHOD',
+        default='dashboard' if 'KUBERNETES_SERVICE_HOST' in os.environ else 'direct'),
 }
+
+assert NUCLIO['INVOKE_METHOD'] in {'dashboard', 'direct'}
 
 RQ_SHOW_ADMIN_LINK = True
 RQ_EXCEPTION_HANDLERS = [

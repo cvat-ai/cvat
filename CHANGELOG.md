@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## \[2.5.0] - Unreleased
 ### Added
+- A configuration option to control how Nuclio functions are invoked
+  (<https://github.com/opencv/cvat/pull/6146>)
 - Support share point/cloud storage files and directories that should be excluded when creating a task (server) (<https://github.com/opencv/cvat/pull/6074>)
 - Support task creation with cloud storage/share directories (<https://github.com/opencv/cvat/pull/6074>)
 - Support task creation with any type of data supported by the server by default from cloud storage
@@ -38,6 +40,8 @@ without use_cache option (<https://github.com/opencv/cvat/pull/6074>)
 - Invalid completed job count reporting (<https://github.com/opencv/cvat/issues/6098>)
 - OpenVINO-based Nuclio functions can now be deployed to Kubernetes
   (<https://github.com/opencv/cvat/pull/6129>).
+- HRNet CPU serverless function
+  (<https://github.com/opencv/cvat/pull/6150>)
 
 ### Security
 - TDB
