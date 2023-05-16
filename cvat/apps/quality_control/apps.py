@@ -15,3 +15,6 @@ class QualityControlConfig(AppConfig):
         for key in dir(default_settings):
             if key.isupper() and not hasattr(settings, key):
                 setattr(settings, key, getattr(default_settings, key))
+
+        # Required to define signals in the application
+        from . import signals  # pylint: disable=unused-import
