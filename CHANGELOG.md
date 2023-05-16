@@ -38,6 +38,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/opencv/cvat/pull/6129>).
 - [helm] fixed issue with multiple caches in same RWX volume, which prevents db migration to start(<https://github.com/opencv/cvat/pull/6137>)
 - HRNet CPU serverless function
+  (<https://github.com/opencv/cvat/pull/6150>)
+- Sending empty list of events
+  (<https://github.com/opencv/cvat/pull/6154>)
 
 ### Security
 - TDB
