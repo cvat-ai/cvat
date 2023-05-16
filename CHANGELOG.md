@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The issue azure.core.exceptions.ResourceExistsError: The specified blob already exists (<https://github.com/opencv/cvat/pull/6082>)
 - Image scaling when moving between images with different resolution (<https://github.com/opencv/cvat/pull/6081>)
 - Invalid completed job count reporting (<https://github.com/opencv/cvat/issues/6098>)
+- Fixed skeletons dumping on created tasks/projects (<https://github.com/opencv/cvat/pull/6157>)
 - OpenVINO-based Nuclio functions can now be deployed to Kubernetes
   (<https://github.com/opencv/cvat/pull/6129>).
 - HRNet CPU serverless function
