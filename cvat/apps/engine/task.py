@@ -77,10 +77,8 @@ def _copy_data_from_share_point(
     # filter data from files/directories that should be excluded
     if server_files_exclude:
         for f in server_files:
-            path = Path(server_dir or settings.SHARE_ROOT) / Path(f)
-            if not path.is_dir():
-                filtered_server_files.append(f)
-            else:
+            path = Path(server_dir or settings.SHARE_ROOT) / f
+            if path.is_dir():
                 filtered_server_files.remove(f)
                 filtered_server_files.extend([str(f / i.relative_to(path)) for i in path.glob('**/*') if i.is_file()])
 
