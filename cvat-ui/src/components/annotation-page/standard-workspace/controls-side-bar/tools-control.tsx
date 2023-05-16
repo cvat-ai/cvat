@@ -30,7 +30,7 @@ import { Canvas, convertShapesForInteractor } from 'cvat-canvas-wrapper';
 import {
     getCore, Attribute, Label, MLModel,
 } from 'cvat-core-wrapper';
-import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
+import openCVWrapper, { MatType } from 'utils/opencv-wrapper/opencv-wrapper';
 import {
     CombinedState, ActiveControl, ObjectType, ShapeType, ToolsBlockerState, ModelAttribute,
 } from 'reducers';
@@ -211,6 +211,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         latestResponse: {
             mask: number[][],
             points: number[][],
+            bounds?: [number, number, number, number],
         };
         lastestApproximatedPoints: number[][];
         latestRequest: null | {
@@ -375,6 +376,13 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 const response = await core.lambda.call(jobInstance.taskId, interactor,
                     { ...data, job: jobInstance.id });
 
+                // if only mask presented, let's receive points
+                if (response.mask && !response.points) {
+                    const left = response.bounds ? response.bounds[0] : 0;
+                    const top = response.bounds ? response.bounds[1] : 0;
+                    response.points = await this.receivePointsFromMask(response.mask, left, top);
+                }
+
                 // approximation with cv.approxPolyDP
                 const approximated = await this.approximateResponsePoints(response.points);
 
@@ -383,10 +391,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     return;
                 }
 
-                this.interaction.latestResponse = {
-                    mask: response.mask,
-                    points: response.points,
-                };
+                this.interaction.latestResponse = response;
                 this.interaction.lastestApproximatedPoints = approximated;
 
                 this.setState({ pointsReceived: !!response.points.length });
@@ -400,10 +405,14 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             }
 
             if (this.interaction.lastestApproximatedPoints.length) {
-                const height = this.interaction.latestResponse.mask.length;
-                const width = this.interaction.latestResponse.mask[0].length;
                 const maskPoints = this.interaction.latestResponse.mask.flat();
-                maskPoints.push(0, 0, width - 1, height - 1);
+                if (this.interaction.latestResponse.bounds) {
+                    maskPoints.push(...this.interaction.latestResponse.bounds);
+                } else {
+                    const height = this.interaction.latestResponse.mask.length;
+                    const width = this.interaction.latestResponse.mask[0].length;
+                    maskPoints.push(0, 0, width - 1, height - 1);
+                }
                 canvasInstance.interact({
                     enabled: true,
                     intermediateShape: {
@@ -830,7 +839,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         }
     }
 
-    private constructFromPoints(points: number[][]): void {
+    private async constructFromPoints(points: number[][]): Promise<void> {
         const { convertMasksToPolygons } = this.state;
         const {
             frame, labels, curZOrder, jobInstance, activeLabelID, createAnnotations,
@@ -849,10 +858,15 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
             createAnnotations(jobInstance, frame, [object]);
         } else {
-            const height = this.interaction.latestResponse.mask.length;
-            const width = this.interaction.latestResponse.mask[0].length;
             const maskPoints = this.interaction.latestResponse.mask.flat();
-            maskPoints.push(0, 0, width - 1, height - 1);
+            if (this.interaction.latestResponse.bounds) {
+                maskPoints.push(...this.interaction.latestResponse.bounds);
+            } else {
+                const height = this.interaction.latestResponse.mask.length;
+                const width = this.interaction.latestResponse.mask[0].length;
+                maskPoints.push(0, 0, width - 1, height - 1);
+            }
+
             const object = new core.classes.ObjectState({
                 frame,
                 objectType: ObjectType.SHAPE,
@@ -867,18 +881,50 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         }
     }
 
+    private async initializeOpenCV(): Promise<void> {
+        if (!openCVWrapper.isInitialized) {
+            const hide = message.loading('OpenCV client initialization..', 0);
+            try {
+                await openCVWrapper.initialize(() => {});
+            } catch (error: any) {
+                notification.error({
+                    message: 'Could not initialize OpenCV',
+                    description: error.toString(),
+                });
+            } finally {
+                hide();
+            }
+        }
+    }
+
+    private async receivePointsFromMask(
+        mask: number[][],
+        left: number,
+        top: number,
+    ): Promise<number[]> {
+        await this.initializeOpenCV();
+
+        const src = openCVWrapper.mat.fromData(mask[0].length, mask.length, MatType.CV_8UC1, mask.flat());
+        const contours = openCVWrapper.matVector.empty();
+        try {
+            const polygons = openCVWrapper.contours.findContours(src, contours);
+            return polygons[0].map((val: number, idx: number) => {
+                if (idx % 2) {
+                    return val + top;
+                }
+
+                return val + left;
+            });
+        } finally {
+            src.delete();
+            contours.delete();
+        }
+    }
+
     private async approximateResponsePoints(points: number[][]): Promise<number[][]> {
         const { approxPolyAccuracy } = this.state;
         if (points.length > 3) {
-            if (!openCVWrapper.isInitialized) {
-                const hide = message.loading('OpenCV.js initialization..', 0);
-                try {
-                    await openCVWrapper.initialize(() => {});
-                } finally {
-                    hide();
-                }
-            }
-
+            await this.initializeOpenCV();
             const threshold = thresholdFromAccuracy(approxPolyAccuracy);
             return openCVWrapper.contours.approxPoly(points, threshold);
         }
