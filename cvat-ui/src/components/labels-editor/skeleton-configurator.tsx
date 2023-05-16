@@ -401,6 +401,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
             color: labels[elementID]?.color || undefined,
             id: (labels[elementID]?.id || 0) > 0 ? labels[elementID].id : idGenerator(),
             type: ShapeType.POINTS,
+            has_parent: true,
         };
 
         return true;
