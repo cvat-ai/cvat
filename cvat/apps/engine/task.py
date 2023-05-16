@@ -72,22 +72,24 @@ def _copy_data_from_share_point(
     job.meta['status'] = 'Data are being copied from source..'
     job.save_meta()
 
+    filtered_server_files = server_files.copy()
+
     # filter data from files/directories that should be excluded
     if server_files_exclude:
         for f in server_files:
             path = Path(server_dir or settings.SHARE_ROOT) / Path(f)
             if not path.is_dir():
-                server_files.append(f)
+                filtered_server_files.append(f)
             else:
-                server_files.remove(f)
-                server_files.extend([str(f / i.relative_to(path)) for i in path.glob('**/*') if i.is_file()])
+                filtered_server_files.remove(f)
+                filtered_server_files.extend([str(f / i.relative_to(path)) for i in path.glob('**/*') if i.is_file()])
 
-        server_files = list(filter(
-            lambda x: x not in server_files_exclude and all([f'{Path(i)}/' not in server_files_exclude for i in Path(x).parents]),
-            server_files
+        filtered_server_files = list(filter(
+            lambda x: x not in server_files_exclude and all([f'{i}/' not in server_files_exclude for i in Path(x).parents]),
+            filtered_server_files
         ))
 
-    for path in server_files:
+    for path in filtered_server_files:
         if server_dir is None:
             source_path = os.path.join(settings.SHARE_ROOT, os.path.normpath(path))
         else:
