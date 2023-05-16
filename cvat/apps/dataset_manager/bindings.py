@@ -1354,7 +1354,9 @@ class CvatTaskOrJobDataExtractor(dm.SourceExtractor, CVATDataExtractorMixin):
         dimension: DimensionType = DimensionType.DIM_2D,
         **kwargs
     ):
-        super().__init__(media_type=dm.Image if dimension == DimensionType.DIM_2D else PointCloud)
+        dm.SourceExtractor.__init__(
+            self, media_type=dm.Image if dimension == DimensionType.DIM_2D else PointCloud
+        )
         CVATDataExtractorMixin.__init__(self, **kwargs)
 
         instance_meta = instance_data.meta[instance_data.META_FIELD]
@@ -1462,7 +1464,9 @@ class CVATProjectDataExtractor(dm.Extractor, CVATDataExtractorMixin):
         dimension: DimensionType = DimensionType.DIM_2D,
         **kwargs
     ):
-        super().__init__(media_type=dm.Image if dimension == DimensionType.DIM_2D else PointCloud)
+        dm.Extractor.__init__(
+            self, media_type=dm.Image if dimension == DimensionType.DIM_2D else PointCloud
+        )
         CVATDataExtractorMixin.__init__(self, **kwargs)
 
         self._categories = self._load_categories(project_data.meta[project_data.META_FIELD]['labels'])
