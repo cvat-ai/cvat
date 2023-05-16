@@ -7,7 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## \[2.5.0] - Unreleased
 ### Added
-- TDB
+- A configuration option to control how Nuclio functions are invoked
+  (<https://github.com/opencv/cvat/pull/6146>)
 
 ### Changed
 - Running SAM masks decoder on frontend (<https://github.com/opencv/cvat/pull/6019>)
@@ -33,6 +34,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Invalid completed job count reporting (<https://github.com/opencv/cvat/issues/6098>)
 - OpenVINO-based Nuclio functions can now be deployed to Kubernetes
   (<https://github.com/opencv/cvat/pull/6129>).
+- HRNet CPU serverless function
+  (<https://github.com/opencv/cvat/pull/6150>)
 
 ### Security
 - TDB
