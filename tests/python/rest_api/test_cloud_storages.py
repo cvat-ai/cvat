@@ -455,7 +455,7 @@ class TestGetCloudStorageContent:
             content_kwargs = {"manifest_path": manifest} if manifest else {}
 
             if version == self.SUPPORTED_VERSIONS.V2:
-                for item in ["next_token", "prefix", "delimiter", "page_size"]:
+                for item in ["next_token", "prefix", "page_size"]:
                     if item_value := kwargs.get(item):
                         content_kwargs[item] = item_value
 
