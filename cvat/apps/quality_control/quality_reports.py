@@ -4,23 +4,24 @@
 
 from __future__ import annotations
 
+from collections import Counter
 from copy import deepcopy
 from datetime import timedelta
 from functools import cached_property, partial
+from typing import Any, Callable, Dict, Hashable, List, Optional, Sequence, Tuple, Union, cast
 
 import itertools
 import math
-from typing import Any, Callable, Dict, Hashable, List, Optional, Sequence, Tuple, Union, cast
 
-from attrs import asdict, define, fields_dict, has as is_attrs_type
+from attrs import asdict, define, fields_dict
 import datumaro as dm
 import datumaro.util.mask_tools
 from django.db import transaction
 from django.conf import settings
 from django.utils import timezone
-from scipy.optimize import linear_sum_assignment
 import django_rq
 import numpy as np
+from scipy.optimize import linear_sum_assignment
 
 from cvat.apps.dataset_manager.task import JobAnnotation
 from cvat.apps.dataset_manager.bindings import (CommonData, CvatToDmAnnotationConverter,
@@ -41,18 +42,33 @@ from datumaro.util import dump_json, parse_json
 
 
 class _Serializable:
-    def _value_serializer(self, inst, attr, v):
+    def _value_serializer(self, v):
         if isinstance(v, _Serializable):
             return v.to_dict()
-        elif is_attrs_type(type(v)):
-            return asdict(v, value_serializer=self._value_serializer)
-        elif self is not inst and isinstance(inst, _Serializable):
-            return inst._value_serializer(inst, attr, v)
+        elif isinstance(v, (list, tuple, set, frozenset)):
+            return [ self._value_serializer(vv) for vv in v ]
+        elif isinstance(v, dict):
+            return {
+                self._value_serializer(vk): self._value_serializer(vv)
+                for vk, vv in v.items()
+            }
         else:
             return v
 
-    def to_dict(self, *, value_serializer = None) -> dict:
-        return asdict(self, value_serializer=value_serializer or self._value_serializer)
+    def to_dict(self) -> dict:
+        return self._value_serializer(self._fields_dict())
+
+    def _fields_dict(self, *, include_properties: Optional[List[str]] = None) -> dict:
+        d = asdict(self, recurse=False)
+
+        for field_name in include_properties or []:
+            d[field_name] = getattr(self, field_name)
+
+        return d
+
+    @classmethod
+    def from_dict(cls, d: dict):
+        raise NotImplementedError("Must be implemented in the subclass")
 
 
 @define(kw_only=True)
@@ -61,14 +77,14 @@ class AnnotationId(_Serializable):
     job_id: int
     type: AnnotationType
 
-    def _value_serializer(self, inst, attr, v):
+    def _value_serializer(self, v):
         if isinstance(v, AnnotationType):
             return str(v)
         else:
-            return super()._value_serializer(inst, attr, v)
+            return super()._value_serializer(v)
 
     @classmethod
-    def from_dict(cls, d):
+    def from_dict(cls, d: dict):
         return cls(
             obj_id=d['obj_id'],
             job_id=d['job_id'],
@@ -102,21 +118,17 @@ class AnnotationConflict(_Serializable):
 
         return importance
 
-    def _value_serializer(self, inst, attr, v):
-        if isinstance(v, AnnotationConflictType):
+    def _value_serializer(self, v):
+        if isinstance(v, (AnnotationConflictType, AnnotationConflictImportance)):
             return str(v)
         else:
-            return super()._value_serializer(inst, attr, v)
+            return super()._value_serializer(v)
 
-    def to_dict(self, *args, **kwargs) -> dict:
-        result = super().to_dict(*args, **kwargs)
-        result.update(**{
-            k: getattr(self, k) for k in ['importance']
-        })
-        return result
+    def _fields_dict(self, *, include_properties: Optional[List[str]] = None) -> dict:
+        return super()._fields_dict(include_properties=include_properties or ['importance'])
 
     @classmethod
-    def from_dict(cls, d):
+    def from_dict(cls, d: dict):
         return cls(
             frame_id=d['frame_id'],
             type=AnnotationConflictType(d['type']),
@@ -177,14 +189,14 @@ class ComparisonParameters(_Serializable):
     "Use only the visible part of the masks and polygons in comparisons"
 
 
-    def _value_serializer(self, inst, attr, v):
+    def _value_serializer(self, v):
         if isinstance(v, dm.AnnotationType):
             return str(v.name)
         else:
-            return super()._value_serializer(inst, attr, v)
+            return super()._value_serializer(v)
 
     @classmethod
-    def from_dict(cls, d):
+    def from_dict(cls, d: dict):
         fields = fields_dict(cls)
         return cls(**{ field_name: d[field_name] for field_name in fields if field_name in d })
 
@@ -201,21 +213,17 @@ class ConfusionMatrix(_Serializable):
     def axes(self):
         return dict(cols='gt', rows='ds')
 
-    def _value_serializer(self, inst, attr, v):
+    def _value_serializer(self, v):
         if isinstance(v, np.ndarray):
             return v.tolist()
         else:
-            return super()._value_serializer(inst, attr, v)
+            return super()._value_serializer(v)
 
-    def to_dict(self, *args, **kwargs) -> dict:
-        result = super().to_dict(*args, **kwargs)
-        result.update(**{
-            k: getattr(self, k) for k in ['axes']
-        })
-        return result
+    def _fields_dict(self, *, include_properties: Optional[List[str]] = None) -> dict:
+        return super()._fields_dict(include_properties=include_properties or ['axes'])
 
     @classmethod
-    def from_dict(cls, d):
+    def from_dict(cls, d: dict):
         return cls(
             labels=d['labels'],
             rows=np.asarray(d['rows']),
@@ -253,15 +261,13 @@ class ComparisonReportAnnotationsSummary(_Serializable):
         ]:
             setattr(self, field, getattr(self, field) + getattr(other, field))
 
-    def to_dict(self, *args, **kwargs) -> dict:
-        result = super().to_dict()
-        result.update(**{
-            k: getattr(self, k) for k in ['accuracy', 'precision', 'recall']
-        })
-        return result
+    def _fields_dict(self, *, include_properties: Optional[List[str]] = None) -> dict:
+        return super()._fields_dict(
+            include_properties=include_properties or ['accuracy', 'precision', 'recall']
+        )
 
     @classmethod
-    def from_dict(cls, d):
+    def from_dict(cls, d: dict):
         return cls(
             valid_count=d['valid_count'],
             missing_count=d['missing_count'],
@@ -293,15 +299,11 @@ class ComparisonReportAnnotationShapeSummary(_Serializable):
         ]:
             setattr(self, field, getattr(self, field) + getattr(other, field))
 
-    def to_dict(self, *args, **kwargs) -> dict:
-        result = super().to_dict(*args, **kwargs)
-        result.update(**{
-            k: getattr(self, k) for k in ['accuracy']
-        })
-        return result
+    def _fields_dict(self, *, include_properties: Optional[List[str]] = None) -> dict:
+        return super()._fields_dict(include_properties=include_properties or ['accuracy'])
 
     @classmethod
-    def from_dict(cls, d):
+    def from_dict(cls, d: dict):
         return cls(
             valid_count=d['valid_count'],
             missing_count=d['missing_count'],
@@ -327,15 +329,11 @@ class ComparisonReportAnnotationLabelSummary(_Serializable):
         for field in ['valid_count', 'total_count', 'invalid_count']:
             setattr(self, field, getattr(self, field) + getattr(other, field))
 
-    def to_dict(self, *args, **kwargs) -> dict:
-        result = super().to_dict(*args, **kwargs)
-        result.update(**{
-            k: getattr(self, k) for k in ['accuracy']
-        })
-        return result
+    def _fields_dict(self, *, include_properties: Optional[List[str]] = None) -> dict:
+        return super()._fields_dict(include_properties=include_properties or ['accuracy'])
 
     @classmethod
-    def from_dict(cls, d):
+    def from_dict(cls, d: dict):
         return cls(
             valid_count=d['valid_count'],
             invalid_count=d['invalid_count'],
@@ -352,7 +350,7 @@ class ComparisonReportAnnotationComponentsSummary(_Serializable):
         self.label.accumulate(other.label)
 
     @classmethod
-    def from_dict(cls, d):
+    def from_dict(cls, d: dict):
         return cls(
             shape=ComparisonReportAnnotationShapeSummary.from_dict(d['shape']),
             label=ComparisonReportAnnotationLabelSummary.from_dict(d['label']),
@@ -371,6 +369,7 @@ class ComparisonReportComparisonSummary(_Serializable):
     conflict_count: int
     warning_count: int
     error_count: int
+    conflicts_by_type: Dict[AnnotationConflictType, int]
 
     annotations: ComparisonReportAnnotationsSummary
     annotation_components: ComparisonReportAnnotationComponentsSummary
@@ -379,37 +378,33 @@ class ComparisonReportComparisonSummary(_Serializable):
     def frame_count(self) -> int:
         return len(self.frames)
 
-    def to_dict(self, *args, **kwargs) -> dict:
-        result = super().to_dict(*args, **kwargs)
-        result.update(**{
-            k: getattr(self, k) for k in ['frame_count', 'mean_conflict_count']
-        })
-        return result
+    def _value_serializer(self, v):
+        if isinstance(v, AnnotationConflictType):
+            return str(v)
+        else:
+            return super()._value_serializer(v)
+
+    def _fields_dict(self, *, include_properties: Optional[List[str]] = None) -> dict:
+        return super()._fields_dict(include_properties=include_properties or [
+            'frame_count', 'mean_conflict_count',
+            'warning_count', 'error_count', 'conflicts_by_type'
+        ])
 
     @classmethod
-    def from_dict(cls, d):
+    def from_dict(cls, d: dict):
         return cls(
             frame_share_percent=d['frame_share_percent'],
             frames=list(d['frames']),
             conflict_count=d['conflict_count'],
             warning_count=d.get('warning_count', 0),
             error_count=d.get('error_count', 0),
+            conflicts_by_type={
+                AnnotationConflictType(k): v
+                for k, v in d.get('conflicts_by_type', {}).items()
+            },
             annotations=ComparisonReportAnnotationsSummary.from_dict(d['annotations']),
             annotation_components=ComparisonReportAnnotationComponentsSummary.from_dict(
                 d['annotation_components']),
-        )
-
-
-@define(kw_only=True)
-class ComparisonReportDatasetSummary(_Serializable):
-    frame_count: int
-    shape_count: int
-
-    @classmethod
-    def from_dict(cls, d):
-        return cls(
-            frame_count=d['frame_count'],
-            shape_count=d['shape_count'],
         )
 
 
@@ -435,29 +430,45 @@ class ComparisonReportFrameSummary(_Serializable):
             if c.importance == AnnotationConflictImportance.ERROR
         ])
 
+    @cached_property
+    def conflicts_by_type(self) -> Dict[AnnotationConflictType, int]:
+        return Counter(c.type for c in self.conflicts)
+
     annotations: ComparisonReportAnnotationsSummary
     annotation_components: ComparisonReportAnnotationComponentsSummary
 
+    _CACHED_FIELDS = ['conflict_count', 'warning_count', 'error_count', 'conflicts_by_type']
+
+    def _value_serializer(self, v):
+        if isinstance(v , AnnotationConflictType):
+            return str(v)
+        else:
+            return super()._value_serializer(v)
+
     def __init__(self, *args, **kwargs):
         # these fields are optional, but can be computed on access
-        for field_name in ['conflict_count', 'warning_count', 'error_count']:
+        for field_name in self._CACHED_FIELDS:
             if field_name in kwargs:
                 setattr(self, field_name, kwargs.pop(field_name))
 
         self.__attrs_init__(*args, **kwargs)
 
+    def _fields_dict(self, *, include_properties: Optional[List[str]] = None) -> dict:
+        return super()._fields_dict(include_properties=include_properties or self._CACHED_FIELDS)
+
     @classmethod
-    def from_dict(cls, d):
+    def from_dict(cls, d: dict):
+        optional_fields = set(cls._CACHED_FIELDS) - {
+            'conflicts_by_type' # requires extra conversion
+        }
         return cls(
+            **{ field: d[field] for field in optional_fields if field in d },
             **dict(
-                conflict_count=d['conflict_count'],
-            ) if 'conflict_count' in d else {},
-            **dict(
-                warning_count=d['warning_count'],
-            ) if 'warning_count' in d else {},
-            **dict(
-                error_count=d['error_count'],
-            ) if 'error_count' in d else {},
+                conflicts_by_type={
+                    AnnotationConflictType(k): v
+                    for k, v in d['conflicts_by_type'].items()
+                }
+            ) if 'conflicts_by_type' in d else {},
             conflicts=[AnnotationConflict.from_dict(v) for v in d['conflicts']],
             annotations=ComparisonReportAnnotationsSummary.from_dict(d['annotations']),
             annotation_components=ComparisonReportAnnotationComponentsSummary.from_dict(
@@ -486,8 +497,8 @@ class ComparisonReport(_Serializable):
             }
         )
 
-    def to_json(self, *args, **kwargs) -> str:
-        d = self.to_dict(*args, **kwargs)
+    def to_json(self) -> str:
+        d = self.to_dict()
 
         # String keys are needed for json dumping
         d["frame_results"] = {str(k): v for k, v in d['frame_results'].items()}
@@ -1355,7 +1366,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
         return returned_values
 
     @classmethod
-    def _make_memoizing_distance(cls, distance_function):
+    def _make_memoizing_distance(cls, distance_function: Callable[[Any, Any], float]):
         distances = {}
         notfound = object()
 
@@ -1975,6 +1986,7 @@ class DatasetComparator:
                 error_count=len([
                     c for c in conflicts if c.importance == AnnotationConflictImportance.ERROR
                 ]),
+                conflicts_by_type=Counter(c.type for c in conflicts),
 
                 annotations=ComparisonReportAnnotationsSummary(
                     valid_count=valid_annotations_count,
@@ -2219,7 +2231,7 @@ class ReportUpdateManager:
         # Thus, a separate report could be computed for the task. Instead, here we only
         # compute the combined summary of the job reports.
         task_intersection_frames = set()
-        task_conflicts = []
+        task_conflicts: List[AnnotationConflict] = []
         task_annotations_summary = None
         task_ann_components_summary = None
         task_mean_shape_ious = []
@@ -2283,6 +2295,7 @@ class ReportUpdateManager:
                     c for c in task_conflicts
                     if c.importance == AnnotationConflictImportance.ERROR
                 ]),
+                conflicts_by_type=Counter(c.type for c in task_conflicts),
 
                 annotations=task_annotations_summary,
                 annotation_components=task_ann_components_summary,
@@ -2368,11 +2381,19 @@ class ReportUpdateManager:
 def prepare_report_for_downloading(db_report: models.QualityReport, *, host: str) -> str:
     # Decorate the report with conflicting annotation links like:
     # <host>/tasks/62/jobs/82?frame=250&type=shape&serverID=33741
+    # And other useful information
+    task_id = db_report.get_task().id
+    serialized_data = dict(
+        job_id=db_report.job.id if db_report.job is not None else None,
+        task_id=task_id,
+        parent_id=db_report.parent.id if db_report.parent is not None else None,
+        created_date=str(db_report.created_date),
+        target_last_updated=str(db_report.target_last_updated),
+        gt_last_updated=str(db_report.gt_last_updated),
+    )
 
     comparison_report = ComparisonReport.from_json(db_report.get_json_report())
-
-    serialized_data = comparison_report.to_dict()
-    task_id = db_report.task.id
+    serialized_data.update(comparison_report.to_dict())
 
     for frame_result in serialized_data["frame_results"].values():
         for conflict in frame_result["conflicts"]:

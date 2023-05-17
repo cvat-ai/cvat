@@ -9183,6 +9183,10 @@ components:
           type: integer
         error_count:
           type: integer
+        conflicts_by_type:
+          type: object
+          additionalProperties:
+            type: integer
         valid_count:
           type: integer
         ds_count:
@@ -9191,6 +9195,7 @@ components:
           type: integer
       required:
       - conflict_count
+      - conflicts_by_type
       - ds_count
       - error_count
       - frame_count

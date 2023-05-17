@@ -29,6 +29,7 @@ class QualityReportSummarySerializer(serializers.Serializer):
     conflict_count = serializers.IntegerField()
     warning_count = serializers.IntegerField()
     error_count = serializers.IntegerField()
+    conflicts_by_type = serializers.DictField(child=serializers.IntegerField())
 
     # This set is enough for basic characteristics, such as
     # DS_unmatched, GT_unmatched, accuracy, precision and recall
