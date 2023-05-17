@@ -131,16 +131,7 @@ function filterFiles(remoteFiles: RemoteFile[], many: boolean): RemoteFile[] {
         return remoteFiles.filter((file: RemoteFile) => file.mimeType === 'video');
     }
 
-    const dirs = remoteFiles.filter((file: RemoteFile) => file.type === 'DIR');
-    let filteredChildren = remoteFiles;
-    for (const dir of dirs) {
-        const { key } = dir;
-        // if directory is in list
-        // we remove all the children to avoid sending them to the server
-        filteredChildren = filteredChildren.filter((child) => !child.key.startsWith(key) || child.key === key);
-    }
-
-    return filteredChildren;
+    return remoteFiles;
 }
 
 class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps, State> {
