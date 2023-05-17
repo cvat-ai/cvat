@@ -3,12 +3,14 @@
 //
 // SPDX-License-Identifier: MIT
 
+import { omit } from 'lodash';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
 import { ArgumentError } from './exceptions';
 import { CloudStorageCredentialsType, CloudStorageProviderType, CloudStorageStatus } from './enums';
 import User from './user';
 import { decodePreview } from './frames';
+import { SerializedRemoteFile } from './server-response-types';
 
 function validateNotEmptyString(value: string): void {
     if (typeof value !== 'string') {
@@ -244,7 +246,10 @@ export default class CloudStorage {
         return result;
     }
 
-    public async getContent(path: string, nextToken?: string): Promise<any> {
+    public async getContent(path: string, nextToken?: string): Promise<{
+        next: string | null,
+        content: (Omit<SerializedRemoteFile, 'mime_type'> & { mimeType: string })[],
+    }> {
         const result = await PluginRegistry.apiWrapper.call(this, CloudStorage.prototype.getContent, path, nextToken);
         return result;
     }
@@ -360,9 +365,12 @@ Object.defineProperties(CloudStorage.prototype.getContent, {
     implementation: {
         writable: false,
         enumerable: false,
-        value: async function implementation(path: string, nextToken?: string): Promise<any> {
+        value: async function implementation(path: string, nextToken?: string): ReturnType<CloudStorage['getContent']> {
             const result = await serverProxy.cloudStorages.getContent(this.id, path, nextToken, this.manifestPath);
-            return result;
+            return {
+                next: result.next,
+                content: result.content.map((item) => ({ ...omit(item, 'mime_type'), mimeType: item.mime_type })),
+            };
         },
     },
 });
