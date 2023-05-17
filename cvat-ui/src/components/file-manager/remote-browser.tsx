@@ -25,7 +25,7 @@ interface Node {
     name: string;
     key: string;
     type: RemoteFileType;
-    mimeType?: string;
+    mimeType: string;
     nextToken?: string | null;
 }
 
@@ -45,6 +45,7 @@ const defaultRoot: Node = {
     key: 'root',
     children: [],
     type: 'DIR',
+    mimeType: 'DIR',
     initialized: false,
     nextToken: null,
 };

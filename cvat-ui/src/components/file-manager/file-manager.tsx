@@ -35,8 +35,8 @@ interface Props {
     onChangeActiveKey(key: string): void;
     onUploadLocalFiles(files: File[]): void;
     onUploadRemoteFiles(urls: string[]): void;
-    onUploadShareFiles(files: Required<RemoteFile>[]): void;
-    onUploadCloudStorageFiles(cloudStorageFiles: string[]): void;
+    onUploadShareFiles(files: RemoteFile[]): void;
+    onUploadCloudStorageFiles(cloudStorageFiles: RemoteFile[]): void;
 }
 
 export class FileManager extends React.PureComponent<Props, State> {
@@ -64,14 +64,13 @@ export class FileManager extends React.PureComponent<Props, State> {
     ): void => {
         const { files } = this.state;
         const { onUploadCloudStorageFiles } = this.props;
-        const keys = cloudStorageFiles.map((item) => item.key);
         this.setState({
             files: {
                 ...files,
-                cloudStorage: keys.filter((item) => !item.endsWith('.jsonl')),
+                cloudStorage: cloudStorageFiles.map((item) => item.key),
             },
         });
-        onUploadCloudStorageFiles(keys);
+        onUploadCloudStorageFiles(cloudStorageFiles);
     };
 
     private handleUploadSharedStorageFiles = (
@@ -85,7 +84,7 @@ export class FileManager extends React.PureComponent<Props, State> {
                 share: shareFiles.map((item) => item.key),
             },
         });
-        onUploadShareFiles(shareFiles as Required<RemoteFile>[]);
+        onUploadShareFiles(shareFiles);
     };
 
     public getCloudStorageId(): number | null {
@@ -207,7 +206,7 @@ export class FileManager extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element {
-        const { onChangeActiveKey, many } = this.props;
+        const { onChangeActiveKey } = this.props;
         const { active } = this.state;
 
         return (
@@ -226,7 +225,7 @@ export class FileManager extends React.PureComponent<Props, State> {
                     {this.renderLocalSelector()}
                     {this.renderShareSelector()}
                     {this.renderRemoteSelector()}
-                    {!many && this.renderCloudStorageSelector()}
+                    {this.renderCloudStorageSelector()}
                 </Tabs>
             </>
         );

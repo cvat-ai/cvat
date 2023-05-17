@@ -106,6 +106,43 @@ const UploadFileErrorMessages = {
     multi: 'It can not be processed. You can upload one or more videos',
 };
 
+function validateRemoteFiles(remoteFiles: RemoteFile[], many: boolean): string {
+    let uploadFileErrorMessage = '';
+    let filteredFiles = remoteFiles;
+    const regFiles = remoteFiles.filter((file) => file.type === 'REG');
+    const excludedManifests = regFiles.filter((file) => !file.key.endsWith('.jsonl'));
+    if (!many && excludedManifests.length > 1) {
+        uploadFileErrorMessage = excludedManifests.every(
+            (it) => it.mimeType === SupportedShareTypes.IMAGE,
+        ) ? '' : UploadFileErrorMessages.one;
+    } else if (many) {
+        filteredFiles = filteredFiles.filter((it) => it.mimeType === SupportedShareTypes.VIDEO);
+        // something is selected and no one video
+        // or something except of videos selected (excluding directories)
+        uploadFileErrorMessage = remoteFiles.length && (
+            !filteredFiles.length || filteredFiles.length !== regFiles.length
+        ) ? UploadFileErrorMessages.multi : '';
+    }
+    return uploadFileErrorMessage;
+}
+
+function filterFiles(remoteFiles: RemoteFile[], many: boolean): RemoteFile[] {
+    if (many) {
+        return remoteFiles.filter((file: RemoteFile) => file.mimeType === 'video');
+    }
+
+    const dirs = remoteFiles.filter((file: RemoteFile) => file.type === 'DIR');
+    let filteredChildren = remoteFiles;
+    for (const dir of dirs) {
+        const { key } = dir;
+        // if directory is in list
+        // we remove all the children to avoid sending them to the server
+        filteredChildren = filteredChildren.filter((child) => !child.key.startsWith(key) || child.key === key);
+    }
+
+    return filteredChildren;
+}
+
 class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps, State> {
     private basicConfigurationComponent: RefObject<BasicConfigurationForm>;
     private advancedConfigurationComponent: RefObject<AdvancedConfigurationForm>;
@@ -322,27 +359,12 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         }
     };
 
-    private handleUploadShareFiles = (shareFiles: Required<RemoteFile>[]): void => {
-        let filteredFiles = shareFiles;
-        const { many } = this.props;
+    private handleUploadShareFiles = (shareFiles: RemoteFile[]): void => {
         const { files } = this.state;
-
-        let uploadFileErrorMessage = '';
-
-        const regFiles = shareFiles.filter((file) => file.type === 'REG');
-        const excludedManifests = regFiles.filter((file) => !file.key.endsWith('.jsonl'));
-        if (!many && excludedManifests.length > 1) {
-            uploadFileErrorMessage = excludedManifests.every(
-                (it) => it.mimeType === SupportedShareTypes.IMAGE,
-            ) ? '' : UploadFileErrorMessages.one;
-        } else if (many) {
-            filteredFiles = filteredFiles.filter((it) => it.mimeType === SupportedShareTypes.VIDEO);
-            uploadFileErrorMessage = !filteredFiles.length && shareFiles.length ? UploadFileErrorMessages.multi : '';
-        }
-
-        this.setState({
-            uploadFileErrorMessage,
-        });
+        const { many } = this.props;
+        const uploadFileErrorMessage = validateRemoteFiles(shareFiles, many);
+        const filteredFiles = filterFiles(shareFiles, many);
+        this.setState({ uploadFileErrorMessage });
 
         if (!uploadFileErrorMessage) {
             this.setState({
@@ -354,15 +376,21 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         }
     };
 
-    private handleUploadCloudStorageFiles = (cloudStorageFiles: string[]): void => {
+    private handleUploadCloudStorageFiles = (cloudStorageFiles: RemoteFile[]): void => {
         const { files } = this.state;
+        const { many } = this.props;
+        const uploadFileErrorMessage = validateRemoteFiles(cloudStorageFiles, many);
+        const filteredFiles = filterFiles(cloudStorageFiles, many);
+        this.setState({ uploadFileErrorMessage });
 
-        this.setState({
-            files: {
-                ...files,
-                cloudStorage: cloudStorageFiles,
-            },
-        });
+        if (!uploadFileErrorMessage) {
+            this.setState({
+                files: {
+                    ...files,
+                    cloudStorage: filteredFiles.map((it) => it.key),
+                },
+            });
+        }
     };
 
     private validateBlocks = (): Promise<any> => new Promise((resolve, reject) => {
