@@ -359,10 +359,24 @@ def _download_s3_files(db_data: models.Data, upload_dir):
             output_path = os.path.join(upload_dir, name)
             with open(output_path, 'wb') as output_file:
                 shutil.copyfileobj(response.raw, output_file)
+
+            new_name = fix_filename(name, output_path, file)
+            if new_name != name:
+                new_path = os.path.join(upload_dir, new_name)
+                os.rename(output_path, new_path)
+
+                rel_path = os.path.relpath(new_path, settings.BASE_DIR)
+                with open(rel_path, 'rb') as f:
+                    models.S3File.objects.create(
+                        data=db_data,
+                        file=File(f, name=new_name)
+                    )
+                file.file.delete()
+                file.delete()
         else:
             raise Exception("Failed to download " + url)
 
-        local_files[name] = name
+        local_files[name] = new_name
     return list(local_files.values())
 
 
@@ -457,9 +471,9 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
     if data['remote_files'] and not isDatasetImport:
         data['remote_files'] = _download_data(db_data, upload_dir)
 
-    data['s3_files'] = _download_s3_files(db_data, upload_dir)
-    if data['s3_files']:
-        data['remote_files'] = data['s3_files']
+    s3_files = _download_s3_files(db_data, upload_dir)
+    if s3_files:
+        data['remote_files'] = s3_files
 
     manifest_files = []
     media = _count_files(data, manifest_files)
@@ -851,7 +865,7 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
 
     _save_task_to_db(db_task, extractor)
 
-    for path in data['s3_files']:
+    for path in s3_files:
         os.remove(os.path.join(upload_dir, path))
 
     if settings.USE_S3:
