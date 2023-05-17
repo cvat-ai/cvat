@@ -1,4 +1,5 @@
 import os
+import requests
 from io import BytesIO, IOBase
 from tempfile import SpooledTemporaryFile, NamedTemporaryFile
 from cvat.rebotics.utils import setting
@@ -8,6 +9,10 @@ from django.conf import settings
 
 
 DEFAULT_EXPIRES = 7 * 24 * 60 * 60
+
+
+class S3ClientError(Exception):
+    pass
 
 
 class S3Client:
@@ -32,10 +37,10 @@ class S3Client:
 
     def upload_from_io(self, io: IOBase, key: str) -> bool:
         io.seek(0)
-        with SpooledTemporaryFile() as c:
-            c.write(io.read())
-            c.seek(0)
-            response = self._client.upload_fileobj(c, self.bucket, self._key(key))
+        with SpooledTemporaryFile() as tmp:
+            tmp.write(io.read())
+            tmp.seek(0)
+            response = self._client.upload_fileobj(tmp, self.bucket, self._key(key))
         return response
 
     def download_to_path(self, key: str, path: str) -> None:
@@ -63,11 +68,34 @@ class S3Client:
             Params={"Bucket": self.bucket, "Key": self._key(key)},
             ExpiresIn=expires,
         )
-        if settings.ENVIRONMENT == 'local':
-            hostname = url.split('/')[2]
-            if 'minio' in hostname:
-                url = url.replace('minio', 'localhost', 1)
+
+        if settings.ENVIRONMENT == 'local' and 'minio' in url[:15]:
+            url = url.replace('minio', 'localhost', 1)
+
         return url
+
+    def get_presigned_post(self, key: str) -> dict:
+        dest = self._client.generate_presigned_post(
+            self.bucket,
+            key,
+        )
+
+        if settings.ENVIRONMENT == 'local' and 'minio' in dest['url'][:15]:
+            dest['url'] = dest['url'].replace('minio', 'localhost', 1)
+
+        return dest
+
+    def send_presigned_post(self, io: IOBase, dest: dict) -> None:
+        io.seek(0)
+
+        response = requests.post(
+            dest['url'],
+            data=dest['fields'],
+            files={'file': io},
+        )
+
+        if response.status_code != 204:
+            raise S3ClientError('Failed to post io to s3: {}'.format(response.content))
 
     def delete_object(self, key: str) -> bool:
         return self._client.delete_object(self.bucket, self._key(key))

@@ -26,6 +26,7 @@ import pytz
 from django.conf import settings
 from django.db import transaction
 from datetime import datetime
+from django.core.files.base import File
 
 from cvat.apps.engine import models
 from cvat.apps.engine.log import slogger
@@ -247,7 +248,7 @@ def _validate_manifest(manifests, root_dir, is_in_cloud, db_cloud_storage):
 
 def _validate_url(url):
     def _validate_ip_address(ip_address):
-        if not ip_address.is_global:
+        if not (ip_address.is_global or settings.DEBUG):
             raise ValidationError('Non public IP address \'{}\' is provided!'.format(ip_address))
 
     ALLOWED_SCHEMES = ['http', 'https']
@@ -333,6 +334,49 @@ def _download_data(db_data: models.Data, upload_dir):
         local_files[name] = new_name
         file.file = new_name
     models.RemoteFile.objects.bulk_update(remote_files, fields=('file',))
+    return list(local_files.values())
+
+
+def _download_s3_files(db_data: models.Data, upload_dir):
+    job = rq.get_current_job()
+    local_files = {}
+    s3_files = db_data.s3_files.all()
+
+    for file in s3_files:
+        url = file.file.url
+        name = os.path.basename(file.file.name)
+
+        if name in local_files:
+            raise Exception("filename collision: {}".format(name))
+        _validate_url(url)
+        slogger.glob.info("Downloading from s3: {}".format(name))
+        job.meta['status'] = 'S3 {} is  being downloaded...'.format(url)
+        job.save_meta()
+
+        response = requests.get(url, stream=True)
+        if response.status_code == 200:
+            response.raw.decode_content = True
+            output_path = os.path.join(upload_dir, name)
+            with open(output_path, 'wb') as output_file:
+                shutil.copyfileobj(response.raw, output_file)
+
+            new_name = fix_filename(name, output_path, file)
+            if new_name != name:
+                new_path = os.path.join(upload_dir, new_name)
+                os.rename(output_path, new_path)
+
+                rel_path = os.path.relpath(new_path, settings.BASE_DIR)
+                with open(rel_path, 'rb') as f:
+                    models.S3File.objects.create(
+                        data=db_data,
+                        file=File(f, name=new_name)
+                    )
+                file.file.delete()
+                file.delete()
+        else:
+            raise Exception("Failed to download " + url)
+
+        local_files[name] = new_name
     return list(local_files.values())
 
 
@@ -426,6 +470,10 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
 
     if data['remote_files'] and not isDatasetImport:
         data['remote_files'] = _download_data(db_data, upload_dir)
+
+    s3_files = _download_s3_files(db_data, upload_dir)
+    if s3_files:
+        data['remote_files'] = s3_files
 
     manifest_files = []
     media = _count_files(data, manifest_files)
@@ -816,6 +864,9 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
     slogger.glob.info("Found frames {} for Data #{}".format(db_data.size, db_data.id))
 
     _save_task_to_db(db_task, extractor)
+
+    for path in s3_files:
+        os.remove(os.path.join(upload_dir, path))
 
     if settings.USE_S3:
         _move_data_to_s3(db_task, db_data)
