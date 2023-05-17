@@ -4247,7 +4247,7 @@ paths:
           - mismatching_groups
           - covered_annotation
       tags:
-      - conflicts
+      - quality
       security:
       - sessionAuth: []
         csrfAuth: []
@@ -4334,7 +4334,7 @@ paths:
           type: integer
         description: A simple equality filter for task id
       tags:
-      - reports
+      - quality
       security:
       - sessionAuth: []
         csrfAuth: []
@@ -4374,7 +4374,7 @@ paths:
           type: integer
         description: Organization identifier
       tags:
-      - reports
+      - quality
       security:
       - sessionAuth: []
         csrfAuth: []
@@ -4390,7 +4390,8 @@ paths:
           description: ''
   /api/quality/reports/{id}/data:
     get:
-      operationId: quality_retrieve_reports_data
+      operationId: quality_retrieve_report_data
+      summary: Retrieve full contents of the report in JSON format
       parameters:
       - in: header
         name: X-Organization
@@ -4413,7 +4414,7 @@ paths:
           type: integer
         description: Organization identifier
       tags:
-      - reports
+      - quality
       security:
       - sessionAuth: []
         csrfAuth: []
@@ -4450,7 +4451,7 @@ paths:
         schema:
           type: integer
       tags:
-      - reports
+      - quality
       security:
       - sessionAuth: []
         csrfAuth: []
@@ -4490,7 +4491,7 @@ paths:
           type: integer
         description: Organization identifier
       tags:
-      - settings
+      - quality
       security:
       - sessionAuth: []
         csrfAuth: []
@@ -4528,7 +4529,7 @@ paths:
           type: integer
         description: Organization identifier
       tags:
-      - settings
+      - quality
       requestBody:
         content:
           application/json:
