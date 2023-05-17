@@ -8,7 +8,6 @@ import os
 import sys
 import imghdr
 
-from django.core.files import File
 from rest_framework.serializers import ValidationError
 import rq
 import re
@@ -371,7 +370,12 @@ def _download_s3_files(db_data: models.Data, upload_dir):
                         data=db_data,
                         file=File(f, name=new_name)
                     )
-                file.file.delete()
+                try:
+                    file.file.delete()
+                except Exception as e:
+                    slogger.glob(f'Failed to delete s3 file {name} with pk {file.pk}.'
+                                 f' {type(e).__name_}: {e}'
+                                 f' Proceeding without deletion.')
                 file.delete()
         else:
             raise Exception("Failed to download " + url)
