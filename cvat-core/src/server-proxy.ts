@@ -1084,7 +1084,7 @@ class ServerProxy {
             try {
                 await Axios.put(
                     `${backendAPI}/tasks/${taskId}/s3-data`,
-                    null,
+                    taskData,
                     {
                         params,
                         proxy,
