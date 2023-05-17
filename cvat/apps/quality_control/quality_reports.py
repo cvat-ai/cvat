@@ -28,7 +28,7 @@ from cvat.apps.dataset_manager.bindings import (CommonData, CvatToDmAnnotationCo
 from cvat.apps.dataset_manager.util import bulk_create
 from cvat.apps.dataset_manager.formats.registry import dm_env
 
-from cvat.apps.engine.models import Job, JobType, ShapeType, Task
+from cvat.apps.engine.models import DimensionType, Job, JobType, ShapeType, Task
 
 from cvat.apps.quality_control.models import (
     AnnotationConflictImportance, AnnotationConflictType, AnnotationType,
@@ -2084,6 +2084,10 @@ class ReportUpdateManager:
         # - job names are stable between potential writers
         # - if multiple simultaneous writes can happen, the objects written must be the same
         # - once a job is created, it can only be updated by the scheduler and the handling worker
+
+        if task.dimension != DimensionType.DIM_2D:
+            # Not supported
+            return
 
         if not task.gt_job:
             # Nothing to compute
