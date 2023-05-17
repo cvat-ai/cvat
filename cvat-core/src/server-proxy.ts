@@ -1055,6 +1055,10 @@ class ServerProxy {
 
             const s3Urls = response.data;
             onUpdate('Uploading data to s3...', null);
+            const s3Axios = Axios.create();
+            s3Axios.defaults.withCredentials = false;
+            delete s3Axios.defaults.headers.common.Authorization;
+            s3Axios.defaults.params = {};
             try {
                 for (let i = 0; i < s3Urls.length; i++) {
                     const { url, fields } = s3Urls[i];
@@ -1062,7 +1066,7 @@ class ServerProxy {
                         ...fields,
                         file: clientFiles[i],
                     };
-                    await Axios.post(
+                    await s3Axios.post(
                         url,
                         data,
                         {
