@@ -11,7 +11,7 @@ import Button from 'antd/lib/button';
 import Select from 'antd/lib/select';
 import notification from 'antd/lib/notification';
 import InputNumber from 'antd/lib/input-number';
-import Text from 'antd/lib/typography/Text';
+import CVATTooltip from 'components/common/cvat-tooltip';
 
 import { CombinedState } from 'reducers';
 import { useDispatch, useSelector } from 'react-redux';
@@ -19,6 +19,8 @@ import { JobType } from 'cvat-core/src/enums';
 import { Task } from 'cvat-core-wrapper';
 import { createJobAsync } from 'actions/jobs-actions';
 import { useHistory } from 'react-router';
+import Space from 'antd/lib/space';
+import { QuestionCircleOutlined } from '@ant-design/icons';
 
 export enum FrameSelectionMethod {
     RANDOM = 'random_uniform',
@@ -108,6 +110,7 @@ function JobForm(props: Props): JSX.Element {
             });
         }
     }, [taskSize]);
+    const frameCountDescription = 'A representative set, 5-15% of randomly chosen frames is recommended';
 
     return (
         <Row className='cvat-create-job-form-wrapper'>
@@ -153,11 +156,20 @@ function JobForm(props: Props): JSX.Element {
                         </Form.Item>
                     </Col>
                     <Col>
-                        <Row>
-                            <Col span={6}>
+                        <Row justify='space-between'>
+                            <Col>
                                 <Form.Item
                                     name='quantity'
-                                    label='Quantity %'
+                                    label={(
+                                        <Space>
+                                            Quantity %
+                                            <CVATTooltip title={frameCountDescription}>
+                                                <QuestionCircleOutlined
+                                                    style={{ opacity: 0.5 }}
+                                                />
+                                            </CVATTooltip>
+                                        </Space>
+                                    )}
                                     rules={[{ required: true, message: 'Please, specify quantity' }]}
                                 >
                                     <InputNumber
@@ -169,12 +181,21 @@ function JobForm(props: Props): JSX.Element {
                                 </Form.Item>
 
                             </Col>
-                            <Col span={12} offset={6}>
+                            <Col>
                                 <Row>
                                     <Col>
                                         <Form.Item
                                             name='frame_count'
-                                            label='Frame count'
+                                            label={(
+                                                <Space>
+                                                    Frame count
+                                                    <CVATTooltip title={frameCountDescription}>
+                                                        <QuestionCircleOutlined
+                                                            style={{ opacity: 0.5 }}
+                                                        />
+                                                    </CVATTooltip>
+                                                </Space>
+                                            )}
                                             rules={[{ required: true, message: 'Please, specify frame count' }]}
                                         >
                                             <InputNumber
@@ -185,18 +206,9 @@ function JobForm(props: Props): JSX.Element {
                                             />
                                         </Form.Item>
                                     </Col>
-                                    <Col className='cvat-create-job-frames-tip'>
-                                        <Text type='secondary'>
-                                            {`of ${taskSize} selected`}
-                                        </Text>
-                                    </Col>
                                 </Row>
                             </Col>
-                        </Row>
-                    </Col>
-                    <Col>
-                        <Row>
-                            <Col span={6}>
+                            <Col>
                                 <Form.Item
                                     name='seed'
                                     label='Seed'
