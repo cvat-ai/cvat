@@ -5,7 +5,9 @@
 import '../styles.scss';
 
 import React, { useEffect } from 'react';
-import { Job, JobType, Task } from 'cvat-core-wrapper';
+import {
+    Job, JobType, Task,
+} from 'cvat-core-wrapper';
 import { Row } from 'antd/lib/grid';
 import JobItem from 'components/job-item/job-item';
 import { useDispatch, useSelector } from 'react-redux';

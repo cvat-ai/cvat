@@ -28,13 +28,50 @@
         justify-content: center;
         align-items: center;
     }
+
+    .ant-card-body {
+        padding: $grid-unit-size * 2 $grid-unit-size * 3;
+    }
+}
+
+.cvat-analytics-card-title {
+    font-size: 16px;
+}
+
+.cvat-analytics-card-value {
+    font-size: 28px;
+}
+
+.cvat-analytics-tooltip {
+    margin-left: $grid-unit-size;
+}
+
+.cvat-analytics-tooltip-inner {
+    span {
+        display: block;
+        color: white;
+    }
+}
+
+.cvat-analytics-download-report-button {
+    padding-left: $grid-unit-size * 2;
+    padding-right: $grid-unit-size * 2;
+
+    a {
+        color: white;
+        margin-left: $grid-unit-size;
+
+        &:hover {
+            color: white;
+        }
+    }
 }
 
 .cvat-analytics-time-hint {
     font-size: 10px;
     position: absolute;
-    bottom: 0;
-    right: $grid-unit-size;
+    bottom: -$grid-unit-size * 3;
+    right: 0;
 }
 
 .cvat-task-analytics-page {
