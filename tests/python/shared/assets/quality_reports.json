@@ -4,44 +4,66 @@
   "previous": null,
   "results": [
     {
-      "created_date": "2023-04-22T14:49:30.751747Z",
+      "created_date": "2023-05-18T18:19:52.294000Z",
       "gt_last_updated": "2023-04-14T15:03:25.984000Z",
-      "job_id": 27,
-      "parameters": {
-        "iou_threshold": 0.0
-      },
-      "parent_id": null,
-      "summary": {
-        "conflicts_count": 0,
-        "ds_count": 0,
-        "frame_count": 0,
-        "frame_share_percent": 0.0,
-        "gt_count": 0,
-        "valid_count": 0
-      },
-      "target": "job",
-      "target_last_updated": "2023-04-14T14:58:50.944000Z",
-      "task_id": null
-    },
-    {
-      "created_date": "2023-04-22T14:49:30.867049Z",
-      "gt_last_updated": "2023-04-14T15:03:25.984000Z",
+      "id": 1,
       "job_id": null,
       "parameters": {
-        "iou_threshold": 0.0
+        "iou_threshold": 0.4
       },
       "parent_id": null,
       "summary": {
-        "conflicts_count": 0,
-        "ds_count": 0,
-        "frame_count": 0,
-        "frame_share_percent": 0.0,
-        "gt_count": 0,
-        "valid_count": 0
+        "conflict_count": 17,
+        "conflicts_by_type": {
+          "covered_annotation": 1,
+          "extra_annotation": 5,
+          "low_overlap": 3,
+          "mismatching_direction": 1,
+          "mismatching_label": 1,
+          "missing_annotation": 6
+        },
+        "ds_count": 13,
+        "error_count": 12,
+        "frame_count": 4,
+        "frame_share_percent": 0.36363636363636365,
+        "gt_count": 14,
+        "valid_count": 7,
+        "warning_count": 5
       },
       "target": "task",
       "target_last_updated": "2023-04-14T15:03:25.969000Z",
       "task_id": 22
+    },
+    {
+      "created_date": "2023-05-18T18:19:52.298000Z",
+      "gt_last_updated": "2023-04-14T15:03:25.984000Z",
+      "id": 2,
+      "job_id": 27,
+      "parameters": {
+        "iou_threshold": 0.4
+      },
+      "parent_id": 1,
+      "summary": {
+        "conflict_count": 17,
+        "conflicts_by_type": {
+          "covered_annotation": 1,
+          "extra_annotation": 5,
+          "low_overlap": 3,
+          "mismatching_direction": 1,
+          "mismatching_label": 1,
+          "missing_annotation": 6
+        },
+        "ds_count": 13,
+        "error_count": 12,
+        "frame_count": 4,
+        "frame_share_percent": 0.36363636363636365,
+        "gt_count": 14,
+        "valid_count": 7,
+        "warning_count": 5
+      },
+      "target": "job",
+      "target_last_updated": "2023-04-14T14:58:50.944000Z",
+      "task_id": null
     }
   ]
 }

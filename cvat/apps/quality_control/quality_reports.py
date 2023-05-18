@@ -2090,19 +2090,25 @@ class ReportUpdateManager:
 
         return queue_job_id
 
+    def _should_update(self, task: Task):
+        if task.dimension != DimensionType.DIM_2D:
+            # Not supported
+            return False
+
+        if not task.gt_job:
+            # Nothing to compute
+            return False
+
+        return True
+
     def schedule_quality_check_job(self, task: Task):
         # This function schedules a report computing job in the queue
-        # The queue work algorithm is lock-free. It should keep the following properties:
+        # The algorithm is lock-free. It should keep the following properties:
         # - job names are stable between potential writers
         # - if multiple simultaneous writes can happen, the objects written must be the same
         # - once a job is created, it can only be updated by the scheduler and the handling worker
 
-        if task.dimension != DimensionType.DIM_2D:
-            # Not supported
-            return
-
-        if not task.gt_job:
-            # Nothing to compute
+        if not self._should_update(task):
             return
 
         now = timezone.now()
@@ -2113,7 +2119,6 @@ class ReportUpdateManager:
         existing_job_ids = set(j.id for j in scheduler.get_jobs(until=next_job_time))
 
         queue_job_id = self._find_next_job_id(existing_job_ids, task, now=now)
-
         if queue_job_id not in existing_job_ids:
             scheduler.enqueue_at(
                 next_job_time,
@@ -2344,6 +2349,7 @@ class ReportUpdateManager:
                     report=db_report,
                     type=conflict['type'],
                     frame=conflict['frame_id'],
+                    importance=conflict['importance'],
                 )
                 db_conflicts.append(db_conflict)
 
