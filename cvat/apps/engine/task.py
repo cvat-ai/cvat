@@ -470,6 +470,7 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
 
     db_data = db_task.data
     upload_dir = db_data.get_upload_dirname()
+    os.makedirs(upload_dir, exist_ok=True)
     is_data_in_cloud = db_data.storage == models.StorageChoice.CLOUD_STORAGE
 
     if data['remote_files'] and not isDatasetImport:
