@@ -12,7 +12,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/opencv/cvat/pull/6146>)
 
 ### Changed
-
 - Relocated SAM masks decoder to frontend operation.
   (<https://github.com/opencv/cvat/pull/6019>)
 - Switched `person-reidentification-retail-0300` and `faster_rcnn_inception_v2_coco` Nuclio functions with `person-reidentification-retail-0277` and `faster_rcnn_inception_resnet_v2_atrous_coco` respectively.
@@ -27,7 +26,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - N/A
 
 ### Fixed
-
 - Resolved issues with tracking multiple objects (30 and more) using the TransT tracker.
   (<https://github.com/opencv/cvat/pull/6073>)
 - Addressed azure.core.exceptions.ResourceExistsError: The specified blob already exists.
