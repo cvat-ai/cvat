@@ -26,6 +26,7 @@ import Comment from 'cvat-core/src/comment';
 import User from 'cvat-core/src/user';
 import Organization from 'cvat-core/src/organization';
 import { Dumper } from 'cvat-core/src/annotation-formats';
+import { APIWrapperEnterOptions } from 'cvat-core/src/plugins';
 
 const cvat: any = _cvat;
 
@@ -75,4 +76,5 @@ export type {
     SerializedLabel,
     StorageData,
     ModelProvider,
+    APIWrapperEnterOptions,
 };
