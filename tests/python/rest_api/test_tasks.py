@@ -1498,3 +1498,23 @@ class TestPatchTask:
                 _check_status=False,
             )
         assert response.status == HTTPStatus.FORBIDDEN
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+def test_can_report_correct_completed_jobs_count(tasks, jobs, admin_user):
+    # Reproduces https://github.com/opencv/cvat/issues/6098
+    task = next(
+        t
+        for t in tasks
+        if t["jobs"]["count"] > 1 and t["jobs"]["completed"] == 0 and t["labels"]["count"] > 1
+    )
+    task_jobs = [j for j in jobs if j["task_id"] == task["id"]]
+
+    with make_api_client(admin_user) as api_client:
+        api_client.jobs_api.partial_update(
+            task_jobs[0]["id"],
+            patched_job_write_request=dict(stage="acceptance", state="completed"),
+        )
+
+        task, _ = api_client.tasks_api.retrieve(task["id"])
+        assert task.jobs.completed == 1

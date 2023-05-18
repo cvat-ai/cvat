@@ -14,9 +14,9 @@ const CopyPlugin = require('copy-webpack-plugin');
 
 module.exports = (env) => {
     const defaultAppConfig = path.join(__dirname, 'src/config.tsx');
-    const defaultPlugins = [];
+    const defaultPlugins = ['plugins/sam_plugin'];
     const appConfigFile = process.env.UI_APP_CONFIG ? process.env.UI_APP_CONFIG : defaultAppConfig;
-    const pluginsList = process.env.CLIENT_PLUGINS ? process.env.CLIENT_PLUGINS.split(':')
+    const pluginsList = process.env.CLIENT_PLUGINS ? [...defaultPlugins, ...process.env.CLIENT_PLUGINS.split(':')]
         .map((s) => s.trim()).filter((s) => !!s) : defaultPlugins
 
     const transformedPlugins = pluginsList
@@ -46,6 +46,9 @@ module.exports = (env) => {
             publicPath: '/',
         },
         devServer: {
+            devMiddleware: {
+                writeToDisk: true,
+            },
             compress: false,
             host: process.env.CVAT_UI_HOST || 'localhost',
             client: {
@@ -55,6 +58,12 @@ module.exports = (env) => {
             historyApiFallback: true,
             static: {
                 directory: path.join(__dirname, 'dist'),
+            },
+            headers: {
+                // to enable SharedArrayBuffer and ONNX multithreading
+                // https://cloudblogs.microsoft.com/opensource/2021/09/02/onnx-runtime-web-running-your-machine-learning-model-in-browser/
+                'Cross-Origin-Opener-Policy': 'same-origin',
+                'Cross-Origin-Embedder-Policy': 'credentialless',
             },
             proxy: [
                 {
@@ -190,6 +199,10 @@ module.exports = (env) => {
                     {
                         from: '../cvat-data/src/ts/3rdparty/avc.wasm',
                         to: 'assets/3rdparty/',
+                    },
+                    {
+                        from: '../node_modules/onnxruntime-web/dist/*.wasm',
+                        to  : 'assets/[name][ext]',
                     },
                 ],
             }),
