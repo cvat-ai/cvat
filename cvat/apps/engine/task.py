@@ -520,7 +520,7 @@ def _create_thread(
                         'The maximum number of the cloud storage attached files '
                         f'is {settings.CLOUD_STORAGE_MAX_FILES_COUNT}')
             else:
-                number_of_files = len(data['server_files']) - len(dirs)
+                number_of_files = len(data['server_files'])
                 while len(dirs):
                     directory = dirs.pop()
                     for f in cloud_storage_instance.list_files(prefix=directory, _use_flat_listing=True):
@@ -538,7 +538,7 @@ def _create_thread(
 
         if server_files_exclude := data.get('server_files_exclude'):
             data['server_files'] = list(filter(
-                lambda x: x not in server_files_exclude and all([f'{Path(i)}/' not in server_files_exclude for i in Path(x).parents]),
+                lambda x: x not in server_files_exclude and all([f'{i}/' not in server_files_exclude for i in Path(x).parents]),
                 data['server_files']
             ))
 
@@ -571,7 +571,7 @@ def _create_thread(
                     else [os.path.join(cloud_storage_manifest_prefix, f) for f in cloud_storage_manifest.data]
                 if not data['filename_pattern'] == '*':
                     additional_files = fnmatch.filter(additional_files, data['filename_pattern'])
-            # we check the limit of files on each iteration to reduce the number of possible requests to the bucket
+
             if (len(additional_files)) > settings.CLOUD_STORAGE_MAX_FILES_COUNT:
                 raise ValidationError(
                     'The maximum number of the cloud storage attached files '
@@ -676,7 +676,7 @@ def _create_thread(
     ):
         extractor.filter(
             lambda x: os.path.relpath(x, upload_dir) not in server_files_exclude and \
-                all([f'{Path(i)}/' not in server_files_exclude for i in Path(x).relative_to(upload_dir).parents])
+                all([f'{i}/' not in server_files_exclude for i in Path(x).relative_to(upload_dir).parents])
         )
 
     validate_dimension = ValidateDimension()
