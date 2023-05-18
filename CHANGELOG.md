@@ -9,16 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Introduced a new configuration option for controlling the invocation of Nuclio functions.
-  ([#6146](https://github.com/opencv/cvat/pull/6146))
+  (<https://github.com/opencv/cvat/pull/6146>)
 
 ### Changed
 
 - Relocated SAM masks decoder to frontend operation.
-  ([#6019](https://github.com/opencv/cvat/pull/6019))
+  (<https://github.com/opencv/cvat/pull/6019>)
 - Switched `person-reidentification-retail-0300` and `faster_rcnn_inception_v2_coco` Nuclio functions with `person-reidentification-retail-0277` and `faster_rcnn_inception_resnet_v2_atrous_coco` respectively.
-  ([#6129](https://github.com/opencv/cvat/pull/6129))
+  (<https://github.com/opencv/cvat/pull/6129>)
 - Upgraded OpenVINO-based Nuclio functions to utilize the OpenVINO 2022.3 runtime.
-  ([#6129](https://github.com/opencv/cvat/pull/6129))
+  (<https://github.com/opencv/cvat/pull/6129>)
 
 ### Deprecated
 - N/A
@@ -29,26 +29,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Resolved issues with tracking multiple objects (30 and more) using the TransT tracker.
-  ([#6073](https://github.com/opencv/cvat/pull/6073))
+  (<https://github.com/opencv/cvat/pull/6073>)
 - Addressed azure.core.exceptions.ResourceExistsError: The specified blob already exists.
-  ([#6082](https://github.com/opencv/cvat/pull/6082))
+  (<https://github.com/opencv/cvat/pull/6082>)
 - Corrected image scaling issues when transitioning between images of different resolutions.
-  ([#6081](https://github.com/opencv/cvat/pull/6081))
+  (<https://github.com/opencv/cvat/pull/6081>)
 - Fixed inaccurate reporting of completed job counts.
-  ([#6098](https://github.com/opencv/cvat/issues/6098))
+  (<https://github.com/opencv/cvat/issues/6098>)
 - Allowed OpenVINO-based Nuclio functions to be deployed to Kubernetes.
-  ([#6129](https://github.com/opencv/cvat/pull/6129))
+  (<https://github.com/opencv/cvat/pull/6129>)
 - Improved skeleton size checks after drawing.
-  ([#6156](https://github.com/opencv/cvat/pull/6156))
+  (<https://github.com/opencv/cvat/pull/6156>)
 - Fixed HRNet CPU serverless function.
-  ([#6150](https://github.com/opencv/cvat/pull/6150))
+  (<https://github.com/opencv/cvat/pull/6150>)
 - Prevented sending of empty list of events.
-  ([#6154](https://github.com/opencv/cvat/pull/6154))
+  (<https://github.com/opencv/cvat/pull/6154>)
 
 ### Security
 - N/A
 
-
+## \[2.4.3] - 2023-04-24
+### Changed
+- Docker images no longer include Ubuntu package sources or FFmpeg/OpenH264 sources
+  (<https://github.com/opencv/cvat/pull/6040>)
+- TUS chunk size changed from 100 MB to 2 MB
+  (<https://github.com/opencv/cvat/pull/6058>)
 
 ## \[2.4.2] - 2023-04-14
 ### Added
