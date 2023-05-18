@@ -48,7 +48,8 @@ class TestSimpleQualityReportsFilters(CollectionSimpleFilterTestBase):
             task_id, task_reports = super()._get_field_samples(field)
             task_job_ids = set(j["id"] for j in self.job_samples if j["task_id"] == task_id)
             task_reports = list(task_reports) + [
-                r for r in self.samples
+                r
+                for r in self.samples
                 if self._get_field(r, self._map_field("job_id")) in task_job_ids
             ]
             return task_id, task_reports
@@ -79,7 +80,8 @@ class TestSimpleQualityConflictsFilters(CollectionSimpleFilterTestBase):
             job_id = self._find_valid_field_value(self.report_samples, field_path=["job_id"])
             job_reports = set(r["id"] for r in self.report_samples if r["job_id"] == job_id)
             job_conflicts = [
-                c for c in self.samples
+                c
+                for c in self.samples
                 if self._get_field(c, self._map_field("report_id")) in job_reports
             ]
             return job_id, job_conflicts

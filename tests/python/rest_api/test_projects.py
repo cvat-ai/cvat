@@ -452,14 +452,7 @@ class TestPostProjects:
     def test_create_response_matches_get(self, admin_user):
         username = admin_user
 
-        spec = {
-            "name": "test create project",
-            "labels": [
-                {
-                    "name": "a"
-                }
-            ]
-        }
+        spec = {"name": "test create project", "labels": [{"name": "a"}]}
 
         response = self._test_create_project_201(username, spec)
         project = json.loads(response.data)

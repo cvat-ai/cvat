@@ -143,12 +143,15 @@ class TestPostJobs:
         assert job_frame_count == gt_job_meta.size
         assert job_frame_count == len(gt_job_meta.included_frames)
 
-    @pytest.mark.parametrize("task_id, frame_ids", [
-        # The results have to be the same in different CVAT revisions,
-        # so the task ids are fixed
-        (21, [3, 5, 7]), # annotation task
-        (5, [11, 14, 20]), # interpolation task
-    ])
+    @pytest.mark.parametrize(
+        "task_id, frame_ids",
+        [
+            # The results have to be the same in different CVAT revisions,
+            # so the task ids are fixed
+            (21, [3, 5, 7]),  # annotation task
+            (5, [11, 14, 20]),  # interpolation task
+        ],
+    )
     def test_can_create_gt_job_with_random_frames_and_seed(self, admin_user, task_id, frame_ids):
         user = admin_user
         job_spec = {
@@ -207,7 +210,10 @@ class TestPostJobs:
         # The frames themselves are the same as in the whole range
         # this is to allow navigation to adjacent frames
         if task_mode == "annotation":
-            assert len(gt_job_meta.frames) == (gt_job_meta.stop_frame + 1 - gt_job_meta.start_frame) / frame_step
+            assert (
+                len(gt_job_meta.frames)
+                == (gt_job_meta.stop_frame + 1 - gt_job_meta.start_frame) / frame_step
+            )
         elif task_mode == "interpolation":
             assert len(gt_job_meta.frames) == 1
         else:
