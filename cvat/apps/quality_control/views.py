@@ -51,7 +51,9 @@ class ConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
     iam_organization_field = None
 
     search_fields = []
-    filter_fields = list(search_fields) + ['id', 'report_id', 'frame', 'type', 'job_id']
+    filter_fields = list(search_fields) + [
+        'id', 'report_id', 'frame', 'type', 'job_id', 'importance'
+    ]
     simple_filters = set(filter_fields) - {'id'}
     lookup_fields = {
         'report_id': 'report__id',

@@ -4174,7 +4174,7 @@ paths:
         required: false
         in: query
         description: 'A filter term. Available filter_fields: [''id'', ''report_id'',
-          ''frame'', ''type'', ''job_id'']'
+          ''frame'', ''type'', ''job_id'', ''importance'']'
         schema:
           type: string
       - name: frame
@@ -4182,6 +4182,14 @@ paths:
         description: A simple equality filter for the frame field
         schema:
           type: integer
+      - name: importance
+        in: query
+        description: A simple equality filter for the importance field
+        schema:
+          type: string
+          enum:
+          - warning
+          - error
       - name: job_id
         in: query
         description: A simple equality filter for the job_id field
@@ -4224,7 +4232,7 @@ paths:
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''id'', ''report_id'', ''frame'', ''type'', ''job_id'']'
+          [''id'', ''report_id'', ''frame'', ''type'', ''job_id'', ''importance'']'
         schema:
           type: string
       - in: query
