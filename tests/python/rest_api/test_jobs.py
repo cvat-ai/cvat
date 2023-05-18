@@ -110,15 +110,7 @@ class TestPostJobs:
             (gt_job_meta, _) = api_client.jobs_api.retrieve_data_meta(job_id)
 
         assert job_frame_count == gt_job_meta.size
-
-        if task_mode == "annotation":
-            assert [f.name for f in gt_job_meta.frames] == [
-                task_meta.frames[i].name for i in job_frame_ids
-            ]
-        elif task_mode == "interpolation":
-            assert gt_job_meta.included_frames == job_frame_ids
-        else:
-            assert False
+        assert job_frame_ids == gt_job_meta.included_frames
 
     @pytest.mark.parametrize("task_mode", ["annotation", "interpolation"])
     def test_can_create_gt_job_with_random_frames(self, admin_user, tasks, task_mode):
@@ -140,7 +132,6 @@ class TestPostJobs:
             "type": "ground_truth",
             "frame_selection_method": "random_uniform",
             "count": job_frame_count,
-            "seed": 42,  # make the test reproducible
         }
 
         response = self._test_create_job_ok(user, job_spec)
@@ -150,11 +141,75 @@ class TestPostJobs:
             (gt_job_meta, _) = api_client.jobs_api.retrieve_data_meta(job_id)
 
         assert job_frame_count == gt_job_meta.size
+        assert job_frame_count == len(gt_job_meta.included_frames)
 
+    @pytest.mark.parametrize("task_id, frame_ids", [
+        # The results have to be the same in different CVAT revisions,
+        # so the task ids are fixed
+        (21, [3, 5, 7]), # annotation task
+        (5, [11, 14, 20]), # interpolation task
+    ])
+    def test_can_create_gt_job_with_random_frames_and_seed(self, admin_user, task_id, frame_ids):
+        user = admin_user
+        job_spec = {
+            "task_id": task_id,
+            "type": "ground_truth",
+            "frame_selection_method": "random_uniform",
+            "count": 3,
+            "seed": 42,
+        }
+
+        response = self._test_create_job_ok(user, job_spec)
+        job_id = json.loads(response.data)["id"]
+
+        with make_api_client(user) as api_client:
+            (gt_job_meta, _) = api_client.jobs_api.retrieve_data_meta(job_id)
+
+        assert gt_job_meta.included_frames == frame_ids
+
+    @pytest.mark.parametrize("task_mode", ["annotation", "interpolation"])
+    def test_can_get_gt_job_meta(self, admin_user, tasks, task_mode):
+        user = admin_user
+        job_frame_count = 4
+        task = next(
+            t
+            for t in tasks
+            if not t["project_id"]
+            and not t["organization"]
+            and t["mode"] == task_mode
+            and t["size"] > job_frame_count
+        )
+        task_id = task["id"]
+        with make_api_client(user) as api_client:
+            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+            frame_step = int(task_meta.frame_filter.split("=")[-1]) if task_meta.frame_filter else 1
+
+        job_frame_ids = list(range(task_meta.start_frame, task_meta.stop_frame, frame_step))[
+            :job_frame_count
+        ]
+        job_spec = {
+            "task_id": task_id,
+            "type": "ground_truth",
+            "frame_selection_method": "manual",
+            "frames": job_frame_ids,
+        }
+
+        response = self._test_create_job_ok(user, job_spec)
+        job_id = json.loads(response.data)["id"]
+
+        with make_api_client(user) as api_client:
+            (gt_job_meta, _) = api_client.jobs_api.retrieve_data_meta(job_id)
+
+        # The size is adjusted by the frame step and included frames
+        assert job_frame_count == gt_job_meta.size
+        assert job_frame_ids == gt_job_meta.included_frames
+
+        # The frames themselves are the same as in the whole range
+        # this is to allow navigation to adjacent frames
         if task_mode == "annotation":
-            assert [f.name for f in gt_job_meta.frames] == ["0.png", "1.png", "5.png"]
+            assert len(gt_job_meta.frames) == (gt_job_meta.stop_frame + 1 - gt_job_meta.start_frame) / frame_step
         elif task_mode == "interpolation":
-            assert gt_job_meta.included_frames == [0, 3, 20]
+            assert len(gt_job_meta.frames) == 1
         else:
             assert False
 

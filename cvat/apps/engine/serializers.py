@@ -635,10 +635,13 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
                 seed = validated_data.pop("seed", None)
 
-                import random
-                # NOTE: the RNG backend must not change to provide reproducible results
-                rng = random.Random(seed)
-                frames = rng.sample(valid_frame_ids, k=count)
+                # The RNG backend must not change to yield reproducible results,
+                # so here we specify it explicitly
+                from numpy import random
+                rng = random.Generator(random.MT19937(seed=seed))
+                frames = rng.choice(
+                    list(valid_frame_ids), size=count, shuffle=False, replace=False
+                ).tolist()
             elif frame_selection_method == models.JobFrameSelectionMethod.MANUAL:
                 frames = validated_data.pop("frames")
 
