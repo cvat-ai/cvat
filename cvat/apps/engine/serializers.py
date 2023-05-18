@@ -978,6 +978,9 @@ class TaskReadSerializer(serializers.ModelSerializer):
     jobs = JobsSummarySerializer(url_filter_key='task_id', source='segment_set')
     labels = LabelsSummarySerializer(source='*')
 
+    # The field may be missing because the app can be disabled
+    quality_settings = serializers.ReadOnlyField(source='quality_settings.id', required=False)
+
     class Meta:
         model = models.Task
         fields = ('url', 'id', 'name', 'project_id', 'mode', 'owner', 'assignee',
