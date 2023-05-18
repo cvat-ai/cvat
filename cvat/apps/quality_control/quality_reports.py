@@ -2060,7 +2060,7 @@ class ReportUpdateManager:
         def _get_timestamp(job_id: str) -> timezone.datetime:
             job_timestamp = job_id.split(job_id_prefix, maxsplit=1)[-1]
             if job_timestamp == 'initial':
-                return timezone.datetime.min
+                return timezone.datetime.min.replace(tzinfo=timezone.utc)
             else:
                 return timezone.datetime.fromtimestamp(float(job_timestamp), tz=timezone.utc)
 
