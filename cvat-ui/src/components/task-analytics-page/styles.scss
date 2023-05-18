@@ -46,3 +46,12 @@
     height: 90%;
     width: 100%;
 }
+
+.cvat-task-analytics-title {
+    h4 {
+        display: inline;
+        margin-right: $grid-unit-size;
+    }
+
+    margin-bottom: $grid-unit-size;
+}

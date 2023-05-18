@@ -9,6 +9,7 @@ import { Row, Col } from 'antd/lib/grid';
 import Tabs from 'antd/lib/tabs';
 import { useHistory, useParams } from 'react-router';
 import Text from 'antd/lib/typography/Text';
+import Title from 'antd/lib/typography/Title';
 import Spin from 'antd/lib/spin';
 import Button from 'antd/lib/button';
 import { Task } from 'reducers';
@@ -94,6 +95,19 @@ function TaskAnalyticsPage(): JSX.Element {
                             </Button>
                         </Col>
                         <Col md={22} lg={18} xl={16} xxl={14} className='cvat-analytics-inner'>
+                            <Col className='cvat-task-analytics-title'>
+                                <Title
+                                    level={4}
+                                    className='cvat-text-color'
+                                >
+                                    {taskInstance.name}
+                                </Title>
+                                <Text
+                                    type='secondary'
+                                >
+                                    {`#${taskInstance.id}`}
+                                </Text>
+                            </Col>
                             <Tabs type='card'>
                                 <Tabs.TabPane
                                     tab={(
