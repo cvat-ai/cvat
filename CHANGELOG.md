@@ -6,7 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## \[2.5.0] - Unreleased
+### Added
+- TDB
 
+### Changed
+- TDB
+
+### Deprecated
+- TDB
+
+### Removed
+- TDB
+
+### Fixed
+- TDB
+
+### Security
+- TDB
+
+## \[2.4.4] - 2023-05-18
 ### Added
 - Introduced a new configuration option for controlling the invocation of Nuclio functions.
   (<https://github.com/opencv/cvat/pull/6146>)
@@ -18,12 +36,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/opencv/cvat/pull/6129>)
 - Upgraded OpenVINO-based Nuclio functions to utilize the OpenVINO 2022.3 runtime.
   (<https://github.com/opencv/cvat/pull/6129>)
-
-### Deprecated
-- N/A
-
-### Removed
-- N/A
 
 ### Fixed
 - Resolved issues with tracking multiple objects (30 and more) using the TransT tracker.
@@ -42,9 +54,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/opencv/cvat/pull/6150>)
 - Prevented sending of empty list of events.
   (<https://github.com/opencv/cvat/pull/6154>)
-
-### Security
-- N/A
 
 ## \[2.4.3] - 2023-04-24
 ### Changed
