@@ -298,6 +298,30 @@ class TestPostJobs:
                 user["username"], job_spec, expected_status=HTTPStatus.FORBIDDEN, **extra_kwargs
             )
 
+    def test_create_response_matches_get(self, tasks, jobs, users):
+        task = next(
+            t
+            for t in tasks
+            if t["organization"] is None
+            and all(j["type"] != "ground_truth" for j in jobs if j["task_id"] == t["id"])
+            and not users[t["owner"]["id"]]["is_superuser"]
+        )
+        user = task["owner"]["username"]
+
+        spec = {
+            "task_id": task["id"],
+            "type": "ground_truth",
+            "frame_selection_method": "random_uniform",
+            "count": 1,
+        }
+
+        response = self._test_create_job_ok(user, spec)
+        job = json.loads(response.data)
+
+        with make_api_client(user) as api_client:
+            (_, response) = api_client.jobs_api.retrieve(job["id"])
+            assert DeepDiff(job, json.loads(response.data), ignore_order=True) == {}
+
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestDeleteJobs:
@@ -413,7 +437,9 @@ class TestDeleteJobs:
 
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetJobs:
-    def _test_get_job_200(self, user, jid, *, expected_data: Optional[Dict[str, Any]], **kwargs):
+    def _test_get_job_200(
+        self, user, jid, *, expected_data: Optional[Dict[str, Any]] = None, **kwargs
+    ):
         with make_api_client(user) as client:
             (_, response) = client.jobs_api.retrieve(jid, **kwargs)
             assert response.status == HTTPStatus.OK
@@ -475,7 +501,7 @@ class TestGetJobs:
         with make_api_client(admin_user) as api_client:
             (job, _) = api_client.jobs_api.create(job_spec)
 
-        self._test_get_job_200(user, job.id, expected_data=None)
+        self._test_get_job_200(user, job.id)
 
     @pytest.mark.usefixtures("restore_db_per_function")
     @pytest.mark.parametrize(
@@ -531,12 +557,13 @@ class TestGetJobs:
         }
 
         with make_api_client(admin_user) as api_client:
-            (job, _) = api_client.jobs_api.create(job_spec, **extra_kwargs)
+            (_, response) = api_client.jobs_api.create(job_spec, **extra_kwargs)
+            job = json.loads(response.data)
 
         if allow:
-            self._test_get_job_200(user["username"], job.id, expected_data=None, **extra_kwargs)
+            self._test_get_job_200(user["username"], job["id"], expected_data=job, **extra_kwargs)
         else:
-            self._test_get_job_403(user["username"], job.id, **extra_kwargs)
+            self._test_get_job_403(user["username"], job["id"], **extra_kwargs)
 
 
 @pytest.mark.usefixtures("restore_db_per_class")

@@ -203,12 +203,16 @@ class TestPostTasks:
             (_, response) = api_client.tasks_api.create(spec, **kwargs)
             assert response.status == HTTPStatus.CREATED
 
+        return response
+
     def _test_create_task_403(self, user, spec, **kwargs):
         with make_api_client(user) as api_client:
             (_, response) = api_client.tasks_api.create(
                 spec, **kwargs, _parse_response=False, _check_status=False
             )
             assert response.status == HTTPStatus.FORBIDDEN
+
+        return response
 
     def _test_users_to_create_task_in_project(
         self, project_id, users, is_staff, is_allow, is_project_staff, **kwargs
@@ -263,8 +267,27 @@ class TestPostTasks:
             project_id, users, is_staff, is_allow, is_project_staff, org=org["slug"]
         )
 
-    def test_can_create_task_with_skeleton(self):
-        username = "admin1"
+    def test_create_response_matches_get(self, admin_user):
+        username = admin_user
+
+        spec = {
+            "name": "test create task",
+            "labels": [
+                {
+                    "name": "a"
+                }
+            ]
+        }
+
+        response = self._test_create_task_201(username, spec)
+        task = json.loads(response.data)
+
+        with make_api_client(username) as api_client:
+            (_, response) = api_client.tasks_api.retrieve(task["id"])
+            assert DeepDiff(task, json.loads(response.data), ignore_order=True) == {}
+
+    def test_can_create_task_with_skeleton(self, admin_user):
+        username = admin_user
 
         spec = {
             "name": f"test admin1 to create a task with skeleton",
