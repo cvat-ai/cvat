@@ -6,43 +6,49 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## \[2.5.0] - Unreleased
+
 ### Added
-- A configuration option to control how Nuclio functions are invoked
-  (<https://github.com/opencv/cvat/pull/6146>)
+- Introduced a new configuration option for controlling the invocation of Nuclio functions.
+  ([#6146](https://github.com/opencv/cvat/pull/6146))
 
 ### Changed
-- Running SAM masks decoder on frontend (<https://github.com/opencv/cvat/pull/6019>)
-- The `person-reidentification-retail-0300` and
-  `faster_rcnn_inception_v2_coco` Nuclio functions were replaced with
-  `person-reidentification-retail-0277` and
-  `faster_rcnn_inception_resnet_v2_atrous_coco`, respectively
-  (<https://github.com/opencv/cvat/pull/6129>).
-- OpenVINO-based Nuclio functions now use the OpenVINO 2022.3 runtime
-  (<https://github.com/opencv/cvat/pull/6129>).
+
+- Relocated SAM masks decoder to frontend operation.
+  ([#6019](https://github.com/opencv/cvat/pull/6019))
+- Switched `person-reidentification-retail-0300` and `faster_rcnn_inception_v2_coco` Nuclio functions with `person-reidentification-retail-0277` and `faster_rcnn_inception_resnet_v2_atrous_coco` respectively.
+  ([#6129](https://github.com/opencv/cvat/pull/6129))
+- Upgraded OpenVINO-based Nuclio functions to utilize the OpenVINO 2022.3 runtime.
+  ([#6129](https://github.com/opencv/cvat/pull/6129))
 
 ### Deprecated
-- TDB
+- N/A
 
 ### Removed
-- TDB
+- N/A
 
 ### Fixed
-- Tracking of multiple objects (30 and more) with TransT tracker
-  (<https://github.com/opencv/cvat/pull/6073>)
-- The issue azure.core.exceptions.ResourceExistsError: The specified blob already exists (<https://github.com/opencv/cvat/pull/6082>)
-- Image scaling when moving between images with different resolution (<https://github.com/opencv/cvat/pull/6081>)
-- Invalid completed job count reporting (<https://github.com/opencv/cvat/issues/6098>)
-- OpenVINO-based Nuclio functions can now be deployed to Kubernetes
-  (<https://github.com/opencv/cvat/pull/6129>)
-- Adjusted skeleton size checking after drawing (<https://github.com/opencv/cvat/pull/6156>)
-- HRNet CPU serverless function
-  (<https://github.com/opencv/cvat/pull/6150>)
-- Sending empty list of events
-  (<https://github.com/opencv/cvat/pull/6154>)
 
+- Resolved issues with tracking multiple objects (30 and more) using the TransT tracker.
+  ([#6073](https://github.com/opencv/cvat/pull/6073))
+- Addressed azure.core.exceptions.ResourceExistsError: The specified blob already exists.
+  ([#6082](https://github.com/opencv/cvat/pull/6082))
+- Corrected image scaling issues when transitioning between images of different resolutions.
+  ([#6081](https://github.com/opencv/cvat/pull/6081))
+- Fixed inaccurate reporting of completed job counts.
+  ([#6098](https://github.com/opencv/cvat/issues/6098))
+- Allowed OpenVINO-based Nuclio functions to be deployed to Kubernetes.
+  ([#6129](https://github.com/opencv/cvat/pull/6129))
+- Improved skeleton size checks after drawing.
+  ([#6156](https://github.com/opencv/cvat/pull/6156))
+- Fixed HRNet CPU serverless function.
+  ([#6150](https://github.com/opencv/cvat/pull/6150))
+- Prevented sending of empty list of events.
+  ([#6154](https://github.com/opencv/cvat/pull/6154))
 
 ### Security
-- TDB
+- N/A
+
+
 
 ## \[2.4.2] - 2023-04-14
 ### Added
