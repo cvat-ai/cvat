@@ -1114,6 +1114,11 @@ export class Task extends Session {
         return result;
     }
 
+    async issues() {
+        const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.issues);
+        return result;
+    }
+
     static async restore(storage: Storage, file: File | string) {
         const result = await PluginRegistry.apiWrapper.call(this, Task.restore, storage, file);
         return result;

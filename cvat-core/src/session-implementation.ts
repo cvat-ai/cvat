@@ -85,7 +85,7 @@ export function implementJob(Job) {
     };
 
     Job.prototype.issues.implementation = async function () {
-        const result = await serverProxy.issues.get(this.id);
+        const result = await serverProxy.issues.get({job_id: this.id });
         return result.map((issue) => new Issue(issue));
     };
 
@@ -511,6 +511,11 @@ export function implementTask(Task) {
     Task.prototype.delete.implementation = async function () {
         const result = await serverProxy.tasks.delete(this.id);
         return result;
+    };
+
+    Task.prototype.issues.implementation = async function () {
+        const result = await serverProxy.issues.get({ task_id: this.id });
+        return result.map((issue) => new Issue(issue));
     };
 
     Task.prototype.backup.implementation = async function (

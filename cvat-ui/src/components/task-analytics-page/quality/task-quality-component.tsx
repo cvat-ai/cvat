@@ -17,6 +17,7 @@ import EmptyQuality from './empty-quality';
 import MeanQuality from './mean-quality';
 import JobList from './job-list';
 import GtConflicts from './gt-conflicts';
+import Issues from './issues';
 
 interface Props {
     task: Task,
@@ -42,8 +43,9 @@ function TaskQualityComponent(props: Props): JSX.Element {
             <Row>
                 <MeanQuality task={task} />
             </Row>
-            <Row>
+            <Row style={{ marginTop: '16px' }} gutter={16}>
                 <GtConflicts task={task} />
+                <Issues task={task} />
             </Row>
             <Row style={{ marginTop: '16px' }}>
                 <JobItem job={gtJob} onJobUpdate={onJobUpdate} />

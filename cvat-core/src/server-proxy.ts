@@ -1243,19 +1243,19 @@ async function getJobs(
     return response.data;
 }
 
-async function getJobIssues(jobID: number) {
+async function getIssues(filter) {
     const { backendAPI } = config;
 
     let response = null;
     try {
         const organization = enableOrganization();
         response = await fetchAll(`${backendAPI}/issues`, {
-            job_id: jobID,
+            ...filter,
             ...organization,
         });
 
         const commentsResponse = await fetchAll(`${backendAPI}/comments`, {
-            job_id: jobID,
+            ...filter,
             ...organization,
         });
 
@@ -2298,7 +2298,7 @@ export default Object.freeze({
     issues: Object.freeze({
         create: createIssue,
         update: updateIssue,
-        get: getJobIssues,
+        get: getIssues,
         delete: deleteIssue,
     }),
 
