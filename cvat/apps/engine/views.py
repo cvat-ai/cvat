@@ -310,10 +310,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             OpenApiParameter('filename', description='Dataset file name',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
         ],
-        request=PolymorphicProxySerializer('DatasetWrite',
-            serializers=[DatasetFileSerializer, OpenApiTypes.NONE],
-            resource_type_field_name=None
-        ),
+        request=DatasetFileSerializer(required=False),
         responses={
             '202': OpenApiResponse(description='Importing has been started'),
             '400': OpenApiResponse(description='Failed to import dataset'),
@@ -494,16 +491,13 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             OpenApiParameter('filename', description='Backup file name',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
         ],
-        request=PolymorphicProxySerializer('BackupWrite',
-            serializers=[ProjectFileSerializer, OpenApiTypes.NONE],
-            resource_type_field_name=None
-        ),
+        request=ProjectFileSerializer(required=False),
         responses={
             '201': OpenApiResponse(description='The project has been imported'), # or better specify {id: project_id}
             '202': OpenApiResponse(description='Importing a backup file has been started'),
         })
     @action(detail=False, methods=['OPTIONS', 'POST'], url_path=r'backup/?$',
-        serializer_class=ProjectFileSerializer(required=False),
+        serializer_class=None,
         parser_classes=_UPLOAD_PARSER_CLASSES)
     def import_backup(self, request, pk=None):
         return self.deserialize(request, backup.import_project)
@@ -731,7 +725,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '202': OpenApiResponse(description='Importing a backup file has been started'),
         })
     @action(detail=False, methods=['OPTIONS', 'POST'], url_path=r'backup/?$',
-        serializer_class=TaskFileSerializer(required=False),
+        serializer_class=None,
         parser_classes=_UPLOAD_PARSER_CLASSES)
     def import_backup(self, request, pk=None):
         return self.deserialize(request, backup.import_task)
@@ -879,7 +873,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     @extend_schema(methods=['POST'],
         summary='Method permanently attaches images or video to a task. Supports tus uploads, see more https://tus.io/',
-        request=DataSerializer,
+        request=DataSerializer(required=False),
         parameters=[
             OpenApiParameter('Upload-Start', location=OpenApiParameter.HEADER, type=OpenApiTypes.BOOL,
                 description='Initializes data upload. No data should be sent with this header'),
@@ -996,10 +990,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             OpenApiParameter('filename', description='Annotation file name',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
         ],
-        request=PolymorphicProxySerializer('TaskAnnotationsWrite',
-            serializers=[AnnotationFileSerializer, OpenApiTypes.NONE],
-            resource_type_field_name=None
-        ),
+        request=AnnotationFileSerializer(required=False),
         responses={
             '201': OpenApiResponse(description='Uploading has finished'),
             '202': OpenApiResponse(description='Uploading has been started'),
@@ -1403,7 +1394,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             OpenApiParameter('filename', description='Annotation file name',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
         ],
-        request=AnnotationFileSerializer,
+        request=AnnotationFileSerializer(required=False),
         responses={
             '201': OpenApiResponse(description='Uploading has finished'),
             '202': OpenApiResponse(description='Uploading has been started'),
@@ -1413,10 +1404,20 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         parameters=[
             OpenApiParameter('format', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
                 description='Input format name\nYou can get the list of supported formats at:\n/server/annotation/formats'),
+            OpenApiParameter('location', description='where to import the annotation from',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
+                enum=Location.list()),
+            OpenApiParameter('cloud_storage_id', description='Storage id',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.NUMBER, required=False),
+            OpenApiParameter('use_default_location', description='Use the location that was configured in the task to import annotation',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.BOOL, required=False,
+                default=True),
+            OpenApiParameter('filename', description='Annotation file name',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
         ],
         request=PolymorphicProxySerializer(
             component_name='JobAnnotationsUpdate',
-            serializers=[LabeledDataSerializer, AnnotationFileSerializer],
+            serializers=[LabeledDataSerializer, AnnotationFileSerializer(required=False)],
             resource_type_field_name=None
         ),
         responses={
@@ -1564,7 +1565,8 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             '200': OpenApiResponse(OpenApiTypes.BINARY, description='Data of a specific type'),
         })
     @action(detail=True, methods=['GET'],
-        simple_filters=[] # type query parameter conflicts with the filter
+        # TODO: fix unexpected collisions with filter params
+        simple_filters=[] # type query parameter conflicts with the filter,
     )
     def data(self, request, pk):
         db_job = self.get_object() # call check_object_permissions as well

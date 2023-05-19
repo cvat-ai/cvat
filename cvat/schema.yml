@@ -2167,7 +2167,6 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/AnnotationFileRequest'
-        required: true
       security:
       - sessionAuth: []
         csrfAuth: []
@@ -2190,6 +2189,16 @@ paths:
         schema:
           type: string
       - in: query
+        name: cloud_storage_id
+        schema:
+          type: number
+        description: Storage id
+      - in: query
+        name: filename
+        schema:
+          type: string
+        description: Annotation file name
+      - in: query
         name: format
         schema:
           type: string
@@ -2204,6 +2213,14 @@ paths:
         description: A unique integer value identifying this job.
         required: true
       - in: query
+        name: location
+        schema:
+          type: string
+          enum:
+          - cloud_storage
+          - local
+        description: where to import the annotation from
+      - in: query
         name: org
         schema:
           type: string
@@ -2213,6 +2230,12 @@ paths:
         schema:
           type: integer
         description: Organization identifier
+      - in: query
+        name: use_default_location
+        schema:
+          type: boolean
+          default: true
+        description: Use the location that was configured in the task to import annotation
       tags:
       - jobs
       requestBody:
@@ -4047,10 +4070,10 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/DatasetWriteRequest'
+              $ref: '#/components/schemas/DatasetFileRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/DatasetWriteRequest'
+              $ref: '#/components/schemas/DatasetFileRequest'
       security:
       - sessionAuth: []
         csrfAuth: []
@@ -4146,10 +4169,10 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/BackupWriteRequest'
+              $ref: '#/components/schemas/ProjectFileRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/BackupWriteRequest'
+              $ref: '#/components/schemas/ProjectFileRequest'
       security:
       - sessionAuth: []
         csrfAuth: []
@@ -4389,7 +4412,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/QualityReportCreateRequest'
-        required: false
       security:
       - sessionAuth: []
         csrfAuth: []
@@ -5357,10 +5379,10 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TaskAnnotationsWriteRequest'
+              $ref: '#/components/schemas/AnnotationFileRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/TaskAnnotationsWriteRequest'
+              $ref: '#/components/schemas/AnnotationFileRequest'
       security:
       - sessionAuth: []
         csrfAuth: []
@@ -5702,7 +5724,6 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/DataRequest'
-        required: true
       security:
       - sessionAuth: []
         csrfAuth: []
@@ -6015,7 +6036,6 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/TaskFileRequest'
-        required: true
       security:
       - sessionAuth: []
         csrfAuth: []
@@ -6970,10 +6990,6 @@ components:
       required:
       - spec_id
       - value
-    BackupWriteRequest:
-      oneOf:
-      - $ref: '#/components/schemas/ProjectFileRequest'
-      nullable: true
     BasicUser:
       type: object
       properties:
@@ -7419,10 +7435,6 @@ components:
       required:
       - exporters
       - importers
-    DatasetWriteRequest:
-      oneOf:
-      - $ref: '#/components/schemas/DatasetFileRequest'
-      nullable: true
     Event:
       type: object
       properties:
@@ -9684,10 +9696,6 @@ components:
     TaskAnnotationsUpdateRequest:
       oneOf:
       - $ref: '#/components/schemas/LabeledDataRequest'
-      - $ref: '#/components/schemas/AnnotationFileRequest'
-      nullable: true
-    TaskAnnotationsWriteRequest:
-      oneOf:
       - $ref: '#/components/schemas/AnnotationFileRequest'
       nullable: true
     TaskFileRequest:
