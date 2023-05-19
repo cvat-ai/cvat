@@ -55,6 +55,10 @@ class QualityReportSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
+class QualityReportCreateSerializer(serializers.Serializer):
+    task_id = serializers.IntegerField(write_only=True)
+
+
 class QualitySettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.QualitySettings

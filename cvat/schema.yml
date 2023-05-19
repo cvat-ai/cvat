@@ -4356,6 +4356,65 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedQualityReportList'
           description: ''
+    post:
+      operationId: quality_create_report
+      summary: Creates a quality report asynchronously and allows to check request
+        status
+      parameters:
+      - in: header
+        name: X-Organization
+        schema:
+          type: string
+      - in: query
+        name: org
+        schema:
+          type: string
+        description: Organization unique slug
+      - in: query
+        name: org_id
+        schema:
+          type: integer
+        description: Organization identifier
+      - in: query
+        name: rq_id
+        schema:
+          type: string
+        description: |
+          The report creation request id. Can be specified to check the report
+          creation status.
+      tags:
+      - quality
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QualityReportCreateRequest'
+        required: false
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/QualityReport'
+          description: ''
+        '202':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                type: string
+          description: |
+            A quality report request has been enqueued, the request id is returned.
+            The request status can be checked at this endpoint by passing the rq_id
+            as the query parameter. If the request id is specified, this response
+            means the quality report request is queued or is being processed.
+        '400':
+          description: Invalid or failed request, check the response data for details
   /api/quality/reports/{id}:
     get:
       operationId: quality_retrieve_reports
@@ -9171,6 +9230,14 @@ components:
       - parameters
       - summary
       - target
+    QualityReportCreateRequest:
+      type: object
+      properties:
+        task_id:
+          type: integer
+          writeOnly: true
+      required:
+      - task_id
     QualityReportParameters:
       type: object
       properties:

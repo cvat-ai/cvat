@@ -34,7 +34,7 @@ def __save_job__update_quality_metrics(instance, created, **kwargs):
         assert False
 
     for task in tasks:
-        qc.ReportUpdateManager().schedule_quality_check_job(task)
+        qc.QualityReportUpdateManager().schedule_quality_autoupdate_job(task)
 
 
 @receiver(post_save, sender=Task,

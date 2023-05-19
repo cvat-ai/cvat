@@ -12,6 +12,7 @@ from typing import Any, Callable, Dict, Hashable, List, Optional, Sequence, Tupl
 
 import itertools
 import math
+from uuid import uuid4
 
 from attrs import asdict, define, fields_dict
 import datumaro as dm
@@ -19,9 +20,9 @@ import datumaro.util.mask_tools
 from django.db import transaction
 from django.conf import settings
 from django.utils import timezone
+from scipy.optimize import linear_sum_assignment
 import django_rq
 import numpy as np
-from scipy.optimize import linear_sum_assignment
 
 from cvat.apps.dataset_manager.task import JobAnnotation
 from cvat.apps.dataset_manager.bindings import (CommonData, CvatToDmAnnotationConverter,
@@ -29,7 +30,9 @@ from cvat.apps.dataset_manager.bindings import (CommonData, CvatToDmAnnotationCo
 from cvat.apps.dataset_manager.util import bulk_create
 from cvat.apps.dataset_manager.formats.registry import dm_env
 
-from cvat.apps.engine.models import DimensionType, Job, JobType, ShapeType, Task
+from cvat.apps.engine.models import (
+    DimensionType, Job, JobType, ShapeType, Task, StatusChoice, StageChoice
+)
 
 from cvat.apps.quality_control.models import (
     AnnotationConflictImportance, AnnotationConflictType, AnnotationType,
@@ -2026,8 +2029,9 @@ class DatasetComparator:
         )
 
 
-class ReportUpdateManager:
+class QualityReportUpdateManager:
     _QUEUE_JOB_PREFIX = "update-quality-metrics-task-"
+    _RQ_CUSTOM_QUALITY_CHECK_JOB_TYPE = 'custom_quality_check'
 
     @classmethod
     def _get_quality_check_job_delay(cls) -> timedelta:
@@ -2036,8 +2040,14 @@ class ReportUpdateManager:
     def _get_scheduler(self):
         return django_rq.get_scheduler(settings.CVAT_QUEUES.QUALITY_REPORTS.value)
 
+    def _get_queue(self):
+        return django_rq.get_queue(settings.CVAT_QUEUES.QUALITY_REPORTS.value)
+
     def _make_queue_job_prefix(self, task: Task) -> str:
         return f'{self._QUEUE_JOB_PREFIX}{task.id}-'
+
+    def _make_custom_quality_check_job_id(self) -> str:
+        return uuid4().hex
 
     def _make_initial_queue_job_id(self, task: Task) -> str:
         return f'{self._make_queue_job_prefix(task)}initial'
@@ -2090,19 +2100,37 @@ class ReportUpdateManager:
 
         return queue_job_id
 
-    def _should_update(self, task: Task):
+    class QualityReportsNotAvailable(Exception):
+        pass
+
+    def _check_quality_reporting_available(self, task: Task):
         if task.dimension != DimensionType.DIM_2D:
-            # Not supported
+            raise self.QualityReportsNotAvailable(
+                "Quality reports are only supported in 2d tasks"
+            )
+
+        gt_job = task.gt_job
+        if gt_job is None or not (
+            gt_job.stage == StageChoice.ACCEPTANCE and gt_job.status == StatusChoice.COMPLETED
+        ):
+            return self.QualityReportsNotAvailable(
+                "Quality reports require a Ground Truth job in the task "
+                f"at the {StageChoice.ACCEPTANCE} stage "
+                f"and in the {StatusChoice.COMPLETED} state"
+            )
+
+    def _should_update(self, task: Task) -> bool:
+        try:
+            self._check_quality_reporting_available(task)
+            return True
+        except self.QualityReportsNotAvailable:
             return False
 
-        if not task.gt_job:
-            # Nothing to compute
-            return False
+    def schedule_quality_autoupdate_job(self, task: Task):
+        """
+        This function schedules a quality report autoupdate job
+        """
 
-        return True
-
-    def schedule_quality_check_job(self, task: Task):
-        # This function schedules a report computing job in the queue
         # The algorithm is lock-free. It should keep the following properties:
         # - job names are stable between potential writers
         # - if multiple simultaneous writes can happen, the objects written must be the same
@@ -2122,14 +2150,53 @@ class ReportUpdateManager:
         if queue_job_id not in existing_job_ids:
             scheduler.enqueue_at(
                 next_job_time,
-                self._update_task_quality_metrics,
+                self._check_task_quality,
                 task_id=task.id,
                 job_id=queue_job_id,
             )
 
+    def schedule_quality_check_job(self, task: Task, *, user_id: int) -> str:
+        """
+        Schedules a quality report computation job, supposed for updates by a request.
+        """
+
+        self._check_quality_reporting_available(task)
+
+        rq_id = self._make_custom_quality_check_job_id()
+
+        queue = self._get_queue()
+        queue.enqueue(
+            self._check_task_quality,
+            task_id=task.id,
+            job_id=rq_id,
+            meta={
+                'user_id': user_id,
+                'job_type': self._RQ_CUSTOM_QUALITY_CHECK_JOB_TYPE
+            },
+            result_ttl=60,
+            failure_ttl=60,
+        )
+
+        return rq_id
+
+    def get_quality_check_job(self, rq_id: str):
+        queue = self._get_queue()
+        rq_job = queue.fetch_job(rq_id)
+
+        if rq_job and not self.is_custom_quality_check_job(rq_job):
+            rq_job = None
+
+        return rq_job
+
+    def is_custom_quality_check_job(self, rq_job) -> bool:
+        return rq_job.meta.get('job_type') == self._RQ_CUSTOM_QUALITY_CHECK_JOB_TYPE
+
     @classmethod
     @silk_profile()
-    def _update_task_quality_metrics(cls, *, task_id: int):
+    def _check_task_quality(cls, *, task_id: int) -> int:
+        return cls()._compute_reports(task_id=task_id)
+
+    def _compute_reports(self, task_id: int) -> int:
         with transaction.atomic():
             # The task could have been deleted during scheduling
             try:
@@ -2173,7 +2240,7 @@ class ReportUpdateManager:
                 for job in jobs
             }
 
-            quality_params = cls._get_task_quality_params(task)
+            quality_params = self._get_task_quality_params(task)
 
         job_comparison_reports: Dict[int, ComparisonReport] = {}
         for job in jobs:
@@ -2186,7 +2253,7 @@ class ReportUpdateManager:
             # Release resources
             del job_data_provider.dm_dataset
 
-        task_comparison_report = cls._compute_task_report(task, job_comparison_reports)
+        task_comparison_report = self._compute_task_report(task, job_comparison_reports)
 
         with transaction.atomic():
             # The task could have been deleted during processing
@@ -2195,9 +2262,9 @@ class ReportUpdateManager:
             except Task.DoesNotExist:
                 return
 
-            last_report_time = cls._get_last_report_time(task)
-            if (last_report_time
-                and timezone.now() < last_report_time + cls._get_quality_check_job_delay()
+            if not self.is_custom_quality_check_job(self._get_current_job()) and (
+                last_report_time := self._get_last_report_time(task)
+                and timezone.now() < last_report_time + self._get_quality_check_job_delay()
             ):
                 # Discard this report as it has probably been computed in parallel
                 # with another one
@@ -2216,7 +2283,7 @@ class ReportUpdateManager:
 
                 job_quality_reports[job.id] = job_report
 
-            cls._save_reports(
+            task_report = self._save_reports(
                 task_report=dict(
                     task=task,
                     target_last_updated=task.updated_date,
@@ -2227,9 +2294,14 @@ class ReportUpdateManager:
                 job_reports=list(job_quality_reports.values())
             )
 
-    @classmethod
+        return task_report.id
+
+    def _get_current_job(self):
+        from rq import get_current_job
+        return get_current_job()
+
     def _compute_task_report(
-        cls, task: Task, job_reports: Dict[int, ComparisonReport]
+        self, task: Task, job_reports: Dict[int, ComparisonReport]
     ) -> ComparisonReport:
         # The task dataset can be different from any jobs' dataset because of frame overlaps
         # between jobs, from which annotations are merged to get the task annotations.
@@ -2311,8 +2383,7 @@ class ReportUpdateManager:
 
         return task_report_data
 
-    @classmethod
-    def _save_reports(cls, *, task_report: Dict, job_reports: List[Dict]) -> models.QualityReport:
+    def _save_reports(self, *, task_report: Dict, job_reports: List[Dict]) -> models.QualityReport:
         # TODO: add validation (e.g. ann id count for different types of conflicts)
 
         db_task_report = models.QualityReport(
@@ -2378,8 +2449,9 @@ class ReportUpdateManager:
             flt_param={}
         )
 
-    @classmethod
-    def _get_task_quality_params(cls, task: Task) -> Optional[ComparisonParameters]:
+        return db_task_report
+
+    def _get_task_quality_params(self, task: Task) -> Optional[ComparisonParameters]:
         quality_params, _ = models.QualitySettings.objects.get_or_create(task=task)
         return ComparisonParameters.from_dict(quality_params.to_dict())
 

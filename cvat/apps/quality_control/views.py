@@ -2,15 +2,19 @@
 #
 # SPDX-License-Identifier: MIT
 
+import textwrap
 from django.http import HttpResponse
 from django.db.models import Q
 
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import OpenApiParameter, extend_schema_view, extend_schema
+from drf_spectacular.utils import (
+    OpenApiParameter, extend_schema_view, extend_schema, OpenApiResponse
+)
 
-from rest_framework import mixins, viewsets
+from rest_framework import mixins, status, viewsets
+from rest_framework.response import Response
 from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, NotFound
 
 from cvat.apps.engine.models import Task
 from cvat.apps.engine.mixins import PartialUpdateModelMixin
@@ -21,7 +25,8 @@ from cvat.apps.quality_control.models import (
     AnnotationConflict, QualityReportTarget, QualitySettings, QualityReport
 )
 from cvat.apps.quality_control.serializers import (
-    AnnotationConflictSerializer, QualitySettingsSerializer, QualityReportSerializer
+    AnnotationConflictSerializer, QualitySettingsSerializer,
+    QualityReportSerializer, QualityReportCreateSerializer
 )
 
 from cvat.apps.iam.permissions import AnnotationConflictPermission, QualityReportPermission
@@ -42,7 +47,7 @@ from cvat.apps.profiler import silk_profile
             '200': AnnotationConflictSerializer(many=True),
         }),
 )
-class ConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
+class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
     queryset = AnnotationConflict.objects.prefetch_related('report', 'annotation_ids').all()
 
     # NOTE: This filter works incorrectly for this view
@@ -103,7 +108,7 @@ class ConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
         }),
 )
 class QualityReportViewSet(viewsets.GenericViewSet,
-    mixins.ListModelMixin, mixins.RetrieveModelMixin
+    mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.CreateModelMixin
 ):
     queryset = QualityReport.objects.prefetch_related(
         'job',
@@ -162,6 +167,82 @@ class QualityReportViewSet(viewsets.GenericViewSet,
 
         return queryset
 
+    CREATE_REPORT_RQ_ID_PARAMETER = 'rq_id'
+    @extend_schema(
+        operation_id="quality_create_report",
+        summary="Creates a quality report asynchronously and allows to check request status",
+        parameters=[
+            OpenApiParameter(
+                CREATE_REPORT_RQ_ID_PARAMETER,
+                type=str,
+                description=textwrap.dedent("""\
+                    The report creation request id. Can be specified to check the report
+                    creation status.
+                """),
+            )
+        ],
+        request=QualityReportCreateSerializer(required=False),
+        responses={
+            '201': QualityReportSerializer,
+            '202': OpenApiResponse(
+                OpenApiTypes.STR,
+                description=textwrap.dedent("""\
+                    A quality report request has been enqueued, the request id is returned.
+                    The request status can be checked at this endpoint by passing the {}
+                    as the query parameter. If the request id is specified, this response
+                    means the quality report request is queued or is being processed.
+                """.format(CREATE_REPORT_RQ_ID_PARAMETER))
+            ),
+            '400': OpenApiResponse(
+                description="Invalid or failed request, check the response data for details"
+            )
+        }
+    )
+    def create(self, request, *args, **kwargs):
+        self.check_permissions(request)
+
+        rq_id = request.query_params.get(self.CREATE_REPORT_RQ_ID_PARAMETER, None)
+
+        if rq_id is None:
+            input_serializer = QualityReportCreateSerializer(data=request.data)
+            input_serializer.is_valid(raise_exception=True)
+
+            task_id = input_serializer.validated_data["task_id"]
+            task = Task.objects.get(pk=task_id)
+
+            try:
+                rq_id = qc.QualityReportUpdateManager().schedule_quality_check_job(
+                    task, user_id=request.user.id
+                )
+                return Response(rq_id, status=status.HTTP_202_ACCEPTED)
+            except qc.QualityReportUpdateManager.QualityReportsNotAvailable as ex:
+                raise ValidationError(str(ex))
+
+        else:
+            report_manager = qc.QualityReportUpdateManager()
+            rq_job = report_manager.get_quality_check_job(rq_id)
+            if not rq_job or not QualityReportPermission.create_scope_check_status(
+                request, job_owner_id=rq_job.meta["user_id"]
+            ).check_access().allow:
+                # We should not provide job existence information to unauthorized users
+                raise NotFound("Unknown request id")
+
+            if rq_job.is_failed:
+                raise ValidationError(str(rq_job.exc_info))
+            elif rq_job.is_queued or rq_job.is_started:
+                return Response(status=status.HTTP_202_ACCEPTED)
+            elif rq_job.is_finished:
+                if not rq_job.return_value:
+                    raise ValidationError("No report has been computed")
+
+                report = self.get_queryset().get(pk=rq_job.return_value)
+                report_serializer = QualityReportSerializer(instance=report)
+                return Response(
+                    data=report_serializer.data,
+                    status=status.HTTP_201_CREATED,
+                    headers=self.get_success_headers(report_serializer.data)
+                )
+
     @extend_schema(
         operation_id="quality_retrieve_report_data",
         summary="Retrieve full contents of the report in JSON format",
@@ -182,7 +263,7 @@ class QualityReportViewSet(viewsets.GenericViewSet,
     @action(detail=False, methods=['GET'], url_path='debug', serializer_class=None)
     @silk_profile()
     def debug(self, request):
-        qc.ReportUpdateManager._update_task_quality_metrics(task_id=request.GET.get('task_id'))
+        qc.QualityReportUpdateManager._check_task_quality(task_id=request.GET.get('task_id'))
         return HttpResponse({})
 
 

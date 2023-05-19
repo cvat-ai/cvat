@@ -11,7 +11,7 @@ from cvat.apps.quality_control import views
 
 router = routers.DefaultRouter(trailing_slash=False)
 router.register('reports', views.QualityReportViewSet, basename='quality_reports')
-router.register('conflicts', views.ConflictsViewSet, basename='annotation_conflicts')
+router.register('conflicts', views.QualityConflictsViewSet, basename='annotation_conflicts')
 router.register('settings', views.QualitySettingsViewSet, basename='quality_settings')
 
 urlpatterns = [

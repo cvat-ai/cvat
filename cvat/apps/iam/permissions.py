@@ -1601,10 +1601,17 @@ class LabelPermission(OpenPolicyAgentPermission):
 
 class QualityReportPermission(OpenPolicyAgentPermission):
     obj: Optional[QualityReport]
+    job_owner_id: Optional[int]
 
     class Scopes(StrEnum):
         LIST = 'list'
+        CREATE = 'create'
         VIEW = 'view'
+        VIEW_STATUS = 'view:status'
+
+    @classmethod
+    def create_scope_check_status(cls, request, job_owner_id: int):
+        return cls(**cls.unpack_context(request), scope='view:status', job_owner_id=job_owner_id)
 
     @classmethod
     def create(cls, request, view, obj):
@@ -1624,12 +1631,21 @@ class QualityReportPermission(OpenPolicyAgentPermission):
                 elif scope == Scopes.LIST and isinstance(obj, Task):
                     permissions.append(TaskPermission.create_base_perm(request, view,
                         scope=TaskPermission.Scopes.VIEW, obj=obj))
+                elif scope == Scopes.CREATE:
+                    task_id = request.data.get('task_id')
+                    if task_id is not None:
+                        permissions.append(TaskPermission.create_scope_view(request, task_id))
+
+                    permissions.append(cls.create_base_perm(request, view, scope, obj))
                 else:
                     permissions.append(cls.create_base_perm(request, view, scope, obj))
 
         return permissions
 
     def __init__(self, **kwargs):
+        if 'job_owner_id' in kwargs:
+            self.job_owner_id = int(kwargs.pop('job_owner_id'))
+
         super().__init__(**kwargs)
         self.url = settings.IAM_OPA_DATA_URL + '/quality_reports/allow'
 
@@ -1638,6 +1654,7 @@ class QualityReportPermission(OpenPolicyAgentPermission):
         Scopes = __class__.Scopes
         return [{
             'list': Scopes.LIST,
+            'create': Scopes.CREATE,
             'retrieve': Scopes.VIEW,
             'data': Scopes.VIEW,
         }.get(view.action, None)]
@@ -1666,6 +1683,8 @@ class QualityReportPermission(OpenPolicyAgentPermission):
                     "assignee": { "id": getattr(task.project.assignee, 'id', None) }
                 } if task.project else None,
             }
+        elif self.scope == self.Scopes.VIEW_STATUS:
+            data = { "owner": self.job_owner_id }
 
         return data
 
