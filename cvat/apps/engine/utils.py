@@ -135,7 +135,7 @@ def parse_exception_message(msg):
     return parsed_msg
 
 def process_failed_job(rq_job: Job):
-    exc_info = str(rq_job.exc_info or rq_job.dependency.exc_info)
+    exc_info = str(rq_job.exc_info or getattr(rq_job.dependency, 'exc_info', None) or '')
     if rq_job.dependency:
         rq_job.dependency.delete()
     rq_job.delete()
