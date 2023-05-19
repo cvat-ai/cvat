@@ -2262,8 +2262,9 @@ class QualityReportUpdateManager:
             except Task.DoesNotExist:
                 return
 
+            last_report_time = self._get_last_report_time(task)
             if not self.is_custom_quality_check_job(self._get_current_job()) and (
-                last_report_time := self._get_last_report_time(task)
+                last_report_time
                 and timezone.now() < last_report_time + self._get_quality_check_job_delay()
             ):
                 # Discard this report as it has probably been computed in parallel
