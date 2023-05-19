@@ -1243,36 +1243,38 @@ async function getJobs(
     return response.data;
 }
 
-async function getJobIssues(jobID: number) {
+async function getIssues(filter) {
     const { backendAPI } = config;
 
     let response = null;
     try {
         const organization = enableOrganization();
         response = await fetchAll(`${backendAPI}/issues`, {
-            job_id: jobID,
+            ...filter,
             ...organization,
         });
 
-        const commentsResponse = await fetchAll(`${backendAPI}/comments`, {
-            job_id: jobID,
-            ...organization,
-        });
+        if (filter.job_id) {
+            const commentsResponse = await fetchAll(`${backendAPI}/comments`, {
+                ...filter,
+                ...organization,
+            });
 
-        const issuesById = response.results.reduce((acc, val: { id: number }) => {
-            acc[val.id] = val;
-            return acc;
-        }, {});
+            const issuesById = response.results.reduce((acc, val: { id: number }) => {
+                acc[val.id] = val;
+                return acc;
+            }, {});
 
-        const commentsByIssue = commentsResponse.results.reduce((acc, val) => {
-            acc[val.issue] = acc[val.issue] || [];
-            acc[val.issue].push(val);
-            return acc;
-        }, {});
+            const commentsByIssue = commentsResponse.results.reduce((acc, val) => {
+                acc[val.issue] = acc[val.issue] || [];
+                acc[val.issue].push(val);
+                return acc;
+            }, {});
 
-        for (const issue of Object.keys(commentsByIssue)) {
-            commentsByIssue[issue].sort((a, b) => a.id - b.id);
-            issuesById[issue].comments = commentsByIssue[issue];
+            for (const issue of Object.keys(commentsByIssue)) {
+                commentsByIssue[issue].sort((a, b) => a.id - b.id);
+                issuesById[issue].comments = commentsByIssue[issue];
+            }
         }
     } catch (errorData) {
         throw generateError(errorData);
@@ -1364,6 +1366,20 @@ async function createJob(jobData: Partial<SerializedJob>): Promise<SerializedJob
     }
 
     return response.data;
+}
+
+async function deleteJob(jobID: number): Promise<void> {
+    const { backendAPI } = config;
+
+    try {
+        await Axios.delete(`${backendAPI}/jobs/${jobID}`, {
+            params: {
+                ...enableOrganization(),
+            },
+        });
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
 }
 
 async function getUsers(filter = { page_size: 'all' }) {
@@ -2247,6 +2263,7 @@ export default Object.freeze({
         getPreview: getPreview('jobs'),
         save: saveJob,
         create: createJob,
+        delete: deleteJob,
         exportDataset: exportDataset('jobs'),
     }),
 
@@ -2298,7 +2315,7 @@ export default Object.freeze({
     issues: Object.freeze({
         create: createIssue,
         update: updateIssue,
-        get: getJobIssues,
+        get: getIssues,
         delete: deleteIssue,
     }),
 

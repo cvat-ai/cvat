@@ -62,6 +62,7 @@ const defaultState: NotificationsState = {
             updating: null,
             fetching: null,
             creating: null,
+            deleting: null,
         },
         formats: {
             fetching: null,
@@ -1570,6 +1571,23 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             message: 'Could not create job',
                             reason: action.payload.error.toString(),
                             className: 'cvat-notification-notice-create-job-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case JobsActionTypes.DELETE_JOB_FAILED: {
+            const { jobID } = action.payload;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    jobs: {
+                        ...state.errors.jobs,
+                        deleting: {
+                            message: `Could not delete the job #${jobID}`,
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-delete-job-failed',
                         },
                     },
                 },

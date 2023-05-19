@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import { ArgumentError } from './exceptions';
-import { HistoryActions } from './enums';
+import { HistoryActions, JobType } from './enums';
 import { Storage } from './storage';
 import loggerStorage from './logger-storage';
 import serverProxy from './server-proxy';
@@ -84,8 +84,16 @@ export function implementJob(Job) {
         return new Job(job);
     };
 
+    Job.prototype.delete.implementation = async function () {
+        if (this.type !== JobType.GROUND_TRUTH) {
+            throw new Error('Only ground truth job can be deleted');
+        }
+        const result = await serverProxy.jobs.delete(this.id);
+        return result;
+    };
+
     Job.prototype.issues.implementation = async function () {
-        const result = await serverProxy.issues.get(this.id);
+        const result = await serverProxy.issues.get({job_id: this.id });
         return result.map((issue) => new Issue(issue));
     };
 
@@ -511,6 +519,11 @@ export function implementTask(Task) {
     Task.prototype.delete.implementation = async function () {
         const result = await serverProxy.tasks.delete(this.id);
         return result;
+    };
+
+    Task.prototype.issues.implementation = async function () {
+        const result = await serverProxy.issues.get({ task_id: this.id });
+        return result.map((issue) => new Issue(issue));
     };
 
     Task.prototype.backup.implementation = async function (

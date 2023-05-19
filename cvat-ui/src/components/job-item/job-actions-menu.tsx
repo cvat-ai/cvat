@@ -1,14 +1,17 @@
 // Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
-import React from 'react';
+import React, { useCallback } from 'react';
 import { useDispatch } from 'react-redux';
 import { useHistory } from 'react-router';
 import Menu from 'antd/lib/menu';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { MenuInfo } from 'rc-menu/lib/interface';
 import { exportActions } from 'actions/export-actions';
-import { Job } from 'cvat-core-wrapper';
+
+import { Job, JobType } from 'cvat-core-wrapper';
+import { deleteJobAsync } from 'actions/jobs-actions';
+import Modal from 'antd/lib/modal';
 
 interface Props {
     job: Job
@@ -16,8 +19,25 @@ interface Props {
 
 function JobActionsMenu(props: Props): JSX.Element {
     const { job } = props;
+    const { id } = job;
     const history = useHistory();
     const dispatch = useDispatch();
+
+    const onDelete = useCallback(() => {
+        Modal.confirm({
+            title: `The job ${job.id} will be deleted`,
+            content: 'All related data (annotations) will be lost. Continue?',
+            className: 'cvat-modal-confirm-delete-job',
+            onOk: () => {
+                dispatch(deleteJobAsync(job));
+            },
+            okButtonProps: {
+                type: 'primary',
+                danger: true,
+            },
+            okText: 'Delete',
+        });
+    }, [id]);
 
     return (
         <Menu onClick={(action: MenuInfo) => {
@@ -34,6 +54,14 @@ function JobActionsMenu(props: Props): JSX.Element {
             <Menu.Item key='project' disabled={job.projectId === null}>Go to the project</Menu.Item>
             <Menu.Item key='bug_tracker' disabled={!job.bugTracker}>Go to the bug tracker</Menu.Item>
             <Menu.Item key='export_job' onClick={() => dispatch(exportActions.openExportDatasetModal(job))}>Export job</Menu.Item>
+            <Menu.Divider />
+            <Menu.Item
+                key='delete'
+                disabled={job.type !== JobType.GROUND_TRUTH}
+                onClick={() => onDelete()}
+            >
+                Delete
+            </Menu.Item>
         </Menu>
     );
 }
