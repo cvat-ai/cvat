@@ -14,24 +14,22 @@ class ModelLoader:
 
         # Initialize input blobs
         self._input_info_name = None
-        for blob_name in network.inputs:
-            if len(network.inputs[blob_name].shape) == 4:
+        for blob_name in network.input_info:
+            if len(network.input_info[blob_name].tensor_desc.dims) == 4:
                 self._input_blob_name = blob_name
-            elif len(network.inputs[blob_name].shape) == 2:
+                self._input_layout = network.input_info[blob_name].tensor_desc.dims
+            elif len(network.input_info[blob_name].tensor_desc.dims) == 2:
                 self._input_info_name = blob_name
             else:
                 raise RuntimeError(
                     "Unsupported {}D input layer '{}'. Only 2D and 4D input layers are supported"
-                    .format(len(network.inputs[blob_name].shape), blob_name))
+                    .format(len(network.input_info[blob_name].tensor_desc.dims), blob_name))
 
         # Initialize output blob
         self._output_blob_name = next(iter(network.outputs))
 
         # Load network
         self._net = ie_core.load_network(network, "CPU", num_requests=2)
-        input_type = network.inputs[self._input_blob_name]
-        self._input_layout = input_type if isinstance(input_type, list) else input_type.shape
-
 
     def _prepare_inputs(self, image, preprocessing):
         image = np.array(image)
@@ -67,5 +65,5 @@ class ModelLoader:
         return self._input_layout[2:]
 
     @property
-    def layers(self):
-        return self._network.layers
+    def network(self):
+        return self._network

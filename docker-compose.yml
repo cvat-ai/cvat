@@ -5,9 +5,7 @@
 services:
   cvat_db:
     container_name: cvat_db
-    # Need to fix version of postgres due to issue
-    # https://github.com/docker-library/postgres/issues/1076
-    image: postgres:15-alpine3.17
+    image: postgres:15-alpine
     restart: always
     environment:
       POSTGRES_USER: root

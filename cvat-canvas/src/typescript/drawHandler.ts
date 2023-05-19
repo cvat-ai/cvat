@@ -72,6 +72,11 @@ function checkConstraint(shapeType: string, points: number[], box: Box | null = 
             (points.length === 2 * 2 && (points[2] - points[0]) * (points[3] - points[1]) >= consts.AREA_THRESHOLD);
     }
 
+    if (shapeType === 'skeleton') {
+        const [xtl, ytl, xbr, ybr] = points;
+        return (xbr - xtl >= 1 || ybr - ytl >= 1);
+    }
+
     return false;
 }
 
@@ -762,7 +767,7 @@ export class DrawHandlerImpl implements DrawHandler {
                 this.release();
 
                 if (this.canceled) return;
-                if (checkConstraint('rectangle', [xtl, ytl, xbr, ybr])) {
+                if (checkConstraint('skeleton', [xtl, ytl, xbr, ybr])) {
                     this.onDrawDone({
                         clientID,
                         shapeType,
