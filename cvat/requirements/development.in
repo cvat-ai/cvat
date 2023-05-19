@@ -1,0 +1,9 @@
+-r base.in
+
+pylint==2.14.5
+pylint-django==2.5.3
+pylint-plugin-utils==0.7
+rope==0.17.0
+django-extensions==3.0.8
+snakeviz==2.1.0
+django-silk==5.0.3

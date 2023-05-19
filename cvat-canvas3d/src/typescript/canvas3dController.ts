@@ -6,14 +6,13 @@
 import { ObjectState } from '.';
 import {
     Canvas3dModel, Mode, DrawData, ActiveElement,
-    GroupData, Configuration, MergeData, SplitData,
+    GroupData, MergeData, SplitData,
 } from './canvas3dModel';
 
 export interface Canvas3dController {
     readonly drawData: DrawData;
     readonly activeElement: ActiveElement;
     readonly groupData: GroupData;
-    readonly configuration: Configuration;
     readonly imageIsDeleted: boolean;
     readonly objects: ObjectState[];
     mode: Mode;
@@ -51,10 +50,6 @@ export class Canvas3dControllerImpl implements Canvas3dController {
 
     public get groupData(): GroupData {
         return this.model.groupData;
-    }
-
-    public get configuration(): Configuration {
-        return this.model.configuration;
     }
 
     public get objects(): ObjectState[] {

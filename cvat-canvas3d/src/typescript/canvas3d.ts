@@ -14,7 +14,6 @@ import {
     MouseInteraction,
     ShapeProperties,
     GroupData,
-    Configuration,
     SplitData,
     MergeData,
 } from './canvas3dModel';
@@ -106,10 +105,6 @@ class Canvas3dImpl implements Canvas3d {
 
     public configureShapes(shapeProperties: ShapeProperties): void {
         this.model.configureShapes(shapeProperties);
-    }
-
-    public configure(configuration: Configuration): void {
-        this.model.configure(configuration);
     }
 
     public activate(clientID: number | null, attributeID: number | null = null): void {

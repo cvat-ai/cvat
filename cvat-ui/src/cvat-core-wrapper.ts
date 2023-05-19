@@ -20,13 +20,18 @@ import {
 import { Storage, StorageData } from 'cvat-core/src/storage';
 import Issue from 'cvat-core/src/issue';
 import Comment from 'cvat-core/src/comment';
-import { SocialAuthMethods, SocialAuthMethod, SelectionSchema } from 'cvat-core/src/auth-methods';
+import User from 'cvat-core/src/user';
+import Organization from 'cvat-core/src/organization';
+import { Dumper } from 'cvat-core/src/annotation-formats';
+import { APIWrapperEnterOptions } from 'cvat-core/src/plugins';
 
 const cvat: any = _cvat;
 
 cvat.config.backendAPI = '/api';
 cvat.config.origin = window.location.origin;
-cvat.config.uploadChunkSize = 100;
+// Set the TUS chunk size to 2 MB. A small value works better in case of a slow internet connection.
+// A larger value may cause a server-side timeout errors in the current implementation.
+cvat.config.uploadChunkSize = 2;
 (globalThis as any).cvat = cvat;
 
 function getCore(): any {
@@ -45,21 +50,22 @@ export {
     LabelType,
     Storage,
     Webhook,
-    SocialAuthMethod,
     Issue,
+    User,
+    Organization,
     Comment,
     MLModel,
     ModelKind,
     ModelProviders,
     ModelReturnType,
-    SelectionSchema,
     DimensionType,
+    Dumper,
 };
 
 export type {
     SerializedAttribute,
     SerializedLabel,
     StorageData,
-    SocialAuthMethods,
     ModelProvider,
+    APIWrapperEnterOptions,
 };

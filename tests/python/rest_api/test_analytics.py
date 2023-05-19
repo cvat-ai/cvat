@@ -5,6 +5,7 @@
 
 import csv
 import json
+import uuid
 from collections import Counter
 from datetime import datetime, timedelta, timezone
 from http import HTTPStatus
@@ -14,7 +15,7 @@ from time import sleep
 import pytest
 from dateutil import parser as datetime_parser
 
-from shared.utils.config import make_api_client, server_get
+from shared.utils.config import delete_method, make_api_client, server_get
 from shared.utils.helpers import generate_image_files
 
 from .utils import _test_create_task
@@ -55,7 +56,7 @@ class TestGetAuditEvents:
         with make_api_client(user) as api_client:
             (project, response) = api_client.projects_api.create(spec, **kwargs)
             assert response.status == HTTPStatus.CREATED
-        return project.id
+        return project.id, response.headers.get("X-Request-Id")
 
     @pytest.fixture(autouse=True)
     def setup(self, restore_clickhouse_db_per_function):
@@ -77,7 +78,9 @@ class TestGetAuditEvents:
                 }
             ],
         }
-        self.project_id = TestGetAuditEvents._create_project(self._USERNAME, project_spec)
+        self.project_id, project_request_id = TestGetAuditEvents._create_project(
+            self._USERNAME, project_spec
+        )
         task_spec = {
             "name": f"test {self._USERNAME} to create a task",
             "segment_size": 2,
@@ -87,7 +90,7 @@ class TestGetAuditEvents:
             "image_quality": 10,
             "client_files": generate_image_files(3),
         }
-        self.task_ids = [
+        task_ids = [
             _test_create_task(
                 self._USERNAME, task_spec, task_data, content_type="multipart/form-data"
             ),
@@ -95,9 +98,28 @@ class TestGetAuditEvents:
                 self._USERNAME, task_spec, task_data, content_type="multipart/form-data"
             ),
         ]
-        # Wait some time to events be processed by Vector and Clickhouse
-        # This will be improved when request tracking UUID is implemented.
-        sleep(8)
+
+        self.task_ids = [t[0] for t in task_ids]
+
+        expected_request_ids = [project_request_id, *[t[1] for t in task_ids]]
+
+        assert all(req_id is not None for req_id in expected_request_ids)
+
+        self._wait_for_request_ids(expected_request_ids)
+
+    def _wait_for_request_ids(self, expected_request_ids):
+        MAX_RETRIES = 5
+        SLEEP_INTERVAL = 2
+        while MAX_RETRIES > 0:
+            data = self._test_get_audit_logs_as_csv()
+            events = self._csv_to_dict(data)
+            request_ids = set(json.loads(e["payload"])["request"]["id"] for e in events)
+            if all(req_id in request_ids for req_id in expected_request_ids):
+                break
+            MAX_RETRIES -= 1
+            sleep(SLEEP_INTERVAL)
+        else:
+            assert False, "Could not wait for expected request IDs"
 
     @staticmethod
     def _export_events(endpoint, *, max_retries: int = 20, interval: float = 0.1, **kwargs):
@@ -175,6 +197,7 @@ class TestGetAuditEvents:
 
         filtered_events = self._filter_events(events, {"project_id": str(self.project_id)})
         assert len(filtered_events)
+        assert len(events) == len(filtered_events)
 
         event_count = Counter([e["scope"] for e in filtered_events])
         assert event_count["create:project"] == 1
@@ -192,6 +215,7 @@ class TestGetAuditEvents:
 
             filtered_events = self._filter_events(events, {"task_id": str(task_id)})
             assert len(filtered_events)
+            assert len(events) == len(filtered_events)
 
             event_count = Counter([e["scope"] for e in filtered_events])
             assert event_count["create:task"] == 1
@@ -205,3 +229,42 @@ class TestGetAuditEvents:
         data = self._test_get_audit_logs_as_csv(**query_params)
         events = self._csv_to_dict(data)
         assert len(events) == 0
+
+    def test_user_and_request_id_not_empty(self):
+        query_params = {
+            "project_id": self.project_id,
+        }
+        data = self._test_get_audit_logs_as_csv(**query_params)
+        events = self._csv_to_dict(data)
+
+        for event in events:
+            assert event["user_id"]
+            assert event["user_name"]
+            assert event["user_email"]
+
+            payload = json.loads(event["payload"])
+            request_id = payload["request"]["id"]
+            assert request_id
+            uuid.UUID(request_id)
+
+    def test_delete_project(self):
+        response = delete_method("admin1", f"projects/{self.project_id}")
+        assert response.status_code == HTTPStatus.NO_CONTENT
+
+        self._wait_for_request_ids([response.headers.get("X-Request-Id")])
+
+        query_params = {
+            "project_id": self.project_id,
+        }
+
+        data = self._test_get_audit_logs_as_csv(**query_params)
+        events = self._csv_to_dict(data)
+
+        filtered_events = self._filter_events(events, {"project_id": str(self.project_id)})
+        assert len(filtered_events)
+        assert len(events) == len(filtered_events)
+
+        event_count = Counter([e["scope"] for e in filtered_events])
+        assert event_count["delete:project"] == 1
+        assert event_count["delete:task"] == 2
+        assert event_count["delete:job"] == 4

@@ -1,5 +1,5 @@
 metadata:
-  name: openvino-omz-face-detection-0205
+  name: openvino-omz-intel-face-detection-0205
   namespace: cvat
   annotations:
     name: Attributed face detection
@@ -28,47 +28,13 @@ metadata:
 
 spec:
   description: Detection network finding faces and defining age, gender and emotion attributes
-  runtime: 'python:3.6'
+  runtime: 'python:3.8'
   handler: main:handler
   eventTimeout: 30000s
-  env:
-    - name: NUCLIO_PYTHON_EXE_PATH
-      value: /opt/nuclio/common/openvino/python3
-
-  volumes:
-    - volume:
-        name: openvino-common
-        configMap:
-          name: "cvat-nuclio-openvino-common"
-          defaultMode: 0750
-      volumeMount:
-        name: openvino-common
-        mountPath: /opt/nuclio/common/openvino
 
   build:
     image: cvat.openvino.omz.intel.face-detection-0205
-    baseImage: openvino/ubuntu18_dev:2021.1
-
-    directives:
-      preCopy:
-        - kind: USER
-          value: root
-        - kind: WORKDIR
-          value: /opt/nuclio
-        - kind: RUN
-          value: ln -s /usr/bin/pip3 /usr/bin/pip
-        - kind: RUN
-          value: /opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/downloader.py --name face-detection-0205 -o /opt/nuclio/open_model_zoo
-        - kind: RUN
-          value: /opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/downloader.py --name emotions-recognition-retail-0003 -o /opt/nuclio/open_model_zoo
-        - kind: RUN
-          value: /opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/downloader.py --name age-gender-recognition-retail-0013 -o /opt/nuclio/open_model_zoo
-
-      postCopy:
-        - kind: RUN
-          value: apt update && DEBIAN_FRONTEND=noninteractive apt install --no-install-recommends -y python3-skimage
-        - kind: RUN
-          value: pip3 install "numpy<1.16.0" # workaround for skimage
+    baseImage: cvat.openvino.omz.intel.face-detection-0205.base
 
   triggers:
     myHttpTrigger:

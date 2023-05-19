@@ -95,12 +95,10 @@
 
     .cvat-task-item-loading-preview,
     .cvat-task-item-empty-preview {
-        .ant-spin {
-            position: inherit;
-        }
+        @extend .cvat-base-preview;
 
         font-size: $grid-unit-size * 6;
-        text-align: center;
+        height: $grid-unit-size * 10;
     }
 
     .cvat-task-item-preview-wrapper {

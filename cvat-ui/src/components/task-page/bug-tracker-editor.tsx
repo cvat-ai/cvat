@@ -60,8 +60,6 @@ export default function BugTrackerEditorComponent(props: Props): JSX.Element {
                         type='ghost'
                         size='small'
                         onClick={(): void => {
-                            // false positive
-                            // eslint-disable-next-line
                             window.open(bugTracker, '_blank');
                         }}
                         className='cvat-open-bug-tracker-button'

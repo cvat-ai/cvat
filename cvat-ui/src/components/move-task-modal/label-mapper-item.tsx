@@ -6,14 +6,12 @@ import React from 'react';
 import { Col, Row } from 'antd/lib/grid';
 import Tag from 'antd/lib/tag';
 import Select from 'antd/lib/select';
-import Checkbox from 'antd/lib/checkbox';
 import { ArrowRightOutlined } from '@ant-design/icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
 
 export interface LabelMapperItemValue {
     labelId: number;
     newLabelName: string | null;
-    clearAttributes: boolean;
 }
 
 export interface LabelMapperItemProps {
@@ -61,18 +59,6 @@ export default function LabelMapperItem(props: LabelMapperItemProps): JSX.Elemen
                             </Select.Option>
                         ))}
                 </Select>
-            </Col>
-            <Col>
-                <Checkbox
-                    disabled
-                    checked={value.clearAttributes}
-                    onChange={(_value) => onChange({
-                        ...value,
-                        clearAttributes: _value.target.checked,
-                    })}
-                >
-                    Clear attributes
-                </Checkbox>
             </Col>
         </Row>
     );

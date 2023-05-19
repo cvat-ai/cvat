@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -146,13 +147,13 @@ export class InteractionHandlerImpl implements InteractionHandler {
                         _e.stopPropagation();
                         self.remove();
                         this.shapesWereUpdated = true;
-                        const shouldRaiseEvent = this.shouldRaiseEvent(_e.ctrlKey);
                         this.interactionShapes = this.interactionShapes.filter(
                             (shape: SVG.Shape): boolean => shape !== self,
                         );
                         if (this.interactionData.startWithBox && this.interactionShapes.length === 1) {
                             this.interactionShapes[0].style({ visibility: '' });
                         }
+                        const shouldRaiseEvent = this.shouldRaiseEvent(_e.ctrlKey);
                         if (shouldRaiseEvent) {
                             this.onInteraction(this.prepareResult(), true, false);
                         }
@@ -314,7 +315,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
                 'pointer-events': 'none',
                 opacity: 0.5,
             }).addClass('cvat_canvas_interact_intermediate_shape');
-            image.move(this.geometry.offset, this.geometry.offset);
+            image.move(this.geometry.offset + left, this.geometry.offset + top);
             this.drawnIntermediateShape = image;
 
             imageDataToDataURL(

@@ -1,7 +1,14 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
-import { useRef, useEffect, useState } from 'react';
+
+import _ from 'lodash';
+import {
+    useRef, useEffect, useState, useCallback,
+} from 'react';
+import { useSelector } from 'react-redux';
+import { CombinedState, PluginComponent } from 'reducers';
 
 // eslint-disable-next-line import/prefer-default-export
 export function usePrevious<T>(value: T): T | undefined {
@@ -9,6 +16,47 @@ export function usePrevious<T>(value: T): T | undefined {
     useEffect(() => {
         ref.current = value;
     });
+    return ref.current;
+}
+
+export function useIsMounted(): () => boolean {
+    const ref = useRef(false);
+
+    useEffect(() => {
+        ref.current = true;
+        return () => {
+            ref.current = false;
+        };
+    }, []);
+
+    return useCallback(() => ref.current, []);
+}
+
+export type Plugin = {
+    component: CallableFunction;
+    weight: number;
+};
+
+export function usePlugins(
+    getState: (state: CombinedState) => PluginComponent[],
+    props: object = {}, state: object = {},
+): Plugin[] {
+    const components = useSelector(getState);
+    const filteredComponents = components.filter((component) => component.data.shouldBeRendered(props, state));
+    const mappedComponents = filteredComponents
+        .map(({ component, data }): {
+            component: CallableFunction;
+            weight: number;
+        } => ({
+            component,
+            weight: data.weight,
+        }));
+    const ref = useRef<Plugin[]>(mappedComponents);
+
+    if (!_.isEqual(ref.current, mappedComponents)) {
+        ref.current = mappedComponents;
+    }
+
     return ref.current;
 }
 

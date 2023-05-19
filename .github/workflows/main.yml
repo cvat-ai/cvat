@@ -42,10 +42,6 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
-        with:
-          # we specify version of buildkit due to issue that occurs in latest version
-          # https://github.com/moby/buildkit/issues/2631
-          driver-opts: image=moby/buildkit:v0.10.0
 
       - name: Create artifact directories
         run: |
@@ -73,14 +69,26 @@ jobs:
 
       - name: CVAT SDK. Build
         run: |
-          docker load --input /tmp/cvat_server/image.tar
-          docker run --rm -v ${PWD}/cvat-sdk/schema/:/transfer \
-            --entrypoint /bin/bash -u root cvat/server \
-            -c 'python manage.py spectacular --file /transfer/schema.yml'
           pip3 install --user -r cvat-sdk/gen/requirements.txt
           ./cvat-sdk/gen/generate.sh
 
           cp -r cvat-sdk/* /tmp/cvat_sdk/
+
+      - name: Verify API schema
+        id: verify_schema
+        run: |
+          docker load --input /tmp/cvat_server/image.tar
+          docker run --rm --entrypoint /bin/bash cvat/server \
+            -c 'python manage.py spectacular' > cvat/schema-expected.yml
+
+          if ! git diff --no-index cvat/schema.yml cvat/schema-expected.yml; then
+            echo
+            echo 'API schema has changed! Please update cvat/schema.yml:'
+            echo
+            echo '  docker run --rm --entrypoint /bin/bash cvat/server:dev \'
+            echo "    -c 'python manage.py spectacular' > cvat/schema.yml"
+            exit 1
+          fi
 
       - name: Upload CVAT server artifact
         uses: actions/upload-artifact@v3
@@ -106,7 +114,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - uses: actions/setup-python@v3
+      - uses: actions/setup-python@v4
         with:
           python-version: '3.8'
 
@@ -136,7 +144,16 @@ jobs:
           docker tag cvat/ui:latest cvat/ui:${CVAT_VERSION}
           docker image ls -a
 
+
+      - name: Upload expected schema as an artifact
+        if: failure() && steps.verify_schema.conclusion == 'failure'
+        uses: actions/upload-artifact@v3.1.2
+        with:
+          name: expected_schema
+          path: cvat/schema-expected.yml
+
       - name: Running REST API and SDK tests
+        id: run_tests
         run: |
           pip3 install --user '/tmp/cvat_sdk/[pytorch]'
           pip3 install --user cvat-cli/
@@ -144,7 +161,7 @@ jobs:
           pytest tests/python/ -s -v
 
       - name: Creating a log file from cvat containers
-        if: failure()
+        if: failure() && steps.run_tests.conclusion == 'failure'
         env:
           LOGS_DIR: "${{ github.workspace }}/rest_api_testing"
         run: |
@@ -155,8 +172,8 @@ jobs:
             docker logs test_cvat_opa_1 2> $LOGS_DIR/cvat_opa.log
 
       - name: Uploading "cvat" container logs as an artifact
-        if: failure()
-        uses: actions/upload-artifact@v3.1.1
+        if: failure() && steps.run_tests.conclusion == 'failure'
+        uses: actions/upload-artifact@v3.1.2
         with:
           name: rest_api_container_logs
           path: "${{ github.workspace }}/rest_api_testing"
@@ -193,16 +210,16 @@ jobs:
           HOST_COVERAGE_DATA_DIR: ${{ github.workspace }}
           CONTAINER_COVERAGE_DATA_DIR: "/coverage_data"
         run: |
-          docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d cvat_opa cvat_server
+          docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d cvat_opa cvat_server cvat_db
 
           max_tries=12
           while [[  $(curl -s -o /dev/null -w "%{http_code}" localhost:8181/health?bundles) != "200" && max_tries -gt 0 ]]; do (( max_tries-- )); sleep 5; done
 
           docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
-          -c 'python manage.py test cvat/apps -v 2'
+            -c 'python manage.py test cvat/apps -v 2'
 
           docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
-          -c 'yarn --frozen-lockfile --ignore-scripts && yarn workspace cvat-core run test'
+            -c 'yarn --frozen-lockfile --ignore-scripts && yarn workspace cvat-core run test'
 
       - name: Creating a log file from cvat containers
         if: failure()
@@ -219,7 +236,6 @@ jobs:
         with:
           name: unit_tests_container_logs
           path: "${{ github.workspace }}/unit_testing"
-
 
   e2e_testing:
     needs: build
@@ -238,7 +254,7 @@ jobs:
         with:
             node-version: '16.x'
 
-      - name: Download CVAT server images
+      - name: Download CVAT server image
         uses: actions/download-artifact@v3
         with:
           name: cvat_server
@@ -266,6 +282,7 @@ jobs:
             -f components/serverless/docker-compose.serverless.yml \
             -f tests/docker-compose.minio.yml \
             -f tests/docker-compose.file_share.yml up -d
+
       - name: Waiting for server
         env:
           API_ABOUT_PAGE: "localhost:8080/api/server/about"
@@ -310,6 +327,8 @@ jobs:
         if: failure()
         run: |
             docker logs cvat_server > ${{ github.workspace }}/tests/cvat_${{ matrix.specs }}.log
+            docker logs cvat_worker_export > ${{ github.workspace }}/tests/cvat_worker_export_${{ matrix.specs }}.log
+            docker logs cvat_worker_import > ${{ github.workspace }}/tests/cvat_worker_import_${{ matrix.specs }}.log
 
       - name: Uploading "cvat" container logs as an artifact
         if: failure()

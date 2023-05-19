@@ -81,13 +81,11 @@
 
         .cvat-job-item-loading-preview,
         .cvat-job-item-empty-preview {
-            .ant-spin {
-                position: inherit;
-            }
+            @extend .cvat-base-preview;
 
-            font-size: $grid-unit-size * 15;
-            text-align: center;
-            height: $grid-unit-size * 24;
+            &:hover {
+                cursor: pointer;
+            }
         }
 
         .cvat-job-page-list-item-dimension {

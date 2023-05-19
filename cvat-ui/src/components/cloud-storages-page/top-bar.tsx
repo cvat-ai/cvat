@@ -81,7 +81,6 @@ export default function StoragesTopBar(props: Props): JSX.Element {
                     </div>
                 </div>
                 <Button
-                    size='large'
                     className='cvat-attach-cloud-storage-button'
                     type='primary'
                     onClick={(): void => history.push('/cloudstorages/create')}

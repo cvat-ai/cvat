@@ -1,36 +1,40 @@
 # Copyright (C) 2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import base64
 import json
-from functools import wraps
-from enum import Enum
-from copy import deepcopy
+import os
 import textwrap
+import glob
+from django_sendfile import sendfile
+from copy import deepcopy
+from enum import Enum
+from functools import wraps
 from typing import Any, Dict, Optional
 
+import datumaro.util.mask_tools as mask_tools
 import django_rq
+import numpy as np
 import requests
 import rq
-import os
-
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
-from rest_framework import status, viewsets, serializers
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import (OpenApiParameter, OpenApiResponse,
+                                   extend_schema, extend_schema_view,
+                                   inline_serializer)
+from rest_framework import serializers, status, viewsets
 from rest_framework.response import Response
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.engine.frame_provider import FrameProvider
-from cvat.apps.engine.models import Job, Task
+from cvat.apps.engine.models import Job, ShapeType, SourceType, Task
 from cvat.apps.engine.serializers import LabeledDataSerializer
-from cvat.apps.engine.models import ShapeType, SourceType
 from cvat.utils.http import make_requests_session
+from cvat.apps.iam.permissions import LambdaPermission
 
-from drf_spectacular.utils import (extend_schema, extend_schema_view,
-    OpenApiResponse, OpenApiParameter, inline_serializer)
-from drf_spectacular.types import OpenApiTypes
 
 class LambdaType(Enum):
     DETECTOR = "detector"
@@ -85,14 +89,21 @@ class LambdaGateway:
         return response
 
     def invoke(self, func, payload):
-        if os.getenv('KUBERNETES_SERVICE_HOST'):
-            return self._http(method="post", url='/api/function_invocations',
+        invoke_method = {
+            'dashboard': self._invoke_via_dashboard,
+            'direct': self._invoke_directly,
+        }
+
+        return invoke_method[settings.NUCLIO['INVOKE_METHOD']](func, payload)
+
+    def _invoke_via_dashboard(self, func, payload):
+        return self._http(method="post", url='/api/function_invocations',
             data=payload, headers={
                 'x-nuclio-function-name': func.id,
                 'x-nuclio-path': '/'
             })
 
-        # Note: call the function directly without the nuclio dashboard
+    def _invoke_directly(self, func, payload):
         # host.docker.internal for Linux will work only with Docker 20.10+
         NUCLIO_TIMEOUT = settings.NUCLIO['DEFAULT_TIMEOUT']
         if os.path.exists('/.dockerenv'): # inside a docker container
@@ -552,14 +563,7 @@ class LambdaJob:
                     elif anno["type"] == "mask":
                         [xtl, ytl, xbr, ybr] = shape["points"][-4:]
                         cut_points = shape["points"][:-4]
-                        rle = [0]
-                        prev = shape["points"][0]
-                        for val in cut_points:
-                            if val == prev:
-                                rle[-1] += 1
-                            else:
-                                rle.append(1)
-                                prev = val
+                        rle = mask_tools.mask_to_rle(np.array(cut_points))["counts"].tolist()
                         rle.extend([xtl, ytl, xbr, ybr])
                         shape["points"] = rle
 
@@ -810,8 +814,22 @@ class RequestViewSet(viewsets.ViewSet):
 
     @return_response()
     def list(self, request):
+        queryset = Task.objects.select_related(
+            "assignee",
+            "owner",
+            "organization",
+        ).prefetch_related(
+            "project__owner",
+            "project__assignee",
+            "project__organization",
+        )
+
+        perm = LambdaPermission.create_scope_list(request)
+        queryset = perm.filter(queryset)
+        task_ids = set(queryset.values_list("id", flat=True))
+
         queue = LambdaQueue()
-        return [job.to_dict() for job in queue.get_jobs()]
+        return [job.to_dict() for job in queue.get_jobs() if job.get_task() in task_ids]
 
     @return_response()
     def create(self, request):
@@ -852,3 +870,11 @@ class RequestViewSet(viewsets.ViewSet):
         queue = LambdaQueue()
         job = queue.fetch_job(pk)
         job.delete()
+
+def ONNXDetector(request):
+    dirname = os.path.join(settings.STATIC_ROOT, 'lambda_manager')
+    pattern = os.path.join(dirname, 'decoder.onnx')
+    path = glob.glob(pattern)[0]
+    response = sendfile(request, path)
+    response['Cache-Control'] = "public, max-age=604800"
+    return response

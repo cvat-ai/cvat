@@ -1220,6 +1220,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
         // Setup event handlers
         this.canvas.addEventListener('dblclick', (e: MouseEvent): void => {
             this.controller.fit();
+            this.canvas.dispatchEvent(
+                new CustomEvent('canvas.fit', {
+                    bubbles: false,
+                    cancelable: true,
+                }),
+            );
             e.preventDefault();
         });
 
@@ -1460,14 +1466,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
         } else if ([UpdateReasons.IMAGE_ZOOMED, UpdateReasons.IMAGE_FITTED].includes(reason)) {
             this.moveCanvas();
             this.transformCanvas();
-            if (reason === UpdateReasons.IMAGE_FITTED) {
-                this.canvas.dispatchEvent(
-                    new CustomEvent('canvas.fit', {
-                        bubbles: false,
-                        cancelable: true,
-                    }),
-                );
-            }
+        } else if (reason === UpdateReasons.IMAGE_ROTATED) {
+            this.transformCanvas();
         } else if (reason === UpdateReasons.IMAGE_MOVED) {
             this.moveCanvas();
         } else if (reason === UpdateReasons.OBJECTS_UPDATED) {
@@ -2826,6 +2826,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 'shape-rendering': 'geometricprecision',
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
                 'data-z-order': state.zOrder,
+                'pointer-events': 'all',
                 ...this.getShapeColorization(state),
             }).addClass('cvat_canvas_shape') as SVG.G;
 

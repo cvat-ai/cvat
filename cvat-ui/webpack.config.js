@@ -12,12 +12,25 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const Dotenv = require('dotenv-webpack');
 const CopyPlugin = require('copy-webpack-plugin');
 
-
 module.exports = (env) => {
-    console.log()
     const defaultAppConfig = path.join(__dirname, 'src/config.tsx');
+    const defaultPlugins = ['plugins/sam_plugin'];
     const appConfigFile = process.env.UI_APP_CONFIG ? process.env.UI_APP_CONFIG : defaultAppConfig;
-    console.log('Application config file is: ', appConfigFile);
+    const pluginsList = process.env.CLIENT_PLUGINS ? [...defaultPlugins, ...process.env.CLIENT_PLUGINS.split(':')]
+        .map((s) => s.trim()).filter((s) => !!s) : defaultPlugins
+
+    const transformedPlugins = pluginsList
+        .filter((plugin) => !!plugin).reduce((acc, _path, index) => ({
+            ...acc,
+            [`plugin_${index}`]: {
+                dependOn: 'cvat-ui',
+                // path can be absolute, in this case it is accepted as is
+                // also the path can be relative to cvat-ui root directory
+                import: path.isAbsolute(_path) ? _path : path.join(__dirname, _path, 'src', 'ts', 'index.tsx'),
+            },
+        }), {});
+
+    console.log('List of plugins: ', Object.values(transformedPlugins).map((plugin) => plugin.import));
 
     return {
         target: 'web',
@@ -25,6 +38,7 @@ module.exports = (env) => {
         devtool: 'source-map',
         entry: {
             'cvat-ui': './src/index.tsx',
+            ...transformedPlugins,
         },
         output: {
             path: path.resolve(__dirname, 'dist'),
@@ -32,6 +46,9 @@ module.exports = (env) => {
             publicPath: '/',
         },
         devServer: {
+            devMiddleware: {
+                writeToDisk: true,
+            },
             compress: false,
             host: process.env.CVAT_UI_HOST || 'localhost',
             client: {
@@ -42,11 +59,17 @@ module.exports = (env) => {
             static: {
                 directory: path.join(__dirname, 'dist'),
             },
+            headers: {
+                // to enable SharedArrayBuffer and ONNX multithreading
+                // https://cloudblogs.microsoft.com/opensource/2021/09/02/onnx-runtime-web-running-your-machine-learning-model-in-browser/
+                'Cross-Origin-Opener-Policy': 'same-origin',
+                'Cross-Origin-Embedder-Policy': 'credentialless',
+            },
             proxy: [
                 {
                     context: (param) =>
                         param.match(
-                            /\/api\/.*|git\/.*|opencv\/.*|analytics\/.*|static\/.*|admin(?:\/(.*))?.*|documentation\/.*|django-rq(?:\/(.*))?/gm,
+                            /\/api\/.*|git\/.*|opencv\/.*|analytics\/.*|static\/.*|admin(?:\/(.*))?.*|profiler(?:\/(.*))?.*|documentation\/.*|django-rq(?:\/(.*))?/gm,
                         ),
                     target: env && env.API_URL,
                     secure: false,
@@ -56,12 +79,20 @@ module.exports = (env) => {
         },
         resolve: {
             extensions: ['.tsx', '.ts', '.jsx', '.js', '.json'],
-
             fallback: {
                 fs: false,
             },
             alias: {
                 config$: appConfigFile,
+
+                // when import svg modules
+                // the loader transforms their to modules with JSX code
+                // and adds 'import React from "react";'
+                // in plugins it leads to errors because they must import '@modules/react'
+                // so, this alias added to fix it
+                react: '@modules/react',
+                '@root': path.resolve(__dirname, 'src'),
+                '@modules': path.resolve(__dirname, '..', 'node_modules'),
             },
             modules: [path.resolve(__dirname, 'src'), 'node_modules'],
         },
@@ -168,6 +199,10 @@ module.exports = (env) => {
                     {
                         from: '../cvat-data/src/ts/3rdparty/avc.wasm',
                         to: 'assets/3rdparty/',
+                    },
+                    {
+                        from: '../node_modules/onnxruntime-web/dist/*.wasm',
+                        to  : 'assets/[name][ext]',
                     },
                 ],
             }),

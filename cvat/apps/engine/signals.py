@@ -16,13 +16,17 @@ from .models import (CloudStorage, Data, Job, Profile, Project,
 
 @receiver(post_save, sender=Job,
     dispatch_uid=__name__ + ".save_job_handler")
-def __save_job_handler(instance, **kwargs):
+def __save_job_handler(instance, created, **kwargs):
+    # no need to update task status for newly created jobs
+    if created:
+        return
+
     db_task = instance.segment.task
     db_jobs = list(Job.objects.filter(segment__task_id=db_task.id))
     status = StatusChoice.COMPLETED
-    if list(filter(lambda x: x.status == StatusChoice.ANNOTATION, db_jobs)):
+    if any(db_job.status == StatusChoice.ANNOTATION for db_job in db_jobs):
         status = StatusChoice.ANNOTATION
-    elif list(filter(lambda x: x.status == StatusChoice.VALIDATION, db_jobs)):
+    elif any(db_job.status == StatusChoice.VALIDATION for db_job in db_jobs):
         status = StatusChoice.VALIDATION
 
     if status != db_task.status:

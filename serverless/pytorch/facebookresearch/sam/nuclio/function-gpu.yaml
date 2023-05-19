@@ -1,0 +1,71 @@
+# Copyright (C) 2023 CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
+
+metadata:
+  name: pth-facebookresearch-sam-vit-h
+  namespace: cvat
+  annotations:
+    name: Segment Anything
+    version: 2
+    type: interactor
+    spec:
+    framework: pytorch
+    min_pos_points: 1
+    min_neg_points: 0
+    animated_gif: https://raw.githubusercontent.com/opencv/cvat/develop/site/content/en/images/hrnet_example.gif
+    help_message: The interactor allows to get a mask of an object using at least one positive, and any negative points inside it
+
+spec:
+  description: Interactive object segmentation with Segment-Anything
+  runtime: 'python:3.8'
+  handler: main:handler
+  eventTimeout: 30s
+  env:
+    - name: PYTHONPATH
+      value: /opt/nuclio/sam
+
+  build:
+    image: cvat.pth.facebookresearch.sam.vit_h
+    baseImage: ubuntu:22.04
+
+    directives:
+      preCopy:
+      # disable interactive frontend
+        - kind: ENV
+          value: DEBIAN_FRONTEND=noninteractive
+      # set workdir
+        - kind: WORKDIR
+          value: /opt/nuclio/sam
+      # install basic deps
+        - kind: RUN
+          value: apt-get update && apt-get -y install curl git python3 python3-pip ffmpeg libsm6 libxext6
+      # install sam deps
+        - kind: RUN
+          value: pip3 install torch torchvision torchaudio opencv-python pycocotools matplotlib onnxruntime onnx
+      # install sam code
+        - kind: RUN
+          value: pip3 install git+https://github.com/facebookresearch/segment-anything.git
+      # download sam weights
+        - kind: RUN
+          value: curl -O https://dl.fbaipublicfiles.com/segment_anything/sam_vit_h_4b8939.pth
+      # map pip3 and python3 to pip and python
+        - kind: RUN
+          value: ln -s /usr/bin/pip3 /usr/local/bin/pip && ln -s /usr/bin/python3 /usr/bin/python
+  triggers:
+    myHttpTrigger:
+      maxWorkers: 1
+      kind: 'http'
+      workerAvailabilityTimeoutMilliseconds: 10000
+      attributes:
+        maxRequestBodySize: 33554432 # 32MB
+  resources:
+    limits:
+      nvidia.com/gpu: 1
+
+  platform:
+    attributes:
+      restartPolicy:
+        name: always
+        maximumRetryCount: 3
+      mountMode: volume

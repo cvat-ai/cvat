@@ -13,7 +13,6 @@ from rest_framework import status
 from crum import get_current_user, get_current_request
 
 from cvat.apps.engine.models import (
-    Organization,
     Project,
     Task,
     Job,
@@ -34,11 +33,37 @@ from cvat.apps.engine.serializers import (
     LabelSerializer,
 )
 from cvat.apps.engine.models import ShapeType
-from cvat.apps.organizations.serializers import OrganizationReadSerializer
-from cvat.apps.webhooks.signals import project_id, organization_id
+from cvat.apps.organizations.models import Membership, Organization, Invitation
+from cvat.apps.organizations.serializers import OrganizationReadSerializer, MembershipReadSerializer, InvitationReadSerializer
 from cvat.apps.engine.log import vlogger
 
 from .event import event_scope, create_event
+from .cache import get_cache
+
+def project_id(instance):
+    if isinstance(instance, Project):
+        return instance.id
+
+    try:
+        pid = getattr(instance, "project_id", None)
+        if pid is None:
+            return instance.get_project_id()
+        return pid
+    except Exception:
+        return None
+
+
+def organization_id(instance):
+    if isinstance(instance, Organization):
+        return instance.id
+
+    try:
+        oid = getattr(instance, "organization_id", None)
+        if oid is None:
+            return instance.get_organization_id()
+        return oid
+    except Exception:
+        return None
 
 
 def task_id(instance):
@@ -65,7 +90,7 @@ def job_id(instance):
     except Exception:
         return None
 
-def _get_current_user(instance=None):
+def get_user(instance=None):
     # Try to get current user from request
     user = get_current_user()
     if user is not None:
@@ -84,26 +109,43 @@ def _get_current_user(instance=None):
 
     return None
 
-def user_id(instance=None):
-    current_user = _get_current_user(instance)
-    if current_user is not None:
-        return getattr(current_user, "id", None)
+def get_request(instance=None):
+    request = get_current_request()
+    if request is not None:
+        return request
+
+    if isinstance(instance, rq.job.Job):
+        return instance.meta.get("request", None)
+    else:
+        rq_job = rq.get_current_job()
+        if rq_job:
+            return rq_job.meta.get("request", None)
 
     return None
+
+def _get_value(obj, key):
+    if obj is not None:
+        if isinstance(obj, dict):
+            return obj.get(key, None)
+        return getattr(obj, key, None)
+
+    return None
+
+def request_id(instance=None):
+    request = get_request(instance)
+    return _get_value(request, "uuid")
+
+def user_id(instance=None):
+    current_user = get_user(instance)
+    return _get_value(current_user, "id")
 
 def user_name(instance=None):
-    current_user = _get_current_user(instance)
-    if current_user is not None:
-        return getattr(current_user, "username", None)
-
-    return None
+    current_user = get_user(instance)
+    return _get_value(current_user, "username")
 
 def user_email(instance=None):
-    current_user = _get_current_user(instance)
-    if current_user is not None:
-        return getattr(current_user, "email", None)
-
-    return None
+    current_user = get_user(instance)
+    return _get_value(current_user, "email")
 
 def organization_slug(instance):
     if isinstance(instance, Organization):
@@ -117,13 +159,13 @@ def organization_slug(instance):
     except Exception:
         return None
 
-def _get_instance_diff(old_data, data):
-    ingone_related_fields = (
+def get_instance_diff(old_data, data):
+    ignore_related_fields = (
         "labels",
     )
     diff = {}
     for prop, value in data.items():
-        if prop in ingone_related_fields:
+        if prop in ignore_related_fields:
             continue
         old_value = old_data.get(prop)
         if old_value != value:
@@ -187,7 +229,7 @@ def _get_object_name(instance):
 
     return None
 
-def _get_serializer(instance):
+def get_serializer(instance):
     context = {
         "request": get_current_request()
     }
@@ -211,10 +253,28 @@ def _get_serializer(instance):
         serializer = CommentReadSerializer(instance=instance, context=context)
     if isinstance(instance, Label):
         serializer = LabelSerializer(instance=instance, context=context)
+    if isinstance(instance, Membership):
+        serializer = MembershipReadSerializer(instance=instance, context=context)
+    if isinstance(instance, Invitation):
+        serializer = InvitationReadSerializer(instance=instance, context=context)
 
-    if serializer :
+    return serializer
+
+def get_serializer_without_url(instance):
+    serializer = get_serializer(instance)
+    if serializer:
         serializer.fields.pop("url", None)
     return serializer
+
+def set_request_id(payload=None, **kwargs):
+    _payload = payload or {}
+    return {
+        **_payload,
+        "request": {
+            **_payload.get("request", {}),
+            "id": request_id(**kwargs),
+        },
+    }
 
 def handle_create(scope, instance, **kwargs):
     oid = organization_id(instance)
@@ -226,7 +286,7 @@ def handle_create(scope, instance, **kwargs):
     uname = user_name(instance)
     uemail = user_email(instance)
 
-    serializer = _get_serializer(instance=instance)
+    serializer = get_serializer_without_url(instance=instance)
     try:
         payload = serializer.data
     except Exception:
@@ -246,7 +306,7 @@ def handle_create(scope, instance, **kwargs):
         user_id=uid,
         user_name=uname,
         user_email=uemail,
-        payload=payload,
+        payload=set_request_id(payload),
     )
     message = JSONRenderer().render(event).decode('UTF-8')
 
@@ -262,9 +322,9 @@ def handle_update(scope, instance, old_instance, **kwargs):
     uname = user_name(instance)
     uemail = user_email(instance)
 
-    old_serializer = _get_serializer(instance=old_instance)
-    serializer = _get_serializer(instance=instance)
-    diff = _get_instance_diff(old_data=old_serializer.data, data=serializer.data)
+    old_serializer = get_serializer_without_url(instance=old_instance)
+    serializer = get_serializer_without_url(instance=instance)
+    diff = get_instance_diff(old_data=old_serializer.data, data=serializer.data)
 
     timestamp = str(datetime.now(timezone.utc).timestamp())
     for prop, change in diff.items():
@@ -284,20 +344,44 @@ def handle_update(scope, instance, old_instance, **kwargs):
             user_id=uid,
             user_name=uname,
             user_email=uemail,
-            payload= {
+            payload=set_request_id({
                 "old_value": change["old_value"],
-            },
+            }),
         )
 
         message = JSONRenderer().render(event).decode('UTF-8')
         vlogger.info(message)
 
-def handle_delete(scope, instance, **kwargs):
-    oid = organization_id(instance)
-    oslug = organization_slug(instance)
-    pid = project_id(instance)
-    tid = task_id(instance)
-    jid = job_id(instance)
+def handle_delete(scope, instance, store_in_deletion_cache=False, **kwargs):
+    deletion_cache = get_cache()
+    if store_in_deletion_cache:
+        deletion_cache.set(
+            instance.__class__,
+            instance.id,
+            {
+                "oid": organization_id(instance),
+                "oslug": organization_slug(instance),
+                "pid": project_id(instance),
+                "tid": task_id(instance),
+                "jid": job_id(instance),
+            },
+        )
+        return
+
+    instance_meta_info = deletion_cache.pop(instance.__class__, instance.id)
+    if instance_meta_info:
+        oid = instance_meta_info["oid"]
+        oslug = instance_meta_info["oslug"]
+        pid = instance_meta_info["pid"]
+        tid = instance_meta_info["tid"]
+        jid = instance_meta_info["jid"]
+    else:
+        oid = organization_id(instance)
+        oslug = organization_slug(instance)
+        pid = project_id(instance)
+        tid = task_id(instance)
+        jid = job_id(instance)
+
     uid = user_id(instance)
     uname = user_name(instance)
     uemail = user_email(instance)
@@ -315,6 +399,7 @@ def handle_delete(scope, instance, **kwargs):
         user_id=uid,
         user_name=uname,
         user_email=uemail,
+        payload=set_request_id(),
     )
     message = JSONRenderer().render(event).decode('UTF-8')
 
@@ -358,7 +443,9 @@ def handle_annotations_patch(instance, annotations, action, **kwargs):
             user_id=uid,
             user_name=uname,
             user_email=uemail,
-            payload=tags,
+            payload=set_request_id({
+                "tags": tags,
+            }),
         )
         message = JSONRenderer().render(event).decode('UTF-8')
         vlogger.info(message)
@@ -383,7 +470,9 @@ def handle_annotations_patch(instance, annotations, action, **kwargs):
                 user_id=uid,
                 user_name=uname,
                 user_email=uemail,
-                payload=shapes,
+                payload=set_request_id({
+                    "shapes": shapes,
+                }),
             )
             message = JSONRenderer().render(event).decode('UTF-8')
             vlogger.info(message)
@@ -413,7 +502,9 @@ def handle_annotations_patch(instance, annotations, action, **kwargs):
                 user_id=uid,
                 user_name=uname,
                 user_email=uemail,
-                payload=tracks,
+                payload=set_request_id({
+                    "tracks": tracks,
+                }),
             )
             message = JSONRenderer().render(event).decode('UTF-8')
             vlogger.info(message)
@@ -431,7 +522,7 @@ def handle_rq_exception(rq_job, exc_type, exc_value, tb):
 
     payload = {
         "message": tb_strings[-1],
-        "stack": ''.join(tb_strings)
+        "stack": ''.join(tb_strings),
     }
 
     event = create_event(
@@ -446,7 +537,7 @@ def handle_rq_exception(rq_job, exc_type, exc_value, tb):
         user_id=uid,
         user_name=uname,
         user_email=uemail,
-        payload=payload,
+        payload=set_request_id(payload, instance=rq_job),
     )
     message = JSONRenderer().render(event).decode('UTF-8')
     vlogger.info(message)
@@ -487,7 +578,7 @@ def handle_viewset_exception(exc, context):
         user_id=getattr(request.user, "id", None),
         user_name=getattr(request.user, "username", None),
         user_email=getattr(request.user, "email", None),
-        payload=payload,
+        payload=set_request_id(payload),
     )
     message = JSONRenderer().render(event).decode('UTF-8')
     vlogger.info(message)

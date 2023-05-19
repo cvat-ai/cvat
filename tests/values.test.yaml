@@ -13,6 +13,8 @@ cvat:
           subPath: share
     # Images are already present in the node
     imagePullPolicy: Never
+  frontend:
+    imagePullPolicy: Never
 
 traefik:
   service:

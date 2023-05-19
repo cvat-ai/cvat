@@ -291,14 +291,16 @@ def org_staff(memberships):
 
 @pytest.fixture(scope="session")
 def is_org_member(memberships):
-    def check(user_id, org_id):
+    def check(user_id, org_id, *, role=None):
         if org_id in ["", None]:
             return True
         else:
             return user_id in set(
                 m["user"]["id"]
                 for m in memberships
-                if m["user"] is not None and m["organization"] == org_id
+                if m["user"] is not None
+                if m["organization"] == org_id
+                if not role or m["role"] == role
             )
 
     return check
@@ -392,3 +394,11 @@ def regular_user(users):
         if not user["is_superuser"] and user["is_active"]:
             return user["username"]
     raise Exception("Can't find any regular user in the test DB")
+
+
+@pytest.fixture(scope="session")
+def regular_lonely_user(users):
+    for user in users:
+        if user["username"] == "lonely_user":
+            return user["username"]
+    raise Exception("Can't find the lonely user in the test DB")

@@ -43,7 +43,6 @@ context('Settings. Default number of points in polygon approximation.', () => {
                     const sliderAttrValuemax = slider.attr('aria-valuemax');
                     cy.saveSettings();
                     cy.closeNotification('.cvat-notification-notice-save-settings-success');
-                    cy.closeSettings();
                     cy.reload();
                     testCheckSliderAttrValuenow(sliderAttrValueNow);
                     cy.contains('strong', 'less').click();

@@ -19,55 +19,29 @@ the repository. To get the full package, one need to generate missing package fi
 
 ## How to generate package code
 
-1. Obtain the server API schema
+1. Install generator dependencies:
+   ```bash
+   pip install -r gen/requirements.txt
+   ```
 
-If you have a local custom version of the server, run the following command in the terminal.
-You need to be able to execute django server. Server installation instructions are available
-[here](/docs/contributing/development-environment).
-```bash
-mkdir -p cvat-sdk/schema/ && python manage.py spectacular --file cvat-sdk/schema/schema.yml
-```
+1. Generate package code (call from the package root directory!):
+   ```bash
+   ./gen/generate.sh
+   ```
 
-If you want to use docker instead:
-```bash
-docker compose -f docker-compose.yml -f docker-compose.dev.yml run \
-    --no-deps --entrypoint '/usr/bin/env python' --rm -u "$(id -u)":"$(id -g)" -v "$PWD":"/local" \
-    cvat_server \
-    manage.py spectacular --file /local/cvat-sdk/schema/schema.yml
-```
+1. Install the packages:
 
-If you don't have access to the server sources, but have a working instance,
-you can also get schema from `<yourserver>/api/docs`:
+   ```bash
+   pip install cvat-sdk/
+   pip install cvat-cli/
+   ```
 
-![Download server schema button image](/images/download_server_schema.png)
+   If you want to edit package files, install them with `-e`:
 
-The official server schema for `app.cvat.ai` is available [here](https://app.cvat.ai/api/docs/).
-
-You can read more about server schema [here](/docs/api_sdk/api#api-schema).
-
-2. Install generator dependencies:
-```bash
-pip install -r gen/requirements.txt
-```
-
-3. Generate package code (call from the package root directory!):
-```bash
-./gen/generate.sh
-```
-
-4. Install the packages:
-
-  ```bash
-  pip install cvat-sdk/
-  pip install cvat-cli/
-  ```
-
-  If you want to edit package files, install them with `-e`:
-
-  ```bash
-  pip install -e cvat-sdk/
-  pip install -e cvat-cli/
-  ```
+   ```bash
+   pip install -e cvat-sdk/
+   pip install -e cvat-cli/
+   ```
 
 ## How to edit templates
 

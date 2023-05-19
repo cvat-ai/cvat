@@ -21,9 +21,8 @@ Each button is responsible for a in menu `Actions` specific function:
   Presence depends on how you build the CVAT instance.
 - `Backup task` — make a backup of this task into a zip archive.
   Read more in the [backup](/docs/manual/advanced/backup/) section.
-- `Move to project` — Moving a task to a project (can be used to move a task from one project to another).
-  Note that attributes reset during the moving process. In case of label mismatch,
-  you can create or delete necessary labels in the project/task.
+- `Move to project` — Moving a task to a project (you can move only a task which does not belong to any project).
+  In case of label mismatch, you can create or delete necessary labels in the project/task.
   Some task labels can be matched with the target project labels.
 - `Delete` — delete task.
 

@@ -142,8 +142,8 @@ def wait_until_task_is_created(api: apis.TasksApi, task_id: int) -> models.RqSta
 
 def _test_create_task(username, spec, data, content_type, **kwargs):
     with make_api_client(username) as api_client:
-        (task, response) = api_client.tasks_api.create(spec, **kwargs)
-        assert response.status == HTTPStatus.CREATED
+        (task, response_) = api_client.tasks_api.create(spec, **kwargs)
+        assert response_.status == HTTPStatus.CREATED
 
         if data.get("client_files") and "json" in content_type:
             # Can't encode binary files in json
@@ -170,4 +170,4 @@ def _test_create_task(username, spec, data, content_type, **kwargs):
         status = wait_until_task_is_created(api_client.tasks_api, task.id)
         assert status.state.value == "Finished"
 
-    return task.id
+    return task.id, response_.headers.get("X-Request-Id")

@@ -28,7 +28,7 @@ use them by setting the `DJANGO_SETTINGS_MODULE` variable.
 
 ```yml
 services:
-  cvat:
+  cvat_server:
     environment:
       DJANGO_SETTINGS_MODULE: settings
     volumes:

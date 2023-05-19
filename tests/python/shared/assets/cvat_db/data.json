@@ -36,7 +36,7 @@
   "pk": 1,
   "fields": {
     "password": "pbkdf2_sha256$260000$DevmxlmLwciP1P6sZs2Qag$U9DFtjTWx96Sk95qY6UXVcvpdQEP2LcoFBftk5D2RKY=",
-    "last_login": "2023-03-01T15:34:27.878Z",
+    "last_login": "2023-03-27T19:06:41.550Z",
     "is_superuser": true,
     "username": "admin1",
     "first_name": "Admin",
@@ -456,6 +456,28 @@
   }
 },
 {
+  "model": "auth.user",
+  "pk": 21,
+  "fields": {
+    "password": "pbkdf2_sha256$260000$pROH9UgQcjk9vIlTBdUDPD$MdGF+2HcnBv2qI/kuLyBl0oYhMwgvhgKMQgcTsmku8c=",
+    "last_login": "2023-03-30T09:37:31.708Z",
+    "is_superuser": false,
+    "username": "lonely_user",
+    "first_name": "Lonely",
+    "last_name": "User",
+    "email": "lonely_user@cvat.org",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2023-03-30T09:37:31.615Z",
+    "groups": [
+      [
+        "user"
+      ]
+    ],
+    "user_permissions": []
+  }
+},
+{
   "model": "sessions.session",
   "pk": "3p7i7jibc6g827i39r8e0ce5i9f1orzp",
   "fields": {
@@ -561,6 +583,14 @@
 },
 {
   "model": "sessions.session",
+  "pk": "kxl8ptkbmarqynt3suxkv33cj4ydkvmc",
+  "fields": {
+    "session_data": ".eJxVjEEOwiAQRe_C2hBKGTq4dO8ZyDCAVA0kpV0Z765NutDtf-_9l_C0rcVvPS1-juIsBnH63QLxI9UdxDvVW5Pc6rrMQe6KPGiX1xbT83K4fweFevnWFLJzkCwlUlqRNiNbNxp0aA1rBMRggBLrSBBwAguKg4sTjNlmPbB4fwDf0jez:1pgsAz:RTj9nJ-XuKRexyoIAYjnSSeB_IjwXNoqh49bdhH9wMc",
+    "expire_date": "2023-04-10T19:06:41.555Z"
+  }
+},
+{
+  "model": "sessions.session",
   "pk": "lqzut02cip3i7xxinmal28z3mo302vey",
   "fields": {
     "session_data": ".eJxVjEEOwiAQRe_C2hCmUCgu3XsGMjCDVA1NSrsy3l1JutDtf-_9lwi4byXsjdcwkzgLEKffLWJ6cO2A7lhvi0xL3dY5yq7IgzZ5XYifl8P9OyjYSq-9niK4b6A1cfYZnCUEBGuzZxW1UsnYFBV7A9PAIxlMzmmj8pDdyOL9AfdKOC0:1nNLbm:bXtVicsOrZtQ_p4Qr9bOTAmHWYJMHD8_GCUbncB6nzQ",
@@ -617,6 +647,14 @@
 },
 {
   "model": "sessions.session",
+  "pk": "rmk4xete2em5m8rbllkk7d2nbd4q4rzg",
+  "fields": {
+    "session_data": ".eJxVjEEOwiAQRe_C2pDSDjC4dO8ZCMOAVA0kpV0Z765NutDtf-_9l_BhW4vfelr8zOIslDj9bhTiI9Ud8D3UW5Ox1XWZSe6KPGiX18bpeTncv4MSevnWzo0RtZ0MgAEmVg4HS2jdoAxqpAh5cmizNkwBIRlFEJzmEdhkVCTeH7LvNxA:1pabKo:-Qpngoe5m2XSdO9BYT01S3o_V8dldaxml3hDBR9GcNc",
+    "expire_date": "2023-03-24T11:54:54.631Z"
+  }
+},
+{
+  "model": "sessions.session",
   "pk": "v28l0efbrv9x06z97ilwcf7lwtuf4ctc",
   "fields": {
     "session_data": ".eJxVjDsOwjAQRO_iGlm22fhDSc8ZrLV3gwPIluKkQtydREoBzRTz3sxbRFyXEtfOc5xIXIRW4vRbJsxPrjuhB9Z7k7nVZZ6S3BV50C5vjfh1Pdy_g4K9bGuLXqMDQqdDTtYN6AHIIoGGMIJlQwxB-VFn3gLPzjil3ABkAIBZfL7_vTer:1nABOV:0UAK9VV6D18QF1-189XQ2T9LrQUSdioGNoHdRUzzt7o",
@@ -660,6 +698,16 @@
   }
 },
 {
+  "model": "authtoken.token",
+  "pk": "7245b803f045dc12002d72473e3479ce6146801c",
+  "fields": {
+    "user": [
+      "lonely_user"
+    ],
+    "created": "2023-03-30T09:37:31.700Z"
+  }
+},
+{
   "model": "sites.site",
   "pk": 1,
   "fields": {
@@ -688,6 +736,18 @@
     ],
     "email": "admin2@cvat.org",
     "verified": true,
+    "primary": true
+  }
+},
+{
+  "model": "account.emailaddress",
+  "pk": 3,
+  "fields": {
+    "user": [
+      "lonely_user"
+    ],
+    "email": "lonely_user@cvat.org",
+    "verified": false,
     "primary": true
   }
 },
@@ -1233,6 +1293,63 @@
     "image_quality": 70,
     "start_frame": 0,
     "stop_frame": 1,
+    "frame_filter": "",
+    "compressed_chunk_type": "imageset",
+    "original_chunk_type": "imageset",
+    "storage_method": "cache",
+    "storage": "local",
+    "cloud_storage": null,
+    "sorting_method": "lexicographical",
+    "deleted_frames": "[]"
+  }
+},
+{
+  "model": "engine.data",
+  "pk": 18,
+  "fields": {
+    "chunk_size": 72,
+    "size": 2,
+    "image_quality": 70,
+    "start_frame": 0,
+    "stop_frame": 1,
+    "frame_filter": "",
+    "compressed_chunk_type": "imageset",
+    "original_chunk_type": "imageset",
+    "storage_method": "cache",
+    "storage": "local",
+    "cloud_storage": null,
+    "sorting_method": "lexicographical",
+    "deleted_frames": "[]"
+  }
+},
+{
+  "model": "engine.data",
+  "pk": 19,
+  "fields": {
+    "chunk_size": 72,
+    "size": 2,
+    "image_quality": 70,
+    "start_frame": 0,
+    "stop_frame": 1,
+    "frame_filter": "",
+    "compressed_chunk_type": "imageset",
+    "original_chunk_type": "imageset",
+    "storage_method": "cache",
+    "storage": "local",
+    "cloud_storage": null,
+    "sorting_method": "lexicographical",
+    "deleted_frames": "[]"
+  }
+},
+{
+  "model": "engine.data",
+  "pk": 20,
+  "fields": {
+    "chunk_size": 72,
+    "size": 10,
+    "image_quality": 70,
+    "start_frame": 0,
+    "stop_frame": 9,
     "frame_filter": "",
     "compressed_chunk_type": "imageset",
     "original_chunk_type": "imageset",
@@ -2364,6 +2481,160 @@
   }
 },
 {
+  "model": "engine.image",
+  "pk": 453,
+  "fields": {
+    "data": 18,
+    "path": "15.png",
+    "frame": 0,
+    "width": 982,
+    "height": 376
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 454,
+  "fields": {
+    "data": 18,
+    "path": "16.png",
+    "frame": 1,
+    "width": 565,
+    "height": 365
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 455,
+  "fields": {
+    "data": 19,
+    "path": "33.png",
+    "frame": 0,
+    "width": 339,
+    "height": 351
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 456,
+  "fields": {
+    "data": 19,
+    "path": "34.png",
+    "frame": 1,
+    "width": 944,
+    "height": 271
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 457,
+  "fields": {
+    "data": 20,
+    "path": "0.png",
+    "frame": 0,
+    "width": 865,
+    "height": 401
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 458,
+  "fields": {
+    "data": 20,
+    "path": "1.png",
+    "frame": 1,
+    "width": 912,
+    "height": 346
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 459,
+  "fields": {
+    "data": 20,
+    "path": "2.png",
+    "frame": 2,
+    "width": 681,
+    "height": 460
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 460,
+  "fields": {
+    "data": 20,
+    "path": "3.png",
+    "frame": 3,
+    "width": 844,
+    "height": 192
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 461,
+  "fields": {
+    "data": 20,
+    "path": "4.png",
+    "frame": 4,
+    "width": 462,
+    "height": 252
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 462,
+  "fields": {
+    "data": 20,
+    "path": "5.png",
+    "frame": 5,
+    "width": 191,
+    "height": 376
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 463,
+  "fields": {
+    "data": 20,
+    "path": "6.png",
+    "frame": 6,
+    "width": 333,
+    "height": 257
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 464,
+  "fields": {
+    "data": 20,
+    "path": "7.png",
+    "frame": 7,
+    "width": 474,
+    "height": 619
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 465,
+  "fields": {
+    "data": 20,
+    "path": "8.png",
+    "frame": 8,
+    "width": 809,
+    "height": 543
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 466,
+  "fields": {
+    "data": 20,
+    "path": "9.png",
+    "frame": 9,
+    "width": 993,
+    "height": 151
+  }
+},
+{
   "model": "engine.project",
   "pk": 1,
   "fields": {
@@ -2553,6 +2824,42 @@
     "organization": 2,
     "source_storage": 21,
     "target_storage": 22
+  }
+},
+{
+  "model": "engine.project",
+  "pk": 12,
+  "fields": {
+    "name": "project with attributes",
+    "owner": [
+      "admin1"
+    ],
+    "assignee": null,
+    "bug_tracker": "",
+    "created_date": "2023-03-10T11:57:14.944Z",
+    "updated_date": "2023-03-10T11:57:48.747Z",
+    "status": "annotation",
+    "organization": null,
+    "source_storage": 27,
+    "target_storage": 28
+  }
+},
+{
+  "model": "engine.project",
+  "pk": 13,
+  "fields": {
+    "name": "project with attributes 2",
+    "owner": [
+      "admin1"
+    ],
+    "assignee": null,
+    "bug_tracker": "",
+    "created_date": "2023-03-10T11:58:04.216Z",
+    "updated_date": "2023-03-10T11:58:04.216Z",
+    "status": "annotation",
+    "organization": null,
+    "source_storage": 31,
+    "target_storage": 32
   }
 },
 {
@@ -2894,6 +3201,81 @@
     "organization": 2,
     "source_storage": 23,
     "target_storage": 24
+  }
+},
+{
+  "model": "engine.task",
+  "pk": 19,
+  "fields": {
+    "project": null,
+    "name": "task with attributes",
+    "mode": "annotation",
+    "owner": [
+      "admin1"
+    ],
+    "assignee": null,
+    "bug_tracker": "",
+    "created_date": "2023-03-10T11:56:33.757Z",
+    "updated_date": "2023-03-10T11:56:54.904Z",
+    "overlap": 0,
+    "segment_size": 2,
+    "status": "annotation",
+    "data": 18,
+    "dimension": "2d",
+    "subset": "",
+    "organization": null,
+    "source_storage": 25,
+    "target_storage": 26
+  }
+},
+{
+  "model": "engine.task",
+  "pk": 20,
+  "fields": {
+    "project": 12,
+    "name": "task in project with attributes",
+    "mode": "annotation",
+    "owner": [
+      "admin1"
+    ],
+    "assignee": null,
+    "bug_tracker": "",
+    "created_date": "2023-03-10T11:57:31.614Z",
+    "updated_date": "2023-03-10T11:57:48.835Z",
+    "overlap": 0,
+    "segment_size": 2,
+    "status": "annotation",
+    "data": 19,
+    "dimension": "2d",
+    "subset": "",
+    "organization": null,
+    "source_storage": 29,
+    "target_storage": 30
+  }
+},
+{
+  "model": "engine.task",
+  "pk": 21,
+  "fields": {
+    "project": null,
+    "name": "task with several jobs",
+    "mode": "annotation",
+    "owner": [
+      "admin1"
+    ],
+    "assignee": null,
+    "bug_tracker": "",
+    "created_date": "2023-03-27T19:08:07.649Z",
+    "updated_date": "2023-03-27T19:08:40.032Z",
+    "overlap": 0,
+    "segment_size": 6,
+    "status": "annotation",
+    "data": 20,
+    "dimension": "2d",
+    "subset": "",
+    "organization": null,
+    "source_storage": 33,
+    "target_storage": 34
   }
 },
 {
@@ -3673,6 +4055,118 @@
   }
 },
 {
+  "model": "engine.clientfile",
+  "pk": 445,
+  "fields": {
+    "data": 18,
+    "file": "/home/django/data/data/18/raw/16.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 446,
+  "fields": {
+    "data": 18,
+    "file": "/home/django/data/data/18/raw/15.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 447,
+  "fields": {
+    "data": 19,
+    "file": "/home/django/data/data/19/raw/33.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 448,
+  "fields": {
+    "data": 19,
+    "file": "/home/django/data/data/19/raw/34.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 449,
+  "fields": {
+    "data": 20,
+    "file": "/home/django/data/data/20/raw/3.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 450,
+  "fields": {
+    "data": 20,
+    "file": "/home/django/data/data/20/raw/2.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 451,
+  "fields": {
+    "data": 20,
+    "file": "/home/django/data/data/20/raw/5.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 452,
+  "fields": {
+    "data": 20,
+    "file": "/home/django/data/data/20/raw/8.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 453,
+  "fields": {
+    "data": 20,
+    "file": "/home/django/data/data/20/raw/9.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 454,
+  "fields": {
+    "data": 20,
+    "file": "/home/django/data/data/20/raw/4.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 455,
+  "fields": {
+    "data": 20,
+    "file": "/home/django/data/data/20/raw/6.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 456,
+  "fields": {
+    "data": 20,
+    "file": "/home/django/data/data/20/raw/0.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 457,
+  "fields": {
+    "data": 20,
+    "file": "/home/django/data/data/20/raw/1.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 458,
+  "fields": {
+    "data": 20,
+    "file": "/home/django/data/data/20/raw/7.png"
+  }
+},
+{
   "model": "engine.relatedfile",
   "pk": 1,
   "fields": {
@@ -3814,6 +4308,42 @@
     "task": 18,
     "start_frame": 0,
     "stop_frame": 1
+  }
+},
+{
+  "model": "engine.segment",
+  "pk": 23,
+  "fields": {
+    "task": 19,
+    "start_frame": 0,
+    "stop_frame": 1
+  }
+},
+{
+  "model": "engine.segment",
+  "pk": 24,
+  "fields": {
+    "task": 20,
+    "start_frame": 0,
+    "stop_frame": 1
+  }
+},
+{
+  "model": "engine.segment",
+  "pk": 25,
+  "fields": {
+    "task": 21,
+    "start_frame": 0,
+    "stop_frame": 5
+  }
+},
+{
+  "model": "engine.segment",
+  "pk": 26,
+  "fields": {
+    "task": 21,
+    "start_frame": 6,
+    "stop_frame": 9
   }
 },
 {
@@ -4001,6 +4531,54 @@
     "segment": 22,
     "assignee": null,
     "updated_date": "2023-03-01T15:36:38.114Z",
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "in progress"
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 23,
+  "fields": {
+    "segment": 23,
+    "assignee": null,
+    "updated_date": "2023-03-10T11:56:55.066Z",
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "in progress"
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 24,
+  "fields": {
+    "segment": 24,
+    "assignee": null,
+    "updated_date": "2023-03-10T11:57:49.019Z",
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "in progress"
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 25,
+  "fields": {
+    "segment": 25,
+    "assignee": null,
+    "updated_date": "2023-03-27T19:08:27.216Z",
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "in progress"
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 26,
+  "fields": {
+    "segment": 26,
+    "assignee": null,
+    "updated_date": "2023-03-27T19:08:40.166Z",
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress"
@@ -4523,6 +5101,150 @@
   }
 },
 {
+  "model": "engine.label",
+  "pk": 51,
+  "fields": {
+    "task": 19,
+    "project": null,
+    "name": "cat",
+    "color": "#6080c0",
+    "type": "any",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 52,
+  "fields": {
+    "task": 19,
+    "project": null,
+    "name": "car",
+    "color": "#2080c0",
+    "type": "any",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 53,
+  "fields": {
+    "task": null,
+    "project": 12,
+    "name": "cat",
+    "color": "#6080c0",
+    "type": "any",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 54,
+  "fields": {
+    "task": null,
+    "project": 12,
+    "name": "car",
+    "color": "#2080c0",
+    "type": "any",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 55,
+  "fields": {
+    "task": null,
+    "project": 13,
+    "name": "cat",
+    "color": "#6080c0",
+    "type": "any",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 56,
+  "fields": {
+    "task": null,
+    "project": 13,
+    "name": "car",
+    "color": "#2080c0",
+    "type": "any",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 57,
+  "fields": {
+    "task": 21,
+    "project": null,
+    "name": "cat",
+    "color": "#6080c0",
+    "type": "any",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 58,
+  "fields": {
+    "task": 21,
+    "project": null,
+    "name": "skeleton1",
+    "color": "#2b3145",
+    "type": "skeleton",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 59,
+  "fields": {
+    "task": 21,
+    "project": null,
+    "name": "1",
+    "color": "#d12345",
+    "type": "points",
+    "parent": 58
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 60,
+  "fields": {
+    "task": 21,
+    "project": null,
+    "name": "2",
+    "color": "#350dea",
+    "type": "points",
+    "parent": 58
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 61,
+  "fields": {
+    "task": 21,
+    "project": null,
+    "name": "3",
+    "color": "#479ffe",
+    "type": "points",
+    "parent": 58
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 62,
+  "fields": {
+    "task": 21,
+    "project": null,
+    "name": "4",
+    "color": "#4a649f",
+    "type": "points",
+    "parent": 58
+  }
+},
+{
   "model": "engine.skeleton",
   "pk": 1,
   "fields": {
@@ -4552,6 +5274,14 @@
   "fields": {
     "root": 46,
     "svg": "<line x1=\"55.60200500488281\" y1=\"21.477842330932617\" x2=\"28.344482421875\" y2=\"55.089881896972656\" stroke=\"black\" data-type=\"edge\" data-node-from=\"3\" stroke-width=\"0.5\" data-node-to=\"2\"></line><line x1=\"73.16053771972656\" y1=\"46.059783935546875\" x2=\"55.60200500488281\" y2=\"21.477842330932617\" stroke=\"black\" data-type=\"edge\" data-node-from=\"4\" stroke-width=\"0.5\" data-node-to=\"3\"></line><line x1=\"16.806020736694336\" y1=\"24.822324752807617\" x2=\"73.16053771972656\" y2=\"46.059783935546875\" stroke=\"black\" data-type=\"edge\" data-node-from=\"1\" stroke-width=\"0.5\" data-node-to=\"4\"></line><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"16.806020736694336\" cy=\"24.822324752807617\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-id=\"47\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"28.344482421875\" cy=\"55.089881896972656\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-id=\"48\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"55.60200500488281\" cy=\"21.477842330932617\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"3\" data-node-id=\"3\" data-label-id=\"49\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"73.16053771972656\" cy=\"46.059783935546875\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"4\" data-node-id=\"4\" data-label-id=\"50\"></circle>"
+  }
+},
+{
+  "model": "engine.skeleton",
+  "pk": 5,
+  "fields": {
+    "root": 58,
+    "svg": "<line x1=\"49.88445281982422\" y1=\"18.897058486938477\" x2=\"35.59873962402344\" y2=\"61.081932067871094\" stroke=\"black\" data-type=\"edge\" data-node-from=\"3\" stroke-width=\"0.5\" data-node-to=\"2\"></line><line x1=\"70.72479248046875\" y1=\"68.30882263183594\" x2=\"49.88445281982422\" y2=\"18.897058486938477\" stroke=\"black\" data-type=\"edge\" data-node-from=\"4\" stroke-width=\"0.5\" data-node-to=\"3\"></line><line x1=\"25.0105037689209\" y1=\"31.165966033935547\" x2=\"70.72479248046875\" y2=\"68.30882263183594\" stroke=\"black\" data-type=\"edge\" data-node-from=\"1\" stroke-width=\"0.5\" data-node-to=\"4\"></line><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"25.0105037689209\" cy=\"31.165966033935547\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-id=\"59\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"35.59873962402344\" cy=\"61.081932067871094\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-id=\"60\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"49.88445281982422\" cy=\"18.897058486938477\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"3\" data-node-id=\"3\" data-label-id=\"61\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"70.72479248046875\" cy=\"68.30882263183594\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"4\" data-node-id=\"4\" data-label-id=\"62\"></circle>"
   }
 },
 {
@@ -4612,6 +5342,78 @@
     "input_type": "checkbox",
     "default_value": "false",
     "values": "false"
+  }
+},
+{
+  "model": "engine.attributespec",
+  "pk": 7,
+  "fields": {
+    "label": 51,
+    "name": "attr",
+    "mutable": false,
+    "input_type": "text",
+    "default_value": "default",
+    "values": "default"
+  }
+},
+{
+  "model": "engine.attributespec",
+  "pk": 8,
+  "fields": {
+    "label": 52,
+    "name": "color",
+    "mutable": false,
+    "input_type": "radio",
+    "default_value": "white",
+    "values": "white\nblack\nred"
+  }
+},
+{
+  "model": "engine.attributespec",
+  "pk": 9,
+  "fields": {
+    "label": 53,
+    "name": "attr",
+    "mutable": false,
+    "input_type": "text",
+    "default_value": "default",
+    "values": "default"
+  }
+},
+{
+  "model": "engine.attributespec",
+  "pk": 10,
+  "fields": {
+    "label": 54,
+    "name": "color",
+    "mutable": false,
+    "input_type": "radio",
+    "default_value": "white",
+    "values": "white\nblack\nred"
+  }
+},
+{
+  "model": "engine.attributespec",
+  "pk": 11,
+  "fields": {
+    "label": 55,
+    "name": "attr",
+    "mutable": false,
+    "input_type": "text",
+    "default_value": "default",
+    "values": "default"
+  }
+},
+{
+  "model": "engine.attributespec",
+  "pk": 12,
+  "fields": {
+    "label": 56,
+    "name": "color",
+    "mutable": false,
+    "input_type": "radio",
+    "default_value": "white",
+    "values": "white\nblack\nred"
   }
 },
 {
@@ -5163,6 +5965,186 @@
   }
 },
 {
+  "model": "engine.labeledshape",
+  "pk": 54,
+  "fields": {
+    "job": 23,
+    "label": 51,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[244.32906271072352, 57.53054619015711, 340.34389750505943, 191.28914362778414]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 55,
+  "fields": {
+    "job": 23,
+    "label": 52,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[424.4396493594086, 86.6660822656795, 664.8078219824692, 251.54672960215976]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 56,
+  "fields": {
+    "job": 24,
+    "label": 53,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[35.913636363637124, 80.58636363636288, 94.8227272727272, 170.58636363636288]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 57,
+  "fields": {
+    "job": 24,
+    "label": 54,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[190.95909090909117, 100.22272727272684, 297.7318181818191, 209.8590909090908]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 58,
+  "fields": {
+    "job": 26,
+    "label": 57,
+    "frame": 6,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[42.63157931421483, 51.228199155397306, 106.13274329786509, 138.0929989443539]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 59,
+  "fields": {
+    "job": 26,
+    "label": 58,
+    "frame": 6,
+    "group": 0,
+    "source": "manual",
+    "type": "skeleton",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 60,
+  "fields": {
+    "job": 26,
+    "label": 59,
+    "frame": 6,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[103.73647295885894, 51.085564225393554]",
+    "rotation": 0.0,
+    "parent": 59
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 61,
+  "fields": {
+    "job": 26,
+    "label": 60,
+    "frame": 6,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[125.86783527366472, 101.86367376801435]",
+    "rotation": 0.0,
+    "parent": 59
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 62,
+  "fields": {
+    "job": 26,
+    "label": 61,
+    "frame": 6,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[155.7276059652392, 30.260833689097126]",
+    "rotation": 0.0,
+    "parent": 59
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 63,
+  "fields": {
+    "job": 26,
+    "label": 62,
+    "frame": 6,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[199.28775272671066, 114.13029555429613]",
+    "rotation": 0.0,
+    "parent": 59
+  }
+},
+{
   "model": "engine.labeledshapeattributeval",
   "pk": 1,
   "fields": {
@@ -5187,6 +6169,42 @@
     "spec": 1,
     "value": "mazda",
     "shape": 42
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 4,
+  "fields": {
+    "spec": 7,
+    "value": "non-default",
+    "shape": 54
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 5,
+  "fields": {
+    "spec": 8,
+    "value": "black",
+    "shape": 55
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 6,
+  "fields": {
+    "spec": 9,
+    "value": "non-default",
+    "shape": 56
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 7,
+  "fields": {
+    "spec": 10,
+    "value": "black",
+    "shape": 57
   }
 },
 {
@@ -5247,6 +6265,126 @@
     "group": 0,
     "source": "manual",
     "parent": 1
+  }
+},
+{
+  "model": "engine.labeledtrack",
+  "pk": 6,
+  "fields": {
+    "job": 25,
+    "label": 58,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledtrack",
+  "pk": 7,
+  "fields": {
+    "job": 25,
+    "label": 59,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "parent": 6
+  }
+},
+{
+  "model": "engine.labeledtrack",
+  "pk": 8,
+  "fields": {
+    "job": 25,
+    "label": 60,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "parent": 6
+  }
+},
+{
+  "model": "engine.labeledtrack",
+  "pk": 9,
+  "fields": {
+    "job": 25,
+    "label": 61,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "parent": 6
+  }
+},
+{
+  "model": "engine.labeledtrack",
+  "pk": 10,
+  "fields": {
+    "job": 25,
+    "label": 62,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "parent": 6
+  }
+},
+{
+  "model": "engine.labeledtrack",
+  "pk": 11,
+  "fields": {
+    "job": 26,
+    "label": 58,
+    "frame": 6,
+    "group": 0,
+    "source": "manual",
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledtrack",
+  "pk": 12,
+  "fields": {
+    "job": 26,
+    "label": 59,
+    "frame": 6,
+    "group": 0,
+    "source": "manual",
+    "parent": 11
+  }
+},
+{
+  "model": "engine.labeledtrack",
+  "pk": 13,
+  "fields": {
+    "job": 26,
+    "label": 60,
+    "frame": 6,
+    "group": 0,
+    "source": "manual",
+    "parent": 11
+  }
+},
+{
+  "model": "engine.labeledtrack",
+  "pk": 14,
+  "fields": {
+    "job": 26,
+    "label": 61,
+    "frame": 6,
+    "group": 0,
+    "source": "manual",
+    "parent": 11
+  }
+},
+{
+  "model": "engine.labeledtrack",
+  "pk": 15,
+  "fields": {
+    "job": 26,
+    "label": 62,
+    "frame": 6,
+    "group": 0,
+    "source": "manual",
+    "parent": 11
   }
 },
 {
@@ -5391,6 +6529,160 @@
     "rotation": 0.0,
     "track": 5,
     "frame": 3
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 10,
+  "fields": {
+    "type": "skeleton",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[]",
+    "rotation": 0.0,
+    "track": 6,
+    "frame": 0
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 11,
+  "fields": {
+    "type": "points",
+    "occluded": false,
+    "outside": true,
+    "z_order": 0,
+    "points": "[230.39103314621025, 149.98846070356873]",
+    "rotation": 0.0,
+    "track": 7,
+    "frame": 0
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 12,
+  "fields": {
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[230.39103314621025, 149.98846070356873]",
+    "rotation": 0.0,
+    "track": 7,
+    "frame": 3
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 13,
+  "fields": {
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[292.80597636674844, 284.1818841927473]",
+    "rotation": 0.0,
+    "track": 8,
+    "frame": 0
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 14,
+  "fields": {
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[377.016603158851, 94.95407858346152]",
+    "rotation": 0.0,
+    "track": 9,
+    "frame": 0
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 15,
+  "fields": {
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[499.86507710826913, 316.59939612801213]",
+    "rotation": 0.0,
+    "track": 10,
+    "frame": 0
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 16,
+  "fields": {
+    "type": "skeleton",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[]",
+    "rotation": 0.0,
+    "track": 11,
+    "frame": 6
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 17,
+  "fields": {
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[92.95325643333308, 129.2954675940839]",
+    "rotation": 0.0,
+    "track": 12,
+    "frame": 6
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 18,
+  "fields": {
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[133.81649280769233, 195.4883603907146]",
+    "rotation": 0.0,
+    "track": 13,
+    "frame": 6
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 19,
+  "fields": {
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[188.94942364574058, 102.14894385926891]",
+    "rotation": 0.0,
+    "track": 14,
+    "frame": 6
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 20,
+  "fields": {
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[269.3786601426267, 211.47877807640333]",
+    "rotation": 0.0,
+    "track": 15,
+    "frame": 6
   }
 },
 {
@@ -5589,6 +6881,16 @@
   "fields": {
     "user": [
       "user6"
+    ],
+    "rating": 0.0
+  }
+},
+{
+  "model": "engine.profile",
+  "pk": 21,
+  "fields": {
+    "user": [
+      "lonely_user"
     ],
     "rating": 0.0
   }
@@ -6027,6 +7329,86 @@
   }
 },
 {
+  "model": "engine.storage",
+  "pk": 25,
+  "fields": {
+    "location": "local",
+    "cloud_storage_id": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 26,
+  "fields": {
+    "location": "local",
+    "cloud_storage_id": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 27,
+  "fields": {
+    "location": "local",
+    "cloud_storage_id": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 28,
+  "fields": {
+    "location": "local",
+    "cloud_storage_id": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 29,
+  "fields": {
+    "location": "local",
+    "cloud_storage_id": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 30,
+  "fields": {
+    "location": "local",
+    "cloud_storage_id": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 31,
+  "fields": {
+    "location": "local",
+    "cloud_storage_id": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 32,
+  "fields": {
+    "location": "local",
+    "cloud_storage_id": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 33,
+  "fields": {
+    "location": "local",
+    "cloud_storage_id": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 34,
+  "fields": {
+    "location": "local",
+    "cloud_storage_id": null
+  }
+},
+{
   "model": "webhooks.webhook",
   "pk": 1,
   "fields": {
@@ -6108,85 +7490,6 @@
     ],
     "project": null,
     "organization": 1
-  }
-},
-{
-  "model": "webhooks.webhookdelivery",
-  "pk": 1,
-  "fields": {
-    "webhook": 2,
-    "event": "update:job",
-    "status_code": 200,
-    "redelivery": false,
-    "created_date": "2022-11-03T13:57:26.380Z",
-    "updated_date": "2022-11-03T13:57:26.908Z",
-    "changed_fields": "state",
-    "request": {
-      "job": {
-        "id": 14,
-        "url": "http://localhost:8080/api/jobs/14",
-        "mode": "annotation",
-        "stage": "annotation",
-        "state": "in progress",
-        "labels": [
-          {
-            "id": 6,
-            "name": "person",
-            "type": "any",
-            "color": "#c06060",
-            "sublabels": [],
-            "attributes": [],
-            "has_parent": false
-          },
-          {
-            "id": 5,
-            "name": "car",
-            "type": "any",
-            "color": "#2080c0",
-            "sublabels": [],
-            "attributes": [
-              {
-                "id": 1,
-                "name": "model",
-                "values": [
-                  "mazda",
-                  "volvo",
-                  "bmw"
-                ],
-                "mutable": false,
-                "input_type": "select",
-                "default_value": "mazda"
-              }
-            ],
-            "has_parent": false
-          }
-        ],
-        "status": "annotation",
-        "task_id": 9,
-        "assignee": null,
-        "dimension": "2d",
-        "project_id": 1,
-        "stop_frame": 19,
-        "bug_tracker": "",
-        "start_frame": 15,
-        "updated_date": "2022-11-03T13:57:26.346824Z",
-        "data_chunk_size": 72,
-        "data_compressed_chunk_type": "imageset"
-      },
-      "event": "update:job",
-      "sender": {
-        "id": 1,
-        "url": "http://localhost:8080/api/users/1",
-        "username": "admin1",
-        "last_name": "First",
-        "first_name": "Admin"
-      },
-      "webhook_id": 2,
-      "before_update": {
-        "state": "new"
-      }
-    },
-    "response": "<!doctype html>\n<html>\n<head>\n    <title>Example Domain</title>\n\n    <meta charset=\"utf-8\" />\n    <meta http-equiv=\"Content-type\" content=\"text/html; charset=utf-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n    <style type=\"text/css\">\n    body {\n        background-color: #f0f0f2;\n        margin: 0;\n        padding: 0;\n        font-family: -apple-system, system-ui, BlinkMacSystemFont, \"Segoe UI\", \"Open Sans\", \"Helvetica Neue\", Helvetica, Arial, sans-serif;\n        \n    }\n    div {\n        width: 600px;\n        margin: 5em auto;\n        padding: 2em;\n        background-color: #fdfdff;\n        border-radius: 0.5em;\n        box-shadow: 2px 3px 7px 2px rgba(0,0,0,0.02);\n    }\n    a:link, a:visited {\n        color: #38488f;\n        text-decoration: none;\n    }\n    @media (max-width: 700px) {\n        div {\n            margin: 0 auto;\n            width: auto;\n        }\n    }\n    </style>    \n</head>\n\n<body>\n<div>\n    <h1>Example Domain</h1>\n    <p>This domain is for use in illustrative examples in documents. You may use this\n    domain in literature without prior coordination or asking for permission.</p>\n    <p><a href=\"https://www.iana.org/domains/example\">More information...</a></p>\n</div>\n</body>\n</html>\n"
   }
 },
 {

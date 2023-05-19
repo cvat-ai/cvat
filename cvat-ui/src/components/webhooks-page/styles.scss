@@ -30,6 +30,10 @@
     .ant-typography-ellipsis {
         margin-bottom: 0;
     }
+
+    > div {
+        word-break: break-all;
+    }
 }
 
 .cvat-webhook-status {

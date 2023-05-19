@@ -13,6 +13,7 @@ from time import sleep
 from typing import Any, Dict, Iterator, Optional, Sequence, Tuple, TypeVar
 
 import attrs
+import packaging.specifiers as specifiers
 import packaging.version as pv
 import platformdirs
 import urllib3
@@ -61,11 +62,8 @@ class Client:
     """
 
     SUPPORTED_SERVER_VERSIONS = (
-        pv.Version("2.0"),
-        pv.Version("2.1"),
-        pv.Version("2.2"),
-        pv.Version("2.3"),
         pv.Version("2.4"),
+        pv.Version("2.5"),
     )
 
     def __init__(
@@ -256,25 +254,29 @@ class Client:
                 raise IncompatibleVersionException(msg)
             return
 
-        sdk_version = pv.Version(VERSION)
-
-        # We only check base version match. Micro releases and fixes do not affect
-        # API compatibility in general.
-        if all(
-            server_version.base_version != sv.base_version for sv in self.SUPPORTED_SERVER_VERSIONS
+        if not any(
+            self._is_version_compatible(server_version, supported_version)
+            for supported_version in self.SUPPORTED_SERVER_VERSIONS
         ):
             msg = (
                 "Server version '%s' is not compatible with SDK version '%s'. "
                 "Some SDK functions may not work properly with this server. "
                 "You can continue using this SDK, or you can "
                 "try to update with 'pip install cvat-sdk'."
-            ) % (server_version, sdk_version)
+            ) % (server_version, pv.Version(VERSION))
             self.logger.warning(msg)
             if fail_if_unsupported:
                 raise IncompatibleVersionException(msg)
 
+    def _is_version_compatible(self, current: pv.Version, target: pv.Version) -> bool:
+        # Check for (major, minor) compatibility.
+        # Micro releases and fixes do not affect API compatibility in general.
+        epoch = f"{target.epoch}!" if target.epoch else ""  # 1.0 ~= 0!1.0 is false
+        return current in specifiers.Specifier(
+            f"~= {epoch}{target.major}.{target.minor}.{target.micro}"
+        )
+
     def get_server_version(self) -> pv.Version:
-        # TODO: allow to use this endpoint unauthorized
         (about, _) = self.api_client.server_api.retrieve_about()
         return pv.Version(about.version)
 

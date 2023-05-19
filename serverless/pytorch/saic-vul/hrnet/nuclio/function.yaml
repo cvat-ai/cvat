@@ -1,0 +1,72 @@
+metadata:
+  name: pth-saic-vul-hrnet
+  namespace: cvat
+  annotations:
+    name: HRNET
+    version: 2
+    type: interactor
+    spec:
+    framework: pytorch
+    min_pos_points: 1
+    min_neg_points: 0
+    animated_gif: https://raw.githubusercontent.com/opencv/cvat/develop/site/content/en/images/hrnet_example.gif
+    help_message: The interactor allows to get a mask for an object using positive points, and negative points
+
+spec:
+  description: HRNet18 for click based interactive segmentation
+  runtime: 'python:3.8'
+  handler: main:handler
+  eventTimeout: 30s
+  env:
+    - name: PYTHONPATH
+      value: /opt/nuclio/hrnet
+
+  build:
+    image: cvat-pth.saic-vul.hrnet
+    baseImage: ubuntu:20.04
+
+    directives:
+      preCopy:
+        - kind: RUN
+          value: |-
+            apt-get update \
+              && apt-get install -y --no-install-recommends \
+                git libgl1-mesa-glx libglib2.0-0 python3 python3-pip python-is-python3 \
+              && rm -rf /var/lib/apt/lists/*
+        - kind: RUN
+          value: pip3 install --upgrade pip
+        - kind: RUN
+          value: git clone https://github.com/saic-vul/ritm_interactive_segmentation.git /opt/nuclio/hrnet
+        - kind: ADD
+          value: >-
+            https://github.com/saic-vul/ritm_interactive_segmentation/releases/download/v1.0/coco_lvis_h18_itermask.pth
+            /opt/nuclio/hrnet/
+        - kind: RUN
+          # NumPy is capped due to https://github.com/SamsungLabs/ritm_interactive_segmentation/issues/36
+          value: |-
+            pip3 install --no-cache-dir \
+              -r /opt/nuclio/hrnet/requirements.txt \
+              torch==1.8.1+cpu torchvision==0.9.1+cpu \
+              'numpy<1.24' \
+              --extra-index-url=https://download.pytorch.org/whl/cpu
+        - kind: WORKDIR
+          value: /opt/nuclio
+
+  triggers:
+    myHttpTrigger:
+      maxWorkers: 1
+      kind: 'http'
+      workerAvailabilityTimeoutMilliseconds: 10000
+      attributes:
+        maxRequestBodySize: 33554432 # 32MB
+
+  platform:
+    attributes:
+      restartPolicy:
+        name: always
+        maximumRetryCount: 3
+      mountMode: volume
+
+  resources:
+    limits:
+      cpu: 2

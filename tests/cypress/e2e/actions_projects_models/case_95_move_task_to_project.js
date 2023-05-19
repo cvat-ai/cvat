@@ -15,9 +15,9 @@ context('Move a task to a project.', { browser: '!firefox' }, () => {
         attrName: 'Kind',
         attrValue: 'Oak',
         nameSecond: `Case ${caseID} second`,
-        labelSecond: 'Car',
-        attrNameSecons: 'Color',
-        attrValueSecond: 'Red',
+        labelSecond: 'Tree',
+        attrNameSecond: 'Kind',
+        attrValueSecond: 'Oak',
         name3d: `Case ${caseID} 3D`,
         label3d: 'Bus',
         attrName3d: 'Type',
@@ -51,7 +51,7 @@ context('Move a task to a project.', { browser: '!firefox' }, () => {
         cy.createZipArchive(directoryToArchive, archivePath);
         cy.goToTaskList();
         cy.createAnnotationTask(
-            task.nameSecond, task.labelSecond, task.attrNameSecons, task.attrValueSecond, archiveName,
+            task.nameSecond, task.labelSecond, task.attrNameSecond, task.attrValueSecond, archiveName,
         );
         cy.createAnnotationTask(task.name3d, task.label3d, task.attrName3d, task.attrValue3d, archiveName3d);
     });

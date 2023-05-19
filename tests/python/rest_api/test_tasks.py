@@ -16,7 +16,7 @@ from tempfile import TemporaryDirectory
 from typing import List
 
 import pytest
-from cvat_sdk import Client, Config
+from cvat_sdk import Client, Config, exceptions
 from cvat_sdk.api_client import models
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from cvat_sdk.core.helpers import get_paginated_collection
@@ -351,7 +351,10 @@ class TestPatchTaskAnnotations:
     def request_data(self, annotations):
         def get_data(tid):
             data = deepcopy(annotations["task"][str(tid)])
-            data["shapes"][0].update({"points": [2.0, 3.0, 4.0, 5.0, 6.0, 7.0]})
+            if data["shapes"][0]["type"] == "skeleton":
+                data["shapes"][0]["elements"][0].update({"points": [2.0, 3.0, 4.0, 5.0]})
+            else:
+                data["shapes"][0].update({"points": [2.0, 3.0, 4.0, 5.0, 6.0, 7.0]})
             data["version"] += 1
             return data
 
@@ -386,7 +389,7 @@ class TestPatchTaskAnnotations:
         users = find_users(privilege=privilege)
         tasks = tasks_by_org[org]
         filtered_tasks = filter_tasks_with_shapes(tasks)
-        username, tid = find_task_staff_user(filtered_tasks, users, task_staff)
+        username, tid = find_task_staff_user(filtered_tasks, users, task_staff, [21])
 
         data = request_data(tid)
         with make_api_client(username) as api_client:
@@ -428,7 +431,7 @@ class TestPatchTaskAnnotations:
     ):
         users = find_users(role=role, org=org)
         tasks = tasks_by_org[org]
-        username, tid = find_task_staff_user(tasks, users, task_staff, [12, 14, 18])
+        username, tid = find_task_staff_user(tasks, users, task_staff)
 
         data = request_data(tid)
         with make_api_client(username) as api_client:
@@ -453,6 +456,14 @@ class TestGetTaskDataset:
     def test_can_export_task_dataset(self, admin_user, tasks_with_shapes):
         task = tasks_with_shapes[0]
         response = self._test_export_task(admin_user, task["id"], format="CVAT for images 1.1")
+        assert response.data
+
+    @pytest.mark.parametrize("tid", [21])
+    @pytest.mark.parametrize(
+        "format_name", ["CVAT for images 1.1", "CVAT for video 1.1", "COCO Keypoints 1.0"]
+    )
+    def test_can_export_task_with_several_jobs(self, admin_user, tid, format_name):
+        response = self._test_export_task(admin_user, tid, format=format_name)
         assert response.data
 
 
@@ -503,7 +514,7 @@ class TestPostTaskData:
             "client_files": generate_image_files(7),
         }
 
-        task_id = _test_create_task(
+        task_id, _ = _test_create_task(
             self._USERNAME, task_spec, task_data, content_type="multipart/form-data"
         )
 
@@ -534,7 +545,7 @@ class TestPostTaskData:
 
         # Besides testing that the sorting method is applied, this also checks for
         # regressions of <https://github.com/opencv/cvat/issues/4962>.
-        task_id = _test_create_task(
+        task_id, _ = _test_create_task(
             self._USERNAME, task_spec, task_data, content_type="multipart/form-data"
         )
 
@@ -574,7 +585,7 @@ class TestPostTaskData:
             "client_files": generate_image_files(3),
         }
 
-        task_id = _test_create_task(
+        task_id, _ = _test_create_task(
             self._USERNAME, spec, task_data, content_type="multipart/form-data"
         )
 
@@ -741,6 +752,68 @@ class TestPostTaskData:
         )
 
     @pytest.mark.with_external_services
+    @pytest.mark.parametrize(
+        "storage_id, manifest",
+        [
+            (1, "manifest.jsonl"),  # public bucket
+            (2, "sub/manifest.jsonl"),  # private bucket
+        ],
+    )
+    @pytest.mark.parametrize(
+        "spec, field",
+        [
+            ("spec", "source_storage"),
+            ("spec", "target_storage"),
+            ("data", "cloud_storage_id"),
+        ],
+    )
+    def test_user_cannot_create_task_with_cloud_storage_without_access(
+        self, storage_id, spec, field, manifest, regular_lonely_user
+    ):
+        user = regular_lonely_user
+
+        task_spec = {
+            "name": f"Task with files from foreign cloud storage {storage_id}",
+            "labels": [
+                {
+                    "name": "car",
+                }
+            ],
+        }
+
+        data_spec = {
+            "image_quality": 75,
+            "use_cache": True,
+        }
+
+        if spec == "spec":
+            task_spec.update(
+                {
+                    field: {
+                        "location": "cloud_storage",
+                        "cloud_storage_id": storage_id,
+                    }
+                }
+            )
+            data_spec["server_files"] = ["images/image_1.jpg"]
+
+        elif spec == "data":
+            data_spec.update(
+                {
+                    field: storage_id,
+                    "filename_pattern": "*",
+                    "server_files": [manifest],
+                }
+            )
+        else:
+            assert False
+
+        with pytest.raises(exceptions.ApiException) as capture:
+            _test_create_task(user, task_spec, data_spec, content_type="application/json")
+
+        assert capture.value.status == HTTPStatus.FORBIDDEN
+
+    @pytest.mark.with_external_services
     @pytest.mark.parametrize("cloud_storage_id", [1])
     @pytest.mark.parametrize(
         "manifest, filename_pattern, sub_dir, task_size",
@@ -843,7 +916,7 @@ class TestPostTaskData:
         }
 
         if task_size:
-            task_id = _test_create_task(
+            task_id, _ = _test_create_task(
                 self._USERNAME, task_spec, data_spec, content_type="application/json", org=org
             )
 
@@ -875,7 +948,7 @@ class TestPostTaskData:
             "job_file_mapping": expected_segments,
         }
 
-        task_id = _test_create_task(
+        task_id, _ = _test_create_task(
             self._USERNAME, task_spec, data_spec, content_type="application/json"
         )
 
@@ -976,7 +1049,7 @@ class TestPatchTaskLabel:
         assert DeepDiff(resulting_labels, task_labels, ignore_order=True) == {}
 
     def test_cannot_rename_label_to_duplicate_name(self, tasks, labels, admin_user):
-        task = [t for t in tasks if t["labels"]["count"] > 1][0]
+        task = [t for t in tasks if t["project_id"] is None and t["labels"]["count"] > 1][0]
         task_labels = deepcopy([l for l in labels if l.get("task_id") == task["id"]])
         task_labels[0].update({"name": task_labels[1]["name"]})
 
@@ -1095,7 +1168,7 @@ class TestPatchTaskLabel:
     def test_admin_can_add_skeleton(self, tasks, admin_user):
         task = [t for t in tasks if t["project_id"] is None][0]
         new_skeleton = {
-            "name": "skeleton1",
+            "name": "new skeleton",
             "type": "skeleton",
             "sublabels": [
                 {
@@ -1141,7 +1214,7 @@ class TestWorkWithTask:
             "server_files": cloud_storage_content,
         }
 
-        task_id = _test_create_task(
+        task_id, _ = _test_create_task(
             self._USERNAME, task_spec, data_spec, content_type="application/json", org=org
         )
 
@@ -1319,3 +1392,129 @@ class TestUnequalJobs:
         for old_job, new_job in zip(old_jobs, new_jobs):
             assert old_job.start_frame == new_job.start_frame
             assert old_job.stop_frame == new_job.stop_frame
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+class TestPatchTask:
+    @pytest.mark.parametrize("task_id, project_id, user", [(19, 12, "admin1")])
+    def test_move_task_to_project_with_attributes(self, task_id, project_id, user):
+        response = get_method(user, f"tasks/{task_id}/annotations")
+        assert response.status_code == HTTPStatus.OK
+        annotations = response.json()
+
+        response = patch_method(user, f"tasks/{task_id}", {"project_id": project_id})
+        assert response.status_code == HTTPStatus.OK
+
+        response = get_method(user, f"tasks/{task_id}")
+        assert response.status_code == HTTPStatus.OK
+        assert response.json().get("project_id") == project_id
+
+        response = get_method(user, f"tasks/{task_id}/annotations")
+        assert response.status_code == HTTPStatus.OK
+        assert (
+            DeepDiff(
+                annotations,
+                response.json(),
+                ignore_order=True,
+                exclude_regex_paths=[
+                    r"root\['\w+'\]\[\d+\]\['label_id'\]",
+                    r"root\['\w+'\]\[\d+\]\['attributes'\]\[\d+\]\['spec_id'\]",
+                ],
+            )
+            == {}
+        )
+
+    @pytest.mark.parametrize("task_id, project_id, user", [(20, 13, "admin1")])
+    def test_move_task_from_one_project_to_another_with_attributes(self, task_id, project_id, user):
+        response = get_method(user, f"tasks/{task_id}/annotations")
+        assert response.status_code == HTTPStatus.OK
+        annotations = response.json()
+
+        response = patch_method(user, f"tasks/{task_id}", {"project_id": project_id})
+        assert response.status_code == HTTPStatus.OK
+
+        response = get_method(user, f"tasks/{task_id}")
+        assert response.status_code == HTTPStatus.OK
+        assert response.json().get("project_id") == project_id
+
+        response = get_method(user, f"tasks/{task_id}/annotations")
+        assert response.status_code == HTTPStatus.OK
+        assert (
+            DeepDiff(
+                annotations,
+                response.json(),
+                ignore_order=True,
+                exclude_regex_paths=[
+                    r"root\['\w+'\]\[\d+\]\['label_id'\]",
+                    r"root\['\w+'\]\[\d+\]\['attributes'\]\[\d+\]\['spec_id'\]",
+                ],
+            )
+            == {}
+        )
+
+    @pytest.mark.with_external_services
+    @pytest.mark.parametrize(
+        "storage_id",
+        [
+            1,  # public bucket
+            2,  # private bucket
+        ],
+    )
+    @pytest.mark.parametrize("field", ["source_storage", "target_storage"])
+    def test_user_cannot_update_task_with_cloud_storage_without_access(
+        self, storage_id, field, regular_lonely_user
+    ):
+        user = regular_lonely_user
+
+        task_spec = {
+            "name": f"Task with files from foreign cloud storage {storage_id}",
+            "labels": [
+                {
+                    "name": "car",
+                }
+            ],
+        }
+        data_spec = {
+            "image_quality": 75,
+            "use_cache": True,
+            "server_files": ["images/image_1.jpg"],
+        }
+        (task_id, _) = _test_create_task(
+            user, task_spec, data_spec, content_type="application/json"
+        )
+
+        updated_fields = {
+            field: {
+                "location": "cloud_storage",
+                "cloud_storage_id": storage_id,
+            }
+        }
+
+        with make_api_client(user) as api_client:
+            (_, response) = api_client.tasks_api.partial_update(
+                task_id,
+                patched_task_write_request=updated_fields,
+                _parse_response=False,
+                _check_status=False,
+            )
+        assert response.status == HTTPStatus.FORBIDDEN
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+def test_can_report_correct_completed_jobs_count(tasks, jobs, admin_user):
+    # Reproduces https://github.com/opencv/cvat/issues/6098
+    task = next(
+        t
+        for t in tasks
+        if t["jobs"]["count"] > 1 and t["jobs"]["completed"] == 0 and t["labels"]["count"] > 1
+    )
+    task_jobs = [j for j in jobs if j["task_id"] == task["id"]]
+
+    with make_api_client(admin_user) as api_client:
+        api_client.jobs_api.partial_update(
+            task_jobs[0]["id"],
+            patched_job_write_request=dict(stage="acceptance", state="completed"),
+        )
+
+        task, _ = api_client.tasks_api.retrieve(task["id"])
+        assert task.jobs.completed == 1

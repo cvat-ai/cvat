@@ -29,8 +29,9 @@ interface OwnProps {
 }
 
 interface StateToProps {
-    treeData: (TreeNodeNormal & { mime_type: string })[];
-    share: any;
+    treeData: ShareItem;
+    sharedStorageInitialized: boolean;
+    sharedStorageFetching: boolean;
 }
 
 interface DispatchToProps {
@@ -38,27 +39,10 @@ interface DispatchToProps {
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
-    function convert(items: ShareItem[], path?: string): (TreeNodeNormal & { mime_type: string })[] {
-        return items.map(
-            (item): (TreeNodeNormal & { mime_type: string }) => {
-                const isLeaf = item.type !== 'DIR';
-                const key = `${path}${item.name}${isLeaf ? '' : '/'}`;
-                return {
-                    key,
-                    isLeaf,
-                    title: item.name || 'root',
-                    mime_type: item.mime_type,
-                    children: convert(item.children, key),
-                };
-            },
-        );
-    }
-
-    const { root } = state.share;
-
     return {
-        treeData: convert([root], ''),
-        share: state.share,
+        treeData: state.share.root,
+        sharedStorageInitialized: state.share.initialized,
+        sharedStorageFetching: state.share.fetching,
     };
 }
 
@@ -71,13 +55,52 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 
 type Props = StateToProps & DispatchToProps & OwnProps;
 
-export class FileManagerContainer extends React.PureComponent<Props> {
+interface State {
+    treeData: (TreeNodeNormal & {
+        mime_type: string;
+    })[];
+    prevRoot: ShareItem | null;
+}
+
+export class FileManagerContainer extends React.PureComponent<Props, State> {
     private managerComponentRef: any;
 
     public constructor(props: Props) {
         super(props);
 
+        this.state = {
+            treeData: [],
+            prevRoot: null,
+        };
+
         this.managerComponentRef = React.createRef();
+    }
+
+    static getDerivedStateFromProps(props: Props, state: State): State | null {
+        function convert(items: ShareItem[], path?: string): (TreeNodeNormal & { mime_type: string })[] {
+            return items.map(
+                (item): (TreeNodeNormal & { mime_type: string }) => {
+                    const isLeaf = item.type !== 'DIR';
+                    const key = `${path}${item.name}${isLeaf ? '' : '/'}`;
+                    return {
+                        key,
+                        isLeaf,
+                        title: item.name || 'root',
+                        mime_type: item.mime_type,
+                        children: convert(item.children, key),
+                    };
+                },
+            );
+        }
+
+        if (state.prevRoot !== props.treeData) {
+            return {
+                prevRoot: props.treeData,
+                treeData: convert([props.treeData], ''),
+            };
+        }
+
+        return null;
     }
 
     private handleUploadShareFiles = (keys: string[]): Promise<void> => new Promise(() => {
@@ -95,7 +118,7 @@ export class FileManagerContainer extends React.PureComponent<Props> {
             type: string;
             mime_type: string;
         }[]> => {
-            const { treeData } = this.props;
+            const { treeData } = this.state;
             let files: {
                 key: string;
                 type: string;
@@ -150,8 +173,8 @@ export class FileManagerContainer extends React.PureComponent<Props> {
 
     public render(): JSX.Element {
         const {
-            treeData,
-            share,
+            sharedStorageInitialized,
+            sharedStorageFetching,
             getTreeData,
             many,
             onChangeActiveKey,
@@ -159,11 +182,13 @@ export class FileManagerContainer extends React.PureComponent<Props> {
             onUploadRemoteFiles,
             onUploadCloudStorageFiles,
         } = this.props;
+        const { treeData } = this.state;
 
         return (
             <FileManagerComponent
                 treeData={treeData}
-                share={share}
+                sharedStorageInitialized={sharedStorageInitialized}
+                sharedStorageFetching={sharedStorageFetching}
                 many={many}
                 onLoadData={getTreeData}
                 onUploadLocalFiles={onUploadLocalFiles}

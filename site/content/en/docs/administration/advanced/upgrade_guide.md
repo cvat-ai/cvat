@@ -83,18 +83,18 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose
 Step by step commands how to upgrade CVAT from v1.7.0 to v2.2.0.
 Let's assume that you have CVAT v1.7.0 working.
 ```shell
-export CVAT_VERSION="2.2.0"
+export CVAT_VERSION="v2.2.0"
 cd cvat
 docker compose down
 cd ..
 mv cvat cvat_170
-wget https://github.com/opencv/cvat/archive/refs/tags/v${CVAT_VERSION}.zip
-unzip v${CVAT_VERSION}.zip && mv cvat_${CVAT_VERSION} cvat
+wget https://github.com/opencv/cvat/archive/refs/tags/${CVAT_VERSION}.zip
+unzip ${CVAT_VERSION}.zip && mv cvat-${CVAT_VERSION:1} cvat
 cd cvat
-docker pull cvat/server:v${CVAT_VERSION}
-docker tag cvat/server:v${CVAT_VERSION} openvino/cvat_server:latest
-docker pull cvat/ui:v${CVAT_VERSION}
-docker tag cvat/ui:v${CVAT_VERSION} openvino/cvat_ui:latest
+docker pull cvat/server:${CVAT_VERSION}
+docker tag cvat/server:${CVAT_VERSION} openvino/cvat_server:latest
+docker pull cvat/ui:${CVAT_VERSION}
+docker tag cvat/ui:${CVAT_VERSION} openvino/cvat_ui:latest
 docker compose up -d
 ```
 
@@ -115,7 +115,7 @@ docker compose up -d
    docker compose down
    ```
 
-1. Delete current PostrgeSQL’s volume, that's why it's important to have a backup:
+1. Delete current PostgreSQL’s volume, that's why it's important to have a backup:
    ```shell
    docker volume rm cvat_cvat_db
    ```

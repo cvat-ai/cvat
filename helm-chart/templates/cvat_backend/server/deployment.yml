@@ -97,14 +97,7 @@ spec:
               secretKeyRef:
                 name: "{{ tpl (.Values.postgresql.secret.name) . }}"
                 key: password
-          {{- if .Values.nuclio.enabled }}
-          - name: CVAT_SERVERLESS
-            value: "1"
-          - name: CVAT_NUCLIO_HOST
-            value: "{{ .Release.Name }}-nuclio-dashboard"
-          - name: CVAT_NUCLIO_FUNCTION_NAMESPACE
-            value: "{{ .Release.Namespace }}"
-          {{- end }}
+          {{ include "cvat.nuclioEnv" . | indent 10 }}
           {{- if .Values.analytics.enabled}}
           - name: CVAT_ANALYTICS
             value: "1"

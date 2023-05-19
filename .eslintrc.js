@@ -16,6 +16,7 @@ module.exports = {
     ignorePatterns: [
         '.eslintrc.js',
         'lint-staged.config.js',
+        'site/themes/**',
     ],
     plugins: ['@typescript-eslint', 'security', 'no-unsanitized', 'import'],
     extends: [

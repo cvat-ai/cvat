@@ -33,11 +33,23 @@ Cypress.Commands.add('create3DCuboid', (cuboidCreationParams) => {
 
 Cypress.Commands.add('customScreenshot', (element, screenshotName) => {
     cy.get(`${element} canvas`).then(([$el]) => ($el.getBoundingClientRect())).then((rect) => {
+        const iframe = window.parent.document
+            .querySelector('iframe.aut-iframe');
+        const parentRect = iframe.getBoundingClientRect();
+
+        const scale = parentRect.width / iframe.clientWidth;
         cy.screenshot(screenshotName, {
+            // tricky way to make screenshots to avoid screen resizing
+            // we take a screenshot of the whole screen, including runner and then clip it
+            // according to iframe coordinates and scale in the runner
             overwrite: true,
-            capture: 'fullPage',
+            capture: 'runner',
+            scale: false,
             clip: {
-                x: rect.x, y: rect.y, width: rect.width, height: rect.height,
+                x: parentRect.x + rect.x * scale,
+                y: parentRect.y + rect.y * scale,
+                width: rect.width * scale,
+                height: rect.height * scale,
             },
         });
     });

@@ -1,5 +1,5 @@
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -19,7 +19,7 @@ import django_rq
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
-from django.shortcuts import get_object_or_404
+
 from rest_framework import serializers, status
 from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
@@ -36,14 +36,13 @@ from cvat.apps.engine.serializers import (AttributeSerializer, DataSerializer, L
     ProjectReadSerializer, ProjectFileSerializer, TaskFileSerializer)
 from cvat.apps.engine.utils import av_scan_paths, process_failed_job, configure_dependent_job, get_rq_job_meta
 from cvat.apps.engine.models import (
-    StorageChoice, StorageMethodChoice, DataChoice, Task, Project, Location,
-    CloudStorage as CloudStorageModel)
+    StorageChoice, StorageMethodChoice, DataChoice, Task, Project, Location)
 from cvat.apps.engine.task import JobFileMapping, _create_thread
+from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
+from cvat.apps.engine.location import StorageType, get_location_configuration
+from cvat.apps.engine.view_utils import get_cloud_storage_for_import_or_export
 from cvat.apps.dataset_manager.views import TASK_CACHE_TTL, PROJECT_CACHE_TTL, get_export_cache_dir, clear_export_cache, log_exception
 from cvat.apps.dataset_manager.bindings import CvatImportError
-from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
-
-from cvat.apps.engine.location import StorageType, get_location_configuration
 
 class Version(Enum):
     V1 = '1.0'
@@ -823,7 +822,8 @@ def export(db_instance, request, queue_name):
     rq_job = queue.fetch_job(rq_id)
     if rq_job:
         last_project_update_time = timezone.localtime(db_instance.updated_date)
-        request_time = rq_job.meta.get('request_time', None)
+        rq_request = rq_job.meta.get('request', None)
+        request_time = rq_request.get("timestamp", None) if rq_request else None
         if request_time is None or request_time < last_project_update_time:
             rq_job.cancel()
             rq_job.delete()
@@ -848,9 +848,12 @@ def export(db_instance, request, queue_name):
                             storage_id = location_conf['storage_id']
                         except KeyError:
                             raise serializers.ValidationError(
-                                'Cloud storage location was selected for destination'
+                                'Cloud storage location was selected as the destination,'
                                 ' but cloud storage id was not specified')
-                        db_storage = get_object_or_404(CloudStorageModel, pk=storage_id)
+
+                        db_storage = get_cloud_storage_for_import_or_export(
+                            storage_id=storage_id, request=request,
+                            is_default=location_conf['is_default'])
                         storage = db_storage_to_storage_instance(db_storage)
 
                         try:
@@ -878,10 +881,7 @@ def export(db_instance, request, queue_name):
         func=_create_backup,
         args=(db_instance, Exporter, '{}_backup.zip'.format(obj_type), logger, cache_ttl),
         job_id=rq_id,
-        meta={
-            'request_time': timezone.localtime(),
-            **get_rq_job_meta(request=request, db_obj=db_instance),
-        },
+        meta=get_rq_job_meta(request=request, db_obj=db_instance),
         result_ttl=ttl, failure_ttl=ttl)
     return Response(status=status.HTTP_202_ACCEPTED)
 
@@ -918,14 +918,24 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
                 storage_id = location_conf['storage_id']
             except KeyError:
                 raise serializers.ValidationError(
-                    'Cloud storage location was selected for destination'
+                    'Cloud storage location was selected as the source,'
                     ' but cloud storage id was not specified')
-            db_storage = get_object_or_404(CloudStorageModel, pk=storage_id)
+
+            db_storage = get_cloud_storage_for_import_or_export(
+                storage_id=storage_id, request=request,
+                is_default=location_conf['is_default'])
+
             key = filename
             fd, filename = mkstemp(prefix='cvat_', dir=settings.TMP_FILES_ROOT)
             dependent_job = configure_dependent_job(
-                queue, rq_id, _download_file_from_bucket,
-                db_storage, filename, key)
+                queue=queue,
+                rq_id=rq_id,
+                rq_func=_download_file_from_bucket,
+                db_storage=db_storage,
+                filename=filename,
+                key=key,
+                request=request,
+            )
 
         rq_job = queue.enqueue_call(
             func=importer,

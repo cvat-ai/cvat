@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -16,12 +17,6 @@ const defaultState: AuthState = {
     showChangePasswordDialog: false,
     allowResetPassword: false,
     hasEmailVerificationBeenSent: false,
-    socialAuthFetching: false,
-    socialAuthInitialized: false,
-    socialAuthMethods: [],
-    ssoIDPSelectFetching: false,
-    ssoIDPSelected: false,
-    ssoIDP: null,
 };
 
 export default function (state = defaultState, action: AuthActions | BoundariesActions): AuthState {
@@ -160,52 +155,6 @@ export default function (state = defaultState, action: AuthActions | BoundariesA
                 allowChangePassword: false,
                 allowResetPassword: false,
             };
-        case AuthActionTypes.LOAD_SOCIAL_AUTHENTICATION: {
-            return {
-                ...state,
-                socialAuthFetching: true,
-                socialAuthInitialized: false,
-            };
-        }
-        case AuthActionTypes.LOAD_SOCIAL_AUTHENTICATION_SUCCESS: {
-            const { methods } = action.payload;
-            return {
-                ...state,
-                socialAuthFetching: false,
-                socialAuthInitialized: true,
-                socialAuthMethods: methods,
-            };
-        }
-        case AuthActionTypes.LOAD_SOCIAL_AUTHENTICATION_FAILED: {
-            return {
-                ...state,
-                socialAuthFetching: false,
-                socialAuthInitialized: true,
-            };
-        }
-        case AuthActionTypes.SELECT_IDENTITY_PROVIDER: {
-            return {
-                ...state,
-                ssoIDPSelectFetching: true,
-                ssoIDPSelected: false,
-            };
-        }
-        case AuthActionTypes.SELECT_IDENTITY_PROVIDER_SUCCESS: {
-            const { identityProviderID } = action.payload;
-            return {
-                ...state,
-                ssoIDPSelectFetching: false,
-                ssoIDPSelected: true,
-                ssoIDP: identityProviderID,
-            };
-        }
-        case AuthActionTypes.SELECT_IDENTITY_PROVIDER_FAILED: {
-            return {
-                ...state,
-                ssoIDPSelectFetching: false,
-                ssoIDPSelected: true,
-            };
-        }
         case BoundariesActionTypes.RESET_AFTER_ERROR: {
             return { ...defaultState };
         }

@@ -23,6 +23,31 @@ def _copy_serializer(
     instance_kwargs.update(kwargs)
     return _new_type(*instance._args, **instance._kwargs)
 
+class _SerializerTransformer:
+    def __init__(self, serializer_instance: serializers.ModelSerializer) -> None:
+        self.serializer_instance = serializer_instance
+
+    def _get_field(
+        self,
+        source_name: str,
+        field_name: str
+    ) -> serializers.ModelField:
+        child_instance = force_instance(self.serializer_instance.fields[source_name].child)
+        assert isinstance(child_instance, serializers.ModelSerializer)
+
+        child_fields = child_instance.fields
+        assert child_fields.keys() == {field_name} # protection from implementation changes
+        return child_fields[field_name]
+
+    @staticmethod
+    def _sanitize_field(field: serializers.ModelField) -> serializers.ModelField:
+        field.source = None
+        field.source_attrs = []
+        return field
+
+    def make_field(self, source_name: str, field_name: str) -> serializers.ModelField:
+        return self._sanitize_field(self._get_field(source_name, field_name))
+
 class DataSerializerExtension(OpenApiSerializerExtension):
     # *FileSerializer mimics a FileField
     # but it is mapped as an object with a file field, which
@@ -43,33 +68,27 @@ class DataSerializerExtension(OpenApiSerializerExtension):
         instance = self.target
         assert isinstance(instance, serializers.ModelSerializer)
 
-        def _get_field(
-            instance: serializers.ModelSerializer,
-            source_name: str,
-            field_name: str
-        ) -> serializers.ModelField:
-            child_instance = force_instance(instance.fields[source_name].child)
-            assert isinstance(child_instance, serializers.ModelSerializer)
-
-            child_fields = child_instance.fields
-            assert child_fields.keys() == {'file'} # protection from implementation changes
-            return child_fields[field_name]
-
-        def _sanitize_field(field: serializers.ModelField) -> serializers.ModelField:
-            field.source = None
-            field.source_attrs = []
-            return field
-
-        def _make_field(source_name: str, field_name: str) -> serializers.ModelField:
-            return _sanitize_field(_get_field(instance, source_name, field_name))
+        serializer_transformer = _SerializerTransformer(instance)
+        source_client_files = instance.fields['client_files']
+        source_server_files = instance.fields['server_files']
+        source_remote_files = instance.fields['remote_files']
 
         class _Override(self.target_class): # pylint: disable=inherit-non-class
             client_files = serializers.ListField(
-                child=_make_field('client_files', 'file'), default=[])
+                child=serializer_transformer.make_field('client_files', 'file'),
+                default=source_client_files.default,
+                help_text=source_client_files.help_text,
+            )
             server_files = serializers.ListField(
-                child=_make_field('server_files', 'file'), default=[])
+                child=serializer_transformer.make_field('server_files', 'file'),
+                default=source_server_files.default,
+                help_text=source_server_files.help_text,
+            )
             remote_files = serializers.ListField(
-                child=_make_field('remote_files', 'file'), default=[])
+                child=serializer_transformer.make_field('remote_files', 'file'),
+                default=source_remote_files.default,
+                help_text=source_remote_files.help_text,
+            )
 
         return auto_schema._map_serializer(
             _copy_serializer(instance, _new_type=_Override, context={'view': auto_schema.view}),
@@ -185,5 +204,28 @@ class PolymorphicProjectSerializerExtension(AnyOfProxySerializerExtension):
     # field here, because these serializers don't have such.
     target_component = 'PolymorphicProject'
 
+class _CloudStorageSerializerExtension(OpenApiSerializerExtension):
+
+    def map_serializer(self, auto_schema, direction):
+        assert issubclass(self.target_class, serializers.ModelSerializer)
+
+        instance = self.target
+        assert isinstance(instance, serializers.ModelSerializer)
+
+        serializer_transformer = _SerializerTransformer(instance)
+
+        class _Override(self.target_class): # pylint: disable=inherit-non-class
+            manifests = serializers.ListField(
+                child=serializer_transformer.make_field('manifests', 'filename'), default=[])
+
+        return auto_schema._map_serializer(
+            _copy_serializer(instance, _new_type=_Override, context={'view': auto_schema.view}),
+            direction, bypass_extensions=False)
+
+class CloudStorageReadSerializerExtension(_CloudStorageSerializerExtension):
+    target_class = 'cvat.apps.engine.serializers.CloudStorageReadSerializer'
+
+class CloudStorageWriteSerializerExtension(_CloudStorageSerializerExtension):
+    target_class = 'cvat.apps.engine.serializers.CloudStorageWriteSerializer'
 
 __all__ = [] # No public symbols here

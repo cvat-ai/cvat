@@ -10,7 +10,7 @@ metadata:
     app: cvat-app
     tier: vector
 {{- if semverCompare ">=1.21-0" .Capabilities.KubeVersion.GitVersion }}
-immutable: true
+immutable: false
 {{- end }}
 data:
 {{ (.Files.Glob "analytics/vector/*.toml").AsConfig | indent 2 }}
