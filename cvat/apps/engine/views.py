@@ -8,6 +8,7 @@ import os
 import os.path as osp
 import pytz
 import traceback
+import textwrap
 from datetime import datetime
 from distutils.util import strtobool
 from tempfile import NamedTemporaryFile
@@ -266,6 +267,14 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         )
 
     @extend_schema(methods=['GET'], summary='Export project as a dataset in a specific format',
+        description=textwrap.dedent("""
+            To check the status of the process of importing a project dataset from a file:
+
+            After initiating the dataset upload, you will receive an rq_id parameter.
+            Make sure to include this parameter as a query parameter in your subsequent
+            GET /api/projects/id/dataset requests to track the status of the dataset import.
+            Also you should specify action parameter: action=import_status.
+        """),
         parameters=[
             OpenApiParameter('format', description='Desired output format name\n'
                 'You can get the list of supported formats at:\n/server/annotation/formats',
@@ -291,7 +300,13 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '202': OpenApiResponse(description='Exporting has been started'),
             '405': OpenApiResponse(description='Format is not available'),
         })
-    @extend_schema(methods=['POST'], summary='Import dataset in specific format as a project',
+    @extend_schema(methods=['POST'],
+        summary='Import dataset in specific format as a project or check status of dataset import process',
+        description=textwrap.dedent("""
+            The request POST /api/projects/id/dataset will initiate file upload and will create
+            the rq job on the server in which the process of dataset import from a file
+            will be carried out. Please, use the GET /api/projects/id/dataset endpoint for checking status of the process.
+        """),
         parameters=[
             OpenApiParameter('format', description='Desired dataset format name\n'
                 'You can get the list of supported formats at:\n/server/annotation/formats',
@@ -489,6 +504,18 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         return self.serialize(request, backup.export)
 
     @extend_schema(methods=['POST'], summary='Methods create a project from a backup',
+        description=textwrap.dedent("""
+            The backup import process is as follows:
+
+            The first request POST /api/projects/backup will initiate file upload and will create
+            the rq job on the server in which the process of a project creating from an uploaded backup
+            will be carried out.
+
+            After initiating the backup upload, you will receive an rq_id parameter.
+            Make sure to include this parameter as a query parameter in your subsequent requests
+            to track the status of the project creation.
+            Once the project has been successfully created, the server will return the id of the newly created project.
+        """),
         parameters=[
             OpenApiParameter('location', description='Where to import the backup file from',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
@@ -496,6 +523,8 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             OpenApiParameter('cloud_storage_id', description='Storage id',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.NUMBER, required=False),
             OpenApiParameter('filename', description='Backup file name',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
+            OpenApiParameter('rq_id', description='rq id',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
         ],
         request=PolymorphicProxySerializer('BackupWrite',
@@ -724,6 +753,18 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         return queryset
 
     @extend_schema(summary='Method recreates a task from an attached task backup file',
+        description=textwrap.dedent("""
+            The backup import process is as follows:
+
+            The first request POST /api/tasks/backup will initiate file upload and will create
+            the rq job on the server in which the process of a task creating from an uploaded backup
+            will be carried out.
+
+            After initiating the backup upload, you will receive an rq_id parameter.
+            Make sure to include this parameter as a query parameter in your subsequent requests
+            to track the status of the task creation.
+            Once the task has been successfully created, the server will return the id of the newly created task.
+        """),
         parameters=[
             OpenApiParameter('location', description='Where to import the backup file from',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
@@ -731,6 +772,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             OpenApiParameter('cloud_storage_id', description='Storage id',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.NUMBER, required=False),
             OpenApiParameter('filename', description='Backup file name',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
+            OpenApiParameter('rq_id', description='rq id',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
         ],
         request=TaskFileSerializer(required=False),
@@ -971,7 +1014,14 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '400': OpenApiResponse(description='Exporting without data is not allowed'),
             '405': OpenApiResponse(description='Format is not available'),
         })
-    @extend_schema(methods=['PUT'], summary='Method allows to upload task annotations',
+    @extend_schema(methods=['PUT'], summary='Method allows to upload task annotations or edit existing annotations',
+        description=textwrap.dedent("""
+            To check the status of the process of uploading a task annotations from a file:
+
+            After initiating the annotations upload, you will receive an rq_id parameter.
+            Make sure to include this parameter as a query parameter in your subsequent
+            PUT /api/tasks/id/annotations requests to track the status of the annotations upload.
+        """),
         parameters=[
             OpenApiParameter('format', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
                 description='Input format name\nYou can get the list of supported formats at:\n/server/annotation/formats'),
@@ -989,6 +1039,11 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         })
     @extend_schema(methods=['POST'],
         summary="Method allows to initialize the  process of upload task annotations from a local or a cloud storage file",
+        description=textwrap.dedent("""
+            The request POST /api/tasks/id/annotations will initiate file upload and will create
+            the rq job on the server in which the process of annotations uploading from file
+            will be carried out. Please, use the PUT /api/tasks/id/annotations endpoint for checking status of the process.
+        """),
         parameters=[
             OpenApiParameter('format', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
                 description='Input format name\nYou can get the list of supported formats at:\n/server/annotation/formats'),
@@ -1365,6 +1420,11 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         })
     @extend_schema(methods=['POST'],
         summary='Method allows to initialize the process of the job annotation upload from a local file or a cloud storage',
+        description=textwrap.dedent("""
+            The request POST /api/jobs/id/annotations will initiate file upload and will create
+            the rq job on the server in which the process of annotations uploading from file
+            will be carried out. Please, use the PUT /api/jobs/id/annotations endpoint for checking status of the process.
+        """),
         parameters=[
             OpenApiParameter('format', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
                 description='Input format name\nYou can get the list of supported formats at:\n/server/annotation/formats'),
@@ -1385,7 +1445,16 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '202': OpenApiResponse(RqIdSerializer, description='Uploading has been started'),
             '405': OpenApiResponse(description='Format is not available'),
         })
-    @extend_schema(methods=['PUT'], summary='Method performs an update of all annotations in a specific job',
+    @extend_schema(methods=['PUT'],
+                   summary='Method performs an update of all annotations in a specific job '
+                            'or used for uploading annotations from a file',
+        description=textwrap.dedent("""
+            To check the status of the process of uploading a job annotations from a file:
+
+            After initiating the annotations upload, you will receive an rq_id parameter.
+            Make sure to include this parameter as a query parameter in your subsequent
+            PUT /api/jobs/id/annotations requests to track the status of the annotations upload.
+        """),
         parameters=[
             OpenApiParameter('format', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
                 description='Input format name\nYou can get the list of supported formats at:\n/server/annotation/formats'),
@@ -2265,7 +2334,8 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
                 serializer = AnnotationFileSerializer(data=request.data)
                 if serializer.is_valid(raise_exception=True):
                     anno_file = serializer.validated_data['annotation_file']
-                    filename = NamedTemporaryFile(prefix='cvat_{}'.format(db_obj.pk), dir=settings.TMP_FILES_ROOT, delete=False).name
+                    with NamedTemporaryFile(prefix='cvat_{}'.format(db_obj.pk), dir=settings.TMP_FILES_ROOT, delete=False) as f:
+                        filename = f.name
                     with open(filename, 'wb+') as f:
                         for chunk in anno_file.chunks():
                             f.write(chunk)
@@ -2283,7 +2353,8 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
                     is_default=location_conf['is_default'])
 
                 key = filename
-                filename = NamedTemporaryFile(prefix='cvat_{}'.format(db_obj.pk), dir=settings.TMP_FILES_ROOT, delete=False).name
+                with NamedTemporaryFile(prefix='cvat_{}'.format(db_obj.pk), dir=settings.TMP_FILES_ROOT, delete=False) as f:
+                    filename = f.name
                 dependent_job = configure_dependent_job(
                     queue=queue,
                     rq_id=rq_id,
@@ -2292,8 +2363,8 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
                     filename=filename,
                     key=key,
                     request=request,
-                    result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL,
-                    failure_ttl=settings.IMPORT_CACHE_FAILED_TTL
+                    result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
+                    failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
                 )
 
         av_scan_paths(filename)
@@ -2306,8 +2377,8 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
             job_id=rq_id,
             depends_on=dependent_job,
             meta={**meta, **get_rq_job_meta(request=request, db_obj=db_obj)},
-            result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL,
-            failure_ttl=settings.IMPORT_CACHE_FAILED_TTL
+            result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
+            failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
         )
         serializer = RqIdSerializer(data={'rq_id': rq_id})
         serializer.is_valid(raise_exception=True)
@@ -2461,8 +2532,8 @@ def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_nam
             serializer = DatasetFileSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
                 dataset_file = serializer.validated_data['dataset_file']
-                filename = NamedTemporaryFile(prefix='cvat_{}'.format(db_obj.pk), dir=settings.TMP_FILES_ROOT, delete=False).name
-                with open(filename, 'wb+') as f:
+                with NamedTemporaryFile(prefix='cvat_{}'.format(db_obj.pk), dir=settings.TMP_FILES_ROOT, delete=False) as f:
+                    filename = f.name
                     for chunk in dataset_file.chunks():
                         f.write(chunk)
         elif location == Location.CLOUD_STORAGE:
@@ -2478,7 +2549,8 @@ def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_nam
                 is_default=location_conf['is_default'])
 
             key = filename
-            filename = NamedTemporaryFile(prefix='cvat_{}'.format(db_obj.pk), dir=settings.TMP_FILES_ROOT, delete=False).name
+            with NamedTemporaryFile(prefix='cvat_{}'.format(db_obj.pk), dir=settings.TMP_FILES_ROOT, delete=False) as f:
+                filename = f.name
             dependent_job = configure_dependent_job(
                 queue=queue,
                 rq_id=rq_id,
@@ -2487,8 +2559,8 @@ def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_nam
                 filename=filename,
                 key=key,
                 request=request,
-                result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL,
-                failure_ttl=settings.IMPORT_CACHE_FAILED_TTL
+                result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
+                failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
             )
 
         rq_job = queue.enqueue_call(
@@ -2500,8 +2572,8 @@ def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_nam
                 **get_rq_job_meta(request=request, db_obj=db_obj),
             },
             depends_on=dependent_job,
-            result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL,
-            failure_ttl=settings.IMPORT_CACHE_FAILED_TTL
+            result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
+            failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
         )
     else:
         return Response(status=status.HTTP_409_CONFLICT, data='Import job already exists')

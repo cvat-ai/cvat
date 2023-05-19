@@ -939,8 +939,8 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
                 filename=filename,
                 key=key,
                 request=request,
-                result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL,
-                failure_ttl=settings.IMPORT_CACHE_FAILED_TTL
+                result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
+                failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
             )
 
         rq_job = queue.enqueue_call(
@@ -952,8 +952,8 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
                 **get_rq_job_meta(request=request, db_obj=None)
             },
             depends_on=dependent_job,
-            result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL,
-            failure_ttl=settings.IMPORT_CACHE_FAILED_TTL
+            result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
+            failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
         )
     else:
         if rq_job.is_finished:

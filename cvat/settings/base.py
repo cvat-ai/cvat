@@ -668,6 +668,6 @@ DATABASES = {
     }
 }
 
-IMPORT_CACHE_FAILED_TTL = timedelta(days=90).total_seconds()
-IMPORT_CACHE_SUCCESS_TTL = timedelta(hours=1).total_seconds()
+IMPORT_CACHE_FAILED_TTL = timedelta(days=90)
+IMPORT_CACHE_SUCCESS_TTL = timedelta(hours=1)
 RUN_CLEAN_IMPORT_CACHE_FUNC_AFTER = timedelta(hours=2)
