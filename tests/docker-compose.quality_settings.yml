@@ -1,0 +1,7 @@
+services:
+  cvat_server:
+    environment:
+      # Avoid quality updates during test runs.
+      # Note that DB initialization triggers server signals,
+      # so quality report updates are scheduled for applicable jobs.
+      CVAT_QUALITY_CHECK_JOB_DELAY: 10000

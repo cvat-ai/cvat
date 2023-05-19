@@ -29,7 +29,7 @@ from cvat.apps.iam.permissions import AnnotationConflictPermission, QualityRepor
 from cvat.apps.profiler import silk_profile
 
 
-@extend_schema(tags=['conflicts'])
+@extend_schema(tags=["quality"])
 @extend_schema_view(
     list=extend_schema(
         summary='Method returns a paginated list of annotation conflicts',
@@ -51,7 +51,9 @@ class ConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
     iam_organization_field = None
 
     search_fields = []
-    filter_fields = list(search_fields) + ['id', 'report_id', 'frame', 'type', 'job_id']
+    filter_fields = list(search_fields) + [
+        'id', 'report_id', 'frame', 'type', 'job_id', 'importance'
+    ]
     simple_filters = set(filter_fields) - {'id'}
     lookup_fields = {
         'report_id': 'report__id',
@@ -80,7 +82,7 @@ class ConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
         return queryset
 
 
-@extend_schema(tags=['reports'])
+@extend_schema(tags=["quality"])
 @extend_schema_view(
     retrieve=extend_schema(
         summary='Method returns details of a quality report',
@@ -160,6 +162,10 @@ class QualityReportViewSet(viewsets.GenericViewSet,
 
         return queryset
 
+    @extend_schema(
+        operation_id="quality_retrieve_report_data",
+        summary="Retrieve full contents of the report in JSON format",
+    )
     @action(detail=True, methods=['GET'], url_path='data', serializer_class=None)
     def data(self, request, pk):
         report = self.get_object() # check permissions
@@ -177,7 +183,7 @@ class QualityReportViewSet(viewsets.GenericViewSet,
         return HttpResponse({})
 
 
-@extend_schema(tags=['settings'])
+@extend_schema(tags=["quality"])
 @extend_schema_view(
     retrieve=extend_schema(
         summary='Method returns details of a quality settings',

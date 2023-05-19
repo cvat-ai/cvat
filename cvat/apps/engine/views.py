@@ -18,7 +18,7 @@ import django_rq
 from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.http import HttpResponse, HttpResponseNotFound, HttpResponseBadRequest
 from django.utils import timezone
 from django.db.models import Count, Q
@@ -260,11 +260,15 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             queryset = perm.filter(queryset)
         return queryset
 
+    @transaction.atomic
     def perform_create(self, serializer, **kwargs):
         serializer.save(
             owner=self.request.user,
             organization=self.request.iam_context['organization']
         )
+
+        # Required for the extra summary information added in the queryset
+        serializer.instance = self.get_queryset().get(pk=serializer.instance.pk)
 
     @extend_schema(methods=['GET'], summary='Export project as a dataset in a specific format',
         parameters=[
@@ -761,6 +765,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def export_backup(self, request, pk=None):
         return self.serialize(request, backup.export)
 
+    @transaction.atomic
     def perform_update(self, serializer):
         instance = serializer.instance
 
@@ -773,15 +778,20 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         if updated_instance.project:
             updated_instance.project.save()
 
+    @transaction.atomic
     def perform_create(self, serializer, **kwargs):
         serializer.save(
             owner=self.request.user,
             organization=self.request.iam_context['organization']
         )
+
         if serializer.instance.project:
             db_project = serializer.instance.project
             db_project.save()
             assert serializer.instance.organization == db_project.organization
+
+        # Required for the extra summary information added in the queryset
+        serializer.instance = self.get_queryset().get(pk=serializer.instance.pk)
 
     # UploadMixin method
     def get_upload_dir(self):
@@ -1302,6 +1312,13 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             return JobReadSerializer
         else:
             return JobWriteSerializer
+
+    @transaction.atomic
+    def perform_create(self, serializer):
+        super().perform_create(serializer)
+
+        # Required for the extra summary information added in the queryset
+        serializer.instance = self.get_queryset().get(pk=serializer.instance.pk)
 
     def perform_destroy(self, instance):
         if instance.type != JobType.GROUND_TRUTH:
