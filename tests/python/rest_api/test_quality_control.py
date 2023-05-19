@@ -7,6 +7,7 @@ from http import HTTPStatus
 from typing import Any, Dict, List, Optional, Tuple
 
 import pytest
+from cvat_sdk.api_client import models
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
@@ -16,6 +17,7 @@ from shared.utils.config import make_api_client
 from .utils import CollectionSimpleFilterTestBase
 
 
+@pytest.mark.usefixtures("restore_db_per_class")
 class TestListQualityReports:
     def _test_list_200(self, user, task_id, data, **kwargs):
         with make_api_client(user) as api_client:
@@ -34,6 +36,7 @@ class TestListQualityReports:
         self._test_list_200(admin_user, task_id, reports)
 
 
+@pytest.mark.usefixtures("restore_db_per_class")
 class TestGetQualityReports:
     @pytest.mark.parametrize("target", ["task", "job"])
     def test_can_get_full_report_data(self, admin_user, target, quality_reports):
@@ -47,6 +50,32 @@ class TestGetQualityReports:
         # Just check several keys exist
         for key in ["parameters", "comparison_summary", "frame_results"]:
             assert key in report_data.keys(), key
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+class TestPostQualityReports:
+    def test_can_create_report(self, admin_user, jobs):
+        gt_job = next(j for j in jobs if j["type"] == "ground_truth")
+        task_id = gt_job["task_id"]
+
+        with make_api_client(admin_user) as api_client:
+            (_, response) = api_client.quality_api.create_report(
+                quality_report_create_request=models.QualityReportCreateRequest(task_id=task_id),
+                _parse_response=False
+            )
+            assert response.status == HTTPStatus.ACCEPTED
+            rq_id = response.data.decode()
+
+            while True:
+                (_, response) = api_client.quality_api.create_report(
+                    rq_id=rq_id, _parse_response=False
+                )
+                assert response.status in [HTTPStatus.CREATED, HTTPStatus.ACCEPTED]
+
+                if response.status == HTTPStatus.CREATED:
+                    break
+
+            assert models.QualityReport._from_openapi_data(**json.loads(response.data))
 
 
 class TestSimpleQualityReportsFilters(CollectionSimpleFilterTestBase):
@@ -113,6 +142,7 @@ class TestSimpleQualityConflictsFilters(CollectionSimpleFilterTestBase):
         return super().test_can_use_simple_filter_for_object_list(field)
 
 
+@pytest.mark.usefixtures("restore_db_per_class")
 class TestGetSettings:
     def _test_get_settings_200(
         self, user: str, obj_id: int, *, expected_data: Optional[Dict[str, Any]] = None, **kwargs

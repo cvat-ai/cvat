@@ -214,7 +214,7 @@ class QualityReportViewSet(viewsets.GenericViewSet,
                 rq_id = qc.QualityReportUpdateManager().schedule_quality_check_job(
                     task, user_id=request.user.id
                 )
-                return Response(rq_id, status=status.HTTP_202_ACCEPTED)
+                return HttpResponse(rq_id, status=status.HTTP_202_ACCEPTED)
             except qc.QualityReportUpdateManager.QualityReportsNotAvailable as ex:
                 raise ValidationError(str(ex))
 
