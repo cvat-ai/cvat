@@ -1523,6 +1523,7 @@ def test_can_report_correct_completed_jobs_count(tasks, jobs, admin_user):
         assert task.jobs.completed == 1
 
 
+@pytest.mark.usefixtures("restore_cvat_data")
 class TestImportTaskAnnotations:
     def _make_client(self) -> Client:
         return Client(BASE_URL, config=Config(status_check_period=0.01))
@@ -1549,8 +1550,8 @@ class TestImportTaskAnnotations:
             (_, response) = api_client.tasks_api.destroy_annotations(id=task_id)
             assert response.status == HTTPStatus.NO_CONTENT
 
-    @pytest.mark.parametrize("task_id", [20])
-    def test_can_import_annotations_after_previous_unclear_import(self, task_id):
+    def test_can_import_annotations_after_previous_unclear_import(self, tasks_with_shapes):
+        task_id = tasks_with_shapes[0]["id"]
         self._check_annotations(task_id)
 
         filename = self.tmp_dir / f"task_{task_id}_coco.zip"
@@ -1582,3 +1583,31 @@ class TestImportTaskAnnotations:
         self._delete_annotations(task_id)
         task.import_annotations(self.format, filename)
         self._check_annotations(task_id)
+
+    @pytest.mark.timeout(40)
+    def test_can_import_annotations_after_previous_interrupted_upload(self, tasks_with_shapes):
+        task_id = tasks_with_shapes[0]["id"]
+        self._check_annotations(task_id)
+
+        filename = self.tmp_dir / f"task_{task_id}_coco.zip"
+        task = self.client.tasks.retrieve(task_id)
+        task.export_dataset(self.format, filename, include_images=False)
+        self._delete_annotations(task_id)
+
+        params = {"format": self.format, "filename": filename.name}
+        url = self.client.api_map.make_endpoint_url(
+            self.client.api_client.tasks_api.create_annotations_endpoint.path
+        ).format(id=task_id)
+
+        uploader = Uploader(self.client)
+        uploader._tus_start_upload(url, query_params=params)
+        uploader._upload_file_data_with_tus(
+            url, filename, meta=params, logger=self.client.logger.debug
+        )
+        sleep(30)
+        assert not int(
+            subprocess.check_output(
+                f'docker exec -it test_cvat_server_1 bash -c "ls data/tasks/{task_id}/tmp | wc -l"',
+                shell=True,
+            )
+        )

@@ -295,6 +295,7 @@ class CVAT_QUEUES(Enum):
     AUTO_ANNOTATION = 'annotation'
     WEBHOOKS = 'webhooks'
     NOTIFICATIONS = 'notifications'
+    CLEANING = 'cleaning'
 
 RQ_QUEUES = {
     CVAT_QUEUES.IMPORT_DATA.value: {
@@ -322,6 +323,12 @@ RQ_QUEUES = {
         'DEFAULT_TIMEOUT': '1h'
     },
     CVAT_QUEUES.NOTIFICATIONS.value: {
+        'HOST': 'localhost',
+        'PORT': 6379,
+        'DB': 0,
+        'DEFAULT_TIMEOUT': '1h'
+    },
+    CVAT_QUEUES.CLEANING.value: {
         'HOST': 'localhost',
         'PORT': 6379,
         'DB': 0,
@@ -663,3 +670,4 @@ DATABASES = {
 
 IMPORT_CACHE_FAILED_TTL = timedelta(days=90).total_seconds()
 IMPORT_CACHE_SUCCESS_TTL = timedelta(hours=1).total_seconds()
+RUN_CLEAN_IMPORT_CACHE_FUNC_AFTER = timedelta(hours=2)

@@ -7,19 +7,22 @@ import base64
 import json
 import os
 import uuid
-import django_rq
 from dataclasses import asdict, dataclass
 from distutils.util import strtobool
+from pathlib import Path
+from tempfile import NamedTemporaryFile
 from unittest import mock
 
+import django_rq
 from django.conf import settings
 from rest_framework import mixins, status
 from rest_framework.response import Response
-from tempfile import NamedTemporaryFile
 
 from cvat.apps.engine.location import StorageType, get_location_configuration
+from cvat.apps.engine.log import slogger
 from cvat.apps.engine.models import Location
 from cvat.apps.engine.serializers import DataSerializer
+from cvat.apps.engine.handlers import clear_import_cache
 from cvat.apps.engine.utils import get_import_rq_id
 
 
@@ -229,7 +232,7 @@ class UploadMixin:
                 # we need to create unique temp file here because
                 # users can try to import backups with the same name at the same time
                 with NamedTemporaryFile(prefix=f'cvat-backup-{filename}-by-{request.user}', suffix='.zip', dir=self.get_upload_dir()) as tmp_file:
-                    filename = tmp_file.name
+                    filename = os.path.relpath(tmp_file.name, self.get_upload_dir())
                 metadata['filename'] = filename
             file_path = os.path.join(self.get_upload_dir(), filename)
             file_exists = os.path.lexists(file_path) and import_type != 'backup'
@@ -260,6 +263,21 @@ class UploadMixin:
             location = request.build_absolute_uri()
             if 'HTTP_X_FORWARDED_HOST' not in request.META:
                 location = request.META.get('HTTP_ORIGIN') + request.META.get('PATH_INFO')
+
+            if import_type in ('backup', 'annotations', 'datasets'):
+                scheduler = django_rq.get_scheduler(settings.CVAT_QUEUES.CLEANING.value)
+                path = Path(self.get_upload_dir()) / tus_file.filename
+                cleaning_job = scheduler.enqueue_in(time_delta=settings.RUN_CLEAN_IMPORT_CACHE_FUNC_AFTER,
+                    func=clear_import_cache,
+                    path=path,
+                    creation_time=Path(tus_file.file_path).stat().st_atime
+                )
+                slogger.glob.info(
+                    f'The cleaning job {cleaning_job.id} is queued.'
+                    f'The check that the file {path} is deleted will be carried out after '
+                    f'{settings.RUN_CLEAN_IMPORT_CACHE_FUNC_AFTER}.'
+                )
+
             return self._tus_response(
                 status=status.HTTP_201_CREATED,
                 extra_headers={'Location': '{}{}'.format(location, tus_file.file_id),
