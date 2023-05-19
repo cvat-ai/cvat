@@ -456,7 +456,7 @@ class TrackManager(ObjectManager):
             if track.get("elements"):
                 track_elements = TrackManager(track["elements"], self._dimension)
                 element_shapes = track_elements.to_shapes(end_frame,
-                    included_frames=set(track_shapes.keys()) & (included_frames or []),
+                    included_frames=set(track_shapes.keys()).intersection(included_frames or []),
                     include_outside=True, # elements are controlled by the parent shape
                     use_server_track_ids=use_server_track_ids
                 )
