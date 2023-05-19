@@ -285,7 +285,7 @@ class AnnotationUploader(Uploader):
 
         rq_id = json.loads(response.data).get("rq_id")
         assert rq_id, "The rq_id was not found in the response"
-        params['rq_id'] = rq_id
+        params["rq_id"] = rq_id
 
         self._wait_for_completion(
             url,
