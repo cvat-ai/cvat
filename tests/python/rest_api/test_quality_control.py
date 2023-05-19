@@ -27,11 +27,14 @@ class TestListQualityReports:
                 task_id=task_id,
                 **kwargs,
             )
-            assert DeepDiff(data, results, ignore_order=True) == {}
+            assert DeepDiff(data, results) == {}
 
-    def test_can_list_quality_reports(self, admin_user, tasks, quality_reports):
-        task_id = next(t for t in tasks if t["quality_reports"]["count"] > 0)["id"]
-        reports = [r for r in quality_reports if r["target"] == "task" and r["task_id"] == task_id]
+    def test_can_list_quality_reports(self, admin_user, quality_reports):
+        parent_report = next(r for r in quality_reports if r["task_id"])
+        task_id = parent_report["task_id"]
+        reports = [parent_report] + [
+            r for r in quality_reports if r["parent_id"] == parent_report["id"]
+        ]
 
         self._test_list_200(admin_user, task_id, reports)
 
