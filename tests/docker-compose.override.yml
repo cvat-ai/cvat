@@ -1,0 +1,8 @@
+services:
+  cvat_server:
+    environment:
+      DJANGO_SETTINGS_MODULE: cvat.settings.rest-api-testing
+
+  cvat_worker_cleaning:
+    environment:
+      DJANGO_SETTINGS_MODULE: cvat.settings.rest-api-testing
