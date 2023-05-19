@@ -14,7 +14,15 @@
     }
 }
 
+.cvat-task-quality-page {
+    >.ant-row {
+        margin-top: $grid-unit-size;
+    }
+}
+
 .cvat-task-quality-page-empty {
+    @extend .cvat-task-quality-page;
+
     display: flex;
     justify-content: center;
     align-items: center;
@@ -91,4 +99,8 @@
     }
 
     margin-bottom: $grid-unit-size;
+}
+
+.cvat-task-quality-reports-hint {
+    margin-bottom: $grid-unit-size * 3;
 }
