@@ -165,6 +165,9 @@ class QualityReportViewSet(viewsets.GenericViewSet,
     @extend_schema(
         operation_id="quality_retrieve_report_data",
         summary="Retrieve full contents of the report in JSON format",
+        responses={
+            '200': OpenApiTypes.OBJECT
+        }
     )
     @action(detail=True, methods=['GET'], url_path='data', serializer_class=None)
     def data(self, request, pk):

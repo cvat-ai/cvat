@@ -4434,7 +4434,8 @@ paths:
           content:
             application/vnd.cvat+json:
               schema:
-                $ref: '#/components/schemas/QualityReport'
+                type: object
+                additionalProperties: {}
           description: ''
   /api/quality/reports/debug:
     get:

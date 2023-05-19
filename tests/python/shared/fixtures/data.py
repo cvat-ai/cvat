@@ -127,7 +127,7 @@ def quality_conflicts():
 @pytest.fixture(scope="session")
 def quality_settings():
     with open(ASSETS_DIR / "quality_settings.json") as f:
-        return json.load(f)["results"]
+        return {int(k): v for k, v in json.load(f).items()}
 
 
 @pytest.fixture(scope="session")
