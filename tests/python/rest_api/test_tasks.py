@@ -13,7 +13,7 @@ from http import HTTPStatus
 from itertools import chain, product
 from math import ceil
 from pathlib import Path
-from tempfile import TemporaryDirectory
+from tempfile import TemporaryDirectory, NamedTemporaryFile
 from time import sleep, time
 from typing import List
 
@@ -1523,7 +1523,6 @@ def test_can_report_correct_completed_jobs_count(tasks, jobs, admin_user):
         assert task.jobs.completed == 1
 
 
-@pytest.mark.usefixtures("restore_cvat_data")
 class TestImportTaskAnnotations:
     def _make_client(self) -> Client:
         return Client(BASE_URL, config=Config(status_check_period=0.01))
@@ -1550,20 +1549,20 @@ class TestImportTaskAnnotations:
             (_, response) = api_client.tasks_api.destroy_annotations(id=task_id)
             assert response.status == HTTPStatus.NO_CONTENT
 
-    def test_can_import_annotations_after_previous_unclear_import(self, tasks_with_shapes):
+    @pytest.mark.timeout(50)
+    @pytest.mark.parametrize("successful_upload", [True, False])
+    def test_can_import_annotations_after_previous_unclear_import(
+        self, successful_upload: bool, tasks_with_shapes
+    ):
         task_id = tasks_with_shapes[0]["id"]
         self._check_annotations(task_id)
 
-        filename = self.tmp_dir / f"task_{task_id}_coco.zip"
+        with NamedTemporaryFile() as f:
+            filename = self.tmp_dir / f"task_{task_id}_{Path(f.name).name}_coco.zip"
+
         task = self.client.tasks.retrieve(task_id)
         task.export_dataset(self.format, filename, include_images=False)
 
-        self._delete_annotations(task_id)
-
-        # define time required to upload file with annotations
-        start_time = time()
-        task.import_annotations(self.format, filename)
-        required_time = ceil(time() - start_time) * 2
         self._delete_annotations(task_id)
 
         params = {"format": self.format, "filename": filename.name}
@@ -1572,27 +1571,40 @@ class TestImportTaskAnnotations:
         ).format(id=task_id)
         uploader = Uploader(self.client)
 
-        response = uploader.upload_file(
-            url, filename, meta=params, query_params=params, logger=self.client.logger.debug
-        )
+        if successful_upload:
+            # define time required to upload file with annotations
+            start_time = time()
+            task.import_annotations(self.format, filename)
+            required_time = ceil(time() - start_time) * 2
+            self._delete_annotations(task_id)
 
-        rq_id = json.loads(response.data)["rq_id"]
-        assert rq_id
+            response = uploader.upload_file(
+                url, filename, meta=params, query_params=params, logger=self.client.logger.debug
+            )
+            rq_id = json.loads(response.data)["rq_id"]
+            assert rq_id
+        else:
+            required_time = 40
+            uploader._tus_start_upload(url, query_params=params)
+            uploader._upload_file_data_with_tus(
+                url, filename, meta=params, logger=self.client.logger.debug
+            )
+
         sleep(required_time)
-        self._check_annotations(task_id)
-        self._delete_annotations(task_id)
+        if successful_upload:
+            self._check_annotations(task_id)
+            self._delete_annotations(task_id)
         task.import_annotations(self.format, filename)
         self._check_annotations(task_id)
 
-    @pytest.mark.timeout(45)
-    def test_can_import_annotations_after_previous_interrupted_upload(self, tasks_with_shapes):
+    @pytest.mark.only_docker_test
+    @pytest.mark.timeout(50)
+    def test_check_import_cache_after_previous_interrupted_upload(self, tasks_with_shapes):
         task_id = tasks_with_shapes[0]["id"]
-        self._check_annotations(task_id)
-
-        filename = self.tmp_dir / f"task_{task_id}_coco.zip"
+        with NamedTemporaryFile() as f:
+            filename = self.tmp_dir / f"task_{task_id}_{Path(f.name).name}_coco.zip"
         task = self.client.tasks.retrieve(task_id)
         task.export_dataset(self.format, filename, include_images=False)
-        self._delete_annotations(task_id)
 
         params = {"format": self.format, "filename": filename.name}
         url = self.client.api_map.make_endpoint_url(
@@ -1604,10 +1616,15 @@ class TestImportTaskAnnotations:
         uploader._upload_file_data_with_tus(
             url, filename, meta=params, logger=self.client.logger.debug
         )
-        sleep(35)
-        assert not int(
-            subprocess.check_output(
+        sleep(40)
+        try:
+            result = subprocess.check_output(
                 f'docker exec -it test_cvat_server_1 bash -c "ls data/tasks/{task_id}/tmp | wc -l"',
                 shell=True,
+                stderr=subprocess.STDOUT,
             )
-        )
+            assert not int(result)
+        except subprocess.CalledProcessError as ex:
+            raise RuntimeError(
+                f"command '{ex.cmd}' returns with error (code {ex.returncode}): {ex.output}"
+            )
