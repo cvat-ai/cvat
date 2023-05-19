@@ -2018,6 +2018,11 @@ paths:
           description: Format is not available
     post:
       operationId: jobs_create_annotations
+      description: |2
+
+        The request POST /api/jobs/id/annotations will initiate file upload and will create
+        the rq job on the server in which the process of annotations uploading from file
+        will be carried out. Please, use the PUT /api/jobs/id/annotations endpoint for checking status of the process.
       summary: Method allows to initialize the process of the job annotation upload
         from a local file or a cloud storage
       parameters:
@@ -2103,7 +2108,15 @@ paths:
           description: Format is not available
     put:
       operationId: jobs_update_annotations
-      summary: Method performs an update of all annotations in a specific job
+      description: |2
+
+        To check the status of the process of uploading a job annotations from a file:
+
+        After initiating the annotations upload, you will receive an rq_id parameter.
+        Make sure to include this parameter as a query parameter in your subsequent
+        PUT /api/jobs/id/annotations requests to track the status of the annotations upload.
+      summary: Method performs an update of all annotations in a specific job or used
+        for uploading annotations from a file
       parameters:
       - in: header
         name: X-Organization
@@ -3824,6 +3837,14 @@ paths:
   /api/projects/{id}/dataset/:
     get:
       operationId: projects_retrieve_dataset
+      description: |2
+
+        To check the status of the process of importing a project dataset from a file:
+
+        After initiating the dataset upload, you will receive an rq_id parameter.
+        Make sure to include this parameter as a query parameter in your subsequent
+        GET /api/projects/id/dataset requests to track the status of the dataset import.
+        Also you should specify action parameter: action=import_status.
       summary: Export project as a dataset in a specific format
       parameters:
       - in: header
@@ -3916,7 +3937,13 @@ paths:
           description: Format is not available
     post:
       operationId: projects_create_dataset
-      summary: Import dataset in specific format as a project
+      description: |2
+
+        The request POST /api/projects/id/dataset will initiate file upload and will create
+        the rq job on the server in which the process of dataset import from a file
+        will be carried out. Please, use the GET /api/projects/id/dataset endpoint for checking status of the process.
+      summary: Import dataset in specific format as a project or check status of dataset
+        import process
       parameters:
       - in: header
         name: X-Organization
@@ -4039,6 +4066,18 @@ paths:
   /api/projects/backup/:
     post:
       operationId: projects_create_backup
+      description: |2
+
+        The backup import process is as follows:
+
+        The first request POST /api/projects/backup will initiate file upload and will create
+        the rq job on the server in which the process of a project creating from an uploaded backup
+        will be carried out.
+
+        After initiating the backup upload, you will receive an rq_id parameter.
+        Make sure to include this parameter as a query parameter in your subsequent requests
+        to track the status of the project creation.
+        Once the project has been successfully created, the server will return the id of the newly created project.
       summary: Methods create a project from a backup
       parameters:
       - in: header
@@ -4074,6 +4113,11 @@ paths:
         schema:
           type: integer
         description: Organization identifier
+      - in: query
+        name: rq_id
+        schema:
+          type: string
+        description: rq id
       tags:
       - projects
       requestBody:
@@ -4779,6 +4823,11 @@ paths:
           description: Format is not available
     post:
       operationId: tasks_create_annotations
+      description: |2
+
+        The request POST /api/tasks/id/annotations will initiate file upload and will create
+        the rq job on the server in which the process of annotations uploading from file
+        will be carried out. Please, use the PUT /api/tasks/id/annotations endpoint for checking status of the process.
       summary: Method allows to initialize the  process of upload task annotations
         from a local or a cloud storage file
       parameters:
@@ -4863,7 +4912,14 @@ paths:
           description: Format is not available
     put:
       operationId: tasks_update_annotations
-      summary: Method allows to upload task annotations
+      description: |2
+
+        To check the status of the process of uploading a task annotations from a file:
+
+        After initiating the annotations upload, you will receive an rq_id parameter.
+        Make sure to include this parameter as a query parameter in your subsequent
+        PUT /api/tasks/id/annotations requests to track the status of the annotations upload.
+      summary: Method allows to upload task annotations or edit existing annotations
       parameters:
       - in: header
         name: X-Organization
@@ -5462,6 +5518,18 @@ paths:
   /api/tasks/backup/:
     post:
       operationId: tasks_create_backup
+      description: |2
+
+        The backup import process is as follows:
+
+        The first request POST /api/tasks/backup will initiate file upload and will create
+        the rq job on the server in which the process of a task creating from an uploaded backup
+        will be carried out.
+
+        After initiating the backup upload, you will receive an rq_id parameter.
+        Make sure to include this parameter as a query parameter in your subsequent requests
+        to track the status of the task creation.
+        Once the task has been successfully created, the server will return the id of the newly created task.
       summary: Method recreates a task from an attached task backup file
       parameters:
       - in: header
@@ -5497,6 +5565,11 @@ paths:
         schema:
           type: integer
         description: Organization identifier
+      - in: query
+        name: rq_id
+        schema:
+          type: string
+        description: rq id
       tags:
       - tasks
       requestBody:
