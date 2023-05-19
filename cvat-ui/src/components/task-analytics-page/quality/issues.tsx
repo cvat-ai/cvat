@@ -9,7 +9,7 @@ import Text from 'antd/lib/typography/Text';
 import { Task } from 'cvat-core-wrapper';
 import notification from 'antd/lib/notification';
 import AnalyticsCard from './analytics-card';
-import { percent } from './common';
+import { percent, clampValue } from './common';
 
 interface Props {
     task: Task;
@@ -41,8 +41,8 @@ function Issues(props: Props): JSX.Element {
             <Text type='secondary'>
                 Resolved:
                 {' '}
-                {resolvedIssues}
-                {` (${percent(resolvedIssues, issuesCount)}%)`}
+                {clampValue(resolvedIssues)}
+                {` (${percent(resolvedIssues, issuesCount)})`}
             </Text>
         </>
     );

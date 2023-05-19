@@ -10,13 +10,11 @@ import { QualityReport, Task } from 'cvat-core-wrapper';
 import { useSelector } from 'react-redux';
 import { CombinedState } from 'reducers';
 import AnalyticsCard from './analytics-card';
-import { percent } from './common';
+import { percent, clampValue } from './common';
 
 interface Props {
     task: Task;
 }
-
-const THRESHOLD = 5000;
 
 function GTConflicts(props: Props): JSX.Element {
     const { task } = props;
@@ -27,7 +25,7 @@ function GTConflicts(props: Props): JSX.Element {
     let reportSummary;
     if (taskReport) {
         reportSummary = taskReport.summary;
-        conflictsRepresentation = reportSummary?.conflictCount > THRESHOLD ? '>5000' : reportSummary?.conflictCount;
+        conflictsRepresentation = clampValue(reportSummary?.conflictCount);
     }
 
     const tooltip = (
@@ -51,15 +49,15 @@ function GTConflicts(props: Props): JSX.Element {
             <Text type='secondary'>
                 Errors:
                 {' '}
-                {reportSummary?.errorCount}
-                {` (${percent(reportSummary?.errorCount, reportSummary?.conflictCount)}%)`}
+                {clampValue(reportSummary?.errorCount)}
+                {` (${percent(reportSummary?.errorCount, reportSummary?.conflictCount)})`}
             </Text>
             <Text type='secondary'>
                 {', '}
                 Warnings:
                 {' '}
-                {reportSummary?.warningCount}
-                {` (${percent(reportSummary?.warningCount, reportSummary?.conflictCount)}%)`}
+                {clampValue(reportSummary?.warningCount)}
+                {` (${percent(reportSummary?.warningCount, reportSummary?.conflictCount)})`}
             </Text>
         </>
     );
