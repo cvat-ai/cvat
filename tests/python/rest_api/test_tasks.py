@@ -13,7 +13,7 @@ from http import HTTPStatus
 from itertools import chain, product
 from math import ceil
 from pathlib import Path
-from tempfile import TemporaryDirectory, NamedTemporaryFile
+from tempfile import NamedTemporaryFile, TemporaryDirectory
 from time import sleep, time
 from typing import List
 
