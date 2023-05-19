@@ -93,14 +93,29 @@
 }
 
 .cvat-task-analytics-title {
+    margin-bottom: $grid-unit-size;
+
     h4 {
         display: inline;
         margin-right: $grid-unit-size;
     }
-
-    margin-bottom: $grid-unit-size;
 }
 
 .cvat-task-quality-reports-hint {
     margin-bottom: $grid-unit-size * 3;
+}
+
+.cvat-job-item-empty-gt {
+    .ant-card-body {
+        padding: $grid-unit-size * 3;
+    }
+
+    h5 {
+        margin: 0;
+    }
+
+    .ant-btn {
+        padding-left: $grid-unit-size * 3;
+        padding-right: $grid-unit-size * 3;
+    }
 }

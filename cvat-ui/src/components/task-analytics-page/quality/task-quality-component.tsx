@@ -14,11 +14,11 @@ import JobItem from 'components/job-item/job-item';
 import { useDispatch, useSelector } from 'react-redux';
 import { getQualityReportsAsync } from 'actions/analytics-actions';
 import { CombinedState } from 'reducers';
-import EmptyQuality from './empty-quality';
 import MeanQuality from './mean-quality';
 import JobList from './job-list';
 import GtConflicts from './gt-conflicts';
 import Issues from './issues';
+import EmptyGtJob from './empty-job';
 
 interface Props {
     task: Task,
@@ -35,9 +35,6 @@ function TaskQualityComponent(props: Props): JSX.Element {
     }, []);
 
     const gtJob = task.jobs.find((job: Job) => job.type === JobType.GROUND_TRUTH);
-    if (!gtJob) {
-        return (<EmptyQuality taskId={task.id} />);
-    }
 
     return (
         <div className='cvat-task-quality-page'>
@@ -54,7 +51,7 @@ function TaskQualityComponent(props: Props): JSX.Element {
                 </Text>
             </Row>
             <Row>
-                <JobItem job={gtJob} onJobUpdate={onJobUpdate} />
+                {gtJob ? <JobItem job={gtJob} onJobUpdate={onJobUpdate} /> : <EmptyGtJob taskId={task.id} />}
             </Row>
             <Row>
                 <JobList task={task} />
