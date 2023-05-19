@@ -2398,8 +2398,6 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
                 exc_info = exc_info.replace(import_error_prefix + ': ', '')
                 return Response(data=exc_info,
                     status=status.HTTP_400_BAD_REQUEST)
-            elif any([i in exc_info for i in ("DatumaroError", "DatasetImportError", "DatasetNotFoundError")]):
-                return Response(data="The uploaded annotations is incorrect", status=status.HTTP_400_BAD_REQUEST)
             else:
                 return Response(data=exc_info,
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR)

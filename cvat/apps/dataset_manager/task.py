@@ -7,6 +7,7 @@ from collections import OrderedDict
 from enum import Enum
 import os
 from tempfile import TemporaryDirectory
+from datumaro.components.errors import DatasetError, DatasetImportError, DatasetNotFoundError
 
 from django.db import transaction
 from django.db.models.query import Prefetch
@@ -17,7 +18,7 @@ from cvat.apps.engine.plugins import plugin_decorator
 from cvat.apps.profiler import silk_profile
 
 from .annotation import AnnotationIR, AnnotationManager
-from .bindings import TaskData, JobData
+from .bindings import TaskData, JobData, CvatImportError
 from .formats.registry import make_exporter, make_importer
 from .util import bulk_create
 
@@ -794,7 +795,10 @@ def import_task_annotations(src_file, task_id, format_name, conv_mask_to_poly):
 
     importer = make_importer(format_name)
     with open(src_file, 'rb') as f:
-        task.import_annotations(f, importer, conv_mask_to_poly=conv_mask_to_poly)
+        try:
+            task.import_annotations(f, importer, conv_mask_to_poly=conv_mask_to_poly)
+        except (DatasetError, DatasetImportError, DatasetNotFoundError) as ex:
+            raise CvatImportError(str(ex))
 
 @transaction.atomic
 def import_job_annotations(src_file, job_id, format_name, conv_mask_to_poly):
@@ -803,4 +807,7 @@ def import_job_annotations(src_file, job_id, format_name, conv_mask_to_poly):
 
     importer = make_importer(format_name)
     with open(src_file, 'rb') as f:
-        job.import_annotations(f, importer, conv_mask_to_poly=conv_mask_to_poly)
+        try:
+            job.import_annotations(f, importer, conv_mask_to_poly=conv_mask_to_poly)
+        except (DatasetError, DatasetImportError, DatasetNotFoundError) as ex:
+            raise CvatImportError(str(ex))

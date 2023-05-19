@@ -7,6 +7,7 @@ import os
 from tempfile import TemporaryDirectory
 import rq
 from typing import Any, Callable, List, Mapping, Tuple
+from datumaro.components.errors import DatasetError, DatasetImportError, DatasetNotFoundError
 
 from django.db import transaction
 
@@ -16,7 +17,7 @@ from cvat.apps.engine.task import _create_thread as create_task
 from cvat.apps.dataset_manager.task import TaskAnnotation
 
 from .annotation import AnnotationIR
-from .bindings import ProjectData, load_dataset_data
+from .bindings import ProjectData, load_dataset_data, CvatImportError
 from .formats.registry import make_exporter, make_importer
 
 def export_project(project_id, dst_file, format_name,
@@ -171,4 +172,7 @@ def import_dataset_as_project(src_file, project_id, format_name, conv_mask_to_po
 
     importer = make_importer(format_name)
     with open(src_file, 'rb') as f:
-        project.import_dataset(f, importer, conv_mask_to_poly=conv_mask_to_poly)
+        try:
+            project.import_dataset(f, importer, conv_mask_to_poly=conv_mask_to_poly)
+        except (DatasetError, DatasetImportError, DatasetNotFoundError) as ex:
+            raise CvatImportError(str(ex))
