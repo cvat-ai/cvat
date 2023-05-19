@@ -31,6 +31,11 @@ spec:
 
     directives:
       preCopy:
+      # set NVIDIA container runtime settings
+        - kind: ENV
+          value: NVIDIA_VISIBLE_DEVICES=all
+        - kind: ENV
+          value: NVIDIA_DRIVER_CAPABILITIES=compute,utility
       # disable interactive frontend
         - kind: ENV
           value: DEBIAN_FRONTEND=noninteractive
