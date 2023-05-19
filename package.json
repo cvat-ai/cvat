@@ -35,7 +35,6 @@
     "babel-register": "^6.26.0",
     "bundle-declarations-webpack-plugin": "^3.1.0",
     "copy-webpack-plugin": "^11.0.0",
-    "coveralls": "^3.1.0",
     "css-loader": "^3.4.2",
     "eslint": "^7.11.0",
     "eslint-config-airbnb": "^18.0.1",

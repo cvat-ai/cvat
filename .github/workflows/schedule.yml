@@ -167,12 +167,13 @@ jobs:
 
       - name: REST API and SDK tests
         run: |
-         pip3 install -r cvat-sdk/gen/requirements.txt
+          pip3 install -r cvat-sdk/gen/requirements.txt
           ./cvat-sdk//gen/generate.sh
 
           pip3 install -r ./tests/python/requirements.txt
           pip3 install -e ./cvat-sdk
           pip3 install -e ./cvat-cli
+
           pytest tests/python/ --cov --cov-report xml
           pytest tests/python/ --stop-services
 
@@ -186,7 +187,7 @@ jobs:
           while [[  $(curl -s -o /dev/null -w "%{http_code}" localhost:8181/health?bundles) != "200" && max_tries -gt 0 ]]; do (( max_tries-- )); sleep 5; done
 
           docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
-            -c 'coverage run -a manage.py test cvat/apps -v 2 && coverage json && mv coverage.json ${CONTAINER_COVERAGE_DATA_DIR}'
+            -c 'coverage run -a manage.py test cvat/apps && coverage json && mv coverage.json ${CONTAINER_COVERAGE_DATA_DIR}'
 
           docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
             -c 'yarn --frozen-lockfile --ignore-scripts && yarn workspace cvat-core run test && mv cvat-core/reports/coverage/coverage-final.json ${CONTAINER_COVERAGE_DATA_DIR}'

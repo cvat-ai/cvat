@@ -1,3 +1,2 @@
 -r development.in
-coveralls
 fakeredis==2.10.3
