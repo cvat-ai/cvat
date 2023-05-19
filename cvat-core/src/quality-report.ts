@@ -16,7 +16,13 @@ export interface RawQualityReportData {
         conflict_count: number,
         valid_count: number,
         ds_count: number,
-        gt_count: number
+        gt_count: number,
+        error_count: number,
+        warning_count: number,
+        conflicts_by_type: {
+            extra_annotation: number,
+            missing_annotation: number,
+        }
     };
     parameters?: object;
 }
@@ -29,6 +35,12 @@ export interface QualitySummary {
     dsCount: number;
     gtCount: number;
     accuracy: number;
+    errorCount: number;
+    warningCount: number;
+    conflictsByType: {
+        extraAnnotations: number;
+        missingAnnotations: number;
+    }
 }
 
 export default class QualityReport {
@@ -92,6 +104,12 @@ export default class QualityReport {
                         gtCount: data.summary.gt_count,
                         accuracy: (data.summary.valid_count /
                             (data.summary.ds_count + data.summary.gt_count - data.summary.valid_count)) * 100,
+                        conflictsByType: {
+                            extraAnnotations: data.summary.conflicts_by_type.extra_annotation,
+                            missingAnnotations: data.summary.conflicts_by_type.missing_annotation,
+                        },
+                        errorCount: data.summary.error_count,
+                        warningCount: data.summary.warning_count,
                     }),
                 },
                 parameters: {

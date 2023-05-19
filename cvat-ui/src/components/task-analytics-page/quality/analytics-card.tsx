@@ -15,7 +15,7 @@ interface Props {
     title: string;
     size?: number;
     className?: string;
-    value: string;
+    value?: string | number;
     tooltip?: JSX.Element;
     bottomElement?: JSX.Element;
     rightElement?: JSX.Element;

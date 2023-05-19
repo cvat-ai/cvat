@@ -16,6 +16,7 @@ import { CombinedState } from 'reducers';
 import EmptyQuality from './empty-quality';
 import MeanQuality from './mean-quality';
 import JobList from './job-list';
+import GtConflicts from './gt-conflicts';
 
 interface Props {
     task: Task,
@@ -40,6 +41,9 @@ function TaskQualityComponent(props: Props): JSX.Element {
         <div className='cvat-task-quality-page'>
             <Row>
                 <MeanQuality task={task} />
+            </Row>
+            <Row>
+                <GtConflicts task={task} />
             </Row>
             <Row style={{ marginTop: '16px' }}>
                 <JobItem job={gtJob} onJobUpdate={onJobUpdate} />
