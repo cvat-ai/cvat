@@ -26,7 +26,7 @@ lazy-object-proxy==1.9.0
     # via astroid
 mccabe==0.7.0
     # via pylint
-platformdirs==3.5.0
+platformdirs==3.5.1
     # via pylint
 pycodestyle==2.10.0
     # via autopep8
@@ -51,7 +51,7 @@ tomli==2.0.1
     #   pylint
 tomlkit==0.11.8
     # via pylint
-tornado==6.3.1
+tornado==6.3.2
     # via snakeviz
 
 # The following packages are considered to be unsafe in a requirements file:
