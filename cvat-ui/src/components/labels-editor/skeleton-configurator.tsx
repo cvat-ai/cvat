@@ -401,6 +401,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
             color: labels[elementID]?.color || undefined,
             id: (labels[elementID]?.id || 0) > 0 ? labels[elementID].id : idGenerator(),
             type: ShapeType.POINTS,
+            has_parent: true,
         };
 
         return true;
@@ -755,7 +756,12 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
 
                                         const desc = window.document.createElementNS('http://www.w3.org/2000/svg', 'desc');
                                         desc.setAttribute('data-description-type', 'labels-specification');
-                                        (desc as SVGDescElement).textContent = JSON.stringify(this.labels);
+                                        const stringifiedLabels = JSON
+                                            .stringify(this.labels, (key: string, value: any) => {
+                                                if (key === 'id') return undefined;
+                                                return value;
+                                            });
+                                        (desc as SVGDescElement).textContent = stringifiedLabels;
                                         copy.appendChild(desc);
                                         Array.from(copy.children).forEach((child: Element) => {
                                             if (child.hasAttribute('data-label-id')) {
