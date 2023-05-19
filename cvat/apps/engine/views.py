@@ -310,7 +310,11 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             OpenApiParameter('filename', description='Dataset file name',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
         ],
-        request=DatasetFileSerializer(required=False),
+        request=PolymorphicProxySerializer('DatasetWrite',
+            # TODO: refactor to use required=False when possible
+            serializers=[DatasetFileSerializer, OpenApiTypes.NONE],
+            resource_type_field_name=None
+        ),
         responses={
             '202': OpenApiResponse(description='Importing has been started'),
             '400': OpenApiResponse(description='Failed to import dataset'),
@@ -491,7 +495,11 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             OpenApiParameter('filename', description='Backup file name',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
         ],
-        request=ProjectFileSerializer(required=False),
+        request=PolymorphicProxySerializer('BackupWrite',
+            # TODO: refactor to use required=False when possible
+            serializers=[ProjectFileSerializer, OpenApiTypes.NONE],
+            resource_type_field_name=None
+        ),
         responses={
             '201': OpenApiResponse(description='The project has been imported'), # or better specify {id: project_id}
             '202': OpenApiResponse(description='Importing a backup file has been started'),
@@ -966,6 +974,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 description='Input format name\nYou can get the list of supported formats at:\n/server/annotation/formats'),
         ],
         request=PolymorphicProxySerializer('TaskAnnotationsUpdate',
+            # TODO: refactor to use required=False when possible
             serializers=[LabeledDataSerializer, AnnotationFileSerializer, OpenApiTypes.NONE],
             resource_type_field_name=None
         ),
@@ -990,7 +999,11 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             OpenApiParameter('filename', description='Annotation file name',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
         ],
-        request=AnnotationFileSerializer(required=False),
+        request=PolymorphicProxySerializer('TaskAnnotationsWrite',
+            # TODO: refactor to use required=False when possible
+            serializers=[AnnotationFileSerializer, OpenApiTypes.NONE],
+            resource_type_field_name=None
+        ),
         responses={
             '201': OpenApiResponse(description='Uploading has finished'),
             '202': OpenApiResponse(description='Uploading has been started'),
@@ -1565,8 +1578,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             '200': OpenApiResponse(OpenApiTypes.BINARY, description='Data of a specific type'),
         })
     @action(detail=True, methods=['GET'],
-        # TODO: fix unexpected collisions with filter params
-        simple_filters=[] # type query parameter conflicts with the filter,
+        simple_filters=[] # type query parameter conflicts with the filter
     )
     def data(self, request, pk):
         db_job = self.get_object() # call check_object_permissions as well
