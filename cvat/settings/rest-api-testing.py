@@ -4,4 +4,4 @@
 
 from .production import *
 
-RUN_CLEAN_IMPORT_CACHE_FUNC_AFTER = timedelta(seconds=10)
+RUN_CLEAN_IMPORT_CACHE_FUNC_AFTER = timedelta(seconds=30)

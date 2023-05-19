@@ -1584,7 +1584,7 @@ class TestImportTaskAnnotations:
         task.import_annotations(self.format, filename)
         self._check_annotations(task_id)
 
-    @pytest.mark.timeout(40)
+    @pytest.mark.timeout(45)
     def test_can_import_annotations_after_previous_interrupted_upload(self, tasks_with_shapes):
         task_id = tasks_with_shapes[0]["id"]
         self._check_annotations(task_id)
@@ -1604,7 +1604,7 @@ class TestImportTaskAnnotations:
         uploader._upload_file_data_with_tus(
             url, filename, meta=params, logger=self.client.logger.debug
         )
-        sleep(30)
+        sleep(35)
         assert not int(
             subprocess.check_output(
                 f'docker exec -it test_cvat_server_1 bash -c "ls data/tasks/{task_id}/tmp | wc -l"',
