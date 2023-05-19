@@ -270,7 +270,7 @@ class UploadMixin:
                 cleaning_job = scheduler.enqueue_in(time_delta=settings.RUN_CLEAN_IMPORT_CACHE_FUNC_AFTER,
                     func=clear_import_cache,
                     path=path,
-                    creation_time=Path(tus_file.file_path).stat().st_atime
+                    creation_time=Path(tus_file.file_path).stat().st_ctime
                 )
                 slogger.glob.info(
                     f'The cleaning job {cleaning_job.id} is queued.'
