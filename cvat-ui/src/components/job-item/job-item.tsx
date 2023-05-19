@@ -73,7 +73,7 @@ function JobItem(props: Props): JSX.Element {
                             </Col>
                         </Row>
                     </Col>
-                    <Col span={8}>
+                    <Col span={7}>
                         <Row className='cvat-job-item-selects' justify='space-between'>
                             <Col>
                                 <Row>
@@ -119,7 +119,7 @@ function JobItem(props: Props): JSX.Element {
                             </Col>
                         </Row>
                     </Col>
-                    <Col span={9}>
+                    <Col span={10}>
                         <Row className='cvat-job-item-details'>
                             <Col>
                                 <Row>

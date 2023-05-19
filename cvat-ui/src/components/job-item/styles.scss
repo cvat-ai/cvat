@@ -49,6 +49,10 @@
     }
 
     .cvat-job-assignee-selector {
-        max-width: $grid-unit-size * 15;
+        max-width: $grid-unit-size * 16;
+
+        @media screen and (max-width: 1300px) {
+            max-width: $grid-unit-size * 12;
+        }
     }
 }
