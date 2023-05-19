@@ -599,6 +599,11 @@ export class Job extends Session {
         const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.close);
         return result;
     }
+
+    async delete(): Promise<void> {
+        const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.delete);
+        return result;
+    }
 }
 
 export class Task extends Session {

@@ -93,6 +93,11 @@ export interface JobsState {
     previews: {
         [index: number]: Preview;
     };
+    activities: {
+        deletes: {
+            [tid: number]: boolean;
+        };
+    };
 }
 
 export interface TasksState {
@@ -465,6 +470,7 @@ export interface NotificationsState {
             updating: null | ErrorState;
             fetching: null | ErrorState;
             creating: null | ErrorState;
+            deleting: null | ErrorState;
         };
         formats: {
             fetching: null | ErrorState;

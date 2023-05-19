@@ -20,6 +20,8 @@ import UserSelector from 'components/task-page/user-selector';
 import Dropdown from 'antd/lib/dropdown';
 import Tag from 'antd/lib/tag';
 import { DurationIcon, FrameCountIcon, FramesIcon } from 'icons';
+import { useSelector } from 'react-redux';
+import { CombinedState } from 'reducers';
 import JobActionsMenu from './job-actions-menu';
 
 interface Props {
@@ -29,14 +31,21 @@ interface Props {
 
 function JobItem(props: Props): JSX.Element {
     const { job, onJobUpdate } = props;
-    const { stage } = job;
+    const { stage, id } = job;
     const created = moment(job.createdDate);
     const updated = moment(job.createdDate);
     const now = moment(moment.now());
-    console.log(job);
+    const deletes = useSelector((state: CombinedState) => state.jobs.activities.deletes);
+    const deleted = id in deletes ? deletes[id] === true : false;
+    const style = {};
+    if (deleted) {
+        (style as any).pointerEvents = 'none';
+        (style as any).opacity = 0.5;
+    }
+
     return (
         <Col span={24}>
-            <Card className='cvat-job-item'>
+            <Card className='cvat-job-item' style={{ ...style }}>
                 <Row>
                     <Col span={7}>
                         <Row>
@@ -50,9 +59,6 @@ function JobItem(props: Props): JSX.Element {
                                     </Col>
                                 )
                             }
-                            {/* <Col offset={1}>
-                                <Text type='secondary'>{job.state.charAt(0).toUpperCase() + job.state.slice(1)}</Text>
-                            </Col> */}
                         </Row>
                         <Row className='cvat-job-item-dates-info'>
                             <Col>
@@ -108,9 +114,6 @@ function JobItem(props: Props): JSX.Element {
                                                 {JobStage.ACCEPTANCE}
                                             </Select.Option>
                                         </Select>
-                                        {/* <CVATTooltip title={<ReviewSummaryComponent jobInstance={jobInstance} />}>
-                            <QuestionCircleOutlined />
-                        </CVATTooltip> */}
                                     </Col>
                                 </Row>
                             </Col>

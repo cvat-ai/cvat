@@ -19,6 +19,9 @@ export enum JobsActionTypes {
     GET_JOB_PREVIEW_SUCCESS = 'GET_JOB_PREVIEW_SUCCESS',
     GET_JOB_PREVIEW_FAILED = 'GET_JOB_PREVIEW_FAILED',
     CREATE_JOB_FAILED = 'CREATE_JOB_FAILED',
+    DELETE_JOB = 'DELETE_JOB',
+    DELETE_JOB_SUCCESS = 'DELETE_JOB_SUCCESS',
+    DELETE_JOB_FAILED = 'DELETE_JOB_FAILED',
 }
 
 interface JobsList extends Array<any> {
@@ -42,6 +45,15 @@ const jobsActions = {
     ),
     createJobFailed: (error: any) => (
         createAction(JobsActionTypes.CREATE_JOB_FAILED, { error })
+    ),
+    deleteJob: (jobID: number) => (
+        createAction(JobsActionTypes.DELETE_JOB, { jobID })
+    ),
+    deleteJobSuccess: (jobID: number) => (
+        createAction(JobsActionTypes.DELETE_JOB_SUCCESS, { jobID })
+    ),
+    deleteJobFailed: (jobID: number, error: any) => (
+        createAction(JobsActionTypes.DELETE_JOB_FAILED, { jobID, error })
     ),
 };
 
@@ -79,4 +91,16 @@ export const createJobAsync = (data: JobData): ThunkAction => async (dispatch) =
         dispatch(jobsActions.createJobFailed(error));
         throw error;
     }
+};
+
+export const deleteJobAsync = (job: Job): ThunkAction => async (dispatch) => {
+    dispatch(jobsActions.deleteJob(job.id));
+    try {
+        await job.delete();
+    } catch (error) {
+        dispatch(jobsActions.deleteJobFailed(job.id, error));
+        return;
+    }
+
+    dispatch(jobsActions.deleteJobSuccess(job.id));
 };
