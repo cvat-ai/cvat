@@ -2394,9 +2394,8 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
             # RQ adds a prefix with exception class name
             import_error_prefix = '{}.{}'.format(
                 CvatImportError.__module__, CvatImportError.__name__)
-            if exc_info.startswith(import_error_prefix):
-                exc_info = exc_info.replace(import_error_prefix + ': ', '')
-                return Response(data=exc_info,
+            if import_error_prefix in exc_info:
+                return Response(data="The annotations that were uploaded are not correct",
                     status=status.HTTP_400_BAD_REQUEST)
             else:
                 return Response(data=exc_info,
