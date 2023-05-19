@@ -83,7 +83,7 @@ function TaskAnalyticsPage(): JSX.Element {
                         align='top'
                         className='cvat-analytics-wrapper'
                     >
-                        <Col md={22} lg={18} xl={16} xxl={14} className='cvat-task-top-bar'>
+                        <Col span={22} xl={18} xxl={14} className='cvat-task-top-bar'>
                             <Button
                                 className='cvat-back-to-task-button'
                                 onClick={() => history.push(`/tasks/${taskInstance.id}`)}
@@ -94,7 +94,7 @@ function TaskAnalyticsPage(): JSX.Element {
                                 Back to task
                             </Button>
                         </Col>
-                        <Col md={22} lg={18} xl={16} xxl={14} className='cvat-analytics-inner'>
+                        <Col span={22} xl={18} xxl={14} className='cvat-analytics-inner'>
                             <Col className='cvat-task-analytics-title'>
                                 <Title
                                     level={4}

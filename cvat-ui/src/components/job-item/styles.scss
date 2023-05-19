@@ -12,21 +12,43 @@
     }
 
     .ant-card-body {
-        padding: $grid-unit-size*2 $grid-unit-size*3;
+        padding: $grid-unit-size*2;
         min-height: $grid-unit-size * 9;
     }
 
     .cvat-job-item-selects {
         padding-top: $grid-unit-size;
 
-        .ant-typography {
+        .ant-select {
             margin-right: $grid-unit-size;
-            margin-left: $grid-unit-size * 3;
+        }
+    }
+
+    .cvat-job-item-details {
+        .ant-row {
+            margin-top: $grid-unit-size;
+        }
+
+        .anticon {
+            margin-right: $grid-unit-size;
         }
     }
 
     .cvat-job-item-more-button {
+        position: absolute;
+        right: 0;
+        top: 50%;
+        transform: translateY(-100%);
         font-size: 16px;
         margin-top: $grid-unit-size;
+        padding: 0 $grid-unit-size * 2;
+    }
+
+    .cvat-job-item-dates-info {
+        margin-top: $grid-unit-size;
+    }
+
+    .cvat-job-assignee-selector {
+        max-width: $grid-unit-size * 15;
     }
 }
