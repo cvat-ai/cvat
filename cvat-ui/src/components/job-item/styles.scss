@@ -51,7 +51,7 @@
     .cvat-job-assignee-selector {
         max-width: $grid-unit-size * 16;
 
-        @media screen and (max-width: 1300px) {
+        @media screen and (max-width: 1620px) {
             max-width: $grid-unit-size * 12;
         }
     }
