@@ -111,7 +111,7 @@ export default class QualityReport {
                 summary: {
                     get: () => ({
                         frameCount: data.summary.frame_count,
-                        frameSharePercent: data.summary.frame_share_percent,
+                        frameSharePercent: data.summary.frame_share_percent * 100,
                         conflictCount: data.summary.conflict_count,
                         validCount: data.summary.valid_count,
                         dsCount: data.summary.ds_count,

@@ -13,6 +13,7 @@ import { CombinedState } from 'reducers';
 import Button from 'antd/lib/button';
 import { DownloadOutlined } from '@ant-design/icons';
 import AnalyticsCard from './analytics-card';
+import { toRepresentation } from './common';
 
 interface Props {
     task: Task;
@@ -23,7 +24,6 @@ function MeanQuality(props: Props): JSX.Element {
     const tasksReports: QualityReport[] = useSelector((state: CombinedState) => state.analytics.quality.tasksReports);
     const taskReport = tasksReports.find((report: QualityReport) => report.taskId === task.id);
     const reportSummary = taskReport?.summary;
-    const toRepresentation = (val?: number): string => (!Number.isFinite(val) ? 'N/A' : `${val?.toFixed(1)}%`);
 
     const tooltip = (
         <div className='cvat-analytics-tooltip-inner'>

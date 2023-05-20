@@ -13,3 +13,7 @@ export function clampValue(a?: number): string | number {
     }
     return 'N/A';
 }
+
+export function toRepresentation(val?: number): string {
+    return (!Number.isFinite(val) ? 'N/A' : `${val?.toFixed(1)}%`);
+}

@@ -6,7 +6,7 @@
 import React, { useEffect, useState } from 'react';
 import { useHistory } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
-import { CopyOutlined } from '@ant-design/icons';
+import { CopyOutlined, DownloadOutlined } from '@ant-design/icons';
 import { ColumnFilterItem } from 'antd/lib/table/interface';
 import Table from 'antd/lib/table';
 import Button from 'antd/lib/button';
@@ -14,12 +14,14 @@ import Text from 'antd/lib/typography/Text';
 import copy from 'copy-to-clipboard';
 
 import {
-    Task, Job, JobType, QualityReport,
+    Task, Job, JobType, QualityReport, getCore,
 } from 'cvat-core-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { CombinedState } from 'reducers';
 import { useSelector } from 'react-redux';
 import { getQualityColor } from 'utils/quality-color';
+import Tag from 'antd/lib/tag';
+import { toRepresentation } from './common';
 
 interface Props {
     task: Task;
@@ -51,8 +53,8 @@ function JobListComponent(props: Props): JSX.Element {
         return (obj1: any, obj2: any): number => {
             let currentObj1 = obj1;
             let currentObj2 = obj2;
-            let field1: string | null = null;
-            let field2: string | null = null;
+            let field1: string | number | null = null;
+            let field2: string | number | null = null;
             for (const pathSegment of path.split('.')) {
                 field1 = currentObj1 && pathSegment in currentObj1 ? currentObj1[pathSegment] : null;
                 field2 = currentObj2 && pathSegment in currentObj2 ? currentObj2[pathSegment] : null;
@@ -61,7 +63,8 @@ function JobListComponent(props: Props): JSX.Element {
             }
 
             if (field1 && field2) {
-                return field1.localeCompare(field2);
+                if (typeof field1 === 'string' && typeof field2 === 'string') return field1.localeCompare(field2);
+                if (typeof field1 === 'number' && typeof field2 === 'number') return field2 - field1;
             }
 
             if (field1 === null) {
@@ -148,11 +151,26 @@ function JobListComponent(props: Props): JSX.Element {
             dataIndex: 'frame_intersection',
             key: 'frame_intersection',
             className: 'cvat-job-item-frame-intersection',
-            render: (jobInstance: Job): JSX.Element => {
-                const frameSharePercent = jobsReports[jobInstance.id]?.summary?.frameSharePercent;
+            render: (report?: QualityReport): JSX.Element => {
+                const frameSharePercent = report?.summary?.frameSharePercent;
                 return (
                     <Text>
-                        {Number.isNaN(frameSharePercent) ? 'N/A' : `${Math.round(frameSharePercent * 100)}%`}
+                        {toRepresentation(frameSharePercent)}
+                    </Text>
+                );
+            },
+        },
+        {
+            title: 'Errors',
+            dataIndex: 'errors',
+            key: 'errors',
+            className: 'cvat-job-item-errors',
+            sorter: sorter('errors.summary.errorCount'),
+            render: (report?: QualityReport): JSX.Element => {
+                const errorCount = report?.summary?.errorCount;
+                return (
+                    <Text>
+                        {errorCount || 0}
                     </Text>
                 );
             },
@@ -162,11 +180,12 @@ function JobListComponent(props: Props): JSX.Element {
             dataIndex: 'conflicts',
             key: 'conflicts',
             className: 'cvat-job-item-conflicts',
-            render: (jobInstance: Job): JSX.Element => {
-                const conflicts = jobsReports[jobInstance.id]?.summary?.conflictCount;
+            sorter: sorter('errors.summary.conflictCount'),
+            render: (report: QualityReport): JSX.Element => {
+                const conflictCount = report?.summary?.conflictCount;
                 return (
                     <Text>
-                        {Number.isNaN(conflicts) ? 'N/A' : conflicts}
+                        {conflictCount || 0}
                     </Text>
                 );
             },
@@ -175,30 +194,59 @@ function JobListComponent(props: Props): JSX.Element {
             title: 'Quality',
             dataIndex: 'quality',
             key: 'quality',
+            align: 'center' as const,
             className: 'cvat-job-item-quality',
-            render: (jobInstance: Job): JSX.Element => {
-                const meanAccuracy = jobsReports[jobInstance.id]?.summary?.accuracy;
+            sorter: sorter('errors.summary.accuracy'),
+            render: (report?: QualityReport): JSX.Element => {
+                const meanAccuracy = report?.summary?.accuracy;
+                const accuracyRepresentation = toRepresentation(meanAccuracy);
                 return (
-                    <Text
-                        style={{
-                            color: getQualityColor(meanAccuracy),
-                        }}
-                    >
-                        {!Number.isFinite(meanAccuracy) ? 'N/A' : `${meanAccuracy.toFixed(1)}%`}
-                    </Text>
+                    accuracyRepresentation.includes('N/A') ? (
+                        <Text
+                            style={{
+                                color: getQualityColor(meanAccuracy),
+                            }}
+                        >
+                            N/A
+                        </Text>
+                    ) :
+                        <Tag color={getQualityColor(meanAccuracy)}>{accuracyRepresentation}</Tag>
+                );
+            },
+        },
+        {
+            title: 'Download',
+            dataIndex: 'download',
+            key: 'download',
+            className: 'cvat-job-item-quality-report-download',
+            align: 'center' as const,
+            render: (report?: QualityReport): JSX.Element => {
+                const reportID = report?.id;
+                return (
+                    reportID ? (
+                        <a
+                            href={`${getCore().config.backendAPI}/quality/reports/${reportID}/data`}
+                            download={`quality-report-${reportID}.json`}
+                        >
+                            <DownloadOutlined />
+                        </a>
+                    ) : <DownloadOutlined />
                 );
             },
         },
     ];
     const data = renderedJobs.reduce((acc: any[], job: any) => {
+        const report = jobsReports[job.id];
         acc.push({
             key: job.id,
             job: job.id,
             stage: job,
             assignee: job,
-            quality: job,
-            conflicts: job,
-            frame_intersection: job,
+            errors: report,
+            quality: report,
+            conflicts: report,
+            download: report,
+            frame_intersection: report,
         });
 
         return acc;
