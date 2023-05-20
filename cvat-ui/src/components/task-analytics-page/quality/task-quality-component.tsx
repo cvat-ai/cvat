@@ -12,13 +12,14 @@ import { Row } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 import JobItem from 'components/job-item/job-item';
 import { useDispatch, useSelector } from 'react-redux';
-import { getQualityReportsAsync } from 'actions/analytics-actions';
+import { getQualityReportsAsync, getQualitySettingsAsync } from 'actions/analytics-actions';
 import { CombinedState } from 'reducers';
 import MeanQuality from './mean-quality';
 import JobList from './job-list';
 import GtConflicts from './gt-conflicts';
 import Issues from './issues';
 import EmptyGtJob from './empty-job';
+import QualitySettingsModal from './quality-settings-modal';
 
 interface Props {
     task: Task,
@@ -32,6 +33,7 @@ function TaskQualityComponent(props: Props): JSX.Element {
 
     useEffect(() => {
         dispatch(getQualityReportsAsync(task, { ...query, taskId: task.id }));
+        dispatch(getQualitySettingsAsync(task));
     }, []);
 
     const gtJob = task.jobs.find((job: Job) => job.type === JobType.GROUND_TRUTH);
@@ -56,6 +58,7 @@ function TaskQualityComponent(props: Props): JSX.Element {
             <Row>
                 <JobList task={task} />
             </Row>
+            <QualitySettingsModal />
         </div>
     );
 }

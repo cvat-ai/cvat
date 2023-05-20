@@ -27,6 +27,7 @@ import Organization from './organization';
 import Webhook from './webhook';
 import QualityReport from './quality-report';
 import QualityConflict from './quality-conflict';
+import QualitySettings from './quality-settings';
 
 export default function implementAPI(cvat) {
     cvat.plugins.list.implementation = PluginRegistry.list;
@@ -376,6 +377,11 @@ export default function implementAPI(cvat) {
         const reportsData = await serverProxy.analytics.quality.conflicts(updatedParams);
 
         return reportsData.map((conflict) => new QualityConflict({ ...conflict }));
+    };
+
+    cvat.analytics.quality.settings.get.implementation = async (taskID: number) => {
+        const settings = await serverProxy.analytics.quality.settings.get(taskID);
+        return new QualitySettings({ ...settings });
     };
 
     return cvat;

@@ -14,6 +14,7 @@ import {
     SerializedRegister, JobsFilter, SerializedJob,
 } from 'server-response-types';
 import { RawQualityReportData } from 'quality-report';
+import { RawQualitySettingsData } from 'quality-settings';
 import { Storage } from './storage';
 import { StorageLocation, WebhookSourceType } from './enums';
 import { isEmail } from './common';
@@ -2208,6 +2209,39 @@ async function getQualityConflicts(filter): Promise<RawQualityConflictData[]> {
     }
 }
 
+async function getQualitySettings(settingsID: number): Promise<RawQualitySettingsData> {
+    const params = enableOrganization();
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.get(`${backendAPI}/quality/settings/${settingsID}`, {
+            params: {
+                ...params,
+            },
+        });
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function updateQualitySettings(
+    settingsID: number,
+    settingsData: RawQualitySettingsData,
+): Promise<RawQualitySettingsData> {
+    const params = enableOrganization();
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.patch(`${backendAPI}/quality/settings/${settingsID}`, settingsData, {
+            params,
+        });
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
 export default Object.freeze({
     server: Object.freeze({
         setAuthData,
@@ -2358,6 +2392,10 @@ export default Object.freeze({
         quality: Object.freeze({
             reports: getQualityReports,
             conflicts: getQualityConflicts,
+            settings: Object.freeze({
+                get: getQualitySettings,
+                update: updateQualitySettings,
+            }),
         }),
     }),
 });

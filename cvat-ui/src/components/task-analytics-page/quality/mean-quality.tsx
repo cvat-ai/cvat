@@ -8,10 +8,11 @@ import React from 'react';
 import Text from 'antd/lib/typography/Text';
 import moment from 'moment';
 import { QualityReport, Task, getCore } from 'cvat-core-wrapper';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { CombinedState } from 'reducers';
 import Button from 'antd/lib/button';
-import { DownloadOutlined } from '@ant-design/icons';
+import { DownloadOutlined, MoreOutlined } from '@ant-design/icons';
+import { analyticsActions } from 'actions/analytics-actions';
 import AnalyticsCard from './analytics-card';
 import { toRepresentation } from './common';
 
@@ -21,6 +22,7 @@ interface Props {
 
 function MeanQuality(props: Props): JSX.Element {
     const { task } = props;
+    const dispatch = useDispatch();
     const tasksReports: QualityReport[] = useSelector((state: CombinedState) => state.analytics.quality.tasksReports);
     const taskReport = tasksReports.find((report: QualityReport) => report.taskId === task.id);
     const reportSummary = taskReport?.summary;
@@ -67,6 +69,10 @@ function MeanQuality(props: Props): JSX.Element {
                     Quality Report
                 </a>
             </Button>
+            <MoreOutlined
+                className='cvat-quality-settings-switch'
+                onClick={() => dispatch(analyticsActions.switchQualitySettingsVisible(true))}
+            />
             <div className='cvat-analytics-time-hint'>
                 <Text type='secondary'>{taskReport?.createdDate ? moment(taskReport?.createdDate).fromNow() : ''}</Text>
             </div>

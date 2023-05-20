@@ -15,6 +15,11 @@ const defaultState: AnalyticsState = {
             jobId: null,
             parentId: null,
         },
+        settings: {
+            modalVisible: false,
+            fetching: false,
+            current: null,
+        },
     },
 };
 
@@ -49,6 +54,55 @@ export default function (
             return {
                 ...state,
                 fetching: false,
+            };
+        case AnalyticsActionsTypes.SWITCH_QUALITY_SETTINGS_VISIBLE:
+            return {
+                ...state,
+                quality: {
+                    ...state.quality,
+                    settings: {
+                        ...state.quality.settings,
+                        modalVisible: action.payload.visible,
+                    },
+                },
+            };
+        case AnalyticsActionsTypes.UPDATE_QUALITY_SETTINGS:
+        case AnalyticsActionsTypes.GET_QUALITY_SETTINGS: {
+            return {
+                ...state,
+                quality: {
+                    ...state.quality,
+                    settings: {
+                        ...state.quality.settings,
+                        fetching: true,
+                    },
+                },
+            };
+        }
+        case AnalyticsActionsTypes.UPDATE_QUALITY_SETTINGS_SUCCESS:
+        case AnalyticsActionsTypes.GET_QUALITY_SETTINGS_SUCCESS:
+            return {
+                ...state,
+                quality: {
+                    ...state.quality,
+                    settings: {
+                        ...state.quality.settings,
+                        current: action.payload.settings,
+                        fetching: false,
+                    },
+                },
+            };
+        case AnalyticsActionsTypes.UPDATE_QUALITY_SETTINGS_FAILED:
+        case AnalyticsActionsTypes.GET_QUALITY_SETTINGS_FAILED:
+            return {
+                ...state,
+                quality: {
+                    ...state.quality,
+                    settings: {
+                        ...state.quality.settings,
+                        fetching: false,
+                    },
+                },
             };
         default:
             return state;

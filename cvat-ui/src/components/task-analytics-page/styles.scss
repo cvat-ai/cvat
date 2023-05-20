@@ -79,7 +79,7 @@
     font-size: 10px;
     position: absolute;
     bottom: -$grid-unit-size * 3;
-    right: 0;
+    right: $grid-unit-size * 4;
 }
 
 .cvat-task-analytics-page {
@@ -117,5 +117,25 @@
     .ant-btn {
         padding-left: $grid-unit-size * 3;
         padding-right: $grid-unit-size * 3;
+    }
+}
+
+.cvat-quality-settings-switch {
+    padding-left: $grid-unit-size * 2;
+}
+
+.cvat-quality-settings-title {
+    margin-bottom: $grid-unit-size * 2;
+}
+
+.cvat-modal-quality-settings {
+    top: $grid-unit-size * 3;
+
+    .ant-divider {
+        margin: $grid-unit-size 0;
+    }
+
+    .ant-form-item-control-input {
+        min-height: 0;
     }
 }

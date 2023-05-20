@@ -16,6 +16,7 @@ import { Job, Task } from 'cvat-core/src/session';
 import Project from 'cvat-core/src/project';
 import QualityReport from 'cvat-core/src/quality-report';
 import QualityConflict, { AnnotationConflict } from 'cvat-core/src/quality-conflict';
+import QualitySettings from 'cvat-core/src/quality-settings';
 import {
     ShapeType, LabelType, ModelKind, ModelProviders, ModelReturnType, DimensionType, JobType,
     JobStage, JobState,
@@ -68,6 +69,7 @@ export {
     JobState,
     QualityReport,
     QualityConflict,
+    QualitySettings,
     AnnotationConflict,
 };
 

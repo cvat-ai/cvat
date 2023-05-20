@@ -6,7 +6,7 @@
 import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 import {
-    Webhook, MLModel, ModelProvider, Organization, QualityReport, QualityConflict,
+    Webhook, MLModel, ModelProvider, Organization, QualityReport, QualityConflict, QualitySettings,
 } from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap } from 'utils/mousetrap-react';
@@ -565,6 +565,11 @@ export interface NotificationsState {
             updating: null | ErrorState;
             deleting: null | ErrorState;
         };
+        analytics: {
+            fetching: null | ErrorState;
+            fetchingSettings: null | ErrorState;
+            updatingSettings: null | ErrorState;
+        }
     };
     messages: {
         tasks: {
@@ -913,6 +918,11 @@ export interface AnalyticsState {
         tasksReports: QualityReport[];
         jobsReports: QualityReport[];
         query: QualityQuery;
+        settings: {
+            modalVisible: boolean;
+            current: QualitySettings | null;
+            fetching: boolean;
+        }
     }
 }
 

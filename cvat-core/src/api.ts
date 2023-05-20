@@ -274,6 +274,12 @@ function build() {
                     const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.conflicts, filter);
                     return result;
                 },
+                settings: {
+                    async get(taskID: number) {
+                        const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.settings.get, taskID);
+                        return result;
+                    },
+                },
             },
         },
         classes: {
