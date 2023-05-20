@@ -42,7 +42,7 @@ function Issues(props: Props): JSX.Element {
                 Resolved:
                 {' '}
                 {clampValue(resolvedIssues)}
-                {` (${percent(resolvedIssues, issuesCount)})`}
+                {resolvedIssues ? ` (${percent(resolvedIssues, issuesCount)})` : ''}
             </Text>
         </>
     );

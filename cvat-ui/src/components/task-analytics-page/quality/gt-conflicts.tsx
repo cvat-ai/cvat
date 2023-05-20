@@ -35,11 +35,35 @@ function GTConflicts(props: Props): JSX.Element {
             </Text>
             <Text>
                 Missing annotations:&nbsp;
-                {reportSummary?.conflictsByType.missingAnnotations}
+                {reportSummary?.conflictsByType.missingAnnotations || 0}
             </Text>
             <Text>
                 Extra annotations:&nbsp;
-                {reportSummary?.conflictsByType.extraAnnotations}
+                {reportSummary?.conflictsByType.extraAnnotations || 0}
+            </Text>
+            <Text>
+                Mismatching label:&nbsp;
+                {reportSummary?.conflictsByType.mismatchingLabel || 0}
+            </Text>
+            <Text>
+                Low overlap:&nbsp;
+                {reportSummary?.conflictsByType.lowOverlap || 0}
+            </Text>
+            <Text>
+                Mismatching direction:&nbsp;
+                {reportSummary?.conflictsByType.mismatchingDirection || 0}
+            </Text>
+            <Text>
+                Mismatching attributes:&nbsp;
+                {reportSummary?.conflictsByType.mismatchingAttributes || 0}
+            </Text>
+            <Text>
+                Mismatching groups:&nbsp;
+                {reportSummary?.conflictsByType.mismatchingGroups || 0}
+            </Text>
+            <Text>
+                Covered annotation:&nbsp;
+                {reportSummary?.conflictsByType.coveredAnnotation || 0}
             </Text>
         </div>
     );
@@ -50,14 +74,16 @@ function GTConflicts(props: Props): JSX.Element {
                 Errors:
                 {' '}
                 {clampValue(reportSummary?.errorCount)}
-                {` (${percent(reportSummary?.errorCount, reportSummary?.conflictCount)})`}
+                {reportSummary?.errorCount ?
+                    ` (${percent(reportSummary?.errorCount, reportSummary?.conflictCount)})` : ''}
             </Text>
             <Text type='secondary'>
                 {', '}
                 Warnings:
                 {' '}
                 {clampValue(reportSummary?.warningCount)}
-                {` (${percent(reportSummary?.warningCount, reportSummary?.conflictCount)})`}
+                { reportSummary?.warningCount ?
+                    ` (${percent(reportSummary?.warningCount, reportSummary?.conflictCount)})` : '' }
             </Text>
         </>
     );

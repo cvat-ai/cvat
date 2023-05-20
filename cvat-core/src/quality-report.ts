@@ -22,6 +22,12 @@ export interface RawQualityReportData {
         conflicts_by_type: {
             extra_annotation: number,
             missing_annotation: number,
+            mismatching_label: number,
+            low_overlap: number,
+            mismatching_direction: number,
+            mismatching_attributes: number,
+            mismatching_groups: number,
+            covered_annotation: number,
         }
     };
     parameters?: object;
@@ -35,11 +41,19 @@ export interface QualitySummary {
     dsCount: number;
     gtCount: number;
     accuracy: number;
+    precision: number;
+    recall: number;
     errorCount: number;
     warningCount: number;
     conflictsByType: {
         extraAnnotations: number;
         missingAnnotations: number;
+        mismatchingLabel: number;
+        lowOverlap: number;
+        mismatchingDirection: number;
+        mismatchingAttributes: number;
+        mismatchingGroups: number;
+        coveredAnnotation: number;
     }
 }
 
@@ -104,9 +118,17 @@ export default class QualityReport {
                         gtCount: data.summary.gt_count,
                         accuracy: (data.summary.valid_count /
                             (data.summary.ds_count + data.summary.gt_count - data.summary.valid_count)) * 100,
+                        precision: (data.summary.valid_count / data.summary.gt_count) * 100,
+                        recall: (data.summary.valid_count / data.summary.ds_count) * 100,
                         conflictsByType: {
-                            extraAnnotations: data.summary.conflicts_by_type.extra_annotation,
-                            missingAnnotations: data.summary.conflicts_by_type.missing_annotation,
+                            extraAnnotations: data.summary.conflicts_by_type?.extra_annotation,
+                            missingAnnotations: data.summary.conflicts_by_type?.missing_annotation,
+                            mismatchingLabel: data.summary.conflicts_by_type?.mismatching_label,
+                            lowOverlap: data.summary.conflicts_by_type?.low_overlap,
+                            mismatchingDirection: data.summary.conflicts_by_type?.mismatching_direction,
+                            mismatchingAttributes: data.summary.conflicts_by_type?.mismatching_attributes,
+                            mismatchingGroups: data.summary.conflicts_by_type?.mismatching_groups,
+                            coveredAnnotation: data.summary.conflicts_by_type?.covered_annotation,
                         },
                         errorCount: data.summary.error_count,
                         warningCount: data.summary.warning_count,

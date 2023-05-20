@@ -23,8 +23,8 @@ function MeanQuality(props: Props): JSX.Element {
     const tasksReports: QualityReport[] = useSelector((state: CombinedState) => state.analytics.quality.tasksReports);
     const taskReport = tasksReports.find((report: QualityReport) => report.taskId === task.id);
     const reportSummary = taskReport?.summary;
-    const meanAccuracy = reportSummary?.accuracy;
-    const accuracyRepresentation = !Number.isFinite(meanAccuracy) ? 'N/A' : `${meanAccuracy?.toFixed(1)}%`;
+    const toRepresentation = (val?: number): string => (!Number.isFinite(val) ? 'N/A' : `${val?.toFixed(1)}%`);
+
     const tooltip = (
         <div className='cvat-analytics-tooltip-inner'>
             <Text>
@@ -32,19 +32,27 @@ function MeanQuality(props: Props): JSX.Element {
             </Text>
             <Text>
                 Correct annotations:&nbsp;
-                {reportSummary?.validCount}
+                {reportSummary?.validCount || 0}
             </Text>
             <Text>
                 Task annotations:&nbsp;
-                {reportSummary?.dsCount}
+                {reportSummary?.dsCount || 0}
             </Text>
             <Text>
                 GT annotations:&nbsp;
-                {reportSummary?.gtCount}
+                {reportSummary?.gtCount || 0}
             </Text>
             <Text>
                 Accuracy:&nbsp;
-                {accuracyRepresentation}
+                {toRepresentation(reportSummary?.accuracy)}
+            </Text>
+            <Text>
+                Precision:&nbsp;
+                {toRepresentation(reportSummary?.precision)}
+            </Text>
+            <Text>
+                Recall:&nbsp;
+                {toRepresentation(reportSummary?.recall)}
             </Text>
         </div>
     );
@@ -56,7 +64,7 @@ function MeanQuality(props: Props): JSX.Element {
                     href={`${getCore().config.backendAPI}/quality/reports/${taskReport?.id}/data`}
                     download={`quality-report-${taskReport?.id}.json`}
                 >
-                    Qulity Report
+                    Quality Report
                 </a>
             </Button>
             <div className='cvat-analytics-time-hint'>
@@ -69,7 +77,7 @@ function MeanQuality(props: Props): JSX.Element {
         <AnalyticsCard
             title='Mean annotation quality'
             className='cvat-task-mean-annotaion-quality'
-            value={accuracyRepresentation}
+            value={toRepresentation(reportSummary?.accuracy)}
             tooltip={tooltip}
             rightElement={dowloadReportButton}
         />
