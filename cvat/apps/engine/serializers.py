@@ -16,6 +16,7 @@ from typing import Any, Dict, Iterable, Optional, OrderedDict, Union
 from rest_framework import serializers, exceptions
 from django.contrib.auth.models import User, Group
 from django.db import transaction
+from django.conf import settings
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine import models
@@ -715,6 +716,23 @@ class DataSerializer(serializers.ModelSerializer):
         help_text="Uploaded files")
     server_files = ServerFileSerializer(many=True, default=[],
         help_text="Paths to files from a file share mounted on the server, or from a cloud storage")
+    server_files_exclude = serializers.ListField(required=False, default=[],
+        child=serializers.CharField(max_length=1024),
+        help_text=textwrap.dedent("""\
+            Paths to files and directories from a file share mounted on the server, or from a cloud storage
+            that should be excluded from the directories specified in server_files.
+            This option cannot be used together with filename_pattern.
+            The server_files_exclude parameter cannot be used to exclude a part of dataset from an archive.
+
+            Examples:
+
+            Exclude all files from subfolder 'sub/sub_1/sub_2'and single file 'sub/image.jpg' from specified folder:
+            server_files = ['sub/'], server_files_exclude = ['sub/sub_1/sub_2/', 'sub/image.jpg']
+
+            Exclude all cloud storage files with prefix 'sub' from the content of manifest file:
+            server_files = ['manifest.jsonl'], server_files_exclude = ['sub/']
+        """)
+    )
     remote_files = RemoteFileSerializer(many=True, default=[],
         help_text="Direct download URLs for files")
     use_cache = serializers.BooleanField(default=False,
@@ -746,7 +764,7 @@ class DataSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Data
         fields = ('chunk_size', 'size', 'image_quality', 'start_frame', 'stop_frame', 'frame_filter',
-            'compressed_chunk_type', 'original_chunk_type', 'client_files', 'server_files', 'remote_files', 'use_zip_chunks',
+            'compressed_chunk_type', 'original_chunk_type', 'client_files', 'server_files', 'server_files_exclude','remote_files', 'use_zip_chunks',
             'cloud_storage_id', 'use_cache', 'copy_data', 'storage_method', 'storage', 'sorting_method', 'filename_pattern',
             'job_file_mapping')
         extra_kwargs = {
@@ -795,6 +813,22 @@ class DataSerializer(serializers.ModelSerializer):
             and attrs['start_frame'] > attrs['stop_frame']:
             raise serializers.ValidationError('Stop frame must be more or equal start frame')
 
+        if (
+            (server_files := attrs.get('server_files'))
+            and attrs.get('cloud_storage_id')
+            and sum(1 for f in server_files if not f['file'].endswith('.jsonl')) > settings.CLOUD_STORAGE_MAX_FILES_COUNT
+        ):
+            raise serializers.ValidationError(f'The maximum number of the cloud storage attached files is {settings.CLOUD_STORAGE_MAX_FILES_COUNT}')
+
+        filename_pattern = attrs.get('filename_pattern')
+        server_files_exclude = attrs.get('server_files_exclude')
+
+        if filename_pattern and len(list(filter(lambda x: not x['file'].endswith('.jsonl'), server_files))):
+            raise serializers.ValidationError('The filename_pattern can only be used with specified manifest or without server_files')
+
+        if filename_pattern and server_files_exclude:
+            raise serializers.ValidationError('The filename_pattern and server_files_exclude cannot be used together')
+
         return attrs
 
     def create(self, validated_data):
@@ -823,6 +857,7 @@ class DataSerializer(serializers.ModelSerializer):
         remote_files = validated_data.pop('remote_files')
 
         validated_data.pop('job_file_mapping', None) # optional
+        validated_data.pop('server_files_exclude', None) # optional
 
         for extra_key in { 'use_zip_chunks', 'use_cache', 'copy_data' }:
             validated_data.pop(extra_key)
@@ -1722,6 +1757,12 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
             os.remove(temporary_file)
         slogger.glob.error(message)
         raise serializers.ValidationError({field: message})
+
+
+class CloudStorageContentSerializer(serializers.Serializer):
+    next = serializers.CharField(required=False, allow_null=True, allow_blank=True,
+        help_text="This token is used to continue listing files in the bucket.")
+    content = FileInfoSerializer(many=True)
 
 class RelatedFileSerializer(serializers.ModelSerializer):
 
