@@ -898,7 +898,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                     (c: AnnotationConflict) => c.objId === objectState.serverID && c.jobId === objectState.jobID,
                 );
                 if (conflict && workspace === Workspace.REVIEW_WORKSPACE) {
-                    objectState.conflict = { description: conflict.conflictType };
+                    objectState.conflict = { description: conflict.description };
                 } else {
                     objectState.conflict = null;
                 }

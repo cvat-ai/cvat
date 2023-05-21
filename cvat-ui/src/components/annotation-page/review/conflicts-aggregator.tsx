@@ -57,9 +57,8 @@ export default function ConflictAggregatorComponent(): JSX.Element | null {
                     if (state && canvasInstance) {
                         const points = canvasInstance.setupConflictsRegions(state);
                         if (points) {
-                            const desc = c.conflictType.split('_').join(' ');
                             return {
-                                description: desc.charAt(0).toUpperCase() + desc.slice(1),
+                                description: c.description,
                                 importance: c.importance,
                                 x: points[0],
                                 y: points[1],

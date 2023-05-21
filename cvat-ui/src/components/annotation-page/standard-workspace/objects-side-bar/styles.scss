@@ -112,17 +112,23 @@
     width: 100%;
     margin: 1px;
     padding: 2px;
+    border-left: 3px solid #ff7300;
+    border-bottom: 1px solid $border-color-1;
 
     &:hover {
-        padding: 0;
-
-        > .ant-alert {
-            border-width: 3px;
-        }
+        border-left: 4px solid #ff7300;
     }
 
     > .ant-alert.ant-alert-with-description {
         padding: $grid-unit-size $grid-unit-size $grid-unit-size $grid-unit-size * 8;
+    }
+}
+
+.cvat-objects-sidebar-issue-resolved {
+    border-left: 3px solid $border-color-1;
+
+    &:hover {
+        border-left: 4px solid $border-color-1;
     }
 }
 

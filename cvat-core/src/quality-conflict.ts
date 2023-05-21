@@ -36,6 +36,7 @@ export class AnnotationConflict {
     public readonly type: string;
     public readonly conflictType: QualityConflictType;
     public readonly importance: ConflictImportance;
+    public readonly description: string;
 
     constructor(initialData: RawAnnotationConflictData) {
         const data: RawAnnotationConflictData = {
@@ -69,6 +70,12 @@ export class AnnotationConflict {
                 },
                 importance: {
                     get: () => data.importance,
+                },
+                description: {
+                    get: () => {
+                        const desc = this.conflictType.split('_').join(' ');
+                        return desc.charAt(0).toUpperCase() + desc.slice(1);
+                    },
                 },
             }),
         );

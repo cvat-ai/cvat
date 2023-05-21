@@ -58,7 +58,7 @@ function ReviewContextMenu({
                     className='cvat-context-menu-item cvat-quick-issue-from-conflict'
                     key={ReviewContextMenuKeys.QUICK_ISSUE_FROM_CONFLICT}
                 >
-                    {`Open an issue: ${conflict.description}`}
+                    {`Quick issue: ${conflict.description}`}
                 </Menu.Item>
             ) : null}
             <Menu.Item className='cvat-context-menu-item' key={ReviewContextMenuKeys.QUICK_ISSUE_POSITION}>

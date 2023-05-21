@@ -8,13 +8,14 @@ import {
     LeftOutlined, RightOutlined, EyeInvisibleFilled, EyeOutlined,
     CheckCircleFilled, CheckCircleOutlined,
 } from '@ant-design/icons';
-import Alert from 'antd/lib/alert';
 import { Row, Col } from 'antd/lib/grid';
+import Text from 'antd/lib/typography/Text';
 
 import { changeFrameAsync } from 'actions/annotation-actions';
 import { reviewActions } from 'actions/review-actions';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { CombinedState } from 'reducers';
+import moment from 'moment';
 
 export default function LabelsListComponent(): JSX.Element {
     const dispatch = useDispatch();
@@ -47,7 +48,7 @@ export default function LabelsListComponent(): JSX.Element {
                 opacity: 0.5,
             },
         };
-
+    console.log(frameIssues);
     return (
         <>
             <div className='cvat-objects-sidebar-issues-list-header'>
@@ -101,7 +102,9 @@ export default function LabelsListComponent(): JSX.Element {
                         <div
                             key={frameIssue.id}
                             id={`cvat-objects-sidebar-issue-item-${frameIssue.id}`}
-                            className='cvat-objects-sidebar-issue-item'
+                            className={
+                                `cvat-objects-sidebar-issue-item ${frameIssue.resolved ? 'cvat-objects-sidebar-issue-resolved' : ''}`
+                            }
                             onMouseEnter={() => {
                                 const element = window.document.getElementById(
                                     `cvat_canvas_issue_region_${frameIssue.id}`,
@@ -119,11 +122,15 @@ export default function LabelsListComponent(): JSX.Element {
                                 }
                             }}
                         >
-                            {frameIssue.resolved ? (
-                                <Alert message='Resolved' type='success' showIcon />
-                            ) : (
-                                <Alert message='Opened' type='warning' showIcon />
-                            )}
+                            <Row>
+                                <Text strong>{`#${frameIssue.id} • Issue`}</Text>
+                            </Row>
+                            <Row>
+                                <Text>{frameIssue.comments[0]?.message ? frameIssue.comments[0]?.message : ''}</Text>
+                            </Row>
+                            <Row>
+                                <Text>{moment(frameIssue.createdDate).fromNow()}</Text>
+                            </Row>
                         </div>
                     ),
                 )}
