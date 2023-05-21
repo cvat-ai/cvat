@@ -87,7 +87,8 @@ export default class QualityConflict {
     public readonly frame: number;
     public readonly type: QualityConflictType;
     public readonly annotationConflicts: AnnotationConflict[];
-    public readonly importance: ConflictImportance
+    public readonly importance: ConflictImportance;
+    public readonly description: string;
 
     constructor(initialData: RawQualityConflictData) {
         const data: RawQualityConflictData = {
@@ -128,6 +129,12 @@ export default class QualityConflict {
                 },
                 importance: {
                     get: () => data.importance,
+                },
+                description: {
+                    get: () => {
+                        const desc = this.type.split('_').join(' ');
+                        return desc.charAt(0).toUpperCase() + desc.slice(1);
+                    },
                 },
             }),
         );

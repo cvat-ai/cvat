@@ -128,6 +128,26 @@
     }
 }
 
+.cvat-objects-sidebar-conflict-item {
+    width: 100%;
+    margin: 1px;
+    padding: $grid-unit-size;
+    border-left: 3px solid #e10602;
+    border-bottom: 1px solid $border-color-1;
+
+    &:hover {
+        border-left: 4px solid #e10602;
+    }
+
+    p {
+        margin-bottom: 0;
+    }
+}
+
+.cvat-objects-sidebar-warning-item {
+    @extend .cvat-objects-sidebar-issue-item;
+}
+
 .cvat-objects-sidebar-issue-resolved {
     border-left: 3px solid $border-color-1;
 

@@ -17,15 +17,24 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 import { CombinedState } from 'reducers';
 import moment from 'moment';
 import Paragraph from 'antd/lib/typography/Paragraph';
+import { ConflictImportance, QualityConflict } from 'cvat-core-wrapper';
 
 export default function LabelsListComponent(): JSX.Element {
     const dispatch = useDispatch();
     const frame = useSelector((state: CombinedState): number => state.annotation.player.frame.number);
     const frameIssues = useSelector((state: CombinedState): any[] => state.review.frameIssues);
+    const frameConflicts = useSelector((state: CombinedState) => state.review.frameConflicts);
+    const showGroundTruth = useSelector((state: CombinedState) => state.settings.shapes.showGroundTruth);
     const issues = useSelector((state: CombinedState): any[] => state.review.issues);
+    const conflicts = useSelector((state: CombinedState) => state.review.conflicts);
     const issuesHidden = useSelector((state: CombinedState): any => state.review.issuesHidden);
     const issuesResolvedHidden = useSelector((state: CombinedState): any => state.review.issuesResolvedHidden);
-    const frames = issues.map((issue: any): number => issue.frame).sort((a: number, b: number) => +a - +b);
+    let frames = issues.map((issue: any): number => issue.frame).sort((a: number, b: number) => +a - +b);
+    if (showGroundTruth) {
+        const conflictFrames = conflicts
+            .map((issue: any): number => issue.frame).sort((a: number, b: number) => +a - +b);
+        frames = [...new Set([...frames, ...conflictFrames])];
+    }
     const nearestLeft = frames.filter((_frame: number): boolean => _frame < frame).reverse()[0];
     const dynamicLeftProps: any = Number.isInteger(nearestLeft) ?
         {
@@ -134,6 +143,28 @@ export default function LabelsListComponent(): JSX.Element {
                             </Row>
                             <Row>
                                 <Text>{moment(frameIssue.createdDate).fromNow()}</Text>
+                            </Row>
+                        </div>
+                    ),
+                )}
+                {showGroundTruth && frameConflicts.map(
+                    (frameConflict: QualityConflict): JSX.Element => (
+                        <div
+                            key={frameConflict.id}
+                            id={`cvat-objects-sidebar-conflict-item-${frameConflict.id}`}
+                            className={
+                                `${frameConflict.importance === ConflictImportance.WARNING ?
+                                    'cvat-objects-sidebar-warning-item' : 'cvat-objects-sidebar-conflict-item'}`
+                            }
+                        >
+                            <Row>
+                                <Text strong>{`#${frameConflict.id} • Conflict`}</Text>
+                            </Row>
+                            <Row>
+                                <Paragraph ellipsis={{ rows: 2 }}>
+                                    {frameConflict.description}
+                                </Paragraph>
+                                <Text />
                             </Row>
                         </div>
                     ),
