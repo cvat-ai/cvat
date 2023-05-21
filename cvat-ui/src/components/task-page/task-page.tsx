@@ -140,7 +140,7 @@ function TaskPageComponent(): JSX.Element {
                 align='top'
                 className='cvat-task-details-wrapper'
             >
-                <Col md={22} lg={18} xl={16} xxl={14}>
+                <Col span={22} xl={18} xxl={14}>
                     <TopBarComponent taskInstance={taskInstance} />
                     <DetailsComponent task={taskInstance} onUpdateTask={onUpdateTask} />
                     <JobListComponent task={taskInstance} onUpdateJob={onJobUpdate} />
