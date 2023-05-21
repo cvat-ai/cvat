@@ -4,7 +4,7 @@
 
 import './styles.scss';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Col, Row } from 'antd/lib/grid';
 import Card from 'antd/lib/card';
 import Text from 'antd/lib/typography/Text';
@@ -13,20 +13,81 @@ import Icon from '@ant-design/icons';
 import {
     Job, JobStage, JobType, User,
 } from 'cvat-core-wrapper';
-import { MoreOutlined, ProjectOutlined } from '@ant-design/icons/lib/icons';
+import {
+    BorderOutlined,
+    LoadingOutlined, MoreOutlined, ProjectOutlined, QuestionCircleOutlined,
+} from '@ant-design/icons/lib/icons';
 import { Link } from 'react-router-dom';
 import moment from 'moment';
 import UserSelector from 'components/task-page/user-selector';
 import Dropdown from 'antd/lib/dropdown';
 import Tag from 'antd/lib/tag';
-import { DurationIcon, FrameCountIcon, FramesIcon } from 'icons';
+import { DurationIcon, FramesIcon } from 'icons';
 import { useSelector } from 'react-redux';
 import { CombinedState } from 'reducers';
+import CVATTooltip from 'components/common/cvat-tooltip';
 import JobActionsMenu from './job-actions-menu';
 
 interface Props {
     job: Job,
     onJobUpdate: (job: Job) => void;
+}
+
+function ReviewSummaryComponent({ jobInstance }: { jobInstance: any }): JSX.Element {
+    const [summary, setSummary] = useState<Record<string, any> | null>(null);
+    const [error, setError] = useState<any>(null);
+    useEffect(() => {
+        setError(null);
+        jobInstance
+            .issues(jobInstance.id)
+            .then((issues: any[]) => {
+                setSummary({
+                    issues_unsolved: issues.filter((issue) => !issue.resolved).length,
+                    issues_resolved: issues.filter((issue) => issue.resolved).length,
+                });
+            })
+            .catch((_error: any) => {
+                // eslint-disable-next-line
+                console.log(_error);
+                setError(_error);
+            });
+    }, []);
+
+    if (!summary) {
+        if (error) {
+            if (error.toString().includes('403')) {
+                return <p>You do not have permissions</p>;
+            }
+
+            return <p>Could not fetch, check console output</p>;
+        }
+
+        return (
+            <>
+                <p>Loading.. </p>
+                <LoadingOutlined />
+            </>
+        );
+    }
+
+    return (
+        <table className='cvat-review-summary-description'>
+            <tbody>
+                <tr>
+                    <td>
+                        <Text strong>Unsolved issues</Text>
+                    </td>
+                    <td>{summary.issues_unsolved}</td>
+                </tr>
+                <tr>
+                    <td>
+                        <Text strong>Resolved issues</Text>
+                    </td>
+                    <td>{summary.issues_resolved}</td>
+                </tr>
+            </tbody>
+        </table>
+    );
 }
 
 function JobItem(props: Props): JSX.Element {
@@ -94,8 +155,15 @@ function JobItem(props: Props): JSX.Element {
                                         />
                                     </Col>
                                     <Col>
-                                        <Row>
-                                            <Text>Stage:</Text>
+                                        <Row justify='space-between' align='middle'>
+                                            <Col>
+                                                <Text>Stage:</Text>
+                                            </Col>
+                                            <Col>
+                                                <CVATTooltip title={<ReviewSummaryComponent jobInstance={job} />}>
+                                                    <QuestionCircleOutlined />
+                                                </CVATTooltip>
+                                            </Col>
                                         </Row>
                                         <Select
                                             value={stage}
@@ -114,6 +182,7 @@ function JobItem(props: Props): JSX.Element {
                                                 {JobStage.ACCEPTANCE}
                                             </Select.Option>
                                         </Select>
+
                                     </Col>
                                 </Row>
                             </Col>
@@ -140,20 +209,19 @@ function JobItem(props: Props): JSX.Element {
                             <Col offset={2}>
                                 <Row>
                                     <Col>
-                                        <Icon component={FrameCountIcon} />
-                                        <Text>Frame count:</Text>
-                                        <Text type='secondary'>{` ${job.stopFrame - job.startFrame}`}</Text>
+                                        <Icon component={FramesIcon} />
+                                        <Text>Frame range:</Text>
+                                        <Text type='secondary'>{` ${job.startFrame}-${job.stopFrame}`}</Text>
                                     </Col>
                                 </Row>
                                 <Row>
                                     <Col>
-                                        <Icon component={FramesIcon} />
-                                        <Text>Frames:</Text>
-                                        <Text type='secondary'>{` ${job.startFrame}-${job.stopFrame}`}</Text>
+                                        <BorderOutlined />
+                                        <Text>Frame count:</Text>
+                                        <Text type='secondary'>{` ${job.stopFrame - job.startFrame}`}</Text>
                                     </Col>
                                 </Row>
                             </Col>
-
                         </Row>
                     </Col>
                 </Row>
