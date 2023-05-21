@@ -25,7 +25,9 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
     const canvasIsReady = useSelector((state: CombinedState): boolean => state.annotation.canvas.ready);
     const newIssuePosition = useSelector((state: CombinedState): number[] | null => state.review.newIssuePosition);
     const issueFetching = useSelector((state: CombinedState): number | null => state.review.fetching.issueId);
+    const ready = useSelector((state: CombinedState) => state.annotation.canvas.ready);
     const [geometry, setGeometry] = useState<Canvas['geometry'] | null>(null);
+
     const issueLabels: JSX.Element[] = [];
     const issueDialogs: JSX.Element[] = [];
 
@@ -50,7 +52,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
         }
 
         return () => {};
-    }, [canvasInstance]);
+    }, [canvasInstance, ready]);
 
     useEffect(() => {
         if (canvasInstance instanceof Canvas) {

@@ -26,6 +26,8 @@ export default function ConflictAggregatorComponent(): JSX.Element | null {
     const canvasInstance = useSelector((state: CombinedState) => state.annotation.canvas.instance);
     const canvasIsReady = useSelector((state: CombinedState): boolean => state.annotation.canvas.ready);
     const [geometry, setGeometry] = useState<Canvas['geometry'] | null>(null);
+    const ready = useSelector((state: CombinedState) => state.annotation.canvas.ready);
+
     const conflictLabels: JSX.Element[] = [];
     useEffect(() => {
         if (canvasInstance instanceof Canvas) {
@@ -48,33 +50,31 @@ export default function ConflictAggregatorComponent(): JSX.Element | null {
         }
 
         return () => {};
-    }, [canvasInstance]);
+    }, [canvasInstance, ready]);
     const [mapping, setMapping] = useState<any>([]);
     useEffect(() => {
-        setTimeout(() => {
-            if (canvasInstance instanceof Canvas && geometry && showConflicts) {
-                const newMapping = conflicts.map((c: AnnotationConflict) => {
-                    const state = objectStates.find((s: ObjectState) => s.jobID === c.jobId && s.serverID === c.objId);
-                    if (state && canvasInstance) {
-                        const points = canvasInstance.setupConflictsRegions(state);
-                        if (points) {
-                            return {
-                                description: c.description,
-                                importance: c.importance,
-                                x: points[0],
-                                y: points[1],
-                                clientID: state.clientID,
-                            };
-                        }
+        if (canvasInstance instanceof Canvas && geometry && showConflicts) {
+            const newMapping = conflicts.map((c: AnnotationConflict) => {
+                const state = objectStates.find((s: ObjectState) => s.jobID === c.jobId && s.serverID === c.objId);
+                if (state && canvasInstance) {
+                    const points = canvasInstance.setupConflictsRegions(state);
+                    if (points) {
+                        return {
+                            description: c.description,
+                            importance: c.importance,
+                            x: points[0],
+                            y: points[1],
+                            clientID: state.clientID,
+                        };
                     }
-                    return [];
-                }).filter((el) => !Array.isArray(el));
-                setMapping(newMapping);
-            } else {
-                setMapping([]);
-            }
-        });
-    }, [geometry, objectStates, showConflicts, currentFrame]);
+                }
+                return [];
+            }).filter((el) => !Array.isArray(el));
+            setMapping(newMapping);
+        } else {
+            setMapping([]);
+        }
+    }, [geometry, objectStates, showConflicts, currentFrame, canvasInstance, ready]);
 
     if (!(canvasInstance instanceof Canvas) || !canvasIsReady || !geometry) {
         return null;

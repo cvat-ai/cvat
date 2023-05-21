@@ -61,21 +61,28 @@ function MeanQuality(props: Props): JSX.Element {
 
     const dowloadReportButton = (
         <div>
-            <Button type='primary' icon={<DownloadOutlined />} className='cvat-analytics-download-report-button'>
-                <a
-                    href={`${getCore().config.backendAPI}/quality/reports/${taskReport?.id}/data`}
-                    download={`quality-report-${taskReport?.id}.json`}
-                >
-                    Quality Report
-                </a>
-            </Button>
-            <MoreOutlined
-                className='cvat-quality-settings-switch'
-                onClick={() => dispatch(analyticsActions.switchQualitySettingsVisible(true))}
-            />
-            <div className='cvat-analytics-time-hint'>
-                <Text type='secondary'>{taskReport?.createdDate ? moment(taskReport?.createdDate).fromNow() : ''}</Text>
-            </div>
+            {
+                taskReport?.id ? (
+                    <>
+                        <Button type='primary' icon={<DownloadOutlined />} className='cvat-analytics-download-report-button'>
+                            <a
+                                href={`${getCore().config.backendAPI}/quality/reports/${taskReport?.id}/data`}
+                                download={`quality-report-${taskReport?.id}.json`}
+                            >
+                                Quality Report
+                            </a>
+                        </Button>
+                        <MoreOutlined
+                            className='cvat-quality-settings-switch'
+                            onClick={() => dispatch(analyticsActions.switchQualitySettingsVisible(true))}
+                        />
+                        <div className='cvat-analytics-time-hint'>
+                            <Text type='secondary'>{taskReport?.createdDate ? moment(taskReport?.createdDate).fromNow() : ''}</Text>
+                        </div>
+                    </>
+                ) : null
+            }
+
         </div>
 
     );
