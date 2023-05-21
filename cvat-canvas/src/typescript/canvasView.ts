@@ -2206,6 +2206,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.deleteText(clientID);
             }
 
+            for (const [key, otherShape] of Object.entries(this.svgShapes)) {
+                otherShape.removeClass('cvat_canvas_shape_darken');
+                otherShape.removeClass('cvat_canvas_conflicted');
+            }
+
             this.sortObjects();
 
             this.activeElement = {
@@ -2237,7 +2242,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private activateShape(clientID: number): void {
         const [state] = this.controller.objects.filter((_state: any): boolean => _state.clientID === clientID);
-
         if (state && state.shapeType === 'points') {
             this.svgShapes[clientID]
                 .remember('_selectHandler')
@@ -2249,6 +2253,26 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
 
         const shape = this.svgShapes[clientID];
+        if (this.configuration.showConflicts && state.conflict) {
+            const conflictedStates = state.conflict.annotationConflicts.map((annotationConflict) => {
+                const [conflictedState] = this.controller.objects.filter(
+                    (_state: any): boolean => _state.serverID === annotationConflict.objId,
+                );
+                return conflictedState;
+            });
+
+            let conflictedIDs = conflictedStates.map((_state) => (
+                [_state.clientID, ..._state.elements.map((element) => element.clientID)]
+            ));
+            conflictedIDs = conflictedIDs.flat();
+            for (const [key, otherShape] of Object.entries(this.svgShapes)) {
+                if (!conflictedIDs.includes(+key)) {
+                    otherShape.addClass('cvat_canvas_shape_darken');
+                } else {
+                    otherShape.addClass('cvat_canvas_conflicted');
+                }
+            }
+        }
         let text = this.svgTexts[clientID];
         if (!text) {
             text = this.addText(state);
@@ -2727,10 +2751,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
             rect.addClass('cvat_canvas_ground_truth');
         }
 
-        if (state.conflict && this.configuration.showConflicts) {
-            rect.addClass('cvat_canvas_conflicted');
-        }
-
         return rect;
     }
 
@@ -2757,10 +2777,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         if (state.isGroundTruth) {
             polygon.addClass('cvat_canvas_ground_truth');
-        }
-
-        if (state.conflict && this.configuration.showConflicts) {
-            polygon.addClass('cvat_canvas_conflicted');
         }
 
         return polygon;
@@ -2791,10 +2807,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
             polyline.addClass('cvat_canvas_ground_truth');
         }
 
-        if (state.conflict && this.configuration.showConflicts) {
-            polyline.addClass('cvat_canvas_conflicted');
-        }
-
         return polyline;
     }
 
@@ -2822,10 +2834,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         if (state.isGroundTruth) {
             cube.addClass('cvat_canvas_ground_truth');
-        }
-
-        if (state.conflict && this.configuration.showConflicts) {
-            cube.addClass('cvat_canvas_conflicted');
         }
 
         return cube;
@@ -3406,10 +3414,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
             rect.addClass('cvat_canvas_ground_truth');
         }
 
-        if (state.conflict && this.configuration.showConflicts) {
-            rect.addClass('cvat_canvas_conflicted');
-        }
-
         return rect;
     }
 
@@ -3438,10 +3442,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         if (state.isGroundTruth) {
             group.addClass('cvat_canvas_ground_truth');
-        }
-
-        if (state.conflict && this.configuration.showConflicts) {
-            group.addClass('cvat_canvas_conflicted');
         }
 
         shape.remove = (): SVG.PolyLine => {

@@ -887,18 +887,14 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         if (frameData !== null && canvasInstance) {
             const filteredAnnotations = annotations.filter((e) => e.objectType !== ObjectType.TAG);
             const shownAnnotations = filteredAnnotations.filter((e) => !e.jobID || statesSources.includes(e.jobID));
-            const annotatationConflicts = conflicts.reduce(
-                (acc, qualityConflict: QualityConflict) => {
-                    acc.push(qualityConflict.annotationConflicts[0]);
-                    return acc;
-                }, [],
-            );
             filteredAnnotations.forEach((objectState: ObjectState) => {
-                const conflict = annotatationConflicts.find(
-                    (c: AnnotationConflict) => c.objId === objectState.serverID && c.jobId === objectState.jobID,
-                );
+                const conflict = conflicts.find((qualityConflict: QualityConflict) => (
+                    qualityConflict.annotationConflicts.some(
+                        (annotationConflict: AnnotationConflict) => (annotationConflict.objId === objectState.serverID),
+                    )
+                ));
                 if (conflict && workspace === Workspace.REVIEW_WORKSPACE) {
-                    objectState.conflict = { description: conflict.description };
+                    objectState.conflict = conflict;
                 } else {
                     objectState.conflict = null;
                 }

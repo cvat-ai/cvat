@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,6 +8,7 @@ import PluginRegistry from './plugins';
 import { ArgumentError } from './exceptions';
 import { Label } from './labels';
 import { isEnum } from './common';
+import QualityConflict from './quality-conflict';
 
 interface UpdateFlags {
     label: boolean;
@@ -84,7 +85,7 @@ export default class ObjectState {
     public readonly updated: number;
     public readonly group: { color: string; id: number; } | null;
     public readonly isGroundTruth: boolean;
-    public conflict: { description: string } | null;
+    public conflict: QualityConflict | null;
     public readonly keyframes: {
         first: number | null;
         prev: number | null;
