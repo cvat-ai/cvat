@@ -18,17 +18,19 @@ interface Props {
     angle: number;
     scale: number;
     text: string;
+    darken: boolean;
     importance: ConflictImportance;
     onClick: () => void;
 }
 
 export default function ConflictLabel(props: Props): ReactPortal {
     const {
-        top, left, angle, scale, onClick, text, importance,
+        top, left, angle, scale, onClick, text, importance, darken,
     } = props;
 
     const ref = useRef<HTMLElement>(null);
     const conflictColor = importance === ConflictImportance.ERROR ? 'cvat-conflict-error' : 'cvat-conflict-warning';
+    const darkenColor = darken ? 'cvat-conflict-darken' : '';
 
     const elementID = `cvat-hidden-issue-label-${top}`;
     return ReactDOM.createPortal(
@@ -42,7 +44,7 @@ export default function ConflictLabel(props: Props): ReactPortal {
                     left,
                     transform: `scale(${scale}) rotate(${angle}deg) translateY(-100%) translateX(-50%)`,
                 }}
-                className={`cvat-conflict-label ${conflictColor}`}
+                className={`cvat-conflict-label ${conflictColor} ${darkenColor}`}
             >
                 <Icon component={ConflictIcon} />
             </Tag>

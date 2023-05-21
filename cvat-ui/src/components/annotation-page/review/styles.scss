@@ -151,3 +151,11 @@
         }
     }
 }
+
+.cvat-conflict-darken {
+    svg {
+        path:first-child {
+            fill: #838383;
+        }
+    }
+}

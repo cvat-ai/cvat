@@ -15,6 +15,7 @@ import ConflictLabel from './conflict-label';
 export default function ConflictAggregatorComponent(): JSX.Element | null {
     const qualityConflicts = useSelector((state: CombinedState) => state.review.conflicts);
     const objectStates = useSelector((state: CombinedState) => state.annotation.annotations.states);
+    const activatedStateID = useSelector((state: CombinedState) => state.annotation.annotations.activatedStateID);
     const currentFrame = useSelector((state: CombinedState) => state.annotation.player.frame.number);
     const showConflicts = useSelector((state: CombinedState) => state.settings.shapes.showGroundTruth);
     const frameQualityConflicts = qualityConflicts.filter(
@@ -62,6 +63,7 @@ export default function ConflictAggregatorComponent(): JSX.Element | null {
                                 importance: c.importance,
                                 x: points[0],
                                 y: points[1],
+                                clientID: state.clientID,
                             };
                         }
                     }
@@ -89,6 +91,7 @@ export default function ConflictAggregatorComponent(): JSX.Element | null {
                 scale={1 / geometry.scale}
                 onClick={() => {}}
                 importance={conflict.importance}
+                darken={!!activatedStateID && (conflict.clientID !== activatedStateID)}
             />,
         );
     }

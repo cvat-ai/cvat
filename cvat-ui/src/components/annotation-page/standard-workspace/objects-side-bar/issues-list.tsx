@@ -123,6 +123,7 @@ export default function LabelsListComponent(): JSX.Element {
                                 if (element) {
                                     element.setAttribute('fill', 'url(#cvat_issue_region_pattern_2)');
                                 }
+                                dispatch(activateObject(null, null, null));
                             }}
                             onMouseLeave={() => {
                                 const element = window.document.getElementById(
