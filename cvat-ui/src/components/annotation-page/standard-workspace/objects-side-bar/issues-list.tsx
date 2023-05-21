@@ -11,7 +11,7 @@ import {
 import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 
-import { changeFrameAsync } from 'actions/annotation-actions';
+import { activateObject, changeFrameAsync } from 'actions/annotation-actions';
 import { reviewActions } from 'actions/review-actions';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { CombinedState } from 'reducers';
@@ -29,6 +29,7 @@ export default function LabelsListComponent(): JSX.Element {
     const conflicts = useSelector((state: CombinedState) => state.review.conflicts);
     const issuesHidden = useSelector((state: CombinedState): any => state.review.issuesHidden);
     const issuesResolvedHidden = useSelector((state: CombinedState): any => state.review.issuesResolvedHidden);
+    const objectStates = useSelector((state: CombinedState) => state.annotation.annotations.states);
     let frames = issues.map((issue: any): number => issue.frame).sort((a: number, b: number) => +a - +b);
     if (showGroundTruth) {
         const conflictFrames = conflicts
@@ -156,6 +157,11 @@ export default function LabelsListComponent(): JSX.Element {
                                 `${frameConflict.importance === ConflictImportance.WARNING ?
                                     'cvat-objects-sidebar-warning-item' : 'cvat-objects-sidebar-conflict-item'}`
                             }
+                            onMouseEnter={() => {
+                                const serverID = frameConflict.annotationConflicts[0].objId;
+                                const objectState = objectStates.find((state) => state.serverID === serverID);
+                                dispatch(activateObject(objectState.clientID, null, null));
+                            }}
                         >
                             <Row>
                                 <Text strong>{`#${frameConflict.id} • Conflict`}</Text>
