@@ -15,7 +15,7 @@ import { SerializedAttribute, SerializedLabel } from 'cvat-core/src/server-respo
 import { Job, Task } from 'cvat-core/src/session';
 import Project from 'cvat-core/src/project';
 import QualityReport from 'cvat-core/src/quality-report';
-import QualityConflict, { AnnotationConflict } from 'cvat-core/src/quality-conflict';
+import QualityConflict, { AnnotationConflict, ConflictImportance } from 'cvat-core/src/quality-conflict';
 import QualitySettings from 'cvat-core/src/quality-settings';
 import {
     ShapeType, LabelType, ModelKind, ModelProviders, ModelReturnType, DimensionType, JobType,
@@ -71,6 +71,7 @@ export {
     QualityConflict,
     QualitySettings,
     AnnotationConflict,
+    ConflictImportance,
 };
 
 export type {

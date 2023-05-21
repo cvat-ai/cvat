@@ -20,7 +20,6 @@ export default function QualitySettingsModal(): JSX.Element | null {
     const settings = useSelector((state: CombinedState) => state.analytics.quality.settings.current);
     const [form] = Form.useForm();
 
-    console.log(settings);
     const dispatch = useDispatch();
 
     const onOk = useCallback(async () => {

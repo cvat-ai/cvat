@@ -1722,8 +1722,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const shape = this.svgShapes[SShape.clientID];
         if (!shape) return [];
         const box = (shape.node as any).getBBox();
-        cx = box.x + (box.x + box.width - box.x) / 2;
-        cy = box.y + (box.y + box.height - box.y) / 2;
+        cx = box.x + (box.width) / 2;
+        cy = box.y;
         return [cx, cy];
     }
 

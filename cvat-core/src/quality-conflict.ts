@@ -8,12 +8,18 @@ export enum QualityConflictType {
     MISSING = 'missing_annotation',
 }
 
+export enum ConflictImportance {
+    ERROR = 'error',
+    WARNING = 'warning',
+}
+
 export interface RawQualityConflictData {
     id?: number;
     frame?: number;
     type?: string;
     annotation_ids?: RawAnnotationConflictData[];
     data?: string;
+    importance?: string;
 }
 
 export interface RawAnnotationConflictData {
@@ -21,6 +27,7 @@ export interface RawAnnotationConflictData {
     obj_id?: number;
     type?: string;
     conflict_type?: string;
+    importance?: string;
 }
 
 export class AnnotationConflict {
@@ -28,6 +35,7 @@ export class AnnotationConflict {
     public readonly objId: number;
     public readonly type: string;
     public readonly conflictType: QualityConflictType;
+    public readonly importance: ConflictImportance;
 
     constructor(initialData: RawAnnotationConflictData) {
         const data: RawAnnotationConflictData = {
@@ -35,6 +43,7 @@ export class AnnotationConflict {
             obj_id: undefined,
             type: undefined,
             conflict_type: undefined,
+            importance: undefined,
         };
 
         for (const property in data) {
@@ -58,6 +67,9 @@ export class AnnotationConflict {
                 conflictType: {
                     get: () => data.conflict_type,
                 },
+                importance: {
+                    get: () => data.importance,
+                },
             }),
         );
     }
@@ -68,7 +80,7 @@ export default class QualityConflict {
     public readonly frame: number;
     public readonly type: QualityConflictType;
     public readonly annotationConflicts: AnnotationConflict[];
-    public readonly data: string;
+    public readonly importance: ConflictImportance
 
     constructor(initialData: RawQualityConflictData) {
         const data: RawQualityConflictData = {
@@ -76,7 +88,7 @@ export default class QualityConflict {
             frame: undefined,
             type: undefined,
             annotation_ids: [],
-            data: '',
+            importance: undefined,
         };
 
         for (const property in data) {
@@ -89,6 +101,7 @@ export default class QualityConflict {
             .map((rawData: RawAnnotationConflictData) => new AnnotationConflict({
                 ...rawData,
                 conflict_type: data.type,
+                importance: data.importance,
             }));
 
         Object.defineProperties(
@@ -106,8 +119,8 @@ export default class QualityConflict {
                 annotationConflicts: {
                     get: () => data.annotation_ids,
                 },
-                data: {
-                    get: () => data.data,
+                importance: {
+                    get: () => data.importance,
                 },
             }),
         );

@@ -50,13 +50,13 @@
     transform-origin: top left;
     background: none;
     border: none;
+    margin: 0;
 
     &:hover {
         opacity: 1;
     }
 
     svg {
-        fill: red;
         width: 1.5em;
         height: 1.5em;
     }
@@ -134,4 +134,20 @@
     @extend .cvat-hidden-issue-indicator;
 
     color: $danger-icon-color;
+}
+
+.cvat-conflict-error {
+    svg {
+        path:first-child {
+            fill: #e10602;
+        }
+    }
+}
+
+.cvat-conflict-warning {
+    svg {
+        path:first-child {
+            fill: #ff7300;
+        }
+    }
 }

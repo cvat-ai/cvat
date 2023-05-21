@@ -7,27 +7,28 @@ import React, {
 } from 'react';
 import ReactDOM from 'react-dom';
 import Tag from 'antd/lib/tag';
-import {
-    ExclamationCircleOutlined,
-} from '@ant-design/icons';
-
+import Icon from '@ant-design/icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
+import { ConflictIcon } from 'icons';
+import { ConflictImportance } from 'cvat-core-wrapper';
 
 interface Props {
     top: number;
     left: number;
     angle: number;
     scale: number;
-    text: string
+    text: string;
+    importance: ConflictImportance;
     onClick: () => void;
 }
 
 export default function ConflictLabel(props: Props): ReactPortal {
     const {
-        top, left, angle, scale, onClick, text,
+        top, left, angle, scale, onClick, text, importance,
     } = props;
 
     const ref = useRef<HTMLElement>(null);
+    const conflictColor = importance === ConflictImportance.ERROR ? 'cvat-conflict-error' : 'cvat-conflict-warning';
 
     const elementID = `cvat-hidden-issue-label-${top}`;
     return ReactDOM.createPortal(
@@ -36,10 +37,14 @@ export default function ConflictLabel(props: Props): ReactPortal {
                 ref={ref}
                 id={elementID}
                 onClick={onClick}
-                style={{ top, left, transform: `scale(${scale}) rotate(${angle}deg)` }}
-                className='cvat-conflict-label'
+                style={{
+                    top,
+                    left,
+                    transform: `scale(${scale}) rotate(${angle}deg) translateY(-100%) translateX(-50%)`,
+                }}
+                className={`cvat-conflict-label ${conflictColor}`}
             >
-                <ExclamationCircleOutlined />
+                <Icon component={ConflictIcon} />
             </Tag>
         </CVATTooltip>,
         window.document.getElementById('cvat_canvas_attachment_board') as HTMLElement,

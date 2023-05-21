@@ -51,14 +51,16 @@ export default function ConflictAggregatorComponent(): JSX.Element | null {
     const [mapping, setMapping] = useState<any>([]);
     useEffect(() => {
         setTimeout(() => {
-            if (geometry && showConflicts) {
+            if (canvasInstance instanceof Canvas && geometry && showConflicts) {
                 const newMapping = conflicts.map((c: AnnotationConflict) => {
                     const state = objectStates.find((s: ObjectState) => s.jobID === c.jobId && s.serverID === c.objId);
                     if (state && canvasInstance) {
                         const points = canvasInstance.setupConflictsRegions(state);
                         if (points) {
+                            const desc = c.conflictType.split('_').join(' ');
                             return {
-                                description: c.conflictType,
+                                description: desc.charAt(0).toUpperCase() + desc.slice(1),
+                                importance: c.importance,
                                 x: points[0],
                                 y: points[1],
                             };
@@ -87,6 +89,7 @@ export default function ConflictAggregatorComponent(): JSX.Element | null {
                 angle={-geometry.angle}
                 scale={1 / geometry.scale}
                 onClick={() => {}}
+                importance={conflict.importance}
             />,
         );
     }
