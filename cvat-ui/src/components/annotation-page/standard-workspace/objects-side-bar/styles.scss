@@ -111,7 +111,7 @@
 .cvat-objects-sidebar-issue-item {
     width: 100%;
     margin: 1px;
-    padding: 2px;
+    padding: $grid-unit-size;
     border-left: 3px solid #ff7300;
     border-bottom: 1px solid $border-color-1;
 
@@ -121,6 +121,10 @@
 
     > .ant-alert.ant-alert-with-description {
         padding: $grid-unit-size $grid-unit-size $grid-unit-size $grid-unit-size * 8;
+    }
+
+    p {
+        margin-bottom: 0;
     }
 }
 

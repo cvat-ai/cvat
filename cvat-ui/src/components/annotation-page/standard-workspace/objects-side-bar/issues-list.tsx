@@ -16,6 +16,7 @@ import { reviewActions } from 'actions/review-actions';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { CombinedState } from 'reducers';
 import moment from 'moment';
+import Paragraph from 'antd/lib/typography/Paragraph';
 
 export default function LabelsListComponent(): JSX.Element {
     const dispatch = useDispatch();
@@ -48,7 +49,7 @@ export default function LabelsListComponent(): JSX.Element {
                 opacity: 0.5,
             },
         };
-    console.log(frameIssues);
+
     return (
         <>
             <div className='cvat-objects-sidebar-issues-list-header'>
@@ -126,7 +127,10 @@ export default function LabelsListComponent(): JSX.Element {
                                 <Text strong>{`#${frameIssue.id} • Issue`}</Text>
                             </Row>
                             <Row>
-                                <Text>{frameIssue.comments[0]?.message ? frameIssue.comments[0]?.message : ''}</Text>
+                                <Paragraph ellipsis={{ rows: 2 }}>
+                                    {frameIssue.comments[0]?.message ? frameIssue.comments[0]?.message : ''}
+                                </Paragraph>
+                                <Text />
                             </Row>
                             <Row>
                                 <Text>{moment(frameIssue.createdDate).fromNow()}</Text>
