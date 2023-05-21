@@ -19,6 +19,9 @@ import {
     switchPropagateVisibility as switchPropagateVisibilityAction,
     removeObject as removeObjectAction,
 } from 'actions/annotation-actions';
+import {
+    changeShowGroundTruth as changeShowGroundTruthAction,
+} from 'actions/settings-actions';
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import {
     CombinedState, StatesOrdering, ObjectType, ColorBy,
@@ -46,6 +49,7 @@ interface StateToProps {
     maxZLayer: number;
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
+    showGroundTruth: boolean;
 }
 
 interface DispatchToProps {
@@ -56,6 +60,7 @@ interface DispatchToProps {
     switchPropagateVisibility: (visible: boolean) => void;
     changeFrame(frame: number): void;
     changeGroupColor(group: number, color: string): void;
+    changeShowGroundTruth(value: boolean): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -78,7 +83,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
             colors,
         },
         settings: {
-            shapes: { colorBy },
+            shapes: { colorBy, showGroundTruth },
         },
         shortcuts: { keyMap, normalizedKeyMap },
     } = state;
@@ -119,6 +124,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         maxZLayer,
         keyMap,
         normalizedKeyMap,
+        showGroundTruth,
     };
 }
 
@@ -144,6 +150,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         changeGroupColor(group: number, color: string): void {
             dispatch(changeGroupColorAsync(group, color));
+        },
+        changeShowGroundTruth(value: boolean): void {
+            dispatch(changeShowGroundTruthAction(value));
         },
     };
 }
@@ -233,6 +242,12 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
         this.hideAllStates(false);
     };
 
+    private changeShowGroundTruth = (): void => {
+        const { showGroundTruth, changeShowGroundTruth } = this.props;
+
+        changeShowGroundTruth(!showGroundTruth);
+    };
+
     private lockAllStates(locked: boolean): void {
         const { objectStates, updateAnnotations, readonly } = this.props;
 
@@ -277,6 +292,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             colorBy,
             readonly,
             statesCollapsedAll,
+            showGroundTruth,
             updateAnnotations,
             changeGroupColor,
             removeObject,
@@ -484,6 +500,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     readonly={readonly || false}
                     statesOrdering={statesOrdering}
                     sortedStatesID={sortedStatesID}
+                    showGroundTruth={showGroundTruth}
                     objectStates={objectStates}
                     switchHiddenAllShortcut={normalizedKeyMap.SWITCH_ALL_HIDDEN}
                     switchLockAllShortcut={normalizedKeyMap.SWITCH_ALL_LOCK}
@@ -494,6 +511,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     expandAllStates={this.onExpandAllStates}
                     hideAllStates={this.onHideAllStates}
                     showAllStates={this.onShowAllStates}
+                    changeShowGroundTruth={this.changeShowGroundTruth}
                 />
             </>
         );

@@ -449,3 +449,9 @@
     border: 2px dashed $object-item-border-color;
     padding: 0;
 }
+
+.cvat-objects-sidebar-show-ground-truth-active {
+    path {
+        fill: #1890ff;
+    }
+}

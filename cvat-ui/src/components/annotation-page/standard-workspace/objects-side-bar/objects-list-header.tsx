@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import {
+import Icon, {
     CaretDownOutlined,
     CaretUpFilled,
     EyeInvisibleFilled,
@@ -16,6 +16,7 @@ import { Col, Row } from 'antd/lib/grid';
 import StatesOrderingSelector from 'components/annotation-page/standard-workspace/objects-side-bar/states-ordering-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { StatesOrdering } from 'reducers';
+import { ShowGroundTruthIcon } from 'icons';
 
 interface Props {
     readonly: boolean;
@@ -25,6 +26,7 @@ interface Props {
     statesOrdering: StatesOrdering;
     switchLockAllShortcut: string;
     switchHiddenAllShortcut: string;
+    showGroundTruth: boolean;
     changeStatesOrdering(value: StatesOrdering): void;
     lockAllStates(): void;
     unlockAllStates(): void;
@@ -32,6 +34,7 @@ interface Props {
     expandAllStates(): void;
     hideAllStates(): void;
     showAllStates(): void;
+    changeShowGroundTruth(): void;
 }
 
 function LockAllSwitcher(props: Props): JSX.Element {
@@ -64,6 +67,25 @@ function HideAllSwitcher(props: Props): JSX.Element {
     );
 }
 
+function GTSwitcher(props: Props): JSX.Element {
+    const {
+        showGroundTruth, changeShowGroundTruth,
+    } = props;
+    return (
+        <Col span={2}>
+            <CVATTooltip title='Show Ground truth annotations and conflicts'>
+                <Icon
+                    className={
+                        `cvat-objects-sidebar-show-ground-truth ${showGroundTruth ? 'cvat-objects-sidebar-show-ground-truth-active' : ''}`
+                    }
+                    component={ShowGroundTruthIcon}
+                    onClick={changeShowGroundTruth}
+                />
+            </CVATTooltip>
+        </Col>
+    );
+}
+
 function CollapseAllSwitcher(props: Props): JSX.Element {
     const { statesCollapsed, expandAllStates, collapseAllStates } = props;
     return (
@@ -90,6 +112,9 @@ function ObjectListHeader(props: Props): JSX.Element {
                         <LockAllSwitcher {...props} />
                         <HideAllSwitcher {...props} />
                     </>
+                )}
+                {readonly && (
+                    <GTSwitcher {...props} />
                 )}
                 <CollapseAllSwitcher {...props} />
                 <StatesOrderingSelector statesOrdering={statesOrdering} changeStatesOrdering={changeStatesOrdering} />
