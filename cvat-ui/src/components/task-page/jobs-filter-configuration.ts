@@ -76,6 +76,18 @@ export const config: Partial<Config> = {
             type: 'datetime',
             operators: ['between', 'greater', 'greater_or_equal', 'less', 'less_or_equal'],
         },
+        type: {
+            label: 'Type',
+            type: 'select',
+            operators: ['select_equals'],
+            valueSources: ['value'],
+            fieldSettings: {
+                listValues: [
+                    { value: 'annotation', title: 'Annotation' },
+                    { value: 'ground_truth', title: 'Ground truth' },
+                ],
+            },
+        },
         id: {
             label: 'ID',
             type: 'number',
