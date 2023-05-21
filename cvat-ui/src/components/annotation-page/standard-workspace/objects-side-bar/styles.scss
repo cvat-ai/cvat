@@ -181,6 +181,10 @@
             }
         }
     }
+
+    .cvat-objects-sidebar-show-ground-truth {
+        margin-right: $grid-unit-size;
+    }
 }
 
 .cvat-objects-sidebar-states-list {

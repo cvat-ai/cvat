@@ -72,7 +72,7 @@ function GTSwitcher(props: Props): JSX.Element {
         showGroundTruth, changeShowGroundTruth,
     } = props;
     return (
-        <Col span={2}>
+        <Col>
             <CVATTooltip title='Show Ground truth annotations and conflicts'>
                 <Icon
                     className={
@@ -89,7 +89,7 @@ function GTSwitcher(props: Props): JSX.Element {
 function CollapseAllSwitcher(props: Props): JSX.Element {
     const { statesCollapsed, expandAllStates, collapseAllStates } = props;
     return (
-        <Col span={2}>
+        <Col>
             <CVATTooltip title='Expand/collapse all'>
                 {statesCollapsed ? (
                     <CaretDownOutlined onClick={expandAllStates} />
@@ -113,10 +113,12 @@ function ObjectListHeader(props: Props): JSX.Element {
                         <HideAllSwitcher {...props} />
                     </>
                 )}
-                {readonly && (
-                    <GTSwitcher {...props} />
-                )}
-                <CollapseAllSwitcher {...props} />
+                <Row>
+                    {readonly && (
+                        <GTSwitcher {...props} />
+                    )}
+                    <CollapseAllSwitcher {...props} />
+                </Row>
                 <StatesOrderingSelector statesOrdering={statesOrdering} changeStatesOrdering={changeStatesOrdering} />
             </Row>
         </div>
