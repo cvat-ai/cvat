@@ -7,7 +7,7 @@
 
 .cvat-task-details-wrapper {
     overflow-y: auto;
-    height: 90%;
+    height: 100%;
     width: 100%;
 
     .cvat-task-details {
@@ -103,14 +103,10 @@
 .cvat-task-job-list {
     width: 100%;
     height: auto;
-    border: 1px solid $border-color-1;
-    border-radius: 3px;
-    margin-top: 20px;
-    padding: 20px;
-    background: $background-color-1;
+    margin-top: $grid-unit-size * 2;
 
-    > div:nth-child(1) > div:nth-child(1) {
-        display: flex;
+    .cvat-job-item {
+        margin-bottom: $grid-unit-size;
     }
 }
 
@@ -167,5 +163,15 @@
         > td:nth-child(2) {
             padding-left: $grid-unit-size;
         }
+    }
+}
+
+.cvat-jobs-list-filters-wrapper {
+    display: flex;
+    justify-content: end;
+    margin-top: $grid-unit-size * 2;
+
+    .cvat-resource-page-filters {
+        margin-right: $grid-unit-size * 4;
     }
 }
