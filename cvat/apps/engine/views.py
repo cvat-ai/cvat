@@ -21,6 +21,7 @@ from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseNotFound, HttpResponseBadRequest
 from django.utils import timezone
 from django.db.models import Count, Q
+from http import HTTPStatus
 
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
@@ -61,7 +62,7 @@ from cvat.apps.engine.serializers import (
     UserSerializer, PluginsSerializer, IssueReadSerializer,
     IssueWriteSerializer, CommentReadSerializer, CommentWriteSerializer, CloudStorageWriteSerializer,
     CloudStorageReadSerializer, DatasetFileSerializer,
-    ProjectFileSerializer, TaskFileSerializer)
+    ProjectFileSerializer, TaskFileSerializer, CloudStorageContentSerializer)
 from cvat.apps.engine.view_utils import get_cloud_storage_for_import_or_export
 
 from utils.dataset_manifest import ImageManifestManager
@@ -145,6 +146,8 @@ class ServerViewSet(viewsets.ViewSet):
                 if entry.is_file():
                     entry_type = "REG"
                     entry_mime_type = get_mime(os.path.join(settings.SHARE_ROOT, entry))
+                    if entry_mime_type == 'zip':
+                        entry_mime_type = 'archive'
                 elif entry.is_dir():
                     entry_type = "DIR"
                     entry_mime_type = "DIR"
@@ -156,7 +159,8 @@ class ServerViewSet(viewsets.ViewSet):
                         "mime_type": entry_mime_type,
                     })
 
-            serializer = FileInfoSerializer(many=True, data=data)
+            # return directories at the top of the list
+            serializer = FileInfoSerializer(many=True, data=sorted(data, key=lambda x: (x['type'], x['name'])))
             if serializer.is_valid(raise_exception=True):
                 return Response(serializer.data)
         else:
@@ -827,8 +831,9 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             self._object.save()
             data = {k: v for k, v in serializer.data.items()}
 
-            if 'job_file_mapping' in serializer.validated_data:
-                data['job_file_mapping'] = serializer.validated_data['job_file_mapping']
+            for optional_field in ['job_file_mapping', 'server_files_exclude']:
+                if optional_field in serializer.validated_data:
+                    data[optional_field] = serializer.validated_data[optional_field]
 
             data['use_zip_chunks'] = serializer.validated_data['use_zip_chunks']
             data['use_cache'] = serializer.validated_data['use_cache']
@@ -2085,7 +2090,11 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         ],
         responses={
             '200': OpenApiResponse(response=build_array_type(build_basic_type(OpenApiTypes.STR)), description='A manifest content'),
-        })
+        },
+        deprecated=True,
+        description="This method is deprecated and will be removed in version 2.6.0. "
+                    "Please use the new version of API: /cloudstorages/id/content-v2/",
+    )
     @action(detail=True, methods=['GET'], url_path='content')
     def content(self, request, pk):
         storage = None
@@ -2105,7 +2114,84 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             # need to update index
             manifest.set_index()
             manifest_files = [os.path.join(manifest_prefix, f) for f in manifest.data]
-            return Response(data=manifest_files, content_type="text/plain")
+            return Response(
+                data=manifest_files,
+                content_type='text/plain',
+                headers={'Deprecation': 'true'}
+            )
+
+        except CloudStorageModel.DoesNotExist:
+            message = f"Storage {pk} does not exist"
+            slogger.glob.error(message)
+            return HttpResponseNotFound(message)
+        except (ValidationError, PermissionDenied, NotFound) as ex:
+            msg = str(ex) if not isinstance(ex, ValidationError) else \
+                '\n'.join([str(d) for d in ex.detail])
+            slogger.cloud_storage[pk].info(msg)
+            return Response(data=msg, status=ex.status_code)
+        except Exception as ex:
+            slogger.glob.error(str(ex))
+            return Response("An internal error has occurred",
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @extend_schema(summary='Method returns the content of the cloud storage',
+        parameters=[
+            OpenApiParameter('manifest_path', description='Path to the manifest file in a cloud storage',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
+            OpenApiParameter('prefix', description='Prefix to filter data',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
+            OpenApiParameter('next_token', description='Used to continue listing files in the bucket',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
+            OpenApiParameter('page_size', location=OpenApiParameter.QUERY, type=OpenApiTypes.INT),
+        ],
+        responses={
+            '200': OpenApiResponse(response=CloudStorageContentSerializer, description='A manifest content'),
+        },
+    )
+    @action(detail=True, methods=['GET'], url_path='content-v2')
+    def content_v2(self, request, pk):
+        storage = None
+        try:
+            db_storage = self.get_object()
+            storage = db_storage_to_storage_instance(db_storage)
+            prefix = request.query_params.get('prefix')
+            page_size = request.query_params.get('page_size', str(settings.BUCKET_CONTENT_MAX_PAGE_SIZE))
+            if not page_size.isnumeric():
+                return HttpResponseBadRequest('Wrong value for page_size was found')
+            page_size = min(int(page_size), settings.BUCKET_CONTENT_MAX_PAGE_SIZE)
+
+            # make api identical to share api
+            if prefix and prefix.startswith('/'):
+                prefix = prefix[1:]
+            next_token = request.query_params.get('next_token')
+
+            if (manifest_path := request.query_params.get('manifest_path')):
+                manifest_prefix = os.path.dirname(manifest_path)
+
+                full_manifest_path = os.path.join(db_storage.get_storage_dirname(), manifest_path)
+                if not os.path.exists(full_manifest_path) or \
+                        datetime.utcfromtimestamp(os.path.getmtime(full_manifest_path)).replace(tzinfo=pytz.UTC) < storage.get_file_last_modified(manifest_path):
+                    storage.download_file(manifest_path, full_manifest_path)
+                manifest = ImageManifestManager(full_manifest_path, db_storage.get_storage_dirname())
+                # need to update index
+                manifest.set_index()
+                try:
+                    start_index = int(next_token or '0')
+                except ValueError:
+                    return HttpResponseBadRequest('Wrong value for the next_token parameter was found.')
+                content = manifest.emulate_hierarchical_structure(
+                    page_size, manifest_prefix=manifest_prefix, prefix=prefix, start_index=start_index)
+            else:
+                content = storage.list_files_on_one_page(prefix, next_token, page_size,_use_sort=True)
+            for i in content['content']:
+                mime_type = get_mime(i['name']) if i['type'] != 'DIR' else 'DIR' # identical to share point
+                if mime_type == 'zip':
+                    mime_type = 'archive'
+                i['mime_type'] = mime_type
+            serializer = CloudStorageContentSerializer(data=content)
+            serializer.is_valid(raise_exception=True)
+            content = serializer.data
+            return Response(data=content)
 
         except CloudStorageModel.DoesNotExist:
             message = f"Storage {pk} does not exist"
@@ -2132,7 +2218,16 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         try:
             db_storage = self.get_object()
             cache = MediaCache()
-            preview, mime = cache.get_cloud_preview_with_mime(db_storage)
+
+            # The idea is try to define real manifest preview only for the storages that have related manifests
+            # because otherwise it can lead to extra calls to a bucket, that are usually not free.
+            if not db_storage.has_at_least_one_manifest:
+                result = cache.get_cloud_preview_with_mime(db_storage)
+                if not result:
+                    return HttpResponse(status=HTTPStatus.NO_CONTENT)
+                return HttpResponse(result[0], result[1])
+
+            preview, mime = cache.get_or_set_cloud_preview_with_mime(db_storage)
             return HttpResponse(preview, mime)
         except CloudStorageModel.DoesNotExist:
             message = f"Storage {pk} does not exist"

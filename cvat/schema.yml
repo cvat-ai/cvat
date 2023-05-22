@@ -746,6 +746,8 @@ paths:
   /api/cloudstorages/{id}/content:
     get:
       operationId: cloudstorages_retrieve_content
+      description: 'This method is deprecated and will be removed in version 2.6.0.
+        Please use the new version of API: /cloudstorages/id/content-v2/'
       summary: Method returns a manifest content
       parameters:
       - in: header
@@ -781,6 +783,7 @@ paths:
         tokenAuth: []
       - signatureAuth: []
       - basicAuth: []
+      deprecated: true
       responses:
         '200':
           content:
@@ -789,6 +792,65 @@ paths:
                 type: array
                 items:
                   type: string
+          description: A manifest content
+  /api/cloudstorages/{id}/content-v2:
+    get:
+      operationId: cloudstorages_retrieve_content_v2
+      summary: Method returns the content of the cloud storage
+      parameters:
+      - in: header
+        name: X-Organization
+        schema:
+          type: string
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this cloud storage.
+        required: true
+      - in: query
+        name: manifest_path
+        schema:
+          type: string
+        description: Path to the manifest file in a cloud storage
+      - in: query
+        name: next_token
+        schema:
+          type: string
+        description: Used to continue listing files in the bucket
+      - in: query
+        name: org
+        schema:
+          type: string
+        description: Organization unique slug
+      - in: query
+        name: org_id
+        schema:
+          type: integer
+        description: Organization identifier
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+      - in: query
+        name: prefix
+        schema:
+          type: string
+        description: Prefix to filter data
+      tags:
+      - cloudstorages
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/CloudStorageContent'
           description: A manifest content
   /api/cloudstorages/{id}/preview:
     get:
@@ -6445,6 +6507,19 @@ components:
           format: date-time
       required:
       - timestamp
+    CloudStorageContent:
+      type: object
+      properties:
+        next:
+          type: string
+          nullable: true
+          description: This token is used to continue listing files in the bucket.
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/FileInfo'
+      required:
+      - content
     CloudStorageRead:
       type: object
       properties:
@@ -6687,6 +6762,26 @@ components:
           default: []
           description: Paths to files from a file share mounted on the server, or
             from a cloud storage
+        server_files_exclude:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 1024
+          default: []
+          description: |
+            Paths to files and directories from a file share mounted on the server, or from a cloud storage
+            that should be excluded from the directories specified in server_files.
+            This option cannot be used together with filename_pattern.
+            The server_files_exclude parameter cannot be used to exclude a part of dataset from an archive.
+
+            Examples:
+
+            Exclude all files from subfolder 'sub/sub_1/sub_2'and single file 'sub/image.jpg' from specified folder:
+            server_files = ['sub/'], server_files_exclude = ['sub/sub_1/sub_2/', 'sub/image.jpg']
+
+            Exclude all cloud storage files with prefix 'sub' from the content of manifest file:
+            server_files = ['manifest.jsonl'], server_files_exclude = ['sub/']
         remote_files:
           type: array
           items:

@@ -460,12 +460,13 @@ export default class LabelForm extends React.Component<Props> {
         const types = Object.values(LabelType)
             .filter((type: string) => type !== LabelType.SKELETON);
         const { label } = this.props;
+        const locked = !!label?.has_parent;
         const defaultType = isSkeleton ? LabelType.SKELETON : LabelType.ANY;
         const value = label ? label.type : defaultType;
 
         return (
             <Form.Item name='type' initialValue={value}>
-                <Select className='cvat-label-type-input' disabled={isSkeleton} showSearch={false}>
+                <Select className='cvat-label-type-input' disabled={isSkeleton || locked} showSearch={false}>
                     {isSkeleton && (
                         <Select.Option
                             className='cvat-label-type-option-skeleton'

@@ -1,4 +1,5 @@
 // Copyright (C) 2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -46,8 +47,8 @@ export const config: Partial<Config> = {
             valueSources: ['value'],
             operators: ['like'],
         },
-        display_name: {
-            label: 'Display name',
+        name: {
+            label: 'Name',
             type: 'text',
             valueSources: ['value'],
             operators: ['like'],
