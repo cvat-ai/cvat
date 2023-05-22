@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import {
+import Icon, {
     LeftOutlined, RightOutlined, EyeInvisibleFilled, EyeOutlined,
     CheckCircleFilled, CheckCircleOutlined,
 } from '@ant-design/icons';
@@ -18,6 +18,8 @@ import { CombinedState } from 'reducers';
 import moment from 'moment';
 import Paragraph from 'antd/lib/typography/Paragraph';
 import { ConflictImportance, QualityConflict } from 'cvat-core-wrapper';
+import { changeShowGroundTruth } from 'actions/settings-actions';
+import { ShowGroundTruthIcon } from 'icons';
 
 export default function LabelsListComponent(): JSX.Element {
     const dispatch = useDispatch();
@@ -105,6 +107,17 @@ export default function LabelsListComponent(): JSX.Element {
                             )}
                         </CVATTooltip>
                     </Col>
+                    <Col offset={2}>
+                        <CVATTooltip title='Show Ground truth annotations and conflicts'>
+                            <Icon
+                                className={
+                                    `cvat-objects-sidebar-show-ground-truth ${showGroundTruth ? 'cvat-objects-sidebar-show-ground-truth-active' : ''}`
+                                }
+                                component={ShowGroundTruthIcon}
+                                onClick={() => dispatch(changeShowGroundTruth(!showGroundTruth))}
+                            />
+                        </CVATTooltip>
+                    </Col>
                 </Row>
             </div>
             <div className='cvat-objects-sidebar-issues-list'>
@@ -165,7 +178,10 @@ export default function LabelsListComponent(): JSX.Element {
                             }}
                         >
                             <Row>
-                                <Text strong>{`#${frameConflict.id} • Conflict`}</Text>
+                                <Text strong>
+                                    {`#${frameConflict.id} • ${frameConflict.importance === ConflictImportance.WARNING ?
+                                        'Warning' : 'Conflict'}`}
+                                </Text>
                             </Row>
                             <Row>
                                 <Paragraph ellipsis={{ rows: 2 }}>

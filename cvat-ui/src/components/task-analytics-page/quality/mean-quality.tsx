@@ -82,7 +82,6 @@ function MeanQuality(props: Props): JSX.Element {
                     </>
                 ) : null
             }
-
         </div>
 
     );

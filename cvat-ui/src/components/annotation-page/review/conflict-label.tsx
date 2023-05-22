@@ -32,12 +32,10 @@ export default function ConflictLabel(props: Props): ReactPortal {
     const conflictColor = importance === ConflictImportance.ERROR ? 'cvat-conflict-error' : 'cvat-conflict-warning';
     const darkenColor = darken ? 'cvat-conflict-darken' : '';
 
-    const elementID = `cvat-hidden-issue-label-${top}`;
     return ReactDOM.createPortal(
         <CVATTooltip title={text}>
             <Tag
                 ref={ref}
-                id={elementID}
                 onClick={onClick}
                 style={{
                     top,

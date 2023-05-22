@@ -207,13 +207,17 @@ function JobItem(props: Props): JSX.Element {
                                 </Row>
                             </Col>
                             <Col offset={2}>
-                                <Row>
-                                    <Col>
-                                        <Icon component={FramesIcon} />
-                                        <Text>Frame range:</Text>
-                                        <Text type='secondary'>{` ${job.startFrame}-${job.stopFrame}`}</Text>
-                                    </Col>
-                                </Row>
+                                {
+                                    job.type !== JobType.GROUND_TRUTH && (
+                                        <Row>
+                                            <Col>
+                                                <Icon component={FramesIcon} />
+                                                <Text>Frame range:</Text>
+                                                <Text type='secondary'>{` ${job.startFrame}-${job.stopFrame}`}</Text>
+                                            </Col>
+                                        </Row>
+                                    )
+                                }
                                 <Row>
                                     <Col>
                                         <BorderOutlined />
