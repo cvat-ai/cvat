@@ -544,6 +544,7 @@ class LabelSerializer(SublabelSerializer):
 class JobReadSerializer(serializers.ModelSerializer):
     task_id = serializers.ReadOnlyField(source="segment.task.id")
     project_id = serializers.ReadOnlyField(source="get_project_id", allow_null=True)
+    guide_id = serializers.ReadOnlyField(source="get_guide_id", allow_null=True)
     start_frame = serializers.ReadOnlyField(source="segment.start_frame")
     stop_frame = serializers.ReadOnlyField(source="segment.stop_frame")
     assignee = BasicUserSerializer(allow_null=True, read_only=True)
@@ -558,7 +559,7 @@ class JobReadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Job
-        fields = ('url', 'id', 'task_id', 'project_id', 'assignee',
+        fields = ('url', 'id', 'task_id', 'project_id', 'assignee', 'guide_id',
             'dimension', 'bug_tracker', 'status', 'stage', 'state', 'mode',
             'start_frame', 'stop_frame', 'data_chunk_size', 'data_compressed_chunk_type',
             'updated_date', 'issues', 'labels'
@@ -900,6 +901,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
     owner = BasicUserSerializer(required=False)
     assignee = BasicUserSerializer(allow_null=True, required=False)
     project_id = serializers.IntegerField(required=False, allow_null=True)
+    guide_id = serializers.IntegerField(required=False, allow_null=True)
     dimension = serializers.CharField(allow_blank=True, required=False)
     target_storage = StorageSerializer(required=False, allow_null=True)
     source_storage = StorageSerializer(required=False, allow_null=True)
@@ -910,7 +912,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
         model = models.Task
         fields = ('url', 'id', 'name', 'project_id', 'mode', 'owner', 'assignee',
             'bug_tracker', 'created_date', 'updated_date', 'overlap', 'segment_size',
-            'status', 'data_chunk_size', 'data_compressed_chunk_type',
+            'status', 'data_chunk_size', 'data_compressed_chunk_type', 'guide_id',
             'data_original_chunk_type', 'size', 'image_quality', 'data', 'dimension',
             'subset', 'organization', 'target_storage', 'source_storage', 'jobs', 'labels',
         )
@@ -1114,6 +1116,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 class ProjectReadSerializer(serializers.ModelSerializer):
     owner = BasicUserSerializer(required=False, read_only=True)
     assignee = BasicUserSerializer(allow_null=True, required=False, read_only=True)
+    guide_id = serializers.IntegerField(required=False, allow_null=True)
     task_subsets = serializers.ListField(child=serializers.CharField(), required=False, read_only=True)
     dimension = serializers.CharField(max_length=16, required=False, read_only=True, allow_null=True)
     target_storage = StorageSerializer(required=False, allow_null=True, read_only=True)
@@ -1123,7 +1126,7 @@ class ProjectReadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Project
-        fields = ('url', 'id', 'name', 'owner', 'assignee',
+        fields = ('url', 'id', 'name', 'owner', 'assignee', 'guide_id',
             'bug_tracker', 'task_subsets', 'created_date', 'updated_date', 'status',
             'dimension', 'organization', 'target_storage', 'source_storage',
             'tasks', 'labels',
@@ -1828,3 +1831,39 @@ def _validate_existence_of_cloud_storage(cloud_storage_id):
         _ = models.CloudStorage.objects.get(id=cloud_storage_id)
     except models.CloudStorage.DoesNotExist:
         raise serializers.ValidationError(f'The specified cloud storage {cloud_storage_id} does not exist.')
+
+class AssetReadSerializer(WriteOnceMixin, serializers.ModelSerializer):
+    filename = serializers.CharField(required=True, max_length=1024)
+    owner = BasicUserSerializer(required=False)
+
+    class Meta:
+        model = models.Asset
+        fields = ('uuid', 'filename', 'created_date', 'owner', 'guide_id',)
+        read_only_fields = fields
+
+class AssetWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
+    uuid = serializers.CharField()
+    filename = serializers.CharField(required=True, max_length=1024)
+    guide_id = serializers.IntegerField(required=False, allow_null=True)
+    owner = BasicUserSerializer(required=False)
+
+    class Meta:
+        model = models.Asset
+        fields = ('uuid', 'filename', 'created_date', 'owner', 'guide_id', )
+        write_once_fields = ('uuid', 'filename', 'created_date', 'owner', )
+
+class AnnotationGuideReadSerializer(WriteOnceMixin, serializers.ModelSerializer):
+    owner = BasicUserSerializer(required=False)
+
+    class Meta:
+        model = models.AnnotationGuide
+        fields = ('id', 'task_id', 'project_id', 'owner', 'created_date', 'updated_date', 'markdown', )
+        read_only_fields = fields
+
+class AnnotationGuideWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
+    owner = BasicUserSerializer(required=False)
+
+    class Meta:
+        model = models.AnnotationGuide
+        fields = ('id', 'task_id', 'project_id', 'owner', 'markdown', )
+        write_once_fields = ('id', 'task_id', 'project_id', 'owner', )

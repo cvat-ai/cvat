@@ -49,9 +49,8 @@ from cvat.apps.engine.media_extractors import get_mime
 from cvat.apps.engine.models import (
     Job, Label, Task, Project, Issue, Data,
     Comment, StorageMethodChoice, StorageChoice,
-    CloudProviderChoice, Location
-)
-from cvat.apps.engine.models import CloudStorage as CloudStorageModel
+    CloudProviderChoice, Location, CloudStorage as CloudStorageModel,
+    Asset, AnnotationGuide)
 from cvat.apps.engine.serializers import (
     AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
     DataMetaReadSerializer, DataMetaWriteSerializer, DataSerializer,
@@ -60,8 +59,9 @@ from cvat.apps.engine.serializers import (
     ProjectReadSerializer, ProjectWriteSerializer,
     RqStatusSerializer, TaskReadSerializer, TaskWriteSerializer,
     UserSerializer, PluginsSerializer, IssueReadSerializer,
+    AnnotationGuideReadSerializer, AnnotationGuideWriteSerializer,
     IssueWriteSerializer, CommentReadSerializer, CommentWriteSerializer, CloudStorageWriteSerializer,
-    CloudStorageReadSerializer, DatasetFileSerializer,
+    CloudStorageReadSerializer, DatasetFileSerializer, AssetReadSerializer, AssetWriteSerializer,
     ProjectFileSerializer, TaskFileSerializer, CloudStorageContentSerializer)
 from cvat.apps.engine.view_utils import get_cloud_storage_for_import_or_export
 
@@ -1248,7 +1248,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, PartialUpdateModelMixin, UploadMixin, AnnotationMixin
 ):
     queryset = Job.objects.select_related('assignee', 'segment__task__data',
-        'segment__task__project'
+        'segment__task__project', 'segment__task__annotation_guide', 'segment__task__project__annotation_guide',
     ).annotate(
         Count('issues', distinct=True),
         task_labels_count=Count('segment__task__label',
@@ -2283,6 +2283,61 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         except Exception as ex:
             msg = str(ex)
             return HttpResponseBadRequest(msg)
+
+class AssetsViewset(
+    viewsets.GenericViewSet, mixins.RetrieveModelMixin,
+    mixins.CreateModelMixin, mixins.DestroyModelMixin
+):
+    # todo: prefetch related for guide?
+    queryset = Asset.objects.select_related('owner').all()
+    search_fields = ()
+    ordering = "uuid"
+
+    def get_serializer_class(self):
+        if self.request.method in SAFE_METHODS:
+            return AssetReadSerializer
+        else:
+            return AssetWriteSerializer
+
+    def create(self, request, *args, **kwargs):
+        response = super().create(request, *args, **kwargs)
+        # get filename, create instance, save it
+        # save file from request to uuid/filename
+        return response
+
+    def perform_destroy(self, instance):
+        full_path = os.path.join(instance.get_asset_dir(), instance.filename)
+        if os.path.exists(full_path):
+            os.remove(full_path)
+        instance.delete()
+
+class AnnotationGuidesViewset(
+    viewsets.GenericViewSet, mixins.RetrieveModelMixin,
+    mixins.CreateModelMixin, mixins.DestroyModelMixin
+):
+    # todo: prefetch related for guide?
+    queryset = AnnotationGuide.objects.order_by('-id').select_related('owner').prefetch_related('assets').all()
+    search_fields = ()
+    ordering = "-id"
+
+    def get_serializer_class(self):
+        if self.request.method in SAFE_METHODS:
+            return AnnotationGuideReadSerializer
+        else:
+            return AnnotationGuideWriteSerializer
+
+    def perform_create(self, instance):
+        # todo: update all guide_id for assets
+        pass
+
+    def perform_update(self, instance):
+        # todo: update all guide_id for assets
+        pass
+
+    def perform_destroy(self, instance):
+        # todo: remove all related assets from filesystem resources
+        pass
+
 
 def rq_exception_handler(rq_job, exc_type, exc_value, tb):
     rq_job.exc_info = "".join(

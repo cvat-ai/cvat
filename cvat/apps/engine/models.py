@@ -6,6 +6,7 @@
 import os
 import re
 import shutil
+import uuid
 from enum import Enum
 from typing import Optional
 
@@ -489,6 +490,15 @@ class Job(models.Model):
         return project.id if project else None
 
     @extend_schema_field(OpenApiTypes.INT)
+    def get_guide_id(self):
+        source = self.segment.task.project
+        if not source:
+            source = self.segment.task
+        if hasattr(source, 'annotation_guide'):
+            return source.annotation_guide.id
+        return None
+
+    @extend_schema_field(OpenApiTypes.INT)
     def get_task_id(self):
         task = self.segment.task
         return task.id if task else None
@@ -871,3 +881,21 @@ class Storage(models.Model):
 
     class Meta:
         default_permissions = ()
+
+class AnnotationGuide(models.Model):
+    task = models.OneToOneField(Task, null=True, blank=True, on_delete=models.CASCADE, related_name="annotation_guide")
+    project = models.OneToOneField(Project, null=True, blank=True, on_delete=models.CASCADE, related_name="annotation_guide")
+    owner = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name="annotation_guides")
+    markdown = models.TextField(default='')
+    created_date = models.DateTimeField(auto_now_add=True)
+    updated_date = models.DateTimeField(auto_now=True)
+
+class Asset(models.Model):
+    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    filename = models.CharField(max_length=1024)
+    created_date = models.DateTimeField(auto_now_add=True)
+    owner = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name="assets")
+    guide = models.ForeignKey(AnnotationGuide, null=True, blank=True, on_delete=models.CASCADE, related_name="assets")
+
+    def get_asset_dir(self):
+        return os.path.join(settings.ASSETS_ROOT, self.uuid)

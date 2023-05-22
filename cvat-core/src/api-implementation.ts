@@ -25,6 +25,8 @@ import Project from './project';
 import CloudStorage from './cloud-storage';
 import Organization from './organization';
 import Webhook from './webhook';
+import { ArgumentError } from './exceptions';
+import AnnotationGuide from './guide';
 
 export default function implementAPI(cvat) {
     cvat.plugins.list.implementation = PluginRegistry.list;
@@ -131,6 +133,16 @@ export default function implementAPI(cvat) {
     cvat.server.installedApps.implementation = async () => {
         const result = await serverProxy.server.installedApps();
         return result;
+    };
+
+    cvat.guides.get.implementation = async (filter: { id: number }) => {
+        if (!('id' in filter)) {
+            throw new ArgumentError('Guide id was not provided');
+        }
+        checkFilter(filter, { id: isInteger });
+
+        const result = await serverProxy.guides.get(filter.id);
+        return new AnnotationGuide(result);
     };
 
     cvat.users.get.implementation = async (filter) => {

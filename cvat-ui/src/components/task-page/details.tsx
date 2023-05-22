@@ -23,6 +23,7 @@ import Space from 'antd/lib/space';
 import { getCore, Task } from 'cvat-core-wrapper';
 import { getReposData, syncRepos, changeRepo } from 'utils/git-utils';
 import AutomaticAnnotationProgress from 'components/tasks-page/automatic-annotation-progress';
+import MdGuideControl from 'components/md-guide/md-guide-control';
 import Preview from 'components/common/preview';
 import { cancelInferenceAsync } from 'actions/models-actions';
 import { CombinedState, ActiveInference, PluginComponent } from 'reducers';
@@ -454,6 +455,7 @@ class DetailsComponent extends React.PureComponent<Props, State> {
                     </Col>
                     <Col md={16} lg={17} xl={17} xxl={18}>
                         {this.renderDescription()}
+                        <MdGuideControl instanceType='task' id={taskInstance.id} />
                         <Row justify='space-between' align='middle'>
                             <Col span={12}>
                                 <BugTrackerEditor
