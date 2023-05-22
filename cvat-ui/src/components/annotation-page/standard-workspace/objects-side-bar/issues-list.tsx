@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -14,7 +15,7 @@ import Text from 'antd/lib/typography/Text';
 import { activateObject, changeFrameAsync } from 'actions/annotation-actions';
 import { reviewActions } from 'actions/review-actions';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { CombinedState } from 'reducers';
+import { CombinedState, Workspace } from 'reducers';
 import moment from 'moment';
 import Paragraph from 'antd/lib/typography/Paragraph';
 import { ConflictImportance, QualityConflict } from 'cvat-core-wrapper';
@@ -32,6 +33,7 @@ export default function LabelsListComponent(): JSX.Element {
     const issuesHidden = useSelector((state: CombinedState): any => state.review.issuesHidden);
     const issuesResolvedHidden = useSelector((state: CombinedState): any => state.review.issuesResolvedHidden);
     const objectStates = useSelector((state: CombinedState) => state.annotation.annotations.states);
+    const workspace = useSelector((state: CombinedState) => state.annotation.workspace);
     let frames = issues.map((issue: any): number => issue.frame).sort((a: number, b: number) => +a - +b);
     if (showGroundTruth) {
         const conflictFrames = conflicts
@@ -107,17 +109,21 @@ export default function LabelsListComponent(): JSX.Element {
                             )}
                         </CVATTooltip>
                     </Col>
-                    <Col offset={2}>
-                        <CVATTooltip title='Show Ground truth annotations and conflicts'>
-                            <Icon
-                                className={
-                                    `cvat-objects-sidebar-show-ground-truth ${showGroundTruth ? 'cvat-objects-sidebar-show-ground-truth-active' : ''}`
-                                }
-                                component={ShowGroundTruthIcon}
-                                onClick={() => dispatch(changeShowGroundTruth(!showGroundTruth))}
-                            />
-                        </CVATTooltip>
-                    </Col>
+                    {
+                        workspace === Workspace.REVIEW_WORKSPACE ? (
+                            <Col offset={2}>
+                                <CVATTooltip title='Show Ground truth annotations and conflicts'>
+                                    <Icon
+                                        className={
+                                            `cvat-objects-sidebar-show-ground-truth ${showGroundTruth ? 'cvat-objects-sidebar-show-ground-truth-active' : ''}`
+                                        }
+                                        component={ShowGroundTruthIcon}
+                                        onClick={() => dispatch(changeShowGroundTruth(!showGroundTruth))}
+                                    />
+                                </CVATTooltip>
+                            </Col>
+                        ) : null
+                    }
                 </Row>
             </div>
             <div className='cvat-objects-sidebar-issues-list'>
