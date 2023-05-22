@@ -25,8 +25,11 @@ export default function ConflictAggregatorComponent(): JSX.Element | null {
 
     const activatedObject = objectStates.find((state) => state.clientID === activatedStateID);
     const conflictedIDs = activatedObject?.conflict?.annotationConflicts?.map((c: AnnotationConflict) => c.objId);
-    const highlightedObjectsIDs = conflictedIDs?.map((serverID: number) => (
-        objectStates.find((state) => state.serverID === serverID))?.clientID);
+    const highlightedObjectsIDs = conflictedIDs
+        ? conflictedIDs.map((serverID: number) => (
+            objectStates.find((state) => state.serverID === serverID))?.clientID
+          )
+        : [];
 
     const canvasInstance = useSelector((state: CombinedState) => state.annotation.canvas.instance);
     const canvasIsReady = useSelector((state: CombinedState): boolean => state.annotation.canvas.ready);

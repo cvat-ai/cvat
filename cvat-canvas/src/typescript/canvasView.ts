@@ -2260,7 +2260,15 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     (_state: any): boolean => _state.serverID === annotationConflict.objId,
                 );
                 return conflictedState;
-            });
+            }).filter(
+                // TODO: in the list, there can be null values in some cases
+                // (eg. from looking for an annotation from the other job),
+                // produced from [x] = [].
+                // Need to investigate, why it happens only sometimes.
+                // Here we just filter such values
+                Boolean
+            );
+
             const conflictedMap = {};
             conflictedStates.forEach((_state) => {
                 conflictedMap[_state.clientID] = _state.conflict;
