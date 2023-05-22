@@ -93,90 +93,14 @@ export default function QualitySettingsModal(): JSX.Element | null {
                 >
                     <Row className='cvat-quality-settings-title'>
                         <Text strong>
-                            Overlap Settings
+                            General
                         </Text>
                     </Row>
                     <Row>
-                        <Col span={12}>
-                            <Form.Item
-                                name='lowOverlapThreshold'
-                                label='Low overlap threshold'
-                                rules={[{ required: true }]}
-                            >
-                                <InputNumber min={0} max={100} />
-                            </Form.Item>
-                        </Col>
                         <Col span={12}>
                             <Form.Item
                                 name='iouThreshold'
-                                label='IOU threshold'
-                                rules={[{ required: true }]}
-                            >
-                                <InputNumber min={0} max={100} />
-                            </Form.Item>
-                        </Col>
-                    </Row>
-                    <Row>
-                        <Col span={12}>
-                            <Form.Item
-                                name='oksSigma'
-                                label='OKS sigma'
-                                rules={[{ required: true }]}
-                            >
-                                <InputNumber min={0} max={100} />
-                            </Form.Item>
-                        </Col>
-                    </Row>
-                    <Divider />
-                    <Row className='cvat-quality-settings-title'>
-                        <Text strong>
-                            Line Settings
-                        </Text>
-                    </Row>
-                    <Row>
-                        <Col span={12}>
-                            <Form.Item
-                                name='lineThickness'
-                                label='Line thickness'
-                                rules={[{ required: true }]}
-                            >
-                                <InputNumber min={0} max={1000} />
-                            </Form.Item>
-                        </Col>
-                        <Col span={12}>
-                            <Form.Item
-                                name='lineOrientationThreshold'
-                                label='Line orientation threshold'
-                                rules={[{ required: true }]}
-                            >
-                                <InputNumber min={0} max={100} />
-                            </Form.Item>
-                        </Col>
-                    </Row>
-                    <Row>
-                        <Col span={12}>
-                            <Form.Item
-                                name='orientedLines'
-                                rules={[{ required: true }]}
-                                valuePropName='checked'
-                            >
-                                <Checkbox>
-                                    <Text className='cvat-text-color'>Oriented lines</Text>
-                                </Checkbox>
-                            </Form.Item>
-                        </Col>
-                    </Row>
-                    <Divider />
-                    <Row className='cvat-quality-settings-title'>
-                        <Text strong>
-                            Group Settings
-                        </Text>
-                    </Row>
-                    <Row>
-                        <Col span={12}>
-                            <Form.Item
-                                name='groupMatchThreshold'
-                                label='Group match threshold'
+                                label='Min overlap threshold (%)'
                                 rules={[{ required: true }]}
                             >
                                 <InputNumber min={0} max={100} />
@@ -184,41 +108,11 @@ export default function QualitySettingsModal(): JSX.Element | null {
                         </Col>
                         <Col span={12}>
                             <Form.Item
-                                name='compareGroups'
-                                valuePropName='checked'
-                                rules={[{ required: true }]}
-                            >
-                                <Checkbox>
-                                    <Text className='cvat-text-color'>Compare groups</Text>
-                                </Checkbox>
-                            </Form.Item>
-                        </Col>
-                    </Row>
-                    <Divider />
-                    <Row className='cvat-quality-settings-title'>
-                        <Text strong>
-                            Others
-                        </Text>
-                    </Row>
-                    <Row>
-                        <Col span={12}>
-                            <Form.Item
-                                name='objectVisibilityThreshold'
-                                label='Object visibility threshold'
+                                name='lowOverlapThreshold'
+                                label='Low overlap threshold (%)'
                                 rules={[{ required: true }]}
                             >
                                 <InputNumber min={0} max={100} />
-                            </Form.Item>
-                        </Col>
-                        <Col span={12}>
-                            <Form.Item
-                                name='checkCoveredAnnotations'
-                                valuePropName='checked'
-                                rules={[{ required: true }]}
-                            >
-                                <Checkbox>
-                                    <Text className='cvat-text-color'>Check covered annotations</Text>
-                                </Checkbox>
                             </Form.Item>
                         </Col>
                     </Row>
@@ -234,6 +128,120 @@ export default function QualitySettingsModal(): JSX.Element | null {
                                 </Checkbox>
                             </Form.Item>
                         </Col>
+                    </Row>
+                    <Divider />
+                    <Row className='cvat-quality-settings-title'>
+                        <Text strong>
+                            Keypoint Comparison
+                        </Text>
+                    </Row>
+                    <Row>
+                        <Col span={12}>
+                            <Form.Item
+                                name='oksSigma'
+                                label='OKS sigma'
+                                rules={[{ required: true }]}
+                            >
+                                <InputNumber min={0} max={100} />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+                    <Divider />
+                    <Row className='cvat-quality-settings-title'>
+                        <Text strong>
+                            Line Comparison
+                        </Text>
+                    </Row>
+                    <Row>
+                        <Col span={12}>
+                            <Form.Item
+                                name='lineThickness'
+                                label='Relative thickness (frame side %)'
+                                rules={[{ required: true }]}
+                            >
+                                <InputNumber min={0} max={1000} />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+                    <Row>
+                        <Col span={12}>
+                            <Form.Item
+                                name='orientedLines'
+                                rules={[{ required: true }]}
+                                valuePropName='checked'
+                            >
+                                <Checkbox>
+                                    <Text className='cvat-text-color'>Check orientation</Text>
+                                </Checkbox>
+                            </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                            <Form.Item
+                                name='lineOrientationThreshold'
+                                label='Min similarity gain (%)'
+                                rules={[{ required: true }]}
+                            >
+                                <InputNumber min={0} max={100} />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+                    <Divider />
+                    <Row className='cvat-quality-settings-title'>
+                        <Text strong>
+                            Group Comparison
+                        </Text>
+                    </Row>
+                    <Row>
+                        <Col span={12}>
+                            <Form.Item
+                                name='compareGroups'
+                                valuePropName='checked'
+                                rules={[{ required: true }]}
+                            >
+                                <Checkbox>
+                                    <Text className='cvat-text-color'>Compare groups</Text>
+                                </Checkbox>
+                            </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                            <Form.Item
+                                name='groupMatchThreshold'
+                                label='Min group match threshold (%)'
+                                rules={[{ required: true }]}
+                            >
+                                <InputNumber min={0} max={100} />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+                    <Divider />
+                    <Row className='cvat-quality-settings-title'>
+                        <Text strong>
+                            Segmentation Comparison
+                        </Text>
+                    </Row>
+                    <Row>
+                        <Col span={12}>
+                            <Form.Item
+                                name='checkCoveredAnnotations'
+                                valuePropName='checked'
+                                rules={[{ required: true }]}
+                            >
+                                <Checkbox>
+                                    <Text className='cvat-text-color'>Check object visibility</Text>
+                                </Checkbox>
+                            </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                            <Form.Item
+                                name='objectVisibilityThreshold'
+                                label='Min visibility threshold (area %)'
+                                rules={[{ required: true }]}
+                            >
+                                <InputNumber min={0} max={100} />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+                    <Row>
                         <Col span={12}>
                             <Form.Item
                                 name='panopticComparison'
@@ -241,7 +249,7 @@ export default function QualitySettingsModal(): JSX.Element | null {
                                 rules={[{ required: true }]}
                             >
                                 <Checkbox>
-                                    <Text className='cvat-text-color'>Panoptic comparison</Text>
+                                    <Text className='cvat-text-color'>Match only visible parts</Text>
                                 </Checkbox>
                             </Form.Item>
                         </Col>
