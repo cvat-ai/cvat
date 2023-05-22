@@ -41,6 +41,8 @@ else:
 
 EMAIL_BACKEND = 'django_ses.SESBackend'
 
-AWS_SES_REGION_NAME = 'us-west-2'
-AWS_SES_REGION_ENDPOINT = 'email.us-west-2.amazonaws.com'
+AWS_SES_REGION_NAME = os.getenv('AWS_SES_REGION_NAME', 'us-west-2')
+AWS_SES_DOMAIN = os.getenv('AWS_SES_DOMAIN', 'amazonaws.com')
+AWS_SES_REGION_ENDPOINT = os.getenv('AWS_SES_REGION_ENDPOINT', f'email.{AWS_SES_REGION_NAME}.{AWS_SES_DOMAIN}')
 DEFAULT_FROM_EMAIL = 'reboticsnoreply@retechlabs.com'
+ACCOUNT_EMAIL_VERIFICATION = os.getenv('ACCOUNT_EMAIL_VERIFICATION', 'mandatory')
