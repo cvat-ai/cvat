@@ -23,6 +23,11 @@ export default function ConflictAggregatorComponent(): JSX.Element | null {
     );
     const conflicts = frameQualityConflicts.map((f: QualityConflict) => f.annotationConflicts[0]);
 
+    const activatedObject = objectStates.find((state) => state.clientID === activatedStateID);
+    const conflictedIDs = activatedObject?.conflict?.annotationConflicts?.map((c: AnnotationConflict) => c.objId);
+    const highlightedObjectsIDs = conflictedIDs?.map((serverID: number) => (
+        objectStates.find((state) => state.serverID === serverID))?.clientID);
+
     const canvasInstance = useSelector((state: CombinedState) => state.annotation.canvas.instance);
     const canvasIsReady = useSelector((state: CombinedState): boolean => state.annotation.canvas.ready);
     const [geometry, setGeometry] = useState<Canvas['geometry'] | null>(null);
@@ -91,7 +96,7 @@ export default function ConflictAggregatorComponent(): JSX.Element | null {
                 scale={1 / geometry.scale}
                 onClick={() => {}}
                 importance={conflict.importance}
-                darken={!!activatedStateID && (conflict.clientID !== activatedStateID)}
+                darken={!!activatedStateID && (!highlightedObjectsIDs.includes(conflict.clientID))}
             />,
         );
     }
