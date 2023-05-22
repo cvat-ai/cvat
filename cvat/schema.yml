@@ -609,10 +609,6 @@ paths:
       operationId: cloudstorages_retrieve_content_v2
       summary: Method returns the content of the cloud storage
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
@@ -629,16 +625,6 @@ paths:
         schema:
           type: string
         description: Used to continue listing files in the bucket
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       - in: query
         name: page_size
         schema:
