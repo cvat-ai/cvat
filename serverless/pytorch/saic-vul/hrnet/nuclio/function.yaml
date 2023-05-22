@@ -27,40 +27,28 @@ spec:
 
     directives:
       preCopy:
-        - kind: ENV
-          value: DEBIAN_FRONTEND=noninteractive
         - kind: RUN
-          value: apt-get update && apt-get install software-properties-common -y
-        - kind: RUN
-          value: add-apt-repository ppa:deadsnakes/ppa
-        - kind: RUN
-          value: apt remove python* -y
-        - kind: RUN
-          value: apt-get update && apt-get install -y --no-install-recommends build-essential git curl libglib2.0-0 software-properties-common python3 python3.6-dev python3-pip python3-tk
-        - kind: RUN
-          value: ln -s /usr/bin/pip3 /usr/local/bin/pip && ln -s /usr/bin/python3 /usr/bin/python
+          value: |-
+            apt-get update \
+              && apt-get install -y --no-install-recommends \
+                git libgl1-mesa-glx libglib2.0-0 python3 python3-pip python-is-python3 \
+              && rm -rf /var/lib/apt/lists/*
         - kind: RUN
           value: pip3 install --upgrade pip
-        - kind: WORKDIR
-          value: /opt/nuclio
         - kind: RUN
-          value: git clone https://github.com/saic-vul/ritm_interactive_segmentation.git hrnet
-        - kind: WORKDIR
-          value: /opt/nuclio/hrnet
+          value: git clone https://github.com/saic-vul/ritm_interactive_segmentation.git /opt/nuclio/hrnet
+        - kind: ADD
+          value: >-
+            https://github.com/saic-vul/ritm_interactive_segmentation/releases/download/v1.0/coco_lvis_h18_itermask.pth
+            /opt/nuclio/hrnet/
         - kind: RUN
-          value: apt-get install -y --no-install-recommends wget
-        - kind: RUN
-          value: wget https://github.com/saic-vul/ritm_interactive_segmentation/releases/download/v1.0/coco_lvis_h18_itermask.pth
-        - kind: RUN
-          value: pip3 install setuptools
-        - kind: RUN
-          value: pip3 install -r requirements.txt
-        - kind: RUN
-          value: apt update && apt install -y libgl1-mesa-glx
-        - kind: RUN
-          value: pip3 uninstall torch torch vision -y
-        - kind: RUN
-          value: pip install torch==1.8.1 torchvision==0.9.1 torchaudio==0.8.1 -f https://download.pytorch.org/whl/torch_stable.html
+          # NumPy is capped due to https://github.com/SamsungLabs/ritm_interactive_segmentation/issues/36
+          value: |-
+            pip3 install --no-cache-dir \
+              -r /opt/nuclio/hrnet/requirements.txt \
+              torch==1.8.1+cpu torchvision==0.9.1+cpu \
+              'numpy<1.24' \
+              --extra-index-url=https://download.pytorch.org/whl/cpu
         - kind: WORKDIR
           value: /opt/nuclio
 
