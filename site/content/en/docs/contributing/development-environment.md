@@ -82,8 +82,6 @@ description: 'Installing a development environment for different operating syste
   pip install \
       -r cvat/requirements/development.txt \
       -r cvat/requirements/production.txt
-  python manage.py migrate
-  python manage.py collectstatic
   ```
 
   Note that the `.txt` files in the `cvat/requirements` directory
@@ -148,26 +146,6 @@ description: 'Installing a development environment for different operating syste
   >
   > Perform this action before installing cvat requirements from the list mentioned above.
 
-- Create a super user for CVAT:
-
-  ```bash
-  python manage.py createsuperuser
-  ```
-
-- Install npm packages for UI (run the following command from CVAT root directory):
-
-  ```bash
-  yarn --frozen-lockfile
-  ```
-
-  > Note for Mac users
-  >
-  > If you faced with error
-  >
-  > `Node Sass does not yet support your current environment: OS X 64-bit with Unsupported runtime (57)`
-  >
-  > Read this article [Node Sass does not yet support your current environment](https://marketplace.visualstudio.com/items?itemName=msjsdiag.debugger-for-chrome)
-
 - Install [Docker Engine](https://docs.docker.com/engine/install/ubuntu/) and [Docker-Compose](https://docs.docker.com/compose/install/)
 
 - Pull and run Open Policy Agent docker image:
@@ -187,6 +165,28 @@ description: 'Installing a development environment for different operating syste
 
   Note: use `docker start/stop cvat_db_debug` commands to start and stop the container.
   If it is removed, data will be removed together with the container.
+
+- Apply migrations and create a super user for CVAT:
+
+  ```bash
+  python manage.py migrate
+  python manage.py collectstatic
+  python manage.py createsuperuser
+  ```
+
+- Install npm packages for UI (run the following command from CVAT root directory):
+
+  ```bash
+  yarn --frozen-lockfile
+  ```
+
+  > Note for Mac users
+  >
+  > If you faced with error
+  >
+  > `Node Sass does not yet support your current environment: OS X 64-bit with Unsupported runtime (57)`
+  >
+  > Read this article [Node Sass does not yet support your current environment](https://marketplace.visualstudio.com/items?itemName=msjsdiag.debugger-for-chrome)
 
 ### Run CVAT
 - Start npm UI debug server (run the following command from CVAT root directory):
@@ -214,7 +214,7 @@ description: 'Installing a development environment for different operating syste
 
 
 You have done! Now it is possible to insert breakpoints and debug server and client of the tool.
-Instructions for running tests locally are available [here](/site/content/en/docs/contributing/running-tests.md).
+Instructions for running tests locally are available [here](/docs/contributing/running-tests/).
 
 ## Note for Windows users
 

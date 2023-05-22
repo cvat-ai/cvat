@@ -4,7 +4,6 @@
 
 import logging
 import os
-import re
 from http import HTTPStatus
 from pathlib import Path
 from subprocess import PIPE, CalledProcessError, run
@@ -12,6 +11,7 @@ from time import sleep
 
 import pytest
 import requests
+import yaml
 
 from shared.utils.config import ASSETS_DIR, get_server_url
 
@@ -207,9 +207,15 @@ def create_compose_files(container_name_files):
         with open(filename.with_name(filename.name.replace(".tests", "")), "r") as dcf, open(
             filename, "w"
         ) as ndcf:
-            ndcf.writelines(
-                [line for line in dcf.readlines() if not re.match("^.+container_name.+$", line)]
-            )
+            dc_config = yaml.safe_load(dcf)
+
+            for service_name, service_config in dc_config["services"].items():
+                service_config.pop("container_name", None)
+                if service_name == "cvat_server":
+                    service_env = service_config["environment"]
+                    service_env["DJANGO_SETTINGS_MODULE"] = "cvat.settings.testing_rest"
+
+            yaml.dump(dc_config, ndcf)
 
 
 def delete_compose_files(container_name_files):

@@ -3296,6 +3296,7 @@ paths:
           - br
           - bs
           - ca
+          - ckb
           - cs
           - cy
           - da
@@ -3348,6 +3349,7 @@ paths:
           - ml
           - mn
           - mr
+          - ms
           - my
           - nb
           - ne
@@ -5137,6 +5139,10 @@ components:
       - imageset
       - list
       type: string
+      description: |-
+        * `video` - VIDEO
+        * `imageset` - IMAGESET
+        * `list` - LIST
     ClientEvents:
       type: object
       properties:
@@ -5326,12 +5332,19 @@ components:
       - ANONYMOUS_ACCESS
       - CONNECTION_STRING
       type: string
+      description: |-
+        * `KEY_SECRET_KEY_PAIR` - KEY_SECRET_KEY_PAIR
+        * `ACCOUNT_NAME_TOKEN_PAIR` - ACCOUNT_NAME_TOKEN_PAIR
+        * `KEY_FILE_PATH` - KEY_FILE_PATH
+        * `ANONYMOUS_ACCESS` - ANONYMOUS_ACCESS
+        * `CONNECTION_STRING` - CONNECTION_STRING
     DataMetaRead:
       type: object
       properties:
         chunk_size:
           type: integer
           readOnly: true
+          nullable: true
         size:
           type: integer
           readOnly: true
@@ -5718,6 +5731,29 @@ components:
       - update:project
       - update:task
       type: string
+      description: |-
+        * `create:comment` - CREATE:COMMENT
+        * `create:invitation` - CREATE:INVITATION
+        * `create:issue` - CREATE:ISSUE
+        * `create:job` - CREATE:JOB
+        * `create:membership` - CREATE:MEMBERSHIP
+        * `create:project` - CREATE:PROJECT
+        * `create:task` - CREATE:TASK
+        * `delete:comment` - DELETE:COMMENT
+        * `delete:invitation` - DELETE:INVITATION
+        * `delete:issue` - DELETE:ISSUE
+        * `delete:job` - DELETE:JOB
+        * `delete:membership` - DELETE:MEMBERSHIP
+        * `delete:organization` - DELETE:ORGANIZATION
+        * `delete:project` - DELETE:PROJECT
+        * `delete:task` - DELETE:TASK
+        * `update:comment` - UPDATE:COMMENT
+        * `update:issue` - UPDATE:ISSUE
+        * `update:job` - UPDATE:JOB
+        * `update:membership` - UPDATE:MEMBERSHIP
+        * `update:organization` - UPDATE:ORGANIZATION
+        * `update:project` - UPDATE:PROJECT
+        * `update:task` - UPDATE:TASK
     FileInfo:
       type: object
       properties:
@@ -5738,6 +5774,9 @@ components:
       - REG
       - DIR
       type: string
+      description: |-
+        * `REG` - REG
+        * `DIR` - DIR
     FrameMeta:
       type: object
       properties:
@@ -5766,6 +5805,12 @@ components:
       - text
       - select
       type: string
+      description: |-
+        * `checkbox` - CHECKBOX
+        * `radio` - RADIO
+        * `number` - NUMBER
+        * `text` - TEXT
+        * `select` - SELECT
     InvitationRead:
       type: object
       properties:
@@ -5972,12 +6017,20 @@ components:
       - validation
       - acceptance
       type: string
+      description: |-
+        * `annotation` - ANNOTATION
+        * `validation` - VALIDATION
+        * `acceptance` - ACCEPTANCE
     JobStatus:
       enum:
       - annotation
       - validation
       - completed
       type: string
+      description: |-
+        * `annotation` - ANNOTATION
+        * `validation` - VALIDATION
+        * `completed` - COMPLETED
     JobsSummary:
       type: object
       properties:
@@ -6330,6 +6383,9 @@ components:
       - cloud_storage
       - local
       type: string
+      description: |-
+        * `cloud_storage` - CLOUD_STORAGE
+        * `local` - LOCAL
     LoginSerializerExRequest:
       type: object
       properties:
@@ -6361,6 +6417,7 @@ components:
           type: string
           format: date-time
           readOnly: true
+          nullable: true
         role:
           allOf:
           - $ref: '#/components/schemas/RoleEnum'
@@ -6388,6 +6445,11 @@ components:
       - completed
       - rejected
       type: string
+      description: |-
+        * `new` - NEW
+        * `in progress` - IN_PROGRESS
+        * `completed` - COMPLETED
+        * `rejected` - REJECTED
     OrganizationRead:
       type: object
       properties:
@@ -7018,6 +7080,7 @@ components:
           type: array
           items:
             type: string
+            minLength: 1
         is_staff:
           type: boolean
           title: Staff status
@@ -7196,6 +7259,11 @@ components:
       - GOOGLE_DRIVE
       - GOOGLE_CLOUD_STORAGE
       type: string
+      description: |-
+        * `AWS_S3_BUCKET` - AWS_S3
+        * `AZURE_CONTAINER` - AZURE_CONTAINER
+        * `GOOGLE_DRIVE` - GOOGLE_DRIVE
+        * `GOOGLE_CLOUD_STORAGE` - GOOGLE_CLOUD_STORAGE
     RegisterSerializerEx:
       type: object
       properties:
@@ -7254,6 +7322,11 @@ components:
       - maintainer
       - owner
       type: string
+      description: |-
+        * `worker` - Worker
+        * `supervisor` - Supervisor
+        * `maintainer` - Maintainer
+        * `owner` - Owner
     RqStatus:
       type: object
       properties:
@@ -7276,6 +7349,11 @@ components:
       - Finished
       - Failed
       type: string
+      description: |-
+        * `Queued` - Queued
+        * `Started` - Started
+        * `Finished` - Finished
+        * `Failed` - Failed
     ShapeType:
       enum:
       - rectangle
@@ -7287,6 +7365,15 @@ components:
       - mask
       - skeleton
       type: string
+      description: |-
+        * `rectangle` - RECTANGLE
+        * `polygon` - POLYGON
+        * `polyline` - POLYLINE
+        * `points` - POINTS
+        * `ellipse` - ELLIPSE
+        * `cuboid` - CUBOID
+        * `mask` - MASK
+        * `skeleton` - SKELETON
     SigningRequest:
       type: object
       properties:
@@ -7302,6 +7389,11 @@ components:
       - predefined
       - random
       type: string
+      description: |-
+        * `lexicographical` - LEXICOGRAPHICAL
+        * `natural` - NATURAL
+        * `predefined` - PREDEFINED
+        * `random` - RANDOM
     Storage:
       type: object
       properties:
@@ -7320,6 +7412,9 @@ components:
       - cache
       - file_system
       type: string
+      description: |-
+        * `cache` - CACHE
+        * `file_system` - FILE_SYSTEM
     StorageRequest:
       type: object
       properties:
@@ -7336,6 +7431,10 @@ components:
       - local
       - share
       type: string
+      description: |-
+        * `cloud_storage` - CLOUD_STORAGE
+        * `local` - LOCAL
+        * `share` - SHARE
     SubLabeledShape:
       type: object
       properties:
@@ -7875,6 +7974,7 @@ components:
       enum:
       - application/json
       type: string
+      description: '* `application/json` - JSON'
     WebhookDeliveryRead:
       type: object
       properties:
@@ -7890,6 +7990,7 @@ components:
         status_code:
           type: integer
           readOnly: true
+          nullable: true
         redelivery:
           type: boolean
           readOnly: true
@@ -7978,6 +8079,9 @@ components:
       - organization
       - project
       type: string
+      description: |-
+        * `organization` - ORGANIZATION
+        * `project` - PROJECT
     WebhookWriteRequest:
       type: object
       properties:
