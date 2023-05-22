@@ -22,11 +22,13 @@ UI_SCHEME = os.environ.get('UI_SCHEME', 'http')
 UI_HOST = os.environ.get('UI_HOST', 'localhost')
 UI_PORT = os.environ.get('UI_PORT', 3000)
 CORS_ALLOW_CREDENTIALS = True
-CSRF_TRUSTED_ORIGINS = [UI_HOST]
 UI_URL = '{}://{}'.format(UI_SCHEME, UI_HOST)
 
 if UI_PORT and UI_PORT != '80':
     UI_URL += ':{}'.format(UI_PORT)
+
+CSRF_TRUSTED_ORIGINS = [UI_URL]
+
 # set UI url to redirect to after successful e-mail confirmation
 ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = '{}/auth/email-confirmation'.format(UI_URL)
 ACCOUNT_EMAIL_VERIFICATION_SENT_REDIRECT_URL = '{}/auth/email-verification-sent'.format(UI_URL)
