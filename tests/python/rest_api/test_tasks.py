@@ -868,7 +868,7 @@ class TestPostTaskData:
         )
 
         with make_api_client(self._USERNAME) as api_client:
-            (task, response) = api_client.tasks_api.retrieve(task_id, org=org)
+            (task, response) = api_client.tasks_api.retrieve(task_id)
             assert response.status == HTTPStatus.OK
             assert task.size == task_size
 
