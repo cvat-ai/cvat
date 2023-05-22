@@ -7,7 +7,7 @@ import data.utils
 import data.organizations
 
 # input: {
-#     "scope": <"view"|"list"> or null,
+#     "scope": <"list"> or null,
 #     "auth": {
 #         "user": {
 #             "id": <num>,

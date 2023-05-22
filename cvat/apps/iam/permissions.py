@@ -1703,11 +1703,7 @@ class AnnotationConflictPermission(OpenPolicyAgentPermission):
         permissions = []
         if view.basename == 'annotation_conflicts':
             for scope in cls.get_scopes(request, view, obj):
-                if scope == Scopes.LIST and isinstance(obj, Task):
-                    permissions.append(TaskPermission.create_base_perm(request, view,
-                        scope=TaskPermission.Scopes.VIEW, obj=obj))
-                else:
-                    permissions.append(cls.create_base_perm(request, view, scope, obj))
+                permissions.append(cls.create_base_perm(request, view, scope, obj))
 
         return permissions
 

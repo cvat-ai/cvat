@@ -40,8 +40,8 @@ from cvat.apps.profiler import silk_profile
         summary='Method returns a paginated list of annotation conflicts',
         parameters=[
             # These filters are implemented differently from others
-            OpenApiParameter('task_id', type=OpenApiTypes.INT,
-                description='A simple equality filter for task id'),
+            OpenApiParameter('report_id', type=OpenApiTypes.INT,
+                description='A simple equality filter for report id'),
         ],
         responses={
             '200': AnnotationConflictSerializer(many=True),
@@ -57,12 +57,12 @@ class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
 
     search_fields = []
     filter_fields = list(search_fields) + [
-        'id', 'report_id', 'frame', 'type', 'job_id', 'importance'
+        'id', 'frame', 'type', 'job_id', 'task_id', 'importance'
     ]
     simple_filters = set(filter_fields) - {'id'}
     lookup_fields = {
-        'report_id': 'report__id',
         'job_id': 'report__job__id',
+        'task_id': 'report__job__segment__task__id' # task reports do not contain own conflicts
     }
     ordering_fields = list(filter_fields)
     ordering = 'id'
@@ -72,17 +72,24 @@ class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
         queryset = super().get_queryset()
 
         if self.action == 'list':
-            if task_id := self.request.GET.get('task_id', None):
-                # NOTE: This filter is too complex to be implemented by other means
-                task = Task.objects.get(id=task_id)
-                self.check_object_permissions(self.request, task)
-                queryset = queryset.filter(
-                    Q(report__job__segment__task__id=task_id) | Q(report__task__id=task_id)
-                )
-            else:
-                # In other cases permissions are checked already
-                perm = AnnotationConflictPermission.create_scope_list(self.request)
-                queryset = perm.filter(queryset)
+            if report_id := self.request.GET.get('report_id', None):
+                try:
+                    report = QualityReport.objects.prefetch_related('parent').get(id=report_id)
+                except QualityReport.DoesNotExist as ex:
+                    raise NotFound(f"Report {report_id} does not exist") from ex
+
+                if report.target == QualityReportTarget.TASK:
+                    queryset = self.queryset.filter(
+                        Q(report=report) | Q(report__parent=report)
+                    ).distinct()
+                elif report.target == QualityReportTarget.JOB:
+                    queryset = self.queryset.filter(report=report)
+                else:
+                    assert False
+
+            # In other cases permissions are checked already
+            perm = AnnotationConflictPermission.create_scope_list(self.request)
+            queryset = perm.filter(queryset)
 
         return queryset
 
@@ -90,6 +97,7 @@ class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
 @extend_schema(tags=["quality"])
 @extend_schema_view(
     retrieve=extend_schema(
+        operation_id='quality_retrieve_report', # the default produces the plural
         summary='Method returns details of a quality report',
         responses={
             '200': QualityReportSerializer,
@@ -144,9 +152,15 @@ class QualityReportViewSet(viewsets.GenericViewSet,
         if self.action == 'list':
             if task_id := self.request.GET.get('task_id', None):
                 # NOTE: This filter is too complex to be implemented by other means
-                task = Task.objects.get(id=task_id)
+                try:
+                    task = Task.objects.get(id=task_id)
+                except Task.DoesNotExist as ex:
+                    raise NotFound(f"Task {task_id} does not exist") from ex
+
                 self.check_object_permissions(self.request, task)
-                queryset = queryset.filter(Q(job__segment__task__id=task_id) | Q(task__id=task_id))
+                queryset = queryset.filter(
+                    Q(job__segment__task__id=task_id) | Q(task__id=task_id)
+                ).distinct()
             else:
                 # In other cases permissions are checked already
                 perm = QualityReportPermission.create_scope_list(self.request)
@@ -208,7 +222,11 @@ class QualityReportViewSet(viewsets.GenericViewSet,
             input_serializer.is_valid(raise_exception=True)
 
             task_id = input_serializer.validated_data["task_id"]
-            task = Task.objects.get(pk=task_id)
+
+            try:
+                task = Task.objects.get(pk=task_id)
+            except Task.DoesNotExist as ex:
+                raise NotFound(f"Task {task_id} does not exist") from ex
 
             try:
                 rq_id = qc.QualityReportUpdateManager().schedule_quality_check_job(
@@ -228,14 +246,18 @@ class QualityReportViewSet(viewsets.GenericViewSet,
                 raise NotFound("Unknown request id")
 
             if rq_job.is_failed:
-                raise ValidationError(str(rq_job.exc_info))
+                message = str(rq_job.exc_info)
+                rq_job.delete()
+                raise ValidationError(message)
             elif rq_job.is_queued or rq_job.is_started:
                 return Response(status=status.HTTP_202_ACCEPTED)
             elif rq_job.is_finished:
-                if not rq_job.return_value:
+                return_value = rq_job.return_value
+                rq_job.delete()
+                if not return_value:
                     raise ValidationError("No report has been computed")
 
-                report = self.get_queryset().get(pk=rq_job.return_value)
+                report = self.get_queryset().get(pk=return_value)
                 report_serializer = QualityReportSerializer(instance=report)
                 return Response(
                     data=report_serializer.data,

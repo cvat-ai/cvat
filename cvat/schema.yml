@@ -4196,8 +4196,8 @@ paths:
       - name: filter
         required: false
         in: query
-        description: 'A filter term. Available filter_fields: [''id'', ''report_id'',
-          ''frame'', ''type'', ''job_id'', ''importance'']'
+        description: 'A filter term. Available filter_fields: [''id'', ''frame'',
+          ''type'', ''job_id'', ''task_id'', ''importance'']'
         schema:
           type: string
       - name: frame
@@ -4240,11 +4240,11 @@ paths:
         description: Number of results to return per page.
         schema:
           type: integer
-      - name: report_id
-        in: query
-        description: A simple equality filter for the report_id field
+      - in: query
+        name: report_id
         schema:
           type: integer
+        description: A simple equality filter for report id
       - name: search
         required: false
         in: query
@@ -4255,14 +4255,14 @@ paths:
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''id'', ''report_id'', ''frame'', ''type'', ''job_id'', ''importance'']'
+          [''id'', ''frame'', ''type'', ''job_id'', ''task_id'', ''importance'']'
         schema:
           type: string
-      - in: query
-        name: task_id
+      - name: task_id
+        in: query
+        description: A simple equality filter for the task_id field
         schema:
           type: integer
-        description: A simple equality filter for task id
       - name: type
         in: query
         description: A simple equality filter for the type field
@@ -4439,7 +4439,7 @@ paths:
           description: Invalid or failed request, check the response data for details
   /api/quality/reports/{id}:
     get:
-      operationId: quality_retrieve_reports
+      operationId: quality_retrieve_report
       summary: Method returns details of a quality report
       parameters:
       - in: header
@@ -9308,6 +9308,9 @@ components:
     QualitySettings:
       type: object
       properties:
+        id:
+          type: integer
+          readOnly: true
         task:
           type: integer
           readOnly: true
