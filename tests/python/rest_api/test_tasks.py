@@ -1666,7 +1666,7 @@ class TestImportTaskAnnotations:
             (_, response) = api_client.tasks_api.destroy_annotations(id=task_id)
             assert response.status == HTTPStatus.NO_CONTENT
 
-    @pytest.mark.timeout(50)
+    @pytest.mark.timeout(70)
     @pytest.mark.parametrize("successful_upload", [True, False])
     def test_can_import_annotations_after_previous_unclear_import(
         self, successful_upload: bool, tasks_with_shapes
@@ -1701,7 +1701,7 @@ class TestImportTaskAnnotations:
             rq_id = json.loads(response.data)["rq_id"]
             assert rq_id
         else:
-            required_time = 40
+            required_time = 60
             uploader._tus_start_upload(url, query_params=params)
             uploader._upload_file_data_with_tus(
                 url, filename, meta=params, logger=self.client.logger.debug
@@ -1715,7 +1715,7 @@ class TestImportTaskAnnotations:
         self._check_annotations(task_id)
 
     @pytest.mark.only_docker_test
-    @pytest.mark.timeout(50)
+    @pytest.mark.timeout(70)
     def test_check_import_cache_after_previous_interrupted_upload(self, tasks_with_shapes):
         task_id = tasks_with_shapes[0]["id"]
         with NamedTemporaryFile() as f:
@@ -1733,7 +1733,7 @@ class TestImportTaskAnnotations:
         uploader._upload_file_data_with_tus(
             url, filename, meta=params, logger=self.client.logger.debug
         )
-        sleep(40)
+        sleep(60)
         try:
             result = subprocess.check_output(
                 f'docker exec test_cvat_server_1 bash -c "ls data/tasks/{task_id}/tmp | wc -l"',
