@@ -1666,6 +1666,8 @@ class TestImportTaskAnnotations:
             (_, response) = api_client.tasks_api.destroy_annotations(id=task_id)
             assert response.status == HTTPStatus.NO_CONTENT
 
+    # skip test in helm because there is not possible to override default settings for this case
+    @pytest.mark.only_docker_test
     @pytest.mark.timeout(70)
     @pytest.mark.parametrize("successful_upload", [True, False])
     def test_can_import_annotations_after_previous_unclear_import(
