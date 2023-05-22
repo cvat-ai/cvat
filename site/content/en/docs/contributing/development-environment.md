@@ -83,7 +83,7 @@ description: 'Installing a development environment for different operating syste
   Note: use `docker start/stop cvat_db_debug` commands to start and stop the container.
   If it is removed, data will be removed together with the container.
   
-  - Pull and run Open Policy Agent docker image:
+- Pull and run Open Policy Agent docker image:
 
   ```bash
    docker run -d --rm --name cvat_opa_debug -p 8181:8181 openpolicyagent/opa:0.45.0-rootless \
