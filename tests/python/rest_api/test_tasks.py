@@ -7,6 +7,7 @@ import io
 import json
 import os
 import os.path as osp
+import subprocess
 from copy import deepcopy
 from functools import partial
 from http import HTTPStatus
@@ -1735,7 +1736,7 @@ class TestImportTaskAnnotations:
         sleep(40)
         try:
             result = subprocess.check_output(
-                f'docker exec -it test_cvat_server_1 bash -c "ls data/tasks/{task_id}/tmp | wc -l"',
+                f'docker exec test_cvat_server_1 bash -c "ls data/tasks/{task_id}/tmp | wc -l"',
                 shell=True,
                 stderr=subprocess.STDOUT,
             )
