@@ -154,7 +154,7 @@ jobs:
         id: run_tests
         run: |
           pip3 install -r cvat-sdk/gen/requirements.txt
-          ./cvat-sdk//gen/generate.sh
+          ./cvat-sdk/gen/generate.sh
 
           pip3 install -r ./tests/python/requirements.txt
           pip3 install -e ./cvat-sdk
