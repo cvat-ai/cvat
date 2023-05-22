@@ -19,6 +19,8 @@ from cvat.apps.quality_control.models import QualitySettings
     dispatch_uid=__name__ + ".save_project-update_quality_metrics")
 @receiver(post_save, sender=Annotation,
     dispatch_uid=__name__ + ".save_annotation-update_quality_metrics")
+@receiver(post_save, sender=QualitySettings,
+    dispatch_uid=__name__ + ".save_settings-update_quality_metrics")
 def __save_job__update_quality_metrics(instance, created, **kwargs):
     tasks = []
 
@@ -30,6 +32,8 @@ def __save_job__update_quality_metrics(instance, created, **kwargs):
         tasks.append(instance.segment.task)
     elif isinstance(instance, Annotation):
         tasks.append(instance.job.segment.task)
+    elif isinstance(instance, QualitySettings):
+        tasks.append(instance.task)
     else:
         assert False
 
