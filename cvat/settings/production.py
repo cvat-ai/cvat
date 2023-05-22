@@ -38,3 +38,9 @@ if USE_SENTRY:
         print(e)
 else:
     logging.info('Sentry usage is disabled.')
+
+EMAIL_BACKEND = 'django_ses.SESBackend'
+
+AWS_SES_REGION_NAME = 'us-west-2'
+AWS_SES_REGION_ENDPOINT = 'email.us-west-2.amazonaws.com'
+DEFAULT_FROM_EMAIL = 'reboticsnoreply@retechlabs.com'
