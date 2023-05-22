@@ -2209,6 +2209,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             for (const [key, otherShape] of Object.entries(this.svgShapes)) {
                 otherShape.removeClass('cvat_canvas_shape_darken');
                 otherShape.removeClass('cvat_canvas_conflicted');
+                otherShape.removeClass('cvat_canvas_warned');
             }
 
             this.sortObjects();
@@ -2260,16 +2261,24 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 );
                 return conflictedState;
             });
+            const conflictedMap = {};
+            conflictedStates.forEach((_state) => {
+                conflictedMap[_state.clientID] = _state.conflict;
+                if (_state.elements.length) {
+                    _state.elements.forEach((element) => { conflictedMap[element.clientID] = _state.conflict; });
+                }
+            });
 
-            let conflictedIDs = conflictedStates.map((_state) => (
-                [_state.clientID, ..._state.elements.map((element) => element.clientID)]
-            ));
-            conflictedIDs = conflictedIDs.flat();
             for (const [key, otherShape] of Object.entries(this.svgShapes)) {
-                if (!conflictedIDs.includes(+key)) {
-                    otherShape.addClass('cvat_canvas_shape_darken');
+                if (conflictedMap[+key]) {
+                    const { importance } = conflictedMap[+key];
+                    if (importance === 'error') {
+                        otherShape.addClass('cvat_canvas_conflicted');
+                    } else if (importance === 'warning') {
+                        otherShape.addClass('cvat_canvas_warned');
+                    }
                 } else {
-                    otherShape.addClass('cvat_canvas_conflicted');
+                    otherShape.addClass('cvat_canvas_shape_darken');
                 }
             }
         }

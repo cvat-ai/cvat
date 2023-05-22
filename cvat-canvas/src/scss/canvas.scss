@@ -153,7 +153,12 @@ polyline.cvat_canvas_shape_splitting {
 }
 
 .cvat_canvas_conflicted {
-    stroke: red;
+    stroke: #ff4800;
+    stroke-dasharray: 1;
+}
+
+.cvat_canvas_warned {
+    stroke: #ff7301;
     stroke-dasharray: 1;
 }
 
