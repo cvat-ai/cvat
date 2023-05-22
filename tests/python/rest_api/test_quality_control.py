@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import json
+from copy import deepcopy
 from http import HTTPStatus
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -64,7 +65,7 @@ class TestPostQualityReports:
         with make_api_client(admin_user) as api_client:
             (_, response) = api_client.quality_api.create_report(
                 quality_report_create_request=models.QualityReportCreateRequest(task_id=task_id),
-                _parse_response=False
+                _parse_response=False,
             )
             assert response.status == HTTPStatus.ACCEPTED
             rq_id = response.data.decode()
@@ -247,3 +248,135 @@ class TestGetSettings:
             )
         else:
             self._test_get_settings_403(user["username"], settings_id, **extra_kwargs)
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+class TestPatchSettings:
+    def _test_patch_settings_200(
+        self,
+        user: str,
+        obj_id: int,
+        data: dict[str, Any],
+        *,
+        expected_data: Optional[Dict[str, Any]] = None,
+        **kwargs,
+    ):
+        with make_api_client(user) as api_client:
+            (_, response) = api_client.quality_api.partial_update_settings(
+                obj_id, patched_quality_settings_request=data, **kwargs
+            )
+            assert response.status == HTTPStatus.OK
+
+        if expected_data is not None:
+            assert DeepDiff(expected_data, json.loads(response.data), ignore_order=True) == {}
+
+        return response
+
+    def _test_patch_settings_403(self, user: str, obj_id: int, data: dict[str, Any], **kwargs):
+        with make_api_client(user) as api_client:
+            (_, response) = api_client.quality_api.partial_update_settings(
+                obj_id,
+                patched_quality_settings_request=data,
+                **kwargs,
+                _parse_response=False,
+                _check_status=False,
+            )
+            assert response.status == HTTPStatus.FORBIDDEN
+
+        return response
+
+    def _get_request_data(self, data: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
+        patched_data = deepcopy(data)
+
+        for field, value in data.items():
+            if isinstance(value, bool):
+                patched_data[field] = not value
+            elif isinstance(value, float):
+                patched_data[field] = 1 - value
+
+        expected_data = deepcopy(patched_data)
+
+        return patched_data, expected_data
+
+    def test_can_patch_settings(self, admin_user, quality_settings):
+        settings_id, settings = next(iter(quality_settings.items()))
+        data, expected_data = self._get_request_data(settings)
+        self._test_patch_settings_200(admin_user, settings_id, data, expected_data=expected_data)
+
+    @pytest.mark.parametrize("is_staff, allow", [(True, True), (False, False)])
+    def test_user_patch_settings_in_sandbox_task(
+        self, quality_settings, tasks, users, is_task_staff, is_staff, allow
+    ):
+        task = next(
+            t
+            for t in tasks
+            if t["organization"] is None and not users[t["owner"]["id"]]["is_superuser"]
+        )
+
+        if is_staff:
+            user = task["owner"]["username"]
+        else:
+            user = next(u for u in users if not is_task_staff(u["id"], task["id"]))["username"]
+
+        settings_id = task["quality_settings"]
+        settings = quality_settings[settings_id]
+        data, expected_data = self._get_request_data(settings)
+
+        if allow:
+            self._test_patch_settings_200(user, settings_id, data, expected_data=expected_data)
+        else:
+            self._test_patch_settings_403(user, settings_id, data)
+
+    @pytest.mark.parametrize(
+        "org_role, is_staff, allow",
+        [
+            ("owner", True, True),
+            ("owner", False, True),
+            ("maintainer", True, True),
+            ("maintainer", False, True),
+            ("supervisor", True, True),
+            ("supervisor", False, False),
+            ("worker", True, True),
+            ("worker", False, False),
+        ],
+    )
+    def test_user_patch_settings_in_org_task(
+        self,
+        tasks,
+        users,
+        is_org_member,
+        is_task_staff,
+        org_role,
+        is_staff,
+        allow,
+        quality_settings,
+    ):
+        for user in users:
+            task = next(
+                (
+                    t
+                    for t in tasks
+                    if t["organization"] is not None
+                    and is_task_staff(user["id"], t["id"]) == is_staff
+                    and is_org_member(user["id"], t["organization"], role=org_role)
+                ),
+                None,
+            )
+            if task is not None:
+                break
+
+        assert task
+
+        org_id = task["organization"]
+        extra_kwargs = {"org_id": org_id}
+
+        settings_id = task["quality_settings"]
+        settings = quality_settings[settings_id]
+        data, expected_data = self._get_request_data(settings)
+
+        if allow:
+            self._test_patch_settings_200(
+                user["username"], settings_id, data, expected_data=expected_data, **extra_kwargs
+            )
+        else:
+            self._test_patch_settings_403(user["username"], settings_id, data, **extra_kwargs)

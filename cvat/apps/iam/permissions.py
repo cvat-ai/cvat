@@ -1730,8 +1730,8 @@ class QualitySettingPermission(OpenPolicyAgentPermission):
     obj: Optional[QualitySettings]
 
     class Scopes(StrEnum):
-        LIST = 'list'
         VIEW = 'view'
+        UPDATE = 'update'
 
     @classmethod
     def create(cls, request, view, obj):
@@ -1740,14 +1740,20 @@ class QualitySettingPermission(OpenPolicyAgentPermission):
         permissions = []
         if view.basename == 'quality_settings':
             for scope in cls.get_scopes(request, view, obj):
-                if scope == Scopes.VIEW:
+                if scope in [Scopes.VIEW, Scopes.UPDATE]:
                     obj = cast(QualitySettings, obj)
+
+                    if scope == Scopes.VIEW:
+                        task_scope = TaskPermission.Scopes.VIEW
+                    elif scope == Scopes.UPDATE:
+                        task_scope = TaskPermission.Scopes.UPDATE_DESC
+                    else:
+                        assert False
 
                     # Access rights are the same as in the owning task
                     # This component doesn't define its own rules in this case
-                    owning_perm = TaskPermission.create_base_perm(request, view,
-                        scope=TaskPermission.Scopes.VIEW, obj=obj.task)
-                    permissions.append(owning_perm)
+                    permissions.append(TaskPermission.create_base_perm(request, view,
+                        scope=task_scope, obj=obj.task))
                 else:
                     permissions.append(cls.create_base_perm(request, view, scope, obj))
 
@@ -1755,15 +1761,14 @@ class QualitySettingPermission(OpenPolicyAgentPermission):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.url = settings.IAM_OPA_DATA_URL + '/quality_reports/allow'
+        self.url = settings.IAM_OPA_DATA_URL + '/quality_settings/allow'
 
     @staticmethod
     def get_scopes(request, view, obj):
         Scopes = __class__.Scopes
         return [{
-            'list': Scopes.LIST,
             'retrieve': Scopes.VIEW,
-            'data': Scopes.VIEW,
+            'partial_update': Scopes.UPDATE,
         }.get(view.action, None)]
 
     def get_resource(self):
