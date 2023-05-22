@@ -257,7 +257,7 @@ def test_organization_filtering(regular_lonely_user: str, fxt_image_file):
             spec={"name": "personal_task", "labels": [{"name": "a"}]}, resources=[fxt_image_file]
         )
 
-        # create a project and in the organization
+        # create a project and task in the organization
         client.organization_slug = org.slug
         client.projects.create(models.ProjectWriteRequest(name="org_project"))
         client.tasks.create_from_data(
