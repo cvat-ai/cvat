@@ -71,6 +71,26 @@ description: 'Installing a development environment for different operating syste
   python3 --version
   ```
 
+- Install [Docker Engine](https://docs.docker.com/engine/install/ubuntu/) and [Docker-Compose](https://docs.docker.com/compose/install/)
+
+- Pull and run PostgreSQL docker image:
+
+  ```bash
+  docker run --name cvat_db_debug -e POSTGRES_HOST_AUTH_METHOD=trust -e POSTGRES_USER=root \
+  -e POSTGRES_DB=cvat -p 5432:5432 -d postgres
+  ```
+
+  Note: use `docker start/stop cvat_db_debug` commands to start and stop the container.
+  If it is removed, data will be removed together with the container.
+  
+  - Pull and run Open Policy Agent docker image:
+
+  ```bash
+   docker run -d --rm --name cvat_opa_debug -p 8181:8181 openpolicyagent/opa:0.45.0-rootless \
+   run --server --set=decision_logs.console=true --set=services.cvat.url=http://localhost:7000 \
+   --set=bundles.cvat.service=cvat --set=bundles.cvat.resource=/api/auth/rules
+  ```
+
 - Install CVAT on your local host:
 
   ```bash
@@ -168,26 +188,6 @@ description: 'Installing a development environment for different operating syste
   >
   > Read this article [Node Sass does not yet support your current environment](https://marketplace.visualstudio.com/items?itemName=msjsdiag.debugger-for-chrome)
 
-- Install [Docker Engine](https://docs.docker.com/engine/install/ubuntu/) and [Docker-Compose](https://docs.docker.com/compose/install/)
-
-- Pull and run Open Policy Agent docker image:
-
-  ```bash
-   docker run -d --rm --name cvat_opa_debug -p 8181:8181 openpolicyagent/opa:0.45.0-rootless \
-   run --server --set=decision_logs.console=true --set=services.cvat.url=http://host.docker.internal:7000 \
-   --set=bundles.cvat.service=cvat --set=bundles.cvat.resource=/api/auth/rules
-  ```
-
-- Pull and run PostgreSQL docker image:
-
-  ```bash
-  docker run --name cvat_db_debug -e POSTGRES_HOST_AUTH_METHOD=trust -e POSTGRES_USER=root \
-  -e POSTGRES_DB=cvat -p 5432:5432 -d postgres
-  ```
-
-  Note: use `docker start/stop cvat_db_debug` commands to start and stop the container.
-  If it is removed, data will be removed together with the container.
-
 ### Run CVAT
 - Start npm UI debug server (run the following command from CVAT root directory):
   - If you want to run CVAT in localhost:
@@ -211,7 +211,6 @@ description: 'Installing a development environment for different operating syste
 - Make sure that ```Uncaught Exceptions``` option under breakpoints section is unchecked
 - If you choose to run CVAT in localhost: Select `server: chrome` configuration and run it (F5) to open CVAT in Chrome
 - Alternative: If you changed CVAT_UI_HOST just enter ```<YOUR_HOST_IP>:3000``` in your browser.
-
 
 You have done! Now it is possible to insert breakpoints and debug server and client of the tool.
 Instructions for running tests locally are available [here](/site/content/en/docs/contributing/running-tests.md).
