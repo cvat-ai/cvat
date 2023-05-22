@@ -8,7 +8,6 @@ import { AnyAction } from 'redux';
 import { AuthActionTypes } from 'actions/auth-actions';
 import { FormatsActionTypes } from 'actions/formats-actions';
 import { ModelsActionTypes } from 'actions/models-actions';
-import { ShareActionTypes } from 'actions/share-actions';
 import { TasksActionTypes } from 'actions/tasks-actions';
 import { ProjectsActionTypes } from 'actions/projects-actions';
 import { AboutActionTypes } from 'actions/about-actions';
@@ -69,9 +68,6 @@ const defaultState: NotificationsState = {
             fetching: null,
         },
         about: {
-            fetching: null,
-        },
-        share: {
             fetching: null,
         },
         models: {
@@ -628,21 +624,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.errors.about,
                         fetching: {
                             message: 'Could not get info about the server',
-                            reason: action.payload.error.toString(),
-                        },
-                    },
-                },
-            };
-        }
-        case ShareActionTypes.LOAD_SHARE_DATA_FAILED: {
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    share: {
-                        ...state.errors.share,
-                        fetching: {
-                            message: 'Could not load share data from the server',
                             reason: action.payload.error.toString(),
                         },
                     },

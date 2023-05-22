@@ -7,13 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## \[2.5.0] - Unreleased
 ### Added
-- TDB
+- Support share point/cloud storage files and directories that should be excluded when creating a task (server) (<https://github.com/opencv/cvat/pull/6074>)
+- Support task creation with cloud storage/share directories (<https://github.com/opencv/cvat/pull/6074>)
+- Support task creation with any type of data supported by the server by default from cloud storage
+without use_cache option (<https://github.com/opencv/cvat/pull/6074>)
+- Support task creation with cloud storage data and without use_cache option (<https://github.com/opencv/cvat/pull/6074>)
+
+### Changed
+- Cloud storage manifest file is optional (<https://github.com/opencv/cvat/pull/6074>)
 
 ### Changed
 - TDB
 
 ### Deprecated
-- TDB
+- The endpoint /cloudstorages/{id}/content was deprecated (<https://github.com/opencv/cvat/pull/6074>)
 
 ### Removed
 - TDB

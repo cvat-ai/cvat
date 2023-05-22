@@ -606,6 +606,7 @@ class CloudStoragePermission(OpenPolicyAgentPermission):
             'partial_update': Scopes.UPDATE,
             'destroy': Scopes.DELETE,
             'content': Scopes.LIST_CONTENT,
+            'content_v2': Scopes.LIST_CONTENT,
             'preview': Scopes.VIEW,
             'status': Scopes.VIEW,
             'actions': Scopes.VIEW,

@@ -24,21 +24,18 @@ context('Connected file share.', () => {
         cy.get('.cvat-create-task-button').should('be.visible').click();
         cy.get('#name').type(taskName);
         cy.addNewLabel(labelName);
+        cy.intercept('GET', '/api/server/share?**').as('shareRequest');
         cy.contains('[role="tab"]', 'Connected file share').click();
-        cy.get('.cvat-share-tree')
-            .should('be.visible')
+        cy.wait('@shareRequest').then((interception) => {
+            for (const item of expectedTopLevel) {
+                const responseEl = interception.response.body.find((el) => el.name === item.name);
+                expect(responseEl).to.deep.equal(item);
+            }
+        });
+        cy.get('.cvat-remote-browser-table-wrapper')
+            .should('exist')
             .within(() => {
-                cy.intercept('GET', '/api/server/share?**').as('shareRequest');
-                cy.get('[aria-label="plus-square"]').click();
-                cy.wait('@shareRequest').then((interception) => {
-                    for (const item of expectedTopLevel) {
-                        const responseEl = interception.response.body.find((el) => el.name === item.name);
-                        expect(responseEl).to.deep.equal(item);
-                    }
-                });
-                cy.get('[title="images"]').parent().within(() => {
-                    cy.get('[aria-label="plus-square"]').click();
-                });
+                cy.get('button').contains('images').click();
                 cy.wait('@shareRequest').then((interception) => {
                     expect(interception.response.body
                         .sort((a, b) => a.name.localeCompare(b.name)))
@@ -46,8 +43,8 @@ context('Connected file share.', () => {
                 });
                 expectedImagesList.forEach((el) => {
                     const { name } = el;
-                    cy.get(`[title="${name}"]`).parent().within(() => {
-                        cy.get('.ant-tree-checkbox').click().should('have.attr', 'class').and('contain', 'checked');
+                    cy.get('.ant-table-cell').contains(name).parent().within(() => {
+                        cy.get('.ant-checkbox-input').click();
                     });
                 });
             });

@@ -152,7 +152,7 @@ export interface SerializedAbout {
     version: string;
 }
 
-export interface SerializedShare {
+export interface SerializedRemoteFile {
     name: string;
     type: ShareFileType;
     mime_type: string;

@@ -861,6 +861,10 @@ class CloudStorage(models.Model):
     def get_key_file_path(self):
         return os.path.join(self.get_storage_dirname(), 'key.json')
 
+    @property
+    def has_at_least_one_manifest(self) -> bool:
+        return bool(self.manifests.count())
+
 class Storage(models.Model):
     location = models.CharField(max_length=16, choices=Location.choices(), default=Location.LOCAL)
     cloud_storage_id = models.IntegerField(null=True, blank=True, default=None)
