@@ -257,7 +257,7 @@ def test_organization_filtering(regular_lonely_user: str, fxt_image_file):
             spec={"name": "personal_task", "labels": [{"name": "a"}]}, resources=[fxt_image_file]
         )
 
-        # create a project and in the organization
+        # create a project and task in the organization
         client.organization_slug = org.slug
         client.projects.create(models.ProjectWriteRequest(name="org_project"))
         client.tasks.create_from_data(
@@ -271,7 +271,7 @@ def test_organization_filtering(regular_lonely_user: str, fxt_image_file):
         assert len(projects) == len(tasks) == len(jobs) == 1
         assert projects[0].organization == tasks[0].organization == jobs[0].organization == None
 
-        # return only all objects if org parameter wasn't presented
+        # return all objects if org parameter wasn't presented
         client.organization_slug = None
         projects, tasks, jobs = client.projects.list(), client.tasks.list(), client.jobs.list()
 
