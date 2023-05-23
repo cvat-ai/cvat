@@ -1914,26 +1914,39 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     list=extend_schema(
         summary='Method returns a paginated list of users',
         responses={
-            '200': PolymorphicProxySerializer(component_name='MetaUser',
+            '200': PolymorphicProxySerializer(
+                component_name='MetaUser',
                 serializers=[
-                    UserSerializer, BasicUserSerializer,
-                ], resource_type_field_name=None),
+                    UserSerializer,
+                    BasicUserSerializer,
+                ],
+                resource_type_field_name=None,
+                many=True, # https://github.com/tfranzel/drf-spectacular/issues/910
+            ),
         }),
     retrieve=extend_schema(
         summary='Method provides information of a specific user',
         responses={
-            '200': PolymorphicProxySerializer(component_name='MetaUser',
+            '200': PolymorphicProxySerializer(
+                component_name='MetaUser',
                 serializers=[
-                    UserSerializer, BasicUserSerializer,
-                ], resource_type_field_name=None),
+                    UserSerializer,
+                    BasicUserSerializer,
+                ],
+                resource_type_field_name=None,
+            ),
         }),
     partial_update=extend_schema(
         summary='Method updates chosen fields of a user',
         responses={
-            '200': PolymorphicProxySerializer(component_name='MetaUser',
+            '200': PolymorphicProxySerializer(
+                component_name='MetaUser',
                 serializers=[
-                    UserSerializer(partial=True), BasicUserSerializer(partial=True),
-                ], resource_type_field_name=None),
+                    UserSerializer(partial=True),
+                    BasicUserSerializer(partial=True),
+                ],
+                resource_type_field_name=None,
+            ),
         }),
     destroy=extend_schema(
         summary='Method deletes a specific user from the server',

@@ -20,7 +20,7 @@ the server calling REST API directly (as it done by users).
 ## How to run?
 **Initial steps**
 
-1. Follow [this guide](/site/content/en/docs/api_sdk/sdk/developer-guide/) to prepare
+1. Follow [this guide](../../site/content/en/docs/api_sdk/sdk/developer-guide.md) to prepare
    `cvat-sdk` and `cvat-cli` source code
 1. Install all necessary requirements before running REST API tests:
    ```
