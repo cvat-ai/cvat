@@ -4,7 +4,7 @@
 
 import './styles.scss';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useParams } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import notification from 'antd/lib/notification';
@@ -20,16 +20,17 @@ import { useIsMounted } from 'utils/hooks';
 const core = getCore();
 
 function GuidePage(): JSX.Element {
-    // добавить эндпоинты для получения гайда
-    // добавить guides пространство имен в cvat-core
-
     // создать эндпоинт для загрузки ассетов на стороне клиента
     // завершить эндпоинт для загрузки ассетов на стороне сервера
     // сделать загрузку ассетов с сервера
 
     // сделать нормальную страничку с редактированием гайда
-    // todo: add working with a local storage
 
+    // refactoring, check db performance
+    // todo: add working with a local storage
+    // добавить обработку через rego файлы
+
+    const mdEditorRef = useRef();
     const location = useLocation();
     const isMounted = useIsMounted();
     const [value, setValue] = useState('');
@@ -77,10 +78,53 @@ function GuidePage(): JSX.Element {
             </div>
             <div data-color-mode='light'>
                 <MDEditor
+                    ref={mdEditorRef}
                     value={value}
                     onChange={(val: string | undefined) => {
                         // todo: debounce
                         setValue(val || '');
+                    }}
+                    onPaste={async (event: React.ClipboardEvent) => {
+                        const { clipboardData } = event;
+                        const { files } = clipboardData;
+                        if (files.length) {
+                            const selection = window.getSelection();
+                            if (!selection || !selection.rangeCount) return false;
+                            event.preventDefault();
+                            for (const file of files) {
+                                const { uuid } = await core.assets.create(file);
+                                const { selectionStart, selectionEnd } = mdEditorRef.current.textarea;
+                                let text = '';
+                                if (file.type.startsWith('image/')) {
+                                    text = `![image](/api/assets/${uuid})`;
+                                } else {
+                                    text = `[${file.name}](/api/assets/${uuid})`;
+                                }
+
+                                setValue(`${value.slice(0, selectionStart)}${text}${value.slice(selectionEnd)}`);
+                            }
+                        }
+                    }}
+                    onDrop={async (event: React.DragEvent) => {
+                        const { dataTransfer } = event;
+                        const { files } = dataTransfer;
+                        if (files.length) {
+                            const selection = window.getSelection();
+                            if (!selection || !selection.rangeCount) return false;
+                            event.preventDefault();
+                            for (const file of files) {
+                                const { uuid } = await core.assets.create(file);
+                                const { selectionStart, selectionEnd } = mdEditorRef.current.textarea;
+                                let text = '';
+                                if (file.type.startsWith('image/')) {
+                                    text = `![image](/api/assets/${uuid})`;
+                                } else {
+                                    text = `[${file.name}](/api/assets/${uuid})`;
+                                }
+
+                                setValue(`${value.slice(0, selectionStart)}${text}${value.slice(selectionEnd)}`);
+                            }
+                        }
                     }}
                     style={{ whiteSpace: 'pre-wrap' }}
                 />

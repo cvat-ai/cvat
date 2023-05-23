@@ -27,6 +27,7 @@ import Organization from './organization';
 import Webhook from './webhook';
 import { ArgumentError } from './exceptions';
 import AnnotationGuide from './guide';
+import { SerializedAsset } from 'server-response-types';
 
 export default function implementAPI(cvat) {
     cvat.plugins.list.implementation = PluginRegistry.list;
@@ -143,6 +144,15 @@ export default function implementAPI(cvat) {
 
         const result = await serverProxy.guides.get(filter.id);
         return new AnnotationGuide(result);
+    };
+
+    cvat.assets.create.implementation = async (file: File): Promise<SerializedAsset> => {
+        if (!(file instanceof File)) {
+            throw new ArgumentError('Assets expect a file');
+        }
+
+        const result = await serverProxy.assets.create(file);
+        return result;
     };
 
     cvat.users.get.implementation = async (filter) => {

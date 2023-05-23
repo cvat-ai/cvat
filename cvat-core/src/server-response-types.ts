@@ -187,3 +187,11 @@ export interface SerializedGuide {
     updated_date: string;
     markdown: string;
 }
+
+export interface SerializedAsset {
+    uuid?: string;
+    guide?: number;
+    filename: string;
+    created_date: string;
+    owner: SerializedUser;
+}

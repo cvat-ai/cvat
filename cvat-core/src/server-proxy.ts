@@ -11,7 +11,7 @@ import {
     SerializedLabel, SerializedAnnotationFormats, ProjectsFilter,
     SerializedProject, SerializedTask, TasksFilter, SerializedUser,
     SerializedAbout, SerializedRemoteFile, SerializedUserAgreement,
-    SerializedRegister, JobsFilter, SerializedJob, SerializedGuide,
+    SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset,
 } from 'server-response-types';
 import { Storage } from './storage';
 import { StorageLocation, WebhookSourceType } from './enums';
@@ -2179,6 +2179,23 @@ async function updateGuide(id: number, data: Partial<SerializedGuide>): Promise<
     }
 }
 
+async function createAsset(file: File): Promise<SerializedAsset> {
+    const { backendAPI } = config;
+    const form = new FormData();
+    form.append('file', file);
+
+    try {
+        const response = await Axios.post(`${backendAPI}/assets`, form, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
 export default Object.freeze({
     server: Object.freeze({
         setAuthData,
@@ -2327,5 +2344,9 @@ export default Object.freeze({
         get: getGuide,
         create: createGuide,
         update: updateGuide,
+    }),
+
+    assets: Object.freeze({
+        create: createAsset,
     }),
 });

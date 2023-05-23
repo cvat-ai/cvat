@@ -1842,7 +1842,7 @@ class AssetReadSerializer(WriteOnceMixin, serializers.ModelSerializer):
         read_only_fields = fields
 
 class AssetWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
-    uuid = serializers.CharField()
+    uuid = serializers.CharField(required=False)
     filename = serializers.CharField(required=True, max_length=1024)
     guide_id = serializers.IntegerField(required=False, allow_null=True)
     owner = BasicUserSerializer(required=False)

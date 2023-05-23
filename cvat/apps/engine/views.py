@@ -2290,6 +2290,7 @@ class AssetsViewset(
 ):
     # todo: prefetch related for guide?
     queryset = Asset.objects.select_related('owner').all()
+    parser_classes=_UPLOAD_PARSER_CLASSES
     search_fields = ()
     ordering = "uuid"
 
@@ -2300,10 +2301,29 @@ class AssetsViewset(
             return AssetWriteSerializer
 
     def create(self, request, *args, **kwargs):
-        response = super().create(request, *args, **kwargs)
-        # get filename, create instance, save it
-        # save file from request to uuid/filename
-        return response
+        file = request.data.get('file')
+        serializer = self.get_serializer(data={
+            'filename': file.name,
+        })
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        path = os.path.join(settings.ASSETS_ROOT, str(serializer.instance.uuid))
+        os.makedirs(path)
+        with open(os.path.join(path, file.name), 'wb+') as destination:
+            for chunk in file.chunks():
+                destination.write(chunk)
+
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    def perform_create(self, serializer):
+        serializer.save(
+            owner=self.request.user,
+        )
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        return sendfile(request, os.path.join(settings.ASSETS_ROOT, str(instance.uuid), instance.filename))
 
     def perform_destroy(self, instance):
         full_path = os.path.join(instance.get_asset_dir(), instance.filename)
@@ -2337,7 +2357,7 @@ class AnnotationGuidesViewset(
         )
 
     def perform_destroy(self, instance):
-        # todo: remove all related assets from filesystem resources
+        # todo: remove all related assets from filesystem if necessary
         pass
 
 

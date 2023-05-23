@@ -149,6 +149,12 @@ function build() {
                 return result;
             },
         },
+        assets: {
+            async create(file: File) {
+                const result = await PluginRegistry.apiWrapper(cvat.assets.create, file);
+                return result;
+            },
+        },
         jobs: {
             async get(filter = {}) {
                 const result = await PluginRegistry.apiWrapper(cvat.jobs.get, filter);
