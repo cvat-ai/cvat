@@ -20,12 +20,18 @@ import { useIsMounted } from 'utils/hooks';
 const core = getCore();
 
 function GuidePage(): JSX.Element {
-    // сделать нормальную страничку с редактированием гайда\
     // отображение гайда на странице джобы
+    // сделать нормальную страничку с редактированием гайда
+    // копирование гайда с ассетами с проверкой доступа
 
+    // production
+
+    // удаление ассетов без гайда через какой то время
     // refactoring, check db performance
+    // добавить обработку правил через rego файлы, iam организации
     // todo: add working with a local storage
-    // добавить обработку через rego файлы
+    // todo: Ctrl + S добавить шорткат
+    // добавить ассеты и гайды в админ панель
 
     const mdEditorRef = useRef();
     const location = useLocation();
