@@ -20,11 +20,8 @@ import { useIsMounted } from 'utils/hooks';
 const core = getCore();
 
 function GuidePage(): JSX.Element {
-    // создать эндпоинт для загрузки ассетов на стороне клиента
-    // завершить эндпоинт для загрузки ассетов на стороне сервера
-    // сделать загрузку ассетов с сервера
-
-    // сделать нормальную страничку с редактированием гайда
+    // сделать нормальную страничку с редактированием гайда\
+    // отображение гайда на странице джобы
 
     // refactoring, check db performance
     // todo: add working with a local storage

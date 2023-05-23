@@ -898,4 +898,4 @@ class Asset(models.Model):
     guide = models.ForeignKey(AnnotationGuide, null=True, blank=True, on_delete=models.CASCADE, related_name="assets")
 
     def get_asset_dir(self):
-        return os.path.join(settings.ASSETS_ROOT, self.uuid)
+        return os.path.join(settings.ASSETS_ROOT, str(self.uuid))

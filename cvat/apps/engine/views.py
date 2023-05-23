@@ -7,6 +7,7 @@ import io
 import os
 import os.path as osp
 import pytz
+import uuid
 import traceback
 from datetime import datetime
 from distutils.util import strtobool
@@ -2305,6 +2306,7 @@ class AssetsViewset(
         serializer = self.get_serializer(data={
             'filename': file.name,
         })
+
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         path = os.path.join(settings.ASSETS_ROOT, str(serializer.instance.uuid))
@@ -2335,7 +2337,6 @@ class AnnotationGuidesViewset(
     viewsets.GenericViewSet, mixins.RetrieveModelMixin,
     mixins.CreateModelMixin, mixins.DestroyModelMixin, mixins.UpdateModelMixin
 ):
-    # todo: prefetch related for guide?
     queryset = AnnotationGuide.objects.order_by('-id').select_related('owner').prefetch_related('assets').all()
     search_fields = ()
     ordering = "-id"
@@ -2345,6 +2346,40 @@ class AnnotationGuidesViewset(
     # Thus, we rely on permission-based filtering
     iam_organization_field = None
 
+    @staticmethod
+    def _update_assets(guide):
+        UUID_LEN = 36
+        TEMPLATE = '/api/assets/'
+        new_assets = []
+        current_assets = list(guide.assets.all())
+        markdown = guide.markdown
+        idx = markdown.find(TEMPLATE)
+        while idx != -1:
+            _from = idx + len(TEMPLATE)
+            _to = _from + UUID_LEN
+            try:
+                pk = uuid.UUID(markdown[_from : _to])
+                try:
+                    asset = models.Asset.objects.get(pk=pk)
+                    if asset not in current_assets and asset.owner != guide.owner:
+                        raise PermissionDenied('Asset owner and guide owner are different')
+                    new_assets.append(asset)
+                except models.Asset.DoesNotExist:
+                    pass
+            except ValueError:
+                continue
+            finally:
+                idx = markdown.find(TEMPLATE, _to)
+
+        for asset in current_assets:
+            if asset not in new_assets:
+                asset.delete()
+
+        for asset in new_assets:
+            # todo: handle case when asset is already assigned to another guide
+            asset.guide = guide
+            asset.save()
+
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
             return AnnotationGuideReadSerializer
@@ -2352,14 +2387,12 @@ class AnnotationGuidesViewset(
             return AnnotationGuideWriteSerializer
 
     def perform_create(self, serializer):
-        serializer.save(
-            owner=self.request.user,
-        )
+        serializer.save(owner=self.request.user)
+        AnnotationGuidesViewset._update_assets(serializer.instance)
 
-    def perform_destroy(self, instance):
-        # todo: remove all related assets from filesystem if necessary
-        pass
-
+    def perform_update(self, serializer):
+        super().perform_update(serializer)
+        AnnotationGuidesViewset._update_assets(serializer.instance)
 
 def rq_exception_handler(rq_job, exc_type, exc_value, tb):
     rq_job.exc_info = "".join(
