@@ -96,6 +96,8 @@ function GuidePage(): JSX.Element {
                                 ...(instanceType === 'project' ? { project_id: id } : { task_id: id }),
                                 markdown: value,
                             });
+                        } else {
+                            guideInstance.markdown = value;
                         }
 
                         setFetching(true);

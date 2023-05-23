@@ -13,6 +13,7 @@ import { getCore, Project } from 'cvat-core-wrapper';
 import LabelsEditor from 'components/labels-editor/labels-editor';
 import BugTrackerEditor from 'components/task-page/bug-tracker-editor';
 import UserSelector from 'components/task-page/user-selector';
+import MdGuideControl from 'components/md-guide/md-guide-control';
 
 const core = getCore();
 
@@ -51,6 +52,7 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
                         {project.owner ? ` by ${project.owner.username}` : null}
                         {` on ${moment(project.createdDate).format('MMMM Do YYYY')}`}
                     </Text>
+                    <MdGuideControl instanceType='project' id={project.id} />
                     <BugTrackerEditor
                         instance={project}
                         onChange={(bugTracker): void => {

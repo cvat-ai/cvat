@@ -2313,7 +2313,7 @@ class AssetsViewset(
 
 class AnnotationGuidesViewset(
     viewsets.GenericViewSet, mixins.RetrieveModelMixin,
-    mixins.CreateModelMixin, mixins.DestroyModelMixin
+    mixins.CreateModelMixin, mixins.DestroyModelMixin, mixins.UpdateModelMixin
 ):
     # todo: prefetch related for guide?
     queryset = AnnotationGuide.objects.order_by('-id').select_related('owner').prefetch_related('assets').all()
@@ -2335,10 +2335,6 @@ class AnnotationGuidesViewset(
         serializer.save(
             owner=self.request.user,
         )
-
-    def perform_update(self, instance):
-        # todo: update all guide_id for assets
-        pass
 
     def perform_destroy(self, instance):
         # todo: remove all related assets from filesystem resources
