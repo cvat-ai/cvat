@@ -23,14 +23,12 @@ PREFIX = "test"
 
 CONTAINER_NAME_FILES = ["docker-compose.tests.yml"]
 
-DC_FILES = (
-    [
-        "docker-compose.dev.yml",
-        "tests/docker-compose.file_share.yml",
-        "tests/docker-compose.minio.yml",
-        "tests/docker-compose.test_servers.yml",
-    ] + CONTAINER_NAME_FILES
-)
+DC_FILES = [
+    "docker-compose.dev.yml",
+    "tests/docker-compose.file_share.yml",
+    "tests/docker-compose.minio.yml",
+    "tests/docker-compose.test_servers.yml",
+] + CONTAINER_NAME_FILES
 
 
 def pytest_addoption(parser):
