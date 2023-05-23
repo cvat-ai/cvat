@@ -16,8 +16,8 @@ cvat:
           subPath: share
       utils:
         additionalEnv:
-        - name: DJANGO_SETTINGS_MODULE
-          value: cvat.settings.testing_rest
+          - name: DJANGO_SETTINGS_MODULE
+            value: cvat.settings.testing_rest
     # Images are already present in the node
     imagePullPolicy: Never
   frontend:
