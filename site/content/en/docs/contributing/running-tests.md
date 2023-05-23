@@ -74,6 +74,11 @@ If you need to rebuild your CVAT images add `--rebuild` option:
 pytest ./tests/python --rebuild
 ```
 
+If you want to get a code coverage report use special option for it:
+```
+pytest ./tests/python
+```
+
 **Debugging**
 
 Currently, this is only supported in deployments based on Docker Compose,
@@ -144,6 +149,12 @@ Extra options:
    ```
    python manage.py test --settings cvat.settings.testing cvat/apps -v 2
    ```
+
+If you want to get a code coverage report run the next command:
+   ```
+   coverage run manage.py test --settings cvat.settings.testing cvat/apps -v 2
+   ```
+
 1. JS tests
    ```
    cd cvat-core

@@ -256,7 +256,7 @@ questions and get our support.
 [ci-url]: https://github.com/opencv/cvat/actions
 [gitter-img]: https://img.shields.io/gitter/room/opencv-cvat/public?style=flat
 [gitter-url]: https://gitter.im/opencv-cvat
-[coverage-img]: https://codecov.io/github/opencv/cvat/branch/develop/graph/badge.svg?token=SC0BwtMJXv
+[coverage-img]: https://codecov.io/github/opencv/cvat/branch/develop/graph/badge.svg
 [coverage-url]: https://codecov.io/github/opencv/cvat
 [doi-img]: https://zenodo.org/badge/139156354.svg
 [doi-url]: https://zenodo.org/badge/latestdoi/139156354
