@@ -436,3 +436,4 @@ setuptools==65.5.1
     #   limits
     #   tensorboard
     #   tensorflow
+coverage

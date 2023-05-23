@@ -76,7 +76,7 @@ pytest ./tests/python --rebuild
 
 If you want to get a code coverage report use special option for it:
 ```
-pytest ./tests/python
+pytest ./tests/python --cov-report xml
 ```
 
 **Debugging**

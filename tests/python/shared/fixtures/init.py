@@ -121,7 +121,7 @@ def kube_cp(source, target):
 
 
 def docker_exec_cvat(command):
-    _run(f"docker exec {PREFIX}_cvat_server_1 {command}")
+    return _run(f"docker exec -u root {PREFIX}_cvat_server_1 {command}")
 
 
 def kube_exec_cvat(command):
@@ -208,7 +208,8 @@ def create_compose_files(container_name_files):
             filename, "w"
         ) as ndcf:
             ndcf.writelines(
-                [line for line in dcf.readlines() if not re.match("^.+container_name.+$", line)]
+                [line.replace("DJANGO_MODWSGI_EXTRA_ARGS: ''", "DJANGO_MODWSGI_EXTRA_ARGS: '--debug-mode --enable-coverage --coverage-directory reports'")
+                 for line in dcf.readlines() if not re.match("^.+container_name.+$", line)]
             )
 
 
@@ -404,6 +405,12 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     platform = session.config.getoption("--platform")
 
     if platform == "local":
+        pid, _ = docker_exec_cvat("pidof apache2")
+        docker_exec_cvat(f"kill -15 {pid}")
+        sleep(5)
+        docker_exec_cvat("coverage xml -i")
+        docker_cp("test_cvat_server_1:home/django/coverage.xml", "coverage_server.xml")
+
         docker_restore_db()
         docker_exec_cvat_db("dropdb test_db")
 
