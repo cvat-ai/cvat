@@ -15,7 +15,7 @@
       "id": 22,
       "image_quality": 70,
       "jobs": {
-        "completed": 0,
+        "completed": 1,
         "count": 2,
         "url": "http://localhost:8080/api/jobs?task_id=22"
       },
@@ -42,7 +42,7 @@
       "status": "annotation",
       "subset": "",
       "target_storage": null,
-      "updated_date": "2023-04-14T15:03:25.969000Z",
+      "updated_date": "2023-05-23T14:45:08.348000Z",
       "url": "http://localhost:8080/api/tasks/22"
     },
     {

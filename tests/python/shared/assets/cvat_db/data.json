@@ -3431,7 +3431,7 @@
     "assignee": null,
     "bug_tracker": "",
     "created_date": "2023-04-14T14:40:10.333Z",
-    "updated_date": "2023-04-14T15:03:25.969Z",
+    "updated_date": "2023-05-23T14:45:08.348Z",
     "overlap": 0,
     "segment_size": 11,
     "status": "annotation",
@@ -4854,7 +4854,7 @@
     "segment": 27,
     "assignee": null,
     "created_date": "2023-04-14T14:40:10.333Z",
-    "updated_date": "2023-04-14T14:58:50.944Z",
+    "updated_date": "2023-05-23T14:45:08.385Z",
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
@@ -4868,10 +4868,10 @@
     "segment": 28,
     "assignee": null,
     "created_date": "2023-04-14T14:40:10.333Z",
-    "updated_date": "2023-04-14T15:03:25.984Z",
-    "status": "annotation",
-    "stage": "annotation",
-    "state": "in progress",
+    "updated_date": "2023-05-23T14:44:02.697Z",
+    "status": "validation",
+    "stage": "acceptance",
+    "state": "completed",
     "type": "ground_truth"
   }
 },
@@ -5788,6 +5788,18 @@
   }
 },
 {
+  "model": "engine.attributespec",
+  "pk": 13,
+  "fields": {
+    "label": 64,
+    "name": "a1",
+    "mutable": false,
+    "input_type": "checkbox",
+    "default_value": "false",
+    "values": "false"
+  }
+},
+{
   "model": "engine.labeledimage",
   "pk": 1,
   "fields": {
@@ -5833,7 +5845,7 @@
 },
 {
   "model": "engine.labeledimage",
-  "pk": 228,
+  "pk": 230,
   "fields": {
     "job": 28,
     "label": 63,
@@ -5844,7 +5856,7 @@
 },
 {
   "model": "engine.labeledimage",
-  "pk": 229,
+  "pk": 231,
   "fields": {
     "job": 28,
     "label": 63,
@@ -6539,7 +6551,7 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 546,
+  "pk": 603,
   "fields": {
     "job": 28,
     "label": 64,
@@ -6557,7 +6569,7 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 547,
+  "pk": 604,
   "fields": {
     "job": 28,
     "label": 63,
@@ -6575,7 +6587,7 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 548,
+  "pk": 605,
   "fields": {
     "job": 28,
     "label": 63,
@@ -6593,7 +6605,7 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 549,
+  "pk": 606,
   "fields": {
     "job": 28,
     "label": 63,
@@ -6611,7 +6623,7 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 550,
+  "pk": 607,
   "fields": {
     "job": 28,
     "label": 63,
@@ -6629,7 +6641,241 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 564,
+  "pk": 608,
+  "fields": {
+    "job": 28,
+    "label": 63,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[362.45, 298.92, 345.44, 317.24, 368.99, 315.93]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 609,
+  "fields": {
+    "job": 28,
+    "label": 63,
+    "frame": 0,
+    "group": 1,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[113.83, 18.23, 136.07, 40.5]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 610,
+  "fields": {
+    "job": 28,
+    "label": 63,
+    "frame": 0,
+    "group": 1,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[147.85, 18.89, 170.06, 42.41]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 611,
+  "fields": {
+    "job": 28,
+    "label": 63,
+    "frame": 0,
+    "group": 2,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[180.56, 19.54, 202.14, 41.77]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 612,
+  "fields": {
+    "job": 28,
+    "label": 63,
+    "frame": 0,
+    "group": 2,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[213.28, 18.23, 236.82, 44.37]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 613,
+  "fields": {
+    "job": 28,
+    "label": 63,
+    "frame": 0,
+    "group": 3,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[567.9, 14.31, 595.37, 43.8]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 614,
+  "fields": {
+    "job": 28,
+    "label": 63,
+    "frame": 0,
+    "group": 3,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[603.9, 13.65, 632.01, 43.1]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 615,
+  "fields": {
+    "job": 28,
+    "label": 63,
+    "frame": 0,
+    "group": 3,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[643.8, 12.35, 671.9, 43.8]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 616,
+  "fields": {
+    "job": 28,
+    "label": 63,
+    "frame": 0,
+    "group": 3,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[681.09, 14.31, 711.8, 43.8]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 617,
+  "fields": {
+    "job": 28,
+    "label": 63,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[112.52, 47.02, 138.03, 69.92]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 618,
+  "fields": {
+    "job": 28,
+    "label": 63,
+    "frame": 0,
+    "group": 4,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[147.85, 47.02, 172.06, 72.54]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 619,
+  "fields": {
+    "job": 28,
+    "label": 63,
+    "frame": 0,
+    "group": 4,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[181.22, 47.68, 205.42, 73.85]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 620,
+  "fields": {
+    "job": 28,
+    "label": 63,
+    "frame": 0,
+    "group": 4,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[213.28, 47.68, 238.14, 73.85]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 621,
   "fields": {
     "job": 28,
     "label": 63,
@@ -6647,7 +6893,7 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 565,
+  "pk": 622,
   "fields": {
     "job": 28,
     "label": 63,
@@ -6665,7 +6911,7 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 566,
+  "pk": 623,
   "fields": {
     "job": 28,
     "label": 63,
@@ -6683,7 +6929,115 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 573,
+  "pk": 624,
+  "fields": {
+    "job": 28,
+    "label": 63,
+    "frame": 0,
+    "group": 7,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[37.27, 267.52, 83.07, 328.36]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 625,
+  "fields": {
+    "job": 28,
+    "label": 63,
+    "frame": 0,
+    "group": 7,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[46.43, 290.42]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 626,
+  "fields": {
+    "job": 28,
+    "label": 63,
+    "frame": 0,
+    "group": 7,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[64.75, 302.19]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 627,
+  "fields": {
+    "job": 28,
+    "label": 63,
+    "frame": 0,
+    "group": 7,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[47.74, 309.39]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 628,
+  "fields": {
+    "job": 28,
+    "label": 64,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[140.7, 338.8]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 629,
+  "fields": {
+    "job": 28,
+    "label": 63,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[225.0, 315.2]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 630,
   "fields": {
     "job": 28,
     "label": 63,
@@ -6701,7 +7055,7 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 574,
+  "pk": 631,
   "fields": {
     "job": 28,
     "label": 63,
@@ -6719,7 +7073,7 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 575,
+  "pk": 632,
   "fields": {
     "job": 28,
     "label": 63,
@@ -6737,7 +7091,7 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 576,
+  "pk": 633,
   "fields": {
     "job": 28,
     "label": 63,
@@ -6755,7 +7109,7 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 577,
+  "pk": 634,
   "fields": {
     "job": 28,
     "label": 63,
@@ -6773,7 +7127,7 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 578,
+  "pk": 635,
   "fields": {
     "job": 28,
     "label": 63,
@@ -6791,7 +7145,7 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 579,
+  "pk": 636,
   "fields": {
     "job": 28,
     "label": 63,
@@ -6809,7 +7163,7 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 580,
+  "pk": 637,
   "fields": {
     "job": 27,
     "label": 63,
@@ -6827,7 +7181,7 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 581,
+  "pk": 638,
   "fields": {
     "job": 27,
     "label": 63,
@@ -6845,7 +7199,7 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 582,
+  "pk": 639,
   "fields": {
     "job": 27,
     "label": 63,
@@ -6863,7 +7217,7 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 583,
+  "pk": 640,
   "fields": {
     "job": 27,
     "label": 63,
@@ -6881,7 +7235,7 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 584,
+  "pk": 641,
   "fields": {
     "job": 27,
     "label": 63,
@@ -6899,7 +7253,7 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 585,
+  "pk": 642,
   "fields": {
     "job": 27,
     "label": 63,
@@ -6917,7 +7271,7 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 586,
+  "pk": 643,
   "fields": {
     "job": 27,
     "label": 63,
@@ -6935,7 +7289,7 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 587,
+  "pk": 644,
   "fields": {
     "job": 27,
     "label": 64,
@@ -6953,7 +7307,7 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 588,
+  "pk": 645,
   "fields": {
     "job": 27,
     "label": 63,
@@ -6971,7 +7325,205 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 600,
+  "pk": 646,
+  "fields": {
+    "job": 27,
+    "label": 63,
+    "frame": 0,
+    "group": 15,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 1,
+    "points": "[213.97, 46.73, 239.5, 72.3]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 647,
+  "fields": {
+    "job": 27,
+    "label": 63,
+    "frame": 0,
+    "group": 16,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 1,
+    "points": "[147.9, 45.42, 171.4, 70.3]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 648,
+  "fields": {
+    "job": 27,
+    "label": 63,
+    "frame": 0,
+    "group": 16,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 1,
+    "points": "[179.94, 46.08, 206.0, 72.8]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 649,
+  "fields": {
+    "job": 27,
+    "label": 63,
+    "frame": 0,
+    "group": 16,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 1,
+    "points": "[113.8, 45.4, 137.38, 69.0]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 650,
+  "fields": {
+    "job": 27,
+    "label": 63,
+    "frame": 0,
+    "group": 12,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 1,
+    "points": "[147.85, 17.61, 170.15, 39.87]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 651,
+  "fields": {
+    "job": 27,
+    "label": 63,
+    "frame": 0,
+    "group": 7,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 1,
+    "points": "[113.8, 17.6, 138.65, 40.47]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 652,
+  "fields": {
+    "job": 27,
+    "label": 63,
+    "frame": 0,
+    "group": 7,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 1,
+    "points": "[179.91, 18.22, 203.4, 41.8]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 653,
+  "fields": {
+    "job": 27,
+    "label": 63,
+    "frame": 0,
+    "group": 11,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 1,
+    "points": "[603.9, 13.65, 632.67, 42.4]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 654,
+  "fields": {
+    "job": 27,
+    "label": 63,
+    "frame": 0,
+    "group": 11,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 1,
+    "points": "[641.2, 13.0, 670.65, 42.5]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 655,
+  "fields": {
+    "job": 27,
+    "label": 63,
+    "frame": 0,
+    "group": 11,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 1,
+    "points": "[681.09, 13.0, 711.3, 43.2]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 656,
+  "fields": {
+    "job": 27,
+    "label": 63,
+    "frame": 0,
+    "group": 12,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 1,
+    "points": "[212.62, 18.92, 236.8, 42.5]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 657,
   "fields": {
     "job": 27,
     "label": 63,
@@ -6989,7 +7541,7 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 601,
+  "pk": 658,
   "fields": {
     "job": 27,
     "label": 64,
@@ -7007,7 +7559,7 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 602,
+  "pk": 659,
   "fields": {
     "job": 27,
     "label": 64,
@@ -7019,6 +7571,222 @@
     "outside": false,
     "z_order": 4,
     "points": "[532.6, 300.2, 533.2, 391.8, 678.47, 393.14, 639.87, 300.88]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 660,
+  "fields": {
+    "job": 27,
+    "label": 63,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 4,
+    "points": "[310.76, 196.2, 339.55, 228.91]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 661,
+  "fields": {
+    "job": 27,
+    "label": 63,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 4,
+    "points": "[361.0, 302.1, 368.9, 316.0, 348.1, 318.6]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 662,
+  "fields": {
+    "job": 27,
+    "label": 64,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 4,
+    "points": "[225.71, 314.62]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 663,
+  "fields": {
+    "job": 27,
+    "label": 63,
+    "frame": 0,
+    "group": 17,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 4,
+    "points": "[60.83, 302.19]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 664,
+  "fields": {
+    "job": 27,
+    "label": 63,
+    "frame": 0,
+    "group": 17,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 4,
+    "points": "[34.66, 268.17, 75.22, 324.44]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 665,
+  "fields": {
+    "job": 27,
+    "label": 64,
+    "frame": 0,
+    "group": 17,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 4,
+    "points": "[50.36, 283.87]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 666,
+  "fields": {
+    "job": 27,
+    "label": 63,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 4,
+    "points": "[138.0, 339.5, 155.0, 338.8]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 667,
+  "fields": {
+    "job": 27,
+    "label": 63,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "polyline",
+    "occluded": false,
+    "outside": false,
+    "z_order": 4,
+    "points": "[43.16, 178.53, 59.52, 190.96, 71.3, 177.22, 100.08, 167.41]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 668,
+  "fields": {
+    "job": 27,
+    "label": 63,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "polygon",
+    "occluded": false,
+    "outside": false,
+    "z_order": 4,
+    "points": "[101.39, 200.78, 135.42, 214.52, 117.75, 248.54, 85.04, 235.46, 73.26, 204.05]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 669,
+  "fields": {
+    "job": 27,
+    "label": 63,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "ellipse",
+    "occluded": false,
+    "outside": false,
+    "z_order": 4,
+    "points": "[216.57, 208.01, 252.56, 191.65]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 670,
+  "fields": {
+    "job": 28,
+    "label": 64,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[349.36595443747683, 35.89987909780575, 377.50004176706534, 64.68824752808177]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 671,
+  "fields": {
+    "job": 27,
+    "label": 64,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 4,
+    "points": "[349.3662109375, 38.5166015625, 376.846017166401, 64.03356448933664]",
     "rotation": 0.0,
     "parent": null
   }
@@ -7084,6 +7852,24 @@
     "spec": 10,
     "value": "black",
     "shape": 57
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 8,
+  "fields": {
+    "spec": 13,
+    "value": "false",
+    "shape": 670
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 9,
+  "fields": {
+    "spec": 13,
+    "value": "true",
+    "shape": 671
   }
 },
 {
@@ -8378,10 +9164,10 @@
     "job": null,
     "task": 22,
     "parent": null,
-    "created_date": "2023-05-18T18:19:52.294Z",
-    "target_last_updated": "2023-04-14T15:03:25.969Z",
-    "gt_last_updated": "2023-04-14T15:03:25.984Z",
-    "data": "{\n  \"parameters\": {\n    \"included_annotation_types\": [\n      \"bbox\",\n      \"points\",\n      \"mask\",\n      \"polygon\",\n      \"polyline\",\n      \"skeleton\"\n    ],\n    \"compare_attributes\": true,\n    \"ignored_attributes\": [],\n    \"iou_threshold\": 0.4,\n    \"low_overlap_threshold\": 0.8,\n    \"oks_sigma\": 0.09,\n    \"line_thickness\": 0.01,\n    \"oriented_lines\": true,\n    \"line_orientation_threshold\": 0.1,\n    \"compare_groups\": true,\n    \"group_match_threshold\": 0.5,\n    \"check_covered_annotations\": true,\n    \"object_visibility_threshold\": 0.05,\n    \"panoptic_comparison\": true\n  },\n  \"comparison_summary\": {\n    \"frame_share_percent\": 0.36363636363636365,\n    \"frames\": [\n      0,\n      1,\n      2,\n      5\n    ],\n    \"conflict_count\": 17,\n    \"warning_count\": 5,\n    \"error_count\": 12,\n    \"conflicts_by_type\": {\n      \"low_overlap\": 3,\n      \"extra_annotation\": 5,\n      \"mismatching_label\": 1,\n      \"mismatching_direction\": 1,\n      \"covered_annotation\": 1,\n      \"missing_annotation\": 6\n    },\n    \"annotations\": {\n      \"valid_count\": 7,\n      \"missing_count\": 6,\n      \"extra_count\": 5,\n      \"total_count\": 19,\n      \"ds_count\": 13,\n      \"gt_count\": 14,\n      \"confusion_matrix\": {\n        \"labels\": [\n          \"cat\",\n          \"dog\",\n          \"sk\",\n          \"unmatched\"\n        ],\n        \"rows\": [\n          [\n            7,\n            1,\n            0,\n            2\n          ],\n          [\n            0,\n            0,\n            0,\n            3\n          ],\n          [\n            0,\n            0,\n            0,\n            0\n          ],\n          [\n            6,\n            0,\n            0,\n            0\n          ]\n        ],\n        \"precision\": [\n          0.7,\n          0.0,\n          0.0,\n          0.0\n        ],\n        \"recall\": [\n          0.5384615384615384,\n          0.0,\n          0.0,\n          0.0\n        ],\n        \"accuracy\": [\n          0.4375,\n          0.0,\n          0.0,\n          0.0\n        ],\n        \"axes\": {\n          \"cols\": \"gt\",\n          \"rows\": \"ds\"\n        }\n      },\n      \"accuracy\": 0.3684210526315789,\n      \"precision\": 0.5384615384615384,\n      \"recall\": 0.5\n    },\n    \"annotation_components\": {\n      \"shape\": {\n        \"valid_count\": 8,\n        \"missing_count\": 6,\n        \"extra_count\": 5,\n        \"total_count\": 19,\n        \"ds_count\": 13,\n        \"gt_count\": 14,\n        \"mean_iou\": 0.12256680179050185,\n        \"accuracy\": 0.42105263157894735\n      },\n      \"label\": {\n        \"valid_count\": 7,\n        \"invalid_count\": 1,\n        \"total_count\": 8,\n        \"accuracy\": 0.875\n      }\n    },\n    \"frame_count\": 4,\n    \"mean_conflict_count\": 4.25\n  },\n  \"frame_results\": {\n    \"0\": {\n      \"conflicts\": [\n        {\n          \"frame_id\": 0,\n          \"type\": \"low_overlap\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 581,\n              \"job_id\": 27,\n              \"type\": \"rectangle\"\n            },\n            {\n              \"obj_id\": 550,\n              \"job_id\": 28,\n              \"type\": \"rectangle\"\n            }\n          ],\n          \"importance\": \"warning\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"low_overlap\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 584,\n              \"job_id\": 27,\n              \"type\": \"polygon\"\n            },\n            {\n              \"obj_id\": 547,\n              \"job_id\": 28,\n              \"type\": \"polygon\"\n            }\n          ],\n          \"importance\": \"warning\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"low_overlap\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 583,\n              \"job_id\": 27,\n              \"type\": \"polyline\"\n            },\n            {\n              \"obj_id\": 548,\n              \"job_id\": 28,\n              \"type\": \"polyline\"\n            }\n          ],\n          \"importance\": \"warning\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"extra_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 587,\n              \"job_id\": 27,\n              \"type\": \"rectangle\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"extra_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 601,\n              \"job_id\": 27,\n              \"type\": \"polygon\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"extra_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 602,\n              \"job_id\": 27,\n              \"type\": \"polygon\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"extra_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 582,\n              \"job_id\": 27,\n              \"type\": \"polyline\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"extra_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 580,\n              \"job_id\": 27,\n              \"type\": \"polyline\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"mismatching_label\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 585,\n              \"job_id\": 27,\n              \"type\": \"mask\"\n            },\n            {\n              \"obj_id\": 546,\n              \"job_id\": 28,\n              \"type\": \"polygon\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"mismatching_direction\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 583,\n              \"job_id\": 27,\n              \"type\": \"polyline\"\n            },\n            {\n              \"obj_id\": 548,\n              \"job_id\": 28,\n              \"type\": \"polyline\"\n            }\n          ],\n          \"importance\": \"warning\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"covered_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 585,\n              \"job_id\": 27,\n              \"type\": \"mask\"\n            }\n          ],\n          \"importance\": \"warning\"\n        }\n      ],\n      \"annotations\": {\n        \"valid_count\": 7,\n        \"missing_count\": 0,\n        \"extra_count\": 5,\n        \"total_count\": 13,\n        \"ds_count\": 13,\n        \"gt_count\": 8,\n        \"confusion_matrix\": {\n          \"labels\": [\n            \"cat\",\n            \"dog\",\n            \"sk\",\n            \"unmatched\"\n          ],\n          \"rows\": [\n            [\n              7,\n              1,\n              0,\n              2\n            ],\n            [\n              0,\n              0,\n              0,\n              3\n            ],\n            [\n              0,\n              0,\n              0,\n              0\n            ],\n            [\n              0,\n              0,\n              0,\n              0\n            ]\n          ],\n          \"precision\": [\n            0.7,\n            0.0,\n            0.0,\n            0.0\n          ],\n          \"recall\": [\n            1.0,\n            0.0,\n            0.0,\n            0.0\n          ],\n          \"accuracy\": [\n            0.7,\n            0.0,\n            0.0,\n            0.0\n          ],\n          \"axes\": {\n            \"cols\": \"gt\",\n            \"rows\": \"ds\"\n          }\n        },\n        \"accuracy\": 0.5384615384615384,\n        \"precision\": 0.5384615384615384,\n        \"recall\": 0.875\n      },\n      \"annotation_components\": {\n        \"shape\": {\n          \"valid_count\": 8,\n          \"missing_count\": 0,\n          \"extra_count\": 5,\n          \"total_count\": 13,\n          \"ds_count\": 13,\n          \"gt_count\": 8,\n          \"mean_iou\": 0.4902672071620074,\n          \"accuracy\": 0.6153846153846154\n        },\n        \"label\": {\n          \"valid_count\": 7,\n          \"invalid_count\": 1,\n          \"total_count\": 8,\n          \"accuracy\": 0.875\n        }\n      },\n      \"conflict_count\": 11,\n      \"warning_count\": 5,\n      \"error_count\": 6,\n      \"conflicts_by_type\": {\n        \"low_overlap\": 3,\n        \"extra_annotation\": 5,\n        \"mismatching_label\": 1,\n        \"mismatching_direction\": 1,\n        \"covered_annotation\": 1\n      }\n    },\n    \"1\": {\n      \"conflicts\": [\n        {\n          \"frame_id\": 1,\n          \"type\": \"missing_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 579,\n              \"job_id\": 28,\n              \"type\": \"rectangle\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 1,\n          \"type\": \"missing_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 577,\n              \"job_id\": 28,\n              \"type\": \"points\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 1,\n          \"type\": \"missing_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 573,\n              \"job_id\": 28,\n              \"type\": \"polygon\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 1,\n          \"type\": \"missing_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 576,\n              \"job_id\": 28,\n              \"type\": \"mask\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 1,\n          \"type\": \"missing_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 574,\n              \"job_id\": 28,\n              \"type\": \"ellipse\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 1,\n          \"type\": \"missing_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 578,\n              \"job_id\": 28,\n              \"type\": \"polyline\"\n            }\n          ],\n          \"importance\": \"error\"\n        }\n      ],\n      \"annotations\": {\n        \"valid_count\": 0,\n        \"missing_count\": 6,\n        \"extra_count\": 0,\n        \"total_count\": 6,\n        \"ds_count\": 0,\n        \"gt_count\": 6,\n        \"confusion_matrix\": {\n          \"labels\": [\n            \"cat\",\n            \"dog\",\n            \"sk\",\n            \"unmatched\"\n          ],\n          \"rows\": [\n            [\n              0,\n              0,\n              0,\n              0\n            ],\n            [\n              0,\n              0,\n              0,\n              0\n            ],\n            [\n              0,\n              0,\n              0,\n              0\n            ],\n            [\n              6,\n              0,\n              0,\n              0\n            ]\n          ],\n          \"precision\": [\n            0.0,\n            0.0,\n            0.0,\n            0.0\n          ],\n          \"recall\": [\n            0.0,\n            0.0,\n            0.0,\n            0.0\n          ],\n          \"accuracy\": [\n            0.0,\n            0.0,\n            0.0,\n            0.0\n          ],\n          \"axes\": {\n            \"cols\": \"gt\",\n            \"rows\": \"ds\"\n          }\n        },\n        \"accuracy\": 0.0,\n        \"precision\": 0.0,\n        \"recall\": 0.0\n      },\n      \"annotation_components\": {\n        \"shape\": {\n          \"valid_count\": 0,\n          \"missing_count\": 6,\n          \"extra_count\": 0,\n          \"total_count\": 6,\n          \"ds_count\": 0,\n          \"gt_count\": 6,\n          \"mean_iou\": 0.0,\n          \"accuracy\": 0.0\n        },\n        \"label\": {\n          \"valid_count\": 0,\n          \"invalid_count\": 0,\n          \"total_count\": 0,\n          \"accuracy\": 0.0\n        }\n      },\n      \"conflict_count\": 6,\n      \"warning_count\": 0,\n      \"error_count\": 6,\n      \"conflicts_by_type\": {\n        \"missing_annotation\": 6\n      }\n    },\n    \"2\": {\n      \"conflicts\": [],\n      \"annotations\": {\n        \"valid_count\": 0,\n        \"missing_count\": 0,\n        \"extra_count\": 0,\n        \"total_count\": 0,\n        \"ds_count\": 0,\n        \"gt_count\": 0,\n        \"confusion_matrix\": {\n          \"labels\": [\n            \"cat\",\n            \"dog\",\n            \"sk\",\n            \"unmatched\"\n          ],\n          \"rows\": [\n            [\n              0,\n              0,\n              0,\n              0\n            ],\n            [\n              0,\n              0,\n              0,\n              0\n            ],\n            [\n              0,\n              0,\n              0,\n              0\n            ],\n            [\n              0,\n              0,\n              0,\n              0\n            ]\n          ],\n          \"precision\": [\n            0.0,\n            0.0,\n            0.0,\n            0.0\n          ],\n          \"recall\": [\n            0.0,\n            0.0,\n            0.0,\n            0.0\n          ],\n          \"accuracy\": [\n            0.0,\n            0.0,\n            0.0,\n            0.0\n          ],\n          \"axes\": {\n            \"cols\": \"gt\",\n            \"rows\": \"ds\"\n          }\n        },\n        \"accuracy\": 0.0,\n        \"precision\": 0.0,\n        \"recall\": 0.0\n      },\n      \"annotation_components\": {\n        \"shape\": {\n          \"valid_count\": 0,\n          \"missing_count\": 0,\n          \"extra_count\": 0,\n          \"total_count\": 0,\n          \"ds_count\": 0,\n          \"gt_count\": 0,\n          \"mean_iou\": 0,\n          \"accuracy\": 0.0\n        },\n        \"label\": {\n          \"valid_count\": 0,\n          \"invalid_count\": 0,\n          \"total_count\": 0,\n          \"accuracy\": 0.0\n        }\n      },\n      \"conflict_count\": 0,\n      \"warning_count\": 0,\n      \"error_count\": 0,\n      \"conflicts_by_type\": {}\n    },\n    \"5\": {\n      \"conflicts\": [],\n      \"annotations\": {\n        \"valid_count\": 0,\n        \"missing_count\": 0,\n        \"extra_count\": 0,\n        \"total_count\": 0,\n        \"ds_count\": 0,\n        \"gt_count\": 0,\n        \"confusion_matrix\": {\n          \"labels\": [\n            \"cat\",\n            \"dog\",\n            \"sk\",\n            \"unmatched\"\n          ],\n          \"rows\": [\n            [\n              0,\n              0,\n              0,\n              0\n            ],\n            [\n              0,\n              0,\n              0,\n              0\n            ],\n            [\n              0,\n              0,\n              0,\n              0\n            ],\n            [\n              0,\n              0,\n              0,\n              0\n            ]\n          ],\n          \"precision\": [\n            0.0,\n            0.0,\n            0.0,\n            0.0\n          ],\n          \"recall\": [\n            0.0,\n            0.0,\n            0.0,\n            0.0\n          ],\n          \"accuracy\": [\n            0.0,\n            0.0,\n            0.0,\n            0.0\n          ],\n          \"axes\": {\n            \"cols\": \"gt\",\n            \"rows\": \"ds\"\n          }\n        },\n        \"accuracy\": 0.0,\n        \"precision\": 0.0,\n        \"recall\": 0.0\n      },\n      \"annotation_components\": {\n        \"shape\": {\n          \"valid_count\": 0,\n          \"missing_count\": 0,\n          \"extra_count\": 0,\n          \"total_count\": 0,\n          \"ds_count\": 0,\n          \"gt_count\": 0,\n          \"mean_iou\": 0,\n          \"accuracy\": 0.0\n        },\n        \"label\": {\n          \"valid_count\": 0,\n          \"invalid_count\": 0,\n          \"total_count\": 0,\n          \"accuracy\": 0.0\n        }\n      },\n      \"conflict_count\": 0,\n      \"warning_count\": 0,\n      \"error_count\": 0,\n      \"conflicts_by_type\": {}\n    }\n  }\n}\n"
+    "created_date": "2023-05-23T14:49:50.920Z",
+    "target_last_updated": "2023-05-23T14:45:08.348Z",
+    "gt_last_updated": "2023-05-23T14:44:02.697Z",
+    "data": "{\n  \"parameters\": {\n    \"included_annotation_types\": [\n      \"bbox\",\n      \"points\",\n      \"mask\",\n      \"polygon\",\n      \"polyline\",\n      \"skeleton\"\n    ],\n    \"compare_attributes\": true,\n    \"ignored_attributes\": [],\n    \"iou_threshold\": 0.4,\n    \"low_overlap_threshold\": 0.8,\n    \"oks_sigma\": 0.09,\n    \"line_thickness\": 0.01,\n    \"oriented_lines\": true,\n    \"line_orientation_threshold\": 0.1,\n    \"compare_groups\": true,\n    \"group_match_threshold\": 0.5,\n    \"check_covered_annotations\": true,\n    \"object_visibility_threshold\": 0.05,\n    \"panoptic_comparison\": true\n  },\n  \"comparison_summary\": {\n    \"frame_share_percent\": 0.36363636363636365,\n    \"frames\": [\n      0,\n      1,\n      2,\n      5\n    ],\n    \"conflict_count\": 37,\n    \"warning_count\": 15,\n    \"error_count\": 22,\n    \"conflicts_by_type\": {\n      \"low_overlap\": 6,\n      \"missing_annotation\": 9,\n      \"extra_annotation\": 10,\n      \"mismatching_label\": 3,\n      \"mismatching_direction\": 1,\n      \"covered_annotation\": 1,\n      \"mismatching_attributes\": 1,\n      \"mismatching_groups\": 6\n    },\n    \"annotations\": {\n      \"valid_count\": 22,\n      \"missing_count\": 9,\n      \"extra_count\": 10,\n      \"total_count\": 44,\n      \"ds_count\": 35,\n      \"gt_count\": 34,\n      \"confusion_matrix\": {\n        \"labels\": [\n          \"cat\",\n          \"dog\",\n          \"sk\",\n          \"unmatched\"\n        ],\n        \"rows\": [\n          [\n            21,\n            1,\n            0,\n            7\n          ],\n          [\n            2,\n            1,\n            0,\n            3\n          ],\n          [\n            0,\n            0,\n            0,\n            0\n          ],\n          [\n            8,\n            1,\n            0,\n            0\n          ]\n        ],\n        \"precision\": [\n          0.7241379310344828,\n          0.16666666666666666,\n          0.0,\n          0.0\n        ],\n        \"recall\": [\n          0.6774193548387096,\n          0.3333333333333333,\n          0.0,\n          0.0\n        ],\n        \"accuracy\": [\n          0.5384615384615384,\n          0.125,\n          0.0,\n          0.0\n        ],\n        \"axes\": {\n          \"cols\": \"gt\",\n          \"rows\": \"ds\"\n        }\n      },\n      \"accuracy\": 0.5,\n      \"precision\": 0.6285714285714286,\n      \"recall\": 0.6470588235294118\n    },\n    \"annotation_components\": {\n      \"shape\": {\n        \"valid_count\": 25,\n        \"missing_count\": 9,\n        \"extra_count\": 10,\n        \"total_count\": 44,\n        \"ds_count\": 35,\n        \"gt_count\": 34,\n        \"mean_iou\": 0.13517879816680567,\n        \"accuracy\": 0.5681818181818182\n      },\n      \"label\": {\n        \"valid_count\": 22,\n        \"invalid_count\": 3,\n        \"total_count\": 25,\n        \"accuracy\": 0.88\n      }\n    },\n    \"frame_count\": 4,\n    \"mean_conflict_count\": 9.25\n  },\n  \"frame_results\": {\n    \"0\": {\n      \"conflicts\": [\n        {\n          \"frame_id\": 0,\n          \"type\": \"low_overlap\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 664,\n              \"job_id\": 27,\n              \"type\": \"rectangle\"\n            },\n            {\n              \"obj_id\": 624,\n              \"job_id\": 28,\n              \"type\": \"rectangle\"\n            }\n          ],\n          \"importance\": \"warning\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"low_overlap\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 638,\n              \"job_id\": 27,\n              \"type\": \"rectangle\"\n            },\n            {\n              \"obj_id\": 607,\n              \"job_id\": 28,\n              \"type\": \"rectangle\"\n            }\n          ],\n          \"importance\": \"warning\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"low_overlap\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 661,\n              \"job_id\": 27,\n              \"type\": \"points\"\n            },\n            {\n              \"obj_id\": 608,\n              \"job_id\": 28,\n              \"type\": \"points\"\n            }\n          ],\n          \"importance\": \"warning\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"low_overlap\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 641,\n              \"job_id\": 27,\n              \"type\": \"polygon\"\n            },\n            {\n              \"obj_id\": 604,\n              \"job_id\": 28,\n              \"type\": \"polygon\"\n            }\n          ],\n          \"importance\": \"warning\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"low_overlap\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 640,\n              \"job_id\": 27,\n              \"type\": \"polyline\"\n            },\n            {\n              \"obj_id\": 605,\n              \"job_id\": 28,\n              \"type\": \"polyline\"\n            }\n          ],\n          \"importance\": \"warning\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"low_overlap\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 665,\n              \"job_id\": 27,\n              \"type\": \"points\"\n            },\n            {\n              \"obj_id\": 625,\n              \"job_id\": 28,\n              \"type\": \"points\"\n            }\n          ],\n          \"importance\": \"warning\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"missing_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 613,\n              \"job_id\": 28,\n              \"type\": \"rectangle\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"missing_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 627,\n              \"job_id\": 28,\n              \"type\": \"points\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"missing_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 628,\n              \"job_id\": 28,\n              \"type\": \"points\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"extra_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 644,\n              \"job_id\": 27,\n              \"type\": \"rectangle\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"extra_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 660,\n              \"job_id\": 27,\n              \"type\": \"rectangle\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"extra_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 666,\n              \"job_id\": 27,\n              \"type\": \"points\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"extra_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 658,\n              \"job_id\": 27,\n              \"type\": \"polygon\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"extra_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 668,\n              \"job_id\": 27,\n              \"type\": \"polygon\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"extra_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 659,\n              \"job_id\": 27,\n              \"type\": \"polygon\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"extra_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 669,\n              \"job_id\": 27,\n              \"type\": \"ellipse\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"extra_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 637,\n              \"job_id\": 27,\n              \"type\": \"polyline\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"extra_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 639,\n              \"job_id\": 27,\n              \"type\": \"polyline\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"extra_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 667,\n              \"job_id\": 27,\n              \"type\": \"polyline\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"mismatching_label\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 662,\n              \"job_id\": 27,\n              \"type\": \"points\"\n            },\n            {\n              \"obj_id\": 629,\n              \"job_id\": 28,\n              \"type\": \"points\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"mismatching_label\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 665,\n              \"job_id\": 27,\n              \"type\": \"points\"\n            },\n            {\n              \"obj_id\": 625,\n              \"job_id\": 28,\n              \"type\": \"points\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"mismatching_label\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 642,\n              \"job_id\": 27,\n              \"type\": \"mask\"\n            },\n            {\n              \"obj_id\": 603,\n              \"job_id\": 28,\n              \"type\": \"polygon\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"mismatching_direction\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 640,\n              \"job_id\": 27,\n              \"type\": \"polyline\"\n            },\n            {\n              \"obj_id\": 605,\n              \"job_id\": 28,\n              \"type\": \"polyline\"\n            }\n          ],\n          \"importance\": \"warning\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"covered_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 642,\n              \"job_id\": 27,\n              \"type\": \"mask\"\n            }\n          ],\n          \"importance\": \"warning\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"mismatching_attributes\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 671,\n              \"job_id\": 27,\n              \"type\": \"rectangle\"\n            },\n            {\n              \"obj_id\": 670,\n              \"job_id\": 28,\n              \"type\": \"rectangle\"\n            }\n          ],\n          \"importance\": \"warning\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"mismatching_groups\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 652,\n              \"job_id\": 27,\n              \"type\": \"rectangle\"\n            },\n            {\n              \"obj_id\": 611,\n              \"job_id\": 28,\n              \"type\": \"rectangle\"\n            }\n          ],\n          \"importance\": \"warning\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"mismatching_groups\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 656,\n              \"job_id\": 27,\n              \"type\": \"rectangle\"\n            },\n            {\n              \"obj_id\": 612,\n              \"job_id\": 28,\n              \"type\": \"rectangle\"\n            }\n          ],\n          \"importance\": \"warning\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"mismatching_groups\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 646,\n              \"job_id\": 27,\n              \"type\": \"rectangle\"\n            },\n            {\n              \"obj_id\": 620,\n              \"job_id\": 28,\n              \"type\": \"rectangle\"\n            }\n          ],\n          \"importance\": \"warning\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"mismatching_groups\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 649,\n              \"job_id\": 27,\n              \"type\": \"rectangle\"\n            },\n            {\n              \"obj_id\": 617,\n              \"job_id\": 28,\n              \"type\": \"rectangle\"\n            }\n          ],\n          \"importance\": \"warning\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"mismatching_groups\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 650,\n              \"job_id\": 27,\n              \"type\": \"rectangle\"\n            },\n            {\n              \"obj_id\": 610,\n              \"job_id\": 28,\n              \"type\": \"rectangle\"\n            }\n          ],\n          \"importance\": \"warning\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"mismatching_groups\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 651,\n              \"job_id\": 27,\n              \"type\": \"rectangle\"\n            },\n            {\n              \"obj_id\": 609,\n              \"job_id\": 28,\n              \"type\": \"rectangle\"\n            }\n          ],\n          \"importance\": \"warning\"\n        }\n      ],\n      \"annotations\": {\n        \"valid_count\": 22,\n        \"missing_count\": 3,\n        \"extra_count\": 10,\n        \"total_count\": 38,\n        \"ds_count\": 35,\n        \"gt_count\": 28,\n        \"confusion_matrix\": {\n          \"labels\": [\n            \"cat\",\n            \"dog\",\n            \"sk\",\n            \"unmatched\"\n          ],\n          \"rows\": [\n            [\n              21,\n              1,\n              0,\n              7\n            ],\n            [\n              2,\n              1,\n              0,\n              3\n            ],\n            [\n              0,\n              0,\n              0,\n              0\n            ],\n            [\n              2,\n              1,\n              0,\n              0\n            ]\n          ],\n          \"precision\": [\n            0.7241379310344828,\n            0.16666666666666666,\n            0.0,\n            0.0\n          ],\n          \"recall\": [\n            0.84,\n            0.3333333333333333,\n            0.0,\n            0.0\n          ],\n          \"accuracy\": [\n            0.6363636363636364,\n            0.125,\n            0.0,\n            0.0\n          ],\n          \"axes\": {\n            \"cols\": \"gt\",\n            \"rows\": \"ds\"\n          }\n        },\n        \"accuracy\": 0.5789473684210527,\n        \"precision\": 0.6285714285714286,\n        \"recall\": 0.7857142857142857\n      },\n      \"annotation_components\": {\n        \"shape\": {\n          \"valid_count\": 25,\n          \"missing_count\": 3,\n          \"extra_count\": 10,\n          \"total_count\": 38,\n          \"ds_count\": 35,\n          \"gt_count\": 28,\n          \"mean_iou\": 0.5407151926672227,\n          \"accuracy\": 0.6578947368421053\n        },\n        \"label\": {\n          \"valid_count\": 22,\n          \"invalid_count\": 3,\n          \"total_count\": 25,\n          \"accuracy\": 0.88\n        }\n      },\n      \"conflict_count\": 31,\n      \"warning_count\": 15,\n      \"error_count\": 16,\n      \"conflicts_by_type\": {\n        \"low_overlap\": 6,\n        \"missing_annotation\": 3,\n        \"extra_annotation\": 10,\n        \"mismatching_label\": 3,\n        \"mismatching_direction\": 1,\n        \"covered_annotation\": 1,\n        \"mismatching_attributes\": 1,\n        \"mismatching_groups\": 6\n      }\n    },\n    \"1\": {\n      \"conflicts\": [\n        {\n          \"frame_id\": 1,\n          \"type\": \"missing_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 636,\n              \"job_id\": 28,\n              \"type\": \"rectangle\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 1,\n          \"type\": \"missing_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 634,\n              \"job_id\": 28,\n              \"type\": \"points\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 1,\n          \"type\": \"missing_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 630,\n              \"job_id\": 28,\n              \"type\": \"polygon\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 1,\n          \"type\": \"missing_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 633,\n              \"job_id\": 28,\n              \"type\": \"mask\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 1,\n          \"type\": \"missing_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 631,\n              \"job_id\": 28,\n              \"type\": \"ellipse\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 1,\n          \"type\": \"missing_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 635,\n              \"job_id\": 28,\n              \"type\": \"polyline\"\n            }\n          ],\n          \"importance\": \"error\"\n        }\n      ],\n      \"annotations\": {\n        \"valid_count\": 0,\n        \"missing_count\": 6,\n        \"extra_count\": 0,\n        \"total_count\": 6,\n        \"ds_count\": 0,\n        \"gt_count\": 6,\n        \"confusion_matrix\": {\n          \"labels\": [\n            \"cat\",\n            \"dog\",\n            \"sk\",\n            \"unmatched\"\n          ],\n          \"rows\": [\n            [\n              0,\n              0,\n              0,\n              0\n            ],\n            [\n              0,\n              0,\n              0,\n              0\n            ],\n            [\n              0,\n              0,\n              0,\n              0\n            ],\n            [\n              6,\n              0,\n              0,\n              0\n            ]\n          ],\n          \"precision\": [\n            0.0,\n            0.0,\n            0.0,\n            0.0\n          ],\n          \"recall\": [\n            0.0,\n            0.0,\n            0.0,\n            0.0\n          ],\n          \"accuracy\": [\n            0.0,\n            0.0,\n            0.0,\n            0.0\n          ],\n          \"axes\": {\n            \"cols\": \"gt\",\n            \"rows\": \"ds\"\n          }\n        },\n        \"accuracy\": 0.0,\n        \"precision\": 0.0,\n        \"recall\": 0.0\n      },\n      \"annotation_components\": {\n        \"shape\": {\n          \"valid_count\": 0,\n          \"missing_count\": 6,\n          \"extra_count\": 0,\n          \"total_count\": 6,\n          \"ds_count\": 0,\n          \"gt_count\": 6,\n          \"mean_iou\": 0.0,\n          \"accuracy\": 0.0\n        },\n        \"label\": {\n          \"valid_count\": 0,\n          \"invalid_count\": 0,\n          \"total_count\": 0,\n          \"accuracy\": 0.0\n        }\n      },\n      \"conflict_count\": 6,\n      \"warning_count\": 0,\n      \"error_count\": 6,\n      \"conflicts_by_type\": {\n        \"missing_annotation\": 6\n      }\n    },\n    \"2\": {\n      \"conflicts\": [],\n      \"annotations\": {\n        \"valid_count\": 0,\n        \"missing_count\": 0,\n        \"extra_count\": 0,\n        \"total_count\": 0,\n        \"ds_count\": 0,\n        \"gt_count\": 0,\n        \"confusion_matrix\": {\n          \"labels\": [\n            \"cat\",\n            \"dog\",\n            \"sk\",\n            \"unmatched\"\n          ],\n          \"rows\": [\n            [\n              0,\n              0,\n              0,\n              0\n            ],\n            [\n              0,\n              0,\n              0,\n              0\n            ],\n            [\n              0,\n              0,\n              0,\n              0\n            ],\n            [\n              0,\n              0,\n              0,\n              0\n            ]\n          ],\n          \"precision\": [\n            0.0,\n            0.0,\n            0.0,\n            0.0\n          ],\n          \"recall\": [\n            0.0,\n            0.0,\n            0.0,\n            0.0\n          ],\n          \"accuracy\": [\n            0.0,\n            0.0,\n            0.0,\n            0.0\n          ],\n          \"axes\": {\n            \"cols\": \"gt\",\n            \"rows\": \"ds\"\n          }\n        },\n        \"accuracy\": 0.0,\n        \"precision\": 0.0,\n        \"recall\": 0.0\n      },\n      \"annotation_components\": {\n        \"shape\": {\n          \"valid_count\": 0,\n          \"missing_count\": 0,\n          \"extra_count\": 0,\n          \"total_count\": 0,\n          \"ds_count\": 0,\n          \"gt_count\": 0,\n          \"mean_iou\": 0,\n          \"accuracy\": 0.0\n        },\n        \"label\": {\n          \"valid_count\": 0,\n          \"invalid_count\": 0,\n          \"total_count\": 0,\n          \"accuracy\": 0.0\n        }\n      },\n      \"conflict_count\": 0,\n      \"warning_count\": 0,\n      \"error_count\": 0,\n      \"conflicts_by_type\": {}\n    },\n    \"5\": {\n      \"conflicts\": [],\n      \"annotations\": {\n        \"valid_count\": 0,\n        \"missing_count\": 0,\n        \"extra_count\": 0,\n        \"total_count\": 0,\n        \"ds_count\": 0,\n        \"gt_count\": 0,\n        \"confusion_matrix\": {\n          \"labels\": [\n            \"cat\",\n            \"dog\",\n            \"sk\",\n            \"unmatched\"\n          ],\n          \"rows\": [\n            [\n              0,\n              0,\n              0,\n              0\n            ],\n            [\n              0,\n              0,\n              0,\n              0\n            ],\n            [\n              0,\n              0,\n              0,\n              0\n            ],\n            [\n              0,\n              0,\n              0,\n              0\n            ]\n          ],\n          \"precision\": [\n            0.0,\n            0.0,\n            0.0,\n            0.0\n          ],\n          \"recall\": [\n            0.0,\n            0.0,\n            0.0,\n            0.0\n          ],\n          \"accuracy\": [\n            0.0,\n            0.0,\n            0.0,\n            0.0\n          ],\n          \"axes\": {\n            \"cols\": \"gt\",\n            \"rows\": \"ds\"\n          }\n        },\n        \"accuracy\": 0.0,\n        \"precision\": 0.0,\n        \"recall\": 0.0\n      },\n      \"annotation_components\": {\n        \"shape\": {\n          \"valid_count\": 0,\n          \"missing_count\": 0,\n          \"extra_count\": 0,\n          \"total_count\": 0,\n          \"ds_count\": 0,\n          \"gt_count\": 0,\n          \"mean_iou\": 0,\n          \"accuracy\": 0.0\n        },\n        \"label\": {\n          \"valid_count\": 0,\n          \"invalid_count\": 0,\n          \"total_count\": 0,\n          \"accuracy\": 0.0\n        }\n      },\n      \"conflict_count\": 0,\n      \"warning_count\": 0,\n      \"error_count\": 0,\n      \"conflicts_by_type\": {}\n    }\n  }\n}\n"
   }
 },
 {
@@ -8391,10 +9177,10 @@
     "job": 27,
     "task": null,
     "parent": 1,
-    "created_date": "2023-05-18T18:19:52.298Z",
-    "target_last_updated": "2023-04-14T14:58:50.944Z",
-    "gt_last_updated": "2023-04-14T15:03:25.984Z",
-    "data": "{\n  \"parameters\": {\n    \"included_annotation_types\": [\n      \"bbox\",\n      \"points\",\n      \"mask\",\n      \"polygon\",\n      \"polyline\",\n      \"skeleton\"\n    ],\n    \"compare_attributes\": true,\n    \"ignored_attributes\": [],\n    \"iou_threshold\": 0.4,\n    \"low_overlap_threshold\": 0.8,\n    \"oks_sigma\": 0.09,\n    \"line_thickness\": 0.01,\n    \"oriented_lines\": true,\n    \"line_orientation_threshold\": 0.1,\n    \"compare_groups\": true,\n    \"group_match_threshold\": 0.5,\n    \"check_covered_annotations\": true,\n    \"object_visibility_threshold\": 0.05,\n    \"panoptic_comparison\": true\n  },\n  \"comparison_summary\": {\n    \"frame_share_percent\": 0.36363636363636365,\n    \"frames\": [\n      0,\n      1,\n      2,\n      5\n    ],\n    \"conflict_count\": 17,\n    \"warning_count\": 5,\n    \"error_count\": 12,\n    \"conflicts_by_type\": {\n      \"low_overlap\": 3,\n      \"extra_annotation\": 5,\n      \"mismatching_label\": 1,\n      \"mismatching_direction\": 1,\n      \"covered_annotation\": 1,\n      \"missing_annotation\": 6\n    },\n    \"annotations\": {\n      \"valid_count\": 7,\n      \"missing_count\": 6,\n      \"extra_count\": 5,\n      \"total_count\": 19,\n      \"ds_count\": 13,\n      \"gt_count\": 14,\n      \"confusion_matrix\": {\n        \"labels\": [\n          \"cat\",\n          \"dog\",\n          \"sk\",\n          \"unmatched\"\n        ],\n        \"rows\": [\n          [\n            7,\n            1,\n            0,\n            2\n          ],\n          [\n            0,\n            0,\n            0,\n            3\n          ],\n          [\n            0,\n            0,\n            0,\n            0\n          ],\n          [\n            6,\n            0,\n            0,\n            0\n          ]\n        ],\n        \"precision\": [\n          0.7,\n          0.0,\n          0.0,\n          0.0\n        ],\n        \"recall\": [\n          0.5384615384615384,\n          0.0,\n          0.0,\n          0.0\n        ],\n        \"accuracy\": [\n          0.4375,\n          0.0,\n          0.0,\n          0.0\n        ],\n        \"axes\": {\n          \"cols\": \"gt\",\n          \"rows\": \"ds\"\n        }\n      },\n      \"accuracy\": 0.3684210526315789,\n      \"precision\": 0.5384615384615384,\n      \"recall\": 0.5\n    },\n    \"annotation_components\": {\n      \"shape\": {\n        \"valid_count\": 8,\n        \"missing_count\": 6,\n        \"extra_count\": 5,\n        \"total_count\": 19,\n        \"ds_count\": 13,\n        \"gt_count\": 14,\n        \"mean_iou\": 0.12256680179050185,\n        \"accuracy\": 0.42105263157894735\n      },\n      \"label\": {\n        \"valid_count\": 7,\n        \"invalid_count\": 1,\n        \"total_count\": 8,\n        \"accuracy\": 0.875\n      }\n    },\n    \"frame_count\": 4,\n    \"mean_conflict_count\": 4.25\n  },\n  \"frame_results\": {\n    \"0\": {\n      \"conflicts\": [\n        {\n          \"frame_id\": 0,\n          \"type\": \"low_overlap\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 581,\n              \"job_id\": 27,\n              \"type\": \"rectangle\"\n            },\n            {\n              \"obj_id\": 550,\n              \"job_id\": 28,\n              \"type\": \"rectangle\"\n            }\n          ],\n          \"importance\": \"warning\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"low_overlap\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 584,\n              \"job_id\": 27,\n              \"type\": \"polygon\"\n            },\n            {\n              \"obj_id\": 547,\n              \"job_id\": 28,\n              \"type\": \"polygon\"\n            }\n          ],\n          \"importance\": \"warning\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"low_overlap\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 583,\n              \"job_id\": 27,\n              \"type\": \"polyline\"\n            },\n            {\n              \"obj_id\": 548,\n              \"job_id\": 28,\n              \"type\": \"polyline\"\n            }\n          ],\n          \"importance\": \"warning\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"extra_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 587,\n              \"job_id\": 27,\n              \"type\": \"rectangle\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"extra_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 601,\n              \"job_id\": 27,\n              \"type\": \"polygon\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"extra_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 602,\n              \"job_id\": 27,\n              \"type\": \"polygon\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"extra_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 582,\n              \"job_id\": 27,\n              \"type\": \"polyline\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"extra_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 580,\n              \"job_id\": 27,\n              \"type\": \"polyline\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"mismatching_label\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 585,\n              \"job_id\": 27,\n              \"type\": \"mask\"\n            },\n            {\n              \"obj_id\": 546,\n              \"job_id\": 28,\n              \"type\": \"polygon\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"mismatching_direction\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 583,\n              \"job_id\": 27,\n              \"type\": \"polyline\"\n            },\n            {\n              \"obj_id\": 548,\n              \"job_id\": 28,\n              \"type\": \"polyline\"\n            }\n          ],\n          \"importance\": \"warning\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"covered_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 585,\n              \"job_id\": 27,\n              \"type\": \"mask\"\n            }\n          ],\n          \"importance\": \"warning\"\n        }\n      ],\n      \"annotations\": {\n        \"valid_count\": 7,\n        \"missing_count\": 0,\n        \"extra_count\": 5,\n        \"total_count\": 13,\n        \"ds_count\": 13,\n        \"gt_count\": 8,\n        \"confusion_matrix\": {\n          \"labels\": [\n            \"cat\",\n            \"dog\",\n            \"sk\",\n            \"unmatched\"\n          ],\n          \"rows\": [\n            [\n              7,\n              1,\n              0,\n              2\n            ],\n            [\n              0,\n              0,\n              0,\n              3\n            ],\n            [\n              0,\n              0,\n              0,\n              0\n            ],\n            [\n              0,\n              0,\n              0,\n              0\n            ]\n          ],\n          \"precision\": [\n            0.7,\n            0.0,\n            0.0,\n            0.0\n          ],\n          \"recall\": [\n            1.0,\n            0.0,\n            0.0,\n            0.0\n          ],\n          \"accuracy\": [\n            0.7,\n            0.0,\n            0.0,\n            0.0\n          ],\n          \"axes\": {\n            \"cols\": \"gt\",\n            \"rows\": \"ds\"\n          }\n        },\n        \"accuracy\": 0.5384615384615384,\n        \"precision\": 0.5384615384615384,\n        \"recall\": 0.875\n      },\n      \"annotation_components\": {\n        \"shape\": {\n          \"valid_count\": 8,\n          \"missing_count\": 0,\n          \"extra_count\": 5,\n          \"total_count\": 13,\n          \"ds_count\": 13,\n          \"gt_count\": 8,\n          \"mean_iou\": 0.4902672071620074,\n          \"accuracy\": 0.6153846153846154\n        },\n        \"label\": {\n          \"valid_count\": 7,\n          \"invalid_count\": 1,\n          \"total_count\": 8,\n          \"accuracy\": 0.875\n        }\n      },\n      \"conflict_count\": 11,\n      \"warning_count\": 5,\n      \"error_count\": 6,\n      \"conflicts_by_type\": {\n        \"low_overlap\": 3,\n        \"extra_annotation\": 5,\n        \"mismatching_label\": 1,\n        \"mismatching_direction\": 1,\n        \"covered_annotation\": 1\n      }\n    },\n    \"1\": {\n      \"conflicts\": [\n        {\n          \"frame_id\": 1,\n          \"type\": \"missing_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 579,\n              \"job_id\": 28,\n              \"type\": \"rectangle\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 1,\n          \"type\": \"missing_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 577,\n              \"job_id\": 28,\n              \"type\": \"points\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 1,\n          \"type\": \"missing_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 573,\n              \"job_id\": 28,\n              \"type\": \"polygon\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 1,\n          \"type\": \"missing_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 576,\n              \"job_id\": 28,\n              \"type\": \"mask\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 1,\n          \"type\": \"missing_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 574,\n              \"job_id\": 28,\n              \"type\": \"ellipse\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 1,\n          \"type\": \"missing_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 578,\n              \"job_id\": 28,\n              \"type\": \"polyline\"\n            }\n          ],\n          \"importance\": \"error\"\n        }\n      ],\n      \"annotations\": {\n        \"valid_count\": 0,\n        \"missing_count\": 6,\n        \"extra_count\": 0,\n        \"total_count\": 6,\n        \"ds_count\": 0,\n        \"gt_count\": 6,\n        \"confusion_matrix\": {\n          \"labels\": [\n            \"cat\",\n            \"dog\",\n            \"sk\",\n            \"unmatched\"\n          ],\n          \"rows\": [\n            [\n              0,\n              0,\n              0,\n              0\n            ],\n            [\n              0,\n              0,\n              0,\n              0\n            ],\n            [\n              0,\n              0,\n              0,\n              0\n            ],\n            [\n              6,\n              0,\n              0,\n              0\n            ]\n          ],\n          \"precision\": [\n            0.0,\n            0.0,\n            0.0,\n            0.0\n          ],\n          \"recall\": [\n            0.0,\n            0.0,\n            0.0,\n            0.0\n          ],\n          \"accuracy\": [\n            0.0,\n            0.0,\n            0.0,\n            0.0\n          ],\n          \"axes\": {\n            \"cols\": \"gt\",\n            \"rows\": \"ds\"\n          }\n        },\n        \"accuracy\": 0.0,\n        \"precision\": 0.0,\n        \"recall\": 0.0\n      },\n      \"annotation_components\": {\n        \"shape\": {\n          \"valid_count\": 0,\n          \"missing_count\": 6,\n          \"extra_count\": 0,\n          \"total_count\": 6,\n          \"ds_count\": 0,\n          \"gt_count\": 6,\n          \"mean_iou\": 0.0,\n          \"accuracy\": 0.0\n        },\n        \"label\": {\n          \"valid_count\": 0,\n          \"invalid_count\": 0,\n          \"total_count\": 0,\n          \"accuracy\": 0.0\n        }\n      },\n      \"conflict_count\": 6,\n      \"warning_count\": 0,\n      \"error_count\": 6,\n      \"conflicts_by_type\": {\n        \"missing_annotation\": 6\n      }\n    },\n    \"2\": {\n      \"conflicts\": [],\n      \"annotations\": {\n        \"valid_count\": 0,\n        \"missing_count\": 0,\n        \"extra_count\": 0,\n        \"total_count\": 0,\n        \"ds_count\": 0,\n        \"gt_count\": 0,\n        \"confusion_matrix\": {\n          \"labels\": [\n            \"cat\",\n            \"dog\",\n            \"sk\",\n            \"unmatched\"\n          ],\n          \"rows\": [\n            [\n              0,\n              0,\n              0,\n              0\n            ],\n            [\n              0,\n              0,\n              0,\n              0\n            ],\n            [\n              0,\n              0,\n              0,\n              0\n            ],\n            [\n              0,\n              0,\n              0,\n              0\n            ]\n          ],\n          \"precision\": [\n            0.0,\n            0.0,\n            0.0,\n            0.0\n          ],\n          \"recall\": [\n            0.0,\n            0.0,\n            0.0,\n            0.0\n          ],\n          \"accuracy\": [\n            0.0,\n            0.0,\n            0.0,\n            0.0\n          ],\n          \"axes\": {\n            \"cols\": \"gt\",\n            \"rows\": \"ds\"\n          }\n        },\n        \"accuracy\": 0.0,\n        \"precision\": 0.0,\n        \"recall\": 0.0\n      },\n      \"annotation_components\": {\n        \"shape\": {\n          \"valid_count\": 0,\n          \"missing_count\": 0,\n          \"extra_count\": 0,\n          \"total_count\": 0,\n          \"ds_count\": 0,\n          \"gt_count\": 0,\n          \"mean_iou\": 0,\n          \"accuracy\": 0.0\n        },\n        \"label\": {\n          \"valid_count\": 0,\n          \"invalid_count\": 0,\n          \"total_count\": 0,\n          \"accuracy\": 0.0\n        }\n      },\n      \"conflict_count\": 0,\n      \"warning_count\": 0,\n      \"error_count\": 0,\n      \"conflicts_by_type\": {}\n    },\n    \"5\": {\n      \"conflicts\": [],\n      \"annotations\": {\n        \"valid_count\": 0,\n        \"missing_count\": 0,\n        \"extra_count\": 0,\n        \"total_count\": 0,\n        \"ds_count\": 0,\n        \"gt_count\": 0,\n        \"confusion_matrix\": {\n          \"labels\": [\n            \"cat\",\n            \"dog\",\n            \"sk\",\n            \"unmatched\"\n          ],\n          \"rows\": [\n            [\n              0,\n              0,\n              0,\n              0\n            ],\n            [\n              0,\n              0,\n              0,\n              0\n            ],\n            [\n              0,\n              0,\n              0,\n              0\n            ],\n            [\n              0,\n              0,\n              0,\n              0\n            ]\n          ],\n          \"precision\": [\n            0.0,\n            0.0,\n            0.0,\n            0.0\n          ],\n          \"recall\": [\n            0.0,\n            0.0,\n            0.0,\n            0.0\n          ],\n          \"accuracy\": [\n            0.0,\n            0.0,\n            0.0,\n            0.0\n          ],\n          \"axes\": {\n            \"cols\": \"gt\",\n            \"rows\": \"ds\"\n          }\n        },\n        \"accuracy\": 0.0,\n        \"precision\": 0.0,\n        \"recall\": 0.0\n      },\n      \"annotation_components\": {\n        \"shape\": {\n          \"valid_count\": 0,\n          \"missing_count\": 0,\n          \"extra_count\": 0,\n          \"total_count\": 0,\n          \"ds_count\": 0,\n          \"gt_count\": 0,\n          \"mean_iou\": 0,\n          \"accuracy\": 0.0\n        },\n        \"label\": {\n          \"valid_count\": 0,\n          \"invalid_count\": 0,\n          \"total_count\": 0,\n          \"accuracy\": 0.0\n        }\n      },\n      \"conflict_count\": 0,\n      \"warning_count\": 0,\n      \"error_count\": 0,\n      \"conflicts_by_type\": {}\n    }\n  }\n}\n"
+    "created_date": "2023-05-23T14:49:50.924Z",
+    "target_last_updated": "2023-05-23T14:45:08.385Z",
+    "gt_last_updated": "2023-05-23T14:44:02.697Z",
+    "data": "{\n  \"parameters\": {\n    \"included_annotation_types\": [\n      \"bbox\",\n      \"points\",\n      \"mask\",\n      \"polygon\",\n      \"polyline\",\n      \"skeleton\"\n    ],\n    \"compare_attributes\": true,\n    \"ignored_attributes\": [],\n    \"iou_threshold\": 0.4,\n    \"low_overlap_threshold\": 0.8,\n    \"oks_sigma\": 0.09,\n    \"line_thickness\": 0.01,\n    \"oriented_lines\": true,\n    \"line_orientation_threshold\": 0.1,\n    \"compare_groups\": true,\n    \"group_match_threshold\": 0.5,\n    \"check_covered_annotations\": true,\n    \"object_visibility_threshold\": 0.05,\n    \"panoptic_comparison\": true\n  },\n  \"comparison_summary\": {\n    \"frame_share_percent\": 0.36363636363636365,\n    \"frames\": [\n      0,\n      1,\n      2,\n      5\n    ],\n    \"conflict_count\": 37,\n    \"warning_count\": 15,\n    \"error_count\": 22,\n    \"conflicts_by_type\": {\n      \"low_overlap\": 6,\n      \"missing_annotation\": 9,\n      \"extra_annotation\": 10,\n      \"mismatching_label\": 3,\n      \"mismatching_direction\": 1,\n      \"covered_annotation\": 1,\n      \"mismatching_attributes\": 1,\n      \"mismatching_groups\": 6\n    },\n    \"annotations\": {\n      \"valid_count\": 22,\n      \"missing_count\": 9,\n      \"extra_count\": 10,\n      \"total_count\": 44,\n      \"ds_count\": 35,\n      \"gt_count\": 34,\n      \"confusion_matrix\": {\n        \"labels\": [\n          \"cat\",\n          \"dog\",\n          \"sk\",\n          \"unmatched\"\n        ],\n        \"rows\": [\n          [\n            21,\n            1,\n            0,\n            7\n          ],\n          [\n            2,\n            1,\n            0,\n            3\n          ],\n          [\n            0,\n            0,\n            0,\n            0\n          ],\n          [\n            8,\n            1,\n            0,\n            0\n          ]\n        ],\n        \"precision\": [\n          0.7241379310344828,\n          0.16666666666666666,\n          0.0,\n          0.0\n        ],\n        \"recall\": [\n          0.6774193548387096,\n          0.3333333333333333,\n          0.0,\n          0.0\n        ],\n        \"accuracy\": [\n          0.5384615384615384,\n          0.125,\n          0.0,\n          0.0\n        ],\n        \"axes\": {\n          \"cols\": \"gt\",\n          \"rows\": \"ds\"\n        }\n      },\n      \"accuracy\": 0.5,\n      \"precision\": 0.6285714285714286,\n      \"recall\": 0.6470588235294118\n    },\n    \"annotation_components\": {\n      \"shape\": {\n        \"valid_count\": 25,\n        \"missing_count\": 9,\n        \"extra_count\": 10,\n        \"total_count\": 44,\n        \"ds_count\": 35,\n        \"gt_count\": 34,\n        \"mean_iou\": 0.13517879816680567,\n        \"accuracy\": 0.5681818181818182\n      },\n      \"label\": {\n        \"valid_count\": 22,\n        \"invalid_count\": 3,\n        \"total_count\": 25,\n        \"accuracy\": 0.88\n      }\n    },\n    \"frame_count\": 4,\n    \"mean_conflict_count\": 9.25\n  },\n  \"frame_results\": {\n    \"0\": {\n      \"conflicts\": [\n        {\n          \"frame_id\": 0,\n          \"type\": \"low_overlap\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 664,\n              \"job_id\": 27,\n              \"type\": \"rectangle\"\n            },\n            {\n              \"obj_id\": 624,\n              \"job_id\": 28,\n              \"type\": \"rectangle\"\n            }\n          ],\n          \"importance\": \"warning\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"low_overlap\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 638,\n              \"job_id\": 27,\n              \"type\": \"rectangle\"\n            },\n            {\n              \"obj_id\": 607,\n              \"job_id\": 28,\n              \"type\": \"rectangle\"\n            }\n          ],\n          \"importance\": \"warning\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"low_overlap\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 661,\n              \"job_id\": 27,\n              \"type\": \"points\"\n            },\n            {\n              \"obj_id\": 608,\n              \"job_id\": 28,\n              \"type\": \"points\"\n            }\n          ],\n          \"importance\": \"warning\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"low_overlap\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 641,\n              \"job_id\": 27,\n              \"type\": \"polygon\"\n            },\n            {\n              \"obj_id\": 604,\n              \"job_id\": 28,\n              \"type\": \"polygon\"\n            }\n          ],\n          \"importance\": \"warning\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"low_overlap\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 640,\n              \"job_id\": 27,\n              \"type\": \"polyline\"\n            },\n            {\n              \"obj_id\": 605,\n              \"job_id\": 28,\n              \"type\": \"polyline\"\n            }\n          ],\n          \"importance\": \"warning\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"low_overlap\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 665,\n              \"job_id\": 27,\n              \"type\": \"points\"\n            },\n            {\n              \"obj_id\": 625,\n              \"job_id\": 28,\n              \"type\": \"points\"\n            }\n          ],\n          \"importance\": \"warning\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"missing_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 613,\n              \"job_id\": 28,\n              \"type\": \"rectangle\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"missing_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 627,\n              \"job_id\": 28,\n              \"type\": \"points\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"missing_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 628,\n              \"job_id\": 28,\n              \"type\": \"points\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"extra_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 644,\n              \"job_id\": 27,\n              \"type\": \"rectangle\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"extra_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 660,\n              \"job_id\": 27,\n              \"type\": \"rectangle\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"extra_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 666,\n              \"job_id\": 27,\n              \"type\": \"points\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"extra_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 658,\n              \"job_id\": 27,\n              \"type\": \"polygon\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"extra_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 668,\n              \"job_id\": 27,\n              \"type\": \"polygon\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"extra_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 659,\n              \"job_id\": 27,\n              \"type\": \"polygon\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"extra_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 669,\n              \"job_id\": 27,\n              \"type\": \"ellipse\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"extra_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 637,\n              \"job_id\": 27,\n              \"type\": \"polyline\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"extra_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 639,\n              \"job_id\": 27,\n              \"type\": \"polyline\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"extra_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 667,\n              \"job_id\": 27,\n              \"type\": \"polyline\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"mismatching_label\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 662,\n              \"job_id\": 27,\n              \"type\": \"points\"\n            },\n            {\n              \"obj_id\": 629,\n              \"job_id\": 28,\n              \"type\": \"points\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"mismatching_label\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 665,\n              \"job_id\": 27,\n              \"type\": \"points\"\n            },\n            {\n              \"obj_id\": 625,\n              \"job_id\": 28,\n              \"type\": \"points\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"mismatching_label\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 642,\n              \"job_id\": 27,\n              \"type\": \"mask\"\n            },\n            {\n              \"obj_id\": 603,\n              \"job_id\": 28,\n              \"type\": \"polygon\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"mismatching_direction\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 640,\n              \"job_id\": 27,\n              \"type\": \"polyline\"\n            },\n            {\n              \"obj_id\": 605,\n              \"job_id\": 28,\n              \"type\": \"polyline\"\n            }\n          ],\n          \"importance\": \"warning\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"covered_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 642,\n              \"job_id\": 27,\n              \"type\": \"mask\"\n            }\n          ],\n          \"importance\": \"warning\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"mismatching_attributes\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 671,\n              \"job_id\": 27,\n              \"type\": \"rectangle\"\n            },\n            {\n              \"obj_id\": 670,\n              \"job_id\": 28,\n              \"type\": \"rectangle\"\n            }\n          ],\n          \"importance\": \"warning\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"mismatching_groups\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 652,\n              \"job_id\": 27,\n              \"type\": \"rectangle\"\n            },\n            {\n              \"obj_id\": 611,\n              \"job_id\": 28,\n              \"type\": \"rectangle\"\n            }\n          ],\n          \"importance\": \"warning\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"mismatching_groups\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 656,\n              \"job_id\": 27,\n              \"type\": \"rectangle\"\n            },\n            {\n              \"obj_id\": 612,\n              \"job_id\": 28,\n              \"type\": \"rectangle\"\n            }\n          ],\n          \"importance\": \"warning\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"mismatching_groups\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 646,\n              \"job_id\": 27,\n              \"type\": \"rectangle\"\n            },\n            {\n              \"obj_id\": 620,\n              \"job_id\": 28,\n              \"type\": \"rectangle\"\n            }\n          ],\n          \"importance\": \"warning\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"mismatching_groups\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 649,\n              \"job_id\": 27,\n              \"type\": \"rectangle\"\n            },\n            {\n              \"obj_id\": 617,\n              \"job_id\": 28,\n              \"type\": \"rectangle\"\n            }\n          ],\n          \"importance\": \"warning\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"mismatching_groups\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 650,\n              \"job_id\": 27,\n              \"type\": \"rectangle\"\n            },\n            {\n              \"obj_id\": 610,\n              \"job_id\": 28,\n              \"type\": \"rectangle\"\n            }\n          ],\n          \"importance\": \"warning\"\n        },\n        {\n          \"frame_id\": 0,\n          \"type\": \"mismatching_groups\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 651,\n              \"job_id\": 27,\n              \"type\": \"rectangle\"\n            },\n            {\n              \"obj_id\": 609,\n              \"job_id\": 28,\n              \"type\": \"rectangle\"\n            }\n          ],\n          \"importance\": \"warning\"\n        }\n      ],\n      \"annotations\": {\n        \"valid_count\": 22,\n        \"missing_count\": 3,\n        \"extra_count\": 10,\n        \"total_count\": 38,\n        \"ds_count\": 35,\n        \"gt_count\": 28,\n        \"confusion_matrix\": {\n          \"labels\": [\n            \"cat\",\n            \"dog\",\n            \"sk\",\n            \"unmatched\"\n          ],\n          \"rows\": [\n            [\n              21,\n              1,\n              0,\n              7\n            ],\n            [\n              2,\n              1,\n              0,\n              3\n            ],\n            [\n              0,\n              0,\n              0,\n              0\n            ],\n            [\n              2,\n              1,\n              0,\n              0\n            ]\n          ],\n          \"precision\": [\n            0.7241379310344828,\n            0.16666666666666666,\n            0.0,\n            0.0\n          ],\n          \"recall\": [\n            0.84,\n            0.3333333333333333,\n            0.0,\n            0.0\n          ],\n          \"accuracy\": [\n            0.6363636363636364,\n            0.125,\n            0.0,\n            0.0\n          ],\n          \"axes\": {\n            \"cols\": \"gt\",\n            \"rows\": \"ds\"\n          }\n        },\n        \"accuracy\": 0.5789473684210527,\n        \"precision\": 0.6285714285714286,\n        \"recall\": 0.7857142857142857\n      },\n      \"annotation_components\": {\n        \"shape\": {\n          \"valid_count\": 25,\n          \"missing_count\": 3,\n          \"extra_count\": 10,\n          \"total_count\": 38,\n          \"ds_count\": 35,\n          \"gt_count\": 28,\n          \"mean_iou\": 0.5407151926672227,\n          \"accuracy\": 0.6578947368421053\n        },\n        \"label\": {\n          \"valid_count\": 22,\n          \"invalid_count\": 3,\n          \"total_count\": 25,\n          \"accuracy\": 0.88\n        }\n      },\n      \"conflict_count\": 31,\n      \"warning_count\": 15,\n      \"error_count\": 16,\n      \"conflicts_by_type\": {\n        \"low_overlap\": 6,\n        \"missing_annotation\": 3,\n        \"extra_annotation\": 10,\n        \"mismatching_label\": 3,\n        \"mismatching_direction\": 1,\n        \"covered_annotation\": 1,\n        \"mismatching_attributes\": 1,\n        \"mismatching_groups\": 6\n      }\n    },\n    \"1\": {\n      \"conflicts\": [\n        {\n          \"frame_id\": 1,\n          \"type\": \"missing_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 636,\n              \"job_id\": 28,\n              \"type\": \"rectangle\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 1,\n          \"type\": \"missing_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 634,\n              \"job_id\": 28,\n              \"type\": \"points\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 1,\n          \"type\": \"missing_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 630,\n              \"job_id\": 28,\n              \"type\": \"polygon\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 1,\n          \"type\": \"missing_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 633,\n              \"job_id\": 28,\n              \"type\": \"mask\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 1,\n          \"type\": \"missing_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 631,\n              \"job_id\": 28,\n              \"type\": \"ellipse\"\n            }\n          ],\n          \"importance\": \"error\"\n        },\n        {\n          \"frame_id\": 1,\n          \"type\": \"missing_annotation\",\n          \"annotation_ids\": [\n            {\n              \"obj_id\": 635,\n              \"job_id\": 28,\n              \"type\": \"polyline\"\n            }\n          ],\n          \"importance\": \"error\"\n        }\n      ],\n      \"annotations\": {\n        \"valid_count\": 0,\n        \"missing_count\": 6,\n        \"extra_count\": 0,\n        \"total_count\": 6,\n        \"ds_count\": 0,\n        \"gt_count\": 6,\n        \"confusion_matrix\": {\n          \"labels\": [\n            \"cat\",\n            \"dog\",\n            \"sk\",\n            \"unmatched\"\n          ],\n          \"rows\": [\n            [\n              0,\n              0,\n              0,\n              0\n            ],\n            [\n              0,\n              0,\n              0,\n              0\n            ],\n            [\n              0,\n              0,\n              0,\n              0\n            ],\n            [\n              6,\n              0,\n              0,\n              0\n            ]\n          ],\n          \"precision\": [\n            0.0,\n            0.0,\n            0.0,\n            0.0\n          ],\n          \"recall\": [\n            0.0,\n            0.0,\n            0.0,\n            0.0\n          ],\n          \"accuracy\": [\n            0.0,\n            0.0,\n            0.0,\n            0.0\n          ],\n          \"axes\": {\n            \"cols\": \"gt\",\n            \"rows\": \"ds\"\n          }\n        },\n        \"accuracy\": 0.0,\n        \"precision\": 0.0,\n        \"recall\": 0.0\n      },\n      \"annotation_components\": {\n        \"shape\": {\n          \"valid_count\": 0,\n          \"missing_count\": 6,\n          \"extra_count\": 0,\n          \"total_count\": 6,\n          \"ds_count\": 0,\n          \"gt_count\": 6,\n          \"mean_iou\": 0.0,\n          \"accuracy\": 0.0\n        },\n        \"label\": {\n          \"valid_count\": 0,\n          \"invalid_count\": 0,\n          \"total_count\": 0,\n          \"accuracy\": 0.0\n        }\n      },\n      \"conflict_count\": 6,\n      \"warning_count\": 0,\n      \"error_count\": 6,\n      \"conflicts_by_type\": {\n        \"missing_annotation\": 6\n      }\n    },\n    \"2\": {\n      \"conflicts\": [],\n      \"annotations\": {\n        \"valid_count\": 0,\n        \"missing_count\": 0,\n        \"extra_count\": 0,\n        \"total_count\": 0,\n        \"ds_count\": 0,\n        \"gt_count\": 0,\n        \"confusion_matrix\": {\n          \"labels\": [\n            \"cat\",\n            \"dog\",\n            \"sk\",\n            \"unmatched\"\n          ],\n          \"rows\": [\n            [\n              0,\n              0,\n              0,\n              0\n            ],\n            [\n              0,\n              0,\n              0,\n              0\n            ],\n            [\n              0,\n              0,\n              0,\n              0\n            ],\n            [\n              0,\n              0,\n              0,\n              0\n            ]\n          ],\n          \"precision\": [\n            0.0,\n            0.0,\n            0.0,\n            0.0\n          ],\n          \"recall\": [\n            0.0,\n            0.0,\n            0.0,\n            0.0\n          ],\n          \"accuracy\": [\n            0.0,\n            0.0,\n            0.0,\n            0.0\n          ],\n          \"axes\": {\n            \"cols\": \"gt\",\n            \"rows\": \"ds\"\n          }\n        },\n        \"accuracy\": 0.0,\n        \"precision\": 0.0,\n        \"recall\": 0.0\n      },\n      \"annotation_components\": {\n        \"shape\": {\n          \"valid_count\": 0,\n          \"missing_count\": 0,\n          \"extra_count\": 0,\n          \"total_count\": 0,\n          \"ds_count\": 0,\n          \"gt_count\": 0,\n          \"mean_iou\": 0,\n          \"accuracy\": 0.0\n        },\n        \"label\": {\n          \"valid_count\": 0,\n          \"invalid_count\": 0,\n          \"total_count\": 0,\n          \"accuracy\": 0.0\n        }\n      },\n      \"conflict_count\": 0,\n      \"warning_count\": 0,\n      \"error_count\": 0,\n      \"conflicts_by_type\": {}\n    },\n    \"5\": {\n      \"conflicts\": [],\n      \"annotations\": {\n        \"valid_count\": 0,\n        \"missing_count\": 0,\n        \"extra_count\": 0,\n        \"total_count\": 0,\n        \"ds_count\": 0,\n        \"gt_count\": 0,\n        \"confusion_matrix\": {\n          \"labels\": [\n            \"cat\",\n            \"dog\",\n            \"sk\",\n            \"unmatched\"\n          ],\n          \"rows\": [\n            [\n              0,\n              0,\n              0,\n              0\n            ],\n            [\n              0,\n              0,\n              0,\n              0\n            ],\n            [\n              0,\n              0,\n              0,\n              0\n            ],\n            [\n              0,\n              0,\n              0,\n              0\n            ]\n          ],\n          \"precision\": [\n            0.0,\n            0.0,\n            0.0,\n            0.0\n          ],\n          \"recall\": [\n            0.0,\n            0.0,\n            0.0,\n            0.0\n          ],\n          \"accuracy\": [\n            0.0,\n            0.0,\n            0.0,\n            0.0\n          ],\n          \"axes\": {\n            \"cols\": \"gt\",\n            \"rows\": \"ds\"\n          }\n        },\n        \"accuracy\": 0.0,\n        \"precision\": 0.0,\n        \"recall\": 0.0\n      },\n      \"annotation_components\": {\n        \"shape\": {\n          \"valid_count\": 0,\n          \"missing_count\": 0,\n          \"extra_count\": 0,\n          \"total_count\": 0,\n          \"ds_count\": 0,\n          \"gt_count\": 0,\n          \"mean_iou\": 0,\n          \"accuracy\": 0.0\n        },\n        \"label\": {\n          \"valid_count\": 0,\n          \"invalid_count\": 0,\n          \"total_count\": 0,\n          \"accuracy\": 0.0\n        }\n      },\n      \"conflict_count\": 0,\n      \"warning_count\": 0,\n      \"error_count\": 0,\n      \"conflicts_by_type\": {}\n    }\n  }\n}\n"
   }
 },
 {
@@ -8433,8 +9219,8 @@
   "fields": {
     "report": 2,
     "frame": 0,
-    "type": "extra_annotation",
-    "importance": "error"
+    "type": "low_overlap",
+    "importance": "warning"
   }
 },
 {
@@ -8443,8 +9229,8 @@
   "fields": {
     "report": 2,
     "frame": 0,
-    "type": "extra_annotation",
-    "importance": "error"
+    "type": "low_overlap",
+    "importance": "warning"
   }
 },
 {
@@ -8453,8 +9239,8 @@
   "fields": {
     "report": 2,
     "frame": 0,
-    "type": "extra_annotation",
-    "importance": "error"
+    "type": "low_overlap",
+    "importance": "warning"
   }
 },
 {
@@ -8463,7 +9249,7 @@
   "fields": {
     "report": 2,
     "frame": 0,
-    "type": "extra_annotation",
+    "type": "missing_annotation",
     "importance": "error"
   }
 },
@@ -8473,13 +9259,123 @@
   "fields": {
     "report": 2,
     "frame": 0,
-    "type": "extra_annotation",
+    "type": "missing_annotation",
     "importance": "error"
   }
 },
 {
   "model": "quality_control.annotationconflict",
   "pk": 9,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "missing_annotation",
+    "importance": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 10,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "extra_annotation",
+    "importance": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 11,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "extra_annotation",
+    "importance": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 12,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "extra_annotation",
+    "importance": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 13,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "extra_annotation",
+    "importance": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 14,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "extra_annotation",
+    "importance": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 15,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "extra_annotation",
+    "importance": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 16,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "extra_annotation",
+    "importance": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 17,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "extra_annotation",
+    "importance": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 18,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "extra_annotation",
+    "importance": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 19,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "extra_annotation",
+    "importance": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 20,
   "fields": {
     "report": 2,
     "frame": 0,
@@ -8489,7 +9385,27 @@
 },
 {
   "model": "quality_control.annotationconflict",
-  "pk": 10,
+  "pk": 21,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "mismatching_label",
+    "importance": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 22,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "mismatching_label",
+    "importance": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 23,
   "fields": {
     "report": 2,
     "frame": 0,
@@ -8499,7 +9415,7 @@
 },
 {
   "model": "quality_control.annotationconflict",
-  "pk": 11,
+  "pk": 24,
   "fields": {
     "report": 2,
     "frame": 0,
@@ -8509,7 +9425,77 @@
 },
 {
   "model": "quality_control.annotationconflict",
-  "pk": 12,
+  "pk": 25,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "mismatching_attributes",
+    "importance": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 26,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "mismatching_groups",
+    "importance": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 27,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "mismatching_groups",
+    "importance": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 28,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "mismatching_groups",
+    "importance": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 29,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "mismatching_groups",
+    "importance": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 30,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "mismatching_groups",
+    "importance": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 31,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "mismatching_groups",
+    "importance": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 32,
   "fields": {
     "report": 2,
     "frame": 1,
@@ -8519,7 +9505,7 @@
 },
 {
   "model": "quality_control.annotationconflict",
-  "pk": 13,
+  "pk": 33,
   "fields": {
     "report": 2,
     "frame": 1,
@@ -8529,7 +9515,7 @@
 },
 {
   "model": "quality_control.annotationconflict",
-  "pk": 14,
+  "pk": 34,
   "fields": {
     "report": 2,
     "frame": 1,
@@ -8539,7 +9525,7 @@
 },
 {
   "model": "quality_control.annotationconflict",
-  "pk": 15,
+  "pk": 35,
   "fields": {
     "report": 2,
     "frame": 1,
@@ -8549,7 +9535,7 @@
 },
 {
   "model": "quality_control.annotationconflict",
-  "pk": 16,
+  "pk": 36,
   "fields": {
     "report": 2,
     "frame": 1,
@@ -8559,7 +9545,7 @@
 },
 {
   "model": "quality_control.annotationconflict",
-  "pk": 17,
+  "pk": 37,
   "fields": {
     "report": 2,
     "frame": 1,
@@ -8572,7 +9558,7 @@
   "pk": 1,
   "fields": {
     "conflict": 1,
-    "obj_id": 581,
+    "obj_id": 664,
     "job_id": 27,
     "type": "rectangle"
   }
@@ -8582,7 +9568,7 @@
   "pk": 2,
   "fields": {
     "conflict": 1,
-    "obj_id": 550,
+    "obj_id": 624,
     "job_id": 28,
     "type": "rectangle"
   }
@@ -8592,9 +9578,9 @@
   "pk": 3,
   "fields": {
     "conflict": 2,
-    "obj_id": 584,
+    "obj_id": 638,
     "job_id": 27,
-    "type": "polygon"
+    "type": "rectangle"
   }
 },
 {
@@ -8602,9 +9588,9 @@
   "pk": 4,
   "fields": {
     "conflict": 2,
-    "obj_id": 547,
+    "obj_id": 607,
     "job_id": 28,
-    "type": "polygon"
+    "type": "rectangle"
   }
 },
 {
@@ -8612,9 +9598,9 @@
   "pk": 5,
   "fields": {
     "conflict": 3,
-    "obj_id": 583,
+    "obj_id": 661,
     "job_id": 27,
-    "type": "polyline"
+    "type": "points"
   }
 },
 {
@@ -8622,9 +9608,9 @@
   "pk": 6,
   "fields": {
     "conflict": 3,
-    "obj_id": 548,
+    "obj_id": 608,
     "job_id": 28,
-    "type": "polyline"
+    "type": "points"
   }
 },
 {
@@ -8632,18 +9618,18 @@
   "pk": 7,
   "fields": {
     "conflict": 4,
-    "obj_id": 587,
+    "obj_id": 641,
     "job_id": 27,
-    "type": "rectangle"
+    "type": "polygon"
   }
 },
 {
   "model": "quality_control.annotationid",
   "pk": 8,
   "fields": {
-    "conflict": 5,
-    "obj_id": 601,
-    "job_id": 27,
+    "conflict": 4,
+    "obj_id": 604,
+    "job_id": 28,
     "type": "polygon"
   }
 },
@@ -8651,19 +9637,19 @@
   "model": "quality_control.annotationid",
   "pk": 9,
   "fields": {
-    "conflict": 6,
-    "obj_id": 602,
+    "conflict": 5,
+    "obj_id": 640,
     "job_id": 27,
-    "type": "polygon"
+    "type": "polyline"
   }
 },
 {
   "model": "quality_control.annotationid",
   "pk": 10,
   "fields": {
-    "conflict": 7,
-    "obj_id": 582,
-    "job_id": 27,
+    "conflict": 5,
+    "obj_id": 605,
+    "job_id": 28,
     "type": "polyline"
   }
 },
@@ -8671,69 +9657,69 @@
   "model": "quality_control.annotationid",
   "pk": 11,
   "fields": {
-    "conflict": 8,
-    "obj_id": 580,
+    "conflict": 6,
+    "obj_id": 665,
     "job_id": 27,
-    "type": "polyline"
+    "type": "points"
   }
 },
 {
   "model": "quality_control.annotationid",
   "pk": 12,
   "fields": {
-    "conflict": 9,
-    "obj_id": 585,
-    "job_id": 27,
-    "type": "mask"
+    "conflict": 6,
+    "obj_id": 625,
+    "job_id": 28,
+    "type": "points"
   }
 },
 {
   "model": "quality_control.annotationid",
   "pk": 13,
   "fields": {
-    "conflict": 9,
-    "obj_id": 546,
+    "conflict": 7,
+    "obj_id": 613,
     "job_id": 28,
-    "type": "polygon"
+    "type": "rectangle"
   }
 },
 {
   "model": "quality_control.annotationid",
   "pk": 14,
   "fields": {
-    "conflict": 10,
-    "obj_id": 583,
-    "job_id": 27,
-    "type": "polyline"
+    "conflict": 8,
+    "obj_id": 627,
+    "job_id": 28,
+    "type": "points"
   }
 },
 {
   "model": "quality_control.annotationid",
   "pk": 15,
   "fields": {
-    "conflict": 10,
-    "obj_id": 548,
+    "conflict": 9,
+    "obj_id": 628,
     "job_id": 28,
-    "type": "polyline"
+    "type": "points"
   }
 },
 {
   "model": "quality_control.annotationid",
   "pk": 16,
   "fields": {
-    "conflict": 11,
-    "obj_id": 585,
+    "conflict": 10,
+    "obj_id": 644,
     "job_id": 27,
-    "type": "mask"
+    "type": "rectangle"
   }
 },
 {
   "model": "quality_control.annotationid",
   "pk": 17,
   "fields": {
-    "conflict": 12,
-    "obj_id": 579,
-    "job_id": 28,
+    "conflict": 11,
+    "obj_id": 660,
+    "job_id": 27,
     "type": "rectangle"
   }
 },
@@ -8741,9 +9727,9 @@
   "model": "quality_control.annotationid",
   "pk": 18,
   "fields": {
-    "conflict": 13,
-    "obj_id": 577,
-    "job_id": 28,
+    "conflict": 12,
+    "obj_id": 666,
+    "job_id": 27,
     "type": "points"
   }
 },
@@ -8751,9 +9737,9 @@
   "model": "quality_control.annotationid",
   "pk": 19,
   "fields": {
-    "conflict": 14,
-    "obj_id": 573,
-    "job_id": 28,
+    "conflict": 13,
+    "obj_id": 658,
+    "job_id": 27,
     "type": "polygon"
   }
 },
@@ -8761,28 +9747,348 @@
   "model": "quality_control.annotationid",
   "pk": 20,
   "fields": {
-    "conflict": 15,
-    "obj_id": 576,
-    "job_id": 28,
-    "type": "mask"
+    "conflict": 14,
+    "obj_id": 668,
+    "job_id": 27,
+    "type": "polygon"
   }
 },
 {
   "model": "quality_control.annotationid",
   "pk": 21,
   "fields": {
-    "conflict": 16,
-    "obj_id": 574,
-    "job_id": 28,
-    "type": "ellipse"
+    "conflict": 15,
+    "obj_id": 659,
+    "job_id": 27,
+    "type": "polygon"
   }
 },
 {
   "model": "quality_control.annotationid",
   "pk": 22,
   "fields": {
+    "conflict": 16,
+    "obj_id": 669,
+    "job_id": 27,
+    "type": "ellipse"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 23,
+  "fields": {
     "conflict": 17,
-    "obj_id": 578,
+    "obj_id": 637,
+    "job_id": 27,
+    "type": "polyline"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 24,
+  "fields": {
+    "conflict": 18,
+    "obj_id": 639,
+    "job_id": 27,
+    "type": "polyline"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 25,
+  "fields": {
+    "conflict": 19,
+    "obj_id": 667,
+    "job_id": 27,
+    "type": "polyline"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 26,
+  "fields": {
+    "conflict": 20,
+    "obj_id": 662,
+    "job_id": 27,
+    "type": "points"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 27,
+  "fields": {
+    "conflict": 20,
+    "obj_id": 629,
+    "job_id": 28,
+    "type": "points"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 28,
+  "fields": {
+    "conflict": 21,
+    "obj_id": 665,
+    "job_id": 27,
+    "type": "points"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 29,
+  "fields": {
+    "conflict": 21,
+    "obj_id": 625,
+    "job_id": 28,
+    "type": "points"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 30,
+  "fields": {
+    "conflict": 22,
+    "obj_id": 642,
+    "job_id": 27,
+    "type": "mask"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 31,
+  "fields": {
+    "conflict": 22,
+    "obj_id": 603,
+    "job_id": 28,
+    "type": "polygon"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 32,
+  "fields": {
+    "conflict": 23,
+    "obj_id": 640,
+    "job_id": 27,
+    "type": "polyline"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 33,
+  "fields": {
+    "conflict": 23,
+    "obj_id": 605,
+    "job_id": 28,
+    "type": "polyline"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 34,
+  "fields": {
+    "conflict": 24,
+    "obj_id": 642,
+    "job_id": 27,
+    "type": "mask"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 35,
+  "fields": {
+    "conflict": 25,
+    "obj_id": 671,
+    "job_id": 27,
+    "type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 36,
+  "fields": {
+    "conflict": 25,
+    "obj_id": 670,
+    "job_id": 28,
+    "type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 37,
+  "fields": {
+    "conflict": 26,
+    "obj_id": 652,
+    "job_id": 27,
+    "type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 38,
+  "fields": {
+    "conflict": 26,
+    "obj_id": 611,
+    "job_id": 28,
+    "type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 39,
+  "fields": {
+    "conflict": 27,
+    "obj_id": 656,
+    "job_id": 27,
+    "type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 40,
+  "fields": {
+    "conflict": 27,
+    "obj_id": 612,
+    "job_id": 28,
+    "type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 41,
+  "fields": {
+    "conflict": 28,
+    "obj_id": 646,
+    "job_id": 27,
+    "type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 42,
+  "fields": {
+    "conflict": 28,
+    "obj_id": 620,
+    "job_id": 28,
+    "type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 43,
+  "fields": {
+    "conflict": 29,
+    "obj_id": 649,
+    "job_id": 27,
+    "type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 44,
+  "fields": {
+    "conflict": 29,
+    "obj_id": 617,
+    "job_id": 28,
+    "type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 45,
+  "fields": {
+    "conflict": 30,
+    "obj_id": 650,
+    "job_id": 27,
+    "type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 46,
+  "fields": {
+    "conflict": 30,
+    "obj_id": 610,
+    "job_id": 28,
+    "type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 47,
+  "fields": {
+    "conflict": 31,
+    "obj_id": 651,
+    "job_id": 27,
+    "type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 48,
+  "fields": {
+    "conflict": 31,
+    "obj_id": 609,
+    "job_id": 28,
+    "type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 49,
+  "fields": {
+    "conflict": 32,
+    "obj_id": 636,
+    "job_id": 28,
+    "type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 50,
+  "fields": {
+    "conflict": 33,
+    "obj_id": 634,
+    "job_id": 28,
+    "type": "points"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 51,
+  "fields": {
+    "conflict": 34,
+    "obj_id": 630,
+    "job_id": 28,
+    "type": "polygon"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 52,
+  "fields": {
+    "conflict": 35,
+    "obj_id": 633,
+    "job_id": 28,
+    "type": "mask"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 53,
+  "fields": {
+    "conflict": 36,
+    "obj_id": 631,
+    "job_id": 28,
+    "type": "ellipse"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 54,
+  "fields": {
+    "conflict": 37,
+    "obj_id": 635,
     "job_id": 28,
     "type": "polyline"
   }

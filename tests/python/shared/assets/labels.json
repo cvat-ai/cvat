@@ -701,7 +701,18 @@
       "type": "any"
     },
     {
-      "attributes": [],
+      "attributes": [
+        {
+          "default_value": "false",
+          "id": 13,
+          "input_type": "checkbox",
+          "mutable": false,
+          "name": "a1",
+          "values": [
+            "false"
+          ]
+        }
+      ],
       "color": "#406040",
       "has_parent": false,
       "id": 64,

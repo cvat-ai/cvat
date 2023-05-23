@@ -22,14 +22,14 @@
       },
       "mode": "annotation",
       "project_id": null,
-      "stage": "annotation",
+      "stage": "acceptance",
       "start_frame": 0,
-      "state": "in progress",
-      "status": "annotation",
+      "state": "completed",
+      "status": "validation",
       "stop_frame": 10,
       "task_id": 22,
       "type": "ground_truth",
-      "updated_date": "2023-04-14T15:03:25.984000Z",
+      "updated_date": "2023-05-23T14:44:02.697000Z",
       "url": "http://localhost:8080/api/jobs/28"
     },
     {
@@ -58,7 +58,7 @@
       "stop_frame": 10,
       "task_id": 22,
       "type": "annotation",
-      "updated_date": "2023-04-14T14:58:50.944000Z",
+      "updated_date": "2023-05-23T14:45:08.385000Z",
       "url": "http://localhost:8080/api/jobs/27"
     },
     {

@@ -1405,43 +1405,160 @@
     "27": {
       "shapes": [
         {
-          "attributes": [],
+          "attributes": [
+            {
+              "spec_id": 13,
+              "value": "true"
+            }
+          ],
           "elements": [],
           "frame": 0,
           "group": 0,
-          "id": 601,
+          "id": 671,
           "label_id": 64,
           "occluded": false,
           "outside": false,
           "points": [
-            618.23,
-            215.13,
-            688.33,
-            284.53,
-            690.25,
-            278.64,
-            626.1,
-            206.7
+            349.3662109375,
+            38.5166015625,
+            376.846017166401,
+            64.03356448933664
           ],
           "rotation": 0.0,
           "source": "manual",
-          "type": "polygon",
-          "z_order": 3
+          "type": "rectangle",
+          "z_order": 4
         },
         {
           "attributes": [],
           "elements": [],
           "frame": 0,
-          "group": 3,
-          "id": 582,
+          "group": 17,
+          "id": 664,
           "label_id": 63,
           "occluded": false,
           "outside": false,
           "points": [
-            414.14,
-            256.39,
-            467.14,
-            255.08
+            34.66,
+            268.17,
+            75.22,
+            324.44
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 4
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 16,
+          "id": 647,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            147.9,
+            45.42,
+            171.4,
+            70.3
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 1
+        },
+        {
+          "attributes": [
+            {
+              "spec_id": 13,
+              "value": "false"
+            }
+          ],
+          "elements": [],
+          "frame": 0,
+          "group": 17,
+          "id": 665,
+          "label_id": 64,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            50.36,
+            283.87
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "points",
+          "z_order": 4
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 667,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            43.16,
+            178.53,
+            59.52,
+            190.96,
+            71.3,
+            177.22,
+            100.08,
+            167.41
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "polyline",
+          "z_order": 4
+        },
+        {
+          "attributes": [
+            {
+              "spec_id": 13,
+              "value": "false"
+            }
+          ],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 662,
+          "label_id": 64,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            225.71,
+            314.62
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "points",
+          "z_order": 4
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 4,
+          "id": 640,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            210.0,
+            274.06,
+            240.1,
+            258.35,
+            267.1,
+            266.4,
+            278.7,
+            261.63,
+            281.32,
+            253.78
           ],
           "rotation": 0.0,
           "source": "manual",
@@ -1449,79 +1566,76 @@
           "z_order": 0
         },
         {
-          "attributes": [],
+          "attributes": [
+            {
+              "spec_id": 13,
+              "value": "false"
+            }
+          ],
           "elements": [],
           "frame": 0,
           "group": 0,
-          "id": 588,
-          "label_id": 63,
+          "id": 644,
+          "label_id": 64,
           "occluded": false,
           "outside": false,
           "points": [
-            673.2,
-            222.4,
-            693.52,
-            240.04,
-            647.8,
-            287.2,
-            620.89,
-            266.86
+            459.5,
+            81.9,
+            545.8,
+            155.8
           ],
           "rotation": 0.0,
           "source": "manual",
-          "type": "polygon",
+          "type": "rectangle",
           "z_order": 1
         },
         {
           "attributes": [],
           "elements": [],
           "frame": 0,
-          "group": 1,
-          "id": 581,
+          "group": 11,
+          "id": 655,
           "label_id": 63,
           "occluded": false,
           "outside": false,
           "points": [
-            109.62,
-            93.68,
-            150.75,
-            154.71
+            681.09,
+            13.0,
+            711.3,
+            43.2
           ],
-          "rotation": 118.4,
+          "rotation": 0.0,
           "source": "manual",
           "type": "rectangle",
-          "z_order": 0
+          "z_order": 1
         },
         {
           "attributes": [],
           "elements": [],
           "frame": 0,
-          "group": 0,
-          "id": 600,
+          "group": 7,
+          "id": 651,
           "label_id": 63,
           "occluded": false,
           "outside": false,
           "points": [
-            502.5,
-            319.9,
-            635.3,
-            319.9,
-            651.0,
-            374.7,
-            499.9,
-            375.5
+            113.8,
+            17.6,
+            138.65,
+            40.47
           ],
           "rotation": 0.0,
           "source": "manual",
-          "type": "polygon",
-          "z_order": 3
+          "type": "rectangle",
+          "z_order": 1
         },
         {
           "attributes": [],
           "elements": [],
           "frame": 0,
           "group": 2,
-          "id": 585,
+          "id": 642,
           "label_id": 63,
           "occluded": false,
           "outside": false,
@@ -1664,15 +1778,77 @@
           "elements": [],
           "frame": 0,
           "group": 0,
-          "id": 587,
-          "label_id": 64,
+          "id": 661,
+          "label_id": 63,
           "occluded": false,
           "outside": false,
           "points": [
-            459.5,
-            81.9,
-            545.8,
-            155.8
+            361.0,
+            302.1,
+            368.9,
+            316.0,
+            348.1,
+            318.6
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "points",
+          "z_order": 4
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 12,
+          "id": 656,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            212.62,
+            18.92,
+            236.8,
+            42.5
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 1
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 11,
+          "id": 653,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            603.9,
+            13.65,
+            632.67,
+            42.4
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 1
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 11,
+          "id": 654,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            641.2,
+            13.0,
+            670.65,
+            42.5
           ],
           "rotation": 0.0,
           "source": "manual",
@@ -1684,7 +1860,7 @@
           "elements": [],
           "frame": 0,
           "group": 6,
-          "id": 586,
+          "id": 643,
           "label_id": 63,
           "occluded": false,
           "outside": false,
@@ -1704,7 +1880,7 @@
           "elements": [],
           "frame": 0,
           "group": 3,
-          "id": 580,
+          "id": 637,
           "label_id": 63,
           "occluded": false,
           "outside": false,
@@ -1723,34 +1899,88 @@
           "attributes": [],
           "elements": [],
           "frame": 0,
-          "group": 4,
-          "id": 583,
+          "group": 1,
+          "id": 638,
           "label_id": 63,
           "occluded": false,
           "outside": false,
           "points": [
-            210.0,
-            274.06,
-            240.1,
-            258.35,
-            267.1,
-            266.4,
-            278.7,
-            261.63,
-            281.32,
-            253.78
+            109.62,
+            93.68,
+            150.75,
+            154.71
           ],
-          "rotation": 0.0,
+          "rotation": 118.4,
           "source": "manual",
-          "type": "polyline",
+          "type": "rectangle",
           "z_order": 0
         },
         {
           "attributes": [],
           "elements": [],
           "frame": 0,
+          "group": 7,
+          "id": 652,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            179.91,
+            18.22,
+            203.4,
+            41.8
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 1
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 15,
+          "id": 646,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            213.97,
+            46.73,
+            239.5,
+            72.3
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 1
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 669,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            216.57,
+            208.01,
+            252.56,
+            191.65
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "ellipse",
+          "z_order": 4
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
           "group": 5,
-          "id": 584,
+          "id": 641,
           "label_id": 63,
           "occluded": false,
           "outside": false,
@@ -1773,8 +2003,230 @@
           "attributes": [],
           "elements": [],
           "frame": 0,
+          "group": 3,
+          "id": 639,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            414.14,
+            256.39,
+            467.14,
+            255.08
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "polyline",
+          "z_order": 0
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
           "group": 0,
-          "id": 602,
+          "id": 660,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            310.76,
+            196.2,
+            339.55,
+            228.91
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 4
+        },
+        {
+          "attributes": [
+            {
+              "spec_id": 13,
+              "value": "false"
+            }
+          ],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 658,
+          "label_id": 64,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            618.23,
+            215.13,
+            688.33,
+            284.53,
+            690.25,
+            278.64,
+            626.1,
+            206.7
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "polygon",
+          "z_order": 3
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 16,
+          "id": 648,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            179.94,
+            46.08,
+            206.0,
+            72.8
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 1
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 17,
+          "id": 663,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            60.83,
+            302.19
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "points",
+          "z_order": 4
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 12,
+          "id": 650,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            147.85,
+            17.61,
+            170.15,
+            39.87
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 1
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 666,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            138.0,
+            339.5,
+            155.0,
+            338.8
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "points",
+          "z_order": 4
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 668,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            101.39,
+            200.78,
+            135.42,
+            214.52,
+            117.75,
+            248.54,
+            85.04,
+            235.46,
+            73.26,
+            204.05
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "polygon",
+          "z_order": 4
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 645,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            673.2,
+            222.4,
+            693.52,
+            240.04,
+            647.8,
+            287.2,
+            620.89,
+            266.86
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "polygon",
+          "z_order": 1
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 16,
+          "id": 649,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            113.8,
+            45.4,
+            137.38,
+            69.0
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 1
+        },
+        {
+          "attributes": [
+            {
+              "spec_id": 13,
+              "value": "false"
+            }
+          ],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 659,
           "label_id": 64,
           "occluded": false,
           "outside": false,
@@ -1792,6 +2244,30 @@
           "source": "manual",
           "type": "polygon",
           "z_order": 4
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 657,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            502.5,
+            319.9,
+            635.3,
+            319.9,
+            651.0,
+            374.7,
+            499.9,
+            375.5
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "polygon",
+          "z_order": 3
         }
       ],
       "tags": [],
@@ -1804,40 +2280,36 @@
           "attributes": [],
           "elements": [],
           "frame": 0,
-          "group": 0,
-          "id": 548,
+          "group": 3,
+          "id": 615,
           "label_id": 63,
           "occluded": false,
           "outside": false,
           "points": [
-            284.59,
-            248.54,
-            264.96,
-            261.63,
-            242.72,
-            251.16,
-            219.16,
-            270.79
+            643.8,
+            12.35,
+            671.9,
+            43.8
           ],
           "rotation": 0.0,
           "source": "manual",
-          "type": "polyline",
+          "type": "rectangle",
           "z_order": 0
         },
         {
           "attributes": [],
           "elements": [],
           "frame": 0,
-          "group": 0,
-          "id": 550,
+          "group": 4,
+          "id": 619,
           "label_id": 63,
           "occluded": false,
           "outside": false,
           "points": [
-            107.28,
-            91.51,
-            152.43,
-            154.32
+            181.22,
+            47.68,
+            205.42,
+            73.85
           ],
           "rotation": 0.0,
           "source": "manual",
@@ -1849,7 +2321,134 @@
           "elements": [],
           "frame": 0,
           "group": 0,
-          "id": 549,
+          "id": 608,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            362.45,
+            298.92,
+            345.44,
+            317.24,
+            368.99,
+            315.93
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "points",
+          "z_order": 0
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 2,
+          "id": 611,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            180.56,
+            19.54,
+            202.14,
+            41.77
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 0
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 4,
+          "id": 618,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            147.85,
+            47.02,
+            172.06,
+            72.54
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 0
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 2,
+          "id": 612,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            213.28,
+            18.23,
+            236.82,
+            44.37
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 0
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 3,
+          "id": 616,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            681.09,
+            14.31,
+            711.8,
+            43.8
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 0
+        },
+        {
+          "attributes": [
+            {
+              "spec_id": 13,
+              "value": "false"
+            }
+          ],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 670,
+          "label_id": 64,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            349.36595443747683,
+            35.89987909780575,
+            377.50004176706534,
+            64.68824752808177
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 0
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 606,
           "label_id": 63,
           "occluded": false,
           "outside": false,
@@ -1872,22 +2471,217 @@
           "attributes": [],
           "elements": [],
           "frame": 0,
-          "group": 0,
-          "id": 547,
+          "group": 4,
+          "id": 620,
           "label_id": 63,
           "occluded": false,
           "outside": false,
           "points": [
-            227.02,
+            213.28,
+            47.68,
+            238.14,
+            73.85
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 0
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 3,
+          "id": 614,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            603.9,
+            13.65,
+            632.01,
+            43.1
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 0
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 617,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            112.52,
+            47.02,
+            138.03,
+            69.92
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 0
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 629,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            225.0,
+            315.2
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "points",
+          "z_order": 0
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 7,
+          "id": 624,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            37.27,
+            267.52,
+            83.07,
+            328.36
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 0
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 7,
+          "id": 626,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            64.75,
+            302.19
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "points",
+          "z_order": 0
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 7,
+          "id": 627,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            47.74,
+            309.39
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "points",
+          "z_order": 0
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 1,
+          "id": 610,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            147.85,
+            18.89,
+            170.06,
+            42.41
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 0
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 1,
+          "id": 609,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            113.83,
+            18.23,
+            136.07,
+            40.5
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 0
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 7,
+          "id": 625,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            46.43,
+            290.42
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "points",
+          "z_order": 0
+        },
+        {
+          "attributes": [
+            {
+              "spec_id": 13,
+              "value": "false"
+            }
+          ],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 603,
+          "label_id": 64,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            455.36,
             88.24,
-            223.74,
+            463.21,
+            158.9,
+            545.65,
             155.63,
-            297.02,
-            156.94,
-            299.64,
-            84.97,
-            261.04,
-            128.81
+            536.49,
+            84.97
           ],
           "rotation": 0.0,
           "source": "manual",
@@ -1899,7 +2693,31 @@
           "elements": [],
           "frame": 0,
           "group": 5,
-          "id": 566,
+          "id": 622,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            672.58,
+            219.1,
+            692.21,
+            239.38,
+            671.27,
+            257.7,
+            655.57,
+            239.38
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "polygon",
+          "z_order": 0
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 5,
+          "id": 623,
           "label_id": 63,
           "occluded": false,
           "outside": false,
@@ -1984,47 +2802,72 @@
           "z_order": 0
         },
         {
-          "attributes": [],
+          "attributes": [
+            {
+              "spec_id": 13,
+              "value": "false"
+            }
+          ],
           "elements": [],
           "frame": 0,
           "group": 0,
-          "id": 546,
+          "id": 628,
           "label_id": 64,
           "occluded": false,
           "outside": false,
           "points": [
-            455.36,
-            88.24,
-            463.21,
-            158.9,
-            545.65,
-            155.63,
-            536.49,
-            84.97
+            140.7,
+            338.8
           ],
           "rotation": 0.0,
           "source": "manual",
-          "type": "polygon",
+          "type": "points",
           "z_order": 0
         },
         {
           "attributes": [],
           "elements": [],
           "frame": 0,
-          "group": 5,
-          "id": 565,
+          "group": 0,
+          "id": 605,
           "label_id": 63,
           "occluded": false,
           "outside": false,
           "points": [
-            672.58,
-            219.1,
-            692.21,
-            239.38,
-            671.27,
-            257.7,
-            655.57,
-            239.38
+            284.59,
+            248.54,
+            264.96,
+            261.63,
+            242.72,
+            251.16,
+            219.16,
+            270.79
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "polyline",
+          "z_order": 0
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 604,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            227.02,
+            88.24,
+            223.74,
+            155.63,
+            297.02,
+            156.94,
+            299.64,
+            84.97,
+            261.04,
+            128.81
           ],
           "rotation": 0.0,
           "source": "manual",
@@ -2036,7 +2879,7 @@
           "elements": [],
           "frame": 0,
           "group": 0,
-          "id": 564,
+          "id": 621,
           "label_id": 63,
           "occluded": false,
           "outside": false,
@@ -2058,9 +2901,131 @@
         {
           "attributes": [],
           "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 607,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            107.28,
+            91.51,
+            152.43,
+            154.32
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 0
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 3,
+          "id": 613,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            567.9,
+            14.31,
+            595.37,
+            43.8
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 0
+        },
+        {
+          "attributes": [],
+          "elements": [],
           "frame": 1,
           "group": 0,
-          "id": 576,
+          "id": 630,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            213.08,
+            27.58,
+            242.67,
+            54.96,
+            220.48,
+            73.46,
+            182.0,
+            63.1,
+            165.72,
+            25.36
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "polygon",
+          "z_order": 0
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 1,
+          "group": 0,
+          "id": 635,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            393.61,
+            109.71,
+            417.29,
+            139.31,
+            432.09,
+            123.03,
+            461.68,
+            140.05
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "polyline",
+          "z_order": 0
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 1,
+          "group": 0,
+          "id": 632,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            503.86,
+            51.36,
+            503.86,
+            95.65,
+            574.15,
+            51.26,
+            574.15,
+            95.65,
+            581.18,
+            46.92,
+            581.18,
+            91.11,
+            510.89,
+            46.92,
+            510.89,
+            91.11
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "cuboid",
+          "z_order": 0
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 1,
+          "group": 0,
+          "id": 633,
           "label_id": 63,
           "occluded": false,
           "outside": false,
@@ -2371,19 +3336,23 @@
           "elements": [],
           "frame": 1,
           "group": 0,
-          "id": 574,
+          "id": 634,
           "label_id": 63,
           "occluded": false,
           "outside": false,
           "points": [
-            359.22,
-            57.54,
-            381.79,
-            37.93
+            276.71,
+            105.27,
+            301.12,
+            121.55,
+            273.75,
+            137.09,
+            252.29,
+            122.29
           ],
           "rotation": 0.0,
           "source": "manual",
-          "type": "ellipse",
+          "type": "points",
           "z_order": 0
         },
         {
@@ -2391,7 +3360,7 @@
           "elements": [],
           "frame": 1,
           "group": 0,
-          "id": 579,
+          "id": 636,
           "label_id": 63,
           "occluded": false,
           "outside": false,
@@ -2411,105 +3380,19 @@
           "elements": [],
           "frame": 1,
           "group": 0,
-          "id": 575,
+          "id": 631,
           "label_id": 63,
           "occluded": false,
           "outside": false,
           "points": [
-            503.86,
-            51.36,
-            503.86,
-            95.65,
-            574.15,
-            51.26,
-            574.15,
-            95.65,
-            581.18,
-            46.92,
-            581.18,
-            91.11,
-            510.89,
-            46.92,
-            510.89,
-            91.11
+            359.22,
+            57.54,
+            381.79,
+            37.93
           ],
           "rotation": 0.0,
           "source": "manual",
-          "type": "cuboid",
-          "z_order": 0
-        },
-        {
-          "attributes": [],
-          "elements": [],
-          "frame": 1,
-          "group": 0,
-          "id": 573,
-          "label_id": 63,
-          "occluded": false,
-          "outside": false,
-          "points": [
-            213.08,
-            27.58,
-            242.67,
-            54.96,
-            220.48,
-            73.46,
-            182.0,
-            63.1,
-            165.72,
-            25.36
-          ],
-          "rotation": 0.0,
-          "source": "manual",
-          "type": "polygon",
-          "z_order": 0
-        },
-        {
-          "attributes": [],
-          "elements": [],
-          "frame": 1,
-          "group": 0,
-          "id": 578,
-          "label_id": 63,
-          "occluded": false,
-          "outside": false,
-          "points": [
-            393.61,
-            109.71,
-            417.29,
-            139.31,
-            432.09,
-            123.03,
-            461.68,
-            140.05
-          ],
-          "rotation": 0.0,
-          "source": "manual",
-          "type": "polyline",
-          "z_order": 0
-        },
-        {
-          "attributes": [],
-          "elements": [],
-          "frame": 1,
-          "group": 0,
-          "id": 577,
-          "label_id": 63,
-          "occluded": false,
-          "outside": false,
-          "points": [
-            276.71,
-            105.27,
-            301.12,
-            121.55,
-            273.75,
-            137.09,
-            252.29,
-            122.29
-          ],
-          "rotation": 0.0,
-          "source": "manual",
-          "type": "points",
+          "type": "ellipse",
           "z_order": 0
         }
       ],
@@ -2518,7 +3401,7 @@
           "attributes": [],
           "frame": 0,
           "group": 0,
-          "id": 228,
+          "id": 230,
           "label_id": 63,
           "source": "manual"
         },
@@ -2526,7 +3409,7 @@
           "attributes": [],
           "frame": 1,
           "group": 0,
-          "id": 229,
+          "id": 231,
           "label_id": 63,
           "source": "manual"
         }
@@ -3982,43 +4865,160 @@
     "22": {
       "shapes": [
         {
-          "attributes": [],
+          "attributes": [
+            {
+              "spec_id": 13,
+              "value": "true"
+            }
+          ],
           "elements": [],
           "frame": 0,
           "group": 0,
-          "id": 601,
+          "id": 671,
           "label_id": 64,
           "occluded": false,
           "outside": false,
           "points": [
-            618.23,
-            215.13,
-            688.33,
-            284.53,
-            690.25,
-            278.64,
-            626.1,
-            206.7
+            349.3662109375,
+            38.5166015625,
+            376.846017166401,
+            64.03356448933664
           ],
           "rotation": 0.0,
           "source": "manual",
-          "type": "polygon",
-          "z_order": 3
+          "type": "rectangle",
+          "z_order": 4
         },
         {
           "attributes": [],
           "elements": [],
           "frame": 0,
-          "group": 3,
-          "id": 582,
+          "group": 17,
+          "id": 664,
           "label_id": 63,
           "occluded": false,
           "outside": false,
           "points": [
-            414.14,
-            256.39,
-            467.14,
-            255.08
+            34.66,
+            268.17,
+            75.22,
+            324.44
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 4
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 16,
+          "id": 647,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            147.9,
+            45.42,
+            171.4,
+            70.3
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 1
+        },
+        {
+          "attributes": [
+            {
+              "spec_id": 13,
+              "value": "false"
+            }
+          ],
+          "elements": [],
+          "frame": 0,
+          "group": 17,
+          "id": 665,
+          "label_id": 64,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            50.36,
+            283.87
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "points",
+          "z_order": 4
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 667,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            43.16,
+            178.53,
+            59.52,
+            190.96,
+            71.3,
+            177.22,
+            100.08,
+            167.41
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "polyline",
+          "z_order": 4
+        },
+        {
+          "attributes": [
+            {
+              "spec_id": 13,
+              "value": "false"
+            }
+          ],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 662,
+          "label_id": 64,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            225.71,
+            314.62
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "points",
+          "z_order": 4
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 4,
+          "id": 640,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            210.0,
+            274.06,
+            240.1,
+            258.35,
+            267.1,
+            266.4,
+            278.7,
+            261.63,
+            281.32,
+            253.78
           ],
           "rotation": 0.0,
           "source": "manual",
@@ -4026,79 +5026,76 @@
           "z_order": 0
         },
         {
-          "attributes": [],
+          "attributes": [
+            {
+              "spec_id": 13,
+              "value": "false"
+            }
+          ],
           "elements": [],
           "frame": 0,
           "group": 0,
-          "id": 588,
-          "label_id": 63,
+          "id": 644,
+          "label_id": 64,
           "occluded": false,
           "outside": false,
           "points": [
-            673.2,
-            222.4,
-            693.52,
-            240.04,
-            647.8,
-            287.2,
-            620.89,
-            266.86
+            459.5,
+            81.9,
+            545.8,
+            155.8
           ],
           "rotation": 0.0,
           "source": "manual",
-          "type": "polygon",
+          "type": "rectangle",
           "z_order": 1
         },
         {
           "attributes": [],
           "elements": [],
           "frame": 0,
-          "group": 1,
-          "id": 581,
+          "group": 11,
+          "id": 655,
           "label_id": 63,
           "occluded": false,
           "outside": false,
           "points": [
-            109.62,
-            93.68,
-            150.75,
-            154.71
+            681.09,
+            13.0,
+            711.3,
+            43.2
           ],
-          "rotation": 118.4,
+          "rotation": 0.0,
           "source": "manual",
           "type": "rectangle",
-          "z_order": 0
+          "z_order": 1
         },
         {
           "attributes": [],
           "elements": [],
           "frame": 0,
-          "group": 0,
-          "id": 600,
+          "group": 7,
+          "id": 651,
           "label_id": 63,
           "occluded": false,
           "outside": false,
           "points": [
-            502.5,
-            319.9,
-            635.3,
-            319.9,
-            651.0,
-            374.7,
-            499.9,
-            375.5
+            113.8,
+            17.6,
+            138.65,
+            40.47
           ],
           "rotation": 0.0,
           "source": "manual",
-          "type": "polygon",
-          "z_order": 3
+          "type": "rectangle",
+          "z_order": 1
         },
         {
           "attributes": [],
           "elements": [],
           "frame": 0,
           "group": 2,
-          "id": 585,
+          "id": 642,
           "label_id": 63,
           "occluded": false,
           "outside": false,
@@ -4241,15 +5238,77 @@
           "elements": [],
           "frame": 0,
           "group": 0,
-          "id": 587,
-          "label_id": 64,
+          "id": 661,
+          "label_id": 63,
           "occluded": false,
           "outside": false,
           "points": [
-            459.5,
-            81.9,
-            545.8,
-            155.8
+            361.0,
+            302.1,
+            368.9,
+            316.0,
+            348.1,
+            318.6
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "points",
+          "z_order": 4
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 12,
+          "id": 656,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            212.62,
+            18.92,
+            236.8,
+            42.5
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 1
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 11,
+          "id": 653,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            603.9,
+            13.65,
+            632.67,
+            42.4
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 1
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 11,
+          "id": 654,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            641.2,
+            13.0,
+            670.65,
+            42.5
           ],
           "rotation": 0.0,
           "source": "manual",
@@ -4261,7 +5320,7 @@
           "elements": [],
           "frame": 0,
           "group": 6,
-          "id": 586,
+          "id": 643,
           "label_id": 63,
           "occluded": false,
           "outside": false,
@@ -4281,7 +5340,7 @@
           "elements": [],
           "frame": 0,
           "group": 3,
-          "id": 580,
+          "id": 637,
           "label_id": 63,
           "occluded": false,
           "outside": false,
@@ -4300,34 +5359,88 @@
           "attributes": [],
           "elements": [],
           "frame": 0,
-          "group": 4,
-          "id": 583,
+          "group": 1,
+          "id": 638,
           "label_id": 63,
           "occluded": false,
           "outside": false,
           "points": [
-            210.0,
-            274.06,
-            240.1,
-            258.35,
-            267.1,
-            266.4,
-            278.7,
-            261.63,
-            281.32,
-            253.78
+            109.62,
+            93.68,
+            150.75,
+            154.71
           ],
-          "rotation": 0.0,
+          "rotation": 118.4,
           "source": "manual",
-          "type": "polyline",
+          "type": "rectangle",
           "z_order": 0
         },
         {
           "attributes": [],
           "elements": [],
           "frame": 0,
+          "group": 7,
+          "id": 652,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            179.91,
+            18.22,
+            203.4,
+            41.8
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 1
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 15,
+          "id": 646,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            213.97,
+            46.73,
+            239.5,
+            72.3
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 1
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 669,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            216.57,
+            208.01,
+            252.56,
+            191.65
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "ellipse",
+          "z_order": 4
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
           "group": 5,
-          "id": 584,
+          "id": 641,
           "label_id": 63,
           "occluded": false,
           "outside": false,
@@ -4350,8 +5463,230 @@
           "attributes": [],
           "elements": [],
           "frame": 0,
+          "group": 3,
+          "id": 639,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            414.14,
+            256.39,
+            467.14,
+            255.08
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "polyline",
+          "z_order": 0
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
           "group": 0,
-          "id": 602,
+          "id": 660,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            310.76,
+            196.2,
+            339.55,
+            228.91
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 4
+        },
+        {
+          "attributes": [
+            {
+              "spec_id": 13,
+              "value": "false"
+            }
+          ],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 658,
+          "label_id": 64,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            618.23,
+            215.13,
+            688.33,
+            284.53,
+            690.25,
+            278.64,
+            626.1,
+            206.7
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "polygon",
+          "z_order": 3
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 16,
+          "id": 648,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            179.94,
+            46.08,
+            206.0,
+            72.8
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 1
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 17,
+          "id": 663,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            60.83,
+            302.19
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "points",
+          "z_order": 4
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 12,
+          "id": 650,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            147.85,
+            17.61,
+            170.15,
+            39.87
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 1
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 666,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            138.0,
+            339.5,
+            155.0,
+            338.8
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "points",
+          "z_order": 4
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 668,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            101.39,
+            200.78,
+            135.42,
+            214.52,
+            117.75,
+            248.54,
+            85.04,
+            235.46,
+            73.26,
+            204.05
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "polygon",
+          "z_order": 4
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 645,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            673.2,
+            222.4,
+            693.52,
+            240.04,
+            647.8,
+            287.2,
+            620.89,
+            266.86
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "polygon",
+          "z_order": 1
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 16,
+          "id": 649,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            113.8,
+            45.4,
+            137.38,
+            69.0
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 1
+        },
+        {
+          "attributes": [
+            {
+              "spec_id": 13,
+              "value": "false"
+            }
+          ],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 659,
           "label_id": 64,
           "occluded": false,
           "outside": false,
@@ -4369,6 +5704,30 @@
           "source": "manual",
           "type": "polygon",
           "z_order": 4
+        },
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 657,
+          "label_id": 63,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            502.5,
+            319.9,
+            635.3,
+            319.9,
+            651.0,
+            374.7,
+            499.9,
+            375.5
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "polygon",
+          "z_order": 3
         }
       ],
       "tags": [],

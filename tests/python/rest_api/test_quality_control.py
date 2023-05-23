@@ -210,19 +210,6 @@ class TestGetQualityReports(_PermissionTestBase):
 
         return response
 
-    @pytest.mark.parametrize("target", ["task", "job"])
-    def test_can_get_full_report_data(self, admin_user, target, quality_reports):
-        report = next(r for r in quality_reports if (r["job_id"] is not None) == (target == "job"))
-        report_id = report["id"]
-
-        with make_api_client(admin_user) as api_client:
-            (report_data, response) = api_client.quality_api.retrieve_report_data(report_id)
-            assert response.status == HTTPStatus.OK
-
-        # Just check several keys exist
-        for key in ["parameters", "comparison_summary", "frame_results"]:
-            assert key in report_data.keys(), key
-
     @pytest.mark.usefixtures("restore_db_per_function")
     @pytest.mark.parametrize("is_staff, allow", [(True, True), (False, False)])
     def test_user_get_report_in_sandbox_task(
@@ -306,6 +293,129 @@ class TestGetQualityReports(_PermissionTestBase):
             )
         else:
             self._test_get_report_403(user["username"], report["id"], **extra_kwargs)
+
+
+@pytest.mark.usefixtures("restore_db_per_class")
+class TestGetQualityReportData(_PermissionTestBase):
+    def _test_get_report_data_200(
+        self, user: str, obj_id: int, *, expected_data: Optional[Dict[str, Any]] = None, **kwargs
+    ):
+        with make_api_client(user) as api_client:
+            (_, response) = api_client.quality_api.retrieve_report_data(obj_id, **kwargs)
+            assert response.status == HTTPStatus.OK
+
+        if expected_data is not None:
+            assert DeepDiff(expected_data, json.loads(response.data), ignore_order=True) == {}
+
+        return response
+
+    def _test_get_report_data_403(self, user: str, obj_id: int, **kwargs):
+        with make_api_client(user) as api_client:
+            (_, response) = api_client.quality_api.retrieve_report_data(
+                obj_id, **kwargs, _parse_response=False, _check_status=False
+            )
+            assert response.status == HTTPStatus.FORBIDDEN
+
+        return response
+
+    @pytest.mark.parametrize("target", ["task", "job"])
+    def test_can_get_full_report_data(self, admin_user, target, quality_reports):
+        report = next(r for r in quality_reports if (r["job_id"] is not None) == (target == "job"))
+        report_id = report["id"]
+
+        with make_api_client(admin_user) as api_client:
+            (report_data, response) = api_client.quality_api.retrieve_report_data(report_id)
+            assert response.status == HTTPStatus.OK
+
+        # Just check several keys exist
+        for key in ["parameters", "comparison_summary", "frame_results"]:
+            assert key in report_data.keys(), key
+
+    @pytest.mark.usefixtures("restore_db_per_function")
+    @pytest.mark.parametrize("is_staff, allow", [(True, True), (False, False)])
+    def test_user_get_report_data_in_sandbox_task(
+        self, tasks, jobs, users, is_task_staff, is_staff, allow, admin_user
+    ):
+        task = next(
+            t
+            for t in tasks
+            if t["organization"] is None
+            and not users[t["owner"]["id"]]["is_superuser"]
+            and not any(j for j in jobs if j["task_id"] == t["id"] and j["type"] == "ground_truth")
+        )
+
+        if is_staff:
+            user = task["owner"]["username"]
+        else:
+            user = next(u for u in users if not is_task_staff(u["id"], task["id"]))["username"]
+
+        self.create_gt_job(admin_user, task["id"])
+        report = self.create_quality_report(admin_user, task["id"])
+        report_data = json.loads(self._test_get_report_data_200(admin_user, report["id"]).data)
+
+        if allow:
+            self._test_get_report_data_200(user, report["id"], expected_data=report_data)
+        else:
+            self._test_get_report_data_403(user, report["id"])
+
+    @pytest.mark.usefixtures("restore_db_per_function")
+    @pytest.mark.parametrize(
+        "org_role, is_staff, allow",
+        [
+            ("owner", True, True),
+            ("owner", False, True),
+            ("maintainer", True, True),
+            ("maintainer", False, True),
+            ("supervisor", True, True),
+            ("supervisor", False, False),
+            ("worker", True, True),
+            ("worker", False, False),
+        ],
+    )
+    def test_user_get_report_data_in_org_task(
+        self,
+        tasks,
+        jobs,
+        users,
+        is_org_member,
+        is_task_staff,
+        org_role,
+        is_staff,
+        allow,
+        admin_user,
+    ):
+        for user in users:
+            task = next(
+                (
+                    t
+                    for t in tasks
+                    if t["organization"] is not None
+                    and is_task_staff(user["id"], t["id"]) == is_staff
+                    and is_org_member(user["id"], t["organization"], role=org_role)
+                    and not any(
+                        j for j in jobs if j["task_id"] == t["id"] and j["type"] == "ground_truth"
+                    )
+                ),
+                None,
+            )
+            if task is not None:
+                break
+
+        assert task
+
+        org_id = task["organization"]
+        extra_kwargs = {"org_id": org_id}
+
+        self.create_gt_job(admin_user, task["id"])
+        report = self.create_quality_report(admin_user, task["id"])
+        report_data = json.loads(self._test_get_report_data_200(admin_user, report["id"]).data)
+
+        if allow:
+            self._test_get_report_data_200(
+                user["username"], report["id"], expected_data=report_data, **extra_kwargs
+            )
+        else:
+            self._test_get_report_data_403(user["username"], report["id"], **extra_kwargs)
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -750,3 +860,128 @@ class TestPatchSettings(_PermissionTestBase):
             )
         else:
             self._test_patch_settings_403(user["username"], settings_id, data, **extra_kwargs)
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+class TestQualityReportMetrics(_PermissionTestBase):
+    @pytest.mark.parametrize("task_id", [22])
+    def test_report_summary(self, task_id, tasks, jobs, quality_reports):
+        gt_job = next(j for j in jobs if j["task_id"] == task_id and j["type"] == "ground_truth")
+        task = tasks[task_id]
+        report = next(r for r in quality_reports if r["task_id"] == task_id)
+
+        summary = report["summary"]
+        assert 0 < summary["conflict_count"]
+        assert summary["conflict_count"] == sum(summary["conflicts_by_type"].values())
+        assert summary["conflict_count"] == summary["warning_count"] + summary["error_count"]
+        assert 0 < summary["valid_count"]
+        assert summary["valid_count"] < summary["ds_count"]
+        assert summary["valid_count"] < summary["gt_count"]
+        assert summary["frame_count"] == gt_job["frame_count"]
+        assert summary["frame_share_percent"] == summary["frame_count"] / task["size"]
+
+    def test_unmodified_task_produces_the_same_metrics(self, admin_user, quality_reports):
+        old_report = next(r for r in quality_reports if r["task_id"])
+        task_id = old_report["task_id"]
+
+        new_report = self.create_quality_report(admin_user, task_id)
+
+        with make_api_client(admin_user) as api_client:
+            (old_report_data, _) = api_client.quality_api.retrieve_report_data(old_report["id"])
+            (new_report_data, _) = api_client.quality_api.retrieve_report_data(new_report["id"])
+
+        assert (
+            DeepDiff(
+                new_report,
+                old_report,
+                ignore_order=True,
+                exclude_paths=["root['created_date']", "root['id']"],
+            )
+            == {}
+        )
+        assert (
+            DeepDiff(
+                new_report_data,
+                old_report_data,
+                ignore_order=True,
+                exclude_paths=["root['created_date']", "root['id']"],
+            )
+            == {}
+        )
+
+    def test_modified_task_produces_different_metrics(
+        self, admin_user, quality_reports, jobs, labels
+    ):
+        gt_job = next(j for j in jobs if j["type"] == "ground_truth")
+        task_id = gt_job["task_id"]
+        old_report = next(r for r in quality_reports if r["task_id"] == task_id)
+        job_labels = [
+            l
+            for l in labels
+            if l.get("task_id") == task_id
+            or gt_job.get("project_id")
+            and l.get("project_id") == gt_job.get("project_id")
+            if not l["parent_id"]
+        ]
+
+        with make_api_client(admin_user) as api_client:
+            api_client.jobs_api.partial_update_annotations(
+                "update",
+                gt_job["id"],
+                patched_labeled_data_request=dict(
+                    shapes=[
+                        dict(
+                            frame=gt_job["start_frame"],
+                            label_id=job_labels[0]["id"],
+                            type="rectangle",
+                            points=[1, 1, 2, 2],
+                        ),
+                    ],
+                ),
+            )
+
+        new_report = self.create_quality_report(admin_user, task_id)
+        assert new_report["summary"]["conflict_count"] > old_report["summary"]["conflict_count"]
+
+    @pytest.mark.parametrize("task_id", [22])
+    @pytest.mark.parametrize(
+        "parameter",
+        [
+            "check_covered_annotations",
+            "compare_attributes",
+            "compare_groups",
+            "group_match_threshold",
+            "iou_threshold",
+            "line_orientation_threshold",
+            "line_thickness",
+            "low_overlap_threshold",
+            "object_visibility_threshold",
+            "oks_sigma",
+            "oriented_lines",
+            "panoptic_comparison",
+        ],
+    )
+    def test_settings_affect_metrics(
+        self, admin_user, quality_reports, tasks, quality_settings, task_id, parameter
+    ):
+        old_report = next(r for r in quality_reports if r["task_id"])
+        task_id = old_report["task_id"]
+        task = tasks[task_id]
+
+        settings = deepcopy(quality_settings[task["quality_settings"]])
+        if isinstance(settings[parameter], bool):
+            settings[parameter] = not settings[parameter]
+        elif isinstance(settings[parameter], float):
+            settings[parameter] = 1 - settings[parameter]
+            if parameter == "group_match_threshold":
+                settings[parameter] = 0.9
+        else:
+            assert False
+
+        with make_api_client(admin_user) as api_client:
+            api_client.quality_api.partial_update_settings(
+                settings["id"], patched_quality_settings_request=settings
+            )
+
+        new_report = self.create_quality_report(admin_user, task_id)
+        assert new_report["summary"]["conflict_count"] != old_report["summary"]["conflict_count"]
