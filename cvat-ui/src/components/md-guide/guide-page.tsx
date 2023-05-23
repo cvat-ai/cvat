@@ -44,7 +44,7 @@ function GuidePage(): JSX.Element {
         promise.then(([instance]: [Task | Project]) => {
             const { guideId } = instance;
             if (guideId !== null) {
-                return core.guides.get(guideId);
+                return core.guides.get({ id: guideId });
             }
             return Promise.resolve(null);
         }).then((guideInstance: AnnotationGuide | null) => {
@@ -100,8 +100,10 @@ function GuidePage(): JSX.Element {
 
                         setFetching(true);
                         guideInstance.save().then((result: AnnotationGuide) => {
-                            setValue(result.markdown);
-                            setGuide(result);
+                            if (isMounted()) {
+                                setValue(result.markdown);
+                                setGuide(result);
+                            }
                         }).catch((error: any) => {
                             if (isMounted()) {
                                 notification.error({

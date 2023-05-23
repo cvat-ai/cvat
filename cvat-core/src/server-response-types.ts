@@ -179,5 +179,11 @@ export interface SerializedRegister {
 }
 
 export interface SerializedGuide {
-    [index: string]: any;
+    id?: number;
+    task_id: number | null;
+    project_id: number | null;
+    owner: SerializedUser;
+    created_date: string;
+    updated_date: string;
+    markdown: string;
 }

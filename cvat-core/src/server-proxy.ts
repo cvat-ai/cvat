@@ -2157,7 +2157,7 @@ async function getGuide(id: number): Promise<SerializedGuide> {
     }
 }
 
-async function createGuide(data: SerializedGuide): Promise<SerializedGuide> {
+async function createGuide(data: Partial<SerializedGuide>): Promise<SerializedGuide> {
     const { backendAPI } = config;
 
     try {

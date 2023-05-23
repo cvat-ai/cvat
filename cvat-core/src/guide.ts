@@ -55,7 +55,7 @@ class AnnotationGuide {
                 get: () => data.updated_date,
             },
             markdown: {
-                get: () => data.updated_date,
+                get: () => data.markdown,
                 set: (value: string) => {
                     if (typeof value !== 'string') {
                         throw new ArgumentError(`Markdown value must be a string, ${typeof value} received`);
@@ -90,7 +90,7 @@ Object.defineProperties(AnnotationGuide.prototype.save, {
                 throw new DataError('Both projectId and taskId must not be presented for a guide');
             }
 
-            const result = await serverProxy.guides.update(this.id, {
+            const result = await serverProxy.guides.create({
                 task_id: this.taskId,
                 project_id: this.projectId,
                 markdown: this.markdown,

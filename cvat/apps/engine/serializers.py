@@ -901,7 +901,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
     owner = BasicUserSerializer(required=False)
     assignee = BasicUserSerializer(allow_null=True, required=False)
     project_id = serializers.IntegerField(required=False, allow_null=True)
-    guide_id = serializers.IntegerField(required=False, allow_null=True)
+    guide_id = serializers.IntegerField(source='annotation_guide.id', required=False, allow_null=True)
     dimension = serializers.CharField(allow_blank=True, required=False)
     target_storage = StorageSerializer(required=False, allow_null=True)
     source_storage = StorageSerializer(required=False, allow_null=True)
@@ -1116,7 +1116,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 class ProjectReadSerializer(serializers.ModelSerializer):
     owner = BasicUserSerializer(required=False, read_only=True)
     assignee = BasicUserSerializer(allow_null=True, required=False, read_only=True)
-    guide_id = serializers.IntegerField(required=False, allow_null=True)
+    guide_id = serializers.IntegerField(source='annotation_guide.id', required=False, allow_null=True)
     task_subsets = serializers.ListField(child=serializers.CharField(), required=False, read_only=True)
     dimension = serializers.CharField(max_length=16, required=False, read_only=True, allow_null=True)
     target_storage = StorageSerializer(required=False, allow_null=True, read_only=True)
@@ -1862,8 +1862,39 @@ class AnnotationGuideReadSerializer(WriteOnceMixin, serializers.ModelSerializer)
 
 class AnnotationGuideWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     owner = BasicUserSerializer(required=False)
+    project_id = serializers.IntegerField(required=False, allow_null=True)
+    task_id = serializers.IntegerField(required=False, allow_null=True)
+
+    @transaction.atomic
+    def create(self, validated_data):
+        project_id = validated_data.get("project_id", None)
+        task_id = validated_data.get("task_id", None)
+        if project_id is None and task_id is None:
+            raise serializers.ValidationError('One of project_id or task_id must be specified')
+        if project_id is not None and task_id is not None:
+            raise serializers.ValidationError('Both project_id and task_id must not be specified')
+
+        project = None
+        task = None
+        if project_id is not None:
+            try:
+                project = models.Project.objects.get(id=project_id)
+            except models.Project.DoesNotExist:
+                raise serializers.ValidationError(f'The specified project #{project_id} does not exist.')
+            print(project)
+
+            # todo: check patch project permissions
+
+        if task_id is not None:
+            try:
+                task = models.Task.objects.get(id=task_id)
+            except models.Task.DoesNotExist:
+                raise serializers.ValidationError(f'The specified task #{task_id} does not exist.')
+            print(task)
+            # todo: check patch task permissions
+        db_data = models.AnnotationGuide.objects.create(**validated_data, project = project, task = task)
+        return db_data
 
     class Meta:
         model = models.AnnotationGuide
         fields = ('id', 'task_id', 'project_id', 'owner', 'markdown', )
-        write_once_fields = ('id', 'task_id', 'project_id', 'owner', )
