@@ -22,7 +22,6 @@ CVAT_DB_DIR = ASSETS_DIR / "cvat_db"
 PREFIX = "test"
 
 CONTAINER_NAME_FILES = ["docker-compose.tests.yml"]
-OVERRIDE_FILES = ["tests/docker-compose.override.yml"]
 
 DC_FILES = (
     [
@@ -30,9 +29,7 @@ DC_FILES = (
         "tests/docker-compose.file_share.yml",
         "tests/docker-compose.minio.yml",
         "tests/docker-compose.test_servers.yml",
-    ]
-    + CONTAINER_NAME_FILES
-    + OVERRIDE_FILES
+    ] + CONTAINER_NAME_FILES
 )
 
 
@@ -215,7 +212,7 @@ def create_compose_files(container_name_files):
 
             for service_name, service_config in dc_config["services"].items():
                 service_config.pop("container_name", None)
-                if service_name == "cvat_server":
+                if service_name in ("cvat_server", "cvat_utils"):
                     service_env = service_config["environment"]
                     service_env["DJANGO_SETTINGS_MODULE"] = "cvat.settings.testing_rest"
 

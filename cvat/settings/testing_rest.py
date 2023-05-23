@@ -10,3 +10,5 @@ from cvat.settings.production import *
 PASSWORD_HASHERS = [
     "django.contrib.auth.hashers.MD5PasswordHasher",
 ]
+
+RUN_CLEAN_IMPORT_CACHE_FUNC_AFTER = timedelta(seconds=30)
