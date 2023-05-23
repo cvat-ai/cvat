@@ -1,0 +1,20 @@
+comment:
+  layout: "header, diff, components"
+  
+component_management:
+  individual_components:
+    - component_id: cvat-ui
+      name: cvat-ui
+      paths:
+        - cvat-canvas/**
+        - cvat-core/**
+        - cvat-data/**
+        - cvat-ui/**
+    - component_id: cvat-server
+      name: cvat-server
+      paths:
+        - cvat/**
+        - cvat-cli/**
+        - cvat-sdk/**
+        - utils/**
+
