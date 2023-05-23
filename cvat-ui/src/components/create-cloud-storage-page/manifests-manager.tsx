@@ -7,12 +7,13 @@ import React, { useEffect } from 'react';
 import { DeleteOutlined, PlusCircleOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import Button from 'antd/lib/button';
 import Col from 'antd/lib/col';
-import Form, { RuleObject } from 'antd/lib/form';
+import Form from 'antd/lib/form';
 import { FormListFieldData, FormListOperation } from 'antd/lib/form/FormList';
 import Input from 'antd/lib/input';
 import Row from 'antd/lib/row';
 import Tooltip from 'antd/lib/tooltip';
 import config from 'config';
+import { Alert } from 'antd';
 
 interface Props {
     form: any;
@@ -71,19 +72,9 @@ export default function ManifestsManager(props: Props): JSX.Element {
                         </Tooltip>
                     </>
                 )}
-                required
             />
             <Form.List
                 name='manifests'
-                rules={[
-                    {
-                        validator: async (_: RuleObject, names: string[]): Promise<void> => {
-                            if (!names || !names.length) {
-                                throw new Error('Please, specify at least one manifest file');
-                            }
-                        },
-                    },
-                ]}
             >
                 {
                     (fields: FormListFieldData[], _: FormListOperation, { errors }: { errors: React.ReactNode[] }) => (
@@ -135,6 +126,13 @@ export default function ManifestsManager(props: Props): JSX.Element {
                     </Button>
                 </Col>
             </Row>
+            {!manifestNames.length && (
+                <Row>
+                    <Col>
+                        <Alert type='info' message='We highly recommend attaching a manifest file to reduce the number of requests to the bucket.' />
+                    </Col>
+                </Row>
+            )}
         </>
     );
 }

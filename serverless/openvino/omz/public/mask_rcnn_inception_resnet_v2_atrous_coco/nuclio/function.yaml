@@ -2,7 +2,7 @@
 # have enough memory (more than 4GB). Look here how to do that
 # https://stackoverflow.com/questions/44417159/docker-process-killed-with-cryptic-killed-message
 metadata:
-  name: openvino-mask-rcnn-inception-resnet-v2-atrous-coco
+  name: openvino-omz-public-mask-rcnn-inception-resnet-v2-atrous-coco
   namespace: cvat
   annotations:
     name: Mask RCNN
@@ -94,45 +94,13 @@ metadata:
 
 spec:
   description: Mask RCNN inception resnet v2 COCO via Intel OpenVINO
-  runtime: 'python:3.6'
+  runtime: 'python:3.8'
   handler: main:handler
   eventTimeout: 60s
-  env:
-    - name: NUCLIO_PYTHON_EXE_PATH
-      value: /opt/nuclio/common/openvino/python3
-
-  volumes:
-    - volume:
-        name: openvino-common
-        configMap:
-          name: "cvat-nuclio-openvino-common"
-          defaultMode: 0750
-      volumeMount:
-        name: openvino-common
-        mountPath: /opt/nuclio/common/openvino
 
   build:
     image: cvat.openvino.omz.public.mask_rcnn_inception_resnet_v2_atrous_coco
-    baseImage: openvino/ubuntu18_dev:2020.2
-
-    directives:
-      preCopy:
-        - kind: USER
-          value: root
-        - kind: WORKDIR
-          value: /opt/nuclio
-        - kind: RUN
-          value: ln -s /usr/bin/pip3 /usr/bin/pip
-        - kind: RUN
-          value: /opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/downloader.py --name mask_rcnn_inception_resnet_v2_atrous_coco -o /opt/nuclio/open_model_zoo
-        - kind: RUN
-          value: /opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/converter.py --name mask_rcnn_inception_resnet_v2_atrous_coco --precisions FP32 -d /opt/nuclio/open_model_zoo -o /opt/nuclio/open_model_zoo
-
-      postCopy:
-        - kind: RUN
-          value: apt update && DEBIAN_FRONTEND=noninteractive apt install --no-install-recommends -y python3-skimage
-        - kind: RUN
-          value: pip3 install "numpy<1.16.0" # workaround for skimage
+    baseImage: cvat.openvino.omz.public.mask_rcnn_inception_resnet_v2_atrous_coco.base
 
   triggers:
     myHttpTrigger:

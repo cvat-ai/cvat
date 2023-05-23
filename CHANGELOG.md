@@ -7,26 +7,67 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## \[2.5.0] - Unreleased
 ### Added
-- TDB
+- Support share point/cloud storage files and directories that should be excluded when creating a task (server) (<https://github.com/opencv/cvat/pull/6074>)
+- Support task creation with cloud storage/share directories (<https://github.com/opencv/cvat/pull/6074>)
+- Support task creation with any type of data supported by the server by default from cloud storage
+without use_cache option (<https://github.com/opencv/cvat/pull/6074>)
+- Support task creation with cloud storage data and without use_cache option (<https://github.com/opencv/cvat/pull/6074>)
 
 ### Changed
-- Running SAM masks decoder on frontend (<https://github.com/opencv/cvat/pull/6019>)
+- Cloud storage manifest file is optional (<https://github.com/opencv/cvat/pull/6074>)
+
+### Changed
+- Updated Django to 4.2.x version (<https://github.com/opencv/cvat/pull/6122>)
 
 ### Deprecated
-- TDB
+- The endpoint /cloudstorages/{id}/content was deprecated (<https://github.com/opencv/cvat/pull/6074>)
 
 ### Removed
 - TDB
 
 ### Fixed
-- Tracking of multiple objects (30 and more) with TransT tracker
-  (<https://github.com/opencv/cvat/pull/6073>)
-- The issue azure.core.exceptions.ResourceExistsError: The specified blob already exists (<https://github.com/opencv/cvat/pull/6082>)
-- Image scaling when moving between images with different resolution (<https://github.com/opencv/cvat/pull/6081>)
-- Invalid completed job count reporting (<https://github.com/opencv/cvat/issues/6098>)
+- Skeletons dumping on created tasks/projects (<https://github.com/opencv/cvat/pull/6157>)
 
 ### Security
 - TDB
+
+## \[2.4.4] - 2023-05-18
+### Added
+- Introduced a new configuration option for controlling the invocation of Nuclio functions.
+  (<https://github.com/opencv/cvat/pull/6146>)
+
+### Changed
+- Relocated SAM masks decoder to frontend operation.
+  (<https://github.com/opencv/cvat/pull/6019>)
+- Switched `person-reidentification-retail-0300` and `faster_rcnn_inception_v2_coco` Nuclio functions with `person-reidentification-retail-0277` and `faster_rcnn_inception_resnet_v2_atrous_coco` respectively.
+  (<https://github.com/opencv/cvat/pull/6129>)
+- Upgraded OpenVINO-based Nuclio functions to utilize the OpenVINO 2022.3 runtime.
+  (<https://github.com/opencv/cvat/pull/6129>)
+
+### Fixed
+- Resolved issues with tracking multiple objects (30 and more) using the TransT tracker.
+  (<https://github.com/opencv/cvat/pull/6073>)
+- Addressed azure.core.exceptions.ResourceExistsError: The specified blob already exists.
+  (<https://github.com/opencv/cvat/pull/6082>)
+- Corrected image scaling issues when transitioning between images of different resolutions.
+  (<https://github.com/opencv/cvat/pull/6081>)
+- Fixed inaccurate reporting of completed job counts.
+  (<https://github.com/opencv/cvat/issues/6098>)
+- Allowed OpenVINO-based Nuclio functions to be deployed to Kubernetes.
+  (<https://github.com/opencv/cvat/pull/6129>)
+- Improved skeleton size checks after drawing.
+  (<https://github.com/opencv/cvat/pull/6156>)
+- Fixed HRNet CPU serverless function.
+  (<https://github.com/opencv/cvat/pull/6150>)
+- Prevented sending of empty list of events.
+  (<https://github.com/opencv/cvat/pull/6154>)
+
+## \[2.4.3] - 2023-04-24
+### Changed
+- Docker images no longer include Ubuntu package sources or FFmpeg/OpenH264 sources
+  (<https://github.com/opencv/cvat/pull/6040>)
+- TUS chunk size changed from 100 MB to 2 MB
+  (<https://github.com/opencv/cvat/pull/6058>)
 
 ## \[2.4.2] - 2023-04-14
 ### Added
