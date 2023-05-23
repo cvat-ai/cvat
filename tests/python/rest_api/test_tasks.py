@@ -1667,7 +1667,7 @@ class TestImportTaskAnnotations:
             assert response.status == HTTPStatus.NO_CONTENT
 
     # skip test in helm because there is not possible to override default settings for this case
-    @pytest.mark.only_docker_test
+    # @pytest.mark.only_docker_test
     @pytest.mark.timeout(70)
     @pytest.mark.parametrize("successful_upload", [True, False])
     def test_can_import_annotations_after_previous_unclear_import(
@@ -1716,7 +1716,7 @@ class TestImportTaskAnnotations:
         task.import_annotations(self.format, filename)
         self._check_annotations(task_id)
 
-    @pytest.mark.only_docker_test
+    # @pytest.mark.only_docker_test
     @pytest.mark.timeout(70)
     def test_check_import_cache_after_previous_interrupted_upload(self, tasks_with_shapes):
         task_id = tasks_with_shapes[0]["id"]
