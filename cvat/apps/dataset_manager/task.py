@@ -125,35 +125,58 @@ class JobAnnotation:
         if label_id not in self.db_labels:
             raise ValidationError("label_id `{}` is invalid".format(label_id))
 
-    def _update_parent_track(self, child_track, parent_track):
-        # parent track cannot have a frame greater than the frame of the child track
-        # so we need to prevent this situation
-        if parent_track is not None and child_track.frame < parent_track.frame:
-            parent_tracked_shapes = parent_track.trackedshape_set
+    def _add_missing_shape(self, track, first_shape):
+        if first_shape["type"] == "skeleton":
+            # in case with skeleton track we always expect to see one shape in track
+            first_shape["frame"] = track["frame"]
+        else:
+            missing_shape = deepcopy(first_shape)
+            missing_shape["frame"] = track["frame"]
+            missing_shape["outside"] = True
+            track["shapes"].append(missing_shape)
 
-            if parent_tracked_shapes.count() == 1 and parent_tracked_shapes.first().type == "skeleton":
-                skeleton = parent_tracked_shapes.first()
-                skeleton.frame = child_track.frame
-                skeleton.save()
+    def _correct_frame_of_tracked_shapes(self, track):
+        shapes = sorted(track["shapes"], key=lambda a: a["frame"])
+        first_shape = shapes[0] if shapes else None
 
-            parent_track.frame = child_track.frame
+        if first_shape and track["frame"] < first_shape["frame"]:
+            self._add_missing_shape(track, first_shape)
+        elif first_shape and first_shape["frame"] < track["frame"]:
+            track["frame"] = first_shape["frame"]
+
+    def _sync_frames(self, tracks, parent_track):
+        if not tracks:
+            return
+
+        min_frame = tracks[0]["frame"]
+
+        for track in tracks:
+            if parent_track and parent_track.frame < track["frame"]:
+                track["frame"] = parent_track.frame
+
+            # track and its first shape must have the same frame
+            self._correct_frame_of_tracked_shapes(track)
+
+            if track["frame"] < min_frame:
+                min_frame = track["frame"]
+
+        if not parent_track:
+            return
+
+        if min_frame < parent_track.frame:
+            # parent track cannot have a frame greater than the frame of the child track
+            parent_tracked_shape = parent_track.trackedshape_set.first()
+            parent_track.frame = min_frame
+            parent_tracked_shape.frame = min_frame
+
+            parent_tracked_shape.save()
             parent_track.save()
 
-    def _add_missing_shape(self, track, shapes):
-        # first shape of track must have the same frame as track
-        first_shape = shapes[0]
-        for shape in shapes:
-            if shape["frame"] < first_shape["frame"]:
-                first_shape = shape
+            for track in tracks:
+                if parent_track.frame < track["frame"]:
+                    track["frame"] = parent_track.frame
 
-        if track.frame < first_shape["frame"]:
-            missing_shape = deepcopy(first_shape)
-            missing_shape["frame"] = track.frame
-            missing_shape["outside"] = True
-            shapes.append(missing_shape)
-
-        elif track.frame > first_shape["frame"]:
-            track.frame = first_shape["frame"]
+                    self._correct_frame_of_tracked_shapes(track)
 
     def _save_tracks_to_db(self, tracks):
 
@@ -162,6 +185,8 @@ class JobAnnotation:
             db_track_attr_vals = []
             db_shapes = []
             db_shape_attr_vals = []
+
+            self._sync_frames(tracks, parent_track)
 
             for track in tracks:
                 track_attributes = track.pop("attributes", [])
@@ -178,8 +203,6 @@ class JobAnnotation:
 
                     db_track_attr_vals.append(db_attr_val)
 
-                self._add_missing_shape(db_track, shapes)
-
                 for shape_idx, shape in enumerate(shapes):
                     shape_attributes = shape.pop("attributes", [])
                     db_shape = models.TrackedShape(**shape, track_id=len(db_tracks))
@@ -193,8 +216,6 @@ class JobAnnotation:
 
                     db_shapes.append(db_shape)
                     shape["attributes"] = shape_attributes
-
-                self._update_parent_track(db_track, parent_track)
 
                 db_tracks.append(db_track)
 
