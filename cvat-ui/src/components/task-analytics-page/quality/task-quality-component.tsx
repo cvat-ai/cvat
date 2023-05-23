@@ -53,7 +53,7 @@ function TaskQualityComponent(props: Props): JSX.Element {
                 </Text>
             </Row>
             <Row>
-                {gtJob ? <JobItem job={gtJob} onJobUpdate={onJobUpdate} /> : <EmptyGtJob taskId={task.id} />}
+                {gtJob ? <JobItem job={gtJob} task={task} onJobUpdate={onJobUpdate} /> : <EmptyGtJob taskId={task.id} />}
             </Row>
             <Row>
                 <JobList task={task} />

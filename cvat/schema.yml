@@ -7823,6 +7823,9 @@ components:
         mode:
           type: string
           readOnly: true
+        frame_count:
+          type: integer
+          readOnly: true
         start_frame:
           type: integer
           maximum: 2147483647

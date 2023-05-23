@@ -84,7 +84,7 @@ function JobListComponent(props: Props): JSX.Element {
     const filteredJobs = setUpJobsList(jobs, query);
     const jobViews = filteredJobs
         .slice((query.page - 1) * PAGE_SIZE, query.page * PAGE_SIZE)
-        .map((job: Job) => <JobItem key={job.id} job={job} onJobUpdate={onUpdateJob} />);
+        .map((job: Job) => <JobItem key={job.id} job={job} task={taskInstance} onJobUpdate={onUpdateJob} />);
     useEffect(() => {
         history.replace({
             search: updateHistoryFromQuery(query),

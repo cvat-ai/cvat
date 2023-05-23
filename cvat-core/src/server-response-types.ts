@@ -120,6 +120,7 @@ export interface SerializedJob {
     type: JobType;
     startFrame: number;
     stopFrame: number;
+    frameCount: number;
     task_id: number;
     updated_date: string;
     url: string;

@@ -320,6 +320,7 @@ export class Job extends Session {
     public readonly id: number;
     public readonly startFrame: number;
     public readonly stopFrame: number;
+    public readonly frameCount: number;
     public readonly projectId: number | null;
     public readonly taskId: number;
     public readonly dimension: DimensionType;
@@ -386,6 +387,7 @@ export class Job extends Session {
             type: JobType.ANNOTATION,
             start_frame: undefined,
             stop_frame: undefined,
+            frame_count: undefined,
             project_id: null,
             task_id: undefined,
             labels: [],
@@ -490,6 +492,9 @@ export class Job extends Session {
                 },
                 stopFrame: {
                     get: () => data.stop_frame,
+                },
+                frameCount: {
+                    get: () => data.frame_count,
                 },
                 projectId: {
                     get: () => data.project_id,
@@ -770,6 +775,7 @@ export class Task extends Session {
                     type: job.type,
                     start_frame: job.start_frame,
                     stop_frame: job.stop_frame,
+                    frame_count: job.frame_count,
                     created_date: job.created_date,
                     updated_date: job.updated_date,
 

@@ -11,7 +11,7 @@ import Text from 'antd/lib/typography/Text';
 import Select from 'antd/lib/select';
 import Icon from '@ant-design/icons';
 import {
-    Job, JobStage, JobType, User,
+    Job, JobStage, JobType, Task, User,
 } from 'cvat-core-wrapper';
 import {
     BorderOutlined,
@@ -30,6 +30,7 @@ import JobActionsMenu from './job-actions-menu';
 
 interface Props {
     job: Job,
+    task: Task,
     onJobUpdate: (job: Job) => void;
 }
 
@@ -91,7 +92,7 @@ function ReviewSummaryComponent({ jobInstance }: { jobInstance: any }): JSX.Elem
 }
 
 function JobItem(props: Props): JSX.Element {
-    const { job, onJobUpdate } = props;
+    const { job, task, onJobUpdate } = props;
     const { stage, id } = job;
     const created = moment(job.createdDate);
     const updated = moment(job.createdDate);
@@ -222,7 +223,7 @@ function JobItem(props: Props): JSX.Element {
                                     <Col>
                                         <BorderOutlined />
                                         <Text>Frame count:</Text>
-                                        <Text type='secondary'>{` ${job.stopFrame - job.startFrame}`}</Text>
+                                        <Text type='secondary'>{` ${job.frameCount} (${(job.frameCount / (task.size || 1) * 100).toFixed(0)}%)`}</Text>
                                     </Col>
                                 </Row>
                             </Col>
