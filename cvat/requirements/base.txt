@@ -316,7 +316,7 @@ redis==4.5.4
     #   -r cvat/requirements/base.in
     #   django-rq
     #   rq
-requests==2.26.0
+requests==2.31.0
     # via
     #   -r cvat/requirements/base.in
     #   azure-core
