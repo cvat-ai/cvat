@@ -423,10 +423,12 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                 );
             }
 
+            const registrationEnabled = false;
+
             return (
                 <GlobalErrorBoundary>
                     <Switch>
-                        <Route exact path='/auth/register' component={RegisterPageContainer} />
+                        {registrationEnabled && <Route exact path='/auth/register' component={RegisterPageContainer} />}
                         <Route exact path='/auth/login' component={LoginPageContainer} />
                         <Route
                             exact

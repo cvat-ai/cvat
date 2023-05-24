@@ -19,6 +19,8 @@ interface LoginPageComponentProps {
     onLogin: (username: string, password: string) => void;
 }
 
+const registrationEnabled = false;
+
 function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps): JSX.Element {
     const sizes = {
         style: {
@@ -29,6 +31,22 @@ function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps
     const { Content } = Layout;
 
     const { fetching, onLogin, renderResetPassword } = props;
+
+    let registrationLink;
+    if (registrationEnabled) {
+        registrationLink = (
+            <Text strong>
+                New to CVAT? Create
+                <Link to='/auth/register'> an account</Link>
+            </Text>
+        );
+    } else {
+        registrationLink = (
+            <Text strong>
+                Do not have an account? Ask your manager to create one for you.
+            </Text>
+        );
+    }
 
     return (
         <Layout>
@@ -45,10 +63,7 @@ function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps
                         />
                         <Row justify='start' align='top'>
                             <Col>
-                                <Text strong>
-                                    New to CVAT? Create
-                                    <Link to='/auth/register'> an account</Link>
-                                </Text>
+                                {registrationLink}
                             </Col>
                         </Row>
                         {renderResetPassword && (

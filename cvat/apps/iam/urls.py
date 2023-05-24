@@ -20,9 +20,14 @@ urlpatterns = [
     path('signing', SigningView.as_view(), name='signing')
 ]
 
+registrationEnabled = False
+
 if settings.IAM_TYPE == 'BASIC':
+    if registrationEnabled:
+        urlpatterns += [
+            path('register', RegisterViewEx.as_view(), name='rest_register'),
+        ]
     urlpatterns += [
-        path('register', RegisterViewEx.as_view(), name='rest_register'),
         path('password/reset', PasswordResetView.as_view(),
             name='rest_password_reset'),
         path('password/reset/confirm', PasswordResetConfirmView.as_view(),
