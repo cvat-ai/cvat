@@ -15,7 +15,6 @@ without use_cache option (<https://github.com/opencv/cvat/pull/6074>)
 
 ### Changed
 - Resource links are opened from any organization/sandbox if available for user (<https://github.com/opencv/cvat/pull/5892>)
-- Running SAM masks decoder on frontend (<https://github.com/opencv/cvat/pull/6019>)
 - Cloud storage manifest file is optional (<https://github.com/opencv/cvat/pull/6074>)
 
 ### Changed
