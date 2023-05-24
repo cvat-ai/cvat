@@ -57,7 +57,7 @@ class OrganizationViewSet(viewsets.GenericViewSet,
                    mixins.DestroyModelMixin,
                    PartialUpdateModelMixin,
     ):
-    queryset = Organization.objects.all()
+    queryset = Organization.objects.select_related('owner').all()
     search_fields = ('name', 'owner')
     filter_fields = list(search_fields) + ['id', 'slug']
     simple_filters = list(search_fields) + ['slug']
@@ -115,7 +115,7 @@ class OrganizationViewSet(viewsets.GenericViewSet,
 )
 class MembershipViewSet(mixins.RetrieveModelMixin, mixins.DestroyModelMixin,
     mixins.ListModelMixin, PartialUpdateModelMixin, viewsets.GenericViewSet):
-    queryset = Membership.objects.all()
+    queryset = Membership.objects.select_related('invitation', 'user').all()
     ordering = '-id'
     http_method_names = ['get', 'patch', 'delete', 'head', 'options']
     search_fields = ('user', 'role')
