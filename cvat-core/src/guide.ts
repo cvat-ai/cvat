@@ -17,7 +17,7 @@ class AnnotationGuide {
     public readonly updatedDate?: string;
     public markdown: string;
 
-    constructor(initialData: SerializedGuide) {
+    constructor(initialData: Partial<SerializedGuide>) {
         const data = {
             id: undefined,
             task_id: null,

@@ -10,7 +10,7 @@ import { Row, Col } from 'antd/lib/grid';
 import notification from 'antd/lib/notification';
 import Button from 'antd/lib/button';
 import Space from 'antd/lib/space';
-import MDEditor from '@uiw/react-md-editor';
+import MDEditor, { commands } from '@uiw/react-md-editor';
 
 import {
     getCore, Task, Project, AnnotationGuide,
@@ -22,7 +22,7 @@ import GoBackButton from 'components/common/go-back-button';
 const core = getCore();
 
 function GuidePage(): JSX.Element {
-    const mdEditorRef = useRef();
+    const mdEditorRef = useRef<typeof MDEditor & { commandOrchestrator: commands.TextAreaCommandOrchestrator }>(null);
     const location = useLocation();
     const isMounted = useIsMounted();
     const [value, setValue] = useState('');
@@ -60,6 +60,27 @@ function GuidePage(): JSX.Element {
         });
     }, []);
 
+    const handleInsert = async (event: React.ClipboardEvent | React.DragEvent, files: FileList): Promise<void> => {
+        if (files.length) {
+            event.preventDefault();
+            const addedAssets = [];
+            if (mdEditorRef.current) {
+                const { textArea } = mdEditorRef.current.commandOrchestrator;
+                const { selectionStart, selectionEnd } = textArea;
+                for (const file of files) {
+                    const { uuid } = await core.assets.create(file);
+                    if (file.type.startsWith('image/')) {
+                        addedAssets.push(`![image](/api/assets/${uuid})`);
+                    } else {
+                        addedAssets.push(`[${file.name}](/api/assets/${uuid})`);
+                    }
+                }
+
+                setValue(`${value.slice(0, selectionStart)}\n${addedAssets.join('\n')}\n${value.slice(selectionEnd)}`);
+            }
+        }
+    };
+
     return (
         <Row
             justify='center'
@@ -79,50 +100,17 @@ function GuidePage(): JSX.Element {
                         ref={mdEditorRef}
                         value={value}
                         onChange={(val: string | undefined) => {
-                            // todo: debounce
                             setValue(val || '');
                         }}
                         onPaste={async (event: React.ClipboardEvent) => {
                             const { clipboardData } = event;
                             const { files } = clipboardData;
-                            if (files.length) {
-                                const selection = window.getSelection();
-                                if (!selection || !selection.rangeCount) return false;
-                                event.preventDefault();
-                                for (const file of files) {
-                                    const { uuid } = await core.assets.create(file);
-                                    const { selectionStart, selectionEnd } = mdEditorRef.current.textarea;
-                                    let text = '';
-                                    if (file.type.startsWith('image/')) {
-                                        text = `![image](/api/assets/${uuid})`;
-                                    } else {
-                                        text = `[${file.name}](/api/assets/${uuid})`;
-                                    }
-
-                                    setValue(`${value.slice(0, selectionStart)}${text}${value.slice(selectionEnd)}`);
-                                }
-                            }
+                            handleInsert(event, files);
                         }}
                         onDrop={async (event: React.DragEvent) => {
                             const { dataTransfer } = event;
                             const { files } = dataTransfer;
-                            if (files.length) {
-                                const selection = window.getSelection();
-                                if (!selection || !selection.rangeCount) return false;
-                                event.preventDefault();
-                                for (const file of files) {
-                                    const { uuid } = await core.assets.create(file);
-                                    const { selectionStart, selectionEnd } = mdEditorRef.current.textarea;
-                                    let text = '';
-                                    if (file.type.startsWith('image/')) {
-                                        text = `![image](/api/assets/${uuid})`;
-                                    } else {
-                                        text = `[${file.name}](/api/assets/${uuid})`;
-                                    }
-
-                                    setValue(`${value.slice(0, selectionStart)}${text}${value.slice(selectionEnd)}`);
-                                }
-                            }
+                            handleInsert(event, files);
                         }}
                         style={{ whiteSpace: 'pre-wrap' }}
                     />

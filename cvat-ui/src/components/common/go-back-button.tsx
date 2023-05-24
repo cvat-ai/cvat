@@ -11,7 +11,7 @@ function GoBackButton(): JSX.Element {
             <Button size='small' style={{ marginRight: 8 }} onClick={goBack}>
                 <LeftOutlined />
             </Button>
-            <Text strong>Back</Text>
+            <Text style={{ userSelect: 'none' }} strong>Back</Text>
         </>
     );
 }
