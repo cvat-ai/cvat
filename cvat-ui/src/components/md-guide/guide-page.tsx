@@ -20,7 +20,6 @@ import { useIsMounted } from 'utils/hooks';
 const core = getCore();
 
 function GuidePage(): JSX.Element {
-    // отображение гайда на странице джобы
     // сделать нормальную страничку с редактированием гайда
     // копирование гайда с ассетами с проверкой доступа
 
