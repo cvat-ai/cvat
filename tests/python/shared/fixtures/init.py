@@ -21,6 +21,16 @@ CVAT_ROOT_DIR = next(dir.parent for dir in Path(__file__).parents if dir.name ==
 CVAT_DB_DIR = ASSETS_DIR / "cvat_db"
 PREFIX = "test"
 
+SERVER_CONTAINER = "test_cvat_server_1"
+WEBHOOKS_CONTAINER = "test_cvat_worker_webhooks_1"
+ANNOTATION_CONTAINER = "test_cvat_worker_annotation_1"
+UTILS_CONTAINER = "test_cvat_utils_1"
+IMPORT_CONTAINER = "test_cvat_worker_import_1"
+EXPORT_CONTAINER = "test_cvat_worker_export_1"
+DB_CONTAINER = "test_cvat_db_1"
+
+CODE_COVERED_CONTAINERS = [SERVER_CONTAINER, WEBHOOKS_CONTAINER, ANNOTATION_CONTAINER, UTILS_CONTAINER, IMPORT_CONTAINER, EXPORT_CONTAINER]
+
 CONTAINER_NAME_FILES = ["docker-compose.tests.yml"]
 
 
@@ -120,17 +130,13 @@ def kube_cp(source, target):
     _run(f"kubectl cp {source} {target}")
 
 
-def docker_exec_cvat(command):
-    return _run(f"docker exec -u root {PREFIX}_cvat_server_1 {command}")
+def docker_exec(container, command):
+    return _run(f"docker exec -u root {container} {command}")
 
 
 def kube_exec_cvat(command):
     pod_name = _kube_get_server_pod_name()
     _run(f"kubectl exec {pod_name} -- {command}")
-
-
-def docker_exec_cvat_db(command):
-    _run(f"docker exec {PREFIX}_cvat_db_1 {command}")
 
 
 def kube_exec_cvat_db(command):
@@ -148,7 +154,7 @@ def kube_exec_clickhouse_db(command):
 
 
 def docker_restore_db():
-    docker_exec_cvat_db("psql -U root -d postgres -v from=test_db -v to=cvat -f /tmp/restore.sql")
+    docker_exec(DB_CONTAINER, "psql -U root -d postgres -v from=test_db -v to=cvat -f /tmp/restore.sql")
 
 
 def kube_restore_db():
@@ -215,6 +221,9 @@ def create_compose_files(container_name_files):
                     service_env = service_config["environment"]
                     service_env["DJANGO_SETTINGS_MODULE"] = "cvat.settings.testing_rest"
                     service_env["DJANGO_MODWSGI_EXTRA_ARGS"] = "--debug-mode --enable-coverage --coverage-directory reports"
+                elif service_name in ["cvat_worker_webhooks", "cvat_worker_annotation", "cvat_worker_export", "cvat_worker_import", "cvat_utils"]:
+                    service_env = service_config["environment"]
+                    service_env["DJANGO_CMD_RUN"] = "coverage run"
 
             yaml.dump(dc_config, ndcf)
 
@@ -249,7 +258,7 @@ def docker_restore_data_volumes():
         CVAT_DB_DIR / "cvat_data.tar.bz2",
         f"{PREFIX}_cvat_server_1:/tmp/cvat_data.tar.bz2",
     )
-    docker_exec_cvat("tar --strip 3 -xjf /tmp/cvat_data.tar.bz2 -C /home/django/data/")
+    docker_exec(SERVER_CONTAINER, "tar --strip 3 -xjf /tmp/cvat_data.tar.bz2 -C /home/django/data/")
 
 
 def kube_restore_data_volumes():
@@ -373,8 +382,8 @@ def local_start(start, stop, dumpdb, cleanup, rebuild, cvat_root_dir, cvat_db_di
     docker_cp(cvat_db_dir / "data.json", f"{PREFIX}_cvat_server_1:/tmp/data.json")
     wait_for_services()
 
-    docker_exec_cvat("python manage.py loaddata /tmp/data.json")
-    docker_exec_cvat_db("psql -U root -d postgres -v from=cvat -v to=test_db -f /tmp/restore.sql")
+    docker_exec(SERVER_CONTAINER, "python manage.py loaddata /tmp/data.json")
+    docker_exec(DB_CONTAINER, "psql -U root -d postgres -v from=cvat -v to=test_db -f /tmp/restore.sql")
 
     if start:
         pytest.exit("All necessary containers have been created and started.", returncode=0)
@@ -411,18 +420,34 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     platform = session.config.getoption("--platform")
 
     if platform == "local":
-        pid, _ = docker_exec_cvat("pidof apache2")
-        docker_exec_cvat(f"kill -15 {pid}")
-        sleep(5)
-        docker_exec_cvat("coverage xml -i")
-        docker_cp("test_cvat_server_1:home/django/coverage.xml", "coverage_server.xml")
+        collect_code_coverage_from_containers()
 
         docker_restore_db()
-        docker_exec_cvat_db("dropdb test_db")
+        docker_exec(DB_CONTAINER, "dropdb test_db")
 
-        docker_exec_cvat_db("dropdb --if-exists cvat")
-        docker_exec_cvat_db("createdb cvat")
-        docker_exec_cvat("python manage.py migrate")
+        docker_exec(DB_CONTAINER, "dropdb --if-exists cvat")
+        docker_exec(DB_CONTAINER, "createdb cvat")
+        docker_exec(SERVER_CONTAINER, "python manage.py migrate")
+
+
+def collect_code_coverage_from_containers():
+    for container in CODE_COVERED_CONTAINERS:
+        if container == SERVER_CONTAINER:
+            process_search = "pidof apache2"
+        else:
+            process_search = "pidof python coverage"
+
+        # find process with code coverage
+        pid, _ = docker_exec(container, process_search)
+
+        # stop process with code coverage
+        docker_exec(container, f"kill -15 {pid}")
+        while not run(f"docker exec -u root {SERVER_CONTAINER} {process_search}", shell=True).returncode:
+            sleep(1)
+
+        # get code coverage report
+        docker_exec(container, "coverage xml -i")
+        docker_cp(f"{container}:home/django/coverage.xml", f"coverage_{container}.xml")
 
 
 @pytest.fixture(scope="function")
