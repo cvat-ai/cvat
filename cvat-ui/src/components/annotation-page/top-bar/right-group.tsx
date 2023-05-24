@@ -11,8 +11,13 @@ import Button from 'antd/lib/button';
 import { useSelector } from 'react-redux';
 
 import { FilterIcon, FullscreenIcon, GuideIcon, InfoIcon } from 'icons';
-import { DimensionType } from 'cvat-core-wrapper';
+import { DimensionType, getCore } from 'cvat-core-wrapper';
 import { CombinedState, Workspace } from 'reducers';
+import { Modal } from 'antd';
+import GuidePage from 'components/md-guide/guide-page';
+import MDEditor from '@uiw/react-md-editor';
+
+const core = getCore();
 
 interface Props {
     workspace: Workspace;
@@ -51,16 +56,30 @@ function RightGroup(props: Props): JSX.Element {
                 <Icon component={FullscreenIcon} />
                 Fullscreen
             </Button>
-            <Button
-                type='link'
-                className='cvat-annotation-header-guide-button cvat-annotation-header-button'
-                onClick={(): void => {
-                    // todo
-                }}
-            >
-                <Icon component={GuideIcon} />
-                Guide
-            </Button>
+            { jobInstance.guideId !== null && (
+                <Button
+                    type='link'
+                    className='cvat-annotation-header-guide-button cvat-annotation-header-button'
+                    onClick={async (): Promise<void> => {
+                        const PADDING = 400;
+                        const guide = await core.guides.get({ id: jobInstance.guideId });
+                        Modal.info({
+                            icon: null,
+                            width: window.screen.availWidth - PADDING,
+                            content: (
+                                <>
+                                    <MDEditor visibleDragbar={false} data-color-mode='light' height={window.screen.availHeight - PADDING} preview='preview' hideToolbar value={guide.markdown} />
+                                </>
+                            ),
+                        });
+
+                        // todo: handle loading, handle error
+                    }}
+                >
+                    <Icon component={GuideIcon} />
+                    Guide
+                </Button>
+            )}
             <Button
                 type='link'
                 className='cvat-annotation-header-info-button cvat-annotation-header-button'
