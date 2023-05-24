@@ -72,6 +72,9 @@ def get_privilege(request):
     return groups[0] if groups else None
 
 def get_membership(request, organization):
+    if organization is None:
+        return None
+
     return Membership.objects.filter(
         organization=organization,
         user=request.user,
@@ -123,24 +126,6 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
         if iam_context:
             return cls(**iam_context, scope='list')
         return cls(**get_iam_context(request, None), scope='list')
-
-    @staticmethod
-    def unpack_context(request, obj=None):
-        privilege = get_privilege(request)
-        organization = get_organization(request, obj)
-        membership = get_membership(request, organization)
-
-        if organization and not request.user.is_superuser and membership is None:
-            raise PermissionDenied({"message": "You should be an active member in the organization"})
-
-        return {
-            'user_id': request.user.id,
-            'group_name': getattr(privilege, 'name', None),
-            'org_id': getattr(organization, 'id', None),
-            'org_owner_id': getattr(organization.owner, 'id', None)
-                if organization else None,
-            'org_role': getattr(membership, 'role', None),
-        }
 
     def __init__(self, **kwargs):
         self.obj = None
