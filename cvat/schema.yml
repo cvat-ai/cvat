@@ -4518,43 +4518,6 @@ paths:
                 type: object
                 additionalProperties: {}
           description: ''
-  /api/quality/reports/debug:
-    get:
-      operationId: quality_retrieve_reports_debug
-      parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
-      - in: query
-        name: task_id
-        schema:
-          type: integer
-      tags:
-      - quality
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses:
-        '200':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                $ref: '#/components/schemas/QualityReport'
-          description: ''
   /api/quality/settings/{id}:
     get:
       operationId: quality_retrieve_settings

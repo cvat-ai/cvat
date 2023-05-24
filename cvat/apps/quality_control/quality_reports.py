@@ -2032,6 +2032,7 @@ class DatasetComparator:
 class QualityReportUpdateManager:
     _QUEUE_JOB_PREFIX = "update-quality-metrics-task-"
     _RQ_CUSTOM_QUALITY_CHECK_JOB_TYPE = 'custom_quality_check'
+    _JOB_RESULT_TTL = 120
 
     @classmethod
     def _get_quality_check_job_delay(cls) -> timedelta:
@@ -2173,8 +2174,8 @@ class QualityReportUpdateManager:
                 'user_id': user_id,
                 'job_type': self._RQ_CUSTOM_QUALITY_CHECK_JOB_TYPE
             },
-            result_ttl=60,
-            failure_ttl=60,
+            result_ttl=self._JOB_RESULT_TTL,
+            failure_ttl=self._JOB_RESULT_TTL,
         )
 
         return rq_id

@@ -278,16 +278,6 @@ class QualityReportViewSet(viewsets.GenericViewSet,
         json_report = qc.prepare_report_for_downloading(report, host=get_server_url(request))
         return HttpResponse(json_report.encode())
 
-    # TODO: remove
-    @extend_schema(parameters=[
-        OpenApiParameter('task_id', type=OpenApiTypes.INT)
-    ])
-    @action(detail=False, methods=['GET'], url_path='debug', serializer_class=None)
-    @silk_profile()
-    def debug(self, request):
-        qc.QualityReportUpdateManager._check_task_quality(task_id=request.GET.get('task_id'))
-        return HttpResponse({})
-
 
 @extend_schema(tags=["quality"])
 @extend_schema_view(
