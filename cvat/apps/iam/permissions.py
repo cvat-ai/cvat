@@ -65,12 +65,6 @@ def get_organization(request, obj):
 
     return request.iam_context["organization"]
 
-def get_privilege(request):
-    IAM_ROLES = {role:priority for priority, role in enumerate(settings.IAM_ROLES)}
-    groups = list(request.user.groups.filter(name__in=list(IAM_ROLES.keys())))
-    groups.sort(key=lambda group: IAM_ROLES[group.name])
-    return groups[0] if groups else None
-
 def get_membership(request, organization):
     if organization is None:
         return None
@@ -82,7 +76,6 @@ def get_membership(request, organization):
     ).first()
 
 def get_iam_context(request, obj):
-    privilege = get_privilege(request)
     organization = get_organization(request, obj)
     membership = get_membership(request, organization)
 
@@ -91,7 +84,7 @@ def get_iam_context(request, obj):
 
     return {
         'user_id': request.user.id,
-        'group_name': getattr(privilege, 'name', None),
+        'group_name': request.iam_context['privilege'],
         'org_id': getattr(organization, 'id', None),
         'org_owner_id': getattr(organization.owner, 'id', None)
             if organization else None,
@@ -785,7 +778,7 @@ class ProjectPermission(OpenPolicyAgentPermission):
     def create_scope_create(cls, request, org_id):
         organization = None
         membership = None
-        privilege = get_privilege(request)
+        privilege = request.iam_context['privilege']
         if org_id:
             try:
                 organization = Organization.objects.get(id=org_id)

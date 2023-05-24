@@ -32,6 +32,11 @@ from .authentication import Signer
 def get_organization(request):
     from cvat.apps.organizations.models import Organization
 
+    IAM_ROLES = {role: priority for priority, role in enumerate(settings.IAM_ROLES)}
+    groups = list(request.user.groups.filter(name__in=list(IAM_ROLES.keys())))
+    groups.sort(key=lambda group: IAM_ROLES[group.name])
+    privilege = groups[0] if groups else None
+
     organization = None
 
     try:
@@ -56,7 +61,10 @@ def get_organization(request):
     except Organization.DoesNotExist:
         raise NotFound(f'{org_slug or org_id} organization does not exist.')
 
-    context = {"organization": organization}
+    context = {
+        "organization": organization,
+        "privilege": getattr(privilege, 'name', None)
+    }
 
     return context
 
