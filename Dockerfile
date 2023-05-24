@@ -5,7 +5,6 @@ FROM ${BASE_IMAGE} as build-image-base
 
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends install -yq \
-        apache2-dev \
         curl \
         g++ \
         gcc \
@@ -42,8 +41,8 @@ RUN curl -sL https://github.com/cisco/openh264/archive/v${OPENH264_VERSION}.tar.
     make -j5 && make install-shared PREFIX=${PREFIX} && make clean
 
 WORKDIR /tmp/ffmpeg
-RUN curl -sL https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.bz2 --output - | \
-    tar -jx --strip-components=1 && \
+RUN curl -sL https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.gz --output - | \
+    tar -zx --strip-components=1 && \
     ./configure --disable-nonfree --disable-gpl --enable-libopenh264 \
         --enable-shared --disable-static --disable-doc --disable-programs --prefix="${PREFIX}" && \
     make -j5 && make install && make clean
@@ -102,19 +101,18 @@ ENV DJANGO_CONFIGURATION=${DJANGO_CONFIGURATION}
 # Install necessary apt packages
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends install -yq \
-        apache2 \
         bzip2 \
         ca-certificates \
         curl \
         git \
         git-lfs \
-        libapache2-mod-xsendfile \
         libgeos-c1v5 \
         libgl1 \
         libgomp1 \
         libldap-2.5-0 \
         libpython3.10 \
         libsasl2-2 \
+        nginx \
         p7zip-full \
         poppler-utils \
         python3 \
@@ -164,6 +162,8 @@ RUN --mount=type=bind,from=build-image,source=/tmp/wheelhouse,target=/mnt/wheelh
 ENV NUMPROCS=1
 COPY --from=build-image-av /opt/ffmpeg/lib /usr/lib
 
+RUN chown -R ${USER} /var/lib/nginx /var/log/nginx
+
 # These variables are required for supervisord substitutions in files
 # This library allows remote python debugging with VS Code
 ARG CVAT_DEBUG_ENABLED
@@ -172,10 +172,12 @@ RUN if [ "${CVAT_DEBUG_ENABLED}" = 'yes' ]; then \
     fi
 
 # Install and initialize CVAT, copy all necessary files
+COPY --chown=${USER} cvat/nginx.conf /etc/nginx/nginx.conf
+COPY --chown=${USER} backend_entrypoint.sh /
 COPY --chown=${USER} components /tmp/components
 COPY --chown=${USER} supervisord/ ${HOME}/supervisord
 COPY --chown=${USER} ssh ${HOME}/.ssh
-COPY --chown=${USER} mod_wsgi.conf wait-for-it.sh manage.py ${HOME}/
+COPY --chown=${USER} wait-for-it.sh manage.py ${HOME}/
 COPY --chown=${USER} utils/ ${HOME}/utils
 COPY --chown=${USER} cvat/ ${HOME}/cvat
 

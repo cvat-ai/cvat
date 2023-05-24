@@ -51,7 +51,7 @@ spec:
           resources:
           {{- toYaml . | nindent 12 }}
           {{- end }}
-          args: ["-c", "supervisord/server.conf"]
+          command: ["/backend_entrypoint.sh"]
           env:
           - name: ALLOWED_HOSTS
             value: {{ .Values.cvat.backend.server.envs.ALLOWED_HOSTS | squote}}

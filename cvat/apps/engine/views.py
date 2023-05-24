@@ -596,7 +596,6 @@ class DataChunkGetter:
                 # mimetype detection inside sendfile will work incorrectly.
                 path = os.path.realpath(frame_provider.get_chunk(self.number, self.quality))
                 return sendfile(request, path)
-
             elif self.type == 'frame' or self.type == 'preview':
                 if not (start <= self.number <= stop):
                     raise ValidationError('The frame number should be in ' +
