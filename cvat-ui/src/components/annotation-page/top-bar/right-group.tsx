@@ -4,17 +4,19 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
+import { useSelector } from 'react-redux';
 import { Col } from 'antd/lib/grid';
 import Icon from '@ant-design/icons';
 import Select from 'antd/lib/select';
 import Button from 'antd/lib/button';
-import { useSelector } from 'react-redux';
+import Modal from 'antd/lib/modal';
 
-import { FilterIcon, FullscreenIcon, GuideIcon, InfoIcon } from 'icons';
+import {
+    FilterIcon, FullscreenIcon, GuideIcon, InfoIcon,
+} from 'icons';
 import { DimensionType, getCore } from 'cvat-core-wrapper';
 import { CombinedState, Workspace } from 'reducers';
-import { Modal } from 'antd';
-import GuidePage from 'components/md-guide/guide-page';
+
 import MDEditor from '@uiw/react-md-editor';
 
 const core = getCore();
