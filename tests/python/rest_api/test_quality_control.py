@@ -864,7 +864,9 @@ class TestPatchSettings(_PermissionTestBase):
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestQualityReportMetrics(_PermissionTestBase):
-    @pytest.mark.parametrize("task_id", [22])
+    demo_task_id = 22  # this task reproduces all the checkable cases
+
+    @pytest.mark.parametrize("task_id", [demo_task_id])
     def test_report_summary(self, task_id, tasks, jobs, quality_reports):
         gt_job = next(j for j in jobs if j["task_id"] == task_id and j["type"] == "ground_truth")
         task = tasks[task_id]
@@ -872,6 +874,7 @@ class TestQualityReportMetrics(_PermissionTestBase):
 
         summary = report["summary"]
         assert 0 < summary["conflict_count"]
+        assert all(summary["conflicts_by_type"].values())
         assert summary["conflict_count"] == sum(summary["conflicts_by_type"].values())
         assert summary["conflict_count"] == summary["warning_count"] + summary["error_count"]
         assert 0 < summary["valid_count"]
@@ -943,7 +946,7 @@ class TestQualityReportMetrics(_PermissionTestBase):
         new_report = self.create_quality_report(admin_user, task_id)
         assert new_report["summary"]["conflict_count"] > old_report["summary"]["conflict_count"]
 
-    @pytest.mark.parametrize("task_id", [22])
+    @pytest.mark.parametrize("task_id", [demo_task_id])
     @pytest.mark.parametrize(
         "parameter",
         [
