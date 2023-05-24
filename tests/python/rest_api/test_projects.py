@@ -869,9 +869,7 @@ class TestPatchProjectLabel:
             'data-element-id="1" data-node-id="1" data-label-name="597501"></circle>',
         }
 
-        response = patch_method(
-            admin_user, f'projects/{project["id"]}', {"labels": [new_skeleton]}
-        )
+        response = patch_method(admin_user, f'projects/{project["id"]}', {"labels": [new_skeleton]})
         assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == project["labels"]["count"] + 1
 
