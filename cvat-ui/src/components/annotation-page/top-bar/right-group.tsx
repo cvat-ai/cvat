@@ -10,7 +10,7 @@ import Select from 'antd/lib/select';
 import Button from 'antd/lib/button';
 import { useSelector } from 'react-redux';
 
-import { FilterIcon, FullscreenIcon, InfoIcon } from 'icons';
+import { FilterIcon, FullscreenIcon, GuideIcon, InfoIcon } from 'icons';
 import { DimensionType } from 'cvat-core-wrapper';
 import { CombinedState, Workspace } from 'reducers';
 
@@ -50,6 +50,16 @@ function RightGroup(props: Props): JSX.Element {
             >
                 <Icon component={FullscreenIcon} />
                 Fullscreen
+            </Button>
+            <Button
+                type='link'
+                className='cvat-annotation-header-guide-button cvat-annotation-header-button'
+                onClick={(): void => {
+                    // todo
+                }}
+            >
+                <Icon component={GuideIcon} />
+                Guide
             </Button>
             <Button
                 type='link'

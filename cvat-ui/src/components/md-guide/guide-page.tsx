@@ -32,6 +32,7 @@ function GuidePage(): JSX.Element {
     // todo: add working with a local storage
     // todo: Ctrl + S добавить шорткат
     // добавить ассеты и гайды в админ панель
+    // merge migration files
 
     const mdEditorRef = useRef();
     const location = useLocation();
