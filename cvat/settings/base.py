@@ -564,8 +564,8 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 # Is used in TUS uploads to provide correct upload endpoint
 USE_X_FORWARDED_HOST = True
 
-# # Django-sendfile requires to set SENDFILE_ROOT
-# # https://github.com/moggers87/django-sendfile2
+# Django-sendfile requires to set SENDFILE_ROOT
+# https://github.com/moggers87/django-sendfile2
 SENDFILE_ROOT = BASE_DIR
 
 SPECTACULAR_SETTINGS = {
