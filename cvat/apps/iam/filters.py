@@ -2,10 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
-from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import BaseFilterBackend
 
-
-class OrganizationFilterBackend(DjangoFilterBackend):
+class OrganizationFilterBackend(BaseFilterBackend):
     organization_slug = 'org'
     organization_slug_description = 'Organization unique slug'
     organization_id = 'org_id'
