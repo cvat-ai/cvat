@@ -643,11 +643,11 @@ class JobDataGetter(DataChunkGetter):
             cache = MediaCache()
 
             if settings.USE_CACHE and db_data.storage_method == StorageMethodChoice.CACHE:
-                buf, mime = cache.get_job_chunk_data_with_mime(
+                buf, mime = cache.get_selective_job_chunk_data_with_mime(
                     chunk_number=self.number, quality=self.quality, job=self.job
                 )
             else:
-                buf, mime = cache._prepare_job_chunk(
+                buf, mime = cache.prepare_selective_job_chunk(
                     chunk_number=self.number, quality=self.quality, db_job=self.job
                 )
 
@@ -1669,6 +1669,8 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             media = [db_data.video]
         else:
             media = [
+                # Insert placeholders if frames are skipped
+                # We could skip them here too, but UI can't decode chunks then
                 f if f.frame in frame_set else SimpleNamespace(
                     path=f'placeholder.jpg', width=f.width, height=f.height
                 )

@@ -50,10 +50,10 @@ class MediaCache:
 
         return item
 
-    def get_job_chunk_data_with_mime(self, chunk_number, quality, job):
+    def get_selective_job_chunk_data_with_mime(self, chunk_number, quality, job):
         item = self._get_or_set_cache_item(
             key=f'{job.id}_{chunk_number}_{quality}',
-            create_function=lambda: self._prepare_job_chunk(job, quality, chunk_number),
+            create_function=lambda: self.prepare_selective_job_chunk(job, quality, chunk_number),
         )
 
         return item
@@ -163,7 +163,7 @@ class MediaCache:
                 os.remove(image_path)
         return buff, mime_type
 
-    def _prepare_job_chunk(self, db_job: Job, quality, chunk_number: int):
+    def prepare_selective_job_chunk(self, db_job: Job, quality, chunk_number: int):
         db_data = db_job.segment.task.data
 
         FrameProvider = self._get_frame_provider_class()
@@ -173,8 +173,9 @@ class MediaCache:
         frame_step = db_data.get_frame_step()
         chunk_frames = []
 
+        writer = ZipCompressedChunkWriter(db_data.image_quality, dimension=self._dimension)
         dummy_frame = BytesIO()
-        PIL.Image.new('RGB', (1, 1)).save(dummy_frame, 'jpeg')
+        PIL.Image.new('RGB', (1, 1)).save(dummy_frame, writer.IMAGE_EXT)
 
         if hasattr(db_data, 'video'):
             frame_size = (db_data.video.width, db_data.video.height)
@@ -194,12 +195,14 @@ class MediaCache:
                 frame_bytes = frame_provider.get_frame(frame_idx, quality=quality)[0]
 
                 if frame_size is not None:
+                    # Decoded video frames can have different size, restore the original one
+
                     frame = PIL.Image.open(frame_bytes)
                     if frame.size != frame_size:
                         frame = frame.resize(frame_size)
 
                     frame_bytes = BytesIO()
-                    frame.save(frame_bytes, 'jpeg')
+                    frame.save(frame_bytes, writer.IMAGE_EXT)
                     frame_bytes.seek(0)
 
             else:
@@ -211,8 +214,9 @@ class MediaCache:
                 chunk_frames.append((frame_bytes, None, None))
 
         buff = BytesIO()
-        writer = ZipCompressedChunkWriter(db_data.image_quality, dimension=self._dimension)
-        writer.save_as_chunk(chunk_frames, buff, compress_frames=False, zip_compress_level=1)
+        writer.save_as_chunk(chunk_frames, buff, compress_frames=False,
+            zip_compress_level=1 # these are likely to be many skips in SPECIFIC_FRAMES segments
+        )
         buff.seek(0)
 
         return buff, 'application/zip'
