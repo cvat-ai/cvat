@@ -319,9 +319,10 @@ FrameData.prototype.data.implementation = async function (onServerRequest) {
 function getFrameMeta(jobID, frame): FramesMetaData['frames'][0] {
     const { meta, mode, startFrame } = frameDataCache[jobID];
     let frame_meta = null;
-    if (mode === 'interpolation') {
+    if (mode === 'interpolation' && meta.frames.length == 1) {
+        // video tasks have 1 frame info, but image tasks will have many infos
         [frame_meta] = meta.frames;
-    } else if (mode === 'annotation') {
+    } else if (mode === 'annotation' || mode === 'interpolation' && meta.frames.length > 1) {
         if (frame > meta.stop_frame) {
             throw new ArgumentError(`Meta information about frame ${frame} can't be received from the server`);
         }
