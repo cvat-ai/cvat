@@ -672,6 +672,13 @@ class Job(models.Model):
 
         super().delete(using, keep_parents)
 
+        self.delete_dirs()
+
+    def delete_dirs(self):
+        job_path = self.get_dirname()
+        if os.path.isdir(job_path):
+            shutil.rmtree(job_path)
+
     def make_dirs(self):
         job_path = self.get_dirname()
         if os.path.isdir(job_path):
