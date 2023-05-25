@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: MIT
 
-export function getFileContentTypeByMimeType(mime_type: string): string {
-    return mime_type.split('/')[0];
+export function getFileContentTypeByMimeType(mimeType: string): string {
+    return mimeType.split('/')[0];
 }
 
 export function getFileContentType(file: File): string {

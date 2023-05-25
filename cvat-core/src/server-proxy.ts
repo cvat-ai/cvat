@@ -10,7 +10,7 @@ import * as tus from 'tus-js-client';
 import {
     SerializedLabel, SerializedAnnotationFormats, ProjectsFilter,
     SerializedProject, SerializedTask, TasksFilter, SerializedUser,
-    SerializedAbout, SerializedShare, SerializedUserAgreement,
+    SerializedAbout, SerializedRemoteFile, SerializedUserAgreement,
     SerializedRegister, JobsFilter, SerializedJob,
 } from 'server-response-types';
 import { Storage } from './storage';
@@ -309,7 +309,7 @@ async function about(): Promise<SerializedAbout> {
     return response.data;
 }
 
-async function share(directoryArg: string): Promise<SerializedShare[]> {
+async function share(directoryArg: string): Promise<SerializedRemoteFile[]> {
     const { backendAPI } = config;
 
     let response = null;
@@ -1368,7 +1368,7 @@ async function getUsers(filter = { page_size: 'all' }) {
     return response.data.results;
 }
 
-function getPreview(instance) {
+function getPreview(instance: 'projects' | 'tasks' | 'jobs' | 'cloudstorages') {
     return async function (id: number) {
         const { backendAPI } = config;
 
@@ -1383,7 +1383,7 @@ function getPreview(instance) {
             throw new ServerError(`Could not get preview for "${instance}/${id}"`, code);
         }
 
-        return response.data;
+        return (response.status === 200) ? response.data : '';
     };
 }
 
@@ -1860,14 +1860,17 @@ async function getCloudStorages(filter = {}) {
     return response.data.results;
 }
 
-async function getCloudStorageContent(id, manifestPath) {
+async function getCloudStorageContent(id: number, path: string, nextToken?: string, manifestPath?: string):
+Promise<{ content: SerializedRemoteFile[], next: string | null }> {
     const { backendAPI } = config;
 
     let response = null;
     try {
-        const url = `${backendAPI}/cloudstorages/${id}/content`;
+        const url = `${backendAPI}/cloudstorages/${id}/content-v2`;
         response = await Axios.get(url, {
             params: {
+                prefix: path,
+                ...(nextToken ? { next_token: nextToken } : {}),
                 ...(manifestPath ? { manifest_path: manifestPath } : {}),
             },
         });
