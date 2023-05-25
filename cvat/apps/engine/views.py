@@ -2326,7 +2326,6 @@ def _import_annotations(request, rq_id, rq_func, db_obj, format_name,
         # If filename is specified we consider that file was uploaded via TUS, so it exists in filesystem
         # Then we dont need to create temporary file
         # Or filename specify key in cloud storage so we need to download file
-        fd = None
         dependent_job = None
         location = location_conf.get('location') if location_conf else Location.LOCAL
 
@@ -2517,7 +2516,6 @@ def _import_project_dataset(request, rq_id, rq_func, db_obj, format_name, filena
     rq_job = queue.fetch_job(rq_id)
 
     if not rq_job:
-        fd = None
         dependent_job = None
         location = location_conf.get('location') if location_conf else None
         if not filename and location != Location.CLOUD_STORAGE:
