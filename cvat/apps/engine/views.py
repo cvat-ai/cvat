@@ -10,7 +10,7 @@ import pytz
 import traceback
 from datetime import datetime
 from distutils.util import strtobool
-from tempfile import mkstemp
+from tempfile import NamedTemporaryFile
 
 from django.db.models.query import Prefetch
 import django_rq
@@ -2335,10 +2335,13 @@ def _import_annotations(request, rq_id, rq_func, db_obj, format_name,
                 serializer = AnnotationFileSerializer(data=request.data)
                 if serializer.is_valid(raise_exception=True):
                     anno_file = serializer.validated_data['annotation_file']
-                    fd, filename = mkstemp(prefix='cvat_{}'.format(db_obj.pk), dir=settings.TMP_FILES_ROOT)
-                    with open(filename, 'wb+') as f:
+                    with NamedTemporaryFile(
+                        prefix='cvat_{}'.format(db_obj.pk),
+                        dir=settings.TMP_FILES_ROOT,
+                        delete=False) as tf:
+                        filename = tf.name
                         for chunk in anno_file.chunks():
-                            f.write(chunk)
+                            tf.write(chunk)
             else:
                 assert filename, 'The filename was not specified'
 
@@ -2353,7 +2356,12 @@ def _import_annotations(request, rq_id, rq_func, db_obj, format_name,
                     is_default=location_conf['is_default'])
 
                 key = filename
-                fd, filename = mkstemp(prefix='cvat_{}'.format(db_obj.pk), dir=settings.TMP_FILES_ROOT)
+                with NamedTemporaryFile(
+                    prefix='cvat_{}'.format(db_obj.pk),
+                    dir=settings.TMP_FILES_ROOT,
+                    delete=False) as tf:
+                    filename = tf.name
+
                 dependent_job = configure_dependent_job(
                     queue=queue,
                     rq_id=rq_id,
@@ -2363,8 +2371,7 @@ def _import_annotations(request, rq_id, rq_func, db_obj, format_name,
                     key=key,
                     request=request,
                 )
-            if fd is not None:
-                os.close(fd)
+
         av_scan_paths(filename)
         meta = {
             'tmp_file': filename,
@@ -2517,10 +2524,14 @@ def _import_project_dataset(request, rq_id, rq_func, db_obj, format_name, filena
             serializer = DatasetFileSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
                 dataset_file = serializer.validated_data['dataset_file']
-                fd, filename = mkstemp(prefix='cvat_{}'.format(db_obj.pk), dir=settings.TMP_FILES_ROOT)
-                with open(filename, 'wb+') as f:
+                with NamedTemporaryFile(
+                    prefix='cvat_{}'.format(db_obj.pk),
+                    dir=settings.TMP_FILES_ROOT,
+                    delete=False) as tf:
+                    filename = tf.name
                     for chunk in dataset_file.chunks():
-                        f.write(chunk)
+                        tf.write(chunk)
+
         elif location == Location.CLOUD_STORAGE:
             assert filename, 'The filename was not specified'
             try:
@@ -2534,7 +2545,12 @@ def _import_project_dataset(request, rq_id, rq_func, db_obj, format_name, filena
                 is_default=location_conf['is_default'])
 
             key = filename
-            fd, filename = mkstemp(prefix='cvat_{}'.format(db_obj.pk), dir=settings.TMP_FILES_ROOT)
+            with NamedTemporaryFile(
+                prefix='cvat_{}'.format(db_obj.pk),
+                dir=settings.TMP_FILES_ROOT,
+                delete=False) as tf:
+                filename = tf.name
+
             dependent_job = configure_dependent_job(
                 queue=queue,
                 rq_id=rq_id,
@@ -2545,8 +2561,6 @@ def _import_project_dataset(request, rq_id, rq_func, db_obj, format_name, filena
                 request=request,
             )
 
-        if fd is not None:
-            os.close(fd)
         rq_job = queue.enqueue_call(
             func=rq_func,
             args=(db_obj.pk, filename, format_name, conv_mask_to_poly),
