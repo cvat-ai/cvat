@@ -339,7 +339,6 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 if rq_job is None:
                     return Response(status=status.HTTP_404_NOT_FOUND)
                 elif rq_job.is_finished:
-                    if rq_job.meta['tmp_file_descriptor']: os.close(rq_job.meta['tmp_file_descriptor'])
                     os.remove(rq_job.meta['tmp_file'])
                     if rq_job.dependency:
                         rq_job.dependency.delete()
@@ -2364,11 +2363,11 @@ def _import_annotations(request, rq_id, rq_func, db_obj, format_name,
                     key=key,
                     request=request,
                 )
-
+            if fd is not None:
+                os.close(fd)
         av_scan_paths(filename)
         meta = {
             'tmp_file': filename,
-            'tmp_file_descriptor': fd,
         }
         rq_job = queue.enqueue_call(
             func=rq_func,
@@ -2379,7 +2378,6 @@ def _import_annotations(request, rq_id, rq_func, db_obj, format_name,
         )
     else:
         if rq_job.is_finished:
-            if rq_job.meta['tmp_file_descriptor']: os.close(rq_job.meta['tmp_file_descriptor'])
             os.remove(rq_job.meta['tmp_file'])
             rq_job.delete()
             return Response(status=status.HTTP_201_CREATED)
@@ -2547,13 +2545,14 @@ def _import_project_dataset(request, rq_id, rq_func, db_obj, format_name, filena
                 request=request,
             )
 
+        if fd is not None:
+            os.close(fd)
         rq_job = queue.enqueue_call(
             func=rq_func,
             args=(db_obj.pk, filename, format_name, conv_mask_to_poly),
             job_id=rq_id,
             meta={
                 'tmp_file': filename,
-                'tmp_file_descriptor': fd,
                 **get_rq_job_meta(request=request, db_obj=db_obj),
             },
             depends_on=dependent_job,

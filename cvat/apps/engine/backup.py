@@ -936,14 +936,14 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
                 key=key,
                 request=request,
             )
-
+        if fd is not None:
+            os.close(fd)
         rq_job = queue.enqueue_call(
             func=importer,
             args=(filename, request.user.id, org_id),
             job_id=rq_id,
             meta={
                 'tmp_file': filename,
-                'tmp_file_descriptor': fd,
                 **get_rq_job_meta(request=request, db_obj=None)
             },
             depends_on=dependent_job
@@ -951,7 +951,6 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
     else:
         if rq_job.is_finished:
             project_id = rq_job.return_value
-            if rq_job.meta['tmp_file_descriptor']: os.close(rq_job.meta['tmp_file_descriptor'])
             os.remove(rq_job.meta['tmp_file'])
             rq_job.delete()
             return Response({'id': project_id}, status=status.HTTP_201_CREATED)
