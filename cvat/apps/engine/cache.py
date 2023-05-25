@@ -3,11 +3,11 @@
 # SPDX-License-Identifier: MIT
 
 import os
-import io
 import zipfile
 from io import BytesIO
 from datetime import datetime
 from tempfile import NamedTemporaryFile
+import PIL.Image
 import cv2
 import pytz
 
@@ -19,7 +19,7 @@ from cvat.apps.engine.log import slogger
 from cvat.apps.engine.media_extractors import (Mpeg4ChunkWriter,
     Mpeg4CompressedChunkWriter, ZipChunkWriter, ZipCompressedChunkWriter,
     ImageDatasetManifestReader, VideoDatasetManifestReader)
-from cvat.apps.engine.models import DataChoice, StorageChoice, Image
+from cvat.apps.engine.models import DataChoice, StorageChoice, Image, Job
 from cvat.apps.engine.models import DimensionType
 from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials
 from cvat.apps.engine.utils import md5_hash
@@ -42,10 +42,18 @@ class MediaCache:
 
         return item
 
-    def get_buf_chunk_with_mime(self, chunk_number, quality, db_data):
+    def get_task_chunk_data_with_mime(self, chunk_number, quality, db_data):
         item = self._get_or_set_cache_item(
             key=f'{db_data.id}_{chunk_number}_{quality}',
-            create_function=lambda: self._prepare_chunk_buff(db_data, quality, chunk_number),
+            create_function=lambda: self._prepare_task_chunk(db_data, quality, chunk_number),
+        )
+
+        return item
+
+    def get_job_chunk_data_with_mime(self, chunk_number, quality, job):
+        item = self._get_or_set_cache_item(
+            key=f'{job.id}_{chunk_number}_{quality}',
+            create_function=lambda: self._prepare_job_chunk(job, quality, chunk_number),
         )
 
         return item
@@ -75,12 +83,12 @@ class MediaCache:
         return item
 
     @staticmethod
-    def _get_frame_provider():
+    def _get_frame_provider_class():
         from cvat.apps.engine.frame_provider import FrameProvider # TODO: remove circular dependency
         return FrameProvider
 
-    def _prepare_chunk_buff(self, db_data, quality, chunk_number):
-        FrameProvider = self._get_frame_provider()
+    def _prepare_task_chunk(self, db_data, quality, chunk_number):
+        FrameProvider = self._get_frame_provider_class()
 
         writer_classes = {
             FrameProvider.Quality.COMPRESSED : Mpeg4CompressedChunkWriter if db_data.compressed_chunk_type == DataChoice.VIDEO else ZipCompressedChunkWriter,
@@ -155,8 +163,62 @@ class MediaCache:
                 os.remove(image_path)
         return buff, mime_type
 
+    def _prepare_job_chunk(self, db_job: Job, quality, chunk_number: int):
+        db_data = db_job.segment.task.data
+
+        FrameProvider = self._get_frame_provider_class()
+        frame_provider = FrameProvider(db_data, self._dimension)
+
+        frame_set = db_job.segment.frame_set
+        frame_step = db_data.get_frame_step()
+        chunk_frames = []
+
+        dummy_frame = BytesIO()
+        PIL.Image.new('RGB', (1, 1)).save(dummy_frame, 'jpeg')
+
+        if hasattr(db_data, 'video'):
+            frame_size = (db_data.video.width, db_data.video.height)
+        else:
+            frame_size = None
+
+        for frame_idx in range(db_data.chunk_size):
+            frame_idx = (
+                db_data.start_frame + chunk_number * db_data.chunk_size + frame_idx * frame_step
+            )
+            if db_data.stop_frame < frame_idx:
+                break
+
+            frame_bytes = None
+
+            if frame_idx in frame_set:
+                frame_bytes = frame_provider.get_frame(frame_idx, quality=quality)[0]
+
+                if frame_size is not None:
+                    frame = PIL.Image.open(frame_bytes)
+                    if frame.size != frame_size:
+                        frame = frame.resize(frame_size)
+
+                    frame_bytes = BytesIO()
+                    frame.save(frame_bytes, 'jpeg')
+                    frame_bytes.seek(0)
+
+            else:
+                # Populate skipped frames with placeholder data,
+                # this is required for video chunk decoding implementation in UI
+                frame_bytes = BytesIO(dummy_frame.getvalue())
+
+            if frame_bytes is not None:
+                chunk_frames.append((frame_bytes, None, None))
+
+        buff = BytesIO()
+        writer = ZipCompressedChunkWriter(db_data.image_quality, dimension=self._dimension)
+        writer.save_as_chunk(chunk_frames, buff, compress_frames=False, zip_compress_level=1)
+        buff.seek(0)
+
+        return buff, 'application/zip'
+
     def _prepare_local_preview(self, frame_number, db_data):
-        FrameProvider = self._get_frame_provider()
+        FrameProvider = self._get_frame_provider_class()
         frame_provider = FrameProvider(db_data, self._dimension)
         buff, mime_type = frame_provider.get_preview(frame_number)
 
@@ -196,7 +258,7 @@ class MediaCache:
         return buff, mime_type
 
     def _prepare_context_image(self, db_data, frame_number):
-        zip_buffer = io.BytesIO()
+        zip_buffer = BytesIO()
         try:
             image = Image.objects.get(data_id=db_data.id, frame=frame_number)
         except Image.DoesNotExist:

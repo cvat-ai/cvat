@@ -649,12 +649,20 @@ class ZipChunkWriter(IChunkWriter):
         return []
 
 class ZipCompressedChunkWriter(IChunkWriter):
-    def save_as_chunk(self, images, chunk_path):
+    def save_as_chunk(
+        self, images, chunk_path, *, compress_frames: bool = True, zip_compress_level: int = 0
+    ):
         image_sizes = []
-        with zipfile.ZipFile(chunk_path, 'x') as zip_chunk:
+        with zipfile.ZipFile(chunk_path, 'x', compresslevel=zip_compress_level) as zip_chunk:
             for idx, (image, _, _) in enumerate(images):
                 if self._dimension == DimensionType.DIM_2D:
-                    w, h, image_buf = self._compress_image(image, self._image_quality)
+                    if compress_frames:
+                        w, h, image_buf = self._compress_image(image, self._image_quality)
+                    else:
+                        assert isinstance(image, io.IOBase)
+                        image_buf = io.BytesIO(image.read())
+                        w, h = Image.open(image_buf).size
+
                     extension = "jpeg"
                 else:
                     image_buf = open(image, "rb") if isinstance(image, str) else image

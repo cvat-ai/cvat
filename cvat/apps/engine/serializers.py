@@ -564,6 +564,12 @@ class JobReadSerializer(serializers.ModelSerializer):
             'created_date', 'updated_date', 'issues', 'labels', 'type')
         read_only_fields = fields
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if instance.segment.type == models.SegmentType.SPECIFIC_FRAMES:
+            data['data_compressed_chunk_type'] = models.DataChoice.IMAGESET
+        return data
+
 
 class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     assignee = serializers.IntegerField(allow_null=True, required=False)

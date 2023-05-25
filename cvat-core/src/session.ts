@@ -324,7 +324,7 @@ export class Job extends Session {
     public readonly projectId: number | null;
     public readonly taskId: number;
     public readonly dimension: DimensionType;
-    public readonly dataCompressedChunkType: ChunkType;
+    public readonly dataChunkType: ChunkType;
     public readonly bugTracker: string | null;
     public readonly mode: TaskMode;
     public readonly labels: Label[];
@@ -629,8 +629,7 @@ export class Task extends Session {
     public readonly segmentSize: number;
     public readonly imageQuality: number;
     public readonly dataChunkSize: number;
-    public readonly dataCompressedChunkType: ChunkType;
-    public readonly dataOriginalChunkType: ChunkType;
+    public readonly dataChunkType: ChunkType;
     public readonly dimension: DimensionType;
     public readonly sourceStorage: Storage;
     public readonly targetStorage: Storage;

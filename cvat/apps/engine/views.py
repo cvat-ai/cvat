@@ -7,6 +7,7 @@ import io
 import os
 import os.path as osp
 import textwrap
+from types import SimpleNamespace
 import pytz
 import traceback
 from datetime import datetime
@@ -47,7 +48,7 @@ from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.media_extractors import get_mime
 from cvat.apps.engine.models import (
-    Job, JobType, Label, Task, Project, Issue, Data,
+    Job, JobType, Label, SegmentType, Task, Project, Issue, Data,
     Comment, StorageMethodChoice, StorageChoice,
     CloudProviderChoice, Location
 )
@@ -630,6 +631,31 @@ class DataChunkGetter:
             msg = str(ex) if not isinstance(ex, ValidationError) else \
                 '\n'.join([str(d) for d in ex.detail])
             return Response(data=msg, status=ex.status_code)
+
+
+class JobDataGetter(DataChunkGetter):
+    def __init__(self, job: Job, data_type, data_num, data_quality):
+        super().__init__(data_type, data_num, data_quality, task_dim=job.segment.task.dimension)
+        self.job = job
+
+    def __call__(self, request, start, stop, db_data):
+        if self.type == 'chunk' and self.job.segment.type == SegmentType.SPECIFIC_FRAMES:
+            cache = MediaCache()
+
+            if settings.USE_CACHE and db_data.storage_method == StorageMethodChoice.CACHE:
+                buf, mime = cache.get_job_chunk_data_with_mime(
+                    chunk_number=self.number, quality=self.quality, job=self.job
+                )
+            else:
+                buf, mime = cache._prepare_job_chunk(
+                    chunk_number=self.number, quality=self.quality, db_job=self.job
+                )
+
+            return HttpResponse(buf.getvalue(), content_type=mime)
+
+        else:
+            return super().__call__(request, start, stop, db_data)
+
 
 @extend_schema(tags=['tasks'])
 @extend_schema_view(
@@ -1586,8 +1612,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         data_num = request.query_params.get('number', None)
         data_quality = request.query_params.get('quality', 'compressed')
 
-        data_getter = DataChunkGetter(data_type, data_num, data_quality,
-            db_job.segment.task.dimension)
+        data_getter = JobDataGetter(db_job, data_type, data_num, data_quality)
 
         return data_getter(request, db_job.segment.start_frame,
             db_job.segment.stop_frame, db_job.segment.task.data)
@@ -1617,8 +1642,13 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         db_data = db_job.segment.task.data
         start_frame = db_job.segment.start_frame
         stop_frame = db_job.segment.stop_frame
-        data_start_frame = db_data.start_frame + start_frame * db_data.get_frame_step()
-        data_stop_frame = db_data.start_frame + stop_frame * db_data.get_frame_step()
+        frame_step = db_data.get_frame_step()
+        data_start_frame = db_data.start_frame + start_frame * frame_step
+        data_stop_frame = db_data.start_frame + stop_frame * frame_step
+        frame_set = set(
+            db_data.start_frame + rel_id * frame_step
+            for rel_id in db_job.segment.frame_set
+        )
 
         if request.method == 'PATCH':
             serializer = DataMetaWriteSerializer(instance=db_data, data=request.data)
@@ -1638,7 +1668,10 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         if hasattr(db_data, 'video'):
             media = [db_data.video]
         else:
-            media = [f
+            media = [
+                f if f.frame in frame_set else SimpleNamespace(
+                    path=f'placeholder.jpg', width=f.width, height=f.height
+                )
                 for f in db_data.images.filter(
                     frame__gte=data_start_frame,
                     frame__lte=data_stop_frame,
