@@ -185,6 +185,8 @@ WORKDIR ${HOME}
 
 RUN mkdir -p data share keys logs /tmp/supervisord static
 
+
+# debug changes
 EXPOSE 8080
 ENTRYPOINT ["/usr/bin/supervisord"]
 CMD ["-c", "supervisord/all.conf"]
