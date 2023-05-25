@@ -91,9 +91,9 @@ cvat:
             name: http
     defaultStorage:
         enabled: true
-        storageClassName: default
+        # storageClassName: default
         accessModes:
-         - ReadWriteOnce
+         - ReadWriteMany
         size: 20Gi
   frontend:
     replicas: 1

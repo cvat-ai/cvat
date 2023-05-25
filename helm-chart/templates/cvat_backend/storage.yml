@@ -11,8 +11,10 @@ metadata:
 spec:
   accessModes:
     {{ .Values.cvat.backend.defaultStorage.accessModes | toYaml | nindent 4 }}
+  {{-  if .Values.cvat.backend.defaultStorage.storageClassName }}
   storageClassName: {{ .Values.cvat.backend.defaultStorage.storageClassName }}
+  {{- end }}
   resources:
     requests:
       storage: {{ .Values.cvat.backend.defaultStorage.size }}
-{{- end}}
+{{- end }}
