@@ -5,11 +5,14 @@
 
 import io
 import json
+from enum import Enum
 from http import HTTPStatus
+from typing import Any, Optional
 
 import pytest
 from cvat_sdk.api_client import ApiClient, models
 from cvat_sdk.api_client.api_client import Endpoint
+from cvat_sdk.api_client.model.file_info import FileInfo
 from deepdiff import DeepDiff
 from PIL import Image
 
@@ -432,3 +435,152 @@ class TestGetCloudStoragePreview:
             self._test_can_see(username, storage_id, org_id=org_id)
         else:
             self._test_cannot_see(username, storage_id, org_id=org_id)
+
+
+class TestGetCloudStorageContent:
+    USER = "admin1"
+
+    class SUPPORTED_VERSIONS(str, Enum):
+        V1 = "v1"
+        V2 = "v2"
+
+    def _test_get_cloud_storage_content(
+        self,
+        cloud_storage_id: int,
+        version: SUPPORTED_VERSIONS = SUPPORTED_VERSIONS.V2,
+        manifest: Optional[str] = None,
+        **kwargs,
+    ):
+        with make_api_client(self.USER) as api_client:
+            content_kwargs = {"manifest_path": manifest} if manifest else {}
+
+            if version == self.SUPPORTED_VERSIONS.V2:
+                for item in ["next_token", "prefix", "page_size"]:
+                    if item_value := kwargs.get(item):
+                        content_kwargs[item] = item_value
+
+            methods = {
+                self.SUPPORTED_VERSIONS.V1: api_client.cloudstorages_api.retrieve_content,
+                self.SUPPORTED_VERSIONS.V2: api_client.cloudstorages_api.retrieve_content_v2,
+            }
+            (data, _) = methods[version](cloud_storage_id, **content_kwargs)
+
+            return data
+
+    @pytest.mark.parametrize("cloud_storage_id", [2])
+    @pytest.mark.parametrize(
+        "version, manifest, prefix, page_size, expected_content",
+        [
+            (
+                SUPPORTED_VERSIONS.V1,  # [v1] list all bucket content
+                "sub/manifest.jsonl",
+                None,
+                None,
+                ["sub/image_case_65_1.png", "sub/image_case_65_2.png"],
+            ),
+            (
+                SUPPORTED_VERSIONS.V2,  # [v2] list the top level of bucket with based on manifest
+                "sub/manifest.jsonl",
+                None,
+                None,
+                [FileInfo(mime_type="DIR", name="sub", type="DIR")],
+            ),
+            (
+                SUPPORTED_VERSIONS.V2,  # [v2] search by some prefix in bucket content based on manifest
+                "sub/manifest.jsonl",
+                "sub/image_case_65_1",
+                None,
+                [
+                    FileInfo(mime_type="image", name="image_case_65_1.png", type="REG"),
+                ],
+            ),
+            (
+                SUPPORTED_VERSIONS.V2,  # [v2] list the second layer (directory "sub") of bucket content based on manifest
+                "sub/manifest.jsonl",
+                "sub/",
+                None,
+                [
+                    FileInfo(mime_type="image", name="image_case_65_1.png", type="REG"),
+                    FileInfo(mime_type="image", name="image_case_65_2.png", type="REG"),
+                ],
+            ),
+            (
+                SUPPORTED_VERSIONS.V2,  # [v2] list the top layer of real bucket content
+                None,
+                None,
+                None,
+                [FileInfo(mime_type="DIR", name="sub", type="DIR")],
+            ),
+            (
+                SUPPORTED_VERSIONS.V2,  # [v2] list the second layer (directory "sub") of real bucket content
+                None,
+                "sub/",
+                2,
+                [
+                    FileInfo(mime_type="unknown", name="demo_manifest.jsonl", type="REG"),
+                    FileInfo(mime_type="image", name="image_case_65_1.png", type="REG"),
+                ],
+            ),
+            (
+                SUPPORTED_VERSIONS.V2,
+                None,
+                "/sub/",  # cover case: API is identical to share point API
+                None,
+                [
+                    FileInfo(mime_type="unknown", name="demo_manifest.jsonl", type="REG"),
+                    FileInfo(mime_type="image", name="image_case_65_1.png", type="REG"),
+                    FileInfo(mime_type="image", name="image_case_65_2.png", type="REG"),
+                    FileInfo(mime_type="unknown", name="manifest.jsonl", type="REG"),
+                    FileInfo(mime_type="unknown", name="manifest_1.jsonl", type="REG"),
+                    FileInfo(mime_type="unknown", name="manifest_2.jsonl", type="REG"),
+                ],
+            ),
+        ],
+    )
+    def test_get_cloud_storage_content(
+        self,
+        cloud_storage_id: int,
+        version: SUPPORTED_VERSIONS,
+        manifest: Optional[str],
+        prefix: Optional[str],
+        page_size: Optional[int],
+        expected_content: Optional[Any],
+    ):
+        result = self._test_get_cloud_storage_content(
+            cloud_storage_id, version, manifest, prefix=prefix, page_size=page_size
+        )
+        if expected_content:
+            if version == self.SUPPORTED_VERSIONS.V1:
+                assert result == expected_content
+            else:
+                assert result["content"] == expected_content
+        if page_size:
+            assert len(result["content"]) <= page_size
+
+    @pytest.mark.parametrize("cloud_storage_id, prefix, page_size", [(2, "sub/", 2)])
+    def test_iterate_over_cloud_storage_content(
+        self, cloud_storage_id: int, prefix: str, page_size: int
+    ):
+        expected_content = self._test_get_cloud_storage_content(
+            cloud_storage_id, self.SUPPORTED_VERSIONS.V2, prefix=prefix
+        )["content"]
+
+        current_content = []
+        next_token = None
+        while True:
+            result = self._test_get_cloud_storage_content(
+                cloud_storage_id,
+                self.SUPPORTED_VERSIONS.V2,
+                prefix=prefix,
+                page_size=page_size,
+                next_token=next_token,
+            )
+            content = result["content"]
+            assert len(content) <= page_size
+            current_content.extend(content)
+
+            next_token = result["next"]
+            if not next_token:
+                break
+
+        assert expected_content == current_content

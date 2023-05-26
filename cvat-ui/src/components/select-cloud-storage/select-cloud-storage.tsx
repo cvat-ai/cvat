@@ -1,4 +1,4 @@
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -39,7 +39,7 @@ const searchCloudStoragesWrapper = debounce((phrase, setList) => {
     const filter = {
         filter: JSON.stringify({
             and: [{
-                '==': [{ var: 'name' }, phrase],
+                in: [phrase, { var: 'name' }],
             }],
         }),
     };
@@ -77,11 +77,11 @@ function SelectCloudStorage(props: Props): JSX.Element {
             onSelectCloudStorage(null);
         } else if (searchPhrase) {
             const potentialStorages = list.filter((_cloudStorage) => _cloudStorage.displayName.includes(searchPhrase));
-            if (potentialStorages.length === 1) {
+            if (potentialStorages.length === 1 && potentialStorages[0].id !== cloudStorage?.id) {
                 const potentialStorage = potentialStorages[0];
                 setSearchPhrase(potentialStorage.displayName);
                 // eslint-disable-next-line prefer-destructuring
-                potentialStorage.manifestPath = potentialStorage.manifests[0];
+                potentialStorage.manifestPath = (potentialStorage.manifests?.length) ? potentialStorage.manifests[0] : '';
                 onSelectCloudStorage(potentialStorage);
             }
         }
@@ -119,12 +119,16 @@ function SelectCloudStorage(props: Props): JSX.Element {
                     ),
                 }))}
                 onSelect={(value: string) => {
-                    const selectedCloudStorage =
-                    list.filter((_cloudStorage: CloudStorage) => _cloudStorage.id === +value)[0] || null;
+                    const selectedCloudStorage = list
+                        .filter((_cloudStorage: CloudStorage) => _cloudStorage.id === +value)[0] || null;
                     // eslint-disable-next-line prefer-destructuring
-                    [selectedCloudStorage.manifestPath] = selectedCloudStorage.manifests;
-                    onSelectCloudStorage(selectedCloudStorage);
-                    setSearchPhrase(selectedCloudStorage?.displayName || '');
+                    if (selectedCloudStorage.id !== cloudStorage?.id) {
+                        if (selectedCloudStorage.manifests?.length) {
+                            [selectedCloudStorage.manifestPath] = selectedCloudStorage.manifests;
+                        }
+                        onSelectCloudStorage(selectedCloudStorage);
+                        setSearchPhrase(selectedCloudStorage?.displayName || '');
+                    }
                 }}
                 allowClear
                 className={`cvat-search${!name ? '-' : `-${name[0].replace('Storage', '-storage')}-`}cloud-storage-field`}

@@ -452,6 +452,9 @@ services:
   cvat_worker_export:
     volumes:
       - cvat_share:/home/django/share:ro
+  cvat_worker_annotation:
+    volumes:
+      - cvat_share:/home/django/share:ro
 
 volumes:
   cvat_share:
