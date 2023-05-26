@@ -23,7 +23,7 @@ jobs:
           # we need to run Black for each python component group separately.
           # Otherwise, they all will use the same config.
 
-          UPDATED_DIRS=${{steps.files.outputs.all_changed_files}}
+          UPDATED_DIRS="${{steps.files.outputs.all_changed_files}}"
 
           if [[ ! -z $UPDATED_DIRS ]]; then
             sudo apt-get --no-install-recommends install -y build-essential curl python3-dev python3-pip python3-venv

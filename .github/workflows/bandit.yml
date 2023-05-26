@@ -15,7 +15,7 @@ jobs:
 
       - name: Run checks
         run: |
-          CHANGED_FILES=${{steps.files.outputs.all_changed_files}}
+          CHANGED_FILES="${{steps.files.outputs.all_changed_files}}"
 
           if [[ ! -z $CHANGED_FILES ]]; then
             sudo apt-get --no-install-recommends install -y build-essential curl python3-dev python3-pip python3-venv
