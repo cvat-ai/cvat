@@ -215,6 +215,7 @@ MIDDLEWARE = [
     # FIXME
     # 'corsheaders.middleware.CorsPostCsrfMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.middleware.gzip.GZipMiddleware',
     'cvat.apps.engine.middleware.RequestTrackingMiddleware',
     'crum.CurrentRequestUserMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -333,8 +334,12 @@ NUCLIO = {
     'HOST': os.getenv('CVAT_NUCLIO_HOST', 'localhost'),
     'PORT': int(os.getenv('CVAT_NUCLIO_PORT', 8070)),
     'DEFAULT_TIMEOUT': int(os.getenv('CVAT_NUCLIO_DEFAULT_TIMEOUT', 120)),
-    'FUNCTION_NAMESPACE': os.getenv('CVAT_NUCLIO_FUNCTION_NAMESPACE', 'nuclio')
+    'FUNCTION_NAMESPACE': os.getenv('CVAT_NUCLIO_FUNCTION_NAMESPACE', 'nuclio'),
+    'INVOKE_METHOD': os.getenv('CVAT_NUCLIO_INVOKE_METHOD',
+        default='dashboard' if 'KUBERNETES_SERVICE_HOST' in os.environ else 'direct'),
 }
+
+assert NUCLIO['INVOKE_METHOD'] in {'dashboard', 'direct'}
 
 RQ_SHOW_ADMIN_LINK = True
 RQ_EXCEPTION_HANDLERS = [
@@ -392,9 +397,10 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 os.makedirs(STATIC_ROOT, exist_ok=True)
 
-# Make sure to update other config files when upading these directories
+# Make sure to update other config files when updating these directories
 DATA_ROOT = os.path.join(BASE_DIR, 'data')
-EVENTS_LOCAL_DB = os.path.join(DATA_ROOT,'events.db')
+
+EVENTS_LOCAL_DB = os.path.join(DATA_ROOT, 'events.db')
 os.makedirs(DATA_ROOT, exist_ok=True)
 if not os.path.exists(EVENTS_LOCAL_DB):
     open(EVENTS_LOCAL_DB, 'w').close()
@@ -506,6 +512,7 @@ DATA_UPLOAD_MAX_NUMBER_FIELDS = None   # this django check disabled
 DATA_UPLOAD_MAX_NUMBER_FILES = None
 LOCAL_LOAD_MAX_FILES_COUNT = 500
 LOCAL_LOAD_MAX_FILES_SIZE = 512 * 1024 * 1024  # 512 MB
+CLOUD_STORAGE_MAX_FILES_COUNT = LOCAL_LOAD_MAX_FILES_COUNT
 
 RESTRICTIONS = {
     # allow access to analytics component to users with business role
@@ -659,3 +666,5 @@ DATABASES = {
         'PORT': os.getenv('CVAT_POSTGRES_PORT', 5432),
     }
 }
+
+BUCKET_CONTENT_MAX_PAGE_SIZE =  500

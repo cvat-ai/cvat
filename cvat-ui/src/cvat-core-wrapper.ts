@@ -23,12 +23,15 @@ import Comment from 'cvat-core/src/comment';
 import User from 'cvat-core/src/user';
 import Organization from 'cvat-core/src/organization';
 import { Dumper } from 'cvat-core/src/annotation-formats';
+import { APIWrapperEnterOptions } from 'cvat-core/src/plugins';
 
 const cvat: any = _cvat;
 
 cvat.config.backendAPI = '/api';
 cvat.config.origin = window.location.origin;
-cvat.config.uploadChunkSize = 100;
+// Set the TUS chunk size to 2 MB. A small value works better in case of a slow internet connection.
+// A larger value may cause a server-side timeout errors in the current implementation.
+cvat.config.uploadChunkSize = 2;
 (globalThis as any).cvat = cvat;
 
 function getCore(): any {
@@ -64,4 +67,5 @@ export type {
     SerializedLabel,
     StorageData,
     ModelProvider,
+    APIWrapperEnterOptions,
 };
