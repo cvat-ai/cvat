@@ -1334,7 +1334,6 @@ class TestPatchTaskLabel:
             user["username"],
             f'/tasks/{task["id"]}',
             {"labels": [new_label]},
-            org_id=task["organization"],
         )
         assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == task["labels"]["count"] + 1
@@ -1363,7 +1362,6 @@ class TestPatchTaskLabel:
             user["username"],
             f'/tasks/{task["id"]}',
             {"labels": [new_label]},
-            org_id=task["organization"],
         )
         assert response.status_code == HTTPStatus.FORBIDDEN
 
@@ -1388,7 +1386,6 @@ class TestPatchTaskLabel:
             user["username"],
             f'/tasks/{task["id"]}',
             {"labels": [new_label]},
-            org_id=task["organization"],
         )
         assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == task["labels"]["count"] + 1

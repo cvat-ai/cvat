@@ -213,9 +213,7 @@ class TestGetProjectBackup:
             and is_org_member(user["id"], project["organization"])
         )
 
-        self._test_cannot_get_project_backup(
-            user["username"], project["id"], org_id=project["organization"]
-        )
+        self._test_cannot_get_project_backup(user["username"], project["id"])
 
     # Org worker that in [project:owner, project:assignee] can get project backup.
     def test_org_worker_can_get_project_backup(
@@ -231,9 +229,7 @@ class TestGetProjectBackup:
             and is_org_member(user["id"], project["organization"])
         )
 
-        self._test_can_get_project_backup(
-            user["username"], project["id"], org_id=project["organization"]
-        )
+        self._test_can_get_project_backup(user["username"], project["id"])
 
     # Org supervisor that in [project:owner, project:assignee] can get project backup.
     def test_org_supervisor_can_get_project_backup(
@@ -249,9 +245,7 @@ class TestGetProjectBackup:
             and is_org_member(user["id"], project["organization"])
         )
 
-        self._test_can_get_project_backup(
-            user["username"], project["id"], org_id=project["organization"]
-        )
+        self._test_can_get_project_backup(user["username"], project["id"])
 
     # Org supervisor that not in [project:owner, project:assignee] cannot get project backup.
     def test_org_supervisor_cannot_get_project_backup(
@@ -267,9 +261,7 @@ class TestGetProjectBackup:
             and is_org_member(user["id"], project["organization"])
         )
 
-        self._test_cannot_get_project_backup(
-            user["username"], project["id"], org_id=project["organization"]
-        )
+        self._test_cannot_get_project_backup(user["username"], project["id"])
 
     # Org maintainer that not in [project:owner, project:assignee] can get project backup.
     def test_org_maintainer_can_get_project_backup(
@@ -285,9 +277,7 @@ class TestGetProjectBackup:
             and is_org_member(user["id"], project["organization"])
         )
 
-        self._test_can_get_project_backup(
-            user["username"], project["id"], org_id=project["organization"]
-        )
+        self._test_can_get_project_backup(user["username"], project["id"])
 
     # Org owner that not in [project:owner, project:assignee] can get project backup.
     def test_org_owner_can_get_project_backup(
@@ -303,9 +293,7 @@ class TestGetProjectBackup:
             and is_org_member(user["id"], project["organization"])
         )
 
-        self._test_can_get_project_backup(
-            user["username"], project["id"], org_id=project["organization"]
-        )
+        self._test_can_get_project_backup(user["username"], project["id"])
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -810,7 +798,6 @@ class TestPatchProjectLabel:
             user["username"],
             f'/projects/{project["id"]}',
             {"labels": [new_label]},
-            org_id=project["organization"],
         )
         assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == project["labels"]["count"] + 1
@@ -839,7 +826,6 @@ class TestPatchProjectLabel:
             user["username"],
             f'/projects/{project["id"]}',
             {"labels": [new_label]},
-            org_id=project["organization"],
         )
         assert response.status_code == HTTPStatus.FORBIDDEN
 
@@ -864,7 +850,6 @@ class TestPatchProjectLabel:
             user["username"],
             f'/projects/{project["id"]}',
             {"labels": [new_label]},
-            org_id=project["organization"],
         )
         assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == project["labels"]["count"] + 1
