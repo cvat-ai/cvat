@@ -73,8 +73,6 @@ import EmailConfirmationPage from './email-confirmation-pages/email-confirmed';
 import EmailVerificationSentPage from './email-confirmation-pages/email-verification-sent';
 import IncorrectEmailConfirmationPage from './email-confirmation-pages/incorrect-email-confirmation';
 import CreateModelPage from './create-model-page/create-model-page';
-import CreateJobPage from './create-job-page/create-job-page';
-import TaskAnalyticsPage from './task-analytics-page/task-analytics-page';
 import OrganizationWatcher from './watchers/organization-watcher';
 
 interface CVATAppProps {
