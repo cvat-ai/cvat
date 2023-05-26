@@ -126,7 +126,7 @@ class QualityReport(models.Model):
     @property
     def organization_id(self):
         if task := self.get_task():
-            return task.organization
+            return getattr(task.organization, 'id')
         return None
 
 
@@ -221,5 +221,5 @@ class QualitySettings(models.Model):
     @property
     def organization_id(self):
         if task := self.task:
-            return task.organization_id
+            return getattr(task.organization, 'id')
         return None

@@ -907,13 +907,16 @@ class TaskPermission(OpenPolicyAgentPermission):
         return permissions
 
     @classmethod
-    def create_scope_view(cls, request, task_id: int):
+    def create_scope_view(cls, request, task_id: int, iam_context=None):
         try:
             obj = Task.objects.get(id=task_id)
         except Task.DoesNotExist as ex:
             raise ValidationError(str(ex))
 
-        return cls(**cls.unpack_context(request), obj=obj, scope=__class__.Scopes.VIEW)
+        if not iam_context and request:
+            iam_context = get_iam_context(request, obj)
+
+        return cls(**iam_context, obj=obj, scope=__class__.Scopes.VIEW)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -1204,7 +1207,9 @@ class JobPermission(OpenPolicyAgentPermission):
                     scope_params['task_id'] = task_id
 
                     if task_id:
-                        permissions.append(TaskPermission.create_scope_view(request, task_id))
+                        permissions.append(TaskPermission.create_scope_view(
+                            request, task_id, iam_context=iam_context
+                        ))
 
                 self = cls.create_base_perm(request, view, scope, iam_context, obj, **scope_params)
                 permissions.append(self)
@@ -1641,8 +1646,10 @@ class QualityReportPermission(OpenPolicyAgentPermission):
         VIEW_STATUS = 'view:status'
 
     @classmethod
-    def create_scope_check_status(cls, request, job_owner_id: int):
-        return cls(**cls.unpack_context(request), scope='view:status', job_owner_id=job_owner_id)
+    def create_scope_check_status(cls, request, job_owner_id: int, iam_context=None):
+        if not iam_context and request:
+            iam_context = get_iam_context(request, None)
+        return cls(**iam_context, scope='view:status', job_owner_id=job_owner_id)
 
     @classmethod
     def create(cls, request, view, obj, iam_context):
@@ -1669,7 +1676,9 @@ class QualityReportPermission(OpenPolicyAgentPermission):
                 elif scope == Scopes.CREATE:
                     task_id = request.data.get('task_id')
                     if task_id is not None:
-                        permissions.append(TaskPermission.create_scope_view(request, task_id))
+                        permissions.append(TaskPermission.create_scope_view(
+                            request, task_id, iam_context=iam_context
+                        ))
 
                     permissions.append(cls.create_base_perm(request, view, scope, iam_context, obj))
                 else:

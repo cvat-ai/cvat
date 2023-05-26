@@ -21,6 +21,7 @@
         "url": "http://localhost:8080/api/labels?job_id=28"
       },
       "mode": "annotation",
+      "organization": 2,
       "project_id": null,
       "stage": "acceptance",
       "start_frame": 0,
@@ -50,6 +51,7 @@
         "url": "http://localhost:8080/api/labels?job_id=27"
       },
       "mode": "annotation",
+      "organization": 2,
       "project_id": null,
       "stage": "annotation",
       "start_frame": 0,

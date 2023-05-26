@@ -282,9 +282,7 @@ class TestGetQualityReports(_PermissionTestBase):
         report = self.create_quality_report(admin_user, task["id"])
 
         if allow:
-            self._test_get_report_200(
-                user["username"], report["id"], expected_data=report
-            )
+            self._test_get_report_200(user["username"], report["id"], expected_data=report)
         else:
             self._test_get_report_403(user["username"], report["id"])
 
@@ -561,9 +559,7 @@ class TestListQualityConflicts(_PermissionTestBase):
         assert conflicts
 
         if allow:
-            self._test_list_conflicts_200(
-                user, report["id"], expected_data=conflicts
-            )
+            self._test_list_conflicts_200(user, report["id"], expected_data=conflicts)
         else:
             self._test_list_conflicts_200(user, report["id"], expected_data=[])
 
@@ -706,9 +702,7 @@ class TestGetSettings(_PermissionTestBase):
         settings = quality_settings[settings_id]
 
         if allow:
-            self._test_get_settings_200(
-                user["username"], settings_id, expected_data=settings
-            )
+            self._test_get_settings_200(user["username"], settings_id, expected_data=settings)
         else:
             self._test_get_settings_403(user["username"], settings_id)
 
