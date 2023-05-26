@@ -159,12 +159,12 @@ class CustomAutoSchema(AutoSchema):
 
         return '_'.join([tokenized_path[0]] + [action] + tokenized_path[1:])
 
-    def _get_request_for_media_type(self, serializer):
+    def _get_request_for_media_type(self, serializer, *args, **kwargs):
         # Enables support for required=False serializers in request body specification
         # in drf-spectacular. Doesn't block other extensions on the target serializer.
         # This is supported by OpenAPI and by SDK generator, but not by drf-spectacular
 
-        schema, required = super()._get_request_for_media_type(serializer)
+        schema, required = super()._get_request_for_media_type(serializer, *args, **kwargs)
 
         if isinstance(serializer, serializers.Serializer):
             if not serializer.required:
