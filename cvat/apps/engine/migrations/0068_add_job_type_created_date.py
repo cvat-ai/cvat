@@ -16,8 +16,6 @@ def add_created_date_to_existing_jobs(apps, schema_editor):
 
 class Migration(migrations.Migration):
 
-    replaces = [('engine', '0068_auto_20230406_1333'), ('engine', '0069_annotationconflict_annotationconflictsreport'), ('engine', '0070_alter_segment_frames'), ('engine', '0071_job_created_date'), ('engine', '0072_auto_20230422_1013'), ('engine', '0073_auto_20230426_1557'), ('engine', '0074_rename_frame_id_annotationconflict_frame'), ('engine', '0075_alter_annotationconflict_type'), ('engine', '0076_alter_annotationid_type'), ('engine', '0077_alter_annotationconflict_type'), ('engine', '0078_alter_annotationconflict_type'), ('engine', '0079_alter_annotationconflict_type'), ('engine', '0080_annotationconflict_importance'), ('engine', '0081_qualitysettings'), ('engine', '0082_alter_job_type'), ('engine', '0083_move_quality_models')]
-
     dependencies = [
         ('engine', '0067_alter_cloudstorage_credentials_type'),
     ]
