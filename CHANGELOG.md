@@ -7,34 +7,125 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## \[2.5.0] - Unreleased
 ### Added
-- Add support for Azure Blob Storage connection string authentication(<https://github.com/openvinotoolkit/cvat/pull/4649>)
+- Support share point/cloud storage files and directories that should be excluded when creating a task (server) (<https://github.com/opencv/cvat/pull/6074>)
+- Support task creation with cloud storage/share directories (<https://github.com/opencv/cvat/pull/6074>)
+- Support task creation with any type of data supported by the server by default from cloud storage
+without use_cache option (<https://github.com/opencv/cvat/pull/6074>)
+- Support task creation with cloud storage data and without use_cache option (<https://github.com/opencv/cvat/pull/6074>)
 
 ### Changed
-- Moving a task from a project to another project is disabled (<https://github.com/opencv/cvat/pull/5901>)
-- In skeleton annotation wrapping rectangle is visible only when a skeleton is activated (<https://github.com/opencv/cvat/pull/5911>)
+- Cloud storage manifest file is optional (<https://github.com/opencv/cvat/pull/6074>)
+- Updated Django to 4.2.x version (<https://github.com/opencv/cvat/pull/6122>)
+- Some Nuclio functions' names were changed to follow a common convention:
+  `onnx-yolov7` -> `onnx-wongkinyiu-yolov7`, `ultralytics-yolov5` -> `pth-ultralytics-yolov5`
+  (<https://github.com/opencv/cvat/pull/6140>)
+
+### Deprecated
+- The endpoint /cloudstorages/{id}/content was deprecated (<https://github.com/opencv/cvat/pull/6074>)
+
+### Removed
+- TDB
+
+### Fixed
+- Skeletons dumping on created tasks/projects (<https://github.com/opencv/cvat/pull/6157>)
+- Fix saving annotations for skeleton tracks (<https://github.com/opencv/cvat/pull/6075>)
+
+### Security
+- TDB
+
+## \[2.4.4] - 2023-05-18
+### Added
+- Introduced a new configuration option for controlling the invocation of Nuclio functions.
+  (<https://github.com/opencv/cvat/pull/6146>)
+
+### Changed
+- Relocated SAM masks decoder to frontend operation.
+  (<https://github.com/opencv/cvat/pull/6019>)
+- Switched `person-reidentification-retail-0300` and `faster_rcnn_inception_v2_coco` Nuclio functions with `person-reidentification-retail-0277` and `faster_rcnn_inception_resnet_v2_atrous_coco` respectively.
+  (<https://github.com/opencv/cvat/pull/6129>)
+- Upgraded OpenVINO-based Nuclio functions to utilize the OpenVINO 2022.3 runtime.
+  (<https://github.com/opencv/cvat/pull/6129>)
+
+### Fixed
+- Resolved issues with tracking multiple objects (30 and more) using the TransT tracker.
+  (<https://github.com/opencv/cvat/pull/6073>)
+- Addressed azure.core.exceptions.ResourceExistsError: The specified blob already exists.
+  (<https://github.com/opencv/cvat/pull/6082>)
+- Corrected image scaling issues when transitioning between images of different resolutions.
+  (<https://github.com/opencv/cvat/pull/6081>)
+- Fixed inaccurate reporting of completed job counts.
+  (<https://github.com/opencv/cvat/issues/6098>)
+- Allowed OpenVINO-based Nuclio functions to be deployed to Kubernetes.
+  (<https://github.com/opencv/cvat/pull/6129>)
+- Improved skeleton size checks after drawing.
+  (<https://github.com/opencv/cvat/pull/6156>)
+- Fixed HRNet CPU serverless function.
+  (<https://github.com/opencv/cvat/pull/6150>)
+- Prevented sending of empty list of events.
+  (<https://github.com/opencv/cvat/pull/6154>)
+
+## \[2.4.3] - 2023-04-24
+### Changed
+- Docker images no longer include Ubuntu package sources or FFmpeg/OpenH264 sources
+  (<https://github.com/opencv/cvat/pull/6040>)
+- TUS chunk size changed from 100 MB to 2 MB
+  (<https://github.com/opencv/cvat/pull/6058>)
+
+## \[2.4.2] - 2023-04-14
+### Added
+- Support for Azure Blob Storage connection string authentication(<https://github.com/openvinotoolkit/cvat/pull/4649>)
+- Segment Anything interactor for CPU/GPU (<https://github.com/opencv/cvat/pull/6008>)
+
+### Changed
+- The capability to transfer a task from one project to another project has been disabled (<https://github.com/opencv/cvat/pull/5901>)
+- The bounding rectangle in the skeleton annotation is visible solely when the skeleton is active (<https://github.com/opencv/cvat/pull/5911>)
+- Base backend image upgraded from ubuntu:20.04 to ubuntu:22.04 (<https://github.com/opencv/cvat/pull/6021>)
 
 ### Deprecated
 - TDB
 
 ### Removed
-- Cloud storage unique_together limitation (<https://github.com/opencv/cvat/pull/5855>)
+- Cloud storage `unique_together` limitation (<https://github.com/opencv/cvat/pull/5855>)
+- Support for redundant request media types in the API
+  (<https://github.com/opencv/cvat/pull/5874>)
+- Static URLs and direct SDK support for the tus chunk endpoints.
+  Clients must use the `Location` header from the response to the `Upload-Length` request,
+  as per the tus creation protocol
+  (<https://github.com/opencv/cvat/pull/5961>)
 
 ### Fixed
 - An invalid project/org handling in webhooks (<https://github.com/opencv/cvat/pull/5707>)
 - Warning `key` is undefined on project page (<https://github.com/opencv/cvat/pull/5876>)
-- Invalid mask when running automatic annotation on a task (<https://github.com/opencv/cvat/pull/5883>)
-- Option 'Reset zoom' now restored as user specified when reload CVAT (<https://github.com/opencv/cvat/pull/5908>)
+- An invalid mask detected when performing automatic annotation on a task (<https://github.com/opencv/cvat/pull/5883>)
+- The 'Reset zoom' option now retains the user's preferences upon reloading CVAT (<https://github.com/opencv/cvat/pull/5908>)
 - Cloud storage content listing when the manifest name contains special characters
   (<https://github.com/opencv/cvat/pull/5873>)
 - Width and height in CVAT dataset format mask annotations (<https://github.com/opencv/cvat/pull/5905>)
 - Empty list of export formats for a project without tasks (<https://github.com/opencv/cvat/pull/5899>)
-- Downgrade NumPy used by HRNet because `np.int` is no longer available (<https://github.com/opencv/cvat/pull/5574>)
-- Make empty previews responsive to page resize <https://github.com/opencv/cvat/pull/5925>
+- Downgraded NumPy used by HRNet because `np.int` is no longer available (<https://github.com/opencv/cvat/pull/5574>)
+- Empty previews responsive to page resize (<https://github.com/opencv/cvat/pull/5925>)
 - Nuclio function invocations when deployed via the Helm chart
   (<https://github.com/opencv/cvat/issues/5626>)
+- Export of a job from a task with multiple jobs (<https://github.com/opencv/cvat/pull/5928>)
+- Points missing when exporting tracked skeleton (<https://github.com/opencv/cvat/issues/5497>)
+- Escaping in the `filter` parameter in generated URLs
+  (<https://github.com/opencv/cvat/issues/5566>)
+- Rotation property lost during saving a mutable attribute (<https://github.com/opencv/cvat/pull/5968>)
+- Optimized /api/jobs request (<https://github.com/opencv/cvat/pull/5962>)
+- Server micro version support check in SDK/CLI (<https://github.com/opencv/cvat/pull/5991>)
+- \[SDK\] Compatibility with upcoming urllib 2.1.0
+  (<https://github.com/opencv/cvat/pull/6002>)
+- Fix TUS file uploading if multiple apache processes are used (<https://github.com/opencv/cvat/pull/6006>)
+- The issue related to webhook events not being sent has been resolved (<https://github.com/opencv/cvat/pull/5916>)
 
 ### Security
-- TDB
+- Updated Redis (in the Compose file) to 7.0.x, and redis-py to 4.5.4
+  (<https://github.com/opencv/cvat/pull/6016>)
+
+## \[2.4.1] - 2023-04-05
+### Fixed
+- Optimized annotation fetching up to 10 times (<https://github.com/opencv/cvat/pull/5974>)
+- Incorrect calculation of working time in analytics (<https://github.com/opencv/cvat/pull/5973>)
 
 ## \[2.4.0] - 2023-03-16
 ### Added

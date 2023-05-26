@@ -4,7 +4,6 @@
 
 import logging
 import os
-import re
 from http import HTTPStatus
 from pathlib import Path
 from subprocess import PIPE, CalledProcessError, run
@@ -12,6 +11,7 @@ from time import sleep
 
 import pytest
 import requests
+import yaml
 
 from shared.utils.config import ASSETS_DIR, get_server_url
 
@@ -207,9 +207,15 @@ def create_compose_files(container_name_files):
         with open(filename.with_name(filename.name.replace(".tests", "")), "r") as dcf, open(
             filename, "w"
         ) as ndcf:
-            ndcf.writelines(
-                [line for line in dcf.readlines() if not re.match("^.+container_name.+$", line)]
-            )
+            dc_config = yaml.safe_load(dcf)
+
+            for service_name, service_config in dc_config["services"].items():
+                service_config.pop("container_name", None)
+                if service_name == "cvat_server":
+                    service_env = service_config["environment"]
+                    service_env["DJANGO_SETTINGS_MODULE"] = "cvat.settings.testing_rest"
+
+            yaml.dump(dc_config, ndcf)
 
 
 def delete_compose_files(container_name_files):
@@ -260,7 +266,8 @@ def get_server_image_tag():
 
 def docker_compose(dc_files, cvat_root_dir):
     return [
-        "docker-compose",
+        "docker",
+        "compose",
         f"--project-name={PREFIX}",
         # use compatibility mode to have fixed names for containers (with underscores)
         # https://github.com/docker/compose#about-update-and-backward-compatibility
@@ -277,7 +284,6 @@ def start_services(dc_files, rebuild=False, cvat_root_dir=CVAT_ROOT_DIR):
             f"List of running containers: {', '.join(running_containers())}"
         )
 
-    _run(docker_compose(dc_files, cvat_root_dir) + ["build"], capture_output=False)
     _run(
         docker_compose(dc_files, cvat_root_dir) + ["up", "-d", *["--build"] * rebuild],
         capture_output=False,
@@ -355,8 +361,9 @@ def local_start(start, stop, dumpdb, cleanup, rebuild, cvat_root_dir, cvat_db_di
         stop_services(dc_files, cvat_root_dir)
         pytest.exit("All testing containers are stopped", returncode=0)
 
-    if not any(
-        [cn in [f"{PREFIX}_cvat_server_1", f"{PREFIX}_cvat_db_1"] for cn in running_containers()]
+    if (
+        not any(set(running_containers()) & {f"{PREFIX}_cvat_server_1", f"{PREFIX}_cvat_db_1"})
+        or rebuild
     ):
         start_services(dc_files, rebuild, cvat_root_dir)
 

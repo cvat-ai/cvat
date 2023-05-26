@@ -8,7 +8,7 @@ from rest_framework.permissions import SAFE_METHODS
 from django.utils.crypto import get_random_string
 
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
-from cvat.apps.engine.mixins import PartialUpdateModelMixin, DestroyModelMixin, CreateModelMixin
+from cvat.apps.engine.mixins import PartialUpdateModelMixin
 
 from cvat.apps.iam.permissions import (
     InvitationPermission, MembershipPermission, OrganizationPermission)
@@ -112,7 +112,7 @@ class OrganizationViewSet(viewsets.GenericViewSet,
             '204': OpenApiResponse(description='The membership has been deleted'),
         })
 )
-class MembershipViewSet(mixins.RetrieveModelMixin, DestroyModelMixin,
+class MembershipViewSet(mixins.RetrieveModelMixin, mixins.DestroyModelMixin,
     mixins.ListModelMixin, PartialUpdateModelMixin, viewsets.GenericViewSet):
     queryset = Membership.objects.all()
     ordering = '-id'
@@ -170,8 +170,8 @@ class InvitationViewSet(viewsets.GenericViewSet,
                    mixins.RetrieveModelMixin,
                    mixins.ListModelMixin,
                    PartialUpdateModelMixin,
-                   CreateModelMixin,
-                   DestroyModelMixin,
+                   mixins.CreateModelMixin,
+                   mixins.DestroyModelMixin,
     ):
     queryset = Invitation.objects.all()
     http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
@@ -196,13 +196,12 @@ class InvitationViewSet(viewsets.GenericViewSet,
         permission = InvitationPermission.create_scope_list(self.request)
         return permission.filter(queryset)
 
-    def perform_create(self, serializer, **kwargs):
-        extra_kwargs = {
-            'owner': self.request.user,
-            'key': get_random_string(length=64),
-            'organization': self.request.iam_context['organization']
-        }
-        super().perform_create(serializer, **extra_kwargs)
+    def perform_create(self, serializer):
+        serializer.save(
+            owner=self.request.user,
+            key=get_random_string(length=64),
+            organization=self.request.iam_context['organization']
+        )
 
     def perform_update(self, serializer):
         if 'accepted' in self.request.query_params:

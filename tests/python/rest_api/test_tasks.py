@@ -5,18 +5,18 @@
 
 import io
 import json
+import os
 import os.path as osp
-import subprocess
 from copy import deepcopy
 from functools import partial
 from http import HTTPStatus
 from itertools import chain, product
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import List
+from typing import List, Optional
 
 import pytest
-from cvat_sdk import Client, Config
+from cvat_sdk import Client, Config, exceptions
 from cvat_sdk.api_client import models
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from cvat_sdk.core.helpers import get_paginated_collection
@@ -25,7 +25,6 @@ from deepdiff import DeepDiff
 from PIL import Image
 
 import shared.utils.s3 as s3
-from shared.fixtures.init import get_server_image_tag
 from shared.utils.config import (
     BASE_URL,
     USER_PASS,
@@ -34,7 +33,7 @@ from shared.utils.config import (
     patch_method,
     post_method,
 )
-from shared.utils.helpers import generate_image_files
+from shared.utils.helpers import generate_image_files, generate_manifest
 
 from .utils import (
     CollectionSimpleFilterTestBase,
@@ -44,12 +43,17 @@ from .utils import (
 )
 
 
-def get_cloud_storage_content(username, cloud_storage_id, manifest):
+def get_cloud_storage_content(
+    api_version: int, username: str, cloud_storage_id: int, manifest: Optional[str] = None
+):
     with make_api_client(username) as api_client:
-        (data, _) = api_client.cloudstorages_api.retrieve_content(
-            cloud_storage_id, manifest_path=manifest
-        )
-        return data
+        kwargs = {"manifest_path": manifest} if manifest else {}
+
+        if api_version == 1:
+            (data, _) = api_client.cloudstorages_api.retrieve_content(cloud_storage_id, **kwargs)
+            return data
+        (data, _) = api_client.cloudstorages_api.retrieve_content_v2(cloud_storage_id, **kwargs)
+        return [f"{f['name']}{'/' if str(f['type']) == 'DIR' else ''}" for f in data["content"]]
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -351,7 +355,10 @@ class TestPatchTaskAnnotations:
     def request_data(self, annotations):
         def get_data(tid):
             data = deepcopy(annotations["task"][str(tid)])
-            data["shapes"][0].update({"points": [2.0, 3.0, 4.0, 5.0, 6.0, 7.0]})
+            if data["shapes"][0]["type"] == "skeleton":
+                data["shapes"][0]["elements"][0].update({"points": [2.0, 3.0, 4.0, 5.0]})
+            else:
+                data["shapes"][0].update({"points": [2.0, 3.0, 4.0, 5.0, 6.0, 7.0]})
             data["version"] += 1
             return data
 
@@ -386,7 +393,7 @@ class TestPatchTaskAnnotations:
         users = find_users(privilege=privilege)
         tasks = tasks_by_org[org]
         filtered_tasks = filter_tasks_with_shapes(tasks)
-        username, tid = find_task_staff_user(filtered_tasks, users, task_staff)
+        username, tid = find_task_staff_user(filtered_tasks, users, task_staff, [21])
 
         data = request_data(tid)
         with make_api_client(username) as api_client:
@@ -428,7 +435,7 @@ class TestPatchTaskAnnotations:
     ):
         users = find_users(role=role, org=org)
         tasks = tasks_by_org[org]
-        username, tid = find_task_staff_user(tasks, users, task_staff, [12, 14, 18])
+        username, tid = find_task_staff_user(tasks, users, task_staff)
 
         data = request_data(tid)
         with make_api_client(username) as api_client:
@@ -454,6 +461,112 @@ class TestGetTaskDataset:
         task = tasks_with_shapes[0]
         response = self._test_export_task(admin_user, task["id"], format="CVAT for images 1.1")
         assert response.data
+
+    @pytest.mark.parametrize("tid", [21])
+    @pytest.mark.parametrize(
+        "format_name", ["CVAT for images 1.1", "CVAT for video 1.1", "COCO Keypoints 1.0"]
+    )
+    def test_can_export_task_with_several_jobs(self, admin_user, tid, format_name):
+        response = self._test_export_task(admin_user, tid, format=format_name)
+        assert response.data
+
+    @pytest.mark.parametrize("tid", [8])
+    def test_can_export_task_to_coco_format(self, admin_user, tid):
+        # these annotations contains incorrect frame numbers
+        # in order to check that server handle such cases
+        annotations = {
+            "version": 0,
+            "tags": [],
+            "shapes": [],
+            "tracks": [
+                {
+                    "label_id": 63,
+                    "frame": 1,
+                    "group": 0,
+                    "source": "manual",
+                    "shapes": [
+                        {
+                            "type": "skeleton",
+                            "frame": 1,
+                            "occluded": False,
+                            "outside": False,
+                            "z_order": 0,
+                            "rotation": 0,
+                            "points": [],
+                            "attributes": [],
+                        }
+                    ],
+                    "attributes": [],
+                    "elements": [
+                        {
+                            "label_id": 64,
+                            "frame": 0,
+                            "group": 0,
+                            "source": "manual",
+                            "shapes": [
+                                {
+                                    "type": "points",
+                                    "frame": 1,
+                                    "occluded": False,
+                                    "outside": True,
+                                    "z_order": 0,
+                                    "rotation": 0,
+                                    "points": [74.14935096036425, 79.09960455479086],
+                                    "attributes": [],
+                                },
+                                {
+                                    "type": "points",
+                                    "frame": 7,
+                                    "occluded": False,
+                                    "outside": False,
+                                    "z_order": 0,
+                                    "rotation": 0,
+                                    "points": [74.14935096036425, 79.09960455479086],
+                                    "attributes": [],
+                                },
+                            ],
+                            "attributes": [],
+                        },
+                        {
+                            "label_id": 65,
+                            "frame": 0,
+                            "group": 0,
+                            "source": "manual",
+                            "shapes": [
+                                {
+                                    "type": "points",
+                                    "frame": 0,
+                                    "occluded": False,
+                                    "outside": False,
+                                    "z_order": 0,
+                                    "rotation": 0,
+                                    "points": [285.07319976630424, 353.51583641966175],
+                                    "attributes": [],
+                                }
+                            ],
+                            "attributes": [],
+                        },
+                    ],
+                }
+            ],
+        }
+        response = patch_method(
+            admin_user, f"tasks/{tid}/annotations", annotations, action="update"
+        )
+        assert response.status_code == HTTPStatus.OK
+
+        # check that we can export task
+        response = self._test_export_task(admin_user, tid, format="COCO Keypoints 1.0")
+        assert response.status == HTTPStatus.OK
+
+        # check that server saved track annotations correctly
+        response = get_method(admin_user, f"tasks/{tid}/annotations")
+        assert response.status_code == HTTPStatus.OK
+
+        annotations = response.json()
+        assert annotations["tracks"][0]["frame"] == 0
+        assert annotations["tracks"][0]["shapes"][0]["frame"] == 0
+        assert annotations["tracks"][0]["elements"][0]["shapes"][0]["frame"] == 0
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -703,22 +816,36 @@ class TestPostTaskData:
 
     @pytest.mark.with_external_services
     @pytest.mark.parametrize(
-        "cloud_storage_id, manifest, use_bucket_content, org",
+        "use_cache, cloud_storage_id, manifest, use_bucket_content, content_api_version, org",
         [
-            (1, "manifest.jsonl", False, ""),  # public bucket
-            (2, "sub/manifest.jsonl", True, "org2"),  # private bucket
+            (True, 1, "manifest.jsonl", False, None, ""),  # public bucket
+            (True, 2, "sub/manifest.jsonl", True, 1, "org2"),  # private bucket
+            (True, 2, "sub/manifest.jsonl", True, 2, "org2"),  # private bucket
+            (True, 1, None, False, None, ""),
+            (True, 2, None, True, 1, "org2"),
+            (True, 2, None, True, 2, "org2"),
+            (False, 1, None, False, None, ""),
+            (False, 2, None, True, 1, "org2"),
+            (False, 2, None, True, 2, "org2"),
         ],
     )
     def test_create_task_with_cloud_storage_files(
-        self, cloud_storage_id, manifest, use_bucket_content, org
+        self,
+        use_cache: bool,
+        cloud_storage_id: int,
+        manifest: str,
+        use_bucket_content: bool,
+        content_api_version: Optional[int],
+        org: str,
     ):
         if use_bucket_content:
             cloud_storage_content = get_cloud_storage_content(
-                self._USERNAME, cloud_storage_id, manifest
+                content_api_version, self._USERNAME, cloud_storage_id, manifest
             )
         else:
             cloud_storage_content = ["image_case_65_1.png", "image_case_65_2.png"]
-        cloud_storage_content.append(manifest)
+        if manifest:
+            cloud_storage_content.append(manifest)
 
         task_spec = {
             "name": f"Task with files from cloud storage {cloud_storage_id}",
@@ -731,7 +858,7 @@ class TestPostTaskData:
 
         data_spec = {
             "image_quality": 75,
-            "use_cache": True,
+            "use_cache": use_cache,
             "cloud_storage_id": cloud_storage_id,
             "server_files": cloud_storage_content,
         }
@@ -739,6 +866,172 @@ class TestPostTaskData:
         _test_create_task(
             self._USERNAME, task_spec, data_spec, content_type="application/json", org=org
         )
+
+    @pytest.mark.with_external_services
+    @pytest.mark.parametrize("cloud_storage_id", [2])
+    @pytest.mark.parametrize(
+        "use_cache, use_manifest, server_files, server_files_exclude, task_size",
+        [
+            (True, False, ["test/"], None, 6),
+            (True, False, ["test/sub_0/", "test/sub_1/"], None, 6),
+            (True, False, ["test/"], ["test/sub_0/", "test/sub_1/img_1.jpeg"], 2),
+            (True, True, ["test/"], None, 6),
+            (True, True, ["test/sub_0/", "test/sub_1/"], None, 6),
+            (True, True, ["test/"], ["test/sub_0/", "test/sub_1/img_1.jpeg"], 2),
+            (False, False, ["test/"], None, 6),
+            (False, False, ["test/sub_0/", "test/sub_1/"], None, 6),
+            (False, False, ["test/"], ["test/sub_0/", "test/sub_1/img_1.jpeg"], 2),
+        ],
+    )
+    @pytest.mark.parametrize("org", [""])
+    def test_create_task_with_cloud_storage_directories_and_excluded_files(
+        self,
+        cloud_storage_id: int,
+        use_cache: bool,
+        use_manifest: bool,
+        server_files: List[str],
+        server_files_exclude: Optional[List[str]],
+        task_size: int,
+        org: str,
+        cloud_storages,
+        request,
+    ):
+        s3_client = s3.make_client()
+        images = generate_image_files(3, prefixes=["img_"] * 3)
+
+        cloud_storage = cloud_storages[cloud_storage_id]
+
+        for image in images:
+            for i in range(2):
+                image.seek(0)
+                s3_client.create_file(
+                    data=image,
+                    bucket=cloud_storage["resource"],
+                    filename=f"test/sub_{i}/{image.name}",
+                )
+                request.addfinalizer(
+                    partial(
+                        s3_client.remove_file,
+                        bucket=cloud_storage["resource"],
+                        filename=f"test/sub_{i}/{image.name}",
+                    )
+                )
+
+        if use_manifest:
+            with TemporaryDirectory() as tmp_dir:
+                manifest_root_path = f"{tmp_dir}/test/"
+                for i in range(2):
+                    path_with_sub_folders = f"{tmp_dir}/test/sub_{i}/"
+                    os.makedirs(path_with_sub_folders)
+                    for image in images:
+                        with open(osp.join(path_with_sub_folders, image.name), "wb") as f:
+                            f.write(image.getvalue())
+
+                generate_manifest(manifest_root_path)
+
+                with open(osp.join(manifest_root_path, "manifest.jsonl"), mode="rb") as m_file:
+                    s3_client.create_file(
+                        data=m_file.read(),
+                        bucket=cloud_storage["resource"],
+                        filename="test/manifest.jsonl",
+                    )
+                    request.addfinalizer(
+                        partial(
+                            s3_client.remove_file,
+                            bucket=cloud_storage["resource"],
+                            filename="test/manifest.jsonl",
+                        )
+                    )
+                server_files.append("test/manifest.jsonl")
+
+        task_spec = {
+            "name": f"Task created from directories from cloud storage {cloud_storage_id}",
+            "labels": [
+                {
+                    "name": "car",
+                }
+            ],
+        }
+
+        data_spec = {
+            "image_quality": 75,
+            "use_cache": use_cache,
+            "cloud_storage_id": cloud_storage_id,
+            "server_files": server_files,
+        }
+        if server_files_exclude:
+            data_spec["server_files_exclude"] = server_files_exclude
+
+        task_id, _ = _test_create_task(
+            self._USERNAME, task_spec, data_spec, content_type="application/json", org=org
+        )
+
+        with make_api_client(self._USERNAME) as api_client:
+            (task, response) = api_client.tasks_api.retrieve(task_id, org=org)
+            assert response.status == HTTPStatus.OK
+            assert task.size == task_size
+
+    @pytest.mark.with_external_services
+    @pytest.mark.parametrize(
+        "storage_id, manifest",
+        [
+            (1, "manifest.jsonl"),  # public bucket
+            (2, "sub/manifest.jsonl"),  # private bucket
+        ],
+    )
+    @pytest.mark.parametrize(
+        "spec, field",
+        [
+            ("spec", "source_storage"),
+            ("spec", "target_storage"),
+            ("data", "cloud_storage_id"),
+        ],
+    )
+    def test_user_cannot_create_task_with_cloud_storage_without_access(
+        self, storage_id, spec, field, manifest, regular_lonely_user
+    ):
+        user = regular_lonely_user
+
+        task_spec = {
+            "name": f"Task with files from foreign cloud storage {storage_id}",
+            "labels": [
+                {
+                    "name": "car",
+                }
+            ],
+        }
+
+        data_spec = {
+            "image_quality": 75,
+            "use_cache": True,
+        }
+
+        if spec == "spec":
+            task_spec.update(
+                {
+                    field: {
+                        "location": "cloud_storage",
+                        "cloud_storage_id": storage_id,
+                    }
+                }
+            )
+            data_spec["server_files"] = ["images/image_1.jpg"]
+
+        elif spec == "data":
+            data_spec.update(
+                {
+                    field: storage_id,
+                    "filename_pattern": "*",
+                    "server_files": [manifest],
+                }
+            )
+        else:
+            assert False
+
+        with pytest.raises(exceptions.ApiException) as capture:
+            _test_create_task(user, task_spec, data_spec, content_type="application/json")
+
+        assert capture.value.status == HTTPStatus.FORBIDDEN
 
     @pytest.mark.with_external_services
     @pytest.mark.parametrize("cloud_storage_id", [1])
@@ -753,6 +1046,14 @@ class TestPostTaskData:
             ("abc_manifest.jsonl", "[a-c]*.jpeg", False, 2),
             ("abc_manifest.jsonl", "[d]*.jpeg", False, 1),
             ("abc_manifest.jsonl", "[e-z]*.jpeg", False, 0),
+            (None, "*", True, 5),
+            (None, "test/*", True, 3),
+            (None, "test/sub*1.jpeg", True, 1),
+            (None, "*image*.jpeg", True, 3),
+            (None, "wrong_pattern", True, 0),
+            (None, "[a-c]*.jpeg", False, 2),
+            (None, "[d]*.jpeg", False, 1),
+            (None, "[e-z]*.jpeg", False, 0),
         ],
     )
     @pytest.mark.parametrize("org", [""])
@@ -788,42 +1089,27 @@ class TestPostTaskData:
                 )
             )
 
-        with TemporaryDirectory() as tmp_dir:
-            for image in images:
-                with open(osp.join(tmp_dir, image.name), "wb") as f:
-                    f.write(image.getvalue())
+        if manifest:
+            with TemporaryDirectory() as tmp_dir:
+                for image in images:
+                    with open(osp.join(tmp_dir, image.name), "wb") as f:
+                        f.write(image.getvalue())
 
-            command = [
-                "docker",
-                "run",
-                "--rm",
-                "-u",
-                "root:root",
-                "-v",
-                f"{tmp_dir}:/local",
-                "--entrypoint",
-                "python3",
-                get_server_image_tag(),
-                "utils/dataset_manifest/create.py",
-                "--output-dir",
-                "/local",
-                "/local",
-            ]
-            subprocess.check_output(command)
+                generate_manifest(tmp_dir)
 
-            with open(osp.join(tmp_dir, "manifest.jsonl"), mode="rb") as m_file:
-                s3_client.create_file(
-                    data=m_file.read(),
-                    bucket=cloud_storage["resource"],
-                    filename=f"test/sub/{manifest}" if sub_dir else manifest,
-                )
-                request.addfinalizer(
-                    partial(
-                        s3_client.remove_file,
+                with open(osp.join(tmp_dir, "manifest.jsonl"), mode="rb") as m_file:
+                    s3_client.create_file(
+                        data=m_file.read(),
                         bucket=cloud_storage["resource"],
                         filename=f"test/sub/{manifest}" if sub_dir else manifest,
                     )
-                )
+                    request.addfinalizer(
+                        partial(
+                            s3_client.remove_file,
+                            bucket=cloud_storage["resource"],
+                            filename=f"test/sub/{manifest}" if sub_dir else manifest,
+                        )
+                    )
 
         task_spec = {
             "name": f"Task with files from cloud storage {cloud_storage_id}",
@@ -838,9 +1124,10 @@ class TestPostTaskData:
             "image_quality": 75,
             "use_cache": True,
             "cloud_storage_id": cloud_storage_id,
-            "server_files": [f"test/sub/{manifest}" if sub_dir else manifest],
             "filename_pattern": filename_pattern,
         }
+        if manifest:
+            data_spec["server_files"] = [f"test/sub/{manifest}" if sub_dir else manifest]
 
         if task_size:
             task_id, _ = _test_create_task(
@@ -1095,7 +1382,7 @@ class TestPatchTaskLabel:
     def test_admin_can_add_skeleton(self, tasks, admin_user):
         task = [t for t in tasks if t["project_id"] is None][0]
         new_skeleton = {
-            "name": "skeleton1",
+            "name": "new skeleton",
             "type": "skeleton",
             "sublabels": [
                 {
@@ -1378,3 +1665,70 @@ class TestPatchTask:
             )
             == {}
         )
+
+    @pytest.mark.with_external_services
+    @pytest.mark.parametrize(
+        "storage_id",
+        [
+            1,  # public bucket
+            2,  # private bucket
+        ],
+    )
+    @pytest.mark.parametrize("field", ["source_storage", "target_storage"])
+    def test_user_cannot_update_task_with_cloud_storage_without_access(
+        self, storage_id, field, regular_lonely_user
+    ):
+        user = regular_lonely_user
+
+        task_spec = {
+            "name": f"Task with files from foreign cloud storage {storage_id}",
+            "labels": [
+                {
+                    "name": "car",
+                }
+            ],
+        }
+        data_spec = {
+            "image_quality": 75,
+            "use_cache": True,
+            "server_files": ["images/image_1.jpg"],
+        }
+        (task_id, _) = _test_create_task(
+            user, task_spec, data_spec, content_type="application/json"
+        )
+
+        updated_fields = {
+            field: {
+                "location": "cloud_storage",
+                "cloud_storage_id": storage_id,
+            }
+        }
+
+        with make_api_client(user) as api_client:
+            (_, response) = api_client.tasks_api.partial_update(
+                task_id,
+                patched_task_write_request=updated_fields,
+                _parse_response=False,
+                _check_status=False,
+            )
+        assert response.status == HTTPStatus.FORBIDDEN
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+def test_can_report_correct_completed_jobs_count(tasks, jobs, admin_user):
+    # Reproduces https://github.com/opencv/cvat/issues/6098
+    task = next(
+        t
+        for t in tasks
+        if t["jobs"]["count"] > 1 and t["jobs"]["completed"] == 0 and t["labels"]["count"] > 1
+    )
+    task_jobs = [j for j in jobs if j["task_id"] == task["id"]]
+
+    with make_api_client(admin_user) as api_client:
+        api_client.jobs_api.partial_update(
+            task_jobs[0]["id"],
+            patched_job_write_request=dict(stage="acceptance", state="completed"),
+        )
+
+        task, _ = api_client.tasks_api.retrieve(task["id"])
+        assert task.jobs.completed == 1
