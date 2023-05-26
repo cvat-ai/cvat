@@ -172,12 +172,11 @@ RUN if [ "${CVAT_DEBUG_ENABLED}" = 'yes' ]; then \
     fi
 
 # Install and initialize CVAT, copy all necessary files
-COPY --chown=${USER} cvat/nginx.conf /etc/nginx/nginx.conf
-COPY --chown=${USER} backend_entrypoint.sh /
+COPY cvat/nginx.conf /etc/nginx/nginx.conf
 COPY --chown=${USER} components /tmp/components
 COPY --chown=${USER} supervisord/ ${HOME}/supervisord
 COPY --chown=${USER} ssh ${HOME}/.ssh
-COPY --chown=${USER} wait-for-it.sh manage.py ${HOME}/
+COPY --chown=${USER} wait-for-it.sh manage.py backend_entrypoint.sh ${HOME}/
 COPY --chown=${USER} utils/ ${HOME}/utils
 COPY --chown=${USER} cvat/ ${HOME}/cvat
 
