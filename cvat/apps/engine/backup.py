@@ -604,6 +604,9 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
             data['job_file_mapping'] = job_file_mapping
 
         _create_thread(self._db_task.pk, data.copy(), isBackupRestore=True)
+        self._db_task.refresh_from_db()
+        db_data.refresh_from_db()
+
         db_data.start_frame = data['start_frame']
         db_data.stop_frame = data['stop_frame']
         db_data.frame_filter = data['frame_filter']
