@@ -1,5 +1,5 @@
 {
-  "count": 38,
+  "count": 36,
   "next": null,
   "previous": null,
   "results": [
@@ -691,50 +691,17 @@
     },
     {
       "attributes": [],
-      "color": "#6080c0",
+      "color": "#91becf",
       "has_parent": false,
       "id": 63,
-      "name": "cat",
-      "parent_id": null,
-      "sublabels": [],
-      "task_id": 22,
-      "type": "any"
-    },
-    {
-      "attributes": [
-        {
-          "default_value": "false",
-          "id": 13,
-          "input_type": "checkbox",
-          "mutable": false,
-          "name": "a1",
-          "values": [
-            "false"
-          ]
-        }
-      ],
-      "color": "#406040",
-      "has_parent": false,
-      "id": 64,
-      "name": "dog",
-      "parent_id": null,
-      "sublabels": [],
-      "task_id": 22,
-      "type": "any"
-    },
-    {
-      "attributes": [],
-      "color": "#89b9bb",
-      "has_parent": false,
-      "id": 66,
-      "name": "sk",
+      "name": "skeleton",
       "parent_id": null,
       "sublabels": [
         {
           "attributes": [],
           "color": "#d12345",
           "has_parent": true,
-          "id": 67,
+          "id": 64,
           "name": "1",
           "type": "points"
         },
@@ -742,21 +709,13 @@
           "attributes": [],
           "color": "#350dea",
           "has_parent": true,
-          "id": 68,
+          "id": 65,
           "name": "2",
-          "type": "points"
-        },
-        {
-          "attributes": [],
-          "color": "#479ffe",
-          "has_parent": true,
-          "id": 69,
-          "name": "3",
           "type": "points"
         }
       ],
-      "svg": "<line x1=\"22.996726989746094\" y1=\"10.472972869873047\" x2=\"41.57780838012695\" y2=\"21.79054069519043\" stroke=\"black\" data-type=\"edge\" data-node-from=\"1\" stroke-width=\"0.5\" data-node-to=\"2\"></line><line x1=\"25.192672729492188\" y1=\"28.885135650634766\" x2=\"22.996726989746094\" y2=\"10.472972869873047\" stroke=\"black\" data-type=\"edge\" data-node-from=\"3\" stroke-width=\"0.5\" data-node-to=\"1\"></line><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"22.996726989746094\" cy=\"10.472972869873047\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-id=\"67\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"41.57780838012695\" cy=\"21.79054069519043\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-id=\"68\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"25.192672729492188\" cy=\"28.885135650634766\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"3\" data-node-id=\"3\" data-label-id=\"69\"></circle>",
-      "task_id": 22,
+      "svg": "<line x1=\"26.91233253479004\" y1=\"27.74985694885254\" x2=\"67.28083801269531\" y2=\"62.590728759765625\" stroke=\"black\" data-type=\"edge\" data-node-from=\"1\" stroke-width=\"0.5\" data-node-to=\"2\"></line><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"26.91233253479004\" cy=\"27.74985694885254\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-id=\"64\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"67.28083801269531\" cy=\"62.590728759765625\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-id=\"65\"></circle>",
+      "task_id": 8,
       "type": "skeleton"
     }
   ]
