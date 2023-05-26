@@ -31,8 +31,6 @@ from cvat.apps.quality_control.serializers import (
 
 from cvat.apps.iam.permissions import AnnotationConflictPermission, QualityReportPermission
 
-from cvat.apps.profiler import silk_profile
-
 
 @extend_schema(tags=["quality"])
 @extend_schema_view(

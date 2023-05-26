@@ -1699,8 +1699,6 @@ class AnnotationConflictPermission(OpenPolicyAgentPermission):
 
     @classmethod
     def create(cls, request, view, obj):
-        Scopes = __class__.Scopes
-
         permissions = []
         if view.basename == 'annotation_conflicts':
             for scope in cls.get_scopes(request, view, obj):
