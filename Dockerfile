@@ -162,8 +162,6 @@ RUN --mount=type=bind,from=build-image,source=/tmp/wheelhouse,target=/mnt/wheelh
 ENV NUMPROCS=1
 COPY --from=build-image-av /opt/ffmpeg/lib /usr/lib
 
-RUN chown -R ${USER} /var/lib/nginx /var/log/nginx
-
 # These variables are required for supervisord substitutions in files
 # This library allows remote python debugging with VS Code
 ARG CVAT_DEBUG_ENABLED
