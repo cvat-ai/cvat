@@ -28,6 +28,7 @@ without use_cache option (<https://github.com/opencv/cvat/pull/6074>)
 
 ### Fixed
 - Skeletons dumping on created tasks/projects (<https://github.com/opencv/cvat/pull/6157>)
+- Fix saving annotations for skeleton tracks (<https://github.com/opencv/cvat/pull/6075>)
 
 ### Security
 - TDB

@@ -4538,7 +4538,7 @@ class JobAnnotationAPITestCase(ApiTestBase):
                     ]
                 },
                 {
-                    "frame": 1,
+                    "frame": 2,
                     "label_id": task["labels"][1]["id"],
                     "group": None,
                     "source": "manual",
