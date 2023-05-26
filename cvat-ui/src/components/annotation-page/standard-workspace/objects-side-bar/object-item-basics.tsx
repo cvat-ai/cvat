@@ -23,7 +23,6 @@ interface Props {
     labels: any[];
     shapeType: ShapeType;
     objectType: ObjectType;
-    isGroundTruth: boolean;
     color: string;
     colorBy: ColorBy;
     type: string;
@@ -68,7 +67,6 @@ function ItemTopComponent(props: Props): JSX.Element {
         toBackgroundShortcut,
         toForegroundShortcut,
         removeShortcut,
-        isGroundTruth,
         changeColor,
         changeLabel,
         copy,
@@ -102,7 +100,6 @@ function ItemTopComponent(props: Props): JSX.Element {
         <Row align='middle'>
             <Col span={10}>
                 <Text style={{ fontSize: 12 }}>{clientID}</Text>
-                {isGroundTruth ? <Text style={{ fontSize: 12 }}>&nbsp;GT</Text> : null}
                 <br />
                 <Text
                     type='secondary'

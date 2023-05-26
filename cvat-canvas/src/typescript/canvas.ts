@@ -32,8 +32,7 @@ interface Canvas {
     html(): HTMLDivElement;
     setup(frameData: any, objectStates: any[], zLayer?: number): void;
     setupIssueRegions(issueRegions: Record<number, { hidden: boolean; points: number[] }>): void;
-    setupConflictRegions(clientID: number): number[];
-    activate(clientID: number | null, attributeID?: number): number[];
+    activate(clientID: number | null, attributeID?: number): void;
     rotate(rotationAngle: number): void;
     focus(clientID: number, padding?: number): void;
     fit(): void;
@@ -83,10 +82,6 @@ class CanvasImpl implements Canvas {
 
     public setupIssueRegions(issueRegions: Record<number, { hidden: boolean; points: number[] }>): void {
         this.model.setupIssueRegions(issueRegions);
-    }
-
-    public setupConflictsRegions(clientID: number): number[] {
-        return this.view.setupConflictsRegions(clientID);
     }
 
     public fitCanvas(): void {

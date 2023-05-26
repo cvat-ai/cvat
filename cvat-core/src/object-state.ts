@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,7 +8,6 @@ import PluginRegistry from './plugins';
 import { ArgumentError } from './exceptions';
 import { Label } from './labels';
 import { isEnum } from './common';
-import QualityConflict from './quality-conflict';
 
 interface UpdateFlags {
     label: boolean;
@@ -36,7 +35,6 @@ export interface SerializedData {
     shapeType?: ShapeType;
     clientID?: number;
     serverID?: number;
-    jobID?: number;
     parentID?: number;
     lock?: boolean;
     hidden?: boolean;
@@ -53,7 +51,6 @@ export interface SerializedData {
     keyframe?: boolean;
     rotation?: number;
     descriptions?: string[];
-    isGroundTruth?: boolean;
     keyframes?: {
         prev: number | null;
         next: number | null;
@@ -80,12 +77,9 @@ export default class ObjectState {
     public readonly source: Source;
     public readonly clientID: number | null;
     public readonly serverID: number | null;
-    public readonly jobID: number | null;
     public readonly parentID: number | null;
     public readonly updated: number;
     public readonly group: { color: string; id: number; } | null;
-    public readonly isGroundTruth: boolean;
-    public conflict: QualityConflict | null;
     public readonly keyframes: {
         first: number | null;
         prev: number | null;
@@ -172,15 +166,12 @@ export default class ObjectState {
             hidden: false,
             pinned: false,
             source: Source.MANUAL,
-            isGroundTruth: serialized.isGroundTruth || false,
-            conflict: null,
             keyframes: serialized.keyframes || null,
             group: serialized.group || null,
             updated: serialized.updated || Date.now(),
 
             clientID: serialized.clientID || null,
             serverID: serialized.serverID || null,
-            jobID: serialized.jobID || null,
             parentID: serialized.parentID || null,
 
             frame: serialized.frame,
@@ -206,19 +197,13 @@ export default class ObjectState {
                     get: () => data.shapeType,
                 },
                 source: {
-                    get: () => (data.isGroundTruth ? 'Ground truth' : data.source),
-                },
-                isGroundTruth: {
-                    get: () => data.isGroundTruth,
+                    get: () => data.source,
                 },
                 clientID: {
                     get: () => data.clientID,
                 },
                 serverID: {
                     get: () => data.serverID,
-                },
-                jobID: {
-                    get: () => data.jobID,
                 },
                 parentID: {
                     get: () => data.parentID,
@@ -231,7 +216,7 @@ export default class ObjectState {
                     },
                 },
                 color: {
-                    get: () => (this.isGroundTruth ? '#ffffff' : data.color),
+                    get: () => data.color,
                     set: (color) => {
                         data.updateFlags.color = true;
                         data.color = color;
@@ -464,12 +449,6 @@ export default class ObjectState {
                             return [...data.elements];
                         }
                         return [];
-                    },
-                },
-                conflict: {
-                    get: () => data.conflict,
-                    set: (conflict) => {
-                        data.conflict = conflict;
                     },
                 },
             }),

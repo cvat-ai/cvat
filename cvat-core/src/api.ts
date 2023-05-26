@@ -264,24 +264,6 @@ function build() {
                 return result;
             },
         },
-        analytics: {
-            quality: {
-                async reports(filter: any) {
-                    const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.reports, filter);
-                    return result;
-                },
-                async conflicts(filter: any) {
-                    const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.conflicts, filter);
-                    return result;
-                },
-                settings: {
-                    async get(taskID: number) {
-                        const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.settings.get, taskID);
-                        return result;
-                    },
-                },
-            },
-        },
         classes: {
             User,
             Project: implementProject(Project),
@@ -313,7 +295,6 @@ function build() {
     cvat.enums = Object.freeze(cvat.enums);
     cvat.cloudStorages = Object.freeze(cvat.cloudStorages);
     cvat.organizations = Object.freeze(cvat.organizations);
-    cvat.analytics = Object.freeze(cvat.analytics);
 
     const implemented = Object.freeze(implementAPI(cvat));
     return implemented;

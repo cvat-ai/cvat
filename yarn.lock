@@ -1738,11 +1738,6 @@
     "@types/tough-cookie" "*"
     parse5 "^7.0.0"
 
-"@types/json-logic-js@^2.0.2":
-  version "2.0.2"
-  resolved "https://registry.yarnpkg.com/@types/json-logic-js/-/json-logic-js-2.0.2.tgz#f22ae63b1ff529db77368e78dab196730a2f1527"
-  integrity sha512-kM5tSI/HWDqlxpYTgISwaU93OdQ+fWzYliYOAn3QaVSCT1S6l0nm8jK2RZXRlD+Sx8s6RYhovZSxookkw6Wk7w==
-
 "@types/json-schema@*", "@types/json-schema@^7.0.5", "@types/json-schema@^7.0.8", "@types/json-schema@^7.0.9":
   version "7.0.11"
   resolved "https://registry.yarnpkg.com/@types/json-schema/-/json-schema-7.0.11.tgz#d421b6c527a3037f7c84433fd2c4229e016863d3"
@@ -3909,7 +3904,7 @@ custom-error-instance@2.1.1:
     three "^0.126.1"
 
 "cvat-canvas@link:./cvat-canvas":
-  version "2.16.6"
+  version "2.16.4"
   dependencies:
     "@types/fabric" "^4.5.7"
     "@types/polylabel" "^1.0.5"
@@ -3922,7 +3917,7 @@ custom-error-instance@2.1.1:
     svg.select.js "3.0.1"
 
 "cvat-core@link:./cvat-core":
-  version "9.1.1"
+  version "9.0.1"
   dependencies:
     "@types/lodash" "^4.14.191"
     axios "^0.27.2"
@@ -6879,7 +6874,7 @@ json-buffer@3.0.0:
   resolved "https://registry.yarnpkg.com/json-buffer/-/json-buffer-3.0.0.tgz#5b1f397afc75d677bde8bcfc0e47e1f9a3d9a898"
   integrity sha512-CuUqjv0FUZIdXkHPI8MezCnFCdaTAacej1TZYulLoAg1h/PhwkdXFN4V/gzY4g+fMBCOV2xF+rp7t2XD2ns/NQ==
 
-json-logic-js@^2.0.1, json-logic-js@^2.0.2:
+json-logic-js@^2.0.1:
   version "2.0.2"
   resolved "https://registry.yarnpkg.com/json-logic-js/-/json-logic-js-2.0.2.tgz#b613e095f5e598cb78f7b9a2bbf638e74cf98158"
   integrity sha512-ZBtBdMJieqQcH7IX/LaBsr5pX+Y5JIW+EhejtM3Ffg2jdN9Iwf+Ht6TbHnvAZ/YtwyuhPaCBlnvzrwVeWdvGDQ==

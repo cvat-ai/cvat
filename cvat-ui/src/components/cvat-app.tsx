@@ -73,8 +73,6 @@ import EmailConfirmationPage from './email-confirmation-pages/email-confirmed';
 import EmailVerificationSentPage from './email-confirmation-pages/email-verification-sent';
 import IncorrectEmailConfirmationPage from './email-confirmation-pages/incorrect-email-confirmation';
 import CreateModelPage from './create-model-page/create-model-page';
-import CreateJobPage from './create-job-page/create-job-page';
-import TaskAnalyticsPage from './task-analytics-page/task-analytics-page';
 
 interface CVATAppProps {
     loadFormats: () => void;
@@ -462,8 +460,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                             <Route exact path='/tasks' component={TasksPageContainer} />
                                             <Route exact path='/tasks/create' component={CreateTaskPageContainer} />
                                             <Route exact path='/tasks/:id' component={TaskPageComponent} />
-                                            <Route exact path='/tasks/:id/analytics' component={TaskAnalyticsPage} />
-                                            <Route exact path='/tasks/:id/jobs/create' component={CreateJobPage} />
                                             <Route exact path='/tasks/:tid/jobs/:jid' component={AnnotationPageContainer} />
                                             <Route exact path='/jobs' component={JobsPageComponent} />
                                             <Route exact path='/cloudstorages' component={CloudStoragesPageComponent} />

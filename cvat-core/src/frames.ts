@@ -6,7 +6,6 @@
 import { isBrowser, isNode } from 'browser-or-node';
 
 import * as cvatData from 'cvat-data';
-import jsonLogic from 'json-logic-js';
 import { DimensionType } from 'enums';
 import PluginRegistry from './plugins';
 import serverProxy, { FramesMetaData } from './server-proxy';
@@ -318,20 +317,20 @@ FrameData.prototype.data.implementation = async function (onServerRequest) {
 
 function getFrameMeta(jobID, frame): FramesMetaData['frames'][0] {
     const { meta, mode, startFrame } = frameDataCache[jobID];
-    let frame_meta = null;
-    if (mode === 'interpolation' && meta.frames.length == 1) {
-        // video tasks have 1 frame info, but image tasks will have many infos
-        [frame_meta] = meta.frames;
-    } else if (mode === 'annotation' || mode === 'interpolation' && meta.frames.length > 1) {
-        if (frame > meta.stop_frame) {
+    let size = null;
+    if (mode === 'interpolation') {
+        [size] = meta.frames;
+    } else if (mode === 'annotation') {
+        if (frame >= meta.size) {
             throw new ArgumentError(`Meta information about frame ${frame} can't be received from the server`);
+        } else {
+            size = meta.frames[frame - startFrame];
         }
-        frame_meta = meta.frames[frame - startFrame];
     } else {
         throw new DataError(`Invalid mode is specified ${mode}`);
     }
 
-    return frame_meta;
+    return size;
 }
 
 class FrameBuffer {
@@ -686,6 +685,7 @@ export async function getFrame(
             nextChunkRequest: null,
         };
 
+        // relevant only for video chunks
         const frameMeta = getFrameMeta(jobID, frame);
         frameDataCache[jobID].provider.setRenderSize(frameMeta.width, frameMeta.height);
     }
@@ -739,32 +739,20 @@ export async function patchMeta(jobID) {
     frameDataCache[jobID].meta.deleted_frames = prevDeletedFrames;
 }
 
-export async function findFrame(jobID, frameFrom, frameTo, filters, externalMeta) {
-    const offset = filters.offset || 1;
+export async function findNotDeletedFrame(jobID, frameFrom, frameTo, offset) {
     let meta;
     if (!frameDataCache[jobID]) {
         meta = await serverProxy.frames.getMeta('job', jobID);
     } else {
         meta = frameDataCache[jobID].meta;
     }
-
     const sign = Math.sign(frameTo - frameFrom);
     const predicate = sign > 0 ? (frame) => frame <= frameTo : (frame) => frame >= frameTo;
     const update = sign > 0 ? (frame) => frame + 1 : (frame) => frame - 1;
     let framesCounter = 0;
     let lastUndeletedFrame = null;
-    const check = (frame): boolean => {
-        if (meta.included_frames) {
-            return (meta.included_frames.includes(frame)) && !(frame in meta.deleted_frames);
-        }
-        if (Array.isArray(filters.jsonFilters) && filters.jsonFilters.length) {
-            const frameConvert = { conflicted: externalMeta.conflictedFrames.includes(frame) };
-            return jsonLogic.apply(filters.jsonFilters[0], frameConvert);
-        }
-        return !(frame in meta.deleted_frames);
-    };
     for (let frame = frameFrom; predicate(frame); frame = update(frame)) {
-        if (check(frame)) {
+        if (!(frame in meta.deleted_frames)) {
             lastUndeletedFrame = frame;
             framesCounter++;
             if (framesCounter === offset) {

@@ -19,9 +19,6 @@ import {
     switchPropagateVisibility as switchPropagateVisibilityAction,
     removeObject as removeObjectAction,
 } from 'actions/annotation-actions';
-import {
-    changeShowGroundTruth as changeShowGroundTruthAction,
-} from 'actions/settings-actions';
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import {
     CombinedState, StatesOrdering, ObjectType, ColorBy,
@@ -49,7 +46,6 @@ interface StateToProps {
     maxZLayer: number;
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
-    showGroundTruth: boolean;
 }
 
 interface DispatchToProps {
@@ -60,7 +56,6 @@ interface DispatchToProps {
     switchPropagateVisibility: (visible: boolean) => void;
     changeFrame(frame: number): void;
     changeGroupColor(group: number, color: string): void;
-    changeShowGroundTruth(value: boolean): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -74,7 +69,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 activatedStateID,
                 activatedElementID,
                 zLayer: { min: minZLayer, max: maxZLayer },
-                statesSources,
             },
             job: { instance: jobInstance },
             player: {
@@ -83,15 +77,15 @@ function mapStateToProps(state: CombinedState): StateToProps {
             colors,
         },
         settings: {
-            shapes: { colorBy, showGroundTruth },
+            shapes: { colorBy },
         },
         shortcuts: { keyMap, normalizedKeyMap },
     } = state;
 
     let statesHidden = true;
     let statesLocked = true;
-    const filteredStates = objectStates.filter((e) => !e.jobID || statesSources.includes(e.jobID));
-    filteredStates.forEach((objectState: ObjectState) => {
+
+    objectStates.forEach((objectState: ObjectState) => {
         const { lock } = objectState;
         if (!lock) {
             if (objectState.objectType !== ObjectType.TAG) {
@@ -112,7 +106,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         statesLocked,
         statesCollapsedAll: collapsedAll,
         collapsedStates: collapsed,
-        objectStates: filteredStates,
+        objectStates,
         frameNumber,
         jobInstance,
         annotationsFilters,
@@ -124,7 +118,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         maxZLayer,
         keyMap,
         normalizedKeyMap,
-        showGroundTruth,
     };
 }
 
@@ -150,9 +143,6 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         changeGroupColor(group: number, color: string): void {
             dispatch(changeGroupColorAsync(group, color));
-        },
-        changeShowGroundTruth(value: boolean): void {
-            dispatch(changeShowGroundTruthAction(value));
         },
     };
 }
@@ -242,12 +232,6 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
         this.hideAllStates(false);
     };
 
-    private changeShowGroundTruth = (): void => {
-        const { showGroundTruth, changeShowGroundTruth } = this.props;
-
-        changeShowGroundTruth(!showGroundTruth);
-    };
-
     private lockAllStates(locked: boolean): void {
         const { objectStates, updateAnnotations, readonly } = this.props;
 
@@ -292,7 +276,6 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             colorBy,
             readonly,
             statesCollapsedAll,
-            showGroundTruth,
             updateAnnotations,
             changeGroupColor,
             removeObject,
@@ -500,7 +483,6 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     readonly={readonly || false}
                     statesOrdering={statesOrdering}
                     sortedStatesID={sortedStatesID}
-                    showGroundTruth={showGroundTruth}
                     objectStates={objectStates}
                     switchHiddenAllShortcut={normalizedKeyMap.SWITCH_ALL_HIDDEN}
                     switchLockAllShortcut={normalizedKeyMap.SWITCH_ALL_LOCK}
@@ -511,7 +493,6 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     expandAllStates={this.onExpandAllStates}
                     hideAllStates={this.onHideAllStates}
                     showAllStates={this.onShowAllStates}
-                    changeShowGroundTruth={this.changeShowGroundTruth}
                 />
             </>
         );

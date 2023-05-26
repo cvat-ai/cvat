@@ -23,7 +23,6 @@ interface Props {
     clientID: number;
     serverID: number | undefined;
     labelID: number;
-    isGroundTruth: boolean;
     locked: boolean;
     elements: any[];
     color: string;
@@ -61,7 +60,6 @@ function ObjectItemComponent(props: Props): JSX.Element {
         attributes,
         labels,
         normalizedKeyMap,
-        isGroundTruth,
         activate,
         copy,
         propagate,
@@ -112,7 +110,6 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     colorBy={colorBy}
                     type={type}
                     locked={locked}
-                    isGroundTruth={isGroundTruth}
                     copyShortcut={normalizedKeyMap.COPY_SHAPE}
                     pasteShortcut={normalizedKeyMap.PASTE_SHAPE}
                     propagateShortcut={normalizedKeyMap.PROPAGATE_OBJECT}

@@ -16,7 +16,6 @@ import {
     checkFilter,
     checkExclusiveFields,
     checkObjectType,
-    filterFieldsToSnakeCase,
 } from './common';
 
 import User from './user';
@@ -26,9 +25,6 @@ import Project from './project';
 import CloudStorage from './cloud-storage';
 import Organization from './organization';
 import Webhook from './webhook';
-import QualityReport from './quality-report';
-import QualityConflict from './quality-conflict';
-import QualitySettings from './quality-settings';
 
 export default function implementAPI(cvat) {
     cvat.plugins.list.implementation = PluginRegistry.list;
@@ -333,56 +329,26 @@ export default function implementAPI(cvat) {
         });
 
         checkExclusiveFields(filter, ['id', 'projectId'], ['page']);
+        const searchParams = {};
+        for (const key of Object.keys(filter)) {
+            if (['page', 'id', 'filter', 'search', 'sort'].includes(key)) {
+                searchParams[key] = filter[key];
+            }
+        }
 
-        const searchParams = filterFieldsToSnakeCase(filter, ['projectId']);
+        if (filter.projectId) {
+            if (searchParams.filter) {
+                const parsed = JSON.parse(searchParams.filter);
+                searchParams.filter = JSON.stringify({ and: [parsed, { '==': [{ var: 'project_id' }, filter.projectId] }] });
+            } else {
+                searchParams.filter = JSON.stringify({ and: [{ '==': [{ var: 'project_id' }, filter.projectId] }] });
+            }
+        }
 
         const webhooksData = await serverProxy.webhooks.get(searchParams);
         const webhooks = webhooksData.map((webhookData) => new Webhook(webhookData));
         webhooks.count = webhooksData.count;
         return webhooks;
-    };
-
-    cvat.analytics.quality.reports.implementation = async (filter) => {
-        // checkFilter(filter, {
-        //     taskId: isInteger,
-        //     parentId: isInteger,
-        // });
-
-        // const searchParams = filterFieldsToSnakeCase(filter, ['taskId', 'parentId']);
-        // TMP solution aka filters disabled
-        let updatedParams: Record<string, string> = {};
-        if ('taskId' in filter) {
-            updatedParams = {
-                task_id: filter.taskId,
-                sort: '-created_date',
-                target: filter.target,
-            };
-        }
-        if ('jobId' in filter) {
-            updatedParams = {
-                job_id: filter.jobId,
-                sort: '-created_date',
-                target: filter.target,
-            };
-        }
-        const reportsData = await serverProxy.analytics.quality.reports(updatedParams);
-
-        return reportsData.map((report) => new QualityReport({ ...report }));
-    };
-
-    cvat.analytics.quality.conflicts.implementation = async (filter) => {
-        let updatedParams: Record<string, string> = {};
-        updatedParams = {
-            report_id: filter.reportId,
-        };
-        const reportsData = await serverProxy.analytics.quality.conflicts(updatedParams);
-
-        return reportsData.map((conflict) => new QualityConflict({ ...conflict }));
-    };
-
-    cvat.analytics.quality.settings.get.implementation = async (taskID: number) => {
-        const settings = await serverProxy.analytics.quality.settings.get(taskID);
-        return new QualitySettings({ ...settings });
     };
 
     return cvat;

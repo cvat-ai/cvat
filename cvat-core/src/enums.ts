@@ -34,11 +34,6 @@ export enum JobState {
     REJECTED = 'rejected',
 }
 
-export enum JobType {
-    ANNOTATION = 'annotation',
-    GROUND_TRUTH = 'ground_truth',
-}
-
 export enum DimensionType {
     DIMENSION_2D = '2d',
     DIMENSION_3D = '3d',

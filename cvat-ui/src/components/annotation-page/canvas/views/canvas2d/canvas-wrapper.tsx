@@ -17,9 +17,7 @@ import {
 import { LogType } from 'cvat-logger';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
-import {
-    AnnotationConflict, ObjectState, QualityConflict, getCore,
-} from 'cvat-core-wrapper';
+import { getCore } from 'cvat-core-wrapper';
 import config from 'config';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import FrameTags from 'components/annotation-page/tag-annotation-workspace/frame-tags';
@@ -68,7 +66,6 @@ interface StateToProps {
     activatedStateID: number | null;
     activatedElementID: number | null;
     activatedAttributeID: number | null;
-    statesSources: number[];
     annotations: any[];
     frameData: any;
     frameAngle: number;
@@ -108,8 +105,6 @@ interface StateToProps {
     switchableAutomaticBordering: boolean;
     keyMap: KeyMap;
     showTagsOnFrame: boolean;
-    conflicts: QualityConflict[];
-    showGroundTruth: boolean;
 }
 
 interface DispatchToProps {
@@ -158,7 +153,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 activatedStateID,
                 activatedElementID,
                 activatedAttributeID,
-                statesSources,
                 zLayer: { cur: curZLayer, min: minZLayer, max: maxZLayer },
             },
             workspace,
@@ -188,11 +182,10 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 textContent,
             },
             shapes: {
-                opacity, colorBy, selectedOpacity, outlined, outlineColor, showBitmap, showProjections, showGroundTruth,
+                opacity, colorBy, selectedOpacity, outlined, outlineColor, showBitmap, showProjections,
             },
         },
         shortcuts: { keyMap },
-        review: { conflicts },
     } = state;
 
     return {
@@ -244,9 +237,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
             activeControl === ActiveControl.DRAW_POLYLINE ||
             activeControl === ActiveControl.DRAW_MASK ||
             activeControl === ActiveControl.EDIT,
-        statesSources,
-        conflicts,
-        showGroundTruth,
     };
 }
 
@@ -369,7 +359,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             colorBy,
             outlined,
             outlineColor,
-            showGroundTruth,
             resetZoom,
         } = this.props;
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
@@ -385,7 +374,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             displayAllText: showObjectsTextAlways,
             autoborders: automaticBordering,
             showProjections,
-            showConflicts: showGroundTruth,
             intelligentPolygonCrop,
             selectedShapeOpacity: selectedOpacity,
             controlPointsSize,
@@ -436,8 +424,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             showProjections,
             colorBy,
             onFetchAnnotation,
-            statesSources,
-            showGroundTruth,
         } = this.props;
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
 
@@ -456,7 +442,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             prevProps.colorBy !== colorBy ||
             prevProps.outlineColor !== outlineColor ||
             prevProps.outlined !== outlined ||
-            prevProps.showGroundTruth !== showGroundTruth ||
             prevProps.resetZoom !== resetZoom
         ) {
             canvasInstance.configure({
@@ -474,7 +459,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                 controlPointsSize,
                 textPosition,
                 textContent,
-                showConflicts: showGroundTruth,
                 resetZoom,
             });
         }
@@ -516,7 +500,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         if (
             prevProps.annotations !== annotations ||
-            prevProps.statesSources !== statesSources ||
             prevProps.frameData !== frameData ||
             prevProps.curZLayer !== curZLayer
         ) {
@@ -881,30 +864,13 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
     private updateCanvas(): void {
         const {
-            curZLayer, annotations, frameData, canvasInstance, statesSources, conflicts,
-            workspace,
+            curZLayer, annotations, frameData, canvasInstance,
         } = this.props;
+
         if (frameData !== null && canvasInstance) {
-            const filteredAnnotations = annotations.filter((e) => e.objectType !== ObjectType.TAG);
-            const shownAnnotations = filteredAnnotations.filter((e) => !e.jobID || statesSources.includes(e.jobID));
-            filteredAnnotations.forEach((objectState: ObjectState) => {
-                const conflict = conflicts.find((qualityConflict: QualityConflict) => (
-                    qualityConflict.annotationConflicts.some(
-                        (annotationConflict: AnnotationConflict) => (annotationConflict.objId === objectState.serverID),
-                    )
-                ));
-                if (conflict && workspace === Workspace.REVIEW_WORKSPACE) {
-                    objectState.conflict = conflict;
-                } else {
-                    objectState.conflict = null;
-                }
-            });
-            const finalAnnotations = filteredAnnotations.filter((objectState: ObjectState) => (
-                shownAnnotations.includes(objectState)
-            ));
             canvasInstance.setup(
                 frameData,
-                frameData.deleted ? [] : finalAnnotations,
+                frameData.deleted ? [] : annotations.filter((e) => e.objectType !== ObjectType.TAG),
                 curZLayer,
             );
         }

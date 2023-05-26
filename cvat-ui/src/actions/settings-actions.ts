@@ -19,7 +19,6 @@ export enum SettingsActionTypes {
     CHANGE_SHAPES_OUTLINED_BORDERS = 'CHANGE_SHAPES_OUTLINED_BORDERS',
     CHANGE_SHAPES_SHOW_PROJECTIONS = 'CHANGE_SHAPES_SHOW_PROJECTIONS',
     CHANGE_SHOW_UNLABELED_REGIONS = 'CHANGE_SHOW_UNLABELED_REGIONS',
-    CHANGE_SHOW_GROUND_TRUTH = 'CHANGE_SHOW_GROUND_TRUTH',
     CHANGE_FRAME_STEP = 'CHANGE_FRAME_STEP',
     CHANGE_FRAME_SPEED = 'CHANGE_FRAME_SPEED',
     SWITCH_RESET_ZOOM = 'SWITCH_RESET_ZOOM',
@@ -70,15 +69,6 @@ export function changeShapesColorBy(colorBy: ColorBy): AnyAction {
         type: SettingsActionTypes.CHANGE_SHAPES_COLOR_BY,
         payload: {
             colorBy,
-        },
-    };
-}
-
-export function changeShowGroundTruth(showGroundTruth: boolean): AnyAction {
-    return {
-        type: SettingsActionTypes.CHANGE_SHOW_GROUND_TRUTH,
-        payload: {
-            showGroundTruth,
         },
     };
 }

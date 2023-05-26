@@ -29,43 +29,13 @@ function getCache(sessionType) {
     throw new ScriptingError(`Unknown session type was received ${sessionType}`);
 }
 
-function processGroundTruthAnnotations(rawAnnotations, groundTruthAnnotations) {
-    groundTruthAnnotations.shapes.forEach((annotation) => { annotation.is_gt = true; });
-    groundTruthAnnotations.tracks.forEach((annotation) => { annotation.is_gt = true; });
-    groundTruthAnnotations.tags.forEach((annotation) => { annotation.is_gt = true; });
-    const result = {
-        shapes: [...rawAnnotations.shapes, ...groundTruthAnnotations.shapes],
-        tracks: [...rawAnnotations.tracks, ...groundTruthAnnotations.tracks],
-        tags: [...rawAnnotations.tags, ...groundTruthAnnotations.tags],
-    };
-    return result;
-}
-
-function addJobId(rawAnnotations, jobID) {
-    rawAnnotations.shapes.forEach((annotation) => { annotation.job_id = jobID; });
-    rawAnnotations.tracks.forEach((annotation) => { annotation.job_id = jobID; });
-    rawAnnotations.tags.forEach((annotation) => { annotation.job_id = jobID; });
-    const result = {
-        shapes: [...rawAnnotations.shapes],
-        tracks: [...rawAnnotations.tracks],
-        tags: [...rawAnnotations.tags],
-    };
-    return result;
-}
-
-async function getAnnotationsFromServer(session, groundTruthJobId) {
+async function getAnnotationsFromServer(session) {
     const sessionType = session instanceof Task ? 'task' : 'job';
     const cache = getCache(sessionType);
 
     if (!cache.has(session)) {
-        let rawAnnotations = await serverProxy.annotations.getAnnotations(sessionType, session.id);
-        rawAnnotations = addJobId(rawAnnotations, session.id);
-        if (groundTruthJobId) {
-            let gtAnnotations = await serverProxy.annotations.getAnnotations(sessionType, groundTruthJobId);
-            gtAnnotations = addJobId(gtAnnotations, groundTruthJobId);
-            rawAnnotations = processGroundTruthAnnotations(rawAnnotations, gtAnnotations);
-        }
-        console.log(rawAnnotations);
+        const rawAnnotations = await serverProxy.annotations.getAnnotations(sessionType, session.id);
+
         // Get meta information about frames
         const startFrame = sessionType === 'job' ? session.startFrame : 0;
         const stopFrame = sessionType === 'job' ? session.stopFrame : session.size - 1;
@@ -100,7 +70,7 @@ export async function clearCache(session) {
     }
 }
 
-export async function getAnnotations(session, frame, allTracks, filters, groundTruthJobId) {
+export async function getAnnotations(session, frame, allTracks, filters) {
     const sessionType = session instanceof Task ? 'task' : 'job';
     const cache = getCache(sessionType);
 
@@ -108,7 +78,7 @@ export async function getAnnotations(session, frame, allTracks, filters, groundT
         return cache.get(session).collection.get(frame, allTracks, filters);
     }
 
-    await getAnnotationsFromServer(session, groundTruthJobId);
+    await getAnnotationsFromServer(session);
     return cache.get(session).collection.get(frame, allTracks, filters);
 }
 

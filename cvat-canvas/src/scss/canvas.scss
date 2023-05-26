@@ -148,20 +148,6 @@ polyline.cvat_canvas_shape_splitting {
     stroke-dasharray: 5;
 }
 
-.cvat_canvas_ground_truth {
-    stroke-dasharray: 1;
-}
-
-.cvat_canvas_conflicted {
-    stroke: #ff4800;
-    stroke-dasharray: 1;
-}
-
-.cvat_canvas_warned {
-    stroke: #ff7301;
-    stroke-dasharray: 1;
-}
-
 .cvat_canvas_shape_occluded_point {
     stroke-dasharray: 1 !important;
     stroke: white;
@@ -393,9 +379,4 @@ g.cvat_canvas_shape_occluded {
         stroke-dashoffset: 300;
         stroke: #09c;
     }
-}
-
-.cvat_canvas_shape_darken {
-    fill: #838383;
-    stroke: #838383;
 }

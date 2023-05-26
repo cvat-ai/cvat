@@ -13,7 +13,6 @@ import ObjectSideBarComponent from 'components/annotation-page/standard-workspac
 import ObjectsListContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/objects-list';
 import CanvasContextMenuContainer from 'containers/annotation-page/canvas/canvas-context-menu';
 import IssueAggregatorComponent from 'components/annotation-page/review/issues-aggregator';
-import ConflictAggregatorComponent from 'components/annotation-page/review/conflicts-aggregator';
 
 export default function ReviewWorkspaceComponent(): JSX.Element {
     return (
@@ -23,7 +22,6 @@ export default function ReviewWorkspaceComponent(): JSX.Element {
             <ObjectSideBarComponent objectsList={<ObjectsListContainer readonly />} />
             <CanvasContextMenuContainer readonly />
             <IssueAggregatorComponent />
-            <ConflictAggregatorComponent />
         </Layout>
     );
 }

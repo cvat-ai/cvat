@@ -63,7 +63,6 @@ import {
 
 export interface CanvasView {
     html(): HTMLDivElement;
-    setupConflictsRegions(clientID: number): number[];
 }
 
 export class CanvasViewImpl implements CanvasView, Listener {
@@ -1315,11 +1314,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         (shapeView as any).instance
                             .fill({ color: fill, opacity: fillOpacity })
                             .stroke({ color: stroke });
-                        if (configuration.showConflicts && objectState?.conflict) {
-                            shapeView.classList.add('cvat_canvas_conflicted');
-                        } else if (!configuration.showConflicts && objectState?.conflict) {
-                            shapeView.classList.remove('cvat_canvas_conflicted');
-                        }
                     }
 
                     if (drawnState.elements) {
@@ -1331,8 +1325,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             const withUpdatingShapeViews = configuration.shapeOpacity !== this.configuration.shapeOpacity ||
                 configuration.selectedShapeOpacity !== this.configuration.selectedShapeOpacity ||
                 configuration.outlinedBorders !== this.configuration.outlinedBorders ||
-                configuration.colorBy !== this.configuration.colorBy ||
-                configuration.showConflicts !== this.configuration.showConflicts;
+                configuration.colorBy !== this.configuration.colorBy;
 
             if (configuration.displayAllText && !this.configuration.displayAllText) {
                 for (const i in this.drawnStates) {
@@ -1714,17 +1707,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     public html(): HTMLDivElement {
         return this.canvas;
-    }
-
-    public setupConflictsRegions(SShape: any): number[] {
-        let cx = 0;
-        let cy = 0;
-        const shape = this.svgShapes[SShape.clientID];
-        if (!shape) return [];
-        const box = (shape.node as any).getBBox();
-        cx = box.x + (box.width) / 2;
-        cy = box.y;
-        return [cx, cy];
     }
 
     private redrawBitmap(): void {
@@ -2206,12 +2188,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.deleteText(clientID);
             }
 
-            for (const [key, otherShape] of Object.entries(this.svgShapes)) {
-                otherShape.removeClass('cvat_canvas_shape_darken');
-                otherShape.removeClass('cvat_canvas_conflicted');
-                otherShape.removeClass('cvat_canvas_warned');
-            }
-
             this.sortObjects();
 
             this.activeElement = {
@@ -2243,6 +2219,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private activateShape(clientID: number): void {
         const [state] = this.controller.objects.filter((_state: any): boolean => _state.clientID === clientID);
+
         if (state && state.shapeType === 'points') {
             this.svgShapes[clientID]
                 .remember('_selectHandler')
@@ -2254,42 +2231,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
 
         const shape = this.svgShapes[clientID];
-        if (this.configuration.showConflicts && state.conflict) {
-            const conflictedStates = state.conflict.annotationConflicts.map((annotationConflict) => {
-                const [conflictedState] = this.controller.objects.filter(
-                    (_state: any): boolean => _state.serverID === annotationConflict.objId,
-                );
-                return conflictedState;
-            }).filter(
-                // TODO: in the list, there can be null values in some cases
-                // (eg. from looking for an annotation from the other job),
-                // produced from [x] = [].
-                // Need to investigate, why it happens only sometimes.
-                // Here we just filter such values
-                Boolean
-            );
-
-            const conflictedMap = {};
-            conflictedStates.forEach((_state) => {
-                conflictedMap[_state.clientID] = _state.conflict;
-                if (_state.elements.length) {
-                    _state.elements.forEach((element) => { conflictedMap[element.clientID] = _state.conflict; });
-                }
-            });
-
-            for (const [key, otherShape] of Object.entries(this.svgShapes)) {
-                if (conflictedMap[+key]) {
-                    const { importance } = conflictedMap[+key];
-                    if (importance === 'error') {
-                        otherShape.addClass('cvat_canvas_conflicted');
-                    } else if (importance === 'warning') {
-                        otherShape.addClass('cvat_canvas_warned');
-                    }
-                } else {
-                    otherShape.addClass('cvat_canvas_shape_darken');
-                }
-            }
-        }
         let text = this.svgTexts[clientID];
         if (!text) {
             text = this.addText(state);
@@ -2764,10 +2705,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
             rect.addClass('cvat_canvas_hidden');
         }
 
-        if (state.isGroundTruth) {
-            rect.addClass('cvat_canvas_ground_truth');
-        }
-
         return rect;
     }
 
@@ -2790,10 +2727,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         if (state.hidden || state.outside || this.isInnerHidden(state.clientID)) {
             polygon.addClass('cvat_canvas_hidden');
-        }
-
-        if (state.isGroundTruth) {
-            polygon.addClass('cvat_canvas_ground_truth');
         }
 
         return polygon;
@@ -2820,10 +2753,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
             polyline.addClass('cvat_canvas_hidden');
         }
 
-        if (state.isGroundTruth) {
-            polyline.addClass('cvat_canvas_ground_truth');
-        }
-
         return polyline;
     }
 
@@ -2847,10 +2776,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         if (state.hidden || state.outside || this.isInnerHidden(state.clientID)) {
             cube.addClass('cvat_canvas_hidden');
-        }
-
-        if (state.isGroundTruth) {
-            cube.addClass('cvat_canvas_ground_truth');
         }
 
         return cube;
@@ -3427,10 +3352,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
             rect.addClass('cvat_canvas_hidden');
         }
 
-        if (state.isGroundTruth) {
-            rect.addClass('cvat_canvas_ground_truth');
-        }
-
         return rect;
     }
 
@@ -3455,10 +3376,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         if (state.occluded) {
             group.addClass('cvat_canvas_shape_occluded');
-        }
-
-        if (state.isGroundTruth) {
-            group.addClass('cvat_canvas_ground_truth');
         }
 
         shape.remove = (): SVG.PolyLine => {

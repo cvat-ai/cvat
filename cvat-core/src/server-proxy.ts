@@ -13,8 +13,6 @@ import {
     SerializedAbout, SerializedRemoteFile, SerializedUserAgreement,
     SerializedRegister, JobsFilter, SerializedJob,
 } from 'server-response-types';
-import { RawQualityReportData } from 'quality-report';
-import { RawQualitySettingsData } from 'quality-settings';
 import { Storage } from './storage';
 import { StorageLocation, WebhookSourceType } from './enums';
 import { isEmail } from './common';
@@ -22,7 +20,6 @@ import config from './config';
 import DownloadWorker from './download.worker';
 import { ServerError } from './exceptions';
 import { FunctionsResponseBody } from './server-response-types';
-import { RawQualityConflictData } from './quality-conflict';
 
 type Params = {
     org: number | string,
@@ -1244,38 +1241,36 @@ async function getJobs(
     return response.data;
 }
 
-async function getIssues(filter) {
+async function getJobIssues(jobID: number) {
     const { backendAPI } = config;
 
     let response = null;
     try {
         const organization = enableOrganization();
         response = await fetchAll(`${backendAPI}/issues`, {
-            ...filter,
+            job_id: jobID,
             ...organization,
         });
 
-        if (filter.job_id) {
-            const commentsResponse = await fetchAll(`${backendAPI}/comments`, {
-                ...filter,
-                ...organization,
-            });
+        const commentsResponse = await fetchAll(`${backendAPI}/comments`, {
+            job_id: jobID,
+            ...organization,
+        });
 
-            const issuesById = response.results.reduce((acc, val: { id: number }) => {
-                acc[val.id] = val;
-                return acc;
-            }, {});
+        const issuesById = response.results.reduce((acc, val: { id: number }) => {
+            acc[val.id] = val;
+            return acc;
+        }, {});
 
-            const commentsByIssue = commentsResponse.results.reduce((acc, val) => {
-                acc[val.issue] = acc[val.issue] || [];
-                acc[val.issue].push(val);
-                return acc;
-            }, {});
+        const commentsByIssue = commentsResponse.results.reduce((acc, val) => {
+            acc[val.issue] = acc[val.issue] || [];
+            acc[val.issue].push(val);
+            return acc;
+        }, {});
 
-            for (const issue of Object.keys(commentsByIssue)) {
-                commentsByIssue[issue].sort((a, b) => a.id - b.id);
-                issuesById[issue].comments = commentsByIssue[issue];
-            }
+        for (const issue of Object.keys(commentsByIssue)) {
+            commentsByIssue[issue].sort((a, b) => a.id - b.id);
+            issuesById[issue].comments = commentsByIssue[issue];
         }
     } catch (errorData) {
         throw generateError(errorData);
@@ -1354,33 +1349,6 @@ async function saveJob(id: number, jobData: Partial<SerializedJob>): Promise<Ser
     }
 
     return response.data;
-}
-
-async function createJob(jobData: Partial<SerializedJob>): Promise<SerializedJob> {
-    const { backendAPI } = config;
-
-    let response = null;
-    try {
-        response = await Axios.post(`${backendAPI}/jobs`, jobData);
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
-
-    return response.data;
-}
-
-async function deleteJob(jobID: number): Promise<void> {
-    const { backendAPI } = config;
-
-    try {
-        await Axios.delete(`${backendAPI}/jobs/${jobID}`, {
-            params: {
-                ...enableOrganization(),
-            },
-        });
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
 }
 
 async function getUsers(filter = { page_size: 'all' }) {
@@ -2178,73 +2146,6 @@ async function receiveWebhookEvents(type: WebhookSourceType): Promise<string[]> 
     }
 }
 
-async function getQualityReports(filter): Promise<RawQualityReportData[]> {
-    const params = enableOrganization();
-    const { backendAPI } = config;
-
-    try {
-        const response = await Axios.get(`${backendAPI}/quality/reports`, {
-            params: {
-                ...params,
-                ...filter,
-            },
-        });
-
-        return response.data.results;
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
-}
-
-async function getQualityConflicts(filter): Promise<RawQualityConflictData[]> {
-    const params = enableOrganization();
-    const { backendAPI } = config;
-
-    try {
-        const response = await fetchAll(`${backendAPI}/quality/conflicts`, {
-            ...params,
-            ...filter,
-        });
-
-        return response.results;
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
-}
-
-async function getQualitySettings(settingsID: number): Promise<RawQualitySettingsData> {
-    const params = enableOrganization();
-    const { backendAPI } = config;
-
-    try {
-        const response = await Axios.get(`${backendAPI}/quality/settings/${settingsID}`, {
-            params: {
-                ...params,
-            },
-        });
-        return response.data;
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
-}
-
-async function updateQualitySettings(
-    settingsID: number,
-    settingsData: RawQualitySettingsData,
-): Promise<RawQualitySettingsData> {
-    const params = enableOrganization();
-    const { backendAPI } = config;
-
-    try {
-        const response = await Axios.patch(`${backendAPI}/quality/settings/${settingsID}`, settingsData, {
-            params,
-        });
-        return response.data;
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
-}
-
 export default Object.freeze({
     server: Object.freeze({
         setAuthData,
@@ -2299,8 +2200,6 @@ export default Object.freeze({
         get: getJobs,
         getPreview: getPreview('jobs'),
         save: saveJob,
-        create: createJob,
-        delete: deleteJob,
         exportDataset: exportDataset('jobs'),
     }),
 
@@ -2352,7 +2251,7 @@ export default Object.freeze({
     issues: Object.freeze({
         create: createIssue,
         update: updateIssue,
-        get: getIssues,
+        get: getJobIssues,
         delete: deleteIssue,
     }),
 
@@ -2389,16 +2288,5 @@ export default Object.freeze({
         delete: deleteWebhook,
         ping: pingWebhook,
         events: receiveWebhookEvents,
-    }),
-
-    analytics: Object.freeze({
-        quality: Object.freeze({
-            reports: getQualityReports,
-            conflicts: getQualityConflicts,
-            settings: Object.freeze({
-                get: getQualitySettings,
-                update: updateQualitySettings,
-            }),
-        }),
     }),
 });

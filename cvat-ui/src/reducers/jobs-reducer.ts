@@ -16,9 +16,6 @@ const defaultState: JobsState = {
     },
     current: [],
     previews: {},
-    activities: {
-        deletes: {},
-    },
 };
 
 export default (state: JobsState = defaultState, action: JobsActions): JobsState => {
@@ -88,54 +85,6 @@ export default (state: JobsState = defaultState, action: JobsActions): JobsState
                         ...previews[jobID],
                         fetching: false,
                         initialized: true,
-                    },
-                },
-            };
-        }
-        case JobsActionTypes.DELETE_JOB: {
-            const { jobID } = action.payload;
-            const { deletes } = state.activities;
-
-            deletes[jobID] = false;
-
-            return {
-                ...state,
-                activities: {
-                    ...state.activities,
-                    deletes: {
-                        ...deletes,
-                    },
-                },
-            };
-        }
-        case JobsActionTypes.DELETE_JOB_SUCCESS: {
-            const { jobID } = action.payload;
-            const { deletes } = state.activities;
-
-            deletes[jobID] = true;
-
-            return {
-                ...state,
-                activities: {
-                    ...state.activities,
-                    deletes: {
-                        ...deletes,
-                    },
-                },
-            };
-        }
-        case JobsActionTypes.DELETE_JOB_FAILED: {
-            const { jobID } = action.payload;
-            const { deletes } = state.activities;
-
-            delete deletes[jobID];
-
-            return {
-                ...state,
-                activities: {
-                    ...state.activities,
-                    deletes: {
-                        ...deletes,
                     },
                 },
             };

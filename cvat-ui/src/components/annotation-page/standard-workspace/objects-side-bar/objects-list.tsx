@@ -22,7 +22,6 @@ interface Props {
     objectStates: any[];
     switchLockAllShortcut: string;
     switchHiddenAllShortcut: string;
-    showGroundTruth: boolean;
     changeStatesOrdering(value: StatesOrdering): void;
     lockAllStates(): void;
     unlockAllStates(): void;
@@ -30,7 +29,6 @@ interface Props {
     expandAllStates(): void;
     hideAllStates(): void;
     showAllStates(): void;
-    changeShowGroundTruth(): void;
 }
 
 function ObjectListComponent(props: Props): JSX.Element {
@@ -44,7 +42,6 @@ function ObjectListComponent(props: Props): JSX.Element {
         objectStates,
         switchLockAllShortcut,
         switchHiddenAllShortcut,
-        showGroundTruth,
         changeStatesOrdering,
         lockAllStates,
         unlockAllStates,
@@ -52,7 +49,6 @@ function ObjectListComponent(props: Props): JSX.Element {
         expandAllStates,
         hideAllStates,
         showAllStates,
-        changeShowGroundTruth,
     } = props;
 
     let latestZOrder: number | null = null;
@@ -66,7 +62,6 @@ function ObjectListComponent(props: Props): JSX.Element {
                 statesOrdering={statesOrdering}
                 switchLockAllShortcut={switchLockAllShortcut}
                 switchHiddenAllShortcut={switchHiddenAllShortcut}
-                showGroundTruth={showGroundTruth}
                 changeStatesOrdering={changeStatesOrdering}
                 lockAllStates={lockAllStates}
                 unlockAllStates={unlockAllStates}
@@ -74,7 +69,6 @@ function ObjectListComponent(props: Props): JSX.Element {
                 expandAllStates={expandAllStates}
                 hideAllStates={hideAllStates}
                 showAllStates={showAllStates}
-                changeShowGroundTruth={changeShowGroundTruth}
             />
             <div className='cvat-objects-sidebar-states-list'>
                 {sortedStatesID.map(

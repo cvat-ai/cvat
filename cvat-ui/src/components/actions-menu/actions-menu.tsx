@@ -35,7 +35,6 @@ export enum Actions {
     MOVE_TASK_TO_PROJECT = 'move_task_to_project',
     OPEN_BUG_TRACKER = 'open_bug_tracker',
     BACKUP_TASK = 'backup_task',
-    VIEW_ANALYTICS = 'view_analytics',
 }
 
 function ActionsMenuComponent(props: Props): JSX.Element {
@@ -108,18 +107,10 @@ function ActionsMenuComponent(props: Props): JSX.Element {
         </Menu.Item>
     ), 40]);
 
-    menuItems.push([(
-        <Menu.Item
-            key={Actions.VIEW_ANALYTICS}
-        >
-            View analytics
-        </Menu.Item>
-    ), 50]);
-
     if (projectID === null) {
         menuItems.push([(
             <Menu.Item key={Actions.MOVE_TASK_TO_PROJECT}>Move to project</Menu.Item>
-        ), 60]);
+        ), 50]);
     }
 
     menuItems.push([(
@@ -127,7 +118,7 @@ function ActionsMenuComponent(props: Props): JSX.Element {
             <Menu.Divider />
             <Menu.Item key={Actions.DELETE_TASK}>Delete</Menu.Item>
         </React.Fragment>
-    ), 70]);
+    ), 60]);
 
     menuItems.push(
         ...plugins.map(({ component: Component, weight }, index) => {
