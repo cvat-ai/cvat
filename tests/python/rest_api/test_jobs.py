@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 import json
+import os
 import xml.etree.ElementTree as ET
 import zipfile
 from copy import deepcopy
@@ -11,6 +12,7 @@ from http import HTTPStatus
 from io import BytesIO
 from typing import Any, Dict, List, Optional
 
+import numpy as np
 import pytest
 from cvat_sdk import models
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
@@ -169,55 +171,6 @@ class TestPostJobs:
             (gt_job_meta, _) = api_client.jobs_api.retrieve_data_meta(job_id)
 
         assert gt_job_meta.included_frames == frame_ids
-
-    @pytest.mark.parametrize("task_mode", ["annotation", "interpolation"])
-    def test_can_get_gt_job_meta(self, admin_user, tasks, task_mode):
-        user = admin_user
-        job_frame_count = 4
-        task = next(
-            t
-            for t in tasks
-            if not t["project_id"]
-            and not t["organization"]
-            and t["mode"] == task_mode
-            and t["size"] > job_frame_count
-        )
-        task_id = task["id"]
-        with make_api_client(user) as api_client:
-            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
-            frame_step = int(task_meta.frame_filter.split("=")[-1]) if task_meta.frame_filter else 1
-
-        job_frame_ids = list(range(task_meta.start_frame, task_meta.stop_frame, frame_step))[
-            :job_frame_count
-        ]
-        job_spec = {
-            "task_id": task_id,
-            "type": "ground_truth",
-            "frame_selection_method": "manual",
-            "frames": job_frame_ids,
-        }
-
-        response = self._test_create_job_ok(user, job_spec)
-        job_id = json.loads(response.data)["id"]
-
-        with make_api_client(user) as api_client:
-            (gt_job_meta, _) = api_client.jobs_api.retrieve_data_meta(job_id)
-
-        # The size is adjusted by the frame step and included frames
-        assert job_frame_count == gt_job_meta.size
-        assert job_frame_ids == gt_job_meta.included_frames
-
-        # The frames themselves are the same as in the whole range
-        # this is to allow navigation to adjacent frames
-        if task_mode == "annotation":
-            assert (
-                len(gt_job_meta.frames)
-                == (gt_job_meta.stop_frame + 1 - gt_job_meta.start_frame) / frame_step
-            )
-        elif task_mode == "interpolation":
-            assert len(gt_job_meta.frames) == 1
-        else:
-            assert False
 
     def test_can_create_no_more_than_1_gt_job(self, admin_user, jobs):
         user = admin_user
@@ -570,6 +523,168 @@ class TestGetJobs:
             self._test_get_job_200(user["username"], job["id"], expected_data=job, **extra_kwargs)
         else:
             self._test_get_job_403(user["username"], job["id"], **extra_kwargs)
+
+
+@pytest.mark.usefixtures(
+    # if the db is restored per test, there are conflicts with the server data cache
+    # if we don't clean the db, the gt jobs created will be reused, and their
+    # ids won't conflict
+    "restore_db_per_class"
+)
+class TestGetGtJobData:
+    @pytest.mark.usefixtures("restore_db_per_function")
+    @pytest.mark.parametrize("task_mode", ["annotation", "interpolation"])
+    def test_can_get_gt_job_meta(self, admin_user, tasks, task_mode):
+        user = admin_user
+        job_frame_count = 4
+        task = next(
+            t
+            for t in tasks
+            if not t["project_id"]
+            and not t["organization"]
+            and t["mode"] == task_mode
+            and t["size"] > job_frame_count
+        )
+        task_id = task["id"]
+        with make_api_client(user) as api_client:
+            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+            frame_step = int(task_meta.frame_filter.split("=")[-1]) if task_meta.frame_filter else 1
+
+        job_frame_ids = list(range(task_meta.start_frame, task_meta.stop_frame, frame_step))[
+            :job_frame_count
+        ]
+        gt_job = self._get_or_create_gt_job(admin_user, task_id, job_frame_ids)
+
+        with make_api_client(user) as api_client:
+            (gt_job_meta, _) = api_client.jobs_api.retrieve_data_meta(gt_job.id)
+
+        # The size is adjusted by the frame step and included frames
+        assert job_frame_count == gt_job_meta.size
+        assert job_frame_ids == gt_job_meta.included_frames
+
+        # The frames themselves are the same as in the whole range
+        # this is required in UI implementation
+        if task_mode == "annotation":
+            assert (
+                len(gt_job_meta.frames)
+                == (gt_job_meta.stop_frame + 1 - gt_job_meta.start_frame) / frame_step
+            )
+        elif task_mode == "interpolation":
+            assert len(gt_job_meta.frames) == 1
+        else:
+            assert False
+
+    @pytest.mark.parametrize("task_mode", ["annotation", "interpolation"])
+    @pytest.mark.parametrize("quality", ["compressed", "original"])
+    def test_can_get_gt_job_chunk(self, admin_user, tasks, task_mode, quality):
+        user = admin_user
+        job_frame_count = 4
+        task = next(
+            t
+            for t in tasks
+            if not t["project_id"]
+            and not t["organization"]
+            and t["mode"] == task_mode
+            and t["size"] > job_frame_count
+        )
+        task_id = task["id"]
+        with make_api_client(user) as api_client:
+            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+            frame_step = int(task_meta.frame_filter.split("=")[-1]) if task_meta.frame_filter else 1
+
+        job_frame_ids = list(range(task_meta.start_frame, task_meta.stop_frame, frame_step))[
+            :job_frame_count
+        ]
+        gt_job = self._get_or_create_gt_job(admin_user, task_id, job_frame_ids)
+
+        with make_api_client(admin_user) as api_client:
+            (chunk_file, response) = api_client.jobs_api.retrieve_data(
+                gt_job.id, number=0, quality=quality, type="chunk"
+            )
+            assert response.status == HTTPStatus.OK
+
+        frame_range = range(
+            task_meta.start_frame, min(task_meta.stop_frame + 1, task_meta.chunk_size), frame_step
+        )
+        included_frames = job_frame_ids
+
+        with zipfile.ZipFile(chunk_file) as chunk:
+            assert set(chunk.namelist()) == set("{:06d}.jpeg".format(i) for i in frame_range)
+
+            for file_info in chunk.filelist:
+                with chunk.open(file_info) as image_file:
+                    image = Image.open(image_file)
+                    image_data = np.array(image)
+
+                if int(os.path.splitext(file_info.filename)[0]) not in included_frames:
+                    assert image.size == (1, 1)
+                    assert np.all(image_data == 0), image_data
+                else:
+                    assert image.size > (1, 1)
+                    assert np.any(image_data != 0)
+
+    def _get_or_create_gt_job(self, user, task_id, frames):
+        with make_api_client(user) as api_client:
+            (task_jobs, _) = api_client.jobs_api.list(task_id=task_id, type="ground_truth")
+            if task_jobs.results:
+                gt_job = task_jobs.results[0]
+            else:
+                job_spec = {
+                    "task_id": task_id,
+                    "type": "ground_truth",
+                    "frame_selection_method": "manual",
+                    "frames": frames,
+                }
+
+                (gt_job, _) = api_client.jobs_api.create(job_spec)
+
+        return gt_job
+
+    @pytest.mark.parametrize("task_mode", ["annotation", "interpolation"])
+    @pytest.mark.parametrize("quality", ["compressed", "original"])
+    def test_can_get_gt_job_frame(self, admin_user, tasks, task_mode, quality):
+        user = admin_user
+        job_frame_count = 4
+        task = next(
+            t
+            for t in tasks
+            if not t["project_id"]
+            and not t["organization"]
+            and t["mode"] == task_mode
+            and t["size"] > job_frame_count
+        )
+        task_id = task["id"]
+        with make_api_client(user) as api_client:
+            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+            frame_step = int(task_meta.frame_filter.split("=")[-1]) if task_meta.frame_filter else 1
+
+        job_frame_ids = list(range(task_meta.start_frame, task_meta.stop_frame, frame_step))[
+            :job_frame_count
+        ]
+        gt_job = self._get_or_create_gt_job(admin_user, task_id, job_frame_ids)
+
+        frame_range = range(
+            task_meta.start_frame, min(task_meta.stop_frame + 1, task_meta.chunk_size), frame_step
+        )
+        included_frames = job_frame_ids
+        excluded_frames = list(set(frame_range).difference(included_frames))
+
+        with make_api_client(admin_user) as api_client:
+            (_, response) = api_client.jobs_api.retrieve_data(
+                gt_job.id,
+                number=excluded_frames[0],
+                quality=quality,
+                type="frame",
+                _parse_response=False,
+                _check_status=False,
+            )
+            assert response.status == HTTPStatus.BAD_REQUEST
+            assert b"The frame number doesn't belong to the job" in response.data
+
+            (_, response) = api_client.jobs_api.retrieve_data(
+                gt_job.id, number=included_frames[0], quality=quality, type="frame"
+            )
+            assert response.status == HTTPStatus.OK
 
 
 @pytest.mark.usefixtures("restore_db_per_class")

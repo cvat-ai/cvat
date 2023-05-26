@@ -8,6 +8,7 @@ import os
 import os.path as osp
 import textwrap
 from types import SimpleNamespace
+from typing import Optional
 import pytz
 import traceback
 from datetime import datetime
@@ -577,9 +578,20 @@ class DataChunkGetter:
 
         self.dimension = task_dim
 
-    def __call__(self, request, start, stop, db_data):
+    def _check_frame_range(self, frame: int):
+        frame_range = range(self._start, self._stop + 1, self._db_data.get_frame_step())
+        if frame not in frame_range:
+            raise ValidationError(
+                f'The frame number should be in the [{self._start}, {self._stop}] range'
+            )
+
+    def __call__(self, request, start: int, stop: int, db_data: Optional[Data]):
         if not db_data:
             raise NotFound(detail='Cannot find requested data')
+
+        self._start = start
+        self._stop = stop
+        self._db_data = db_data
 
         frame_provider = FrameProvider(db_data, self.dimension)
 
@@ -589,7 +601,7 @@ class DataChunkGetter:
                 stop_chunk = frame_provider.get_chunk_number(stop)
                 # pylint: disable=superfluous-parens
                 if not (start_chunk <= self.number <= stop_chunk):
-                    raise ValidationError('The chunk number should be in ' +
+                    raise ValidationError('The chunk number should be in  the ' +
                         f'[{start_chunk}, {stop_chunk}] range')
 
                 # TODO: av.FFmpegError processing
@@ -603,9 +615,7 @@ class DataChunkGetter:
                 return sendfile(request, path)
 
             elif self.type == 'frame' or self.type == 'preview':
-                if not (start <= self.number <= stop):
-                    raise ValidationError('The frame number should be in ' +
-                        f'[{start}, {stop}] range')
+                self._check_frame_range(self.number)
 
                 if self.type == 'preview':
                     cache = MediaCache(self.dimension)
@@ -616,14 +626,13 @@ class DataChunkGetter:
                 return HttpResponse(buf.getvalue(), content_type=mime)
 
             elif self.type == 'context_image':
-                if start <= self.number <= stop:
-                    cache = MediaCache(self.dimension)
-                    buff, mime = cache.get_frame_context_images(db_data, self.number)
-                    if not buff:
-                        return HttpResponseNotFound()
-                    return HttpResponse(io.BytesIO(buff), content_type=mime)
-                raise ValidationError('The frame number should be in ' +
-                    f'[{start}, {stop}] range')
+                self._check_frame_range(self.number)
+
+                cache = MediaCache(self.dimension)
+                buff, mime = cache.get_frame_context_images(db_data, self.number)
+                if not buff:
+                    return HttpResponseNotFound()
+                return HttpResponse(io.BytesIO(buff), content_type=mime)
             else:
                 return Response(data='unknown data type {}.'.format(self.type),
                     status=status.HTTP_400_BAD_REQUEST)
@@ -638,8 +647,22 @@ class JobDataGetter(DataChunkGetter):
         super().__init__(data_type, data_num, data_quality, task_dim=job.segment.task.dimension)
         self.job = job
 
+    def _check_frame_range(self, frame: int):
+        frame_range = self.job.segment.frame_set
+        if frame not in frame_range:
+            raise ValidationError("The frame number doesn't belong to the job")
+
     def __call__(self, request, start, stop, db_data):
         if self.type == 'chunk' and self.job.segment.type == SegmentType.SPECIFIC_FRAMES:
+            frame_provider = FrameProvider(db_data, self.dimension)
+
+            start_chunk = frame_provider.get_chunk_number(start)
+            stop_chunk = frame_provider.get_chunk_number(stop)
+            # pylint: disable=superfluous-parens
+            if not (start_chunk <= self.number <= stop_chunk):
+                raise ValidationError('The chunk number should be in the ' +
+                    f'[{start_chunk}, {stop_chunk}] range')
+
             cache = MediaCache()
 
             if settings.USE_CACHE and db_data.storage_method == StorageMethodChoice.CACHE:
