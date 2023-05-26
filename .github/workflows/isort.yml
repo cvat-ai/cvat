@@ -6,53 +6,21 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - id: files
-        uses: jitterbit/get-changed-files@v1
-        continue-on-error: true
+        uses: tj-actions/changed-files@v35.9.2
+        with:
+          files: |
+              cvat-sdk/**/*.py
+              cvat-cli/**/*.py
+              tests/python/**/*.py
+          dir_names: true
 
       - name: Run checks
-        env:
-          PR_FILES_AM: ${{ steps.files.outputs.added_modified }}
-          PR_FILES_RENAMED: ${{ steps.files.outputs.renamed }}
         run: |
           # If different modules use different isort configs,
           # we need to run isort for each python component group separately.
           # Otherwise, they all will use the same config.
-          ENABLED_DIRS=("cvat-sdk" "cvat-cli" "tests/python")
 
-          isValueIn () {
-            # Checks if a value is in an array
-            # https://stackoverflow.com/a/8574392
-            # args: value, array
-            local e match="$1"
-            shift
-            for e; do
-              [[ "$e" == "$match" ]] && return 0;
-            done
-            return 1
-          }
-
-          startswith () {
-            # Inspired by https://stackoverflow.com/a/2172367
-            # Checks if the first arg starts with the second one
-            local value="$1"
-            local beginning="$2"
-            return $([[ $value == ${beginning}* ]])
-          }
-
-          PR_FILES="$PR_FILES_AM $PR_FILES_RENAMED"
-          UPDATED_DIRS=""
-          for FILE in $PR_FILES; do
-              EXTENSION="${FILE##*.}"
-              DIRECTORY="$(dirname $FILE)"
-              if [[ "$EXTENSION" == "py" ]]; then
-                  for EDIR in ${ENABLED_DIRS[@]}; do
-                      if startswith "${DIRECTORY}/" "${EDIR}/" && ! isValueIn "${EDIR}" ${UPDATED_DIRS[@]};
-                      then
-                          UPDATED_DIRS+=" ${EDIR}"
-                      fi
-                  done
-              fi
-          done
+          UPDATED_DIRS="${{steps.files.outputs.all_changed_files}}"
 
           if [[ ! -z $UPDATED_DIRS ]]; then
             sudo apt-get --no-install-recommends install -y build-essential curl python3-dev python3-pip python3-venv
