@@ -225,6 +225,12 @@ function build() {
             set removeUnderlyingMaskPixels(value: boolean) {
                 config.removeUnderlyingMaskPixels = value;
             },
+            get onOrganizationChange(): (orgId: number) => void {
+                return config.onOrganizationChange;
+            },
+            set onOrganizationChange(value: (orgId: number) => void) {
+                config.onOrganizationChange = value;
+            },
         },
         client: {
             version: `${pjson.version}`,

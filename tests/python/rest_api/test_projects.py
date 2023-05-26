@@ -40,9 +40,9 @@ class TestGetProjects:
             if is_project_staff(user["id"], p["id"]) == is_project_staff_flag:
                 return p["id"]
 
-    def _test_response_200(self, username, project_id, **kwargs):
+    def _test_response_200(self, username, project_id):
         with make_api_client(username) as api_client:
-            (project, response) = api_client.projects_api.retrieve(project_id, **kwargs)
+            (project, response) = api_client.projects_api.retrieve(project_id)
             assert response.status == HTTPStatus.OK
             assert project_id == project.id
 
@@ -122,7 +122,7 @@ class TestGetProjects:
             )
         )
 
-        self._test_response_200(user["username"], pid, org_id=user["org"])
+        self._test_response_200(user["username"], pid)
 
     @pytest.mark.parametrize("role", ("supervisor", "worker"))
     def test_if_org_member_supervisor_or_worker_can_see_project(
@@ -138,7 +138,7 @@ class TestGetProjects:
             )
         )
 
-        self._test_response_200(user["username"], pid, org_id=user["org"])
+        self._test_response_200(user["username"], pid)
 
 
 class TestProjectsListFilters(CollectionSimpleFilterTestBase):
@@ -213,9 +213,7 @@ class TestGetProjectBackup:
             and is_org_member(user["id"], project["organization"])
         )
 
-        self._test_cannot_get_project_backup(
-            user["username"], project["id"], org_id=project["organization"]
-        )
+        self._test_cannot_get_project_backup(user["username"], project["id"])
 
     # Org worker that in [project:owner, project:assignee] can get project backup.
     def test_org_worker_can_get_project_backup(
@@ -231,9 +229,7 @@ class TestGetProjectBackup:
             and is_org_member(user["id"], project["organization"])
         )
 
-        self._test_can_get_project_backup(
-            user["username"], project["id"], org_id=project["organization"]
-        )
+        self._test_can_get_project_backup(user["username"], project["id"])
 
     # Org supervisor that in [project:owner, project:assignee] can get project backup.
     def test_org_supervisor_can_get_project_backup(
@@ -249,9 +245,7 @@ class TestGetProjectBackup:
             and is_org_member(user["id"], project["organization"])
         )
 
-        self._test_can_get_project_backup(
-            user["username"], project["id"], org_id=project["organization"]
-        )
+        self._test_can_get_project_backup(user["username"], project["id"])
 
     # Org supervisor that not in [project:owner, project:assignee] cannot get project backup.
     def test_org_supervisor_cannot_get_project_backup(
@@ -267,9 +261,7 @@ class TestGetProjectBackup:
             and is_org_member(user["id"], project["organization"])
         )
 
-        self._test_cannot_get_project_backup(
-            user["username"], project["id"], org_id=project["organization"]
-        )
+        self._test_cannot_get_project_backup(user["username"], project["id"])
 
     # Org maintainer that not in [project:owner, project:assignee] can get project backup.
     def test_org_maintainer_can_get_project_backup(
@@ -285,9 +277,7 @@ class TestGetProjectBackup:
             and is_org_member(user["id"], project["organization"])
         )
 
-        self._test_can_get_project_backup(
-            user["username"], project["id"], org_id=project["organization"]
-        )
+        self._test_can_get_project_backup(user["username"], project["id"])
 
     # Org owner that not in [project:owner, project:assignee] can get project backup.
     def test_org_owner_can_get_project_backup(
@@ -303,9 +293,7 @@ class TestGetProjectBackup:
             and is_org_member(user["id"], project["organization"])
         )
 
-        self._test_can_get_project_backup(
-            user["username"], project["id"], org_id=project["organization"]
-        )
+        self._test_can_get_project_backup(user["username"], project["id"])
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -810,7 +798,6 @@ class TestPatchProjectLabel:
             user["username"],
             f'/projects/{project["id"]}',
             {"labels": [new_label]},
-            org_id=project["organization"],
         )
         assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == project["labels"]["count"] + 1
@@ -839,7 +826,6 @@ class TestPatchProjectLabel:
             user["username"],
             f'/projects/{project["id"]}',
             {"labels": [new_label]},
-            org_id=project["organization"],
         )
         assert response.status_code == HTTPStatus.FORBIDDEN
 
@@ -864,7 +850,6 @@ class TestPatchProjectLabel:
             user["username"],
             f'/projects/{project["id"]}',
             {"labels": [new_label]},
-            org_id=project["organization"],
         )
         assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == project["labels"]["count"] + 1
@@ -1010,7 +995,7 @@ class TestGetProjectPreview:
             )
         )
 
-        self._test_response_200(user["username"], pid, org_id=user["org"])
+        self._test_response_200(user["username"], pid)
 
 
 @pytest.mark.usefixtures("restore_db_per_function")

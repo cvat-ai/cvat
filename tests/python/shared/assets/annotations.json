@@ -4795,31 +4795,6 @@
         {
           "attributes": [
             {
-              "spec_id": 8,
-              "value": "black"
-            }
-          ],
-          "elements": [],
-          "frame": 0,
-          "group": 0,
-          "id": 55,
-          "label_id": 52,
-          "occluded": false,
-          "outside": false,
-          "points": [
-            424.4396493594086,
-            86.6660822656795,
-            664.8078219824692,
-            251.54672960215976
-          ],
-          "rotation": 0.0,
-          "source": "manual",
-          "type": "rectangle",
-          "z_order": 0
-        },
-        {
-          "attributes": [
-            {
               "spec_id": 7,
               "value": "non-default"
             }
@@ -4836,6 +4811,31 @@
             57.53054619015711,
             340.34389750505943,
             191.28914362778414
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 0
+        },
+        {
+          "attributes": [
+            {
+              "spec_id": 8,
+              "value": "black"
+            }
+          ],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 55,
+          "label_id": 52,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            424.4396493594086,
+            86.6660822656795,
+            664.8078219824692,
+            251.54672960215976
           ],
           "rotation": 0.0,
           "source": "manual",

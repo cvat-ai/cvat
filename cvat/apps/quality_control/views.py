@@ -37,6 +37,9 @@ from cvat.apps.iam.permissions import AnnotationConflictPermission, QualityRepor
     list=extend_schema(
         summary='Method returns a paginated list of annotation conflicts',
         parameters=[
+            # TODO: add support for this
+            # *ORGANIZATION_OPEN_API_PARAMETERS,
+
             # These filters are implemented differently from others
             OpenApiParameter('report_id', type=OpenApiTypes.INT,
                 description='A simple equality filter for report id'),
@@ -103,6 +106,9 @@ class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
     list=extend_schema(
         summary='Method returns a paginated list of quality reports',
         parameters=[
+            # TODO: add support for this
+            # *ORGANIZATION_OPEN_API_PARAMETERS,
+
             # These filters are implemented differently from others
             OpenApiParameter('task_id', type=OpenApiTypes.INT,
                 description='A simple equality filter for task id'),

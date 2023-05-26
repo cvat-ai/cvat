@@ -550,6 +550,7 @@ class JobReadSerializer(serializers.ModelSerializer):
     assignee = BasicUserSerializer(allow_null=True, read_only=True)
     dimension = serializers.CharField(max_length=2, source='segment.task.dimension', read_only=True)
     data_chunk_size = serializers.ReadOnlyField(source='segment.task.data.chunk_size')
+    organization = serializers.ReadOnlyField(source='segment.task.organization.id', allow_null=True)
     data_compressed_chunk_type = serializers.ReadOnlyField(source='segment.task.data.compressed_chunk_type')
     mode = serializers.ReadOnlyField(source='segment.task.mode')
     bug_tracker = serializers.CharField(max_length=2000, source='get_bug_tracker',
@@ -562,7 +563,7 @@ class JobReadSerializer(serializers.ModelSerializer):
         fields = ('url', 'id', 'task_id', 'project_id', 'assignee',
             'dimension', 'bug_tracker', 'status', 'stage', 'state', 'mode', 'frame_count',
             'start_frame', 'stop_frame', 'data_chunk_size', 'data_compressed_chunk_type',
-            'created_date', 'updated_date', 'issues', 'labels', 'type')
+            'created_date', 'updated_date', 'issues', 'labels', 'type', 'organization')
         read_only_fields = fields
 
     def to_representation(self, instance):
