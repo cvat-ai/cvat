@@ -45,7 +45,7 @@ The CVAT analytics is based on Vector, ClickHouse, and Grafana.
 
 ## CVAT Analytics
 
-CVAT and its analytics module can be set up locally, as for
+CVAT and its analytics module can be set up locally, for
 self-hosted solution analytics are enabled by default.
 
 > For detailed instructions for CVAT installation, see [Installation Guide](https://opencv.github.io/cvat/docs/administration/basics/installation/)
@@ -75,7 +75,7 @@ cvat_vector:
 ```
 
 **Or** remove the following data from
-[launch.json](https://github.com/opencv/cvat/blob/develop/.vscode/launch.json)
+[launch.json](https://github.com/opencv/cvat/blob/develop/.vscode/launch.json):
 
 ```json
   "DJANGO_LOG_SERVER_HOST": "localhost",
@@ -88,7 +88,7 @@ Analytics on GitHub:
 ### Events Log structure
 
 [Relational database](https://github.com/opencv/cvat/blob/develop/components/analytics/clickhouse/init.sh)
-schema with the following fields.
+schema with the following fields:
 
 <!--lint disable maximum-line-length-->
 
@@ -200,7 +200,7 @@ the following `curl` command can be used:
 curl --user 'user:pass' https://app.cvat.ai/api/events?job_id=123
 ```
 
-In the response, you will receive a query ID.
+In the response, you will receive a query ID:
 
 ```json
 { "query_id": "150cac1f-09f1-4d73-b6a5-5f47aa5d0031" }
@@ -245,7 +245,7 @@ on your local machine.
 By default, three dashboards are available in CVAT.
 
 To access them, click **General**, you will be forwarded to the
-page with available dashboards.
+page with available dashboards:
 
 ![List of dashboards](/images/dashboard_00.png)
 
