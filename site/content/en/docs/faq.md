@@ -72,7 +72,16 @@ After that, it should be possible to use this directory as a CVAT share:
 
 ```yaml
 services:
-  cvat:
+  cvat_server:
+    volumes:
+      - cvat_share:/home/django/share:ro
+  cvat_worker_import:
+    volumes:
+      - cvat_share:/home/django/share:ro
+  cvat_worker_export:
+    volumes:
+      - cvat_share:/home/django/share:ro
+  cvat_worker_annotation:
     volumes:
       - cvat_share:/home/django/share:ro
 
