@@ -233,22 +233,18 @@ context('New organization pipeline.', () => {
             });
         });
 
-        it("Logout, the third user login. The user does not see the project, the task. The user can't open the job using direct link.", () => {
+        it('Logout, the third user login. The user does not see the project, the task.', () => {
             cy.logout(secondUserName);
             cy.login(thirdUserName, thirdUser.password);
             cy.contains('.cvat-item-task-name', taskName).should('not.exist');
             cy.goToProjectsList();
             cy.contains('.cvat-projects-project-item-title', project.name).should('not.exist');
-            cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
-            cy.get('.cvat-canvas-container').should('not.exist');
-            cy.get('.cvat-notification-notice-fetch-job-failed').should('be.visible');
-            cy.closeNotification('.cvat-notification-notice-fetch-job-failed');
         });
 
-        it('The third user activates the organization. Now can open the job using direct link. Create an object, save annotations.', () => {
-            cy.activateOrganization(organizationParams.shortName);
+        it('User can open the job using direct link. Organization is set automatically. Create an object, save annotations.', () => {
             cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
             cy.get('.cvat-canvas-container').should('exist');
+            cy.get('.cvat-header-menu-user-dropdown-organization').should('have.text', organizationParams.shortName);
             cy.createCuboid(createCuboidShape2Points);
             cy.saveJob();
         });

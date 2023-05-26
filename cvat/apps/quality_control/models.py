@@ -123,6 +123,12 @@ class QualityReport(models.Model):
         if not (self.job is not None) ^ (self.task is not None):
             raise ValidationError("One of the 'job' and 'task' fields must be set")
 
+    @property
+    def organization_id(self):
+        if task := self.get_task():
+            return task.organization
+        return None
+
 
 class AnnotationConflict(models.Model):
     report = models.ForeignKey(QualityReport,
@@ -132,6 +138,12 @@ class AnnotationConflict(models.Model):
     importance = models.CharField(max_length=32, choices=AnnotationConflictImportance.choices())
 
     annotation_ids: Sequence[AnnotationId]
+
+    @property
+    def organization_id(self):
+        if report := self.report:
+            return report.organization_id
+        return None
 
 
 class AnnotationType(str, Enum):
@@ -205,3 +217,9 @@ class QualitySettings(models.Model):
 
     def to_dict(self):
         return model_to_dict(self)
+
+    @property
+    def organization_id(self):
+        if task := self.task:
+            return task.organization_id
+        return None

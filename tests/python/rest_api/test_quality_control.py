@@ -173,18 +173,15 @@ class TestListQualityReports(_PermissionTestBase):
 
         assert task
 
-        org_id = task["organization"]
-        extra_kwargs = {"org_id": org_id}
-
         self.create_gt_job(admin_user, task["id"])
         report = self.create_quality_report(admin_user, task["id"])
 
         if allow:
             self._test_list_reports_200(
-                user["username"], task["id"], expected_data=[report], **extra_kwargs, target="task"
+                user["username"], task["id"], expected_data=[report], target="task"
             )
         else:
-            self._test_list_reports_403(user["username"], task["id"], **extra_kwargs)
+            self._test_list_reports_403(user["username"], task["id"])
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -281,18 +278,15 @@ class TestGetQualityReports(_PermissionTestBase):
 
         assert task
 
-        org_id = task["organization"]
-        extra_kwargs = {"org_id": org_id}
-
         self.create_gt_job(admin_user, task["id"])
         report = self.create_quality_report(admin_user, task["id"])
 
         if allow:
             self._test_get_report_200(
-                user["username"], report["id"], expected_data=report, **extra_kwargs
+                user["username"], report["id"], expected_data=report
             )
         else:
-            self._test_get_report_403(user["username"], report["id"], **extra_kwargs)
+            self._test_get_report_403(user["username"], report["id"])
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -403,19 +397,16 @@ class TestGetQualityReportData(_PermissionTestBase):
 
         assert task
 
-        org_id = task["organization"]
-        extra_kwargs = {"org_id": org_id}
-
         self.create_gt_job(admin_user, task["id"])
         report = self.create_quality_report(admin_user, task["id"])
         report_data = json.loads(self._test_get_report_data_200(admin_user, report["id"]).data)
 
         if allow:
             self._test_get_report_data_200(
-                user["username"], report["id"], expected_data=report_data, **extra_kwargs
+                user["username"], report["id"], expected_data=report_data
             )
         else:
-            self._test_get_report_data_403(user["username"], report["id"], **extra_kwargs)
+            self._test_get_report_data_403(user["username"], report["id"])
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -564,22 +555,17 @@ class TestListQualityConflicts(_PermissionTestBase):
         assert task
         user = user["username"]
 
-        org_id = task["organization"]
-        extra_kwargs = {"org_id": org_id}
-
         self.create_gt_job(admin_user, task["id"])
         report = self.create_quality_report(admin_user, task["id"])
-        conflicts = self._test_list_conflicts_200(
-            admin_user, report_id=report["id"], **extra_kwargs
-        )
+        conflicts = self._test_list_conflicts_200(admin_user, report_id=report["id"])
         assert conflicts
 
         if allow:
             self._test_list_conflicts_200(
-                user, report["id"], expected_data=conflicts, **extra_kwargs
+                user, report["id"], expected_data=conflicts
             )
         else:
-            self._test_list_conflicts_200(user, report["id"], expected_data=[], **extra_kwargs)
+            self._test_list_conflicts_200(user, report["id"], expected_data=[])
 
 
 class TestSimpleQualityConflictsFilters(CollectionSimpleFilterTestBase):
@@ -716,18 +702,15 @@ class TestGetSettings(_PermissionTestBase):
 
         assert task
 
-        org_id = task["organization"]
-        extra_kwargs = {"org_id": org_id}
-
         settings_id = task["quality_settings"]
         settings = quality_settings[settings_id]
 
         if allow:
             self._test_get_settings_200(
-                user["username"], settings_id, expected_data=settings, **extra_kwargs
+                user["username"], settings_id, expected_data=settings
             )
         else:
-            self._test_get_settings_403(user["username"], settings_id, **extra_kwargs)
+            self._test_get_settings_403(user["username"], settings_id)
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -847,19 +830,16 @@ class TestPatchSettings(_PermissionTestBase):
 
         assert task
 
-        org_id = task["organization"]
-        extra_kwargs = {"org_id": org_id}
-
         settings_id = task["quality_settings"]
         settings = quality_settings[settings_id]
         data, expected_data = self._get_request_data(settings)
 
         if allow:
             self._test_patch_settings_200(
-                user["username"], settings_id, data, expected_data=expected_data, **extra_kwargs
+                user["username"], settings_id, data, expected_data=expected_data
             )
         else:
-            self._test_patch_settings_403(user["username"], settings_id, data, **extra_kwargs)
+            self._test_patch_settings_403(user["username"], settings_id, data)
 
 
 @pytest.mark.usefixtures("restore_db_per_function")

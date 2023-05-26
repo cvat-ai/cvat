@@ -14,6 +14,7 @@ without use_cache option (<https://github.com/opencv/cvat/pull/6074>)
 - Support task creation with cloud storage data and without use_cache option (<https://github.com/opencv/cvat/pull/6074>)
 
 ### Changed
+- Resource links are opened from any organization/sandbox if available for user (<https://github.com/opencv/cvat/pull/5892>)
 - Cloud storage manifest file is optional (<https://github.com/opencv/cvat/pull/6074>)
 - Updated Django to 4.2.x version (<https://github.com/opencv/cvat/pull/6122>)
 - Some Nuclio functions' names were changed to follow a common convention:
