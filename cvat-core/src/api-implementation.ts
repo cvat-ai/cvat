@@ -311,11 +311,17 @@ export default function implementAPI(cvat) {
 
     cvat.organizations.activate.implementation = (organization) => {
         checkObjectType('organization', organization, null, Organization);
-        config.organizationID = organization.slug;
+        config.organization = {
+            organizationID: organization.id,
+            organizationSlug: organization.slug,
+        };
     };
 
     cvat.organizations.deactivate.implementation = async () => {
-        config.organizationID = null;
+        config.organization = {
+            organizationID: null,
+            organizationSlug: null,
+        };
     };
 
     cvat.webhooks.get.implementation = async (filter) => {

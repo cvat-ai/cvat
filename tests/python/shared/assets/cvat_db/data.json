@@ -527,6 +527,14 @@
 },
 {
   "model": "sessions.session",
+  "pk": "d5hzap008bh0kj64738vfcnlddz3rq3q",
+  "fields": {
+    "session_data": ".eJxVjMsOwiAQRf-FtSHQ4VFcuvcbyMAwUjU0Ke3K-O_apAvd3nPOfYmI21rj1ssSJxJnoZU4_Y4J86O0ndAd222WeW7rMiW5K_KgXV5nKs_L4f4dVOz1WzvjmIjAQWaTBstgNIzsXAnkgUJSQVmA4tFzZgDLxHoEp82AWEIQ7w8KLDgb:1ptSj6:O-nWOvTicB2nf5bWCA0_-_IWElDl02tyQY-O2obZc4Q",
+    "expire_date": "2023-05-15T12:33:56.878Z"
+  }
+},
+{
+  "model": "sessions.session",
   "pk": "dpaw6pntyqwr5l6qjv6zq3yoajp301be",
   "fields": {
     "session_data": ".eJxVjEsOwjAMBe-SNYrq_BxYsucMlWO7tIAaqWlXiLujSl3A9s3Me5uetnXst6ZLP4m5GABz-h0L8VPnnciD5nu1XOd1mYrdFXvQZm9V9HU93L-Dkdq41550gJRLCCmJyoBdJmKMmaEEjpwDqmh0wuhc8Q68cmJA7M4OMJjPFyYSODI:1nUkTH:BLJ2UbMcN1AmDEbuOLS5T_O-vbrAzEW_K8oRkQZYt4M",
@@ -686,6 +694,14 @@
   }
 },
 {
+  "model": "sessions.session",
+  "pk": "y0gqgy87qj5rzdymhcrm5cilkbzmmmdi",
+  "fields": {
+    "session_data": ".eJxVjEEOwiAQRe_C2hCmdCi4dN8zkIEBqZqSlHZlvLtt0oVu_3vvv4WnbS1-a2nxE4urACUuv2Og-EzzQfhB873KWOd1mYI8FHnSJsfK6XU73b-DQq3sdbbUJaNz4MToIvfEoBBwQDDKoYXOaZNcwH4nGYGGAGQtdho4Rg3i8wUMbDfM:1ptP7Q:QohmTMRYLohe_xym4-jZdnDdhEcDBLoWmnf-6tnNuAY",
+    "expire_date": "2023-05-15T08:42:48.134Z"
+  }
+},
+{
   "model": "authtoken.token",
   "pk": "2dcf8d2ff5032c3cf7d276549af3a50edb4f11c8",
   "fields": {
@@ -713,6 +729,16 @@
       "lonely_user"
     ],
     "created": "2023-03-30T09:37:31.700Z"
+  }
+},
+{
+  "model": "authtoken.token",
+  "pk": "c051fe19df24a0ac4c6bec5e635034271c9549dc",
+  "fields": {
+    "user": [
+      "business1"
+    ],
+    "created": "2023-05-01T08:42:48.127Z"
   }
 },
 {

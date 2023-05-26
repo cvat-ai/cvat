@@ -245,7 +245,7 @@ class TestPatchIssues:
         username, issue_id = find_issue_staff_user(issues, users, issue_staff, issue_admin)
 
         data = request_and_response_data(issue_id, username=username)
-        self._test_check_response(username, issue_id, data, is_allow, org_id=org)
+        self._test_check_response(username, issue_id, data, is_allow)
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -331,7 +331,7 @@ class TestDeleteIssues:
         issues = issues_by_org[org]
         username, issue_id = find_issue_staff_user(issues, users, issue_staff, issue_admin)
 
-        self._test_check_response(username, issue_id, expect_success, org_id=org)
+        self._test_check_response(username, issue_id, expect_success)
 
 
 class TestIssuesListFilters(CollectionSimpleFilterTestBase):

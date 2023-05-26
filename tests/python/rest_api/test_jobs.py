@@ -39,15 +39,15 @@ def get_job_staff(job, tasks, projects):
 
 
 def filter_jobs(jobs, tasks, org):
-    if org is None:
-        kwargs = {}
-        jobs = jobs.raw
+    if isinstance(org, int):
+        kwargs = {"org_id": org}
+        jobs = [job for job in jobs if tasks[job["task_id"]]["organization"] == org]
     elif org == "":
         kwargs = {"org": ""}
         jobs = [job for job in jobs if tasks[job["task_id"]]["organization"] is None]
     else:
-        kwargs = {"org_id": org}
-        jobs = [job for job in jobs if tasks[job["task_id"]]["organization"] == org]
+        kwargs = {}
+        jobs = jobs.raw
 
     return jobs, kwargs
 
@@ -75,31 +75,51 @@ class TestGetJobs:
             )
             assert response.status == HTTPStatus.FORBIDDEN
 
-    @pytest.mark.parametrize("org", [None, "", 1, 2])
-    def test_admin_get_job(self, jobs, tasks, org):
-        jobs, kwargs = filter_jobs(jobs, tasks, org)
+    def test_admin_can_get_sandbox_job(self, jobs, tasks):
+        job = next(job for job in jobs if tasks[job["task_id"]]["organization"] is None)
+        self._test_get_job_200("admin2", job["id"], job)
 
-        # keep only the reasonable amount of jobs
-        for job in jobs[:8]:
-            self._test_get_job_200("admin2", job["id"], job, **kwargs)
+    def test_admin_can_get_org_job(self, jobs, tasks):
+        job = next(job for job in jobs if tasks[job["task_id"]]["organization"] is not None)
+        self._test_get_job_200("admin2", job["id"], job)
 
-    @pytest.mark.parametrize("org_id", ["", None, 1, 2])
-    @pytest.mark.parametrize("groups", [["business"], ["user"], ["worker"], []])
-    def test_non_admin_get_job(self, org_id, groups, users, jobs, tasks, projects, org_staff):
-        # keep the reasonable amount of users and jobs
-        users = [u for u in users if u["groups"] == groups][:4]
-        jobs, kwargs = filter_jobs(jobs, tasks, org_id)
-        org_staff = org_staff(org_id)
+    @pytest.mark.parametrize("groups", [["business"], ["user"]])
+    def test_non_admin_org_staff_can_get_job(
+        self, groups, users, organizations, org_staff, jobs_by_org
+    ):
+        user, org_id = next(
+            (user, org["id"])
+            for user in users
+            for org in organizations
+            if user["groups"] == groups and user["id"] in org_staff(org["id"])
+        )
+        job = jobs_by_org[org_id][0]
+        self._test_get_job_200(user["username"], job["id"], job)
 
-        for job in jobs[:8]:
-            job_staff = get_job_staff(job, tasks, projects)
+    @pytest.mark.parametrize("groups", [["business"], ["user"], ["worker"]])
+    def test_non_admin_job_staff_can_get_job(self, groups, users, jobs, is_job_staff):
+        user, job = next(
+            (user, job)
+            for user in users
+            for job in jobs
+            if user["groups"] == groups and is_job_staff(user["id"], job["id"])
+        )
+        self._test_get_job_200(user["username"], job["id"], job)
 
-            # check if the specific user in job_staff to see the job
-            for user in users:
-                if user["id"] in job_staff | org_staff:
-                    self._test_get_job_200(user["username"], job["id"], job, **kwargs)
-                else:
-                    self._test_get_job_403(user["username"], job["id"], **kwargs)
+    @pytest.mark.parametrize("groups", [["business"], ["user"], ["worker"]])
+    def test_non_admin_non_job_staff_non_org_staff_cannot_get_job(
+        self, groups, users, organizations, org_staff, jobs, is_job_staff
+    ):
+        user, job_id = next(
+            (user, job["id"])
+            for user in users
+            for org in organizations
+            for job in jobs
+            if user["groups"] == groups
+            and user["id"] not in org_staff(org["id"])
+            and not is_job_staff(user["id"], job["id"])
+        )
+        self._test_get_job_403(user["username"], job_id)
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -176,9 +196,9 @@ class TestJobsListFilters(CollectionSimpleFilterTestBase):
 
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetAnnotations:
-    def _test_get_job_annotations_200(self, user, jid, data, **kwargs):
+    def _test_get_job_annotations_200(self, user, jid, data):
         with make_api_client(user) as client:
-            (_, response) = client.jobs_api.retrieve_annotations(jid, **kwargs)
+            (_, response) = client.jobs_api.retrieve_annotations(jid)
             assert response.status == HTTPStatus.OK
 
             response_data = json.loads(response.data)
@@ -187,10 +207,10 @@ class TestGetAnnotations:
                 == {}
             )
 
-    def _test_get_job_annotations_403(self, user, jid, **kwargs):
+    def _test_get_job_annotations_403(self, user, jid):
         with make_api_client(user) as client:
             (_, response) = client.jobs_api.retrieve_annotations(
-                jid, **kwargs, _check_status=False, _parse_response=False
+                jid, _check_status=False, _parse_response=False
             )
             assert response.status == HTTPStatus.FORBIDDEN
 
@@ -221,15 +241,13 @@ class TestGetAnnotations:
         find_job_staff_user,
     ):
         users = [u for u in users if u["groups"] == groups]
-        jobs, kwargs = filter_jobs(jobs, tasks, org)
+        jobs, _ = filter_jobs(jobs, tasks, org)
         username, job_id = find_job_staff_user(jobs, users, job_staff)
 
         if expect_success:
-            self._test_get_job_annotations_200(
-                username, job_id, annotations["job"][str(job_id)], **kwargs
-            )
+            self._test_get_job_annotations_200(username, job_id, annotations["job"][str(job_id)])
         else:
-            self._test_get_job_annotations_403(username, job_id, **kwargs)
+            self._test_get_job_annotations_403(username, job_id)
 
     @pytest.mark.parametrize("org", [2])
     @pytest.mark.parametrize(
@@ -258,15 +276,15 @@ class TestGetAnnotations:
         find_users,
     ):
         users = find_users(org=org, role=role)
-        jobs, kwargs = filter_jobs(jobs, tasks, org)
+        jobs, _ = filter_jobs(jobs, tasks, org)
         username, jid = find_job_staff_user(jobs, users, job_staff)
 
         if expect_success:
             data = annotations["job"][str(jid)]
             data["shapes"] = sorted(data["shapes"], key=lambda a: a["id"])
-            self._test_get_job_annotations_200(username, jid, data, **kwargs)
+            self._test_get_job_annotations_200(username, jid, data)
         else:
-            self._test_get_job_annotations_403(username, jid, **kwargs)
+            self._test_get_job_annotations_403(username, jid)
 
     @pytest.mark.parametrize("org", [1])
     @pytest.mark.parametrize(
@@ -285,34 +303,23 @@ class TestGetAnnotations:
         find_users,
     ):
         users = find_users(privilege=privilege, exclude_org=org)
-        jobs, kwargs = filter_jobs(jobs, tasks, org)
+        jobs, _ = filter_jobs(jobs, tasks, org)
         username, job_id = find_job_staff_user(jobs, users, False)
 
-        kwargs = {"org_id": org}
         if expect_success:
-            self._test_get_job_annotations_200(
-                username, job_id, annotations["job"][str(job_id)], **kwargs
-            )
+            self._test_get_job_annotations_200(username, job_id, annotations["job"][str(job_id)])
         else:
-            self._test_get_job_annotations_403(username, job_id, **kwargs)
+            self._test_get_job_annotations_403(username, job_id)
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestPatchJobAnnotations:
-    def _check_respone(self, username, jid, expect_success, data=None, org=None):
-        kwargs = {}
-        if org is not None:
-            if isinstance(org, str):
-                kwargs["org"] = org
-            else:
-                kwargs["org_id"] = org
-
+    def _check_response(self, username, jid, expect_success, data=None):
         with make_api_client(username) as client:
             (_, response) = client.jobs_api.partial_update_annotations(
                 id=jid,
                 patched_labeled_data_request=deepcopy(data),
                 action="update",
-                **kwargs,
                 _parse_response=expect_success,
                 _check_status=expect_success,
             )
@@ -375,7 +382,7 @@ class TestPatchJobAnnotations:
         username, jid = find_job_staff_user(filtered_jobs, users, job_staff)
 
         data = request_data(jid)
-        self._check_respone(username, jid, expect_success, data, org=org)
+        self._check_response(username, jid, expect_success, data)
 
     @pytest.mark.parametrize("org", [2])
     @pytest.mark.parametrize(
@@ -399,7 +406,7 @@ class TestPatchJobAnnotations:
         username, jid = find_job_staff_user(filtered_jobs, users, False)
 
         data = request_data(jid)
-        self._check_respone(username, jid, expect_success, data, org=org)
+        self._check_response(username, jid, expect_success, data)
 
     @pytest.mark.parametrize("org", [""])
     @pytest.mark.parametrize(
@@ -433,7 +440,7 @@ class TestPatchJobAnnotations:
         username, jid = find_job_staff_user(filtered_jobs, users, job_staff)
 
         data = request_data(jid)
-        self._check_respone(username, jid, expect_success, data, org=org)
+        self._check_response(username, jid, expect_success, data)
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -503,7 +510,6 @@ class TestPatchJob:
             (_, response) = client.jobs_api.partial_update(
                 id=jid,
                 patched_job_write_request={"assignee": assignee},
-                org_id=org,
                 _parse_response=expect_success,
                 _check_status=expect_success,
             )
@@ -716,30 +722,106 @@ class TestGetJobPreview:
             )
             assert response.status == HTTPStatus.FORBIDDEN
 
-    @pytest.mark.parametrize("org", [None, "", 1, 2])
-    def test_admin_get_job_preview(self, jobs, tasks, org):
-        jobs, kwargs = filter_jobs(jobs, tasks, org)
+    def test_admin_get_sandbox_job_preview(self, jobs, tasks):
+        job_id = next(job["id"] for job in jobs if not tasks[job["task_id"]]["organization"])
+        self._test_get_job_preview_200("admin2", job_id)
 
-        # keep only the reasonable amount of jobs
-        for job in jobs[:8]:
-            self._test_get_job_preview_200("admin2", job["id"], **kwargs)
+    def test_admin_get_org_job_preview(self, jobs, tasks):
+        job_id = next(job["id"] for job in jobs if tasks[job["task_id"]]["organization"])
+        self._test_get_job_preview_200("admin2", job_id)
 
-    @pytest.mark.parametrize("org_id", ["", None, 1, 2])
-    @pytest.mark.parametrize("groups", [["business"], ["user"], ["worker"], []])
-    def test_non_admin_get_job_preview(
-        self, org_id, groups, users, jobs, tasks, projects, org_staff
+    def test_business_can_get_job_preview_in_sandbox(self, find_users, jobs, is_job_staff):
+        username, job_id = next(
+            (user["username"], job["id"])
+            for user in find_users(privilege="business")
+            for job in jobs
+            if is_job_staff(user["id"], job["id"])
+        )
+        self._test_get_job_preview_200(username, job_id)
+
+    def test_user_can_get_job_preview_in_sandbox(self, find_users, jobs, is_job_staff):
+        username, job_id = next(
+            (user["username"], job["id"])
+            for user in find_users(privilege="user")
+            for job in jobs
+            if is_job_staff(user["id"], job["id"])
+        )
+        self._test_get_job_preview_200(username, job_id)
+
+    def test_business_cannot_get_job_preview_in_sandbox(self, find_users, jobs, is_job_staff):
+        username, job_id = next(
+            (user["username"], job["id"])
+            for user in find_users(privilege="business")
+            for job in jobs
+            if not is_job_staff(user["id"], job["id"])
+        )
+        self._test_get_job_preview_403(username, job_id)
+
+    def test_user_cannot_get_job_preview_in_sandbox(self, find_users, jobs, is_job_staff):
+        username, job_id = next(
+            (user["username"], job["id"])
+            for user in find_users(privilege="user")
+            for job in jobs
+            if not is_job_staff(user["id"], job["id"])
+        )
+        self._test_get_job_preview_403(username, job_id)
+
+    def test_org_staff_can_get_job_preview_in_org(
+        self, organizations, users, org_staff, jobs_by_org
     ):
-        # keep the reasonable amount of users and jobs
-        users = [u for u in users if u["groups"] == groups][:4]
-        jobs, kwargs = filter_jobs(jobs, tasks, org_id)
-        org_staff = org_staff(org_id)
+        username, job_id = next(
+            (user["username"], jobs_by_org[org["id"]][0]["id"])
+            for user in users
+            for org in organizations
+            if user["id"] in org_staff(org["id"])
+        )
+        self._test_get_job_preview_200(username, job_id)
 
-        for job in jobs[:8]:
-            job_staff = get_job_staff(job, tasks, projects)
+    def test_job_staff_can_get_job_preview_in_org(
+        self, organizations, users, jobs_by_org, is_job_staff
+    ):
+        username, job_id = next(
+            (user["username"], job["id"])
+            for user in users
+            for org in organizations
+            for job in jobs_by_org[org["id"]]
+            if is_job_staff(user["id"], job["id"])
+        )
+        self._test_get_job_preview_200(username, job_id)
 
-            # check if the specific user in job_staff to see the job preview
-            for user in users:
-                if user["id"] in job_staff | org_staff:
-                    self._test_get_job_preview_200(user["username"], job["id"], **kwargs)
-                else:
-                    self._test_get_job_preview_403(user["username"], job["id"], **kwargs)
+    def test_job_staff_can_get_job_preview_in_sandbox(self, users, jobs, tasks, is_job_staff):
+        username, job_id = next(
+            (user["username"], job["id"])
+            for user in users
+            for job in jobs
+            if is_job_staff(user["id"], job["id"]) and tasks[job["task_id"]]["organization"] is None
+        )
+        self._test_get_job_preview_200(username, job_id)
+
+    def test_non_org_staff_non_job_staff_cannot_get_job_preview_in_org(
+        self, users, organizations, jobs_by_org, is_job_staff, org_staff
+    ):
+        username, job_id = next(
+            (user["username"], job["id"])
+            for user in users
+            for org in organizations
+            for job in jobs_by_org[org["id"]]
+            if user["id"] not in org_staff(org["id"]) and not is_job_staff(user["id"], job["id"])
+        )
+        self._test_get_job_preview_403(username, job_id)
+
+
+@pytest.mark.usefixtures("restore_db_per_class")
+class TestGetJobDataMeta:
+    def test_admin_can_get_job_meta(self, jobs):
+        with make_api_client("admin1") as client:
+            job_id = jobs.raw[0]["id"]
+
+            client.organization_slug = None
+            client.jobs_api.retrieve_data_meta(job_id)
+
+            client.organization_slug = ""
+            client.jobs_api.retrieve_data_meta(job_id)
+
+            client.organization_slug = "org1"
+            client.jobs_api.retrieve_data_meta(job_id)

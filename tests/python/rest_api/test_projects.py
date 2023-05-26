@@ -40,9 +40,9 @@ class TestGetProjects:
             if is_project_staff(user["id"], p["id"]) == is_project_staff_flag:
                 return p["id"]
 
-    def _test_response_200(self, username, project_id, **kwargs):
+    def _test_response_200(self, username, project_id):
         with make_api_client(username) as api_client:
-            (project, response) = api_client.projects_api.retrieve(project_id, **kwargs)
+            (project, response) = api_client.projects_api.retrieve(project_id)
             assert response.status == HTTPStatus.OK
             assert project_id == project.id
 
@@ -122,7 +122,7 @@ class TestGetProjects:
             )
         )
 
-        self._test_response_200(user["username"], pid, org_id=user["org"])
+        self._test_response_200(user["username"], pid)
 
     @pytest.mark.parametrize("role", ("supervisor", "worker"))
     def test_if_org_member_supervisor_or_worker_can_see_project(
@@ -138,7 +138,7 @@ class TestGetProjects:
             )
         )
 
-        self._test_response_200(user["username"], pid, org_id=user["org"])
+        self._test_response_200(user["username"], pid)
 
 
 class TestProjectsListFilters(CollectionSimpleFilterTestBase):
@@ -994,7 +994,7 @@ class TestGetProjectPreview:
             )
         )
 
-        self._test_response_200(user["username"], pid, org_id=user["org"])
+        self._test_response_200(user["username"], pid)
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
