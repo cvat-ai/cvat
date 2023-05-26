@@ -6,7 +6,7 @@
     {
       "assignee": null,
       "bug_tracker": "",
-      "created_date": "2023-04-14T14:40:10.333000Z",
+      "created_date": "2023-05-26T16:11:23.540000Z",
       "data": 21,
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
@@ -20,7 +20,7 @@
         "url": "http://localhost:8080/api/jobs?task_id=22"
       },
       "labels": {
-        "count": 3,
+        "count": 2,
         "url": "http://localhost:8080/api/labels?task_id=22"
       },
       "mode": "annotation",
@@ -39,10 +39,10 @@
       "segment_size": 11,
       "size": 11,
       "source_storage": null,
-      "status": "annotation",
-      "subset": "",
+      "status": "validation",
+      "subset": "Train",
       "target_storage": null,
-      "updated_date": "2023-05-23T14:45:08.348000Z",
+      "updated_date": "2023-05-26T16:17:02.635000Z",
       "url": "http://localhost:8080/api/tasks/22"
     },
     {

@@ -7,12 +7,12 @@
       "annotation_ids": [
         {
           "job_id": 27,
-          "obj_id": 664,
+          "obj_id": 65,
           "type": "rectangle"
         },
         {
           "job_id": 28,
-          "obj_id": 624,
+          "obj_id": 101,
           "type": "rectangle"
         }
       ],
@@ -26,12 +26,12 @@
       "annotation_ids": [
         {
           "job_id": 27,
-          "obj_id": 638,
+          "obj_id": 91,
           "type": "rectangle"
         },
         {
           "job_id": 28,
-          "obj_id": 607,
+          "obj_id": 118,
           "type": "rectangle"
         }
       ],
@@ -45,12 +45,12 @@
       "annotation_ids": [
         {
           "job_id": 27,
-          "obj_id": 661,
+          "obj_id": 88,
           "type": "points"
         },
         {
           "job_id": 28,
-          "obj_id": 608,
+          "obj_id": 102,
           "type": "points"
         }
       ],
@@ -64,12 +64,12 @@
       "annotation_ids": [
         {
           "job_id": 27,
-          "obj_id": 641,
+          "obj_id": 68,
           "type": "polygon"
         },
         {
           "job_id": 28,
-          "obj_id": 604,
+          "obj_id": 98,
           "type": "polygon"
         }
       ],
@@ -83,12 +83,12 @@
       "annotation_ids": [
         {
           "job_id": 27,
-          "obj_id": 640,
+          "obj_id": 67,
           "type": "polyline"
         },
         {
           "job_id": 28,
-          "obj_id": 605,
+          "obj_id": 99,
           "type": "polyline"
         }
       ],
@@ -102,12 +102,12 @@
       "annotation_ids": [
         {
           "job_id": 27,
-          "obj_id": 665,
+          "obj_id": 92,
           "type": "points"
         },
         {
           "job_id": 28,
-          "obj_id": 625,
+          "obj_id": 119,
           "type": "points"
         }
       ],
@@ -121,7 +121,7 @@
       "annotation_ids": [
         {
           "job_id": 28,
-          "obj_id": 613,
+          "obj_id": 107,
           "type": "rectangle"
         }
       ],
@@ -135,7 +135,7 @@
       "annotation_ids": [
         {
           "job_id": 28,
-          "obj_id": 627,
+          "obj_id": 121,
           "type": "points"
         }
       ],
@@ -149,7 +149,7 @@
       "annotation_ids": [
         {
           "job_id": 28,
-          "obj_id": 628,
+          "obj_id": 122,
           "type": "points"
         }
       ],
@@ -163,7 +163,7 @@
       "annotation_ids": [
         {
           "job_id": 27,
-          "obj_id": 644,
+          "obj_id": 70,
           "type": "rectangle"
         }
       ],
@@ -177,7 +177,7 @@
       "annotation_ids": [
         {
           "job_id": 27,
-          "obj_id": 660,
+          "obj_id": 76,
           "type": "rectangle"
         }
       ],
@@ -191,7 +191,7 @@
       "annotation_ids": [
         {
           "job_id": 27,
-          "obj_id": 666,
+          "obj_id": 93,
           "type": "points"
         }
       ],
@@ -205,7 +205,7 @@
       "annotation_ids": [
         {
           "job_id": 27,
-          "obj_id": 658,
+          "obj_id": 74,
           "type": "polygon"
         }
       ],
@@ -219,7 +219,7 @@
       "annotation_ids": [
         {
           "job_id": 27,
-          "obj_id": 668,
+          "obj_id": 95,
           "type": "polygon"
         }
       ],
@@ -233,7 +233,7 @@
       "annotation_ids": [
         {
           "job_id": 27,
-          "obj_id": 659,
+          "obj_id": 73,
           "type": "polygon"
         }
       ],
@@ -247,7 +247,7 @@
       "annotation_ids": [
         {
           "job_id": 27,
-          "obj_id": 669,
+          "obj_id": 96,
           "type": "ellipse"
         }
       ],
@@ -261,7 +261,7 @@
       "annotation_ids": [
         {
           "job_id": 27,
-          "obj_id": 637,
+          "obj_id": 64,
           "type": "polyline"
         }
       ],
@@ -275,7 +275,7 @@
       "annotation_ids": [
         {
           "job_id": 27,
-          "obj_id": 639,
+          "obj_id": 66,
           "type": "polyline"
         }
       ],
@@ -289,7 +289,7 @@
       "annotation_ids": [
         {
           "job_id": 27,
-          "obj_id": 667,
+          "obj_id": 94,
           "type": "polyline"
         }
       ],
@@ -303,12 +303,12 @@
       "annotation_ids": [
         {
           "job_id": 27,
-          "obj_id": 662,
+          "obj_id": 89,
           "type": "points"
         },
         {
           "job_id": 28,
-          "obj_id": 629,
+          "obj_id": 123,
           "type": "points"
         }
       ],
@@ -322,12 +322,12 @@
       "annotation_ids": [
         {
           "job_id": 27,
-          "obj_id": 665,
+          "obj_id": 92,
           "type": "points"
         },
         {
           "job_id": 28,
-          "obj_id": 625,
+          "obj_id": 119,
           "type": "points"
         }
       ],
@@ -341,12 +341,12 @@
       "annotation_ids": [
         {
           "job_id": 27,
-          "obj_id": 642,
+          "obj_id": 69,
           "type": "mask"
         },
         {
           "job_id": 28,
-          "obj_id": 603,
+          "obj_id": 97,
           "type": "polygon"
         }
       ],
@@ -360,12 +360,12 @@
       "annotation_ids": [
         {
           "job_id": 27,
-          "obj_id": 640,
+          "obj_id": 67,
           "type": "polyline"
         },
         {
           "job_id": 28,
-          "obj_id": 605,
+          "obj_id": 99,
           "type": "polyline"
         }
       ],
@@ -379,7 +379,7 @@
       "annotation_ids": [
         {
           "job_id": 27,
-          "obj_id": 642,
+          "obj_id": 69,
           "type": "mask"
         }
       ],
@@ -393,12 +393,12 @@
       "annotation_ids": [
         {
           "job_id": 27,
-          "obj_id": 671,
+          "obj_id": 65,
           "type": "rectangle"
         },
         {
           "job_id": 28,
-          "obj_id": 670,
+          "obj_id": 101,
           "type": "rectangle"
         }
       ],
@@ -412,12 +412,12 @@
       "annotation_ids": [
         {
           "job_id": 27,
-          "obj_id": 652,
+          "obj_id": 82,
           "type": "rectangle"
         },
         {
           "job_id": 28,
-          "obj_id": 611,
+          "obj_id": 103,
           "type": "rectangle"
         }
       ],
@@ -431,12 +431,12 @@
       "annotation_ids": [
         {
           "job_id": 27,
-          "obj_id": 656,
+          "obj_id": 81,
           "type": "rectangle"
         },
         {
           "job_id": 28,
-          "obj_id": 612,
+          "obj_id": 104,
           "type": "rectangle"
         }
       ],
@@ -450,12 +450,12 @@
       "annotation_ids": [
         {
           "job_id": 27,
-          "obj_id": 646,
+          "obj_id": 83,
           "type": "rectangle"
         },
         {
           "job_id": 28,
-          "obj_id": 620,
+          "obj_id": 105,
           "type": "rectangle"
         }
       ],
@@ -469,12 +469,12 @@
       "annotation_ids": [
         {
           "job_id": 27,
-          "obj_id": 649,
+          "obj_id": 87,
           "type": "rectangle"
         },
         {
           "job_id": 28,
-          "obj_id": 617,
+          "obj_id": 106,
           "type": "rectangle"
         }
       ],
@@ -488,12 +488,12 @@
       "annotation_ids": [
         {
           "job_id": 27,
-          "obj_id": 650,
+          "obj_id": 80,
           "type": "rectangle"
         },
         {
           "job_id": 28,
-          "obj_id": 610,
+          "obj_id": 111,
           "type": "rectangle"
         }
       ],
@@ -507,12 +507,12 @@
       "annotation_ids": [
         {
           "job_id": 27,
-          "obj_id": 651,
+          "obj_id": 77,
           "type": "rectangle"
         },
         {
           "job_id": 28,
-          "obj_id": 609,
+          "obj_id": 114,
           "type": "rectangle"
         }
       ],
@@ -526,7 +526,7 @@
       "annotation_ids": [
         {
           "job_id": 28,
-          "obj_id": 636,
+          "obj_id": 130,
           "type": "rectangle"
         }
       ],
@@ -540,7 +540,7 @@
       "annotation_ids": [
         {
           "job_id": 28,
-          "obj_id": 634,
+          "obj_id": 128,
           "type": "points"
         }
       ],
@@ -554,7 +554,7 @@
       "annotation_ids": [
         {
           "job_id": 28,
-          "obj_id": 630,
+          "obj_id": 124,
           "type": "polygon"
         }
       ],
@@ -568,8 +568,8 @@
       "annotation_ids": [
         {
           "job_id": 28,
-          "obj_id": 633,
-          "type": "mask"
+          "obj_id": 125,
+          "type": "ellipse"
         }
       ],
       "frame": 1,
@@ -582,8 +582,8 @@
       "annotation_ids": [
         {
           "job_id": 28,
-          "obj_id": 631,
-          "type": "ellipse"
+          "obj_id": 127,
+          "type": "mask"
         }
       ],
       "frame": 1,
@@ -596,7 +596,7 @@
       "annotation_ids": [
         {
           "job_id": 28,
-          "obj_id": 635,
+          "obj_id": 129,
           "type": "polyline"
         }
       ],

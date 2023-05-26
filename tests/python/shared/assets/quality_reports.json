@@ -4,8 +4,8 @@
   "previous": null,
   "results": [
     {
-      "created_date": "2023-05-23T14:49:50.920000Z",
-      "gt_last_updated": "2023-05-23T14:44:02.697000Z",
+      "created_date": "2023-05-26T16:25:36.613000Z",
+      "gt_last_updated": "2023-05-26T16:16:50.630000Z",
       "id": 1,
       "job_id": null,
       "parameters": {
@@ -24,21 +24,21 @@
           "mismatching_label": 3,
           "missing_annotation": 9
         },
-        "ds_count": 35,
+        "ds_count": 34,
         "error_count": 22,
-        "frame_count": 4,
-        "frame_share_percent": 0.36363636363636365,
-        "gt_count": 34,
-        "valid_count": 22,
+        "frame_count": 3,
+        "frame_share_percent": 0.2727272727272727,
+        "gt_count": 33,
+        "valid_count": 21,
         "warning_count": 15
       },
       "target": "task",
-      "target_last_updated": "2023-05-23T14:45:08.348000Z",
+      "target_last_updated": "2023-05-26T16:17:02.635000Z",
       "task_id": 22
     },
     {
-      "created_date": "2023-05-23T14:49:50.924000Z",
-      "gt_last_updated": "2023-05-23T14:44:02.697000Z",
+      "created_date": "2023-05-26T16:25:36.616000Z",
+      "gt_last_updated": "2023-05-26T16:16:50.630000Z",
       "id": 2,
       "job_id": 27,
       "parameters": {
@@ -57,16 +57,16 @@
           "mismatching_label": 3,
           "missing_annotation": 9
         },
-        "ds_count": 35,
+        "ds_count": 34,
         "error_count": 22,
-        "frame_count": 4,
-        "frame_share_percent": 0.36363636363636365,
-        "gt_count": 34,
-        "valid_count": 22,
+        "frame_count": 3,
+        "frame_share_percent": 0.2727272727272727,
+        "gt_count": 33,
+        "valid_count": 21,
         "warning_count": 15
       },
       "target": "job",
-      "target_last_updated": "2023-05-23T14:45:08.385000Z",
+      "target_last_updated": "2023-05-26T16:11:24.294000Z",
       "task_id": null
     }
   ]
