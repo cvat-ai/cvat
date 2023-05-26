@@ -1733,15 +1733,21 @@ class TestImportTaskAnnotations:
         uploader._upload_file_data_with_tus(
             url, filename, meta=params, logger=self.client.logger.debug
         )
-        sleep(60)
-        try:
-            result = subprocess.check_output(
-                f'docker exec test_cvat_server_1 bash -c "ls data/tasks/{task_id}/tmp | wc -l"',
-                shell=True,
-                stderr=subprocess.STDOUT,
-            )
-            assert not int(result)
-        except subprocess.CalledProcessError as ex:
-            raise RuntimeError(
-                f"command '{ex.cmd}' returns with error (code {ex.returncode}): {ex.output}"
-            )
+        number_of_files = 1
+        sleep(30) # wait when the cleaning job from rq worker will be started
+        for _ in range(15):
+            sleep(2)
+            try:
+                result = subprocess.check_output(
+                    f'docker exec test_cvat_server_1 bash -c "ls data/tasks/{task_id}/tmp | wc -l"',
+                    shell=True,
+                    stderr=subprocess.STDOUT,
+                )
+                number_of_files = int(result)
+                if not number_of_files:
+                    break
+            except subprocess.CalledProcessError as ex:
+                raise RuntimeError(
+                    f"command '{ex.cmd}' returns with error (code {ex.returncode}): {ex.output}"
+                )
+        assert not number_of_files
