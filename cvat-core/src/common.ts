@@ -140,6 +140,7 @@ export function filterFieldsToSnakeCase(filter: Record<string, string>, keysToSn
         searchParams.filter = JSON.stringify({ and: [...filtersGroup] });
     }
     return searchParams;
+}
 
 export function isResourceURL(url: string): boolean {
     return /\/([0-9]+)$/.test(url);
