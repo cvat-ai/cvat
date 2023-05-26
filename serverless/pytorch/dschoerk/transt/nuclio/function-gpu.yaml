@@ -17,7 +17,7 @@ spec:
       value: /opt/nuclio/trans-t
 
   build:
-    image: cvat/pth.dschoerk.transt
+    image: cvat.pth.dschoerk.transt
     baseImage: nvidia/cuda:11.7.0-devel-ubuntu20.04
 
     directives:
