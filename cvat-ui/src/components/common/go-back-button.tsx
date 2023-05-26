@@ -8,7 +8,7 @@ function GoBackButton(): JSX.Element {
     const goBack = useGoBack();
     return (
         <>
-            <Button size='small' style={{ marginRight: 8 }} onClick={goBack}>
+            <Button style={{ marginRight: 8 }} onClick={goBack}>
                 <LeftOutlined />
             </Button>
             <Text style={{ userSelect: 'none' }} strong>Back</Text>
