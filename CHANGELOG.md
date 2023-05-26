@@ -12,19 +12,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support task creation with any type of data supported by the server by default from cloud storage
 without use_cache option (<https://github.com/opencv/cvat/pull/6074>)
 - Support task creation with cloud storage data and without use_cache option (<https://github.com/opencv/cvat/pull/6074>)
-- [helm] Added configurable default storage option to chart(<https://github.com/opencv/cvat/pull/6137>)
+- Helm: Added configurable default storage option to chart(<https://github.com/opencv/cvat/pull/6137>)
 
 ### Changed
 - Cloud storage manifest file is optional (<https://github.com/opencv/cvat/pull/6074>)
 
 ### Changed
 - Updated Django to 4.2.x version (<https://github.com/opencv/cvat/pull/6122>)
-- [helm] Moved test-related values to another values.file to separate it from default config(<https://github.com/opencv/cvat/pull/6137>)
+- Helm: Moved test-related values to another values.file to separate it from default config(<https://github.com/opencv/cvat/pull/6137>)
 ### Deprecated
 - The endpoint /cloudstorages/{id}/content was deprecated (<https://github.com/opencv/cvat/pull/6074>)
 
 ### Removed
-- [helm] Removed hardcoded mandatory traefik ingress usage(<https://github.com/opencv/cvat/pull/6137>)
+- Helm: Removed hardcoded mandatory traefik ingress usage(<https://github.com/opencv/cvat/pull/6137>)
 
 ### Fixed
 - Skeletons dumping on created tasks/projects (<https://github.com/opencv/cvat/pull/6157>)
@@ -62,7 +62,7 @@ without use_cache option (<https://github.com/opencv/cvat/pull/6074>)
   (<https://github.com/opencv/cvat/pull/6150>)
 - Prevented sending of empty list of events.
   (<https://github.com/opencv/cvat/pull/6154>)
-- - [helm] fixed issue with multiple caches in same RWX volume, which prevents db migration to start(<https://github.com/opencv/cvat/pull/6137>)
+- Helm: fixed issue with multiple caches in same RWX volume, which prevents db migration to start(<https://github.com/opencv/cvat/pull/6137>)
 
 ## \[2.4.3] - 2023-04-24
 ### Changed
