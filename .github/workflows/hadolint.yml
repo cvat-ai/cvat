@@ -17,7 +17,7 @@ jobs:
           HADOLINT_VER: "2.1.0"
           VERIFICATION_LEVEL: "error"
         run: |
-          CHANGED_FILES=${{steps.files.outputs.all_changed_files}}
+          CHANGED_FILES="${{steps.files.outputs.all_changed_files}}"
 
           if [[ ! -z $CHANGED_FILES ]]; then
             curl -sL -o $HADOLINT "https://github.com/hadolint/hadolint/releases/download/v$HADOLINT_VER/hadolint-Linux-x86_64" && chmod 700 $HADOLINT

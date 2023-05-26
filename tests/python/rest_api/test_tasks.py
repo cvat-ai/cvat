@@ -470,6 +470,104 @@ class TestGetTaskDataset:
         response = self._test_export_task(admin_user, tid, format=format_name)
         assert response.data
 
+    @pytest.mark.parametrize("tid", [8])
+    def test_can_export_task_to_coco_format(self, admin_user, tid):
+        # these annotations contains incorrect frame numbers
+        # in order to check that server handle such cases
+        annotations = {
+            "version": 0,
+            "tags": [],
+            "shapes": [],
+            "tracks": [
+                {
+                    "label_id": 63,
+                    "frame": 1,
+                    "group": 0,
+                    "source": "manual",
+                    "shapes": [
+                        {
+                            "type": "skeleton",
+                            "frame": 1,
+                            "occluded": False,
+                            "outside": False,
+                            "z_order": 0,
+                            "rotation": 0,
+                            "points": [],
+                            "attributes": [],
+                        }
+                    ],
+                    "attributes": [],
+                    "elements": [
+                        {
+                            "label_id": 64,
+                            "frame": 0,
+                            "group": 0,
+                            "source": "manual",
+                            "shapes": [
+                                {
+                                    "type": "points",
+                                    "frame": 1,
+                                    "occluded": False,
+                                    "outside": True,
+                                    "z_order": 0,
+                                    "rotation": 0,
+                                    "points": [74.14935096036425, 79.09960455479086],
+                                    "attributes": [],
+                                },
+                                {
+                                    "type": "points",
+                                    "frame": 7,
+                                    "occluded": False,
+                                    "outside": False,
+                                    "z_order": 0,
+                                    "rotation": 0,
+                                    "points": [74.14935096036425, 79.09960455479086],
+                                    "attributes": [],
+                                },
+                            ],
+                            "attributes": [],
+                        },
+                        {
+                            "label_id": 65,
+                            "frame": 0,
+                            "group": 0,
+                            "source": "manual",
+                            "shapes": [
+                                {
+                                    "type": "points",
+                                    "frame": 0,
+                                    "occluded": False,
+                                    "outside": False,
+                                    "z_order": 0,
+                                    "rotation": 0,
+                                    "points": [285.07319976630424, 353.51583641966175],
+                                    "attributes": [],
+                                }
+                            ],
+                            "attributes": [],
+                        },
+                    ],
+                }
+            ],
+        }
+        response = patch_method(
+            admin_user, f"tasks/{tid}/annotations", annotations, action="update"
+        )
+        assert response.status_code == HTTPStatus.OK
+
+        # check that we can export task
+        response = self._test_export_task(admin_user, tid, format="COCO Keypoints 1.0")
+        assert response.status == HTTPStatus.OK
+
+        # check that server saved track annotations correctly
+        response = get_method(admin_user, f"tasks/{tid}/annotations")
+        assert response.status_code == HTTPStatus.OK
+
+        annotations = response.json()
+        assert annotations["tracks"][0]["frame"] == 0
+        assert annotations["tracks"][0]["shapes"][0]["frame"] == 0
+        assert annotations["tracks"][0]["elements"][0]["shapes"][0]["frame"] == 0
+
 
 @pytest.mark.usefixtures("restore_db_per_function")
 @pytest.mark.usefixtures("restore_cvat_data")
