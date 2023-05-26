@@ -188,9 +188,12 @@ class QualitySettings(models.Model):
     compare_attributes = models.BooleanField()
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        params = deepcopy(self.get_defaults())
-        params.update(kwargs)
-        super().__init__(*args, **params)
+        defaults = deepcopy(self.get_defaults())
+        for field in self._meta.fields:
+            if field.name in defaults:
+                field.default = defaults[field.name]
+
+        super().__init__(*args, **kwargs)
 
     @classmethod
     def get_defaults(cls) -> dict:
