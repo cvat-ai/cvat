@@ -228,7 +228,7 @@ nuclio:
 #      password: somepass
 
 analytics:
-  enabled: false
+  enabled: true
   clickhouseDb: cvat
   clickhouseUser: user
   clickhousePassword: user
