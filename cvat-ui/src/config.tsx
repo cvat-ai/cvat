@@ -124,6 +124,7 @@ const RESET_NOTIFICATIONS_PATHS = {
         '/auth',
     ],
 };
+const BUCKET_CONTENT_KEY = 'All files';
 
 export default {
     UNDEFINED_ATTRIBUTE_VALUE,
@@ -159,4 +160,5 @@ export default {
     CANVAS_WORKSPACE_DEFAULT_CONTEXT_HEIGHT,
     CONTROLS_LOGS_INTERVAL,
     RESET_NOTIFICATIONS_PATHS,
+    BUCKET_CONTENT_KEY,
 };
