@@ -34,6 +34,11 @@ const defaultState: PluginsState = {
         taskItem: {
             name: [],
         },
+        annotationPage: {
+            header: {
+                player: [],
+            },
+        },
         router: [],
         loggedInModals: [],
     },

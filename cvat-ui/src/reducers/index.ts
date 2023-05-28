@@ -299,6 +299,11 @@ export interface PluginsState {
         taskItem: {
             name: PluginComponent[];
         };
+        annotationPage: {
+            header: {
+                player: PluginComponent[];
+            };
+        };
         router: PluginComponent[];
         loggedInModals: PluginComponent[];
     }

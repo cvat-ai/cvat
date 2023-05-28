@@ -250,7 +250,7 @@ Axios.defaults.xsrfHeaderName = 'X-CSRFTOKEN';
 Axios.defaults.xsrfCookieName = 'csrftoken';
 const workerAxios = new WorkerWrappedAxios();
 Axios.interceptors.request.use((reqConfig) => {
-    if ('params' in reqConfig && 'org' in reqConfig.params) {
+    if (reqConfig.url.includes('toloka') || ('params' in reqConfig && 'org' in reqConfig.params)) {
         return reqConfig;
     }
 

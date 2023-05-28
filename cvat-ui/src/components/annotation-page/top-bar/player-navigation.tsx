@@ -10,11 +10,11 @@ import Slider from 'antd/lib/slider';
 import InputNumber from 'antd/lib/input-number';
 import Input from 'antd/lib/input';
 import Text from 'antd/lib/typography/Text';
+import modal from 'antd/lib/modal';
 
 import { RestoreIcon } from 'icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { clamp } from 'utils/math';
-import modal from 'antd/lib/modal';
 
 interface Props {
     startFrame: number;
