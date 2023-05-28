@@ -35,7 +35,7 @@ See:
   - [Dashboard: All Events](#dashboard-all-events)
   - [Dashboard: Management](#dashboard-management)
   - [Dashboard: Monitoring](#dashboard-monitoring)
-  - [Dashboards look and feel](#dashboards-look-and-feel)
+  - [Dashboards update](#dashboards-update)
 
 ## High-level architecture
 
@@ -353,11 +353,37 @@ Every column name can be used like a filter.
 If you want to inspect the value, hover over it and click
 on the eye icon.
 
-### Dashboards look and feel
+### Dashboards update
 
-You can adjust the dashboard. To do this, click on the
+You can adjust the dashboards. To do this, click on the
 graph or table name and from the drop-down menu select **Edit**.
 
 Adjust the query in the editor.
 
 ![Dashboard: look and feel](/images/dashboard_04.png)
+
+Example of query:
+
+```sql
+SELECT
+    time,
+    uniqExact(user_id) Users
+FROM
+(
+    SELECT
+      user_id,
+      toStartOfInterval(timestamp, INTERVAL 15 minute) as time
+    FROM cvat.events
+    WHERE
+      user_id IS NOT NULL
+    GROUP BY
+      user_id,
+      time
+    ORDER BY time ASC WITH FILL STEP toIntervalMinute(15)
+)
+GROUP BY time
+ORDER BY time
+```
+
+For more information,
+see [Grafana Dashboards](https://grafana.com/docs/grafana/latest/dashboards/)
