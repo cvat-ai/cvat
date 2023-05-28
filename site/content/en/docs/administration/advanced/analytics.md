@@ -386,4 +386,4 @@ ORDER BY time
 ```
 
 For more information,
-see [Grafana Dashboards](https://grafana.com/docs/grafana/latest/dashboards/)
+see [Grafana Dashboards](https://grafana.com/docs/grafana/latest/dashboards/).
