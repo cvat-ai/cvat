@@ -155,6 +155,9 @@ class TestListQualityReports(_PermissionTestBase):
         admin_user,
     ):
         for user in users:
+            if user["is_superuser"]:
+                continue
+
             task = next(
                 (
                     t
@@ -260,6 +263,9 @@ class TestGetQualityReports(_PermissionTestBase):
         admin_user,
     ):
         for user in users:
+            if user["is_superuser"]:
+                continue
+
             task = next(
                 (
                     t
@@ -377,6 +383,9 @@ class TestGetQualityReportData(_PermissionTestBase):
         admin_user,
     ):
         for user in users:
+            if user["is_superuser"]:
+                continue
+
             task = next(
                 (
                     t
@@ -505,7 +514,7 @@ class TestListQualityConflicts(_PermissionTestBase):
         if allow:
             self._test_list_conflicts_200(user, report["id"], expected_data=conflicts)
         else:
-            self._test_list_conflicts_200(user, report["id"], expected_data=[])
+            self._test_list_conflicts_403(user, report["id"])
 
     @pytest.mark.usefixtures("restore_db_per_function")
     @pytest.mark.parametrize(
@@ -534,6 +543,9 @@ class TestListQualityConflicts(_PermissionTestBase):
         admin_user,
     ):
         for user in users:
+            if user["is_superuser"]:
+                continue
+
             task = next(
                 (
                     t
@@ -561,7 +573,7 @@ class TestListQualityConflicts(_PermissionTestBase):
         if allow:
             self._test_list_conflicts_200(user, report["id"], expected_data=conflicts)
         else:
-            self._test_list_conflicts_200(user, report["id"], expected_data=[])
+            self._test_list_conflicts_403(user, report["id"])
 
 
 class TestSimpleQualityConflictsFilters(CollectionSimpleFilterTestBase):
@@ -683,6 +695,9 @@ class TestGetSettings(_PermissionTestBase):
         quality_settings,
     ):
         for user in users:
+            if user["is_superuser"]:
+                continue
+
             task = next(
                 (
                     t
@@ -809,6 +824,9 @@ class TestPatchSettings(_PermissionTestBase):
         quality_settings,
     ):
         for user in users:
+            if user["is_superuser"]:
+                continue
+
             task = next(
                 (
                     t

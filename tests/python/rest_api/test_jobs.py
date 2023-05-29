@@ -224,6 +224,9 @@ class TestPostJobs:
         self, tasks, jobs, users, is_org_member, is_task_staff, org_role, is_staff, allow
     ):
         for user in users:
+            if user["is_superuser"]:
+                continue
+
             task = next(
                 (
                     t

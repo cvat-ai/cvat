@@ -73,11 +73,15 @@ class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
         queryset = super().get_queryset()
 
         if self.action == 'list':
-            if report_id := self.request.GET.get('report_id', None):
+            self.check_permissions(self.request)
+
+            if report_id := self.request.query_params.get('report_id', None):
                 try:
                     report = QualityReport.objects.prefetch_related('parent').get(id=report_id)
                 except QualityReport.DoesNotExist as ex:
                     raise NotFound(f"Report {report_id} does not exist") from ex
+
+                self.check_object_permissions(self.request, report)
 
                 if report.target == QualityReportTarget.TASK:
                     queryset = self.queryset.filter(
@@ -87,10 +91,9 @@ class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
                     queryset = self.queryset.filter(report=report)
                 else:
                     assert False
-
-            # In other cases permissions are checked already
-            perm = AnnotationConflictPermission.create_scope_list(self.request)
-            queryset = perm.filter(queryset)
+            else:
+                perm = AnnotationConflictPermission.create_scope_list(self.request)
+                queryset = perm.filter(queryset)
 
         return queryset
 
@@ -154,7 +157,9 @@ class QualityReportViewSet(viewsets.GenericViewSet,
         queryset = super().get_queryset()
 
         if self.action == 'list':
-            if task_id := self.request.GET.get('task_id', None):
+            self.check_permissions(self.request)
+
+            if task_id := self.request.query_params.get('task_id', None):
                 # NOTE: This filter is too complex to be implemented by other means
                 try:
                     task = Task.objects.get(id=task_id)
@@ -162,15 +167,15 @@ class QualityReportViewSet(viewsets.GenericViewSet,
                     raise NotFound(f"Task {task_id} does not exist") from ex
 
                 self.check_object_permissions(self.request, task)
+
                 queryset = queryset.filter(
                     Q(job__segment__task__id=task_id) | Q(task__id=task_id)
                 ).distinct()
             else:
-                # In other cases permissions are checked already
                 perm = QualityReportPermission.create_scope_list(self.request)
                 queryset = perm.filter(queryset)
 
-            if target := self.request.GET.get('target', None):
+            if target := self.request.query_params.get('target', None):
                 if target == QualityReportTarget.JOB:
                     queryset = queryset.filter(job__isnull=False)
                 elif target == QualityReportTarget.TASK:
