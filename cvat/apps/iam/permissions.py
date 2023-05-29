@@ -57,7 +57,7 @@ def get_organization(request, obj):
         return obj
 
     if obj:
-        if organization_id := getattr(obj, "organization_id", None):
+        if organization_id := getattr(obj, 'organization_id', None):
             try:
                 return Organization.objects.get(id=organization_id)
             except Organization.DoesNotExist:
@@ -66,9 +66,9 @@ def get_organization(request, obj):
         if isinstance(obj, User):
             return None
 
-        raise PermissionDenied({"message": f"Cannot get `organization_id` attr for {type(obj)} object"})
+        raise PermissionDenied({'message': f'Cannot get `organization_id` attr for {type(obj)} object'})
 
-    return request.iam_context["organization"]
+    return request.iam_context['organization']
 
 def get_membership(request, organization):
     if organization is None:
