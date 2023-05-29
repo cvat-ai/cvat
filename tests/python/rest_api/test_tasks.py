@@ -1829,7 +1829,7 @@ class TestImportTaskAnnotations:
         )
         number_of_files = 1
         sleep(30)  # wait when the cleaning job from rq worker will be started
-        command = ["bash", "-c", f"ls data/tasks/{task_id}/tmp | wc -l"]
+        command = ["/bin/bash", "-c", f"ls data/tasks/{task_id}/tmp | wc -l"]
         platform = request.config.getoption("--platform")
         assert platform in ("kube", "local")
         func = docker_exec_cvat if platform == "local" else kube_exec_cvat
