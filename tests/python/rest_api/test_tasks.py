@@ -7,7 +7,6 @@ import io
 import json
 import os
 import os.path as osp
-import subprocess
 from copy import deepcopy
 from functools import partial
 from http import HTTPStatus
@@ -29,6 +28,7 @@ from deepdiff import DeepDiff
 from PIL import Image
 
 import shared.utils.s3 as s3
+from shared.fixtures.init import docker_exec_cvat, kube_exec_cvat
 from shared.utils.config import (
     BASE_URL,
     USER_PASS,
@@ -1809,9 +1809,8 @@ class TestImportTaskAnnotations:
         task.import_annotations(self.format, filename)
         self._check_annotations(task_id)
 
-    @pytest.mark.only_docker_test
     @pytest.mark.timeout(70)
-    def test_check_import_cache_after_previous_interrupted_upload(self, tasks_with_shapes):
+    def test_check_import_cache_after_previous_interrupted_upload(self, tasks_with_shapes, request):
         task_id = tasks_with_shapes[0]["id"]
         with NamedTemporaryFile() as f:
             filename = self.tmp_dir / f"task_{task_id}_{Path(f.name).name}_coco.zip"
@@ -1829,20 +1828,15 @@ class TestImportTaskAnnotations:
             url, filename, meta=params, logger=self.client.logger.debug
         )
         number_of_files = 1
-        sleep(30) # wait when the cleaning job from rq worker will be started
+        sleep(30)  # wait when the cleaning job from rq worker will be started
+        command = ["bash", "-c", f"ls data/tasks/{task_id}/tmp | wc -l"]
+        platform = request.config.getoption("--platform")
+        assert platform in ("kube", "local")
+        func = docker_exec_cvat if platform == "local" else kube_exec_cvat
         for _ in range(15):
             sleep(2)
-            try:
-                result = subprocess.check_output(
-                    f'docker exec test_cvat_server_1 bash -c "ls data/tasks/{task_id}/tmp | wc -l"',
-                    shell=True,
-                    stderr=subprocess.STDOUT,
-                )
-                number_of_files = int(result)
-                if not number_of_files:
-                    break
-            except subprocess.CalledProcessError as ex:
-                raise RuntimeError(
-                    f"command '{ex.cmd}' returns with error (code {ex.returncode}): {ex.output}"
-                )
+            result, _ = func(command)
+            number_of_files = int(result)
+            if not number_of_files:
+                break
         assert not number_of_files

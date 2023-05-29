@@ -120,12 +120,12 @@ def kube_cp(source, target):
 
 
 def docker_exec_cvat(command):
-    _run(f"docker exec {PREFIX}_cvat_server_1 {command}")
+    return _run(f"docker exec {PREFIX}_cvat_server_1 {command}")
 
 
 def kube_exec_cvat(command):
     pod_name = _kube_get_server_pod_name()
-    _run(f"kubectl exec {pod_name} -- {command}")
+    return _run(f"kubectl exec {pod_name} -- {command}")
 
 
 def docker_exec_cvat_db(command):
