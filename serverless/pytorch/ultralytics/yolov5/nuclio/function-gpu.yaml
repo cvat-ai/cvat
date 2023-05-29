@@ -1,5 +1,5 @@
 metadata:
-  name: ultralytics-yolov5
+  name: pth-ultralytics-yolov5
   namespace: cvat
   annotations:
     name: YOLO v5
@@ -95,7 +95,7 @@ spec:
   handler: main:handler
   eventTimeout: 30s
   build:
-    image: cvat/ultralytics-yolov5
+    image: cvat.pth.ultralytics.yolov5
     baseImage: ultralytics/yolov5:latest
 
     directives:

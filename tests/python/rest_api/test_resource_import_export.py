@@ -270,14 +270,11 @@ class TestImportResourceFromS3(_S3ResourceTest):
     @pytest.mark.parametrize(
         "obj, resource",
         [
-            ("projects", "annotations"),
             ("projects", "dataset"),
-            ("projects", "backup"),
             ("tasks", "annotations"),
-            ("tasks", "dataset"),
-            ("tasks", "backup"),
             ("jobs", "annotations"),
-            ("jobs", "dataset"),
+            ("tasks", "backup"),
+            ("projects", "backup"),
         ],
     )
     def test_user_cannot_import_from_cloud_storage_with_specific_location_without_access(

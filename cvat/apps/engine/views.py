@@ -65,6 +65,7 @@ from cvat.apps.engine.serializers import (
     CloudStorageReadSerializer, DatasetFileSerializer,
     ProjectFileSerializer, TaskFileSerializer, RqIdSerializer, CloudStorageContentSerializer)
 from cvat.apps.engine.view_utils import get_cloud_storage_for_import_or_export
+from cvat.apps.engine.schema import ORGANIZATION_OPEN_API_PARAMETERS
 
 from utils.dataset_manifest import ImageManifestManager
 from cvat.apps.engine.utils import (
@@ -205,6 +206,7 @@ class ServerViewSet(viewsets.ViewSet):
     create=extend_schema(
         summary='Method creates a new project',
         request=ProjectWriteSerializer,
+        parameters=ORGANIZATION_OPEN_API_PARAMETERS,
         responses={
             '201': ProjectReadSerializer, # check ProjectWriteSerializer.to_representation
         }),
@@ -521,6 +523,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             Once the project has been successfully created, the server will return the id of the newly created project.
         """),
         parameters=[
+            *ORGANIZATION_OPEN_API_PARAMETERS,
             OpenApiParameter('location', description='Where to import the backup file from',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
                 enum=Location.list(), default=Location.LOCAL),
@@ -680,6 +683,7 @@ class DataChunkGetter:
     create=extend_schema(
         summary='Method creates a new task in a database without any attached images and videos',
         request=TaskWriteSerializer,
+        parameters=ORGANIZATION_OPEN_API_PARAMETERS,
         responses={
             '201': TaskReadSerializer, # check TaskWriteSerializer.to_representation
         }),
@@ -771,6 +775,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             Once the task has been successfully created, the server will return the id of the newly created task.
         """),
         parameters=[
+            *ORGANIZATION_OPEN_API_PARAMETERS,
             OpenApiParameter('location', description='Where to import the backup file from',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
                 enum=Location.list(), default=Location.LOCAL),
@@ -1739,6 +1744,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     create=extend_schema(
         summary='Method creates an issue',
         request=IssueWriteSerializer,
+        parameters=ORGANIZATION_OPEN_API_PARAMETERS,
         responses={
             '201': IssueReadSerializer, # check IssueWriteSerializer.to_representation
         }),
@@ -1809,6 +1815,7 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     create=extend_schema(
         summary='Method creates a comment',
         request=CommentWriteSerializer,
+        parameters=ORGANIZATION_OPEN_API_PARAMETERS,
         responses={
             '201': CommentReadSerializer, # check CommentWriteSerializer.to_representation
         }),
@@ -1875,6 +1882,7 @@ class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 description='A simple equality filter for task id'),
             OpenApiParameter('project_id', type=OpenApiTypes.INT,
                 description='A simple equality filter for project id'),
+            *ORGANIZATION_OPEN_API_PARAMETERS
         ],
         responses={
             '200': LabelSerializer(many=True),
@@ -2123,6 +2131,7 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     create=extend_schema(
         summary='Method creates a cloud storage with a specified characteristics',
         request=CloudStorageWriteSerializer,
+        parameters=ORGANIZATION_OPEN_API_PARAMETERS,
         responses={
             '201': CloudStorageReadSerializer, # check CloudStorageWriteSerializer.to_representation
         })

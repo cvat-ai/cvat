@@ -6,21 +6,17 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - id: files
-        uses: jitterbit/get-changed-files@v1
-        continue-on-error: true
+        uses: tj-actions/changed-files@v35.9.2
+        with:
+          files: |
+              **/*.py
 
       - name: Run checks
         env:
           PR_FILES_AM: ${{ steps.files.outputs.added_modified }}
           PR_FILES_RENAMED: ${{ steps.files.outputs.renamed }}
         run: |
-          PR_FILES="$PR_FILES_AM $PR_FILES_RENAMED"
-          for FILE in $PR_FILES; do
-              EXTENSION="${FILE##*.}"
-              if [[ "$EXTENSION" == 'py' ]]; then
-                  CHANGED_FILES+=" $FILE"
-              fi
-          done
+          CHANGED_FILES="${{steps.files.outputs.all_changed_files}}"
 
           if [[ ! -z $CHANGED_FILES ]]; then
             sudo apt-get --no-install-recommends install -y build-essential curl python3-dev python3-pip python3-venv

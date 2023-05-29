@@ -15,7 +15,7 @@ import {
 } from 'server-response-types';
 import { Storage } from './storage';
 import { StorageLocation, WebhookSourceType } from './enums';
-import { isEmail } from './common';
+import { isEmail, isResourceURL } from './common';
 import config from './config';
 import DownloadWorker from './download.worker';
 import { ServerError } from './exceptions';
@@ -32,7 +32,7 @@ type Params = {
 };
 
 function enableOrganization(): { org: string } {
-    return { org: config.organizationID || '' };
+    return { org: config.organization.organizationSlug || '' };
 }
 
 function configureStorage(storage: Storage, useDefaultLocation = false): Partial<Params> {
@@ -266,8 +266,23 @@ Axios.interceptors.request.use((reqConfig) => {
         return reqConfig;
     }
 
+    if (isResourceURL(reqConfig.url)) {
+        return reqConfig;
+    }
+
     reqConfig.params = { ...organization, ...(reqConfig.params || {}) };
     return reqConfig;
+});
+
+Axios.interceptors.response.use((response) => {
+    if (isResourceURL(response.config.url)) {
+        const newOrg = response.data.organization;
+        if (newOrg && config.organization.organizationID !== newOrg) {
+            config?.onOrganizationChange(newOrg);
+        }
+    }
+
+    return response;
 });
 
 let token = store.get('token');
