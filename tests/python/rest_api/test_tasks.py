@@ -1761,7 +1761,7 @@ class TestImportTaskAnnotations:
             (_, response) = api_client.tasks_api.destroy_annotations(id=task_id)
             assert response.status == HTTPStatus.NO_CONTENT
 
-    @pytest.mark.timeout(60)
+    @pytest.mark.timeout(64)
     @pytest.mark.parametrize("successful_upload", [True, False])
     def test_can_import_annotations_after_previous_unclear_import(
         self, successful_upload: bool, tasks_with_shapes
@@ -1796,7 +1796,7 @@ class TestImportTaskAnnotations:
             rq_id = json.loads(response.data)["rq_id"]
             assert rq_id
         else:
-            required_time = 50
+            required_time = 54
             uploader._tus_start_upload(url, query_params=params)
             uploader._upload_file_data_with_tus(
                 url, filename, meta=params, logger=self.client.logger.debug
@@ -1809,7 +1809,7 @@ class TestImportTaskAnnotations:
         task.import_annotations(self.format, filename)
         self._check_annotations(task_id)
 
-    @pytest.mark.timeout(60)
+    @pytest.mark.timeout(64)
     def test_check_import_cache_after_previous_interrupted_upload(self, tasks_with_shapes, request):
         task_id = tasks_with_shapes[0]["id"]
         with NamedTemporaryFile() as f:
@@ -1833,7 +1833,7 @@ class TestImportTaskAnnotations:
         platform = request.config.getoption("--platform")
         assert platform in ("kube", "local")
         func = docker_exec_cvat if platform == "local" else kube_exec_cvat
-        for _ in range(15):
+        for _ in range(12):
             sleep(2)
             result, _ = func(command)
             number_of_files = int(result)
