@@ -3,9 +3,12 @@
 #
 # SPDX-License-Identifier: MIT
 
+import re
 import textwrap
+
+from drf_spectacular.authentication import SessionScheme, TokenScheme
 from drf_spectacular.extensions import OpenApiAuthenticationExtension
-from drf_spectacular.authentication import TokenScheme, SessionScheme
+from drf_spectacular.openapi import AutoSchema
 
 
 class SignatureAuthenticationScheme(OpenApiAuthenticationExtension):
@@ -74,4 +77,23 @@ class CookieAuthenticationScheme(SessionScheme):
             'description': 'Can be sent as a cookie or as the X-CSRFTOKEN header'
         }
         return [sessionid_schema, csrftoken_schema]
+
+class CustomAutoSchema(AutoSchema):
+    def get_operation_id(self):
+        tokenized_path = self._tokenize_path()
+        # replace dashes as they can be problematic later in code generation
+        tokenized_path = [t.replace('-', '_') for t in tokenized_path]
+
+        if self.method == 'GET' and self._is_list_view():
+            action = 'list'
+        else:
+            action = self.method_mapping[self.method.lower()]
+
+        if not tokenized_path:
+            tokenized_path.append('root')
+
+        if re.search(r'<drf_format_suffix\w*:\w+>', self.path_regex):
+            tokenized_path.append('formatted')
+
+        return '_'.join([tokenized_path[0]] + [action] + tokenized_path[1:])
 

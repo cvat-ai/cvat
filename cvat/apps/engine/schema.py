@@ -2,16 +2,13 @@
 #
 # SPDX-License-Identifier: MIT
 
-import re
 import textwrap
 from typing import Type
 
 from drf_spectacular.extensions import OpenApiSerializerExtension
-from drf_spectacular.openapi import AutoSchema
 from drf_spectacular.plumbing import build_basic_type, force_instance
 from drf_spectacular.serializers import PolymorphicProxySerializerExtension
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import OpenApiParameter
 from rest_framework import serializers
 
 
@@ -232,46 +229,5 @@ class CloudStorageReadSerializerExtension(_CloudStorageSerializerExtension):
 class CloudStorageWriteSerializerExtension(_CloudStorageSerializerExtension):
     target_class = 'cvat.apps.engine.serializers.CloudStorageWriteSerializer'
 
-class CustomAutoSchema(AutoSchema):
-    def get_operation_id(self):
-        tokenized_path = self._tokenize_path()
-        # replace dashes as they can be problematic later in code generation
-        tokenized_path = [t.replace('-', '_') for t in tokenized_path]
-
-        if self.method == 'GET' and self._is_list_view():
-            action = 'list'
-        else:
-            action = self.method_mapping[self.method.lower()]
-
-        if not tokenized_path:
-            tokenized_path.append('root')
-
-        if re.search(r'<drf_format_suffix\w*:\w+>', self.path_regex):
-            tokenized_path.append('formatted')
-
-        return '_'.join([tokenized_path[0]] + [action] + tokenized_path[1:])
-
-ORGANIZATION_OPEN_API_PARAMETERS = [
-    OpenApiParameter(
-        name='org',
-        type=str,
-        required=False,
-        location=OpenApiParameter.QUERY,
-        description="Organization unique slug",
-    ),
-    OpenApiParameter(
-        name='org_id',
-        type=int,
-        required=False,
-        location=OpenApiParameter.QUERY,
-        description="Organization identifier",
-    ),
-    OpenApiParameter(
-        name='X-Organization',
-        type=str,
-        required=False,
-        location=OpenApiParameter.HEADER
-    ),
-]
 
 __all__ = [] # No public symbols here
