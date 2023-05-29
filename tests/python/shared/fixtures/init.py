@@ -8,7 +8,7 @@ from http import HTTPStatus
 from pathlib import Path
 from subprocess import PIPE, CalledProcessError, run
 from time import sleep
-from typing import Union, List
+from typing import List, Union
 
 import pytest
 import requests
