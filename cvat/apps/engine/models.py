@@ -19,7 +19,7 @@ from drf_spectacular.utils import extend_schema_field
 
 from cvat.apps.engine.utils import parse_specific_attributes
 from cvat.apps.organizations.models import Organization
-
+from cvat.apps.events.utils import cache_deleted
 
 class SafeCharField(models.CharField):
     def get_prep_value(self, value):
@@ -326,6 +326,10 @@ class Project(models.Model):
     def get_log_path(self):
         return os.path.join(self.get_project_logs_dirname(), "project.log")
 
+    @cache_deleted
+    def delete(self, using=None, keep_parents=False):
+        super().delete(using, keep_parents)
+
     # Extend default permission model
     class Meta:
         default_permissions = ()
@@ -390,6 +394,10 @@ class Task(models.Model):
 
     def __str__(self):
         return self.name
+
+    @cache_deleted
+    def delete(self, using=None, keep_parents=False):
+        super().delete(using, keep_parents)
 
 # Redefined a couple of operation for FileSystemStorage to avoid renaming
 # or other side effects.
@@ -485,7 +493,8 @@ class Job(models.Model):
         task = self.segment.task
         return task.id if task else None
 
-    def get_organization_id(self):
+    @property
+    def organization_id(self):
         return self.segment.task.organization_id
 
     def get_organization_slug(self):
@@ -533,6 +542,14 @@ class Label(models.Model):
             return cls.objects.create(**kwargs)
         except IntegrityError:
             raise InvalidLabel("All label names must be unique")
+
+    @property
+    def organization_id(self):
+        if self.project is not None:
+            return self.project.organization.id
+        if self.task is not None:
+            return self.task.organization.id
+        return None
 
     class Meta:
         default_permissions = ()
@@ -705,8 +722,9 @@ class Issue(models.Model):
     def get_project_id(self):
         return self.job.get_project_id()
 
-    def get_organization_id(self):
-        return self.job.get_organization_id()
+    @property
+    def organization_id(self):
+        return self.job.organization_id
 
     def get_organization_slug(self):
         return self.job.get_organization_slug()
@@ -728,8 +746,9 @@ class Comment(models.Model):
     def get_project_id(self):
         return self.issue.get_project_id()
 
-    def get_organization_id(self):
-        return self.issue.get_organization_id()
+    @property
+    def organization_id(self):
+        return self.issue.organization_id
 
     def get_organization_slug(self):
         return self.issue.get_organization_slug()
@@ -845,6 +864,10 @@ class CloudStorage(models.Model):
 
     def get_key_file_path(self):
         return os.path.join(self.get_storage_dirname(), 'key.json')
+
+    @property
+    def has_at_least_one_manifest(self) -> bool:
+        return bool(self.manifests.count())
 
 class Storage(models.Model):
     location = models.CharField(max_length=16, choices=Location.choices(), default=Location.LOCAL)

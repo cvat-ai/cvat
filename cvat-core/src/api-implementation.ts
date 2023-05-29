@@ -3,6 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import { omit } from 'lodash';
 import config from './config';
 
 import PluginRegistry from './plugins';
@@ -44,7 +45,7 @@ export default function implementAPI(cvat) {
 
     cvat.server.share.implementation = async (directory) => {
         const result = await serverProxy.server.share(directory);
-        return result;
+        return result.map((item) => ({ ...omit(item, 'mime_type'), mimeType: item.mime_type }));
     };
 
     cvat.server.formats.implementation = async () => {
@@ -310,11 +311,17 @@ export default function implementAPI(cvat) {
 
     cvat.organizations.activate.implementation = (organization) => {
         checkObjectType('organization', organization, null, Organization);
-        config.organizationID = organization.slug;
+        config.organization = {
+            organizationID: organization.id,
+            organizationSlug: organization.slug,
+        };
     };
 
     cvat.organizations.deactivate.implementation = async () => {
-        config.organizationID = null;
+        config.organization = {
+            organizationID: null,
+            organizationSlug: null,
+        };
     };
 
     cvat.webhooks.get.implementation = async (filter) => {

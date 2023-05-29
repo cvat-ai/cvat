@@ -160,7 +160,7 @@ Object.defineProperties(LoggerStorage.prototype.save, {
         writable: false,
         enumerable: false,
         value: async function implementation() {
-            if (!this.collection) {
+            if (!this.collection.length) {
                 return;
             }
 

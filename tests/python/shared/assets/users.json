@@ -1,8 +1,24 @@
 {
-  "count": 20,
+  "count": 21,
   "next": null,
   "previous": null,
   "results": [
+    {
+      "date_joined": "2023-03-30T09:37:31.615000Z",
+      "email": "lonely_user@cvat.org",
+      "first_name": "Lonely",
+      "groups": [
+        "user"
+      ],
+      "id": 21,
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": "2023-03-30T09:37:31.708000Z",
+      "last_name": "User",
+      "url": "http://localhost:8080/api/users/21",
+      "username": "lonely_user"
+    },
     {
       "date_joined": "2022-02-24T20:45:19Z",
       "email": "user6@cvat.org",

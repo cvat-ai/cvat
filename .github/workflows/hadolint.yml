@@ -6,23 +6,18 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - id: files
-        uses: jitterbit/get-changed-files@v1
-        continue-on-error: true
+        uses: tj-actions/changed-files@v35.9.2
+        with:
+          files: |
+              **/Dockerfile*
 
       - name: Run checks
         env:
           HADOLINT: "${{ github.workspace }}/hadolint"
           HADOLINT_VER: "2.1.0"
           VERIFICATION_LEVEL: "error"
-          PR_FILES_AM: ${{ steps.files.outputs.added_modified }}
-          PR_FILES_RENAMED: ${{ steps.files.outputs.renamed }}
         run: |
-          PR_FILES="$PR_FILES_AM $PR_FILES_RENAMED"
-          for FILE in $PR_FILES; do
-              if [[ $FILE =~ 'Dockerfile' ]]; then
-                  CHANGED_FILES+=" $FILE"
-              fi
-          done
+          CHANGED_FILES="${{steps.files.outputs.all_changed_files}}"
 
           if [[ ! -z $CHANGED_FILES ]]; then
             curl -sL -o $HADOLINT "https://github.com/hadolint/hadolint/releases/download/v$HADOLINT_VER/hadolint-Linux-x86_64" && chmod 700 $HADOLINT

@@ -40,9 +40,9 @@ class TestGetProjects:
             if is_project_staff(user["id"], p["id"]) == is_project_staff_flag:
                 return p["id"]
 
-    def _test_response_200(self, username, project_id, **kwargs):
+    def _test_response_200(self, username, project_id):
         with make_api_client(username) as api_client:
-            (project, response) = api_client.projects_api.retrieve(project_id, **kwargs)
+            (project, response) = api_client.projects_api.retrieve(project_id)
             assert response.status == HTTPStatus.OK
             assert project_id == project.id
 
@@ -122,7 +122,7 @@ class TestGetProjects:
             )
         )
 
-        self._test_response_200(user["username"], pid, org_id=user["org"])
+        self._test_response_200(user["username"], pid)
 
     @pytest.mark.parametrize("role", ("supervisor", "worker"))
     def test_if_org_member_supervisor_or_worker_can_see_project(
@@ -138,7 +138,7 @@ class TestGetProjects:
             )
         )
 
-        self._test_response_200(user["username"], pid, org_id=user["org"])
+        self._test_response_200(user["username"], pid)
 
 
 class TestProjectsListFilters(CollectionSimpleFilterTestBase):
@@ -420,6 +420,30 @@ class TestPostProjects:
 
         response = get_method(admin_user, "/projects")
         assert response.status_code == HTTPStatus.OK
+
+    @pytest.mark.parametrize(
+        "storage_id",
+        [
+            1,  # public bucket
+            2,  # private bucket
+        ],
+    )
+    @pytest.mark.parametrize("field", ["source_storage", "target_storage"])
+    def test_user_cannot_create_project_with_cloud_storage_without_access(
+        self, storage_id, field, regular_lonely_user
+    ):
+        user = regular_lonely_user
+
+        project_spec = {
+            "name": f"Project with foreign cloud storage {storage_id} settings",
+            field: {
+                "location": "cloud_storage",
+                "cloud_storage_id": storage_id,
+            },
+        }
+
+        response = post_method(user, "/projects", project_spec)
+        assert response.status_code == HTTPStatus.FORBIDDEN
 
 
 def _check_cvat_for_video_project_annotations_meta(content, values_to_be_checked):
@@ -970,4 +994,36 @@ class TestGetProjectPreview:
             )
         )
 
-        self._test_response_200(user["username"], pid, org_id=user["org"])
+        self._test_response_200(user["username"], pid)
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+class TestPatchProject:
+    @pytest.mark.parametrize(
+        "storage_id",
+        [
+            1,  # public bucket
+            2,  # private bucket
+        ],
+    )
+    @pytest.mark.parametrize("field", ["source_storage", "target_storage"])
+    def test_user_cannot_update_project_with_cloud_storage_without_access(
+        self, storage_id, field, regular_lonely_user
+    ):
+        user = regular_lonely_user
+
+        project_spec = {
+            "name": f"Project with foreign cloud storage {storage_id} settings",
+        }
+        response = post_method(user, "/projects", project_spec)
+
+        updated_fields = {
+            field: {
+                "location": "cloud_storage",
+                "cloud_storage_id": storage_id,
+            }
+        }
+        project_id = response.json()["id"]
+
+        response = patch_method(user, f"/projects/{project_id}", updated_fields)
+        assert response.status_code == HTTPStatus.FORBIDDEN

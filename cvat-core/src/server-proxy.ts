@@ -10,12 +10,12 @@ import * as tus from 'tus-js-client';
 import {
     SerializedLabel, SerializedAnnotationFormats, ProjectsFilter,
     SerializedProject, SerializedTask, TasksFilter, SerializedUser,
-    SerializedAbout, SerializedShare, SerializedUserAgreement,
+    SerializedAbout, SerializedRemoteFile, SerializedUserAgreement,
     SerializedRegister, JobsFilter, SerializedJob,
 } from 'server-response-types';
 import { Storage } from './storage';
 import { StorageLocation, WebhookSourceType } from './enums';
-import { isEmail } from './common';
+import { isEmail, isResourceURL } from './common';
 import config from './config';
 import DownloadWorker from './download.worker';
 import { ServerError } from './exceptions';
@@ -32,7 +32,7 @@ type Params = {
 };
 
 function enableOrganization(): { org: string } {
-    return { org: config.organizationID || '' };
+    return { org: config.organization.organizationSlug || '' };
 }
 
 function configureStorage(storage: Storage, useDefaultLocation = false): Partial<Params> {
@@ -266,8 +266,23 @@ Axios.interceptors.request.use((reqConfig) => {
         return reqConfig;
     }
 
+    if (isResourceURL(reqConfig.url)) {
+        return reqConfig;
+    }
+
     reqConfig.params = { ...organization, ...(reqConfig.params || {}) };
     return reqConfig;
+});
+
+Axios.interceptors.response.use((response) => {
+    if (isResourceURL(response.config.url)) {
+        const newOrg = response.data.organization;
+        if (newOrg && config.organization.organizationID !== newOrg) {
+            config?.onOrganizationChange(newOrg);
+        }
+    }
+
+    return response;
 });
 
 let token = store.get('token');
@@ -309,7 +324,7 @@ async function about(): Promise<SerializedAbout> {
     return response.data;
 }
 
-async function share(directoryArg: string): Promise<SerializedShare[]> {
+async function share(directoryArg: string): Promise<SerializedRemoteFile[]> {
     const { backendAPI } = config;
 
     let response = null;
@@ -1368,7 +1383,7 @@ async function getUsers(filter = { page_size: 'all' }) {
     return response.data.results;
 }
 
-function getPreview(instance) {
+function getPreview(instance: 'projects' | 'tasks' | 'jobs' | 'cloudstorages') {
     return async function (id: number) {
         const { backendAPI } = config;
 
@@ -1383,7 +1398,7 @@ function getPreview(instance) {
             throw new ServerError(`Could not get preview for "${instance}/${id}"`, code);
         }
 
-        return response.data;
+        return (response.status === 200) ? response.data : '';
     };
 }
 
@@ -1860,14 +1875,17 @@ async function getCloudStorages(filter = {}) {
     return response.data.results;
 }
 
-async function getCloudStorageContent(id, manifestPath) {
+async function getCloudStorageContent(id: number, path: string, nextToken?: string, manifestPath?: string):
+Promise<{ content: SerializedRemoteFile[], next: string | null }> {
     const { backendAPI } = config;
 
     let response = null;
     try {
-        const url = `${backendAPI}/cloudstorages/${id}/content`;
+        const url = `${backendAPI}/cloudstorages/${id}/content-v2`;
         response = await Axios.get(url, {
             params: {
+                prefix: path,
+                ...(nextToken ? { next_token: nextToken } : {}),
                 ...(manifestPath ? { manifest_path: manifestPath } : {}),
             },
         });

@@ -10,7 +10,6 @@ from typing import Any, Dict, List, Tuple
 
 import pytest
 from cvat_sdk import models
-from cvat_sdk.api_client import exceptions
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from deepdiff import DeepDiff
 
@@ -246,22 +245,7 @@ class TestPatchIssues:
         username, issue_id = find_issue_staff_user(issues, users, issue_staff, issue_admin)
 
         data = request_and_response_data(issue_id, username=username)
-        self._test_check_response(username, issue_id, data, is_allow, org_id=org)
-
-    @pytest.mark.xfail(
-        raises=exceptions.ServiceException,
-        reason="server bug, https://github.com/cvat-ai/cvat/issues/122",
-    )
-    def test_cant_update_message(self, admin_user: str, issues_by_org):
-        org = 2
-        issue_id = issues_by_org[org][0]["id"]
-
-        with make_api_client(admin_user) as client:
-            client.issues_api.partial_update(
-                issue_id,
-                patched_issue_write_request=models.PatchedIssueWriteRequest(message="foo"),
-                org_id=org,
-            )
+        self._test_check_response(username, issue_id, data, is_allow)
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -347,7 +331,7 @@ class TestDeleteIssues:
         issues = issues_by_org[org]
         username, issue_id = find_issue_staff_user(issues, users, issue_staff, issue_admin)
 
-        self._test_check_response(username, issue_id, expect_success, org_id=org)
+        self._test_check_response(username, issue_id, expect_success)
 
 
 class TestIssuesListFilters(CollectionSimpleFilterTestBase):
