@@ -115,8 +115,7 @@ module.exports = (env) => ({
                 use: {
                     loader: 'worker-loader',
                     options: {
-                        publicPath: '/',
-                        filename: 'assets/3rdparty/[name].[contenthash].js',
+                        inline: "fallback",
                         esModule: false,
                     },
                 },
@@ -127,8 +126,7 @@ module.exports = (env) => ({
                 use: {
                     loader: 'worker-loader',
                     options: {
-                        publicPath: '/',
-                        filename: 'assets/[name].[contenthash].js',
+                        inline: "fallback",
                         esModule: false,
                     },
                 },

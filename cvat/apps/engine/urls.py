@@ -7,8 +7,6 @@ from django.urls import path, include
 from . import views
 from rest_framework import routers
 
-from django.views.generic import RedirectView
-from django.conf import settings
 from cvat.apps.restrictions.views import RestrictionsViewSet
 
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
@@ -25,10 +23,6 @@ router.register('restrictions', RestrictionsViewSet, basename='restrictions')
 router.register('cloudstorages', views.CloudStorageViewSet)
 
 urlpatterns = [
-    # Entry point for a client
-    path('', RedirectView.as_view(url=settings.UI_URL, permanent=True,
-         query_string=True)),
-
     # documentation for API
     path('api/schema/', SpectacularAPIView.as_view(
         permission_classes=[] # This endpoint is available for everyone

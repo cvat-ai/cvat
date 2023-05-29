@@ -664,6 +664,17 @@ AWS_S3_OBJECT_PARAMETERS = {
     'CacheControl': 'max-age=3600',
 }
 
+STATICFILES_STORAGE = 'cvat.rebotics.storage.CustomAWSStaticStorage'
+AWS_S3_STATIC_LOCATION = os.getenv('AWS_S3_STATIC_LOCATION', '')
+AWS_STATIC_QUERYSTRING_AUTH = bool(int(os.getenv('AWS_STATIC_QUERYSTRING_AUTH', 0)))
+AWS_S3_STATIC_ACL = os.getenv('AWS_S3_STATIC_ACL', 'public-read')
+AWS_S3_STATIC_BUCKET_NAME = os.getenv('AWS_S3_STATIC_BUCKET_NAME')
+AWS_S3_STATIC_GZIPPED = bool(int(os.getenv('AWS_S3_STATIC_GZIPPED', 1)))
+
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static-ui')
+]
+
 USE_S3 = True
 USE_CACHE_S3 = True
 

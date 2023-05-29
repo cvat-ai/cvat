@@ -83,8 +83,7 @@ const webConfig = {
                 use: {
                     loader: 'worker-loader',
                     options: {
-                        publicPath: '/static/engine/js/3rdparty/',
-                        filename: '[name].[contenthash].js',
+                        inline: "fallback",
                         esModule: false,
                     },
                 },
@@ -95,8 +94,7 @@ const webConfig = {
                 use: {
                     loader: 'worker-loader',
                     options: {
-                        publicPath: '/static/engine/js/',
-                        filename: '[name].[contenthash].js',
+                        inline: "fallback",
                         esModule: false,
                     },
                 },

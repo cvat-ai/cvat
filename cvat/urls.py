@@ -20,7 +20,11 @@ Including another URLconf
 
 from django.apps import apps
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
+from django.views.generic import RedirectView
+from django.templatetags.static import static
+from cvat.apps.rebotics.views import index_view
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -45,3 +49,11 @@ if apps.is_installed('cvat.apps.webhooks'):
 
 if apps.is_installed('silk'):
     urlpatterns.append(path('profiler/', include('silk.urls')))
+
+
+urlpatterns += [
+    path('version', RedirectView.as_view(url=static('version'), permanent=True), name='version'),
+    path('favicon.ico', RedirectView.as_view(url=static('favicon.ico'), permanent=True), name='favicon'),
+
+    re_path('^.*', index_view, name='index'),
+]

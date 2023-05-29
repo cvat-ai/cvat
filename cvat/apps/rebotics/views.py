@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
 from django.http.response import Http404
+from django.shortcuts import render
 
 from .authentication import RetailerAuthentication
 from .serializers import ImportSerializer, ImportResponseSerializer
@@ -46,3 +47,7 @@ class RetailerImportViewset(GenericViewSet):
         serializer = ImportResponseSerializer(data=task_data)
         serializer.is_valid(raise_exception=True)
         return Response(serializer.data)
+
+
+def index_view(request, *args, **kwargs):
+    return render(request, 'index.html')

@@ -138,11 +138,6 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/* && \
     echo 'application/wasm wasm' >> /etc/mime.types
 
-# Install rebotics requirements
-RUN apt-get update && \
-    apt-get --no-install-recommends install -yq nginx && \
-    rm -rf /var/lib/apt/lists/*
-
 # Add a non-root user
 ENV USER=${USER}
 ENV HOME /home/${USER}
@@ -196,19 +191,18 @@ COPY --chown=${USER} mod_wsgi.conf wait-for-it.sh manage.py ${HOME}/
 COPY --chown=${USER} utils/ ${HOME}/utils
 COPY --chown=${USER} cvat/ ${HOME}/cvat
 
-# Install UI and setup nginx proxy
-COPY --from=cvat-ui --chown=${USER} /tmp/cvat-ui/dist ${HOME}/static
+# Install UI
+COPY --from=cvat-ui --chown=${USER} /tmp/cvat-ui/dist ${HOME}/static-ui
+RUN sed -i -E "s#(<\!doctype html>)#{% load static %}\1#g" ${HOME}/static-ui/index.html && \
+    sed -i -E "s#\"/(assets/.*)\"#\"{% static \"\1\" %}\"#g" ${HOME}/static-ui/index.html && \
+    mkdir -p ${HOME}/cvat/apps/rebotics/templates && \
+    mv ${HOME}/static-ui/index.html ${HOME}/cvat/apps/rebotics/templates
+
+# Override supervisor
 COPY --chown=${USER} rebotics/supervisord.conf ${HOME}/supervisord/all.conf
-COPY rebotics/nginx_proxy.conf /etc/nginx/conf.d/default.conf
-RUN sed -i "s#\${HOME}#${HOME}#g" /etc/nginx/conf.d/default.conf && \
-    sed -i "s#pid /run#pid ${HOME}#" /etc/nginx/nginx.conf && \
-    ln -sf /dev/stdout /var/log/nginx/access.log && \
-    ln -sf /dev/stderr /var/log/nginx/error.log && \
-    chown -R ${USER} /var/lib/nginx /var/log/nginx
-RUN rm /etc/nginx/sites-enabled/default
 
 # Add version file
-COPY --chown=${USER} VERSION ${HOME}/static/version
+COPY --chown=${USER} VERSION ${HOME}/static-ui
 
 # RUN all commands below as 'django' user
 USER ${USER}

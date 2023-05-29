@@ -8,6 +8,12 @@ from six import StringIO
 from storages.backends.s3boto3 import S3Boto3Storage, S3Boto3StorageFile
 from django.conf import settings
 
+try:
+    from storages.backends.s3boto3 import S3StaticStorage as StaticStorage
+except ImportError:
+    StaticStorage = S3Boto3Storage
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -80,6 +86,14 @@ class CustomAWSMediaStorage(BaseS3StorageWithPathMixin, S3Boto3Storage):
             return url
 
         return self._strip_signing_parameters(url)
+
+
+class CustomAWSStaticStorage(BaseS3StorageWithPathMixin, StaticStorage):
+    location = settings.AWS_S3_STATIC_LOCATION
+    bucket_name = settings.AWS_S3_STATIC_BUCKET_NAME
+    querystring_auth = settings.AWS_STATIC_QUERYSTRING_AUTH
+    default_acl = settings.AWS_S3_STATIC_ACL
+    gzip = settings.AWS_S3_STATIC_GZIPPED
 
 
 def create_pre_signed_post(file_field):
