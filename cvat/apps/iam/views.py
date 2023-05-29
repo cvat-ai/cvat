@@ -183,7 +183,7 @@ class RulesView(views.APIView):
     serializer_class = None
     permission_classes = [AllowAny]
     authentication_classes = []
-    iam_organization_field = None
+    iam_organization_fields = None
 
     @staticmethod
     def _get_bundle_path():

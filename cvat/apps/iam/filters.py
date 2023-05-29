@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 from rest_framework.filters import BaseFilterBackend
+from django.db.models import Q
 
 from drf_spectacular.utils import OpenApiParameter
 
@@ -43,7 +44,7 @@ class OrganizationFilterBackend(BaseFilterBackend):
         # Filter works only for "list" requests and allows to return
         # only non-organization objects if org isn't specified
 
-        if view.detail or not view.iam_organization_field:
+        if view.detail or not view.iam_organization_fields:
             return queryset
 
         visibility = None
@@ -56,13 +57,25 @@ class OrganizationFilterBackend(BaseFilterBackend):
             visibility = {'organization': None}
 
         if visibility:
-            visibility[view.iam_organization_field] = visibility.pop('organization')
-            return queryset.filter(**visibility).distinct()
+            organization = visibility.pop("organization")
+
+            # we select all db records where AT LEAST ONE organization fields is satisfied to query
+            operation = Q.OR
+
+            if organization is None:
+                # but to get all non-org objects we need select db records where ALL organization fields is None
+                operation = Q.AND
+
+            query = Q()
+            for org_field in view.iam_organization_fields:
+                query.add(Q(**{org_field: organization}), operation)
+
+            return queryset.filter(query).distinct()
 
         return queryset
 
     def get_schema_operation_parameters(self, view):
-        if not view.iam_organization_field or view.detail:
+        if not view.iam_organization_fields or view.detail:
             return []
 
         parameters = []

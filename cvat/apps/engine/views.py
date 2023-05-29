@@ -89,7 +89,7 @@ _UPLOAD_PARSER_CLASSES = api_settings.DEFAULT_PARSER_CLASSES + [MultiPartParser]
 @extend_schema(tags=['server'])
 class ServerViewSet(viewsets.ViewSet):
     serializer_class = None
-    iam_organization_field = None
+    iam_organization_fields = None
 
     # To get nice documentation about ServerViewSet actions it is necessary
     # to implement the method. By default, ViewSet doesn't provide it.
@@ -248,7 +248,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     ordering_fields = list(filter_fields)
     ordering = "-id"
     lookup_fields = {'owner': 'owner__username', 'assignee': 'assignee__username'}
-    iam_organization_field = 'organization'
+    iam_organization_fields = ('organization',)
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
@@ -700,7 +700,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     simple_filters = list(search_fields) + ['project_id']
     ordering_fields = list(filter_fields)
     ordering = "-id"
-    iam_organization_field = 'organization'
+    iam_organization_fields = ('organization',)
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
@@ -1262,7 +1262,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             filter=Q(segment__task__project__label__parent__isnull=True), distinct=True)
     ).all()
 
-    iam_organization_field = 'segment__task__organization'
+    iam_organization_fields = ('segment__task__organization',)
     search_fields = ('task_name', 'project_name', 'assignee', 'state', 'stage')
     filter_fields = list(search_fields) + ['id', 'task_id', 'project_id', 'updated_date', 'dimension']
     simple_filters = list(set(filter_fields) - {'id', 'updated_date'})
@@ -1671,7 +1671,7 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         'job__segment__task', 'owner', 'assignee', 'job'
     ).all()
 
-    iam_organization_field = 'job__segment__task__organization'
+    iam_organization_fields = ('job__segment__task__organization',)
     search_fields = ('owner', 'assignee')
     filter_fields = list(search_fields) + ['id', 'job_id', 'task_id', 'resolved', 'frame_id']
     simple_filters = list(search_fields) + ['job_id', 'task_id', 'resolved', 'frame_id']
@@ -1742,7 +1742,7 @@ class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         'issue', 'issue__job', 'owner'
     ).all()
 
-    iam_organization_field = 'issue__job__segment__task__organization'
+    iam_organization_fields = ('issue__job__segment__task__organization',)
     search_fields = ('owner',)
     filter_fields = list(search_fields) + ['id', 'issue_id', 'frame_id', 'job_id']
     simple_filters = list(search_fields) + ['issue_id', 'frame_id', 'job_id']
@@ -1829,7 +1829,7 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     # NOTE: This filter works incorrectly for this view
     # it requires task__organization OR project__organization check.
     # Thus, we rely on permission-based filtering
-    iam_organization_field = None
+    iam_organization_fields = ("task__organization", "project__organization")
 
     search_fields = ('name', 'parent')
     filter_fields = list(search_fields) + ['id', 'type', 'color', 'parent_id']
@@ -1965,7 +1965,7 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, PartialUpdateModelMixin, mixins.DestroyModelMixin):
     queryset = User.objects.prefetch_related('groups').all()
-    iam_organization_field = 'memberships__organization'
+    iam_organization_fields = ('memberships__organization',)
 
     search_fields = ('username', 'first_name', 'last_name')
     filter_fields = list(search_fields) + ['id', 'is_active']
@@ -2058,7 +2058,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     ordering_fields = list(filter_fields)
     ordering = "-id"
     lookup_fields = {'owner': 'owner__username', 'name': 'display_name'}
-    iam_organization_field = 'organization'
+    iam_organization_fields = ('organization',)
 
     # Multipart support is necessary here, as CloudStorageWriteSerializer
     # contains a file field (key_file).
