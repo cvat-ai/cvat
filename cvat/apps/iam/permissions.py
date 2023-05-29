@@ -14,11 +14,12 @@ from typing import Any, Dict, List, Optional, Sequence, Union, cast
 from attrs import define, field
 from django.conf import settings
 from django.db.models import Q
-from rest_framework.exceptions import ValidationError, PermissionDenied
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.permissions import BasePermission
 
+from cvat.apps.engine.models import (CloudStorage, Issue, Job, Label, Project,
+                                     Task, User)
 from cvat.apps.organizations.models import Membership, Organization
-from cvat.apps.engine.models import CloudStorage, Label, Project, Task, Job, Issue
 from cvat.apps.webhooks.models import WebhookTypeChoice
 from cvat.utils.http import make_requests_session
 
@@ -61,7 +62,11 @@ def get_organization(request, obj):
                 return Organization.objects.get(id=organization_id)
             except Organization.DoesNotExist:
                 return None
-        return None
+
+        if isinstance(obj, User):
+            return None
+
+        raise PermissionDenied({"message": f"Cannot get `organization_id` attr for {type(obj)} object"})
 
     return request.iam_context["organization"]
 
@@ -80,7 +85,7 @@ def get_iam_context(request, obj):
     membership = get_membership(request, organization)
 
     if organization and not request.user.is_superuser and membership is None:
-        raise PermissionDenied({"message": "You should be an active member in the organization"})
+        raise PermissionDenied({'message': 'You should be an active member in the organization'})
 
     return {
         'user_id': request.user.id,
