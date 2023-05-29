@@ -8,7 +8,7 @@ description: 'Instructions for deployment and customization of analytics and mon
 CVAT Analytics suite of tools is designed to track and understand users' behavior, system performance,
 and for identifying potential issues in your application.
 
-You can also visualize user activity through Graphana, and aggregate user
+You can also visualize user activity through Grafana, and aggregate user
 working time by the jobs.
 
 Gathered logs can be additionally filtered for efficient debugging.
@@ -18,7 +18,7 @@ and enhance user satisfaction.
 
 CVAT analytics are available from the top menu.
 
-![CVAT Analytics](/images/analytics_menu.png)
+![CVAT Analytics](/images/analytics_menu.jpg)
 
 > Note: CVAT analytics and monitoring are available only for on-prem solution.
 
@@ -41,7 +41,7 @@ See:
 
 The CVAT analytics is based on Vector, ClickHouse, and Grafana.
 
-![CVAT Analytics](/images/analytic_architecture.png)
+![CVAT Analytics](/images/analytic_architecture.jpg)
 
 ## CVAT Analytics
 
@@ -61,29 +61,9 @@ docker compose up -d
 
 ### Ports settings
 
-In case you cannot access analytics, check if the following ports are open:
-
-```json
-
-cvat_vector:
-    ports:
-      - '8282:80'
-
-  cvat_clickhouse:
-    ports:
-      - '8123:8123'
-```
-
-**Or** remove the following data from
-[launch.json](https://github.com/opencv/cvat/blob/develop/.vscode/launch.json):
-
-```json
-  "DJANGO_LOG_SERVER_HOST": "localhost",
-  "DJANGO_LOG_SERVER_PORT": "8282"
-```
-
-Analytics on GitHub:
-[Analytics Components](https://github.com/opencv/cvat/tree/develop/components/analytics)
+If you cannot access analytics on
+development environnement,
+See [Analytics Ports](/docs/contributing/development-environment/#cvat-analytics-ports)
 
 ### Events Log structure
 
@@ -92,31 +72,33 @@ schema with the following fields:
 
 <!--lint disable maximum-line-length-->
 
-| Mandatory Field | Description                                                                             |
-| --------------- | --------------------------------------------------------------------------------------- |
-| scope           | scope of the event (e.g., zoomin:image, add:annotations, delete:image, update:assignee) |
-| obj_name        | object name or None (e.g., task, job, cloudstorage, model, organization)                |
-| obj_id          | object identifier as in DB or None                                                      |
-| obj_val         | value for the event as string or None (e.g., frame number, number of added annotations) |
-| source          | who generates the log event (e.g., server, ui)                                          |
-| timestamp       | local event time (in general for UI and server, the time is different)                  |
-| count           | how many times in the row it occurs                                                     |
-| duration        | how much time does it take (it can be 0 for events without duration)                    |
-| project         | project ID or None                                                                      |
-| task            | task ID or None                                                                         |
-| job             | job ID or None                                                                          |
-| user            | user ID or None                                                                         |
-| organization    | organization ID or None                                                                 |
+| Field      | Description                                                                             |
+| ---------- | --------------------------------------------------------------------------------------- |
+| scope      | scope of the event (e.g., zoomin:image, add:annotations, delete:image, update:assignee) |
+| obj_name   | object name or None (e.g., task, job, cloudstorage, model, organization)                |
+| obj_id     | object identifier as in DB or None                                                      |
+| obj_val    | value for the event as string or None (e.g., frame number, number of added annotations) |
+| source     | who generates the log event (e.g., server, ui)                                          |
+| timestamp  | local event time (in general for UI and server, the time is different)                  |
+| count      | how many times in the row it occurs                                                     |
+| duration   | how much time does it take (it can be 0 for events without duration)                    |
+| project_id | project ID or None                                                                      |
+| task_id    | task ID or None                                                                         |
+| job_id     | job ID or None                                                                          |
+| user_id    | user ID or None                                                                         |
+| user_name  | user name or None                                                                       |
+| user_email | user email or None                                                                      |
+| org_id     | organization ID or None                                                                 |
+| org_slug   | org slug or none                                                                        |
+| payload    | JSON payload or None. Extra fields can be added to the JSON blob.                       |
 
 <!--lint enable maximum-line-length-->
-
-Extra fields can be added to the JSON blob.
 
 ### Types of supported events
 
 Supported events change the scope of information displayed in Grafana.
 
-![Supported Events](/images/supported_events.png)
+![Supported Events](/images/supported_events.jpg)
 
 <!--lint disable maximum-line-length-->
 
@@ -216,7 +198,7 @@ curl -I --user 'user:pass' https://app.cvat.ai/api/events?job_id=123&query_id=15
 
 Upon successful creation, the server will return a `201 Created` status:
 
-```json
+```
 HTTP/2 201
 allow: GET, POST, HEAD, OPTIONS
 date: Tue, 16 May 2023 13:38:42 GMT
@@ -247,7 +229,7 @@ By default, three dashboards are available in CVAT.
 To access them, click **General**, you will be forwarded to the
 page with available dashboards:
 
-![List of dashboards](/images/dashboard_00.png)
+![List of dashboards](/images/dashboard_00.jpg)
 
 <!--lint disable maximum-line-length-->
 
@@ -263,7 +245,7 @@ page with available dashboards:
 
 The dashboard shows all events, their timestamps, and their source.
 
-![Dashboard: All Events](/images/dashboard_01.png)
+![Dashboard: All Events](/images/dashboard_01.jpg)
 
 <!--lint disable maximum-line-length-->
 
@@ -297,7 +279,7 @@ on the eye icon.
 
 The dashboard shows user activity.
 
-![Dashboard: Management](/images/dashboard_02.png)
+![Dashboard: Management](/images/dashboard_02.jpg)
 
 <!--lint disable maximum-line-length-->
 
@@ -324,7 +306,7 @@ on the eye icon.
 
 The dashboard shows server logs, helps handle errors, and shows user activity.
 
-![Dashboard: Monitoring](/images/dashboard_03.png)
+![Dashboard: Monitoring](/images/dashboard_03.jpg)
 
 <!--lint disable maximum-line-length-->
 
@@ -360,7 +342,7 @@ graph or table name and from the drop-down menu select **Edit**.
 
 Adjust the query in the editor.
 
-![Dashboard: look and feel](/images/dashboard_04.png)
+![Dashboard: look and feel](/images/dashboard_04.jpg)
 
 Example of query:
 
