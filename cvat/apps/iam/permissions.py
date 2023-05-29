@@ -57,16 +57,19 @@ def get_organization(request, obj):
         return obj
 
     if obj:
-        if organization_id := getattr(obj, 'organization_id', None):
-            try:
-                return Organization.objects.get(id=organization_id)
-            except Organization.DoesNotExist:
+        try:
+            organization_id = getattr(obj, "organization_id")
+        except AttributeError as exc:
+            if isinstance(obj, User):
                 return None
+            raise exc
 
-        if isinstance(obj, User):
+        try:
+            return Organization.objects.get(id=organization_id)
+        except Organization.DoesNotExist:
             return None
 
-        raise PermissionDenied({'message': f'Cannot get `organization_id` attr for {type(obj)} object'})
+
 
     return request.iam_context['organization']
 
