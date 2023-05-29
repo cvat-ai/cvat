@@ -206,8 +206,9 @@ class JsonLogicFilter(filters.BaseFilterBackend):
         assert coreschema is not None, 'coreschema must be installed to use `get_schema_fields()`'
 
         filter_fields = getattr(view, 'filter_fields', [])
+        filter_description = getattr(view, 'filter_description', '')
         full_description = self.filter_description + \
-            f' Available filter_fields: {filter_fields}'
+            f' Available filter_fields: {filter_fields}.' + filter_description
 
         return [
             coreapi.Field(
@@ -223,8 +224,9 @@ class JsonLogicFilter(filters.BaseFilterBackend):
 
     def get_schema_operation_parameters(self, view):
         filter_fields = getattr(view, 'filter_fields', [])
+        filter_description = getattr(view, 'filter_description', '')
         full_description = self.filter_description + \
-            f' Available filter_fields: {filter_fields}'
+            f' Available filter_fields: {filter_fields}.' + filter_description
         return [
             {
                 'name': self.filter_param,
