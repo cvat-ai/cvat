@@ -11,4 +11,4 @@ PASSWORD_HASHERS = [
     "django.contrib.auth.hashers.MD5PasswordHasher",
 ]
 
-RUN_CLEAN_IMPORT_CACHE_FUNC_AFTER = timedelta(seconds=30)
+IMPORT_CACHE_CLEAN_DELAY = timedelta(seconds=30)

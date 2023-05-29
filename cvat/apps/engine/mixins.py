@@ -267,7 +267,7 @@ class UploadMixin:
             if import_type in ('backup', 'annotations', 'datasets'):
                 scheduler = django_rq.get_scheduler(settings.CVAT_QUEUES.CLEANING.value)
                 path = Path(self.get_upload_dir()) / tus_file.filename
-                cleaning_job = scheduler.enqueue_in(time_delta=settings.RUN_CLEAN_IMPORT_CACHE_FUNC_AFTER,
+                cleaning_job = scheduler.enqueue_in(time_delta=settings.IMPORT_CACHE_CLEAN_DELAY,
                     func=clear_import_cache,
                     path=path,
                     creation_time=Path(tus_file.file_path).stat().st_ctime
@@ -275,7 +275,7 @@ class UploadMixin:
                 slogger.glob.info(
                     f'The cleaning job {cleaning_job.id} is queued.'
                     f'The check that the file {path} is deleted will be carried out after '
-                    f'{settings.RUN_CLEAN_IMPORT_CACHE_FUNC_AFTER}.'
+                    f'{settings.IMPORT_CACHE_CLEAN_DELAY}.'
                 )
 
             return self._tus_response(

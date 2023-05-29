@@ -17,6 +17,6 @@ def clear_import_cache(path: Path, creation_time: float) -> None:
         path (Path): path to file
         creation_time (float): file creation time
     """
-    if path.is_file() and (time() - creation_time + 1) >= settings.RUN_CLEAN_IMPORT_CACHE_FUNC_AFTER.total_seconds():
+    if path.is_file() and (time() - creation_time + 1) >= settings.IMPORT_CACHE_CLEAN_DELAY.total_seconds():
         path.unlink()
         slogger.glob.warning(f"The file {str(path)} was removed from cleaning job.")
