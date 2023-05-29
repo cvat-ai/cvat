@@ -33,7 +33,7 @@ class OrganizationFilterBackend(BaseFilterBackend):
 
     def _parameter_is_provided(self, request):
         for parameter in ORGANIZATION_OPEN_API_PARAMETERS:
-            if parameter.location == 'header' and parameter.name in request.header:
+            if parameter.location == 'header' and parameter.name in request.headers:
                 return True
             elif parameter.location == 'query' and parameter.name in request.query_params:
                 return True
