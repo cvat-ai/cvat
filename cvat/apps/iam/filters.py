@@ -60,11 +60,11 @@ class OrganizationFilterBackend(BaseFilterBackend):
         if visibility:
             organization = visibility.pop("organization")
 
-            # we select all db records where AT LEAST ONE organization fields is satisfied to query
+            # we select all db records where AT LEAST ONE organization field is satisfied to query
             operation = Q.OR
 
             if organization is None:
-                # but to get all non-org objects we need select db records where ALL organization fields is None
+                # but to get all non-org objects we need select db records where ALL organization fields are None
                 operation = Q.AND
 
             query = Q()
