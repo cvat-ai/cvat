@@ -29,7 +29,7 @@ from cvat.apps.quality_control.serializers import (
     QualityReportSerializer, QualityReportCreateSerializer
 )
 
-from cvat.apps.iam.permissions import AnnotationConflictPermission, QualityReportPermission
+from cvat.apps.iam.permissions import AnnotationConflictPermission, QualityReportPermission, QualitySettingPermission
 
 
 @extend_schema(tags=["quality"])
@@ -297,7 +297,7 @@ class QualityReportViewSet(viewsets.GenericViewSet,
             # *ORGANIZATION_OPEN_API_PARAMETERS,
         ],
         responses={
-            '200': QualityReportSerializer(many=True),
+            '200': QualitySettingsSerializer(many=True),
         }),
     retrieve=extend_schema(
         summary='Method returns details of quality settings',
@@ -308,13 +308,23 @@ class QualityReportViewSet(viewsets.GenericViewSet,
 class QualitySettingsViewSet(viewsets.GenericViewSet,
     mixins.ListModelMixin, mixins.RetrieveModelMixin, PartialUpdateModelMixin
 ):
-    queryset = QualitySettings.objects.select_related('task').all()
+    queryset = QualitySettings.objects.select_related('task', 'task__organization').all()
 
     iam_organization_field = 'task__organization'
 
     search_fields = []
-    filter_fields = []
+    filter_fields = ['id', 'task_id']
+    simple_filters = ['task_id']
     ordering_fields = ['id']
     ordering = 'id'
 
     serializer_class = QualitySettingsSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+
+        if self.action == 'list':
+            permissions = QualitySettingPermission.create_scope_list(self.request)
+            queryset = permissions.filter(queryset)
+
+        return queryset

@@ -3627,7 +3627,7 @@ paths:
       - name: filter
         required: false
         in: query
-        description: 'A filter term. Available filter_fields: []'
+        description: 'A filter term. Available filter_fields: [''id'', ''task_id'']'
         schema:
           type: string
       - name: org
@@ -3665,6 +3665,11 @@ paths:
           [''id'']'
         schema:
           type: string
+      - name: task_id
+        in: query
+        description: A simple equality filter for the task_id field
+        schema:
+          type: integer
       tags:
       - quality
       security:
@@ -3678,7 +3683,7 @@ paths:
           content:
             application/vnd.cvat+json:
               schema:
-                $ref: '#/components/schemas/PaginatedQualityReportList'
+                $ref: '#/components/schemas/PaginatedQualitySettingsList'
           description: ''
   /api/quality/settings/{id}:
     get:
@@ -3760,6 +3765,7 @@ paths:
           - br
           - bs
           - ca
+          - ckb
           - cs
           - cy
           - da
@@ -3812,6 +3818,7 @@ paths:
           - ml
           - mn
           - mr
+          - ms
           - my
           - nb
           - ne
@@ -5887,6 +5894,7 @@ components:
         chunk_size:
           type: integer
           readOnly: true
+          nullable: true
         size:
           type: integer
           readOnly: true
@@ -7043,6 +7051,7 @@ components:
           type: string
           format: date-time
           readOnly: true
+          nullable: true
         role:
           allOf:
           - $ref: '#/components/schemas/RoleEnum'
@@ -7365,6 +7374,26 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/QualityReport'
+    PaginatedQualitySettingsList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/QualitySettings'
     PaginatedTaskReadList:
       type: object
       properties:
@@ -8067,7 +8096,7 @@ components:
         id:
           type: integer
           readOnly: true
-        task:
+        task_id:
           type: integer
           readOnly: true
         iou_threshold:
@@ -8603,9 +8632,6 @@ components:
           $ref: '#/components/schemas/JobsSummary'
         labels:
           $ref: '#/components/schemas/LabelsSummary'
-        quality_settings:
-          type: integer
-          readOnly: true
       required:
       - jobs
       - labels
@@ -8830,6 +8856,7 @@ components:
         status_code:
           type: integer
           readOnly: true
+          nullable: true
         redelivery:
           type: boolean
           readOnly: true

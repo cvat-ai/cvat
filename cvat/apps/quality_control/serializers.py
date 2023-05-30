@@ -64,7 +64,7 @@ class QualitySettingsSerializer(serializers.ModelSerializer):
         model = models.QualitySettings
         fields = (
             'id',
-            'task',
+            'task_id',
 
             'iou_threshold',
             'oks_sigma',
@@ -85,7 +85,7 @@ class QualitySettingsSerializer(serializers.ModelSerializer):
 
             'compare_attributes',
         )
-        read_only_fields = ('id', 'task', )
+        read_only_fields = ('id', 'task_id', )
         extra_kwargs = {
             k: {'required': False}
             for k in fields

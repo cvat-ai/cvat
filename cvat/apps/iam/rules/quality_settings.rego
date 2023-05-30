@@ -48,3 +48,52 @@ allow {
     utils.is_admin
 }
 
+allow {
+    input.scope == utils.LIST
+    utils.is_sandbox
+}
+
+allow {
+    input.scope == utils.LIST
+    organizations.is_member
+}
+
+filter = [] { # Django Q object to filter list of entries
+    utils.is_admin
+    utils.is_sandbox
+} else = qobject {
+    utils.is_admin
+    utils.is_organization
+    org := input.auth.organization
+    qobject := [
+        {"task__organization": org.id},
+        {"task__project__organization": org.id}, "|",
+    ]
+} else = qobject {
+    utils.is_sandbox
+    user := input.auth.user
+    qobject := [
+        {"task__owner_id": user.id},
+        {"task__assignee_id": user.id}, "|",
+        {"task__project__owner_id": user.id}, "|",
+        {"task__project__assignee_id": user.id}, "|",
+    ]
+} else = qobject {
+    utils.is_organization
+    utils.has_perm(utils.USER)
+    organizations.has_perm(organizations.MAINTAINER)
+    org := input.auth.organization
+    qobject := [
+        {"task__organization": org.id},
+        {"task__project__organization": org.id}, "|",
+    ]
+} else = qobject {
+    organizations.has_perm(organizations.WORKER)
+    user := input.auth.user
+    qobject := [
+        {"task__owner_id": user.id},
+        {"task__assignee_id": user.id}, "|",
+        {"task__project__owner_id": user.id}, "|",
+        {"task__project__assignee_id": user.id}, "|",
+    ]
+}

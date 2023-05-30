@@ -15,7 +15,7 @@ from shared.utils import config
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetResources:
     @pytest.mark.parametrize("path", config.ASSETS_DIR.glob("*.json"))
-    def test_check_objects_integrity(self, path: Path, tasks):
+    def test_check_objects_integrity(self, path: Path):
         with open(path) as f:
             endpoint = path.stem
             if endpoint in ["quality_settings", "quality_reports", "quality_conflicts"]:
@@ -31,20 +31,6 @@ class TestGetResources:
                             response,
                             ignore_order=True,
                             exclude_paths="root['version']",
-                        )
-                        == {}
-                    )
-            elif endpoint == "quality/settings":
-                # There is no list endpoint, but every task must have quality settings
-                objects = json.load(f)
-                assert len(tasks) == len(objects)
-                for sid, settings in objects.items():
-                    response = config.get_method("admin1", f"quality/settings/{sid}").json()
-                    assert (
-                        DeepDiff(
-                            settings,
-                            response,
-                            ignore_order=True,
                         )
                         == {}
                     )

@@ -620,6 +620,19 @@ class TestSimpleQualityConflictsFilters(CollectionSimpleFilterTestBase):
         return super().test_can_use_simple_filter_for_object_list(field)
 
 
+class TestSimpleQualitySettingsFilters(CollectionSimpleFilterTestBase):
+    @pytest.fixture(autouse=True)
+    def setup(self, restore_db_per_class, admin_user, quality_settings):
+        self.user = admin_user
+        self.samples = quality_settings
+
+    def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
+        return api_client.quality_api.list_settings_endpoint
+
+    @pytest.mark.parametrize("field", ("task_id",))
+    def test_can_use_simple_filter_for_object_list(self, field):
+        return super().test_can_use_simple_filter_for_object_list(field)
+
 
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestListSettings(_PermissionTestBase):
@@ -659,8 +672,8 @@ class TestListSettings(_PermissionTestBase):
         else:
             user = next(u for u in users if not is_task_staff(u["id"], task["id"]))["username"]
 
-        settings_id = task["quality_settings"]
-        settings = quality_settings[settings_id]
+        settings = next(s for s in quality_settings if s["task_id"] == task["id"])
+        settings_id = settings["id"]
 
         if allow:
             self._test_list_settings_200(user, settings_id, expected_data=settings)
@@ -710,8 +723,8 @@ class TestListSettings(_PermissionTestBase):
 
         assert task
 
-        settings_id = task["quality_settings"]
-        settings = quality_settings[settings_id]
+        settings = next(s for s in quality_settings if s["task_id"] == task["id"])
+        settings_id = settings["id"]
 
         if allow:
             self._test_list_settings_200(user["username"], settings_id, expected_data=settings)
@@ -743,7 +756,8 @@ class TestGetSettings(_PermissionTestBase):
         return response
 
     def test_can_get_settings(self, admin_user, quality_settings):
-        settings_id, settings = next(iter(quality_settings.items()))
+        settings = next(iter(quality_settings))
+        settings_id = settings["id"]
         self._test_get_settings_200(admin_user, settings_id, expected_data=settings)
 
     @pytest.mark.parametrize("is_staff, allow", [(True, True), (False, False)])
@@ -761,8 +775,8 @@ class TestGetSettings(_PermissionTestBase):
         else:
             user = next(u for u in users if not is_task_staff(u["id"], task["id"]))["username"]
 
-        settings_id = task["quality_settings"]
-        settings = quality_settings[settings_id]
+        settings = next(s for s in quality_settings if s["task_id"] == task["id"])
+        settings_id = settings["id"]
 
         if allow:
             self._test_get_settings_200(user, settings_id, expected_data=settings)
@@ -812,8 +826,8 @@ class TestGetSettings(_PermissionTestBase):
 
         assert task
 
-        settings_id = task["quality_settings"]
-        settings = quality_settings[settings_id]
+        settings = next(s for s in quality_settings if s["task_id"] == task["id"])
+        settings_id = settings["id"]
 
         if allow:
             self._test_get_settings_200(user["username"], settings_id, expected_data=settings)
@@ -870,7 +884,8 @@ class TestPatchSettings(_PermissionTestBase):
         return patched_data, expected_data
 
     def test_can_patch_settings(self, admin_user, quality_settings):
-        settings_id, settings = next(iter(quality_settings.items()))
+        settings = next(iter(quality_settings))
+        settings_id = settings["id"]
         data, expected_data = self._get_request_data(settings)
         self._test_patch_settings_200(admin_user, settings_id, data, expected_data=expected_data)
 
@@ -889,8 +904,8 @@ class TestPatchSettings(_PermissionTestBase):
         else:
             user = next(u for u in users if not is_task_staff(u["id"], task["id"]))["username"]
 
-        settings_id = task["quality_settings"]
-        settings = quality_settings[settings_id]
+        settings = next(s for s in quality_settings if s["task_id"] == task["id"])
+        settings_id = settings["id"]
         data, expected_data = self._get_request_data(settings)
 
         if allow:
@@ -941,8 +956,8 @@ class TestPatchSettings(_PermissionTestBase):
 
         assert task
 
-        settings_id = task["quality_settings"]
-        settings = quality_settings[settings_id]
+        settings = next(s for s in quality_settings if s["task_id"] == task["id"])
+        settings_id = settings["id"]
         data, expected_data = self._get_request_data(settings)
 
         if allow:
@@ -1056,13 +1071,12 @@ class TestQualityReportMetrics(_PermissionTestBase):
         ],
     )
     def test_settings_affect_metrics(
-        self, admin_user, quality_reports, tasks, quality_settings, task_id, parameter
+        self, admin_user, quality_reports, quality_settings, task_id, parameter
     ):
         old_report = next(r for r in quality_reports if r["task_id"])
         task_id = old_report["task_id"]
-        task = tasks[task_id]
 
-        settings = deepcopy(quality_settings[task["quality_settings"]])
+        settings = deepcopy(next(s for s in quality_settings if s["task_id"] == task_id))
         if isinstance(settings[parameter], bool):
             settings[parameter] = not settings[parameter]
         elif isinstance(settings[parameter], float):

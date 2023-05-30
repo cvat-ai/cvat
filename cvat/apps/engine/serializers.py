@@ -1021,9 +1021,6 @@ class TaskReadSerializer(serializers.ModelSerializer):
     jobs = JobsSummarySerializer(url_filter_key='task_id', source='segment_set')
     labels = LabelsSummarySerializer(source='*')
 
-    # The field may be missing because the app can be disabled
-    quality_settings = serializers.ReadOnlyField(source='quality_settings.id', required=False)
-
     class Meta:
         model = models.Task
         fields = ('url', 'id', 'name', 'project_id', 'mode', 'owner', 'assignee',
@@ -1031,7 +1028,6 @@ class TaskReadSerializer(serializers.ModelSerializer):
             'status', 'data_chunk_size', 'data_compressed_chunk_type',
             'data_original_chunk_type', 'size', 'image_quality', 'data', 'dimension',
             'subset', 'organization', 'target_storage', 'source_storage', 'jobs', 'labels',
-            'quality_settings'
         )
         read_only_fields = fields
         extra_kwargs = {
