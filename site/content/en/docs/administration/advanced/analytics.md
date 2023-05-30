@@ -30,7 +30,7 @@ See:
   - [Events log structure](#events-log-structure)
   - [Types of supported events](#types-of-supported-events)
   - [Request `id` for tracking](#request-id-for-tracking)
-  - [Fetching event data as CSV from the `/api/events` Endpoint](#fetching-event-data-as-csv-from-the-apievents-endpoint)
+  - [Fetching event data as CSV from the `/api/events` endpoint](#fetching-event-data-as-csv-from-the-apievents-endpoint)
 - [Dashboards](#dashboards)
   - [Dashboard: All Events](#dashboard-all-events)
   - [Dashboard: Management](#dashboard-management)
@@ -164,7 +164,7 @@ generated on the server in addition to the Task object.
 All events associated with this operation will have the same `request_id` in
 the payload field.
 
-### Fetching event data as CSV from the `/api/events` Endpoint
+### Fetching event data as CSV from the `/api/events` endpoint
 
 <!--lint disable maximum-line-length-->
 
