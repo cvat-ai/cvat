@@ -114,3 +114,7 @@ export class FieldUpdateTrigger {
 export function clamp(value: number, min: number, max: number): number {
     return Math.min(Math.max(value, min), max);
 }
+
+export function isResourceURL(url: string): boolean {
+    return /\/([0-9]+)$/.test(url);
+}

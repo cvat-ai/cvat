@@ -10,7 +10,7 @@ import pytz
 import traceback
 from datetime import datetime
 from distutils.util import strtobool
-from tempfile import mkstemp
+from tempfile import NamedTemporaryFile
 
 from django.db.models.query import Prefetch
 import django_rq
@@ -64,6 +64,7 @@ from cvat.apps.engine.serializers import (
     CloudStorageReadSerializer, DatasetFileSerializer,
     ProjectFileSerializer, TaskFileSerializer, CloudStorageContentSerializer)
 from cvat.apps.engine.view_utils import get_cloud_storage_for_import_or_export
+from cvat.apps.engine.schema import ORGANIZATION_OPEN_API_PARAMETERS
 
 from utils.dataset_manifest import ImageManifestManager
 from cvat.apps.engine.utils import (
@@ -204,6 +205,7 @@ class ServerViewSet(viewsets.ViewSet):
     create=extend_schema(
         summary='Method creates a new project',
         request=ProjectWriteSerializer,
+        parameters=ORGANIZATION_OPEN_API_PARAMETERS,
         responses={
             '201': ProjectReadSerializer, # check ProjectWriteSerializer.to_representation
         }),
@@ -339,7 +341,6 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 if rq_job is None:
                     return Response(status=status.HTTP_404_NOT_FOUND)
                 elif rq_job.is_finished:
-                    if rq_job.meta['tmp_file_descriptor']: os.close(rq_job.meta['tmp_file_descriptor'])
                     os.remove(rq_job.meta['tmp_file'])
                     if rq_job.dependency:
                         rq_job.dependency.delete()
@@ -484,6 +485,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     @extend_schema(summary='Methods create a project from a backup',
         parameters=[
+            *ORGANIZATION_OPEN_API_PARAMETERS,
             OpenApiParameter('location', description='Where to import the backup file from',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
                 enum=Location.list(), default=Location.LOCAL),
@@ -596,7 +598,6 @@ class DataChunkGetter:
                 # mimetype detection inside sendfile will work incorrectly.
                 path = os.path.realpath(frame_provider.get_chunk(self.number, self.quality))
                 return sendfile(request, path)
-
             elif self.type == 'frame' or self.type == 'preview':
                 if not (start <= self.number <= stop):
                     raise ValidationError('The frame number should be in ' +
@@ -637,6 +638,7 @@ class DataChunkGetter:
     create=extend_schema(
         summary='Method creates a new task in a database without any attached images and videos',
         request=TaskWriteSerializer,
+        parameters=ORGANIZATION_OPEN_API_PARAMETERS,
         responses={
             '201': TaskReadSerializer, # check TaskWriteSerializer.to_representation
         }),
@@ -715,6 +717,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     @extend_schema(summary='Method recreates a task from an attached task backup file',
         parameters=[
+            *ORGANIZATION_OPEN_API_PARAMETERS,
             OpenApiParameter('location', description='Where to import the backup file from',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
                 enum=Location.list(), default=Location.LOCAL),
@@ -1648,6 +1651,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     create=extend_schema(
         summary='Method creates an issue',
         request=IssueWriteSerializer,
+        parameters=ORGANIZATION_OPEN_API_PARAMETERS,
         responses={
             '201': IssueReadSerializer, # check IssueWriteSerializer.to_representation
         }),
@@ -1718,6 +1722,7 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     create=extend_schema(
         summary='Method creates a comment',
         request=CommentWriteSerializer,
+        parameters=ORGANIZATION_OPEN_API_PARAMETERS,
         responses={
             '201': CommentReadSerializer, # check CommentWriteSerializer.to_representation
         }),
@@ -1784,6 +1789,7 @@ class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 description='A simple equality filter for task id'),
             OpenApiParameter('project_id', type=OpenApiTypes.INT,
                 description='A simple equality filter for project id'),
+            *ORGANIZATION_OPEN_API_PARAMETERS
         ],
         responses={
             '200': LabelSerializer(many=True),
@@ -2032,6 +2038,7 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     create=extend_schema(
         summary='Method creates a cloud storage with a specified characteristics',
         request=CloudStorageWriteSerializer,
+        parameters=ORGANIZATION_OPEN_API_PARAMETERS,
         responses={
             '201': CloudStorageReadSerializer, # check CloudStorageWriteSerializer.to_representation
         })
@@ -2328,7 +2335,6 @@ def _import_annotations(request, rq_id, rq_func, db_obj, format_name,
         # If filename is specified we consider that file was uploaded via TUS, so it exists in filesystem
         # Then we dont need to create temporary file
         # Or filename specify key in cloud storage so we need to download file
-        fd = None
         dependent_job = None
         location = location_conf.get('location') if location_conf else Location.LOCAL
 
@@ -2337,10 +2343,13 @@ def _import_annotations(request, rq_id, rq_func, db_obj, format_name,
                 serializer = AnnotationFileSerializer(data=request.data)
                 if serializer.is_valid(raise_exception=True):
                     anno_file = serializer.validated_data['annotation_file']
-                    fd, filename = mkstemp(prefix='cvat_{}'.format(db_obj.pk), dir=settings.TMP_FILES_ROOT)
-                    with open(filename, 'wb+') as f:
+                    with NamedTemporaryFile(
+                        prefix='cvat_{}'.format(db_obj.pk),
+                        dir=settings.TMP_FILES_ROOT,
+                        delete=False) as tf:
+                        filename = tf.name
                         for chunk in anno_file.chunks():
-                            f.write(chunk)
+                            tf.write(chunk)
             else:
                 assert filename, 'The filename was not specified'
 
@@ -2355,7 +2364,12 @@ def _import_annotations(request, rq_id, rq_func, db_obj, format_name,
                     is_default=location_conf['is_default'])
 
                 key = filename
-                fd, filename = mkstemp(prefix='cvat_{}'.format(db_obj.pk), dir=settings.TMP_FILES_ROOT)
+                with NamedTemporaryFile(
+                    prefix='cvat_{}'.format(db_obj.pk),
+                    dir=settings.TMP_FILES_ROOT,
+                    delete=False) as tf:
+                    filename = tf.name
+
                 dependent_job = configure_dependent_job(
                     queue=queue,
                     rq_id=rq_id,
@@ -2369,7 +2383,6 @@ def _import_annotations(request, rq_id, rq_func, db_obj, format_name,
         av_scan_paths(filename)
         meta = {
             'tmp_file': filename,
-            'tmp_file_descriptor': fd,
         }
         rq_job = queue.enqueue_call(
             func=rq_func,
@@ -2380,7 +2393,6 @@ def _import_annotations(request, rq_id, rq_func, db_obj, format_name,
         )
     else:
         if rq_job.is_finished:
-            if rq_job.meta['tmp_file_descriptor']: os.close(rq_job.meta['tmp_file_descriptor'])
             os.remove(rq_job.meta['tmp_file'])
             rq_job.delete()
             return Response(status=status.HTTP_201_CREATED)
@@ -2513,17 +2525,20 @@ def _import_project_dataset(request, rq_id, rq_func, db_obj, format_name, filena
     rq_job = queue.fetch_job(rq_id)
 
     if not rq_job:
-        fd = None
         dependent_job = None
         location = location_conf.get('location') if location_conf else None
         if not filename and location != Location.CLOUD_STORAGE:
             serializer = DatasetFileSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
                 dataset_file = serializer.validated_data['dataset_file']
-                fd, filename = mkstemp(prefix='cvat_{}'.format(db_obj.pk), dir=settings.TMP_FILES_ROOT)
-                with open(filename, 'wb+') as f:
+                with NamedTemporaryFile(
+                    prefix='cvat_{}'.format(db_obj.pk),
+                    dir=settings.TMP_FILES_ROOT,
+                    delete=False) as tf:
+                    filename = tf.name
                     for chunk in dataset_file.chunks():
-                        f.write(chunk)
+                        tf.write(chunk)
+
         elif location == Location.CLOUD_STORAGE:
             assert filename, 'The filename was not specified'
             try:
@@ -2537,7 +2552,12 @@ def _import_project_dataset(request, rq_id, rq_func, db_obj, format_name, filena
                 is_default=location_conf['is_default'])
 
             key = filename
-            fd, filename = mkstemp(prefix='cvat_{}'.format(db_obj.pk), dir=settings.TMP_FILES_ROOT)
+            with NamedTemporaryFile(
+                prefix='cvat_{}'.format(db_obj.pk),
+                dir=settings.TMP_FILES_ROOT,
+                delete=False) as tf:
+                filename = tf.name
+
             dependent_job = configure_dependent_job(
                 queue=queue,
                 rq_id=rq_id,
@@ -2554,7 +2574,6 @@ def _import_project_dataset(request, rq_id, rq_func, db_obj, format_name, filena
             job_id=rq_id,
             meta={
                 'tmp_file': filename,
-                'tmp_file_descriptor': fd,
                 **get_rq_job_meta(request=request, db_obj=db_obj),
             },
             depends_on=dependent_job,
