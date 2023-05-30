@@ -58,10 +58,13 @@ def get_organization(request, obj):
 
     if obj:
         try:
-            organization_id = getattr(obj, "organization_id")
+            organization_id = getattr(obj, 'organization_id')
         except AttributeError as exc:
-            if isinstance(obj, User):
+            # Skip initialization of organization for those objects that don't related with organization
+            view = request.parser_context.get('view')
+            if view and view.basename in ('user', 'function', 'request'):
                 return None
+
             raise exc
 
         try:
