@@ -525,7 +525,7 @@ class TrackManager(ObjectManager):
                     error += 1
                     count += 1
 
-            return 1 - error / count
+            return 1 - error / (count or 1)
         else:
             return 0
 
@@ -554,10 +554,18 @@ class TrackManager(ObjectManager):
             copied["frame"] = frame
             if rotation is not None:
                 copied["rotation"] = rotation
+
+            if points is None:
+                points = copied["points"]
+
+            if isinstance(points, np.ndarray):
+                points = points.tolist()
+            else:
+                points = points.copy()
+
             if points is not None:
                 copied["points"] = points
-            else:
-                copied["points"] = source["points"].copy()
+
             return copied
 
         def find_angle_diff(right_angle, left_angle):
@@ -868,7 +876,7 @@ class TrackManager(ObjectManager):
         def propagate(shape, end_frame, *, included_frames=None):
             return [
                 copy_shape(shape, i)
-                for i in range(shape["frame"], end_frame)
+                for i in range(shape["frame"] + 1, end_frame)
                 if included_frames is None or i in included_frames
             ]
 
@@ -926,7 +934,12 @@ class TrackManager(ObjectManager):
             # https://github.com/openvinotoolkit/cvat/issues/2827
             if track["frame"] <= shape["frame"] < end_frame
 
-            if not shape["outside"] or include_outside
+            # Exclude outside shapes.
+            # Keyframes should be included regardless the outside value
+            # If really needed, they can be excluded on the later stages,
+            # but here they represent a finishing shape in a visible sequence
+            if shape["keyframe"] or not shape["outside"] or include_outside
+
             if included_frames is None or shape["frame"] in included_frames
         ]
 
