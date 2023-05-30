@@ -10,7 +10,6 @@ from typing import List, Tuple
 import packaging.version as pv
 import pytest
 from cvat_sdk import Client, models
-from cvat_sdk.api_client.exceptions import NotFoundException
 from cvat_sdk.core.client import Config, make_client
 from cvat_sdk.core.exceptions import IncompatibleVersionException, InvalidHostException
 from cvat_sdk.exceptions import ApiException
@@ -235,17 +234,56 @@ def test_organization_contexts(admin_user: str):
         client.projects.retrieve(personal_project.id)
         client.projects.retrieve(org_project.id)
 
-        # only the personal project should be visible in the personal workspace
+        # retrieve personal and org projects by id
         client.organization_slug = ""
         client.projects.retrieve(personal_project.id)
-        with pytest.raises(NotFoundException):
-            client.projects.retrieve(org_project.id)
+        client.projects.retrieve(org_project.id)
 
-        # only the organizational project should be visible in the organization
+        # org context doesn't make sense for detailed request
         client.organization_slug = org.slug
         client.projects.retrieve(org_project.id)
-        with pytest.raises(NotFoundException):
-            client.projects.retrieve(personal_project.id)
+        client.projects.retrieve(personal_project.id)
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+def test_organization_filtering(regular_lonely_user: str, fxt_image_file):
+    with make_client(BASE_URL, credentials=(regular_lonely_user, USER_PASS)) as client:
+        org = client.organizations.create(models.OrganizationWriteRequest(slug="testorg"))
+
+        # create a project and task in sandbox
+        client.organization_slug = None
+        client.projects.create(models.ProjectWriteRequest(name="personal_project"))
+        client.tasks.create_from_data(
+            spec={"name": "personal_task", "labels": [{"name": "a"}]}, resources=[fxt_image_file]
+        )
+
+        # create a project and task in the organization
+        client.organization_slug = org.slug
+        client.projects.create(models.ProjectWriteRequest(name="org_project"))
+        client.tasks.create_from_data(
+            spec={"name": "org_task", "labels": [{"name": "a"}]}, resources=[fxt_image_file]
+        )
+
+        # return only non-org objects if org parameter is empty
+        client.organization_slug = ""
+        projects, tasks, jobs = client.projects.list(), client.tasks.list(), client.jobs.list()
+
+        assert len(projects) == len(tasks) == len(jobs) == 1
+        assert projects[0].organization == tasks[0].organization == jobs[0].organization == None
+
+        # return all objects if org parameter wasn't presented
+        client.organization_slug = None
+        projects, tasks, jobs = client.projects.list(), client.tasks.list(), client.jobs.list()
+
+        assert len(projects) == len(tasks) == len(jobs) == 2
+        assert {None, org.id} == set([a.organization for a in (*projects, *tasks, *jobs)])
+
+        # return only org objects if org parameter is presented and not empty
+        client.organization_slug = org.slug
+        projects, tasks, jobs = client.projects.list(), client.tasks.list(), client.jobs.list()
+
+        assert len(projects) == len(tasks) == len(jobs) == 1
+        assert projects[0].organization == tasks[0].organization == jobs[0].organization == org.id
 
 
 def test_organization_context_manager():

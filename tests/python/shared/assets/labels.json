@@ -1,5 +1,5 @@
 {
-  "count": 35,
+  "count": 36,
   "next": null,
   "previous": null,
   "results": [
@@ -687,6 +687,35 @@
       ],
       "svg": "<line x1=\"49.88445281982422\" y1=\"18.897058486938477\" x2=\"35.59873962402344\" y2=\"61.081932067871094\" stroke=\"black\" data-type=\"edge\" data-node-from=\"3\" stroke-width=\"0.5\" data-node-to=\"2\"></line><line x1=\"70.72479248046875\" y1=\"68.30882263183594\" x2=\"49.88445281982422\" y2=\"18.897058486938477\" stroke=\"black\" data-type=\"edge\" data-node-from=\"4\" stroke-width=\"0.5\" data-node-to=\"3\"></line><line x1=\"25.0105037689209\" y1=\"31.165966033935547\" x2=\"70.72479248046875\" y2=\"68.30882263183594\" stroke=\"black\" data-type=\"edge\" data-node-from=\"1\" stroke-width=\"0.5\" data-node-to=\"4\"></line><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"25.0105037689209\" cy=\"31.165966033935547\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-id=\"59\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"35.59873962402344\" cy=\"61.081932067871094\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-id=\"60\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"49.88445281982422\" cy=\"18.897058486938477\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"3\" data-node-id=\"3\" data-label-id=\"61\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"70.72479248046875\" cy=\"68.30882263183594\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"4\" data-node-id=\"4\" data-label-id=\"62\"></circle>",
       "task_id": 21,
+      "type": "skeleton"
+    },
+    {
+      "attributes": [],
+      "color": "#91becf",
+      "has_parent": false,
+      "id": 63,
+      "name": "skeleton",
+      "parent_id": null,
+      "sublabels": [
+        {
+          "attributes": [],
+          "color": "#d12345",
+          "has_parent": true,
+          "id": 64,
+          "name": "1",
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#350dea",
+          "has_parent": true,
+          "id": 65,
+          "name": "2",
+          "type": "points"
+        }
+      ],
+      "svg": "<line x1=\"26.91233253479004\" y1=\"27.74985694885254\" x2=\"67.28083801269531\" y2=\"62.590728759765625\" stroke=\"black\" data-type=\"edge\" data-node-from=\"1\" stroke-width=\"0.5\" data-node-to=\"2\"></line><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"26.91233253479004\" cy=\"27.74985694885254\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-id=\"64\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"67.28083801269531\" cy=\"62.590728759765625\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-id=\"65\"></circle>",
+      "task_id": 8,
       "type": "skeleton"
     }
   ]

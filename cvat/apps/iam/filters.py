@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import coreapi
 from rest_framework.filters import BaseFilterBackend
 
 class OrganizationFilterBackend(BaseFilterBackend):
@@ -10,24 +9,55 @@ class OrganizationFilterBackend(BaseFilterBackend):
     organization_slug_description = 'Organization unique slug'
     organization_id = 'org_id'
     organization_id_description = 'Organization identifier'
-
-    def get_schema_fields(self, view):
-        return [
-            # NOTE: in coreapi.Field 'type', 'description' and 'example' are now deprecated, in favor of 'schema'.
-            coreapi.Field(name=self.organization_slug, location='query', required=False,
-                type='string', description=self.organization_slug_description),
-            coreapi.Field(name=self.organization_id, location='query', required=False,
-                type='string', description=self.organization_id_description),
-        ]
+    organization_slug_header = 'X-Organization'
 
     def filter_queryset(self, request, queryset, view):
-        # Rego rules should filter objects correctly (see filter rule). The
-        # filter isn't necessary but it is an extra check that we show only
-        # objects inside an organization if the request in context of the
-        # organization.
-        visibility = request.iam_context['visibility']
-        if visibility and view.iam_organization_field:
+        # Filter works only for "list" requests and allows to return
+        # only non-organization objects if org isn't specified
+
+        if view.detail or not view.iam_organization_field:
+            return queryset
+
+        visibility = None
+        org = request.iam_context['organization']
+
+        if org:
+            visibility = {'organization': org.id}
+
+        elif not org and (
+            self.organization_slug in request.query_params
+            or self.organization_id in request.query_params
+            or self.organization_slug_header in request.headers
+        ):
+            visibility = {'organization': None}
+
+        if visibility:
             visibility[view.iam_organization_field] = visibility.pop('organization')
             return queryset.filter(**visibility).distinct()
-        else:
-            return queryset
+
+        return queryset
+
+    def get_schema_operation_parameters(self, view):
+        if not view.iam_organization_field or view.detail:
+            return []
+
+        return [
+            {
+                'name': self.organization_slug,
+                'in': 'query',
+                'description': self.organization_slug_description,
+                'schema': {'type': 'string'},
+            },
+            {
+                'name': self.organization_id,
+                'in': 'query',
+                'description': self.organization_id_description,
+                'schema': {'type': 'integer'},
+            },
+            {
+                'name': self.organization_slug_header,
+                'in': 'header',
+                'description': self.organization_slug_description,
+                'schema': {'type': 'string'},
+            },
+        ]

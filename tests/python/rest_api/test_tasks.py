@@ -400,7 +400,6 @@ class TestPatchTaskAnnotations:
             (_, response) = api_client.tasks_api.partial_update_annotations(
                 id=tid,
                 action="update",
-                org=org,
                 patched_labeled_data_request=deepcopy(data),
                 _parse_response=False,
                 _check_status=False,
@@ -441,7 +440,6 @@ class TestPatchTaskAnnotations:
         with make_api_client(username) as api_client:
             (_, response) = api_client.tasks_api.partial_update_annotations(
                 id=tid,
-                org_id=org,
                 action="update",
                 patched_labeled_data_request=deepcopy(data),
                 _parse_response=False,
@@ -469,6 +467,104 @@ class TestGetTaskDataset:
     def test_can_export_task_with_several_jobs(self, admin_user, tid, format_name):
         response = self._test_export_task(admin_user, tid, format=format_name)
         assert response.data
+
+    @pytest.mark.parametrize("tid", [8])
+    def test_can_export_task_to_coco_format(self, admin_user, tid):
+        # these annotations contains incorrect frame numbers
+        # in order to check that server handle such cases
+        annotations = {
+            "version": 0,
+            "tags": [],
+            "shapes": [],
+            "tracks": [
+                {
+                    "label_id": 63,
+                    "frame": 1,
+                    "group": 0,
+                    "source": "manual",
+                    "shapes": [
+                        {
+                            "type": "skeleton",
+                            "frame": 1,
+                            "occluded": False,
+                            "outside": False,
+                            "z_order": 0,
+                            "rotation": 0,
+                            "points": [],
+                            "attributes": [],
+                        }
+                    ],
+                    "attributes": [],
+                    "elements": [
+                        {
+                            "label_id": 64,
+                            "frame": 0,
+                            "group": 0,
+                            "source": "manual",
+                            "shapes": [
+                                {
+                                    "type": "points",
+                                    "frame": 1,
+                                    "occluded": False,
+                                    "outside": True,
+                                    "z_order": 0,
+                                    "rotation": 0,
+                                    "points": [74.14935096036425, 79.09960455479086],
+                                    "attributes": [],
+                                },
+                                {
+                                    "type": "points",
+                                    "frame": 7,
+                                    "occluded": False,
+                                    "outside": False,
+                                    "z_order": 0,
+                                    "rotation": 0,
+                                    "points": [74.14935096036425, 79.09960455479086],
+                                    "attributes": [],
+                                },
+                            ],
+                            "attributes": [],
+                        },
+                        {
+                            "label_id": 65,
+                            "frame": 0,
+                            "group": 0,
+                            "source": "manual",
+                            "shapes": [
+                                {
+                                    "type": "points",
+                                    "frame": 0,
+                                    "occluded": False,
+                                    "outside": False,
+                                    "z_order": 0,
+                                    "rotation": 0,
+                                    "points": [285.07319976630424, 353.51583641966175],
+                                    "attributes": [],
+                                }
+                            ],
+                            "attributes": [],
+                        },
+                    ],
+                }
+            ],
+        }
+        response = patch_method(
+            admin_user, f"tasks/{tid}/annotations", annotations, action="update"
+        )
+        assert response.status_code == HTTPStatus.OK
+
+        # check that we can export task
+        response = self._test_export_task(admin_user, tid, format="COCO Keypoints 1.0")
+        assert response.status == HTTPStatus.OK
+
+        # check that server saved track annotations correctly
+        response = get_method(admin_user, f"tasks/{tid}/annotations")
+        assert response.status_code == HTTPStatus.OK
+
+        annotations = response.json()
+        assert annotations["tracks"][0]["frame"] == 0
+        assert annotations["tracks"][0]["shapes"][0]["frame"] == 0
+        assert annotations["tracks"][0]["elements"][0]["shapes"][0]["frame"] == 0
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -765,8 +861,9 @@ class TestPostTaskData:
             "server_files": cloud_storage_content,
         }
 
+        kwargs = {"org": org} if org else {}
         _test_create_task(
-            self._USERNAME, task_spec, data_spec, content_type="application/json", org=org
+            self._USERNAME, task_spec, data_spec, content_type="application/json", **kwargs
         )
 
     @pytest.mark.with_external_services
@@ -869,7 +966,7 @@ class TestPostTaskData:
         )
 
         with make_api_client(self._USERNAME) as api_client:
-            (task, response) = api_client.tasks_api.retrieve(task_id, org=org)
+            (task, response) = api_client.tasks_api.retrieve(task_id)
             assert response.status == HTTPStatus.OK
             assert task.size == task_size
 
@@ -958,7 +1055,6 @@ class TestPostTaskData:
             (None, "[e-z]*.jpeg", False, 0),
         ],
     )
-    @pytest.mark.parametrize("org", [""])
     def test_create_task_with_file_pattern(
         self,
         cloud_storage_id,
@@ -966,7 +1062,6 @@ class TestPostTaskData:
         filename_pattern,
         sub_dir,
         task_size,
-        org,
         cloud_storages,
         request,
     ):
@@ -1033,11 +1128,11 @@ class TestPostTaskData:
 
         if task_size:
             task_id, _ = _test_create_task(
-                self._USERNAME, task_spec, data_spec, content_type="application/json", org=org
+                self._USERNAME, task_spec, data_spec, content_type="application/json"
             )
 
             with make_api_client(self._USERNAME) as api_client:
-                (task, response) = api_client.tasks_api.retrieve(task_id, org=org)
+                (task, response) = api_client.tasks_api.retrieve(task_id)
                 assert response.status == HTTPStatus.OK
                 assert task.size == task_size
         else:
@@ -1309,11 +1404,11 @@ class TestWorkWithTask:
 
     @pytest.mark.with_external_services
     @pytest.mark.parametrize(
-        "cloud_storage_id, manifest, org",
-        [(1, "manifest.jsonl", "")],  # public bucket
+        "cloud_storage_id, manifest",
+        [(1, "manifest.jsonl")],  # public bucket
     )
     def test_work_with_task_containing_non_stable_cloud_storage_files(
-        self, cloud_storage_id, manifest, org, cloud_storages, request
+        self, cloud_storage_id, manifest, cloud_storages, request
     ):
         image_name = "image_case_65_1.png"
         cloud_storage_content = [image_name, manifest]
@@ -1331,7 +1426,7 @@ class TestWorkWithTask:
         }
 
         task_id, _ = _test_create_task(
-            self._USERNAME, task_spec, data_spec, content_type="application/json", org=org
+            self._USERNAME, task_spec, data_spec, content_type="application/json"
         )
 
         # save image from the "public" bucket and remove it temporary
@@ -1409,7 +1504,7 @@ class TestGetTaskPreview:
         tasks = list(filter(lambda x: x["project_id"] == project_id and x["assignee"], tasks))
         assert len(tasks)
 
-        self._test_assigned_users_to_see_task_preview(tasks, users, is_task_staff, org=org["slug"])
+        self._test_assigned_users_to_see_task_preview(tasks, users, is_task_staff)
 
     @pytest.mark.parametrize("project_id, groups", [(1, "user")])
     def test_task_unassigned_cannot_see_task_preview(

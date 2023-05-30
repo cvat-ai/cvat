@@ -491,9 +491,9 @@ class TestGetLabels(_TestLabelsPermissionsBase):
     def setup(self, restore_db_per_class, _base_setup):  # pylint: disable=arguments-differ
         pass
 
-    def _test_get_ok(self, user, lid, data, **kwargs):
+    def _test_get_ok(self, user, lid, data):
         with make_api_client(user) as client:
-            (_, response) = client.labels_api.retrieve(lid, **kwargs)
+            (_, response) = client.labels_api.retrieve(lid)
             assert response.status == HTTPStatus.OK
             assert (
                 DeepDiff(
@@ -505,10 +505,10 @@ class TestGetLabels(_TestLabelsPermissionsBase):
                 == {}
             )
 
-    def _test_get_denied(self, user, lid, **kwargs):
+    def _test_get_denied(self, user, lid):
         with make_api_client(user) as client:
             (_, response) = client.labels_api.retrieve(
-                lid, **kwargs, _check_status=False, _parse_response=False
+                lid, _check_status=False, _parse_response=False
             )
             assert response.status == HTTPStatus.FORBIDDEN
 
@@ -531,15 +531,12 @@ class TestGetLabels(_TestLabelsPermissionsBase):
             self._test_get_denied(user["username"], label["id"])
 
     def test_regular_user_get_org_label(self, user_org_case):
-        label, user, org_id, is_staff = get_attrs(
-            user_org_case, ["label", "user", "org_id", "is_staff"]
-        )
+        label, user, is_staff = get_attrs(user_org_case, ["label", "user", "is_staff"])
 
-        kwargs = {"org_id": org_id}
         if is_staff:
-            self._test_get_ok(user["username"], label["id"], label, **kwargs)
+            self._test_get_ok(user["username"], label["id"], label)
         else:
-            self._test_get_denied(user["username"], label["id"], **kwargs)
+            self._test_get_denied(user["username"], label["id"])
 
 
 class TestPatchLabels(_TestLabelsPermissionsBase):
@@ -727,20 +724,16 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
             self._test_update_denied(user["username"], label["id"], patch_data)
 
     def test_regular_user_patch_org_label(self, user_org_case):
-        label, user, org_id, is_staff = get_attrs(
-            user_org_case, ["label", "user", "org_id", "is_staff"]
-        )
-
-        kwargs = {"org_id": org_id}
+        label, user, is_staff = get_attrs(user_org_case, ["label", "user", "is_staff"])
 
         expected_data, patch_data, *_ = self._get_patch_data(label)
 
         if is_staff:
             self._test_update_ok(
-                user["username"], label["id"], patch_data, expected_data=expected_data, **kwargs
+                user["username"], label["id"], patch_data, expected_data=expected_data
             )
         else:
-            self._test_update_denied(user["username"], label["id"], patch_data, **kwargs)
+            self._test_update_denied(user["username"], label["id"], patch_data)
 
 
 class TestDeleteLabels(_TestLabelsPermissionsBase):
@@ -820,13 +813,9 @@ class TestDeleteLabels(_TestLabelsPermissionsBase):
             self._test_delete_denied(user["username"], label["id"])
 
     def test_regular_user_delete_org_label(self, user_org_case):
-        label, user, org_id, is_staff = get_attrs(
-            user_org_case, ["label", "user", "org_id", "is_staff"]
-        )
-
-        kwargs = {"org_id": org_id}
+        label, user, is_staff = get_attrs(user_org_case, ["label", "user", "is_staff"])
 
         if is_staff:
-            self._test_delete_ok(user["username"], label["id"], **kwargs)
+            self._test_delete_ok(user["username"], label["id"])
         else:
-            self._test_delete_denied(user["username"], label["id"], **kwargs)
+            self._test_delete_denied(user["username"], label["id"])

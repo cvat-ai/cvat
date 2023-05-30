@@ -14,8 +14,12 @@ without use_cache option (<https://github.com/opencv/cvat/pull/6074>)
 - Support task creation with cloud storage data and without use_cache option (<https://github.com/opencv/cvat/pull/6074>)
 
 ### Changed
+- Resource links are opened from any organization/sandbox if available for user (<https://github.com/opencv/cvat/pull/5892>)
 - Cloud storage manifest file is optional (<https://github.com/opencv/cvat/pull/6074>)
 - Updated Django to 4.2.x version (<https://github.com/opencv/cvat/pull/6122>)
+- Some Nuclio functions' names were changed to follow a common convention:
+  `onnx-yolov7` -> `onnx-wongkinyiu-yolov7`, `ultralytics-yolov5` -> `pth-ultralytics-yolov5`
+  (<https://github.com/opencv/cvat/pull/6140>)
 - Using Uvicorn ASGI server instead of Apache mod_wsgi for the backend (<https://github.com/opencv/cvat/pull/6195>)
 
 ### Deprecated
@@ -26,6 +30,7 @@ without use_cache option (<https://github.com/opencv/cvat/pull/6074>)
 
 ### Fixed
 - Skeletons dumping on created tasks/projects (<https://github.com/opencv/cvat/pull/6157>)
+- Fix saving annotations for skeleton tracks (<https://github.com/opencv/cvat/pull/6075>)
 
 ### Security
 - TDB

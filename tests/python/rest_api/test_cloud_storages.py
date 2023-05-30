@@ -26,11 +26,10 @@ pytestmark = [pytest.mark.with_external_services]
 
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetCloudStorage:
-    def _test_can_see(self, user, storage_id, data, **kwargs):
+    def _test_can_see(self, user, storage_id, data):
         with make_api_client(user) as api_client:
             (_, response) = api_client.cloudstorages_api.retrieve(
                 id=storage_id,
-                **kwargs,
                 _parse_response=False,
                 _check_status=False,
             )
@@ -44,11 +43,10 @@ class TestGetCloudStorage:
                 == {}
             )
 
-    def _test_cannot_see(self, user, storage_id, **kwargs):
+    def _test_cannot_see(self, user, storage_id):
         with make_api_client(user) as api_client:
             (_, response) = api_client.cloudstorages_api.retrieve(
                 id=storage_id,
-                **kwargs,
                 _parse_response=False,
                 _check_status=False,
             )
@@ -66,7 +64,6 @@ class TestGetCloudStorage:
     def test_sandbox_user_get_cloud_storage(
         self, storage_id, group, is_owner, is_allow, users, cloud_storages
     ):
-        org = ""
         cloud_storage = cloud_storages[storage_id]
         username = (
             cloud_storage["owner"]["username"]
@@ -81,9 +78,9 @@ class TestGetCloudStorage:
         )
 
         if is_allow:
-            self._test_can_see(username, storage_id, cloud_storage, org=org)
+            self._test_can_see(username, storage_id, cloud_storage)
         else:
-            self._test_cannot_see(username, storage_id, org=org)
+            self._test_cannot_see(username, storage_id)
 
     @pytest.mark.parametrize("org_id", [2])
     @pytest.mark.parametrize("storage_id", [2])
@@ -112,9 +109,9 @@ class TestGetCloudStorage:
         )
 
         if is_allow:
-            self._test_can_see(username, storage_id, cloud_storage, org_id=org_id)
+            self._test_can_see(username, storage_id, cloud_storage)
         else:
-            self._test_cannot_see(username, storage_id, org_id=org_id)
+            self._test_cannot_see(username, storage_id)
 
 
 class TestCloudStoragesListFilters(CollectionSimpleFilterTestBase):
@@ -258,12 +255,11 @@ class TestPatchCloudStorage:
         }
     ]
 
-    def _test_can_update(self, user, storage_id, spec, **kwargs):
+    def _test_can_update(self, user, storage_id, spec):
         with make_api_client(user) as api_client:
             (_, response) = api_client.cloudstorages_api.partial_update(
                 id=storage_id,
                 patched_cloud_storage_write_request=models.PatchedCloudStorageWriteRequest(**spec),
-                **kwargs,
                 _parse_response=False,
                 _check_status=False,
             )
@@ -275,12 +271,11 @@ class TestPatchCloudStorage:
                 == {}
             )
 
-    def _test_cannot_update(self, user, storage_id, spec, **kwargs):
+    def _test_cannot_update(self, user, storage_id, spec):
         with make_api_client(user) as api_client:
             (_, response) = api_client.cloudstorages_api.partial_update(
                 id=storage_id,
                 patched_cloud_storage_write_request=models.PatchedCloudStorageWriteRequest(**spec),
-                **kwargs,
                 _parse_response=False,
                 _check_status=False,
             )
@@ -298,7 +293,6 @@ class TestPatchCloudStorage:
     def test_sandbox_user_update_cloud_storage(
         self, storage_id, group, is_owner, is_allow, users, cloud_storages
     ):
-        org = ""
         cloud_storage = cloud_storages[storage_id]
         username = (
             cloud_storage["owner"]["username"]
@@ -313,9 +307,9 @@ class TestPatchCloudStorage:
         )
 
         if is_allow:
-            self._test_can_update(username, storage_id, self._SPEC, org=org)
+            self._test_can_update(username, storage_id, self._SPEC)
         else:
-            self._test_cannot_update(username, storage_id, self._SPEC, org=org)
+            self._test_cannot_update(username, storage_id, self._SPEC)
 
     @pytest.mark.parametrize("org_id", [2])
     @pytest.mark.parametrize("storage_id", [2])
@@ -344,18 +338,17 @@ class TestPatchCloudStorage:
         )
 
         if is_allow:
-            self._test_can_update(username, storage_id, self._PRIVATE_BUCKET_SPEC, org_id=org_id)
+            self._test_can_update(username, storage_id, self._PRIVATE_BUCKET_SPEC)
         else:
-            self._test_cannot_update(username, storage_id, self._PRIVATE_BUCKET_SPEC, org_id=org_id)
+            self._test_cannot_update(username, storage_id, self._PRIVATE_BUCKET_SPEC)
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetCloudStoragePreview:
-    def _test_can_see(self, user, storage_id, **kwargs):
+    def _test_can_see(self, user, storage_id):
         with make_api_client(user) as api_client:
             (_, response) = api_client.cloudstorages_api.retrieve_preview(
                 id=storage_id,
-                **kwargs,
                 _parse_response=False,
                 _check_status=False,
             )
@@ -364,11 +357,10 @@ class TestGetCloudStoragePreview:
             (width, height) = Image.open(io.BytesIO(response.data)).size
             assert width > 0 and height > 0
 
-    def _test_cannot_see(self, user, storage_id, **kwargs):
+    def _test_cannot_see(self, user, storage_id):
         with make_api_client(user) as api_client:
             (_, response) = api_client.cloudstorages_api.retrieve_preview(
                 id=storage_id,
-                **kwargs,
                 _parse_response=False,
                 _check_status=False,
             )
@@ -386,7 +378,6 @@ class TestGetCloudStoragePreview:
     def test_sandbox_user_get_cloud_storage_preview(
         self, storage_id, group, is_owner, is_allow, users, cloud_storages
     ):
-        org = ""
         cloud_storage = cloud_storages[storage_id]
         username = (
             cloud_storage["owner"]["username"]
@@ -401,9 +392,9 @@ class TestGetCloudStoragePreview:
         )
 
         if is_allow:
-            self._test_can_see(username, storage_id, org=org)
+            self._test_can_see(username, storage_id)
         else:
-            self._test_cannot_see(username, storage_id, org=org)
+            self._test_cannot_see(username, storage_id)
 
     @pytest.mark.parametrize("org_id", [2])
     @pytest.mark.parametrize("storage_id", [2])
@@ -432,9 +423,9 @@ class TestGetCloudStoragePreview:
         )
 
         if is_allow:
-            self._test_can_see(username, storage_id, org_id=org_id)
+            self._test_can_see(username, storage_id)
         else:
-            self._test_cannot_see(username, storage_id, org_id=org_id)
+            self._test_cannot_see(username, storage_id)
 
 
 class TestGetCloudStorageContent:

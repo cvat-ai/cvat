@@ -9,6 +9,7 @@ from django.utils.crypto import get_random_string
 
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
 from cvat.apps.engine.mixins import PartialUpdateModelMixin
+from cvat.apps.engine.schema import ORGANIZATION_OPEN_API_PARAMETERS
 
 from cvat.apps.iam.permissions import (
     InvitationPermission, MembershipPermission, OrganizationPermission)
@@ -56,7 +57,7 @@ class OrganizationViewSet(viewsets.GenericViewSet,
                    mixins.DestroyModelMixin,
                    PartialUpdateModelMixin,
     ):
-    queryset = Organization.objects.all()
+    queryset = Organization.objects.select_related('owner').all()
     search_fields = ('name', 'owner')
     filter_fields = list(search_fields) + ['id', 'slug']
     simple_filters = list(search_fields) + ['slug']
@@ -114,7 +115,7 @@ class OrganizationViewSet(viewsets.GenericViewSet,
 )
 class MembershipViewSet(mixins.RetrieveModelMixin, mixins.DestroyModelMixin,
     mixins.ListModelMixin, PartialUpdateModelMixin, viewsets.GenericViewSet):
-    queryset = Membership.objects.all()
+    queryset = Membership.objects.select_related('invitation', 'user').all()
     ordering = '-id'
     http_method_names = ['get', 'patch', 'delete', 'head', 'options']
     search_fields = ('user', 'role')
@@ -133,8 +134,11 @@ class MembershipViewSet(mixins.RetrieveModelMixin, mixins.DestroyModelMixin,
     def get_queryset(self):
         queryset = super().get_queryset()
 
-        permission = MembershipPermission.create_scope_list(self.request)
-        return permission.filter(queryset)
+        if self.action == 'list':
+            permission = MembershipPermission.create_scope_list(self.request)
+            queryset = permission.filter(queryset)
+
+        return queryset
 
 @extend_schema(tags=['invitations'])
 @extend_schema_view(
@@ -157,6 +161,7 @@ class MembershipViewSet(mixins.RetrieveModelMixin, mixins.DestroyModelMixin,
     create=extend_schema(
         summary='Method creates an invitation',
         request=InvitationWriteSerializer,
+        parameters=ORGANIZATION_OPEN_API_PARAMETERS,
         responses={
             '201': InvitationReadSerializer, # check InvitationWriteSerializer.to_representation
         }),

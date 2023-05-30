@@ -5,6 +5,7 @@
 import textwrap
 from typing import Type
 from rest_framework import serializers
+from drf_spectacular.utils import OpenApiParameter
 from drf_spectacular.extensions import OpenApiSerializerExtension
 from drf_spectacular.plumbing import force_instance, build_basic_type
 from drf_spectacular.types import OpenApiTypes
@@ -227,5 +228,28 @@ class CloudStorageReadSerializerExtension(_CloudStorageSerializerExtension):
 
 class CloudStorageWriteSerializerExtension(_CloudStorageSerializerExtension):
     target_class = 'cvat.apps.engine.serializers.CloudStorageWriteSerializer'
+
+ORGANIZATION_OPEN_API_PARAMETERS = [
+    OpenApiParameter(
+        name='org',
+        type=str,
+        required=False,
+        location=OpenApiParameter.QUERY,
+        description="Organization unique slug",
+    ),
+    OpenApiParameter(
+        name='org_id',
+        type=int,
+        required=False,
+        location=OpenApiParameter.QUERY,
+        description="Organization identifier",
+    ),
+    OpenApiParameter(
+        name='X-Organization',
+        type=str,
+        required=False,
+        location=OpenApiParameter.HEADER
+    ),
+]
 
 __all__ = [] # No public symbols here

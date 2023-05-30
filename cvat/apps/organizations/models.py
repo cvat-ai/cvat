@@ -56,7 +56,8 @@ class Invitation(models.Model):
     owner = models.ForeignKey(get_user_model(), null=True, on_delete=models.SET_NULL)
     membership = models.OneToOneField(Membership, on_delete=models.CASCADE)
 
-    def get_organization_id(self):
+    @property
+    def organization_id(self):
         return self.membership.organization_id
 
     def send(self):
