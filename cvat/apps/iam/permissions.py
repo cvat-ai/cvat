@@ -18,7 +18,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.permissions import BasePermission
 
 from cvat.apps.engine.models import (CloudStorage, Issue, Job, Label, Project,
-                                     Task, User)
+                                     Task)
 from cvat.apps.organizations.models import Membership, Organization
 from cvat.apps.webhooks.models import WebhookTypeChoice
 from cvat.utils.http import make_requests_session
