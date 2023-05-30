@@ -257,7 +257,7 @@ The dashboard shows all events, their timestamps, and their source.
 | **obj_name**         | Object or item related to the **Scope**.                                                                                   |
 | **obj_id**           | Object's id. Might be empty.                                                                                               |
 | **source**           | Source of the event, can be `client` or `server`.                                                                          |
-| **timestamp**        | Time when the event happened.                                                                                                  |
+| **timestamp**        | Time when the event happened.                                                                                              |
 | **count**            | Common field for all events, not null where it makes sense, for example, the <br>number of saved objects in an annotation. |
 | **duration**         | Duration in milliseconds.                                                                                                  |
 | **project_id**       | Id of the project.                                                                                                         |
@@ -316,7 +316,7 @@ The dashboard shows server logs, helps handle errors, and shows user activity.
 | **Active users (now)** | Number of active users on an instance.                                                                                                                                                                                             |
 | **Overall activity**   | Graph that shows the number of active users.                                                                                                                                                                                       |
 | **Exceptions**         | Graph that shows the number of errors that happened in the instance.                                                                                                                                                               |
-| **timestamp**          | Time when the error happened.                                                                                                                                                                                                          |
+| **timestamp**          | Time when the error happened.                                                                                                                                                                                                      |
 | **user_id**            | User ID.                                                                                                                                                                                                                           |
 | **user_name**          | User nickname.                                                                                                                                                                                                                     |
 | **project_id**         | Id of the project. Might be empty.                                                                                                                                                                                                 |
@@ -368,8 +368,8 @@ ORDER BY time
 ```
 
 > **Note**, that by default the updated configuration will not be saved
-and will be reset to the default parameters after you restart the
-container.
+> and will be reset to the default parameters after you restart the
+> container.
 
 To save the updated configuration, do the following:
 
@@ -383,18 +383,17 @@ To save the updated configuration, do the following:
 3. **Save Configuration**: To save your applied changes, on the top of the dashboard,
    click the **Save** button.
 
-    ![Apply changes](/images/save_results.jpg)
+![Apply changes](/images/save_results.jpg)
 
 4. **Replace Configuration File**: After saving, replace the existing
-    Grafana dashboard configuration file is located at
-    `components/analytics/grafana/dashboards` with the new JSON configuration file.
+   Grafana dashboard configuration file is located at
+   `components/analytics/grafana/dashboards` with the new JSON configuration file.
 
-    ![Apply changes](/images/save_json.jpg)
+   ![Apply changes](/images/save_json.jpg)
 
 5. **Restart Grafana Service**: To ensure, that all changes take effect,
-    restart the Grafana service. If you're using Docker Compose,
-    execute the following command: `docker compose restart cvat_grafana`.
+   restart the Grafana service. If you're using Docker Compose,
+   execute the following command: `docker compose restart cvat_grafana`.
 
 For more information,
 see [Grafana Dashboards](https://grafana.com/docs/grafana/latest/dashboards/).
-
