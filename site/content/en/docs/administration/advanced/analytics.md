@@ -63,7 +63,7 @@ docker compose up -d
 
 If you cannot access analytics on
 development environnement,
-See [Analytics Ports](/docs/contributing/development-environment/#cvat-analytics-ports)
+see [Analytics Ports](/docs/contributing/development-environment/#cvat-analytics-ports)
 
 ### Events log structure
 
@@ -72,25 +72,25 @@ schema with the following fields:
 
 <!--lint disable maximum-line-length-->
 
-| Field      | Description                                                                             |
-| ---------- | --------------------------------------------------------------------------------------- |
-| scope      | scope of the event (e.g., zoomin:image, add:annotations, delete:image, update:assignee) |
-| obj_name   | object name or None (e.g., task, job, cloudstorage, model, organization)                |
-| obj_id     | object identifier as in DB or None                                                      |
-| obj_val    | value for the event as string or None (e.g., frame number, number of added annotations) |
-| source     | who generates the log event (e.g., server, ui)                                          |
-| timestamp  | local event time (in general for UI and server, the time is different)                  |
-| count      | how many times in the row it occurs                                                     |
-| duration   | how much time does it take (it can be 0 for events without duration)                    |
-| project_id | project ID or None                                                                      |
-| task_id    | task ID or None                                                                         |
-| job_id     | job ID or None                                                                          |
-| user_id    | user ID or None                                                                         |
-| user_name  | user name or None                                                                       |
-| user_email | user email or None                                                                      |
-| org_id     | organization ID or None                                                                 |
-| org_slug   | org slug or none                                                                        |
-| payload    | JSON payload or None. Extra fields can be added to the JSON blob.                       |
+| Field      | Description                                                                                      |
+| ---------- | ------------------------------------------------------------------------------------------------ |
+| scope      | Scope of the event (e.g., `zoomin:image`, `add:annotations`, `delete:image`, `update:assignee`). |
+| obj_name   | Object name or None (e.g., task, job, cloudstorage, model, organization).                        |
+| obj_id     | Object identifier as in DB or None.                                                              |
+| obj_val    | Value for the event as string or None (e.g., frame number, number of added annotations).         |
+| source     | Who generates the log event (e.g., server, ui).                                                  |
+| timestamp  | Local event time (in general for UI and server, the time is different).                          |
+| count      | How many times in the row it occurs.                                                             |
+| duration   | How much time does it take (it can be 0 for events without duration).                            |
+| project_id | Project ID or None.                                                                              |
+| task_id    | Task ID or None.                                                                                 |
+| job_id     | Job ID or None.                                                                                  |
+| user_id    | User ID or None.                                                                                 |
+| user_name  | User name or None.                                                                               |
+| user_email | User email or None.                                                                              |
+| org_id     | Organization ID or None.                                                                         |
+| org_slug   | Organization slug or None.                                                                       |
+| payload    | JSON payload or None. Extra fields can be added to the JSON blob.                                |
 
 <!--lint enable maximum-line-length-->
 
@@ -151,15 +151,16 @@ Client events:
 
 ### Request `id` for tracking
 
-Note that every response to an API request made to the
+Note, that every response to an API request made to the
 the server includes a header named `X-Request-Id`,
 for example: `X-Request-Id: 6a2b7102-c4b9-4d57-8754-5658132ba37d`.
 
-This identifier is also recorded in all server events that occur as a result of the respective request.
+This identifier is also recorded in all server events that
+occur as a result of the respective request.
 
 For example, when an operation to create a task is performed,
 other related entities such as labels and attributes are
-generated on the server in addition to the Task object.
+generated on the server in addition to the **Task** object.
 
 All events associated with this operation will have the same `request_id` in
 the payload field.
@@ -172,8 +173,8 @@ The `/api/events` endpoint allows the fetching of
 event data with filtering parameters such as
 `org_id`, `project_id`, `task_id`, `job_id`, and `user_id`.
 
-More details can be found at the Swagger
-documentation: [API Documentation](https://app.cvat.ai/api/swagger/#/events/events_list).
+For more details,
+see [Swagger API Documentation](https://app.cvat.ai/api/swagger/#/events/events_list).
 
 For example, to fetch all events associated with a specific job,
 the following `curl` command can be used:
@@ -190,7 +191,7 @@ In the response, you will receive a query ID:
 
 As this process may take some time to complete,
 the status of the request can be checked by
-adding the query parameter `query_id `to the request:
+adding the query parameter `query_id` to the request:
 
 ```bash
 curl -I --user 'user:pass' https://app.cvat.ai/api/events?job_id=123&query_id=150cac1f-09f1-4d73-b6a5-5f47aa5d0031
@@ -210,7 +211,7 @@ x-frame-options: DENY
 x-request-id: 4631f5fa-a4f0-42a8-b77b-7426fc298a85
 ```
 
-Finally, the CSV file can be downloaded by
+The CSV file can be downloaded by
 adding the `action=download` query parameter to the request:
 
 ```bash
