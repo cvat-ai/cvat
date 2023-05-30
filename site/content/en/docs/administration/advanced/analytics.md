@@ -1,6 +1,6 @@
 ---
 title: 'CVAT Analytics and Monitoring'
-linkTitle: 'CVAT Analytics and monitoring'
+linkTitle: 'CVAT Analytics and Monitoring'
 weight: 20
 description: 'Instructions for deployment and customization of analytics and monitoring.'
 ---
