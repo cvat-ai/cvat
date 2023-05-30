@@ -35,7 +35,7 @@ See:
   - [Dashboard: All Events](#dashboard-all-events)
   - [Dashboard: Management](#dashboard-management)
   - [Dashboard: Monitoring](#dashboard-monitoring)
-  - [Dashboards update](#dashboards-update)
+  - [Dashboards setup](#dashboards-setup)
 
 ## High-level architecture
 
@@ -152,7 +152,7 @@ Client events:
 ### Request `id` for tracking
 
 Note that every response to an API request made to the
-server includes a header named `X-Request-Id`,
+the server includes a header named `X-Request-Id`,
 for example: `X-Request-Id: 6a2b7102-c4b9-4d57-8754-5658132ba37d`.
 
 This identifier is also recorded in all server events that occur as a result of the respective request.
@@ -257,7 +257,7 @@ The dashboard shows all events, their timestamps, and their source.
 | **obj_name**         | Object or item related to the **Scope**.                                                                                   |
 | **obj_id**           | Object's id. Might be empty.                                                                                               |
 | **source**           | Source of the event, can be `client` or `server`.                                                                          |
-| **timestamp**        | Time when event happened.                                                                                                  |
+| **timestamp**        | Time when the event happened.                                                                                                  |
 | **count**            | Common field for all events, not null where it makes sense, for example, the <br>number of saved objects in an annotation. |
 | **duration**         | Duration in milliseconds.                                                                                                  |
 | **project_id**       | Id of the project.                                                                                                         |
@@ -316,7 +316,7 @@ The dashboard shows server logs, helps handle errors, and shows user activity.
 | **Active users (now)** | Number of active users on an instance.                                                                                                                                                                                             |
 | **Overall activity**   | Graph that shows the number of active users.                                                                                                                                                                                       |
 | **Exceptions**         | Graph that shows the number of errors that happened in the instance.                                                                                                                                                               |
-| **timestamp**          | Time when error happened.                                                                                                                                                                                                          |
+| **timestamp**          | Time when the error happened.                                                                                                                                                                                                          |
 | **user_id**            | User ID.                                                                                                                                                                                                                           |
 | **user_name**          | User nickname.                                                                                                                                                                                                                     |
 | **project_id**         | Id of the project. Might be empty.                                                                                                                                                                                                 |
@@ -335,7 +335,7 @@ Every column name can be used like a filter.
 If you want to inspect the value, hover over it and click
 on the eye icon.
 
-### Dashboards update
+### Dashboards setup
 
 You can adjust the dashboards. To do this, click on the
 graph or table name and from the drop-down menu select **Edit**.
@@ -367,5 +367,34 @@ GROUP BY time
 ORDER BY time
 ```
 
+> **Note**, that by default the updated configuration will not be saved
+and will be reset to the default parameters after you restart the
+container.
+
+To save the updated configuration, do the following:
+
+1. **Update Configuration**: Start by making your desired changes in the query.
+
+2. **Apply Changes**: Once you've made your changes,
+   click the **Apply** button to ensure the changes are implemented.
+
+   ![Apply changes](/images/apply.jpg)
+
+3. **Save Configuration**: To save your applied changes, on the top of the dashboard,
+   click the **Save** button.
+
+    ![Apply changes](/images/save_results.jpg)
+
+4. **Replace Configuration File**: After saving, replace the existing
+    Grafana dashboard configuration file is located at
+    `components/analytics/grafana/dashboards` with the new JSON configuration file.
+
+    ![Apply changes](/images/save_json.jpg)
+
+5. **Restart Grafana Service**: To ensure, that all changes take effect,
+    restart the Grafana service. If you're using Docker Compose,
+    execute the following command: `docker compose restart cvat_grafana`.
+
 For more information,
 see [Grafana Dashboards](https://grafana.com/docs/grafana/latest/dashboards/).
+

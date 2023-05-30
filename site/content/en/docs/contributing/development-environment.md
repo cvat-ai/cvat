@@ -263,7 +263,6 @@ You develop CVAT under WSL (Windows subsystem for Linux) following next steps.
 In case you cannot access analytics, check if the following ports are open:
 
 ```json
-
 cvat_vector:
     ports:
       - '8282:80'
@@ -283,3 +282,4 @@ cvat_vector:
 
 Analytics on GitHub:
 [Analytics Components](https://github.com/opencv/cvat/tree/develop/components/analytics)
+
