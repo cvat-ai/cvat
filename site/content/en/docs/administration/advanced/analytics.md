@@ -1,6 +1,6 @@
 ---
-title: 'CVAT Analytics and Monitoring'
-linkTitle: 'CVAT Analytics and Monitoring'
+title: 'CVAT Analytics and monitoring'
+linkTitle: 'CVAT Analytics and monitoring'
 weight: 20
 description: 'Instructions for deployment and customization of analytics and monitoring.'
 ---
@@ -27,7 +27,7 @@ See:
 - [High-level architecture](#high-level-architecture)
 - [CVAT Analytics](#cvat-analytics)
   - [Ports settings](#ports-settings)
-  - [Events Log structure](#events-log-structure)
+  - [Events log structure](#events-log-structure)
   - [Types of supported events](#types-of-supported-events)
   - [Request `id` for tracking](#request-id-for-tracking)
   - [Fetching event data as CSV from the `/api/events` Endpoint](#fetching-event-data-as-csv-from-the-apievents-endpoint)
@@ -65,7 +65,7 @@ If you cannot access analytics on
 development environnement,
 See [Analytics Ports](/docs/contributing/development-environment/#cvat-analytics-ports)
 
-### Events Log structure
+### Events log structure
 
 [Relational database](https://github.com/opencv/cvat/blob/develop/components/analytics/clickhouse/init.sh)
 schema with the following fields:
