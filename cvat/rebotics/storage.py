@@ -93,7 +93,7 @@ class CustomAWSStaticStorage(BaseS3StorageWithPathMixin, StaticStorage):
     bucket_name = settings.AWS_S3_STATIC_BUCKET_NAME
     querystring_auth = settings.AWS_STATIC_QUERYSTRING_AUTH
     default_acl = settings.AWS_S3_STATIC_ACL
-    gzip = settings.AWS_S3_STATIC_GZIPPED
+    gzip = settings.AWS_S3_STATIC_GZIP
 
 
 def create_pre_signed_post(file_field):
