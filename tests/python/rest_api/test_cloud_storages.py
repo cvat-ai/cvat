@@ -575,6 +575,7 @@ class TestGetCloudStorageContent:
 
         assert expected_content == current_content
 
+
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestListCloudStorages:
     def _test_can_see_cloud_storages(self, user, data, **kwargs):
@@ -589,4 +590,6 @@ class TestListCloudStorages:
     @pytest.mark.parametrize("field_value, query_value", [(2, 2), (None, "")])
     def test_can_filter_by_org_id(self, field_value, query_value, cloud_storages):
         cloud_storages = filter(lambda i: i["organization"] == field_value, cloud_storages)
-        self._test_can_see_cloud_storages("admin2", list(cloud_storages), page_size="all", org_id=query_value)
+        self._test_can_see_cloud_storages(
+            "admin2", list(cloud_storages), page_size="all", org_id=query_value
+        )

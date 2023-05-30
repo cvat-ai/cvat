@@ -121,6 +121,7 @@ class TestInvitationsListFilters(CollectionSimpleFilterTestBase):
     def test_can_use_simple_filter_for_object_list(self, field):
         return super().test_can_use_simple_filter_for_object_list(field)
 
+
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestListInvitations:
     def _test_can_see_invitations(self, user, data, **kwargs):
@@ -135,5 +136,6 @@ class TestListInvitations:
     @pytest.mark.parametrize("field_value, query_value", [(1, 1), (None, "")])
     def test_can_filter_by_org_id(self, field_value, query_value, invitations):
         invitations = filter(lambda i: i["organization"] == field_value, invitations)
-        self._test_can_see_invitations("admin2", list(invitations), page_size="all", org_id=query_value)
-
+        self._test_can_see_invitations(
+            "admin2", list(invitations), page_size="all", org_id=query_value
+        )
