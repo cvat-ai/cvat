@@ -65,7 +65,7 @@ class OrganizationViewSet(viewsets.GenericViewSet,
     ordering_fields = list(filter_fields)
     ordering = '-id'
     http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
-    iam_organization_fields = None
+    iam_organization_field = None
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -123,7 +123,7 @@ class MembershipViewSet(mixins.RetrieveModelMixin, mixins.DestroyModelMixin,
     simple_filters = list(search_fields)
     ordering_fields = list(filter_fields)
     lookup_fields = {'user': 'user__username'}
-    iam_organization_fields = ('organization',)
+    iam_organization_field = 'organization'
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
@@ -180,7 +180,7 @@ class InvitationViewSet(viewsets.GenericViewSet,
     ):
     queryset = Invitation.objects.all()
     http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
-    iam_organization_fields = ('membership__organization',)
+    iam_organization_field = 'membership__organization'
 
     search_fields = ('owner',)
     filter_fields = list(search_fields)

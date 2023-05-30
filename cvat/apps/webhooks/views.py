@@ -68,7 +68,7 @@ class WebhookViewSet(viewsets.ModelViewSet):
     simple_filters = list(set(search_fields) - {"description"} | {"project_id"})
     ordering_fields = list(filter_fields)
     lookup_fields = {"owner": "owner__username"}
-    iam_organization_fields = ("organization",)
+    iam_organization_field = "organization"
 
     def get_serializer_class(self):
         if self.request.path.endswith("redelivery") or self.request.path.endswith(

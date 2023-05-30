@@ -737,7 +737,7 @@ def return_response(success_code=status.HTTP_200_OK):
 class FunctionViewSet(viewsets.ViewSet):
     lookup_value_regex = '[a-zA-Z0-9_.-]+'
     lookup_field = 'func_id'
-    iam_organization_fields = None
+    iam_organization_field = None
     serializer_class = None
 
     @return_response()
@@ -811,7 +811,7 @@ class FunctionViewSet(viewsets.ViewSet):
     delete=extend_schema(summary='Method cancels the request')
 )
 class RequestViewSet(viewsets.ViewSet):
-    iam_organization_fields = None
+    iam_organization_field = None
     serializer_class = None
 
     @return_response()

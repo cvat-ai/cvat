@@ -4,6 +4,7 @@
 
 from rest_framework.filters import BaseFilterBackend
 from django.db.models import Q
+from collections.abc import Iterable
 
 from drf_spectacular.utils import OpenApiParameter
 
@@ -41,11 +42,32 @@ class OrganizationFilterBackend(BaseFilterBackend):
                 return True
         return False
 
+    def _construct_filter_query(self, organization_fields, org_id):
+        if isinstance(organization_fields, str):
+            return Q(**{organization_fields: org_id})
+
+        if isinstance(organization_fields, Iterable):
+            # we select all db records where AT LEAST ONE organization field is equal org_id
+            operation = Q.OR
+
+            if org_id is None:
+                # but to get all non-org objects we need select db records where ALL organization fields are None
+                operation = Q.AND
+
+            filter_query = Q()
+            for org_field in organization_fields:
+                filter_query.add(Q(**{org_field: org_id}), operation)
+
+            return filter_query
+
+        return Q()
+
+
     def filter_queryset(self, request, queryset, view):
         # Filter works only for "list" requests and allows to return
         # only non-organization objects if org isn't specified
 
-        if view.detail or not view.iam_organization_fields:
+        if view.detail or not view.iam_organization_field:
             return queryset
 
         visibility = None
@@ -58,25 +80,15 @@ class OrganizationFilterBackend(BaseFilterBackend):
             visibility = {'organization': None}
 
         if visibility:
-            organization = visibility.pop("organization")
-
-            # we select all db records where AT LEAST ONE organization field is satisfied to query
-            operation = Q.OR
-
-            if organization is None:
-                # but to get all non-org objects we need select db records where ALL organization fields are None
-                operation = Q.AND
-
-            query = Q()
-            for org_field in view.iam_organization_fields:
-                query.add(Q(**{org_field: organization}), operation)
+            org_id = visibility.pop("organization")
+            query = self._construct_filter_query(view.iam_organization_field, org_id)
 
             return queryset.filter(query).distinct()
 
         return queryset
 
     def get_schema_operation_parameters(self, view):
-        if not view.iam_organization_fields or view.detail:
+        if not view.iam_organization_field or view.detail:
             return []
 
         parameters = []
