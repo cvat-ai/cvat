@@ -40,19 +40,26 @@ class MediaCache:
         self._cache = caches['media']
 
     def _get_or_set_cache_item(self, key, create_function):
+        slogger.glob.info(f'Starting to get chunk from cache: key {key}')
         item = self._cache.get(key)
+        slogger.glob.info(f'Ending to get chunk from cache: key {key}, is_cached {bool(item)}')
         if not item:
+            slogger.glob.info(f'Starting to prepare chunk: key {key}')
             item = create_function()
+            slogger.glob.info(f'Ending to prepare chunk: key {key}')
             if item[0]:
                 self._cache.set(key, item)
 
         return item
 
     def get_buf_chunk_with_mime(self, chunk_number, quality, db_data):
+        slogger.glob.info(f'Start chunk request: chunk number {chunk_number} data_id {db_data.id}')
         item = self._get_or_set_cache_item(
             key=f'{db_data.id}_{chunk_number}_{quality}',
             create_function=lambda: self._prepare_chunk_buff(db_data, quality, chunk_number),
         )
+
+        slogger.glob.info(f'End chunk request: chunk number {chunk_number} data_id {db_data.id}')
 
         return item
 
