@@ -383,7 +383,7 @@ To save the updated configuration, do the following:
 3. **Save Configuration**: To save your applied changes, on the top of the dashboard,
    click the **Save** button.
 
-![Apply changes](/images/save_results.jpg)
+   ![Apply changes](/images/save_results.jpg)
 
 4. **Replace Configuration File**: After saving, replace the existing
    Grafana dashboard configuration file is located at
