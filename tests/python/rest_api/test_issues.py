@@ -12,8 +12,7 @@ import pytest
 from cvat_sdk import models
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from deepdiff import DeepDiff
-
-from shared.utils.config import make_api_client, get_method
+from shared.utils.config import get_method, make_api_client
 
 from .utils import CollectionSimpleFilterTestBase
 
