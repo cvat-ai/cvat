@@ -1453,6 +1453,57 @@ class TestWorkWithTask:
                 assert image_name in ex.body
 
 
+class TestTaskBackups:
+    def _make_client(self) -> Client:
+        return Client(BASE_URL, config=Config(status_check_period=0.01))
+
+    @pytest.fixture(autouse=True)
+    def setup(self, restore_db_per_function, tmp_path: Path, admin_user: str):
+        self.tmp_dir = tmp_path
+
+        self.client = self._make_client()
+        self.user = admin_user
+
+        with self.client:
+            self.client.login((self.user, USER_PASS))
+
+    @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
+    def test_can_export_backup(self, tasks, mode):
+        task_id = next(t for t in tasks if t["mode"] == mode)["id"]
+        task = self.client.tasks.retrieve(task_id)
+
+        filename = self.tmp_dir / f"task_{task.id}_backup.zip"
+        task.download_backup(filename)
+
+        assert filename.is_file()
+        assert filename.stat().st_size > 0
+
+    @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
+    def test_can_import_backup(self, tasks, mode):
+        task_json = next(t for t in tasks if t["mode"] == mode and not t["project_id"] and not t["source_storage"] and not t["target_storage"])
+        task = self.client.tasks.retrieve(task_json["id"])
+
+        filename = self.tmp_dir / f"task_{task.id}_backup.zip"
+        task.download_backup(filename)
+
+        restored_task = self.client.tasks.create_from_backup(filename)
+
+        old_jobs = task.get_jobs()
+        new_jobs = restored_task.get_jobs()
+        assert len(old_jobs) == len(new_jobs)
+
+        for old_job, new_job in zip(old_jobs, new_jobs):
+            assert old_job.start_frame == new_job.start_frame
+            assert old_job.stop_frame == new_job.stop_frame
+
+        (_, response) = self.client.api_client.tasks_api.retrieve(restored_task.id)
+        restored_task_json = json.loads(response.data)
+        assert DeepDiff(task_json, restored_task_json, ignore_order=True,
+            exclude_regex_paths=["root['id']", "root['created_date']", "root['updated_date']"]
+        ) == {}
+
+
+
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetTaskPreview:
     def _test_task_preview_200(self, username, task_id, **kwargs):
