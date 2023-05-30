@@ -870,7 +870,7 @@ class TestPatchSettings(_PermissionTestBase):
 
         return response
 
-    def _get_request_data(self, data: Dict[str, Any]) -> tuple[Dict[str, Any], Dict[str, Any]]:
+    def _get_request_data(self, data: Dict[str, Any]) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         patched_data = deepcopy(data)
 
         for field, value in data.items():
