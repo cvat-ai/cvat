@@ -3694,6 +3694,7 @@ paths:
           - br
           - bs
           - ca
+          - ckb
           - cs
           - cy
           - da
@@ -3746,6 +3747,7 @@ paths:
           - ml
           - mn
           - mr
+          - ms
           - my
           - nb
           - ne
@@ -5821,6 +5823,7 @@ components:
         chunk_size:
           type: integer
           readOnly: true
+          nullable: true
         size:
           type: integer
           readOnly: true
@@ -6977,6 +6980,7 @@ components:
           type: string
           format: date-time
           readOnly: true
+          nullable: true
         role:
           allOf:
           - $ref: '#/components/schemas/RoleEnum'
@@ -8764,6 +8768,7 @@ components:
         status_code:
           type: integer
           readOnly: true
+          nullable: true
         redelivery:
           type: boolean
           readOnly: true
