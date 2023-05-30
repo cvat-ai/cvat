@@ -1826,9 +1826,6 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         'project__organization'
     ).all()
 
-    # NOTE: This filter works incorrectly for this view
-    # it requires task__organization OR project__organization check.
-    # Thus, we rely on permission-based filtering
     iam_organization_field = ('task__organization', 'project__organization')
 
     search_fields = ('name', 'parent')
