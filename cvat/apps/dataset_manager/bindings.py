@@ -433,6 +433,8 @@ class CommonData(InstanceLabelData):
             shape_data = ''
 
             if 'track_id' in shape:
+                if shape['outside']:
+                    continue
                 exported_shape = self._export_tracked_shape(shape)
             else:
                 exported_shape = self._export_labeled_shape(shape)
