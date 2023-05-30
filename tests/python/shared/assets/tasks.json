@@ -35,7 +35,6 @@
         "username": "user2"
       },
       "project_id": null,
-      "quality_settings": 17,
       "segment_size": 11,
       "size": 11,
       "source_storage": null,
@@ -77,7 +76,6 @@
         "username": "admin1"
       },
       "project_id": null,
-      "quality_settings": 16,
       "segment_size": 6,
       "size": 10,
       "source_storage": {
@@ -127,7 +125,6 @@
         "username": "admin1"
       },
       "project_id": 12,
-      "quality_settings": 15,
       "segment_size": 2,
       "size": 2,
       "source_storage": {
@@ -177,7 +174,6 @@
         "username": "admin1"
       },
       "project_id": null,
-      "quality_settings": 14,
       "segment_size": 2,
       "size": 2,
       "source_storage": {
@@ -227,7 +223,6 @@
         "username": "admin1"
       },
       "project_id": 11,
-      "quality_settings": 13,
       "segment_size": 2,
       "size": 2,
       "source_storage": {
@@ -283,7 +278,6 @@
         "username": "admin1"
       },
       "project_id": null,
-      "quality_settings": 12,
       "segment_size": 5,
       "size": 5,
       "source_storage": null,
@@ -325,7 +319,6 @@
         "username": "admin1"
       },
       "project_id": 8,
-      "quality_settings": 11,
       "segment_size": 25,
       "size": 25,
       "source_storage": {
@@ -375,7 +368,6 @@
         "username": "admin1"
       },
       "project_id": 5,
-      "quality_settings": 10,
       "segment_size": 8,
       "size": 8,
       "source_storage": {
@@ -431,7 +423,6 @@
         "username": "admin1"
       },
       "project_id": 4,
-      "quality_settings": 9,
       "segment_size": 5,
       "size": 5,
       "source_storage": null,
@@ -468,7 +459,6 @@
         "username": "admin1"
       },
       "project_id": null,
-      "quality_settings": 8,
       "segment_size": 0,
       "source_storage": null,
       "status": "annotation",
@@ -515,7 +505,6 @@
         "username": "business1"
       },
       "project_id": 2,
-      "quality_settings": 7,
       "segment_size": 11,
       "size": 11,
       "source_storage": {
@@ -571,7 +560,6 @@
         "username": "business1"
       },
       "project_id": 1,
-      "quality_settings": 6,
       "segment_size": 5,
       "size": 20,
       "source_storage": null,
@@ -619,7 +607,6 @@
         "username": "user1"
       },
       "project_id": null,
-      "quality_settings": 5,
       "segment_size": 14,
       "size": 14,
       "source_storage": null,
@@ -667,7 +654,6 @@
         "username": "business2"
       },
       "project_id": null,
-      "quality_settings": 4,
       "segment_size": 11,
       "size": 11,
       "source_storage": null,
@@ -709,7 +695,6 @@
         "username": "user1"
       },
       "project_id": null,
-      "quality_settings": 3,
       "segment_size": 1,
       "size": 1,
       "source_storage": null,
@@ -757,7 +742,6 @@
         "username": "user1"
       },
       "project_id": null,
-      "quality_settings": 2,
       "segment_size": 25,
       "size": 25,
       "source_storage": null,
@@ -805,7 +789,6 @@
         "username": "user1"
       },
       "project_id": null,
-      "quality_settings": 1,
       "segment_size": 23,
       "size": 23,
       "source_storage": null,

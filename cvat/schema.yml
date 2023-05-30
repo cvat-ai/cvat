@@ -3614,10 +3614,81 @@ paths:
                 type: object
                 additionalProperties: {}
           description: ''
+  /api/quality/settings:
+    get:
+      operationId: quality_list_settings
+      summary: Method returns a paginated list of quality settings
+      parameters:
+      - name: X-Organization
+        in: header
+        description: Organization unique slug
+        schema:
+          type: string
+      - name: filter
+        required: false
+        in: query
+        description: 'A filter term. Available filter_fields: [''id'', ''task_id'']'
+        schema:
+          type: string
+      - name: org
+        in: query
+        description: Organization unique slug
+        schema:
+          type: string
+      - name: org_id
+        in: query
+        description: Organization identifier
+        schema:
+          type: integer
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: 'A search term. Available search_fields: []'
+        schema:
+          type: string
+      - name: sort
+        required: false
+        in: query
+        description: 'Which field to use when ordering the results. Available ordering_fields:
+          [''id'']'
+        schema:
+          type: string
+      - name: task_id
+        in: query
+        description: A simple equality filter for the task_id field
+        schema:
+          type: integer
+      tags:
+      - quality
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/PaginatedQualitySettingsList'
+          description: ''
   /api/quality/settings/{id}:
     get:
       operationId: quality_retrieve_settings
-      summary: Method returns details of a quality settings
+      summary: Method returns details of quality settings
       parameters:
       - in: path
         name: id
@@ -7303,6 +7374,26 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/QualityReport'
+    PaginatedQualitySettingsList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/QualitySettings'
     PaginatedTaskReadList:
       type: object
       properties:
@@ -8005,7 +8096,7 @@ components:
         id:
           type: integer
           readOnly: true
-        task:
+        task_id:
           type: integer
           readOnly: true
         iou_threshold:
@@ -8541,9 +8632,6 @@ components:
           $ref: '#/components/schemas/JobsSummary'
         labels:
           $ref: '#/components/schemas/LabelsSummary'
-        quality_settings:
-          type: integer
-          readOnly: true
       required:
       - jobs
       - labels

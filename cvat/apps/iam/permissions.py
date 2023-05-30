@@ -1782,6 +1782,7 @@ class QualitySettingPermission(OpenPolicyAgentPermission):
     obj: Optional[QualitySettings]
 
     class Scopes(StrEnum):
+        LIST = 'list'
         VIEW = 'view'
         UPDATE = 'update'
 
@@ -1805,9 +1806,8 @@ class QualitySettingPermission(OpenPolicyAgentPermission):
                     # Access rights are the same as in the owning task
                     # This component doesn't define its own rules in this case
                     permissions.append(TaskPermission.create_base_perm(
-                        request, view,
-                        iam_context=iam_context, scope=task_scope, obj=obj.task)
-                    )
+                        request, view, iam_context=iam_context, scope=task_scope, obj=obj.task
+                    ))
                 else:
                     permissions.append(cls.create_base_perm(request, view, scope, iam_context, obj))
 
@@ -1821,6 +1821,7 @@ class QualitySettingPermission(OpenPolicyAgentPermission):
     def get_scopes(request, view, obj):
         Scopes = __class__.Scopes
         return [{
+            'list': Scopes.LIST,
             'retrieve': Scopes.VIEW,
             'partial_update': Scopes.UPDATE,
         }.get(view.action, None)]
