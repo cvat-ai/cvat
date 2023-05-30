@@ -15,9 +15,8 @@ without use_cache option (<https://github.com/opencv/cvat/pull/6074>)
 
 ### Changed
 - Cloud storage manifest file is optional (<https://github.com/opencv/cvat/pull/6074>)
-
-### Changed
 - Updated Django to 4.2.x version (<https://github.com/opencv/cvat/pull/6122>)
+- Using Uvicorn ASGI server instead of Apache mod_wsgi for the backend (<https://github.com/opencv/cvat/pull/6195>)
 
 ### Deprecated
 - The endpoint /cloudstorages/{id}/content was deprecated (<https://github.com/opencv/cvat/pull/6074>)
