@@ -525,7 +525,7 @@ class TrackManager(ObjectManager):
                     error += 1
                     count += 1
 
-            return 1 - error / count
+            return 1 - error / (count or 1)
         else:
             return 0
 
