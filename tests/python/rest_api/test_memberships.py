@@ -33,7 +33,9 @@ class TestGetMemberships:
     @pytest.mark.parametrize("field_value, query_value", [(1, 1), (None, "")])
     def test_can_filter_by_org_id(self, field_value, query_value, memberships):
         memberships = filter(lambda m: m["organization"] == field_value, memberships)
-        self._test_can_see_memberships("admin2", list(memberships), page_size="all", org_id=query_value)
+        self._test_can_see_memberships(
+            "admin2", list(memberships), page_size="all", org_id=query_value
+        )
 
     def test_non_admin_can_see_only_self_memberships(self, memberships):
         non_admins = ["business1", "user1", "dummy1", "worker2"]
@@ -71,7 +73,6 @@ class TestMembershipsListFilters(CollectionSimpleFilterTestBase):
     )
     def test_can_use_simple_filter_for_object_list(self, field):
         return super().test_can_use_simple_filter_for_object_list(field)
-
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
