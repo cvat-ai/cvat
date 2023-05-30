@@ -227,7 +227,7 @@ on your local machine.
 By default, three dashboards are available in CVAT.
 
 To access them, click **General**, you will be forwarded to the
-page with available dashboards:
+page with available dashboards.
 
 ![List of dashboards](/images/dashboard_00.jpg)
 
