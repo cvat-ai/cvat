@@ -290,14 +290,23 @@ class QualityReportViewSet(viewsets.GenericViewSet,
 
 @extend_schema(tags=["quality"])
 @extend_schema_view(
+    list=extend_schema(
+        summary='Method returns a paginated list of quality settings',
+        parameters=[
+            # TODO: add support for this
+            # *ORGANIZATION_OPEN_API_PARAMETERS,
+        ],
+        responses={
+            '200': QualityReportSerializer(many=True),
+        }),
     retrieve=extend_schema(
-        summary='Method returns details of a quality settings',
+        summary='Method returns details of quality settings',
         responses={
             '200': QualitySettingsSerializer,
         }),
 )
 class QualitySettingsViewSet(viewsets.GenericViewSet,
-    mixins.RetrieveModelMixin, PartialUpdateModelMixin
+    mixins.ListModelMixin, mixins.RetrieveModelMixin, PartialUpdateModelMixin
 ):
     queryset = QualitySettings.objects.select_related('task').all()
 

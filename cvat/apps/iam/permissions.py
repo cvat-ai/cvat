@@ -1782,6 +1782,7 @@ class QualitySettingPermission(OpenPolicyAgentPermission):
     obj: Optional[QualitySettings]
 
     class Scopes(StrEnum):
+        LIST = 'list'
         VIEW = 'view'
         UPDATE = 'update'
 
@@ -1792,10 +1793,10 @@ class QualitySettingPermission(OpenPolicyAgentPermission):
         permissions = []
         if view.basename == 'quality_settings':
             for scope in cls.get_scopes(request, view, obj):
-                if scope in [Scopes.VIEW, Scopes.UPDATE]:
+                if scope in [Scopes.LIST, Scopes.VIEW, Scopes.UPDATE]:
                     obj = cast(QualitySettings, obj)
 
-                    if scope == Scopes.VIEW:
+                    if scope in [Scopes.LIST, Scopes.VIEW]:
                         task_scope = TaskPermission.Scopes.VIEW
                     elif scope == Scopes.UPDATE:
                         task_scope = TaskPermission.Scopes.UPDATE_DESC
@@ -1821,6 +1822,7 @@ class QualitySettingPermission(OpenPolicyAgentPermission):
     def get_scopes(request, view, obj):
         Scopes = __class__.Scopes
         return [{
+            'list': Scopes.LISt,
             'retrieve': Scopes.VIEW,
             'partial_update': Scopes.UPDATE,
         }.get(view.action, None)]

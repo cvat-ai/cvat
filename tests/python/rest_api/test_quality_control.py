@@ -620,6 +620,105 @@ class TestSimpleQualityConflictsFilters(CollectionSimpleFilterTestBase):
         return super().test_can_use_simple_filter_for_object_list(field)
 
 
+
+@pytest.mark.usefixtures("restore_db_per_class")
+class TestListSettings(_PermissionTestBase):
+    def _test_list_settings_200(
+        self, user: str, obj_id: int, *, expected_data: Optional[Dict[str, Any]] = None, **kwargs
+    ):
+        with make_api_client(user) as api_client:
+            (_, response) = api_client.quality_api.retrieve_settings(obj_id, **kwargs)
+            assert response.status == HTTPStatus.OK
+
+        if expected_data is not None:
+            assert DeepDiff(expected_data, json.loads(response.data), ignore_order=True) == {}
+
+        return response
+
+    def _test_list_settings_403(self, user: str, obj_id: int, **kwargs):
+        with make_api_client(user) as api_client:
+            (_, response) = api_client.quality_api.retrieve_settings(
+                obj_id, **kwargs, _parse_response=False, _check_status=False
+            )
+            assert response.status == HTTPStatus.FORBIDDEN
+
+        return response
+
+    @pytest.mark.parametrize("is_staff, allow", [(True, True), (False, False)])
+    def test_user_list_settings_in_sandbox(
+        self, quality_settings, tasks, users, is_task_staff, is_staff, allow
+    ):
+        task = next(
+            t
+            for t in tasks
+            if t["organization"] is None and not users[t["owner"]["id"]]["is_superuser"]
+        )
+
+        if is_staff:
+            user = task["owner"]["username"]
+        else:
+            user = next(u for u in users if not is_task_staff(u["id"], task["id"]))["username"]
+
+        settings_id = task["quality_settings"]
+        settings = quality_settings[settings_id]
+
+        if allow:
+            self._test_list_settings_200(user, settings_id, expected_data=settings)
+        else:
+            self._test_list_settings_403(user, settings_id)
+
+    @pytest.mark.parametrize(
+        "org_role, is_staff, allow",
+        [
+            ("owner", True, True),
+            ("owner", False, True),
+            ("maintainer", True, True),
+            ("maintainer", False, True),
+            ("supervisor", True, True),
+            ("supervisor", False, False),
+            ("worker", True, True),
+            ("worker", False, False),
+        ],
+    )
+    def test_user_get_settings_in_org_task(
+        self,
+        tasks,
+        users,
+        is_org_member,
+        is_task_staff,
+        org_role,
+        is_staff,
+        allow,
+        quality_settings,
+    ):
+        for user in users:
+            if user["is_superuser"]:
+                continue
+
+            task = next(
+                (
+                    t
+                    for t in tasks
+                    if t["organization"] is not None
+                    and is_task_staff(user["id"], t["id"]) == is_staff
+                    and is_org_member(user["id"], t["organization"], role=org_role)
+                ),
+                None,
+            )
+            if task is not None:
+                break
+
+        assert task
+
+        settings_id = task["quality_settings"]
+        settings = quality_settings[settings_id]
+
+        if allow:
+            self._test_list_settings_200(user["username"], settings_id, expected_data=settings)
+        else:
+            self._test_list_settings_403(user["username"], settings_id)
+
+
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetSettings(_PermissionTestBase):
     def _test_get_settings_200(
