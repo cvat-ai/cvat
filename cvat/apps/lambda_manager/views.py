@@ -19,6 +19,7 @@ import django_rq
 import numpy as np
 import requests
 import rq
+from cvat.apps.lambda_manager.signals import lambda_function_call_signal
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from drf_spectacular.types import OpenApiTypes
@@ -27,6 +28,7 @@ from drf_spectacular.utils import (OpenApiParameter, OpenApiResponse,
                                    inline_serializer)
 from rest_framework import serializers, status, viewsets
 from rest_framework.response import Response
+from rest_framework.request import Request
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.engine.frame_provider import FrameProvider
@@ -194,7 +196,7 @@ class LambdaFunction:
 
         return response
 
-    def invoke(self, db_task: Task, data: Dict[str, Any], *, db_job: Optional[Job] = None):
+    def invoke(self, db_task: Task, request: Request, *, db_job: Optional[Job] = None):
         try:
             if db_job is not None and db_job.get_task_id() != db_task.id:
                 raise ValidationError("Job task id does not match task id",
@@ -202,7 +204,7 @@ class LambdaFunction:
                 )
 
             payload = {}
-            data = {k: v for k,v in data.items() if v is not None}
+            data = {k: v for k,v in request.data.items() if v is not None}
             threshold = data.get("threshold")
             if threshold:
                 payload.update({ "threshold": threshold })
@@ -299,7 +301,10 @@ class LambdaFunction:
                 .format(self.id, str(err)),
                 code=status.HTTP_400_BAD_REQUEST)
 
+        lambda_function_call_signal.send(sender=self, request=request)
+
         response = self.gateway.invoke(self, payload)
+
         response_filtered = []
         def check_attr_value(value, func_attr, db_attr):
             if db_attr is None:
@@ -788,7 +793,7 @@ class FunctionViewSet(viewsets.ViewSet):
         gateway = LambdaGateway()
         lambda_func = gateway.get(func_id)
 
-        return lambda_func.invoke(db_task, request.data, db_job=job)
+        return lambda_func.invoke(db_task, request, db_job=job)
 
 @extend_schema(tags=['lambda'])
 @extend_schema_view(
