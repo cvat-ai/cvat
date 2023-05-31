@@ -30,6 +30,8 @@ without use_cache option (<https://github.com/opencv/cvat/pull/6074>)
 ### Fixed
 - Skeletons dumping on created tasks/projects (<https://github.com/opencv/cvat/pull/6157>)
 - Fix saving annotations for skeleton tracks (<https://github.com/opencv/cvat/pull/6075>)
+- The problem with manifest file during task restoring from backup (<https://github.com/opencv/cvat/issues/5971>)
+- The problem with task mode in a task restored from backup (<https://github.com/opencv/cvat/issues/5668>)
 
 ### Security
 - TDB
