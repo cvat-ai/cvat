@@ -1478,11 +1478,29 @@ class TestTaskBackups:
         assert filename.is_file()
         assert filename.stat().st_size > 0
 
-    @pytest.mark.usefixtures('restore_cvat_data')
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_import_backup(self, tasks, mode):
-        task_json = next(t for t in tasks if t["mode"] == mode and not t["project_id"] and not t["source_storage"] and not t["target_storage"])
+        task_json = next(t for t in tasks if t["mode"] == mode)
+        self._test_can_restore_backup_task(task_json["id"])
+
+    @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
+    def test_can_import_backup_for_task_in_nondefault_state(self, tasks, mode):
+        # Reproduces the problem with empty 'mode' in a restored task,
+        # described in the reproduction steps https://github.com/opencv/cvat/issues/5668
+
+        task_json = next(t for t in tasks if t["mode"] == mode and t["jobs"]["count"])
+
         task = self.client.tasks.retrieve(task_json["id"])
+        jobs = task.get_jobs()
+        for j in jobs:
+            j.update({"stage": "validation"})
+
+        self._test_can_restore_backup_task(task_json["id"])
+
+    def _test_can_restore_backup_task(self, task_id: int):
+        task = self.client.tasks.retrieve(task_id)
+        (_, response) = self.client.api_client.tasks_api.retrieve(task_id)
+        task_json = json.loads(response.data)
 
         filename = self.tmp_dir / f"task_{task.id}_backup.zip"
         task.download_backup(filename)
@@ -1494,26 +1512,53 @@ class TestTaskBackups:
         assert len(old_jobs) == len(new_jobs)
 
         for old_job, new_job in zip(old_jobs, new_jobs):
+            assert old_job.status == new_job.status
             assert old_job.start_frame == new_job.start_frame
             assert old_job.stop_frame == new_job.stop_frame
 
         (_, response) = self.client.api_client.tasks_api.retrieve(restored_task.id)
         restored_task_json = json.loads(response.data)
-        assert DeepDiff(task_json, restored_task_json, ignore_order=True,
-            exclude_regex_paths=[
-                r"root\['id'\]",
-                r"root\['created_date'\]",
-                r"root\['updated_date'\]",
-                r"root\['assignee'\]",
-                r"root\['owner'\]",
-                r"root\['data'\]",
-                r"root\['organization'\]",
-                r"root\['project_id'\]",
-                r"root\['status'\]",
-                r"root(\['.*'\])*\['url'\]",
-            ]
-        ) == {}
 
+        assert restored_task_json["assignee"] is None
+        assert restored_task_json["owner"]["username"] == self.user
+        assert restored_task_json["id"] != task_json["id"]
+        assert restored_task_json["data"] != task_json["data"]
+        assert restored_task_json["organization"] is None
+        assert restored_task_json["data_compressed_chunk_type"] in ["imageset", "video"]
+        if task_json["jobs"]["count"] == 1:
+            assert restored_task_json["overlap"] == 0
+        else:
+            assert restored_task_json["overlap"] == task_json["overlap"]
+        assert restored_task_json["source_storage"] is None
+        assert restored_task_json["target_storage"] is None
+        assert restored_task_json["project_id"] is None
+
+        assert (
+            DeepDiff(
+                task_json,
+                restored_task_json,
+                ignore_order=True,
+                exclude_regex_paths=[
+                    r"root\['id'\]",  # id, must be different
+                    r"root\['created_date'\]",  # must be different
+                    r"root\['updated_date'\]",  # must be different
+                    r"root\['assignee'\]",  # id, depends on the situation
+                    r"root\['owner'\]",  # id, depends on the situation
+                    r"root\['data'\]",  # id, must be different
+                    r"root\['organization'\]",  # depends on the task setup
+                    r"root\['project_id'\]",  # should be dropped
+                    r"root(\['.*'\])*\['url'\]",  # depends on the task id
+                    r"root\['data_compressed_chunk_type'\]",  # depends on the server configuration
+                    r"root\['source_storage'\]",  # should be dropped
+                    r"root\['target_storage'\]",  # should be dropped
+                    # depends on the actual job configuration,
+                    # unlike to what is obtained from the regular task creation,
+                    # where the requested number is recorded
+                    r"root\['overlap'\]",
+                ],
+            )
+            == {}
+        )
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
