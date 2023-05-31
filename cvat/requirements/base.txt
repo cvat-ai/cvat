@@ -58,7 +58,7 @@ coreapi==2.3.3
     # via -r cvat/requirements/base.in
 coreschema==0.0.4
     # via coreapi
-coverage==6.5.0
+coverage==7.2.3
     # via -r cvat/requirements/base.in
 croniter==1.3.14
     # via rq-scheduler

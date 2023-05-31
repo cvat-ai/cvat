@@ -220,10 +220,6 @@ def create_compose_files(container_name_files):
                 if service_name == "cvat_server":
                     service_env = service_config["environment"]
                     service_env["DJANGO_SETTINGS_MODULE"] = "cvat.settings.testing_rest"
-                    service_env["DJANGO_MODWSGI_EXTRA_ARGS"] = "--debug-mode --enable-coverage --coverage-directory reports"
-                elif service_name in ["cvat_worker_webhooks", "cvat_worker_annotation", "cvat_worker_export", "cvat_worker_import", "cvat_utils"]:
-                    service_env = service_config["environment"]
-                    service_env["DJANGO_CMD_RUN"] = "coverage run"
 
             yaml.dump(dc_config, ndcf)
 
@@ -432,21 +428,12 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
 
 def collect_code_coverage_from_containers():
     for container in CODE_COVERED_CONTAINERS:
-        if container == SERVER_CONTAINER:
-            process_search = "pidof apache2"
-        else:
-            process_search = "pidof python coverage"
-
-        # find process with code coverage
-        pid, _ = docker_exec(container, process_search)
-
         # stop process with code coverage
-        docker_exec(container, f"kill -15 {pid}")
-        while not run(f"docker exec -u root {SERVER_CONTAINER} {process_search}", shell=True).returncode:
-            sleep(1)
+        docker_exec(container, f"kill -15 1")
+        sleep(5)
 
         # get code coverage report
-        docker_exec(container, "coverage xml -i")
+        docker_exec(container, "coverage xml")
         docker_cp(f"{container}:home/django/coverage.xml", f"coverage_{container}.xml")
 
 
