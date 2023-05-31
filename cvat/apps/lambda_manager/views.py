@@ -12,7 +12,7 @@ from django_sendfile import sendfile
 from copy import deepcopy
 from enum import Enum
 from functools import wraps
-from typing import Any, Dict, Optional
+from typing import Optional
 
 import datumaro.util.mask_tools as mask_tools
 import django_rq
