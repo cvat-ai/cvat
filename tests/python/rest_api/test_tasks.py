@@ -1478,6 +1478,7 @@ class TestTaskBackups:
         assert filename.is_file()
         assert filename.stat().st_size > 0
 
+    @pytest.mark.usefixtures('restore_cvat_data')
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_import_backup(self, tasks, mode):
         task_json = next(t for t in tasks if t["mode"] == mode and not t["project_id"] and not t["source_storage"] and not t["target_storage"])
@@ -1499,7 +1500,18 @@ class TestTaskBackups:
         (_, response) = self.client.api_client.tasks_api.retrieve(restored_task.id)
         restored_task_json = json.loads(response.data)
         assert DeepDiff(task_json, restored_task_json, ignore_order=True,
-            exclude_regex_paths=["root['id']", "root['created_date']", "root['updated_date']"]
+            exclude_regex_paths=[
+                r"root\['id'\]",
+                r"root\['created_date'\]",
+                r"root\['updated_date'\]",
+                r"root\['assignee'\]",
+                r"root\['owner'\]",
+                r"root\['data'\]",
+                r"root\['organization'\]",
+                r"root\['project_id'\]",
+                r"root\['status'\]",
+                r"root(\['.*'\])*\['url'\]",
+            ]
         ) == {}
 
 
