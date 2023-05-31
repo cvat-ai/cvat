@@ -167,10 +167,10 @@ COPY --from=build-image-av /opt/ffmpeg/lib /usr/lib
 # These variables are required for supervisord substitutions in files
 # This library allows remote python debugging with VS Code
 ARG CVAT_DEBUG_ENABLED
-RUN if [ "${CVAT_DEBUG_ENABLED}" = 'yes' ]; then \
-        python3 -m pip install --no-cache-dir debugpy; \
-    fi
-
+# RUN if [ "${CVAT_DEBUG_ENABLED}" = 'yes' ]; then \
+#         python3 -m pip install --no-cache-dir debugpy; \
+#     fi
+RUN python3 -m pip install --no-cache-dir debugpy
 # Install and initialize CVAT, copy all necessary files
 COPY --chown=${USER} components /tmp/components
 COPY --chown=${USER} supervisord/ ${HOME}/supervisord
@@ -178,6 +178,12 @@ COPY --chown=${USER} ssh ${HOME}/.ssh
 COPY --chown=${USER} mod_wsgi.conf wait-for-it.sh manage.py ${HOME}/
 COPY --chown=${USER} utils/ ${HOME}/utils
 COPY --chown=${USER} cvat/ ${HOME}/cvat
+COPY --chown=${USER} .coveragerc ${HOME}/
+# COPY --chown=${USER} sitecustomize.py ${HOME}/sitecustomize.py
+
+# ENV PYTHONPATH={HOME}/sitecustomize.py
+COPY coverage_subprocess.pth /opt/venv/lib/python3.10/site-packages/coverage_subprocess.pth
+COPY coverage_subprocess.pth /usr/lib/python3/dist-packages/coverage_subprocess.pth
 
 # RUN all commands below as 'django' user
 USER ${USER}
