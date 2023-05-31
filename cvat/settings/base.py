@@ -665,12 +665,12 @@ AWS_S3_OBJECT_PARAMETERS = {
 }
 
 AWS_S3_STATIC_BUCKET_NAME = os.getenv('AWS_S3_STATIC_BUCKET_NAME')
+AWS_S3_STATIC_LOCATION = os.getenv('AWS_S3_STATIC_LOCATION', f'{ENVIRONMENT}-cvat-static')
+AWS_STATIC_QUERYSTRING_AUTH = bool(int(os.getenv('AWS_STATIC_QUERYSTRING_AUTH', 0)))
+AWS_S3_STATIC_ACL = os.getenv('AWS_S3_STATIC_ACL', 'public-read')
+AWS_S3_STATIC_GZIP = bool(int(os.getenv('AWS_S3_STATIC_GZIP', 1)))
 if AWS_S3_STATIC_BUCKET_NAME:
     STATICFILES_STORAGE = 'cvat.rebotics.storage.CustomAWSStaticStorage'
-    AWS_S3_STATIC_LOCATION = os.getenv('AWS_S3_STATIC_LOCATION', f'{ENVIRONMENT}-cvat-static')
-    AWS_STATIC_QUERYSTRING_AUTH = bool(int(os.getenv('AWS_STATIC_QUERYSTRING_AUTH', 0)))
-    AWS_S3_STATIC_ACL = os.getenv('AWS_S3_STATIC_ACL', 'public-read')
-    AWS_S3_STATIC_GZIP = bool(int(os.getenv('AWS_S3_STATIC_GZIP', 1)))
 
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static-ui')
