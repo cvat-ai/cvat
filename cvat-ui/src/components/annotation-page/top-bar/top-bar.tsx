@@ -7,7 +7,10 @@ import React from 'react';
 import Input from 'antd/lib/input';
 import { Col, Row } from 'antd/lib/grid';
 
-import { ActiveControl, ToolsBlockerState, Workspace } from 'reducers';
+import {
+    ActiveControl, ToolsBlockerState, Workspace, CombinedState,
+} from 'reducers';
+import { usePlugins } from 'utils/hooks';
 import LeftGroup from './left-group';
 import PlayerButtons from './player-buttons';
 import PlayerNavigation from './player-navigation';
@@ -68,6 +71,7 @@ interface Props {
 }
 
 export default function AnnotationTopBarComponent(props: Props): JSX.Element {
+    const plugins = usePlugins((state: CombinedState) => state.plugins.components.annotationPage.header.player, props);
     const {
         saving,
         undoAction,
@@ -182,6 +186,14 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                     />
                 </Row>
             </Col>
+            <Col className='cvat-annotation-header-plugins'>
+                {
+                    plugins.map(({ component: Component }, index) => (
+                        <Component targetProps={props} key={index} />
+                    ))
+                }
+            </Col>
+
             <RightGroup
                 workspace={workspace}
                 jobInstance={jobInstance}

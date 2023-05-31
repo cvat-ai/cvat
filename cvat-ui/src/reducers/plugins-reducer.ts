@@ -36,6 +36,11 @@ const defaultState: PluginsState = {
         },
         router: [],
         loggedInModals: [],
+        annotationPage: {
+            header: {
+                player: [],
+            },
+        },
     },
 };
 

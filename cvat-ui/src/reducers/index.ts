@@ -301,6 +301,11 @@ export interface PluginsState {
         };
         router: PluginComponent[];
         loggedInModals: PluginComponent[];
+        annotationPage: {
+            header: {
+                player: PluginComponent[],
+            };
+        };
     }
 }
 
