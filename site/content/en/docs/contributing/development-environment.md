@@ -272,7 +272,7 @@ cvat_vector:
       - '8123:8123'
 ```
 
-**Or** remove the following data from
+In addition, you can completely disable analytics if you don't need it by deleting the following data from
 [launch.json](https://github.com/opencv/cvat/blob/develop/.vscode/launch.json):
 
 ```json
