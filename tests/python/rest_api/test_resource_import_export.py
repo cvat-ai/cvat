@@ -135,7 +135,7 @@ class TestExportResourceToS3(_S3ResourceTest):
         user = regular_lonely_user
 
         project_spec = {"name": "Test project"}
-        project = post_method(user, "/projects", project_spec).json()
+        project = post_method(user, "projects", project_spec).json()
         project_id = project["id"]
 
         task_spec = {
@@ -156,7 +156,7 @@ class TestExportResourceToS3(_S3ResourceTest):
             user, task_spec, data_spec, content_type="application/json"
         )
 
-        jobs = get_method(user, "/jobs", task_id=task_id).json()["results"]
+        jobs = get_method(user, "jobs", task_id=task_id).json()["results"]
         job_id = jobs[0]["id"]
 
         if obj == "projects":
@@ -283,7 +283,7 @@ class TestImportResourceFromS3(_S3ResourceTest):
         user = regular_lonely_user
 
         project_spec = {"name": "Test project"}
-        project = post_method(user, "/projects", project_spec).json()
+        project = post_method(user, "projects", project_spec).json()
         project_id = project["id"]
 
         task_spec = {
@@ -304,7 +304,7 @@ class TestImportResourceFromS3(_S3ResourceTest):
             user, task_spec, data_spec, content_type="application/json"
         )
 
-        jobs = get_method(user, "/jobs", task_id=task_id).json()["results"]
+        jobs = get_method(user, "jobs", task_id=task_id).json()["results"]
         job_id = jobs[0]["id"]
 
         if obj == "projects":

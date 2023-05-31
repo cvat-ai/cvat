@@ -12,7 +12,7 @@ description: 'Installing a development environment for different operating syste
   Ubuntu 18.04
 
   ```bash
-  sudo apt-get update && sudo apt-get --no-install-recommends install -y build-essential curl git redis-server python3-dev python3-pip python3-venv python3-tk libldap2-dev libsasl2-dev pkg-config libavformat-dev libavcodec-dev libavdevice-dev libavutil-dev libswscale-dev libswresample-dev libavfilter-dev apache2-dev
+  sudo apt-get update && sudo apt-get --no-install-recommends install -y build-essential curl git redis-server python3-dev python3-pip python3-venv python3-tk libldap2-dev libsasl2-dev pkg-config libavformat-dev libavcodec-dev libavdevice-dev libavutil-dev libswscale-dev libswresample-dev libavfilter-dev
   ```
 
   ```bash
@@ -262,7 +262,7 @@ You develop CVAT under WSL (Windows subsystem for Linux) following next steps.
 
 In case you cannot access analytics, check if the following ports are open:
 
-```json
+```yml
 cvat_vector:
     ports:
       - '8282:80'
@@ -272,7 +272,7 @@ cvat_vector:
       - '8123:8123'
 ```
 
-**Or** remove the following data from
+In addition, you can completely disable analytics if you don't need it by deleting the following data from
 [launch.json](https://github.com/opencv/cvat/blob/develop/.vscode/launch.json):
 
 ```json
