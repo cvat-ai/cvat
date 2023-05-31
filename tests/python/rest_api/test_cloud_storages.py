@@ -15,6 +15,7 @@ from cvat_sdk.api_client.api_client import Endpoint
 from cvat_sdk.api_client.model.file_info import FileInfo
 from deepdiff import DeepDiff
 from PIL import Image
+
 from shared.utils.config import get_method, make_api_client
 
 from .utils import CollectionSimpleFilterTestBase
