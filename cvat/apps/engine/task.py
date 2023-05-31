@@ -314,12 +314,14 @@ def _validate_manifest(
     is_in_cloud: bool,
     db_cloud_storage: models.CloudStorage,
     data_storage_method: str,
+    isBackupRestore: bool
 ) -> Optional[str]:
     if manifests:
         if len(manifests) != 1:
             raise ValidationError('Only one manifest file can be attached to data')
         manifest_file = manifests[0]
         full_manifest_path = os.path.join(root_dir, manifests[0])
+
         if is_in_cloud:
             cloud_storage_instance = db_storage_to_storage_instance(db_cloud_storage)
             # check that cloud storage manifest file exists and is up to date
@@ -327,10 +329,17 @@ def _validate_manifest(
                     datetime.utcfromtimestamp(os.path.getmtime(full_manifest_path)).replace(tzinfo=pytz.UTC) \
                     < cloud_storage_instance.get_file_last_modified(manifest_file):
                 cloud_storage_instance.download_file(manifest_file, full_manifest_path)
+
         if is_manifest(full_manifest_path):
-            if not (settings.USE_CACHE or data_storage_method != models.StorageMethodChoice.CACHE):
-                raise ValidationError("Manifest file can be uploaded only if 'Use cache' option is also selected")
+            if (
+                not (settings.USE_CACHE or data_storage_method != models.StorageMethodChoice.CACHE)
+                and not isBackupRestore
+            ):
+                raise ValidationError(
+                    "Manifest file can be uploaded only if 'Use cache' option is also selected"
+                )
             return manifest_file
+
         raise ValidationError('Invalid manifest was uploaded')
     return None
 
@@ -483,6 +492,7 @@ def _create_thread(
         manifest_files, manifest_root,
         is_data_in_cloud, db_data.cloud_storage if is_data_in_cloud else None,
         db_data.storage_method,
+        isBackupRestore=isBackupRestore
     )
 
     if is_data_in_cloud:
