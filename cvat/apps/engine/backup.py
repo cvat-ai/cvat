@@ -13,7 +13,7 @@ from typing import Any, Dict, Iterable
 import uuid
 from zipfile import ZipFile
 from datetime import datetime
-from tempfile import mkstemp
+from tempfile import NamedTemporaryFile
 
 import django_rq
 from django.conf import settings
@@ -901,7 +901,6 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
 
     if not rq_job:
         org_id = getattr(request.iam_context['organization'], 'id', None)
-        fd = None
         dependent_job = None
 
         location = location_conf.get('location')
@@ -910,10 +909,13 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
                 serializer = Serializer(data=request.data)
                 serializer.is_valid(raise_exception=True)
                 payload_file = serializer.validated_data[file_field_name]
-                fd, filename = mkstemp(prefix='cvat_', dir=settings.TMP_FILES_ROOT)
-                with open(filename, 'wb+') as f:
+                with NamedTemporaryFile(
+                    prefix='cvat_',
+                    dir=settings.TMP_FILES_ROOT,
+                    delete=False) as tf:
+                    filename = tf.name
                     for chunk in payload_file.chunks():
-                        f.write(chunk)
+                        tf.write(chunk)
         else:
             file_name = request.query_params.get('filename')
             assert file_name, "The filename wasn't specified"
@@ -929,7 +931,9 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
                 is_default=location_conf['is_default'])
 
             key = filename
-            fd, filename = mkstemp(prefix='cvat_', dir=settings.TMP_FILES_ROOT)
+            with NamedTemporaryFile(prefix='cvat_', dir=settings.TMP_FILES_ROOT, delete=False) as tf:
+                filename = tf.name
+
             dependent_job = configure_dependent_job(
                 queue=queue,
                 rq_id=rq_id,
@@ -946,7 +950,6 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
             job_id=rq_id,
             meta={
                 'tmp_file': filename,
-                'tmp_file_descriptor': fd,
                 **get_rq_job_meta(request=request, db_obj=None)
             },
             depends_on=dependent_job
@@ -954,7 +957,6 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
     else:
         if rq_job.is_finished:
             project_id = rq_job.return_value
-            if rq_job.meta['tmp_file_descriptor']: os.close(rq_job.meta['tmp_file_descriptor'])
             os.remove(rq_job.meta['tmp_file'])
             rq_job.delete()
             return Response({'id': project_id}, status=status.HTTP_201_CREATED)
