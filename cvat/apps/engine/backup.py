@@ -910,10 +910,13 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
                 serializer = Serializer(data=request.data)
                 serializer.is_valid(raise_exception=True)
                 payload_file = serializer.validated_data[file_field_name]
-                with NamedTemporaryFile(prefix='cvat_', dir=settings.TMP_FILES_ROOT, delete=False) as f:
-                    filename = f.name
+                with NamedTemporaryFile(
+                    prefix='cvat_',
+                    dir=settings.TMP_FILES_ROOT,
+                    delete=False) as tf:
+                    filename = tf.name
                     for chunk in payload_file.chunks():
-                        f.write(chunk)
+                        tf.write(chunk)
         else:
             file_name = request.query_params.get('filename')
             assert file_name, "The filename wasn't specified"
@@ -929,8 +932,9 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
                 is_default=location_conf['is_default'])
 
             key = filename
-            with NamedTemporaryFile(prefix='cvat_', dir=settings.TMP_FILES_ROOT, delete=False) as f:
-                filename = f.name
+            with NamedTemporaryFile(prefix='cvat_', dir=settings.TMP_FILES_ROOT, delete=False) as tf:
+                filename = tf.name
+
             dependent_job = configure_dependent_job(
                 queue=queue,
                 rq_id=rq_id,

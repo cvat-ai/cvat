@@ -65,7 +65,6 @@ from cvat.apps.engine.serializers import (
     CloudStorageReadSerializer, DatasetFileSerializer,
     ProjectFileSerializer, TaskFileSerializer, RqIdSerializer, CloudStorageContentSerializer)
 from cvat.apps.engine.view_utils import get_cloud_storage_for_import_or_export
-from cvat.apps.engine.schema import ORGANIZATION_OPEN_API_PARAMETERS
 
 from utils.dataset_manifest import ImageManifestManager
 from cvat.apps.engine.utils import (
@@ -80,6 +79,7 @@ from .log import slogger
 from cvat.apps.iam.permissions import (CloudStoragePermission,
     CommentPermission, IssuePermission, JobPermission, LabelPermission, ProjectPermission,
     TaskPermission, UserPermission)
+from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 from cvat.apps.engine.cache import MediaCache
 from cvat.apps.events.handlers import handle_annotations_patch
 from cvat.apps.engine.view_utils import tus_chunk_action
@@ -642,7 +642,6 @@ class DataChunkGetter:
                 # mimetype detection inside sendfile will work incorrectly.
                 path = os.path.realpath(frame_provider.get_chunk(self.number, self.quality))
                 return sendfile(request, path)
-
             elif self.type == 'frame' or self.type == 'preview':
                 if not (start <= self.number <= stop):
                     raise ValidationError('The frame number should be in ' +
@@ -1917,10 +1916,7 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         'project__organization'
     ).all()
 
-    # NOTE: This filter works incorrectly for this view
-    # it requires task__organization OR project__organization check.
-    # Thus, we rely on permission-based filtering
-    iam_organization_field = None
+    iam_organization_field = ('task__organization', 'project__organization')
 
     search_fields = ('name', 'parent')
     filter_fields = list(search_fields) + ['id', 'type', 'color', 'parent_id']
@@ -2453,11 +2449,13 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
                 serializer = AnnotationFileSerializer(data=request.data)
                 if serializer.is_valid(raise_exception=True):
                     anno_file = serializer.validated_data['annotation_file']
-                    with NamedTemporaryFile(prefix='cvat_{}'.format(db_obj.pk), dir=settings.TMP_FILES_ROOT, delete=False) as f:
-                        filename = f.name
-                    with open(filename, 'wb+') as f:
+                    with NamedTemporaryFile(
+                        prefix='cvat_{}'.format(db_obj.pk),
+                        dir=settings.TMP_FILES_ROOT,
+                        delete=False) as tf:
+                        filename = tf.name
                         for chunk in anno_file.chunks():
-                            f.write(chunk)
+                            tf.write(chunk)
             else:
                 assert filename, 'The filename was not specified'
 
@@ -2472,8 +2470,12 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
                     is_default=location_conf['is_default'])
 
                 key = filename
-                with NamedTemporaryFile(prefix='cvat_{}'.format(db_obj.pk), dir=settings.TMP_FILES_ROOT, delete=False) as f:
-                    filename = f.name
+                with NamedTemporaryFile(
+                    prefix='cvat_{}'.format(db_obj.pk),
+                    dir=settings.TMP_FILES_ROOT,
+                    delete=False) as tf:
+                    filename = tf.name
+
                 dependent_job = configure_dependent_job(
                     queue=queue,
                     rq_id=rq_id,
@@ -2648,10 +2650,14 @@ def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_nam
             serializer = DatasetFileSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
                 dataset_file = serializer.validated_data['dataset_file']
-                with NamedTemporaryFile(prefix='cvat_{}'.format(db_obj.pk), dir=settings.TMP_FILES_ROOT, delete=False) as f:
-                    filename = f.name
+                with NamedTemporaryFile(
+                    prefix='cvat_{}'.format(db_obj.pk),
+                    dir=settings.TMP_FILES_ROOT,
+                    delete=False) as tf:
+                    filename = tf.name
                     for chunk in dataset_file.chunks():
-                        f.write(chunk)
+                        tf.write(chunk)
+
         elif location == Location.CLOUD_STORAGE:
             assert filename, 'The filename was not specified'
             try:
@@ -2665,8 +2671,12 @@ def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_nam
                 is_default=location_conf['is_default'])
 
             key = filename
-            with NamedTemporaryFile(prefix='cvat_{}'.format(db_obj.pk), dir=settings.TMP_FILES_ROOT, delete=False) as f:
-                filename = f.name
+            with NamedTemporaryFile(
+                prefix='cvat_{}'.format(db_obj.pk),
+                dir=settings.TMP_FILES_ROOT,
+                delete=False) as tf:
+                filename = tf.name
+
             dependent_job = configure_dependent_job(
                 queue=queue,
                 rq_id=rq_id,

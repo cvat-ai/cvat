@@ -9,10 +9,10 @@ from django.utils.crypto import get_random_string
 
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
 from cvat.apps.engine.mixins import PartialUpdateModelMixin
-from cvat.apps.engine.schema import ORGANIZATION_OPEN_API_PARAMETERS
 
 from cvat.apps.iam.permissions import (
     InvitationPermission, MembershipPermission, OrganizationPermission)
+from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 from .models import Invitation, Membership, Organization
 
 from .serializers import (

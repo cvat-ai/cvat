@@ -10,9 +10,9 @@ from rest_framework.decorators import action
 from rest_framework.permissions import SAFE_METHODS
 from rest_framework.response import Response
 
-from cvat.apps.engine.schema import ORGANIZATION_OPEN_API_PARAMETERS
 from cvat.apps.engine.view_utils import list_action, make_paginated_response
 from cvat.apps.iam.permissions import WebhookPermission
+from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 
 from .event_type import AllEvents, OrganizationEvents, ProjectEvents
 from .models import Webhook, WebhookDelivery, WebhookTypeChoice

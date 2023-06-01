@@ -338,6 +338,7 @@ paths:
         name: X-Organization
         schema:
           type: string
+        description: Organization unique slug
       - in: query
         name: org
         schema:
@@ -796,6 +797,7 @@ paths:
         name: X-Organization
         schema:
           type: string
+        description: Organization unique slug
       - in: query
         name: org
         schema:
@@ -991,6 +993,7 @@ paths:
         name: X-Organization
         schema:
           type: string
+        description: Organization unique slug
       - in: query
         name: org
         schema:
@@ -1101,6 +1104,7 @@ paths:
         name: X-Organization
         schema:
           type: string
+        description: Organization unique slug
       - in: query
         name: org
         schema:
@@ -1315,6 +1319,7 @@ paths:
         name: X-Organization
         schema:
           type: string
+        description: Organization unique slug
       - in: query
         name: org
         schema:
@@ -2075,6 +2080,7 @@ paths:
         name: X-Organization
         schema:
           type: string
+        description: Organization unique slug
       - name: color
         in: query
         description: A simple equality filter for the color field
@@ -2360,6 +2366,7 @@ paths:
         name: X-Organization
         schema:
           type: string
+        description: Organization unique slug
       - in: query
         name: org
         schema:
@@ -2830,6 +2837,7 @@ paths:
         name: X-Organization
         schema:
           type: string
+        description: Organization unique slug
       - in: query
         name: org
         schema:
@@ -3279,6 +3287,7 @@ paths:
         name: X-Organization
         schema:
           type: string
+        description: Organization unique slug
       - in: query
         name: cloud_storage_id
         schema:
@@ -3707,6 +3716,7 @@ paths:
         name: X-Organization
         schema:
           type: string
+        description: Organization unique slug
       - in: query
         name: org
         schema:
@@ -4437,6 +4447,7 @@ paths:
         name: X-Organization
         schema:
           type: string
+        description: Organization unique slug
       - in: query
         name: cloud_storage_id
         schema:
@@ -4782,6 +4793,7 @@ paths:
         name: X-Organization
         schema:
           type: string
+        description: Organization unique slug
       - in: query
         name: org
         schema:
