@@ -30,6 +30,13 @@ class TestGetMemberships:
     def test_admin_can_see_all_memberships(self, memberships):
         self._test_can_see_memberships("admin2", memberships.raw, page_size="all")
 
+    @pytest.mark.parametrize("field_value, query_value", [(1, 1), (None, "")])
+    def test_can_filter_by_org_id(self, field_value, query_value, memberships):
+        memberships = filter(lambda m: m["organization"] == field_value, memberships)
+        self._test_can_see_memberships(
+            "admin2", list(memberships), page_size="all", org_id=query_value
+        )
+
     def test_non_admin_can_see_only_self_memberships(self, memberships):
         non_admins = ["business1", "user1", "dummy1", "worker2"]
         for username in non_admins:

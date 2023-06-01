@@ -1187,10 +1187,10 @@ class TestPostTaskData:
             "name": "test cannot create task with same labels",
             "labels": [{"name": "l1"}, {"name": "l1"}],
         }
-        response = post_method(self._USERNAME, "/tasks", task_spec)
+        response = post_method(self._USERNAME, "tasks", task_spec)
         assert response.status_code == HTTPStatus.BAD_REQUEST
 
-        response = get_method(self._USERNAME, "/tasks")
+        response = get_method(self._USERNAME, "tasks")
         assert response.status_code == HTTPStatus.OK
 
     def test_cannot_create_task_with_same_skeleton_sublabels(self):
@@ -1200,10 +1200,10 @@ class TestPostTaskData:
                 {"name": "s1", "type": "skeleton", "sublabels": [{"name": "1"}, {"name": "1"}]}
             ],
         }
-        response = post_method(self._USERNAME, "/tasks", task_spec)
+        response = post_method(self._USERNAME, "tasks", task_spec)
         assert response.status_code == HTTPStatus.BAD_REQUEST
 
-        response = get_method(self._USERNAME, "/tasks")
+        response = get_method(self._USERNAME, "tasks")
         assert response.status_code == HTTPStatus.OK
 
 
@@ -1221,7 +1221,7 @@ class TestPatchTaskLabel:
         label = deepcopy([l for l in labels if l.get("task_id") == task["id"]][0])
         label_payload = {"id": label["id"], "deleted": True}
 
-        response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [label_payload]})
+        response = patch_method(admin_user, f'tasks/{task["id"]}', {"labels": [label_payload]})
         assert response.status_code == HTTPStatus.OK, response.content
         assert response.json()["labels"]["count"] == task["labels"]["count"] - 1
 
@@ -1241,7 +1241,7 @@ class TestPatchTaskLabel:
         task_labels.remove(label)
         label_payload = {"id": label["id"], "deleted": True}
 
-        response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [label_payload]})
+        response = patch_method(admin_user, f'tasks/{task["id"]}', {"labels": [label_payload]})
         assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == task["labels"]["count"] - 1
 
@@ -1253,7 +1253,7 @@ class TestPatchTaskLabel:
         task_labels = deepcopy([l for l in labels if l.get("task_id") == task["id"]])
         task_labels[0].update({"name": "new name"})
 
-        response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [task_labels[0]]})
+        response = patch_method(admin_user, f'tasks/{task["id"]}', {"labels": [task_labels[0]]})
         assert response.status_code == HTTPStatus.OK
 
         resulting_labels = self._get_task_labels(task["id"], admin_user)
@@ -1266,7 +1266,7 @@ class TestPatchTaskLabel:
 
         label_payload = {"id": task_labels[0]["id"], "name": task_labels[0]["name"]}
 
-        response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [label_payload]})
+        response = patch_method(admin_user, f'tasks/{task["id"]}', {"labels": [label_payload]})
         assert response.status_code == HTTPStatus.BAD_REQUEST
         assert "All label names must be unique" in response.text
 
@@ -1281,7 +1281,7 @@ class TestPatchTaskLabel:
             ][0]
         )
 
-        response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [new_label]})
+        response = patch_method(admin_user, f'tasks/{task["id"]}', {"labels": [new_label]})
         assert response.status_code == HTTPStatus.NOT_FOUND
         assert f"Not found label with id #{new_label['id']} to change" in response.text
 
@@ -1289,7 +1289,7 @@ class TestPatchTaskLabel:
         task = [t for t in tasks if t["project_id"] is None][0]
         new_label = {"name": "new name"}
 
-        response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [new_label]})
+        response = patch_method(admin_user, f'tasks/{task["id"]}', {"labels": [new_label]})
         assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == task["labels"]["count"] + 1
 
@@ -1315,9 +1315,8 @@ class TestPatchTaskLabel:
         new_label = {"name": "new name"}
         response = patch_method(
             user["username"],
-            f'/tasks/{task["id"]}',
+            f'tasks/{task["id"]}',
             {"labels": [new_label]},
-            org_id=task["organization"],
         )
         assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == task["labels"]["count"] + 1
@@ -1344,9 +1343,8 @@ class TestPatchTaskLabel:
         new_label = {"name": "new name"}
         response = patch_method(
             user["username"],
-            f'/tasks/{task["id"]}',
+            f'tasks/{task["id"]}',
             {"labels": [new_label]},
-            org_id=task["organization"],
         )
         assert response.status_code == HTTPStatus.FORBIDDEN
 
@@ -1369,9 +1367,8 @@ class TestPatchTaskLabel:
         new_label = {"name": "new name"}
         response = patch_method(
             user["username"],
-            f'/tasks/{task["id"]}',
+            f'tasks/{task["id"]}',
             {"labels": [new_label]},
-            org_id=task["organization"],
         )
         assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == task["labels"]["count"] + 1
@@ -1392,7 +1389,7 @@ class TestPatchTaskLabel:
             'data-element-id="1" data-node-id="1" data-label-name="597501"></circle>',
         }
 
-        response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [new_skeleton]})
+        response = patch_method(admin_user, f'tasks/{task["id"]}', {"labels": [new_skeleton]})
         assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == task["labels"]["count"] + 1
 
