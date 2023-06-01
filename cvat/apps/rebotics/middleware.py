@@ -57,7 +57,9 @@ def subnet_hosts_middleware(get_response):
 
         slogger.glob.info(f'Validating host: {host} in {allowed_hosts}, {allowed_subnets}')
         domain, port = split_domain_port(host)
-        if validate_host(domain, allowed_hosts) or _validate_subnet(domain, allowed_subnets):
+        if validate_host(domain, allowed_hosts):
+            return get_response(request)
+        if re.match(r'^\d+.\d+.\d+.\d+/\d+$', domain) and _validate_subnet(domain, allowed_subnets):
             return get_response(request)
         return HttpResponseBadRequest(f'Invalid HTTP_HOST header: {host}.')
 
