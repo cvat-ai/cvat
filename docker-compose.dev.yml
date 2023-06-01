@@ -20,9 +20,6 @@ services:
         CLAM_AV:
         CVAT_DEBUG_ENABLED:
     environment:
-      # Use this with CVAT_DEBUG_ENABLED to avoid server response timeouts
-      # Remove the same setting in the docker-compose.yml for this override to work
-      # DJANGO_MODWSGI_EXTRA_ARGS: '--request-timeout 0 --queue-timeout 0 --socket-timeout 1000000'
       CVAT_DEBUG_ENABLED: '${CVAT_DEBUG_ENABLED:-no}'
       CVAT_DEBUG_PORT: '9090'
       # If 'yes', wait for a debugger connection on startup
