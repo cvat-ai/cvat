@@ -53,13 +53,10 @@ class MediaCache:
         return item
 
     def get_buf_chunk_with_mime(self, chunk_number, quality, db_data):
-        slogger.glob.info(f'Start chunk request: chunk number {chunk_number} data_id {db_data.id}')
         item = self._get_or_set_cache_item(
             key=f'{db_data.id}_{chunk_number}_{quality}',
             create_function=lambda: self._prepare_chunk_buff(db_data, quality, chunk_number),
         )
-
-        slogger.glob.info(f'End chunk request: chunk number {chunk_number} data_id {db_data.id}')
 
         return item
 
