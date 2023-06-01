@@ -360,7 +360,7 @@ jobs:
       - name: Pull CVAT server image
         run: |
           docker pull ${{ steps.meta-server.outputs.tags }}
-          docker tag ${{ steps.meta-server.outputs.tags }} cvat/server:dev
+          docker tag ${{ steps.meta-server.outputs.tags }} cvat/server:local
 
       - name: Downloading coverage results
         uses: actions/download-artifact@v2
