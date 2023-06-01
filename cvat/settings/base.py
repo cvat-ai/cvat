@@ -29,8 +29,15 @@ from pathlib import Path
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = str(Path(__file__).parents[2])
 
-ALLOWED_HOSTS = ['*cvat.rebotics.net', '*cvat.rebotics.cn', 'localhost', '127.0.0.1']\
-                + os.environ.get('ALLOWED_HOSTS', '').split(',')
+# For django
+ALLOWED_HOSTS = ['*']
+
+# For subnet checking middleware
+ALLOWED_SUBNETS = ['*cvat.rebotics.net', '*cvat.rebotics.cn', 'localhost', '127.0.0.1']
+extra_hosts = os.environ.get('ALLOWED_HOSTS', '')
+if extra_hosts:
+    ALLOWED_SUBNETS += extra_hosts.split(',')
+
 PUBLIC_DOMAIN_NAME = os.environ.get('PUBLIC_DOMAIN_NAME')
 if PUBLIC_DOMAIN_NAME:
     ALLOWED_HOSTS += [PUBLIC_DOMAIN_NAME]
@@ -169,6 +176,7 @@ if strtobool(os.getenv('CVAT_ANALYTICS', '0')):
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'cvat.apps.rebotics.middleware.subnet_hosts_middleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
