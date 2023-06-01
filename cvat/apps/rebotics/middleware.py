@@ -54,8 +54,6 @@ def subnet_hosts_middleware(get_response):
 
     def middleware(request):
         host = request.get_host()
-
-        slogger.glob.info(f'Validating host: {host} in {allowed_hosts}, {allowed_subnets}')
         domain, port = split_domain_port(host)
         if validate_host(domain, allowed_hosts):
             return get_response(request)

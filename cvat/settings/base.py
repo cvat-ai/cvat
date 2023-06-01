@@ -33,14 +33,14 @@ BASE_DIR = str(Path(__file__).parents[2])
 ALLOWED_HOSTS = ['*']
 
 # For subnet checking middleware
-ALLOWED_SUBNETS = ['*cvat.rebotics.net', '*cvat.rebotics.cn', 'localhost', '127.0.0.1']
+ALLOWED_SUBNETS = ['localhost', '127.0.0.1']
 extra_hosts = os.environ.get('ALLOWED_HOSTS', '')
 if extra_hosts:
     ALLOWED_SUBNETS += extra_hosts.split(',')
 
 PUBLIC_DOMAIN_NAME = os.environ.get('PUBLIC_DOMAIN_NAME')
 if PUBLIC_DOMAIN_NAME:
-    ALLOWED_HOSTS += [PUBLIC_DOMAIN_NAME]
+    ALLOWED_SUBNETS += [PUBLIC_DOMAIN_NAME]
 
 INTERNAL_IPS = ['127.0.0.1']
 
