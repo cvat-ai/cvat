@@ -646,8 +646,6 @@ export class Task extends Session {
     public readonly cloudStorageID: number;
     public readonly sortingMethod: string;
 
-    public readonly qualitySettingsID: number;
-
     public annotations: {
         get: CallableFunction;
         put: CallableFunction;
@@ -1046,9 +1044,6 @@ export class Task extends Session {
                 },
                 progress: {
                     get: () => data.progress,
-                },
-                qualitySettingsID: {
-                    get: () => data.quality_settings,
                 },
                 _internalData: {
                     get: () => data,

@@ -2227,17 +2227,19 @@ async function getQualityConflicts(filter): Promise<RawQualityConflictData[]> {
     }
 }
 
-async function getQualitySettings(settingsID: number): Promise<RawQualitySettingsData> {
+async function getQualitySettings(taskID: number): Promise<RawQualitySettingsData> {
     const params = enableOrganization();
     const { backendAPI } = config;
 
     try {
-        const response = await Axios.get(`${backendAPI}/quality/settings/${settingsID}`, {
+        const response = await Axios.get(`${backendAPI}/quality/settings`, {
             params: {
                 ...params,
+                task_id: taskID,
             },
         });
-        return response.data;
+        const settings = response.data.results[0];
+        return settings;
     } catch (errorData) {
         throw generateError(errorData);
     }

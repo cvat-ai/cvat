@@ -84,7 +84,7 @@ export const getQualitySettingsAsync = (task: Task): ThunkAction => (
     async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         dispatch(analyticsActions.getQualitySettings(task.id));
         try {
-            const qualitySettings = await cvat.analytics.quality.settings.get(task.qualitySettingsID);
+            const qualitySettings = await cvat.analytics.quality.settings.get(task.id);
 
             dispatch(analyticsActions.getQualitySettingsSuccess(qualitySettings));
         } catch (error) {
