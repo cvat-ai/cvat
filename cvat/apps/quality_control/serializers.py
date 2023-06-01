@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from rest_framework import serializers
+import textwrap
 
 from cvat.apps.quality_control import models
 
@@ -86,10 +87,53 @@ class QualitySettingsSerializer(serializers.ModelSerializer):
             'compare_attributes',
         )
         read_only_fields = ('id', 'task_id', )
+
         extra_kwargs = {
             k: {'required': False}
             for k in fields
         }
+
+        for field_name, help_text in {
+            'iou_threshold': "Used for distinction between matched / unmatched shapes",
+            'low_overlap_threshold': (
+                "Used for distinction between strong / weak (low_overlap) matches"
+            ),
+            'oks_sigma': """
+                Like IoU threshold, but for points.
+                The percent of the bbox area, used as the radius of the circle around the GT point,
+                where the checked point is expected to be.
+                Read more: https://cocodataset.org/#keypoints-eval
+            """,
+            'line_thickness': """
+                Thickness of polylines, relatively to the (image area) ^ 0.5.
+                The distance to the boundary around the GT line,
+                inside of which the checked line points should be
+            """,
+            'oriented_lines': "Indicates that polylines have direction",
+            'line_orientation_threshold': """
+                The minimal gain in the GT IoU between the given and reversed line directions
+                to consider the line inverted. Only useful with the 'oriented_lines' parameter
+            """,
+            'compare_groups': "Enables or disables annotation group checks",
+            'group_match_threshold': """
+                Minimal IoU for groups to be considered matching,
+                used when the 'compare_groups' is enabled
+            """,
+            'check_covered_annotations': (
+                "Check for partially-covered annotations, useful in segmentation tasks"
+            ),
+            'object_visibility_threshold': """
+                Minimal visible area percent of the spatial annotations (polygons, masks)
+                for reporting covered annotations,
+                useful with the 'check_covered_annotations' option
+            """,
+            'panoptic_comparison': (
+                "Use only the visible part of the masks and polygons in comparisons"
+            )
+        }.items():
+            extra_kwargs.setdefault(field_name, {}).setdefault(
+                'help_text', textwrap.dedent(help_text.lstrip('\n'))
+            )
 
     def validate(self, attrs):
         for k, v in attrs.items():

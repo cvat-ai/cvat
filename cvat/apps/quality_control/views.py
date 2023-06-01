@@ -29,7 +29,9 @@ from cvat.apps.quality_control.serializers import (
     QualityReportSerializer, QualityReportCreateSerializer
 )
 
-from cvat.apps.iam.permissions import AnnotationConflictPermission, QualityReportPermission, QualitySettingPermission
+from cvat.apps.iam.permissions import (
+    AnnotationConflictPermission, QualityReportPermission, QualitySettingPermission
+)
 
 
 @extend_schema(tags=["quality"])
@@ -37,9 +39,6 @@ from cvat.apps.iam.permissions import AnnotationConflictPermission, QualityRepor
     list=extend_schema(
         summary='Method returns a paginated list of annotation conflicts',
         parameters=[
-            # TODO: add support for this
-            # *ORGANIZATION_OPEN_API_PARAMETERS,
-
             # These filters are implemented differently from others
             OpenApiParameter('report_id', type=OpenApiTypes.INT,
                 description='A simple equality filter for report id'),
@@ -49,12 +48,23 @@ from cvat.apps.iam.permissions import AnnotationConflictPermission, QualityRepor
         }),
 )
 class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
-    queryset = AnnotationConflict.objects.prefetch_related('report', 'annotation_ids').all()
+    queryset = AnnotationConflict.objects.select_related(
+        'report',
+        'report__parent',
+        'report__job',
+        'report__job__segment',
+        'report__job__segment__task',
+        'report__job__segment__task__organization',
+        'report__task',
+        'report__task__organization',
+    ).prefetch_related(
+        'annotation_ids',
+    ).all()
 
-    # NOTE: This filter works incorrectly for this view
-    # it requires task__organization OR project__organization check.
-    # Thus, we rely on permission-based filtering
-    iam_organization_field = None
+    iam_organization_field = [
+        'report__job__segment__task__organization',
+        'report__task__organization',
+    ]
 
     search_fields = []
     filter_fields = list(search_fields) + [
@@ -66,7 +76,7 @@ class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
         'task_id': 'report__job__segment__task__id' # task reports do not contain own conflicts
     }
     ordering_fields = list(filter_fields)
-    ordering = 'id'
+    ordering = '-id'
     serializer_class = AnnotationConflictSerializer
 
     def get_queryset(self):
@@ -76,19 +86,21 @@ class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
             self.check_permissions(self.request)
 
             if report_id := self.request.query_params.get('report_id', None):
+                # NOTE: This filter is too complex to be implemented by other means,
+                # it has a dependency on the report type
                 try:
-                    report = QualityReport.objects.prefetch_related('parent').get(id=report_id)
+                    report = QualityReport.objects.get(id=report_id)
                 except QualityReport.DoesNotExist as ex:
                     raise NotFound(f"Report {report_id} does not exist") from ex
 
                 self.check_object_permissions(self.request, report)
 
                 if report.target == QualityReportTarget.TASK:
-                    queryset = self.queryset.filter(
+                    queryset = queryset.filter(
                         Q(report=report) | Q(report__parent=report)
                     ).distinct()
                 elif report.target == QualityReportTarget.JOB:
-                    queryset = self.queryset.filter(report=report)
+                    queryset = queryset.filter(report=report)
                 else:
                     assert False
             else:
@@ -109,9 +121,6 @@ class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
     list=extend_schema(
         summary='Method returns a paginated list of quality reports',
         parameters=[
-            # TODO: add support for this
-            # *ORGANIZATION_OPEN_API_PARAMETERS,
-
             # These filters are implemented differently from others
             OpenApiParameter('task_id', type=OpenApiTypes.INT,
                 description='A simple equality filter for task id'),
@@ -129,14 +138,12 @@ class QualityReportViewSet(viewsets.GenericViewSet,
         'job',
         'job__segment',
         'job__segment__task',
+        'job__segment__task__organization',
         'task',
-        'task__project',
+        'task__organization',
     ).all()
 
-    # NOTE: This filter works incorrectly for this view
-    # it requires task__organization OR project__organization check.
-    # Thus, we rely on permission-based filtering
-    iam_organization_field = None
+    iam_organization_field = ['job__segment__task__organization', 'task__organization']
 
     search_fields = []
     filter_fields = list(search_fields) + [
@@ -292,10 +299,6 @@ class QualityReportViewSet(viewsets.GenericViewSet,
 @extend_schema_view(
     list=extend_schema(
         summary='Method returns a paginated list of quality settings',
-        parameters=[
-            # TODO: add support for this
-            # *ORGANIZATION_OPEN_API_PARAMETERS,
-        ],
         responses={
             '200': QualitySettingsSerializer(many=True),
         }),

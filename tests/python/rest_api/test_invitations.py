@@ -7,8 +7,9 @@ from http import HTTPStatus
 
 import pytest
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
+from deepdiff import DeepDiff
 
-from shared.utils.config import post_method
+from shared.utils.config import get_method, post_method
 
 from .utils import CollectionSimpleFilterTestBase
 
@@ -120,3 +121,22 @@ class TestInvitationsListFilters(CollectionSimpleFilterTestBase):
     )
     def test_can_use_simple_filter_for_object_list(self, field):
         return super().test_can_use_simple_filter_for_object_list(field)
+
+
+@pytest.mark.usefixtures("restore_db_per_class")
+class TestListInvitations:
+    def _test_can_see_invitations(self, user, data, **kwargs):
+        response = get_method(user, "invitations", **kwargs)
+
+        assert response.status_code == HTTPStatus.OK
+        assert DeepDiff(data, response.json()["results"]) == {}
+
+    def test_admin_can_see_all_invitations(self, invitations):
+        self._test_can_see_invitations("admin2", invitations.raw, page_size="all")
+
+    @pytest.mark.parametrize("field_value, query_value", [(1, 1), (None, "")])
+    def test_can_filter_by_org_id(self, field_value, query_value, invitations):
+        invitations = filter(lambda i: i["organization"] == field_value, invitations)
+        self._test_can_see_invitations(
+            "admin2", list(invitations), page_size="all", org_id=query_value
+        )

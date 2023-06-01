@@ -20,6 +20,7 @@ without use_cache option (<https://github.com/opencv/cvat/pull/6074>)
 - Some Nuclio functions' names were changed to follow a common convention:
   `onnx-yolov7` -> `onnx-wongkinyiu-yolov7`, `ultralytics-yolov5` -> `pth-ultralytics-yolov5`
   (<https://github.com/opencv/cvat/pull/6140>)
+- Using Uvicorn ASGI server instead of Apache mod_wsgi for the backend (<https://github.com/opencv/cvat/pull/6195>)
 
 ### Deprecated
 - The endpoint /cloudstorages/{id}/content was deprecated (<https://github.com/opencv/cvat/pull/6074>)

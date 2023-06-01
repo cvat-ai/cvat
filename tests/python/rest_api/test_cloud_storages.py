@@ -16,7 +16,7 @@ from cvat_sdk.api_client.model.file_info import FileInfo
 from deepdiff import DeepDiff
 from PIL import Image
 
-from shared.utils.config import make_api_client
+from shared.utils.config import get_method, make_api_client
 
 from .utils import CollectionSimpleFilterTestBase
 
@@ -575,3 +575,22 @@ class TestGetCloudStorageContent:
                 break
 
         assert expected_content == current_content
+
+
+@pytest.mark.usefixtures("restore_db_per_class")
+class TestListCloudStorages:
+    def _test_can_see_cloud_storages(self, user, data, **kwargs):
+        response = get_method(user, "cloudstorages", **kwargs)
+
+        assert response.status_code == HTTPStatus.OK
+        assert DeepDiff(data, response.json()["results"]) == {}
+
+    def test_admin_can_see_all_cloud_storages(self, cloud_storages):
+        self._test_can_see_cloud_storages("admin2", cloud_storages.raw, page_size="all")
+
+    @pytest.mark.parametrize("field_value, query_value", [(2, 2), (None, "")])
+    def test_can_filter_by_org_id(self, field_value, query_value, cloud_storages):
+        cloud_storages = filter(lambda i: i["organization"] == field_value, cloud_storages)
+        self._test_can_see_cloud_storages(
+            "admin2", list(cloud_storages), page_size="all", org_id=query_value
+        )
