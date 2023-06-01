@@ -12,7 +12,7 @@ from django_sendfile import sendfile
 from copy import deepcopy
 from enum import Enum
 from functools import wraps
-from typing import Optional
+from typing import Any, Dict, Optional
 
 import datumaro.util.mask_tools as mask_tools
 import django_rq
@@ -196,7 +196,7 @@ class LambdaFunction:
 
         return response
 
-    def invoke(self, db_task: Task, request: Request, *, db_job: Optional[Job] = None):
+    def invoke(self, db_task: Task,  data: Dict[str, Any], *, db_job: Optional[Job] = None, request: Optional[Request] = None):
         try:
             if db_job is not None and db_job.get_task_id() != db_task.id:
                 raise ValidationError("Job task id does not match task id",
@@ -204,7 +204,7 @@ class LambdaFunction:
                 )
 
             payload = {}
-            data = {k: v for k,v in request.data.items() if v is not None}
+            data = {k: v for k,v in data.items() if v is not None}
             threshold = data.get("threshold")
             if threshold:
                 payload.update({ "threshold": threshold })
@@ -301,7 +301,8 @@ class LambdaFunction:
                 .format(self.id, str(err)),
                 code=status.HTTP_400_BAD_REQUEST)
 
-        lambda_function_call_signal.send(sender=self, request=request)
+        if request:
+            lambda_function_call_signal.send(sender=self, request=request)
 
         response = self.gateway.invoke(self, payload)
 
@@ -793,7 +794,7 @@ class FunctionViewSet(viewsets.ViewSet):
         gateway = LambdaGateway()
         lambda_func = gateway.get(func_id)
 
-        return lambda_func.invoke(db_task, request, db_job=job)
+        return lambda_func.invoke(db_task, request.data, db_job=job, request=request)
 
 @extend_schema(tags=['lambda'])
 @extend_schema_view(
