@@ -21,13 +21,13 @@ CVAT_ROOT_DIR = next(dir.parent for dir in Path(__file__).parents if dir.name ==
 CVAT_DB_DIR = ASSETS_DIR / "cvat_db"
 PREFIX = "test"
 
-SERVER_CONTAINER = "test_cvat_server_1"
-WEBHOOKS_CONTAINER = "test_cvat_worker_webhooks_1"
-ANNOTATION_CONTAINER = "test_cvat_worker_annotation_1"
-UTILS_CONTAINER = "test_cvat_utils_1"
-IMPORT_CONTAINER = "test_cvat_worker_import_1"
-EXPORT_CONTAINER = "test_cvat_worker_export_1"
-DB_CONTAINER = "test_cvat_db_1"
+DB_CONTAINER = "cvat_db"
+SERVER_CONTAINER = "cvat_server"
+WEBHOOKS_CONTAINER = "cvat_worker_webhooks"
+ANNOTATION_CONTAINER = "cvat_worker_annotation"
+UTILS_CONTAINER = "cvat_utils"
+IMPORT_CONTAINER = "cvat_worker_import"
+EXPORT_CONTAINER = "cvat_worker_export"
 
 CODE_COVERED_CONTAINERS = [SERVER_CONTAINER, WEBHOOKS_CONTAINER, ANNOTATION_CONTAINER, UTILS_CONTAINER, IMPORT_CONTAINER, EXPORT_CONTAINER]
 
@@ -131,7 +131,7 @@ def kube_cp(source, target):
 
 
 def docker_exec(container, command):
-    return _run(f"docker exec -u root {container} {command}")
+    return _run(f"docker exec -u root {PREFIX}_{container}_1 {command}")
 
 
 def kube_exec_cvat(command):
@@ -220,6 +220,10 @@ def create_compose_files(container_name_files):
                 if service_name == "cvat_server":
                     service_env = service_config["environment"]
                     service_env["DJANGO_SETTINGS_MODULE"] = "cvat.settings.testing_rest"
+                if service_name in CODE_COVERED_CONTAINERS:
+                    service_env = service_config["environment"]
+                    service_env["COVERAGE_PROCESS_START"] = ".coveragerc"
+                    service_env["RQ_WORKER_CLASS"] = "cvat.rqworker.CoverageWorker"
 
             yaml.dump(dc_config, ndcf)
 
@@ -427,12 +431,15 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
 
 
 def collect_code_coverage_from_containers():
+    command = "python3"
     for container in CODE_COVERED_CONTAINERS:
         # stop process with code coverage
-        docker_exec(container, f"kill -15 1")
-        sleep(5)
+        docker_exec(container, f"kill -15 {command}")
+        while not run(f"docker exec -u root {PREFIX}_{SERVER_CONTAINER}_1 {command}", shell=True).returncode:
+            sleep(1)
 
         # get code coverage report
+        docker_exec(container, "coverage combine")
         docker_exec(container, "coverage xml")
         docker_cp(f"{container}:home/django/coverage.xml", f"coverage_{container}.xml")
 
