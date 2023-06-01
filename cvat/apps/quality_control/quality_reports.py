@@ -1977,7 +1977,7 @@ class DatasetComparator:
             parameters=self.settings,
 
             comparison_summary=ComparisonReportComparisonSummary(
-                frame_share_percent=(
+                frame_share_percent=100 * (
                     len(intersection_frames) / (len(self._ds_data_provider.job_data.rel_range) or 1)
                 ),
                 frames=intersection_frames,
@@ -2362,7 +2362,7 @@ class QualityReportUpdateManager:
             parameters=next(iter(job_reports.values())).parameters,
 
             comparison_summary=ComparisonReportComparisonSummary(
-                frame_share_percent=len(task_intersection_frames) / (task.data.size or 1),
+                frame_share_percent=len(task_intersection_frames) / (task.data.size or 1) * 100,
                 frames=sorted(task_intersection_frames),
 
                 conflict_count=len(task_conflicts),
