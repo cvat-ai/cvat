@@ -134,8 +134,6 @@ def parse_exception_message(msg):
     return parsed_msg
 
 def process_failed_job(rq_job):
-    if rq_job.meta['tmp_file_descriptor']:
-        os.close(rq_job.meta['tmp_file_descriptor'])
     if os.path.exists(rq_job.meta['tmp_file']):
         os.remove(rq_job.meta['tmp_file'])
     exc_info = str(rq_job.exc_info or rq_job.dependency.exc_info)

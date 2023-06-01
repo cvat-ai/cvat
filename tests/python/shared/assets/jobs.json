@@ -19,6 +19,7 @@
         "url": "http://localhost:8080/api/labels?job_id=26"
       },
       "mode": "annotation",
+      "organization": null,
       "project_id": null,
       "stage": "annotation",
       "start_frame": 6,
@@ -45,6 +46,7 @@
         "url": "http://localhost:8080/api/labels?job_id=25"
       },
       "mode": "annotation",
+      "organization": null,
       "project_id": null,
       "stage": "annotation",
       "start_frame": 0,
@@ -71,6 +73,7 @@
         "url": "http://localhost:8080/api/labels?job_id=24"
       },
       "mode": "annotation",
+      "organization": null,
       "project_id": 12,
       "stage": "annotation",
       "start_frame": 0,
@@ -97,6 +100,7 @@
         "url": "http://localhost:8080/api/labels?job_id=23"
       },
       "mode": "annotation",
+      "organization": null,
       "project_id": null,
       "stage": "annotation",
       "start_frame": 0,
@@ -123,6 +127,7 @@
         "url": "http://localhost:8080/api/labels?job_id=22"
       },
       "mode": "annotation",
+      "organization": 2,
       "project_id": 11,
       "stage": "annotation",
       "start_frame": 0,
@@ -149,6 +154,7 @@
         "url": "http://localhost:8080/api/labels?job_id=21"
       },
       "mode": "annotation",
+      "organization": 2,
       "project_id": null,
       "stage": "annotation",
       "start_frame": 0,
@@ -175,6 +181,7 @@
         "url": "http://localhost:8080/api/labels?job_id=19"
       },
       "mode": "interpolation",
+      "organization": null,
       "project_id": 8,
       "stage": "annotation",
       "start_frame": 0,
@@ -201,6 +208,7 @@
         "url": "http://localhost:8080/api/labels?job_id=18"
       },
       "mode": "annotation",
+      "organization": 2,
       "project_id": 5,
       "stage": "annotation",
       "start_frame": 0,
@@ -227,6 +235,7 @@
         "url": "http://localhost:8080/api/labels?job_id=17"
       },
       "mode": "annotation",
+      "organization": 2,
       "project_id": 4,
       "stage": "annotation",
       "start_frame": 0,
@@ -259,6 +268,7 @@
         "url": "http://localhost:8080/api/labels?job_id=16"
       },
       "mode": "annotation",
+      "organization": 2,
       "project_id": 2,
       "stage": "annotation",
       "start_frame": 0,
@@ -285,6 +295,7 @@
         "url": "http://localhost:8080/api/labels?job_id=14"
       },
       "mode": "annotation",
+      "organization": null,
       "project_id": 1,
       "stage": "annotation",
       "start_frame": 15,
@@ -311,6 +322,7 @@
         "url": "http://localhost:8080/api/labels?job_id=13"
       },
       "mode": "annotation",
+      "organization": null,
       "project_id": 1,
       "stage": "acceptance",
       "start_frame": 10,
@@ -337,6 +349,7 @@
         "url": "http://localhost:8080/api/labels?job_id=12"
       },
       "mode": "annotation",
+      "organization": null,
       "project_id": 1,
       "stage": "validation",
       "start_frame": 5,
@@ -369,6 +382,7 @@
         "url": "http://localhost:8080/api/labels?job_id=11"
       },
       "mode": "annotation",
+      "organization": null,
       "project_id": 1,
       "stage": "annotation",
       "start_frame": 0,
@@ -397,10 +411,11 @@
         "url": "http://localhost:8080/api/issues?job_id=10"
       },
       "labels": {
-        "count": 2,
+        "count": 3,
         "url": "http://localhost:8080/api/labels?job_id=10"
       },
       "mode": "annotation",
+      "organization": null,
       "project_id": null,
       "stage": "annotation",
       "start_frame": 0,
@@ -427,6 +442,7 @@
         "url": "http://localhost:8080/api/labels?job_id=9"
       },
       "mode": "annotation",
+      "organization": 2,
       "project_id": null,
       "stage": "annotation",
       "start_frame": 0,
@@ -453,6 +469,7 @@
         "url": "http://localhost:8080/api/labels?job_id=8"
       },
       "mode": "annotation",
+      "organization": null,
       "project_id": null,
       "stage": "annotation",
       "start_frame": 0,
@@ -485,6 +502,7 @@
         "url": "http://localhost:8080/api/labels?job_id=7"
       },
       "mode": "interpolation",
+      "organization": null,
       "project_id": null,
       "stage": "annotation",
       "start_frame": 0,
@@ -517,6 +535,7 @@
         "url": "http://localhost:8080/api/labels?job_id=2"
       },
       "mode": "annotation",
+      "organization": 1,
       "project_id": null,
       "stage": "annotation",
       "start_frame": 0,

@@ -41,9 +41,9 @@ class TestGetProjects:
             if is_project_staff(user["id"], p["id"]) == is_project_staff_flag:
                 return p["id"]
 
-    def _test_response_200(self, username, project_id, **kwargs):
+    def _test_response_200(self, username, project_id):
         with make_api_client(username) as api_client:
-            (project, response) = api_client.projects_api.retrieve(project_id, **kwargs)
+            (project, response) = api_client.projects_api.retrieve(project_id)
             assert response.status == HTTPStatus.OK
             assert project_id == project.id
 
@@ -123,7 +123,7 @@ class TestGetProjects:
             )
         )
 
-        self._test_response_200(user["username"], pid, org_id=user["org"])
+        self._test_response_200(user["username"], pid)
 
     @pytest.mark.parametrize("role", ("supervisor", "worker"))
     def test_if_org_member_supervisor_or_worker_can_see_project(
@@ -139,7 +139,7 @@ class TestGetProjects:
             )
         )
 
-        self._test_response_200(user["username"], pid, org_id=user["org"])
+        self._test_response_200(user["username"], pid)
 
 
 class TestProjectsListFilters(CollectionSimpleFilterTestBase):
@@ -403,10 +403,10 @@ class TestPostProjects:
             "name": "test cannot create project with same labels",
             "labels": [{"name": "l1"}, {"name": "l1"}],
         }
-        response = post_method(admin_user, "/projects", project_spec)
+        response = post_method(admin_user, "projects", project_spec)
         assert response.status_code == HTTPStatus.BAD_REQUEST
 
-        response = get_method(admin_user, "/projects")
+        response = get_method(admin_user, "projects")
         assert response.status_code == HTTPStatus.OK
 
     def test_cannot_create_project_with_same_skeleton_sublabels(self, admin_user):
@@ -416,10 +416,10 @@ class TestPostProjects:
                 {"name": "s1", "type": "skeleton", "sublabels": [{"name": "1"}, {"name": "1"}]}
             ],
         }
-        response = post_method(admin_user, "/projects", project_spec)
+        response = post_method(admin_user, "projects", project_spec)
         assert response.status_code == HTTPStatus.BAD_REQUEST
 
-        response = get_method(admin_user, "/projects")
+        response = get_method(admin_user, "projects")
         assert response.status_code == HTTPStatus.OK
 
     @pytest.mark.parametrize(
@@ -443,7 +443,7 @@ class TestPostProjects:
             },
         }
 
-        response = post_method(user, "/projects", project_spec)
+        response = post_method(user, "projects", project_spec)
         assert response.status_code == HTTPStatus.FORBIDDEN
 
 
@@ -664,7 +664,7 @@ class TestImportExportDatasetProject:
 
         self._test_import_project(username, project_id, "CVAT 1.1", import_data)
 
-        response = get_method(username, f"/tasks", project_id=project_id)
+        response = get_method(username, f"tasks", project_id=project_id)
         assert response.status_code == HTTPStatus.OK
         tasks = response.json()["results"]
 
@@ -699,7 +699,7 @@ class TestPatchProjectLabel:
         label_payload = {"id": label["id"], "deleted": True}
 
         response = patch_method(
-            admin_user, f'/projects/{project["id"]}', {"labels": [label_payload]}
+            admin_user, f'projects/{project["id"]}', {"labels": [label_payload]}
         )
         assert response.status_code == HTTPStatus.OK, response.content
         assert response.json()["labels"]["count"] == project["labels"]["count"] - 1
@@ -721,7 +721,7 @@ class TestPatchProjectLabel:
         label_payload = {"id": label["id"], "deleted": True}
 
         response = patch_method(
-            admin_user, f'/projects/{project["id"]}', {"labels": [label_payload]}
+            admin_user, f'projects/{project["id"]}', {"labels": [label_payload]}
         )
         assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == project["labels"]["count"] - 1
@@ -735,7 +735,7 @@ class TestPatchProjectLabel:
         project_labels[0].update({"name": "new name"})
 
         response = patch_method(
-            admin_user, f'/projects/{project["id"]}', {"labels": [project_labels[0]]}
+            admin_user, f'projects/{project["id"]}', {"labels": [project_labels[0]]}
         )
         assert response.status_code == HTTPStatus.OK
 
@@ -750,7 +750,7 @@ class TestPatchProjectLabel:
         label_payload = {"id": project_labels[0]["id"], "name": project_labels[0]["name"]}
 
         response = patch_method(
-            admin_user, f'/projects/{project["id"]}', {"labels": [label_payload]}
+            admin_user, f'projects/{project["id"]}', {"labels": [label_payload]}
         )
         assert response.status_code == HTTPStatus.BAD_REQUEST
         assert "All label names must be unique" in response.text
@@ -759,7 +759,7 @@ class TestPatchProjectLabel:
         project = list(projects)[0]
         new_label = deepcopy([l for l in labels if l.get("project_id") != project["id"]][0])
 
-        response = patch_method(admin_user, f'/projects/{project["id"]}', {"labels": [new_label]})
+        response = patch_method(admin_user, f'projects/{project["id"]}', {"labels": [new_label]})
         assert response.status_code == HTTPStatus.NOT_FOUND
         assert f"Not found label with id #{new_label['id']} to change" in response.text
 
@@ -767,7 +767,7 @@ class TestPatchProjectLabel:
         project = list(projects)[0]
         new_label = {"name": "new name"}
 
-        response = patch_method(admin_user, f'/projects/{project["id"]}', {"labels": [new_label]})
+        response = patch_method(admin_user, f'projects/{project["id"]}', {"labels": [new_label]})
         assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == project["labels"]["count"] + 1
 
@@ -793,7 +793,7 @@ class TestPatchProjectLabel:
         new_label = {"name": "new name"}
         response = patch_method(
             user["username"],
-            f'/projects/{project["id"]}',
+            f'projects/{project["id"]}',
             {"labels": [new_label]},
             org_id=project["organization"],
         )
@@ -822,7 +822,7 @@ class TestPatchProjectLabel:
         new_label = {"name": "new name"}
         response = patch_method(
             user["username"],
-            f'/projects/{project["id"]}',
+            f'projects/{project["id"]}',
             {"labels": [new_label]},
             org_id=project["organization"],
         )
@@ -847,7 +847,7 @@ class TestPatchProjectLabel:
         new_label = {"name": "new name"}
         response = patch_method(
             user["username"],
-            f'/projects/{project["id"]}',
+            f'projects/{project["id"]}',
             {"labels": [new_label]},
             org_id=project["organization"],
         )
@@ -870,9 +870,7 @@ class TestPatchProjectLabel:
             'data-element-id="1" data-node-id="1" data-label-name="597501"></circle>',
         }
 
-        response = patch_method(
-            admin_user, f'/projects/{project["id"]}', {"labels": [new_skeleton]}
-        )
+        response = patch_method(admin_user, f'projects/{project["id"]}', {"labels": [new_skeleton]})
         assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == project["labels"]["count"] + 1
 
@@ -995,7 +993,7 @@ class TestGetProjectPreview:
             )
         )
 
-        self._test_response_200(user["username"], pid, org_id=user["org"])
+        self._test_response_200(user["username"], pid)
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -1016,7 +1014,7 @@ class TestPatchProject:
         project_spec = {
             "name": f"Project with foreign cloud storage {storage_id} settings",
         }
-        response = post_method(user, "/projects", project_spec)
+        response = post_method(user, "projects", project_spec)
 
         updated_fields = {
             field: {
@@ -1026,5 +1024,5 @@ class TestPatchProject:
         }
         project_id = response.json()["id"]
 
-        response = patch_method(user, f"/projects/{project_id}", updated_fields)
+        response = patch_method(user, f"projects/{project_id}", updated_fields)
         assert response.status_code == HTTPStatus.FORBIDDEN

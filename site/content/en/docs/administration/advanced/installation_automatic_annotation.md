@@ -98,16 +98,16 @@ description: 'Information about the installation of components needed for semi-a
   cat << EOF > /tmp/input.json
   {"image": "$image"}
   EOF
-  cat /tmp/input.json | nuctl invoke openvino.omz.public.yolo-v3-tf -c 'application/json'
+  cat /tmp/input.json | nuctl invoke openvino-omz-public-yolo-v3-tf -c 'application/json'
   ```
 
   <details>
 
   ```bash
-  20.07.17 12:07:44.519    nuctl.platform.invoker (I) Executing function {"method": "POST", "url": "http://:57308", "headers": {"Content-Type":["application/json"],"X-Nuclio-Log-Level":["info"],"X-Nuclio-Target":["openvino.omz.public.yolo-v3-tf"]}}
+  20.07.17 12:07:44.519    nuctl.platform.invoker (I) Executing function {"method": "POST", "url": "http://:57308", "headers": {"Content-Type":["application/json"],"X-Nuclio-Log-Level":["info"],"X-Nuclio-Target":["openvino-omz-public-yolo-v3-tf"]}}
   20.07.17 12:07:45.275    nuctl.platform.invoker (I) Got response {"status": "200 OK"}
   20.07.17 12:07:45.275                     nuctl (I) >>> Start of function logs
-  20.07.17 12:07:45.275 ino.omz.public.yolo-v3-tf (I) Run yolo-v3-tf model {"worker_id": "0", "time": 1594976864570.9353}
+  20.07.17 12:07:45.275 ino-omz-public-yolo-v3-tf (I) Run yolo-v3-tf model {"worker_id": "0", "time": 1594976864570.9353}
   20.07.17 12:07:45.275                     nuctl (I) <<< End of function logs
 
   > Response headers:

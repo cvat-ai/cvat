@@ -1,5 +1,5 @@
 metadata:
-  name: onnx-yolov7
+  name: onnx-wongkinyiu-yolov7
   namespace: cvat
   annotations:
     name: YOLO v7
@@ -94,7 +94,7 @@ spec:
   handler: main:handler
   eventTimeout: 30s
   build:
-    image: cvat/onnx-yolov7
+    image: cvat.onnx.wongkinyiu.yolov7
     baseImage: ultralytics/yolov5:latest-cpu
 
     directives:

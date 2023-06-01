@@ -17,7 +17,7 @@ spec:
       value: /opt/nuclio/trans-t
 
   build:
-    image: cvat/pth.dschoerk.transt
+    image: cvat.pth.dschoerk.transt
     baseImage: ubuntu:20.04
 
     directives:
