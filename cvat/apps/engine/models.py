@@ -520,8 +520,15 @@ class Segment(models.Model):
 
     @property
     def frame_set(self) -> Sequence[int]:
-        step = self.task.data.get_frame_step()
-        frame_range = range(self.start_frame, self.stop_frame + 1, step)
+        data = self.task.data
+        data_start_frame = data.start_frame
+        data_stop_frame = data.stop_frame
+        step = data.get_frame_step()
+        frame_range = range(
+            data_start_frame + self.start_frame * step,
+            min(data_start_frame + self.stop_frame * step, data_stop_frame) + step,
+            step
+        )
 
         if self.type == SegmentType.RANGE:
             return frame_range

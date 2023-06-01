@@ -693,9 +693,10 @@ class JobData(CommonData):
         super()._init_frame_info()
 
         if self.db_instance.segment.type == SegmentType.SPECIFIC_FRAMES:
+            frame_set = self.db_instance.segment.frame_set
             self._excluded_frames.update(
                 frame for frame in self.rel_range
-                if self.abs_frame_id(frame) not in self.db_instance.segment.frame_set
+                if self.abs_frame_id(frame) not in frame_set
             )
 
         if self._required_frames:
