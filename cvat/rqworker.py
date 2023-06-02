@@ -34,6 +34,14 @@ class SimpleWorker(Worker):
 
     def execute_job(self, *args, **kwargs):
         """Execute job in same thread/process, do not fork()"""
+
+        # Resolves problems with
+        # django.db.utils.OperationalError: server closed the connection unexpectedly
+        # errors during debugging
+        # https://stackoverflow.com/questions/8242837/django-multiprocessing-and-database-connections/10684672#10684672
+        from django import db
+        db.connections.close_all()
+
         return self.perform_job(*args, **kwargs)
 
 
