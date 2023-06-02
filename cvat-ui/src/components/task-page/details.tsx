@@ -17,7 +17,6 @@ import moment from 'moment';
 import Paragraph from 'antd/lib/typography/Paragraph';
 import Select from 'antd/lib/select';
 import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
-import Descriptions from 'antd/lib/descriptions';
 import Space from 'antd/lib/space';
 
 import { getCore, Task } from 'cvat-core-wrapper';
@@ -232,19 +231,6 @@ class DetailsComponent extends React.PureComponent<Props, State> {
         );
     }
 
-    private renderParameters(): JSX.Element {
-        const { task: taskInstance } = this.props;
-        const { overlap, segmentSize, imageQuality } = taskInstance;
-
-        return (
-            <Descriptions className='cvat-task-parameters' bordered layout='vertical' size='small'>
-                <Descriptions.Item label='Overlap size'>{overlap}</Descriptions.Item>
-                <Descriptions.Item label='Segment size'>{segmentSize}</Descriptions.Item>
-                <Descriptions.Item label='Image quality'>{imageQuality}</Descriptions.Item>
-            </Descriptions>
-        );
-    }
-
     private renderDescription(): JSX.Element {
         const { task: taskInstance, onUpdateTask } = this.props;
         const owner = taskInstance.owner ? taskInstance.owner.username : null;
@@ -447,9 +433,6 @@ class DetailsComponent extends React.PureComponent<Props, State> {
                                     previewClassName='cvat-task-item-preview'
                                 />
                             </Col>
-                        </Row>
-                        <Row>
-                            <Col span={24}>{this.renderParameters()}</Col>
                         </Row>
                     </Col>
                     <Col md={16} lg={17} xl={17} xxl={18}>
