@@ -34,7 +34,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed the issue of skeletons dumping on created tasks/projects (<https://github.com/opencv/cvat/pull/6157>)
 - Resolved an issue related to saving annotations for skeleton tracks (<https://github.com/opencv/cvat/pull/6075>)
-
+- Incorrect location of temporary file during job annotation import.(<https://github.com/opencv/cvat/pull/5909>)
+- Deletion of uploaded file along with annotations/backups when an RQ job
+  has been initiated, but no subsequent status check requests have been made.(<https://github.com/opencv/cvat/pull/5909>)
+- Deletion of uploaded files, including annotations and backups,
+  after they have been uploaded to the server using the TUS protocol  but before an RQ job has been initiated. (<https://github.com/opencv/cvat/pull/5909>)
+- Simultaneous creation of tasks or projects with identical names from backups by multiple users.(<https://github.com/opencv/cvat/pull/5909>)
 
 ### Security
 - TDB
