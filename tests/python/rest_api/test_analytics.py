@@ -111,15 +111,15 @@ class TestGetAuditEvents:
             ),
         ]
         for task_id in task_ids:
-            event_filters.extend((
+            event_filters.extend(
                 (
-                    (lambda e: json.loads(e["payload"])["request"]["id"], [task_id[1]]),
-                    ("scope", ["create:task"]),
-                ),
-                (
-                    ("scope", ["create:job"]),
-                ),
-            ))
+                    (
+                        (lambda e: json.loads(e["payload"])["request"]["id"], [task_id[1]]),
+                        ("scope", ["create:task"]),
+                    ),
+                    (("scope", ["create:job"]),),
+                )
+            )
         self._wait_for_request_ids(event_filters)
 
     def _wait_for_request_ids(self, event_filters):
@@ -266,11 +266,17 @@ class TestGetAuditEvents:
 
         event_filters = (
             (
-                (lambda e: json.loads(e["payload"])["request"]["id"], [response.headers.get("X-Request-Id")]),
+                (
+                    lambda e: json.loads(e["payload"])["request"]["id"],
+                    [response.headers.get("X-Request-Id")],
+                ),
                 ("scope", ["delete:project"]),
             ),
             (
-                (lambda e: json.loads(e["payload"])["request"]["id"], [response.headers.get("X-Request-Id")]),
+                (
+                    lambda e: json.loads(e["payload"])["request"]["id"],
+                    [response.headers.get("X-Request-Id")],
+                ),
                 ("scope", ["delete:task"]),
             ),
         )
