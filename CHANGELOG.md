@@ -7,7 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## \[2.5.0] - Unreleased
 ### Added
+- TBD
 
+### Changed
+- Replaced Apache mod_wsgi with Uvicorn ASGI server for backend use(<https://github.com/opencv/cvat/pull/6195>)
+
+### Deprecated
+- TBD
+
+### Removed
+- TDB
+
+### Fixed
+- Incorrect location of temporary file during job annotation import.(<https://github.com/opencv/cvat/pull/5909>)
+- Deletion of uploaded file along with annotations/backups when an RQ job
+  has been initiated, but no subsequent status check requests have been made.(<https://github.com/opencv/cvat/pull/5909>)
+- Deletion of uploaded files, including annotations and backups,
+  after they have been uploaded to the server using the TUS protocol  but before an RQ job has been initiated. (<https://github.com/opencv/cvat/pull/5909>)
+- Simultaneous creation of tasks or projects with identical names from backups by multiple users.(<https://github.com/opencv/cvat/pull/5909>)
+
+### Security
+- TDB
+
+## \[2.4.5] - 2023-06-02
+### Added
 - Integrated support for sharepoint and cloud storage files, along with
   directories to be omitted during task creation (server) (<https://github.com/opencv/cvat/pull/6074>)
 - Enabled task creation with directories from cloud storage or sharepoint  (<https://github.com/opencv/cvat/pull/6074>)
@@ -22,27 +45,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Renamed certain Nuclio functions to adhere to a common naming convention. For instance,
   `onnx-yolov7` -> `onnx-wongkinyiu-yolov7`, `ultralytics-yolov5` -> `pth-ultralytics-yolov5`
   (<https://github.com/opencv/cvat/pull/6140>)
-- Replaced Apache mod_wsgi with Uvicorn ASGI server for backend use(<https://github.com/opencv/cvat/pull/6195>)
 
 ### Deprecated
 - Deprecated the endpoint `/cloudstorages/{id}/content` (<https://github.com/opencv/cvat/pull/6074>)
 
-### Removed
-- TDB
-
 ### Fixed
-
 - Fixed the issue of skeletons dumping on created tasks/projects (<https://github.com/opencv/cvat/pull/6157>)
 - Resolved an issue related to saving annotations for skeleton tracks (<https://github.com/opencv/cvat/pull/6075>)
-- Incorrect location of temporary file during job annotation import.(<https://github.com/opencv/cvat/pull/5909>)
-- Deletion of uploaded file along with annotations/backups when an RQ job
-  has been initiated, but no subsequent status check requests have been made.(<https://github.com/opencv/cvat/pull/5909>)
-- Deletion of uploaded files, including annotations and backups,
-  after they have been uploaded to the server using the TUS protocol  but before an RQ job has been initiated. (<https://github.com/opencv/cvat/pull/5909>)
-- Simultaneous creation of tasks or projects with identical names from backups by multiple users.(<https://github.com/opencv/cvat/pull/5909>)
-
-### Security
-- TDB
 
 ## \[2.4.4] - 2023-05-18
 ### Added
