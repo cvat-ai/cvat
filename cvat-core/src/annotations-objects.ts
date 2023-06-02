@@ -57,7 +57,7 @@ class Annotation {
     protected history: any;
     protected groupColors: Record<number, string>;
     public serverID: number | null;
-    protected jobID: number;
+    public jobID: number;
     protected parentID: number | null;
     protected dimension: DimensionType;
     public group: number;

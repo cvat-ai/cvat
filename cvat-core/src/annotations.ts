@@ -219,6 +219,9 @@ export function annotationsStatistics(session) {
     const cache = getCache(sessionType);
 
     if (cache.has(session)) {
+        if (sessionType === 'job') {
+            return cache.get(session).collection.statistics({ jobID: session.id });
+        }
         return cache.get(session).collection.statistics();
     }
 
