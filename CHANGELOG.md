@@ -8,9 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## \[2.5.0] - Unreleased
 ### Added
 
-- Integrated support for sharepoint and cloud storage files, along with directories to be omitted during task creation (server) (<https://github.com/opencv/cvat/pull/6074>)
+- Integrated support for sharepoint and cloud storage files, along with
+  directories to be omitted during task creation (server) (<https://github.com/opencv/cvat/pull/6074>)
 - Enabled task creation with directories from cloud storage or sharepoint  (<https://github.com/opencv/cvat/pull/6074>)
-- Enhanced task creation to support any data type supported by the server by default, from cloud storage without the necessity for the `use_cache` option (<https://github.com/opencv/cvat/pull/6074>)
+- Enhanced task creation to support any data type supported by the server
+   by default, from cloud storage without the necessity for the `use_cache` option (<https://github.com/opencv/cvat/pull/6074>)
 - Added capability for task creation with data from cloud storage without the `use_cache` option  (<https://github.com/opencv/cvat/pull/6074>)
 
 
