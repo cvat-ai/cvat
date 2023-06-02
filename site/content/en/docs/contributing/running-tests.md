@@ -29,6 +29,12 @@ description: 'Instructions on how to run all existence tests.'
    yarn --frozen-lockfile
    ```
 
+If you want to get a code coverage report instrument the code:
+```
+yarn --frozen-lockfile
+yarn run coverage
+```
+
 **Running tests**
 
 ```

@@ -125,18 +125,22 @@ def _kube_get_clichouse_pod_name():
     return output
 
 
-def docker_cp(source, target, capture_output=True):
-    _run(f"docker container cp {source} {target}", capture_output)
+def docker_cp(source, target):
+    _run(f"docker container cp {source} {target}")
 
 
 def kube_cp(source, target):
     _run(f"kubectl cp {source} {target}")
 
 
-def docker_exec(container, command: Union[List[str], str], capture_output=True):
-    base = f"docker exec {PREFIX}_{container}_1"
+def docker_exec(container, command, capture_output=True):
+    return _run(f"docker exec -u root {PREFIX}_{container}_1 {command}", capture_output)
+
+
+def docker_exec_cvat(command: Union[List[str], str]):
+    base = f"docker exec {PREFIX}_server_1"
     _command = f"{base} {command}" if isinstance(command, str) else base.split() + command
-    return _run(_command, capture_output)
+    return _run(_command)
 
 
 def kube_exec_cvat(command: Union[List[str], str]):
@@ -233,7 +237,6 @@ def create_compose_files(container_name_files):
                     service_env = service_config["environment"]
                     service_env["COVERAGE_PROCESS_START"] = ".coveragerc"
                     service_env["RQ_WORKER_CLASS"] = "cvat.rqworker.CoverageWorker"
-                    # service_env["COVERAGE_ENABLED"] = "yes"
 
             yaml.dump(dc_config, ndcf)
 
@@ -432,7 +435,8 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     platform = session.config.getoption("--platform")
 
     if platform == "local":
-        collect_code_coverage_from_containers()
+        if os.environ.get("COVERAGE_ENABLED", "no") == "yes":
+            collect_code_coverage_from_containers()
 
         docker_restore_db()
         docker_exec(DB_CONTAINER, "dropdb test_db")
@@ -449,12 +453,11 @@ def collect_code_coverage_from_containers():
         sleep(5)
 
         # get code coverage report
-        docker_exec(container, "coverage combine", capture_output=False)
+        docker_exec(container, "coverage combine")
         docker_exec(container, "coverage xml", capture_output=False)
         docker_cp(
             f"{PREFIX}_{container}_1:home/django/coverage.xml",
             f"coverage_{container}.xml",
-            capture_output=False,
         )
 
 
