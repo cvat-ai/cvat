@@ -6,7 +6,7 @@
 import React, { useEffect, useState } from 'react';
 import { useHistory } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
-import { CopyOutlined, DownloadOutlined } from '@ant-design/icons';
+import { CopyOutlined, DownloadOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import { ColumnFilterItem } from 'antd/lib/table/interface';
 import Table from 'antd/lib/table';
 import Button from 'antd/lib/button';
@@ -22,6 +22,7 @@ import { useSelector } from 'react-redux';
 import { getQualityColor } from 'utils/quality-color';
 import Tag from 'antd/lib/tag';
 import { toRepresentation } from './common';
+import { ConflictsTooltip } from './gt-conflicts';
 
 interface Props {
     task: Task;
@@ -161,21 +162,6 @@ function JobListComponent(props: Props): JSX.Element {
             },
         },
         {
-            title: 'Errors',
-            dataIndex: 'errors',
-            key: 'errors',
-            className: 'cvat-job-item-errors',
-            sorter: sorter('errors.summary.errorCount'),
-            render: (report?: QualityReport): JSX.Element => {
-                const errorCount = report?.summary?.errorCount;
-                return (
-                    <Text>
-                        {errorCount || 0}
-                    </Text>
-                );
-            },
-        },
-        {
             title: 'Conflicts',
             dataIndex: 'conflicts',
             key: 'conflicts',
@@ -184,9 +170,20 @@ function JobListComponent(props: Props): JSX.Element {
             render: (report: QualityReport): JSX.Element => {
                 const conflictCount = report?.summary?.conflictCount;
                 return (
-                    <Text>
-                        {conflictCount || 0}
-                    </Text>
+                    <div className='cvat-job-list-item-conflicts'>
+                        <Text>
+                            {conflictCount || 0}
+                        </Text>
+                        <CVATTooltip
+                            title={<ConflictsTooltip reportSummary={report?.summary} />}
+                            className='cvat-analytics-tooltip'
+                            overlayStyle={{ maxWidth: '500px' }}
+                        >
+                            <QuestionCircleOutlined
+                                style={{ opacity: 0.5 }}
+                            />
+                        </CVATTooltip>
+                    </div>
                 );
             },
         },

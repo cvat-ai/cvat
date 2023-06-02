@@ -6,14 +6,69 @@ import '../styles.scss';
 
 import React from 'react';
 import Text from 'antd/lib/typography/Text';
-import { QualityReport, Task } from 'cvat-core-wrapper';
+import { QualityReport, QualitySummary, Task } from 'cvat-core-wrapper';
 import { useSelector } from 'react-redux';
 import { CombinedState } from 'reducers';
+import { Col, Row } from 'antd/lib/grid';
 import AnalyticsCard from './analytics-card';
 import { percent, clampValue } from './common';
 
 interface Props {
     task: Task;
+}
+
+interface ConflictTooltipProps {
+    reportSummary?: QualitySummary;
+}
+
+export function ConflictsTooltip(props: ConflictTooltipProps): JSX.Element {
+    const { reportSummary } = props;
+    return (
+        <Row className='cvat-analytics-tooltip-conflicts-inner'>
+            <Col span={12}>
+                <Text>
+                    Warnings:
+                </Text>
+                <Text>
+                    Low overlap:&nbsp;
+                    {reportSummary?.conflictsByType.lowOverlap || 0}
+                </Text>
+                <Text>
+                    Mismatching direction:&nbsp;
+                    {reportSummary?.conflictsByType.mismatchingDirection || 0}
+                </Text>
+                <Text>
+                    Mismatching attributes:&nbsp;
+                    {reportSummary?.conflictsByType.mismatchingAttributes || 0}
+                </Text>
+                <Text>
+                    Mismatching groups:&nbsp;
+                    {reportSummary?.conflictsByType.mismatchingGroups || 0}
+                </Text>
+                <Text>
+                    Covered annotation:&nbsp;
+                    {reportSummary?.conflictsByType.coveredAnnotation || 0}
+                </Text>
+            </Col>
+            <Col span={12}>
+                <Text>
+                    Errors:
+                </Text>
+                <Text>
+                    Missing annotations:&nbsp;
+                    {reportSummary?.conflictsByType.missingAnnotations || 0}
+                </Text>
+                <Text>
+                    Extra annotations:&nbsp;
+                    {reportSummary?.conflictsByType.extraAnnotations || 0}
+                </Text>
+                <Text>
+                    Mismatching label:&nbsp;
+                    {reportSummary?.conflictsByType.mismatchingLabel || 0}
+                </Text>
+            </Col>
+        </Row>
+    );
 }
 
 function GTConflicts(props: Props): JSX.Element {
@@ -27,46 +82,6 @@ function GTConflicts(props: Props): JSX.Element {
         reportSummary = taskReport.summary;
         conflictsRepresentation = clampValue(reportSummary?.conflictCount);
     }
-
-    const tooltip = (
-        <div className='cvat-analytics-tooltip-inner'>
-            <Text>
-                Conflicts by type:
-            </Text>
-            <Text>
-                Missing annotations:&nbsp;
-                {reportSummary?.conflictsByType.missingAnnotations || 0}
-            </Text>
-            <Text>
-                Extra annotations:&nbsp;
-                {reportSummary?.conflictsByType.extraAnnotations || 0}
-            </Text>
-            <Text>
-                Mismatching label:&nbsp;
-                {reportSummary?.conflictsByType.mismatchingLabel || 0}
-            </Text>
-            <Text>
-                Low overlap:&nbsp;
-                {reportSummary?.conflictsByType.lowOverlap || 0}
-            </Text>
-            <Text>
-                Mismatching direction:&nbsp;
-                {reportSummary?.conflictsByType.mismatchingDirection || 0}
-            </Text>
-            <Text>
-                Mismatching attributes:&nbsp;
-                {reportSummary?.conflictsByType.mismatchingAttributes || 0}
-            </Text>
-            <Text>
-                Mismatching groups:&nbsp;
-                {reportSummary?.conflictsByType.mismatchingGroups || 0}
-            </Text>
-            <Text>
-                Covered annotation:&nbsp;
-                {reportSummary?.conflictsByType.coveredAnnotation || 0}
-            </Text>
-        </div>
-    );
 
     const bottomElement = (
         <>
@@ -93,7 +108,7 @@ function GTConflicts(props: Props): JSX.Element {
             title='GT Conflicts'
             className='cvat-task-gt-conflicts'
             value={conflictsRepresentation}
-            tooltip={tooltip}
+            tooltip={<ConflictsTooltip reportSummary={reportSummary} />}
             size={12}
             bottomElement={bottomElement}
         />

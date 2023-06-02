@@ -61,6 +61,12 @@
     }
 }
 
+.cvat-analytics-tooltip-conflicts-inner {
+    @extend .cvat-analytics-tooltip-inner;
+
+    min-width: $grid-unit-size * 47;
+}
+
 .cvat-analytics-download-report-button {
     padding-left: $grid-unit-size * 2;
     padding-right: $grid-unit-size * 2;
@@ -138,4 +144,10 @@
     .ant-form-item-control-input {
         min-height: 0;
     }
+}
+
+.cvat-job-list-item-conflicts {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }

@@ -38,7 +38,7 @@ function AnalyticsCard(props: Props): JSX.Element {
                                 </Text>
                                 {
                                     tooltip && (
-                                        <CVATTooltip title={tooltip} className='cvat-analytics-tooltip'>
+                                        <CVATTooltip title={tooltip} className='cvat-analytics-tooltip' overlayStyle={{ maxWidth: '500px' }}>
                                             <QuestionCircleOutlined
                                                 style={{ opacity: 0.5 }}
                                             />
