@@ -179,7 +179,10 @@ COPY --chown=${USER} utils/ ${HOME}/utils
 COPY --chown=${USER} cvat/ ${HOME}/cvat
 COPY --chown=${USER} .coveragerc ${HOME}/
 
-RUN echo "import coverage; coverage.process_startup()" > /opt/venv/lib/python3.10/site-packages/coverage_subprocess.pth
+ARG COVERAGE_ENABLED
+RUN if [ "${COVERAGE_ENABLED}" = 'yes' ]; then \
+        echo "import coverage; coverage.process_startup()" > /opt/venv/lib/python3.10/site-packages/coverage_subprocess.pth; \
+    fi
 
 # RUN all commands below as 'django' user
 USER ${USER}

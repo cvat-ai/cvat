@@ -1,6 +1,6 @@
 comment:
-  layout: "header, diff, components"
-  
+  layout: "header, diff, flags, components"
+
 component_management:
   individual_components:
     - component_id: cvat-ui

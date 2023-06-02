@@ -23,13 +23,16 @@ PREFIX = "test"
 
 DB_CONTAINER = "cvat_db"
 SERVER_CONTAINER = "cvat_server"
-WEBHOOKS_CONTAINER = "cvat_worker_webhooks"
 ANNOTATION_CONTAINER = "cvat_worker_annotation"
-UTILS_CONTAINER = "cvat_utils"
 IMPORT_CONTAINER = "cvat_worker_import"
 EXPORT_CONTAINER = "cvat_worker_export"
 
-CODE_COVERED_CONTAINERS = [SERVER_CONTAINER, WEBHOOKS_CONTAINER, ANNOTATION_CONTAINER, UTILS_CONTAINER, IMPORT_CONTAINER, EXPORT_CONTAINER]
+CODE_COVERED_CONTAINERS = [
+    SERVER_CONTAINER,
+    ANNOTATION_CONTAINER,
+    IMPORT_CONTAINER,
+    EXPORT_CONTAINER,
+]
 
 CONTAINER_NAME_FILES = ["docker-compose.tests.yml"]
 
@@ -92,7 +95,7 @@ def _run(command, capture_output=True):
             proc = run(_command, check=True, stdout=PIPE, stderr=PIPE)  # nosec
             stdout, stderr = proc.stdout.decode(), proc.stderr.decode()
         else:
-            proc = run(_command, check=True)  # nosec
+            proc = run(_command)  # nosec
         return stdout, stderr
     except CalledProcessError as exc:
         stderr = exc.stderr.decode() if capture_output else "see above"
@@ -130,8 +133,8 @@ def kube_cp(source, target):
     _run(f"kubectl cp {source} {target}")
 
 
-def docker_exec(container, command):
-    return _run(f"docker exec -u root {PREFIX}_{container}_1 {command}")
+def docker_exec(container, command, capture_output=True):
+    return _run(f"docker exec -u root {PREFIX}_{container}_1 {command}", capture_output)
 
 
 def kube_exec_cvat(command):
@@ -154,7 +157,9 @@ def kube_exec_clickhouse_db(command):
 
 
 def docker_restore_db():
-    docker_exec(DB_CONTAINER, "psql -U root -d postgres -v from=test_db -v to=cvat -f /tmp/restore.sql")
+    docker_exec(
+        DB_CONTAINER, "psql -U root -d postgres -v from=test_db -v to=cvat -f /tmp/restore.sql"
+    )
 
 
 def kube_restore_db():
@@ -224,6 +229,7 @@ def create_compose_files(container_name_files):
                     service_env = service_config["environment"]
                     service_env["COVERAGE_PROCESS_START"] = ".coveragerc"
                     service_env["RQ_WORKER_CLASS"] = "cvat.rqworker.CoverageWorker"
+                    service_env["COVERAGE_ENABLED"] = "yes"
 
             yaml.dump(dc_config, ndcf)
 
@@ -383,7 +389,9 @@ def local_start(start, stop, dumpdb, cleanup, rebuild, cvat_root_dir, cvat_db_di
     wait_for_services()
 
     docker_exec(SERVER_CONTAINER, "python manage.py loaddata /tmp/data.json")
-    docker_exec(DB_CONTAINER, "psql -U root -d postgres -v from=cvat -v to=test_db -f /tmp/restore.sql")
+    docker_exec(
+        DB_CONTAINER, "psql -U root -d postgres -v from=cvat -v to=test_db -f /tmp/restore.sql"
+    )
 
     if start:
         pytest.exit("All necessary containers have been created and started.", returncode=0)
@@ -431,17 +439,15 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
 
 
 def collect_code_coverage_from_containers():
-    command = "python3"
     for container in CODE_COVERED_CONTAINERS:
         # stop process with code coverage
-        docker_exec(container, f"kill -15 {command}")
-        while not run(f"docker exec -u root {PREFIX}_{SERVER_CONTAINER}_1 {command}", shell=True).returncode:
-            sleep(1)
+        docker_exec(container, f"kill -15 1")
+        sleep(2)
 
         # get code coverage report
         docker_exec(container, "coverage combine")
-        docker_exec(container, "coverage xml")
-        docker_cp(f"{container}:home/django/coverage.xml", f"coverage_{container}.xml")
+        docker_exec(container, "coverage xml", capture_output=False)
+        docker_cp(f"{PREFIX}_{container}_1:home/django/coverage.xml", f"coverage_{container}.xml")
 
 
 @pytest.fixture(scope="function")
