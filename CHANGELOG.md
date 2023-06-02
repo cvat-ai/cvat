@@ -13,7 +13,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Enhanced task creation to support any data type supported by the server by default, from cloud storage without the necessity for the `use_cache` option (<https://github.com/opencv/cvat/pull/6074>)
 - Added capability for task creation with data from cloud storage without the `use_cache` option  (<https://github.com/opencv/cvat/pull/6074>)
 
-
 ### Changed
 - User can now access resource links from any organization or sandbox, granted it's available to them (<https://github.com/opencv/cvat/pull/5892>)
 - Cloud storage manifest files have been made optional (<https://github.com/opencv/cvat/pull/6074>)
@@ -24,14 +23,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Replaced Apache mod_wsgi with Uvicorn ASGI server for backend use(<https://github.com/opencv/cvat/pull/6195>)
 
 ### Deprecated
-- Deprecated the endpoint `/cloudstorages/{id}/conten` (<https://github.com/opencv/cvat/pull/6074>)
+- Deprecated the endpoint `/cloudstorages/{id}/content` (<https://github.com/opencv/cvat/pull/6074>)
 
 ### Removed
 - TDB
 
 ### Fixed
+
 - Fixed the issue of skeletons dumping on created tasks/projects (<https://github.com/opencv/cvat/pull/6157>)
 - Resolved an issue related to saving annotations for skeleton tracks (<https://github.com/opencv/cvat/pull/6075>)
+
 
 ### Security
 - TDB

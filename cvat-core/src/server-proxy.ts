@@ -783,13 +783,14 @@ async function importDataset(
     };
 
     const url = `${backendAPI}/projects/${id}/dataset`;
+    let rqId: string;
 
     async function wait() {
         return new Promise<void>((resolve, reject) => {
             async function requestStatus() {
                 try {
                     const response = await Axios.get(url, {
-                        params: { ...params, action: 'import_status' },
+                        params: { ...params, action: 'import_status', rq_id: rqId },
                     });
                     if (response.status === 202) {
                         if (response.data.message) {
@@ -812,10 +813,11 @@ async function importDataset(
 
     if (isCloudStorage) {
         try {
-            await Axios.post(url,
+            const response = await Axios.post(url,
                 new FormData(), {
                     params,
                 });
+            rqId = response.data.rq_id;
         } catch (errorData) {
             throw generateError(errorData);
         }
@@ -837,11 +839,12 @@ async function importDataset(
                     headers: { 'Upload-Start': true },
                 });
             await chunkUpload(file, uploadConfig);
-            await Axios.post(url,
+            const response = await Axios.post(url,
                 new FormData(), {
                     params,
                     headers: { 'Upload-Finish': true },
                 });
+            rqId = response.data.rq_id;
         } catch (errorData) {
             throw generateError(errorData);
         }
@@ -1617,6 +1620,7 @@ async function uploadAnnotations(
         filename: typeof file === 'string' ? file : file.name,
         conv_mask_to_poly: options.convMaskToPoly,
     };
+    let rqId: string;
 
     const url = `${backendAPI}/${session}s/${id}/annotations`;
     async function wait() {
@@ -1627,7 +1631,7 @@ async function uploadAnnotations(
                         url,
                         new FormData(),
                         {
-                            params,
+                            params: { ...params, rq_id: rqId },
                         },
                     );
                     if (response.status === 202) {
@@ -1646,10 +1650,11 @@ async function uploadAnnotations(
 
     if (isCloudStorage) {
         try {
-            await Axios.post(url,
+            const response = await Axios.post(url,
                 new FormData(), {
                     params,
                 });
+            rqId = response.data.rq_id;
         } catch (errorData) {
             throw generateError(errorData);
         }
@@ -1667,11 +1672,12 @@ async function uploadAnnotations(
                     headers: { 'Upload-Start': true },
                 });
             await chunkUpload(file, uploadConfig);
-            await Axios.post(url,
+            const response = await Axios.post(url,
                 new FormData(), {
                     params,
                     headers: { 'Upload-Finish': true },
                 });
+            rqId = response.data.rq_id;
         } catch (errorData) {
             throw generateError(errorData);
         }
