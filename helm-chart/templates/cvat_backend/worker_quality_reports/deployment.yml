@@ -1,57 +1,57 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Release.Name }}-backend-worker-quality-reports
+  name: {{ .Release.Name }}-backend-worker-quality_reports
   namespace: {{ .Release.Namespace }}
   labels:
     app: cvat-app
     tier: backend
-    component: worker-quality-reports
+    component: worker-quality_reports
     {{- include "cvat.labels" . | nindent 4 }}
-    {{- with .Values.cvat.backend.worker.quality-reports.labels }}
+    {{- with .Values.cvat.backend.worker.quality_reports.labels }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
-  {{- with .Values.cvat.backend.worker.quality-reports.annotations }}
+  {{- with .Values.cvat.backend.worker.quality_reports.annotations }}
   annotations:
   {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  replicas: {{ .Values.cvat.backend.worker.quality-reports.replicas }}
+  replicas: {{ .Values.cvat.backend.worker.quality_reports.replicas }}
   strategy:
     type: Recreate
   selector:
     matchLabels:
       {{- include "cvat.labels" . | nindent 6 }}
-      {{- with .Values.cvat.backend.worker.quality-reports.labels }}
+      {{- with .Values.cvat.backend.worker.quality_reports.labels }}
       {{- toYaml . | nindent 6 }}
       {{- end }}
-      app: cvat-app-worker-quality-reports
+      app: cvat-app-worker-quality_reports
       tier: backend
-      component: worker-quality-reports
+      component: worker-quality_reports
   template:
     metadata:
       labels:
-        app: cvat-app-worker-quality-reports
+        app: cvat-app-worker-quality_reports
         tier: backend
-        component: worker-quality-reports
+        component: worker-quality_reports
         {{- include "cvat.labels" . | nindent 8 }}
-        {{- with .Values.cvat.backend.worker.quality-reports.labels }}
+        {{- with .Values.cvat.backend.worker.quality_reports.labels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
-      {{- with .Values.cvat.backend.worker.quality-reports.annotations }}
+      {{- with .Values.cvat.backend.worker.quality_reports.annotations }}
       annotations:
       {{- toYaml . | nindent 8 }}
       {{- end }}
     spec:
       containers:
-        - name: cvat-app-backend-worker-quality-reports-container
+        - name: cvat-app-backend-worker-quality_reports-container
           image: {{ .Values.cvat.backend.image }}:{{ .Values.cvat.backend.tag }}
           imagePullPolicy: {{ .Values.cvat.backend.imagePullPolicy }}
-          {{- with .Values.cvat.backend.worker.quality-reports.resources }}
+          {{- with .Values.cvat.backend.worker.quality_reports.resources }}
           resources:
           {{- toYaml . | nindent 12 }}
           {{- end }}
-          args: ["-c", "supervisord/worker.quality-reports.conf"]
+          args: ["-c", "supervisord/worker.quality_reports.conf"]
           env:
           {{- if .Values.redis.enabled }}
           - name: CVAT_REDIS_HOST
@@ -91,22 +91,22 @@ spec:
               secretKeyRef:
                 name: "{{ tpl (.Values.postgresql.secret.name) . }}"
                 key: password
-          {{- with .Values.cvat.backend.worker.quality-reports.additionalEnv }}
+          {{- with .Values.cvat.backend.worker.quality_reports.additionalEnv }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
-          {{- with .Values.cvat.backend.worker.quality-reports.additionalVolumeMounts }}
+          {{- with .Values.cvat.backend.worker.quality_reports.additionalVolumeMounts }}
           volumeMounts:
           {{- toYaml . | nindent 10 }}
           {{- end }}
-      {{- with .Values.cvat.backend.worker.quality-reports.affinity }}
+      {{- with .Values.cvat.backend.worker.quality_reports.affinity }}
       affinity:
       {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.cvat.backend.worker.quality-reports.tolerations }}
+      {{- with .Values.cvat.backend.worker.quality_reports.tolerations }}
       tolerations:
       {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.cvat.backend.worker.quality-reports.additionalVolumes }}
+      {{- with .Values.cvat.backend.worker.quality_reports.additionalVolumes }}
       volumes:
       {{- toYaml . | nindent 8 }}
       {{- end }}
