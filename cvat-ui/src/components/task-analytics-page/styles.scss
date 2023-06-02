@@ -61,6 +61,14 @@
     }
 }
 
+.cvat-analytics-settings-tooltip-inner {
+    @extend .cvat-analytics-tooltip-inner;
+
+    span:not(:last-child) {
+        margin-bottom: $grid-unit-size;
+    }
+}
+
 .cvat-analytics-tooltip-conflicts-inner {
     @extend .cvat-analytics-tooltip-inner;
 
@@ -132,6 +140,7 @@
 
 .cvat-quality-settings-title {
     margin-bottom: $grid-unit-size * 2;
+    align-items: center;
 }
 
 .cvat-modal-quality-settings {
