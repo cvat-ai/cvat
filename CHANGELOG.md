@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support task creation with any type of data supported by the server by default from cloud storage
 without use_cache option (<https://github.com/opencv/cvat/pull/6074>)
 - Support task creation with cloud storage data and without use_cache option (<https://github.com/opencv/cvat/pull/6074>)
+- Cleaning worker to check that the uploaded resource has been deleted or delete otherwise (<https://github.com/opencv/cvat/pull/5909>)
 
 ### Changed
 - Resource links are opened from any organization/sandbox if available for user (<https://github.com/opencv/cvat/pull/5892>)
@@ -31,6 +32,12 @@ without use_cache option (<https://github.com/opencv/cvat/pull/6074>)
 ### Fixed
 - Skeletons dumping on created tasks/projects (<https://github.com/opencv/cvat/pull/6157>)
 - Fix saving annotations for skeleton tracks (<https://github.com/opencv/cvat/pull/6075>)
+- Wrong location of tmp file when importing job annotations (<https://github.com/opencv/cvat/pull/5909>)
+- Removing uploaded file with annotations/backups when rq job was created
+but no next requests for checking status were not made (<https://github.com/opencv/cvat/pull/5909>)
+- Removing uploaded file with annotations/backups after file was uploaded to the server by tus protocol
+but rq job has not yet been created (<https://github.com/opencv/cvat/pull/5909>)
+- Tasks/projects creation from backups with the same name at the same time by different users (<https://github.com/opencv/cvat/pull/5909>)
 
 ### Security
 - TDB
