@@ -251,8 +251,6 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'cvat.wsgi.application'
-
 # IAM settings
 IAM_TYPE = 'BASIC'
 IAM_BASE_EXCEPTION = None # a class which will be used by IAM to report errors
