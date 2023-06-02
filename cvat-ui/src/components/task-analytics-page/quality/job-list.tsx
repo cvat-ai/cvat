@@ -217,13 +217,14 @@ function JobListComponent(props: Props): JSX.Element {
             key: 'download',
             className: 'cvat-job-item-quality-report-download',
             align: 'center' as const,
-            render: (report?: QualityReport): JSX.Element => {
+            render: (job: Job): JSX.Element => {
+                const report = jobsReports[job.id];
                 const reportID = report?.id;
                 return (
                     reportID ? (
                         <a
                             href={`${getCore().config.backendAPI}/quality/reports/${reportID}/data`}
-                            download={`quality-report-${reportID}.json`}
+                            download={`quality-report-job_${job.id}-${reportID}.json`}
                         >
                             <DownloadOutlined />
                         </a>
@@ -237,12 +238,12 @@ function JobListComponent(props: Props): JSX.Element {
         acc.push({
             key: job.id,
             job: job.id,
+            download: job,
             stage: job,
             assignee: job,
             errors: report,
             quality: report,
             conflicts: report,
-            download: report,
             frame_intersection: report,
         });
 

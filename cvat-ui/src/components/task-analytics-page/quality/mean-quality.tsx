@@ -67,7 +67,7 @@ function MeanQuality(props: Props): JSX.Element {
                         <Button type='primary' icon={<DownloadOutlined />} className='cvat-analytics-download-report-button'>
                             <a
                                 href={`${getCore().config.backendAPI}/quality/reports/${taskReport?.id}/data`}
-                                download={`quality-report-${taskReport?.id}.json`}
+                                download={`quality-report-task_${task.id}-${taskReport?.id}.json`}
                             >
                                 Quality Report
                             </a>
