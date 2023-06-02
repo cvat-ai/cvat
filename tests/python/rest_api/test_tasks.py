@@ -11,8 +11,10 @@ from copy import deepcopy
 from functools import partial
 from http import HTTPStatus
 from itertools import chain, product
+from math import ceil
 from pathlib import Path
-from tempfile import TemporaryDirectory
+from tempfile import NamedTemporaryFile, TemporaryDirectory
+from time import sleep, time
 from typing import List, Optional
 
 import pytest
@@ -21,10 +23,12 @@ from cvat_sdk.api_client import models
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from cvat_sdk.core.helpers import get_paginated_collection
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
+from cvat_sdk.core.uploading import Uploader
 from deepdiff import DeepDiff
 from PIL import Image
 
 import shared.utils.s3 as s3
+from shared.fixtures.init import docker_exec_cvat, kube_exec_cvat
 from shared.utils.config import (
     BASE_URL,
     USER_PASS,
@@ -1187,10 +1191,10 @@ class TestPostTaskData:
             "name": "test cannot create task with same labels",
             "labels": [{"name": "l1"}, {"name": "l1"}],
         }
-        response = post_method(self._USERNAME, "/tasks", task_spec)
+        response = post_method(self._USERNAME, "tasks", task_spec)
         assert response.status_code == HTTPStatus.BAD_REQUEST
 
-        response = get_method(self._USERNAME, "/tasks")
+        response = get_method(self._USERNAME, "tasks")
         assert response.status_code == HTTPStatus.OK
 
     def test_cannot_create_task_with_same_skeleton_sublabels(self):
@@ -1200,10 +1204,10 @@ class TestPostTaskData:
                 {"name": "s1", "type": "skeleton", "sublabels": [{"name": "1"}, {"name": "1"}]}
             ],
         }
-        response = post_method(self._USERNAME, "/tasks", task_spec)
+        response = post_method(self._USERNAME, "tasks", task_spec)
         assert response.status_code == HTTPStatus.BAD_REQUEST
 
-        response = get_method(self._USERNAME, "/tasks")
+        response = get_method(self._USERNAME, "tasks")
         assert response.status_code == HTTPStatus.OK
 
 
@@ -1221,7 +1225,7 @@ class TestPatchTaskLabel:
         label = deepcopy([l for l in labels if l.get("task_id") == task["id"]][0])
         label_payload = {"id": label["id"], "deleted": True}
 
-        response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [label_payload]})
+        response = patch_method(admin_user, f'tasks/{task["id"]}', {"labels": [label_payload]})
         assert response.status_code == HTTPStatus.OK, response.content
         assert response.json()["labels"]["count"] == task["labels"]["count"] - 1
 
@@ -1241,7 +1245,7 @@ class TestPatchTaskLabel:
         task_labels.remove(label)
         label_payload = {"id": label["id"], "deleted": True}
 
-        response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [label_payload]})
+        response = patch_method(admin_user, f'tasks/{task["id"]}', {"labels": [label_payload]})
         assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == task["labels"]["count"] - 1
 
@@ -1253,7 +1257,7 @@ class TestPatchTaskLabel:
         task_labels = deepcopy([l for l in labels if l.get("task_id") == task["id"]])
         task_labels[0].update({"name": "new name"})
 
-        response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [task_labels[0]]})
+        response = patch_method(admin_user, f'tasks/{task["id"]}', {"labels": [task_labels[0]]})
         assert response.status_code == HTTPStatus.OK
 
         resulting_labels = self._get_task_labels(task["id"], admin_user)
@@ -1266,7 +1270,7 @@ class TestPatchTaskLabel:
 
         label_payload = {"id": task_labels[0]["id"], "name": task_labels[0]["name"]}
 
-        response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [label_payload]})
+        response = patch_method(admin_user, f'tasks/{task["id"]}', {"labels": [label_payload]})
         assert response.status_code == HTTPStatus.BAD_REQUEST
         assert "All label names must be unique" in response.text
 
@@ -1281,7 +1285,7 @@ class TestPatchTaskLabel:
             ][0]
         )
 
-        response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [new_label]})
+        response = patch_method(admin_user, f'tasks/{task["id"]}', {"labels": [new_label]})
         assert response.status_code == HTTPStatus.NOT_FOUND
         assert f"Not found label with id #{new_label['id']} to change" in response.text
 
@@ -1289,7 +1293,7 @@ class TestPatchTaskLabel:
         task = [t for t in tasks if t["project_id"] is None][0]
         new_label = {"name": "new name"}
 
-        response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [new_label]})
+        response = patch_method(admin_user, f'tasks/{task["id"]}', {"labels": [new_label]})
         assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == task["labels"]["count"] + 1
 
@@ -1315,9 +1319,8 @@ class TestPatchTaskLabel:
         new_label = {"name": "new name"}
         response = patch_method(
             user["username"],
-            f'/tasks/{task["id"]}',
+            f'tasks/{task["id"]}',
             {"labels": [new_label]},
-            org_id=task["organization"],
         )
         assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == task["labels"]["count"] + 1
@@ -1344,9 +1347,8 @@ class TestPatchTaskLabel:
         new_label = {"name": "new name"}
         response = patch_method(
             user["username"],
-            f'/tasks/{task["id"]}',
+            f'tasks/{task["id"]}',
             {"labels": [new_label]},
-            org_id=task["organization"],
         )
         assert response.status_code == HTTPStatus.FORBIDDEN
 
@@ -1369,9 +1371,8 @@ class TestPatchTaskLabel:
         new_label = {"name": "new name"}
         response = patch_method(
             user["username"],
-            f'/tasks/{task["id"]}',
+            f'tasks/{task["id"]}',
             {"labels": [new_label]},
-            org_id=task["organization"],
         )
         assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == task["labels"]["count"] + 1
@@ -1392,7 +1393,7 @@ class TestPatchTaskLabel:
             'data-element-id="1" data-node-id="1" data-label-name="597501"></circle>',
         }
 
-        response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [new_skeleton]})
+        response = patch_method(admin_user, f'tasks/{task["id"]}', {"labels": [new_skeleton]})
         assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == task["labels"]["count"] + 1
 
@@ -1729,3 +1730,110 @@ def test_can_report_correct_completed_jobs_count(tasks, jobs, admin_user):
 
         task, _ = api_client.tasks_api.retrieve(task["id"])
         assert task.jobs.completed == 1
+
+
+class TestImportTaskAnnotations:
+    def _make_client(self) -> Client:
+        return Client(BASE_URL, config=Config(status_check_period=0.01))
+
+    @pytest.fixture(autouse=True)
+    def setup(self, restore_db_per_function, tmp_path: Path, admin_user: str):
+        self.tmp_dir = tmp_path
+        self.client = self._make_client()
+        self.user = admin_user
+        self.format = "COCO 1.0"
+
+        with self.client:
+            self.client.login((self.user, USER_PASS))
+
+    def _check_annotations(self, task_id):
+        with make_api_client(self.user) as api_client:
+            (_, response) = api_client.tasks_api.retrieve_annotations(id=task_id)
+            assert response.status == HTTPStatus.OK
+            annotations = json.loads(response.data)["shapes"]
+            assert len(annotations) > 0
+
+    def _delete_annotations(self, task_id):
+        with make_api_client(self.user) as api_client:
+            (_, response) = api_client.tasks_api.destroy_annotations(id=task_id)
+            assert response.status == HTTPStatus.NO_CONTENT
+
+    @pytest.mark.timeout(64)
+    @pytest.mark.parametrize("successful_upload", [True, False])
+    def test_can_import_annotations_after_previous_unclear_import(
+        self, successful_upload: bool, tasks_with_shapes
+    ):
+        task_id = tasks_with_shapes[0]["id"]
+        self._check_annotations(task_id)
+
+        with NamedTemporaryFile() as f:
+            filename = self.tmp_dir / f"task_{task_id}_{Path(f.name).name}_coco.zip"
+
+        task = self.client.tasks.retrieve(task_id)
+        task.export_dataset(self.format, filename, include_images=False)
+
+        self._delete_annotations(task_id)
+
+        params = {"format": self.format, "filename": filename.name}
+        url = self.client.api_map.make_endpoint_url(
+            self.client.api_client.tasks_api.create_annotations_endpoint.path
+        ).format(id=task_id)
+        uploader = Uploader(self.client)
+
+        if successful_upload:
+            # define time required to upload file with annotations
+            start_time = time()
+            task.import_annotations(self.format, filename)
+            required_time = ceil(time() - start_time) * 2
+            self._delete_annotations(task_id)
+
+            response = uploader.upload_file(
+                url, filename, meta=params, query_params=params, logger=self.client.logger.debug
+            )
+            rq_id = json.loads(response.data)["rq_id"]
+            assert rq_id
+        else:
+            required_time = 54
+            uploader._tus_start_upload(url, query_params=params)
+            uploader._upload_file_data_with_tus(
+                url, filename, meta=params, logger=self.client.logger.debug
+            )
+
+        sleep(required_time)
+        if successful_upload:
+            self._check_annotations(task_id)
+            self._delete_annotations(task_id)
+        task.import_annotations(self.format, filename)
+        self._check_annotations(task_id)
+
+    @pytest.mark.timeout(64)
+    def test_check_import_cache_after_previous_interrupted_upload(self, tasks_with_shapes, request):
+        task_id = tasks_with_shapes[0]["id"]
+        with NamedTemporaryFile() as f:
+            filename = self.tmp_dir / f"task_{task_id}_{Path(f.name).name}_coco.zip"
+        task = self.client.tasks.retrieve(task_id)
+        task.export_dataset(self.format, filename, include_images=False)
+
+        params = {"format": self.format, "filename": filename.name}
+        url = self.client.api_map.make_endpoint_url(
+            self.client.api_client.tasks_api.create_annotations_endpoint.path
+        ).format(id=task_id)
+
+        uploader = Uploader(self.client)
+        uploader._tus_start_upload(url, query_params=params)
+        uploader._upload_file_data_with_tus(
+            url, filename, meta=params, logger=self.client.logger.debug
+        )
+        number_of_files = 1
+        sleep(30)  # wait when the cleaning job from rq worker will be started
+        command = ["/bin/bash", "-c", f"ls data/tasks/{task_id}/tmp | wc -l"]
+        platform = request.config.getoption("--platform")
+        assert platform in ("kube", "local")
+        func = docker_exec_cvat if platform == "local" else kube_exec_cvat
+        for _ in range(12):
+            sleep(2)
+            result, _ = func(command)
+            number_of_files = int(result)
+            if not number_of_files:
+                break
+        assert not number_of_files

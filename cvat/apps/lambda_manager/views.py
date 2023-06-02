@@ -32,9 +32,9 @@ import cvat.apps.dataset_manager as dm
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.models import Job, ShapeType, SourceType, Task
 from cvat.apps.engine.serializers import LabeledDataSerializer
-from cvat.apps.engine.schema import ORGANIZATION_OPEN_API_PARAMETERS
 from cvat.utils.http import make_requests_session
 from cvat.apps.iam.permissions import LambdaPermission
+from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 
 
 class LambdaType(Enum):
