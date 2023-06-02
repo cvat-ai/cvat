@@ -68,10 +68,13 @@ class _PermissionTestBase:
                 ),
             )
 
-            api_client.jobs_api.partial_update(job.id, patched_job_write_request={
-                'stage': 'acceptance',
-                'state': 'completed',
-            })
+            api_client.jobs_api.partial_update(
+                job.id,
+                patched_job_write_request={
+                    "stage": "acceptance",
+                    "state": "completed",
+                },
+            )
 
         return job
 
@@ -425,8 +428,11 @@ class TestGetQualityReportData(_PermissionTestBase):
 class TestPostQualityReports(_PermissionTestBase):
     def test_can_create_report(self, admin_user, jobs):
         gt_job = next(
-            j for j in jobs if j["type"] == "ground_truth"
-            and j["stage"] == 'acceptance' and j['state'] == 'completed'
+            j
+            for j in jobs
+            if j["type"] == "ground_truth"
+            and j["stage"] == "acceptance"
+            and j["state"] == "completed"
         )
         task_id = gt_job["task_id"]
 
@@ -440,34 +446,43 @@ class TestPostQualityReports(_PermissionTestBase):
             self.create_quality_report(admin_user, task_id)
 
         assert (
-            'Quality reports require a Ground Truth job in the task at the acceptance '
-            'stage and in the completed state'
+            "Quality reports require a Ground Truth job in the task at the acceptance "
+            "stage and in the completed state"
         ) in capture.value.body
 
-    @pytest.mark.parametrize("field_name, field_value", [
-        ("stage", "annotation"),
-        ("stage", "validation"),
-        ("state", "new"),
-        ("state", "in progress"),
-        ("state", "rejected"),
-    ])
-    def test_cannot_create_report_with_incomplete_gt_job(self, admin_user, jobs, field_name, field_value):
+    @pytest.mark.parametrize(
+        "field_name, field_value",
+        [
+            ("stage", "annotation"),
+            ("stage", "validation"),
+            ("state", "new"),
+            ("state", "in progress"),
+            ("state", "rejected"),
+        ],
+    )
+    def test_cannot_create_report_with_incomplete_gt_job(
+        self, admin_user, jobs, field_name, field_value
+    ):
         gt_job = next(
-            j for j in jobs
+            j
+            for j in jobs
             if j["type"] == "ground_truth"
-            and j["stage"] == 'acceptance' and j['state'] == 'completed'
+            and j["stage"] == "acceptance"
+            and j["state"] == "completed"
         )
         task_id = gt_job["task_id"]
 
         with make_api_client(admin_user) as api_client:
-            api_client.jobs_api.partial_update(gt_job["id"], patched_job_write_request={field_name: field_value})
+            api_client.jobs_api.partial_update(
+                gt_job["id"], patched_job_write_request={field_name: field_value}
+            )
 
         with pytest.raises(exceptions.ApiException) as capture:
             self.create_quality_report(admin_user, task_id)
 
         assert (
-            'Quality reports require a Ground Truth job in the task at the acceptance '
-            'stage and in the completed state'
+            "Quality reports require a Ground Truth job in the task at the acceptance "
+            "stage and in the completed state"
         ) in capture.value.body
 
 
