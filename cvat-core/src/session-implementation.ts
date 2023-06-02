@@ -197,13 +197,8 @@ export function implementJob(Job) {
             throw new ArgumentError('The stop frame is out of the job');
         }
         if (filters.notDeleted) {
-            return findFrame(this.id, frameFrom, frameTo, filters, this.frameMeta);
+            return findFrame(this.id, frameFrom, frameTo, filters);
         }
-        return null;
-    };
-
-    Job.prototype.frames.updateMeta.implementation = async function (meta) {
-        this.frameMeta = meta;
         return null;
     };
 
@@ -649,7 +644,7 @@ export function implementTask(Task) {
 
         if (filters.notDeleted) {
             for (const job of jobs) {
-                const result = await findNotDeletedFrame(
+                const result = await findFrame(
                     job.id, Math.max(frameFrom, job.startFrame), Math.min(frameTo, job.stopFrame), 1,
                 );
 

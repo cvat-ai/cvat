@@ -739,7 +739,7 @@ export async function patchMeta(jobID) {
     frameDataCache[jobID].meta.deleted_frames = prevDeletedFrames;
 }
 
-export async function findFrame(jobID, frameFrom, frameTo, filters, externalMeta) {
+export async function findFrame(jobID, frameFrom, frameTo, filters) {
     const offset = filters.offset || 1;
     let meta;
     if (!frameDataCache[jobID]) {
@@ -756,10 +756,6 @@ export async function findFrame(jobID, frameFrom, frameTo, filters, externalMeta
     const check = (frame): boolean => {
         if (meta.included_frames) {
             return (meta.included_frames.includes(frame)) && !(frame in meta.deleted_frames);
-        }
-        if (Array.isArray(filters.jsonFilters) && filters.jsonFilters.length) {
-            const frameConvert = { conflicted: externalMeta.conflictedFrames.includes(frame) };
-            return jsonLogic.apply(filters.jsonFilters[0], frameConvert);
         }
         return !(frame in meta.deleted_frames);
     };

@@ -32,8 +32,7 @@ function RightGroup(props: Props): JSX.Element {
     } = props;
 
     const annotationFilters = useSelector((state: CombinedState) => state.annotation.annotations.filters);
-    const frameFilters = useSelector((state: CombinedState) => state.annotation.player.filters);
-    const filters = annotationFilters.length || frameFilters.length;
+    const filters = annotationFilters.length;
 
     return (
         <Col className='cvat-annotation-header-right-group'>
