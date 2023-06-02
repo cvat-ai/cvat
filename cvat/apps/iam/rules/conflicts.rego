@@ -98,7 +98,13 @@ filter = [] { # Django Q object to filter list of entries
 } else = qobject {
     organizations.has_perm(organizations.WORKER)
     user := input.auth.user
+    org := input.auth.organization
     qobject := [
+        {"report__job__segment__task__organization": org.id},
+        {"report__job__segment__task__project__organization": org.id}, "|",
+        {"report__task__organization": org.id}, "|",
+        {"report__task__project__organization": org.id}, "|",
+
         {"report__job__segment__task__owner_id": user.id},
         {"report__job__segment__task__assignee_id": user.id}, "|",
         {"report__job__segment__task__project__owner_id": user.id}, "|",
@@ -107,5 +113,7 @@ filter = [] { # Django Q object to filter list of entries
         {"report__task__assignee_id": user.id}, "|",
         {"report__task__project__owner_id": user.id}, "|",
         {"report__task__project__assignee_id": user.id}, "|",
+
+        "&"
     ]
 }

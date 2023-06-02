@@ -2112,9 +2112,9 @@ class QualityReportUpdateManager:
 
         gt_job = task.gt_job
         if gt_job is None or not (
-            gt_job.stage == StageChoice.ACCEPTANCE and gt_job.status == StatusChoice.COMPLETED
+            gt_job.stage == StageChoice.ACCEPTANCE and gt_job.state == StatusChoice.COMPLETED
         ):
-            return self.QualityReportsNotAvailable(
+            raise self.QualityReportsNotAvailable(
                 "Quality reports require a Ground Truth job in the task "
                 f"at the {StageChoice.ACCEPTANCE} stage "
                 f"and in the {StatusChoice.COMPLETED} state"

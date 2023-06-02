@@ -220,6 +220,4 @@ class QualitySettings(models.Model):
 
     @property
     def organization_id(self):
-        if task := self.task:
-            return getattr(task.organization, 'id', None)
-        return None
+        return getattr(self.task.organization, 'id', None)

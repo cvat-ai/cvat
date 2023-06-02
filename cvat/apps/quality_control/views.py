@@ -307,6 +307,12 @@ class QualityReportViewSet(viewsets.GenericViewSet,
         responses={
             '200': QualitySettingsSerializer,
         }),
+    partial_update=extend_schema(
+        summary='Methods does a partial update of chosen fields in the quality settings instance',
+        request=QualitySettingsSerializer(partial=True),
+        responses={
+            '200': QualitySettingsSerializer,
+        })
 )
 class QualitySettingsViewSet(viewsets.GenericViewSet,
     mixins.ListModelMixin, mixins.RetrieveModelMixin, PartialUpdateModelMixin
