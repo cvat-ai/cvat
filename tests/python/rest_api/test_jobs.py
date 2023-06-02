@@ -1391,15 +1391,15 @@ class TestGetJobPreview:
 
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetJobDataMeta:
-    def test_admin_can_get_job_meta(self, jobs):
-        with make_api_client("admin1") as client:
-            job_id = jobs.raw[0]["id"]
+    @pytest.mark.parametrize("org_slug", [None, "", "org"])
+    def test_can_get_job_meta_with_org_slug(self, admin_user, tasks, jobs, organizations, org_slug):
+        # Checks for backward compatibility with org_slug parameter
+        task = next(t for t in tasks if t["organization"])
+        job = next(j for j in jobs if j["task_id"] == task["id"])
 
-            client.organization_slug = None
-            client.jobs_api.retrieve_data_meta(job_id)
+        if org_slug == "org":
+            org_slug = organizations[task["organization"]]["slug"]
 
-            client.organization_slug = ""
-            client.jobs_api.retrieve_data_meta(job_id)
-
-            client.organization_slug = "org1"
-            client.jobs_api.retrieve_data_meta(job_id)
+        with make_api_client(admin_user) as client:
+            client.organization_slug = org_slug
+            client.jobs_api.retrieve_data_meta(job["id"])
