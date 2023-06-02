@@ -21,6 +21,7 @@ import os
 import shutil
 import subprocess
 import sys
+from datetime import timedelta
 from distutils.util import strtobool
 from enum import Enum
 
@@ -294,6 +295,7 @@ class CVAT_QUEUES(Enum):
     AUTO_ANNOTATION = 'annotation'
     WEBHOOKS = 'webhooks'
     NOTIFICATIONS = 'notifications'
+    CLEANING = 'cleaning'
 
 RQ_QUEUES = {
     CVAT_QUEUES.IMPORT_DATA.value: {
@@ -326,6 +328,12 @@ RQ_QUEUES = {
         'DB': 0,
         'DEFAULT_TIMEOUT': '1h'
     },
+    CVAT_QUEUES.CLEANING.value: {
+        'HOST': 'localhost',
+        'PORT': 6379,
+        'DB': 0,
+        'DEFAULT_TIMEOUT': '1h'
+    },
 }
 
 NUCLIO = {
@@ -345,7 +353,6 @@ RQ_EXCEPTION_HANDLERS = [
     'cvat.apps.engine.views.rq_exception_handler',
     'cvat.apps.events.handlers.handle_rq_exception',
 ]
-
 
 # JavaScript and CSS compression
 # https://django-compressor.readthedocs.io
@@ -667,3 +674,7 @@ DATABASES = {
 }
 
 BUCKET_CONTENT_MAX_PAGE_SIZE =  500
+
+IMPORT_CACHE_FAILED_TTL = timedelta(days=90)
+IMPORT_CACHE_SUCCESS_TTL = timedelta(hours=1)
+IMPORT_CACHE_CLEAN_DELAY = timedelta(hours=2)

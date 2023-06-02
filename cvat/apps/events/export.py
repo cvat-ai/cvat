@@ -148,7 +148,7 @@ def export(request, filter_query, queue_name):
                 if os.path.exists(file_path):
                     return Response(status=status.HTTP_201_CREATED)
         elif rq_job.is_failed:
-            exc_info = str(rq_job.exc_info)
+            exc_info = rq_job.meta.get('formatted_exception', str(rq_job.exc_info))
             rq_job.delete()
             return Response(exc_info,
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR)
