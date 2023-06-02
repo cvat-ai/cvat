@@ -125,8 +125,8 @@ def _kube_get_clichouse_pod_name():
     return output
 
 
-def docker_cp(source, target):
-    _run(f"docker container cp {source} {target}")
+def docker_cp(source, target, capture_output=True):
+    _run(f"docker container cp {source} {target}", capture_output)
 
 
 def kube_cp(source, target):
@@ -229,7 +229,7 @@ def create_compose_files(container_name_files):
                     service_env = service_config["environment"]
                     service_env["COVERAGE_PROCESS_START"] = ".coveragerc"
                     service_env["RQ_WORKER_CLASS"] = "cvat.rqworker.CoverageWorker"
-                    service_env["COVERAGE_ENABLED"] = "yes"
+                    # service_env["COVERAGE_ENABLED"] = "yes"
 
             yaml.dump(dc_config, ndcf)
 
@@ -442,12 +442,12 @@ def collect_code_coverage_from_containers():
     for container in CODE_COVERED_CONTAINERS:
         # stop process with code coverage
         docker_exec(container, f"kill -15 1")
-        sleep(2)
+        sleep(5)
 
         # get code coverage report
-        docker_exec(container, "coverage combine")
+        docker_exec(container, "coverage combine", capture_output=False)
         docker_exec(container, "coverage xml", capture_output=False)
-        docker_cp(f"{PREFIX}_{container}_1:home/django/coverage.xml", f"coverage_{container}.xml")
+        docker_cp(f"{PREFIX}_{container}_1:home/django/coverage.xml", f"coverage_{container}.xml", capture_output=False)
 
 
 @pytest.fixture(scope="function")
