@@ -95,7 +95,7 @@ function JobItem(props: Props): JSX.Element {
     const { job, task, onJobUpdate } = props;
     const { stage, id } = job;
     const created = moment(job.createdDate);
-    const updated = moment(job.createdDate);
+    const updated = moment(job.updatedDate);
     const now = moment(moment.now());
     const deletes = useSelector((state: CombinedState) => state.jobs.activities.deletes);
     const deleted = id in deletes ? deletes[id] === true : false;
@@ -223,7 +223,7 @@ function JobItem(props: Props): JSX.Element {
                                     <Col>
                                         <BorderOutlined />
                                         <Text>Frame count:</Text>
-                                        <Text type='secondary'>{` ${job.frameCount} (${(job.frameCount / (task.size || 1) * 100).toFixed(0)}%)`}</Text>
+                                        <Text type='secondary'>{` ${job.frameCount} (${((job.frameCount / (task.size || 1)) * 100).toFixed(0)}%)`}</Text>
                                     </Col>
                                 </Row>
                             </Col>
