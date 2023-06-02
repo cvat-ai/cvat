@@ -52,7 +52,7 @@ class CoverageWorker(Worker):
         self._is_horse = True
         try:
             self.perform_job(*args, **kwargs)
-        except:  # noqa
+        except:  # pylint: disable=bare-except
             os._exit(1)
 
         cov = coverage.Coverage.current()
