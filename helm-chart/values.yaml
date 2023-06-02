@@ -63,7 +63,7 @@ cvat:
         additionalEnv: []
         additionalVolumes: []
         additionalVolumeMounts: []
-      quality_reports:
+      qualityreports:
         replicas: 1
         labels: {}
         annotations: {}
