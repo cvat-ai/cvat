@@ -428,10 +428,11 @@ class TestPostQualityReports(_PermissionTestBase):
 
 class TestSimpleQualityReportsFilters(CollectionSimpleFilterTestBase):
     @pytest.fixture(autouse=True)
-    def setup(self, restore_db_per_class, admin_user, quality_reports, jobs):
+    def setup(self, restore_db_per_class, admin_user, quality_reports, jobs, tasks):
         self.user = admin_user
         self.samples = quality_reports
         self.job_samples = jobs
+        self.task_samples = tasks
 
     def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
         return api_client.quality_api.list_reports_endpoint
@@ -447,12 +448,28 @@ class TestSimpleQualityReportsFilters(CollectionSimpleFilterTestBase):
                 if self._get_field(r, self._map_field("job_id")) in task_job_ids
             ]
             return task_id, task_reports
+        elif field == "org_id":
+            org_id = self.task_samples[
+                next(
+                    s
+                    for s in self.samples
+                    if s["task_id"] and self.task_samples[s["task_id"]]["organization"]
+                )["task_id"]
+            ]["organization"]
+            return org_id, [
+                s
+                for s in self.samples
+                if s["job_id"]
+                and self.job_samples[s["job_id"]]["organization"] == org_id
+                or s["task_id"]
+                and self.task_samples[s["task_id"]]["organization"] == org_id
+            ]
         else:
             return super()._get_field_samples(field)
 
     @pytest.mark.parametrize(
         "field",
-        ("task_id", "job_id", "parent_id", "target"),
+        ("task_id", "job_id", "parent_id", "target", "org_id"),
     )
     def test_can_use_simple_filter_for_object_list(self, field):
         return super().test_can_use_simple_filter_for_object_list(field)
@@ -578,10 +595,14 @@ class TestListQualityConflicts(_PermissionTestBase):
 
 class TestSimpleQualityConflictsFilters(CollectionSimpleFilterTestBase):
     @pytest.fixture(autouse=True)
-    def setup(self, restore_db_per_class, admin_user, quality_conflicts, quality_reports):
+    def setup(
+        self, restore_db_per_class, admin_user, quality_conflicts, quality_reports, jobs, tasks
+    ):
         self.user = admin_user
         self.samples = quality_conflicts
         self.report_samples = quality_reports
+        self.task_samples = tasks
+        self.job_samples = jobs
 
     def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
         return api_client.quality_api.list_conflicts_endpoint
@@ -609,12 +630,29 @@ class TestSimpleQualityConflictsFilters(CollectionSimpleFilterTestBase):
                 if self._get_field(c, self._map_field("report_id")) in task_reports
             ]
             return task_report["task_id"], task_conflicts
+        elif field == "org_id":
+            org_id = self.task_samples[
+                next(
+                    s
+                    for s in self.report_samples
+                    if s["task_id"] and self.task_samples[s["task_id"]]["organization"]
+                )["task_id"]
+            ]["organization"]
+            report_ids = set(
+                s["id"]
+                for s in self.report_samples
+                if s["job_id"]
+                and self.job_samples[s["job_id"]]["organization"] == org_id
+                or s["task_id"]
+                and self.task_samples[s["task_id"]]["organization"] == org_id
+            )
+            return org_id, [c for c in self.samples if c["report_id"] in report_ids]
         else:
             return super()._get_field_samples(field)
 
     @pytest.mark.parametrize(
         "field",
-        ("report_id", "importance", "type", "frame", "job_id", "task_id"),
+        ("report_id", "importance", "type", "frame", "job_id", "task_id", "org_id"),
     )
     def test_can_use_simple_filter_for_object_list(self, field):
         return super().test_can_use_simple_filter_for_object_list(field)

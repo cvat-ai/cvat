@@ -144,7 +144,6 @@ def export(request, filter_query, queue_name):
 
                 return sendfile(request, file_path, attachment=True,
                     attachment_filename=filename)
-
             else:
                 if os.path.exists(file_path):
                     return Response(status=status.HTTP_201_CREATED)

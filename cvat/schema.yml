@@ -338,6 +338,7 @@ paths:
         name: X-Organization
         schema:
           type: string
+        description: Organization unique slug
       - in: query
         name: org
         schema:
@@ -796,6 +797,7 @@ paths:
         name: X-Organization
         schema:
           type: string
+        description: Organization unique slug
       - in: query
         name: org
         schema:
@@ -991,6 +993,7 @@ paths:
         name: X-Organization
         schema:
           type: string
+        description: Organization unique slug
       - in: query
         name: org
         schema:
@@ -1101,6 +1104,7 @@ paths:
         name: X-Organization
         schema:
           type: string
+        description: Organization unique slug
       - in: query
         name: org
         schema:
@@ -1315,6 +1319,7 @@ paths:
         name: X-Organization
         schema:
           type: string
+        description: Organization unique slug
       - in: query
         name: org
         schema:
@@ -2131,6 +2136,7 @@ paths:
         name: X-Organization
         schema:
           type: string
+        description: Organization unique slug
       - name: color
         in: query
         description: A simple equality filter for the color field
@@ -2416,6 +2422,7 @@ paths:
         name: X-Organization
         schema:
           type: string
+        description: Organization unique slug
       - in: query
         name: org
         schema:
@@ -2886,6 +2893,7 @@ paths:
         name: X-Organization
         schema:
           type: string
+        description: Organization unique slug
       - in: query
         name: org
         schema:
@@ -3300,6 +3308,7 @@ paths:
         name: X-Organization
         schema:
           type: string
+        description: Organization unique slug
       - in: query
         name: cloud_storage_id
         schema:
@@ -3355,6 +3364,11 @@ paths:
       operationId: quality_list_conflicts
       summary: Method returns a paginated list of annotation conflicts
       parameters:
+      - name: X-Organization
+        in: header
+        description: Organization unique slug
+        schema:
+          type: string
       - name: filter
         required: false
         in: query
@@ -3378,6 +3392,16 @@ paths:
       - name: job_id
         in: query
         description: A simple equality filter for the job_id field
+        schema:
+          type: integer
+      - name: org
+        in: query
+        description: Organization unique slug
+        schema:
+          type: string
+      - name: org_id
+        in: query
+        description: Organization identifier
         schema:
           type: integer
       - name: page
@@ -3449,6 +3473,11 @@ paths:
       operationId: quality_list_reports
       summary: Method returns a paginated list of quality reports
       parameters:
+      - name: X-Organization
+        in: header
+        description: Organization unique slug
+        schema:
+          type: string
       - name: filter
         required: false
         in: query
@@ -3459,6 +3488,16 @@ paths:
       - name: job_id
         in: query
         description: A simple equality filter for the job_id field
+        schema:
+          type: integer
+      - name: org
+        in: query
+        description: Organization unique slug
+        schema:
+          type: string
+      - name: org_id
+        in: query
+        description: Organization identifier
         schema:
           type: integer
       - name: page
@@ -4109,6 +4148,7 @@ paths:
         name: X-Organization
         schema:
           type: string
+        description: Organization unique slug
       - in: query
         name: org
         schema:
@@ -4805,6 +4845,7 @@ paths:
         name: X-Organization
         schema:
           type: string
+        description: Organization unique slug
       - in: query
         name: cloud_storage_id
         schema:
@@ -5140,6 +5181,7 @@ paths:
         name: X-Organization
         schema:
           type: string
+        description: Organization unique slug
       - in: query
         name: org
         schema:

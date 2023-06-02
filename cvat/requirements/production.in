@@ -1,2 +1,2 @@
 -r base.in
-mod-wsgi==4.9.4
+uvicorn[standard]==0.22.0

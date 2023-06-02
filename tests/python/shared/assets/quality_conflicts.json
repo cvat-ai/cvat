@@ -6,127 +6,13 @@
     {
       "annotation_ids": [
         {
-          "job_id": 27,
-          "obj_id": 65,
-          "type": "rectangle"
-        },
-        {
           "job_id": 28,
-          "obj_id": 101,
-          "type": "rectangle"
-        }
-      ],
-      "frame": 0,
-      "id": 1,
-      "importance": "warning",
-      "report_id": 2,
-      "type": "low_overlap"
-    },
-    {
-      "annotation_ids": [
-        {
-          "job_id": 27,
-          "obj_id": 91,
-          "type": "rectangle"
-        },
-        {
-          "job_id": 28,
-          "obj_id": 118,
-          "type": "rectangle"
-        }
-      ],
-      "frame": 0,
-      "id": 2,
-      "importance": "warning",
-      "report_id": 2,
-      "type": "low_overlap"
-    },
-    {
-      "annotation_ids": [
-        {
-          "job_id": 27,
-          "obj_id": 88,
-          "type": "points"
-        },
-        {
-          "job_id": 28,
-          "obj_id": 102,
-          "type": "points"
-        }
-      ],
-      "frame": 0,
-      "id": 3,
-      "importance": "warning",
-      "report_id": 2,
-      "type": "low_overlap"
-    },
-    {
-      "annotation_ids": [
-        {
-          "job_id": 27,
-          "obj_id": 68,
-          "type": "polygon"
-        },
-        {
-          "job_id": 28,
-          "obj_id": 98,
-          "type": "polygon"
-        }
-      ],
-      "frame": 0,
-      "id": 4,
-      "importance": "warning",
-      "report_id": 2,
-      "type": "low_overlap"
-    },
-    {
-      "annotation_ids": [
-        {
-          "job_id": 27,
-          "obj_id": 67,
-          "type": "polyline"
-        },
-        {
-          "job_id": 28,
-          "obj_id": 99,
+          "obj_id": 129,
           "type": "polyline"
         }
       ],
-      "frame": 0,
-      "id": 5,
-      "importance": "warning",
-      "report_id": 2,
-      "type": "low_overlap"
-    },
-    {
-      "annotation_ids": [
-        {
-          "job_id": 27,
-          "obj_id": 92,
-          "type": "points"
-        },
-        {
-          "job_id": 28,
-          "obj_id": 119,
-          "type": "points"
-        }
-      ],
-      "frame": 0,
-      "id": 6,
-      "importance": "warning",
-      "report_id": 2,
-      "type": "low_overlap"
-    },
-    {
-      "annotation_ids": [
-        {
-          "job_id": 28,
-          "obj_id": 107,
-          "type": "rectangle"
-        }
-      ],
-      "frame": 0,
-      "id": 7,
+      "frame": 1,
+      "id": 37,
       "importance": "error",
       "report_id": 2,
       "type": "missing_annotation"
@@ -135,12 +21,12 @@
       "annotation_ids": [
         {
           "job_id": 28,
-          "obj_id": 121,
-          "type": "points"
+          "obj_id": 127,
+          "type": "mask"
         }
       ],
-      "frame": 0,
-      "id": 8,
+      "frame": 1,
+      "id": 36,
       "importance": "error",
       "report_id": 2,
       "type": "missing_annotation"
@@ -149,337 +35,73 @@
       "annotation_ids": [
         {
           "job_id": 28,
-          "obj_id": 122,
-          "type": "points"
-        }
-      ],
-      "frame": 0,
-      "id": 9,
-      "importance": "error",
-      "report_id": 2,
-      "type": "missing_annotation"
-    },
-    {
-      "annotation_ids": [
-        {
-          "job_id": 27,
-          "obj_id": 70,
-          "type": "rectangle"
-        }
-      ],
-      "frame": 0,
-      "id": 10,
-      "importance": "error",
-      "report_id": 2,
-      "type": "extra_annotation"
-    },
-    {
-      "annotation_ids": [
-        {
-          "job_id": 27,
-          "obj_id": 76,
-          "type": "rectangle"
-        }
-      ],
-      "frame": 0,
-      "id": 11,
-      "importance": "error",
-      "report_id": 2,
-      "type": "extra_annotation"
-    },
-    {
-      "annotation_ids": [
-        {
-          "job_id": 27,
-          "obj_id": 93,
-          "type": "points"
-        }
-      ],
-      "frame": 0,
-      "id": 12,
-      "importance": "error",
-      "report_id": 2,
-      "type": "extra_annotation"
-    },
-    {
-      "annotation_ids": [
-        {
-          "job_id": 27,
-          "obj_id": 74,
-          "type": "polygon"
-        }
-      ],
-      "frame": 0,
-      "id": 13,
-      "importance": "error",
-      "report_id": 2,
-      "type": "extra_annotation"
-    },
-    {
-      "annotation_ids": [
-        {
-          "job_id": 27,
-          "obj_id": 95,
-          "type": "polygon"
-        }
-      ],
-      "frame": 0,
-      "id": 14,
-      "importance": "error",
-      "report_id": 2,
-      "type": "extra_annotation"
-    },
-    {
-      "annotation_ids": [
-        {
-          "job_id": 27,
-          "obj_id": 73,
-          "type": "polygon"
-        }
-      ],
-      "frame": 0,
-      "id": 15,
-      "importance": "error",
-      "report_id": 2,
-      "type": "extra_annotation"
-    },
-    {
-      "annotation_ids": [
-        {
-          "job_id": 27,
-          "obj_id": 96,
+          "obj_id": 125,
           "type": "ellipse"
         }
       ],
-      "frame": 0,
-      "id": 16,
+      "frame": 1,
+      "id": 35,
       "importance": "error",
       "report_id": 2,
-      "type": "extra_annotation"
+      "type": "missing_annotation"
     },
     {
       "annotation_ids": [
-        {
-          "job_id": 27,
-          "obj_id": 64,
-          "type": "polyline"
-        }
-      ],
-      "frame": 0,
-      "id": 17,
-      "importance": "error",
-      "report_id": 2,
-      "type": "extra_annotation"
-    },
-    {
-      "annotation_ids": [
-        {
-          "job_id": 27,
-          "obj_id": 66,
-          "type": "polyline"
-        }
-      ],
-      "frame": 0,
-      "id": 18,
-      "importance": "error",
-      "report_id": 2,
-      "type": "extra_annotation"
-    },
-    {
-      "annotation_ids": [
-        {
-          "job_id": 27,
-          "obj_id": 94,
-          "type": "polyline"
-        }
-      ],
-      "frame": 0,
-      "id": 19,
-      "importance": "error",
-      "report_id": 2,
-      "type": "extra_annotation"
-    },
-    {
-      "annotation_ids": [
-        {
-          "job_id": 27,
-          "obj_id": 89,
-          "type": "points"
-        },
         {
           "job_id": 28,
-          "obj_id": 123,
-          "type": "points"
-        }
-      ],
-      "frame": 0,
-      "id": 20,
-      "importance": "error",
-      "report_id": 2,
-      "type": "mismatching_label"
-    },
-    {
-      "annotation_ids": [
-        {
-          "job_id": 27,
-          "obj_id": 92,
-          "type": "points"
-        },
-        {
-          "job_id": 28,
-          "obj_id": 119,
-          "type": "points"
-        }
-      ],
-      "frame": 0,
-      "id": 21,
-      "importance": "error",
-      "report_id": 2,
-      "type": "mismatching_label"
-    },
-    {
-      "annotation_ids": [
-        {
-          "job_id": 27,
-          "obj_id": 69,
-          "type": "mask"
-        },
-        {
-          "job_id": 28,
-          "obj_id": 97,
+          "obj_id": 124,
           "type": "polygon"
         }
       ],
-      "frame": 0,
-      "id": 22,
+      "frame": 1,
+      "id": 34,
       "importance": "error",
       "report_id": 2,
-      "type": "mismatching_label"
+      "type": "missing_annotation"
     },
     {
       "annotation_ids": [
-        {
-          "job_id": 27,
-          "obj_id": 67,
-          "type": "polyline"
-        },
         {
           "job_id": 28,
-          "obj_id": 99,
-          "type": "polyline"
+          "obj_id": 128,
+          "type": "points"
         }
       ],
-      "frame": 0,
-      "id": 23,
-      "importance": "warning",
+      "frame": 1,
+      "id": 33,
+      "importance": "error",
       "report_id": 2,
-      "type": "mismatching_direction"
+      "type": "missing_annotation"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 28,
+          "obj_id": 130,
+          "type": "rectangle"
+        }
+      ],
+      "frame": 1,
+      "id": 32,
+      "importance": "error",
+      "report_id": 2,
+      "type": "missing_annotation"
     },
     {
       "annotation_ids": [
         {
           "job_id": 27,
-          "obj_id": 69,
-          "type": "mask"
-        }
-      ],
-      "frame": 0,
-      "id": 24,
-      "importance": "warning",
-      "report_id": 2,
-      "type": "covered_annotation"
-    },
-    {
-      "annotation_ids": [
-        {
-          "job_id": 27,
-          "obj_id": 65,
+          "obj_id": 77,
           "type": "rectangle"
         },
         {
           "job_id": 28,
-          "obj_id": 101,
+          "obj_id": 114,
           "type": "rectangle"
         }
       ],
       "frame": 0,
-      "id": 25,
-      "importance": "warning",
-      "report_id": 2,
-      "type": "mismatching_attributes"
-    },
-    {
-      "annotation_ids": [
-        {
-          "job_id": 27,
-          "obj_id": 82,
-          "type": "rectangle"
-        },
-        {
-          "job_id": 28,
-          "obj_id": 103,
-          "type": "rectangle"
-        }
-      ],
-      "frame": 0,
-      "id": 26,
-      "importance": "warning",
-      "report_id": 2,
-      "type": "mismatching_groups"
-    },
-    {
-      "annotation_ids": [
-        {
-          "job_id": 27,
-          "obj_id": 81,
-          "type": "rectangle"
-        },
-        {
-          "job_id": 28,
-          "obj_id": 104,
-          "type": "rectangle"
-        }
-      ],
-      "frame": 0,
-      "id": 27,
-      "importance": "warning",
-      "report_id": 2,
-      "type": "mismatching_groups"
-    },
-    {
-      "annotation_ids": [
-        {
-          "job_id": 27,
-          "obj_id": 83,
-          "type": "rectangle"
-        },
-        {
-          "job_id": 28,
-          "obj_id": 105,
-          "type": "rectangle"
-        }
-      ],
-      "frame": 0,
-      "id": 28,
-      "importance": "warning",
-      "report_id": 2,
-      "type": "mismatching_groups"
-    },
-    {
-      "annotation_ids": [
-        {
-          "job_id": 27,
-          "obj_id": 87,
-          "type": "rectangle"
-        },
-        {
-          "job_id": 28,
-          "obj_id": 106,
-          "type": "rectangle"
-        }
-      ],
-      "frame": 0,
-      "id": 29,
+      "id": 31,
       "importance": "warning",
       "report_id": 2,
       "type": "mismatching_groups"
@@ -507,17 +129,17 @@
       "annotation_ids": [
         {
           "job_id": 27,
-          "obj_id": 77,
+          "obj_id": 87,
           "type": "rectangle"
         },
         {
           "job_id": 28,
-          "obj_id": 114,
+          "obj_id": 106,
           "type": "rectangle"
         }
       ],
       "frame": 0,
-      "id": 31,
+      "id": 29,
       "importance": "warning",
       "report_id": 2,
       "type": "mismatching_groups"
@@ -525,69 +147,319 @@
     {
       "annotation_ids": [
         {
+          "job_id": 27,
+          "obj_id": 83,
+          "type": "rectangle"
+        },
+        {
           "job_id": 28,
-          "obj_id": 130,
+          "obj_id": 105,
           "type": "rectangle"
         }
       ],
-      "frame": 1,
-      "id": 32,
-      "importance": "error",
+      "frame": 0,
+      "id": 28,
+      "importance": "warning",
       "report_id": 2,
-      "type": "missing_annotation"
+      "type": "mismatching_groups"
     },
     {
       "annotation_ids": [
         {
+          "job_id": 27,
+          "obj_id": 81,
+          "type": "rectangle"
+        },
+        {
           "job_id": 28,
-          "obj_id": 128,
-          "type": "points"
+          "obj_id": 104,
+          "type": "rectangle"
         }
       ],
-      "frame": 1,
-      "id": 33,
-      "importance": "error",
+      "frame": 0,
+      "id": 27,
+      "importance": "warning",
       "report_id": 2,
-      "type": "missing_annotation"
+      "type": "mismatching_groups"
     },
     {
       "annotation_ids": [
         {
+          "job_id": 27,
+          "obj_id": 82,
+          "type": "rectangle"
+        },
+        {
           "job_id": 28,
-          "obj_id": 124,
-          "type": "polygon"
+          "obj_id": 103,
+          "type": "rectangle"
         }
       ],
-      "frame": 1,
-      "id": 34,
-      "importance": "error",
+      "frame": 0,
+      "id": 26,
+      "importance": "warning",
       "report_id": 2,
-      "type": "missing_annotation"
+      "type": "mismatching_groups"
     },
     {
       "annotation_ids": [
         {
+          "job_id": 27,
+          "obj_id": 65,
+          "type": "rectangle"
+        },
+        {
           "job_id": 28,
-          "obj_id": 125,
-          "type": "ellipse"
+          "obj_id": 101,
+          "type": "rectangle"
         }
       ],
-      "frame": 1,
-      "id": 35,
-      "importance": "error",
+      "frame": 0,
+      "id": 25,
+      "importance": "warning",
       "report_id": 2,
-      "type": "missing_annotation"
+      "type": "mismatching_attributes"
     },
     {
       "annotation_ids": [
         {
-          "job_id": 28,
-          "obj_id": 127,
+          "job_id": 27,
+          "obj_id": 69,
           "type": "mask"
         }
       ],
-      "frame": 1,
-      "id": 36,
+      "frame": 0,
+      "id": 24,
+      "importance": "warning",
+      "report_id": 2,
+      "type": "covered_annotation"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 27,
+          "obj_id": 67,
+          "type": "polyline"
+        },
+        {
+          "job_id": 28,
+          "obj_id": 99,
+          "type": "polyline"
+        }
+      ],
+      "frame": 0,
+      "id": 23,
+      "importance": "warning",
+      "report_id": 2,
+      "type": "mismatching_direction"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 27,
+          "obj_id": 69,
+          "type": "mask"
+        },
+        {
+          "job_id": 28,
+          "obj_id": 97,
+          "type": "polygon"
+        }
+      ],
+      "frame": 0,
+      "id": 22,
+      "importance": "error",
+      "report_id": 2,
+      "type": "mismatching_label"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 27,
+          "obj_id": 92,
+          "type": "points"
+        },
+        {
+          "job_id": 28,
+          "obj_id": 119,
+          "type": "points"
+        }
+      ],
+      "frame": 0,
+      "id": 21,
+      "importance": "error",
+      "report_id": 2,
+      "type": "mismatching_label"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 27,
+          "obj_id": 89,
+          "type": "points"
+        },
+        {
+          "job_id": 28,
+          "obj_id": 123,
+          "type": "points"
+        }
+      ],
+      "frame": 0,
+      "id": 20,
+      "importance": "error",
+      "report_id": 2,
+      "type": "mismatching_label"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 27,
+          "obj_id": 94,
+          "type": "polyline"
+        }
+      ],
+      "frame": 0,
+      "id": 19,
+      "importance": "error",
+      "report_id": 2,
+      "type": "extra_annotation"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 27,
+          "obj_id": 66,
+          "type": "polyline"
+        }
+      ],
+      "frame": 0,
+      "id": 18,
+      "importance": "error",
+      "report_id": 2,
+      "type": "extra_annotation"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 27,
+          "obj_id": 64,
+          "type": "polyline"
+        }
+      ],
+      "frame": 0,
+      "id": 17,
+      "importance": "error",
+      "report_id": 2,
+      "type": "extra_annotation"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 27,
+          "obj_id": 96,
+          "type": "ellipse"
+        }
+      ],
+      "frame": 0,
+      "id": 16,
+      "importance": "error",
+      "report_id": 2,
+      "type": "extra_annotation"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 27,
+          "obj_id": 73,
+          "type": "polygon"
+        }
+      ],
+      "frame": 0,
+      "id": 15,
+      "importance": "error",
+      "report_id": 2,
+      "type": "extra_annotation"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 27,
+          "obj_id": 95,
+          "type": "polygon"
+        }
+      ],
+      "frame": 0,
+      "id": 14,
+      "importance": "error",
+      "report_id": 2,
+      "type": "extra_annotation"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 27,
+          "obj_id": 74,
+          "type": "polygon"
+        }
+      ],
+      "frame": 0,
+      "id": 13,
+      "importance": "error",
+      "report_id": 2,
+      "type": "extra_annotation"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 27,
+          "obj_id": 93,
+          "type": "points"
+        }
+      ],
+      "frame": 0,
+      "id": 12,
+      "importance": "error",
+      "report_id": 2,
+      "type": "extra_annotation"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 27,
+          "obj_id": 76,
+          "type": "rectangle"
+        }
+      ],
+      "frame": 0,
+      "id": 11,
+      "importance": "error",
+      "report_id": 2,
+      "type": "extra_annotation"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 27,
+          "obj_id": 70,
+          "type": "rectangle"
+        }
+      ],
+      "frame": 0,
+      "id": 10,
+      "importance": "error",
+      "report_id": 2,
+      "type": "extra_annotation"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 28,
+          "obj_id": 122,
+          "type": "points"
+        }
+      ],
+      "frame": 0,
+      "id": 9,
       "importance": "error",
       "report_id": 2,
       "type": "missing_annotation"
@@ -596,15 +468,143 @@
       "annotation_ids": [
         {
           "job_id": 28,
-          "obj_id": 129,
-          "type": "polyline"
+          "obj_id": 121,
+          "type": "points"
         }
       ],
-      "frame": 1,
-      "id": 37,
+      "frame": 0,
+      "id": 8,
       "importance": "error",
       "report_id": 2,
       "type": "missing_annotation"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 28,
+          "obj_id": 107,
+          "type": "rectangle"
+        }
+      ],
+      "frame": 0,
+      "id": 7,
+      "importance": "error",
+      "report_id": 2,
+      "type": "missing_annotation"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 27,
+          "obj_id": 92,
+          "type": "points"
+        },
+        {
+          "job_id": 28,
+          "obj_id": 119,
+          "type": "points"
+        }
+      ],
+      "frame": 0,
+      "id": 6,
+      "importance": "warning",
+      "report_id": 2,
+      "type": "low_overlap"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 27,
+          "obj_id": 67,
+          "type": "polyline"
+        },
+        {
+          "job_id": 28,
+          "obj_id": 99,
+          "type": "polyline"
+        }
+      ],
+      "frame": 0,
+      "id": 5,
+      "importance": "warning",
+      "report_id": 2,
+      "type": "low_overlap"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 27,
+          "obj_id": 68,
+          "type": "polygon"
+        },
+        {
+          "job_id": 28,
+          "obj_id": 98,
+          "type": "polygon"
+        }
+      ],
+      "frame": 0,
+      "id": 4,
+      "importance": "warning",
+      "report_id": 2,
+      "type": "low_overlap"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 27,
+          "obj_id": 88,
+          "type": "points"
+        },
+        {
+          "job_id": 28,
+          "obj_id": 102,
+          "type": "points"
+        }
+      ],
+      "frame": 0,
+      "id": 3,
+      "importance": "warning",
+      "report_id": 2,
+      "type": "low_overlap"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 27,
+          "obj_id": 91,
+          "type": "rectangle"
+        },
+        {
+          "job_id": 28,
+          "obj_id": 118,
+          "type": "rectangle"
+        }
+      ],
+      "frame": 0,
+      "id": 2,
+      "importance": "warning",
+      "report_id": 2,
+      "type": "low_overlap"
+    },
+    {
+      "annotation_ids": [
+        {
+          "job_id": 27,
+          "obj_id": 65,
+          "type": "rectangle"
+        },
+        {
+          "job_id": 28,
+          "obj_id": 101,
+          "type": "rectangle"
+        }
+      ],
+      "frame": 0,
+      "id": 1,
+      "importance": "warning",
+      "report_id": 2,
+      "type": "low_overlap"
     }
   ]
 }

@@ -5,9 +5,10 @@
 
 import re
 import textwrap
-from drf_spectacular.openapi import AutoSchema
+
+from drf_spectacular.authentication import SessionScheme, TokenScheme
 from drf_spectacular.extensions import OpenApiAuthenticationExtension
-from drf_spectacular.authentication import TokenScheme, SessionScheme
+from drf_spectacular.openapi import AutoSchema
 
 from rest_framework import serializers
 
