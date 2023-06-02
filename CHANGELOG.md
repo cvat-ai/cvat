@@ -7,37 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## \[2.5.0] - Unreleased
 ### Added
-- Support share point/cloud storage files and directories that should be excluded when creating a task (server) (<https://github.com/opencv/cvat/pull/6074>)
-- Support task creation with cloud storage/share directories (<https://github.com/opencv/cvat/pull/6074>)
-- Support task creation with any type of data supported by the server by default from cloud storage
-without use_cache option (<https://github.com/opencv/cvat/pull/6074>)
-- Support task creation with cloud storage data and without use_cache option (<https://github.com/opencv/cvat/pull/6074>)
-- Cleaning worker to check that the uploaded resource has been deleted or delete otherwise (<https://github.com/opencv/cvat/pull/5909>)
+
+- Integrated support for sharepoint and cloud storage files, along with
+  directories to be omitted during task creation (server) (<https://github.com/opencv/cvat/pull/6074>)
+- Enabled task creation with directories from cloud storage or sharepoint  (<https://github.com/opencv/cvat/pull/6074>)
+- Enhanced task creation to support any data type supported by the server
+   by default, from cloud storage without the necessity for the `use_cache` option (<https://github.com/opencv/cvat/pull/6074>)
+- Added capability for task creation with data from cloud storage without the `use_cache` option  (<https://github.com/opencv/cvat/pull/6074>)
 
 ### Changed
-- Resource links are opened from any organization/sandbox if available for user (<https://github.com/opencv/cvat/pull/5892>)
-- Cloud storage manifest file is optional (<https://github.com/opencv/cvat/pull/6074>)
-- Updated Django to 4.2.x version (<https://github.com/opencv/cvat/pull/6122>)
-- Some Nuclio functions' names were changed to follow a common convention:
+- User can now access resource links from any organization or sandbox, granted it's available to them (<https://github.com/opencv/cvat/pull/5892>)
+- Cloud storage manifest files have been made optional (<https://github.com/opencv/cvat/pull/6074>)
+- Updated Django to the 4.2.x version (<https://github.com/opencv/cvat/pull/6122>)
+- Renamed certain Nuclio functions to adhere to a common naming convention. For instance,
   `onnx-yolov7` -> `onnx-wongkinyiu-yolov7`, `ultralytics-yolov5` -> `pth-ultralytics-yolov5`
   (<https://github.com/opencv/cvat/pull/6140>)
-- Using Uvicorn ASGI server instead of Apache mod_wsgi for the backend (<https://github.com/opencv/cvat/pull/6195>)
+- Replaced Apache mod_wsgi with Uvicorn ASGI server for backend use(<https://github.com/opencv/cvat/pull/6195>)
 
 ### Deprecated
-- The endpoint /cloudstorages/{id}/content was deprecated (<https://github.com/opencv/cvat/pull/6074>)
+- Deprecated the endpoint `/cloudstorages/{id}/content` (<https://github.com/opencv/cvat/pull/6074>)
 
 ### Removed
 - TDB
 
 ### Fixed
-- Skeletons dumping on created tasks/projects (<https://github.com/opencv/cvat/pull/6157>)
-- Fix saving annotations for skeleton tracks (<https://github.com/opencv/cvat/pull/6075>)
-- Wrong location of tmp file when importing job annotations (<https://github.com/opencv/cvat/pull/5909>)
-- Removing uploaded file with annotations/backups when rq job was created
-but no next requests for checking status were not made (<https://github.com/opencv/cvat/pull/5909>)
-- Removing uploaded file with annotations/backups after file was uploaded to the server by tus protocol
-but rq job has not yet been created (<https://github.com/opencv/cvat/pull/5909>)
-- Tasks/projects creation from backups with the same name at the same time by different users (<https://github.com/opencv/cvat/pull/5909>)
+
+- Fixed the issue of skeletons dumping on created tasks/projects (<https://github.com/opencv/cvat/pull/6157>)
+- Resolved an issue related to saving annotations for skeleton tracks (<https://github.com/opencv/cvat/pull/6075>)
+- Incorrect location of temporary file during job annotation import.(<https://github.com/opencv/cvat/pull/5909>)
+- Deletion of uploaded file along with annotations/backups when an RQ job
+  has been initiated, but no subsequent status check requests have been made.(<https://github.com/opencv/cvat/pull/5909>)
+- Deletion of uploaded files, including annotations and backups,
+  after they have been uploaded to the server using the TUS protocol  but before an RQ job has been initiated. (<https://github.com/opencv/cvat/pull/5909>)
+- Simultaneous creation of tasks or projects with identical names from backups by multiple users.(<https://github.com/opencv/cvat/pull/5909>)
 
 ### Security
 - TDB
