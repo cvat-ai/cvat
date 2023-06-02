@@ -138,7 +138,7 @@ def docker_exec(container, command, capture_output=True):
 
 
 def docker_exec_cvat(command: Union[List[str], str]):
-    base = f"docker exec {PREFIX}_server_1"
+    base = f"docker exec {PREFIX}_cvat_server_1"
     _command = f"{base} {command}" if isinstance(command, str) else base.split() + command
     return _run(_command)
 
