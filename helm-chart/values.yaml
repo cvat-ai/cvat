@@ -63,6 +63,16 @@ cvat:
         additionalEnv: []
         additionalVolumes: []
         additionalVolumeMounts: []
+      quality_reports:
+        replicas: 1
+        labels: {}
+        annotations: {}
+        resources: {}
+        affinity: {}
+        tolerations: []
+        additionalEnv: []
+        additionalVolumes: []
+        additionalVolumeMounts: []
     utils:
       replicas: 1
       labels: {}
