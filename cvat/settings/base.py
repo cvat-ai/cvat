@@ -154,7 +154,6 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
-        'cvat.apps.iam.permissions.IsMemberInOrganization',
         'cvat.apps.iam.permissions.PolicyEnforcer',
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
@@ -215,6 +214,7 @@ MIDDLEWARE = [
     # FIXME
     # 'corsheaders.middleware.CorsPostCsrfMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.middleware.gzip.GZipMiddleware',
     'cvat.apps.engine.middleware.RequestTrackingMiddleware',
     'crum.CurrentRequestUserMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -511,6 +511,7 @@ DATA_UPLOAD_MAX_NUMBER_FIELDS = None   # this django check disabled
 DATA_UPLOAD_MAX_NUMBER_FILES = None
 LOCAL_LOAD_MAX_FILES_COUNT = 500
 LOCAL_LOAD_MAX_FILES_SIZE = 512 * 1024 * 1024  # 512 MB
+CLOUD_STORAGE_MAX_FILES_COUNT = LOCAL_LOAD_MAX_FILES_COUNT
 
 RESTRICTIONS = {
     # allow access to analytics component to users with business role
@@ -664,3 +665,5 @@ DATABASES = {
         'PORT': os.getenv('CVAT_POSTGRES_PORT', 5432),
     }
 }
+
+BUCKET_CONTENT_MAX_PAGE_SIZE =  500

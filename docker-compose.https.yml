@@ -14,7 +14,7 @@ services:
       - traefik.http.routers.cvat-ui.tls.certresolver=lets-encrypt
 
   traefik:
-    image: traefik:v2.4
+    image: traefik:v2.9
     container_name: traefik
     command:
       - "--providers.docker.exposedByDefault=false"

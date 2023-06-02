@@ -2,29 +2,22 @@
 #
 # SPDX-License-Identifier: MIT
 
-from drf_spectacular.utils import (
-    OpenApiParameter,
-    OpenApiResponse,
-    OpenApiTypes,
-    extend_schema,
-    extend_schema_view,
-)
+from drf_spectacular.utils import (OpenApiParameter, OpenApiResponse,
+                                   OpenApiTypes, extend_schema,
+                                   extend_schema_view)
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import SAFE_METHODS
 from rest_framework.response import Response
 
+from cvat.apps.engine.schema import ORGANIZATION_OPEN_API_PARAMETERS
 from cvat.apps.engine.view_utils import list_action, make_paginated_response
 from cvat.apps.iam.permissions import WebhookPermission
 
 from .event_type import AllEvents, OrganizationEvents, ProjectEvents
 from .models import Webhook, WebhookDelivery, WebhookTypeChoice
-from .serializers import (
-    EventsSerializer,
-    WebhookDeliveryReadSerializer,
-    WebhookReadSerializer,
-    WebhookWriteSerializer,
-)
+from .serializers import (EventsSerializer, WebhookDeliveryReadSerializer,
+                          WebhookReadSerializer, WebhookWriteSerializer)
 from .signals import signal_ping, signal_redelivery
 
 
@@ -55,6 +48,7 @@ from .signals import signal_ping, signal_redelivery
     create=extend_schema(
         request=WebhookWriteSerializer,
         summary="Method creates a webhook",
+        parameters=ORGANIZATION_OPEN_API_PARAMETERS,
         responses={
             "201": WebhookReadSerializer
         },  # check WebhookWriteSerializer.to_representation

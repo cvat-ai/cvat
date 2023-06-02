@@ -1,30 +1,36 @@
 # Copyright (C) 2020-2022 Intel Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
-import os
 import io
+import os
 import zipfile
-from io import BytesIO
 from datetime import datetime
+from io import BytesIO
 from tempfile import NamedTemporaryFile
+from typing import Optional, Tuple
+
 import cv2
 import pytz
-
-from django.core.cache import caches
 from django.conf import settings
-from rest_framework.exceptions import ValidationError, NotFound
+from django.core.cache import caches
+from rest_framework.exceptions import NotFound, ValidationError
 
+from cvat.apps.engine.cloud_provider import (Credentials,
+                                             db_storage_to_storage_instance,
+                                             get_cloud_storage_instance)
 from cvat.apps.engine.log import slogger
-from cvat.apps.engine.media_extractors import (Mpeg4ChunkWriter,
-    Mpeg4CompressedChunkWriter, ZipChunkWriter, ZipCompressedChunkWriter,
-    ImageDatasetManifestReader, VideoDatasetManifestReader)
-from cvat.apps.engine.models import DataChoice, StorageChoice, Image
-from cvat.apps.engine.models import DimensionType
-from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials
-from cvat.apps.engine.utils import md5_hash
-from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
+from cvat.apps.engine.media_extractors import (ImageDatasetManifestReader,
+                                               Mpeg4ChunkWriter,
+                                               Mpeg4CompressedChunkWriter,
+                                               VideoDatasetManifestReader,
+                                               ZipChunkWriter,
+                                               ZipCompressedChunkWriter)
 from cvat.apps.engine.mime_types import mimetypes
+from cvat.apps.engine.models import (DataChoice, DimensionType, Image,
+                                     StorageChoice, CloudStorage)
+from cvat.apps.engine.utils import md5_hash
 from utils.dataset_manifest import ImageManifestManager
 
 
@@ -58,10 +64,21 @@ class MediaCache:
 
         return item
 
-    def get_cloud_preview_with_mime(self, db_storage):
+    def get_cloud_preview_with_mime(
+        self,
+        db_storage: CloudStorage,
+    ) -> Optional[Tuple[io.BytesIO, str]]:
+        key = f'cloudstorage_{db_storage.id}_preview'
+        return self._cache.get(key)
+
+    def get_or_set_cloud_preview_with_mime(
+        self,
+        db_storage: CloudStorage,
+    ) -> Tuple[io.BytesIO, str]:
+        key = f'cloudstorage_{db_storage.id}_preview'
+
         item = self._get_or_set_cache_item(
-            key=f'cloudstorage_{db_storage.id}_preview',
-            create_function=lambda: self._prepare_cloud_preview(db_storage)
+            key, create_function=lambda: self._prepare_cloud_preview(db_storage)
         )
 
         return item
@@ -76,7 +93,8 @@ class MediaCache:
 
     @staticmethod
     def _get_frame_provider():
-        from cvat.apps.engine.frame_provider import FrameProvider # TODO: remove circular dependency
+        from cvat.apps.engine.frame_provider import \
+            FrameProvider  # TODO: remove circular dependency
         return FrameProvider
 
     def _prepare_chunk_buff(self, db_data, quality, chunk_number):
