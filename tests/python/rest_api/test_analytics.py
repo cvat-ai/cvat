@@ -101,20 +101,34 @@ class TestGetAuditEvents:
 
         self.task_ids = [t[0] for t in task_ids]
 
-        expected_request_ids = [project_request_id, *[t[1] for t in task_ids]]
+        assert project_request_id is not None
+        assert all(t[1] is not None for t in task_ids)
 
-        assert all(req_id is not None for req_id in expected_request_ids)
+        event_filters = [
+            (
+                (lambda e: json.loads(e["payload"])["request"]["id"], [project_request_id]),
+                ("scope", ["create:project"]),
+            ),
+        ]
+        for task_id in task_ids:
+            event_filters.extend(
+                (
+                    (
+                        (lambda e: json.loads(e["payload"])["request"]["id"], [task_id[1]]),
+                        ("scope", ["create:task"]),
+                    ),
+                    (("scope", ["create:job"]),),
+                )
+            )
+        self._wait_for_request_ids(event_filters)
 
-        self._wait_for_request_ids(expected_request_ids)
-
-    def _wait_for_request_ids(self, expected_request_ids):
+    def _wait_for_request_ids(self, event_filters):
         MAX_RETRIES = 5
         SLEEP_INTERVAL = 2
         while MAX_RETRIES > 0:
             data = self._test_get_audit_logs_as_csv()
             events = self._csv_to_dict(data)
-            request_ids = set(json.loads(e["payload"])["request"]["id"] for e in events)
-            if all(req_id in request_ids for req_id in expected_request_ids):
+            if all(self._filter_events(events, filter) for filter in event_filters):
                 break
             MAX_RETRIES -= 1
             sleep(SLEEP_INTERVAL)
@@ -155,13 +169,12 @@ class TestGetAuditEvents:
         return res
 
     @staticmethod
-    def _filter_events(events, filter_):
+    def _filter_events(events, filters):
         res = []
-        for event in events:
-            if all(
-                (event[filter_key] == filter_value for filter_key, filter_value in filter_.items())
-            ):
-                res.append(event)
+        get_value = lambda getter, e: getter(e) if callable(getter) else e.get(getter, None)
+        for e in events:
+            if all(get_value(getter, e) in expected_values for getter, expected_values in filters):
+                res.append(e)
 
         return res
 
@@ -195,7 +208,7 @@ class TestGetAuditEvents:
         data = self._test_get_audit_logs_as_csv(**query_params)
         events = self._csv_to_dict(data)
 
-        filtered_events = self._filter_events(events, {"project_id": str(self.project_id)})
+        filtered_events = self._filter_events(events, [("project_id", [str(self.project_id)])])
         assert len(filtered_events)
         assert len(events) == len(filtered_events)
 
@@ -213,7 +226,7 @@ class TestGetAuditEvents:
             data = self._test_get_audit_logs_as_csv(**query_params)
             events = self._csv_to_dict(data)
 
-            filtered_events = self._filter_events(events, {"task_id": str(task_id)})
+            filtered_events = self._filter_events(events, [("task_id", [str(task_id)])])
             assert len(filtered_events)
             assert len(events) == len(filtered_events)
 
@@ -251,7 +264,24 @@ class TestGetAuditEvents:
         response = delete_method("admin1", f"projects/{self.project_id}")
         assert response.status_code == HTTPStatus.NO_CONTENT
 
-        self._wait_for_request_ids([response.headers.get("X-Request-Id")])
+        event_filters = (
+            (
+                (
+                    lambda e: json.loads(e["payload"])["request"]["id"],
+                    [response.headers.get("X-Request-Id")],
+                ),
+                ("scope", ["delete:project"]),
+            ),
+            (
+                (
+                    lambda e: json.loads(e["payload"])["request"]["id"],
+                    [response.headers.get("X-Request-Id")],
+                ),
+                ("scope", ["delete:task"]),
+            ),
+        )
+
+        self._wait_for_request_ids(event_filters)
 
         query_params = {
             "project_id": self.project_id,
@@ -260,7 +290,7 @@ class TestGetAuditEvents:
         data = self._test_get_audit_logs_as_csv(**query_params)
         events = self._csv_to_dict(data)
 
-        filtered_events = self._filter_events(events, {"project_id": str(self.project_id)})
+        filtered_events = self._filter_events(events, [("project_id", [str(self.project_id)])])
         assert len(filtered_events)
         assert len(events) == len(filtered_events)
 
