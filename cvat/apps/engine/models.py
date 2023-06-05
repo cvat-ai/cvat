@@ -511,7 +511,8 @@ class Job(models.Model):
         task = self.segment.task
         return task.id if task else None
 
-    def get_organization_id(self):
+    @property
+    def organization_id(self):
         return self.segment.task.organization_id
 
     def get_organization_slug(self):
@@ -560,11 +561,12 @@ class Label(models.Model):
         except IntegrityError:
             raise InvalidLabel("All label names must be unique")
 
-    def get_organization_id(self):
+    @property
+    def organization_id(self):
         if self.project is not None:
-            return self.project.organization.id
+            return self.project.organization_id
         if self.task is not None:
-            return self.task.organization.id
+            return self.task.organization_id
         return None
 
     class Meta:
@@ -738,8 +740,9 @@ class Issue(models.Model):
     def get_project_id(self):
         return self.job.get_project_id()
 
-    def get_organization_id(self):
-        return self.job.get_organization_id()
+    @property
+    def organization_id(self):
+        return self.job.organization_id
 
     def get_organization_slug(self):
         return self.job.get_organization_slug()
@@ -761,8 +764,9 @@ class Comment(models.Model):
     def get_project_id(self):
         return self.issue.get_project_id()
 
-    def get_organization_id(self):
-        return self.issue.get_organization_id()
+    @property
+    def organization_id(self):
+        return self.issue.organization_id
 
     def get_organization_slug(self):
         return self.issue.get_organization_slug()
@@ -878,6 +882,10 @@ class CloudStorage(models.Model):
 
     def get_key_file_path(self):
         return os.path.join(self.get_storage_dirname(), 'key.json')
+
+    @property
+    def has_at_least_one_manifest(self) -> bool:
+        return bool(self.manifests.count())
 
 class Storage(models.Model):
     location = models.CharField(max_length=16, choices=Location.choices(), default=Location.LOCAL)

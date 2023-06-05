@@ -13,7 +13,7 @@ from typing import Any, Dict, Iterable
 import uuid
 from zipfile import ZipFile
 from datetime import datetime
-from tempfile import mkstemp
+from tempfile import NamedTemporaryFile
 
 import django_rq
 from django.conf import settings
@@ -33,8 +33,10 @@ from cvat.apps.engine import models
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.serializers import (AttributeSerializer, DataSerializer, LabelSerializer,
     LabeledDataSerializer, SegmentSerializer, SimpleJobSerializer, TaskReadSerializer,
-    ProjectReadSerializer, ProjectFileSerializer, TaskFileSerializer)
-from cvat.apps.engine.utils import av_scan_paths, process_failed_job, configure_dependent_job, get_rq_job_meta
+    ProjectReadSerializer, ProjectFileSerializer, TaskFileSerializer, RqIdSerializer)
+from cvat.apps.engine.utils import (
+    av_scan_paths, process_failed_job, configure_dependent_job, get_rq_job_meta, get_import_rq_id, import_resource_with_clean_up_after
+)
 from cvat.apps.engine.models import (
     StorageChoice, StorageMethodChoice, DataChoice, Task, Project, Location)
 from cvat.apps.engine.task import JobFileMapping, _create_thread
@@ -46,7 +48,6 @@ from cvat.apps.dataset_manager.bindings import CvatImportError
 
 class Version(Enum):
     V1 = '1.0'
-
 
 def _get_label_mapping(db_labels):
     label_mapping = {db_label.id: db_label.name for db_label in db_labels}
@@ -869,7 +870,7 @@ def export(db_instance, request, queue_name):
                     if os.path.exists(file_path):
                         return Response(status=status.HTTP_201_CREATED)
             elif rq_job.is_failed:
-                exc_info = str(rq_job.exc_info)
+                exc_info = rq_job.meta.get('formatted_exception', str(rq_job.exc_info))
                 rq_job.delete()
                 return Response(exc_info,
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -896,9 +897,11 @@ def _download_file_from_bucket(db_storage, filename, key):
 def _import(importer, request, queue, rq_id, Serializer, file_field_name, location_conf, filename=None):
     rq_job = queue.fetch_job(rq_id)
 
+    if (user_id_from_meta := getattr(rq_job, 'meta', {}).get('user', {}).get('id')) and user_id_from_meta != request.user.id:
+        return Response(status=status.HTTP_403_FORBIDDEN)
+
     if not rq_job:
         org_id = getattr(request.iam_context['organization'], 'id', None)
-        fd = None
         dependent_job = None
 
         location = location_conf.get('location')
@@ -907,10 +910,13 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
                 serializer = Serializer(data=request.data)
                 serializer.is_valid(raise_exception=True)
                 payload_file = serializer.validated_data[file_field_name]
-                fd, filename = mkstemp(prefix='cvat_', dir=settings.TMP_FILES_ROOT)
-                with open(filename, 'wb+') as f:
+                with NamedTemporaryFile(
+                    prefix='cvat_',
+                    dir=settings.TMP_FILES_ROOT,
+                    delete=False) as tf:
+                    filename = tf.name
                     for chunk in payload_file.chunks():
-                        f.write(chunk)
+                        tf.write(chunk)
         else:
             file_name = request.query_params.get('filename')
             assert file_name, "The filename wasn't specified"
@@ -926,7 +932,9 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
                 is_default=location_conf['is_default'])
 
             key = filename
-            fd, filename = mkstemp(prefix='cvat_', dir=settings.TMP_FILES_ROOT)
+            with NamedTemporaryFile(prefix='cvat_', dir=settings.TMP_FILES_ROOT, delete=False) as tf:
+                filename = tf.name
+
             dependent_job = configure_dependent_job(
                 queue=queue,
                 rq_id=rq_id,
@@ -935,24 +943,25 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
                 filename=filename,
                 key=key,
                 request=request,
+                result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
+                failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
             )
 
         rq_job = queue.enqueue_call(
-            func=importer,
-            args=(filename, request.user.id, org_id),
+            func=import_resource_with_clean_up_after,
+            args=(importer, filename, request.user.id, org_id),
             job_id=rq_id,
             meta={
                 'tmp_file': filename,
-                'tmp_file_descriptor': fd,
                 **get_rq_job_meta(request=request, db_obj=None)
             },
-            depends_on=dependent_job
+            depends_on=dependent_job,
+            result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
+            failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
         )
     else:
         if rq_job.is_finished:
             project_id = rq_job.return_value
-            if rq_job.meta['tmp_file_descriptor']: os.close(rq_job.meta['tmp_file_descriptor'])
-            os.remove(rq_job.meta['tmp_file'])
             rq_job.delete()
             return Response({'id': project_id}, status=status.HTTP_201_CREATED)
         elif rq_job.is_failed or \
@@ -969,7 +978,10 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
                 return Response(data=exc_info,
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    return Response({'rq_id': rq_id}, status=status.HTTP_202_ACCEPTED)
+    serializer = RqIdSerializer(data={'rq_id': rq_id})
+    serializer.is_valid(raise_exception=True)
+
+    return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
 def get_backup_dirname():
     return settings.TMP_FILES_ROOT
@@ -978,7 +990,7 @@ def import_project(request, queue_name, filename=None):
     if 'rq_id' in request.data:
         rq_id = request.data['rq_id']
     else:
-        rq_id = f"import:project.{uuid.uuid4()}-by-{request.user}"
+        rq_id = get_import_rq_id('project', uuid.uuid4(), 'backup', request.user)
     Serializer = ProjectFileSerializer
     file_field_name = 'project_file'
 
@@ -1001,10 +1013,8 @@ def import_project(request, queue_name, filename=None):
     )
 
 def import_task(request, queue_name, filename=None):
-    if 'rq_id' in request.data:
-        rq_id = request.data['rq_id']
-    else:
-        rq_id = f"import:task.{uuid.uuid4()}-by-{request.user}"
+    rq_id = request.data.get('rq_id',  get_import_rq_id('task', uuid.uuid4(), 'backup', request.user))
+
     Serializer = TaskFileSerializer
     file_field_name = 'task_file'
 

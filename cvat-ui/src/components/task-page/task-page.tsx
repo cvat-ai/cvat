@@ -44,7 +44,7 @@ function TaskPageComponent(): JSX.Element {
                 }).catch((error: Error) => {
                     if (mounted.current) {
                         notification.error({
-                            message: 'Could not receive the requested project from the server',
+                            message: 'Could not receive the requested task from the server',
                             description: error.toString(),
                         });
                     }

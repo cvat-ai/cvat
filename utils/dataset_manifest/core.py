@@ -13,9 +13,12 @@ from abc import ABC, abstractmethod, abstractproperty, abstractstaticmethod
 from contextlib import closing
 from PIL import Image
 from json.decoder import JSONDecodeError
+from io import BytesIO
 
 from .errors import InvalidManifestError, InvalidVideoFrameError
 from .utils import SortingMethod, md5_hash, rotate_image, sort
+
+from typing import Dict, List, Union, Optional
 
 class VideoStreamReader:
     def __init__(self, source_path, chunk_size, force):
@@ -147,16 +150,18 @@ class KeyFramesVideoStreamReader(VideoStreamReader):
 
 class DatasetImagesReader:
     def __init__(self,
-                sources,
+                sources: Union[List[str], List[BytesIO]],
                 *,
-                start = 0,
-                step = 1,
-                stop = None,
-                meta=None,
-                sorting_method=SortingMethod.PREDEFINED,
-                use_image_hash=False,
+                start: int = 0,
+                step: int = 1,
+                stop: Optional[int] = None,
+                meta: Optional[Dict[str, List[str]]] = None,
+                sorting_method: SortingMethod =SortingMethod.PREDEFINED,
+                use_image_hash: bool = False,
                 **kwargs):
-        self._sources = sort(sources, sorting_method)
+        self._raw_data_used = not isinstance(sources[0], str)
+        func = (lambda x: x.filename) if self._raw_data_used else None
+        self._sources = sort(sources, sorting_method, func=func)
         self._meta = meta
         self._data_dir = kwargs.get('data_dir', None)
         self._use_image_hash = use_image_hash
@@ -196,7 +201,7 @@ class DatasetImagesReader:
                 img = Image.open(image, mode='r')
 
                 img_name = os.path.relpath(image, self._data_dir) if self._data_dir \
-                    else os.path.basename(image)
+                    else os.path.basename(image) if not self._raw_data_used else image.filename
                 name, extension = os.path.splitext(img_name)
                 image_properties = {
                     'name': name.replace('\\', '/'),
@@ -386,7 +391,7 @@ class _ManifestManager(ABC):
                 offset = self._index[line]
                 manifest_file.seek(offset)
                 properties = manifest_file.readline()
-                parsed_properties = json.loads(properties)
+                parsed_properties = ImageProperties(json.loads(properties))
                 self._json_item_is_valid(**parsed_properties)
                 return parsed_properties
 
@@ -427,7 +432,7 @@ class _ManifestManager(ABC):
             for idx, line_start in enumerate(self._index):
                 manifest_file.seek(line_start)
                 line = manifest_file.readline()
-                item = json.loads(line)
+                item = ImageProperties(json.loads(line))
                 self._json_item_is_valid(**item)
                 yield (idx, item)
 
@@ -442,6 +447,8 @@ class _ManifestManager(ABC):
             return None
 
     def __getitem__(self, item):
+        if isinstance(item, slice):
+            return [self._parse_line(i) for i in range(item.start or 0, item.stop or len(self), item.step or 1)]
         return self._parse_line(item)
 
     @property
@@ -455,6 +462,10 @@ class _ManifestManager(ABC):
     @abstractmethod
     def get_subset(self, subset_names):
         ...
+
+    @property
+    def exists(self):
+        return os.path.exists(self._manifest.path)
 
 class VideoManifestManager(_ManifestManager):
     _required_item_attributes = {'number', 'pts'}
@@ -574,6 +585,11 @@ class VideoManifestValidator(VideoManifestManager):
                 assert frames == self.video_length, "The uploaded manifest does not match the video"
                 return
 
+class ImageProperties(dict):
+    @property
+    def full_name(self):
+        return f"{self['name']}{self['extension']}"
+
 class ImageManifestManager(_ManifestManager):
     _required_item_attributes = {'name', 'extension'}
 
@@ -618,13 +634,13 @@ class ImageManifestManager(_ManifestManager):
 
     @property
     def data(self):
-        return (f"{image['name']}{image['extension']}" for _, image in self)
+        return (f"{image.full_name}" for _, image in self)
 
     def get_subset(self, subset_names):
         index_list = []
         subset = []
         for _, image in self:
-            image_name = f"{image['name']}{image['extension']}"
+            image_name = f"{image.full_name}"
             if image_name in subset_names:
                 index_list.append(subset_names.index(image_name))
                 properties = {
@@ -640,6 +656,50 @@ class ImageManifestManager(_ManifestManager):
                 subset.append(properties)
         return index_list, subset
 
+    def emulate_hierarchical_structure(
+        self,
+        page_size: int,
+        manifest_prefix: Optional[str] = None,
+        prefix: Optional[str] = None,
+        start_index: Optional[int] = None,
+    ) -> Dict:
+
+        next_start_index = None
+        # get part of manifest content
+        # generally we cannot rely to slice with manifest content because it may not be sorted.
+        # And then this can lead to incorrect index calculation.
+        if manifest_prefix:
+            content = [os.path.join(manifest_prefix, f[1].full_name) for f in self]
+        else:
+            content = [f[1].full_name for f in self]
+
+        if prefix:
+            content = list(filter(lambda x: x.startswith(prefix), content))
+            if os.path.sep in prefix:
+                last_dir_symbol = prefix.rindex(os.path.sep)
+                content = [f[last_dir_symbol + 1:] for f in content]
+
+        files_in_root, files_in_directories = [], []
+
+        for f in content:
+            if os.path.sep in f:
+                files_in_directories.append(f)
+            else:
+                files_in_root.append(f)
+
+        directories = list(set([d.split(os.path.sep)[0] for d in files_in_directories]))
+        level_in_hierarchical_structure = [{'name': d, 'type': 'DIR'} for d in sort(directories, SortingMethod.NATURAL)]
+        level_in_hierarchical_structure.extend([{'name': f, 'type': 'REG'} for f in sort(files_in_root, SortingMethod.NATURAL)])
+
+        level_in_hierarchical_structure = level_in_hierarchical_structure[start_index:]
+        if len(level_in_hierarchical_structure) > page_size:
+            level_in_hierarchical_structure = level_in_hierarchical_structure[:page_size]
+            next_start_index = start_index + page_size
+
+        return {
+            'content': level_in_hierarchical_structure,
+            'next': next_start_index,
+        }
 
 class _BaseManifestValidator(ABC):
     def __init__(self, full_manifest_path):

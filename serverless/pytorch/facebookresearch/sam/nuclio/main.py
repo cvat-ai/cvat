@@ -17,15 +17,13 @@ def init_context(context):
 def handler(context, event):
     context.logger.info("call handler")
     data = event.body
-    pos_points = data["pos_points"]
-    neg_points = data["neg_points"]
     buf = io.BytesIO(base64.b64decode(data["image"]))
     image = Image.open(buf)
     image = image.convert("RGB")  #  to make sure image comes in RGB
-    mask, polygon = context.user_data.model.handle(image, pos_points, neg_points)
+    features = context.user_data.model.handle(image)
+
     return context.Response(body=json.dumps({
-            'points': polygon,
-            'mask': mask.tolist(),
+            'blob': base64.b64encode((features.cpu().numpy() if features.is_cuda else features.numpy())).decode(),
         }),
         headers={},
         content_type='application/json',
