@@ -5,7 +5,7 @@
 # their access options such as login and password.
 
 # Required to initialize Django settings correctly
-from cvat.wsgi import application  # pylint: disable=unused-import
+from cvat.asgi import application  # pylint: disable=unused-import
 
 from rq_scheduler.scripts import rqscheduler
 
