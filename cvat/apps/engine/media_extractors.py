@@ -633,7 +633,6 @@ class IChunkWriter(ABC):
         pass
 
 class ZipChunkWriter(IChunkWriter):
-    # TODO: check this
     def save_as_chunk(self, images, chunk_path):
         with zipfile.ZipFile(chunk_path, 'x') as zip_chunk:
             for idx, (image, path, _) in enumerate(images):
@@ -647,7 +646,6 @@ class ZipChunkWriter(IChunkWriter):
         return []
 
 class ZipCompressedChunkWriter(IChunkWriter):
-    # TODO: errors here
     def save_as_chunk(self, images, chunk_path):
         image_sizes = []
         with zipfile.ZipFile(chunk_path, 'x') as zip_chunk:
