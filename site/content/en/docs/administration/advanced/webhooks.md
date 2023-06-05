@@ -73,7 +73,7 @@ To create a webhook for **Project**, do the following:
 To create a webhook for **Organization**, do the following:
 
 1. [Create Organization](/docs/manual/advanced/organization/)
-2. Go to the **Organization** > **Settings** > **Actions** > **Setup Webhooks**
+2. Go to the **Organization** > **Settings** > **Actions** > **Setup Webhooks**.
 3. In the top right corner click **+**
 
    ![](/images/create_organization_webhook.gif)
