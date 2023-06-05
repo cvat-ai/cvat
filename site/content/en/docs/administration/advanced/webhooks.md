@@ -59,14 +59,14 @@ See:
 
 To create a webhook for **Project**, do the following:
 
-1.  [Create a Project](/docs/manual/advanced/projects/).
-2.  Go to the **Projects** and click on the project's widget.
-3.  In the top right corner, click **Actions** > **Setup Webhooks**.
-4.  In the top right corner click **+**
+1. [Create a Project](/docs/manual/advanced/projects/).
+2. Go to the **Projects** and click on the project's widget.
+3. In the top right corner, click **Actions** > **Setup Webhooks**.
+4. In the top right corner click **+**
 
     ![Create Project Webhook](/images/create_project_webhook.gif)
 
-5.  Fill in the **[Setup webhook](#webhooks-forms)** form and click **Submit**.
+5. Fill in the **[Setup webhook](#webhooks-forms)** form and click **Submit**.
 
 ### For organization
 
@@ -387,9 +387,11 @@ To validate that the webhook requests originate from CVAT, include a `secret` du
 
 When a `secret` is provided for the webhook, CVAT includes an `X-Signature-256` in the request header of the webhook.
 
-CVAT uses the SHA256 hash function to encode the request body for the webhook and places the resulting hash into the header.
+CVAT uses the SHA256 hash function to encode the request
+body for the webhook and places the resulting hash into the header.
 
-The webhook recipient can verify the source of the request by comparing the received `X-Signature-256` value with the expected value.
+The webhook recipient can verify the source of the request
+by comparing the received `X-Signature-256` value with the expected value.
 
 Here's an example of a header value for a request with an empty body and `secret = mykey`:
 
