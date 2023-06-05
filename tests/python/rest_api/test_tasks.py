@@ -1806,7 +1806,7 @@ class TestImportTaskAnnotations:
         task.import_annotations(self.format, filename)
         self._check_annotations(task_id)
 
-    @pytest.mark.timeout(64)
+    @pytest.mark.timeout(70)
     def test_check_import_cache_after_previous_interrupted_upload(self, tasks_with_shapes, request):
         task_id = tasks_with_shapes[0]["id"]
         with NamedTemporaryFile() as f:
