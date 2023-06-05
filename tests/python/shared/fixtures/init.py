@@ -459,11 +459,6 @@ def collect_code_coverage_from_containers():
             f"{PREFIX}_{container}_1:home/django/coverage.xml",
             f"coverage_{container}.xml",
         )
-        docker_exec(container, "coverage html", capture_output=False)
-        docker_cp(
-            f"{PREFIX}_{container}_1:home/django/htmlcov",
-            f"coverage_{container}",
-        )
 
 
 @pytest.fixture(scope="function")
