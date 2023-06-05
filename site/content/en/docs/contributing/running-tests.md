@@ -29,7 +29,7 @@ description: 'Instructions on how to run all existence tests.'
    yarn --frozen-lockfile
    ```
 
-If you want to get a code coverage report instrument the code:
+If you want to get a code coverage report, instrument the code:
 ```
 yarn --frozen-lockfile
 yarn run coverage
@@ -80,7 +80,7 @@ If you need to rebuild your CVAT images add `--rebuild` option:
 pytest ./tests/python --rebuild
 ```
 
-If you want to get a code coverage report use special option for it:
+If you want to get a code coverage report, use special option for it:
 ```
 COVERAGE_ENABLED=yes pytest ./tests/python --rebuild --cov --cov-report xml
 ```
@@ -158,7 +158,7 @@ Extra options:
    python manage.py test --settings cvat.settings.testing cvat/apps -v 2
    ```
 
-If you want to get a code coverage report run the next command:
+If you want to get a code coverage report, run the next command:
    ```
    coverage run manage.py test --settings cvat.settings.testing cvat/apps -v 2
    ```
