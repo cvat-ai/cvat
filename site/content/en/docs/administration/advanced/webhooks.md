@@ -16,23 +16,11 @@ jobs, and so on.
 This makes it easy to set up automated processes
 that respond to changes made in CVAT.
 
-A few examples of use cases might include:
+For example, you can set up webhooks to alert you when a job's assignee is changed or when
+a job/task's status is updated, for instance, when a job is completed and ready for review
+or has been reviewed. New task creation can also trigger notifications.
 
-- **Real-time updates**: If you have a dashboard or a reporting system that relies on the data in CVAT,
-  you can use webhooks to get real-time updates whenever data changes in CVAT,
-  keeping your dashboards up-to-date without requiring manual data exports or imports.
-
-- **Collaboration and review workflows**: If you have a team working on a CVAT task,
-  webhooks could be used to notify team members when new annotations have been added or
-  existing ones have been modified, facilitating smoother collaboration and review processes.
-
-- **Integration with machine learning pipelines**: Webhooks can be used to trigger re-training
-  of a model as soon as new annotations are added or existing ones are modified,
-  ensuring your models are always trained on the latest data.
-
-These are just a few examples of what you can achieve with CVAT webhooks.
-With their flexibility and easy configuration, they open up many possibilities
-for optimizing and automating your computer vision annotation workflows
+These capabilities allow you to keep track of progress and changes in your CVAT workflow instantly.
 
 In CVAT you can create a webhook for a project or organization.
 You can use CVAT GUI or direct API calls.
@@ -76,7 +64,7 @@ To create a webhook for **Organization**, do the following:
 2. Go to the **Organization** > **Settings** > **Actions** > **Setup Webhooks**.
 3. In the top right corner click **+**
 
-   ![](/images/create_organization_webhook.gif)
+  ![](/images/create_organization_webhook.gif)
 
 4. Fill in the **[Setup webhook](#webhooks-forms)** form and click **Submit**.
 
