@@ -450,6 +450,6 @@ class TasksRepo(
         )
 
         task_id = json.loads(response.data)["id"]
-        self._client.logger.info(f"Task has been imported sucessfully. Task ID: {task_id}")
+        self._client.logger.info(f"Task has been imported successfully. Task ID: {task_id}")
 
         return self.retrieve(task_id)

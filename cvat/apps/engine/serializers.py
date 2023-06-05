@@ -22,11 +22,9 @@ from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine import models
 from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials, Status
 from cvat.apps.engine.log import slogger
-from cvat.apps.engine.utils import parse_specific_attributes
+from cvat.apps.engine.utils import parse_specific_attributes, build_field_filter_params, get_list_view_name, reverse
 
 from drf_spectacular.utils import OpenApiExample, extend_schema_field, extend_schema_serializer
-
-from cvat.apps.engine.utils import build_field_filter_params, get_list_view_name, reverse
 
 
 class WriteOnceMixin:
@@ -666,6 +664,9 @@ class RqStatusSerializer(serializers.Serializer):
         "Queued", "Started", "Finished", "Failed"])
     message = serializers.CharField(allow_blank=True, default="")
     progress = serializers.FloatField(max_value=100, default=0)
+
+class RqIdSerializer(serializers.Serializer):
+    rq_id = serializers.CharField()
 
 
 class JobFiles(serializers.ListField):
