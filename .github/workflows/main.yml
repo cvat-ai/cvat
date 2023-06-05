@@ -154,6 +154,8 @@ jobs:
 
       - name: Running REST API and SDK tests
         id: run_tests
+        env:
+          COVERAGE_ENABLED: "yes"
         run: |
           pip3 install -r cvat-sdk/gen/requirements.txt
           ./cvat-sdk/gen/generate.sh

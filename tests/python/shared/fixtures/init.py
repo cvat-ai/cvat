@@ -236,6 +236,7 @@ def create_compose_files(container_name_files):
                 if service_name in CODE_COVERED_CONTAINERS:
                     service_env = service_config["environment"]
                     service_env["COVERAGE_PROCESS_START"] = ".coveragerc"
+                    service_env["COVERAGE_ENABLED"] = "yes"
 
             yaml.dump(dc_config, ndcf)
 
@@ -457,6 +458,11 @@ def collect_code_coverage_from_containers():
         docker_cp(
             f"{PREFIX}_{container}_1:home/django/coverage.xml",
             f"coverage_{container}.xml",
+        )
+        docker_exec(container, "coverage html", capture_output=False)
+        docker_cp(
+            f"{PREFIX}_{container}_1:home/django/htmlcov",
+            f"coverage_{container}",
         )
 
 

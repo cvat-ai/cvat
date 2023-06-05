@@ -3,10 +3,12 @@
 #
 # SPDX-License-Identifier: MIT
 
+import os
+import sys
+
 from rq import Worker
 
 import cvat.utils.remote_debugger as debug
-
 
 DefaultWorker = Worker
 
@@ -62,3 +64,7 @@ if debug.is_debugging_enabled():
             return super().execute_job(*args, **kwargs)
 
     DefaultWorker = RemoteDebugWorker
+
+
+if os.environ.get("COVERAGE_ENABLED", "no") == "yes":
+    os._exit = sys.exit
