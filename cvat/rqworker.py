@@ -3,10 +3,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import os
-import random
-
-import coverage
 from rq import Worker
 
 import cvat.utils.remote_debugger as debug
@@ -47,26 +43,6 @@ class SimpleWorker(Worker):
         db.connections.close_all()
 
         return self.perform_job(*args, **kwargs)
-
-
-class CoverageWorker(Worker):
-    """
-    Allows to collect code coverage from child processes
-    """
-
-    def main_work_horse(self, *args, **kwargs):
-        random.seed()
-        self.setup_work_horse_signals()
-        self._is_horse = True
-        try:
-            self.perform_job(*args, **kwargs)
-        except:  # pylint: disable=bare-except
-            os._exit(1)
-
-        cov = coverage.Coverage.current()
-        cov.stop()
-        cov.save()
-        os._exit(0)
 
 
 if debug.is_debugging_enabled():

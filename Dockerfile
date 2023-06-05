@@ -184,6 +184,9 @@ RUN if [ "${COVERAGE_ENABLED}" = 'yes' ]; then \
         echo "import coverage; coverage.process_startup()" > /opt/venv/lib/python3.10/site-packages/coverage_subprocess.pth; \
     fi
 
+ARG COVERAGE_ENABLED
+ENV COVERAGE_ENABLED=${COVERAGE_ENABLED}
+
 # RUN all commands below as 'django' user
 USER ${USER}
 WORKDIR ${HOME}

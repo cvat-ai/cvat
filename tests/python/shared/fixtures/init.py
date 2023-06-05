@@ -236,7 +236,6 @@ def create_compose_files(container_name_files):
                 if service_name in CODE_COVERED_CONTAINERS:
                     service_env = service_config["environment"]
                     service_env["COVERAGE_PROCESS_START"] = ".coveragerc"
-                    service_env["RQ_WORKER_CLASS"] = "cvat.rqworker.CoverageWorker"
 
             yaml.dump(dc_config, ndcf)
 
