@@ -83,8 +83,6 @@ class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
         queryset = super().get_queryset()
 
         if self.action == 'list':
-            self.check_permissions(self.request)
-
             if report_id := self.request.query_params.get('report_id', None):
                 # NOTE: This filter is too complex to be implemented by other means,
                 # it has a dependency on the report type
@@ -164,8 +162,6 @@ class QualityReportViewSet(viewsets.GenericViewSet,
         queryset = super().get_queryset()
 
         if self.action == 'list':
-            self.check_permissions(self.request)
-
             if task_id := self.request.query_params.get('task_id', None):
                 # NOTE: This filter is too complex to be implemented by other means
                 try:
