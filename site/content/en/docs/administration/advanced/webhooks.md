@@ -64,7 +64,7 @@ To create a webhook for **Project**, do the following:
 3. In the top right corner, click **Actions** > **Setup Webhooks**.
 4. In the top right corner click **+**
 
-    ![Create Project Webhook](/images/create_project_webhook.gif)
+   ![Create Project Webhook](/images/create_project_webhook.gif)
 
 5. Fill in the **[Setup webhook](#webhooks-forms)** form and click **Submit**.
 
