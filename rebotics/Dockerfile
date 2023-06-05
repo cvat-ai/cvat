@@ -202,7 +202,7 @@ RUN sed -i -E "s#(<\!doctype html>)#{% load static %}\1#g" ${HOME}/static-ui/ind
 COPY --chown=${USER} rebotics/supervisord.conf ${HOME}/supervisord/all.conf
 
 # Add version file
-COPY --chown=${USER} VERSION ${HOME}/static-ui/version
+COPY --chown=${USER} VERSION ${HOME}/static-ui
 
 # RUN all commands below as 'django' user
 USER ${USER}
