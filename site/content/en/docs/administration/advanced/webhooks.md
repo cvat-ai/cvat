@@ -16,7 +16,7 @@ jobs, and so on.
 This makes it easy to set up automated processes
 that respond to changes made in CVAT.
 
-A few example use-cases might include:
+A few examples of use cases might include:
 
 - **Real-time updates**: If you have a dashboard or a reporting system that relies on the data in CVAT,
   you can use webhooks to get real-time updates whenever data changes in CVAT,
@@ -34,7 +34,7 @@ These are just a few examples of what you can achieve with CVAT webhooks.
 With their flexibility and easy configuration, they open up many possibilities
 for optimizing and automating your computer vision annotation workflows
 
-In CVAT you can create webhook for project or for organization.
+In CVAT you can create a webhook for a project or organization.
 You can use CVAT GUI or direct API calls.
 
 See:
@@ -135,12 +135,12 @@ Webhook payload object for `create:<resource>` events:
 | ------------ | --------- | --------------------------------------------------------------------------------------------------------------------------------------- |
 | `event`      | `string`  | Identifies the event that triggered the webhook, following the `create:<resource>` pattern.                                             |
 | `<resource>` | `object`  | Complete information about the created resource. Refer to the [Swagger](#webhooks-with-api-calls) docs for individual resource details. |
-| `webhook_id` | `integer` | The identifier for the webhook that send the payload.                                                                                   |
+| `webhook_id` | `integer` | The identifier for the webhook that sends the payload.                                                                                   |
 | `sender`     | `object`  | Details about the user that triggered the webhook.                                                                                      |
 
 <!--lint enable maximum-line-length-->
 
-An example of payload for `create:task` event:
+An example of payload for the `create:task` event:
 
 {{< scroll-code lang="json" >}}
 {
@@ -319,7 +319,7 @@ Webhook payload object for `delete:<resource>` events:
 
 <!--lint enable maximum-line-length-->
 
-Here is example of payload for `delete:task` event:
+Here is an example of the payload for the `delete:task` event:
 
 {{< scroll-code lang="json" >}}
 {
@@ -424,7 +424,7 @@ def webhook():
 ## Ping Webhook
 
 To confirm the proper configuration of your webhook and ensure that CVAT can establish
-a connection with the target URL, use **Ping** webhook feature.
+a connection with the target URL, use the **Ping** webhook feature.
 
 ![Ping Webhook ](/images/ping_webhook.jpg)
 
@@ -443,7 +443,7 @@ Ping webhook payload:
 
 <!--lint enable maximum-line-length-->
 
-Here is example of payload for `ping` event:
+Here is an example of a payload for the `ping` event:
 
 {{< scroll-code lang="json" >}}
 {
@@ -496,7 +496,7 @@ Here is example of payload for `ping` event:
 
 ## Webhooks with API calls
 
-In order to create webhook via an API call,
+To create webhook via an API call,
 see [Swagger documentation](https://app.cvat.ai/api/docs).
 
 For examples,
@@ -504,7 +504,8 @@ see [REST API tests](https://github.com/opencv/cvat/blob/develop/tests/python/re
 
 ## Example of setup and use
 
-In this video, we show how you can configure an email alerts for a project, by using Zapier and Gmail.
+
+This video demonstrates setting up email alerts for a project using Zapier and Gmail.
 
 <!--lint disable maximum-line-length-->
 
