@@ -609,7 +609,7 @@ SPECTACULAR_SETTINGS = {
 
 # Rebotics info settings
 home = os.getenv('HOME')
-version_file = os.path.join(home, 'static-ui', 'VERSION')
+version_file = os.path.join(home, 'static-ui', 'version.txt')
 try:
     with open(version_file, 'r') as f:
         VERSION = f.read().strip()

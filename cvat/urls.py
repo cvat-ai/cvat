@@ -52,7 +52,7 @@ if apps.is_installed('silk'):
 
 
 urlpatterns += [
-    path('version', RedirectView.as_view(url=static('VERSION'), permanent=True), name='version'),
+    path('version.txt', RedirectView.as_view(url=static('version.txt'), permanent=True), name='version'),
     path('favicon.ico', RedirectView.as_view(url=static('favicon.ico'), permanent=True), name='favicon'),
 
     re_path('^.*', index_view, name='index'),
