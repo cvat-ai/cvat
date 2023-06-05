@@ -141,9 +141,7 @@ class AnnotationConflict(models.Model):
 
     @property
     def organization_id(self):
-        if report := self.report:
-            return report.organization_id
-        return None
+        return report.organization_id
 
 
 class AnnotationType(str, Enum):
