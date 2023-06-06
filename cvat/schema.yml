@@ -3819,6 +3819,8 @@ paths:
           description: ''
     patch:
       operationId: quality_partial_update_settings
+      summary: Methods does a partial update of chosen fields in the quality settings
+        instance
       parameters:
       - in: path
         name: id

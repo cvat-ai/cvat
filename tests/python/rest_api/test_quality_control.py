@@ -8,7 +8,7 @@ from http import HTTPStatus
 from typing import Any, Dict, List, Optional, Tuple
 
 import pytest
-from cvat_sdk.api_client import models
+from cvat_sdk.api_client import exceptions, models
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
@@ -66,6 +66,14 @@ class _PermissionTestBase:
                         ),
                     ],
                 ),
+            )
+
+            api_client.jobs_api.partial_update(
+                job.id,
+                patched_job_write_request={
+                    "stage": "acceptance",
+                    "state": "completed",
+                },
             )
 
         return job
@@ -419,11 +427,63 @@ class TestGetQualityReportData(_PermissionTestBase):
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestPostQualityReports(_PermissionTestBase):
     def test_can_create_report(self, admin_user, jobs):
-        gt_job = next(j for j in jobs if j["type"] == "ground_truth")
+        gt_job = next(
+            j
+            for j in jobs
+            if j["type"] == "ground_truth"
+            and j["stage"] == "acceptance"
+            and j["state"] == "completed"
+        )
         task_id = gt_job["task_id"]
 
         report = self.create_quality_report(admin_user, task_id)
         assert models.QualityReport._from_openapi_data(**report)
+
+    def test_cannot_create_report_without_gt_job(self, admin_user, tasks):
+        task_id = next(t["id"] for t in tasks if t["jobs"]["count"] == 1)
+
+        with pytest.raises(exceptions.ApiException) as capture:
+            self.create_quality_report(admin_user, task_id)
+
+        assert (
+            "Quality reports require a Ground Truth job in the task at the acceptance "
+            "stage and in the completed state"
+        ) in capture.value.body
+
+    @pytest.mark.parametrize(
+        "field_name, field_value",
+        [
+            ("stage", "annotation"),
+            ("stage", "validation"),
+            ("state", "new"),
+            ("state", "in progress"),
+            ("state", "rejected"),
+        ],
+    )
+    def test_cannot_create_report_with_incomplete_gt_job(
+        self, admin_user, jobs, field_name, field_value
+    ):
+        gt_job = next(
+            j
+            for j in jobs
+            if j["type"] == "ground_truth"
+            and j["stage"] == "acceptance"
+            and j["state"] == "completed"
+        )
+        task_id = gt_job["task_id"]
+
+        with make_api_client(admin_user) as api_client:
+            api_client.jobs_api.partial_update(
+                gt_job["id"], patched_job_write_request={field_name: field_value}
+            )
+
+        with pytest.raises(exceptions.ApiException) as capture:
+            self.create_quality_report(admin_user, task_id)
+
+        assert (
+            "Quality reports require a Ground Truth job in the task at the acceptance "
+            "stage and in the completed state"
+        ) in capture.value.body
 
 
 class TestSimpleQualityReportsFilters(CollectionSimpleFilterTestBase):

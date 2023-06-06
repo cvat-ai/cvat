@@ -169,7 +169,7 @@ class AnnotationManager:
         included_frames: Optional[Sequence[int]] = None,
         include_outside: bool = False,
         use_server_track_ids: bool = False
-    ):
+    ) -> list:
         shapes = self.data.shapes
         tracks = TrackManager(self.data.tracks, dimension)
 
@@ -427,7 +427,7 @@ class TrackManager(ObjectManager):
         included_frames: Optional[Sequence[int]] = None,
         include_outside: bool = False,
         use_server_track_ids: bool = False
-    ):
+    ) -> list:
         shapes = []
         for idx, track in enumerate(self.objects):
             track_id = track["id"] if use_server_track_ids else idx
@@ -468,8 +468,9 @@ class TrackManager(ObjectManager):
                 # and outside shapes are not requested.
                 if not include_outside:
                     track_shapes = {
-                        k: v for k, v in track_shapes.items()
-                        if not v['elements'] or not all(elem["outside"] for elem in v["elements"])
+                        frame_number: shape for frame_number, shape in track_shapes.items()
+                        if not shape["elements"]
+                        or not all(elem["outside"] for elem in shape["elements"])
                     }
 
             shapes.extend(track_shapes.values())

@@ -498,6 +498,7 @@
                 "server: RQ - annotation",
                 "server: RQ - webhooks",
                 "server: RQ - scheduler",
+                "server: RQ - quality reports",
                 "server: RQ - cleaning",
                 "server: git",
             ]
