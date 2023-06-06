@@ -14,6 +14,7 @@ import ObjectItemContainer from 'containers/annotation-page/standard-workspace/o
 import { ShapeType, Workspace } from 'reducers';
 import { rotatePoint } from 'utils/math';
 import config from 'config';
+import { AnnotationConflict, QualityConflict } from 'cvat-core-wrapper';
 
 interface Props {
     readonly: boolean;
@@ -21,6 +22,7 @@ interface Props {
     contextMenuParentID: number | null;
     contextMenuClientID: number | null;
     objectStates: any[];
+    frameConflicts: QualityConflict[];
     visible: boolean;
     left: number;
     top: number;
@@ -33,7 +35,7 @@ interface ReviewContextMenuProps {
     top: number;
     left: number;
     latestComments: string[];
-    conflict: { description: string };
+    conflict?: AnnotationConflict;
     onClick: (param: MenuInfo) => void;
 }
 
@@ -94,6 +96,7 @@ export default function CanvasContextMenu(props: Props): JSX.Element | null {
         contextMenuClientID,
         contextMenuParentID,
         objectStates,
+        frameConflicts,
         visible,
         left,
         top,
@@ -108,6 +111,13 @@ export default function CanvasContextMenu(props: Props): JSX.Element | null {
         return null;
     }
     const state = objectStates.find((_state: any): boolean => _state.clientID === contextMenuClientID);
+    const annotationConflicts = frameConflicts.reduce(
+        (acc: AnnotationConflict[],
+            qualityConflict: QualityConflict) => [...acc, ...qualityConflict.annotationConflicts],
+        [],
+    );
+    const conflict = annotationConflicts
+        .find((annotationConflict: AnnotationConflict) => annotationConflict.clientID === state.clientID);
 
     if (workspace === Workspace.REVIEW_WORKSPACE) {
         return ReactDOM.createPortal(
@@ -115,7 +125,7 @@ export default function CanvasContextMenu(props: Props): JSX.Element | null {
                 key={contextMenuClientID}
                 top={top}
                 left={left}
-                conflict={state.conflict}
+                conflict={conflict}
                 latestComments={latestComments}
                 onClick={(param: MenuInfo) => {
                     if (state) {

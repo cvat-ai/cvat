@@ -12,7 +12,7 @@ import Icon, {
 import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 
-import { activateObject, changeFrameAsync } from 'actions/annotation-actions';
+import { activateObject, changeFrameAsync, highlightConflict } from 'actions/annotation-actions';
 import { reviewActions } from 'actions/review-actions';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { CombinedState, Workspace } from 'reducers';
@@ -32,7 +32,7 @@ export default function LabelsListComponent(): JSX.Element {
     const conflicts = useSelector((state: CombinedState) => state.review.conflicts);
     const issuesHidden = useSelector((state: CombinedState): any => state.review.issuesHidden);
     const issuesResolvedHidden = useSelector((state: CombinedState): any => state.review.issuesResolvedHidden);
-    const objectStates = useSelector((state: CombinedState) => state.annotation.annotations.states);
+    const highlightedConflict = useSelector((state: CombinedState) => state.annotation.annotations.highlightedConflict);
     const workspace = useSelector((state: CombinedState) => state.annotation.workspace);
     let frames = issues.map((issue: any): number => issue.frame).sort((a: number, b: number) => +a - +b);
     if (showGroundTruth) {
@@ -175,12 +175,14 @@ export default function LabelsListComponent(): JSX.Element {
                             id={`cvat-objects-sidebar-conflict-item-${frameConflict.id}`}
                             className={
                                 `${frameConflict.importance === ConflictImportance.WARNING ?
-                                    'cvat-objects-sidebar-warning-item' : 'cvat-objects-sidebar-conflict-item'}`
+                                    'cvat-objects-sidebar-warning-item' : 'cvat-objects-sidebar-conflict-item'}
+                                  ${frameConflict.id === highlightedConflict?.id ? 'cvat-objects-sidebar-item-active' : ''}  `
                             }
                             onMouseEnter={() => {
-                                const serverID = frameConflict.annotationConflicts[0].objId;
-                                const objectState = objectStates.find((state) => state.serverID === serverID);
-                                dispatch(activateObject(objectState.clientID, null, null));
+                                dispatch(highlightConflict(frameConflict));
+                            }}
+                            onMouseLeave={() => {
+                                dispatch(highlightConflict(null));
                             }}
                         >
                             <Row>

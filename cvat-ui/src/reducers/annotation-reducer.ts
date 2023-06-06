@@ -85,6 +85,7 @@ const defaultState: AnnotationState = {
         activatedStateID: null,
         activatedElementID: null,
         activatedAttributeID: null,
+        highlightedConflict: null,
         saving: {
             forceExit: false,
             uploading: false,
@@ -290,6 +291,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 annotations: {
                     ...state.annotations,
                     activatedStateID: updateActivatedStateID(states, activatedStateID),
+                    highlightedConflict: null,
                     states,
                     zLayer: {
                         min: minZ,
@@ -1184,6 +1186,17 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 canvas: {
                     ...state.canvas,
                     ready: true,
+                },
+            };
+        }
+        case AnnotationActionTypes.HIGHLIGHT_CONFLICT: {
+            const { conflict, clientIDs } = action.payload;
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    highlightedConflict: conflict,
+                    highlightedElementIDs: clientIDs,
                 },
             };
         }

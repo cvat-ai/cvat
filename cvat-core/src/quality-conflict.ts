@@ -20,19 +20,22 @@ export interface RawQualityConflictData {
     annotation_ids?: RawAnnotationConflictData[];
     data?: string;
     importance?: string;
+    description?: string;
 }
 
 export interface RawAnnotationConflictData {
     job_id?: number;
     obj_id?: number;
+    client_id?: number;
     type?: string;
     conflict_type?: string;
     importance?: string;
 }
 
 export class AnnotationConflict {
-    public readonly jobId: number;
-    public readonly objId: number;
+    public readonly jobID: number;
+    public readonly serverID: number;
+    public clientID: number;
     public readonly type: string;
     public readonly conflictType: QualityConflictType;
     public readonly importance: ConflictImportance;
@@ -42,6 +45,7 @@ export class AnnotationConflict {
         const data: RawAnnotationConflictData = {
             job_id: undefined,
             obj_id: undefined,
+            client_id: undefined,
             type: undefined,
             conflict_type: undefined,
             importance: undefined,
@@ -56,11 +60,17 @@ export class AnnotationConflict {
         Object.defineProperties(
             this,
             Object.freeze({
-                jobId: {
+                jobID: {
                     get: () => data.job_id,
                 },
-                objId: {
+                serverID: {
                     get: () => data.obj_id,
+                },
+                clientID: {
+                    get: () => data.client_id,
+                    set: (newID: number) => {
+                        data.client_id = newID;
+                    },
                 },
                 type: {
                     get: () => data.type,
@@ -88,7 +98,7 @@ export default class QualityConflict {
     public readonly type: QualityConflictType;
     public readonly annotationConflicts: AnnotationConflict[];
     public readonly importance: ConflictImportance;
-    public readonly description: string;
+    public description: string;
 
     constructor(initialData: RawQualityConflictData) {
         const data: RawQualityConflictData = {
@@ -97,6 +107,7 @@ export default class QualityConflict {
             type: undefined,
             annotation_ids: [],
             importance: undefined,
+            description: undefined,
         };
 
         for (const property in data) {
@@ -111,6 +122,9 @@ export default class QualityConflict {
                 conflict_type: data.type,
                 importance: data.importance,
             }));
+
+        const desc = data.type.split('_').join(' ');
+        data.description = desc.charAt(0).toUpperCase() + desc.slice(1);
 
         Object.defineProperties(
             this,
@@ -131,9 +145,9 @@ export default class QualityConflict {
                     get: () => data.importance,
                 },
                 description: {
-                    get: () => {
-                        const desc = this.type.split('_').join(' ');
-                        return desc.charAt(0).toUpperCase() + desc.slice(1);
+                    get: () => data.description,
+                    set: (newDescription) => {
+                        data.description = newDescription;
                     },
                 },
             }),

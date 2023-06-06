@@ -199,6 +199,7 @@ export enum AnnotationActionTypes {
     RESTORE_FRAME_SUCCESS = 'RESTORE_FRAME_SUCCESS',
     RESTORE_FRAME_FAILED = 'RESTORE_FRAME_FAILED',
     UPDATE_BRUSH_TOOLS_CONFIG = 'UPDATE_BRUSH_TOOLS_CONFIG',
+    HIGHLIGHT_CONFLICT = 'HIGHLIGHT_CONFCLICT',
 }
 
 export function saveLogsAsync(): ThunkAction {
@@ -250,6 +251,15 @@ export function switchZLayer(cur: number): AnyAction {
         type: AnnotationActionTypes.SWITCH_Z_LAYER,
         payload: {
             cur,
+        },
+    };
+}
+
+export function highlightConflict(conflict: QualityConflict | null): AnyAction {
+    return {
+        type: AnnotationActionTypes.HIGHLIGHT_CONFLICT,
+        payload: {
+            conflict,
         },
     };
 }

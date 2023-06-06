@@ -43,6 +43,16 @@ export interface ActiveElement {
     attributeID: number | null;
 }
 
+export enum HighlightImportance {
+    ERROR = 'error',
+    WARNING = 'warning',
+}
+
+export interface HighlightedElements {
+    elementsIDs: number [];
+    importance: HighlightImportance;
+}
+
 export enum RectDrawingMethod {
     CLASSIC = 'By 2 points',
     EXTREME_POINTS = 'By 4 points',
@@ -169,6 +179,7 @@ export enum UpdateReasons {
     OBJECTS_UPDATED = 'objects_updated',
     SHAPE_ACTIVATED = 'shape_activated',
     SHAPE_FOCUSED = 'shape_focused',
+    SHAPE_HIGHLIGHTED = 'shape_highlighted',
 
     FITTED_CANVAS = 'fitted_canvas',
 
@@ -214,6 +225,7 @@ export interface CanvasModel {
     readonly gridSize: Size;
     readonly focusData: FocusData;
     readonly activeElement: ActiveElement;
+    readonly highlightedElements: HighlightedElements;
     readonly drawData: DrawData;
     readonly editData: MasksEditData;
     readonly interactionData: InteractionData;
@@ -232,6 +244,7 @@ export interface CanvasModel {
     setup(frameData: any, objectStates: any[], zLayer: number): void;
     setupIssueRegions(issueRegions: Record<number, { hidden: boolean; points: number[] }>): void;
     activate(clientID: number | null, attributeID: number | null): void;
+    highlight(clientIDs: number[] | null, importance: HighlightImportance): void;
     rotate(rotationAngle: number): void;
     focus(clientID: number, padding: number): void;
     fit(): void;
@@ -304,6 +317,7 @@ function disableInternalSVGDrawing(data: DrawData | MasksEditData, currentData: 
 export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     private data: {
         activeElement: ActiveElement;
+        highlightedElements: HighlightedElements;
         angle: number;
         canvasSize: Size;
         configuration: Configuration;
@@ -340,6 +354,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             activeElement: {
                 clientID: null,
                 attributeID: null,
+            },
+            highlightedElements: {
+                elementsIDs: [],
+                importance: null,
             },
             angle: 0,
             canvasSize: {
@@ -584,6 +602,28 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         };
 
         this.notify(UpdateReasons.SHAPE_ACTIVATED);
+    }
+
+    public highlight(clientIDs: number[] | null, importance: HighlightImportance | null): void {
+        // TODO add check hightleted already
+
+        if (this.data.mode !== Mode.IDLE && clientIDs !== null) {
+            throw Error(`Canvas is busy. Action: ${this.data.mode}`);
+        }
+
+        if (Array.isArray(clientIDs)) {
+            this.data.highlightedElements = {
+                elementsIDs: clientIDs,
+                importance,
+            };
+        } else {
+            this.data.highlightedElements = {
+                elementsIDs: [],
+                importance: null,
+            };
+        }
+
+        this.notify(UpdateReasons.SHAPE_HIGHLIGHTED);
     }
 
     public rotate(rotationAngle: number): void {
@@ -959,6 +999,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
     public get activeElement(): ActiveElement {
         return { ...this.data.activeElement };
+    }
+
+    public get highlightedElements(): HighlightedElements {
+        return { ...this.data.highlightedElements };
     }
 
     public get drawData(): DrawData {

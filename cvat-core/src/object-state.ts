@@ -8,7 +8,6 @@ import PluginRegistry from './plugins';
 import { ArgumentError } from './exceptions';
 import { Label } from './labels';
 import { isEnum } from './common';
-import QualityConflict from './quality-conflict';
 
 interface UpdateFlags {
     label: boolean;
@@ -85,7 +84,6 @@ export default class ObjectState {
     public readonly updated: number;
     public readonly group: { color: string; id: number; } | null;
     public readonly isGroundTruth: boolean;
-    public conflict: QualityConflict | null;
     public readonly keyframes: {
         first: number | null;
         prev: number | null;
@@ -173,7 +171,6 @@ export default class ObjectState {
             pinned: false,
             source: Source.MANUAL,
             isGroundTruth: serialized.isGroundTruth || false,
-            conflict: null,
             keyframes: serialized.keyframes || null,
             group: serialized.group || null,
             updated: serialized.updated || Date.now(),
@@ -464,12 +461,6 @@ export default class ObjectState {
                             return [...data.elements];
                         }
                         return [];
-                    },
-                },
-                conflict: {
-                    get: () => data.conflict,
-                    set: (conflict) => {
-                        data.conflict = conflict;
                     },
                 },
             }),

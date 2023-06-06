@@ -6,7 +6,9 @@ import config from 'config';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
 import { ReviewActionTypes } from 'actions/review-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
-import { QualityConflict } from 'cvat-core-wrapper';
+import {
+    AnnotationConflict, ConflictImportance, ObjectState, QualityConflict,
+} from 'cvat-core-wrapper';
 import { ReviewState } from '.';
 
 const defaultState: ReviewState = {
@@ -84,11 +86,58 @@ export default function (state: ReviewState = defaultState, action: any): Review
             };
         }
         case AnnotationActionTypes.CHANGE_FRAME_SUCCESS: {
-            const { number: frame } = action.payload;
+            const { number: frame, states } = action.payload;
+
+            const mergedFrameConflicts = [];
+            if (state.conflicts.length) {
+                const serverIDMap: Record<number, number> = {};
+                states.forEach((_state: ObjectState) => {
+                    if (_state.serverID && _state.clientID) serverIDMap[_state.serverID] = _state.clientID;
+                });
+
+                const conflictMap: Record<number, QualityConflict[]> = {};
+                const frameConflicts = state.conflicts
+                    .filter((conflict: QualityConflict): boolean => conflict.frame === frame);
+                frameConflicts.forEach((qualityConflict: QualityConflict) => {
+                    qualityConflict.annotationConflicts.forEach((annotationConflict: AnnotationConflict) => {
+                        if (serverIDMap[annotationConflict.serverID]) {
+                            annotationConflict.clientID = serverIDMap[annotationConflict.serverID];
+                        }
+                    });
+                    const firstObjID = qualityConflict.annotationConflicts[0].clientID;
+                    if (conflictMap[firstObjID]) {
+                        conflictMap[firstObjID] = [...conflictMap[firstObjID], qualityConflict];
+                    } else {
+                        conflictMap[firstObjID] = [qualityConflict];
+                    }
+                });
+
+                for (const conflicts of Object.values(conflictMap)) {
+                    if (conflicts.length === 1) {
+                        mergedFrameConflicts.push(conflicts[0]);
+                    } else {
+                        const mainConflict = conflicts
+                            .find((conflict) => conflict.importance === ConflictImportance.ERROR) || conflicts[0];
+                        const activeIDs = mainConflict.annotationConflicts.map((conflict) => conflict.clientID);
+                        const descriptionList: string[] = [];
+                        conflicts.forEach((conflict) => {
+                            descriptionList.push(conflict.description);
+                            conflict.annotationConflicts.forEach((annotationConflict) => {
+                                if (!activeIDs.includes(annotationConflict.clientID)) {
+                                    mainConflict.annotationConflicts.push(annotationConflict);
+                                }
+                            });
+                        });
+                        mainConflict.description = descriptionList.join(', ');
+                        mergedFrameConflicts.push(mainConflict);
+                    }
+                }
+            }
+
             return {
                 ...state,
                 frameIssues: state.issues.filter((issue: any): boolean => issue.frame === frame),
-                frameConflicts: state.conflicts.filter((conflict: any): boolean => conflict.frame === frame),
+                frameConflicts: mergedFrameConflicts,
             };
         }
         case ReviewActionTypes.START_ISSUE: {

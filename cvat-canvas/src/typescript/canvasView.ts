@@ -59,6 +59,8 @@ import {
     InteractionResult,
     InteractionData,
     ColorBy,
+    HighlightedElements,
+    HighlightImportance,
 } from './canvasModel';
 
 export interface CanvasView {
@@ -98,6 +100,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private autoborderHandler: AutoborderHandler;
     private interactionHandler: InteractionHandler;
     private activeElement: ActiveElement;
+    private highlightedElements: HighlightedElements;
     private configuration: Configuration;
     private snapToAngleResize: number;
     private innerObjectsFlags: {
@@ -1073,6 +1076,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
             clientID: null,
             attributeID: null,
         };
+        this.highlightedElements = {
+            elementsIDs: [],
+            importance: null,
+        };
         this.configuration = model.configuration;
         this.mode = Mode.IDLE;
         this.snapToAngleResize = consts.SNAP_TO_ANGLE_RESIZE_DEFAULT;
@@ -1315,11 +1322,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         (shapeView as any).instance
                             .fill({ color: fill, opacity: fillOpacity })
                             .stroke({ color: stroke });
-                        if (configuration.showConflicts && objectState?.conflict) {
-                            shapeView.classList.add('cvat_canvas_conflicted');
-                        } else if (!configuration.showConflicts && objectState?.conflict) {
-                            shapeView.classList.remove('cvat_canvas_conflicted');
-                        }
                     }
 
                     if (drawnState.elements) {
@@ -1507,6 +1509,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
         } else if (reason === UpdateReasons.SHAPE_ACTIVATED) {
             this.activate(this.controller.activeElement);
+        } else if (reason === UpdateReasons.SHAPE_HIGHLIGHTED) {
+            this.highlight(this.controller.highlightedElements);
         } else if (reason === UpdateReasons.SELECT_REGION) {
             if (this.mode === Mode.SELECT_REGION) {
                 this.regionSelector.select(true);
@@ -1873,6 +1877,17 @@ export class CanvasViewImpl implements CanvasView, Listener {
         } else if (colorBy === ColorBy.LABEL) {
             shapeColor = state.label.color;
         }
+        if (this.highlightedElements.elementsIDs.length) {
+            if (this.highlightedElements.elementsIDs.includes(state.clientID)) {
+                if (this.highlightedElements.importance === HighlightImportance.ERROR) {
+                    shapeColor = consts.CONFLICT_COLOR;
+                } else if (this.highlightedElements.importance === HighlightImportance.WARNING) {
+                    shapeColor = consts.WARNING_COLOR;
+                }
+            } else {
+                shapeColor = consts.SHADED_COLOR;
+            }
+        }
         const outlinedColor = parentShapeType === 'skeleton' ? 'black' : outlinedBorders || shapeColor;
 
         return {
@@ -1880,6 +1895,17 @@ export class CanvasViewImpl implements CanvasView, Listener {
             stroke: outlinedColor,
             'fill-opacity': !['polyline', 'points', 'skeleton'].includes(shapeType) || parentShapeType === 'skeleton' ? shapeOpacity : 0,
         };
+    }
+
+    private getHighlightClassname(): string {
+        const { importance } = this.highlightedElements;
+        if (importance === HighlightImportance.ERROR) {
+            return 'cvat_canvas_conflicted';
+        }
+        if (importance === HighlightImportance.WARNING) {
+            return 'cvat_canvas_warned';
+        }
+        return '';
     }
 
     private updateObjects(states: any[]): void {
@@ -2206,12 +2232,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.deleteText(clientID);
             }
 
-            for (const [key, otherShape] of Object.entries(this.svgShapes)) {
-                otherShape.removeClass('cvat_canvas_shape_darken');
-                otherShape.removeClass('cvat_canvas_conflicted');
-                otherShape.removeClass('cvat_canvas_warned');
-            }
-
             this.sortObjects();
 
             this.activeElement = {
@@ -2254,42 +2274,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
 
         const shape = this.svgShapes[clientID];
-        if (this.configuration.showConflicts && state.conflict) {
-            const conflictedStates = state.conflict.annotationConflicts.map((annotationConflict) => {
-                const [conflictedState] = this.controller.objects.filter(
-                    (_state: any): boolean => _state.serverID === annotationConflict.objId,
-                );
-                return conflictedState;
-            }).filter(
-                // TODO: in the list, there can be null values in some cases
-                // (eg. from looking for an annotation from the other job),
-                // produced from [x] = [].
-                // Need to investigate, why it happens only sometimes.
-                // Here we just filter such values
-                Boolean
-            );
 
-            const conflictedMap = {};
-            conflictedStates.forEach((_state) => {
-                conflictedMap[_state.clientID] = _state.conflict;
-                if (_state.elements.length) {
-                    _state.elements.forEach((element) => { conflictedMap[element.clientID] = _state.conflict; });
-                }
-            });
-
-            for (const [key, otherShape] of Object.entries(this.svgShapes)) {
-                if (conflictedMap[+key]) {
-                    const { importance } = conflictedMap[+key];
-                    if (importance === 'error') {
-                        otherShape.addClass('cvat_canvas_conflicted');
-                    } else if (importance === 'warning') {
-                        otherShape.addClass('cvat_canvas_warned');
-                    }
-                } else {
-                    otherShape.addClass('cvat_canvas_shape_darken');
-                }
-            }
-        }
         let text = this.svgTexts[clientID];
         if (!text) {
             text = this.addText(state);
@@ -2543,6 +2528,30 @@ export class CanvasViewImpl implements CanvasView, Listener {
         if (clientID !== null && attributeID !== null && this.activeElement.attributeID !== attributeID) {
             this.activateAttribute(clientID, attributeID);
         }
+    }
+
+    private highlight(highlightedElements: HighlightedElements): void {
+        this.highlightedElements.elementsIDs.forEach((clientID) => {
+            const shapeView = window.document.getElementById(`cvat_canvas_shape_${clientID}`);
+            if (shapeView) shapeView.classList.remove(this.getHighlightClassname());
+        });
+        if (highlightedElements.elementsIDs.length) {
+            this.highlightedElements = { ...highlightedElements };
+            this.canvas.classList.add('cvat-canvas-highlight-enabled');
+            this.highlightedElements.elementsIDs.forEach((clientID) => {
+                const shapeView = window.document.getElementById(`cvat_canvas_shape_${clientID}`);
+                if (shapeView) shapeView.classList.add(this.getHighlightClassname());
+            });
+        } else {
+            this.highlightedElements = {
+                elementsIDs: [],
+                importance: null,
+            };
+            this.canvas.classList.remove('cvat-canvas-highlight-enabled');
+        }
+        const masks = Object.values(this.drawnStates).filter((state) => state.shapeType === 'mask');
+        this.deleteObjects(masks);
+        this.addObjects(masks);
     }
 
     // Update text position after corresponding box has been moved, resized, etc.

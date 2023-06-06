@@ -2,15 +2,13 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, {
-    ReactPortal, useRef,
-} from 'react';
+import React, { ReactPortal } from 'react';
 import ReactDOM from 'react-dom';
 import Tag from 'antd/lib/tag';
 import Icon from '@ant-design/icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { ConflictIcon } from 'icons';
-import { ConflictImportance } from 'cvat-core-wrapper';
+import { ConflictImportance, QualityConflict } from 'cvat-core-wrapper';
 
 interface Props {
     top: number;
@@ -20,23 +18,26 @@ interface Props {
     text: string;
     darken: boolean;
     importance: ConflictImportance;
-    onClick: () => void;
+    conflict: QualityConflict;
+    tooltipVisible: boolean;
+    onEnter: (conflict: QualityConflict) => void;
+    onLeave: (conflict: QualityConflict) => void;
 }
 
 export default function ConflictLabel(props: Props): ReactPortal {
     const {
-        top, left, angle, scale, onClick, text, importance, darken,
+        top, left, angle, scale, text, importance, darken, conflict, onEnter, onLeave, tooltipVisible,
     } = props;
 
-    const ref = useRef<HTMLElement>(null);
     const conflictColor = importance === ConflictImportance.ERROR ? 'cvat-conflict-error' : 'cvat-conflict-warning';
     const darkenColor = darken ? 'cvat-conflict-darken' : '';
 
     return ReactDOM.createPortal(
-        <CVATTooltip title={text}>
+        <CVATTooltip
+            title={text}
+            visible={tooltipVisible}
+        >
             <Tag
-                ref={ref}
-                onClick={onClick}
                 style={{
                     top,
                     left,
@@ -44,7 +45,15 @@ export default function ConflictLabel(props: Props): ReactPortal {
                 }}
                 className={`cvat-conflict-label ${conflictColor} ${darkenColor}`}
             >
-                <Icon component={ConflictIcon} />
+                <Icon
+                    onMouseEnter={() => {
+                        onEnter(conflict);
+                    }}
+                    onMouseLeave={() => {
+                        onLeave(conflict);
+                    }}
+                    component={ConflictIcon}
+                />
             </Tag>
         </CVATTooltip>,
         window.document.getElementById('cvat_canvas_attachment_board') as HTMLElement,

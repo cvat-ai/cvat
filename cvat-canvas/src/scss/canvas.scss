@@ -153,11 +153,39 @@ polyline.cvat_canvas_shape_splitting {
 }
 
 .cvat_canvas_conflicted {
-    stroke: #ff4800;
+    stroke: #ff4800 !important;
+    fill: #ff4800 !important;
+
+    rect,
+    ellipse,
+    polygon,
+    polyline,
+    line {
+        fill: #ff4800 !important;
+        stroke: #ff4800 !important;
+    }
+
+    circle {
+        fill: #ff4800 !important;
+    }
 }
 
 .cvat_canvas_warned {
-    stroke: #ff7301;
+    stroke: #ff7301 !important;
+    fill: #ff7301 !important;
+
+    rect,
+    ellipse,
+    polygon,
+    polyline,
+    line {
+        fill: #ff7301 !important;
+        stroke: #ff7301 !important;
+    }
+
+    circle {
+        fill: #ff7301 !important;
+    }
 }
 
 .cvat_canvas_shape_occluded_point {
@@ -308,6 +336,23 @@ g.cvat_canvas_shape_occluded {
     background-color: inherit;
     overflow: hidden;
     position: relative;
+}
+
+.cvat-canvas-highlight-enabled {
+    svg {
+        rect,
+        ellipse,
+        polygon,
+        polyline,
+        line {
+            fill: gray;
+            stroke: gray;
+        }
+
+        circle {
+            fill: gray;
+        }
+    }
 }
 
 #cvat_canvas_text_content {

@@ -701,6 +701,7 @@ export interface AnnotationState {
         activatedStateID: number | null;
         activatedElementID: number | null;
         activatedAttributeID: number | null;
+        highlightedConflict: QualityConflict | null;
         collapsed: Record<number, boolean>;
         collapsedAll: boolean;
         statesSources: number[];

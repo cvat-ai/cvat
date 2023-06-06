@@ -98,6 +98,10 @@
 .cvat-task-page {
     position: relative;
     height: 100%;
+
+    .ant-empty {
+        margin: $grid-unit-size * 8;
+    }
 }
 
 .cvat-task-job-list {

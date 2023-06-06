@@ -16,7 +16,7 @@ import { updateCanvasContextMenu } from 'actions/annotation-actions';
 import { reviewActions, finishIssueAsync } from 'actions/review-actions';
 import { ThunkDispatch } from 'utils/redux';
 import { Canvas } from 'cvat-canvas-wrapper';
-import { ObjectState } from 'cvat-core-wrapper';
+import { ObjectState, QualityConflict } from 'cvat-core-wrapper';
 
 interface OwnProps {
     readonly: boolean;
@@ -27,6 +27,7 @@ interface StateToProps {
     contextMenuClientID: number | null;
     canvasInstance: Canvas | null;
     objectStates: any[];
+    frameConflicts: QualityConflict[];
     visible: boolean;
     top: number;
     left: number;
@@ -59,7 +60,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
             },
             workspace,
         },
-        review: { latestComments },
+        review: { latestComments, frameConflicts },
     } = state;
 
     let objectState = objectStates.find((_state: ObjectState) => {
@@ -87,6 +88,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         type,
         workspace,
         latestComments,
+        frameConflicts,
     };
 }
 
@@ -289,6 +291,7 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
             contextMenuClientID,
             contextMenuParentID,
             objectStates,
+            frameConflicts,
             type,
             readonly,
             workspace,
@@ -307,6 +310,7 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
                     top={top}
                     visible={visible}
                     objectStates={objectStates}
+                    frameConflicts={frameConflicts}
                     workspace={workspace}
                     latestComments={latestComments}
                     onStartIssue={onStartIssue}

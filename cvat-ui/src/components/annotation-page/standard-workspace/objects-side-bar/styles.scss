@@ -135,10 +135,6 @@
     border-left: 3px solid #e10602;
     border-bottom: 1px solid $border-color-1;
 
-    &:hover {
-        border-left: 4px solid #e10602;
-    }
-
     p {
         margin-bottom: 0;
     }
@@ -146,6 +142,10 @@
 
 .cvat-objects-sidebar-warning-item {
     @extend .cvat-objects-sidebar-issue-item;
+}
+
+.cvat-objects-sidebar-item-active {
+    border-left-width: 4px;
 }
 
 .cvat-objects-sidebar-issue-resolved {

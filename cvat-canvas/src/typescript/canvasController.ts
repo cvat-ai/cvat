@@ -17,6 +17,7 @@ import {
     InteractionData,
     Configuration,
     MasksEditData,
+    HighlightedElements,
 } from './canvasModel';
 
 export interface CanvasController {
@@ -25,6 +26,7 @@ export interface CanvasController {
     readonly zLayer: number | null;
     readonly focusData: FocusData;
     readonly activeElement: ActiveElement;
+    readonly highlightedElements: HighlightedElements;
     readonly drawData: DrawData;
     readonly editData: MasksEditData;
     readonly interactionData: InteractionData;
@@ -145,6 +147,10 @@ export class CanvasControllerImpl implements CanvasController {
 
     public get activeElement(): ActiveElement {
         return this.model.activeElement;
+    }
+
+    public get highlightedElements(): HighlightedElements {
+        return this.model.highlightedElements;
     }
 
     public get drawData(): DrawData {

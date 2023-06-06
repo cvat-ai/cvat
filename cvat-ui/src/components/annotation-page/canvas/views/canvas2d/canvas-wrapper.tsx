@@ -15,10 +15,10 @@ import {
     ColorBy, GridColor, ObjectType, ContextMenuType, Workspace, ShapeType, ActiveControl, CombinedState,
 } from 'reducers';
 import { LogType } from 'cvat-logger';
-import { Canvas } from 'cvat-canvas-wrapper';
+import { Canvas, HighlightImportance } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import {
-    AnnotationConflict, ObjectState, QualityConflict, getCore,
+    AnnotationConflict, QualityConflict, getCore,
 } from 'cvat-core-wrapper';
 import config from 'config';
 import CVATTooltip from 'components/common/cvat-tooltip';
@@ -110,6 +110,7 @@ interface StateToProps {
     showTagsOnFrame: boolean;
     conflicts: QualityConflict[];
     showGroundTruth: boolean;
+    highlightedConflict: QualityConflict | null;
 }
 
 interface DispatchToProps {
@@ -160,6 +161,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 activatedAttributeID,
                 statesSources,
                 zLayer: { cur: curZLayer, min: minZLayer, max: maxZLayer },
+                highlightedConflict,
             },
             workspace,
         },
@@ -247,6 +249,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         statesSources,
         conflicts,
         showGroundTruth,
+        highlightedConflict,
     };
 }
 
@@ -438,6 +441,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             onFetchAnnotation,
             statesSources,
             showGroundTruth,
+            highlightedConflict,
         } = this.props;
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
 
@@ -485,6 +489,15 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         if (prevProps.activatedStateID !== null && prevProps.activatedStateID !== activatedStateID) {
             canvasInstance.activate(null);
+        }
+
+        if (prevProps.highlightedConflict !== highlightedConflict) {
+            const importance: HighlightImportance | null =
+                highlightedConflict?.importance ? (highlightedConflict?.importance as any) : null;
+            const highlightedElementsIDs = highlightedConflict?.annotationConflicts.map(
+                (conflict: AnnotationConflict) => conflict.clientID,
+            );
+            canvasInstance.highlight(highlightedElementsIDs || null, importance);
         }
 
         if (gridSize !== prevProps.gridSize) {
@@ -881,30 +894,14 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
     private updateCanvas(): void {
         const {
-            curZLayer, annotations, frameData, canvasInstance, statesSources, conflicts,
-            workspace,
+            curZLayer, annotations, frameData, canvasInstance, statesSources,
         } = this.props;
         if (frameData !== null && canvasInstance) {
             const filteredAnnotations = annotations.filter((e) => e.objectType !== ObjectType.TAG);
             const shownAnnotations = filteredAnnotations.filter((e) => !e.jobID || statesSources.includes(e.jobID));
-            filteredAnnotations.forEach((objectState: ObjectState) => {
-                const conflict = conflicts.find((qualityConflict: QualityConflict) => (
-                    qualityConflict.annotationConflicts.some(
-                        (annotationConflict: AnnotationConflict) => (annotationConflict.objId === objectState.serverID),
-                    )
-                ));
-                if (conflict && workspace === Workspace.REVIEW_WORKSPACE) {
-                    objectState.conflict = conflict;
-                } else {
-                    objectState.conflict = null;
-                }
-            });
-            const finalAnnotations = filteredAnnotations.filter((objectState: ObjectState) => (
-                shownAnnotations.includes(objectState)
-            ));
             canvasInstance.setup(
                 frameData,
-                frameData.deleted ? [] : finalAnnotations,
+                frameData.deleted ? [] : shownAnnotations,
                 curZLayer,
             );
         }

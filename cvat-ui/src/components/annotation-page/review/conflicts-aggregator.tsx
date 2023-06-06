@@ -3,33 +3,33 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 
 import { CombinedState } from 'reducers';
 import { Canvas } from 'cvat-canvas/src/typescript/canvas';
 
 import { AnnotationConflict, ObjectState, QualityConflict } from 'cvat-core-wrapper';
+import { highlightConflict } from 'actions/annotation-actions';
 import ConflictLabel from './conflict-label';
 
 export default function ConflictAggregatorComponent(): JSX.Element | null {
-    const qualityConflicts = useSelector((state: CombinedState) => state.review.conflicts);
+    const dispatch = useDispatch();
+
+    const qualityConflicts = useSelector((state: CombinedState) => state.review.frameConflicts);
     const objectStates = useSelector((state: CombinedState) => state.annotation.annotations.states);
-    const activatedStateID = useSelector((state: CombinedState) => state.annotation.annotations.activatedStateID);
     const currentFrame = useSelector((state: CombinedState) => state.annotation.player.frame.number);
     const showConflicts = useSelector((state: CombinedState) => state.settings.shapes.showGroundTruth);
-    const frameQualityConflicts = qualityConflicts.filter(
-        (conflict: QualityConflict) => conflict.frame === currentFrame,
-    );
-    const conflicts = frameQualityConflicts.map((f: QualityConflict) => f.annotationConflicts[0]);
+    const highlightedConflict = useSelector((state: CombinedState) => state.annotation.annotations.highlightedConflict);
 
-    const activatedObject = objectStates.find((state) => state.clientID === activatedStateID);
-    const conflictedIDs = activatedObject?.conflict?.annotationConflicts?.map((c: AnnotationConflict) => c.objId);
-    const highlightedObjectsIDs = conflictedIDs
-        ? conflictedIDs.map((serverID: number) => (
-            objectStates.find((state) => state.serverID === serverID))?.clientID
-          )
-        : [];
+    const onEnter = useCallback((conflict: QualityConflict) => {
+        dispatch(highlightConflict(conflict));
+    }, []);
+    const onLeave = useCallback(() => {
+        dispatch(highlightConflict(null));
+    }, []);
+
+    const highlightedObjectsIDs = highlightedConflict?.annotationConflicts?.map((c: AnnotationConflict) => c.clientID);
 
     const canvasInstance = useSelector((state: CombinedState) => state.annotation.canvas.instance);
     const canvasIsReady = useSelector((state: CombinedState): boolean => state.annotation.canvas.ready);
@@ -43,6 +43,7 @@ export default function ConflictAggregatorComponent(): JSX.Element | null {
             setGeometry(updatedGeometry);
 
             const geometryListener = (): void => {
+                dispatch(highlightConflict(null));
                 setGeometry(canvasInstance.geometry);
             };
 
@@ -62,17 +63,19 @@ export default function ConflictAggregatorComponent(): JSX.Element | null {
     const [mapping, setMapping] = useState<any>([]);
     useEffect(() => {
         if (canvasInstance instanceof Canvas && geometry && showConflicts) {
-            const newMapping = conflicts.map((c: AnnotationConflict) => {
-                const state = objectStates.find((s: ObjectState) => s.jobID === c.jobId && s.serverID === c.objId);
+            const newMapping = qualityConflicts.map((conflict: QualityConflict) => {
+                const c = conflict.annotationConflicts[0];
+                const state = objectStates.find((s: ObjectState) => s.jobID === c.jobID && s.serverID === c.serverID);
                 if (state && canvasInstance) {
                     const points = canvasInstance.setupConflictsRegions(state);
                     if (points) {
                         return {
-                            description: c.description,
-                            importance: c.importance,
+                            description: conflict.description,
+                            importance: conflict.importance,
                             x: points[0],
                             y: points[1],
-                            clientID: state.clientID,
+                            clientID: c.clientID,
+                            conflict,
                         };
                     }
                 }
@@ -97,9 +100,14 @@ export default function ConflictAggregatorComponent(): JSX.Element | null {
                 left={conflict.x}
                 angle={-geometry.angle}
                 scale={1 / geometry.scale}
-                onClick={() => {}}
                 importance={conflict.importance}
-                darken={!!activatedStateID && (!highlightedObjectsIDs.includes(conflict.clientID))}
+                darken={!!highlightedConflict && !!highlightedObjectsIDs &&
+                    (!highlightedObjectsIDs.includes(conflict.clientID))}
+                conflict={conflict.conflict}
+                onEnter={onEnter}
+                onLeave={onLeave}
+                tooltipVisible={!!highlightedConflict && !!highlightedObjectsIDs &&
+                    highlightedObjectsIDs.includes(conflict.clientID)}
             />,
         );
     }
