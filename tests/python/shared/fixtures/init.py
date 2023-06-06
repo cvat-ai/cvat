@@ -461,7 +461,7 @@ def collect_code_coverage_from_containers():
         sleep(5)
 
         # get code coverage report
-        docker_exec(container, "coverage combine")
+        docker_exec(container, "coverage combine", capture_output=False)
         docker_exec(container, "coverage xml", capture_output=False)
         docker_cp(
             f"{PREFIX}_{container}_1:home/django/coverage.xml",
