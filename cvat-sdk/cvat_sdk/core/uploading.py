@@ -240,7 +240,7 @@ class Uploader:
             tus_uploader.upload()
             return tus_uploader.real_filename
 
-    def _tus_start_upload(self, url, *, query_params=None, fields=None):
+    def _tus_start_upload(self, url, *, query_params=None):
         response = self._client.api_client.rest_client.POST(
             url,
             query_params=query_params,
@@ -248,7 +248,6 @@ class Uploader:
                 "Upload-Start": "",
                 **self._client.api_client.get_common_headers(),
             },
-            post_params=fields,
         )
         expect_status(202, response)
         return response
@@ -355,7 +354,7 @@ class DataUploader(Uploader):
             # Request file ordering, because we reorder files to send more efficiently
             kwargs.setdefault("upload_file_order", [p.name for p in resources])
 
-        self._tus_start_upload(url, fields={"image_quality": kwargs["image_quality"]})
+        self._tus_start_upload(url)
 
         for group, group_size in bulk_file_groups:
             files = {}
