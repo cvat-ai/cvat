@@ -242,7 +242,9 @@ def create_compose_files(container_name_files):
                 if service_name in Container.covered():
                     service_env = service_config["environment"]
                     service_env["COVERAGE_PROCESS_START"] = ".coveragerc"
-                    service_config["volumes"].append("./tests/python/.coveragerc:/home/django/.coveragerc")
+                    service_config["volumes"].append(
+                        "./tests/python/.coveragerc:/home/django/.coveragerc"
+                    )
 
             yaml.dump(dc_config, ndcf)
 
