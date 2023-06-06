@@ -177,7 +177,6 @@ COPY --chown=${USER} ssh ${HOME}/.ssh
 COPY --chown=${USER} wait-for-it.sh manage.py backend_entrypoint.sh ${HOME}/
 COPY --chown=${USER} utils/ ${HOME}/utils
 COPY --chown=${USER} cvat/ ${HOME}/cvat
-COPY --chown=${USER} tests/python/.coveragerc ${HOME}/
 
 ARG COVERAGE_PROCESS_START
 RUN if [ "${COVERAGE_PROCESS_START}" ]; then \

@@ -235,12 +235,14 @@ def create_compose_files(container_name_files):
 
             for service_name, service_config in dc_config["services"].items():
                 service_config.pop("container_name", None)
-                if service_name in ("cvat_server", "cvat_utils"):
+                if service_name in (Container.SERVER, Container.UTILS):
                     service_env = service_config["environment"]
                     service_env["DJANGO_SETTINGS_MODULE"] = "cvat.settings.testing_rest"
+
                 if service_name in Container.covered():
                     service_env = service_config["environment"]
                     service_env["COVERAGE_PROCESS_START"] = ".coveragerc"
+                    service_config["volumes"].append("./tests/python/.coveragerc:/home/django/.coveragerc")
 
             yaml.dump(dc_config, ndcf)
 
