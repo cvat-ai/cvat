@@ -41,9 +41,13 @@ class MediaCache:
         self._cache = caches['media']
 
     def _get_or_set_cache_item(self, key, create_function):
+        slogger.glob.info(f'Starting to get chunk from cache: key {key}')
         item = self._cache.get(key)
+        slogger.glob.info(f'Ending to get chunk from cache: key {key}, is_cached {bool(item)}')
         if not item:
+            slogger.glob.info(f'Starting to prepare chunk: key {key}')
             item = create_function()
+            slogger.glob.info(f'Ending to prepare chunk: key {key}')
             if item[0]:
                 self._cache.set(key, item)
 
