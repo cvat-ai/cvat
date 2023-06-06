@@ -147,13 +147,17 @@ def create_task(username, spec, data, content_type="application/json", **kwargs)
 
         sent_upload_start = False
 
+        data_kwargs = (kwargs or {}).copy()
+        data_kwargs.pop('org', None)
+        data_kwargs.pop('org_id', None)
+
         if data.get("client_files") and "json" in content_type:
             (_, response) = api_client.tasks_api.create_data(
                 task.id,
                 data_request=models.DataRequest(image_quality=data["image_quality"]),
                 upload_start=True,
                 _content_type=content_type,
-                **kwargs,
+                **data_kwargs,
             )
             assert response.status == HTTPStatus.ACCEPTED
             sent_upload_start = True
@@ -167,7 +171,7 @@ def create_task(username, spec, data, content_type="application/json", **kwargs)
                 ),
                 upload_multiple=True,
                 _content_type="multipart/form-data",
-                **kwargs,
+                **data_kwargs,
             )
             assert response.status == HTTPStatus.OK
 
@@ -182,7 +186,7 @@ def create_task(username, spec, data, content_type="application/json", **kwargs)
             task.id,
             data_request=deepcopy(data),
             _content_type=content_type,
-            **kwargs,
+            **data_kwargs,
             **last_kwargs,
         )
         assert response.status == HTTPStatus.ACCEPTED
