@@ -4,6 +4,7 @@ linkTitle: 'Development environment'
 weight: 2
 description: 'Installing a development environment for different operating systems.'
 ---
+
 ### Setup the dependencies:
 
 - Install necessary dependencies:
@@ -28,6 +29,7 @@ description: 'Installing a development environment for different operating syste
   ```
 
   Arch Linux
+
   ```bash
   # Update the system and AUR (you can use any other AUR helper of choice) first:
   sudo pacman -Syyu
@@ -67,6 +69,7 @@ description: 'Installing a development environment for different operating syste
   - [Code Spell Checker](https://marketplace.visualstudio.com/items?itemName=streetsidesoftware.code-spell-checker)
 
 - Make sure to use Python 3.9.0 or higher
+
   ```
   python3 --version
   ```
@@ -104,6 +107,7 @@ description: 'Installing a development environment for different operating syste
   >
   > Homebrew will install FFMpeg 5.0 by default, which does not work, so you should install 4.X.
   > You can install older 4.X FFMpeg using Homebrew like that:
+  >
   > ```
   >  cd "$(brew --repo homebrew/core)"
   >  git checkout addd616edc9134f057e33694c420f4900be59db8
@@ -111,8 +115,10 @@ description: 'Installing a development environment for different operating syste
   >  HOMEBREW_NO_AUTO_UPDATE=1 brew install ffmpeg
   >  git checkout master
   > ```
+  >
   > if you are still facing error `Running setup.py install for av ... error`, you may
   > try more radical variant
+  >
   > ```
   >  cd "$(brew --repo homebrew/core)"
   >  git checkout addd616edc9134f057e33694c420f4900be59db8
@@ -122,21 +128,25 @@ description: 'Installing a development environment for different operating syste
   > ```
   >
   > If you faced with error `Failed building wheel for h5py`, you may need install `hdf5`
+  >
   > ```
   > brew install hdf5
   > export HDF5_DIR="$(brew --prefix hdf5)"
   > pip install --no-binary=h5py h5py
   > ```
+  >
   > If you faced with error
   > `OSError: Could not find library geos_c or load any of its variants ['libgeos_c.so.1', 'libgeos_c.so']`.
   > You may fix this using
+  >
   > ```
   > sudo ln -s /opt/homebrew/lib/libgeos_c.dylib /usr/local/lib
   > ```
+  >
   > On Mac with Apple Silicon (M1) in order to install TensorFlow you will have
   > to edit `cvat/requirements/base.txt`.
   > Change `tensorflow` to `tensorflow-macos`
-  > May need to downgrade version Python to 3.9.* or upgrade version `tensorflow-macos`
+  > May need to downgrade version Python to 3.9.\* or upgrade version `tensorflow-macos`
 
   > Note for Arch Linux users:
   >
@@ -189,11 +199,12 @@ description: 'Installing a development environment for different operating syste
   > Read this article [Node Sass does not yet support your current environment](https://marketplace.visualstudio.com/items?itemName=msjsdiag.debugger-for-chrome)
 
 ### Run CVAT
+
 - Start npm UI debug server (run the following command from CVAT root directory):
   - If you want to run CVAT in localhost:
     ```sh
     yarn run start:cvat-ui
-     ```
+    ```
   - If you want to access CVAT from outside of your host:
     ```sh
     CVAT_UI_HOST='<YOUR_HOST_IP>' yarn run start:cvat-ui
@@ -208,10 +219,9 @@ description: 'Installing a development environment for different operating syste
 - Inside VScode, Open CVAT root dir
 
 - Select `server: debug` configuration and run it (F5) to run REST server and its workers
-- Make sure that ```Uncaught Exceptions``` option under breakpoints section is unchecked
+- Make sure that `Uncaught Exceptions` option under breakpoints section is unchecked
 - If you choose to run CVAT in localhost: Select `server: chrome` configuration and run it (F5) to open CVAT in Chrome
-- Alternative: If you changed CVAT_UI_HOST just enter ```<YOUR_HOST_IP>:3000``` in your browser.
-
+- Alternative: If you changed CVAT_UI_HOST just enter `<YOUR_HOST_IP>:3000` in your browser.
 
 You have done! Now it is possible to insert breakpoints and debug server and client of the tool.
 Instructions for running tests locally are available [here](/docs/contributing/running-tests/).
@@ -238,11 +248,38 @@ You develop CVAT under WSL (Windows subsystem for Linux) following next steps.
 ## Note for Mac users
 
 - You might have to manually start the redis server. You can do this with `redis-server`.
-Alternatively you can also use a redis docker image instead of using the redis-server locally.
+  Alternatively you can also use a redis docker image instead of using the redis-server locally.
 
 ## Note for Arch Linux users
+
 - You need to start `redis` and `docker` services manually in order to begin debugging/running tests:
   ```bash
   sudo systemctl start redis.service
   sudo systemctl start docker.service
   ```
+
+## CVAT Analytics Ports
+
+In case you cannot access analytics, check if the following ports are open:
+
+```yml
+cvat_vector:
+    ports:
+      - '8282:80'
+
+  cvat_clickhouse:
+    ports:
+      - '8123:8123'
+```
+
+In addition, you can completely disable analytics if you don't need it by deleting the following data from
+[launch.json](https://github.com/opencv/cvat/blob/develop/.vscode/launch.json):
+
+```json
+  "DJANGO_LOG_SERVER_HOST": "localhost",
+  "DJANGO_LOG_SERVER_PORT": "8282"
+```
+
+Analytics on GitHub:
+[Analytics Components](https://github.com/opencv/cvat/tree/develop/components/analytics)
+

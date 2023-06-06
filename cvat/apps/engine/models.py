@@ -546,9 +546,9 @@ class Label(models.Model):
     @property
     def organization_id(self):
         if self.project is not None:
-            return self.project.organization.id
+            return self.project.organization_id
         if self.task is not None:
-            return self.task.organization.id
+            return self.task.organization_id
         return None
 
     class Meta:
