@@ -1720,10 +1720,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
         return this.canvas;
     }
 
-    public setupConflictsRegions(SShape: any): number[] {
+    public setupConflictsRegions(state: any): number[] {
         let cx = 0;
         let cy = 0;
-        const shape = this.svgShapes[SShape.clientID];
+        const shape = this.svgShapes[state.clientID];
         if (!shape) return [];
         const box = (shape.node as any).getBBox();
         cx = box.x + (box.width) / 2;

@@ -605,8 +605,6 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public highlight(clientIDs: number[] | null, importance: HighlightImportance | null): void {
-        // TODO add check hightleted already
-
         if (this.data.mode !== Mode.IDLE && clientIDs !== null) {
             throw Error(`Canvas is busy. Action: ${this.data.mode}`);
         }

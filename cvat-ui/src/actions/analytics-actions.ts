@@ -8,7 +8,6 @@ import {
 import { Dispatch, ActionCreator } from 'redux';
 import { QualityQuery } from 'reducers';
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
-// import { filterNull } from 'utils/filter-null';
 
 const cvat = getCore();
 
@@ -59,8 +58,6 @@ export const analyticsActions = {
 export const getQualityReportsAsync = (task: Task, query: QualityQuery): ThunkAction => (
     async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         dispatch(analyticsActions.getQualityReports(task, query));
-
-        // const filteredQuery = filterNull(query);
 
         try {
             // reports are returned in order -created_date

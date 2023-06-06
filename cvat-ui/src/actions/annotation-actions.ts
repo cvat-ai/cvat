@@ -163,7 +163,6 @@ export enum AnnotationActionTypes {
     SWITCH_PROPAGATE_VISIBILITY = 'SWITCH_PROPAGATE_VISIBILITY',
     SWITCH_SHOWING_STATISTICS = 'SWITCH_SHOWING_STATISTICS',
     SWITCH_SHOWING_FILTERS = 'SWITCH_SHOWING_FILTERS',
-    CHANGE_FRAME_FILTERS = 'CHANGE_FRAME_FILTERS',
     COLLECT_STATISTICS = 'COLLECT_STATISTICS',
     COLLECT_STATISTICS_SUCCESS = 'COLLECT_STATISTICS_SUCCESS',
     COLLECT_STATISTICS_FAILED = 'COLLECT_STATISTICS_FAILED',
@@ -647,8 +646,6 @@ export function changeFrameAsync(
 
             const data = await job.frames.get(toFrame, fillBuffer, frameStep);
             const states = await job.annotations.get(toFrame, showAllInterpolationTracks, filters);
-            // const groundTruthStates = states.filter((_state: any) => _state.isGroundTruth);
-            // if (!showGroundTruth) states = states.filter((_state: any) => !_state.isGroundTruth);
 
             if (!isAbleToChangeFrame() || statisticsVisible || propagateVisible) {
                 // while doing async actions above, canvas can become used by a user in another way
@@ -927,6 +924,7 @@ export function getJobAsync(
                 try {
                     const [task] = await cvat.tasks.get({ id: tid });
                     [gtJob] = task.jobs.filter((_job: Job) => _job.type === JobType.GROUND_TRUTH);
+                    // gtJob is not available for workers
                     // eslint-disable-next-line no-empty
                 } catch (e) { }
             }

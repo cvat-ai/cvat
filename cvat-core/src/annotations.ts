@@ -65,7 +65,7 @@ async function getAnnotationsFromServer(session, groundTruthJobId) {
             gtAnnotations = addJobId(gtAnnotations, groundTruthJobId);
             rawAnnotations = processGroundTruthAnnotations(rawAnnotations, gtAnnotations);
         }
-        console.log(rawAnnotations);
+
         // Get meta information about frames
         const startFrame = sessionType === 'job' ? session.startFrame : 0;
         const stopFrame = sessionType === 'job' ? session.stopFrame : session.size - 1;

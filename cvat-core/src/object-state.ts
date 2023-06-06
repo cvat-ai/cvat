@@ -228,7 +228,7 @@ export default class ObjectState {
                     },
                 },
                 color: {
-                    get: () => (this.isGroundTruth ? '#ffffff' : data.color),
+                    get: () => data.color,
                     set: (color) => {
                         data.updateFlags.color = true;
                         data.color = color;

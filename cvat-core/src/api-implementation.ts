@@ -349,13 +349,6 @@ export default function implementAPI(cvat) {
     };
 
     cvat.analytics.quality.reports.implementation = async (filter) => {
-        // checkFilter(filter, {
-        //     taskId: isInteger,
-        //     parentId: isInteger,
-        // });
-
-        // const searchParams = filterFieldsToSnakeCase(filter, ['taskId', 'parentId']);
-        // TMP solution aka filters disabled
         let updatedParams: Record<string, string> = {};
         if ('taskId' in filter) {
             updatedParams = {
@@ -378,9 +371,12 @@ export default function implementAPI(cvat) {
 
     cvat.analytics.quality.conflicts.implementation = async (filter) => {
         let updatedParams: Record<string, string> = {};
-        updatedParams = {
-            report_id: filter.reportId,
-        };
+        if ('reportId' in filter) {
+            updatedParams = {
+                report_id: filter.reportId,
+            };
+        }
+
         const reportsData = await serverProxy.analytics.quality.conflicts(updatedParams);
 
         return reportsData.map((conflict) => new QualityConflict({ ...conflict }));
