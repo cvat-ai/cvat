@@ -2,8 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
-from rest_framework import serializers
 import textwrap
+
+from rest_framework import serializers
 
 from cvat.apps.quality_control import models
 
@@ -11,7 +12,7 @@ from cvat.apps.quality_control import models
 class AnnotationIdSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.AnnotationId
-        fields = ('obj_id', 'job_id', 'type')
+        fields = ("obj_id", "job_id", "type")
         read_only_fields = fields
 
 
@@ -20,7 +21,7 @@ class AnnotationConflictSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.AnnotationConflict
-        fields = ('id', 'frame', 'type', 'annotation_ids', 'report_id', 'importance')
+        fields = ("id", "frame", "type", "annotation_ids", "report_id", "importance")
         read_only_fields = fields
 
 
@@ -34,9 +35,9 @@ class QualityReportSummarySerializer(serializers.Serializer):
 
     # This set is enough for basic characteristics, such as
     # DS_unmatched, GT_unmatched, accuracy, precision and recall
-    valid_count = serializers.IntegerField(source='annotations.valid_count')
-    ds_count = serializers.IntegerField(source='annotations.ds_count')
-    gt_count = serializers.IntegerField(source='annotations.gt_count')
+    valid_count = serializers.IntegerField(source="annotations.valid_count")
+    ds_count = serializers.IntegerField(source="annotations.ds_count")
+    gt_count = serializers.IntegerField(source="annotations.gt_count")
 
 
 class QualityReportParametersSerializer(serializers.Serializer):
@@ -50,8 +51,17 @@ class QualityReportSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.QualityReport
-        fields = ('id', 'job_id', 'task_id', 'parent_id', 'target', 'summary', 'parameters',
-            'created_date', 'target_last_updated', 'gt_last_updated',
+        fields = (
+            "id",
+            "job_id",
+            "task_id",
+            "parent_id",
+            "target",
+            "summary",
+            "parameters",
+            "created_date",
+            "target_last_updated",
+            "gt_last_updated",
         )
         read_only_fields = fields
 
@@ -64,80 +74,73 @@ class QualitySettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.QualitySettings
         fields = (
-            'id',
-            'task_id',
-
-            'iou_threshold',
-            'oks_sigma',
-            'line_thickness',
-
-            'low_overlap_threshold',
-
-            'oriented_lines',
-            'line_orientation_threshold',
-
-            'compare_groups',
-            'group_match_threshold',
-
-            'check_covered_annotations',
-            'object_visibility_threshold',
-
-            'panoptic_comparison',
-
-            'compare_attributes',
+            "id",
+            "task_id",
+            "iou_threshold",
+            "oks_sigma",
+            "line_thickness",
+            "low_overlap_threshold",
+            "oriented_lines",
+            "line_orientation_threshold",
+            "compare_groups",
+            "group_match_threshold",
+            "check_covered_annotations",
+            "object_visibility_threshold",
+            "panoptic_comparison",
+            "compare_attributes",
         )
-        read_only_fields = ('id', 'task_id', )
+        read_only_fields = (
+            "id",
+            "task_id",
+        )
 
-        extra_kwargs = {
-            k: {'required': False}
-            for k in fields
-        }
+        extra_kwargs = {k: {"required": False} for k in fields}
 
         for field_name, help_text in {
-            'iou_threshold': "Used for distinction between matched / unmatched shapes",
-            'low_overlap_threshold': (
+            "iou_threshold": "Used for distinction between matched / unmatched shapes",
+            "low_overlap_threshold": (
                 "Used for distinction between strong / weak (low_overlap) matches"
             ),
-            'oks_sigma': """
+            "oks_sigma": """
                 Like IoU threshold, but for points.
                 The percent of the bbox area, used as the radius of the circle around the GT point,
                 where the checked point is expected to be.
                 Read more: https://cocodataset.org/#keypoints-eval
             """,
-            'line_thickness': """
+            "line_thickness": """
                 Thickness of polylines, relatively to the (image area) ^ 0.5.
                 The distance to the boundary around the GT line,
                 inside of which the checked line points should be
             """,
-            'oriented_lines': "Indicates that polylines have direction",
-            'line_orientation_threshold': """
+            "oriented_lines": "Indicates that polylines have direction",
+            "line_orientation_threshold": """
                 The minimal gain in the GT IoU between the given and reversed line directions
                 to consider the line inverted. Only useful with the 'oriented_lines' parameter
             """,
-            'compare_groups': "Enables or disables annotation group checks",
-            'group_match_threshold': """
+            "compare_groups": "Enables or disables annotation group checks",
+            "group_match_threshold": """
                 Minimal IoU for groups to be considered matching,
                 used when the 'compare_groups' is enabled
             """,
-            'check_covered_annotations': (
+            "check_covered_annotations": (
                 "Check for partially-covered annotations, useful in segmentation tasks"
             ),
-            'object_visibility_threshold': """
+            "object_visibility_threshold": """
                 Minimal visible area percent of the spatial annotations (polygons, masks)
                 for reporting covered annotations,
                 useful with the 'check_covered_annotations' option
             """,
-            'panoptic_comparison': (
+            "panoptic_comparison": (
                 "Use only the visible part of the masks and polygons in comparisons"
-            )
+            ),
         }.items():
             extra_kwargs.setdefault(field_name, {}).setdefault(
-                'help_text', textwrap.dedent(help_text.lstrip('\n'))
+                "help_text", textwrap.dedent(help_text.lstrip("\n"))
             )
 
     def validate(self, attrs):
         for k, v in attrs.items():
-            if k.endswith('_threshold') or k in ['oks_sigma', 'line_thickness']:
+            if k.endswith("_threshold") or k in ["oks_sigma", "line_thickness"]:
                 if not 0 <= v <= 1:
                     raise serializers.ValidationError(f"{k} must be in the range [0; 1]")
 

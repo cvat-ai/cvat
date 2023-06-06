@@ -6,11 +6,12 @@ from django.apps import AppConfig
 
 
 class QualityControlConfig(AppConfig):
-    name = 'cvat.apps.quality_control'
+    name = "cvat.apps.quality_control"
 
     def ready(self) -> None:
-        from . import default_settings
         from django.conf import settings
+
+        from . import default_settings
 
         for key in dir(default_settings):
             if key.isupper() and not hasattr(settings, key):
