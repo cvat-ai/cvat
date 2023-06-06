@@ -14,6 +14,7 @@ from typing import List, Union
 import pytest
 import requests
 import yaml
+
 from shared.utils.config import ASSETS_DIR, get_server_url
 
 logger = logging.getLogger(__name__)
@@ -30,6 +31,7 @@ DC_FILES = [
     "tests/docker-compose.minio.yml",
     "tests/docker-compose.test_servers.yml",
 ] + CONTAINER_NAME_FILES
+
 
 class Container(str, Enum):
     DB = "cvat_db"
