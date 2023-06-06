@@ -11,9 +11,9 @@ from rest_framework.renderers import JSONRenderer
 
 
 from cvat.apps.iam.permissions import EventsPermission
+from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 from cvat.apps.events.serializers import ClientEventsSerializer
 from cvat.apps.engine.log import vlogger
-from cvat.apps.engine.schema import ORGANIZATION_OPEN_API_PARAMETERS
 from .export import export
 
 class EventsViewSet(viewsets.ViewSet):
