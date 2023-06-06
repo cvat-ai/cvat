@@ -148,8 +148,8 @@ def create_task(username, spec, data, content_type="application/json", **kwargs)
         sent_upload_start = False
 
         data_kwargs = (kwargs or {}).copy()
-        data_kwargs.pop('org', None)
-        data_kwargs.pop('org_id', None)
+        data_kwargs.pop("org", None)
+        data_kwargs.pop("org_id", None)
 
         if data.get("client_files") and "json" in content_type:
             (_, response) = api_client.tasks_api.create_data(
