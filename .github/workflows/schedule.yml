@@ -89,7 +89,7 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           build-args: |
-              "COVERAGE_ENABLED=yes"
+              "COVERAGE_PROCESS_START=.coveragerc"
           cache-from: type=local,src=/tmp/cvat_cache_server
           context: .
           file: Dockerfile
@@ -166,7 +166,7 @@ jobs:
 
       - name: REST API and SDK tests
         env:
-          COVERAGE_ENABLED: "yes"
+          COVERAGE_PROCESS_START: ".coveragerc"
         run: |
           pip3 install -r cvat-sdk/gen/requirements.txt
           ./cvat-sdk/gen/generate.sh

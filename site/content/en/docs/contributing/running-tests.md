@@ -82,7 +82,7 @@ pytest ./tests/python --rebuild
 
 If you want to get a code coverage report, use special option for it:
 ```
-COVERAGE_ENABLED=yes pytest ./tests/python --rebuild --cov --cov-report xml
+COVERAGE_PROCESS_START=.coveragerc pytest ./tests/python --rebuild --cov --cov-report xml
 ```
 
 **Debugging**

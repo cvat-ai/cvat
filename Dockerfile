@@ -179,8 +179,8 @@ COPY --chown=${USER} utils/ ${HOME}/utils
 COPY --chown=${USER} cvat/ ${HOME}/cvat
 COPY --chown=${USER} tests/python/.coveragerc ${HOME}/
 
-ARG COVERAGE_ENABLED
-RUN if [ "${COVERAGE_ENABLED}" = 'yes' ]; then \
+ARG COVERAGE_PROCESS_START
+RUN if [ "${COVERAGE_PROCESS_START}" ]; then \
         echo "import coverage; coverage.process_startup()" > /opt/venv/lib/python3.10/site-packages/coverage_subprocess.pth; \
     fi
 
