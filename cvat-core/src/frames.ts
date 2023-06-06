@@ -317,19 +317,19 @@ FrameData.prototype.data.implementation = async function (onServerRequest) {
 
 function getFrameMeta(jobID, frame): FramesMetaData['frames'][0] {
     const { meta, mode, startFrame } = frameDataCache[jobID];
-    let frame_meta = null;
+    let frameMeta = null;
     if (mode === 'interpolation') {
-        [frame_meta] = meta.frames;
+        [frameMeta] = meta.frames;
     } else if (mode === 'annotation') {
         if (frame > meta.stop_frame) {
             throw new ArgumentError(`Meta information about frame ${frame} can't be received from the server`);
         }
-        frame_meta = meta.frames[frame - startFrame];
+        frameMeta = meta.frames[frame - startFrame];
     } else {
         throw new DataError(`Invalid mode is specified ${mode}`);
     }
 
-    return frame_meta;
+    return frameMeta;
 }
 
 class FrameBuffer {
