@@ -4,14 +4,13 @@
 # SPDX-License-Identifier: MIT
 
 import os
-import sys
 
+import coverage
 from rq import Worker
 
 import cvat.utils.remote_debugger as debug
 
 DefaultWorker = Worker
-import coverage
 
 class BaseDeathPenalty:
     def __init__(self, timeout, exception, **kwargs):

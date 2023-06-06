@@ -22,6 +22,7 @@ CVAT_ROOT_DIR = next(dir.parent for dir in Path(__file__).parents if dir.name ==
 CVAT_DB_DIR = ASSETS_DIR / "cvat_db"
 PREFIX = "test"
 
+
 class Container(str, Enum):
     DB = "cvat_db"
     SERVER = "cvat_server"
