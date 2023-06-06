@@ -1187,10 +1187,10 @@ class _DistanceComparator(dm.ops.DistanceComparator):
         b_extra = [ia_b for i_b in b_extra for ia_b in b_instances[i_b]]
 
         if self.return_distances:
-            for (i_a, i_b) in list(distances.keys()):
+            for i_a, i_b in list(distances.keys()):
                 dist = distances.pop((i_a, i_b))
 
-                for (ia_a, ia_b) in itertools.product(a_instances[i_a], b_instances[i_b]):
+                for ia_a, ia_b in itertools.product(a_instances[i_a], b_instances[i_b]):
                     distances[(id(ia_a), id(ia_b))] = dist
 
         returned_values = (matched, mismatched, a_extra, b_extra)
@@ -1387,7 +1387,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
 
         # Map points back to skeletons
         if self.return_distances:
-            for (p_a_id, p_b_id) in list(distances.keys()):
+            for p_a_id, p_b_id in list(distances.keys()):
                 dist = distances.pop((p_a_id, p_b_id))
                 distances[(id(points_map[p_a_id]), id(points_map[p_b_id]))] = dist
 
