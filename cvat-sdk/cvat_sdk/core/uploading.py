@@ -351,15 +351,11 @@ class DataUploader(Uploader):
         if pbar is not None:
             pbar.start(total_size, desc="Uploading data")
 
-        upload_info = None
         if str(kwargs.get("sorting_method")).lower() == "predefined":
             # Request file ordering, because we reorder files to send more efficiently
-            upload_info = {
-                "upload_file_order": [p.name for p in resources],
-                "image_quality": kwargs["image_quality"],
-            }
+            kwargs.setdefault("upload_file_order", [p.name for p in resources])
 
-        self._tus_start_upload(url, fields=upload_info)
+        self._tus_start_upload(url, fields={"image_quality": kwargs["image_quality"]})
 
         for group, group_size in bulk_file_groups:
             files = {}

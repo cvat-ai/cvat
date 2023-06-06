@@ -4435,10 +4435,7 @@ class TaskDataAPITestCase(ApiTestBase):
 
         def _send_data(tid, user, data):
             response = self._run_api_v2_tasks_id_data_post(tid, user,
-                data={
-                    'upload_file_order': upload_info,
-                    'image_quality': task_data["image_quality"]
-                },
+                data={ 'image_quality': task_data["image_quality"] },
                 headers={ 'Upload-Start': True })
             assert response.status_code == status.HTTP_202_ACCEPTED, response.status_code
 
@@ -4450,6 +4447,7 @@ class TaskDataAPITestCase(ApiTestBase):
 
                 if group_idx == len(file_groups) - 1:
                     headers = { 'Upload-Finish': True }
+                    request_data['upload_file_order'] = upload_info
                 else:
                     headers = { 'Upload-Multiple': True }
 

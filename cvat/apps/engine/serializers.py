@@ -763,15 +763,12 @@ class DataSerializer(serializers.ModelSerializer):
         """))
     job_file_mapping = JobFileMapping(required=False, write_only=True)
 
-    # NOTE: This field is defined here instead of a separate serializer
-    # to avoid backward-incompatible API changes in the schema and SDK,
-    # that would be produced by PolymorphicProxySerializer use in the
-    # Upload-Start request.
     upload_file_order = serializers.ListField(
         child=serializers.CharField(max_length=1024),
         default=list, allow_empty=True, write_only=True,
         help_text=textwrap.dedent("""\
-            Allows to specify file order for client file uploads.
+            Allows to specify file order for client_file uploads.
+            Only valid with the "{}" sorting method selected.
 
             To state that the input files are sent in the correct order,
             pass an empty list.
@@ -779,7 +776,7 @@ class DataSerializer(serializers.ModelSerializer):
             If you want to send files in an arbitrary order
             and reorder them afterwards on the server,
             pass the list of file names in the required order.
-        """)
+        """.format(models.SortingMethod.PREDEFINED))
     )
 
     class Meta:
