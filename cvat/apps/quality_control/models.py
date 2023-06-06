@@ -3,8 +3,8 @@
 # SPDX-License-Identifier: MIT
 
 from __future__ import annotations
-from copy import deepcopy
 
+from copy import deepcopy
 from enum import Enum
 from typing import Any, Sequence
 
@@ -12,18 +12,18 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.forms.models import model_to_dict
 
-from cvat.apps.engine.models import Task, Job
+from cvat.apps.engine.models import Job, Task
 
 
 class AnnotationConflictType(str, Enum):
-    MISSING_ANNOTATION = 'missing_annotation'
-    EXTRA_ANNOTATION = 'extra_annotation'
-    MISMATCHING_LABEL = 'mismatching_label'
-    LOW_OVERLAP = 'low_overlap'
-    MISMATCHING_DIRECTION = 'mismatching_direction'
-    MISMATCHING_ATTRIBUTES = 'mismatching_attributes'
-    MISMATCHING_GROUPS = 'mismatching_groups'
-    COVERED_ANNOTATION = 'covered_annotation'
+    MISSING_ANNOTATION = "missing_annotation"
+    EXTRA_ANNOTATION = "extra_annotation"
+    MISMATCHING_LABEL = "mismatching_label"
+    LOW_OVERLAP = "low_overlap"
+    MISMATCHING_DIRECTION = "mismatching_direction"
+    MISMATCHING_ATTRIBUTES = "mismatching_attributes"
+    MISMATCHING_GROUPS = "mismatching_groups"
+    COVERED_ANNOTATION = "covered_annotation"
 
     def __str__(self) -> str:
         return self.value
@@ -34,8 +34,8 @@ class AnnotationConflictType(str, Enum):
 
 
 class AnnotationConflictImportance(str, Enum):
-    WARNING = 'warning'
-    ERROR = 'error'
+    WARNING = "warning"
+    ERROR = "error"
 
     def __str__(self) -> str:
         return self.value
@@ -46,8 +46,8 @@ class AnnotationConflictImportance(str, Enum):
 
 
 class MismatchingAnnotationKind(str, Enum):
-    ATTRIBUTE = 'attribute'
-    LABEL = 'label'
+    ATTRIBUTE = "attribute"
+    LABEL = "label"
 
     def __str__(self) -> str:
         return self.value
@@ -58,8 +58,8 @@ class MismatchingAnnotationKind(str, Enum):
 
 
 class QualityReportTarget(str, Enum):
-    JOB = 'job'
-    TASK = 'task'
+    JOB = "job"
+    TASK = "task"
 
     def __str__(self) -> str:
         return self.value
@@ -70,13 +70,16 @@ class QualityReportTarget(str, Enum):
 
 
 class QualityReport(models.Model):
-    job = models.ForeignKey(Job, on_delete=models.CASCADE,
-        related_name='quality_reports', null=True, blank=True)
-    task = models.ForeignKey(Task, on_delete=models.CASCADE,
-        related_name='quality_reports', null=True, blank=True)
+    job = models.ForeignKey(
+        Job, on_delete=models.CASCADE, related_name="quality_reports", null=True, blank=True
+    )
+    task = models.ForeignKey(
+        Task, on_delete=models.CASCADE, related_name="quality_reports", null=True, blank=True
+    )
 
-    parent = models.ForeignKey('self', on_delete=models.CASCADE,
-        related_name='children', null=True, blank=True)
+    parent = models.ForeignKey(
+        "self", on_delete=models.CASCADE, related_name="children", null=True, blank=True
+    )
     children: Sequence[QualityReport]
 
     created_date = models.DateTimeField(auto_now_add=True)
@@ -98,6 +101,7 @@ class QualityReport(models.Model):
 
     def _parse_report(self):
         from cvat.apps.quality_control.quality_reports import ComparisonReport
+
         return ComparisonReport.from_json(self.data)
 
     @property
@@ -126,13 +130,12 @@ class QualityReport(models.Model):
     @property
     def organization_id(self):
         if task := self.get_task():
-            return getattr(task.organization, 'id', None)
+            return getattr(task.organization, "id", None)
         return None
 
 
 class AnnotationConflict(models.Model):
-    report = models.ForeignKey(QualityReport,
-        on_delete=models.CASCADE, related_name='conflicts')
+    report = models.ForeignKey(QualityReport, on_delete=models.CASCADE, related_name="conflicts")
     frame = models.PositiveIntegerField()
     type = models.CharField(max_length=32, choices=AnnotationConflictType.choices())
     importance = models.CharField(max_length=32, choices=AnnotationConflictImportance.choices())
@@ -145,16 +148,16 @@ class AnnotationConflict(models.Model):
 
 
 class AnnotationType(str, Enum):
-    TAG = 'tag'
-    TRACK = 'track'
-    RECTANGLE = 'rectangle'
-    POLYGON = 'polygon'
-    POLYLINE = 'polyline'
-    POINTS = 'points'
-    ELLIPSE = 'ellipse'
-    CUBOID = 'cuboid'
-    MASK = 'mask'
-    SKELETON = 'skeleton'
+    TAG = "tag"
+    TRACK = "track"
+    RECTANGLE = "rectangle"
+    POLYGON = "polygon"
+    POLYLINE = "polyline"
+    POINTS = "points"
+    ELLIPSE = "ellipse"
+    CUBOID = "cuboid"
+    MASK = "mask"
+    SKELETON = "skeleton"
 
     def __str__(self) -> str:
         return self.value
@@ -165,8 +168,9 @@ class AnnotationType(str, Enum):
 
 
 class AnnotationId(models.Model):
-    conflict = models.ForeignKey(AnnotationConflict,
-        on_delete=models.CASCADE, related_name='annotation_ids')
+    conflict = models.ForeignKey(
+        AnnotationConflict, on_delete=models.CASCADE, related_name="annotation_ids"
+    )
 
     obj_id = models.PositiveIntegerField()
     job_id = models.PositiveIntegerField()
@@ -174,9 +178,7 @@ class AnnotationId(models.Model):
 
 
 class QualitySettings(models.Model):
-    task = models.OneToOneField(Task,
-        on_delete=models.CASCADE, related_name='quality_settings'
-    )
+    task = models.OneToOneField(Task, on_delete=models.CASCADE, related_name="quality_settings")
 
     iou_threshold = models.FloatField()
     oks_sigma = models.FloatField()
@@ -208,6 +210,7 @@ class QualitySettings(models.Model):
     @classmethod
     def get_defaults(cls) -> dict:
         import cvat.apps.quality_control.quality_reports as qc
+
         default_settings = qc.DatasetComparator.DEFAULT_SETTINGS.to_dict()
 
         existing_fields = {f.name for f in cls._meta.fields}
@@ -218,4 +221,4 @@ class QualitySettings(models.Model):
 
     @property
     def organization_id(self):
-        return getattr(self.task.organization, 'id', None)
+        return getattr(self.task.organization, "id", None)
