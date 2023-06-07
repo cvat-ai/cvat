@@ -264,11 +264,6 @@ class Data(models.Model):
         os.makedirs(self.get_original_cache_dirname())
         os.makedirs(self.get_upload_dirname())
 
-    def get_uploaded_files(self):
-        upload_dir = self.get_upload_dirname()
-        uploaded_files = [os.path.join(upload_dir, file) for file in os.listdir(upload_dir) if os.path.isfile(os.path.join(upload_dir, file))]
-        represented_files = [{'file':f} for f in uploaded_files]
-        return represented_files
 
 class Video(models.Model):
     data = models.OneToOneField(Data, on_delete=models.CASCADE, related_name="video", null=True)
