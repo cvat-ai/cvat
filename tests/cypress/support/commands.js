@@ -273,9 +273,9 @@ Cypress.Commands.add('saveJob', (method = 'PATCH', status = 200, as = 'saveJob')
 Cypress.Commands.add('getJobNum', (jobID) => {
     const jobsKey = [];
     cy.document().then((doc) => {
-        const jobs = Array.from(doc.querySelectorAll('.cvat-task-jobs-table-row'));
+        const jobs = Array.from(doc.querySelectorAll('.cvat-job-item'));
         for (let i = 0; i < jobs.length; i++) {
-            jobsKey.push(jobs[i].getAttribute('data-row-key'));
+            jobsKey.push(jobs[i].getAttribute('data-row-id'));
         }
         const minKey = Math.min(...jobsKey);
         return minKey + jobID;
@@ -284,9 +284,8 @@ Cypress.Commands.add('getJobNum', (jobID) => {
 
 Cypress.Commands.add('openJob', (jobID = 0, removeAnnotations = true, expectedFail = false) => {
     cy.get('.cvat-task-job-list').should('exist');
-    cy.get('.cvat-task-jobs-table-row').should('exist');
     cy.getJobNum(jobID).then(($job) => {
-        cy.get('.cvat-task-jobs-table-row').contains('a', `Job #${$job}`).click();
+        cy.get('.cvat-job-item').contains('a', `Job #${$job}`).click();
     });
     cy.url().should('include', '/jobs');
     if (expectedFail) {

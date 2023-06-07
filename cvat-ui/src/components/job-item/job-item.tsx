@@ -107,7 +107,7 @@ function JobItem(props: Props): JSX.Element {
 
     return (
         <Col span={24}>
-            <Card className='cvat-job-item' style={{ ...style }}>
+            <Card className='cvat-job-item' style={{ ...style }} data-row-id={job.id}>
                 <Row>
                     <Col span={7}>
                         <Row>
@@ -214,7 +214,9 @@ function JobItem(props: Props): JSX.Element {
                                             <Col>
                                                 <Icon component={FramesIcon} />
                                                 <Text>Frame range:</Text>
-                                                <Text type='secondary'>{` ${job.startFrame}-${job.stopFrame}`}</Text>
+                                                <Text type='secondary' className='cvat-job-item-frame-range'>
+                                                    {` ${job.startFrame}-${job.stopFrame}`}
+                                                </Text>
                                             </Col>
                                         </Row>
                                     )
@@ -223,7 +225,10 @@ function JobItem(props: Props): JSX.Element {
                                     <Col>
                                         <BorderOutlined />
                                         <Text>Frame count:</Text>
-                                        <Text type='secondary'>{` ${job.frameCount} (${((job.frameCount / (task.size || 1)) * 100).toFixed(0)}%)`}</Text>
+                                        <Text type='secondary' className='cvat-job-item-frames'>
+                                            {` ${job.frameCount}
+                                             (${((job.frameCount / (task.size || 1)) * 100).toFixed(0)}%)`}
+                                        </Text>
                                     </Col>
                                 </Row>
                             </Col>
