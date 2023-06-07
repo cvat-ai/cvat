@@ -25,21 +25,6 @@ paths:
 
         Accept the following POST parameters: username, email, password
         Return the REST Framework Token Object's key.
-      parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - auth
       requestBody:
@@ -70,21 +55,6 @@ paths:
         assigned to the current User object.
 
         Accepts/Returns nothing.
-      parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - auth
       security:
@@ -109,21 +79,6 @@ paths:
 
         Accepts the following POST parameters: new_password1, new_password2
         Returns the success/fail message.
-      parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - auth
       requestBody:
@@ -153,21 +108,6 @@ paths:
 
         Accepts the following POST parameters: email
         Returns the success/fail message.
-      parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - auth
       requestBody:
@@ -200,21 +140,6 @@ paths:
         Accepts the following POST parameters: token, uid,
             new_password1, new_password2
         Returns the success/fail message.
-      parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - auth
       requestBody:
@@ -240,21 +165,6 @@ paths:
   /api/auth/register:
     post:
       operationId: auth_create_register
-      parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - auth
       requestBody:
@@ -280,21 +190,6 @@ paths:
   /api/auth/rules:
     get:
       operationId: auth_retrieve_rules
-      parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - auth
       security:
@@ -308,21 +203,6 @@ paths:
       description: Signed URL contains a token which authenticates a user on the server.Signed
         URL is valid during 30 seconds since signing.
       summary: This method signs URL for access to the server
-      parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - auth
       requestBody:
@@ -349,8 +229,9 @@ paths:
       operationId: cloudstorages_list
       summary: Returns a paginated list of storages
       parameters:
-      - in: header
-        name: X-Organization
+      - name: X-Organization
+        in: header
+        description: Organization unique slug
         schema:
           type: string
       - name: credentials_type
@@ -377,16 +258,16 @@ paths:
         description: A simple equality filter for the name field
         schema:
           type: string
-      - in: query
-        name: org
+      - name: org
+        in: query
+        description: Organization unique slug
         schema:
           type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
+      - name: org_id
+        in: query
+        description: Organization identifier
         schema:
           type: integer
-        description: Organization identifier
       - name: owner
         in: query
         description: A simple equality filter for the owner field
@@ -457,6 +338,7 @@ paths:
         name: X-Organization
         schema:
           type: string
+        description: Organization unique slug
       - in: query
         name: org
         schema:
@@ -540,26 +422,12 @@ paths:
       operationId: cloudstorages_retrieve
       summary: Method returns details of a specific cloud storage
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this cloud storage.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - cloudstorages
       security:
@@ -579,26 +447,12 @@ paths:
       operationId: cloudstorages_partial_update
       summary: Methods does a partial update of chosen fields in a cloud storage instance
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this cloud storage.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - cloudstorages
       requestBody:
@@ -670,26 +524,12 @@ paths:
       operationId: cloudstorages_destroy
       summary: Method deletes a specific cloud storage
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this cloud storage.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - cloudstorages
       security:
@@ -708,26 +548,12 @@ paths:
         for reading/writing
       summary: Method returns allowed actions for the cloud storage
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this cloud storage.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - cloudstorages
       security:
@@ -746,12 +572,44 @@ paths:
   /api/cloudstorages/{id}/content:
     get:
       operationId: cloudstorages_retrieve_content
+      description: 'This method is deprecated and will be removed in version 2.6.0.
+        Please use the new version of API: /cloudstorages/id/content-v2/'
       summary: Method returns a manifest content
       parameters:
-      - in: header
-        name: X-Organization
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this cloud storage.
+        required: true
+      - in: query
+        name: manifest_path
         schema:
           type: string
+        description: Path to the manifest file in a cloud storage
+      tags:
+      - cloudstorages
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      deprecated: true
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                type: array
+                items:
+                  type: string
+          description: A manifest content
+  /api/cloudstorages/{id}/content-v2:
+    get:
+      operationId: cloudstorages_retrieve_content_v2
+      summary: Method returns the content of the cloud storage
+      parameters:
       - in: path
         name: id
         schema:
@@ -764,15 +622,19 @@ paths:
           type: string
         description: Path to the manifest file in a cloud storage
       - in: query
-        name: org
+        name: next_token
         schema:
           type: string
-        description: Organization unique slug
+        description: Used to continue listing files in the bucket
       - in: query
-        name: org_id
+        name: page_size
         schema:
           type: integer
-        description: Organization identifier
+      - in: query
+        name: prefix
+        schema:
+          type: string
+        description: Prefix to filter data
       tags:
       - cloudstorages
       security:
@@ -786,35 +648,19 @@ paths:
           content:
             application/vnd.cvat+json:
               schema:
-                type: array
-                items:
-                  type: string
+                $ref: '#/components/schemas/CloudStorageContent'
           description: A manifest content
   /api/cloudstorages/{id}/preview:
     get:
       operationId: cloudstorages_retrieve_preview
       summary: Method returns a preview image from a cloud storage
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this cloud storage.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - cloudstorages
       security:
@@ -835,26 +681,12 @@ paths:
       operationId: cloudstorages_retrieve_status
       summary: Method returns a cloud storage status
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this cloud storage.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - cloudstorages
       security:
@@ -875,8 +707,9 @@ paths:
       operationId: comments_list
       summary: Method returns a paginated list of comments
       parameters:
-      - in: header
-        name: X-Organization
+      - name: X-Organization
+        in: header
+        description: Organization unique slug
         schema:
           type: string
       - name: filter
@@ -901,16 +734,16 @@ paths:
         description: A simple equality filter for the job_id field
         schema:
           type: integer
-      - in: query
-        name: org
+      - name: org
+        in: query
+        description: Organization unique slug
         schema:
           type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
+      - name: org_id
+        in: query
+        description: Organization identifier
         schema:
           type: integer
-        description: Organization identifier
       - name: owner
         in: query
         description: A simple equality filter for the owner field
@@ -964,6 +797,7 @@ paths:
         name: X-Organization
         schema:
           type: string
+        description: Organization unique slug
       - in: query
         name: org
         schema:
@@ -1000,26 +834,12 @@ paths:
       operationId: comments_retrieve
       summary: Method returns details of a comment
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this comment.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - comments
       security:
@@ -1039,26 +859,12 @@ paths:
       operationId: comments_partial_update
       summary: Methods does a partial update of chosen fields in a comment
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this comment.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - comments
       requestBody:
@@ -1083,26 +889,12 @@ paths:
       operationId: comments_destroy
       summary: Method deletes a comment
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this comment.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - comments
       security:
@@ -1120,10 +912,6 @@ paths:
       description: Recieve logs from the server
       summary: 'Method returns csv log file '
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: query
         name: action
         schema:
@@ -1149,11 +937,6 @@ paths:
         schema:
           type: integer
         description: Filter events by job ID
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
       - in: query
         name: org_id
         schema:
@@ -1210,6 +993,7 @@ paths:
         name: X-Organization
         schema:
           type: string
+        description: Organization unique slug
       - in: query
         name: org
         schema:
@@ -1246,8 +1030,9 @@ paths:
       operationId: invitations_list
       summary: Method returns a paginated list of invitations
       parameters:
-      - in: header
-        name: X-Organization
+      - name: X-Organization
+        in: header
+        description: Organization unique slug
         schema:
           type: string
       - name: filter
@@ -1256,16 +1041,16 @@ paths:
         description: 'A filter term. Available filter_fields: [''owner'']'
         schema:
           type: string
-      - in: query
-        name: org
+      - name: org
+        in: query
+        description: Organization unique slug
         schema:
           type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
+      - name: org_id
+        in: query
+        description: Organization identifier
         schema:
           type: integer
-        description: Organization identifier
       - name: owner
         in: query
         description: A simple equality filter for the owner field
@@ -1319,6 +1104,7 @@ paths:
         name: X-Organization
         schema:
           type: string
+        description: Organization unique slug
       - in: query
         name: org
         schema:
@@ -1355,26 +1141,12 @@ paths:
       operationId: invitations_retrieve
       summary: Method returns details of an invitation
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: key
         schema:
           type: string
         description: A unique value identifying this invitation.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - invitations
       security:
@@ -1394,26 +1166,12 @@ paths:
       operationId: invitations_partial_update
       summary: Methods does a partial update of chosen fields in an invitation
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: key
         schema:
           type: string
         description: A unique value identifying this invitation.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - invitations
       requestBody:
@@ -1438,26 +1196,12 @@ paths:
       operationId: invitations_destroy
       summary: Method deletes an invitation
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: key
         schema:
           type: string
         description: A unique value identifying this invitation.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - invitations
       security:
@@ -1474,8 +1218,9 @@ paths:
       operationId: issues_list
       summary: Method returns a paginated list of issues
       parameters:
-      - in: header
-        name: X-Organization
+      - name: X-Organization
+        in: header
+        description: Organization unique slug
         schema:
           type: string
       - name: assignee
@@ -1500,16 +1245,16 @@ paths:
         description: A simple equality filter for the job_id field
         schema:
           type: integer
-      - in: query
-        name: org
+      - name: org
+        in: query
+        description: Organization unique slug
         schema:
           type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
+      - name: org_id
+        in: query
+        description: Organization identifier
         schema:
           type: integer
-        description: Organization identifier
       - name: owner
         in: query
         description: A simple equality filter for the owner field
@@ -1574,6 +1319,7 @@ paths:
         name: X-Organization
         schema:
           type: string
+        description: Organization unique slug
       - in: query
         name: org
         schema:
@@ -1610,26 +1356,12 @@ paths:
       operationId: issues_retrieve
       summary: Method returns details of an issue
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this issue.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - issues
       security:
@@ -1649,26 +1381,12 @@ paths:
       operationId: issues_partial_update
       summary: Methods does a partial update of chosen fields in an issue
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this issue.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - issues
       requestBody:
@@ -1693,26 +1411,12 @@ paths:
       operationId: issues_destroy
       summary: Method deletes an issue
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this issue.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - issues
       security:
@@ -1729,8 +1433,9 @@ paths:
       operationId: jobs_list
       summary: Method returns a paginated list of jobs
       parameters:
-      - in: header
-        name: X-Organization
+      - name: X-Organization
+        in: header
+        description: Organization unique slug
         schema:
           type: string
       - name: assignee
@@ -1754,16 +1459,16 @@ paths:
           ''updated_date'', ''dimension'']'
         schema:
           type: string
-      - in: query
-        name: org
+      - name: org
+        in: query
+        description: Organization unique slug
         schema:
           type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
+      - name: org_id
+        in: query
+        description: Organization identifier
         schema:
           type: integer
-        description: Organization identifier
       - name: page
         required: false
         in: query
@@ -1850,26 +1555,12 @@ paths:
       operationId: jobs_retrieve
       summary: Method returns details of a job
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this job.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - jobs
       security:
@@ -1889,26 +1580,12 @@ paths:
       operationId: jobs_partial_update
       summary: Methods does a partial update of chosen fields in a job
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this job.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - jobs
       requestBody:
@@ -1935,10 +1612,6 @@ paths:
       summary: Method returns annotations for a specific job as a JSON document. If
         format is specified, a zip archive is returned.
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: query
         name: action
         schema:
@@ -1980,16 +1653,6 @@ paths:
           - local
         description: Where need to save downloaded annotation
       - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
-      - in: query
         name: use_default_location
         schema:
           type: boolean
@@ -2018,12 +1681,14 @@ paths:
           description: Format is not available
     post:
       operationId: jobs_create_annotations
-      summary: Method allows to upload job annotations
+      description: |2
+
+        The request POST /api/jobs/id/annotations will initiate file upload and will create
+        the rq job on the server in which the process of annotations uploading from file
+        will be carried out. Please, use the PUT /api/jobs/id/annotations endpoint for checking status of the process.
+      summary: Method allows to initialize the process of the job annotation upload
+        from a local file or a cloud storage
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: query
         name: cloud_storage_id
         schema:
@@ -2057,16 +1722,6 @@ paths:
           - local
         description: where to import the annotation from
       - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
-      - in: query
         name: use_default_location
         schema:
           type: boolean
@@ -2093,17 +1748,25 @@ paths:
         '201':
           description: Uploading has finished
         '202':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/RqId'
           description: Uploading has been started
         '405':
           description: Format is not available
     put:
       operationId: jobs_update_annotations
-      summary: Method performs an update of all annotations in a specific job
+      description: |2
+
+        To check the status of the process of uploading a job annotations from a file:
+
+        After initiating the annotations upload, you will receive an rq_id parameter.
+        Make sure to include this parameter as a query parameter in your subsequent
+        PUT /api/jobs/id/annotations requests to track the status of the annotations upload.
+      summary: Method performs an update of all annotations in a specific job or used
+        for uploading annotations from a file
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: query
         name: format
         schema:
@@ -2119,15 +1782,10 @@ paths:
         description: A unique integer value identifying this job.
         required: true
       - in: query
-        name: org
+        name: rq_id
         schema:
           type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
+        description: rq id
       tags:
       - jobs
       requestBody:
@@ -2155,10 +1813,6 @@ paths:
       operationId: jobs_partial_update_annotations
       summary: Method performs a partial update of annotations in a specific job
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: query
         name: action
         schema:
@@ -2174,16 +1828,6 @@ paths:
           type: integer
         description: A unique integer value identifying this job.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - jobs
       requestBody:
@@ -2207,26 +1851,12 @@ paths:
       operationId: jobs_destroy_annotations
       summary: Method deletes all annotations for a specific job
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this job.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - jobs
       security:
@@ -2243,10 +1873,6 @@ paths:
       operationId: jobs_retrieve_data
       summary: Method returns data for a specific job
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
@@ -2258,16 +1884,6 @@ paths:
         schema:
           type: integer
         description: A unique number value identifying chunk or frame
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       - in: query
         name: quality
         schema:
@@ -2307,26 +1923,12 @@ paths:
       summary: Method provides a meta information about media files which are related
         with the job
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this job.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - jobs
       security:
@@ -2347,26 +1949,12 @@ paths:
       summary: Method provides a meta information about media files which are related
         with the job
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this job.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - tasks
       requestBody:
@@ -2392,10 +1980,6 @@ paths:
       operationId: jobs_retrieve_dataset
       summary: Export job as a dataset in a specific format
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: query
         name: action
         schema:
@@ -2438,16 +2022,6 @@ paths:
           - local
         description: Where need to save downloaded dataset
       - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
-      - in: query
         name: use_default_location
         schema:
           type: boolean
@@ -2480,26 +2054,12 @@ paths:
       operationId: jobs_retrieve_preview
       summary: Method returns a preview image for the job
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this job.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - jobs
       security:
@@ -2520,6 +2080,7 @@ paths:
         name: X-Organization
         schema:
           type: string
+        description: Organization unique slug
       - name: color
         in: query
         description: A simple equality filter for the color field
@@ -2633,26 +2194,12 @@ paths:
       operationId: labels_retrieve
       summary: Method returns details of a label
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this label.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - labels
       security:
@@ -2673,26 +2220,12 @@ paths:
       summary: Methods does a partial update of chosen fields in a labelTo modify
         a sublabel, please use the PATCH method of the parent label
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this label.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - labels
       requestBody:
@@ -2718,26 +2251,12 @@ paths:
       summary: Method deletes a label. To delete a sublabel, please use the PATCH
         method of the parent label
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this label.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - labels
       security:
@@ -2753,21 +2272,6 @@ paths:
     get:
       operationId: lambda_list_functions
       summary: Method returns a list of functions
-      parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - lambda
       security:
@@ -2784,26 +2288,12 @@ paths:
       operationId: lambda_retrieve_functions
       summary: Method returns the information about the function
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: func_id
         schema:
           type: string
           pattern: ^[a-zA-Z0-9_.-]+$
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - lambda
       security:
@@ -2831,26 +2321,12 @@ paths:
         in the 'job' input field. The task id is not required in this case,
         but if it is specified, it must match the job task id.
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: func_id
         schema:
           type: string
           pattern: ^[a-zA-Z0-9_.-]+$
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - lambda
       requestBody:
@@ -2871,21 +2347,6 @@ paths:
     get:
       operationId: lambda_list_requests
       summary: Method returns a list of requests
-      parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - lambda
       security:
@@ -2905,6 +2366,7 @@ paths:
         name: X-Organization
         schema:
           type: string
+        description: Organization unique slug
       - in: query
         name: org
         schema:
@@ -2931,26 +2393,12 @@ paths:
       operationId: lambda_retrieve_requests
       summary: Method returns the status of the request
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
           type: integer
         description: Request id
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - lambda
       security:
@@ -2967,8 +2415,9 @@ paths:
       operationId: memberships_list
       summary: Method returns a paginated list of memberships
       parameters:
-      - in: header
-        name: X-Organization
+      - name: X-Organization
+        in: header
+        description: Organization unique slug
         schema:
           type: string
       - name: filter
@@ -2978,16 +2427,16 @@ paths:
           ''id'']'
         schema:
           type: string
-      - in: query
-        name: org
+      - name: org
+        in: query
+        description: Organization unique slug
         schema:
           type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
+      - name: org_id
+        in: query
+        description: Organization identifier
         schema:
           type: integer
-        description: Organization identifier
       - name: page
         required: false
         in: query
@@ -3048,26 +2497,12 @@ paths:
       operationId: memberships_retrieve
       summary: Method returns details of a membership
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this membership.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - memberships
       security:
@@ -3087,26 +2522,12 @@ paths:
       operationId: memberships_partial_update
       summary: Methods does a partial update of chosen fields in a membership
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this membership.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - memberships
       requestBody:
@@ -3131,26 +2552,12 @@ paths:
       operationId: memberships_destroy
       summary: Method deletes a membership
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this membership.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - memberships
       security:
@@ -3167,10 +2574,6 @@ paths:
       operationId: organizations_list
       summary: Method returns a paginated list of organizations
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - name: filter
         required: false
         in: query
@@ -3183,16 +2586,6 @@ paths:
         description: A simple equality filter for the name field
         schema:
           type: string
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       - name: owner
         in: query
         description: A simple equality filter for the owner field
@@ -3246,21 +2639,6 @@ paths:
     post:
       operationId: organizations_create
       summary: Method creates an organization
-      parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - organizations
       requestBody:
@@ -3287,26 +2665,12 @@ paths:
       operationId: organizations_retrieve
       summary: Method returns details of an organization
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this organization.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - organizations
       security:
@@ -3326,26 +2690,12 @@ paths:
       operationId: organizations_partial_update
       summary: Methods does a partial update of chosen fields in an organization
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this organization.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - organizations
       requestBody:
@@ -3370,26 +2720,12 @@ paths:
       operationId: organizations_destroy
       summary: Method deletes an organization
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this organization.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - organizations
       security:
@@ -3406,8 +2742,9 @@ paths:
       operationId: projects_list
       summary: Returns a paginated list of projects
       parameters:
-      - in: header
-        name: X-Organization
+      - name: X-Organization
+        in: header
+        description: Organization unique slug
         schema:
           type: string
       - name: assignee
@@ -3427,16 +2764,16 @@ paths:
         description: A simple equality filter for the name field
         schema:
           type: string
-      - in: query
-        name: org
+      - name: org
+        in: query
+        description: Organization unique slug
         schema:
           type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
+      - name: org_id
+        in: query
+        description: Organization identifier
         schema:
           type: integer
-        description: Organization identifier
       - name: owner
         in: query
         description: A simple equality filter for the owner field
@@ -3500,6 +2837,7 @@ paths:
         name: X-Organization
         schema:
           type: string
+        description: Organization unique slug
       - in: query
         name: org
         schema:
@@ -3536,26 +2874,12 @@ paths:
       operationId: projects_retrieve
       summary: Method returns details of a specific project
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this project.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - projects
       security:
@@ -3575,26 +2899,12 @@ paths:
       operationId: projects_partial_update
       summary: Methods does a partial update of chosen fields in a project
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this project.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - projects
       requestBody:
@@ -3619,26 +2929,12 @@ paths:
       operationId: projects_destroy
       summary: Method deletes a specific project
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this project.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - projects
       security:
@@ -3655,10 +2951,6 @@ paths:
       operationId: projects_retrieve_annotations
       summary: Method allows to download project annotations
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: query
         name: action
         schema:
@@ -3701,16 +2993,6 @@ paths:
           - local
         description: Where need to save downloaded dataset
       - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
-      - in: query
         name: use_default_location
         schema:
           type: boolean
@@ -3744,10 +3026,6 @@ paths:
       operationId: projects_retrieve_backup
       summary: Methods creates a backup copy of a project
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: query
         name: action
         schema:
@@ -3781,16 +3059,6 @@ paths:
           - local
         description: Where need to save downloaded backup
       - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
-      - in: query
         name: use_default_location
         schema:
           type: boolean
@@ -3814,12 +3082,16 @@ paths:
   /api/projects/{id}/dataset/:
     get:
       operationId: projects_retrieve_dataset
+      description: |2
+
+        To check the status of the process of importing a project dataset from a file:
+
+        After initiating the dataset upload, you will receive an rq_id parameter.
+        Make sure to include this parameter as a query parameter in your subsequent
+        GET /api/projects/id/dataset requests to track the status of the dataset import.
+        Also you should specify action parameter: action=import_status.
       summary: Export project as a dataset in a specific format
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: query
         name: action
         schema:
@@ -3862,15 +3134,10 @@ paths:
           - local
         description: Where need to save downloaded dataset
       - in: query
-        name: org
+        name: rq_id
         schema:
           type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
+        description: rq id
       - in: query
         name: use_default_location
         schema:
@@ -3901,12 +3168,14 @@ paths:
           description: Format is not available
     post:
       operationId: projects_create_dataset
-      summary: Import dataset in specific format as a project
+      description: |2
+
+        The request POST /api/projects/id/dataset will initiate file upload and will create
+        the rq job on the server in which the process of dataset import from a file
+        will be carried out. Please, use the GET /api/projects/id/dataset endpoint for checking status of the process.
+      summary: Import dataset in specific format as a project or check status of dataset
+        import process
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: query
         name: cloud_storage_id
         schema:
@@ -3940,16 +3209,6 @@ paths:
           - local
         description: Where to import the dataset from
       - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
-      - in: query
         name: use_default_location
         schema:
           type: boolean
@@ -3974,6 +3233,10 @@ paths:
       - basicAuth: []
       responses:
         '202':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/RqId'
           description: Importing has been started
         '400':
           description: Failed to import dataset
@@ -3984,26 +3247,12 @@ paths:
       operationId: projects_retrieve_preview
       summary: Method returns a preview image for the project
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this project.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - projects
       security:
@@ -4020,12 +3269,25 @@ paths:
   /api/projects/backup/:
     post:
       operationId: projects_create_backup
+      description: |2
+
+        The backup import process is as follows:
+
+        The first request POST /api/projects/backup will initiate file upload and will create
+        the rq job on the server in which the process of a project creating from an uploaded backup
+        will be carried out.
+
+        After initiating the backup upload, you will receive an rq_id parameter.
+        Make sure to include this parameter as a query parameter in your subsequent requests
+        to track the status of the project creation.
+        Once the project has been successfully created, the server will return the id of the newly created project.
       summary: Methods create a project from a backup
       parameters:
       - in: header
         name: X-Organization
         schema:
           type: string
+        description: Organization unique slug
       - in: query
         name: cloud_storage_id
         schema:
@@ -4055,6 +3317,11 @@ paths:
         schema:
           type: integer
         description: Organization identifier
+      - in: query
+        name: rq_id
+        schema:
+          type: string
+        description: rq id
       tags:
       - projects
       requestBody:
@@ -4075,6 +3342,10 @@ paths:
         '201':
           description: The project has been imported
         '202':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/RqId'
           description: Importing a backup file has been started
   /api/schema/:
     get:
@@ -4085,10 +3356,6 @@ paths:
         - YAML: application/vnd.oai.openapi
         - JSON: application/vnd.oai.openapi+json
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: query
         name: lang
         schema:
@@ -4105,6 +3372,7 @@ paths:
           - br
           - bs
           - ca
+          - ckb
           - cs
           - cy
           - da
@@ -4157,6 +3425,7 @@ paths:
           - ml
           - mn
           - mr
+          - ms
           - my
           - nb
           - ne
@@ -4190,16 +3459,6 @@ paths:
           - vi
           - zh-hans
           - zh-hant
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       - in: query
         name: scheme
         schema:
@@ -4239,21 +3498,6 @@ paths:
     get:
       operationId: server_retrieve_about
       summary: Method provides basic CVAT information
-      parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - server
       security:
@@ -4273,21 +3517,6 @@ paths:
     get:
       operationId: server_retrieve_annotation_formats
       summary: Method provides the list of supported annotations formats
-      parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - server
       security:
@@ -4307,21 +3536,6 @@ paths:
     get:
       operationId: server_retrieve_plugins
       summary: Method provides allowed plugins
-      parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - server
       security:
@@ -4343,25 +3557,11 @@ paths:
       summary: Returns all files and folders that are on the server along specified
         path
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: query
         name: directory
         schema:
           type: string
         description: Directory to browse
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - server
       security:
@@ -4384,8 +3584,9 @@ paths:
       operationId: tasks_list
       summary: Returns a paginated list of tasks
       parameters:
-      - in: header
-        name: X-Organization
+      - name: X-Organization
+        in: header
+        description: Organization unique slug
         schema:
           type: string
       - name: assignee
@@ -4419,16 +3620,16 @@ paths:
         description: A simple equality filter for the name field
         schema:
           type: string
-      - in: query
-        name: org
+      - name: org
+        in: query
+        description: Organization unique slug
         schema:
           type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
+      - name: org_id
+        in: query
+        description: Organization identifier
         schema:
           type: integer
-        description: Organization identifier
       - name: owner
         in: query
         description: A simple equality filter for the owner field
@@ -4515,6 +3716,7 @@ paths:
         name: X-Organization
         schema:
           type: string
+        description: Organization unique slug
       - in: query
         name: org
         schema:
@@ -4551,26 +3753,12 @@ paths:
       operationId: tasks_retrieve
       summary: Method returns details of a specific task
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this task.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - tasks
       security:
@@ -4590,26 +3778,12 @@ paths:
       operationId: tasks_partial_update
       summary: Methods does a partial update of chosen fields in a task
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this task.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - tasks
       requestBody:
@@ -4635,26 +3809,12 @@ paths:
       summary: Method deletes a specific task, all attached jobs, annotations, and
         data
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this task.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - tasks
       security:
@@ -4671,10 +3831,6 @@ paths:
       operationId: tasks_retrieve_annotations
       summary: Method allows to download task annotations
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: query
         name: action
         schema:
@@ -4716,16 +3872,6 @@ paths:
           - local
         description: Where need to save downloaded dataset
       - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
-      - in: query
         name: use_default_location
         schema:
           type: boolean
@@ -4756,13 +3902,14 @@ paths:
           description: Format is not available
     post:
       operationId: tasks_create_annotations
-      summary: Method allows to upload task annotations from a local file or a cloud
-        storage
+      description: |2
+
+        The request POST /api/tasks/id/annotations will initiate file upload and will create
+        the rq job on the server in which the process of annotations uploading from file
+        will be carried out. Please, use the PUT /api/tasks/id/annotations endpoint for checking status of the process.
+      summary: Method allows to initialize the  process of upload task annotations
+        from a local or a cloud storage file
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: query
         name: cloud_storage_id
         schema:
@@ -4796,16 +3943,6 @@ paths:
           - local
         description: where to import the annotation from
       - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
-      - in: query
         name: use_default_location
         schema:
           type: boolean
@@ -4831,17 +3968,24 @@ paths:
         '201':
           description: Uploading has finished
         '202':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/RqId'
           description: Uploading has been started
         '405':
           description: Format is not available
     put:
       operationId: tasks_update_annotations
-      summary: Method allows to upload task annotations
+      description: |2
+
+        To check the status of the process of uploading a task annotations from a file:
+
+        After initiating the annotations upload, you will receive an rq_id parameter.
+        Make sure to include this parameter as a query parameter in your subsequent
+        PUT /api/tasks/id/annotations requests to track the status of the annotations upload.
+      summary: Method allows to upload task annotations or edit existing annotations
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: query
         name: format
         schema:
@@ -4857,15 +4001,10 @@ paths:
         description: A unique integer value identifying this task.
         required: true
       - in: query
-        name: org
+        name: rq_id
         schema:
           type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
+        description: rq id
       tags:
       - tasks
       requestBody:
@@ -4893,10 +4032,6 @@ paths:
       operationId: tasks_partial_update_annotations
       summary: Method performs a partial update of annotations in a specific task
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: query
         name: action
         schema:
@@ -4912,16 +4047,6 @@ paths:
           type: integer
         description: A unique integer value identifying this task.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - tasks
       requestBody:
@@ -4949,26 +4074,12 @@ paths:
       operationId: tasks_destroy_annotations
       summary: Method deletes all annotations for a specific task
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this task.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - tasks
       security:
@@ -4985,10 +4096,6 @@ paths:
       operationId: tasks_retrieve_backup
       summary: Method backup a specified task
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: query
         name: action
         schema:
@@ -5022,16 +4129,6 @@ paths:
           - local
         description: Where need to save downloaded backup
       - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
-      - in: query
         name: use_default_location
         schema:
           type: boolean
@@ -5057,10 +4154,6 @@ paths:
       operationId: tasks_retrieve_data
       summary: Method returns data for a specific task
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
@@ -5072,16 +4165,6 @@ paths:
         schema:
           type: integer
         description: A unique number value identifying chunk or frame
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       - in: query
         name: quality
         schema:
@@ -5132,26 +4215,12 @@ paths:
         schema:
           type: boolean
         description: Initializes data upload. No data should be sent with this header
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this task.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - tasks
       requestBody:
@@ -5178,26 +4247,12 @@ paths:
       summary: Method provides a meta information about media files which are related
         with the task
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this task.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - tasks
       security:
@@ -5218,26 +4273,12 @@ paths:
       summary: Method provides a meta information about media files which are related
         with the task
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this task.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - tasks
       requestBody:
@@ -5263,10 +4304,6 @@ paths:
       operationId: tasks_retrieve_dataset
       summary: Export task as a dataset in a specific format
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: query
         name: action
         schema:
@@ -5309,16 +4346,6 @@ paths:
           - local
         description: Where need to save downloaded dataset
       - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
-      - in: query
         name: use_default_location
         schema:
           type: boolean
@@ -5353,26 +4380,12 @@ paths:
       operationId: tasks_retrieve_preview
       summary: Method returns a preview image for the task
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this task.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - tasks
       security:
@@ -5392,26 +4405,12 @@ paths:
       summary: When task is being created the method returns information about a status
         of the creation process
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this task.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - tasks
       security:
@@ -5430,12 +4429,25 @@ paths:
   /api/tasks/backup/:
     post:
       operationId: tasks_create_backup
+      description: |2
+
+        The backup import process is as follows:
+
+        The first request POST /api/tasks/backup will initiate file upload and will create
+        the rq job on the server in which the process of a task creating from an uploaded backup
+        will be carried out.
+
+        After initiating the backup upload, you will receive an rq_id parameter.
+        Make sure to include this parameter as a query parameter in your subsequent requests
+        to track the status of the task creation.
+        Once the task has been successfully created, the server will return the id of the newly created task.
       summary: Method recreates a task from an attached task backup file
       parameters:
       - in: header
         name: X-Organization
         schema:
           type: string
+        description: Organization unique slug
       - in: query
         name: cloud_storage_id
         schema:
@@ -5465,6 +4477,11 @@ paths:
         schema:
           type: integer
         description: Organization identifier
+      - in: query
+        name: rq_id
+        schema:
+          type: string
+        description: rq id
       tags:
       - tasks
       requestBody:
@@ -5486,14 +4503,19 @@ paths:
         '201':
           description: The task has been imported
         '202':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/RqId'
           description: Importing a backup file has been started
   /api/users:
     get:
       operationId: users_list
       summary: Method returns a paginated list of users
       parameters:
-      - in: header
-        name: X-Organization
+      - name: X-Organization
+        in: header
+        description: Organization unique slug
         schema:
           type: string
       - name: filter
@@ -5518,16 +4540,16 @@ paths:
         description: A simple equality filter for the last_name field
         schema:
           type: string
-      - in: query
-        name: org
+      - name: org
+        in: query
+        description: Organization unique slug
         schema:
           type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
+      - name: org_id
+        in: query
+        description: Organization identifier
         schema:
           type: integer
-        description: Organization identifier
       - name: page
         required: false
         in: query
@@ -5579,26 +4601,12 @@ paths:
       operationId: users_retrieve
       summary: Method provides information of a specific user
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this user.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - users
       security:
@@ -5618,26 +4626,12 @@ paths:
       operationId: users_partial_update
       summary: Method updates chosen fields of a user
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this user.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - users
       requestBody:
@@ -5662,26 +4656,12 @@ paths:
       operationId: users_destroy
       summary: Method deletes a specific user from the server
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this user.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - users
       security:
@@ -5698,21 +4678,6 @@ paths:
       operationId: users_retrieve_self
       description: Method returns an instance of a user who is currently authorized
       summary: Method returns an instance of a user who is currently authorized
-      parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - users
       security:
@@ -5733,8 +4698,9 @@ paths:
       operationId: webhooks_list
       summary: Method returns a paginated list of webhook according to query parameters
       parameters:
-      - in: header
-        name: X-Organization
+      - name: X-Organization
+        in: header
+        description: Organization unique slug
         schema:
           type: string
       - name: filter
@@ -5744,16 +4710,16 @@ paths:
           ''type'', ''description'', ''id'', ''project_id'', ''updated_date'']'
         schema:
           type: string
-      - in: query
-        name: org
+      - name: org
+        in: query
+        description: Organization unique slug
         schema:
           type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
+      - name: org_id
+        in: query
+        description: Organization identifier
         schema:
           type: integer
-        description: Organization identifier
       - name: owner
         in: query
         description: A simple equality filter for the owner field
@@ -5827,6 +4793,7 @@ paths:
         name: X-Organization
         schema:
           type: string
+        description: Organization unique slug
       - in: query
         name: org
         schema:
@@ -5863,26 +4830,12 @@ paths:
       operationId: webhooks_retrieve
       summary: Method returns details of a webhook
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this webhook.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - webhooks
       security:
@@ -5902,26 +4855,12 @@ paths:
       operationId: webhooks_update
       summary: Method updates a webhook by id
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this webhook.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - webhooks
       requestBody:
@@ -5947,26 +4886,12 @@ paths:
       operationId: webhooks_partial_update
       summary: Methods does a partial update of chosen fields in a webhook
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this webhook.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - webhooks
       requestBody:
@@ -5991,26 +4916,12 @@ paths:
       operationId: webhooks_destroy
       summary: Method deletes a webhook
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this webhook.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - webhooks
       security:
@@ -6027,10 +4938,6 @@ paths:
       operationId: webhooks_list_deliveries
       summary: Method return a list of deliveries for a specific webhook
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - name: filter
         required: false
         in: query
@@ -6043,16 +4950,6 @@ paths:
           type: integer
         description: A unique integer value identifying this webhook.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       - name: page
         required: false
         in: query
@@ -6098,10 +4995,6 @@ paths:
       operationId: webhooks_retrieve_deliveries
       summary: Method return a specific delivery for a specific webhook
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: delivery_id
         schema:
@@ -6114,16 +5007,6 @@ paths:
           type: integer
         description: A unique integer value identifying this webhook.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - webhooks
       security:
@@ -6144,10 +5027,6 @@ paths:
       operationId: webhooks_create_deliveries_redelivery
       summary: Method redeliver a specific webhook delivery
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: delivery_id
         schema:
@@ -6160,16 +5039,6 @@ paths:
           type: integer
         description: A unique integer value identifying this webhook.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - webhooks
       security:
@@ -6186,26 +5055,12 @@ paths:
       operationId: webhooks_create_ping
       summary: Method send ping webhook
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this webhook.
         required: true
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - webhooks
       security:
@@ -6226,20 +5081,6 @@ paths:
       operationId: webhooks_retrieve_events
       summary: Method return a list of available webhook events
       parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       - in: query
         name: type
         schema:
@@ -6419,6 +5260,10 @@ components:
       - imageset
       - list
       type: string
+      description: |-
+        * `video` - VIDEO
+        * `imageset` - IMAGESET
+        * `list` - LIST
     ClientEvents:
       type: object
       properties:
@@ -6445,6 +5290,19 @@ components:
           format: date-time
       required:
       - timestamp
+    CloudStorageContent:
+      type: object
+      properties:
+        next:
+          type: string
+          nullable: true
+          description: This token is used to continue listing files in the bucket.
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/FileInfo'
+      required:
+      - content
     CloudStorageRead:
       type: object
       properties:
@@ -6595,12 +5453,19 @@ components:
       - ANONYMOUS_ACCESS
       - CONNECTION_STRING
       type: string
+      description: |-
+        * `KEY_SECRET_KEY_PAIR` - KEY_SECRET_KEY_PAIR
+        * `ACCOUNT_NAME_TOKEN_PAIR` - ACCOUNT_NAME_TOKEN_PAIR
+        * `KEY_FILE_PATH` - KEY_FILE_PATH
+        * `ANONYMOUS_ACCESS` - ANONYMOUS_ACCESS
+        * `CONNECTION_STRING` - CONNECTION_STRING
     DataMetaRead:
       type: object
       properties:
         chunk_size:
           type: integer
           readOnly: true
+          nullable: true
         size:
           type: integer
           readOnly: true
@@ -6687,6 +5552,26 @@ components:
           default: []
           description: Paths to files from a file share mounted on the server, or
             from a cloud storage
+        server_files_exclude:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 1024
+          default: []
+          description: |
+            Paths to files and directories from a file share mounted on the server, or from a cloud storage
+            that should be excluded from the directories specified in server_files.
+            This option cannot be used together with filename_pattern.
+            The server_files_exclude parameter cannot be used to exclude a part of dataset from an archive.
+
+            Examples:
+
+            Exclude all files from subfolder 'sub/sub_1/sub_2'and single file 'sub/image.jpg' from specified folder:
+            server_files = ['sub/'], server_files_exclude = ['sub/sub_1/sub_2/', 'sub/image.jpg']
+
+            Exclude all cloud storage files with prefix 'sub' from the content of manifest file:
+            server_files = ['manifest.jsonl'], server_files_exclude = ['sub/']
         remote_files:
           type: array
           items:
@@ -6967,6 +5852,29 @@ components:
       - update:project
       - update:task
       type: string
+      description: |-
+        * `create:comment` - CREATE:COMMENT
+        * `create:invitation` - CREATE:INVITATION
+        * `create:issue` - CREATE:ISSUE
+        * `create:job` - CREATE:JOB
+        * `create:membership` - CREATE:MEMBERSHIP
+        * `create:project` - CREATE:PROJECT
+        * `create:task` - CREATE:TASK
+        * `delete:comment` - DELETE:COMMENT
+        * `delete:invitation` - DELETE:INVITATION
+        * `delete:issue` - DELETE:ISSUE
+        * `delete:job` - DELETE:JOB
+        * `delete:membership` - DELETE:MEMBERSHIP
+        * `delete:organization` - DELETE:ORGANIZATION
+        * `delete:project` - DELETE:PROJECT
+        * `delete:task` - DELETE:TASK
+        * `update:comment` - UPDATE:COMMENT
+        * `update:issue` - UPDATE:ISSUE
+        * `update:job` - UPDATE:JOB
+        * `update:membership` - UPDATE:MEMBERSHIP
+        * `update:organization` - UPDATE:ORGANIZATION
+        * `update:project` - UPDATE:PROJECT
+        * `update:task` - UPDATE:TASK
     FileInfo:
       type: object
       properties:
@@ -6987,6 +5895,9 @@ components:
       - REG
       - DIR
       type: string
+      description: |-
+        * `REG` - REG
+        * `DIR` - DIR
     FrameMeta:
       type: object
       properties:
@@ -7015,6 +5926,12 @@ components:
       - text
       - select
       type: string
+      description: |-
+        * `checkbox` - CHECKBOX
+        * `radio` - RADIO
+        * `number` - NUMBER
+        * `text` - TEXT
+        * `select` - SELECT
     InvitationRead:
       type: object
       properties:
@@ -7123,12 +6040,12 @@ components:
     IssuesSummary:
       type: object
       properties:
-        count:
-          type: integer
-          default: 0
         url:
           type: string
           format: uri
+          readOnly: true
+        count:
+          type: integer
           readOnly: true
     JobAnnotationsUpdateRequest:
       oneOf:
@@ -7196,6 +6113,10 @@ components:
           minimum: 0
           nullable: true
           readOnly: true
+        organization:
+          type: integer
+          readOnly: true
+          nullable: true
         data_compressed_chunk_type:
           allOf:
           - $ref: '#/components/schemas/ChunkType'
@@ -7217,12 +6138,20 @@ components:
       - validation
       - acceptance
       type: string
+      description: |-
+        * `annotation` - ANNOTATION
+        * `validation` - VALIDATION
+        * `acceptance` - ACCEPTANCE
     JobStatus:
       enum:
       - annotation
       - validation
       - completed
       type: string
+      description: |-
+        * `annotation` - ANNOTATION
+        * `validation` - VALIDATION
+        * `completed` - COMPLETED
     JobsSummary:
       type: object
       properties:
@@ -7569,18 +6498,21 @@ components:
     LabelsSummary:
       type: object
       properties:
-        count:
-          type: integer
-          default: 0
         url:
           type: string
           format: uri
+          readOnly: true
+        count:
+          type: integer
           readOnly: true
     LocationEnum:
       enum:
       - cloud_storage
       - local
       type: string
+      description: |-
+        * `cloud_storage` - CLOUD_STORAGE
+        * `local` - LOCAL
     LoginSerializerExRequest:
       type: object
       properties:
@@ -7612,6 +6544,7 @@ components:
           type: string
           format: date-time
           readOnly: true
+          nullable: true
         role:
           allOf:
           - $ref: '#/components/schemas/RoleEnum'
@@ -7639,6 +6572,11 @@ components:
       - completed
       - rejected
       type: string
+      description: |-
+        * `new` - NEW
+        * `in progress` - IN_PROGRESS
+        * `completed` - COMPLETED
+        * `rejected` - REJECTED
     OrganizationRead:
       type: object
       properties:
@@ -8269,6 +7207,7 @@ components:
           type: array
           items:
             type: string
+            minLength: 1
         is_staff:
           type: boolean
           title: Staff status
@@ -8447,6 +7386,11 @@ components:
       - GOOGLE_DRIVE
       - GOOGLE_CLOUD_STORAGE
       type: string
+      description: |-
+        * `AWS_S3_BUCKET` - AWS_S3
+        * `AZURE_CONTAINER` - AZURE_CONTAINER
+        * `GOOGLE_DRIVE` - GOOGLE_DRIVE
+        * `GOOGLE_CLOUD_STORAGE` - GOOGLE_CLOUD_STORAGE
     RegisterSerializerEx:
       type: object
       properties:
@@ -8505,6 +7449,18 @@ components:
       - maintainer
       - owner
       type: string
+      description: |-
+        * `worker` - Worker
+        * `supervisor` - Supervisor
+        * `maintainer` - Maintainer
+        * `owner` - Owner
+    RqId:
+      type: object
+      properties:
+        rq_id:
+          type: string
+      required:
+      - rq_id
     RqStatus:
       type: object
       properties:
@@ -8527,6 +7483,11 @@ components:
       - Finished
       - Failed
       type: string
+      description: |-
+        * `Queued` - Queued
+        * `Started` - Started
+        * `Finished` - Finished
+        * `Failed` - Failed
     ShapeType:
       enum:
       - rectangle
@@ -8538,6 +7499,15 @@ components:
       - mask
       - skeleton
       type: string
+      description: |-
+        * `rectangle` - RECTANGLE
+        * `polygon` - POLYGON
+        * `polyline` - POLYLINE
+        * `points` - POINTS
+        * `ellipse` - ELLIPSE
+        * `cuboid` - CUBOID
+        * `mask` - MASK
+        * `skeleton` - SKELETON
     SigningRequest:
       type: object
       properties:
@@ -8553,6 +7523,11 @@ components:
       - predefined
       - random
       type: string
+      description: |-
+        * `lexicographical` - LEXICOGRAPHICAL
+        * `natural` - NATURAL
+        * `predefined` - PREDEFINED
+        * `random` - RANDOM
     Storage:
       type: object
       properties:
@@ -8571,6 +7546,9 @@ components:
       - cache
       - file_system
       type: string
+      description: |-
+        * `cache` - CACHE
+        * `file_system` - FILE_SYSTEM
     StorageRequest:
       type: object
       properties:
@@ -8587,6 +7565,10 @@ components:
       - local
       - share
       type: string
+      description: |-
+        * `cloud_storage` - CLOUD_STORAGE
+        * `local` - LOCAL
+        * `share` - SHARE
     SubLabeledShape:
       type: object
       properties:
@@ -9126,6 +8108,7 @@ components:
       enum:
       - application/json
       type: string
+      description: '* `application/json` - JSON'
     WebhookDeliveryRead:
       type: object
       properties:
@@ -9141,6 +8124,7 @@ components:
         status_code:
           type: integer
           readOnly: true
+          nullable: true
         redelivery:
           type: boolean
           readOnly: true
@@ -9229,6 +8213,9 @@ components:
       - organization
       - project
       type: string
+      description: |-
+        * `organization` - ORGANIZATION
+        * `project` - PROJECT
     WebhookWriteRequest:
       type: object
       properties:

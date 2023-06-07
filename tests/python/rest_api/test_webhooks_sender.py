@@ -65,14 +65,14 @@ def create_webhook(events, webhook_type, project_id=None, org_id=""):
     return response.json()
 
 
-def get_deliveries(webhook_id):
+def get_deliveries(webhook_id, expected_count=1):
     delivery_response = {}
     for _ in range(10):
         response = get_method("admin1", f"webhooks/{webhook_id}/deliveries")
         assert response.status_code == HTTPStatus.OK
 
         deliveries = response.json()
-        if deliveries["count"] > 0:
+        if deliveries["count"] == expected_count:
             delivery_response = json.loads(deliveries["results"][0]["response"])
             break
 
@@ -134,7 +134,7 @@ class TestWebhookProjectEvents:
         response = delete_method("admin1", f"projects/{project['id']}", org_id=org_id)
         assert response.status_code == HTTPStatus.NO_CONTENT
 
-        deliveries, delete_payload = get_deliveries(webhook["id"])
+        deliveries, delete_payload = get_deliveries(webhook["id"], 2)
 
         assert deliveries["count"] == 2
 
@@ -319,7 +319,7 @@ class TestWebhookTaskEvents:
         response = delete_method("admin1", f"tasks/{task['id']}", org_id=org_id)
         assert response.status_code == HTTPStatus.NO_CONTENT
 
-        deliveries, delete_payload = get_deliveries(webhook["id"])
+        deliveries, delete_payload = get_deliveries(webhook["id"], 2)
 
         assert deliveries["count"] == 2
 
@@ -482,7 +482,7 @@ class TestWebhookIssueEvents:
         response = delete_method("admin1", f"issues/{issue['id']}", org_id=org_id)
         assert response.status_code == HTTPStatus.NO_CONTENT
 
-        deliveries, delete_payload = get_deliveries(webhook["id"])
+        deliveries, delete_payload = get_deliveries(webhook["id"], 2)
 
         assert deliveries["count"] == 2
 
@@ -632,7 +632,7 @@ class TestWebhookCommentEvents:
         response = delete_method("admin1", f"comments/{comment_id}", org_id=org_id)
         assert response.status_code == HTTPStatus.NO_CONTENT
 
-        delete_deliveries, delete_payload = get_deliveries(webhook_id)
+        delete_deliveries, delete_payload = get_deliveries(webhook_id, 2)
 
         assert create_deliveries["count"] == 1
         assert delete_deliveries["count"] == 2
@@ -691,7 +691,7 @@ class TestWebhookRedelivery:
         )
         assert response.status_code == HTTPStatus.OK
 
-        deliveries_2, payload_2 = get_deliveries(webhook_id)
+        deliveries_2, payload_2 = get_deliveries(webhook_id, 2)
 
         assert deliveries_1["count"] == 1
         assert deliveries_2["count"] == 2

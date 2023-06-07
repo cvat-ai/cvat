@@ -1,6 +1,6 @@
 
 # Copyright (C) 2018-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -24,6 +24,7 @@ import pytz
 from django.conf import settings
 from django.db import transaction
 from datetime import datetime
+from pathlib import Path
 
 from cvat.apps.engine import models
 from cvat.apps.engine.log import slogger
@@ -61,12 +62,32 @@ class SegmentsParams(NamedTuple):
     segment_size: int
     overlap: int
 
-def _copy_data_from_source(server_files, upload_dir, server_dir=None):
+def _copy_data_from_share_point(
+    server_files: List[str],
+    upload_dir: str,
+    server_dir: Optional[str] = None,
+    server_files_exclude: Optional[List[str]] = None,
+):
     job = rq.get_current_job()
     job.meta['status'] = 'Data are being copied from source..'
     job.save_meta()
 
-    for path in server_files:
+    filtered_server_files = server_files.copy()
+
+    # filter data from files/directories that should be excluded
+    if server_files_exclude:
+        for f in server_files:
+            path = Path(server_dir or settings.SHARE_ROOT) / f
+            if path.is_dir():
+                filtered_server_files.remove(f)
+                filtered_server_files.extend([str(f / i.relative_to(path)) for i in path.glob('**/*') if i.is_file()])
+
+        filtered_server_files = list(filter(
+            lambda x: x not in server_files_exclude and all([f'{i}/' not in server_files_exclude for i in Path(x).parents]),
+            filtered_server_files
+        ))
+
+    for path in filtered_server_files:
         if server_dir is None:
             source_path = os.path.join(settings.SHARE_ROOT, os.path.normpath(path))
         else:
@@ -213,7 +234,10 @@ def _count_files(data):
 def _find_manifest_files(data):
     manifest_files = []
     for files in ['client_files', 'server_files', 'remote_files']:
-        manifest_files.extend(list(filter(lambda x: x.endswith('.jsonl'), data[files])))
+        current_manifest_files = list(filter(lambda x: x.endswith('.jsonl'), data[files]))
+        if current_manifest_files:
+            manifest_files.extend(current_manifest_files)
+            data[files] = [f for f in data[files] if f not in current_manifest_files]
     return manifest_files
 
 def _validate_data(counter, manifest_files=None):
@@ -279,9 +303,18 @@ def _validate_job_file_mapping(
     if data.get('filename_pattern'):
         raise ValidationError("job_file_mapping cannot be used with filename_pattern")
 
+    if data.get('server_files_exclude'):
+        raise ValidationError("job_file_mapping cannot be used with server_files_exclude")
+
     return job_file_mapping
 
-def _validate_manifest(manifests, root_dir, is_in_cloud, db_cloud_storage, data_storage_method):
+def _validate_manifest(
+    manifests: List[str],
+    root_dir: str,
+    is_in_cloud: bool,
+    db_cloud_storage: models.CloudStorage,
+    data_storage_method: str,
+) -> Optional[str]:
     if manifests:
         if len(manifests) != 1:
             raise ValidationError('Only one manifest file can be attached to data')
@@ -366,15 +399,23 @@ def _download_data(urls, upload_dir):
 
     return list(local_files.keys())
 
+def _download_data_from_cloud_storage(
+    db_storage: models.CloudStorage,
+    files: List[str],
+    upload_dir: str,
+):
+    cloud_storage_instance = db_storage_to_storage_instance(db_storage)
+    cloud_storage_instance.bulk_download_to_dir(files, upload_dir)
+
 def _get_manifest_frame_indexer(start_frame=0, frame_step=1):
     return lambda frame_id: start_frame + frame_id * frame_step
 
 def _create_task_manifest_based_on_cloud_storage_manifest(
-    sorted_media,
-    cloud_storage_manifest_prefix,
-    cloud_storage_manifest,
-    manifest
-):
+    sorted_media: List[str],
+    cloud_storage_manifest_prefix: str,
+    cloud_storage_manifest: ImageManifestManager,
+    manifest: ImageManifestManager,
+) -> None:
     if cloud_storage_manifest_prefix:
         sorted_media_without_manifest_prefix = [
             os.path.relpath(i, cloud_storage_manifest_prefix) for i in sorted_media
@@ -392,6 +433,17 @@ def _create_task_manifest_based_on_cloud_storage_manifest(
                             'in the request with the contents of the bucket')
     sorted_content = (i[1] for i in sorted(zip(sequence, content)))
     manifest.create(sorted_content)
+
+def _create_task_manifest_from_cloud_data(
+    db_storage: models.CloudStorage,
+    sorted_media: List[str],
+    manifest: ImageManifestManager,
+    dimension: models.DimensionType = models.DimensionType.DIM_2D,
+) -> None:
+    cloud_storage_instance = db_storage_to_storage_instance(db_storage)
+    content = cloud_storage_instance.bulk_download_to_memory(sorted_media)
+    manifest.link(sources=content, DIM_3D=dimension == models.DimensionType.DIM_3D)
+    manifest.create()
 
 @transaction.atomic
 def _create_thread(
@@ -434,31 +486,104 @@ def _create_thread(
     )
 
     if is_data_in_cloud:
-        manifest = ImageManifestManager(db_data.get_manifest_path())
-        cloud_storage_manifest = ImageManifestManager(
-            os.path.join(db_data.cloud_storage.get_storage_dirname(), manifest_file),
-            db_data.cloud_storage.get_storage_dirname()
-        )
-        cloud_storage_manifest.set_index()
-        cloud_storage_manifest_prefix = os.path.dirname(manifest_file)
-
-    # update list with server files if task creation approach with pattern and manifest file is used
-    if is_data_in_cloud and data['filename_pattern']:
-        if 1 != len(data['server_files']):
-            l = len(data['server_files']) - 1
-            raise ValidationError(
-                'Using a filename_pattern is only supported with a manifest file, '
-                f'but others {l} file{"s" if l > 1 else ""} {"were" if l > 1 else "was"} found'
-                'Please remove extra files and keep only manifest file in server_files field.'
+        if manifest_file:
+            cloud_storage_manifest = ImageManifestManager(
+                os.path.join(db_data.cloud_storage.get_storage_dirname(), manifest_file),
+                db_data.cloud_storage.get_storage_dirname()
             )
-
-        cloud_storage_manifest_data = list(cloud_storage_manifest.data) if not cloud_storage_manifest_prefix \
-            else [os.path.join(cloud_storage_manifest_prefix, f) for f in cloud_storage_manifest.data]
-        if data['filename_pattern'] == '*':
-            server_files = cloud_storage_manifest_data
+            cloud_storage_manifest.set_index()
+            cloud_storage_manifest_prefix = os.path.dirname(manifest_file)
         else:
-            server_files = fnmatch.filter(cloud_storage_manifest_data, data['filename_pattern'])
-        data['server_files'].extend(server_files)
+            cloud_storage_instance = db_storage_to_storage_instance(db_data.cloud_storage)
+
+        # update the server_files list with files from the specified directories
+        if (dirs:= list(filter(lambda x: x.endswith('/'), data['server_files']))):
+            data['server_files'] = [i for i in data['server_files'] if i not in dirs]
+            additional_files = []
+            if manifest_file:
+                for directory in dirs:
+                    if cloud_storage_manifest_prefix:
+                        # cloud_storage_manifest_prefix is a dirname of manifest, it doesn't end with a slash
+                        directory = directory[len(cloud_storage_manifest_prefix) + 1:]
+                    additional_files.extend(
+                        list(
+                            map(
+                                lambda x: x[1].full_name,
+                                filter(lambda x: x[1].full_name.startswith(directory), cloud_storage_manifest)
+                            )
+                        )
+                    )
+                if cloud_storage_manifest_prefix:
+                    additional_files = [os.path.join(cloud_storage_manifest_prefix, f) for f in additional_files]
+                if len(data['server_files']) + len(additional_files) > settings.CLOUD_STORAGE_MAX_FILES_COUNT:
+                    raise ValidationError(
+                        'The maximum number of the cloud storage attached files '
+                        f'is {settings.CLOUD_STORAGE_MAX_FILES_COUNT}')
+            else:
+                number_of_files = len(data['server_files'])
+                while len(dirs):
+                    directory = dirs.pop()
+                    for f in cloud_storage_instance.list_files(prefix=directory, _use_flat_listing=True):
+                        if f['type'] == 'REG':
+                            additional_files.append(f['name'])
+                        else:
+                            dirs.append(f['name'])
+                    # we check the limit of files on each iteration to reduce the number of possible requests to the bucket
+                    if (len(additional_files) + len(dirs) + number_of_files) > settings.CLOUD_STORAGE_MAX_FILES_COUNT:
+                        raise ValidationError(
+                            'The maximum number of the cloud storage attached files '
+                            f'is {settings.CLOUD_STORAGE_MAX_FILES_COUNT}')
+            data['server_files'].extend(additional_files)
+            del additional_files
+
+        if server_files_exclude := data.get('server_files_exclude'):
+            data['server_files'] = list(filter(
+                lambda x: x not in server_files_exclude and all([f'{i}/' not in server_files_exclude for i in Path(x).parents]),
+                data['server_files']
+            ))
+
+        if manifest_file and not data['server_files'] and not data['filename_pattern']: # only manifest file was specified in server files by the user
+            data['filename_pattern'] = '*'
+
+        # update list with server files if task creation approach with pattern and manifest file is used
+        if data['filename_pattern']:
+            additional_files = []
+
+            if not manifest_file:
+                # NOTE: we cannot list files with specified pattern on the providers page because they don't provide such function
+                dirs = []
+                prefix = None
+
+                while True:
+                    for f in cloud_storage_instance.list_files(prefix=prefix, _use_flat_listing=True):
+                        if f['type'] == 'REG':
+                            additional_files.append(f['name'])
+                        else:
+                            dirs.append(f['name'])
+                    if not dirs:
+                        break
+                    prefix = dirs.pop()
+
+                if not data['filename_pattern'] == '*':
+                    additional_files = fnmatch.filter(additional_files, data['filename_pattern'])
+            else:
+                additional_files = list(cloud_storage_manifest.data) if not cloud_storage_manifest_prefix \
+                    else [os.path.join(cloud_storage_manifest_prefix, f) for f in cloud_storage_manifest.data]
+                if not data['filename_pattern'] == '*':
+                    additional_files = fnmatch.filter(additional_files, data['filename_pattern'])
+
+            if (len(additional_files)) > settings.CLOUD_STORAGE_MAX_FILES_COUNT:
+                raise ValidationError(
+                    'The maximum number of the cloud storage attached files '
+                    f'is {settings.CLOUD_STORAGE_MAX_FILES_COUNT}')
+            data['server_files'].extend(additional_files)
+
+        if db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM or not settings.USE_CACHE:
+            _download_data_from_cloud_storage(db_data.cloud_storage, data['server_files'], upload_dir)
+            is_data_in_cloud = False
+            db_data.storage = models.StorageChoice.LOCAL
+        else:
+            manifest = ImageManifestManager(db_data.get_manifest_path())
 
     # count and validate uploaded files
     media = _count_files(data)
@@ -468,18 +593,25 @@ def _create_thread(
         raise ValidationError("job_file_mapping can't be used with sequence-based data like videos")
 
     if data['server_files']:
-        if db_data.storage == models.StorageChoice.LOCAL:
-            _copy_data_from_source(data['server_files'], upload_dir, data.get('server_files_path'))
+        if db_data.storage == models.StorageChoice.LOCAL and not db_data.cloud_storage:
+            # this means that the data has not been downloaded from the storage to the host
+            _copy_data_from_share_point(
+                (data['server_files'] + [manifest_file]) if manifest_file else data['server_files'],
+                upload_dir, data.get('server_files_path'), data.get('server_files_exclude'))
         elif is_data_in_cloud:
             if job_file_mapping is not None:
                 sorted_media = list(itertools.chain.from_iterable(job_file_mapping))
             else:
                 sorted_media = sort(media['image'], data['sorting_method'])
 
-            # Define task manifest content based on cloud storage manifest content and uploaded files
-            _create_task_manifest_based_on_cloud_storage_manifest(
-                sorted_media, cloud_storage_manifest_prefix,
-                cloud_storage_manifest, manifest)
+            if manifest_file:
+                # Define task manifest content based on cloud storage manifest content and uploaded files
+                _create_task_manifest_based_on_cloud_storage_manifest(
+                    sorted_media, cloud_storage_manifest_prefix,
+                    cloud_storage_manifest, manifest)
+            else: # without manifest file but with use_cache option
+                # Define task manifest content based on list with uploaded files
+                _create_task_manifest_from_cloud_data(db_data.cloud_storage, sorted_media, manifest)
 
     av_scan_paths(upload_dir)
 
@@ -532,6 +664,20 @@ def _create_thread(
             if media_type != 'video':
                 details['sorting_method'] = data['sorting_method']
             extractor = MEDIA_TYPES[media_type]['extractor'](**details)
+
+    # filter server_files from server_files_exclude when share point is used and files are not copied to CVAT.
+    # here we exclude the case when the files are copied to CVAT because files are already filtered out.
+    if (
+        (server_files_exclude := data.get('server_files_exclude')) and
+        data['server_files'] and
+        not is_data_in_cloud and
+        not data['copy_data'] and
+        isinstance(extractor, MEDIA_TYPES['image']['extractor'])
+    ):
+        extractor.filter(
+            lambda x: os.path.relpath(x, upload_dir) not in server_files_exclude and \
+                all([f'{i}/' not in server_files_exclude for i in Path(x).relative_to(upload_dir).parents])
+        )
 
     validate_dimension = ValidateDimension()
     if isinstance(extractor, MEDIA_TYPES['zip']['extractor']):
@@ -734,7 +880,8 @@ def _create_thread(
             else: # images, archive, pdf
                 db_data.size = len(extractor)
                 manifest = ImageManifestManager(db_data.get_manifest_path())
-                if not manifest_file:
+
+                if not manifest.exists:
                     manifest.link(
                         sources=extractor.absolute_source_paths,
                         meta={ k: {'related_images': related_images[k] } for k in related_images },

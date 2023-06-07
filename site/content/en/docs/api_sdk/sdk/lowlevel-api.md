@@ -483,3 +483,58 @@ while True:
 with open('output_file', 'wb') as output_file:
     output_file.write(response.data)
 ```
+### Different versions of API endpoints
+#### The cloudstorages/id/content REST API endpoint
+
+> **Warning:** The `retrieve_content` method of `cloudstorages_api` will be deprecated in 2.5.0 version.
+> We recommend using `retrieve_content_v2` method that matches to revised API when using SDK.
+> For backward compatibility, we continue to support the prior interface version until version 2.6.0 is released.
+
+Here you can find the example how to get the bucket content using new method `retrieve_content_v2`.
+
+```python
+from pprint import pprint
+
+from cvat_sdk.api_client import ApiClient, Configuration
+
+next_token = None
+files, prefixes = [], []
+prefix = ""
+
+with ApiClient(
+    configuration=Configuration(host=BASE_URL, username=user, password=password)
+) as api_client:
+    while True:
+        data, response = api_client.cloudstorages_api.retrieve_content_v2(
+            cloud_storage_id,
+            **({"prefix": prefix} if prefix else {}),
+            **({"next_token": next_token} if next_token else {}),
+        )
+        # the data will have the following structure:
+        # {'content': [
+        #     {'mime_type': <image|video|archive|pdf|DIR>, 'name': <name>, 'type': <REG|DIR>},
+        # ],
+        # 'next': <next_token_string|None>}
+        files.extend(
+            [
+                prefix + f["name"]
+                for f in data["content"]
+                if str(f["type"]) == "REG"
+            ]
+        )
+        prefixes.extend(
+            [
+                prefix + f["name"]
+                for f in data["content"]
+                if str(f["type"]) == "DIR"
+            ]
+        )
+        next_token = data["next"]
+        if next_token:
+            continue
+        if not len(prefixes):
+            break
+        prefix = f"{prefixes.pop()}/"
+    pprint(files) # ['sub/image_1.jpg', 'image_2.jpg']
+
+```

@@ -1,0 +1,2 @@
+-r base.in
+uvicorn[standard]==0.22.0

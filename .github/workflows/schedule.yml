@@ -120,9 +120,6 @@ jobs:
         with:
           python-version: '3.8'
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
       - name: Getting CVAT UI cache from the default branch
         uses: actions/cache@v3
         with:
@@ -155,9 +152,9 @@ jobs:
       - name: Pull CVAT server image
         run: |
           docker pull ${{ steps.meta-server.outputs.tags }}
-          docker tag ${{ steps.meta-server.outputs.tags }} cvat/server:dev
+          docker tag ${{ steps.meta-server.outputs.tags }} cvat/server:local
           docker tag ${{ steps.meta-server.outputs.tags }} cvat/server:latest
-          docker tag cvat/ui:latest cvat/ui:dev
+          docker tag cvat/ui:latest cvat/ui:local
 
       - name: OPA tests
         run: |
@@ -181,7 +178,7 @@ jobs:
           HOST_COVERAGE_DATA_DIR: ${{ github.workspace }}
           CONTAINER_COVERAGE_DATA_DIR: "/coverage_data"
         run: |
-          docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d cvat_opa cvat_server
+          docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d cvat_opa cvat_server cvat_db
           max_tries=12
           while [[  $(curl -s -o /dev/null -w "%{http_code}" localhost:8181/health?bundles) != "200" && max_tries -gt 0 ]]; do (( max_tries-- )); sleep 5; done
 
@@ -217,9 +214,6 @@ jobs:
       - uses: actions/setup-node@v3
         with:
             node-version: '16.x'
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
 
       - name: Login to Docker Hub
         uses: docker/login-action@v2
@@ -349,9 +343,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
       - name: CVAT server. Extract metadata (tags, labels) for Docker
         id: meta-server
         uses: docker/metadata-action@master
@@ -369,7 +360,7 @@ jobs:
       - name: Pull CVAT server image
         run: |
           docker pull ${{ steps.meta-server.outputs.tags }}
-          docker tag ${{ steps.meta-server.outputs.tags }} cvat/server:dev
+          docker tag ${{ steps.meta-server.outputs.tags }} cvat/server:local
 
       - name: Downloading coverage results
         uses: actions/download-artifact@v2

@@ -1,33 +1,98 @@
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
-import os
 import base64
-from unittest import mock
+import json
+import os
 import uuid
-
-from django.conf import settings
-from django.core.cache import cache
+from dataclasses import asdict, dataclass
 from distutils.util import strtobool
-from rest_framework import status, mixins
+from pathlib import Path
+from tempfile import NamedTemporaryFile
+from unittest import mock
+
+import django_rq
+from django.conf import settings
+from rest_framework import mixins, status
 from rest_framework.response import Response
 
-from cvat.apps.engine.models import Location
 from cvat.apps.engine.location import StorageType, get_location_configuration
+from cvat.apps.engine.log import slogger
+from cvat.apps.engine.models import Location
 from cvat.apps.engine.serializers import DataSerializer
+from cvat.apps.engine.handlers import clear_import_cache
+from cvat.apps.engine.utils import get_import_rq_id
+
 
 class TusFile:
-    _tus_cache_timeout = 3600
-    def __init__(self, file_id, upload_dir):
+    @dataclass
+    class TusMeta:
+        metadata: dict
+        filename: str
+        file_size: int
+        offset: int = 0
+
+    class TusMetaFile():
+        def __init__(self, path) -> None:
+            self._path = path
+            self._meta = None
+            if os.path.exists(self._path):
+                self._meta = self._read()
+
+        @property
+        def meta(self):
+            return self._meta
+
+        @meta.setter
+        def meta(self, meta):
+            self._meta = meta
+
+        def _read(self):
+            with open(self._path, "r") as fp:
+                data = json.load(fp)
+            return TusFile.TusMeta(**data)
+
+        def save(self):
+            if self._meta is not None:
+                os.makedirs(os.path.dirname(self._path), exist_ok=True)
+                with open(self._path, "w") as fp:
+                    json.dump(asdict(self._meta), fp)
+
+        def exists(self):
+            return os.path.exists(self._path)
+
+        def delete(self):
+            os.remove(self._path)
+
+    def __init__(self, file_id, upload_dir, meta=None):
         self.file_id = file_id
         self.upload_dir = upload_dir
         self.file_path = os.path.join(self.upload_dir, self.file_id)
-        self.filename = cache.get("tus-uploads/{}/filename".format(file_id))
-        self.file_size = int(cache.get("tus-uploads/{}/file_size".format(file_id)))
-        self.metadata = cache.get("tus-uploads/{}/metadata".format(file_id))
-        self.offset = cache.get("tus-uploads/{}/offset".format(file_id))
+        self.meta_file = self.TusMetaFile(self._get_tus_meta_file_path(file_id, upload_dir))
+        if meta is not None:
+            self.meta_file.meta = meta
+            self.meta_file.save()
+
+    @property
+    def filename(self):
+        return self.meta_file.meta.filename
+
+    @property
+    def file_size(self):
+        return self.meta_file.meta.file_size
+
+    @property
+    def offset(self):
+        return self.meta_file.meta.offset
+
+    def exists(self):
+        return self.meta_file.exists()
+
+    @staticmethod
+    def _get_tus_meta_file_path(file_id, upload_dir):
+        return os.path.join(upload_dir, f"{file_id}.meta")
 
     def init_file(self):
         os.makedirs(self.upload_dir, exist_ok=True)
@@ -40,50 +105,43 @@ class TusFile:
         with open(self.file_path, 'r+b') as file:
             file.seek(chunk.offset)
             file.write(chunk.content)
-        self.offset = cache.incr("tus-uploads/{}/offset".format(self.file_id), chunk.size)
+        self.meta_file.meta.offset += chunk.size
+        self.meta_file.save()
 
     def is_complete(self):
         return self.offset == self.file_size
 
     def rename(self):
-        file_id_path = os.path.join(self.upload_dir, self.file_id)
         file_path = os.path.join(self.upload_dir, self.filename)
-        file_exists = os.path.lexists(os.path.join(self.upload_dir, self.filename))
-        if file_exists:
+        if os.path.lexists(file_path):
             original_file_name, extension = os.path.splitext(self.filename)
             file_amount = 1
             while os.path.lexists(os.path.join(self.upload_dir, self.filename)):
-                self.filename = "{}_{}{}".format(original_file_name, file_amount, extension)
+                self.meta_file.meta.filename = "{}_{}{}".format(original_file_name, file_amount, extension)
                 file_path = os.path.join(self.upload_dir, self.filename)
                 file_amount += 1
-        os.rename(file_id_path, file_path)
+        os.rename(self.file_path, file_path)
 
     def clean(self):
-        cache.delete_many([
-            "tus-uploads/{}/file_size".format(self.file_id),
-            "tus-uploads/{}/filename".format(self.file_id),
-            "tus-uploads/{}/offset".format(self.file_id),
-            "tus-uploads/{}/metadata".format(self.file_id),
-        ])
-
-    @staticmethod
-    def get_tusfile(file_id, upload_dir):
-        file_exists = cache.get("tus-uploads/{}/filename".format(file_id), None) is not None
-        if file_exists:
-            return TusFile(file_id, upload_dir)
-        return None
+        self.meta_file.delete()
 
     @staticmethod
     def create_file(metadata, file_size, upload_dir):
         file_id = str(uuid.uuid4())
         filename = metadata.get("filename")
-        cache.add("tus-uploads/{}/filename".format(file_id), "{}".format(filename), TusFile._tus_cache_timeout)
-        cache.add("tus-uploads/{}/file_size".format(file_id), file_size, TusFile._tus_cache_timeout)
-        cache.add("tus-uploads/{}/offset".format(file_id), 0, TusFile._tus_cache_timeout)
-        cache.add("tus-uploads/{}/metadata".format(file_id), metadata, TusFile._tus_cache_timeout)
 
-        tus_file = TusFile(file_id, upload_dir)
+        tus_file = TusFile(
+            file_id,
+            upload_dir,
+            TusFile.TusMeta(
+                filename=filename,
+                file_size=file_size,
+                offset=0,
+                metadata=metadata,
+            ),
+        )
         tus_file.init_file()
+
         return tus_file
 
 class TusChunk:
@@ -169,7 +227,27 @@ class UploadMixin:
             if message_id:
                 metadata["message_id"] = base64.b64decode(message_id)
 
-            file_exists = os.path.lexists(os.path.join(self.get_upload_dir(), filename))
+            import_type = request.path.strip('/').split('/')[-1]
+            if import_type == 'backup':
+                # we need to create unique temp file here because
+                # users can try to import backups with the same name at the same time
+                with NamedTemporaryFile(prefix=f'cvat-backup-{filename}-by-{request.user}', suffix='.zip', dir=self.get_upload_dir()) as tmp_file:
+                    filename = os.path.relpath(tmp_file.name, self.get_upload_dir())
+                metadata['filename'] = filename
+            file_path = os.path.join(self.get_upload_dir(), filename)
+            file_exists = os.path.lexists(file_path) and import_type != 'backup'
+
+            if file_exists:
+                # check whether the rq_job is in progress or has been finished/failed
+                object_class_name = self._object.__class__.__name__.lower()
+                template = get_import_rq_id(object_class_name, self._object.pk, import_type, request.user)
+                queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
+                finished_job_ids = queue.finished_job_registry.get_job_ids()
+                failed_job_ids = queue.failed_job_registry.get_job_ids()
+                if template in finished_job_ids or template in failed_job_ids:
+                    os.remove(file_path)
+                    file_exists = False
+
             if file_exists:
                 return self._tus_response(status=status.HTTP_409_CONFLICT,
                     data="File with same name already exists")
@@ -179,43 +257,58 @@ class UploadMixin:
                 return self._tus_response(status=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
                     data="File size exceeds max limit of {} bytes".format(self._tus_max_file_size))
 
+
             tus_file = TusFile.create_file(metadata, file_size, self.get_upload_dir())
 
             location = request.build_absolute_uri()
             if 'HTTP_X_FORWARDED_HOST' not in request.META:
                 location = request.META.get('HTTP_ORIGIN') + request.META.get('PATH_INFO')
+
+            if import_type in ('backup', 'annotations', 'datasets'):
+                scheduler = django_rq.get_scheduler(settings.CVAT_QUEUES.CLEANING.value)
+                path = Path(self.get_upload_dir()) / tus_file.filename
+                cleaning_job = scheduler.enqueue_in(time_delta=settings.IMPORT_CACHE_CLEAN_DELAY,
+                    func=clear_import_cache,
+                    path=path,
+                    creation_time=Path(tus_file.file_path).stat().st_ctime
+                )
+                slogger.glob.info(
+                    f'The cleaning job {cleaning_job.id} is queued.'
+                    f'The check that the file {path} is deleted will be carried out after '
+                    f'{settings.IMPORT_CACHE_CLEAN_DELAY}.'
+                )
+
             return self._tus_response(
                 status=status.HTTP_201_CREATED,
                 extra_headers={'Location': '{}{}'.format(location, tus_file.file_id),
                                'Upload-Filename': tus_file.filename})
 
     def append_tus_chunk(self, request, file_id):
+        tus_file = TusFile(str(file_id), self.get_upload_dir())
         if request.method == 'HEAD':
-            tus_file = TusFile.get_tusfile(str(file_id), self.get_upload_dir())
-            if tus_file:
+            if tus_file.exists():
                 return self._tus_response(status=status.HTTP_200_OK, extra_headers={
                                'Upload-Offset': tus_file.offset,
                                'Upload-Length': tus_file.file_size})
             return self._tus_response(status=status.HTTP_404_NOT_FOUND)
-        else:
-            tus_file = TusFile.get_tusfile(str(file_id), self.get_upload_dir())
-            chunk = TusChunk(request)
 
-            if chunk.offset != tus_file.offset:
-                return self._tus_response(status=status.HTTP_409_CONFLICT)
+        chunk = TusChunk(request)
 
-            if chunk.offset > tus_file.file_size:
-                return self._tus_response(status=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE)
+        if chunk.offset != tus_file.offset:
+            return self._tus_response(status=status.HTTP_409_CONFLICT)
 
-            tus_file.write_chunk(chunk)
+        if chunk.offset > tus_file.file_size:
+            return self._tus_response(status=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE)
 
-            if tus_file.is_complete():
-                tus_file.rename()
-                tus_file.clean()
+        tus_file.write_chunk(chunk)
 
-            return self._tus_response(status=status.HTTP_204_NO_CONTENT,
-                                      extra_headers={'Upload-Offset': tus_file.offset,
-                                                     'Upload-Filename': tus_file.filename})
+        if tus_file.is_complete():
+            tus_file.rename()
+            tus_file.clean()
+
+        return self._tus_response(status=status.HTTP_204_NO_CONTENT,
+                                    extra_headers={'Upload-Offset': tus_file.offset,
+                                                    'Upload-Filename': tus_file.filename})
 
     def validate_filename(self, filename):
         upload_dir = self.get_upload_dir()
@@ -279,7 +372,7 @@ class AnnotationMixin:
         data = get_data(self._object.pk)
         return Response(data)
 
-    def import_annotations(self, request, db_obj, import_func, rq_func, rq_id):
+    def import_annotations(self, request, db_obj, import_func, rq_func, rq_id_template):
         is_tus_request = request.headers.get('Upload-Length', None) is not None or \
             request.method == 'OPTIONS'
         if is_tus_request:
@@ -301,7 +394,7 @@ class AnnotationMixin:
 
             return import_func(
                 request=request,
-                rq_id=rq_id,
+                rq_id_template=rq_id_template,
                 rq_func=rq_func,
                 db_obj=self._object,
                 format_name=format_name,

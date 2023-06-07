@@ -40,7 +40,7 @@ yarn run cypress:run:chrome:canvas3d
 
 **Initial steps**
 
-1. Follow [this guide](/site/content/en/docs/api_sdk/sdk/developer-guide/) to prepare
+1. Follow [this guide](/docs/api_sdk/sdk/developer-guide/) to prepare
    `cvat-sdk` and `cvat-cli` source code
 1. Install all necessary requirements before running REST API tests:
    ```
@@ -81,7 +81,9 @@ which should be enough to fix errors arising in REST API tests.
 
 To debug a server deployed with Docker, you need to do the following:
 
-Rebuild the images and start the test containers:
+- Adjust env variables in the `docker-compose.dev.yml` file for your test case
+
+- Rebuild the images and start the test containers:
 
 ```bash
 CVAT_DEBUG_ENABLED=yes pytest --rebuild --start-services tests/python
@@ -130,20 +132,52 @@ Extra options:
    ```
    yarn --frozen-lockfile
    ```
-1. Run CVAT instance
+1. Build CVAT server image
    ```
-   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+   docker compose -f docker-compose.yml -f docker-compose.dev.yml build cvat_server
+   ```
+1. Run cvat_opa container
+   ```
+   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d cvat_opa
    ```
 
 **Running tests**
 1. Python tests
    ```
-   python manage.py test --settings cvat.settings.testing cvat/apps
+   python manage.py test --settings cvat.settings.testing cvat/apps -v 2
    ```
 1. JS tests
    ```
    cd cvat-core
    yarn run test
+   ```
+
+**Debug python unit tests**
+1. Run `server: tests` debug task in VSCode
+1. If you want to debug particular tests then change the configuration
+of the corresponding task in `./vscode/launch.json`, for example:
+   ```json
+   {
+       "name": "server: tests",
+       "type": "python",
+       "request": "launch",
+       "justMyCode": false,
+       "stopOnEntry": false,
+       "python": "${command:python.interpreterPath}",
+       "program": "${workspaceRoot}/manage.py",
+       "args": [
+           "test",
+           "--settings",
+           "cvat.settings.testing",
+           "cvat/apps/engine",
+           "-v", "2",
+           "-k", "test_api_v2_projects_",
+       ],
+       "django": true,
+       "cwd": "${workspaceFolder}",
+       "env": {},
+       "console": "internalConsole"
+   }
    ```
 
 

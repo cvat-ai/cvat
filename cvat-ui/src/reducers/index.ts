@@ -280,18 +280,27 @@ export interface PluginsState {
             destructor: CallableFunction;
             globalStateDidUpdate?: CallableFunction;
         };
-    },
+    };
     components: {
         header: {
             userMenu: {
                 items: PluginComponent[],
-            },
-        },
+            };
+        };
         loginPage: {
             loginForm: PluginComponent[];
-        }
-        router: PluginComponent[],
-        loggedInModals: PluginComponent[],
+        };
+        projectActions: {
+            items: PluginComponent[];
+        };
+        taskActions: {
+            items: PluginComponent[];
+        };
+        taskItem: {
+            name: PluginComponent[];
+        };
+        router: PluginComponent[];
+        loggedInModals: PluginComponent[];
     }
 }
 
@@ -320,25 +329,7 @@ export interface UserAgreementsState {
     initialized: boolean;
 }
 
-export interface ShareFileInfo {
-    // get this data from cvat-core
-    name: string;
-    type: 'DIR' | 'REG';
-    mime_type: string;
-}
-
-export interface ShareItem {
-    name: string;
-    type: 'DIR' | 'REG';
-    mime_type: string;
-    children: ShareItem[];
-}
-
-export interface ShareState {
-    root: ShareItem;
-    fetching: boolean;
-    initialized: boolean;
-}
+export type RemoteFileType = 'DIR' | 'REG';
 
 export interface ModelAttribute {
     name: string;
@@ -463,9 +454,6 @@ export interface NotificationsState {
             fetching: null | ErrorState;
         };
         about: {
-            fetching: null | ErrorState;
-        };
-        share: {
             fetching: null | ErrorState;
         };
         models: {
@@ -885,7 +873,6 @@ export interface CombinedState {
     jobs: JobsState;
     tasks: TasksState;
     about: AboutState;
-    share: ShareState;
     formats: FormatsState;
     userAgreements: UserAgreementsState;
     plugins: PluginsState;

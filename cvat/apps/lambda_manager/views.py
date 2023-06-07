@@ -1,5 +1,5 @@
 # Copyright (C) 2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -7,6 +7,8 @@ import base64
 import json
 import os
 import textwrap
+import glob
+from django_sendfile import sendfile
 from copy import deepcopy
 from enum import Enum
 from functools import wraps
@@ -31,6 +33,8 @@ from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.models import Job, ShapeType, SourceType, Task
 from cvat.apps.engine.serializers import LabeledDataSerializer
 from cvat.utils.http import make_requests_session
+from cvat.apps.iam.permissions import LambdaPermission
+from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 
 
 class LambdaType(Enum):
@@ -86,14 +90,21 @@ class LambdaGateway:
         return response
 
     def invoke(self, func, payload):
-        if os.getenv('KUBERNETES_SERVICE_HOST'):
-            return self._http(method="post", url='/api/function_invocations',
+        invoke_method = {
+            'dashboard': self._invoke_via_dashboard,
+            'direct': self._invoke_directly,
+        }
+
+        return invoke_method[settings.NUCLIO['INVOKE_METHOD']](func, payload)
+
+    def _invoke_via_dashboard(self, func, payload):
+        return self._http(method="post", url='/api/function_invocations',
             data=payload, headers={
                 'x-nuclio-function-name': func.id,
                 'x-nuclio-path': '/'
             })
 
-        # Note: call the function directly without the nuclio dashboard
+    def _invoke_directly(self, func, payload):
         # host.docker.internal for Linux will work only with Docker 20.10+
         NUCLIO_TIMEOUT = settings.NUCLIO['DEFAULT_TIMEOUT']
         if os.path.exists('/.dockerenv'): # inside a docker container
@@ -794,9 +805,10 @@ class FunctionViewSet(viewsets.ViewSet):
         summary='Method returns a list of requests'),
     #TODO
     create=extend_schema(
-        summary='Method calls the function'),
-    delete=extend_schema(
-        summary='Method cancels the request')
+        parameters=ORGANIZATION_OPEN_API_PARAMETERS,
+        summary='Method calls the function'
+    ),
+    delete=extend_schema(summary='Method cancels the request')
 )
 class RequestViewSet(viewsets.ViewSet):
     iam_organization_field = None
@@ -804,8 +816,22 @@ class RequestViewSet(viewsets.ViewSet):
 
     @return_response()
     def list(self, request):
+        queryset = Task.objects.select_related(
+            "assignee",
+            "owner",
+            "organization",
+        ).prefetch_related(
+            "project__owner",
+            "project__assignee",
+            "project__organization",
+        )
+
+        perm = LambdaPermission.create_scope_list(request)
+        queryset = perm.filter(queryset)
+        task_ids = set(queryset.values_list("id", flat=True))
+
         queue = LambdaQueue()
-        return [job.to_dict() for job in queue.get_jobs()]
+        return [job.to_dict() for job in queue.get_jobs() if job.get_task() in task_ids]
 
     @return_response()
     def create(self, request):
@@ -846,3 +872,11 @@ class RequestViewSet(viewsets.ViewSet):
         queue = LambdaQueue()
         job = queue.fetch_job(pk)
         job.delete()
+
+def ONNXDetector(request):
+    dirname = os.path.join(settings.STATIC_ROOT, 'lambda_manager')
+    pattern = os.path.join(dirname, 'decoder.onnx')
+    path = glob.glob(pattern)[0]
+    response = sendfile(request, path)
+    response['Cache-Control'] = "public, max-age=604800"
+    return response

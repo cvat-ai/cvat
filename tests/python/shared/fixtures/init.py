@@ -4,14 +4,15 @@
 
 import logging
 import os
-import re
 from http import HTTPStatus
 from pathlib import Path
 from subprocess import PIPE, CalledProcessError, run
 from time import sleep
+from typing import List, Union
 
 import pytest
 import requests
+import yaml
 
 from shared.utils.config import ASSETS_DIR, get_server_url
 
@@ -22,7 +23,6 @@ CVAT_DB_DIR = ASSETS_DIR / "cvat_db"
 PREFIX = "test"
 
 CONTAINER_NAME_FILES = ["docker-compose.tests.yml"]
-
 
 DC_FILES = [
     "docker-compose.dev.yml",
@@ -85,7 +85,7 @@ def _run(command, capture_output=True):
             proc = run(_command, check=True)  # nosec
         return stdout, stderr
     except CalledProcessError as exc:
-        stderr = exc.stderr.decode() if capture_output else "see above"
+        stderr = exc.stderr.decode() or exc.stdout.decode() if capture_output else "see above"
         pytest.exit(
             f"Command failed: {command}.\n"
             f"Error message: {stderr}.\n"
@@ -120,13 +120,17 @@ def kube_cp(source, target):
     _run(f"kubectl cp {source} {target}")
 
 
-def docker_exec_cvat(command):
-    _run(f"docker exec {PREFIX}_cvat_server_1 {command}")
+def docker_exec_cvat(command: Union[List[str], str]):
+    base = f"docker exec {PREFIX}_cvat_server_1"
+    _command = f"{base} {command}" if isinstance(command, str) else base.split() + command
+    return _run(_command)
 
 
-def kube_exec_cvat(command):
+def kube_exec_cvat(command: Union[List[str], str]):
     pod_name = _kube_get_server_pod_name()
-    _run(f"kubectl exec {pod_name} -- {command}")
+    base = f"kubectl exec {pod_name} --"
+    _command = f"{base} {command}" if isinstance(command, str) else base.split() + command
+    return _run(_command)
 
 
 def docker_exec_cvat_db(command):
@@ -207,9 +211,15 @@ def create_compose_files(container_name_files):
         with open(filename.with_name(filename.name.replace(".tests", "")), "r") as dcf, open(
             filename, "w"
         ) as ndcf:
-            ndcf.writelines(
-                [line for line in dcf.readlines() if not re.match("^.+container_name.+$", line)]
-            )
+            dc_config = yaml.safe_load(dcf)
+
+            for service_name, service_config in dc_config["services"].items():
+                service_config.pop("container_name", None)
+                if service_name in ("cvat_server", "cvat_utils"):
+                    service_env = service_config["environment"]
+                    service_env["DJANGO_SETTINGS_MODULE"] = "cvat.settings.testing_rest"
+
+            yaml.dump(dc_config, ndcf)
 
 
 def delete_compose_files(container_name_files):
