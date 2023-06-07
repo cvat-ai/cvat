@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Deletion of uploaded files, including annotations and backups,
   after they have been uploaded to the server using the TUS protocol  but before an RQ job has been initiated. (<https://github.com/opencv/cvat/pull/5909>)
 - Simultaneous creation of tasks or projects with identical names from backups by multiple users.(<https://github.com/opencv/cvat/pull/5909>)
+- Allowed slashes in export filenames. (<https://github.com/opencv/cvat/pull/6265>)
 
 ### Security
 - TDB
