@@ -584,7 +584,7 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     frame_selection_method = serializers.ChoiceField(
         choices=models.JobFrameSelectionMethod.choices(), required=False)
 
-    count = serializers.IntegerField(min_value=0, required=False,
+    frame_count = serializers.IntegerField(min_value=0, required=False,
         help_text=textwrap.dedent("""\
             The number of frames included in the job.
             Applicable only to the random frame selection
@@ -593,7 +593,8 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         help_text=textwrap.dedent("""\
             The seed value for the random number generator.
             The same value will produce the same frame sets.
-            Applicable only to the random frame selection
+            Applicable only to the random frame selection.
+            By default, a random value is used.
         """))
 
     frames = serializers.ListField(child=serializers.IntegerField(min_value=0),
@@ -603,7 +604,7 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
     class Meta:
         model = models.Job
-        random_selection_params = ('count', 'seed',)
+        random_selection_params = ('frame_count', 'seed',)
         manual_selection_params = ('frames',)
         write_once_fields = ('type', 'task_id', 'frame_selection_method',) \
             + random_selection_params + manual_selection_params
@@ -633,10 +634,10 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
             frame_selection_method = validated_data.pop("frame_selection_method", None)
             if frame_selection_method == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
-                count = validated_data.pop("count")
-                if size <= count:
+                frame_count = validated_data.pop("frame_count")
+                if size <= frame_count:
                     raise serializers.ValidationError(
-                        f"The number of frames requested ({count}) must be lesser than "
+                        f"The number of frames requested ({frame_count}) must be lesser than "
                         f"the number of the task frames ({size})"
                     )
 
@@ -647,7 +648,7 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 from numpy import random
                 rng = random.Generator(random.MT19937(seed=seed))
                 frames = rng.choice(
-                    list(valid_frame_ids), size=count, shuffle=False, replace=False
+                    list(valid_frame_ids), size=frame_count, shuffle=False, replace=False
                 ).tolist()
             elif frame_selection_method == models.JobFrameSelectionMethod.MANUAL:
                 frames = validated_data.pop("frames")

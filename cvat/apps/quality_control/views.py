@@ -327,13 +327,13 @@ class QualityReportViewSet(
 @extend_schema(tags=["quality"])
 @extend_schema_view(
     list=extend_schema(
-        summary="Method returns a paginated list of quality settings",
+        summary="Method returns a paginated list of quality settings instances",
         responses={
             "200": QualitySettingsSerializer(many=True),
         },
     ),
     retrieve=extend_schema(
-        summary="Method returns details of quality settings",
+        summary="Method returns details of the quality settings instance",
         responses={
             "200": QualitySettingsSerializer,
         },

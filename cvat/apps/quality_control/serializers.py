@@ -133,6 +133,7 @@ class QualitySettingsSerializer(serializers.ModelSerializer):
             "panoptic_comparison": (
                 "Use only the visible part of the masks and polygons in comparisons"
             ),
+            "compare_attributes": "Enables or disables annotation attribute comparison",
         }.items():
             extra_kwargs.setdefault(field_name, {}).setdefault(
                 "help_text", textwrap.dedent(help_text.lstrip("\n"))

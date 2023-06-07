@@ -3711,7 +3711,7 @@ paths:
   /api/quality/settings:
     get:
       operationId: quality_list_settings
-      summary: Method returns a paginated list of quality settings
+      summary: Method returns a paginated list of quality settings instances
       parameters:
       - name: X-Organization
         in: header
@@ -3776,7 +3776,7 @@ paths:
   /api/quality/settings/{id}:
     get:
       operationId: quality_retrieve_settings
-      summary: Method returns details of quality settings
+      summary: Method returns details of the quality settings instance
       parameters:
       - in: path
         name: id
@@ -6758,7 +6758,7 @@ components:
           type: integer
         frame_selection_method:
           $ref: '#/components/schemas/FrameSelectionMethodEnum'
-        count:
+        frame_count:
           type: integer
           minimum: 0
           description: |
@@ -6770,7 +6770,8 @@ components:
           description: |
             The seed value for the random number generator.
             The same value will produce the same frame sets.
-            Applicable only to the random frame selection
+            Applicable only to the random frame selection.
+            By default, a random value is used.
         frames:
           type: array
           items:
@@ -7889,6 +7890,7 @@ components:
           description: Use only the visible part of the masks and polygons in comparisons
         compare_attributes:
           type: boolean
+          description: Enables or disables annotation attribute comparison
     PatchedTaskWriteRequest:
       type: object
       properties:
@@ -8298,6 +8300,7 @@ components:
           description: Use only the visible part of the masks and polygons in comparisons
         compare_attributes:
           type: boolean
+          description: Enables or disables annotation attribute comparison
     RegisterSerializerEx:
       type: object
       properties:
