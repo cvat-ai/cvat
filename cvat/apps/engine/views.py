@@ -960,6 +960,11 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             serializer = DataSerializer(task_data, data=request.data)
             serializer.is_valid(raise_exception=True)
 
+            # Append new files to the previous ones
+            if uploaded_files := serializer.validated_data.get('client_files', None):
+                self._append_upload_info_entries(uploaded_files)
+                serializer.validated_data['client_files'] = [] # avoid file info duplication
+
             # Refresh the db value with the updated file list and other request parameters
             db_data = serializer.save()
             self._object.data = db_data
