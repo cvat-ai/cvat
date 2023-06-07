@@ -3488,12 +3488,6 @@ paths:
         schema:
           type: integer
         description: A simple equality filter for report id
-      - name: search
-        required: false
-        in: query
-        description: 'A search term. Available search_fields: []'
-        schema:
-          type: string
       - name: sort
         required: false
         in: query
@@ -3584,12 +3578,6 @@ paths:
         description: A simple equality filter for the parent_id field
         schema:
           type: integer
-      - name: search
-        required: false
-        in: query
-        description: 'A search term. Available search_fields: []'
-        schema:
-          type: string
       - name: sort
         required: false
         in: query
@@ -3758,12 +3746,6 @@ paths:
         description: Number of results to return per page.
         schema:
           type: integer
-      - name: search
-        required: false
-        in: query
-        description: 'A search term. Available search_fields: []'
-        schema:
-          type: string
       - name: sort
         required: false
         in: query
@@ -5437,12 +5419,6 @@ paths:
       operationId: webhooks_list_deliveries
       summary: Method return a list of deliveries for a specific webhook
       parameters:
-      - name: filter
-        required: false
-        in: query
-        description: 'A filter term. Available filter_fields: None'
-        schema:
-          type: string
       - in: path
         name: id
         schema:
@@ -5461,19 +5437,6 @@ paths:
         description: Number of results to return per page.
         schema:
           type: integer
-      - name: search
-        required: false
-        in: query
-        description: 'A search term. Available search_fields: None'
-        schema:
-          type: string
-      - name: sort
-        required: false
-        in: query
-        description: 'Which field to use when ordering the results. Available ordering_fields:
-          None'
-        schema:
-          type: string
       tags:
       - webhooks
       security:
