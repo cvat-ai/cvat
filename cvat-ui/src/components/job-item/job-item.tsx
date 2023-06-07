@@ -124,14 +124,14 @@ function JobItem(props: Props): JSX.Element {
                         </Row>
                         <Row className='cvat-job-item-dates-info'>
                             <Col>
-                                <Text>Created on</Text>
-                                <Text type='secondary'>{` ${created.format('MMMM Do YYYY HH:MM')}`}</Text>
+                                <Text>Created on </Text>
+                                <Text type='secondary'>{`${created.format('MMMM Do YYYY HH:MM')}`}</Text>
                             </Col>
                         </Row>
                         <Row>
                             <Col>
-                                <Text>Last updated</Text>
-                                <Text type='secondary'>{` ${updated.format('MMMM Do YYYY HH:MM')}`}</Text>
+                                <Text>Last updated </Text>
+                                <Text type='secondary'>{`${updated.format('MMMM Do YYYY HH:MM')}`}</Text>
                             </Col>
                         </Row>
                     </Col>
@@ -167,6 +167,7 @@ function JobItem(props: Props): JSX.Element {
                                             </Col>
                                         </Row>
                                         <Select
+                                            className='cvat-job-item-stage'
                                             value={stage}
                                             onChange={(newValue: JobStage) => {
                                                 job.stage = newValue;
@@ -195,15 +196,17 @@ function JobItem(props: Props): JSX.Element {
                                 <Row>
                                     <Col>
                                         <ProjectOutlined />
-                                        <Text>State:</Text>
-                                        <Text type='secondary'>{` ${job.state.charAt(0).toUpperCase() + job.state.slice(1)}`}</Text>
+                                        <Text>State: </Text>
+                                        <Text type='secondary' className='cvat-job-item-state'>
+                                            {`${job.state.charAt(0).toUpperCase() + job.state.slice(1)}`}
+                                        </Text>
                                     </Col>
                                 </Row>
                                 <Row>
                                     <Col>
                                         <Icon component={DurationIcon} />
-                                        <Text>Duration:</Text>
-                                        <Text type='secondary'>{` ${moment.duration(now.diff(created)).humanize()}`}</Text>
+                                        <Text>Duration: </Text>
+                                        <Text type='secondary'>{`${moment.duration(now.diff(created)).humanize()}`}</Text>
                                     </Col>
                                 </Row>
                             </Col>
@@ -213,9 +216,9 @@ function JobItem(props: Props): JSX.Element {
                                         <Row>
                                             <Col>
                                                 <Icon component={FramesIcon} />
-                                                <Text>Frame range:</Text>
+                                                <Text>Frame range: </Text>
                                                 <Text type='secondary' className='cvat-job-item-frame-range'>
-                                                    {` ${job.startFrame}-${job.stopFrame}`}
+                                                    {`${job.startFrame}-${job.stopFrame}`}
                                                 </Text>
                                             </Col>
                                         </Row>
@@ -224,9 +227,9 @@ function JobItem(props: Props): JSX.Element {
                                 <Row>
                                     <Col>
                                         <BorderOutlined />
-                                        <Text>Frame count:</Text>
+                                        <Text>Frame count: </Text>
                                         <Text type='secondary' className='cvat-job-item-frames'>
-                                            {` ${job.frameCount}
+                                            {`${job.frameCount}
                                              (${((job.frameCount / (task.size || 1)) * 100).toFixed(0)}%)`}
                                         </Text>
                                     </Col>
