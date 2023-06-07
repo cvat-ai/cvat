@@ -56,14 +56,14 @@ def get_organization(request, obj):
     if obj is not None and isinstance(obj, Organization):
         return obj
 
-    view = request.parser_context.get('view')
-    if obj and view.basename not in ("function", "request"):
+    if obj:
         try:
             organization_id = getattr(obj, 'organization_id')
         except AttributeError as exc:
             # Skip initialization of organization for those objects that don't related with organization
-            if view and view.basename == 'user':
-                return None
+            view = request.parser_context.get('view')
+            if view and view.basename in ('user', 'function', 'request',):
+                return request.iam_context['organization']
 
             raise exc
 
