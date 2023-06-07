@@ -27,7 +27,7 @@ class AnnotationConflictSerializer(serializers.ModelSerializer):
 
 class QualityReportSummarySerializer(serializers.Serializer):
     frame_count = serializers.IntegerField()
-    frame_share_percent = serializers.FloatField()
+    frame_share = serializers.FloatField()
     conflict_count = serializers.IntegerField()
     warning_count = serializers.IntegerField()
     error_count = serializers.IntegerField()

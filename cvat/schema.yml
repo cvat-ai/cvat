@@ -8192,7 +8192,7 @@ components:
       properties:
         frame_count:
           type: integer
-        frame_share_percent:
+        frame_share:
           type: number
           format: double
         conflict_count:
@@ -8217,7 +8217,7 @@ components:
       - ds_count
       - error_count
       - frame_count
-      - frame_share_percent
+      - frame_share
       - gt_count
       - valid_count
       - warning_count

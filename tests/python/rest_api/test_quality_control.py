@@ -1085,7 +1085,7 @@ class TestQualityReportMetrics(_PermissionTestBase):
         assert summary["valid_count"] < summary["ds_count"]
         assert summary["valid_count"] < summary["gt_count"]
         assert summary["frame_count"] == gt_job["frame_count"]
-        assert summary["frame_share_percent"] == summary["frame_count"] / task["size"] * 100
+        assert summary["frame_share"] == summary["frame_count"] / task["size"]
 
     def test_unmodified_task_produces_the_same_metrics(self, admin_user, quality_reports):
         old_report = next(r for r in quality_reports if r["task_id"])

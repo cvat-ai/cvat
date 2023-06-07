@@ -378,7 +378,7 @@ class ComparisonReportAnnotationComponentsSummary(_Serializable):
 
 @define(kw_only=True)
 class ComparisonReportComparisonSummary(_Serializable):
-    frame_share_percent: float
+    frame_share: float
     frames: List[str]
 
     @property
@@ -418,7 +418,7 @@ class ComparisonReportComparisonSummary(_Serializable):
     @classmethod
     def from_dict(cls, d: dict):
         return cls(
-            frame_share_percent=d["frame_share_percent"],
+            frame_share=d["frame_share"],
             frames=list(d["frames"]),
             conflict_count=d["conflict_count"],
             warning_count=d.get("warning_count", 0),
@@ -2016,8 +2016,7 @@ class DatasetComparator:
         return ComparisonReport(
             parameters=self.settings,
             comparison_summary=ComparisonReportComparisonSummary(
-                frame_share_percent=100
-                * (
+                frame_share=(
                     len(intersection_frames) / (len(self._ds_data_provider.job_data.rel_range) or 1)
                 ),
                 frames=intersection_frames,
@@ -2385,7 +2384,7 @@ class QualityReportUpdateManager:
         task_report_data = ComparisonReport(
             parameters=next(iter(job_reports.values())).parameters,
             comparison_summary=ComparisonReportComparisonSummary(
-                frame_share_percent=len(task_intersection_frames) / (task.data.size or 1) * 100,
+                frame_share=len(task_intersection_frames) / (task.data.size or 1),
                 frames=sorted(task_intersection_frames),
                 conflict_count=len(task_conflicts),
                 warning_count=len(
@@ -2469,9 +2468,12 @@ class QualityReportUpdateManager:
 
 
 def prepare_report_for_downloading(db_report: models.QualityReport, *, host: str) -> str:
-    # Decorate the report with conflicting annotation links like:
+    # Decorate the report for better usability and readability:
+    # - add conflicting annotation links like:
     # <host>/tasks/62/jobs/82?frame=250&type=shape&serverID=33741
-    # And other useful information
+    # - covert some fractions to percents
+    # - add common report info
+
     task_id = db_report.get_task().id
     serialized_data = dict(
         job_id=db_report.job.id if db_report.job is not None else None,
@@ -2499,6 +2501,10 @@ def prepare_report_for_downloading(db_report: models.QualityReport, *, host: str
                     f"&type={ann_type}"
                     f"&serverID={ann_id['obj_id']}"
                 )
+
+    serialized_data["comparison_summary"]["frame_share_percent"] = (
+        serialized_data["comparison_summary"].pop("frame_share") * 100
+    )
 
     # String keys are needed for json dumping
     serialized_data["frame_results"] = {
