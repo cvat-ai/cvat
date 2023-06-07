@@ -196,10 +196,8 @@ export function implementJob(Job) {
         if (frameTo < this.startFrame || frameTo > this.stopFrame) {
             throw new ArgumentError('The stop frame is out of the job');
         }
-        if (filters.notDeleted) {
-            return findFrame(this.id, frameFrom, frameTo, filters);
-        }
-        return null;
+
+        return findFrame(this.id, frameFrom, frameTo, filters);
     };
 
     // TODO: Check filter for annotations

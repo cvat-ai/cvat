@@ -757,7 +757,10 @@ export async function findFrame(jobID, frameFrom, frameTo, filters) {
         if (meta.included_frames) {
             return (meta.included_frames.includes(frame)) && !(frame in meta.deleted_frames);
         }
-        return !(frame in meta.deleted_frames);
+        if (filters.notDeleted) {
+            return !(frame in meta.deleted_frames);
+        }
+        return true;
     };
     for (let frame = frameFrom; predicate(frame); frame = update(frame)) {
         if (check(frame)) {
