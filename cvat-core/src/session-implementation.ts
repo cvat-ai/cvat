@@ -93,7 +93,7 @@ export function implementJob(Job) {
     };
 
     Job.prototype.issues.implementation = async function () {
-        const result = await serverProxy.issues.get({job_id: this.id });
+        const result = await serverProxy.issues.get({ job_id: this.id });
         return result.map((issue) => new Issue(issue));
     };
 

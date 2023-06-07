@@ -6,7 +6,6 @@
 import { isBrowser, isNode } from 'browser-or-node';
 
 import * as cvatData from 'cvat-data';
-import jsonLogic from 'json-logic-js';
 import { DimensionType } from 'enums';
 import PluginRegistry from './plugins';
 import serverProxy, { FramesMetaData } from './server-proxy';
@@ -318,20 +317,20 @@ FrameData.prototype.data.implementation = async function (onServerRequest) {
 
 function getFrameMeta(jobID, frame): FramesMetaData['frames'][0] {
     const { meta, mode, startFrame } = frameDataCache[jobID];
-    let frame_meta = null;
-    if (mode === 'interpolation' && meta.frames.length == 1) {
+    let frameMeta = null;
+    if (mode === 'interpolation' && meta.frames.length === 1) {
         // video tasks have 1 frame info, but image tasks will have many infos
-        [frame_meta] = meta.frames;
-    } else if (mode === 'annotation' || mode === 'interpolation' && meta.frames.length > 1) {
+        [frameMeta] = meta.frames;
+    } else if (mode === 'annotation' || (mode === 'interpolation' && meta.frames.length > 1)) {
         if (frame > meta.stop_frame) {
             throw new ArgumentError(`Meta information about frame ${frame} can't be received from the server`);
         }
-        frame_meta = meta.frames[frame - startFrame];
+        frameMeta = meta.frames[frame - startFrame];
     } else {
         throw new DataError(`Invalid mode is specified ${mode}`);
     }
 
-    return frame_meta;
+    return frameMeta;
 }
 
 class FrameBuffer {
