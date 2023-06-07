@@ -9,17 +9,21 @@ import hashlib
 import importlib
 import sys
 import traceback
-from typing import Any, Dict, Optional
+from contextlib import suppress
+from typing import Any, Dict, Optional, Callable, Union
 import subprocess
 import os
 import urllib.parse
+import logging
 import platform
+
+from rq.job import Job
+from django_rq.queues import DjangoRQ
 from pathlib import Path
 
 from django.http.request import HttpRequest
 from django.utils import timezone
 from django.utils.http import urlencode
-
 from rest_framework.reverse import reverse as _reverse
 
 from av import VideoFrame
@@ -133,17 +137,29 @@ def parse_exception_message(msg):
         pass
     return parsed_msg
 
-def process_failed_job(rq_job):
-    if os.path.exists(rq_job.meta['tmp_file']):
-        os.remove(rq_job.meta['tmp_file'])
-    exc_info = str(rq_job.exc_info or rq_job.dependency.exc_info)
+def process_failed_job(rq_job: Job):
+    exc_info = str(rq_job.exc_info or getattr(rq_job.dependency, 'exc_info', None) or '')
     if rq_job.dependency:
         rq_job.dependency.delete()
     rq_job.delete()
 
-    return parse_exception_message(exc_info)
+    msg = parse_exception_message(exc_info)
+    log = logging.getLogger('cvat.server.engine')
+    log.error(msg)
+    return msg
 
-def configure_dependent_job(queue, rq_id, rq_func, db_storage, filename, key, request):
+
+def configure_dependent_job(
+    queue: DjangoRQ,
+    rq_id: str,
+    rq_func: Callable[[Any, str, str], None],
+    db_storage: Any,
+    filename: str,
+    key: str,
+    request: HttpRequest,
+    result_ttl: float,
+    failure_ttl: float
+) -> Job:
     rq_job_id_download_file = rq_id + f'?action=download_{filename}'
     rq_job_download_file = queue.fetch_job(rq_job_id_download_file)
     if not rq_job_download_file:
@@ -153,6 +169,8 @@ def configure_dependent_job(queue, rq_id, rq_func, db_storage, filename, key, re
             args=(db_storage, filename, key),
             job_id=rq_job_id_download_file,
             meta=get_rq_job_meta(request=request, db_obj=db_storage),
+            result_ttl=result_ttl,
+            failure_ttl=failure_ttl
         )
     return rq_job_download_file
 
@@ -218,6 +236,27 @@ def get_list_view_name(model):
         'model_name': model._meta.object_name.lower()
     }
 
+def get_import_rq_id(
+    resource_type: str,
+    resource_id: int,
+    subresource_type: str,
+    user: str,
+) -> str:
+    # import:<task|project|job>-<id|uuid>-<annotations|dataset|backup>-by-<user>
+    return f"import:{resource_type}-{resource_id}-{subresource_type}-by-{user}"
+
+def import_resource_with_clean_up_after(
+    func: Union[Callable[[str, int, int], int], Callable[[str, int, str, bool], None]],
+    filename: str,
+    *args,
+    **kwargs,
+) -> Any:
+    try:
+        result = func(filename, *args, **kwargs)
+    finally:
+        with suppress(FileNotFoundError):
+            os.remove(filename)
+    return result
 
 def get_cpu_number() -> int:
     cpu_number = None

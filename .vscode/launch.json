@@ -271,6 +271,28 @@
             "console": "internalConsole"
         },
         {
+            "name": "server: RQ - cleaning",
+            "type": "python",
+            "request": "launch",
+            "stopOnEntry": false,
+            "justMyCode": false,
+            "python": "${command:python.interpreterPath}",
+            "program": "${workspaceRoot}/manage.py",
+            "args": [
+                "rqworker",
+                "cleaning",
+                "--worker-class",
+                "cvat.rqworker.SimpleWorker"
+            ],
+            "django": true,
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "DJANGO_LOG_SERVER_HOST": "localhost",
+                "DJANGO_LOG_SERVER_PORT": "8282"
+            },
+            "console": "internalConsole"
+        },
+        {
             "name": "server: migrate",
             "type": "python",
             "request": "launch",
@@ -433,6 +455,7 @@
                 "server: RQ - annotation",
                 "server: RQ - webhooks",
                 "server: RQ - scheduler",
+                "server: RQ - cleaning",
                 "server: git",
             ]
         }

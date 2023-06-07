@@ -773,6 +773,14 @@ class TestGetListWebhooks:
         assert response.status_code == HTTPStatus.OK
         assert DeepDiff(expected_response, response.json()["results"], ignore_order=True) == {}
 
+    @pytest.mark.parametrize("field_value, query_value", [(1, 1), (None, "")])
+    def test_can_filter_by_org_id(self, field_value, query_value, webhooks):
+        webhooks = filter(lambda w: w["organization"] == field_value, webhooks)
+        response = get_method("admin2", f"webhooks", org_id=query_value)
+
+        assert response.status_code == HTTPStatus.OK
+        assert DeepDiff(list(webhooks), response.json()["results"], ignore_order=True) == {}
+
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestPatchWebhooks:
