@@ -39,7 +39,7 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 (
-                    "importance",
+                    "severity",
                     models.CharField(
                         choices=[("warning", "WARNING"), ("error", "ERROR")], max_length=32
                     ),

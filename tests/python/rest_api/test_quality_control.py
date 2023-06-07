@@ -712,7 +712,7 @@ class TestSimpleQualityConflictsFilters(CollectionSimpleFilterTestBase):
 
     @pytest.mark.parametrize(
         "field",
-        ("report_id", "importance", "type", "frame", "job_id", "task_id", "org_id"),
+        ("report_id", "severity", "type", "frame", "job_id", "task_id", "org_id"),
     )
     def test_can_use_simple_filter_for_object_list(self, field):
         return super().test_can_use_simple_filter_for_object_list(field)

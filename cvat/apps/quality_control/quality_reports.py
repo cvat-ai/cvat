@@ -46,7 +46,7 @@ from cvat.apps.engine.models import (
 from cvat.apps.profiler import silk_profile
 from cvat.apps.quality_control import models
 from cvat.apps.quality_control.models import (
-    AnnotationConflictImportance,
+    AnnotationConflictSeverity,
     AnnotationConflictType,
     AnnotationType,
 )
@@ -107,13 +107,13 @@ class AnnotationConflict(_Serializable):
     annotation_ids: List[AnnotationId]
 
     @property
-    def importance(self) -> AnnotationConflictImportance:
+    def severity(self) -> AnnotationConflictSeverity:
         if self.type in [
             AnnotationConflictType.MISSING_ANNOTATION,
             AnnotationConflictType.EXTRA_ANNOTATION,
             AnnotationConflictType.MISMATCHING_LABEL,
         ]:
-            importance = AnnotationConflictImportance.ERROR
+            severity = AnnotationConflictSeverity.ERROR
         elif self.type in [
             AnnotationConflictType.LOW_OVERLAP,
             AnnotationConflictType.MISMATCHING_ATTRIBUTES,
@@ -121,20 +121,20 @@ class AnnotationConflict(_Serializable):
             AnnotationConflictType.MISMATCHING_GROUPS,
             AnnotationConflictType.COVERED_ANNOTATION,
         ]:
-            importance = AnnotationConflictImportance.WARNING
+            severity = AnnotationConflictSeverity.WARNING
         else:
             assert False
 
-        return importance
+        return severity
 
     def _value_serializer(self, v):
-        if isinstance(v, (AnnotationConflictType, AnnotationConflictImportance)):
+        if isinstance(v, (AnnotationConflictType, AnnotationConflictSeverity)):
             return str(v)
         else:
             return super()._value_serializer(v)
 
     def _fields_dict(self, *, include_properties: Optional[List[str]] = None) -> dict:
-        return super()._fields_dict(include_properties=include_properties or ["importance"])
+        return super()._fields_dict(include_properties=include_properties or ["severity"])
 
     @classmethod
     def from_dict(cls, d: dict):
@@ -444,13 +444,13 @@ class ComparisonReportFrameSummary(_Serializable):
     @cached_property
     def warning_count(self) -> int:
         return len(
-            [c for c in self.conflicts if c.importance == AnnotationConflictImportance.WARNING]
+            [c for c in self.conflicts if c.severity == AnnotationConflictSeverity.WARNING]
         )
 
     @cached_property
     def error_count(self) -> int:
         return len(
-            [c for c in self.conflicts if c.importance == AnnotationConflictImportance.ERROR]
+            [c for c in self.conflicts if c.severity == AnnotationConflictSeverity.ERROR]
         )
 
     @cached_property
@@ -2027,10 +2027,10 @@ class DatasetComparator:
                 frames=intersection_frames,
                 conflict_count=len(conflicts),
                 warning_count=len(
-                    [c for c in conflicts if c.importance == AnnotationConflictImportance.WARNING]
+                    [c for c in conflicts if c.severity == AnnotationConflictSeverity.WARNING]
                 ),
                 error_count=len(
-                    [c for c in conflicts if c.importance == AnnotationConflictImportance.ERROR]
+                    [c for c in conflicts if c.severity == AnnotationConflictSeverity.ERROR]
                 ),
                 conflicts_by_type=Counter(c.type for c in conflicts),
                 annotations=ComparisonReportAnnotationsSummary(
@@ -2396,14 +2396,14 @@ class QualityReportUpdateManager:
                     [
                         c
                         for c in task_conflicts
-                        if c.importance == AnnotationConflictImportance.WARNING
+                        if c.severity == AnnotationConflictSeverity.WARNING
                     ]
                 ),
                 error_count=len(
                     [
                         c
                         for c in task_conflicts
-                        if c.importance == AnnotationConflictImportance.ERROR
+                        if c.severity == AnnotationConflictSeverity.ERROR
                     ]
                 ),
                 conflicts_by_type=Counter(c.type for c in task_conflicts),
@@ -2450,7 +2450,7 @@ class QualityReportUpdateManager:
                     report=db_report,
                     type=conflict["type"],
                     frame=conflict["frame_id"],
-                    importance=conflict["importance"],
+                    severity=conflict["severity"],
                 )
                 db_conflicts.append(db_conflict)
 

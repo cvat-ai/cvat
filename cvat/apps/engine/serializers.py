@@ -781,7 +781,7 @@ class RqStatusSerializer(serializers.Serializer):
     progress = serializers.FloatField(max_value=100, default=0)
 
 class RqIdSerializer(serializers.Serializer):
-    rq_id = serializers.CharField()
+    rq_id = serializers.CharField(help_text="Request id")
 
 
 class JobFiles(serializers.ListField):
