@@ -136,7 +136,7 @@ export function filterFieldsToSnakeCase(filter: Record<string, string>, keysToSn
     if (searchParams.filter) {
         const parsed = JSON.parse(searchParams.filter);
         searchParams.filter = JSON.stringify({ and: [parsed, ...filtersGroup] });
-    } else {
+    } else if (filtersGroup.length) {
         searchParams.filter = JSON.stringify({ and: [...filtersGroup] });
     }
     return searchParams;
