@@ -68,6 +68,18 @@ function NameConfigurationForm(
             >
                 <Input ref={inputRef} />
             </Form.Item>
+            <Form.Item
+                name='description'
+                hasFeedback
+                label='Description'
+                rules={[
+                    {
+                        required: false,
+                    },
+                ]}
+            >
+                <Input ref={inputRef} />
+            </Form.Item>
         </Form>
     );
 }
@@ -156,6 +168,7 @@ export default function CreateProjectContent(): JSX.Element {
                     ...projectData,
                     ...advancedValues,
                     name: basicValues.name,
+                    description: basicValues.description,
                     source_storage: new Storage(
                         advancedValues.sourceStorage || { location: StorageLocation.LOCAL },
                     ).toJSON(),

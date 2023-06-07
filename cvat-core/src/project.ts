@@ -16,6 +16,7 @@ import { FieldUpdateTrigger } from './common';
 export default class Project {
     public readonly id: number;
     public name: string;
+    public description: string;
     public assignee: User;
     public bugTracker: string;
     public readonly status: ProjectStatus;
@@ -37,6 +38,7 @@ export default class Project {
         const data = {
             id: undefined,
             name: undefined,
+            description: undefined,
             status: undefined,
             assignee: undefined,
             organization: undefined,
@@ -80,6 +82,13 @@ export default class Project {
                         }
                         data.name = value;
                         updateTrigger.update('name');
+                    },
+                },
+                description: {
+                    get: () => data.description,
+                    set: (value) => {
+                        data.description = value;
+                        updateTrigger.update('description');
                     },
                 },
                 status: {

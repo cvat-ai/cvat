@@ -55,6 +55,7 @@ export interface SerializedUser {
 export interface SerializedProject {
     assignee: SerializedUser | null;
     id: number;
+    description: string;
     bug_tracker: string;
     created_date: string;
     updated_date: string;

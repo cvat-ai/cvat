@@ -24,6 +24,7 @@ interface DetailsComponentProps {
 export default function DetailsComponent(props: DetailsComponentProps): JSX.Element {
     const { project, onUpdateProject } = props;
     const [projectName, setProjectName] = useState(project.name);
+    const [projectDescription, setProjectDescription] = useState(project.description);
 
     return (
         <div data-cvat-project-id={project.id} className='cvat-project-details'>
@@ -42,6 +43,23 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
                     >
                         {projectName}
                     </Title>
+                </Col>
+            </Row>
+            <Row>
+                <Col>
+                    <Text type='primary'
+                        level={4}
+                        editable={{
+                            onChange: (value: string): void => {
+                                setProjectDescription(value);
+                                project.description = value;
+                                onUpdateProject(project);
+                            },
+                        }}
+                        className='cvat-text-color cvat-project-description'
+                    >
+                        {projectDescription}
+                    </Text>
                 </Col>
             </Row>
             <Row justify='space-between' className='cvat-project-description'>

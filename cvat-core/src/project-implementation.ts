@@ -60,6 +60,10 @@ export default function implementProject(projectClass) {
             labels: this.labels.map((el) => el.toJSON()),
         };
 
+        if (this.description) {
+            projectSpec.description = this.description;
+        }
+
         if (this.bugTracker) {
             projectSpec.bug_tracker = this.bugTracker;
         }

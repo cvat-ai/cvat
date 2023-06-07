@@ -1124,7 +1124,7 @@ class ProjectReadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Project
-        fields = ('url', 'id', 'name', 'owner', 'assignee',
+        fields = ('url', 'id', 'name', 'description', 'owner', 'assignee',
             'bug_tracker', 'task_subsets', 'created_date', 'updated_date', 'status',
             'dimension', 'organization', 'target_storage', 'source_storage',
             'tasks', 'labels',
@@ -1151,7 +1151,7 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Project
-        fields = ('name', 'labels', 'owner_id', 'assignee_id', 'bug_tracker',
+        fields = ('name', 'description', 'labels', 'owner_id', 'assignee_id', 'bug_tracker',
             'target_storage', 'source_storage', 'task_subsets',
         )
 

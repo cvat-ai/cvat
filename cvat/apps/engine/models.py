@@ -292,6 +292,7 @@ class Image(models.Model):
 
 class Project(models.Model):
     name = SafeCharField(max_length=256)
+    description = SafeCharField(max_length=1400, default="")
     owner = models.ForeignKey(User, null=True, blank=True,
                               on_delete=models.SET_NULL, related_name="+")
     assignee = models.ForeignKey(User, null=True, blank=True,
