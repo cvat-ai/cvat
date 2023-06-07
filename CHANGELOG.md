@@ -7,7 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## \[2.5.0] - Unreleased
 ### Added
-- TBD
+- \[API\] Support for Ground Truth job creation and removal (<https://github.com/opencv/cvat/pull/6204>)
+- \[API\] Task quality estimation endpoints (<https://github.com/opencv/cvat/pull/6204>)
 
 ### Changed
 - Replaced Apache mod_wsgi with Uvicorn ASGI server for backend use(<https://github.com/opencv/cvat/pull/6195>)
@@ -25,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Deletion of uploaded files, including annotations and backups,
   after they have been uploaded to the server using the TUS protocol  but before an RQ job has been initiated. (<https://github.com/opencv/cvat/pull/5909>)
 - Simultaneous creation of tasks or projects with identical names from backups by multiple users.(<https://github.com/opencv/cvat/pull/5909>)
+- Dataset export error with `outside` property of tracks (<https://github.com/opencv/cvat/issues/5971>)
 
 ### Security
 - TDB

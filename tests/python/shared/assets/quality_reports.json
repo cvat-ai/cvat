@@ -27,7 +27,7 @@
         "ds_count": 34,
         "error_count": 22,
         "frame_count": 3,
-        "frame_share_percent": 27.27272727272727,
+        "frame_share": 0.2727272727272727,
         "gt_count": 33,
         "valid_count": 21,
         "warning_count": 15
@@ -60,7 +60,7 @@
         "ds_count": 34,
         "error_count": 22,
         "frame_count": 3,
-        "frame_share_percent": 27.27272727272727,
+        "frame_share": 0.2727272727272727,
         "gt_count": 33,
         "valid_count": 21,
         "warning_count": 15

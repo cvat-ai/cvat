@@ -20,6 +20,7 @@ from rest_framework.response import Response
 
 from cvat.apps.engine.mixins import PartialUpdateModelMixin
 from cvat.apps.engine.models import Task
+from cvat.apps.engine.serializers import RqIdSerializer
 from cvat.apps.engine.utils import get_server_url
 from cvat.apps.iam.permissions import (
     AnnotationConflictPermission,
@@ -82,7 +83,7 @@ class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
     ]
 
     search_fields = []
-    filter_fields = list(search_fields) + ["id", "frame", "type", "job_id", "task_id", "importance"]
+    filter_fields = list(search_fields) + ["id", "frame", "type", "job_id", "task_id", "severity"]
     simple_filters = set(filter_fields) - {"id"}
     lookup_fields = {
         "job_id": "report__job__id",
@@ -274,11 +275,16 @@ class QualityReportViewSet(
                 rq_id = qc.QualityReportUpdateManager().schedule_quality_check_job(
                     task, user_id=request.user.id
                 )
-                return HttpResponse(rq_id, status=status.HTTP_202_ACCEPTED)
+                serializer = RqIdSerializer({"rq_id": rq_id})
+                return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
             except qc.QualityReportUpdateManager.QualityReportsNotAvailable as ex:
                 raise ValidationError(str(ex))
 
         else:
+            serializer = RqIdSerializer(data={"rq_id": rq_id})
+            serializer.is_valid(raise_exception=True)
+            rq_id = serializer.validated_data["rq_id"]
+
             report_manager = qc.QualityReportUpdateManager()
             rq_job = report_manager.get_quality_check_job(rq_id)
             if (
@@ -327,13 +333,13 @@ class QualityReportViewSet(
 @extend_schema(tags=["quality"])
 @extend_schema_view(
     list=extend_schema(
-        summary="Method returns a paginated list of quality settings",
+        summary="Method returns a paginated list of quality settings instances",
         responses={
             "200": QualitySettingsSerializer(many=True),
         },
     ),
     retrieve=extend_schema(
-        summary="Method returns details of quality settings",
+        summary="Method returns details of the quality settings instance",
         responses={
             "200": QualitySettingsSerializer,
         },

@@ -46,7 +46,7 @@ from cvat.apps.engine.models import (
 from cvat.apps.profiler import silk_profile
 from cvat.apps.quality_control import models
 from cvat.apps.quality_control.models import (
-    AnnotationConflictImportance,
+    AnnotationConflictSeverity,
     AnnotationConflictType,
     AnnotationType,
 )
@@ -107,13 +107,13 @@ class AnnotationConflict(_Serializable):
     annotation_ids: List[AnnotationId]
 
     @property
-    def importance(self) -> AnnotationConflictImportance:
+    def severity(self) -> AnnotationConflictSeverity:
         if self.type in [
             AnnotationConflictType.MISSING_ANNOTATION,
             AnnotationConflictType.EXTRA_ANNOTATION,
             AnnotationConflictType.MISMATCHING_LABEL,
         ]:
-            importance = AnnotationConflictImportance.ERROR
+            severity = AnnotationConflictSeverity.ERROR
         elif self.type in [
             AnnotationConflictType.LOW_OVERLAP,
             AnnotationConflictType.MISMATCHING_ATTRIBUTES,
@@ -121,20 +121,20 @@ class AnnotationConflict(_Serializable):
             AnnotationConflictType.MISMATCHING_GROUPS,
             AnnotationConflictType.COVERED_ANNOTATION,
         ]:
-            importance = AnnotationConflictImportance.WARNING
+            severity = AnnotationConflictSeverity.WARNING
         else:
             assert False
 
-        return importance
+        return severity
 
     def _value_serializer(self, v):
-        if isinstance(v, (AnnotationConflictType, AnnotationConflictImportance)):
+        if isinstance(v, (AnnotationConflictType, AnnotationConflictSeverity)):
             return str(v)
         else:
             return super()._value_serializer(v)
 
     def _fields_dict(self, *, include_properties: Optional[List[str]] = None) -> dict:
-        return super()._fields_dict(include_properties=include_properties or ["importance"])
+        return super()._fields_dict(include_properties=include_properties or ["severity"])
 
     @classmethod
     def from_dict(cls, d: dict):
@@ -173,7 +173,7 @@ class ComparisonParameters(_Serializable):
     line_thickness: float = 0.01
     "Thickness of polylines, relatively to the (image area) ^ 0.5"
 
-    oriented_lines: bool = True
+    compare_line_orientation: bool = True
     "Indicates that polylines have direction"
 
     line_orientation_threshold: float = 0.1
@@ -378,7 +378,7 @@ class ComparisonReportAnnotationComponentsSummary(_Serializable):
 
 @define(kw_only=True)
 class ComparisonReportComparisonSummary(_Serializable):
-    frame_share_percent: float
+    frame_share: float
     frames: List[str]
 
     @property
@@ -418,7 +418,7 @@ class ComparisonReportComparisonSummary(_Serializable):
     @classmethod
     def from_dict(cls, d: dict):
         return cls(
-            frame_share_percent=d["frame_share_percent"],
+            frame_share=d["frame_share"],
             frames=list(d["frames"]),
             conflict_count=d["conflict_count"],
             warning_count=d.get("warning_count", 0),
@@ -443,15 +443,11 @@ class ComparisonReportFrameSummary(_Serializable):
 
     @cached_property
     def warning_count(self) -> int:
-        return len(
-            [c for c in self.conflicts if c.importance == AnnotationConflictImportance.WARNING]
-        )
+        return len([c for c in self.conflicts if c.severity == AnnotationConflictSeverity.WARNING])
 
     @cached_property
     def error_count(self) -> int:
-        return len(
-            [c for c in self.conflicts if c.importance == AnnotationConflictImportance.ERROR]
-        )
+        return len([c for c in self.conflicts if c.severity == AnnotationConflictSeverity.ERROR])
 
     @cached_property
     def conflicts_by_type(self) -> Dict[AnnotationConflictType, int]:
@@ -922,7 +918,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
         # https://cocodataset.org/#keypoints-eval
         # https://github.com/cocodataset/cocoapi/blob/8c9bcc3cf640524c4c20a9c40e89cb6a2f2fa0e9/PythonAPI/pycocotools/cocoeval.py#L523
         oks_sigma: float = 0.09,
-        oriented_lines: bool = False,
+        compare_line_orientation: bool = False,
         line_torso_radius: float = 0.01,
         panoptic_comparison: bool = False,
     ):
@@ -935,7 +931,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
         self.oks_sigma = oks_sigma
         "% of the shape area"
 
-        self.oriented_lines = oriented_lines
+        self.compare_line_orientation = compare_line_orientation
         "Whether lines are oriented or not"
 
         # Here we use a % of image size in pixels, using the image size as the scale
@@ -1202,7 +1198,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
 
     def match_lines(self, item_a, item_b):
         matcher = _LineMatcher(
-            oriented=self.oriented_lines,
+            oriented=self.compare_line_orientation,
             torso_r=self.line_torso_radius,
             scale=np.prod(item_a.image.size),
         )
@@ -1472,7 +1468,7 @@ class _Comparator:
             iou_threshold=settings.iou_threshold,
             oks_sigma=settings.oks_sigma,
             line_torso_radius=settings.line_thickness,
-            oriented_lines=False,  # should not be taken from outside, handled differently
+            compare_line_orientation=False,  # should not be taken from outside, handled differently
         )
         self.coverage_threshold = settings.object_visibility_threshold
         self.group_match_threshold = settings.group_match_threshold
@@ -1753,7 +1749,7 @@ class DatasetComparator:
         mean_iou = np.mean(resulting_distances) if resulting_distances else 0
 
         if (
-            self.settings.oriented_lines
+            self.settings.compare_line_orientation
             and dm.AnnotationType.polyline in self.comparator.included_ann_types
         ):
             # Check line directions
@@ -2020,17 +2016,16 @@ class DatasetComparator:
         return ComparisonReport(
             parameters=self.settings,
             comparison_summary=ComparisonReportComparisonSummary(
-                frame_share_percent=100
-                * (
+                frame_share=(
                     len(intersection_frames) / (len(self._ds_data_provider.job_data.rel_range) or 1)
                 ),
                 frames=intersection_frames,
                 conflict_count=len(conflicts),
                 warning_count=len(
-                    [c for c in conflicts if c.importance == AnnotationConflictImportance.WARNING]
+                    [c for c in conflicts if c.severity == AnnotationConflictSeverity.WARNING]
                 ),
                 error_count=len(
-                    [c for c in conflicts if c.importance == AnnotationConflictImportance.ERROR]
+                    [c for c in conflicts if c.severity == AnnotationConflictSeverity.ERROR]
                 ),
                 conflicts_by_type=Counter(c.type for c in conflicts),
                 annotations=ComparisonReportAnnotationsSummary(
@@ -2389,22 +2384,14 @@ class QualityReportUpdateManager:
         task_report_data = ComparisonReport(
             parameters=next(iter(job_reports.values())).parameters,
             comparison_summary=ComparisonReportComparisonSummary(
-                frame_share_percent=len(task_intersection_frames) / (task.data.size or 1) * 100,
+                frame_share=len(task_intersection_frames) / (task.data.size or 1),
                 frames=sorted(task_intersection_frames),
                 conflict_count=len(task_conflicts),
                 warning_count=len(
-                    [
-                        c
-                        for c in task_conflicts
-                        if c.importance == AnnotationConflictImportance.WARNING
-                    ]
+                    [c for c in task_conflicts if c.severity == AnnotationConflictSeverity.WARNING]
                 ),
                 error_count=len(
-                    [
-                        c
-                        for c in task_conflicts
-                        if c.importance == AnnotationConflictImportance.ERROR
-                    ]
+                    [c for c in task_conflicts if c.severity == AnnotationConflictSeverity.ERROR]
                 ),
                 conflicts_by_type=Counter(c.type for c in task_conflicts),
                 annotations=task_annotations_summary,
@@ -2450,7 +2437,7 @@ class QualityReportUpdateManager:
                     report=db_report,
                     type=conflict["type"],
                     frame=conflict["frame_id"],
-                    importance=conflict["importance"],
+                    severity=conflict["severity"],
                 )
                 db_conflicts.append(db_conflict)
 
@@ -2481,9 +2468,12 @@ class QualityReportUpdateManager:
 
 
 def prepare_report_for_downloading(db_report: models.QualityReport, *, host: str) -> str:
-    # Decorate the report with conflicting annotation links like:
+    # Decorate the report for better usability and readability:
+    # - add conflicting annotation links like:
     # <host>/tasks/62/jobs/82?frame=250&type=shape&serverID=33741
-    # And other useful information
+    # - covert some fractions to percents
+    # - add common report info
+
     task_id = db_report.get_task().id
     serialized_data = dict(
         job_id=db_report.job.id if db_report.job is not None else None,
@@ -2511,6 +2501,10 @@ def prepare_report_for_downloading(db_report: models.QualityReport, *, host: str
                     f"&type={ann_type}"
                     f"&serverID={ann_id['obj_id']}"
                 )
+
+    serialized_data["comparison_summary"]["frame_share_percent"] = (
+        serialized_data["comparison_summary"].pop("frame_share") * 100
+    )
 
     # String keys are needed for json dumping
     serialized_data["frame_results"] = {

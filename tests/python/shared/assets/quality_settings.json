@@ -15,7 +15,7 @@
       "low_overlap_threshold": 0.8,
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
-      "oriented_lines": true,
+      "compare_line_orientation": true,
       "panoptic_comparison": true,
       "task_id": 2
     },
@@ -31,7 +31,7 @@
       "low_overlap_threshold": 0.8,
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
-      "oriented_lines": true,
+      "compare_line_orientation": true,
       "panoptic_comparison": true,
       "task_id": 5
     },
@@ -47,7 +47,7 @@
       "low_overlap_threshold": 0.8,
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
-      "oriented_lines": true,
+      "compare_line_orientation": true,
       "panoptic_comparison": true,
       "task_id": 6
     },
@@ -63,7 +63,7 @@
       "low_overlap_threshold": 0.8,
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
-      "oriented_lines": true,
+      "compare_line_orientation": true,
       "panoptic_comparison": true,
       "task_id": 7
     },
@@ -79,7 +79,7 @@
       "low_overlap_threshold": 0.8,
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
-      "oriented_lines": true,
+      "compare_line_orientation": true,
       "panoptic_comparison": true,
       "task_id": 8
     },
@@ -95,7 +95,7 @@
       "low_overlap_threshold": 0.8,
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
-      "oriented_lines": true,
+      "compare_line_orientation": true,
       "panoptic_comparison": true,
       "task_id": 9
     },
@@ -111,7 +111,7 @@
       "low_overlap_threshold": 0.8,
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
-      "oriented_lines": true,
+      "compare_line_orientation": true,
       "panoptic_comparison": true,
       "task_id": 11
     },
@@ -127,7 +127,7 @@
       "low_overlap_threshold": 0.8,
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
-      "oriented_lines": true,
+      "compare_line_orientation": true,
       "panoptic_comparison": true,
       "task_id": 12
     },
@@ -143,7 +143,7 @@
       "low_overlap_threshold": 0.8,
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
-      "oriented_lines": true,
+      "compare_line_orientation": true,
       "panoptic_comparison": true,
       "task_id": 13
     },
@@ -159,7 +159,7 @@
       "low_overlap_threshold": 0.8,
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
-      "oriented_lines": true,
+      "compare_line_orientation": true,
       "panoptic_comparison": true,
       "task_id": 14
     },
@@ -175,7 +175,7 @@
       "low_overlap_threshold": 0.8,
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
-      "oriented_lines": true,
+      "compare_line_orientation": true,
       "panoptic_comparison": true,
       "task_id": 15
     },
@@ -191,7 +191,7 @@
       "low_overlap_threshold": 0.8,
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
-      "oriented_lines": true,
+      "compare_line_orientation": true,
       "panoptic_comparison": true,
       "task_id": 17
     },
@@ -207,7 +207,7 @@
       "low_overlap_threshold": 0.8,
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
-      "oriented_lines": true,
+      "compare_line_orientation": true,
       "panoptic_comparison": true,
       "task_id": 18
     },
@@ -223,7 +223,7 @@
       "low_overlap_threshold": 0.8,
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
-      "oriented_lines": true,
+      "compare_line_orientation": true,
       "panoptic_comparison": true,
       "task_id": 19
     },
@@ -239,7 +239,7 @@
       "low_overlap_threshold": 0.8,
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
-      "oriented_lines": true,
+      "compare_line_orientation": true,
       "panoptic_comparison": true,
       "task_id": 20
     },
@@ -255,7 +255,7 @@
       "low_overlap_threshold": 0.8,
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
-      "oriented_lines": true,
+      "compare_line_orientation": true,
       "panoptic_comparison": true,
       "task_id": 21
     },
@@ -271,7 +271,7 @@
       "low_overlap_threshold": 0.8,
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
-      "oriented_lines": true,
+      "compare_line_orientation": true,
       "panoptic_comparison": true,
       "task_id": 22
     }

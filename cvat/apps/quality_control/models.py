@@ -33,7 +33,7 @@ class AnnotationConflictType(str, Enum):
         return tuple((x.value, x.name) for x in cls)
 
 
-class AnnotationConflictImportance(str, Enum):
+class AnnotationConflictSeverity(str, Enum):
     WARNING = "warning"
     ERROR = "error"
 
@@ -138,7 +138,7 @@ class AnnotationConflict(models.Model):
     report = models.ForeignKey(QualityReport, on_delete=models.CASCADE, related_name="conflicts")
     frame = models.PositiveIntegerField()
     type = models.CharField(max_length=32, choices=AnnotationConflictType.choices())
-    importance = models.CharField(max_length=32, choices=AnnotationConflictImportance.choices())
+    severity = models.CharField(max_length=32, choices=AnnotationConflictSeverity.choices())
 
     annotation_ids: Sequence[AnnotationId]
 
@@ -186,7 +186,7 @@ class QualitySettings(models.Model):
 
     low_overlap_threshold = models.FloatField()
 
-    oriented_lines = models.BooleanField()
+    compare_line_orientation = models.BooleanField()
     line_orientation_threshold = models.FloatField()
 
     compare_groups = models.BooleanField()

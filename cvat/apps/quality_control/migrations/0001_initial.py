@@ -39,7 +39,7 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 (
-                    "importance",
+                    "severity",
                     models.CharField(
                         choices=[("warning", "WARNING"), ("error", "ERROR")], max_length=32
                     ),
@@ -59,7 +59,7 @@ class Migration(migrations.Migration):
                 ("oks_sigma", models.FloatField()),
                 ("line_thickness", models.FloatField()),
                 ("low_overlap_threshold", models.FloatField()),
-                ("oriented_lines", models.BooleanField()),
+                ("compare_line_orientation", models.BooleanField()),
                 ("line_orientation_threshold", models.FloatField()),
                 ("compare_groups", models.BooleanField()),
                 ("group_match_threshold", models.FloatField()),

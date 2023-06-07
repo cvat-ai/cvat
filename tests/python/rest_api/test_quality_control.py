@@ -26,7 +26,7 @@ class _PermissionTestBase:
                 _parse_response=False,
             )
             assert response.status == HTTPStatus.ACCEPTED
-            rq_id = response.data.decode()
+            rq_id = json.loads(response.data)["rq_id"]
 
             while True:
                 (_, response) = api_client.quality_api.create_report(
@@ -712,7 +712,7 @@ class TestSimpleQualityConflictsFilters(CollectionSimpleFilterTestBase):
 
     @pytest.mark.parametrize(
         "field",
-        ("report_id", "importance", "type", "frame", "job_id", "task_id", "org_id"),
+        ("report_id", "severity", "type", "frame", "job_id", "task_id", "org_id"),
     )
     def test_can_use_simple_filter_for_object_list(self, field):
         return super().test_can_use_simple_filter_for_object_list(field)
@@ -1085,7 +1085,7 @@ class TestQualityReportMetrics(_PermissionTestBase):
         assert summary["valid_count"] < summary["ds_count"]
         assert summary["valid_count"] < summary["gt_count"]
         assert summary["frame_count"] == gt_job["frame_count"]
-        assert summary["frame_share_percent"] == summary["frame_count"] / task["size"] * 100
+        assert summary["frame_share"] == summary["frame_count"] / task["size"]
 
     def test_unmodified_task_produces_the_same_metrics(self, admin_user, quality_reports):
         old_report = next(r for r in quality_reports if r["task_id"])
@@ -1164,7 +1164,7 @@ class TestQualityReportMetrics(_PermissionTestBase):
             "low_overlap_threshold",
             "object_visibility_threshold",
             "oks_sigma",
-            "oriented_lines",
+            "compare_line_orientation",
             "panoptic_comparison",
         ],
     )
