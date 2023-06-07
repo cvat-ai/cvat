@@ -3647,7 +3647,7 @@ paths:
           content:
             application/vnd.cvat+json:
               schema:
-                type: string
+                $ref: '#/components/schemas/RqId'
           description: |
             A quality report request has been enqueued, the request id is returned.
             The request status can be checked at this endpoint by passing the rq_id
@@ -3784,6 +3784,11 @@ paths:
           type: integer
         description: A unique integer value identifying this quality settings.
         required: true
+      - in: query
+        name: id
+        schema:
+          type: integer
+        description: An id of a quality settings instance
       tags:
       - quality
       security:
@@ -3810,6 +3815,11 @@ paths:
           type: integer
         description: A unique integer value identifying this quality settings.
         required: true
+      - in: query
+        name: id
+        schema:
+          type: integer
+        description: An id of a quality settings instance
       tags:
       - quality
       requestBody:
