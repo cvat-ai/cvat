@@ -339,6 +339,23 @@ class Project(models.Model):
         return self.name
 
 class TaskQuerySet(models.QuerySet):
+    def with_label_summary(self):
+        return self.prefetch_related(
+            'label_set',
+            'label_set__parent',
+            'project__label_set',
+            'project__label_set__parent',
+        ).annotate(
+            task_labels_count=models.Count('label',
+                filter=models.Q(label__parent__isnull=True),
+                distinct=True
+            ),
+            proj_labels_count=models.Count('project__label',
+                filter=models.Q(project__label__parent__isnull=True),
+                distinct=True
+            )
+        )
+
     def with_job_summary(self):
         return self.prefetch_related(
             'segment_set__job_set',
@@ -346,11 +363,13 @@ class TaskQuerySet(models.QuerySet):
             completed_jobs_count=models.Count(
                 'segment__job',
                 filter=models.Q(segment__job__state=StateChoice.COMPLETED.value) &
-                       models.Q(segment__job__stage=StageChoice.ACCEPTANCE.value)
+                       models.Q(segment__job__stage=StageChoice.ACCEPTANCE.value),
+                distinct=True,
             ),
             validation_jobs_count=models.Count(
                 'segment__job',
-                filter=models.Q(segment__job__stage=StageChoice.VALIDATION.value)
+                filter=models.Q(segment__job__stage=StageChoice.VALIDATION.value),
+                distinct=True,
             )
         )
 

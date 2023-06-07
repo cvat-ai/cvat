@@ -709,19 +709,11 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 ):
     queryset = Task.objects.select_related(
         'data', 'assignee', 'owner',
-        'target_storage', 'source_storage'
+        'target_storage', 'source_storage',
     ).prefetch_related(
         'segment_set__job_set',
-        'segment_set__job_set__assignee', 'label_set__attributespec_set',
-        'project__label_set__attributespec_set',
-        'label_set__sublabels__attributespec_set',
-        'project__label_set__sublabels__attributespec_set'
-    ).annotate(
-        task_labels_count=Count('label',
-            filter=Q(label__parent__isnull=True), distinct=True),
-        proj_labels_count=Count('project__label',
-            filter=Q(project__label__parent__isnull=True), distinct=True)
-    ).with_job_summary().all()
+        'segment_set__job_set__assignee',
+    ).with_label_summary().with_job_summary().all()
 
     lookup_fields = {
         'project_name': 'project__name',
