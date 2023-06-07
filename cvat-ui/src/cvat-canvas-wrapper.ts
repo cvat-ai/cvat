@@ -10,7 +10,7 @@ import {
     CuboidDrawingMethod,
     InteractionData as _InteractionData,
     InteractionResult as _InteractionResult,
-    HighlightImportance as _HighlightImportance,
+    HighlightSeverity as _HighlightSeverity,
 } from 'cvat-canvas/src/typescript/canvas';
 
 export function convertShapesForInteractor(shapes: InteractionResult[], button: number): number[][] {
@@ -31,7 +31,7 @@ export function convertShapesForInteractor(shapes: InteractionResult[], button: 
 
 export type InteractionData = _InteractionData;
 export type InteractionResult = _InteractionResult;
-export type HighlightImportance = _HighlightImportance;
+export type HighlightSeverity = _HighlightSeverity;
 
 export {
     Canvas, CanvasMode, CanvasVersion, RectDrawingMethod, CuboidDrawingMethod,

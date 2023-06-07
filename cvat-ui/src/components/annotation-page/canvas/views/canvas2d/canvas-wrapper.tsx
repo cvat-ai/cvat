@@ -15,7 +15,7 @@ import {
     ColorBy, GridColor, ObjectType, ContextMenuType, Workspace, ShapeType, ActiveControl, CombinedState,
 } from 'reducers';
 import { LogType } from 'cvat-logger';
-import { Canvas, HighlightImportance } from 'cvat-canvas-wrapper';
+import { Canvas, HighlightSeverity } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import {
     AnnotationConflict, QualityConflict, getCore,
@@ -492,12 +492,12 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         }
 
         if (prevProps.highlightedConflict !== highlightedConflict) {
-            const importance: HighlightImportance | null =
-                highlightedConflict?.importance ? (highlightedConflict?.importance as any) : null;
+            const severity: HighlightSeverity | null =
+                highlightedConflict?.severity ? (highlightedConflict?.severity as any) : null;
             const highlightedElementsIDs = highlightedConflict?.annotationConflicts.map(
                 (conflict: AnnotationConflict) => conflict.clientID,
             );
-            canvasInstance.highlight(highlightedElementsIDs || null, importance);
+            canvasInstance.highlight(highlightedElementsIDs || null, severity);
         }
 
         if (gridSize !== prevProps.gridSize) {

@@ -12,7 +12,7 @@ export interface RawQualityReportData {
     gt_last_updated?: string;
     summary?: {
         frame_count: number,
-        frame_share_percent: number,
+        frame_share: number,
         conflict_count: number,
         valid_count: number,
         ds_count: number,
@@ -111,7 +111,7 @@ export default class QualityReport {
                 summary: {
                     get: () => ({
                         frameCount: data.summary.frame_count,
-                        frameSharePercent: data.summary.frame_share_percent,
+                        frameSharePercent: data.summary.frame_share * 100,
                         conflictCount: data.summary.conflict_count,
                         validCount: data.summary.valid_count,
                         dsCount: data.summary.ds_count,

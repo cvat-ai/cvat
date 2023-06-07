@@ -7,7 +7,7 @@ import { AnnotationActionTypes } from 'actions/annotation-actions';
 import { ReviewActionTypes } from 'actions/review-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
 import {
-    AnnotationConflict, ConflictImportance, ObjectState, QualityConflict,
+    AnnotationConflict, ConflictSeverity, ObjectState, QualityConflict,
 } from 'cvat-core-wrapper';
 import { ReviewState } from '.';
 
@@ -117,7 +117,7 @@ export default function (state: ReviewState = defaultState, action: any): Review
                         mergedFrameConflicts.push(conflicts[0]);
                     } else {
                         const mainConflict = conflicts
-                            .find((conflict) => conflict.importance === ConflictImportance.ERROR) || conflicts[0];
+                            .find((conflict) => conflict.severity === ConflictSeverity.ERROR) || conflicts[0];
                         const activeIDs = mainConflict.annotationConflicts.map((conflict) => conflict.clientID);
                         const descriptionList: string[] = [];
                         conflicts.forEach((conflict) => {

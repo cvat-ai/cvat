@@ -18,7 +18,7 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 import { CombinedState, Workspace } from 'reducers';
 import moment from 'moment';
 import Paragraph from 'antd/lib/typography/Paragraph';
-import { ConflictImportance, QualityConflict } from 'cvat-core-wrapper';
+import { ConflictSeverity, QualityConflict } from 'cvat-core-wrapper';
 import { changeShowGroundTruth } from 'actions/settings-actions';
 import { ShowGroundTruthIcon } from 'icons';
 
@@ -174,7 +174,7 @@ export default function LabelsListComponent(): JSX.Element {
                             key={frameConflict.id}
                             id={`cvat-objects-sidebar-conflict-item-${frameConflict.id}`}
                             className={
-                                `${frameConflict.importance === ConflictImportance.WARNING ?
+                                `${frameConflict.severity === ConflictSeverity.WARNING ?
                                     'cvat-objects-sidebar-warning-item' : 'cvat-objects-sidebar-conflict-item'}
                                   ${frameConflict.id === highlightedConflict?.id ? 'cvat-objects-sidebar-item-active' : ''}  `
                             }
@@ -187,7 +187,7 @@ export default function LabelsListComponent(): JSX.Element {
                         >
                             <Row>
                                 <Text strong>
-                                    {`#${frameConflict.id} • ${frameConflict.importance === ConflictImportance.WARNING ?
+                                    {`#${frameConflict.id} • ${frameConflict.severity === ConflictSeverity.WARNING ?
                                         'Warning' : 'Conflict'}`}
                                 </Text>
                             </Row>

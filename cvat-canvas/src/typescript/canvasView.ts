@@ -60,7 +60,7 @@ import {
     InteractionData,
     ColorBy,
     HighlightedElements,
-    HighlightImportance,
+    HighlightSeverity,
 } from './canvasModel';
 
 export interface CanvasView {
@@ -1078,7 +1078,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         };
         this.highlightedElements = {
             elementsIDs: [],
-            importance: null,
+            severity: null,
         };
         this.configuration = model.configuration;
         this.mode = Mode.IDLE;
@@ -1879,9 +1879,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
         if (this.highlightedElements.elementsIDs.length) {
             if (this.highlightedElements.elementsIDs.includes(state.clientID)) {
-                if (this.highlightedElements.importance === HighlightImportance.ERROR) {
+                if (this.highlightedElements.severity === HighlightSeverity.ERROR) {
                     shapeColor = consts.CONFLICT_COLOR;
-                } else if (this.highlightedElements.importance === HighlightImportance.WARNING) {
+                } else if (this.highlightedElements.severity === HighlightSeverity.WARNING) {
                     shapeColor = consts.WARNING_COLOR;
                 }
             } else {
@@ -1898,11 +1898,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     private getHighlightClassname(): string {
-        const { importance } = this.highlightedElements;
-        if (importance === HighlightImportance.ERROR) {
+        const { severity } = this.highlightedElements;
+        if (severity === HighlightSeverity.ERROR) {
             return 'cvat_canvas_conflicted';
         }
-        if (importance === HighlightImportance.WARNING) {
+        if (severity === HighlightSeverity.WARNING) {
             return 'cvat_canvas_warned';
         }
         return '';
@@ -2545,7 +2545,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         } else {
             this.highlightedElements = {
                 elementsIDs: [],
-                importance: null,
+                severity: null,
             };
             this.canvas.classList.remove('cvat-canvas-highlight-enabled');
         }

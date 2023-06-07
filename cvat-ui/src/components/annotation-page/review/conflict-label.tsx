@@ -8,7 +8,7 @@ import Tag from 'antd/lib/tag';
 import Icon from '@ant-design/icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { ConflictIcon } from 'icons';
-import { ConflictImportance, QualityConflict } from 'cvat-core-wrapper';
+import { ConflictSeverity, QualityConflict } from 'cvat-core-wrapper';
 
 interface Props {
     top: number;
@@ -17,7 +17,7 @@ interface Props {
     scale: number;
     text: string;
     darken: boolean;
-    importance: ConflictImportance;
+    severity: ConflictSeverity;
     conflict: QualityConflict;
     tooltipVisible: boolean;
     onEnter: (conflict: QualityConflict) => void;
@@ -26,10 +26,10 @@ interface Props {
 
 export default function ConflictLabel(props: Props): ReactPortal {
     const {
-        top, left, angle, scale, text, importance, darken, conflict, onEnter, onLeave, tooltipVisible,
+        top, left, angle, scale, text, severity, darken, conflict, onEnter, onLeave, tooltipVisible,
     } = props;
 
-    const conflictColor = importance === ConflictImportance.ERROR ? 'cvat-conflict-error' : 'cvat-conflict-warning';
+    const conflictColor = severity === ConflictSeverity.ERROR ? 'cvat-conflict-error' : 'cvat-conflict-warning';
     const darkenColor = darken ? 'cvat-conflict-darken' : '';
 
     return ReactDOM.createPortal(

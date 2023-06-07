@@ -34,7 +34,7 @@ interface JobDataMutual {
 }
 
 export interface JobData extends JobDataMutual {
-    count: number,
+    frame_count: number,
 }
 
 export interface JobFormData extends JobDataMutual {
@@ -64,7 +64,7 @@ function JobForm(props: Props): JSX.Element {
                 frame_selection_method: values.frame_selection_method,
                 type: values.type,
                 seed: values.seed,
-                count: values.frame_count,
+                frame_count: values.frame_count,
                 task_id: task.id,
             };
             const createdJob = await dispatch(createJobAsync(data));

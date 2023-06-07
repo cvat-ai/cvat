@@ -71,7 +71,7 @@ export default function ConflictAggregatorComponent(): JSX.Element | null {
                     if (points) {
                         return {
                             description: conflict.description,
-                            importance: conflict.importance,
+                            severity: conflict.severity,
                             x: points[0],
                             y: points[1],
                             clientID: c.clientID,
@@ -100,7 +100,7 @@ export default function ConflictAggregatorComponent(): JSX.Element | null {
                 left={conflict.x}
                 angle={-geometry.angle}
                 scale={1 / geometry.scale}
-                importance={conflict.importance}
+                severity={conflict.severity}
                 darken={!!highlightedConflict && !!highlightedObjectsIDs &&
                     (!highlightedObjectsIDs.includes(conflict.clientID))}
                 conflict={conflict.conflict}

@@ -43,14 +43,14 @@ export interface ActiveElement {
     attributeID: number | null;
 }
 
-export enum HighlightImportance {
+export enum HighlightSeverity {
     ERROR = 'error',
     WARNING = 'warning',
 }
 
 export interface HighlightedElements {
     elementsIDs: number [];
-    importance: HighlightImportance;
+    severity: HighlightSeverity;
 }
 
 export enum RectDrawingMethod {
@@ -244,7 +244,7 @@ export interface CanvasModel {
     setup(frameData: any, objectStates: any[], zLayer: number): void;
     setupIssueRegions(issueRegions: Record<number, { hidden: boolean; points: number[] }>): void;
     activate(clientID: number | null, attributeID: number | null): void;
-    highlight(clientIDs: number[] | null, importance: HighlightImportance): void;
+    highlight(clientIDs: number[] | null, severity: HighlightSeverity): void;
     rotate(rotationAngle: number): void;
     focus(clientID: number, padding: number): void;
     fit(): void;
@@ -357,7 +357,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             },
             highlightedElements: {
                 elementsIDs: [],
-                importance: null,
+                severity: null,
             },
             angle: 0,
             canvasSize: {
@@ -604,7 +604,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         this.notify(UpdateReasons.SHAPE_ACTIVATED);
     }
 
-    public highlight(clientIDs: number[] | null, importance: HighlightImportance | null): void {
+    public highlight(clientIDs: number[] | null, severity: HighlightSeverity | null): void {
         if (this.data.mode !== Mode.IDLE && clientIDs !== null) {
             throw Error(`Canvas is busy. Action: ${this.data.mode}`);
         }
@@ -612,12 +612,12 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         if (Array.isArray(clientIDs)) {
             this.data.highlightedElements = {
                 elementsIDs: clientIDs,
-                importance,
+                severity,
             };
         } else {
             this.data.highlightedElements = {
                 elementsIDs: [],
-                importance: null,
+                severity: null,
             };
         }
 

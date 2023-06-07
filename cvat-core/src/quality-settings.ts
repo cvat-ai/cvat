@@ -12,7 +12,7 @@ export interface RawQualitySettingsData {
     oks_sigma?: number;
     line_thickness?: number;
     low_overlap_threshold?: number;
-    oriented_lines?: boolean;
+    compare_line_orientation?: boolean;
     line_orientation_threshold?: number;
     compare_groups?: boolean;
     group_match_threshold?: number;
@@ -46,7 +46,7 @@ export default class QualitySettings {
             oks_sigma: undefined,
             line_thickness: undefined,
             low_overlap_threshold: undefined,
-            oriented_lines: undefined,
+            compare_line_orientation: undefined,
             line_orientation_threshold: undefined,
             compare_groups: undefined,
             group_match_threshold: undefined,
@@ -96,9 +96,9 @@ export default class QualitySettings {
                     },
                 },
                 orientedLines: {
-                    get: () => data.oriented_lines,
+                    get: () => data.compare_line_orientation,
                     set: (value: boolean) => {
-                        data.oriented_lines = value;
+                        data.compare_line_orientation = value;
                     },
                 },
                 lineOrientationThreshold: {
@@ -153,7 +153,7 @@ export default class QualitySettings {
             oks_sigma: this.oksSigma,
             line_thickness: this.lineThickness,
             low_overlap_threshold: this.lowOverlapThreshold,
-            oriented_lines: this.orientedLines,
+            compare_line_orientation: this.orientedLines,
             line_orientation_threshold: this.lineOrientationThreshold,
             compare_groups: this.compareGroups,
             group_match_threshold: this.groupMatchThreshold,

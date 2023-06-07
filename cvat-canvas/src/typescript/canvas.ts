@@ -18,7 +18,7 @@ import {
     CuboidDrawingMethod,
     Configuration,
     Geometry,
-    HighlightImportance as _HighlightImportance,
+    HighlightSeverity as _HighlightSeverity,
 } from './canvasModel';
 import { Master } from './master';
 import { CanvasController, CanvasControllerImpl } from './canvasController';
@@ -35,7 +35,7 @@ interface Canvas {
     setupIssueRegions(issueRegions: Record<number, { hidden: boolean; points: number[] }>): void;
     setupConflictRegions(clientID: number): number[];
     activate(clientID: number | null, attributeID?: number): number[];
-    highlight(clientIDs: number[] | null, importance: HighlightImportance | null): void;
+    highlight(clientIDs: number[] | null, severity: HighlightSeverity | null): void;
     rotate(rotationAngle: number): void;
     focus(clientID: number, padding?: number): void;
     fit(): void;
@@ -115,8 +115,8 @@ class CanvasImpl implements Canvas {
         this.model.activate(clientID, attributeID);
     }
 
-    public highlight(clientIDs: number[] | null, importance: HighlightImportance | null = null): void {
-        this.model.highlight(clientIDs, importance);
+    public highlight(clientIDs: number[] | null, severity: HighlightSeverity | null = null): void {
+        this.model.highlight(clientIDs, severity);
     }
 
     public rotate(rotationAngle: number): void {
@@ -190,7 +190,7 @@ class CanvasImpl implements Canvas {
 
 export type InteractionData = _InteractionData;
 export type InteractionResult = _InteractionResult;
-export type HighlightImportance = _HighlightImportance;
+export type HighlightSeverity = _HighlightSeverity;
 
 export {
     CanvasImpl as Canvas, CanvasVersion, RectDrawingMethod, CuboidDrawingMethod, Mode as CanvasMode,

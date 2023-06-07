@@ -8,7 +8,7 @@ export enum QualityConflictType {
     MISSING = 'missing_annotation',
 }
 
-export enum ConflictImportance {
+export enum ConflictSeverity {
     ERROR = 'error',
     WARNING = 'warning',
 }
@@ -19,7 +19,7 @@ export interface RawQualityConflictData {
     type?: string;
     annotation_ids?: RawAnnotationConflictData[];
     data?: string;
-    importance?: string;
+    severity?: string;
     description?: string;
 }
 
@@ -29,7 +29,7 @@ export interface RawAnnotationConflictData {
     client_id?: number;
     type?: string;
     conflict_type?: string;
-    importance?: string;
+    severity?: string;
 }
 
 export class AnnotationConflict {
@@ -38,7 +38,7 @@ export class AnnotationConflict {
     public clientID: number;
     public readonly type: string;
     public readonly conflictType: QualityConflictType;
-    public readonly importance: ConflictImportance;
+    public readonly severity: ConflictSeverity;
     public readonly description: string;
 
     constructor(initialData: RawAnnotationConflictData) {
@@ -48,7 +48,7 @@ export class AnnotationConflict {
             client_id: undefined,
             type: undefined,
             conflict_type: undefined,
-            importance: undefined,
+            severity: undefined,
         };
 
         for (const property in data) {
@@ -78,8 +78,8 @@ export class AnnotationConflict {
                 conflictType: {
                     get: () => data.conflict_type,
                 },
-                importance: {
-                    get: () => data.importance,
+                severity: {
+                    get: () => data.severity,
                 },
                 description: {
                     get: () => {
@@ -97,7 +97,7 @@ export default class QualityConflict {
     public readonly frame: number;
     public readonly type: QualityConflictType;
     public readonly annotationConflicts: AnnotationConflict[];
-    public readonly importance: ConflictImportance;
+    public readonly severity: ConflictSeverity;
     public description: string;
 
     constructor(initialData: RawQualityConflictData) {
@@ -106,7 +106,7 @@ export default class QualityConflict {
             frame: undefined,
             type: undefined,
             annotation_ids: [],
-            importance: undefined,
+            severity: undefined,
             description: undefined,
         };
 
@@ -120,7 +120,7 @@ export default class QualityConflict {
             .map((rawData: RawAnnotationConflictData) => new AnnotationConflict({
                 ...rawData,
                 conflict_type: data.type,
-                importance: data.importance,
+                severity: data.severity,
             }));
 
         const desc = data.type.split('_').join(' ');
@@ -141,8 +141,8 @@ export default class QualityConflict {
                 annotationConflicts: {
                     get: () => data.annotation_ids,
                 },
-                importance: {
-                    get: () => data.importance,
+                severity: {
+                    get: () => data.severity,
                 },
                 description: {
                     get: () => data.description,
