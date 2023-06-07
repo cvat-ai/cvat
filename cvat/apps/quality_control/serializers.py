@@ -98,9 +98,9 @@ class QualitySettingsSerializer(serializers.ModelSerializer):
 
         for field_name, help_text in {
             "iou_threshold": "Used for distinction between matched / unmatched shapes",
-            "low_overlap_threshold": (
-                "Used for distinction between strong / weak (low_overlap) matches"
-            ),
+            "low_overlap_threshold": """
+                Used for distinction between strong / weak (low_overlap) matches
+            """,
             "oks_sigma": """
                 Like IoU threshold, but for points.
                 The percent of the bbox area, used as the radius of the circle around the GT point,
@@ -115,24 +115,24 @@ class QualitySettingsSerializer(serializers.ModelSerializer):
             "oriented_lines": "Indicates that polylines have direction",
             "line_orientation_threshold": """
                 The minimal gain in the GT IoU between the given and reversed line directions
-                to consider the line inverted. Only useful with the 'oriented_lines' parameter
+                to consider the line inverted. Only used when the 'oriented_lines' parameter is true
             """,
             "compare_groups": "Enables or disables annotation group checks",
             "group_match_threshold": """
-                Minimal IoU for groups to be considered matching,
-                used when the 'compare_groups' is enabled
+                Minimal IoU for groups to be considered matching.
+                Only used when the 'compare_groups' parameter is true
             """,
-            "check_covered_annotations": (
-                "Check for partially-covered annotations, useful in segmentation tasks"
-            ),
+            "check_covered_annotations": """
+                Check for partially-covered annotations, useful in segmentation tasks
+            """,
             "object_visibility_threshold": """
                 Minimal visible area percent of the spatial annotations (polygons, masks)
-                for reporting covered annotations,
-                useful with the 'check_covered_annotations' option
+                for reporting covered annotations.
+                Only used when the 'object_visibility_threshold' parameter is true
             """,
-            "panoptic_comparison": (
-                "Use only the visible part of the masks and polygons in comparisons"
-            ),
+            "panoptic_comparison": """
+                Use only the visible part of the masks and polygons in comparisons
+            """,
             "compare_attributes": "Enables or disables annotation attribute comparison",
         }.items():
             extra_kwargs.setdefault(field_name, {}).setdefault(
