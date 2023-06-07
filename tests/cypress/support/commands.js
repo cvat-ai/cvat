@@ -954,9 +954,9 @@ Cypress.Commands.add('setJobState', (choice) => {
 
 Cypress.Commands.add('setJobStage', (jobID, stage) => {
     cy.getJobNum(jobID).then(($job) => {
-        cy.get('.cvat-task-jobs-table')
+        cy.get('.cvat-task-job-list')
             .contains('a', `Job #${$job}`)
-            .parents('.cvat-task-jobs-table-row')
+            .parents('.cvat-job-item')
             .find('.cvat-job-item-stage').click();
         cy.get('.ant-select-dropdown')
             .should('be.visible')
