@@ -80,7 +80,7 @@ class QualitySettingsSerializer(serializers.ModelSerializer):
             "oks_sigma",
             "line_thickness",
             "low_overlap_threshold",
-            "oriented_lines",
+            "compare_line_orientation",
             "line_orientation_threshold",
             "compare_groups",
             "group_match_threshold",
@@ -112,10 +112,11 @@ class QualitySettingsSerializer(serializers.ModelSerializer):
                 The distance to the boundary around the GT line,
                 inside of which the checked line points should be
             """,
-            "oriented_lines": "Indicates that polylines have direction",
+            "compare_line_orientation": "Enables or disables polyline orientation comparison",
             "line_orientation_threshold": """
                 The minimal gain in the GT IoU between the given and reversed line directions
-                to consider the line inverted. Only used when the 'oriented_lines' parameter is true
+                to consider the line inverted.
+                Only used when the 'compare_line_orientation' parameter is true
             """,
             "compare_groups": "Enables or disables annotation group checks",
             "group_match_threshold": """

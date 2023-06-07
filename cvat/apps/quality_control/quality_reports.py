@@ -173,7 +173,7 @@ class ComparisonParameters(_Serializable):
     line_thickness: float = 0.01
     "Thickness of polylines, relatively to the (image area) ^ 0.5"
 
-    oriented_lines: bool = True
+    compare_line_orientation: bool = True
     "Indicates that polylines have direction"
 
     line_orientation_threshold: float = 0.1
@@ -918,7 +918,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
         # https://cocodataset.org/#keypoints-eval
         # https://github.com/cocodataset/cocoapi/blob/8c9bcc3cf640524c4c20a9c40e89cb6a2f2fa0e9/PythonAPI/pycocotools/cocoeval.py#L523
         oks_sigma: float = 0.09,
-        oriented_lines: bool = False,
+        compare_line_orientation: bool = False,
         line_torso_radius: float = 0.01,
         panoptic_comparison: bool = False,
     ):
@@ -931,7 +931,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
         self.oks_sigma = oks_sigma
         "% of the shape area"
 
-        self.oriented_lines = oriented_lines
+        self.compare_line_orientation = compare_line_orientation
         "Whether lines are oriented or not"
 
         # Here we use a % of image size in pixels, using the image size as the scale
@@ -1198,7 +1198,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
 
     def match_lines(self, item_a, item_b):
         matcher = _LineMatcher(
-            oriented=self.oriented_lines,
+            oriented=self.compare_line_orientation,
             torso_r=self.line_torso_radius,
             scale=np.prod(item_a.image.size),
         )
@@ -1468,7 +1468,7 @@ class _Comparator:
             iou_threshold=settings.iou_threshold,
             oks_sigma=settings.oks_sigma,
             line_torso_radius=settings.line_thickness,
-            oriented_lines=False,  # should not be taken from outside, handled differently
+            compare_line_orientation=False,  # should not be taken from outside, handled differently
         )
         self.coverage_threshold = settings.object_visibility_threshold
         self.group_match_threshold = settings.group_match_threshold
@@ -1749,7 +1749,7 @@ class DatasetComparator:
         mean_iou = np.mean(resulting_distances) if resulting_distances else 0
 
         if (
-            self.settings.oriented_lines
+            self.settings.compare_line_orientation
             and dm.AnnotationType.polyline in self.comparator.included_ann_types
         ):
             # Check line directions

@@ -1164,7 +1164,7 @@ class TestQualityReportMetrics(_PermissionTestBase):
             "low_overlap_threshold",
             "object_visibility_threshold",
             "oks_sigma",
-            "oriented_lines",
+            "compare_line_orientation",
             "panoptic_comparison",
         ],
     )

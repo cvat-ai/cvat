@@ -7849,15 +7849,16 @@ components:
           format: double
           description: |
             Used for distinction between strong / weak (low_overlap) matches
-        oriented_lines:
+        compare_line_orientation:
           type: boolean
-          description: Indicates that polylines have direction
+          description: Enables or disables polyline orientation comparison
         line_orientation_threshold:
           type: number
           format: double
           description: |
             The minimal gain in the GT IoU between the given and reversed line directions
-            to consider the line inverted. Only used when the 'oriented_lines' parameter is true
+            to consider the line inverted.
+            Only used when the 'compare_line_orientation' parameter is true
         compare_groups:
           type: boolean
           description: Enables or disables annotation group checks
@@ -8261,15 +8262,16 @@ components:
           format: double
           description: |
             Used for distinction between strong / weak (low_overlap) matches
-        oriented_lines:
+        compare_line_orientation:
           type: boolean
-          description: Indicates that polylines have direction
+          description: Enables or disables polyline orientation comparison
         line_orientation_threshold:
           type: number
           format: double
           description: |
             The minimal gain in the GT IoU between the given and reversed line directions
-            to consider the line inverted. Only used when the 'oriented_lines' parameter is true
+            to consider the line inverted.
+            Only used when the 'compare_line_orientation' parameter is true
         compare_groups:
           type: boolean
           description: Enables or disables annotation group checks
