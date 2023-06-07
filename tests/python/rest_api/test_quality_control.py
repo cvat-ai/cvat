@@ -26,7 +26,7 @@ class _PermissionTestBase:
                 _parse_response=False,
             )
             assert response.status == HTTPStatus.ACCEPTED
-            rq_id = response.data.decode()
+            rq_id = json.loads(response.data)["rq_id"]
 
             while True:
                 (_, response) = api_client.quality_api.create_report(

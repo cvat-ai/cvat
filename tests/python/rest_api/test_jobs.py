@@ -133,7 +133,7 @@ class TestPostJobs:
             "task_id": task_id,
             "type": "ground_truth",
             "frame_selection_method": "random_uniform",
-            "count": job_frame_count,
+            "frame_count": job_frame_count,
         }
 
         response = self._test_create_job_ok(user, job_spec)
@@ -160,7 +160,7 @@ class TestPostJobs:
             "task_id": task_id,
             "type": "ground_truth",
             "frame_selection_method": "random_uniform",
-            "count": 3,
+            "frame_count": 3,
             "seed": 42,
         }
 
@@ -180,7 +180,7 @@ class TestPostJobs:
             "task_id": task_id,
             "type": "ground_truth",
             "frame_selection_method": "random_uniform",
-            "count": 1,
+            "frame_count": 1,
         }
 
         response = self._test_create_job_fails(
@@ -202,7 +202,7 @@ class TestPostJobs:
             "task_id": task["id"],
             "type": "ground_truth",
             "frame_selection_method": "random_uniform",
-            "count": 1,
+            "frame_count": 1,
         }
 
         self._test_create_job_ok(user, job_spec)
@@ -247,7 +247,7 @@ class TestPostJobs:
             "task_id": task["id"],
             "type": "ground_truth",
             "frame_selection_method": "random_uniform",
-            "count": 1,
+            "frame_count": 1,
         }
 
         if allow:
@@ -271,7 +271,7 @@ class TestPostJobs:
             "task_id": task["id"],
             "type": "ground_truth",
             "frame_selection_method": "random_uniform",
-            "count": 1,
+            "frame_count": 1,
         }
 
         response = self._test_create_job_ok(user, spec)
@@ -323,7 +323,7 @@ class TestDeleteJobs:
             "task_id": task["id"],
             "type": "ground_truth",
             "frame_selection_method": "random_uniform",
-            "count": 1,
+            "frame_count": 1,
         }
 
         with make_api_client(admin_user) as api_client:
@@ -377,7 +377,7 @@ class TestDeleteJobs:
             "task_id": task["id"],
             "type": "ground_truth",
             "frame_selection_method": "random_uniform",
-            "count": 1,
+            "frame_count": 1,
         }
 
         with make_api_client(admin_user) as api_client:
@@ -471,7 +471,7 @@ class TestGetJobs:
             "task_id": task["id"],
             "type": "ground_truth",
             "frame_selection_method": "random_uniform",
-            "count": 1,
+            "frame_count": 1,
         }
 
         with make_api_client(admin_user) as api_client:
@@ -526,7 +526,7 @@ class TestGetJobs:
             "task_id": task["id"],
             "type": "ground_truth",
             "frame_selection_method": "random_uniform",
-            "count": 1,
+            "frame_count": 1,
         }
 
         with make_api_client(admin_user) as api_client:
