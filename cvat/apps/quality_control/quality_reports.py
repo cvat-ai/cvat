@@ -443,15 +443,11 @@ class ComparisonReportFrameSummary(_Serializable):
 
     @cached_property
     def warning_count(self) -> int:
-        return len(
-            [c for c in self.conflicts if c.severity == AnnotationConflictSeverity.WARNING]
-        )
+        return len([c for c in self.conflicts if c.severity == AnnotationConflictSeverity.WARNING])
 
     @cached_property
     def error_count(self) -> int:
-        return len(
-            [c for c in self.conflicts if c.severity == AnnotationConflictSeverity.ERROR]
-        )
+        return len([c for c in self.conflicts if c.severity == AnnotationConflictSeverity.ERROR])
 
     @cached_property
     def conflicts_by_type(self) -> Dict[AnnotationConflictType, int]:
@@ -2393,18 +2389,10 @@ class QualityReportUpdateManager:
                 frames=sorted(task_intersection_frames),
                 conflict_count=len(task_conflicts),
                 warning_count=len(
-                    [
-                        c
-                        for c in task_conflicts
-                        if c.severity == AnnotationConflictSeverity.WARNING
-                    ]
+                    [c for c in task_conflicts if c.severity == AnnotationConflictSeverity.WARNING]
                 ),
                 error_count=len(
-                    [
-                        c
-                        for c in task_conflicts
-                        if c.severity == AnnotationConflictSeverity.ERROR
-                    ]
+                    [c for c in task_conflicts if c.severity == AnnotationConflictSeverity.ERROR]
                 ),
                 conflicts_by_type=Counter(c.type for c in task_conflicts),
                 annotations=task_annotations_summary,

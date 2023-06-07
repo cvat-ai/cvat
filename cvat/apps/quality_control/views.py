@@ -275,12 +275,16 @@ class QualityReportViewSet(
                 rq_id = qc.QualityReportUpdateManager().schedule_quality_check_job(
                     task, user_id=request.user.id
                 )
-                serializer = RqIdSerializer(data={"rq_id": rq_id})
-                return HttpResponse(serializer.data, status=status.HTTP_202_ACCEPTED)
+                serializer = RqIdSerializer({"rq_id": rq_id})
+                return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
             except qc.QualityReportUpdateManager.QualityReportsNotAvailable as ex:
                 raise ValidationError(str(ex))
 
         else:
+            serializer = RqIdSerializer(data={"rq_id": rq_id})
+            serializer.is_valid(raise_exception=True)
+            rq_id = serializer.validated_data["rq_id"]
+
             report_manager = qc.QualityReportUpdateManager()
             rq_job = report_manager.get_quality_check_job(rq_id)
             if (
