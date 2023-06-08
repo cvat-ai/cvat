@@ -1853,8 +1853,6 @@ class AssetWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         write_once_fields = ('uuid', 'filename', 'created_date', 'owner', 'guide_id', )
 
 class AnnotationGuideReadSerializer(WriteOnceMixin, serializers.ModelSerializer):
-    owner = BasicUserSerializer(required=False)
-
     class Meta:
         model = models.AnnotationGuide
         fields = ('id', 'task_id', 'project_id', 'created_date', 'updated_date', 'markdown', )

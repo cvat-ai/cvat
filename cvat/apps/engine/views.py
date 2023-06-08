@@ -5,6 +5,7 @@
 
 import io
 import os
+import re
 import os.path as osp
 import pytz
 import uuid
@@ -2341,65 +2342,50 @@ class AnnotationGuidesViewset(
     viewsets.GenericViewSet, mixins.RetrieveModelMixin,
     mixins.CreateModelMixin, mixins.DestroyModelMixin, PartialUpdateModelMixin
 ):
-    queryset = AnnotationGuide.objects.order_by('-id').select_related('owner', 'project', 'project__owner', 'project__organization', 'task', 'task__owner', 'task__organization').prefetch_related('assets').all()
+    queryset = AnnotationGuide.objects.order_by('-id').select_related(
+        'project', 'project__owner', 'project__organization', 'task', 'task__owner', 'task__organization'
+    ).prefetch_related('assets').all()
     search_fields = ()
     ordering = "-id"
 
     # NOTE: This filter works incorrectly for this view
     # it requires task__organization OR project__organization check.
-    # Thus, we rely on permission-based filtering
+    # Anyway we do not need any filtering in this class since it does not have 'list' method
     iam_organization_field = None
+
+    @staticmethod
+    def _update_assets(guide):
+        new_assets = []
+        current_assets = list(guide.assets.all())
+        markdown = guide.markdown
+
+        # pylint: disable=anomalous-backslash-in-string
+        pattern = re.compile('\!\[image\]\(\/api\/assets\/([0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12})\)')
+        results = re.findall(pattern, markdown)
+
+        for asset_id in results:
+            new_asset = models.Asset.objects.get(pk=asset_id)
+            if new_asset.guide_id != guide.id:
+                raise ValidationError('Asset is already related to another guide')
+            new_assets.append(new_asset)
+
+        for current_asset in current_assets:
+            if current_asset not in new_assets:
+                current_asset.delete()
 
     def check_object_permissions(self, request, obj):
         if self.action == 'retrieve':
             job_id = self.request.GET.get('job_id', None)
             if job_id is not None:
                 # NOTE: This filter is too complex to be implemented by other means
-                # It requires the following filter query:
-                # (
-                #  project__task__segment__job__id = job_id
-                #  OR
-                #  task__segment__job__id = job_id
-                # )
+                # Otherwise it would require difficult query project__task__segment__job__assignee = user
+                # OR
+                # task__segment__job__assignee = user
                 db_job = Job.objects.select_related('segment', 'segment__task', 'segment__task__project').get(id=job_id)
                 super().check_object_permissions(request, db_job)
                 return
 
         super().check_object_permissions(request, obj)
-
-    @staticmethod
-    def _update_assets(guide):
-        UUID_LEN = 36
-        TEMPLATE = '/api/assets/'
-        new_assets = []
-        current_assets = list(guide.assets.all())
-        markdown = guide.markdown
-        idx = markdown.find(TEMPLATE)
-        while idx != -1:
-            _from = idx + len(TEMPLATE)
-            _to = _from + UUID_LEN
-            try:
-                pk = uuid.UUID(markdown[_from : _to])
-                try:
-                    asset = models.Asset.objects.get(pk=pk)
-                    if asset not in current_assets and asset.owner != guide.owner:
-                        raise PermissionDenied('Asset owner and guide owner are different')
-                    new_assets.append(asset)
-                except models.Asset.DoesNotExist:
-                    pass
-            except ValueError:
-                continue
-            finally:
-                idx = markdown.find(TEMPLATE, _to)
-
-        for asset in current_assets:
-            if asset not in new_assets:
-                asset.delete()
-
-        for asset in new_assets:
-            # todo: handle case when asset is already assigned to another guide
-            asset.guide = guide
-            asset.save()
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:

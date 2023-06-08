@@ -1604,7 +1604,6 @@ class AnnotationGuidePermission(OpenPolicyAgentPermission):
             db_organization = getattr(db_project, 'organization', None) or getattr(db_task, 'organization', None) or {}
             data.update({
                 'id': self.obj.id,
-                'owner': { 'id': getattr(self.obj.owner, 'id', None) },
                 'project': {
                     'owner': { 'id': getattr(getattr(db_project, 'owner', {}), 'id', None) },
                     'assignee': { 'id': getattr(getattr(db_project, 'assignee', {}), 'id', None) }

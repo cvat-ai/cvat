@@ -22,7 +22,6 @@ import data.organizations
 #     },
 #     "resource": {
 #         "id": <num>,
-#         "owner": { "id": <num> },
 #         "organization": { "id": <num> or null },
 #         "task": {
 #             "owner": { "id": <num> or null },
@@ -83,7 +82,6 @@ allow {
 
 allow {
     { utils.CREATE, utils.DELETE, utils.UPDATE, utils.VIEW }[input.scope]
-    input.scope == utils.CREATE
     utils.is_sandbox
     is_target_staff
 }
