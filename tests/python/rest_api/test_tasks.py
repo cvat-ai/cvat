@@ -11,8 +11,10 @@ from copy import deepcopy
 from functools import partial
 from http import HTTPStatus
 from itertools import chain, product
+from math import ceil
 from pathlib import Path
-from tempfile import TemporaryDirectory
+from tempfile import NamedTemporaryFile, TemporaryDirectory
+from time import sleep, time
 from typing import List, Optional
 
 import pytest
@@ -21,10 +23,12 @@ from cvat_sdk.api_client import models
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from cvat_sdk.core.helpers import get_paginated_collection
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
+from cvat_sdk.core.uploading import Uploader
 from deepdiff import DeepDiff
 from PIL import Image
 
 import shared.utils.s3 as s3
+from shared.fixtures.init import docker_exec_cvat, kube_exec_cvat
 from shared.utils.config import (
     BASE_URL,
     USER_PASS,
@@ -37,7 +41,7 @@ from shared.utils.helpers import generate_image_files, generate_manifest
 
 from .utils import (
     CollectionSimpleFilterTestBase,
-    _test_create_task,
+    create_task,
     export_dataset,
     wait_until_task_is_created,
 )
@@ -400,7 +404,6 @@ class TestPatchTaskAnnotations:
             (_, response) = api_client.tasks_api.partial_update_annotations(
                 id=tid,
                 action="update",
-                org=org,
                 patched_labeled_data_request=deepcopy(data),
                 _parse_response=False,
                 _check_status=False,
@@ -441,7 +444,6 @@ class TestPatchTaskAnnotations:
         with make_api_client(username) as api_client:
             (_, response) = api_client.tasks_api.partial_update_annotations(
                 id=tid,
-                org_id=org,
                 action="update",
                 patched_labeled_data_request=deepcopy(data),
                 _parse_response=False,
@@ -469,6 +471,104 @@ class TestGetTaskDataset:
     def test_can_export_task_with_several_jobs(self, admin_user, tid, format_name):
         response = self._test_export_task(admin_user, tid, format=format_name)
         assert response.data
+
+    @pytest.mark.parametrize("tid", [8])
+    def test_can_export_task_to_coco_format(self, admin_user, tid):
+        # these annotations contains incorrect frame numbers
+        # in order to check that server handle such cases
+        annotations = {
+            "version": 0,
+            "tags": [],
+            "shapes": [],
+            "tracks": [
+                {
+                    "label_id": 63,
+                    "frame": 1,
+                    "group": 0,
+                    "source": "manual",
+                    "shapes": [
+                        {
+                            "type": "skeleton",
+                            "frame": 1,
+                            "occluded": False,
+                            "outside": False,
+                            "z_order": 0,
+                            "rotation": 0,
+                            "points": [],
+                            "attributes": [],
+                        }
+                    ],
+                    "attributes": [],
+                    "elements": [
+                        {
+                            "label_id": 64,
+                            "frame": 0,
+                            "group": 0,
+                            "source": "manual",
+                            "shapes": [
+                                {
+                                    "type": "points",
+                                    "frame": 1,
+                                    "occluded": False,
+                                    "outside": True,
+                                    "z_order": 0,
+                                    "rotation": 0,
+                                    "points": [74.14935096036425, 79.09960455479086],
+                                    "attributes": [],
+                                },
+                                {
+                                    "type": "points",
+                                    "frame": 7,
+                                    "occluded": False,
+                                    "outside": False,
+                                    "z_order": 0,
+                                    "rotation": 0,
+                                    "points": [74.14935096036425, 79.09960455479086],
+                                    "attributes": [],
+                                },
+                            ],
+                            "attributes": [],
+                        },
+                        {
+                            "label_id": 65,
+                            "frame": 0,
+                            "group": 0,
+                            "source": "manual",
+                            "shapes": [
+                                {
+                                    "type": "points",
+                                    "frame": 0,
+                                    "occluded": False,
+                                    "outside": False,
+                                    "z_order": 0,
+                                    "rotation": 0,
+                                    "points": [285.07319976630424, 353.51583641966175],
+                                    "attributes": [],
+                                }
+                            ],
+                            "attributes": [],
+                        },
+                    ],
+                }
+            ],
+        }
+        response = patch_method(
+            admin_user, f"tasks/{tid}/annotations", annotations, action="update"
+        )
+        assert response.status_code == HTTPStatus.OK
+
+        # check that we can export task
+        response = self._test_export_task(admin_user, tid, format="COCO Keypoints 1.0")
+        assert response.status == HTTPStatus.OK
+
+        # check that server saved track annotations correctly
+        response = get_method(admin_user, f"tasks/{tid}/annotations")
+        assert response.status_code == HTTPStatus.OK
+
+        annotations = response.json()
+        assert annotations["tracks"][0]["frame"] == 0
+        assert annotations["tracks"][0]["shapes"][0]["frame"] == 0
+        assert annotations["tracks"][0]["elements"][0]["shapes"][0]["frame"] == 0
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -518,23 +618,19 @@ class TestPostTaskData:
             "client_files": generate_image_files(7),
         }
 
-        task_id, _ = _test_create_task(
-            self._USERNAME, task_spec, task_data, content_type="multipart/form-data"
-        )
+        task_id, _ = create_task(self._USERNAME, task_spec, task_data)
 
         # check task size
         with make_api_client(self._USERNAME) as api_client:
             (task, _) = api_client.tasks_api.retrieve(task_id)
             assert task.size == 4
 
-    def test_can_create_task_with_sorting_method(self):
+    def test_can_create_task_with_sorting_method_natural(self):
         task_spec = {
             "name": f"test {self._USERNAME} to create a task with a custom sorting method",
             "labels": [
                 {
                     "name": "car",
-                    "color": "#ff00ff",
-                    "attributes": [],
                 }
             ],
         }
@@ -547,11 +643,7 @@ class TestPostTaskData:
             "sorting_method": "natural",
         }
 
-        # Besides testing that the sorting method is applied, this also checks for
-        # regressions of <https://github.com/opencv/cvat/issues/4962>.
-        task_id, _ = _test_create_task(
-            self._USERNAME, task_spec, task_data, content_type="multipart/form-data"
-        )
+        task_id, _ = create_task(self._USERNAME, task_spec, task_data)
 
         # check that the frames were sorted again
         with make_api_client(self._USERNAME) as api_client:
@@ -560,6 +652,48 @@ class TestPostTaskData:
             # generate_image_files produces files that are already naturally sorted
             for image_file, frame in zip(image_files, data_meta.frames):
                 assert image_file.name == frame.name
+
+    @pytest.mark.parametrize("data_source", ["client_files", "server_files"])
+    def test_can_create_task_with_sorting_method_predefined(self, data_source):
+        task_spec = {
+            "name": f"test {self._USERNAME} to create a task with a custom sorting method",
+            "labels": [
+                {
+                    "name": "car",
+                }
+            ],
+        }
+
+        if data_source == "client_files":
+            image_files = generate_image_files(15)
+
+            # shuffle to check for occasional sorting, e.g. in the DB
+            image_files = image_files[7:] + image_files[5:7] + image_files[:5]
+        elif data_source == "server_files":
+            # Files from the test file share
+            image_files = ["images/image_3.jpg", "images/image_1.jpg", "images/image_2.jpg"]
+        else:
+            assert False
+
+        task_data = {
+            data_source: image_files,
+            "image_quality": 70,
+            "sorting_method": "predefined",
+        }
+
+        (task_id, _) = create_task(self._USERNAME, task_spec, task_data)
+
+        # check that the frames were sorted again
+        with make_api_client(self._USERNAME) as api_client:
+            (data_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+
+            for image_file, frame in zip(image_files, data_meta.frames):
+                if isinstance(image_file, str):
+                    image_name = image_file
+                else:
+                    image_name = image_file.name
+
+                assert image_name == frame.name
 
     def test_can_get_annotations_from_new_task_with_skeletons(self):
         spec = {
@@ -589,9 +723,7 @@ class TestPostTaskData:
             "client_files": generate_image_files(3),
         }
 
-        task_id, _ = _test_create_task(
-            self._USERNAME, spec, task_data, content_type="multipart/form-data"
-        )
+        task_id, _ = create_task(self._USERNAME, spec, task_data)
 
         response = get_method(self._USERNAME, "labels", task_id=f"{task_id}")
         label_ids = {}
@@ -765,9 +897,8 @@ class TestPostTaskData:
             "server_files": cloud_storage_content,
         }
 
-        _test_create_task(
-            self._USERNAME, task_spec, data_spec, content_type="application/json", org=org
-        )
+        kwargs = {"org": org} if org else {}
+        create_task(self._USERNAME, task_spec, data_spec, **kwargs)
 
     @pytest.mark.with_external_services
     @pytest.mark.parametrize("cloud_storage_id", [2])
@@ -864,12 +995,10 @@ class TestPostTaskData:
         if server_files_exclude:
             data_spec["server_files_exclude"] = server_files_exclude
 
-        task_id, _ = _test_create_task(
-            self._USERNAME, task_spec, data_spec, content_type="application/json", org=org
-        )
+        task_id, _ = create_task(self._USERNAME, task_spec, data_spec, org=org)
 
         with make_api_client(self._USERNAME) as api_client:
-            (task, response) = api_client.tasks_api.retrieve(task_id, org=org)
+            (task, response) = api_client.tasks_api.retrieve(task_id)
             assert response.status == HTTPStatus.OK
             assert task.size == task_size
 
@@ -931,7 +1060,7 @@ class TestPostTaskData:
             assert False
 
         with pytest.raises(exceptions.ApiException) as capture:
-            _test_create_task(user, task_spec, data_spec, content_type="application/json")
+            create_task(user, task_spec, data_spec)
 
         assert capture.value.status == HTTPStatus.FORBIDDEN
 
@@ -958,7 +1087,6 @@ class TestPostTaskData:
             (None, "[e-z]*.jpeg", False, 0),
         ],
     )
-    @pytest.mark.parametrize("org", [""])
     def test_create_task_with_file_pattern(
         self,
         cloud_storage_id,
@@ -966,7 +1094,6 @@ class TestPostTaskData:
         filename_pattern,
         sub_dir,
         task_size,
-        org,
         cloud_storages,
         request,
     ):
@@ -1032,12 +1159,10 @@ class TestPostTaskData:
             data_spec["server_files"] = [f"test/sub/{manifest}" if sub_dir else manifest]
 
         if task_size:
-            task_id, _ = _test_create_task(
-                self._USERNAME, task_spec, data_spec, content_type="application/json", org=org
-            )
+            task_id, _ = create_task(self._USERNAME, task_spec, data_spec)
 
             with make_api_client(self._USERNAME) as api_client:
-                (task, response) = api_client.tasks_api.retrieve(task_id, org=org)
+                (task, response) = api_client.tasks_api.retrieve(task_id)
                 assert response.status == HTTPStatus.OK
                 assert task.size == task_size
         else:
@@ -1064,7 +1189,7 @@ class TestPostTaskData:
             "job_file_mapping": expected_segments,
         }
 
-        task_id, _ = _test_create_task(
+        task_id, _ = create_task(
             self._USERNAME, task_spec, data_spec, content_type="application/json"
         )
 
@@ -1092,10 +1217,10 @@ class TestPostTaskData:
             "name": "test cannot create task with same labels",
             "labels": [{"name": "l1"}, {"name": "l1"}],
         }
-        response = post_method(self._USERNAME, "/tasks", task_spec)
+        response = post_method(self._USERNAME, "tasks", task_spec)
         assert response.status_code == HTTPStatus.BAD_REQUEST
 
-        response = get_method(self._USERNAME, "/tasks")
+        response = get_method(self._USERNAME, "tasks")
         assert response.status_code == HTTPStatus.OK
 
     def test_cannot_create_task_with_same_skeleton_sublabels(self):
@@ -1105,10 +1230,10 @@ class TestPostTaskData:
                 {"name": "s1", "type": "skeleton", "sublabels": [{"name": "1"}, {"name": "1"}]}
             ],
         }
-        response = post_method(self._USERNAME, "/tasks", task_spec)
+        response = post_method(self._USERNAME, "tasks", task_spec)
         assert response.status_code == HTTPStatus.BAD_REQUEST
 
-        response = get_method(self._USERNAME, "/tasks")
+        response = get_method(self._USERNAME, "tasks")
         assert response.status_code == HTTPStatus.OK
 
 
@@ -1126,7 +1251,7 @@ class TestPatchTaskLabel:
         label = deepcopy([l for l in labels if l.get("task_id") == task["id"]][0])
         label_payload = {"id": label["id"], "deleted": True}
 
-        response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [label_payload]})
+        response = patch_method(admin_user, f'tasks/{task["id"]}', {"labels": [label_payload]})
         assert response.status_code == HTTPStatus.OK, response.content
         assert response.json()["labels"]["count"] == task["labels"]["count"] - 1
 
@@ -1146,7 +1271,7 @@ class TestPatchTaskLabel:
         task_labels.remove(label)
         label_payload = {"id": label["id"], "deleted": True}
 
-        response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [label_payload]})
+        response = patch_method(admin_user, f'tasks/{task["id"]}', {"labels": [label_payload]})
         assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == task["labels"]["count"] - 1
 
@@ -1158,7 +1283,7 @@ class TestPatchTaskLabel:
         task_labels = deepcopy([l for l in labels if l.get("task_id") == task["id"]])
         task_labels[0].update({"name": "new name"})
 
-        response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [task_labels[0]]})
+        response = patch_method(admin_user, f'tasks/{task["id"]}', {"labels": [task_labels[0]]})
         assert response.status_code == HTTPStatus.OK
 
         resulting_labels = self._get_task_labels(task["id"], admin_user)
@@ -1171,7 +1296,7 @@ class TestPatchTaskLabel:
 
         label_payload = {"id": task_labels[0]["id"], "name": task_labels[0]["name"]}
 
-        response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [label_payload]})
+        response = patch_method(admin_user, f'tasks/{task["id"]}', {"labels": [label_payload]})
         assert response.status_code == HTTPStatus.BAD_REQUEST
         assert "All label names must be unique" in response.text
 
@@ -1186,7 +1311,7 @@ class TestPatchTaskLabel:
             ][0]
         )
 
-        response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [new_label]})
+        response = patch_method(admin_user, f'tasks/{task["id"]}', {"labels": [new_label]})
         assert response.status_code == HTTPStatus.NOT_FOUND
         assert f"Not found label with id #{new_label['id']} to change" in response.text
 
@@ -1194,7 +1319,7 @@ class TestPatchTaskLabel:
         task = [t for t in tasks if t["project_id"] is None][0]
         new_label = {"name": "new name"}
 
-        response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [new_label]})
+        response = patch_method(admin_user, f'tasks/{task["id"]}', {"labels": [new_label]})
         assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == task["labels"]["count"] + 1
 
@@ -1220,9 +1345,8 @@ class TestPatchTaskLabel:
         new_label = {"name": "new name"}
         response = patch_method(
             user["username"],
-            f'/tasks/{task["id"]}',
+            f'tasks/{task["id"]}',
             {"labels": [new_label]},
-            org_id=task["organization"],
         )
         assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == task["labels"]["count"] + 1
@@ -1249,9 +1373,8 @@ class TestPatchTaskLabel:
         new_label = {"name": "new name"}
         response = patch_method(
             user["username"],
-            f'/tasks/{task["id"]}',
+            f'tasks/{task["id"]}',
             {"labels": [new_label]},
-            org_id=task["organization"],
         )
         assert response.status_code == HTTPStatus.FORBIDDEN
 
@@ -1274,9 +1397,8 @@ class TestPatchTaskLabel:
         new_label = {"name": "new name"}
         response = patch_method(
             user["username"],
-            f'/tasks/{task["id"]}',
+            f'tasks/{task["id"]}',
             {"labels": [new_label]},
-            org_id=task["organization"],
         )
         assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == task["labels"]["count"] + 1
@@ -1297,7 +1419,7 @@ class TestPatchTaskLabel:
             'data-element-id="1" data-node-id="1" data-label-name="597501"></circle>',
         }
 
-        response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [new_skeleton]})
+        response = patch_method(admin_user, f'tasks/{task["id"]}', {"labels": [new_skeleton]})
         assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == task["labels"]["count"] + 1
 
@@ -1309,11 +1431,11 @@ class TestWorkWithTask:
 
     @pytest.mark.with_external_services
     @pytest.mark.parametrize(
-        "cloud_storage_id, manifest, org",
-        [(1, "manifest.jsonl", "")],  # public bucket
+        "cloud_storage_id, manifest",
+        [(1, "manifest.jsonl")],  # public bucket
     )
     def test_work_with_task_containing_non_stable_cloud_storage_files(
-        self, cloud_storage_id, manifest, org, cloud_storages, request
+        self, cloud_storage_id, manifest, cloud_storages, request
     ):
         image_name = "image_case_65_1.png"
         cloud_storage_content = [image_name, manifest]
@@ -1330,9 +1452,7 @@ class TestWorkWithTask:
             "server_files": cloud_storage_content,
         }
 
-        task_id, _ = _test_create_task(
-            self._USERNAME, task_spec, data_spec, content_type="application/json", org=org
-        )
+        task_id, _ = create_task(self._USERNAME, task_spec, data_spec)
 
         # save image from the "public" bucket and remove it temporary
 
@@ -1409,7 +1529,7 @@ class TestGetTaskPreview:
         tasks = list(filter(lambda x: x["project_id"] == project_id and x["assignee"], tasks))
         assert len(tasks)
 
-        self._test_assigned_users_to_see_task_preview(tasks, users, is_task_staff, org=org["slug"])
+        self._test_assigned_users_to_see_task_preview(tasks, users, is_task_staff)
 
     @pytest.mark.parametrize("project_id, groups", [(1, "user")])
     def test_task_unassigned_cannot_see_task_preview(
@@ -1595,9 +1715,7 @@ class TestPatchTask:
             "use_cache": True,
             "server_files": ["images/image_1.jpg"],
         }
-        (task_id, _) = _test_create_task(
-            user, task_spec, data_spec, content_type="application/json"
-        )
+        (task_id, _) = create_task(user, task_spec, data_spec)
 
         updated_fields = {
             field: {
@@ -1634,3 +1752,110 @@ def test_can_report_correct_completed_jobs_count(tasks, jobs, admin_user):
 
         task, _ = api_client.tasks_api.retrieve(task["id"])
         assert task.jobs.completed == 1
+
+
+class TestImportTaskAnnotations:
+    def _make_client(self) -> Client:
+        return Client(BASE_URL, config=Config(status_check_period=0.01))
+
+    @pytest.fixture(autouse=True)
+    def setup(self, restore_db_per_function, tmp_path: Path, admin_user: str):
+        self.tmp_dir = tmp_path
+        self.client = self._make_client()
+        self.user = admin_user
+        self.format = "COCO 1.0"
+
+        with self.client:
+            self.client.login((self.user, USER_PASS))
+
+    def _check_annotations(self, task_id):
+        with make_api_client(self.user) as api_client:
+            (_, response) = api_client.tasks_api.retrieve_annotations(id=task_id)
+            assert response.status == HTTPStatus.OK
+            annotations = json.loads(response.data)["shapes"]
+            assert len(annotations) > 0
+
+    def _delete_annotations(self, task_id):
+        with make_api_client(self.user) as api_client:
+            (_, response) = api_client.tasks_api.destroy_annotations(id=task_id)
+            assert response.status == HTTPStatus.NO_CONTENT
+
+    @pytest.mark.timeout(64)
+    @pytest.mark.parametrize("successful_upload", [True, False])
+    def test_can_import_annotations_after_previous_unclear_import(
+        self, successful_upload: bool, tasks_with_shapes
+    ):
+        task_id = tasks_with_shapes[0]["id"]
+        self._check_annotations(task_id)
+
+        with NamedTemporaryFile() as f:
+            filename = self.tmp_dir / f"task_{task_id}_{Path(f.name).name}_coco.zip"
+
+        task = self.client.tasks.retrieve(task_id)
+        task.export_dataset(self.format, filename, include_images=False)
+
+        self._delete_annotations(task_id)
+
+        params = {"format": self.format, "filename": filename.name}
+        url = self.client.api_map.make_endpoint_url(
+            self.client.api_client.tasks_api.create_annotations_endpoint.path
+        ).format(id=task_id)
+        uploader = Uploader(self.client)
+
+        if successful_upload:
+            # define time required to upload file with annotations
+            start_time = time()
+            task.import_annotations(self.format, filename)
+            required_time = ceil(time() - start_time) * 2
+            self._delete_annotations(task_id)
+
+            response = uploader.upload_file(
+                url, filename, meta=params, query_params=params, logger=self.client.logger.debug
+            )
+            rq_id = json.loads(response.data)["rq_id"]
+            assert rq_id
+        else:
+            required_time = 54
+            uploader._tus_start_upload(url, query_params=params)
+            uploader._upload_file_data_with_tus(
+                url, filename, meta=params, logger=self.client.logger.debug
+            )
+
+        sleep(required_time)
+        if successful_upload:
+            self._check_annotations(task_id)
+            self._delete_annotations(task_id)
+        task.import_annotations(self.format, filename)
+        self._check_annotations(task_id)
+
+    @pytest.mark.timeout(64)
+    def test_check_import_cache_after_previous_interrupted_upload(self, tasks_with_shapes, request):
+        task_id = tasks_with_shapes[0]["id"]
+        with NamedTemporaryFile() as f:
+            filename = self.tmp_dir / f"task_{task_id}_{Path(f.name).name}_coco.zip"
+        task = self.client.tasks.retrieve(task_id)
+        task.export_dataset(self.format, filename, include_images=False)
+
+        params = {"format": self.format, "filename": filename.name}
+        url = self.client.api_map.make_endpoint_url(
+            self.client.api_client.tasks_api.create_annotations_endpoint.path
+        ).format(id=task_id)
+
+        uploader = Uploader(self.client)
+        uploader._tus_start_upload(url, query_params=params)
+        uploader._upload_file_data_with_tus(
+            url, filename, meta=params, logger=self.client.logger.debug
+        )
+        number_of_files = 1
+        sleep(30)  # wait when the cleaning job from rq worker will be started
+        command = ["/bin/bash", "-c", f"ls data/tasks/{task_id}/tmp | wc -l"]
+        platform = request.config.getoption("--platform")
+        assert platform in ("kube", "local")
+        func = docker_exec_cvat if platform == "local" else kube_exec_cvat
+        for _ in range(12):
+            sleep(2)
+            result, _ = func(command)
+            number_of_files = int(result)
+            if not number_of_files:
+                break
+        assert not number_of_files

@@ -22,11 +22,9 @@ from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine import models
 from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials, Status
 from cvat.apps.engine.log import slogger
-from cvat.apps.engine.utils import parse_specific_attributes
+from cvat.apps.engine.utils import parse_specific_attributes, build_field_filter_params, get_list_view_name, reverse
 
 from drf_spectacular.utils import OpenApiExample, extend_schema_field, extend_schema_serializer
-
-from cvat.apps.engine.utils import build_field_filter_params, get_list_view_name, reverse
 
 
 class WriteOnceMixin:
@@ -550,6 +548,7 @@ class JobReadSerializer(serializers.ModelSerializer):
     assignee = BasicUserSerializer(allow_null=True, read_only=True)
     dimension = serializers.CharField(max_length=2, source='segment.task.dimension', read_only=True)
     data_chunk_size = serializers.ReadOnlyField(source='segment.task.data.chunk_size')
+    organization = serializers.ReadOnlyField(source='segment.task.organization.id', allow_null=True)
     data_compressed_chunk_type = serializers.ReadOnlyField(source='segment.task.data.compressed_chunk_type')
     mode = serializers.ReadOnlyField(source='segment.task.mode')
     bug_tracker = serializers.CharField(max_length=2000, source='get_bug_tracker',
@@ -561,7 +560,7 @@ class JobReadSerializer(serializers.ModelSerializer):
         model = models.Job
         fields = ('url', 'id', 'task_id', 'project_id', 'assignee', 'guide_id',
             'dimension', 'bug_tracker', 'status', 'stage', 'state', 'mode',
-            'start_frame', 'stop_frame', 'data_chunk_size', 'data_compressed_chunk_type',
+            'start_frame', 'stop_frame', 'data_chunk_size', 'organization', 'data_compressed_chunk_type',
             'updated_date', 'issues', 'labels'
         )
         read_only_fields = fields
@@ -667,6 +666,9 @@ class RqStatusSerializer(serializers.Serializer):
     message = serializers.CharField(allow_blank=True, default="")
     progress = serializers.FloatField(max_value=100, default=0)
 
+class RqIdSerializer(serializers.Serializer):
+    rq_id = serializers.CharField()
+
 
 class JobFiles(serializers.ListField):
     """
@@ -762,12 +764,33 @@ class DataSerializer(serializers.ModelSerializer):
         """))
     job_file_mapping = JobFileMapping(required=False, write_only=True)
 
+    upload_file_order = serializers.ListField(
+        child=serializers.CharField(max_length=1024),
+        default=list, allow_empty=True, write_only=True,
+        help_text=textwrap.dedent("""\
+            Allows to specify file order for client_file uploads.
+            Only valid with the "{}" sorting method selected.
+
+            To state that the input files are sent in the correct order,
+            pass an empty list.
+
+            If you want to send files in an arbitrary order
+            and reorder them afterwards on the server,
+            pass the list of file names in the required order.
+        """.format(models.SortingMethod.PREDEFINED))
+    )
+
     class Meta:
         model = models.Data
-        fields = ('chunk_size', 'size', 'image_quality', 'start_frame', 'stop_frame', 'frame_filter',
-            'compressed_chunk_type', 'original_chunk_type', 'client_files', 'server_files', 'server_files_exclude','remote_files', 'use_zip_chunks',
-            'cloud_storage_id', 'use_cache', 'copy_data', 'storage_method', 'storage', 'sorting_method', 'filename_pattern',
-            'job_file_mapping')
+        fields = (
+            'chunk_size', 'size', 'image_quality', 'start_frame', 'stop_frame', 'frame_filter',
+            'compressed_chunk_type', 'original_chunk_type',
+            'client_files', 'server_files', 'remote_files',
+            'use_zip_chunks', 'server_files_exclude',
+            'cloud_storage_id', 'use_cache', 'copy_data', 'storage_method',
+            'storage', 'sorting_method', 'filename_pattern',
+            'job_file_mapping', 'upload_file_order',
+        )
         extra_kwargs = {
             'chunk_size': { 'help_text': "Maximum number of frames per chunk" },
             'size': { 'help_text': "The number of frames" },
@@ -857,8 +880,9 @@ class DataSerializer(serializers.ModelSerializer):
         server_files = validated_data.pop('server_files')
         remote_files = validated_data.pop('remote_files')
 
-        validated_data.pop('job_file_mapping', None) # optional
-        validated_data.pop('server_files_exclude', None) # optional
+        validated_data.pop('job_file_mapping', None) # optional, not present in Data
+        validated_data.pop('upload_file_order', None) # optional, not present in Data
+        validated_data.pop('server_files_exclude', None) # optional, not present in Data
 
         for extra_key in { 'use_zip_chunks', 'use_cache', 'copy_data' }:
             validated_data.pop(extra_key)

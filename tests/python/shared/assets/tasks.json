@@ -551,7 +551,7 @@
         "url": "http://localhost:8080/api/jobs?task_id=8"
       },
       "labels": {
-        "count": 2,
+        "count": 3,
         "url": "http://localhost:8080/api/labels?task_id=8"
       },
       "mode": "annotation",
@@ -572,7 +572,7 @@
       "status": "annotation",
       "subset": "",
       "target_storage": null,
-      "updated_date": "2022-03-05T08:52:34.908000Z",
+      "updated_date": "2023-05-02T09:28:57.638000Z",
       "url": "http://localhost:8080/api/tasks/8"
     },
     {

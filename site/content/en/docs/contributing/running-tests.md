@@ -40,7 +40,7 @@ yarn run cypress:run:chrome:canvas3d
 
 **Initial steps**
 
-1. Follow [this guide](/site/content/en/docs/api_sdk/sdk/developer-guide/) to prepare
+1. Follow [this guide](/docs/api_sdk/sdk/developer-guide/) to prepare
    `cvat-sdk` and `cvat-cli` source code
 1. Install all necessary requirements before running REST API tests:
    ```
@@ -81,7 +81,9 @@ which should be enough to fix errors arising in REST API tests.
 
 To debug a server deployed with Docker, you need to do the following:
 
-Rebuild the images and start the test containers:
+- Adjust env variables in the `docker-compose.dev.yml` file for your test case
+
+- Rebuild the images and start the test containers:
 
 ```bash
 CVAT_DEBUG_ENABLED=yes pytest --rebuild --start-services tests/python

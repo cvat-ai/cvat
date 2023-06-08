@@ -790,13 +790,13 @@ class _DatasetManifestStructureValidator(_BaseManifestValidator):
         #     raise InvalidManifestError('Incorrect height field')
 
 def is_manifest(full_manifest_path):
-    return _is_video_manifest(full_manifest_path) or \
-        _is_dataset_manifest(full_manifest_path)
+    return is_video_manifest(full_manifest_path) or \
+        is_dataset_manifest(full_manifest_path)
 
-def _is_video_manifest(full_manifest_path):
+def is_video_manifest(full_manifest_path):
     validator = _VideoManifestStructureValidator(full_manifest_path)
     return validator.validate()
 
-def _is_dataset_manifest(full_manifest_path):
+def is_dataset_manifest(full_manifest_path):
     validator = _DatasetManifestStructureValidator(full_manifest_path)
     return validator.validate()

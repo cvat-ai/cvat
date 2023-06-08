@@ -14,11 +14,13 @@ from typing import Any, Dict, List, Optional, Sequence, Union, cast
 from attrs import define, field
 from django.conf import settings
 from django.db.models import Q
-from rest_framework.exceptions import ValidationError, PermissionDenied
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.permissions import BasePermission
 
+from cvat.apps.engine.models import (
+    CloudStorage, Issue, Job, Label, Project, Task, AnnotationGuide
+)
 from cvat.apps.organizations.models import Membership, Organization
-from cvat.apps.engine.models import CloudStorage, Label, Project, Task, Job, Issue, AnnotationGuide
 from cvat.apps.webhooks.models import WebhookTypeChoice
 from cvat.utils.http import make_requests_session
 
@@ -50,6 +52,59 @@ class PermissionResult:
     allow: bool
     reasons: List[str] = field(factory=list)
 
+def get_organization(request, obj):
+    # Try to get organization from an object otherwise, return the organization that is specified in query parameters
+    if obj is not None and isinstance(obj, Organization):
+        return obj
+
+    if obj:
+        try:
+            organization_id = getattr(obj, 'organization_id')
+        except AttributeError as exc:
+            # Skip initialization of organization for those objects that don't related with organization
+            view = request.parser_context.get('view')
+            if view and view.basename in ('user', 'function', 'request'):
+                return None
+
+            raise exc
+
+        try:
+            return Organization.objects.get(id=organization_id)
+        except Organization.DoesNotExist:
+            return None
+
+
+
+    return request.iam_context['organization']
+
+def get_membership(request, organization):
+    if organization is None:
+        return None
+
+    return Membership.objects.filter(
+        organization=organization,
+        user=request.user,
+        is_active=True
+    ).first()
+
+def get_iam_context(request, obj):
+    organization = get_organization(request, obj)
+    membership = get_membership(request, organization)
+
+    if organization and not request.user.is_superuser and membership is None:
+        raise PermissionDenied({'message': 'You should be an active member in the organization'})
+
+    return {
+        'user_id': request.user.id,
+        'group_name': request.iam_context['privilege'],
+        'org_id': getattr(organization, 'id', None),
+        'org_slug': getattr(organization, 'slug', None),
+        'org_owner_id': getattr(organization.owner, 'id', None)
+            if organization else None,
+        'org_role': getattr(membership, 'role', None),
+    }
+
+
 class OpenPolicyAgentPermission(metaclass=ABCMeta):
     url: str
     user_id: int
@@ -62,34 +117,21 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
 
     @classmethod
     @abstractmethod
-    def create(cls, request, view, obj) -> Sequence[OpenPolicyAgentPermission]:
+    def create(cls, request, view, obj, iam_context) -> Sequence[OpenPolicyAgentPermission]:
         ...
 
     @classmethod
-    def create_base_perm(cls, request, view, scope, obj=None, **kwargs):
+    def create_base_perm(cls, request, view, scope, iam_context, obj=None, **kwargs):
         return cls(
             scope=scope,
             obj=obj,
-            **cls.unpack_context(request), **kwargs)
+            **iam_context, **kwargs)
 
     @classmethod
-    def create_scope_list(cls, request):
-        return cls(**cls.unpack_context(request), scope='list')
-
-    @staticmethod
-    def unpack_context(request):
-        privilege = request.iam_context['privilege']
-        organization = request.iam_context['organization']
-        membership = request.iam_context['membership']
-
-        return {
-            'user_id': request.user.id,
-            'group_name': getattr(privilege, 'name', None),
-            'org_id': getattr(organization, 'id', None),
-            'org_owner_id': getattr(organization.owner, 'id', None)
-                if organization else None,
-            'org_role': getattr(membership, 'role', None),
-        }
+    def create_scope_list(cls, request, iam_context=None):
+        if iam_context:
+            return cls(**iam_context, scope='list')
+        return cls(**get_iam_context(request, None), scope='list')
 
     def __init__(self, **kwargs):
         self.obj = None
@@ -183,11 +225,11 @@ class OrganizationPermission(OpenPolicyAgentPermission):
         VIEW = 'view'
 
     @classmethod
-    def create(cls, request, view, obj):
+    def create(cls, request, view, obj, iam_context):
         permissions = []
         if view.basename == 'organization':
             for scope in cls.get_scopes(request, view, obj):
-                self = cls.create_base_perm(request, view, scope, obj)
+                self = cls.create_base_perm(request, view, scope, iam_context, obj)
                 permissions.append(self)
 
         return permissions
@@ -243,11 +285,11 @@ class InvitationPermission(OpenPolicyAgentPermission):
         VIEW = 'view'
 
     @classmethod
-    def create(cls, request, view, obj):
+    def create(cls, request, view, obj, iam_context):
         permissions = []
         if view.basename == 'invitation':
             for scope in cls.get_scopes(request, view, obj):
-                self = cls.create_base_perm(request, view, scope, obj,
+                self = cls.create_base_perm(request, view, scope, iam_context, obj,
                     role=request.data.get('role'))
                 permissions.append(self)
 
@@ -304,7 +346,7 @@ class MembershipPermission(OpenPolicyAgentPermission):
         DELETE = 'delete'
 
     @classmethod
-    def create(cls, request, view, obj):
+    def create(cls, request, view, obj, iam_context):
         permissions = []
         if view.basename == 'membership':
             for scope in cls.get_scopes(request, view, obj):
@@ -312,7 +354,7 @@ class MembershipPermission(OpenPolicyAgentPermission):
                 if scope == 'change:role':
                     params['role'] = request.data.get('role')
 
-                self = cls.create_base_perm(request, view, scope, obj, **params)
+                self = cls.create_base_perm(request, view, scope, iam_context, obj, **params)
                 permissions.append(self)
 
         return permissions
@@ -358,11 +400,11 @@ class ServerPermission(OpenPolicyAgentPermission):
         LIST_CONTENT = 'list:content'
 
     @classmethod
-    def create(cls, request, view, obj):
+    def create(cls, request, view, obj, iam_context):
         permissions = []
         if view.basename == 'server':
             for scope in cls.get_scopes(request, view, obj):
-                self = cls.create_base_perm(request, view, scope, obj)
+                self = cls.create_base_perm(request, view, scope, iam_context, obj)
                 permissions.append(self)
 
         return permissions
@@ -390,11 +432,11 @@ class EventsPermission(OpenPolicyAgentPermission):
         DUMP_EVENTS = 'dump:events'
 
     @classmethod
-    def create(cls, request, view, obj):
+    def create(cls, request, view, obj, iam_context):
         permissions = []
         if view.basename == 'events':
             for scope in cls.get_scopes(request, view, obj):
-                self = cls.create_base_perm(request, view, scope, obj)
+                self = cls.create_base_perm(request, view, scope, iam_context, obj)
                 permissions.append(self)
 
         return permissions
@@ -434,11 +476,11 @@ class LogViewerPermission(OpenPolicyAgentPermission):
         VIEW = 'view'
 
     @classmethod
-    def create(cls, request, view, obj):
+    def create(cls, request, view, obj, iam_context):
         permissions = []
         if view.basename == 'analytics':
             for scope in cls.get_scopes(request, view, obj):
-                self = cls.create_base_perm(request, view, scope, obj)
+                self = cls.create_base_perm(request, view, scope, iam_context, obj)
                 permissions.append(self)
 
         return permissions
@@ -467,11 +509,11 @@ class UserPermission(OpenPolicyAgentPermission):
         DELETE = 'delete'
 
     @classmethod
-    def create(cls, request, view, obj):
+    def create(cls, request, view, obj, iam_context):
         permissions = []
         if view.basename == 'user':
             for scope in cls.get_scopes(request, view, obj):
-                self = cls.create_base_perm(request, view, scope, obj)
+                self = cls.create_base_perm(request, view, scope, iam_context, obj)
                 permissions.append(self)
 
         return permissions
@@ -492,9 +534,9 @@ class UserPermission(OpenPolicyAgentPermission):
         }.get(view.action)]
 
     @classmethod
-    def create_scope_view(cls, request, user_id):
+    def create_scope_view(cls, iam_context, user_id):
         obj = namedtuple('User', ['id'])(id=int(user_id))
-        return cls(**cls.unpack_context(request), scope=__class__.Scopes.VIEW, obj=obj)
+        return cls(**iam_context, scope=__class__.Scopes.VIEW, obj=obj)
 
     def get_resource(self):
         data = None
@@ -527,19 +569,19 @@ class LambdaPermission(OpenPolicyAgentPermission):
         LIST_OFFLINE = 'list:offline'
 
     @classmethod
-    def create(cls, request, view, obj):
+    def create(cls, request, view, obj, iam_context):
         permissions = []
         if view.basename == 'function' or view.basename == 'request':
             scopes = cls.get_scopes(request, view, obj)
             for scope in scopes:
-                self = cls.create_base_perm(request, view, scope, obj)
+                self = cls.create_base_perm(request, view, scope, iam_context, obj)
                 permissions.append(self)
 
             if job_id := request.data.get('job'):
-                perm = JobPermission.create_scope_view_data(request, job_id)
+                perm = JobPermission.create_scope_view_data(iam_context, job_id)
                 permissions.append(perm)
             elif task_id := request.data.get('task'):
-                perm = TaskPermission.create_scope_view_data(request, task_id)
+                perm = TaskPermission.create_scope_view_data(iam_context, task_id)
                 permissions.append(perm)
 
         return permissions
@@ -574,23 +616,26 @@ class CloudStoragePermission(OpenPolicyAgentPermission):
         DELETE = 'delete'
 
     @classmethod
-    def create(cls, request, view, obj):
+    def create(cls, request, view, obj, iam_context):
         permissions = []
         if view.basename == 'cloudstorage':
             for scope in cls.get_scopes(request, view, obj):
-                self = cls.create_base_perm(request, view, scope, obj)
+                self = cls.create_base_perm(request, view, scope, iam_context, obj)
                 permissions.append(self)
 
         return permissions
 
     @classmethod
-    def create_scope_view(cls, request, storage_id):
+    def create_scope_view(cls, iam_context, storage_id, request=None):
         try:
             obj = CloudStorage.objects.get(id=storage_id)
         except CloudStorage.DoesNotExist as ex:
             raise ValidationError(str(ex))
 
-        return cls(**cls.unpack_context(request), obj=obj, scope=__class__.Scopes.VIEW)
+        if not iam_context and request:
+            iam_context = get_iam_context(request, obj)
+
+        return cls(**iam_context, obj=obj, scope=__class__.Scopes.VIEW)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -650,26 +695,26 @@ class ProjectPermission(OpenPolicyAgentPermission):
         IMPORT_BACKUP = 'import:backup'
 
     @classmethod
-    def create(cls, request, view, obj):
+    def create(cls, request, view, obj, iam_context):
         permissions = []
         if view.basename == 'project':
             assignee_id = request.data.get('assignee_id') or request.data.get('assignee')
             for scope in cls.get_scopes(request, view, obj):
-                self = cls.create_base_perm(request, view, scope, obj,
+                self = cls.create_base_perm(request, view, scope, iam_context, obj,
                     assignee_id=assignee_id)
                 permissions.append(self)
 
             if view.action == 'tasks':
-                perm = TaskPermission.create_scope_list(request)
+                perm = TaskPermission.create_scope_list(request, iam_context)
                 permissions.append(perm)
 
             owner = request.data.get('owner_id') or request.data.get('owner')
             if owner:
-                perm = UserPermission.create_scope_view(request, owner)
+                perm = UserPermission.create_scope_view(iam_context, owner)
                 permissions.append(perm)
 
             if assignee_id:
-                perm = UserPermission.create_scope_view(request, assignee_id)
+                perm = UserPermission.create_scope_view(iam_context, assignee_id)
                 permissions.append(perm)
 
             for field_source, field in [
@@ -683,7 +728,7 @@ class ProjectPermission(OpenPolicyAgentPermission):
                 field_path = field.split('.')
                 if cloud_storage_id := _get_key(field_source, field_path):
                     permissions.append(CloudStoragePermission.create_scope_view(
-                        request=request, storage_id=cloud_storage_id))
+                        iam_context, storage_id=cloud_storage_id))
 
         return permissions
 
@@ -735,12 +780,12 @@ class ProjectPermission(OpenPolicyAgentPermission):
         return scopes
 
     @classmethod
-    def create_scope_view(cls, request, project_id):
+    def create_scope_view(cls, iam_context, project_id):
         try:
             obj = Project.objects.get(id=project_id)
         except Project.DoesNotExist as ex:
             raise ValidationError(str(ex))
-        return cls(**cls.unpack_context(request), obj=obj, scope=__class__.Scopes.VIEW)
+        return cls(**iam_context, obj=obj, scope=__class__.Scopes.VIEW)
 
     @classmethod
     def create_scope_create(cls, request, org_id):
@@ -753,11 +798,7 @@ class ProjectPermission(OpenPolicyAgentPermission):
             except Organization.DoesNotExist as ex:
                 raise ValidationError(str(ex))
 
-            try:
-                membership = Membership.objects.filter(
-                    organization=organization, user=request.user).first()
-            except Membership.DoesNotExist:
-                membership = None
+            membership = get_membership(request, organization)
 
         return cls(
             user_id=request.user.id,
@@ -820,7 +861,7 @@ class TaskPermission(OpenPolicyAgentPermission):
         EXPORT_BACKUP = 'export:backup'
 
     @classmethod
-    def create(cls, request, view, obj):
+    def create(cls, request, view, obj, iam_context):
         permissions = []
         if view.basename == 'task':
             project_id = request.data.get('project_id') or request.data.get('project')
@@ -835,27 +876,28 @@ class TaskPermission(OpenPolicyAgentPermission):
                     if obj is not None and obj.project is not None:
                         raise ValidationError('Cannot change the organization for '
                             'a task inside a project')
+                    # FIX IT: TaskPermission doesn't have create_scope_create method
                     permissions.append(TaskPermission.create_scope_create(request, org_id))
                 elif scope == __class__.Scopes.UPDATE_OWNER:
                     params['owner_id'] = owner
 
-                self = cls.create_base_perm(request, view, scope, obj, **params)
+                self = cls.create_base_perm(request, view, scope, iam_context, obj, **params)
                 permissions.append(self)
 
             if view.action == 'jobs':
-                perm = JobPermission.create_scope_list(request)
+                perm = JobPermission.create_scope_list(request, iam_context)
                 permissions.append(perm)
 
             if owner:
-                perm = UserPermission.create_scope_view(request, owner)
+                perm = UserPermission.create_scope_view(iam_context, owner)
                 permissions.append(perm)
 
             if assignee_id:
-                perm = UserPermission.create_scope_view(request, assignee_id)
+                perm = UserPermission.create_scope_view(iam_context, assignee_id)
                 permissions.append(perm)
 
             if project_id:
-                perm = ProjectPermission.create_scope_view(request, project_id)
+                perm = ProjectPermission.create_scope_view(iam_context, project_id)
                 permissions.append(perm)
 
             for field_source, field in [
@@ -872,7 +914,7 @@ class TaskPermission(OpenPolicyAgentPermission):
                 field_path = field.split('.')
                 if cloud_storage_id := _get_key(field_source, field_path):
                     permissions.append(CloudStoragePermission.create_scope_view(
-                        request=request, storage_id=cloud_storage_id))
+                        iam_context, storage_id=cloud_storage_id))
 
         return permissions
 
@@ -966,12 +1008,12 @@ class TaskPermission(OpenPolicyAgentPermission):
         return scopes
 
     @classmethod
-    def create_scope_view_data(cls, request, task_id):
+    def create_scope_view_data(cls, iam_context, task_id):
         try:
             obj = Task.objects.get(id=task_id)
         except Task.DoesNotExist as ex:
             raise ValidationError(str(ex))
-        return cls(**cls.unpack_context(request), obj=obj, scope=__class__.Scopes.VIEW_DATA)
+        return cls(**iam_context, obj=obj, scope=__class__.Scopes.VIEW_DATA)
 
     def get_resource(self):
         data = None
@@ -1035,22 +1077,22 @@ class WebhookPermission(OpenPolicyAgentPermission):
         VIEW = 'view'
 
     @classmethod
-    def create(cls, request, view, obj):
+    def create(cls, request, view, obj, iam_context):
         permissions = []
         if view.basename == 'webhook':
             project_id = request.data.get('project_id')
             for scope in cls.get_scopes(request, view, obj):
-                self = cls.create_base_perm(request, view, scope, obj,
+                self = cls.create_base_perm(request, view, scope, iam_context, obj,
                     project_id=project_id)
                 permissions.append(self)
 
             owner = request.data.get('owner_id') or request.data.get('owner')
             if owner:
-                perm = UserPermission.create_scope_view(request, owner)
+                perm = UserPermission.create_scope_view(iam_context, owner)
                 permissions.append(perm)
 
             if project_id:
-                perm = ProjectPermission.create_scope_view(request, project_id)
+                perm = ProjectPermission.create_scope_view(iam_context, project_id)
                 permissions.append(perm)
 
         return permissions
@@ -1151,20 +1193,20 @@ class JobPermission(OpenPolicyAgentPermission):
         UPDATE_METADATA = 'update:metadata'
 
     @classmethod
-    def create(cls, request, view, obj):
+    def create(cls, request, view, obj, iam_context):
         permissions = []
         if view.basename == 'job':
             for scope in cls.get_scopes(request, view, obj):
-                self = cls.create_base_perm(request, view, scope, obj)
+                self = cls.create_base_perm(request, view, scope, iam_context, obj)
                 permissions.append(self)
 
             if view.action == 'issues':
-                perm = IssuePermission.create_scope_list(request)
+                perm = IssuePermission.create_scope_list(request, iam_context)
                 permissions.append(perm)
 
             assignee_id = request.data.get('assignee')
             if assignee_id:
-                perm = UserPermission.create_scope_view(request, assignee_id)
+                perm = UserPermission.create_scope_view(iam_context, assignee_id)
                 permissions.append(perm)
 
             for field_source, field in [
@@ -1174,17 +1216,17 @@ class JobPermission(OpenPolicyAgentPermission):
                 field_path = field.split('.')
                 if cloud_storage_id := _get_key(field_source, field_path):
                     permissions.append(CloudStoragePermission.create_scope_view(
-                        request=request, storage_id=cloud_storage_id))
+                        iam_context, storage_id=cloud_storage_id))
 
         return permissions
 
     @classmethod
-    def create_scope_view_data(cls, request, job_id):
+    def create_scope_view_data(cls, iam_context, job_id):
         try:
             obj = Job.objects.get(id=job_id)
         except Job.DoesNotExist as ex:
             raise ValidationError(str(ex))
-        return cls(**cls.unpack_context(request), obj=obj, scope='view:data')
+        return cls(**iam_context, obj=obj, scope='view:data')
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -1287,11 +1329,11 @@ class CommentPermission(OpenPolicyAgentPermission):
         VIEW = 'view'
 
     @classmethod
-    def create(cls, request, view, obj):
+    def create(cls, request, view, obj, iam_context):
         permissions = []
         if view.basename == 'comment':
             for scope in cls.get_scopes(request, view, obj):
-                self = cls.create_base_perm(request, view, scope, obj,
+                self = cls.create_base_perm(request, view, scope, iam_context, obj,
                     issue_id=request.data.get('issue'))
                 permissions.append(self)
 
@@ -1372,18 +1414,18 @@ class IssuePermission(OpenPolicyAgentPermission):
         VIEW = 'view'
 
     @classmethod
-    def create(cls, request, view, obj):
+    def create(cls, request, view, obj, iam_context):
         permissions = []
         if view.basename == 'issue':
             assignee_id = request.data.get('assignee')
             for scope in cls.get_scopes(request, view, obj):
-                self = cls.create_base_perm(request, view, scope, obj,
+                self = cls.create_base_perm(request, view, scope, iam_context, obj,
                     job_id=request.data.get('job'),
                     assignee_id=assignee_id)
                 permissions.append(self)
 
             if assignee_id:
-                perm = UserPermission.create_scope_view(request, assignee_id)
+                perm = UserPermission.create_scope_view(iam_context, assignee_id)
                 permissions.append(perm)
 
         return permissions
@@ -1464,7 +1506,7 @@ class LabelPermission(OpenPolicyAgentPermission):
         VIEW = 'view'
 
     @classmethod
-    def create(cls, request, view, obj):
+    def create(cls, request, view, obj, iam_context):
         Scopes = __class__.Scopes
 
         permissions = []
@@ -1483,7 +1525,7 @@ class LabelPermission(OpenPolicyAgentPermission):
                             owning_perm_scope = ProjectPermission.Scopes.UPDATE_DESC
 
                         owning_perm = ProjectPermission.create_base_perm(
-                            request, view, scope=owning_perm_scope, obj=obj.project,
+                            request, view, owning_perm_scope, iam_context, obj=obj.project
                         )
                     else:
                         if scope == Scopes.VIEW:
@@ -1492,25 +1534,25 @@ class LabelPermission(OpenPolicyAgentPermission):
                             owning_perm_scope = TaskPermission.Scopes.UPDATE_DESC
 
                         owning_perm = TaskPermission.create_base_perm(
-                            request, view, scope=owning_perm_scope, obj=obj.task,
+                            request, view, owning_perm_scope, iam_context, obj=obj.task,
                         )
 
                     # This component doesn't define its own rules for these cases
                     permissions.append(owning_perm)
                 elif scope == Scopes.LIST and isinstance(obj, Job):
                     permissions.append(JobPermission.create_base_perm(
-                        request, view, scope=JobPermission.Scopes.VIEW, obj=obj,
+                        request, view, JobPermission.Scopes.VIEW, iam_context, obj=obj,
                     ))
                 elif scope == Scopes.LIST and isinstance(obj, Task):
                     permissions.append(TaskPermission.create_base_perm(
-                        request, view, scope=TaskPermission.Scopes.VIEW, obj=obj,
+                        request, view, TaskPermission.Scopes.VIEW, iam_context, obj=obj,
                     ))
                 elif scope == Scopes.LIST and isinstance(obj, Project):
                     permissions.append(ProjectPermission.create_base_perm(
-                        request, view, scope=ProjectPermission.Scopes.VIEW, obj=obj,
+                        request, view, ProjectPermission.Scopes.VIEW, iam_context, obj=obj,
                     ))
                 else:
-                    permissions.append(cls.create_base_perm(request, view, scope, obj))
+                    permissions.append(cls.create_base_perm(request, view, scope, iam_context, obj))
 
         return permissions
 
@@ -1703,6 +1745,8 @@ class PolicyEnforcer(BasePermission):
     def check_permission(self, request, view, obj):
         permissions: List[OpenPolicyAgentPermission] = []
 
+        iam_context = get_iam_context(request, obj)
+
         # DRF can send OPTIONS request. Internally it will try to get
         # information about serializers for PUT and POST requests (clone
         # request and replace the http method). To avoid handling
@@ -1710,7 +1754,7 @@ class PolicyEnforcer(BasePermission):
         # the condition below is enough.
         if not self.is_metadata_request(request, view):
             for perm in OpenPolicyAgentPermission.__subclasses__():
-                permissions.extend(perm.create(request, view, obj))
+                permissions.extend(perm.create(request, view, obj, iam_context))
 
         allow = True
         for perm in permissions:
@@ -1732,18 +1776,3 @@ class PolicyEnforcer(BasePermission):
     def is_metadata_request(request, view):
         return request.method == 'OPTIONS' \
             or (request.method == 'POST' and view.action == 'metadata' and len(request.data) == 0)
-
-class IsMemberInOrganization(BasePermission):
-    message = 'You should be an active member in the organization.'
-
-    # pylint: disable=no-self-use
-    def has_permission(self, request, view):
-        user = request.user
-        organization = request.iam_context['organization']
-        membership = request.iam_context['membership']
-
-        if organization and not user.is_superuser:
-            return membership is not None
-
-        return True
-

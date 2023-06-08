@@ -265,11 +265,6 @@ class Data(models.Model):
         os.makedirs(self.get_original_cache_dirname())
         os.makedirs(self.get_upload_dirname())
 
-    def get_uploaded_files(self):
-        upload_dir = self.get_upload_dirname()
-        uploaded_files = [os.path.join(upload_dir, file) for file in os.listdir(upload_dir) if os.path.isfile(os.path.join(upload_dir, file))]
-        represented_files = [{'file':f} for f in uploaded_files]
-        return represented_files
 
 class Video(models.Model):
     data = models.OneToOneField(Data, on_delete=models.CASCADE, related_name="video", null=True)
@@ -425,6 +420,10 @@ class ClientFile(models.Model):
         default_permissions = ()
         unique_together = ("data", "file")
 
+        # Some DBs can shuffle the rows. Here we restore the insertion order.
+        # https://github.com/opencv/cvat/pull/5083#discussion_r1038032715
+        ordering = ('id', )
+
 # For server files on the mounted share
 class ServerFile(models.Model):
     data = models.ForeignKey(Data, on_delete=models.CASCADE, null=True, related_name='server_files')
@@ -432,6 +431,11 @@ class ServerFile(models.Model):
 
     class Meta:
         default_permissions = ()
+        unique_together = ("data", "file")
+
+        # Some DBs can shuffle the rows. Here we restore the insertion order.
+        # https://github.com/opencv/cvat/pull/5083#discussion_r1038032715
+        ordering = ('id', )
 
 # For URLs
 class RemoteFile(models.Model):
@@ -440,6 +444,11 @@ class RemoteFile(models.Model):
 
     class Meta:
         default_permissions = ()
+        unique_together = ("data", "file")
+
+        # Some DBs can shuffle the rows. Here we restore the insertion order.
+        # https://github.com/opencv/cvat/pull/5083#discussion_r1038032715
+        ordering = ('id', )
 
 
 class RelatedFile(models.Model):
@@ -451,6 +460,10 @@ class RelatedFile(models.Model):
     class Meta:
         default_permissions = ()
         unique_together = ("data", "path")
+
+        # Some DBs can shuffle the rows. Here we restore the insertion order.
+        # https://github.com/opencv/cvat/pull/5083#discussion_r1038032715
+        ordering = ('id', )
 
 class Segment(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE)
@@ -503,7 +516,8 @@ class Job(models.Model):
         task = self.segment.task
         return task.id if task else None
 
-    def get_organization_id(self):
+    @property
+    def organization_id(self):
         return self.segment.task.organization_id
 
     def get_organization_slug(self):
@@ -552,11 +566,12 @@ class Label(models.Model):
         except IntegrityError:
             raise InvalidLabel("All label names must be unique")
 
-    def get_organization_id(self):
+    @property
+    def organization_id(self):
         if self.project is not None:
-            return self.project.organization.id
+            return self.project.organization_id
         if self.task is not None:
-            return self.task.organization.id
+            return self.task.organization_id
         return None
 
     class Meta:
@@ -730,8 +745,9 @@ class Issue(models.Model):
     def get_project_id(self):
         return self.job.get_project_id()
 
-    def get_organization_id(self):
-        return self.job.get_organization_id()
+    @property
+    def organization_id(self):
+        return self.job.organization_id
 
     def get_organization_slug(self):
         return self.job.get_organization_slug()
@@ -753,8 +769,9 @@ class Comment(models.Model):
     def get_project_id(self):
         return self.issue.get_project_id()
 
-    def get_organization_id(self):
-        return self.issue.get_organization_id()
+    @property
+    def organization_id(self):
+        return self.issue.organization_id
 
     def get_organization_slug(self):
         return self.issue.get_organization_slug()

@@ -7,6 +7,10 @@ metadata:
     {{- include "cvat.labels" . | nindent 4 }}
     app: cvat-app
     tier: frontend
+  annotations:
+    {{- with .Values.cvat.frontend.service.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
 spec:
   selector:
     app: cvat-app

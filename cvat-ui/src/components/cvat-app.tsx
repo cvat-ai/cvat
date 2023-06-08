@@ -75,6 +75,7 @@ import EmailConfirmationPage from './email-confirmation-pages/email-confirmed';
 import EmailVerificationSentPage from './email-confirmation-pages/email-verification-sent';
 import IncorrectEmailConfirmationPage from './email-confirmation-pages/incorrect-email-confirmation';
 import CreateModelPage from './create-model-page/create-model-page';
+import OrganizationWatcher from './watchers/organization-watcher';
 
 interface CVATAppProps {
     loadFormats: () => void;
@@ -503,7 +504,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                             />
                                         </Switch>
                                     </GlobalHotKeys>
-                                    {/* eslint-disable-next-line */}
                                     <ExportDatasetModal />
                                     <ExportBackupModal />
                                     <ImportDatasetModal />
@@ -511,6 +511,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                     { loggedInModals.map((Component, idx) => (
                                         <Component key={idx} targetProps={this.props} targetState={this.state} />
                                     ))}
+                                    <OrganizationWatcher />
                                     {/* eslint-disable-next-line */}
                                     <a id='downloadAnchor' target='_blank' style={{ display: 'none' }} download />
                                 </Layout.Content>
