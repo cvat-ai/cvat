@@ -136,12 +136,12 @@ export default function implementAPI(cvat) {
         return result;
     };
 
-    cvat.assets.create.implementation = async (file: File): Promise<SerializedAsset> => {
+    cvat.assets.create.implementation = async (file: File, guideId: number): Promise<SerializedAsset> => {
         if (!(file instanceof File)) {
             throw new ArgumentError('Assets expect a file');
         }
 
-        const result = await serverProxy.assets.create(file);
+        const result = await serverProxy.assets.create(file, guideId);
         return result;
     };
 

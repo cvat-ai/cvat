@@ -144,8 +144,8 @@ function build() {
             },
         },
         assets: {
-            async create(file: File) {
-                const result = await PluginRegistry.apiWrapper(cvat.assets.create, file);
+            async create(file: File, guideId: number) {
+                const result = await PluginRegistry.apiWrapper(cvat.assets.create, file, guideId);
                 return result;
             },
         },

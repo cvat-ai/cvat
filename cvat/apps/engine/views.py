@@ -2303,8 +2303,10 @@ class AssetsViewset(
 
     def create(self, request, *args, **kwargs):
         file = request.data.get('file')
+        guide_id = request.data.get('guide_id')
         serializer = self.get_serializer(data={
             'filename': file.name,
+            'guide_id': guide_id,
         })
 
         serializer.is_valid(raise_exception=True)

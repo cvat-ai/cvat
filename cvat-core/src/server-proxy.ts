@@ -2179,10 +2179,11 @@ async function updateGuide(id: number, data: Partial<SerializedGuide>): Promise<
     }
 }
 
-async function createAsset(file: File): Promise<SerializedAsset> {
+async function createAsset(file: File, guideId: number): Promise<SerializedAsset> {
     const { backendAPI } = config;
     const form = new FormData();
     form.append('file', file);
+    form.append('guide_id', guideId);
 
     try {
         const response = await Axios.post(`${backendAPI}/assets`, form, {

@@ -26,10 +26,15 @@ function GuidePage(): JSX.Element {
     const location = useLocation();
     const isMounted = useIsMounted();
     const [value, setValue] = useState('');
-    const [guide, setGuide] = useState<AnnotationGuide | null>(null);
-    const [fetching, setFetching] = useState(false);
-    const id = +useParams<{ id: string }>().id;
     const instanceType = location.pathname.includes('projects') ? 'project' : 'task';
+    const id = +useParams<{ id: string }>().id;
+    const [guide, setGuide] = useState<AnnotationGuide>(
+        new AnnotationGuide({
+            ...(instanceType === 'project' ? { project_id: id } : { task_id: id }),
+            markdown: value,
+        }),
+    );
+    const [fetching, setFetching] = useState(false);
 
     useEffect(() => {
         setFetching(true);
@@ -37,7 +42,12 @@ function GuidePage(): JSX.Element {
         promise.then(([instance]: [Task | Project]) => (
             instance.guide()
         )).then((guideInstance: AnnotationGuide | null) => {
-            if (guideInstance && isMounted()) {
+            if (guideInstance) {
+                return (async () => guideInstance)();
+            }
+            return guide.save();
+        }).then((guideInstance: AnnotationGuide) => {
+            if (isMounted()) {
                 setValue(guideInstance.markdown);
                 setGuide(guideInstance);
             }
@@ -48,7 +58,6 @@ function GuidePage(): JSX.Element {
                     description: error.toString(),
                 });
             }
-            console.log(error.toString());
         }).finally(() => {
             if (isMounted()) {
                 setFetching(false);
@@ -64,7 +73,7 @@ function GuidePage(): JSX.Element {
                 const { textArea } = mdEditorRef.current.commandOrchestrator;
                 const { selectionStart, selectionEnd } = textArea;
                 for (const file of files) {
-                    const { uuid } = await core.assets.create(file);
+                    const { uuid } = await core.assets.create(file, guide.id);
                     if (file.type.startsWith('image/')) {
                         addedAssets.push(`![image](/api/assets/${uuid})`);
                     } else {
