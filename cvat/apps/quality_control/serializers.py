@@ -12,7 +12,7 @@ from cvat.apps.quality_control import models
 class AnnotationIdSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.AnnotationId
-        fields = ("obj_id", "job_id", "type")
+        fields = ("obj_id", "job_id", "type", "shape_type")
         read_only_fields = fields
 
 

@@ -5658,30 +5658,22 @@ components:
           allOf:
           - $ref: '#/components/schemas/AnnotationIdTypeEnum'
           readOnly: true
+        shape_type:
+          readOnly: true
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/ShapeType'
+          - $ref: '#/components/schemas/NullEnum'
     AnnotationIdTypeEnum:
       enum:
       - tag
+      - shape
       - track
-      - rectangle
-      - polygon
-      - polyline
-      - points
-      - ellipse
-      - cuboid
-      - mask
-      - skeleton
       type: string
       description: |-
         * `tag` - TAG
+        * `shape` - SHAPE
         * `track` - TRACK
-        * `rectangle` - RECTANGLE
-        * `polygon` - POLYGON
-        * `polyline` - POLYLINE
-        * `points` - POINTS
-        * `ellipse` - ELLIPSE
-        * `cuboid` - CUBOID
-        * `mask` - MASK
-        * `skeleton` - SKELETON
     AnnotationsRead:
       oneOf:
       - $ref: '#/components/schemas/LabeledData'
@@ -7184,6 +7176,9 @@ components:
       anyOf:
       - $ref: '#/components/schemas/User'
       - $ref: '#/components/schemas/BasicUser'
+    NullEnum:
+      enum:
+      - null
     OnlineFunctionCallRequest:
       type: object
       properties:
