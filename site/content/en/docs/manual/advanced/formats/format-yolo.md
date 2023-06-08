@@ -6,6 +6,7 @@ weight: 7
 # [YOLO](https://pjreddie.com/darknet/yolo/)
 
 - [Format specification](https://github.com/AlexeyAB/darknet#how-to-train-to-detect-your-custom-objects)
+- [Dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/yolo_dataset)
 - supported annotations: Rectangles
 
 ## YOLO export
