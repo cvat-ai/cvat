@@ -3782,13 +3782,8 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this quality settings.
-        required: true
-      - in: query
-        name: id
-        schema:
-          type: integer
         description: An id of a quality settings instance
+        required: true
       tags:
       - quality
       security:
@@ -3813,13 +3808,8 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this quality settings.
-        required: true
-      - in: query
-        name: id
-        schema:
-          type: integer
         description: An id of a quality settings instance
+        required: true
       tags:
       - quality
       requestBody:

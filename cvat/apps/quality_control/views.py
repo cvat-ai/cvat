@@ -342,7 +342,10 @@ class QualityReportViewSet(
         summary="Method returns details of the quality settings instance",
         parameters=[
             OpenApiParameter(
-                "id", type=OpenApiTypes.INT, description="An id of a quality settings instance"
+                "id",
+                type=OpenApiTypes.INT,
+                location="path",
+                description="An id of a quality settings instance",
             )
         ],
         responses={
@@ -353,7 +356,10 @@ class QualityReportViewSet(
         summary="Methods does a partial update of chosen fields in the quality settings instance",
         parameters=[
             OpenApiParameter(
-                "id", type=OpenApiTypes.INT, description="An id of a quality settings instance"
+                "id",
+                type=OpenApiTypes.INT,
+                location="path",
+                description="An id of a quality settings instance",
             )
         ],
         request=QualitySettingsSerializer(partial=True),
