@@ -238,7 +238,7 @@ class QualityReportViewSet(
         responses={
             "201": QualityReportSerializer,
             "202": OpenApiResponse(
-                OpenApiTypes.STR,
+                RqIdSerializer,
                 description=textwrap.dedent(
                     """\
                     A quality report request has been enqueued, the request id is returned.
@@ -340,12 +340,28 @@ class QualityReportViewSet(
     ),
     retrieve=extend_schema(
         summary="Method returns details of the quality settings instance",
+        parameters=[
+            OpenApiParameter(
+                "id",
+                type=OpenApiTypes.INT,
+                location="path",
+                description="An id of a quality settings instance",
+            )
+        ],
         responses={
             "200": QualitySettingsSerializer,
         },
     ),
     partial_update=extend_schema(
         summary="Methods does a partial update of chosen fields in the quality settings instance",
+        parameters=[
+            OpenApiParameter(
+                "id",
+                type=OpenApiTypes.INT,
+                location="path",
+                description="An id of a quality settings instance",
+            )
+        ],
         request=QualitySettingsSerializer(partial=True),
         responses={
             "200": QualitySettingsSerializer,

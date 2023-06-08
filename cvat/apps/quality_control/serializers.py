@@ -12,7 +12,7 @@ from cvat.apps.quality_control import models
 class AnnotationIdSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.AnnotationId
-        fields = ("obj_id", "job_id", "type")
+        fields = ("obj_id", "job_id", "type", "shape_type")
         read_only_fields = fields
 
 
@@ -40,14 +40,9 @@ class QualityReportSummarySerializer(serializers.Serializer):
     gt_count = serializers.IntegerField(source="annotations.gt_count")
 
 
-class QualityReportParametersSerializer(serializers.Serializer):
-    iou_threshold = serializers.FloatField()
-
-
 class QualityReportSerializer(serializers.ModelSerializer):
     target = serializers.ChoiceField(models.QualityReportTarget.choices())
     summary = QualityReportSummarySerializer()
-    parameters = QualityReportParametersSerializer()
 
     class Meta:
         model = models.QualityReport
@@ -58,7 +53,6 @@ class QualityReportSerializer(serializers.ModelSerializer):
             "parent_id",
             "target",
             "summary",
-            "parameters",
             "created_date",
             "target_last_updated",
             "gt_last_updated",
