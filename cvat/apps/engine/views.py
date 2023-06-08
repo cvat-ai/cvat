@@ -2374,17 +2374,15 @@ class AnnotationGuidesViewset(
                 current_asset.delete()
 
     def check_object_permissions(self, request, obj):
-        if self.action == 'retrieve':
-            job_id = self.request.GET.get('job_id', None)
-            if job_id is not None:
-                # NOTE: This filter is too complex to be implemented by other means
-                # Otherwise it would require difficult query project__task__segment__job__assignee = user
-                # OR
-                # task__segment__job__assignee = user
-                db_job = Job.objects.select_related('segment', 'segment__task', 'segment__task__project').get(id=job_id)
-                super().check_object_permissions(request, db_job)
-                return
-
+        job_id = self.request.GET.get('job_id', None)
+        if self.action == 'retrieve' and job_id is not None:
+            # NOTE: This filter is too complex to be implemented by other means
+            # Otherwise it would require difficult query project__task__segment__job__assignee = user
+            # OR
+            # task__segment__job__assignee = user
+            db_job = Job.objects.select_related('segment', 'segment__task', 'segment__task__project').get(id=job_id)
+            super().check_object_permissions(request, db_job)
+            return
         super().check_object_permissions(request, obj)
 
     def get_serializer_class(self):
