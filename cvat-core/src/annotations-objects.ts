@@ -32,11 +32,7 @@ function copyShape(state: TrackedShape, data: Partial<TrackedShape> = {}): Track
 }
 
 function computeNewSource(currentSource: Source): Source {
-    if (currentSource === Source.AUTO) {
-        return Source.SEMI_AUTO;
-    }
-
-    if (currentSource === Source.SEMI_AUTO) {
+    if ([Source.AUTO, Source.SEMI_AUTO].includes(currentSource)) {
         return Source.SEMI_AUTO;
     }
 
