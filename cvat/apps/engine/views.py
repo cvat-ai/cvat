@@ -9,16 +9,18 @@ import os.path as osp
 import pytz
 import traceback
 import textwrap
+from copy import copy
 from datetime import datetime
 from distutils.util import strtobool
 from tempfile import NamedTemporaryFile
+from typing import Any, Dict, List, cast
 
 from django.db.models.query import Prefetch
 import django_rq
 from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.http import HttpResponse, HttpResponseNotFound, HttpResponseBadRequest
 from django.utils import timezone
 from django.db.models import Count, Q
@@ -48,7 +50,7 @@ from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.media_extractors import get_mime
 from cvat.apps.engine.models import (
-    Job, Label, Task, Project, Issue, Data,
+    ClientFile, Job, Label, Task, Project, Issue, Data,
     Comment, StorageMethodChoice, StorageChoice,
     CloudProviderChoice, Location
 )
@@ -852,17 +854,87 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             db_project.save()
             assert serializer.instance.organization == db_project.organization
 
+    def _is_data_uploading(self) -> bool:
+        return 'data' in self.action
+
     # UploadMixin method
     def get_upload_dir(self):
         if 'annotations' in self.action:
             return self._object.get_tmp_dirname()
-        elif 'data' in self.action:
+        elif self._is_data_uploading():
             return self._object.data.get_upload_dirname()
         elif 'backup' in self.action:
             return backup.get_backup_dirname()
         return ""
 
+    def _prepare_upload_info_entry(self, filename: str) -> str:
+        filename = osp.normpath(filename)
+        upload_dir = self.get_upload_dir()
+        return osp.join(upload_dir, filename)
+
+    def _maybe_append_upload_info_entry(self, filename: str):
+        task_data = cast(Data, self._object.data)
+
+        filename = self._prepare_upload_info_entry(filename)
+        task_data.client_files.get_or_create(file=filename)
+
+    def _append_upload_info_entries(self, client_files: List[Dict[str, Any]]):
+        # batch version without optional insertion
+        task_data = cast(Data, self._object.data)
+        task_data.client_files.bulk_create([
+            ClientFile(**cf, data=task_data) for cf in client_files
+        ])
+
+    def _sort_uploaded_files(self, uploaded_files: List[str], ordering: List[str]) -> List[str]:
+        """
+        Applies file ordering for the "predefined" file sorting method of the task creation.
+
+        Read more: https://github.com/opencv/cvat/issues/5061
+        """
+
+        expected_files = ordering
+
+        uploaded_file_names = set(uploaded_files)
+        mismatching_files = list(uploaded_file_names.symmetric_difference(expected_files))
+        if mismatching_files:
+            DISPLAY_ENTRIES_COUNT = 5
+            mismatching_display = [
+                fn + (" (extra)" if fn in uploaded_file_names else " (missing)")
+                for fn in mismatching_files[:DISPLAY_ENTRIES_COUNT]
+            ]
+            remaining_count = len(mismatching_files) - DISPLAY_ENTRIES_COUNT
+            raise ValidationError(
+                "Uploaded files do not match the '{}' field contents. "
+                "Please check the uploaded data and the list of uploaded files. "
+                "Mismatching files: {}{}"
+                .format(
+                    self._UPLOAD_FILE_ORDER_FIELD,
+                    ", ".join(mismatching_display),
+                    f" (and {remaining_count} more). " if 0 < remaining_count else ""
+                )
+            )
+
+        return list(expected_files)
+
     # UploadMixin method
+    def init_tus_upload(self, request):
+        response = super().init_tus_upload(request)
+
+        if self._is_data_uploading() and response.status_code == status.HTTP_201_CREATED:
+            self._maybe_append_upload_info_entry(response['Upload-Filename'])
+
+        return response
+
+    # UploadMixin method
+    def append_files(self, request):
+        client_files = self._get_request_client_files(request)
+        if self._is_data_uploading() and client_files:
+            self._append_upload_info_entries(client_files)
+
+        return super().append_files(request)
+
+    # UploadMixin method
+    @transaction.atomic
     def upload_finished(self, request):
         if self.action == 'annotations':
             format_name = request.query_params.get("format", "")
@@ -887,23 +959,41 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             task_data = self._object.data
             serializer = DataSerializer(task_data, data=request.data)
             serializer.is_valid(raise_exception=True)
-            data = dict(serializer.validated_data.items())
-            uploaded_files = task_data.get_uploaded_files()
-            uploaded_files.extend(data.get('client_files'))
-            serializer.validated_data.update({'client_files': uploaded_files})
 
+            # Append new files to the previous ones
+            if uploaded_files := serializer.validated_data.get('client_files', None):
+                self._append_upload_info_entries(uploaded_files)
+                serializer.validated_data['client_files'] = [] # avoid file info duplication
+
+            # Refresh the db value with the updated file list and other request parameters
             db_data = serializer.save()
             self._object.data = db_data
             self._object.save()
-            data = {k: v for k, v in serializer.data.items()}
+
+            # Create a temporary copy of the parameters we will try to create the task with
+            data = copy(serializer.data)
 
             for optional_field in ['job_file_mapping', 'server_files_exclude']:
                 if optional_field in serializer.validated_data:
                     data[optional_field] = serializer.validated_data[optional_field]
 
+            if (
+                data['sorting_method'] == models.SortingMethod.PREDEFINED
+                and (uploaded_files := data['client_files'])
+                and (
+                    uploaded_file_order := serializer.validated_data[self._UPLOAD_FILE_ORDER_FIELD]
+                )
+            ):
+                # In the case of predefined sorting and custom file ordering,
+                # the requested order must be applied
+                data['client_files'] = self._sort_uploaded_files(
+                    uploaded_files, uploaded_file_order
+                )
+
             data['use_zip_chunks'] = serializer.validated_data['use_zip_chunks']
             data['use_cache'] = serializer.validated_data['use_cache']
             data['copy_data'] = serializer.validated_data['copy_data']
+
             if data['use_cache']:
                 self._object.data.storage_method = StorageMethodChoice.CACHE
                 self._object.data.save(update_fields=['storage_method'])
@@ -913,9 +1003,9 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             if db_data.cloud_storage:
                 self._object.data.storage = StorageChoice.CLOUD_STORAGE
                 self._object.data.save(update_fields=['storage'])
+            if 'stop_frame' not in serializer.validated_data:
                 # if the value of stop_frame is 0, then inside the function we cannot know
                 # the value specified by the user or it's default value from the database
-            if 'stop_frame' not in serializer.validated_data:
                 data['stop_frame'] = None
             task.create(self._object, data, request)
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
@@ -936,12 +1026,69 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         return Response(data='Unknown upload was finished',
                         status=status.HTTP_400_BAD_REQUEST)
 
+    _UPLOAD_FILE_ORDER_FIELD = 'upload_file_order'
+    assert _UPLOAD_FILE_ORDER_FIELD in DataSerializer().fields
+
     @extend_schema(methods=['POST'],
-        summary='Method permanently attaches images or video to a task. Supports tus uploads, see more https://tus.io/',
+        summary="Method permanently attaches data (images, video, etc.) to a task",
+        description=textwrap.dedent("""\
+            Allows to upload data to a task.
+            Supports the TUS open file uploading protocol (https://tus.io/).
+
+            Supports the following protocols:
+
+            1. A single Data request
+
+            and
+
+            2.1. An Upload-Start request
+            2.2.a. Regular TUS protocol requests (Upload-Length + Chunks)
+            2.2.b. Upload-Multiple requests
+            2.3. An Upload-Finish request
+
+            Requests:
+            - Data - POST, no extra headers or 'Upload-Start' + 'Upload-Finish' headers.
+              Contains data in the body.
+            - Upload-Start - POST, has an 'Upload-Start' header. No body is expected.
+            - Upload-Length - POST, has an 'Upload-Length' header (see the TUS specification)
+            - Chunk - HEAD/PATCH (see the TUS specification). Sent to /data/<file id> endpoints.
+            - Upload-Finish - POST, has an 'Upload-Finish' header. Can contain data in the body.
+            - Upload-Multiple - POST, has an 'Upload-Multiple' header. Contains data in the body.
+
+            The 'Upload-Finish' request allows to specify the uploaded files should be ordered.
+            This may be needed if the files can be sent unordered. To state that the input files
+            are sent ordered, pass an empty list of files in the '{upload_file_order_field}' field.
+            If the files are sent unordered, the ordered file list is expected
+            in the '{upload_file_order_field}' field. It must be a list of string file paths,
+            relative to the dataset root.
+
+            Example:
+            files = [
+                "cats/cat_1.jpg",
+                "dogs/dog2.jpg",
+                "image_3.png",
+                ...
+            ]
+
+            Independently of the file declaration field used
+            ('client_files', 'server_files', etc.), when the 'predefined'
+            sorting method is selected, the uploaded files will be ordered according
+            to the '.jsonl' manifest file, if it is found in the list of files.
+            For archives (e.g. '.zip'), a manifest file ('*.jsonl') is required when using
+            the 'predefined' file ordering. Such file must be provided next to the archive
+            in the list of files. Read more about manifest files here:
+            https://opencv.github.io/cvat/docs/manual/advanced/dataset_manifest/
+
+            After all data is sent, the operation status can be retrieved via
+            the /status endpoint.
+        """.format_map(
+            {'upload_file_order_field': _UPLOAD_FILE_ORDER_FIELD}
+        )),
+        # TODO: add a tutorial on this endpoint in the REST API docs
         request=DataSerializer,
         parameters=[
             OpenApiParameter('Upload-Start', location=OpenApiParameter.HEADER, type=OpenApiTypes.BOOL,
-                description='Initializes data upload. No data should be sent with this header'),
+                description='Initializes data upload. Optionally, can include upload metadata in the request body.'),
             OpenApiParameter('Upload-Multiple', location=OpenApiParameter.HEADER, type=OpenApiTypes.BOOL,
                 description='Indicates that data with this request are single or multiple files that should be attached to a task'),
             OpenApiParameter('Upload-Finish', location=OpenApiParameter.HEADER, type=OpenApiTypes.BOOL,
@@ -950,7 +1097,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         responses={
             '202': OpenApiResponse(description=''),
         })
-    @extend_schema(methods=['GET'], summary='Method returns data for a specific task',
+    @extend_schema(methods=['GET'],
+        summary='Method returns data for a specific task',
         parameters=[
             OpenApiParameter('type', location=OpenApiParameter.QUERY, required=False,
                 type=OpenApiTypes.STR, enum=['chunk', 'frame', 'context_image'],
