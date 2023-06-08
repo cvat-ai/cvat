@@ -31,6 +31,20 @@ Manifest files can be used in the following cases:
 - A video file or a set of images is used as the data source and
   the caching mode is enabled. [Read more](/docs/manual/advanced/data_on_fly/)
 - The data is located in a cloud storage. [Read more](/docs/manual/basics/cloud-storages/)
+- The `predefined` file sorting method is specified. [Read more](/docs/manual/basics/creating_an_annotation_task/#sorting-method)
+
+### The predefined sorting method
+
+Independently of the file source being used, when the `predefined`
+sorting method is selected in the task configuration, the source files will be
+ordered according to the `.jsonl` manifest file, if it is found in the input list of files.
+If a manifest is not found, the order provided in the input file list is used.
+
+For image archives (e.g. `.zip`), a manifest file (`*.jsonl`) is required when using
+the `predefined` file ordering. A manifest file must be provided next to the archive
+in the input list of files, it must not be inside the archive.
+
+If there are multiple manifest files in the input file list, an error will be raised.
 
 ## How to generate manifest files
 
