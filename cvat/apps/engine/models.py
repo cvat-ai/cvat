@@ -265,11 +265,6 @@ class Data(models.Model):
         os.makedirs(self.get_original_cache_dirname())
         os.makedirs(self.get_upload_dirname())
 
-    def get_uploaded_files(self):
-        upload_dir = self.get_upload_dirname()
-        uploaded_files = [os.path.join(upload_dir, file) for file in os.listdir(upload_dir) if os.path.isfile(os.path.join(upload_dir, file))]
-        represented_files = [{'file':f} for f in uploaded_files]
-        return represented_files
 
 class Video(models.Model):
     data = models.OneToOneField(Data, on_delete=models.CASCADE, related_name="video", null=True)
@@ -476,6 +471,10 @@ class ClientFile(models.Model):
         default_permissions = ()
         unique_together = ("data", "file")
 
+        # Some DBs can shuffle the rows. Here we restore the insertion order.
+        # https://github.com/opencv/cvat/pull/5083#discussion_r1038032715
+        ordering = ('id', )
+
 # For server files on the mounted share
 class ServerFile(models.Model):
     data = models.ForeignKey(Data, on_delete=models.CASCADE, null=True, related_name='server_files')
@@ -483,6 +482,11 @@ class ServerFile(models.Model):
 
     class Meta:
         default_permissions = ()
+        unique_together = ("data", "file")
+
+        # Some DBs can shuffle the rows. Here we restore the insertion order.
+        # https://github.com/opencv/cvat/pull/5083#discussion_r1038032715
+        ordering = ('id', )
 
 # For URLs
 class RemoteFile(models.Model):
@@ -491,6 +495,11 @@ class RemoteFile(models.Model):
 
     class Meta:
         default_permissions = ()
+        unique_together = ("data", "file")
+
+        # Some DBs can shuffle the rows. Here we restore the insertion order.
+        # https://github.com/opencv/cvat/pull/5083#discussion_r1038032715
+        ordering = ('id', )
 
 
 class RelatedFile(models.Model):
@@ -502,6 +511,10 @@ class RelatedFile(models.Model):
     class Meta:
         default_permissions = ()
         unique_together = ("data", "path")
+
+        # Some DBs can shuffle the rows. Here we restore the insertion order.
+        # https://github.com/opencv/cvat/pull/5083#discussion_r1038032715
+        ordering = ('id', )
 
 class Segment(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE)

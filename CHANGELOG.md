@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## \[2.5.0] - Unreleased
 ### Added
+- \[Server API\] An option to supply custom file ordering for task data uploads (<https://github.com/opencv/cvat/pull/5083>)
+
+### Changed
+- Allowed to use dataset manifest for the `predefined` sorting method for task data (<https://github.com/opencv/cvat/pull/5083>)
 - TBD
 
 ### Changed
@@ -25,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Deletion of uploaded files, including annotations and backups,
   after they have been uploaded to the server using the TUS protocol  but before an RQ job has been initiated. (<https://github.com/opencv/cvat/pull/5909>)
 - Simultaneous creation of tasks or projects with identical names from backups by multiple users.(<https://github.com/opencv/cvat/pull/5909>)
+- \[Server API\] The `predefined` sorting method for task data uploads (<https://github.com/opencv/cvat/pull/5083>)
 
 ### Security
 - TDB
