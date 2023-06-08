@@ -19,7 +19,7 @@ import django_rq
 import numpy as np
 import requests
 import rq
-from cvat.apps.lambda_manager.signals import lambda_function_call_signal
+from cvat.apps.lambda_manager.signals import interactive_function_call_signal
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from drf_spectacular.types import OpenApiTypes
@@ -196,7 +196,15 @@ class LambdaFunction:
 
         return response
 
-    def invoke(self, db_task: Task,  data: Dict[str, Any], *, db_job: Optional[Job] = None, request: Optional[Request] = None):
+    def invoke(
+        self,
+        db_task: Task,
+        data: Dict[str, Any],
+        *,
+        db_job: Optional[Job] = None,
+        is_interactive: Optional[bool] = False,
+        request: Optional[Request] = None
+    ):
         try:
             if db_job is not None and db_job.get_task_id() != db_task.id:
                 raise ValidationError("Job task id does not match task id",
@@ -301,8 +309,8 @@ class LambdaFunction:
                 .format(self.id, str(err)),
                 code=status.HTTP_400_BAD_REQUEST)
 
-        if request:
-            lambda_function_call_signal.send(sender=self, request=request)
+        if is_interactive and request:
+            interactive_function_call_signal.send(sender=self, request=request)
 
         response = self.gateway.invoke(self, payload)
 
@@ -794,7 +802,7 @@ class FunctionViewSet(viewsets.ViewSet):
         gateway = LambdaGateway()
         lambda_func = gateway.get(func_id)
 
-        return lambda_func.invoke(db_task, request.data, db_job=job, request=request)
+        return lambda_func.invoke(db_task, request.data, db_job=job, is_interactive=True, request=request)
 
 @extend_schema(tags=['lambda'])
 @extend_schema_view(

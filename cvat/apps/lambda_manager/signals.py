@@ -4,4 +4,4 @@
 
 from django.dispatch import Signal
 
-lambda_function_call_signal = Signal()
+interactive_function_call_signal = Signal()
