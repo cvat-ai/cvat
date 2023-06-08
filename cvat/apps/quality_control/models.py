@@ -105,11 +105,6 @@ class QualityReport(models.Model):
         return ComparisonReport.from_json(self.data)
 
     @property
-    def parameters(self):
-        report = self._parse_report()
-        return report.parameters
-
-    @property
     def summary(self):
         report = self._parse_report()
         return report.comparison_summary

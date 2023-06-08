@@ -8163,8 +8163,6 @@ components:
           $ref: '#/components/schemas/QualityReportTarget'
         summary:
           $ref: '#/components/schemas/QualityReportSummary'
-        parameters:
-          $ref: '#/components/schemas/QualityReportParameters'
         created_date:
           type: string
           format: date-time
@@ -8178,7 +8176,6 @@ components:
           format: date-time
           readOnly: true
       required:
-      - parameters
       - summary
       - target
     QualityReportCreateRequest:
@@ -8189,14 +8186,6 @@ components:
           writeOnly: true
       required:
       - task_id
-    QualityReportParameters:
-      type: object
-      properties:
-        iou_threshold:
-          type: number
-          format: double
-      required:
-      - iou_threshold
     QualityReportSummary:
       type: object
       properties:
