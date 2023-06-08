@@ -175,6 +175,10 @@
     justify-content: end;
     margin-top: $grid-unit-size * 2;
 
+    button:not(:last-child) {
+        margin-right: $grid-unit-size;
+    }
+
     .cvat-resource-page-filters {
         margin-right: $grid-unit-size * 4;
     }

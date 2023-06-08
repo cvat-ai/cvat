@@ -20,11 +20,12 @@ import { updateJobAsync } from 'actions/tasks-actions';
 const core = getCore();
 
 interface Props {
-    job: Job
+    job: Job;
+    onJobUpdate?: (job: Job) => void;
 }
 
 function JobActionsMenu(props: Props): JSX.Element {
-    const { job } = props;
+    const { job, onJobUpdate } = props;
     const { id } = job;
     const history = useHistory();
     const dispatch = useDispatch();
@@ -60,21 +61,27 @@ function JobActionsMenu(props: Props): JSX.Element {
             } else if (action.key === 'renew_job') {
                 job.state = core.enums.JobState.NEW;
                 job.stage = JobStage.ANNOTATION;
-                dispatch(updateJobAsync(job));
-                window.location.reload();
+                if (onJobUpdate) {
+                    onJobUpdate(job);
+                } else {
+                    dispatch(updateJobAsync(job));
+                }
             } else if (action.key === 'finish_job') {
                 job.stage = JobStage.ACCEPTANCE;
                 job.state = core.enums.JobState.COMPLETED;
-                dispatch(updateJobAsync(job));
-                window.location.reload();
+                if (onJobUpdate) {
+                    onJobUpdate(job);
+                } else {
+                    dispatch(updateJobAsync(job));
+                }
             }
         }}
         >
             <Menu.Item key='task' disabled={job.taskId === null}>Go to the task</Menu.Item>
             <Menu.Item key='project' disabled={job.projectId === null}>Go to the project</Menu.Item>
             <Menu.Item key='bug_tracker' disabled={!job.bugTracker}>Go to the bug tracker</Menu.Item>
-            <Menu.Item key='import_job'>Import job</Menu.Item>
-            <Menu.Item key='export_job'>Export job</Menu.Item>
+            <Menu.Item key='import_job'>Import annotations</Menu.Item>
+            <Menu.Item key='export_job'>Export annotations</Menu.Item>
             {[JobStage.ANNOTATION, JobStage.VALIDATION].includes(job.stage) ?
                 <Menu.Item key='finish_job'>Finish the job</Menu.Item> : null}
             {job.stage === JobStage.ACCEPTANCE ?
