@@ -16,6 +16,7 @@ import { Label } from './labels';
 import User from './user';
 import { FieldUpdateTrigger } from './common';
 import { SerializedJob, SerializedTask } from 'server-response-types';
+import AnnotationGuide from './guide';
 
 function buildDuplicatedAPI(prototype) {
     Object.defineProperties(prototype, {
@@ -565,6 +566,11 @@ export class Job extends Session {
         return result;
     }
 
+    async guide(): Promise<AnnotationGuide | null> {
+        const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.guide);
+        return result;
+    }
+
     async openIssue(issue, message) {
         const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.openIssue, issue, message);
         return result;
@@ -1097,6 +1103,11 @@ export class Task extends Session {
 
     static async restore(storage: Storage, file: File | string) {
         const result = await PluginRegistry.apiWrapper.call(this, Task.restore, storage, file);
+        return result;
+    }
+
+    async guide(): Promise<AnnotationGuide | null> {
+        const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.guide);
         return result;
     }
 }

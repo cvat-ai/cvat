@@ -34,13 +34,9 @@ function GuidePage(): JSX.Element {
     useEffect(() => {
         setFetching(true);
         const promise = instanceType === 'project' ? core.projects.get({ id }) : core.tasks.get({ id });
-        promise.then(([instance]: [Task | Project]) => {
-            const { guideId } = instance;
-            if (guideId !== null) {
-                return core.guides.get({ id: guideId });
-            }
-            return Promise.resolve(null);
-        }).then((guideInstance: AnnotationGuide | null) => {
+        promise.then(([instance]: [Task | Project]) => (
+            instance.guide()
+        )).then((guideInstance: AnnotationGuide | null) => {
             if (guideInstance && isMounted()) {
                 setValue(guideInstance.markdown);
                 setGuide(guideInstance);

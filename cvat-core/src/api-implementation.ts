@@ -136,16 +136,6 @@ export default function implementAPI(cvat) {
         return result;
     };
 
-    cvat.guides.get.implementation = async (filter: { id: number }) => {
-        if (!('id' in filter)) {
-            throw new ArgumentError('Guide id was not provided');
-        }
-        checkFilter(filter, { id: isInteger });
-
-        const result = await serverProxy.guides.get(filter.id);
-        return new AnnotationGuide(result);
-    };
-
     cvat.assets.create.implementation = async (file: File): Promise<SerializedAsset> => {
         if (!(file instanceof File)) {
             throw new ArgumentError('Assets expect a file');

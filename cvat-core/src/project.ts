@@ -12,6 +12,7 @@ import { ArgumentError } from './exceptions';
 import { Label } from './labels';
 import User from './user';
 import { FieldUpdateTrigger } from './common';
+import AnnotationGuide from './guide';
 
 export default class Project {
     public readonly id: number;
@@ -233,6 +234,11 @@ export default class Project {
 
     static async restore(storage: Storage, file: File | string) {
         const result = await PluginRegistry.apiWrapper.call(this, Project.restore, storage, file);
+        return result;
+    }
+
+    async guide(): Promise<AnnotationGuide | null> {
+        const result = await PluginRegistry.apiWrapper.call(this, Project.prototype.guide);
         return result;
     }
 }

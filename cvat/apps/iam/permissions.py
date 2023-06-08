@@ -1563,15 +1563,22 @@ class AnnotationGuidePermission(OpenPolicyAgentPermission):
 
     @classmethod
     def create(cls, request, view, obj):
+        Scopes = __class__.Scopes
         permissions = []
+
         if view.basename == 'annotationguide':
             project_id = request.data.get('project_id')
             task_id = request.data.get('task_id')
             params = { 'project_id': project_id, 'task_id': task_id }
 
             for scope in cls.get_scopes(request, view, obj):
-                self = cls.create_base_perm(request, view, scope, obj, **params)
-                permissions.append(self)
+                if scope == Scopes.VIEW and isinstance(obj, Job):
+                    permissions.append(JobPermission.create_base_perm(
+                        request, view, scope=JobPermission.Scopes.VIEW, obj=obj,
+                    ))
+                else:
+                    self = cls.create_base_perm(request, view, scope, obj, **params)
+                    permissions.append(self)
 
         return permissions
 

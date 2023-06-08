@@ -2346,14 +2346,22 @@ class AnnotationGuidesViewset(
     # Thus, we rely on permission-based filtering
     iam_organization_field = None
 
-    def get_queryset(self):
-        queryset = super().get_queryset()
+    def check_object_permissions(self, request, obj):
+        if self.action == 'retrieve':
+            job_id = self.request.GET.get('job_id', None)
+            if job_id is not None:
+                # NOTE: This filter is too complex to be implemented by other means
+                # It requires the following filter query:
+                # (
+                #  project__task__segment__job__id = job_id
+                #  OR
+                #  task__segment__job__id = job_id
+                # )
+                db_job = Job.objects.select_related('segment', 'segment__task', 'segment__task__project').get(id=job_id)
+                super().check_object_permissions(request, db_job)
+                return
 
-        if self.action == 'list':
-            perm = AnnotationGuidePermission.create_scope_list(self.request)
-            queryset = perm.filter(queryset)
-
-        return queryset
+        super().check_object_permissions(request, obj)
 
     @staticmethod
     def _update_assets(guide):

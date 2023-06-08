@@ -64,7 +64,7 @@ function RightGroup(props: Props): JSX.Element {
                     className='cvat-annotation-header-guide-button cvat-annotation-header-button'
                     onClick={async (): Promise<void> => {
                         const PADDING = Math.min(window.screen.availHeight, window.screen.availWidth) * 0.4;
-                        const guide = await core.guides.get({ id: jobInstance.guideId });
+                        const guide = await jobInstance.guide();
                         Modal.info({
                             icon: null,
                             width: window.screen.availWidth - PADDING,

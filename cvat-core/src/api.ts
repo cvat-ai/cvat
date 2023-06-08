@@ -143,12 +143,6 @@ function build() {
                 return result;
             },
         },
-        guides: {
-            async get(filter: { id: number }) {
-                const result = await PluginRegistry.apiWrapper(cvat.guides.get, filter);
-                return result;
-            },
-        },
         assets: {
             async create(file: File) {
                 const result = await PluginRegistry.apiWrapper(cvat.assets.create, file);
