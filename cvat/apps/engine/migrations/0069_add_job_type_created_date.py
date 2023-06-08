@@ -17,7 +17,7 @@ def add_created_date_to_existing_jobs(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('engine', '0067_alter_cloudstorage_credentials_type'),
+        ('engine', '0068_auto_20230418_0901'),
     ]
 
     operations = [
