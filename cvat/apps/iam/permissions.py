@@ -56,6 +56,8 @@ def get_organization(request, obj):
     # Try to get organization from an object otherwise, return the organization that is specified in query parameters
     if obj is not None and isinstance(obj, Organization):
         return obj
+    if obj is not None and isinstance(obj, AnnotationGuide):
+        return (obj.project if obj.project else obj.task).organization
 
     if obj:
         try:
@@ -1604,7 +1606,7 @@ class AnnotationGuidePermission(OpenPolicyAgentPermission):
         CREATE  = 'create'
 
     @classmethod
-    def create(cls, request, view, obj):
+    def create(cls, request, view, obj, iam_context):
         Scopes = __class__.Scopes
         permissions = []
 
@@ -1616,10 +1618,10 @@ class AnnotationGuidePermission(OpenPolicyAgentPermission):
             for scope in cls.get_scopes(request, view, obj):
                 if scope == Scopes.VIEW and isinstance(obj, Job):
                     permissions.append(JobPermission.create_base_perm(
-                        request, view, scope=JobPermission.Scopes.VIEW, obj=obj,
+                        request, view, JobPermission.Scopes.VIEW, iam_context, obj=obj,
                     ))
                 else:
-                    self = cls.create_base_perm(request, view, scope, obj, **params)
+                    self = cls.create_base_perm(request, view, scope, iam_context, obj, **params)
                     permissions.append(self)
 
         return permissions
@@ -1705,7 +1707,7 @@ class GuideAssetPermission(OpenPolicyAgentPermission):
         CREATE  = 'create'
 
     @classmethod
-    def create(cls, request, view, obj):
+    def create(cls, request, view, obj, iam_context):
         Scopes = __class__.Scopes
         permissions = []
 
@@ -1713,18 +1715,18 @@ class GuideAssetPermission(OpenPolicyAgentPermission):
             for scope in cls.get_scopes(request, view, obj):
                 if scope == Scopes.VIEW and isinstance(obj, AnnotationGuide):
                     permissions.append(AnnotationGuidePermission.create_base_perm(
-                        request, view, scope=AnnotationGuidePermission.Scopes.VIEW, obj=obj)
+                        request, view, AnnotationGuidePermission.Scopes.VIEW, iam_context, obj=obj)
                     )
                 if scope == Scopes.DELETE and isinstance(obj, AnnotationGuide):
                     permissions.append(AnnotationGuidePermission.create_base_perm(
-                        request, view, scope=AnnotationGuidePermission.Scopes.UPDATE, obj=obj)
+                        request, view, AnnotationGuidePermission.Scopes.UPDATE, iam_context, obj=obj)
                     )
                 if scope == Scopes.CREATE:
                     guide_id = request.data.get('guide_id')
                     try:
                         obj = AnnotationGuide.objects.get(id=guide_id)
                         permissions.append(AnnotationGuidePermission.create_base_perm(
-                            request, view, scope=AnnotationGuidePermission.Scopes.UPDATE, obj=obj)
+                            request, view, AnnotationGuidePermission.Scopes.UPDATE, iam_context, obj=obj)
                         )
                     except AnnotationGuide.DoesNotExist as ex:
                         raise ValidationError(str(ex))

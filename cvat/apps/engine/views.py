@@ -2548,12 +2548,17 @@ class AssetsViewset(
     viewsets.GenericViewSet, mixins.RetrieveModelMixin,
     mixins.CreateModelMixin, mixins.DestroyModelMixin
 ):
-    queryset = Asset.objects.select_related('owner', 'guide').all()
+    queryset = Asset.objects.select_related(
+        'owner', 'guide', 'guide__project', 'guide__task', 'guide__project__organization', 'guide__task__organization',
+    ).all()
     parser_classes=_UPLOAD_PARSER_CLASSES
     search_fields = ()
     ordering = "uuid"
 
     def check_object_permissions(self, request, obj):
+        setattr(obj.guide, 'organization_id', getattr(
+            (obj.guide.project if obj.guide.project else obj.guide.task).organization
+        , 'id', None))
         super().check_object_permissions(request, obj.guide)
 
     def get_serializer_class(self):
@@ -2641,6 +2646,10 @@ class AnnotationGuidesViewset(
             db_job = Job.objects.select_related('segment', 'segment__task', 'segment__task__project').get(id=job_id)
             super().check_object_permissions(request, db_job)
             return
+
+        setattr(obj, 'organization_id', getattr(
+            (obj.project if obj.project else obj.task).organization
+        , 'id', None))
         super().check_object_permissions(request, obj)
 
     def get_serializer_class(self):
@@ -2650,7 +2659,7 @@ class AnnotationGuidesViewset(
             return AnnotationGuideWriteSerializer
 
     def perform_create(self, serializer):
-        serializer.save(owner=self.request.user)
+        serializer.save()
         AnnotationGuidesViewset._update_assets(serializer.instance)
 
     def perform_update(self, serializer):
