@@ -3058,6 +3058,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
             skeleton.addClass('cvat_canvas_shape_occluded');
         }
 
+        if (state.isGroundTruth) {
+            skeleton.addClass('cvat_canvas_ground_truth');
+        }
+
         if (state.hidden || state.outside || this.isInnerHidden(state.clientID)) {
             skeleton.addClass('cvat_canvas_hidden');
         }
