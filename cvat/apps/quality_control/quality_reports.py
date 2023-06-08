@@ -2502,8 +2502,9 @@ def prepare_report_for_downloading(db_report: models.QualityReport, *, host: str
                     f"&serverID={ann_id['obj_id']}"
                 )
 
+    # Add the percent representation for better human readability
     serialized_data["comparison_summary"]["frame_share_percent"] = (
-        serialized_data["comparison_summary"].pop("frame_share") * 100
+        serialized_data["comparison_summary"]["frame_share"] * 100
     )
 
     # String keys are needed for json dumping
