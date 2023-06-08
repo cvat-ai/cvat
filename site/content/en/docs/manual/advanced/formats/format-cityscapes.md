@@ -6,6 +6,7 @@ weight: 16
 # [Cityscapes](https://www.cityscapes-dataset.com/login/)
 
 - [Format specification](https://github.com/mcordts/cityscapesScripts#the-cityscapes-dataset)
+- [Dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/cityscapes_dataset)
 
 - Supported annotations
 
