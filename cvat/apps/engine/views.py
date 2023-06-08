@@ -78,7 +78,7 @@ from . import models, task
 from .log import slogger
 from cvat.apps.iam.permissions import (CloudStoragePermission,
     CommentPermission, IssuePermission, JobPermission, LabelPermission, ProjectPermission,
-    TaskPermission, UserPermission)
+    TaskPermission, UserPermission, AnnotationGuidePermission)
 from cvat.apps.engine.cache import MediaCache
 from cvat.apps.events.handlers import handle_annotations_patch
 from cvat.apps.engine.view_utils import tus_chunk_action
@@ -2337,7 +2337,7 @@ class AnnotationGuidesViewset(
     viewsets.GenericViewSet, mixins.RetrieveModelMixin,
     mixins.CreateModelMixin, mixins.DestroyModelMixin, mixins.UpdateModelMixin
 ):
-    queryset = AnnotationGuide.objects.order_by('-id').select_related('owner').prefetch_related('assets').all()
+    queryset = AnnotationGuide.objects.order_by('-id').select_related('owner', 'project', 'project__owner', 'project__organization', 'task', 'task__owner', 'task__organization').prefetch_related('assets').all()
     search_fields = ()
     ordering = "-id"
 
@@ -2345,6 +2345,15 @@ class AnnotationGuidesViewset(
     # it requires task__organization OR project__organization check.
     # Thus, we rely on permission-based filtering
     iam_organization_field = None
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+
+        if self.action == 'list':
+            perm = AnnotationGuidePermission.create_scope_list(self.request)
+            queryset = perm.filter(queryset)
+
+        return queryset
 
     @staticmethod
     def _update_assets(guide):

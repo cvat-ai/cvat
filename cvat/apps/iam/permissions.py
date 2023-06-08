@@ -1554,6 +1554,60 @@ class LabelPermission(OpenPolicyAgentPermission):
 
         return data
 
+class AnnotationGuidePermission(OpenPolicyAgentPermission):
+    class Scopes(StrEnum):
+        VIEW = 'view'
+        UPDATE = 'update'
+        DELETE = 'delete'
+        CREATE  = 'create'
+
+    @classmethod
+    def create(cls, request, view, obj):
+        permissions = []
+        if view.basename == 'annotationguide':
+            for scope in cls.get_scopes(request, view, obj):
+                self = cls.create_base_perm(request, view, scope, obj)
+                permissions.append(self)
+
+        return permissions
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.url = settings.IAM_OPA_DATA_URL + '/annotationguides/allow'
+
+    @staticmethod
+    def get_scopes(request, view, obj):
+        Scopes = __class__.Scopes
+        return [{
+            'create': Scopes.CREATE,
+            'destroy': Scopes.DELETE,
+            'partial_update': Scopes.UPDATE,
+            'retrieve': Scopes.VIEW,
+        }.get(view.action, None)]
+
+    def get_resource(self):
+        data = {}
+        if self.obj:
+            db_project = getattr(self.obj, 'project', {})
+            db_task = getattr(self.obj, 'task', {})
+            db_organization = getattr(db_project, 'organization', None) or getattr(db_task, 'organization', None) or {}
+            data.update({
+                'id': self.obj.id,
+                'owner': { 'id': getattr(self.obj.owner, 'id', None) },
+                'project': {
+                    'owner': { 'id': getattr(getattr(db_project, 'owner', {}), 'id', None) },
+                    'assignee': { 'id': getattr(getattr(db_project, 'assignee', {}), 'id', None) }
+                },
+                'task': {
+                    'owner': { 'id': getattr(getattr(db_task, 'owner', {}), 'id', None) },
+                    'assignee': { 'id': getattr(getattr(db_task, 'assignee', {}), 'id', None) }
+                },
+                'organization': { 'id': getattr(db_organization, 'id', None) }
+            })
+        elif self.scope == __class__.Scopes.CREATE:
+            pass
+
+        return data
 
 class PolicyEnforcer(BasePermission):
     # pylint: disable=no-self-use
