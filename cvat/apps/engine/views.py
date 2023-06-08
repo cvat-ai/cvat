@@ -2289,11 +2289,13 @@ class AssetsViewset(
     viewsets.GenericViewSet, mixins.RetrieveModelMixin,
     mixins.CreateModelMixin, mixins.DestroyModelMixin
 ):
-    # todo: prefetch related for guide?
-    queryset = Asset.objects.select_related('owner').all()
+    queryset = Asset.objects.select_related('owner', 'guide').all()
     parser_classes=_UPLOAD_PARSER_CLASSES
     search_fields = ()
     ordering = "uuid"
+
+    def check_object_permissions(self, request, obj):
+        super().check_object_permissions(request, obj.guide)
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:

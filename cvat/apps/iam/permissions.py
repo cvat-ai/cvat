@@ -18,7 +18,7 @@ from rest_framework.exceptions import ValidationError, PermissionDenied
 from rest_framework.permissions import BasePermission
 
 from cvat.apps.organizations.models import Membership, Organization
-from cvat.apps.engine.models import CloudStorage, Label, Project, Task, Job, Issue
+from cvat.apps.engine.models import CloudStorage, Label, Project, Task, Job, Issue, AnnotationGuide
 from cvat.apps.webhooks.models import WebhookTypeChoice
 from cvat.utils.http import make_requests_session
 
@@ -1656,6 +1656,48 @@ class AnnotationGuidePermission(OpenPolicyAgentPermission):
                     raise ValidationError(str(ex))
 
         return data
+
+class GuideAssetPermission(OpenPolicyAgentPermission):
+    class Scopes(StrEnum):
+        VIEW = 'view'
+        DELETE = 'delete'
+        CREATE  = 'create'
+
+    @classmethod
+    def create(cls, request, view, obj):
+        Scopes = __class__.Scopes
+        permissions = []
+
+        if view.basename == 'asset':
+            for scope in cls.get_scopes(request, view, obj):
+                if scope == Scopes.VIEW and isinstance(obj, AnnotationGuide):
+                    permissions.append(AnnotationGuidePermission.create_base_perm(
+                        request, view, scope=AnnotationGuidePermission.Scopes.VIEW, obj=obj)
+                    )
+                if scope == Scopes.DELETE and isinstance(obj, AnnotationGuide):
+                    permissions.append(AnnotationGuidePermission.create_base_perm(
+                        request, view, scope=AnnotationGuidePermission.Scopes.UPDATE, obj=obj)
+                    )
+                if scope == Scopes.CREATE:
+                    guide_id = request.data.get('guide_id')
+                    try:
+                        obj = AnnotationGuide.objects.get(id=guide_id)
+                        permissions.append(AnnotationGuidePermission.create_base_perm(
+                            request, view, scope=AnnotationGuidePermission.Scopes.UPDATE, obj=obj)
+                        )
+                    except AnnotationGuide.DoesNotExist as ex:
+                        raise ValidationError(str(ex))
+
+        return permissions
+
+    @staticmethod
+    def get_scopes(request, view, obj):
+        Scopes = __class__.Scopes
+        return [{
+            'create': Scopes.CREATE,
+            'destroy': Scopes.DELETE,
+            'retrieve': Scopes.VIEW,
+        }.get(view.action, None)]
 
 class PolicyEnforcer(BasePermission):
     # pylint: disable=no-self-use
