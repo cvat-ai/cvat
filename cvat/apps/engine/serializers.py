@@ -1882,9 +1882,6 @@ class AnnotationGuideWriteSerializer(WriteOnceMixin, serializers.ModelSerializer
                 project = models.Project.objects.get(id=project_id)
             except models.Project.DoesNotExist:
                 raise serializers.ValidationError(f'The specified project #{project_id} does not exist.')
-            print(project)
-
-            # todo: check patch project permissions
 
         if task_id is not None:
             try:
@@ -1892,7 +1889,6 @@ class AnnotationGuideWriteSerializer(WriteOnceMixin, serializers.ModelSerializer
             except models.Task.DoesNotExist:
                 raise serializers.ValidationError(f'The specified task #{task_id} does not exist.')
             print(task)
-            # todo: check patch task permissions
         db_data = models.AnnotationGuide.objects.create(**validated_data, project = project, task = task)
         return db_data
 

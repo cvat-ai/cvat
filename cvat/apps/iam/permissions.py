@@ -1565,8 +1565,12 @@ class AnnotationGuidePermission(OpenPolicyAgentPermission):
     def create(cls, request, view, obj):
         permissions = []
         if view.basename == 'annotationguide':
+            project_id = request.data.get('project_id')
+            task_id = request.data.get('task_id')
+            params = { 'project_id': project_id, 'task_id': task_id }
+
             for scope in cls.get_scopes(request, view, obj):
-                self = cls.create_base_perm(request, view, scope, obj)
+                self = cls.create_base_perm(request, view, scope, obj, **params)
                 permissions.append(self)
 
         return permissions
@@ -1605,7 +1609,44 @@ class AnnotationGuidePermission(OpenPolicyAgentPermission):
                 'organization': { 'id': getattr(db_organization, 'id', None) }
             })
         elif self.scope == __class__.Scopes.CREATE:
-            pass
+            data.update({
+                'project': {
+                    'owner': { 'id': None },
+                    'assignee': { 'id': None }
+                },
+                'task': {
+                    'owner': { 'id': None },
+                    'assignee': { 'id': None }
+                },
+                'organization': { 'id': None }
+            })
+
+            if self.project_id is not None:
+                try:
+                    db_project = Project.objects.get(id=self.project_id)
+                    db_organization = getattr(db_project, 'organization', {})
+                    data.update({
+                        'project': {
+                            'owner': { 'id': db_project.owner.id },
+                            'assignee': { 'id': getattr(db_project.assignee, 'id', None) }
+                        },
+                        'organization': { 'id': getattr(db_organization, 'id', None) }
+                    })
+                except Project.DoesNotExist as ex:
+                    raise ValidationError(str(ex))
+            elif self.task_id is not None:
+                try:
+                    db_task = Task.objects.get(id=self.project_id)
+                    db_organization = getattr(db_task, 'organization', {})
+                    data.update({
+                        'task': {
+                            'owner': { 'id': db_task.owner.id },
+                            'assignee': { 'id': getattr(db_task.assignee, 'id', None) }
+                        },
+                        'organization': { 'id': getattr(db_organization, 'id', None) }
+                    })
+                except Task.DoesNotExist as ex:
+                    raise ValidationError(str(ex))
 
         return data
 
