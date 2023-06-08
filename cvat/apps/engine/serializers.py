@@ -1838,20 +1838,19 @@ class AssetReadSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
     class Meta:
         model = models.Asset
-        fields = ('uuid', 'filename', 'created_date', 'owner', 'guide_id', 'access_type', )
+        fields = ('uuid', 'filename', 'created_date', 'owner', 'guide_id', )
         read_only_fields = fields
 
 class AssetWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     uuid = serializers.CharField(required=False)
     filename = serializers.CharField(required=True, max_length=1024)
-    access_type = serializers.CharField(required=True, max_length=16)
-    guide_id = serializers.IntegerField(required=False, allow_null=True)
+    guide_id = serializers.IntegerField(required=True)
     owner = BasicUserSerializer(required=False)
 
     class Meta:
         model = models.Asset
-        fields = ('uuid', 'filename', 'created_date', 'owner', 'access_type', 'guide_id', )
-        write_once_fields = ('uuid', 'filename', 'created_date', 'owner', 'access_type', )
+        fields = ('uuid', 'filename', 'created_date', 'owner', 'guide_id', )
+        write_once_fields = ('uuid', 'filename', 'created_date', 'owner', 'guide_id', )
 
 class AnnotationGuideReadSerializer(WriteOnceMixin, serializers.ModelSerializer):
     owner = BasicUserSerializer(required=False)

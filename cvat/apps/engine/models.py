@@ -890,28 +890,12 @@ class AnnotationGuide(models.Model):
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
 
-class AssetAccessType(str, Enum):
-    ANONYMOUS_ACCESS = 'ANONYMOUS_ACCESS'
-    PRIVATE_ACCESS = 'PRIVATE_ACCESS'
-
-    @classmethod
-    def choices(cls):
-        return tuple((x.value, x.name) for x in cls)
-
-    @classmethod
-    def list(cls):
-        return list(map(lambda x: x.value, cls))
-
-    def __str__(self):
-        return self.value
-
 class Asset(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    access_type = models.CharField(max_length=16, default=AssetAccessType.PRIVATE_ACCESS, choices=AssetAccessType.choices())
     filename = models.CharField(max_length=1024)
     created_date = models.DateTimeField(auto_now_add=True)
     owner = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name="assets")
-    guide = models.ForeignKey(AnnotationGuide, null=True, blank=True, on_delete=models.CASCADE, related_name="assets")
+    guide = models.ForeignKey(AnnotationGuide, on_delete=models.CASCADE, related_name="assets")
 
     def get_asset_dir(self):
         return os.path.join(settings.ASSETS_ROOT, str(self.uuid))
