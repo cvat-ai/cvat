@@ -493,6 +493,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             const state = new core.classes.ObjectState({
                 shapeType: ShapeType.RECTANGLE,
                 objectType: ObjectType.TRACK,
+                source: core.enums.Source.SEMI_AUTO,
                 zOrder: curZOrder,
                 label,
                 points,
@@ -849,6 +850,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             const object = new core.classes.ObjectState({
                 frame,
                 objectType: ObjectType.SHAPE,
+                source: core.enums.Source.SEMI_AUTO,
                 label: labels.length ? labels.filter((label: any) => label.id === activeLabelID)[0] : null,
                 shapeType: ShapeType.POLYGON,
                 points: points.flat(),
@@ -870,6 +872,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             const object = new core.classes.ObjectState({
                 frame,
                 objectType: ObjectType.SHAPE,
+                source: core.enums.Source.SEMI_AUTO,
                 label: labels.length ? labels.filter((label: any) => label.id === activeLabelID)[0] : null,
                 shapeType: ShapeType.MASK,
                 points: maskPoints,
