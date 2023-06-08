@@ -885,7 +885,6 @@ class Storage(models.Model):
 class AnnotationGuide(models.Model):
     task = models.OneToOneField(Task, null=True, blank=True, on_delete=models.CASCADE, related_name="annotation_guide")
     project = models.OneToOneField(Project, null=True, blank=True, on_delete=models.CASCADE, related_name="annotation_guide")
-    owner = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name="annotation_guides")
     markdown = models.TextField(blank=True, default='')
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)

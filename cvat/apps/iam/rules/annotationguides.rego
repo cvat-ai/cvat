@@ -82,43 +82,22 @@ allow {
 }
 
 allow {
+    { utils.CREATE, utils.DELETE, utils.UPDATE, utils.VIEW }[input.scope]
     input.scope == utils.CREATE
     utils.is_sandbox
     is_target_staff
 }
 
 allow {
-    input.scope == utils.DELETE
-    utils.is_sandbox
+    { utils.CREATE, utils.DELETE, utils.UPDATE, utils.VIEW }[input.scope]
+    input.auth.organization.id == input.resource.organization.id
+    utils.has_perm(utils.USER)
+    organizations.has_perm(organizations.MAINTAINER)
+}
+
+allow {
+    { utils.CREATE, utils.DELETE, utils.UPDATE, utils.VIEW }[input.scope]
+    input.auth.organization.id == input.resource.organization.id
+    organizations.is_member
     is_target_staff
-}
-
-allow {
-    input.scope == utils.DELETE
-    utils.is_sandbox
-    utils.is_resource_owner
-}
-
-allow {
-    input.scope == utils.UPDATE
-    utils.is_sandbox
-    is_target_staff
-}
-
-allow {
-    input.scope == utils.UPDATE
-    utils.is_sandbox
-    utils.is_resource_owner
-}
-
-allow {
-    input.scope == utils.VIEW
-    utils.is_sandbox
-    is_target_staff
-}
-
-allow {
-    input.scope == utils.VIEW
-    utils.is_sandbox
-    utils.is_resource_owner
 }

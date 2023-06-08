@@ -1857,11 +1857,10 @@ class AnnotationGuideReadSerializer(WriteOnceMixin, serializers.ModelSerializer)
 
     class Meta:
         model = models.AnnotationGuide
-        fields = ('id', 'task_id', 'project_id', 'owner', 'created_date', 'updated_date', 'markdown', )
+        fields = ('id', 'task_id', 'project_id', 'created_date', 'updated_date', 'markdown', )
         read_only_fields = fields
 
 class AnnotationGuideWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
-    owner = BasicUserSerializer(required=False)
     project_id = serializers.IntegerField(required=False, allow_null=True)
     task_id = serializers.IntegerField(required=False, allow_null=True)
 
@@ -1893,4 +1892,4 @@ class AnnotationGuideWriteSerializer(WriteOnceMixin, serializers.ModelSerializer
 
     class Meta:
         model = models.AnnotationGuide
-        fields = ('id', 'task_id', 'project_id', 'owner', 'markdown', )
+        fields = ('id', 'task_id', 'project_id', 'markdown', )

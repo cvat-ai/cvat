@@ -12,7 +12,6 @@ class AnnotationGuide {
     public readonly id?: number;
     public readonly taskId: number;
     public readonly projectId: number;
-    public readonly owner?: User;
     public readonly createdDate?: string;
     public readonly updatedDate?: string;
     public markdown: string;
@@ -22,7 +21,6 @@ class AnnotationGuide {
             id: undefined,
             task_id: null,
             project_id: null,
-            owner: undefined,
             created_date: undefined,
             updated_date: undefined,
             markdown: '',
@@ -33,7 +31,6 @@ class AnnotationGuide {
                 data[property] = initialData[property];
             }
         }
-        if (data.owner) data.owner = new User(data.owner);
 
         Object.defineProperties(this, Object.freeze({
             id: {
@@ -44,9 +41,6 @@ class AnnotationGuide {
             },
             projectId: {
                 get: () => data.project_id,
-            },
-            owner: {
-                get: () => data.owner,
             },
             createdDate: {
                 get: () => data.created_date,
