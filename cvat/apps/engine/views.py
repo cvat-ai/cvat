@@ -2335,7 +2335,7 @@ class AssetsViewset(
 
 class AnnotationGuidesViewset(
     viewsets.GenericViewSet, mixins.RetrieveModelMixin,
-    mixins.CreateModelMixin, mixins.DestroyModelMixin, mixins.UpdateModelMixin
+    mixins.CreateModelMixin, mixins.DestroyModelMixin, PartialUpdateModelMixin
 ):
     queryset = AnnotationGuide.objects.order_by('-id').select_related('owner', 'project', 'project__owner', 'project__organization', 'task', 'task__owner', 'task__organization').prefetch_related('assets').all()
     search_fields = ()
