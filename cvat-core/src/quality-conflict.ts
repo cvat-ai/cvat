@@ -28,6 +28,7 @@ export interface RawAnnotationConflictData {
     obj_id?: number;
     client_id?: number;
     type?: string;
+    shape_type?: string | null;
     conflict_type?: string;
     severity?: string;
 }
@@ -37,6 +38,7 @@ export class AnnotationConflict {
     public readonly serverID: number;
     public clientID: number;
     public readonly type: string;
+    public readonly shapeType: string | null;
     public readonly conflictType: QualityConflictType;
     public readonly severity: ConflictSeverity;
     public readonly description: string;
@@ -47,6 +49,7 @@ export class AnnotationConflict {
             obj_id: undefined,
             client_id: undefined,
             type: undefined,
+            shape_type: undefined,
             conflict_type: undefined,
             severity: undefined,
         };
@@ -74,6 +77,9 @@ export class AnnotationConflict {
                 },
                 type: {
                     get: () => data.type,
+                },
+                shapeType: {
+                    get: () => data.shape_type,
                 },
                 conflictType: {
                     get: () => data.conflict_type,
