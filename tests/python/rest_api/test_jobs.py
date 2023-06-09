@@ -21,8 +21,9 @@ from deepdiff import DeepDiff
 from PIL import Image
 
 from shared.utils.config import make_api_client
+from shared.utils.helpers import generate_image_files
 
-from .utils import CollectionSimpleFilterTestBase, compare_annotations, export_dataset
+from .utils import CollectionSimpleFilterTestBase, compare_annotations, create_task, export_dataset
 
 
 def get_job_staff(job, tasks, projects):
@@ -577,7 +578,9 @@ class TestGetGtJobData:
         assert job_frame_ids == gt_job_meta.included_frames
 
         # The frames themselves are the same as in the whole range
-        # this is required in UI implementation
+        # this is required by the UI implementation
+        assert task_meta.start_frame == gt_job_meta.start_frame
+        assert task_meta.stop_frame == gt_job_meta.stop_frame
         if task_mode == "annotation":
             assert (
                 len(gt_job_meta.frames)
@@ -587,6 +590,52 @@ class TestGetGtJobData:
             assert len(gt_job_meta.frames) == 1
         else:
             assert False
+
+    @pytest.mark.usefixtures("restore_db_per_function")
+    def test_can_get_gt_job_meta_with_complex_frame_setup(self, admin_user):
+        image_count = 50
+        start_frame = 3
+        stop_frame = image_count - 4
+        frame_step = 5
+
+        images = generate_image_files(image_count)
+
+        task_id, _ = create_task(
+            admin_user,
+            spec={
+                "name": "test complex frame setup",
+                "labels": [{"name": "cat"}],
+            },
+            data={
+                "image_quality": 75,
+                "start_frame": start_frame,
+                "stop_frame": stop_frame,
+                "frame_filter": f"step={frame_step}",
+                "client_files": images,
+                "sorting_method": "predefined",
+            },
+        )
+
+        task_frame_ids = range(start_frame, stop_frame, frame_step)
+        job_frame_ids = list(task_frame_ids[::3])
+        gt_job = self._get_or_create_gt_job(admin_user, task_id, job_frame_ids)
+
+        with make_api_client(admin_user) as api_client:
+            (gt_job_meta, _) = api_client.jobs_api.retrieve_data_meta(gt_job.id)
+
+        # The size is adjusted by the frame step and included frames
+        assert len(job_frame_ids) == gt_job_meta.size
+        assert job_frame_ids == gt_job_meta.included_frames
+
+        # The frames themselves are the same as in the whole range
+        # with placeholders in the frames outside the job.
+        # This is required by the UI implementation
+        assert start_frame == gt_job_meta.start_frame
+        assert max(task_frame_ids) == gt_job_meta.stop_frame
+        assert [frame_info["name"] for frame_info in gt_job_meta.frames] == [
+            images[frame].name if frame in job_frame_ids else "placeholder.jpg"
+            for frame in task_frame_ids
+        ]
 
     @pytest.mark.parametrize("task_mode", ["annotation", "interpolation"])
     @pytest.mark.parametrize("quality", ["compressed", "original"])
@@ -622,6 +671,9 @@ class TestGetGtJobData:
         )
         included_frames = job_frame_ids
 
+        # The frame count is the same as in the whole range
+        # with placeholders in the frames outside the job.
+        # This is required by the UI implementation
         with zipfile.ZipFile(chunk_file) as chunk:
             assert set(chunk.namelist()) == set("{:06d}.jpeg".format(i) for i in frame_range)
 
