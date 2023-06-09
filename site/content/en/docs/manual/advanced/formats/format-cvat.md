@@ -5,6 +5,9 @@ weight: 1
 
 # CVAT
 
+- [Format specification](/docs/manual/advanced/xml_format/)
+- [Dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/cvat_dataset)
+
 This is the native CVAT annotation format. It supports all CVAT annotations
 features, so it can be used to make data backups.
 
@@ -15,8 +18,6 @@ features, so it can be used to make data backups.
   Points, Cuboids, Skeletons, Tracks
 
 - attributes are supported
-
-- [Format specification](/docs/manual/advanced/xml_format/)
 
 ## CVAT for images export
 

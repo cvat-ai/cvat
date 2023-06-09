@@ -278,6 +278,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                     frame,
                     objectType: ObjectType.SHAPE,
                     shapeType: ShapeType.POLYGON,
+                    source: core.enums.Source.SEMI_AUTO,
                     label: labels.filter((label: any) => label.id === activeLabelID)[0],
                     points: openCVWrapper.contours
                         .approxPoly(finalPoints, thresholdFromAccuracy(approxPolyAccuracy))
@@ -321,6 +322,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
             const state = new core.classes.ObjectState({
                 shapeType: ShapeType.RECTANGLE,
                 objectType: ObjectType.TRACK,
+                source: core.enums.Source.SEMI_AUTO,
                 zOrder: curZOrder,
                 label,
                 points,
