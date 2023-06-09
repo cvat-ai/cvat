@@ -205,20 +205,20 @@ allow {
 }
 
 allow {
-    { utils.EXPORT_ANNOTATIONS, utils.EXPORT_DATASET, utils.EXPORT_BACKUP }[input.scope]
+    { }[input.scope]
     utils.is_sandbox
     is_project_staff
 }
 
 allow {
-    { utils.EXPORT_ANNOTATIONS, utils.EXPORT_DATASET, utils.EXPORT_BACKUP }[input.scope]
+    { }[input.scope]
     input.auth.organization.id == input.resource.organization.id
     organizations.is_member
     is_project_staff
 }
 
 allow {
-    { utils.EXPORT_ANNOTATIONS, utils.EXPORT_DATASET, utils.EXPORT_BACKUP }[input.scope]
+    { }[input.scope]
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
     organizations.has_perm(organizations.MAINTAINER)
