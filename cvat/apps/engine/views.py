@@ -1915,7 +1915,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         stop_frame = db_job.segment.stop_frame
         frame_step = db_data.get_frame_step()
         data_start_frame = db_data.start_frame + start_frame * frame_step
-        data_stop_frame = db_data.start_frame + stop_frame * frame_step
+        data_stop_frame = min(db_data.stop_frame, db_data.start_frame + stop_frame * frame_step)
         frame_set = db_job.segment.frame_set
 
         if request.method == 'PATCH':
