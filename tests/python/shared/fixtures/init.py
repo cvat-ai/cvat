@@ -470,7 +470,8 @@ def collect_code_coverage_from_containers():
 
         # stop process with code coverage
         docker_exec(container, f"kill -15 {pid}")
-        while not run(f"docker exec -u root {PREFIX}_{container}_1 {process_command}", shell=True).returncode:
+        command = f"docker exec -u root {PREFIX}_{container}_1 {process_command}"
+        while not run(command, shell=True).returncode:
             sleep(1)
 
         # get code coverage report
