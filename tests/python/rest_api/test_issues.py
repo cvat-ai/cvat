@@ -13,7 +13,7 @@ from cvat_sdk import models
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from deepdiff import DeepDiff
 
-from shared.utils.config import make_api_client
+from shared.utils.config import get_method, make_api_client
 
 from .utils import CollectionSimpleFilterTestBase
 
@@ -394,3 +394,20 @@ class TestCommentsListFilters(CollectionSimpleFilterTestBase):
     )
     def test_can_use_simple_filter_for_object_list(self, field):
         return super().test_can_use_simple_filter_for_object_list(field)
+
+
+@pytest.mark.usefixtures("restore_db_per_class")
+class TestListIssues:
+    def _test_can_see_issues(self, user, data, **kwargs):
+        response = get_method(user, "issues", **kwargs)
+
+        assert response.status_code == HTTPStatus.OK
+        assert DeepDiff(data, response.json()["results"]) == {}
+
+    def test_admin_can_see_all_issues(self, issues):
+        self._test_can_see_issues("admin2", issues.raw, page_size="all")
+
+    @pytest.mark.parametrize("field_value, query_value", [(1, 1), (None, "")])
+    def test_can_filter_by_org_id(self, field_value, query_value, issues, jobs):
+        issues = filter(lambda i: jobs[i["job"]]["organization"] == field_value, issues)
+        self._test_can_see_issues("admin2", list(issues), page_size="all", org_id=query_value)

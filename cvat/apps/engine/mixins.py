@@ -6,18 +6,25 @@
 import base64
 import json
 import os
+import os.path
 import uuid
 from dataclasses import asdict, dataclass
 from distutils.util import strtobool
+from pathlib import Path
+from tempfile import NamedTemporaryFile
 from unittest import mock
 
+import django_rq
 from django.conf import settings
 from rest_framework import mixins, status
 from rest_framework.response import Response
 
 from cvat.apps.engine.location import StorageType, get_location_configuration
+from cvat.apps.engine.log import slogger
 from cvat.apps.engine.models import Location
 from cvat.apps.engine.serializers import DataSerializer
+from cvat.apps.engine.handlers import clear_import_cache
+from cvat.apps.engine.utils import get_import_rq_id
 
 
 class TusFile:
@@ -145,9 +152,30 @@ class TusChunk:
         self.size = int(request.META.get("CONTENT_LENGTH", settings.TUS_DEFAULT_CHUNK_SIZE))
         self.content = request.body
 
-# This upload mixin is implemented using tus
-# tus is open protocol for file uploads (see more https://tus.io/)
 class UploadMixin:
+    """
+    Implements file uploads to the server. Allows to upload single and multiple files, suspend
+    and resume uploading. Uses the TUS open file uploading protocol (https://tus.io/).
+
+    Implements the following protocols:
+    a. A single Data request
+
+    and
+
+    b.1. An Upload-Start request
+    b.2.a. The regular TUS protocol requests (Upload-Length + Chunks)
+    b.2.b. Upload-Multiple requests
+    b.3. An Upload-Finish request
+
+    Requests:
+    - Data - POST, no extra headers or 'Upload-Start' + 'Upload-Finish' headers
+    - Upload-Start - POST, has an 'Upload-Start' header
+    - Upload-Length - POST, has an 'Upload-Length' header (read the TUS protocol)
+    - Chunk - HEAD/PATCH (read the TUS protocol)
+    - Upload-Finish - POST, has an 'Upload-Finish' header
+    - Upload-Multiple - POST, has a 'Upload-Multiple' header
+    """
+
     _tus_api_version = '1.0.0'
     _tus_api_version_supported = ['1.0.0']
     _tus_api_extensions = []
@@ -198,11 +226,11 @@ class UploadMixin:
         if one_request_upload or finish_upload:
             return self.upload_finished(request)
         elif start_upload:
-            return Response(status=status.HTTP_202_ACCEPTED)
+            return self.upload_started(request)
         elif tus_request:
             return self.init_tus_upload(request)
         elif bulk_file_upload:
-            return self.append(request)
+            return self.append_files(request)
         else: # backward compatibility case - no upload headers were found
             return self.upload_finished(request)
 
@@ -212,7 +240,7 @@ class UploadMixin:
         else:
             metadata = self._get_metadata(request)
             filename = metadata.get('filename', '')
-            if not self.validate_filename(filename):
+            if not self.is_valid_uploaded_file_name(filename):
                 return self._tus_response(status=status.HTTP_400_BAD_REQUEST,
                     data="File name {} is not allowed".format(filename))
 
@@ -221,7 +249,27 @@ class UploadMixin:
             if message_id:
                 metadata["message_id"] = base64.b64decode(message_id)
 
-            file_exists = os.path.lexists(os.path.join(self.get_upload_dir(), filename))
+            import_type = request.path.strip('/').split('/')[-1]
+            if import_type == 'backup':
+                # we need to create unique temp file here because
+                # users can try to import backups with the same name at the same time
+                with NamedTemporaryFile(prefix=f'cvat-backup-{filename}-by-{request.user}', suffix='.zip', dir=self.get_upload_dir()) as tmp_file:
+                    filename = os.path.relpath(tmp_file.name, self.get_upload_dir())
+                metadata['filename'] = filename
+            file_path = os.path.join(self.get_upload_dir(), filename)
+            file_exists = os.path.lexists(file_path) and import_type != 'backup'
+
+            if file_exists:
+                # check whether the rq_job is in progress or has been finished/failed
+                object_class_name = self._object.__class__.__name__.lower()
+                template = get_import_rq_id(object_class_name, self._object.pk, import_type, request.user)
+                queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
+                finished_job_ids = queue.finished_job_registry.get_job_ids()
+                failed_job_ids = queue.failed_job_registry.get_job_ids()
+                if template in finished_job_ids or template in failed_job_ids:
+                    os.remove(file_path)
+                    file_exists = False
+
             if file_exists:
                 return self._tus_response(status=status.HTTP_409_CONFLICT,
                     data="File with same name already exists")
@@ -231,11 +279,27 @@ class UploadMixin:
                 return self._tus_response(status=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
                     data="File size exceeds max limit of {} bytes".format(self._tus_max_file_size))
 
+
             tus_file = TusFile.create_file(metadata, file_size, self.get_upload_dir())
 
             location = request.build_absolute_uri()
             if 'HTTP_X_FORWARDED_HOST' not in request.META:
                 location = request.META.get('HTTP_ORIGIN') + request.META.get('PATH_INFO')
+
+            if import_type in ('backup', 'annotations', 'datasets'):
+                scheduler = django_rq.get_scheduler(settings.CVAT_QUEUES.CLEANING.value)
+                path = Path(self.get_upload_dir()) / tus_file.filename
+                cleaning_job = scheduler.enqueue_in(time_delta=settings.IMPORT_CACHE_CLEAN_DELAY,
+                    func=clear_import_cache,
+                    path=path,
+                    creation_time=Path(tus_file.file_path).stat().st_ctime
+                )
+                slogger.glob.info(
+                    f'The cleaning job {cleaning_job.id} is queued.'
+                    f'The check that the file {path} is deleted will be carried out after '
+                    f'{settings.IMPORT_CACHE_CLEAN_DELAY}.'
+                )
+
             return self._tus_response(
                 status=status.HTTP_201_CREATED,
                 extra_headers={'Location': '{}{}'.format(location, tus_file.file_id),
@@ -268,32 +332,55 @@ class UploadMixin:
                                     extra_headers={'Upload-Offset': tus_file.offset,
                                                     'Upload-Filename': tus_file.filename})
 
-    def validate_filename(self, filename):
+    def is_valid_uploaded_file_name(self, filename: str) -> bool:
+        """
+        Checks the file name to be valid.
+        Returns True if the filename is valid, otherwise returns False.
+        """
+
         upload_dir = self.get_upload_dir()
         file_path = os.path.join(upload_dir, filename)
         return os.path.commonprefix((os.path.realpath(file_path), upload_dir)) == upload_dir
 
-    def get_upload_dir(self):
+    def get_upload_dir(self) -> str:
         return self._object.data.get_upload_dirname()
 
-    def get_request_client_files(self, request):
+    def _get_request_client_files(self, request):
         serializer = DataSerializer(self._object, data=request.data)
         serializer.is_valid(raise_exception=True)
-        data = {k: v for k, v in serializer.validated_data.items()}
-        return data.get('client_files', None)
+        return serializer.validated_data.get('client_files')
 
-    def append(self, request):
-        client_files = self.get_request_client_files(request)
+    def append_files(self, request):
+        """
+        Processes a single or multiple files sent in a single request inside
+        a file uploading session.
+        """
+
+        client_files = self._get_request_client_files(request)
         if client_files:
             upload_dir = self.get_upload_dir()
             for client_file in client_files:
-                with open(os.path.join(upload_dir, client_file['file'].name), 'ab+') as destination:
+                filename = client_file['file'].name
+                if not self.is_valid_uploaded_file_name(filename):
+                    return Response(status=status.HTTP_400_BAD_REQUEST,
+                        data=f"File name {filename} is not allowed", content_type="text/plain")
+
+                with open(os.path.join(upload_dir, filename), 'ab+') as destination:
                     destination.write(client_file['file'].read())
         return Response(status=status.HTTP_200_OK)
 
-    # override this to do stuff after upload
+    def upload_started(self, request):
+        """
+        Allows to do actions before upcoming file uploading.
+        """
+        return Response(status=status.HTTP_202_ACCEPTED)
+
     def upload_finished(self, request):
-        raise NotImplementedError('You need to implement upload_finished in UploadMixin')
+        """
+        Allows to process uploaded files.
+        """
+
+        raise NotImplementedError('Must be implemented in the derived class')
 
 class AnnotationMixin:
     def export_annotations(self, request, db_obj, export_func, callback, get_data=None):
@@ -330,7 +417,7 @@ class AnnotationMixin:
         data = get_data(self._object.pk)
         return Response(data)
 
-    def import_annotations(self, request, db_obj, import_func, rq_func, rq_id):
+    def import_annotations(self, request, db_obj, import_func, rq_func, rq_id_template):
         is_tus_request = request.headers.get('Upload-Length', None) is not None or \
             request.method == 'OPTIONS'
         if is_tus_request:
@@ -352,7 +439,7 @@ class AnnotationMixin:
 
             return import_func(
                 request=request,
-                rq_id=rq_id,
+                rq_id_template=rq_id_template,
                 rq_func=rq_func,
                 db_obj=self._object,
                 format_name=format_name,

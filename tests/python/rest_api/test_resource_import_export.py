@@ -15,7 +15,7 @@ from shared.utils.resource_import_export import (
 )
 from shared.utils.s3 import make_client as make_s3_client
 
-from .utils import _test_create_task
+from .utils import create_task
 
 # https://docs.pytest.org/en/7.1.x/example/markers.html#marking-whole-classes-or-modules
 pytestmark = [pytest.mark.with_external_services]
@@ -135,7 +135,7 @@ class TestExportResourceToS3(_S3ResourceTest):
         user = regular_lonely_user
 
         project_spec = {"name": "Test project"}
-        project = post_method(user, "/projects", project_spec).json()
+        project = post_method(user, "projects", project_spec).json()
         project_id = project["id"]
 
         task_spec = {
@@ -152,11 +152,9 @@ class TestExportResourceToS3(_S3ResourceTest):
             "server_files": ["images/image_1.jpg"],
             "project_id": project_id,
         }
-        (task_id, _) = _test_create_task(
-            user, task_spec, data_spec, content_type="application/json"
-        )
+        (task_id, _) = create_task(user, task_spec, data_spec)
 
-        jobs = get_method(user, "/jobs", task_id=task_id).json()["results"]
+        jobs = get_method(user, "jobs", task_id=task_id).json()["results"]
         job_id = jobs[0]["id"]
 
         if obj == "projects":
@@ -283,7 +281,7 @@ class TestImportResourceFromS3(_S3ResourceTest):
         user = regular_lonely_user
 
         project_spec = {"name": "Test project"}
-        project = post_method(user, "/projects", project_spec).json()
+        project = post_method(user, "projects", project_spec).json()
         project_id = project["id"]
 
         task_spec = {
@@ -300,11 +298,9 @@ class TestImportResourceFromS3(_S3ResourceTest):
             "server_files": ["images/image_1.jpg"],
             "project_id": project_id,
         }
-        (task_id, _) = _test_create_task(
-            user, task_spec, data_spec, content_type="application/json"
-        )
+        (task_id, _) = create_task(user, task_spec, data_spec)
 
-        jobs = get_method(user, "/jobs", task_id=task_id).json()["results"]
+        jobs = get_method(user, "jobs", task_id=task_id).json()["results"]
         job_id = jobs[0]["id"]
 
         if obj == "projects":

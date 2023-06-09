@@ -44,7 +44,6 @@ TASK_CACHE_TTL = DEFAULT_CACHE_TTL
 PROJECT_CACHE_TTL = DEFAULT_CACHE_TTL / 3
 JOB_CACHE_TTL = DEFAULT_CACHE_TTL
 
-
 def export(dst_format, project_id=None, task_id=None, job_id=None, server_url=None, save_images=False):
     try:
         if task_id is not None:

@@ -14,11 +14,12 @@ from typing import Any, Dict, List, Optional, Sequence, Union, cast
 from attrs import define, field
 from django.conf import settings
 from django.db.models import Q
-from rest_framework.exceptions import ValidationError, PermissionDenied
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.permissions import BasePermission
 
+from cvat.apps.engine.models import (CloudStorage, Issue, Job, Label, Project,
+                                     Task)
 from cvat.apps.organizations.models import Membership, Organization
-from cvat.apps.engine.models import CloudStorage, Label, Project, Task, Job, Issue
 from cvat.apps.webhooks.models import WebhookTypeChoice
 from cvat.utils.http import make_requests_session
 
@@ -56,14 +57,22 @@ def get_organization(request, obj):
         return obj
 
     if obj:
-        if organization_id := getattr(obj, "organization_id", None):
-            try:
-                return Organization.objects.get(id=organization_id)
-            except Organization.DoesNotExist:
-                return None
-        return None
+        try:
+            organization_id = getattr(obj, 'organization_id')
+        except AttributeError as exc:
+            # Skip initialization of organization for those objects that don't related with organization
+            view = request.parser_context.get('view')
+            if view and view.basename in ('user', 'function', 'request',):
+                return request.iam_context['organization']
 
-    return request.iam_context["organization"]
+            raise exc
+
+        try:
+            return Organization.objects.get(id=organization_id)
+        except Organization.DoesNotExist:
+            return None
+
+    return request.iam_context['organization']
 
 def get_membership(request, organization):
     if organization is None:
@@ -80,12 +89,13 @@ def get_iam_context(request, obj):
     membership = get_membership(request, organization)
 
     if organization and not request.user.is_superuser and membership is None:
-        raise PermissionDenied({"message": "You should be an active member in the organization"})
+        raise PermissionDenied({'message': 'You should be an active member in the organization'})
 
     return {
         'user_id': request.user.id,
         'group_name': request.iam_context['privilege'],
         'org_id': getattr(organization, 'id', None),
+        'org_slug': getattr(organization, 'slug', None),
         'org_owner_id': getattr(organization.owner, 'id', None)
             if organization else None,
         'org_role': getattr(membership, 'role', None),
