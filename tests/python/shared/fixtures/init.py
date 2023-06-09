@@ -437,6 +437,10 @@ def pytest_sessionstart(session: pytest.Session) -> None:
 
 
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
+    session_finish(session)
+
+
+def session_finish(session):
     if session.config.getoption("--collect-only"):
         return
 

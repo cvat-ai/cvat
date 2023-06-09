@@ -12,5 +12,7 @@ fakeredis==2.10.3
     # via -r cvat/requirements/testing.in
 sortedcontainers==2.4.0
     # via fakeredis
+coverage==7.2.3
+    # via -r cvat/requirements/testing.in
 
 # The following packages are considered to be unsafe in a requirements file:
