@@ -573,6 +573,10 @@ class TestGetGtJobData:
         with make_api_client(user) as api_client:
             (gt_job_meta, _) = api_client.jobs_api.retrieve_data_meta(gt_job.id)
 
+        # These values are relative to the resulting task frames, unlike meta values
+        assert 0 == gt_job.start_frame
+        assert task_meta.size - 1 == gt_job.stop_frame
+
         # The size is adjusted by the frame step and included frames
         assert job_frame_count == gt_job_meta.size
         assert job_frame_ids == gt_job_meta.included_frames
@@ -622,6 +626,10 @@ class TestGetGtJobData:
 
         with make_api_client(admin_user) as api_client:
             (gt_job_meta, _) = api_client.jobs_api.retrieve_data_meta(gt_job.id)
+
+        # These values are relative to the resulting task frames, unlike meta values
+        assert 0 == gt_job.start_frame
+        assert len(task_frame_ids) - 1 == gt_job.stop_frame
 
         # The size is adjusted by the frame step and included frames
         assert len(job_frame_ids) == gt_job_meta.size

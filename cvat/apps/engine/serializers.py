@@ -673,7 +673,7 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
             segment = models.Segment.objects.create(
                 start_frame=0,
-                stop_frame=task.data.size,
+                stop_frame=task.data.size - 1,
                 frames=frames,
                 task=task,
                 type=models.SegmentType.SPECIFIC_FRAMES,
