@@ -55,5 +55,5 @@ urlpatterns += [
     path('version.txt', RedirectView.as_view(url=static('version.txt'), permanent=True), name='version'),
     path('favicon.ico', RedirectView.as_view(url=static('favicon.ico'), permanent=True), name='favicon'),
 
-    re_path('^.*', index_view, name='index'),
+    re_path(r'(?P<url>.*)$', index_view, name='index'),
 ]

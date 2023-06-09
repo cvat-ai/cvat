@@ -5,8 +5,11 @@ from rest_framework.response import Response
 
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
-from django.http.response import Http404
+from django.http.response import Http404, HttpResponsePermanentRedirect
 from django.shortcuts import render
+from django.conf import settings
+from django.urls import resolve, Resolver404
+from django.views.decorators.common import no_append_slash
 
 from .authentication import RetailerAuthentication
 from .serializers import ImportSerializer, ImportResponseSerializer
@@ -49,5 +52,17 @@ class RetailerImportViewset(GenericViewSet):
         return Response(serializer.data)
 
 
-def index_view(request, *args, **kwargs):
+@no_append_slash
+def index_view(request, url, *args, **kwargs):
+    # same as django.contrib.admin.sites.AdminSite.catch_all_view
+    # except returns index.html when url is not found.
+    if settings.APPEND_SLASH and not url.endswith('/'):
+        urlconf = getattr(request, 'urlconf', None)
+        try:
+            match = resolve('%s/' % request.path_info, urlconf)
+        except Resolver404:
+            pass
+        else:
+            if getattr(match.func, 'should_append_slash', True):
+                return HttpResponsePermanentRedirect('%s/' % request.path)
     return render(request, 'index.html')
