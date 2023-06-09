@@ -250,14 +250,24 @@ class LambdaFunction:
                             supported_attrs[func_label].update({ attr["name"]: task_attributes[mapped_label][mapped_attr] })
 
             # Check job frame boundaries
-            for key, desc in (
-                ('frame', 'frame'),
-                ('frame0', 'start frame'),
-                ('frame1', 'end frame'),
-            ):
-                if key in data and db_job and not db_job.segment.contains_frame(data[key]):
-                    raise ValidationError(f"The {desc} is outside the job range",
-                        code=status.HTTP_400_BAD_REQUEST)
+            if db_job:
+                task_data = db_task.data
+                data_start_frame = task_data.start_frame
+                step = task_data.get_frame_step()
+
+                for key, desc in (
+                    ('frame', 'frame'),
+                    ('frame0', 'start frame'),
+                    ('frame1', 'end frame'),
+                ):
+                    if key not in data:
+                        continue
+
+                    abs_frame_id = data_start_frame + data[key] * step
+                    if not db_job.segment.contains_frame(abs_frame_id):
+                        raise ValidationError(f"The {desc} is outside the job range",
+                            code=status.HTTP_400_BAD_REQUEST)
+
 
             if self.kind == LambdaType.DETECTOR:
                 payload.update({
