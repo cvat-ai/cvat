@@ -1099,6 +1099,8 @@ class TestComplexFrameSetupCases(_LambdaTestCaseBase):
             owner=self.user
         )
         self.task_rel_frame_range = range(len(range(start_frame, stop_frame, frame_step)))
+        self.start_frame = start_frame
+        self.frame_step = frame_step
 
         self.jobs = get_paginated_collection(lambda page:
             self._get_request(
@@ -1180,6 +1182,45 @@ class TestComplexFrameSetupCases(_LambdaTestCaseBase):
                 for frame, group in groupby(annotations["shapes"], key=lambda a: a["frame"])
             }
         )
+
+    def test_can_run_function_on_gt_job(self):
+        requested_frame_range = self.task_rel_frame_range[::3]
+        response = self._post_request("/api/jobs", self.admin, data={
+            "type": "ground_truth",
+            "task_id": self.task["id"],
+            "frame_selection_method": "manual",
+            "frames": [
+                self.start_frame + frame * self.frame_step for frame in requested_frame_range
+            ],
+        })
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        job = response.json()
+
+        data = self.common_request_data.copy()
+        data["job"] = job["id"]
+        self._run_function(self.function_id, data, self.user)
+
+        response = self._get_request(f'/api/jobs/{job["id"]}/annotations', self.admin)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        annotations = response.json()
+
+        self.assertEqual(len(annotations["tags"]), 0)
+        self.assertEqual(len(annotations["tracks"]), 0)
+
+        self.assertEqual(
+            {
+                frame: 1 for frame in requested_frame_range
+            },
+            {
+                frame: len(list(group))
+                for frame, group in groupby(annotations["shapes"], key=lambda a: a["frame"])
+            }
+        )
+
+        response = self._get_request(f'/api/tasks/{self.task["id"]}/annotations', self.admin)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        annotations = response.json()
+        self.assertEqual(annotations, {'version': 0, 'tags': [], 'shapes': [], 'tracks': []})
 
     def test_can_run_interactor_on_valid_task_frame(self):
         data = self.common_request_data.copy()

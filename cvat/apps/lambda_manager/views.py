@@ -535,8 +535,9 @@ class LambdaJob:
         db_job: Optional[Job] = None
     ):
         class Results:
-            def __init__(self, task_id):
+            def __init__(self, task_id, job_id: Optional[int] = None):
                 self.task_id = task_id
+                self.job_id = job_id
                 self.reset()
 
             def append_shape(self, shape):
@@ -546,11 +547,17 @@ class LambdaJob:
                 self.data["tags"].append(tag)
 
             def submit(self):
-                if not self.is_empty():
-                    serializer = LabeledDataSerializer(data=self.data)
-                    if serializer.is_valid(raise_exception=True):
+                if self.is_empty():
+                    return
+
+                serializer = LabeledDataSerializer(data=self.data)
+                if serializer.is_valid(raise_exception=True):
+                    if self.job_id:
+                        dm.task.patch_job_data(self.job_id, serializer.data, "create")
+                    else:
                         dm.task.patch_task_data(self.task_id, serializer.data, "create")
-                    self.reset()
+
+                self.reset()
 
             def is_empty(self):
                 return not (self.data["tags"] or self.data["shapes"] or self.data["tracks"])
@@ -560,16 +567,16 @@ class LambdaJob:
                 # FIXME: need to provide the correct version here
                 self.data = {"version": 0, "tags": [], "shapes": [], "tracks": []}
 
-        results = Results(db_task.id)
+        results = Results(db_task.id, job_id=db_job.id if db_job else None)
 
         if db_job:
             task_data = db_task.data
             data_start_frame = task_data.start_frame
             step = task_data.get_frame_step()
-            frame_set = [
+            frame_set = sorted(
                 (abs_id - data_start_frame) // step
                 for abs_id in db_job.segment.frame_set
-            ]
+            )
         else:
             frame_set = range(db_task.data.size)
 
