@@ -460,9 +460,18 @@ def session_finish(session):
 
 def collect_code_coverage_from_containers():
     for container in Container.covered():
+        if container == Container.SERVER:
+            process_command = "uvicorn"
+        else:
+            process_command = "manage.py"
+
+        # find process with code coverage
+        pid, _ = docker_exec(container, f"ps axu | grep {process_command}")
+
         # stop process with code coverage
-        docker_exec(container, f"kill -15 1")
-        sleep(5)
+        docker_exec(container, f"kill -15 {pid}")
+        while not run(f"docker exec -u root {PREFIX}_{container}_1 {process_command}", shell=True).returncode:
+            sleep(1)
 
         # get code coverage report
         docker_exec(container, "coverage combine", capture_output=False)
