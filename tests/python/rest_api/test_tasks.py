@@ -1806,7 +1806,7 @@ class TestImportTaskAnnotations:
         task.import_annotations(self.format, filename)
         self._check_annotations(task_id)
 
-    @pytest.mark.timeout(64)
+    @pytest.mark.timeout(25)
     def test_check_import_cache_after_previous_interrupted_upload(self, tasks_with_shapes, request):
         task_id = tasks_with_shapes[0]["id"]
         with NamedTemporaryFile() as f:
@@ -1825,12 +1825,12 @@ class TestImportTaskAnnotations:
             url, filename, meta=params, logger=self.client.logger.debug
         )
         number_of_files = 1
-        sleep(30)  # wait when the cleaning job from rq worker will be started
+        sleep(15)  # wait when the cleaning job from rq worker will be started
         command = ["/bin/bash", "-c", f"ls data/tasks/{task_id}/tmp | wc -l"]
         platform = request.config.getoption("--platform")
         assert platform in ("kube", "local")
         func = docker_exec_cvat if platform == "local" else kube_exec_cvat
-        for _ in range(12):
+        for _ in range(3):
             sleep(2)
             result, _ = func(command)
             number_of_files = int(result)
