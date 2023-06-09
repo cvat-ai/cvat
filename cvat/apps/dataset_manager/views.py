@@ -87,7 +87,7 @@ def export(dst_format, project_id=None, task_id=None, job_id=None, server_url=No
             archive_ctime = osp.getctime(output_path)
             scheduler = django_rq.get_scheduler(
                 settings.CVAT_QUEUES.EXPORT_DATA.value,
-                interval=settings.RQ_SCHEDULER_CHECK_INTERVAL
+                interval=settings.DJANGO_RQ_SCHEDULER_INTERVAL
             )
             cleaning_job = scheduler.enqueue_in(time_delta=cache_ttl,
                 func=clear_export_cache,

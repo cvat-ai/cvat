@@ -11,6 +11,6 @@ PASSWORD_HASHERS = [
     "django.contrib.auth.hashers.MD5PasswordHasher",
 ]
 
-IMPORT_CACHE_CLEAN_DELAY = timedelta(seconds=1)
+IMPORT_CACHE_CLEAN_DELAY = timedelta(seconds=30)
 
-RQ_SCHEDULER_CHECK_INTERVAL = 30
+DJANGO_RQ_SCHEDULER_INTERVAL = 30

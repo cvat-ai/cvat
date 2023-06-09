@@ -770,7 +770,7 @@ def _create_backup(db_instance, Exporter, output_path, logger, cache_ttl):
             archive_ctime = os.path.getctime(output_path)
             scheduler = django_rq.get_scheduler(
                 settings.CVAT_QUEUES.IMPORT_DATA.value,
-                interval=settings.RQ_SCHEDULER_CHECK_INTERVAL
+                interval=settings.DJANGO_RQ_SCHEDULER_INTERVAL
             )
             cleaning_job = scheduler.enqueue_in(time_delta=cache_ttl,
                 func=clear_export_cache,

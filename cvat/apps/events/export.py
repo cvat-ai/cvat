@@ -70,7 +70,7 @@ def _create_csv(query_params, output_filename, cache_ttl):
         archive_ctime = os.path.getctime(output_filename)
         scheduler = django_rq.get_scheduler(
             settings.CVAT_QUEUES.EXPORT_DATA.value,
-            interval=settings.RQ_SCHEDULER_CHECK_INTERVAL
+            interval=settings.DJANGO_RQ_SCHEDULER_INTERVAL
         )
         cleaning_job = scheduler.enqueue_in(time_delta=cache_ttl,
             func=clear_export_cache,
