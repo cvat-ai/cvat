@@ -2552,6 +2552,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const masks = Object.values(this.drawnStates).filter((state) => state.shapeType === 'mask');
         this.deleteObjects(masks);
         this.addObjects(masks);
+        if (this.highlightedElements.elementsIDs.length) {
+            this.deactivate();
+            const clientID = this.highlightedElements.elementsIDs[0];
+            this.activate({ clientID, attributeID: null });
+        }
     }
 
     // Update text position after corresponding box has been moved, resized, etc.
