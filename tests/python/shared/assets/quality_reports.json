@@ -8,9 +8,6 @@
       "gt_last_updated": "2023-05-26T16:16:50.630000Z",
       "id": 1,
       "job_id": null,
-      "parameters": {
-        "iou_threshold": 0.4
-      },
       "parent_id": null,
       "summary": {
         "conflict_count": 37,
@@ -41,9 +38,6 @@
       "gt_last_updated": "2023-05-26T16:16:50.630000Z",
       "id": 2,
       "job_id": 27,
-      "parameters": {
-        "iou_threshold": 0.4
-      },
       "parent_id": 1,
       "summary": {
         "conflict_count": 37,

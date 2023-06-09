@@ -30,7 +30,6 @@ export interface RawQualityReportData {
             covered_annotation: number,
         }
     };
-    parameters?: object;
 }
 
 export interface QualitySummary {
@@ -66,7 +65,6 @@ export default class QualityReport {
     public readonly createdDate: string;
     public readonly gtLastUpdated: string;
     public readonly summary: QualitySummary;
-    public readonly parameters: object;
 
     constructor(initialData: RawQualityReportData) {
         const data: RawQualityReportData = {
@@ -77,7 +75,6 @@ export default class QualityReport {
             target: '',
             gt_last_updated: undefined,
             summary: undefined,
-            parameters: {},
             created_date: undefined,
         };
 
@@ -133,9 +130,6 @@ export default class QualityReport {
                         errorCount: data.summary.error_count,
                         warningCount: data.summary.warning_count,
                     }),
-                },
-                parameters: {
-                    get: () => data.parameters,
                 },
                 createdDate: {
                     get: () => data.created_date,

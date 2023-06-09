@@ -84,9 +84,10 @@ class AnnotationId(_Serializable):
     obj_id: int
     job_id: int
     type: AnnotationType
+    shape_type: Optional[ShapeType]
 
     def _value_serializer(self, v):
-        if isinstance(v, AnnotationType):
+        if isinstance(v, (AnnotationType, ShapeType)):
             return str(v)
         else:
             return super()._value_serializer(v)
@@ -97,6 +98,7 @@ class AnnotationId(_Serializable):
             obj_id=d["obj_id"],
             job_id=d["job_id"],
             type=AnnotationType(d["type"]),
+            shape_type=ShapeType(d["shape_type"]) if d.get("shape_type") else None,
         )
 
 
@@ -523,7 +525,7 @@ class ComparisonReport(_Serializable):
 
         # String keys are needed for json dumping
         d["frame_results"] = {str(k): v for k, v in d["frame_results"].items()}
-        return dump_json(d, indent=True, append_newline=True).decode()
+        return dump_json(d).decode()
 
     @classmethod
     def from_json(cls, data: str) -> ComparisonReport:
@@ -561,16 +563,23 @@ class JobDataProvider:
         source_ann = self._annotation_memo.get_source_ann(ann)
         if "track_id" in ann.attributes:
             source_ann_id = source_ann.track_id
-            ann_type = "track"
+            ann_type = AnnotationType.TRACK
+            shape_type = source_ann.type
         else:
             if isinstance(source_ann, CommonData.LabeledShape):
-                ann_type = AnnotationType(source_ann.type)
+                ann_type = AnnotationType.SHAPE
+                shape_type = source_ann.type
             elif isinstance(source_ann, CommonData.Tag):
                 ann_type = AnnotationType.TAG
+                shape_type = None
+            else:
+                assert False
 
             source_ann_id = source_ann.id
 
-        return AnnotationId(obj_id=source_ann_id, type=ann_type, job_id=self.job_id)
+        return AnnotationId(
+            obj_id=source_ann_id, type=ann_type, shape_type=shape_type, job_id=self.job_id
+        )
 
 
 class _MemoizingAnnotationConverterFactory:
@@ -2455,6 +2464,7 @@ class QualityReportUpdateManager:
                         job_id=ann_id["job_id"],
                         obj_id=ann_id["obj_id"],
                         type=ann_id["type"],
+                        shape_type=ann_id["shape_type"],
                     )
                     db_ann_ids.append(db_ann_id)
 
@@ -2490,20 +2500,16 @@ def prepare_report_for_downloading(db_report: models.QualityReport, *, host: str
     for frame_result in serialized_data["frame_results"].values():
         for conflict in frame_result["conflicts"]:
             for ann_id in conflict["annotation_ids"]:
-                if ann_id["type"] in ShapeType.__members__.values():
-                    ann_type = "shape"
-                else:
-                    ann_type = ann_id["type"]
-
                 ann_id["url"] = (
                     f"{host}tasks/{task_id}/jobs/{ann_id['job_id']}"
                     f"?frame={conflict['frame_id']}"
-                    f"&type={ann_type}"
+                    f"&type={ann_id['type']}"
                     f"&serverID={ann_id['obj_id']}"
                 )
 
+    # Add the percent representation for better human readability
     serialized_data["comparison_summary"]["frame_share_percent"] = (
-        serialized_data["comparison_summary"].pop("frame_share") * 100
+        serialized_data["comparison_summary"]["frame_share"] * 100
     )
 
     # String keys are needed for json dumping

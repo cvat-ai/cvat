@@ -8,13 +8,14 @@
         {
           "job_id": 28,
           "obj_id": 129,
-          "type": "polyline"
+          "shape_type": "polyline",
+          "type": "shape"
         }
       ],
       "frame": 1,
       "id": 37,
-      "severity": "error",
       "report_id": 2,
+      "severity": "error",
       "type": "missing_annotation"
     },
     {
@@ -22,13 +23,14 @@
         {
           "job_id": 28,
           "obj_id": 127,
-          "type": "mask"
+          "shape_type": "mask",
+          "type": "shape"
         }
       ],
       "frame": 1,
       "id": 36,
-      "severity": "error",
       "report_id": 2,
+      "severity": "error",
       "type": "missing_annotation"
     },
     {
@@ -36,13 +38,14 @@
         {
           "job_id": 28,
           "obj_id": 125,
-          "type": "ellipse"
+          "shape_type": "ellipse",
+          "type": "shape"
         }
       ],
       "frame": 1,
       "id": 35,
-      "severity": "error",
       "report_id": 2,
+      "severity": "error",
       "type": "missing_annotation"
     },
     {
@@ -50,13 +53,14 @@
         {
           "job_id": 28,
           "obj_id": 124,
-          "type": "polygon"
+          "shape_type": "polygon",
+          "type": "shape"
         }
       ],
       "frame": 1,
       "id": 34,
-      "severity": "error",
       "report_id": 2,
+      "severity": "error",
       "type": "missing_annotation"
     },
     {
@@ -64,13 +68,14 @@
         {
           "job_id": 28,
           "obj_id": 128,
-          "type": "points"
+          "shape_type": "points",
+          "type": "shape"
         }
       ],
       "frame": 1,
       "id": 33,
-      "severity": "error",
       "report_id": 2,
+      "severity": "error",
       "type": "missing_annotation"
     },
     {
@@ -78,13 +83,14 @@
         {
           "job_id": 28,
           "obj_id": 130,
-          "type": "rectangle"
+          "shape_type": "rectangle",
+          "type": "shape"
         }
       ],
       "frame": 1,
       "id": 32,
-      "severity": "error",
       "report_id": 2,
+      "severity": "error",
       "type": "missing_annotation"
     },
     {
@@ -92,18 +98,20 @@
         {
           "job_id": 27,
           "obj_id": 77,
-          "type": "rectangle"
+          "shape_type": "rectangle",
+          "type": "shape"
         },
         {
           "job_id": 28,
           "obj_id": 114,
-          "type": "rectangle"
+          "shape_type": "rectangle",
+          "type": "shape"
         }
       ],
       "frame": 0,
       "id": 31,
-      "severity": "warning",
       "report_id": 2,
+      "severity": "warning",
       "type": "mismatching_groups"
     },
     {
@@ -111,18 +119,20 @@
         {
           "job_id": 27,
           "obj_id": 80,
-          "type": "rectangle"
+          "shape_type": "rectangle",
+          "type": "shape"
         },
         {
           "job_id": 28,
           "obj_id": 111,
-          "type": "rectangle"
+          "shape_type": "rectangle",
+          "type": "shape"
         }
       ],
       "frame": 0,
       "id": 30,
-      "severity": "warning",
       "report_id": 2,
+      "severity": "warning",
       "type": "mismatching_groups"
     },
     {
@@ -130,18 +140,20 @@
         {
           "job_id": 27,
           "obj_id": 87,
-          "type": "rectangle"
+          "shape_type": "rectangle",
+          "type": "shape"
         },
         {
           "job_id": 28,
           "obj_id": 106,
-          "type": "rectangle"
+          "shape_type": "rectangle",
+          "type": "shape"
         }
       ],
       "frame": 0,
       "id": 29,
-      "severity": "warning",
       "report_id": 2,
+      "severity": "warning",
       "type": "mismatching_groups"
     },
     {
@@ -149,18 +161,20 @@
         {
           "job_id": 27,
           "obj_id": 83,
-          "type": "rectangle"
+          "shape_type": "rectangle",
+          "type": "shape"
         },
         {
           "job_id": 28,
           "obj_id": 105,
-          "type": "rectangle"
+          "shape_type": "rectangle",
+          "type": "shape"
         }
       ],
       "frame": 0,
       "id": 28,
-      "severity": "warning",
       "report_id": 2,
+      "severity": "warning",
       "type": "mismatching_groups"
     },
     {
@@ -168,18 +182,20 @@
         {
           "job_id": 27,
           "obj_id": 81,
-          "type": "rectangle"
+          "shape_type": "rectangle",
+          "type": "shape"
         },
         {
           "job_id": 28,
           "obj_id": 104,
-          "type": "rectangle"
+          "shape_type": "rectangle",
+          "type": "shape"
         }
       ],
       "frame": 0,
       "id": 27,
-      "severity": "warning",
       "report_id": 2,
+      "severity": "warning",
       "type": "mismatching_groups"
     },
     {
@@ -187,18 +203,20 @@
         {
           "job_id": 27,
           "obj_id": 82,
-          "type": "rectangle"
+          "shape_type": "rectangle",
+          "type": "shape"
         },
         {
           "job_id": 28,
           "obj_id": 103,
-          "type": "rectangle"
+          "shape_type": "rectangle",
+          "type": "shape"
         }
       ],
       "frame": 0,
       "id": 26,
-      "severity": "warning",
       "report_id": 2,
+      "severity": "warning",
       "type": "mismatching_groups"
     },
     {
@@ -206,18 +224,20 @@
         {
           "job_id": 27,
           "obj_id": 65,
-          "type": "rectangle"
+          "shape_type": "rectangle",
+          "type": "shape"
         },
         {
           "job_id": 28,
           "obj_id": 101,
-          "type": "rectangle"
+          "shape_type": "rectangle",
+          "type": "shape"
         }
       ],
       "frame": 0,
       "id": 25,
-      "severity": "warning",
       "report_id": 2,
+      "severity": "warning",
       "type": "mismatching_attributes"
     },
     {
@@ -225,13 +245,14 @@
         {
           "job_id": 27,
           "obj_id": 69,
-          "type": "mask"
+          "shape_type": "mask",
+          "type": "shape"
         }
       ],
       "frame": 0,
       "id": 24,
-      "severity": "warning",
       "report_id": 2,
+      "severity": "warning",
       "type": "covered_annotation"
     },
     {
@@ -239,18 +260,20 @@
         {
           "job_id": 27,
           "obj_id": 67,
-          "type": "polyline"
+          "shape_type": "polyline",
+          "type": "shape"
         },
         {
           "job_id": 28,
           "obj_id": 99,
-          "type": "polyline"
+          "shape_type": "polyline",
+          "type": "shape"
         }
       ],
       "frame": 0,
       "id": 23,
-      "severity": "warning",
       "report_id": 2,
+      "severity": "warning",
       "type": "mismatching_direction"
     },
     {
@@ -258,18 +281,20 @@
         {
           "job_id": 27,
           "obj_id": 69,
-          "type": "mask"
+          "shape_type": "mask",
+          "type": "shape"
         },
         {
           "job_id": 28,
           "obj_id": 97,
-          "type": "polygon"
+          "shape_type": "polygon",
+          "type": "shape"
         }
       ],
       "frame": 0,
       "id": 22,
-      "severity": "error",
       "report_id": 2,
+      "severity": "error",
       "type": "mismatching_label"
     },
     {
@@ -277,18 +302,20 @@
         {
           "job_id": 27,
           "obj_id": 92,
-          "type": "points"
+          "shape_type": "points",
+          "type": "shape"
         },
         {
           "job_id": 28,
           "obj_id": 119,
-          "type": "points"
+          "shape_type": "points",
+          "type": "shape"
         }
       ],
       "frame": 0,
       "id": 21,
-      "severity": "error",
       "report_id": 2,
+      "severity": "error",
       "type": "mismatching_label"
     },
     {
@@ -296,18 +323,20 @@
         {
           "job_id": 27,
           "obj_id": 89,
-          "type": "points"
+          "shape_type": "points",
+          "type": "shape"
         },
         {
           "job_id": 28,
           "obj_id": 123,
-          "type": "points"
+          "shape_type": "points",
+          "type": "shape"
         }
       ],
       "frame": 0,
       "id": 20,
-      "severity": "error",
       "report_id": 2,
+      "severity": "error",
       "type": "mismatching_label"
     },
     {
@@ -315,13 +344,14 @@
         {
           "job_id": 27,
           "obj_id": 94,
-          "type": "polyline"
+          "shape_type": "polyline",
+          "type": "shape"
         }
       ],
       "frame": 0,
       "id": 19,
-      "severity": "error",
       "report_id": 2,
+      "severity": "error",
       "type": "extra_annotation"
     },
     {
@@ -329,13 +359,14 @@
         {
           "job_id": 27,
           "obj_id": 66,
-          "type": "polyline"
+          "shape_type": "polyline",
+          "type": "shape"
         }
       ],
       "frame": 0,
       "id": 18,
-      "severity": "error",
       "report_id": 2,
+      "severity": "error",
       "type": "extra_annotation"
     },
     {
@@ -343,13 +374,14 @@
         {
           "job_id": 27,
           "obj_id": 64,
-          "type": "polyline"
+          "shape_type": "polyline",
+          "type": "shape"
         }
       ],
       "frame": 0,
       "id": 17,
-      "severity": "error",
       "report_id": 2,
+      "severity": "error",
       "type": "extra_annotation"
     },
     {
@@ -357,13 +389,14 @@
         {
           "job_id": 27,
           "obj_id": 96,
-          "type": "ellipse"
+          "shape_type": "ellipse",
+          "type": "shape"
         }
       ],
       "frame": 0,
       "id": 16,
-      "severity": "error",
       "report_id": 2,
+      "severity": "error",
       "type": "extra_annotation"
     },
     {
@@ -371,13 +404,14 @@
         {
           "job_id": 27,
           "obj_id": 73,
-          "type": "polygon"
+          "shape_type": "polygon",
+          "type": "shape"
         }
       ],
       "frame": 0,
       "id": 15,
-      "severity": "error",
       "report_id": 2,
+      "severity": "error",
       "type": "extra_annotation"
     },
     {
@@ -385,13 +419,14 @@
         {
           "job_id": 27,
           "obj_id": 95,
-          "type": "polygon"
+          "shape_type": "polygon",
+          "type": "shape"
         }
       ],
       "frame": 0,
       "id": 14,
-      "severity": "error",
       "report_id": 2,
+      "severity": "error",
       "type": "extra_annotation"
     },
     {
@@ -399,13 +434,14 @@
         {
           "job_id": 27,
           "obj_id": 74,
-          "type": "polygon"
+          "shape_type": "polygon",
+          "type": "shape"
         }
       ],
       "frame": 0,
       "id": 13,
-      "severity": "error",
       "report_id": 2,
+      "severity": "error",
       "type": "extra_annotation"
     },
     {
@@ -413,13 +449,14 @@
         {
           "job_id": 27,
           "obj_id": 93,
-          "type": "points"
+          "shape_type": "points",
+          "type": "shape"
         }
       ],
       "frame": 0,
       "id": 12,
-      "severity": "error",
       "report_id": 2,
+      "severity": "error",
       "type": "extra_annotation"
     },
     {
@@ -427,13 +464,14 @@
         {
           "job_id": 27,
           "obj_id": 76,
-          "type": "rectangle"
+          "shape_type": "rectangle",
+          "type": "shape"
         }
       ],
       "frame": 0,
       "id": 11,
-      "severity": "error",
       "report_id": 2,
+      "severity": "error",
       "type": "extra_annotation"
     },
     {
@@ -441,13 +479,14 @@
         {
           "job_id": 27,
           "obj_id": 70,
-          "type": "rectangle"
+          "shape_type": "rectangle",
+          "type": "shape"
         }
       ],
       "frame": 0,
       "id": 10,
-      "severity": "error",
       "report_id": 2,
+      "severity": "error",
       "type": "extra_annotation"
     },
     {
@@ -455,13 +494,14 @@
         {
           "job_id": 28,
           "obj_id": 122,
-          "type": "points"
+          "shape_type": "points",
+          "type": "shape"
         }
       ],
       "frame": 0,
       "id": 9,
-      "severity": "error",
       "report_id": 2,
+      "severity": "error",
       "type": "missing_annotation"
     },
     {
@@ -469,13 +509,14 @@
         {
           "job_id": 28,
           "obj_id": 121,
-          "type": "points"
+          "shape_type": "points",
+          "type": "shape"
         }
       ],
       "frame": 0,
       "id": 8,
-      "severity": "error",
       "report_id": 2,
+      "severity": "error",
       "type": "missing_annotation"
     },
     {
@@ -483,13 +524,14 @@
         {
           "job_id": 28,
           "obj_id": 107,
-          "type": "rectangle"
+          "shape_type": "rectangle",
+          "type": "shape"
         }
       ],
       "frame": 0,
       "id": 7,
-      "severity": "error",
       "report_id": 2,
+      "severity": "error",
       "type": "missing_annotation"
     },
     {
@@ -497,18 +539,20 @@
         {
           "job_id": 27,
           "obj_id": 92,
-          "type": "points"
+          "shape_type": "points",
+          "type": "shape"
         },
         {
           "job_id": 28,
           "obj_id": 119,
-          "type": "points"
+          "shape_type": "points",
+          "type": "shape"
         }
       ],
       "frame": 0,
       "id": 6,
-      "severity": "warning",
       "report_id": 2,
+      "severity": "warning",
       "type": "low_overlap"
     },
     {
@@ -516,18 +560,20 @@
         {
           "job_id": 27,
           "obj_id": 67,
-          "type": "polyline"
+          "shape_type": "polyline",
+          "type": "shape"
         },
         {
           "job_id": 28,
           "obj_id": 99,
-          "type": "polyline"
+          "shape_type": "polyline",
+          "type": "shape"
         }
       ],
       "frame": 0,
       "id": 5,
-      "severity": "warning",
       "report_id": 2,
+      "severity": "warning",
       "type": "low_overlap"
     },
     {
@@ -535,18 +581,20 @@
         {
           "job_id": 27,
           "obj_id": 68,
-          "type": "polygon"
+          "shape_type": "polygon",
+          "type": "shape"
         },
         {
           "job_id": 28,
           "obj_id": 98,
-          "type": "polygon"
+          "shape_type": "polygon",
+          "type": "shape"
         }
       ],
       "frame": 0,
       "id": 4,
-      "severity": "warning",
       "report_id": 2,
+      "severity": "warning",
       "type": "low_overlap"
     },
     {
@@ -554,18 +602,20 @@
         {
           "job_id": 27,
           "obj_id": 88,
-          "type": "points"
+          "shape_type": "points",
+          "type": "shape"
         },
         {
           "job_id": 28,
           "obj_id": 102,
-          "type": "points"
+          "shape_type": "points",
+          "type": "shape"
         }
       ],
       "frame": 0,
       "id": 3,
-      "severity": "warning",
       "report_id": 2,
+      "severity": "warning",
       "type": "low_overlap"
     },
     {
@@ -573,18 +623,20 @@
         {
           "job_id": 27,
           "obj_id": 91,
-          "type": "rectangle"
+          "shape_type": "rectangle",
+          "type": "shape"
         },
         {
           "job_id": 28,
           "obj_id": 118,
-          "type": "rectangle"
+          "shape_type": "rectangle",
+          "type": "shape"
         }
       ],
       "frame": 0,
       "id": 2,
-      "severity": "warning",
       "report_id": 2,
+      "severity": "warning",
       "type": "low_overlap"
     },
     {
@@ -592,18 +644,20 @@
         {
           "job_id": 27,
           "obj_id": 65,
-          "type": "rectangle"
+          "shape_type": "rectangle",
+          "type": "shape"
         },
         {
           "job_id": 28,
           "obj_id": 101,
-          "type": "rectangle"
+          "shape_type": "rectangle",
+          "type": "shape"
         }
       ],
       "frame": 0,
       "id": 1,
-      "severity": "warning",
       "report_id": 2,
+      "severity": "warning",
       "type": "low_overlap"
     }
   ]

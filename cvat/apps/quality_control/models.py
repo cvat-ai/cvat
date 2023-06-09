@@ -12,7 +12,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.forms.models import model_to_dict
 
-from cvat.apps.engine.models import Job, Task
+from cvat.apps.engine.models import Job, ShapeType, Task
 
 
 class AnnotationConflictType(str, Enum):
@@ -105,11 +105,6 @@ class QualityReport(models.Model):
         return ComparisonReport.from_json(self.data)
 
     @property
-    def parameters(self):
-        report = self._parse_report()
-        return report.parameters
-
-    @property
     def summary(self):
         report = self._parse_report()
         return report.comparison_summary
@@ -149,15 +144,8 @@ class AnnotationConflict(models.Model):
 
 class AnnotationType(str, Enum):
     TAG = "tag"
+    SHAPE = "shape"
     TRACK = "track"
-    RECTANGLE = "rectangle"
-    POLYGON = "polygon"
-    POLYLINE = "polyline"
-    POINTS = "points"
-    ELLIPSE = "ellipse"
-    CUBOID = "cuboid"
-    MASK = "mask"
-    SKELETON = "skeleton"
 
     def __str__(self) -> str:
         return self.value
@@ -175,6 +163,19 @@ class AnnotationId(models.Model):
     obj_id = models.PositiveIntegerField()
     job_id = models.PositiveIntegerField()
     type = models.CharField(max_length=32, choices=AnnotationType.choices())
+    shape_type = models.CharField(
+        max_length=32, choices=ShapeType.choices(), null=True, default=None
+    )
+
+    def clean(self) -> None:
+        if self.type in [AnnotationType.SHAPE, AnnotationType.TRACK]:
+            if not self.shape_type:
+                raise ValidationError("Annotation kind must be specified")
+        elif self.type == AnnotationType.TAG:
+            if self.shape_type:
+                raise ValidationError("Annotation kind must be empty")
+        else:
+            raise ValidationError(f"Unexpected type value '{self.type}'")
 
 
 class QualitySettings(models.Model):
