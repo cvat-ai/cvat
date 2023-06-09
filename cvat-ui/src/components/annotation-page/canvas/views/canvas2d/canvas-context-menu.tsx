@@ -35,7 +35,7 @@ interface ReviewContextMenuProps {
     top: number;
     left: number;
     latestComments: string[];
-    conflict?: AnnotationConflict;
+    conflict?: QualityConflict;
     onClick: (param: MenuInfo) => void;
 }
 
@@ -110,14 +110,11 @@ export default function CanvasContextMenu(props: Props): JSX.Element | null {
     if (!visible || contextMenuClientID === null) {
         return null;
     }
+
     const state = objectStates.find((_state: any): boolean => _state.clientID === contextMenuClientID);
-    const annotationConflicts = frameConflicts.reduce(
-        (acc: AnnotationConflict[],
-            qualityConflict: QualityConflict) => [...acc, ...qualityConflict.annotationConflicts],
-        [],
-    );
-    const conflict = annotationConflicts
-        .find((annotationConflict: AnnotationConflict) => annotationConflict.clientID === state.clientID);
+    const conflict = frameConflicts.find((qualityConflict: QualityConflict) => qualityConflict.annotationConflicts.some(
+        (annotationConflict: AnnotationConflict) => annotationConflict.clientID === state.clientID,
+    ));
 
     if (workspace === Workspace.REVIEW_WORKSPACE) {
         return ReactDOM.createPortal(
@@ -166,7 +163,7 @@ export default function CanvasContextMenu(props: Props): JSX.Element | null {
                         } else if (param.key === ReviewContextMenuKeys.QUICK_ISSUE_ATTRIBUTE) {
                             openIssue(points, config.QUICK_ISSUE_INCORRECT_ATTRIBUTE_TEXT);
                         } else if (param.key === ReviewContextMenuKeys.QUICK_ISSUE_FROM_CONFLICT) {
-                            openIssue(points, state.conflict.description);
+                            if (conflict) openIssue(points, conflict.description);
                         } else if (
                             param.keyPath.length === 2 &&
                             param.keyPath[1] === ReviewContextMenuKeys.QUICK_ISSUE_FROM_LATEST
