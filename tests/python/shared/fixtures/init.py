@@ -93,7 +93,6 @@ def pytest_addoption(parser):
 
 def _run(command, capture_output=True):
     _command = command.split() if isinstance(command, str) else command
-
     try:
         stdout, stderr = "", ""
         if capture_output:
@@ -460,19 +459,14 @@ def session_finish(session):
 
 def collect_code_coverage_from_containers():
     for container in Container.covered():
-        if container == Container.SERVER:
-            process_command = "uvicorn"
-        else:
-            process_command = "manage.py"
+        process_command = "python3"
 
         # find process with code coverage
-        pid, _ = docker_exec(container, f"ps axu | grep {process_command}")
+        pid, _ = docker_exec(container, f"pidof {process_command} -o 1")
 
         # stop process with code coverage
         docker_exec(container, f"kill -15 {pid}")
-        command = f"docker exec -u root {PREFIX}_{container}_1 {process_command}"
-        while not run(command, shell=True).returncode:
-            sleep(1)
+        sleep(3)
 
         # get code coverage report
         docker_exec(container, "coverage combine", capture_output=False)
