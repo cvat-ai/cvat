@@ -881,8 +881,7 @@ class FunctionViewSet(viewsets.ViewSet):
         operation_id='lambda_retrieve_requests',
         summary='Method returns the status of the request',
         parameters=[
-            # specify correct type
-            OpenApiParameter('id', location=OpenApiParameter.PATH, type=OpenApiTypes.INT,
+            OpenApiParameter('id', location=OpenApiParameter.PATH, type=OpenApiTypes.STR,
                 description='Request id'),
         ],
         responses={
@@ -904,7 +903,14 @@ class FunctionViewSet(viewsets.ViewSet):
             '200': FunctionCallSerializer
         }
     ),
-    delete=extend_schema(summary='Method cancels the request')
+    delete=extend_schema(
+        operation_id='lambda_delete_requests',
+        summary='Method cancels the request',
+        parameters=[
+            OpenApiParameter('id', location=OpenApiParameter.PATH, type=OpenApiTypes.STR,
+                description='Request id'),
+        ]
+    ),
 )
 class RequestViewSet(viewsets.ViewSet):
     iam_organization_field = None
