@@ -1157,6 +1157,30 @@ class TestComplexFrameSetupCases(_LambdaTestCaseBase):
             }
         )
 
+    def test_can_run_function_on_whole_job(self):
+        data = self.common_request_data.copy()
+        job = self.jobs[3]
+        data["job"] = job["id"]
+        self._run_function(self.function_id, data, self.user)
+
+        response = self._get_request(f'/api/tasks/{self.task["id"]}/annotations', self.admin)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        annotations = response.json()
+
+        self.assertEqual(len(annotations["tags"]), 0)
+        self.assertEqual(len(annotations["tracks"]), 0)
+
+        requested_frame_range = range(job["start_frame"], job["stop_frame"] + 1)
+        self.assertEqual(
+            {
+                frame: 1 for frame in requested_frame_range
+            },
+            {
+                frame: len(list(group))
+                for frame, group in groupby(annotations["shapes"], key=lambda a: a["frame"])
+            }
+        )
+
     def test_can_run_interactor_on_valid_task_frame(self):
         data = self.common_request_data.copy()
         requested_frame = self.task_rel_frame_range[4]
