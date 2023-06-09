@@ -7,6 +7,7 @@ component_management:
       name: cvat-ui
       paths:
         - cvat-canvas/**
+        - cvat-canvas3d/**
         - cvat-core/**
         - cvat-data/**
         - cvat-ui/**
