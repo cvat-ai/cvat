@@ -10,7 +10,7 @@ import data.organizations
 #     "scope": <"create"|"create@project"|"view"|"list"|"update:desc"|
 #         "update:owner"|"update:assignee"|"update:project"|"delete"|
 #         "view:annotations"|"update:annotations"|"delete:annotations"|
-#         ":dataset"|"view:data"|"upload:data"|"export:annotations"> or null,
+#         "export:dataset"|"view:data"|"upload:data"|"export:annotations"> or null,
 #     "auth": {
 #         "user": {
 #             "id": <num>,
