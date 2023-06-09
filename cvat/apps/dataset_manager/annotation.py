@@ -444,6 +444,7 @@ class TrackManager(ObjectManager):
                 shape["label_id"] = track["label_id"]
                 shape["group"] = track["group"]
                 shape["track_id"] = track_id
+                shape["source"] = track["source"]
                 shape["attributes"] += track["attributes"]
                 shape["elements"] = []
 
