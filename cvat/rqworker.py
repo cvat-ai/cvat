@@ -5,12 +5,13 @@
 
 import os
 
-import coverage
 from rq import Worker
 
 import cvat.utils.remote_debugger as debug
 
+
 DefaultWorker = Worker
+
 
 class BaseDeathPenalty:
     def __init__(self, timeout, exception, **kwargs):
@@ -66,6 +67,8 @@ if debug.is_debugging_enabled():
 
 
 if os.environ.get("COVERAGE_PROCESS_START"):
+    import coverage
+
     def coverage_exit():
         cov = coverage.Coverage.current()
         cov.stop()
