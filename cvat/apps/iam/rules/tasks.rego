@@ -10,7 +10,7 @@ import data.organizations
 #     "scope": <"create"|"create@project"|"view"|"list"|"update:desc"|
 #         "update:owner"|"update:assignee"|"update:project"|"delete"|
 #         "view:annotations"|"update:annotations"|"delete:annotations"|
-#         "export:dataset"|"view:data"|"upload:data"|"export:annotations"> or null,
+#         ":dataset"|"view:data"|"upload:data"|"export:annotations"> or null,
 #     "auth": {
 #         "user": {
 #             "id": <num>,
@@ -191,23 +191,20 @@ filter = [] { # Django Q object to filter list of entries
 }
 
 allow {
-    { utils.VIEW, utils.VIEW_ANNOTATIONS, utils.EXPORT_DATASET, utils.VIEW_METADATA,
-      utils.VIEW_DATA, utils.EXPORT_ANNOTATIONS, utils.EXPORT_BACKUP }[input.scope]
+    { utils.VIEW, utils.VIEW_ANNOTATIONS, utils.VIEW_METADATA, utils.VIEW_DATA }[input.scope]
     utils.is_sandbox
     is_task_staff
 }
 
 allow {
-    { utils.VIEW, utils.VIEW_ANNOTATIONS, utils.EXPORT_DATASET, utils.VIEW_METADATA,
-      utils.VIEW_DATA, utils.EXPORT_ANNOTATIONS, utils.EXPORT_BACKUP }[input.scope]
+    { utils.VIEW, utils.VIEW_ANNOTATIONS, utils.VIEW_METADATA, utils.VIEW_DATA }[input.scope]
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
     organizations.has_perm(organizations.MAINTAINER)
 }
 
 allow {
-    { utils.VIEW, utils.VIEW_ANNOTATIONS, utils.EXPORT_DATASET, utils.VIEW_METADATA,
-      utils.VIEW_DATA, utils.EXPORT_ANNOTATIONS, utils.EXPORT_BACKUP }[input.scope]
+    { utils.VIEW, utils.VIEW_ANNOTATIONS, utils.VIEW_METADATA, utils.VIEW_DATA }[input.scope]
     input.auth.organization.id == input.resource.organization.id
     organizations.has_perm(organizations.WORKER)
     is_task_staff
