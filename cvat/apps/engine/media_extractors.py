@@ -31,7 +31,6 @@ from utils.dataset_manifest import VideoManifestManager, ImageManifestManager
 
 ORIENTATION_EXIF_TAG = 274
 
-
 class ORIENTATION(IntEnum):
     NORMAL_HORIZONTAL=1
     MIRROR_HORIZONTAL=2
@@ -41,7 +40,6 @@ class ORIENTATION(IntEnum):
     NORMAL_90_ROTATED=6
     MIRROR_HORIZONTAL_90_ROTATED=7
     NORMAL_270_ROTATED=8
-
 
 def get_mime(name):
     for type_name, type_def in MEDIA_TYPES.items():
@@ -63,6 +61,7 @@ def files_to_ignore(directory):
         return True
     return False
 
+
 def sort(images, sorting_method=SortingMethod.LEXICOGRAPHICAL, func=None):
     if sorting_method == SortingMethod.LEXICOGRAPHICAL:
         return sorted(images, key=func)
@@ -75,6 +74,7 @@ def sort(images, sorting_method=SortingMethod.LEXICOGRAPHICAL, func=None):
         return images
     else:
         raise NotImplementedError()
+
 
 def image_size_within_orientation(img: Image):
     orientation = img.getexif().get(ORIENTATION_EXIF_TAG, ORIENTATION.NORMAL_HORIZONTAL)
@@ -651,11 +651,12 @@ class ZipChunkWriter(IChunkWriter):
     def save_as_chunk(self, images, chunk_path):
         with zipfile.ZipFile(chunk_path, 'x') as zip_chunk:
             for idx, (image, path, _) in enumerate(images):
-                arcname = '{:06d}{}'.format(idx, os.path.splitext(path)[1])
-                if isinstance(image, io.BytesIO):
-                    zip_chunk.writestr(arcname, image.getvalue())
-                else:
-                    zip_chunk.write(filename=image, arcname=arcname)
+                ext = os.path.splitext(path)[1]
+                arcname = '{:06d}{}'.format(idx, ext)
+                pil_image = rotate_within_exif(Image.open(image))
+                with io.BytesIO() as output:
+                    pil_image.save(output, format=pil_image.format if pil_image.format else ext or 'jpeg', quality=100, subsampling=0)
+                    zip_chunk.writestr(arcname, output.getvalue())
         # return empty list because ZipChunkWriter write files as is
         # and does not decode it to know img size.
         return []
