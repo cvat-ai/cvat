@@ -61,7 +61,6 @@ def files_to_ignore(directory):
         return True
     return False
 
-
 def sort(images, sorting_method=SortingMethod.LEXICOGRAPHICAL, func=None):
     if sorting_method == SortingMethod.LEXICOGRAPHICAL:
         return sorted(images, key=func)
@@ -74,7 +73,6 @@ def sort(images, sorting_method=SortingMethod.LEXICOGRAPHICAL, func=None):
         return images
     else:
         raise NotImplementedError()
-
 
 def image_size_within_orientation(img: Image):
     orientation = img.getexif().get(ORIENTATION_EXIF_TAG, ORIENTATION.NORMAL_HORIZONTAL)
