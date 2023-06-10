@@ -180,7 +180,6 @@ COPY --chown=${USER} cvat/ ${HOME}/cvat
 
 ARG COVERAGE_PROCESS_START
 RUN if [ "${COVERAGE_PROCESS_START}" ]; then \
-        python3 -m  pip install --no-cache-dir coverage==7.2.3; \
         echo "import coverage; coverage.process_startup()" > /opt/venv/lib/python3.10/site-packages/coverage_subprocess.pth; \
     fi
 
