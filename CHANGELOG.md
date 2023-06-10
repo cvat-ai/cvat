@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Simultaneous creation of tasks or projects with identical names from backups by multiple users.(<https://github.com/opencv/cvat/pull/5909>)
 - \[Server API\] The `predefined` sorting method for task data uploads (<https://github.com/opencv/cvat/pull/5083>)
 - Allowed slashes in export filenames. (<https://github.com/opencv/cvat/pull/6265>)
+- Running serverless models for EXIF-rotated images (<https://github.com/opencv/cvat/pull/6275/>)
 
 ### Security
 - TDB
