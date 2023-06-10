@@ -1,4 +1,4 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -350,6 +350,10 @@ class DataUploader(Uploader):
         if pbar is not None:
             pbar.start(total_size, desc="Uploading data")
 
+        if str(kwargs.get("sorting_method")).lower() == "predefined":
+            # Request file ordering, because we reorder files to send more efficiently
+            kwargs.setdefault("upload_file_order", [p.name for p in resources])
+
         self._tus_start_upload(url)
 
         for group, group_size in bulk_file_groups:
@@ -374,7 +378,6 @@ class DataUploader(Uploader):
                 pbar.advance(group_size)
 
         for filename in separate_files:
-            # TODO: check if basename produces invalid paths here, can lead to overwriting
             self._upload_file_data_with_tus(
                 url,
                 filename,
