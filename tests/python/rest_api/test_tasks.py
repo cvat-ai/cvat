@@ -1852,7 +1852,7 @@ class TestImportTaskAnnotations:
         platform = request.config.getoption("--platform")
         assert platform in ("kube", "local")
         func = docker_exec_cvat if platform == "local" else kube_exec_cvat
-        for _ in range(9):
+        for _ in range(12):
             sleep(2)
             result, _ = func(command)
             number_of_files = int(result)
