@@ -141,6 +141,7 @@ INSTALLED_APPS = [
     'cvat.apps.webhooks',
     'cvat.apps.health',
     'cvat.apps.events',
+    'cvat.apps.quality_control',
 ]
 
 SITE_ID = 1
@@ -293,6 +294,7 @@ class CVAT_QUEUES(Enum):
     AUTO_ANNOTATION = 'annotation'
     WEBHOOKS = 'webhooks'
     NOTIFICATIONS = 'notifications'
+    QUALITY_REPORTS = 'quality_reports'
     CLEANING = 'cleaning'
 
 RQ_QUEUES = {
@@ -325,6 +327,12 @@ RQ_QUEUES = {
         'PORT': 6379,
         'DB': 0,
         'DEFAULT_TIMEOUT': '1h'
+    },
+    CVAT_QUEUES.QUALITY_REPORTS.value: {
+        'HOST': 'localhost',
+        'PORT': 6379,
+        'DB': 0,
+        'DEFAULT_TIMEOUT': '1h',
     },
     CVAT_QUEUES.CLEANING.value: {
         'HOST': 'localhost',
@@ -624,6 +632,8 @@ SPECTACULAR_SETTINGS = {
         'StorageMethod': 'cvat.apps.engine.models.StorageMethodChoice',
         'JobStatus': 'cvat.apps.engine.models.StatusChoice',
         'JobStage': 'cvat.apps.engine.models.StageChoice',
+        'JobType': 'cvat.apps.engine.models.JobType',
+        'QualityReportTarget': 'cvat.apps.quality_control.models.QualityReportTarget',
         'StorageType': 'cvat.apps.engine.models.StorageChoice',
         'SortingMethod': 'cvat.apps.engine.models.SortingMethod',
         'WebhookType': 'cvat.apps.webhooks.models.WebhookTypeChoice',
