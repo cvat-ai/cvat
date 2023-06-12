@@ -5,6 +5,8 @@ weight: 4
 
 # [MOTS PNG](https://www.vision.rwth-aachen.de/page/mots)
 
+- [Dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/mots_dataset)
+
 ## MOTS PNG export
 
 Downloaded file: a zip archive of the following structure:

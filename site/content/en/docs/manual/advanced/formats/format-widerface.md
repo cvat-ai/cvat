@@ -5,6 +5,8 @@ weight: 9
 
 # [WIDER Face](http://shuoyang1213.me/WIDERFACE/)
 
+- [Dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/widerface_dataset)
+
 ## WIDER Face export
 
 Downloaded file: a zip archive of the following structure:
