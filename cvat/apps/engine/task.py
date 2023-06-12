@@ -584,12 +584,7 @@ def _create_thread(
                     )
                 if cloud_storage_manifest_prefix:
                     additional_files = [os.path.join(cloud_storage_manifest_prefix, f) for f in additional_files]
-                if len(data['server_files']) + len(additional_files) > settings.CLOUD_STORAGE_MAX_FILES_COUNT:
-                    raise ValidationError(
-                        'The maximum number of the cloud storage attached files '
-                        f'is {settings.CLOUD_STORAGE_MAX_FILES_COUNT}')
             else:
-                number_of_files = len(data['server_files'])
                 while len(dirs):
                     directory = dirs.pop()
                     for f in cloud_storage_instance.list_files(prefix=directory, _use_flat_listing=True):
@@ -597,11 +592,7 @@ def _create_thread(
                             additional_files.append(f['name'])
                         else:
                             dirs.append(f['name'])
-                    # we check the limit of files on each iteration to reduce the number of possible requests to the bucket
-                    if (len(additional_files) + len(dirs) + number_of_files) > settings.CLOUD_STORAGE_MAX_FILES_COUNT:
-                        raise ValidationError(
-                            'The maximum number of the cloud storage attached files '
-                            f'is {settings.CLOUD_STORAGE_MAX_FILES_COUNT}')
+
             data['server_files'].extend(additional_files)
             del additional_files
 
@@ -641,10 +632,6 @@ def _create_thread(
                 if not data['filename_pattern'] == '*':
                     additional_files = fnmatch.filter(additional_files, data['filename_pattern'])
 
-            if (len(additional_files)) > settings.CLOUD_STORAGE_MAX_FILES_COUNT:
-                raise ValidationError(
-                    'The maximum number of the cloud storage attached files '
-                    f'is {settings.CLOUD_STORAGE_MAX_FILES_COUNT}')
             data['server_files'].extend(additional_files)
 
         if db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM or not settings.USE_CACHE:
