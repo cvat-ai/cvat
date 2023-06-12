@@ -1,9 +1,10 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import logging
 import os
+from enum import Enum
 from http import HTTPStatus
 from pathlib import Path
 from subprocess import PIPE, CalledProcessError, run
@@ -30,6 +31,23 @@ DC_FILES = [
     "tests/docker-compose.minio.yml",
     "tests/docker-compose.test_servers.yml",
 ] + CONTAINER_NAME_FILES
+
+
+class Container(str, Enum):
+    DB = "cvat_db"
+    SERVER = "cvat_server"
+    WORKER_ANNOTATION = "cvat_worker_annotation"
+    WORKER_IMPORT = "cvat_worker_import"
+    WORKER_EXPORT = "cvat_worker_export"
+    WORKER_WEBHOOKS = "cvat_worker_webhooks"
+    UTILS = "cvat_utils"
+
+    def __str__(self):
+        return self.value
+
+    @classmethod
+    def covered(cls):
+        return [item.value for item in cls if item != cls.DB]
 
 
 def pytest_addoption(parser):
@@ -75,14 +93,13 @@ def pytest_addoption(parser):
 
 def _run(command, capture_output=True):
     _command = command.split() if isinstance(command, str) else command
-
     try:
         stdout, stderr = "", ""
         if capture_output:
             proc = run(_command, check=True, stdout=PIPE, stderr=PIPE)  # nosec
             stdout, stderr = proc.stdout.decode(), proc.stderr.decode()
         else:
-            proc = run(_command, check=True)  # nosec
+            proc = run(_command)  # nosec
         return stdout, stderr
     except CalledProcessError as exc:
         stderr = exc.stderr.decode() or exc.stdout.decode() if capture_output else "see above"
@@ -120,6 +137,10 @@ def kube_cp(source, target):
     _run(f"kubectl cp {source} {target}")
 
 
+def docker_exec(container, command, capture_output=True):
+    return _run(f"docker exec -u root {PREFIX}_{container}_1 {command}", capture_output)
+
+
 def docker_exec_cvat(command: Union[List[str], str]):
     base = f"docker exec {PREFIX}_cvat_server_1"
     _command = f"{base} {command}" if isinstance(command, str) else base.split() + command
@@ -131,10 +152,6 @@ def kube_exec_cvat(command: Union[List[str], str]):
     base = f"kubectl exec {pod_name} --"
     _command = f"{base} {command}" if isinstance(command, str) else base.split() + command
     return _run(_command)
-
-
-def docker_exec_cvat_db(command):
-    _run(f"docker exec {PREFIX}_cvat_db_1 {command}")
 
 
 def kube_exec_cvat_db(command):
@@ -152,7 +169,9 @@ def kube_exec_clickhouse_db(command):
 
 
 def docker_restore_db():
-    docker_exec_cvat_db("psql -U root -d postgres -v from=test_db -v to=cvat -f /tmp/restore.sql")
+    docker_exec(
+        Container.DB, "psql -U root -d postgres -v from=test_db -v to=cvat -f /tmp/restore.sql"
+    )
 
 
 def kube_restore_db():
@@ -215,9 +234,14 @@ def create_compose_files(container_name_files):
 
             for service_name, service_config in dc_config["services"].items():
                 service_config.pop("container_name", None)
-                if service_name in ("cvat_server", "cvat_utils", "cvat_worker_import"):
+                if service_name in Container.covered():
                     service_env = service_config["environment"]
                     service_env["DJANGO_SETTINGS_MODULE"] = "cvat.settings.testing_rest"
+                    service_env["COVERAGE_PROCESS_START"] = ".coveragerc"
+
+                    service_config["volumes"].append(
+                        "./tests/python/.coveragerc:/home/django/.coveragerc"
+                    )
 
             yaml.dump(dc_config, ndcf)
 
@@ -252,7 +276,7 @@ def docker_restore_data_volumes():
         CVAT_DB_DIR / "cvat_data.tar.bz2",
         f"{PREFIX}_cvat_server_1:/tmp/cvat_data.tar.bz2",
     )
-    docker_exec_cvat("tar --strip 3 -xjf /tmp/cvat_data.tar.bz2 -C /home/django/data/")
+    docker_exec(Container.SERVER, "tar --strip 3 -xjf /tmp/cvat_data.tar.bz2 -C /home/django/data/")
 
 
 def kube_restore_data_volumes():
@@ -376,8 +400,10 @@ def local_start(start, stop, dumpdb, cleanup, rebuild, cvat_root_dir, cvat_db_di
     docker_cp(cvat_db_dir / "data.json", f"{PREFIX}_cvat_server_1:/tmp/data.json")
     wait_for_services()
 
-    docker_exec_cvat("python manage.py loaddata /tmp/data.json")
-    docker_exec_cvat_db("psql -U root -d postgres -v from=cvat -v to=test_db -f /tmp/restore.sql")
+    docker_exec(Container.SERVER, "python manage.py loaddata /tmp/data.json")
+    docker_exec(
+        Container.DB, "psql -U root -d postgres -v from=cvat -v to=test_db -f /tmp/restore.sql"
+    )
 
     if start:
         pytest.exit("All necessary containers have been created and started.", returncode=0)
@@ -408,18 +434,45 @@ def pytest_sessionstart(session: pytest.Session) -> None:
 
 
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
+    session_finish(session)
+
+
+def session_finish(session):
     if session.config.getoption("--collect-only"):
         return
 
     platform = session.config.getoption("--platform")
 
     if platform == "local":
-        docker_restore_db()
-        docker_exec_cvat_db("dropdb test_db")
+        if os.environ.get("COVERAGE_PROCESS_START"):
+            collect_code_coverage_from_containers()
 
-        docker_exec_cvat_db("dropdb --if-exists cvat")
-        docker_exec_cvat_db("createdb cvat")
-        docker_exec_cvat("python manage.py migrate")
+        docker_restore_db()
+        docker_exec(Container.DB, "dropdb test_db")
+
+        docker_exec(Container.DB, "dropdb --if-exists cvat")
+        docker_exec(Container.DB, "createdb cvat")
+        docker_exec(Container.SERVER, "python manage.py migrate")
+
+
+def collect_code_coverage_from_containers():
+    for container in Container.covered():
+        process_command = "python3"
+
+        # find process with code coverage
+        pid, _ = docker_exec(container, f"pidof {process_command} -o 1")
+
+        # stop process with code coverage
+        docker_exec(container, f"kill -15 {pid}")
+        sleep(3)
+
+        # get code coverage report
+        docker_exec(container, "coverage combine", capture_output=False)
+        docker_exec(container, "coverage xml", capture_output=False)
+        docker_cp(
+            f"{PREFIX}_{container}_1:home/django/coverage.xml",
+            f"coverage_{container}.xml",
+        )
 
 
 @pytest.fixture(scope="function")

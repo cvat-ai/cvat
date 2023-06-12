@@ -1780,7 +1780,7 @@ class TestImportTaskAnnotations:
             (_, response) = api_client.tasks_api.destroy_annotations(id=task_id)
             assert response.status == HTTPStatus.NO_CONTENT
 
-    @pytest.mark.timeout(45)
+    @pytest.mark.timeout(50)
     @pytest.mark.parametrize("successful_upload", [True, False])
     def test_can_import_annotations_after_previous_unclear_import(
         self, successful_upload: bool, tasks_with_shapes
@@ -1815,7 +1815,7 @@ class TestImportTaskAnnotations:
             rq_id = json.loads(response.data)["rq_id"]
             assert rq_id
         else:
-            required_time = 40
+            required_time = 45
             uploader._tus_start_upload(url, query_params=params)
             uploader._upload_file_data_with_tus(
                 url, filename, meta=params, logger=self.client.logger.debug
@@ -1828,7 +1828,7 @@ class TestImportTaskAnnotations:
         task.import_annotations(self.format, filename)
         self._check_annotations(task_id)
 
-    @pytest.mark.timeout(45)
+    @pytest.mark.timeout(50)
     def test_check_import_cache_after_previous_interrupted_upload(self, tasks_with_shapes, request):
         task_id = tasks_with_shapes[0]["id"]
         with NamedTemporaryFile() as f:
@@ -1847,7 +1847,7 @@ class TestImportTaskAnnotations:
             url, filename, meta=params, logger=self.client.logger.debug
         )
         number_of_files = 1
-        sleep(15)  # wait when the cleaning job from rq worker will be started
+        sleep(20)  # wait when the cleaning job from rq worker will be started
         command = ["/bin/bash", "-c", f"ls data/tasks/{task_id}/tmp | wc -l"]
         platform = request.config.getoption("--platform")
         assert platform in ("kube", "local")
