@@ -36,7 +36,9 @@ import cvat.apps.dataset_manager as dm
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.models import Job, ShapeType, SourceType, Task
 from cvat.apps.engine.serializers import LabeledDataSerializer
-from cvat.apps.lambda_manager.serializers import FunctionCallRequestSerializer, FunctionCallSerializer
+from cvat.apps.lambda_manager.serializers import (
+    FunctionCallRequestSerializer, FunctionCallSerializer
+)
 from cvat.utils.http import make_requests_session
 from cvat.apps.iam.permissions import LambdaPermission
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
@@ -569,16 +571,7 @@ class LambdaJob:
 
         results = Results(db_task.id, job_id=db_job.id if db_job else None)
 
-        if db_job:
-            task_data = db_task.data
-            data_start_frame = task_data.start_frame
-            step = task_data.get_frame_step()
-            frame_set = sorted(
-                (abs_id - data_start_frame) // step
-                for abs_id in db_job.segment.frame_set
-            )
-        else:
-            frame_set = range(db_task.data.size)
+        frame_set = cls._get_frame_set(db_task, db_job)
 
         for frame in frame_set:
             if frame in db_task.data.deleted_frames:
@@ -654,6 +647,21 @@ class LambdaJob:
         return job.get_status()
 
     @classmethod
+    def _get_frame_set(cls, db_task: Task, db_job: Optional[Job]):
+        if db_job:
+            task_data = db_task.data
+            data_start_frame = task_data.start_frame
+            step = task_data.get_frame_step()
+            frame_set = sorted(
+                (abs_id - data_start_frame) // step
+                for abs_id in db_job.segment.frame_set
+            )
+        else:
+            frame_set = range(db_task.data.size)
+
+        return frame_set
+
+    @classmethod
     def _call_reid(
         cls,
         function: LambdaFunction,
@@ -664,8 +672,14 @@ class LambdaJob:
         *,
         db_job: Optional[Job] = None
     ):
-        data = dm.task.get_task_data(db_task.id)
-        boxes_by_frame = [[] for _ in range(db_task.data.size)]
+        if db_job:
+            data = dm.task.get_job_data(db_job.id)
+        else:
+            data = dm.task.get_task_data(db_task.id)
+
+        frame_set = cls._get_frame_set(db_task, db_job)
+
+        boxes_by_frame = {frame: [] for frame in frame_set}
         shapes_without_boxes = []
         for shape in data["shapes"]:
             if shape["type"] == str(ShapeType.RECTANGLE):
@@ -674,18 +688,18 @@ class LambdaJob:
                 shapes_without_boxes.append(shape)
 
         paths = {}
-        for frame in range(db_task.data.size - 1):
-            boxes0 = boxes_by_frame[frame]
+        for i, (frame0, frame1) in enumerate(zip(frame_set[:-1], frame_set[1:])):
+            boxes0 = boxes_by_frame[frame0]
             for box in boxes0:
                 if "path_id" not in box:
                     path_id = len(paths)
                     paths[path_id] = [box]
                     box["path_id"] = path_id
 
-            boxes1 = boxes_by_frame[frame + 1]
+            boxes1 = boxes_by_frame[frame1]
             if boxes0 and boxes1:
                 matching = function.invoke(db_task, db_job=db_job, data={
-                    "frame0": frame, "frame1": frame + 1, "quality": quality,
+                    "frame0": frame0, "frame1": frame1, "quality": quality,
                     "boxes0": boxes0, "boxes1": boxes1, "threshold": threshold,
                     "max_distance": max_distance})
 
@@ -695,12 +709,11 @@ class LambdaJob:
                         boxes1[idx1]["path_id"] = path_id
                         paths[path_id].append(boxes1[idx1])
 
-            progress = (frame + 2) / db_task.data.size
-            if not LambdaJob._update_progress(progress):
+            if not LambdaJob._update_progress((i + 1) / len(frame_set)):
                 break
 
 
-        for box in boxes_by_frame[db_task.data.size - 1]:
+        for box in boxes_by_frame[frame_set[-1]]:
             if "path_id" not in box:
                 path_id = len(paths)
                 paths[path_id] = [box]
@@ -728,7 +741,7 @@ class LambdaJob:
                 box["attributes"] = []
 
         for track in tracks:
-            if track["shapes"][-1]["frame"] != db_task.data.size - 1:
+            if track["shapes"][-1]["frame"] != frame_set[-1]:
                 box = track["shapes"][-1].copy()
                 box["outside"] = True
                 box["frame"] += 1
@@ -740,7 +753,10 @@ class LambdaJob:
 
             serializer = LabeledDataSerializer(data=data)
             if serializer.is_valid(raise_exception=True):
-                dm.task.put_task_data(db_task.id, serializer.data)
+                if db_job:
+                    dm.task.put_job_data(db_job.id, serializer.data)
+                else:
+                    dm.task.put_task_data(db_task.id, serializer.data)
 
     @classmethod
     def __call__(cls, function, task: int, quality: str, cleanup: bool, **kwargs):
