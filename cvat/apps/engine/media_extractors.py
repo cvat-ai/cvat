@@ -668,7 +668,7 @@ class ZipChunkWriter(IChunkWriter):
                     pil_image.save(output, format=pil_image.format if pil_image.format else ext or self.IMAGE_EXT, quality=100, subsampling=0)
                 else:
                     output, ext = self._write_pcd_file(image)[0:2]
-                arcname = '{:06d}{}'.format(idx, ext)
+                arcname = '{:06d}.{}'.format(idx, ext)
                 zip_chunk.writestr(arcname, output.getvalue())
         # return empty list because ZipChunkWriter write files as is
         # and does not decode it to know img size.
