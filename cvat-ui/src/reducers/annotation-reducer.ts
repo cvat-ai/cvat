@@ -693,9 +693,12 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
 
             const {
                 canvas: { activeControl, instance },
+                annotations: { highlightedConflict },
             } = state;
 
-            if (activeControl !== ActiveControl.CURSOR || (instance as Canvas | Canvas3d).mode() !== CanvasMode.IDLE) {
+            if (activeControl !== ActiveControl.CURSOR ||
+                (instance as Canvas | Canvas3d).mode() !== CanvasMode.IDLE ||
+                highlightedConflict) {
                 return state;
             }
 
@@ -1190,13 +1193,28 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.HIGHLIGHT_CONFLICT: {
-            const { conflict, clientIDs } = action.payload;
+            const { conflict } = action.payload;
+            if (conflict) {
+                const { annotationConflicts } = conflict;
+                const [mainConflict] = annotationConflicts;
+                const { clientID } = mainConflict;
+                return {
+                    ...state,
+                    annotations: {
+                        ...state.annotations,
+                        highlightedConflict: conflict,
+                        activatedStateID: clientID,
+                        activatedElementID: null,
+                        activatedAttributeID: null,
+                    },
+                };
+            }
+
             return {
                 ...state,
                 annotations: {
                     ...state.annotations,
                     highlightedConflict: conflict,
-                    highlightedElementIDs: clientIDs,
                 },
             };
         }

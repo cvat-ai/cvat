@@ -12,7 +12,7 @@ import {
 } from 'reducers';
 
 import CanvasContextMenuComponent from 'components/annotation-page/canvas/views/canvas2d/canvas-context-menu';
-import { updateCanvasContextMenu } from 'actions/annotation-actions';
+import { copyShape, pasteShapeAsync, updateCanvasContextMenu } from 'actions/annotation-actions';
 import { reviewActions, finishIssueAsync } from 'actions/review-actions';
 import { ThunkDispatch } from 'utils/redux';
 import { Canvas } from 'cvat-canvas-wrapper';
@@ -45,6 +45,7 @@ interface DispatchToProps {
     ): void;
     onStartIssue(position: number[]): void;
     openIssue(position: number[], message: string): void;
+    onCopyObject(objectState: ObjectState): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -108,6 +109,10 @@ function mapDispatchToProps(dispatch: ThunkDispatch): DispatchToProps {
             dispatch(reviewActions.startIssue(position));
             dispatch(finishIssueAsync(message));
             dispatch(updateCanvasContextMenu(false, 0, 0));
+        },
+        onCopyObject(objectState: ObjectState): void {
+            dispatch(copyShape(objectState));
+            dispatch(pasteShapeAsync());
         },
     };
 }
@@ -298,6 +303,7 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
             latestComments,
             onStartIssue,
             openIssue,
+            onCopyObject,
         } = this.props;
 
         return (
@@ -315,6 +321,7 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
                     latestComments={latestComments}
                     onStartIssue={onStartIssue}
                     openIssue={openIssue}
+                    onCopyObject={onCopyObject}
                 />
             ) : null
         );
