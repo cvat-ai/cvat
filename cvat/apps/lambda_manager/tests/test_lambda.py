@@ -1432,13 +1432,13 @@ class TestComplexFrameSetupCases(_LambdaTestCaseBase):
         self.assertEqual(annotations, {'version': 0, 'tags': [], 'shapes': [], 'tracks': []})
 
     def test_offline_function_run_on_task_does_not_affect_gt_job(self):
-        requested_frame_range = self.task_rel_frame_range[::3]
         response = self._post_request("/api/jobs", self.admin, data={
             "type": "ground_truth",
             "task_id": self.task["id"],
             "frame_selection_method": "manual",
             "frames": [
-                self.start_frame + frame * self.frame_step for frame in requested_frame_range
+                self.start_frame + frame * self.frame_step
+                for frame in self.task_rel_frame_range[::3]
             ],
         })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -1454,6 +1454,7 @@ class TestComplexFrameSetupCases(_LambdaTestCaseBase):
         self.assertEqual(len(annotations["tags"]), 0)
         self.assertEqual(len(annotations["tracks"]), 0)
 
+        requested_frame_range = self.task_rel_frame_range
         self.assertEqual(
             {
                 frame: 1 for frame in requested_frame_range
