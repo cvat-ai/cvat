@@ -5,6 +5,8 @@ weight: 10
 
 # [CamVid](http://mi.eng.cam.ac.uk/research/projects/VideoRec/CamVid/)
 
+- [Dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/camvid_dataset)
+
 ## CamVid export
 
 Downloaded file: a zip archive of the following structure:
