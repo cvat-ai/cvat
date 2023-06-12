@@ -7,22 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## \[2.5.0] - Unreleased
 ### Added
-- \[API\] An option to supply custom file ordering for task data uploads (<https://github.com/opencv/cvat/pull/5083>)
 - New option ``semi-auto`` is available as annotations source (<https://github.com/opencv/cvat/pull/6263>) 
 - \[API\] Support for Ground Truth job creation and removal (<https://github.com/opencv/cvat/pull/6204>)
 - \[API\] Task quality estimation endpoints (<https://github.com/opencv/cvat/pull/6204>)
+
+### Changed
+- TDB
+
+### Changed
+- TDB
+
+### Deprecated
+- TDB
+
+### Removed
+- TDB
+
+### Fixed
+- TDB
+
+### Security
+- TDB
+
+## \[2.4.6] - 2023-06-09
+### Added
+- \[Server API\] An option to supply custom file ordering for task data uploads (<https://github.com/opencv/cvat/pull/5083>)
+- New option ``semi-auto`` is available as annotations source (<https://github.com/opencv/cvat/pull/6263>)
 
 ### Changed
 - Allowed to use dataset manifest for the `predefined` sorting method for task data (<https://github.com/opencv/cvat/pull/5083>)
 
 ### Changed
 - Replaced Apache mod_wsgi with Uvicorn ASGI server for backend use(<https://github.com/opencv/cvat/pull/6195>)
-
-### Deprecated
-- TBD
-
-### Removed
-- TDB
 
 ### Fixed
 - Incorrect location of temporary file during job annotation import.(<https://github.com/opencv/cvat/pull/5909>)
@@ -34,9 +50,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - \[API\] The `predefined` sorting method for task data uploads (<https://github.com/opencv/cvat/pull/5083>)
 - Allowed slashes in export filenames. (<https://github.com/opencv/cvat/pull/6265>)
 - Dataset export error with `outside` property of tracks (<https://github.com/opencv/cvat/issues/5971>)
-
-### Security
-- TDB
 
 ## \[2.4.5] - 2023-06-02
 ### Added

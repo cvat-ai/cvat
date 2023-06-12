@@ -382,9 +382,6 @@ ingress:
   #   secretName: ingress-tls-cvat
 
 traefik:
-  logs:
-    general:
-      level: INFO
   service:
     externalIPs:
       # - "192.168.49.2"
