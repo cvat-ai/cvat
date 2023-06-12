@@ -96,6 +96,15 @@ def rotate_within_exif(img: Image):
 
     return img
 
+def write_pcd_file(image):
+    image_buf = open(image, "rb") if isinstance(image, str) else image
+    properties = ValidateDimension.get_pcd_properties(image_buf)
+    w, h = int(properties["WIDTH"]), int(properties["HEIGHT"])
+    extension = "pcd"
+    image_buf.seek(0, 0)
+    image_buf = io.BytesIO(image_buf.read())
+    return image_buf, extension, w, h
+
 class IMediaReader(ABC):
     def __init__(self, source_path, step, start, stop, dimension):
         self._source_path = source_path
@@ -650,11 +659,14 @@ class ZipChunkWriter(IChunkWriter):
         with zipfile.ZipFile(chunk_path, 'x') as zip_chunk:
             for idx, (image, path, _) in enumerate(images):
                 ext = os.path.splitext(path)[1]
-                arcname = '{:06d}{}'.format(idx, ext)
-                pil_image = rotate_within_exif(Image.open(image))
-                with io.BytesIO() as output:
+                output = io.BytesIO()
+                if self._dimension == DimensionType.DIM_2D:
+                    pil_image = rotate_within_exif(Image.open(image))
                     pil_image.save(output, format=pil_image.format if pil_image.format else ext or 'jpeg', quality=100, subsampling=0)
-                    zip_chunk.writestr(arcname, output.getvalue())
+                else:
+                    output, ext = write_pcd_file(image)[0:2]
+                arcname = '{:06d}{}'.format(idx, ext)
+                zip_chunk.writestr(arcname, output.getvalue())
         # return empty list because ZipChunkWriter write files as is
         # and does not decode it to know img size.
         return []
@@ -668,12 +680,7 @@ class ZipCompressedChunkWriter(IChunkWriter):
                     w, h, image_buf = self._compress_image(image, self._image_quality)
                     extension = "jpeg"
                 else:
-                    image_buf = open(image, "rb") if isinstance(image, str) else image
-                    properties = ValidateDimension.get_pcd_properties(image_buf)
-                    w, h = int(properties["WIDTH"]), int(properties["HEIGHT"])
-                    extension = "pcd"
-                    image_buf.seek(0, 0)
-                    image_buf = io.BytesIO(image_buf.read())
+                    image_buf, extension, w, h = write_pcd_file(image)
                 image_sizes.append((w, h))
                 arcname = '{:06d}.{}'.format(idx, extension)
                 zip_chunk.writestr(arcname, image_buf.getvalue())
