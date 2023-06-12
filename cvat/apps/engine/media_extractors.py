@@ -600,21 +600,9 @@ class VideoDatasetManifestReader(FragmentMediaReader):
                         return
 
 class IChunkWriter(ABC):
-    IMAGE_EXT = 'jpeg'
-    POINT_CLOUD_EXT = 'pcd'
-
     def __init__(self, quality, dimension=DimensionType.DIM_2D):
         self._image_quality = quality
         self._dimension = dimension
-
-    def _write_pcd_file(self, image):
-        image_buf = open(image, "rb") if isinstance(image, str) else image
-        properties = ValidateDimension.get_pcd_properties(image_buf)
-        w, h = int(properties["WIDTH"]), int(properties["HEIGHT"])
-        extension = self.POINT_CLOUD_EXT
-        image_buf.seek(0, 0)
-        image_buf = io.BytesIO(image_buf.read())
-        return image_buf, extension, w, h
 
     @staticmethod
     def _compress_image(image_path, quality):
@@ -658,6 +646,18 @@ class IChunkWriter(ABC):
         pass
 
 class ZipChunkWriter(IChunkWriter):
+    IMAGE_EXT = 'jpeg'
+    POINT_CLOUD_EXT = 'pcd'
+
+    def _write_pcd_file(self, image):
+        image_buf = open(image, "rb") if isinstance(image, str) else image
+        properties = ValidateDimension.get_pcd_properties(image_buf)
+        w, h = int(properties["WIDTH"]), int(properties["HEIGHT"])
+        extension = self.POINT_CLOUD_EXT
+        image_buf.seek(0, 0)
+        image_buf = io.BytesIO(image_buf.read())
+        return image_buf, extension, w, h
+
     def save_as_chunk(self, images, chunk_path):
         with zipfile.ZipFile(chunk_path, 'x') as zip_chunk:
             for idx, (image, path, _) in enumerate(images):
@@ -674,7 +674,7 @@ class ZipChunkWriter(IChunkWriter):
         # and does not decode it to know img size.
         return []
 
-class ZipCompressedChunkWriter(IChunkWriter):
+class ZipCompressedChunkWriter(ZipChunkWriter):
     def save_as_chunk(
         self, images, chunk_path, *, compress_frames: bool = True, zip_compress_level: int = 0
     ):
