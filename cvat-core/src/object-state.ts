@@ -454,7 +454,7 @@ export default class ObjectState {
             }),
         );
 
-        if ([Source.MANUAL, Source.AUTO].includes(serialized.source)) {
+        if ([Source.MANUAL, Source.SEMI_AUTO, Source.AUTO].includes(serialized.source)) {
             data.source = serialized.source;
         }
         if (typeof serialized.zOrder === 'number') {
