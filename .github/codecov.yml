@@ -19,3 +19,7 @@ component_management:
         - cvat-sdk/**
         - utils/**
 
+codecov:
+  require_ci_to_pass: yes
+  notify:
+    wait_for_ci: yes
