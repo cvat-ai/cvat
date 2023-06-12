@@ -12,6 +12,7 @@ jobs:
               cvat-sdk/**/*.py
               cvat-cli/**/*.py
               tests/python/**/*.py
+              cvat/apps/quality_control/**/*.py
           dir_names: true
 
       - name: Run checks

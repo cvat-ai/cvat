@@ -96,15 +96,6 @@ def rotate_within_exif(img: Image):
 
     return img
 
-def write_pcd_file(image):
-    image_buf = open(image, "rb") if isinstance(image, str) else image
-    properties = ValidateDimension.get_pcd_properties(image_buf)
-    w, h = int(properties["WIDTH"]), int(properties["HEIGHT"])
-    extension = "pcd"
-    image_buf.seek(0, 0)
-    image_buf = io.BytesIO(image_buf.read())
-    return image_buf, extension, w, h
-
 class IMediaReader(ABC):
     def __init__(self, source_path, step, start, stop, dimension):
         self._source_path = source_path
@@ -609,9 +600,21 @@ class VideoDatasetManifestReader(FragmentMediaReader):
                         return
 
 class IChunkWriter(ABC):
+    IMAGE_EXT = 'jpeg'
+    POINT_CLOUD_EXT = 'pcd'
+
     def __init__(self, quality, dimension=DimensionType.DIM_2D):
         self._image_quality = quality
         self._dimension = dimension
+
+    def _write_pcd_file(self, image):
+        image_buf = open(image, "rb") if isinstance(image, str) else image
+        properties = ValidateDimension.get_pcd_properties(image_buf)
+        w, h = int(properties["WIDTH"]), int(properties["HEIGHT"])
+        extension = self.POINT_CLOUD_EXT
+        image_buf.seek(0, 0)
+        image_buf = io.BytesIO(image_buf.read())
+        return image_buf, extension, w, h
 
     @staticmethod
     def _compress_image(image_path, quality):
@@ -662,9 +665,9 @@ class ZipChunkWriter(IChunkWriter):
                 output = io.BytesIO()
                 if self._dimension == DimensionType.DIM_2D:
                     pil_image = rotate_within_exif(Image.open(image))
-                    pil_image.save(output, format=pil_image.format if pil_image.format else ext or 'jpeg', quality=100, subsampling=0)
+                    pil_image.save(output, format=pil_image.format if pil_image.format else ext or self.IMAGE_EXT, quality=100, subsampling=0)
                 else:
-                    output, ext = write_pcd_file(image)[0:2]
+                    output, ext = self._write_pcd_file(image)[0:2]
                 arcname = '{:06d}{}'.format(idx, ext)
                 zip_chunk.writestr(arcname, output.getvalue())
         # return empty list because ZipChunkWriter write files as is
@@ -672,15 +675,23 @@ class ZipChunkWriter(IChunkWriter):
         return []
 
 class ZipCompressedChunkWriter(IChunkWriter):
-    def save_as_chunk(self, images, chunk_path):
+    def save_as_chunk(
+        self, images, chunk_path, *, compress_frames: bool = True, zip_compress_level: int = 0
+    ):
         image_sizes = []
-        with zipfile.ZipFile(chunk_path, 'x') as zip_chunk:
+        with zipfile.ZipFile(chunk_path, 'x', compresslevel=zip_compress_level) as zip_chunk:
             for idx, (image, _, _) in enumerate(images):
                 if self._dimension == DimensionType.DIM_2D:
-                    w, h, image_buf = self._compress_image(image, self._image_quality)
-                    extension = "jpeg"
+                    if compress_frames:
+                        w, h, image_buf = self._compress_image(image, self._image_quality)
+                    else:
+                        assert isinstance(image, io.IOBase)
+                        image_buf = io.BytesIO(image.read())
+                        w, h = Image.open(image_buf).size
+
+                    extension = self.IMAGE_EXT
                 else:
-                    image_buf, extension, w, h = write_pcd_file(image)
+                    image_buf, extension, w, h = self._write_pcd_file(image)
                 image_sizes.append((w, h))
                 arcname = '{:06d}.{}'.format(idx, extension)
                 zip_chunk.writestr(arcname, image_buf.getvalue())
