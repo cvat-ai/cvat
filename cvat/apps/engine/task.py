@@ -341,10 +341,12 @@ def _validate_manifest(
             ):
                 cache_disabled_message = ""
                 if data_storage_method == models.StorageMethodChoice.CACHE and not settings.USE_CACHE:
-                    cache_disabled_message = "This server doesn't allow to use cache for data. "
+                    cache_disabled_message = (
+                        "This server doesn't allow to use cache for data. "
                         "Please turn 'use cache' off and try to recreate the task"
+                    )
                     slogger.glob.warning(cache_disabled_message)
-                  
+
                 raise ValidationError(
                     "A manifest file can only be used with the 'use cache' option "
                     "or when 'sorting_method' is 'predefined'" + \
