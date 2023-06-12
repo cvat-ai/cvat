@@ -1,5 +1,8 @@
 [run]
 branch = true
+parallel = true
+sigterm = true
+concurrency=thread
 
 source =
     cvat/apps/
@@ -15,7 +18,6 @@ omit =
     */migrations/*
 
 [report]
-# Regexes for lines to exclude from consideration
 exclude_lines =
     # Have to re-enable the standard pragma
     pragma: no cover

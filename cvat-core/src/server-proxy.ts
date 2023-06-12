@@ -734,7 +734,7 @@ function exportDataset(instanceType: 'projects' | 'jobs' | 'tasks') {
         const params: Params = {
             ...enableOrganization(),
             ...configureStorage(targetStorage, useDefaultSettings),
-            ...(name ? { filename: name.replace(/\//g, '_') } : {}),
+            ...(name ? { filename: name } : {}),
             format,
         };
 

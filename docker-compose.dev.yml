@@ -19,6 +19,7 @@ services:
         socks_proxy:
         CLAM_AV:
         CVAT_DEBUG_ENABLED:
+        COVERAGE_PROCESS_START:
     environment:
       # Use this with CVAT_DEBUG_ENABLED to avoid server response timeouts
       # DJANGO_MODWSGI_EXTRA_ARGS: '--request-timeout 0 --queue-timeout 0 --socket-timeout 1000000'
@@ -26,6 +27,7 @@ services:
       CVAT_DEBUG_PORT: '9090'
       # If 'yes', wait for a debugger connection on startup
       CVAT_DEBUG_WAIT: '${CVAT_DEBUG_WAIT_CLIENT:-no}'
+      COVERAGE_PROCESS_START:
     ports:
       - '9090:9090'
 
@@ -37,6 +39,7 @@ services:
       # NUMPROCS: 1
       CVAT_DEBUG_ENABLED: '${CVAT_DEBUG_ENABLED:-no}'
       CVAT_DEBUG_PORT: '9092'
+      COVERAGE_PROCESS_START:
     ports:
       - '9092:9092'
 
@@ -48,6 +51,7 @@ services:
       # NUMPROCS: 1
       CVAT_DEBUG_ENABLED: '${CVAT_DEBUG_ENABLED:-no}'
       CVAT_DEBUG_PORT: '9093'
+      COVERAGE_PROCESS_START:
     ports:
       - '9093:9093'
 
@@ -70,6 +74,7 @@ services:
       # NUMPROCS: 1
       CVAT_DEBUG_ENABLED: '${CVAT_DEBUG_ENABLED:-no}'
       CVAT_DEBUG_PORT: '9091'
+      COVERAGE_PROCESS_START:
     ports:
       - '9091:9091'
 
