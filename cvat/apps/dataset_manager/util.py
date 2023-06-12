@@ -3,10 +3,14 @@
 #
 # SPDX-License-Identifier: MIT
 
+from copy import deepcopy
+from typing import Sequence
 import inspect
 import os, os.path as osp
 import zipfile
+
 from django.conf import settings
+from django.db.models import QuerySet
 
 
 def current_function_name(depth=1):
@@ -35,3 +39,25 @@ def bulk_create(db_model, objects, flt_param):
             return db_model.objects.bulk_create(objects)
 
     return []
+
+def is_prefetched(queryset: QuerySet, field: str) -> bool:
+    return field in queryset._prefetch_related_lookups
+
+def add_prefetch_fields(queryset: QuerySet, fields: Sequence[str]) -> QuerySet:
+    for field in fields:
+        if not is_prefetched(queryset, field):
+            queryset = queryset.prefetch_related(field)
+
+    return queryset
+
+def deepcopy_simple(v):
+    # Default deepcopy is very slow
+
+    if isinstance(v, dict):
+        return {k: deepcopy_simple(vv) for k, vv in v.items()}
+    elif isinstance(v, (list, tuple, set)):
+        return type(v)(deepcopy_simple(vv) for vv in v)
+    elif isinstance(v, (int, float, str, bool)) or v is None:
+        return v
+    else:
+        return deepcopy(v)

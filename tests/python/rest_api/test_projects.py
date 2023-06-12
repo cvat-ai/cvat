@@ -303,12 +303,16 @@ class TestPostProjects:
             (_, response) = api_client.projects_api.create(spec, **kwargs)
             assert response.status == HTTPStatus.CREATED
 
+        return response
+
     def _test_create_project_403(self, user, spec, **kwargs):
         with make_api_client(user) as api_client:
             (_, response) = api_client.projects_api.create(
                 spec, **kwargs, _parse_response=False, _check_status=False
             )
         assert response.status == HTTPStatus.FORBIDDEN
+
+        return response
 
     def test_if_worker_cannot_create_project(self, find_users):
         workers = find_users(privilege="worker")
@@ -432,6 +436,18 @@ class TestPostProjects:
 
         response = post_method(user, "projects", project_spec)
         assert response.status_code == HTTPStatus.FORBIDDEN
+
+    def test_create_response_matches_get(self, admin_user):
+        username = admin_user
+
+        spec = {"name": "test create project", "labels": [{"name": "a"}]}
+
+        response = self._test_create_project_201(username, spec)
+        project = json.loads(response.data)
+
+        with make_api_client(username) as api_client:
+            (_, response) = api_client.projects_api.retrieve(project["id"])
+            assert DeepDiff(project, json.loads(response.data), ignore_order=True) == {}
 
 
 def _check_cvat_for_video_project_annotations_meta(content, values_to_be_checked):

@@ -661,18 +661,29 @@ class ZipChunkWriter(IChunkWriter):
         return []
 
 class ZipCompressedChunkWriter(IChunkWriter):
-    def save_as_chunk(self, images, chunk_path):
+    IMAGE_EXT = 'jpeg'
+    POINT_CLOUD_EXT = 'pcd'
+
+    def save_as_chunk(
+        self, images, chunk_path, *, compress_frames: bool = True, zip_compress_level: int = 0
+    ):
         image_sizes = []
-        with zipfile.ZipFile(chunk_path, 'x') as zip_chunk:
+        with zipfile.ZipFile(chunk_path, 'x', compresslevel=zip_compress_level) as zip_chunk:
             for idx, (image, _, _) in enumerate(images):
                 if self._dimension == DimensionType.DIM_2D:
-                    w, h, image_buf = self._compress_image(image, self._image_quality)
-                    extension = "jpeg"
+                    if compress_frames:
+                        w, h, image_buf = self._compress_image(image, self._image_quality)
+                    else:
+                        assert isinstance(image, io.IOBase)
+                        image_buf = io.BytesIO(image.read())
+                        w, h = Image.open(image_buf).size
+
+                    extension = self.IMAGE_EXT
                 else:
                     image_buf = open(image, "rb") if isinstance(image, str) else image
                     properties = ValidateDimension.get_pcd_properties(image_buf)
                     w, h = int(properties["WIDTH"]), int(properties["HEIGHT"])
-                    extension = "pcd"
+                    extension = self.POINT_CLOUD_EXT
                     image_buf.seek(0, 0)
                     image_buf = io.BytesIO(image_buf.read())
                 image_sizes.append((w, h))

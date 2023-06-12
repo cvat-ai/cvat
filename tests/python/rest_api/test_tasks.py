@@ -41,6 +41,7 @@ from shared.utils.helpers import generate_image_files, generate_manifest
 
 from .utils import (
     CollectionSimpleFilterTestBase,
+    compare_annotations,
     create_task,
     export_dataset,
     wait_until_task_is_created,
@@ -210,12 +211,16 @@ class TestPostTasks:
             (_, response) = api_client.tasks_api.create(spec, **kwargs)
             assert response.status == HTTPStatus.CREATED
 
+        return response
+
     def _test_create_task_403(self, user, spec, **kwargs):
         with make_api_client(user) as api_client:
             (_, response) = api_client.tasks_api.create(
                 spec, **kwargs, _parse_response=False, _check_status=False
             )
             assert response.status == HTTPStatus.FORBIDDEN
+
+        return response
 
     def _test_users_to_create_task_in_project(
         self, project_id, users, is_staff, is_allow, is_project_staff, **kwargs
@@ -270,8 +275,20 @@ class TestPostTasks:
             project_id, users, is_staff, is_allow, is_project_staff, org=org["slug"]
         )
 
-    def test_can_create_task_with_skeleton(self):
-        username = "admin1"
+    def test_create_response_matches_get(self, admin_user):
+        username = admin_user
+
+        spec = {"name": "test create task", "labels": [{"name": "a"}]}
+
+        response = self._test_create_task_201(username, spec)
+        task = json.loads(response.data)
+
+        with make_api_client(username) as api_client:
+            (_, response) = api_client.tasks_api.retrieve(task["id"])
+            assert DeepDiff(task, json.loads(response.data), ignore_order=True) == {}
+
+    def test_can_create_task_with_skeleton(self, admin_user):
+        username = admin_user
 
         spec = {
             "name": f"test admin1 to create a task with skeleton",
@@ -351,7 +368,7 @@ class TestPatchTaskAnnotations:
     def _test_check_response(self, is_allow, response, data=None):
         if is_allow:
             assert response.status == HTTPStatus.OK
-            assert DeepDiff(data, json.loads(response.data), exclude_paths="root['version']") == {}
+            assert compare_annotations(data, json.loads(response.data)) == {}
         else:
             assert response.status == HTTPStatus.FORBIDDEN
 
@@ -1476,6 +1493,107 @@ class TestWorkWithTask:
             except Exception as ex:
                 assert ex.status == HTTPStatus.NOT_FOUND
                 assert image_name in ex.body
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+class TestWorkWithGtJobs:
+    def test_normal_and_gt_job_annotations_are_not_merged(
+        self, tmp_path, admin_user, tasks, jobs, annotations
+    ):
+        gt_job = next(j for j in jobs if j["type"] == "ground_truth")
+        task = tasks[gt_job["task_id"]]
+        task_jobs = [j for j in jobs if j["task_id"] == task["id"]]
+
+        gt_job_source_annotations = annotations["job"][str(gt_job["id"])]
+        assert (
+            gt_job_source_annotations["tags"]
+            or gt_job_source_annotations["shapes"]
+            or gt_job_source_annotations["tracks"]
+        )
+
+        with Client(BASE_URL) as client:
+            client.config.status_check_period = 0.01
+            client.login((admin_user, USER_PASS))
+
+            for j in task_jobs:
+                if j["type"] != "ground_truth":
+                    client.jobs.retrieve(j["id"]).remove_annotations()
+
+            task_obj = client.tasks.retrieve(task["id"])
+            task_raw_annotations = task_obj.get_annotations()
+
+            # It's quite hard to parse the dataset files, just import the data back instead
+            dataset_format = "CVAT for images 1.1"
+
+            dataset_file = tmp_path / "dataset.zip"
+            task_obj.export_dataset(dataset_format, dataset_file, include_images=True)
+            task_obj.import_annotations("CVAT 1.1", dataset_file)
+            task_dataset_file_annotations = task_obj.get_annotations()
+
+            annotations_file = tmp_path / "annotations.zip"
+            task_obj.export_dataset(dataset_format, annotations_file, include_images=False)
+            task_obj.import_annotations("CVAT 1.1", annotations_file)
+            task_annotations_file_annotations = task_obj.get_annotations()
+
+        for annotation_source in [
+            task_raw_annotations,
+            task_dataset_file_annotations,
+            task_annotations_file_annotations,
+        ]:
+            assert not annotation_source.tags
+            assert not annotation_source.shapes
+            assert not annotation_source.tracks
+
+    def test_can_backup_task_with_gt_jobs(self, tmp_path, admin_user, tasks, jobs, annotations):
+        gt_job = next(
+            j
+            for j in jobs
+            if j["type"] == "ground_truth" and tasks[j["task_id"]]["jobs"]["count"] == 2
+        )
+        task = tasks[gt_job["task_id"]]
+        annotation_job = next(
+            j for j in jobs if j["task_id"] == task["id"] and j["type"] == "annotation"
+        )
+
+        gt_job_source_annotations = annotations["job"][str(gt_job["id"])]
+        assert (
+            gt_job_source_annotations["tags"]
+            or gt_job_source_annotations["shapes"]
+            or gt_job_source_annotations["tracks"]
+        )
+
+        annotation_job_source_annotations = annotations["job"][str(annotation_job["id"])]
+
+        with Client(BASE_URL) as client:
+            client.config.status_check_period = 0.01
+            client.login((admin_user, USER_PASS))
+
+            backup_file: Path = tmp_path / "dataset.zip"
+            client.tasks.retrieve(task["id"]).download_backup(backup_file)
+
+            new_task = client.tasks.create_from_backup(backup_file)
+            updated_job_annotations = {
+                j.type: json.loads(j.api.retrieve_annotations(j.id)[1].data)
+                for j in new_task.get_jobs()
+            }
+
+        for job_type, source_annotations in {
+            gt_job["type"]: gt_job_source_annotations,
+            annotation_job["type"]: annotation_job_source_annotations,
+        }.items():
+            assert (
+                DeepDiff(
+                    source_annotations,
+                    updated_job_annotations[job_type],
+                    ignore_order=True,
+                    exclude_regex_paths=[
+                        r"root(\['\w+'\]\[\d+\])+\['id'\]",
+                        r"root(\['\w+'\]\[\d+\])+\['label_id'\]",
+                        r"root(\['\w+'\]\[\d+\])+\['attributes'\]\[\d+\]\['spec_id'\]",
+                    ],
+                )
+                == {}
+            )
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
