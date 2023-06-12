@@ -2,12 +2,17 @@
 #
 # SPDX-License-Identifier: MIT
 
+from drf_spectacular.utils import extend_schema_serializer
 from rest_framework import serializers
 
 
 class LabelMappingEntrySerializer(serializers.DictField):
     name = serializers.CharField()
 
+@extend_schema_serializer(
+    # The "Request" suffix is added by drf-spectacular automatically
+    component_name='FunctionCall'
+)
 class FunctionCallRequestSerializer(serializers.Serializer):
     function = serializers.CharField(help_text="The name of the function to execute")
 
@@ -25,7 +30,7 @@ class FunctionCallRequestSerializer(serializers.Serializer):
     )
     max_distance = serializers.IntegerField(required=False)
 
-class FunctionSerializer(serializers.Serializer):
+class FunctionCallParamsSerializer(serializers.Serializer):
     id = serializers.CharField(help_text="The name of the function")
 
     task = serializers.IntegerField(help_text="The id of the task")
@@ -36,7 +41,7 @@ class FunctionSerializer(serializers.Serializer):
 class FunctionCallSerializer(serializers.Serializer):
     id = serializers.CharField(help_text="Request id")
 
-    function = FunctionSerializer()
+    function = FunctionCallParamsSerializer()
     status = serializers.CharField()
     progress = serializers.IntegerField(default=0)
     enqueued = serializers.DateTimeField()

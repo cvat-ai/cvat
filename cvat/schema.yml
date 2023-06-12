@@ -2436,7 +2436,13 @@ paths:
       - basicAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/vnd.cvat+json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FunctionCall'
+          description: ''
     post:
       operationId: lambda_create_requests
       summary: Method calls the function
@@ -2458,6 +2464,12 @@ paths:
         description: Organization identifier
       tags:
       - lambda
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FunctionCallRequest'
+        required: true
       security:
       - sessionAuth: []
         csrfAuth: []
@@ -2465,8 +2477,12 @@ paths:
       - signatureAuth: []
       - basicAuth: []
       responses:
-        '201':
-          description: No response body
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/FunctionCall'
+          description: ''
   /api/lambda/requests/{id}:
     get:
       operationId: lambda_retrieve_requests
@@ -2475,7 +2491,7 @@ paths:
       - in: path
         name: id
         schema:
-          type: integer
+          type: string
         description: Request id
         required: true
       tags:
@@ -2488,7 +2504,11 @@ paths:
       - basicAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/FunctionCall'
+          description: ''
   /api/memberships:
     get:
       operationId: memberships_list
@@ -6540,6 +6560,98 @@ components:
       description: |-
         * `random_uniform` - RANDOM_UNIFORM
         * `manual` - MANUAL
+    FunctionCall:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Request id
+        function:
+          $ref: '#/components/schemas/FunctionCallParams'
+        status:
+          type: string
+        progress:
+          type: integer
+          default: 0
+        enqueued:
+          type: string
+          format: date-time
+        started:
+          type: string
+          format: date-time
+        ended:
+          type: string
+          format: date-time
+        exc_info:
+          type: string
+      required:
+      - ended
+      - enqueued
+      - exc_info
+      - function
+      - id
+      - started
+      - status
+    FunctionCallParams:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The name of the function
+        task:
+          type: integer
+          description: The id of the task
+        job:
+          type: integer
+          description: The id of the job
+        threshold:
+          type: number
+          format: double
+      required:
+      - id
+      - task
+    FunctionCallRequest:
+      type: object
+      properties:
+        function:
+          type: string
+          minLength: 1
+          description: The name of the function to execute
+        task:
+          type: integer
+          description: The id of the task to annotate
+        job:
+          type: integer
+          description: The id of the job to annotate
+        quality:
+          allOf:
+          - $ref: '#/components/schemas/QualityEnum'
+          default: original
+          description: |-
+            The quality of the images to use in the model run
+
+            * `compressed` - compressed
+            * `original` - original
+        cleanup:
+          type: boolean
+          default: false
+        convMaskToPoly:
+          type: boolean
+          default: false
+        threshold:
+          type: number
+          format: double
+        mapping:
+          type: object
+          additionalProperties:
+            type: object
+            additionalProperties: {}
+          description: Label mapping from the model to the task labels
+        max_distance:
+          type: integer
+      required:
+      - function
+      - task
     InputTypeEnum:
       enum:
       - checkbox
@@ -8193,6 +8305,14 @@ components:
         * `AZURE_CONTAINER` - AZURE_CONTAINER
         * `GOOGLE_DRIVE` - GOOGLE_DRIVE
         * `GOOGLE_CLOUD_STORAGE` - GOOGLE_CLOUD_STORAGE
+    QualityEnum:
+      enum:
+      - compressed
+      - original
+      type: string
+      description: |-
+        * `compressed` - compressed
+        * `original` - original
     QualityReport:
       type: object
       properties:
