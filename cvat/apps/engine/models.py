@@ -467,6 +467,7 @@ class Task(models.Model):
         # to avoid unexpected DB queries on access.
         return None
 
+    @cached_property
     def gt_job(self) -> Optional[Job]:
         try:
             return Job.objects.get(segment__task=self, type=JobType.GROUND_TRUTH)
