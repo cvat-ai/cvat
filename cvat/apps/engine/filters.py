@@ -58,7 +58,7 @@ class SearchFilter(filters.SearchFilter):
                     description=force_str(full_description)
                 )
             )
-        ]
+        ] if search_fields else []
 
     def get_schema_operation_parameters(self, view):
         search_fields = getattr(view, 'search_fields', [])
@@ -73,7 +73,7 @@ class SearchFilter(filters.SearchFilter):
             'schema': {
                 'type': 'string',
             },
-        }]
+        }] if search_fields else []
 
 class OrderingFilter(filters.OrderingFilter):
     ordering_param = 'sort'
@@ -113,7 +113,7 @@ class OrderingFilter(filters.OrderingFilter):
                     description=force_str(full_description)
                 )
             )
-        ]
+        ] if ordering_fields else []
 
     def get_schema_operation_parameters(self, view):
         ordering_fields = getattr(view, 'ordering_fields', [])
@@ -128,7 +128,7 @@ class OrderingFilter(filters.OrderingFilter):
             'schema': {
                 'type': 'string',
             },
-        }]
+        }] if ordering_fields else []
 
 class JsonLogicFilter(filters.BaseFilterBackend):
     Rules = Dict[str, Any]
@@ -219,7 +219,7 @@ class JsonLogicFilter(filters.BaseFilterBackend):
                     description=force_str(full_description)
                 )
             )
-        ]
+        ] if filter_fields else []
 
     def get_schema_operation_parameters(self, view):
         filter_fields = getattr(view, 'filter_fields', [])
@@ -235,7 +235,7 @@ class JsonLogicFilter(filters.BaseFilterBackend):
                     'type': 'string',
                 },
             },
-        ]
+        ] if filter_fields else []
 
     def _get_lookup_fields(self, view):
         return get_lookup_fields(view)
