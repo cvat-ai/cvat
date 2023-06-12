@@ -16,7 +16,6 @@ from typing import Any, Dict, Iterable, Optional, OrderedDict, Union
 from rest_framework import serializers, exceptions
 from django.contrib.auth.models import User, Group
 from django.db import transaction
-from django.conf import settings
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine import models
