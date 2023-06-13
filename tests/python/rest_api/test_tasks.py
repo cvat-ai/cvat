@@ -1500,7 +1500,7 @@ class TestTaskBackups:
         return Client(BASE_URL, config=Config(status_check_period=0.01))
 
     @pytest.fixture(autouse=True)
-    def setup(self, restore_db_per_function, tmp_path: Path, admin_user: str):
+    def setup(self, restore_db_per_function, restore_cvat_data, tmp_path: Path, admin_user: str):
         self.tmp_dir = tmp_path
 
         self.client = self._make_client()
@@ -1571,6 +1571,7 @@ class TestTaskBackups:
             assert restored_task_json["overlap"] == 0
         else:
             assert restored_task_json["overlap"] == task_json["overlap"]
+        assert restored_task_json["jobs"]["completed"] == 0
         assert restored_task_json["source_storage"] is None
         assert restored_task_json["target_storage"] is None
         assert restored_task_json["project_id"] is None
@@ -1593,6 +1594,7 @@ class TestTaskBackups:
                     r"root\['data_compressed_chunk_type'\]",  # depends on the server configuration
                     r"root\['source_storage'\]",  # should be dropped
                     r"root\['target_storage'\]",  # should be dropped
+                    r"root\['jobs'\]\['completed'\]",  # job statuses should be renewed
                     # depends on the actual job configuration,
                     # unlike to what is obtained from the regular task creation,
                     # where the requested number is recorded
