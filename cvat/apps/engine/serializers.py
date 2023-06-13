@@ -837,7 +837,7 @@ class DataSerializer(serializers.ModelSerializer):
 
         filename_pattern = attrs.get('filename_pattern')
         server_files_exclude = attrs.get('server_files_exclude')
-        server_files = attrs.get('server_files')
+        server_files = attrs.get('server_files', [])
 
         if filename_pattern and len(list(filter(lambda x: not x['file'].endswith('.jsonl'), server_files))):
             raise serializers.ValidationError('The filename_pattern can only be used with specified manifest or without server_files')
