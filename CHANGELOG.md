@@ -7,7 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## \[2.5.0] - Unreleased
 ### Added
-- New option ``semi-auto`` is available as annotations source (<https://github.com/opencv/cvat/pull/6263>) 
 - \[API\] Support for Ground Truth job creation and removal (<https://github.com/opencv/cvat/pull/6204>)
 - \[API\] Task quality estimation endpoints (<https://github.com/opencv/cvat/pull/6204>)
 
@@ -24,7 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TDB
 
 ### Fixed
-- The problem with manifest file during task restoring from backup (<https://github.com/opencv/cvat/issues/5971>)
+- Running serverless models for EXIF-rotated images (<https://github.com/opencv/cvat/pull/6275/>)
+- The problem with manifest file in tasks restored from backup (<https://github.com/opencv/cvat/issues/5971>)
 - The problem with task mode in a task restored from backup (<https://github.com/opencv/cvat/issues/5668>)
 
 ### Security
