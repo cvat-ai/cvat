@@ -7,7 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## \[2.5.0] - Unreleased
 ### Added
-- New option ``semi-auto`` is available as annotations source (<https://github.com/opencv/cvat/pull/6263>) 
 - \[API\] Support for Ground Truth job creation and removal (<https://github.com/opencv/cvat/pull/6204>)
 - \[API\] Task quality estimation endpoints (<https://github.com/opencv/cvat/pull/6204>)
 
@@ -24,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TDB
 
 ### Fixed
-- TDB
+- Running serverless models for EXIF-rotated images (<https://github.com/opencv/cvat/pull/6275/>)
 
 ### Security
 - TDB
