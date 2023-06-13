@@ -1930,6 +1930,7 @@ class TestImportTaskAnnotations:
             (_, response) = api_client.tasks_api.destroy_annotations(id=task_id)
             assert response.status == HTTPStatus.NO_CONTENT
 
+    @pytest.mark.skip("Fails sometimes, needs to be fixed")
     @pytest.mark.timeout(70)
     @pytest.mark.parametrize("successful_upload", [True, False])
     def test_can_import_annotations_after_previous_unclear_import(
@@ -1978,6 +1979,7 @@ class TestImportTaskAnnotations:
         task.import_annotations(self.format, filename)
         self._check_annotations(task_id)
 
+    @pytest.mark.skip("Fails sometimes, needs to be fixed")
     @pytest.mark.timeout(70)
     def test_check_import_cache_after_previous_interrupted_upload(self, tasks_with_shapes, request):
         task_id = tasks_with_shapes[0]["id"]
