@@ -44,9 +44,12 @@ see: [Pricing Plans](https://www.cvat.ai/post/new-pricing-plans)
 ### Pro plan
 
 **Account/Month**: The **Pro** plan has a fixed price and is
-designed for personal use only.  It doesn't allow collaboration with team members,
+designed **for personal use only**. It doesn't allow collaboration with team members,
 but removes all the other limits of the **Free** plan.
 
+> **Note**: Although it allows the creation of an organization and
+> access for up to 3 members -- it is *for trial purposes* only,
+> organization and members *will have all the limitations of the **Free** plan*.
 
 ### Team plan
 
@@ -54,6 +57,10 @@ but removes all the other limits of the **Free** plan.
 an organization and add team members who can collaborate on projects.
 The **monthly payment for the plan depends on the number of team members you've added**.
 All limits of the **Free** plan will be removed.
+
+> **Note**: The organization owner is also part of the team.
+> So, if you have three annotators working, you'll need to pay
+> for 4 seats (3 annotators + 1 organization owner).
 
 ## Change payment method
 
