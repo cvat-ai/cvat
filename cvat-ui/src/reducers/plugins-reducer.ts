@@ -32,7 +32,10 @@ const defaultState: PluginsState = {
             items: [],
         },
         taskItem: {
-            name: [],
+            ribbon: [],
+        },
+        projectItem: {
+            ribbon: [],
         },
         annotationPage: {
             header: {

@@ -297,7 +297,10 @@ export interface PluginsState {
             items: PluginComponent[];
         };
         taskItem: {
-            name: PluginComponent[];
+            ribbon: PluginComponent[];
+        };
+        projectItem: {
+            ribbon: PluginComponent[];
         };
         annotationPage: {
             header: {
