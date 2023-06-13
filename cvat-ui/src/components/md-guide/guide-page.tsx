@@ -4,7 +4,7 @@
 
 import './styles.scss';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation, useParams } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import notification from 'antd/lib/notification';
@@ -65,23 +65,75 @@ function GuidePage(): JSX.Element {
         });
     }, []);
 
+    const submit = useCallback((currentValue: string) => {
+        guide.markdown = currentValue;
+        setFetching(true);
+        guide.save().then((result: AnnotationGuide) => {
+            if (isMounted()) {
+                setValue(result.markdown);
+                setGuide(result);
+            }
+        }).catch((error: any) => {
+            if (isMounted()) {
+                notification.error({
+                    message: 'Could not save guide on the server',
+                    description: error.toString(),
+                });
+            }
+        }).finally(() => {
+            if (isMounted()) {
+                setFetching(false);
+            }
+        });
+    }, [guide, fetching]);
+
     const handleInsert = async (event: React.ClipboardEvent | React.DragEvent, files: FileList): Promise<void> => {
         if (files.length) {
             event.preventDefault();
-            const addedAssets = [];
+            const assetsToAdd = Array.from(files);
+            const addedAssets: [File, string][] = [];
+
             if (mdEditorRef.current) {
                 const { textArea } = mdEditorRef.current.commandOrchestrator;
                 const { selectionStart, selectionEnd } = textArea;
-                for (const file of files) {
-                    const { uuid } = await core.assets.create(file, guide.id);
-                    if (file.type.startsWith('image/')) {
-                        addedAssets.push(`![image](/api/assets/${uuid})`);
-                    } else {
-                        addedAssets.push(`[${file.name}](/api/assets/${uuid})`);
+                const computeNewValue = (): string => {
+                    const addedStrings = addedAssets.map(([file, uuid]) => {
+                        if (file.type.startsWith('image/')) {
+                            return (`![image](/api/assets/${uuid})`);
+                        }
+                        return (`[${file.name}](/api/assets/${uuid})`);
+                    });
+
+                    const stringsToAdd = assetsToAdd.map((file: File) => {
+                        if (file.type.startsWith('image/')) {
+                            return '![image](Loading...)';
+                        }
+                        return `![${file.name}](Loading...)`;
+                    });
+
+                    return `${value.slice(0, selectionStart)}\n${addedStrings.concat(stringsToAdd).join('\n')}\n${value.slice(selectionEnd)}`;
+                };
+
+                setValue(computeNewValue());
+                let file = assetsToAdd.shift();
+                while (file) {
+                    try {
+                        const { uuid } = await core.assets.create(file, guide.id);
+                        addedAssets.push([file, uuid]);
+                        setValue(computeNewValue());
+                    } catch (error: any) {
+                        notification.error({
+                            message: 'Could not create a server asset',
+                            description: error.toString(),
+                        });
+                    } finally {
+                        file = assetsToAdd.shift();
                     }
                 }
 
-                setValue(`${value.slice(0, selectionStart)}\n${addedAssets.join('\n')}\n${value.slice(selectionEnd)}`);
+                const finalValue = computeNewValue();
+                setValue(finalValue);
+                submit(finalValue);
             }
         }
     };
@@ -124,36 +176,7 @@ function GuidePage(): JSX.Element {
                     <Button
                         type='primary'
                         disabled={fetching}
-                        onClick={() => {
-                            let guideInstance = guide;
-                            if (!guideInstance) {
-                                guideInstance = new AnnotationGuide({
-                                    ...(instanceType === 'project' ? { project_id: id } : { task_id: id }),
-                                    markdown: value,
-                                });
-                            } else {
-                                guideInstance.markdown = value;
-                            }
-
-                            setFetching(true);
-                            guideInstance.save().then((result: AnnotationGuide) => {
-                                if (isMounted()) {
-                                    setValue(result.markdown);
-                                    setGuide(result);
-                                }
-                            }).catch((error: any) => {
-                                if (isMounted()) {
-                                    notification.error({
-                                        message: 'Could not save guide on the server',
-                                        description: error.toString(),
-                                    });
-                                }
-                            }).finally(() => {
-                                if (isMounted()) {
-                                    setFetching(false);
-                                }
-                            });
-                        }}
+                        onClick={() => submit(value)}
                     >
                         Submit
                     </Button>
