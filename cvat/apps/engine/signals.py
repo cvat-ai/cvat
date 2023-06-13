@@ -1,4 +1,5 @@
 # Copyright (C) 2019-2022 Intel Corporation
+# Copyright (C) 2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 import shutil
@@ -7,8 +8,8 @@ from django.contrib.auth.models import User
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 
-from .models import (CloudStorage, Data, Job, Profile, Project,
-    StatusChoice, Task, Asset)
+from .models import CloudStorage, Data, Job, Profile, Project, StatusChoice, Task, Asset
+
 
 # TODO: need to log any problems reported by shutil.rmtree when the new
 # analytics feature is available. Now the log system can write information

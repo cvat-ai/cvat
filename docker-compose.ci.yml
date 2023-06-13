@@ -14,7 +14,6 @@ services:
     depends_on:
       - cvat_server
     environment:
-      COVERALLS_SERVICE_NAME:
       CONTAINER_COVERAGE_DATA_DIR:
       GITHUB_ACTIONS:
       GITHUB_TOKEN:

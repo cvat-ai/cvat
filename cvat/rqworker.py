@@ -1,7 +1,9 @@
 # Copyright (C) 2018-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
+
+import os
 
 from rq import Worker
 
@@ -62,3 +64,15 @@ if debug.is_debugging_enabled():
             return super().execute_job(*args, **kwargs)
 
     DefaultWorker = RemoteDebugWorker
+
+
+if os.environ.get("COVERAGE_PROCESS_START"):
+    import coverage
+
+    def coverage_exit():
+        cov = coverage.Coverage.current()
+        cov.stop()
+        cov.save()
+        os._exit(0)
+
+    os._exit = coverage_exit

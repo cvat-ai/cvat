@@ -5,7 +5,8 @@ weight: 17
 
 # [LFW](http://vis-www.cs.umass.edu/lfw/)
 
-- Format specification available [here](http://vis-www.cs.umass.edu/lfw/README.txt)
+- [Format specification](http://vis-www.cs.umass.edu/lfw/README.txt)
+- [Dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/lfw_dataset)
 
 - Supported annotations: tags, points.
 
