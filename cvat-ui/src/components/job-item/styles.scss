@@ -5,6 +5,14 @@
 @import '../../base.scss';
 
 .cvat-job-item {
+    border: 1px solid $border-color-1;
+    border-radius: 3px;
+    background: $background-color-1;
+
+    &:hover {
+        border: 1px solid $border-color-hover;
+    }
+
     .cvat-job-item-icon {
         .anticon svg {
             fill: #fc3;
@@ -18,6 +26,12 @@
 
     .cvat-job-item-selects {
         padding-top: $grid-unit-size;
+
+        .cvat-job-item-select {
+            >div:first-child {
+                margin-bottom: $grid-unit-size;
+            }
+        }
 
         .cvat-job-assignee-selector {
             margin-right: $grid-unit-size;

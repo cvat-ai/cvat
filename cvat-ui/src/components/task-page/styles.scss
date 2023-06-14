@@ -9,6 +9,7 @@
     overflow-y: auto;
     height: 100%;
     width: 100%;
+    padding-bottom: $grid-unit-size * 2;
 
     .cvat-task-details {
         width: 100%;
