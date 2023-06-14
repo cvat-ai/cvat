@@ -177,6 +177,12 @@ COPY --chown=${USER} ssh ${HOME}/.ssh
 COPY --chown=${USER} wait-for-it.sh manage.py backend_entrypoint.sh ${HOME}/
 COPY --chown=${USER} utils/ ${HOME}/utils
 COPY --chown=${USER} cvat/ ${HOME}/cvat
+COPY --chown=${USER} rqscheduler.py ${HOME}
+
+ARG COVERAGE_PROCESS_START
+RUN if [ "${COVERAGE_PROCESS_START}" ]; then \
+        echo "import coverage; coverage.process_startup()" > /opt/venv/lib/python3.10/site-packages/coverage_subprocess.pth; \
+    fi
 
 # RUN all commands below as 'django' user
 USER ${USER}

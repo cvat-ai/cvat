@@ -1456,7 +1456,7 @@ paths:
         in: query
         description: 'A filter term. Available filter_fields: [''task_name'', ''project_name'',
           ''assignee'', ''state'', ''stage'', ''id'', ''task_id'', ''project_id'',
-          ''updated_date'', ''dimension'']'
+          ''updated_date'', ''dimension'', ''type'']'
         schema:
           type: string
       - name: org
@@ -1503,7 +1503,7 @@ paths:
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
           [''task_name'', ''project_name'', ''assignee'', ''state'', ''stage'', ''id'',
-          ''task_id'', ''project_id'', ''updated_date'', ''dimension'']'
+          ''task_id'', ''project_id'', ''updated_date'', ''dimension'', ''type'']'
         schema:
           type: string
       - name: stage
@@ -1535,6 +1535,14 @@ paths:
         description: A simple equality filter for the task_name field
         schema:
           type: string
+      - name: type
+        in: query
+        description: A simple equality filter for the type field
+        schema:
+          type: string
+          enum:
+          - annotation
+          - ground_truth
       tags:
       - jobs
       security:
@@ -1549,6 +1557,30 @@ paths:
             application/vnd.cvat+json:
               schema:
                 $ref: '#/components/schemas/PaginatedJobReadList'
+          description: ''
+    post:
+      operationId: jobs_create
+      summary: Method creates a new job in the task
+      tags:
+      - jobs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JobWriteRequest'
+        required: true
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/JobRead'
           description: ''
   /api/jobs/{id}:
     get:
@@ -1606,6 +1638,30 @@ paths:
               schema:
                 $ref: '#/components/schemas/JobRead'
           description: ''
+    delete:
+      operationId: jobs_destroy
+      description: |
+        Please note, that not every job can be removed. Currently,
+        it is only available for Ground Truth jobs.
+      summary: Method deletes a job and its related annotations
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this job.
+        required: true
+      tags:
+      - jobs
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: The job has been deleted
   /api/jobs/{id}/annotations/:
     get:
       operationId: jobs_retrieve_annotations
@@ -1737,7 +1793,6 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/AnnotationFileRequest'
-        required: true
       security:
       - sessionAuth: []
         csrfAuth: []
@@ -1768,6 +1823,16 @@ paths:
         for uploading annotations from a file
       parameters:
       - in: query
+        name: cloud_storage_id
+        schema:
+          type: number
+        description: Storage id
+      - in: query
+        name: filename
+        schema:
+          type: string
+        description: Annotation file name
+      - in: query
         name: format
         schema:
           type: string
@@ -1782,10 +1847,24 @@ paths:
         description: A unique integer value identifying this job.
         required: true
       - in: query
+        name: location
+        schema:
+          type: string
+          enum:
+          - cloud_storage
+          - local
+        description: where to import the annotation from
+      - in: query
         name: rq_id
         schema:
           type: string
         description: rq id
+      - in: query
+        name: use_default_location
+        schema:
+          type: boolean
+          default: true
+        description: Use the location that was configured in the task to import annotation
       tags:
       - jobs
       requestBody:
@@ -3347,6 +3426,410 @@ paths:
               schema:
                 $ref: '#/components/schemas/RqId'
           description: Importing a backup file has been started
+  /api/quality/conflicts:
+    get:
+      operationId: quality_list_conflicts
+      summary: Method returns a paginated list of annotation conflicts
+      parameters:
+      - name: X-Organization
+        in: header
+        description: Organization unique slug
+        schema:
+          type: string
+      - name: filter
+        required: false
+        in: query
+        description: 'A filter term. Available filter_fields: [''id'', ''frame'',
+          ''type'', ''job_id'', ''task_id'', ''severity'']'
+        schema:
+          type: string
+      - name: frame
+        in: query
+        description: A simple equality filter for the frame field
+        schema:
+          type: integer
+      - name: job_id
+        in: query
+        description: A simple equality filter for the job_id field
+        schema:
+          type: integer
+      - name: org
+        in: query
+        description: Organization unique slug
+        schema:
+          type: string
+      - name: org_id
+        in: query
+        description: Organization identifier
+        schema:
+          type: integer
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: report_id
+        schema:
+          type: integer
+        description: A simple equality filter for report id
+      - name: severity
+        in: query
+        description: A simple equality filter for the severity field
+        schema:
+          type: string
+          enum:
+          - warning
+          - error
+      - name: sort
+        required: false
+        in: query
+        description: 'Which field to use when ordering the results. Available ordering_fields:
+          [''id'', ''frame'', ''type'', ''job_id'', ''task_id'', ''severity'']'
+        schema:
+          type: string
+      - name: task_id
+        in: query
+        description: A simple equality filter for the task_id field
+        schema:
+          type: integer
+      - name: type
+        in: query
+        description: A simple equality filter for the type field
+        schema:
+          type: string
+          enum:
+          - missing_annotation
+          - extra_annotation
+          - mismatching_label
+          - low_overlap
+          - mismatching_direction
+          - mismatching_attributes
+          - mismatching_groups
+          - covered_annotation
+      tags:
+      - quality
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAnnotationConflictList'
+          description: ''
+  /api/quality/reports:
+    get:
+      operationId: quality_list_reports
+      summary: Method returns a paginated list of quality reports
+      parameters:
+      - name: X-Organization
+        in: header
+        description: Organization unique slug
+        schema:
+          type: string
+      - name: filter
+        required: false
+        in: query
+        description: 'A filter term. Available filter_fields: [''id'', ''job_id'',
+          ''created_date'', ''gt_last_updated'', ''target_last_updated'', ''parent_id'']'
+        schema:
+          type: string
+      - name: job_id
+        in: query
+        description: A simple equality filter for the job_id field
+        schema:
+          type: integer
+      - name: org
+        in: query
+        description: Organization unique slug
+        schema:
+          type: string
+      - name: org_id
+        in: query
+        description: Organization identifier
+        schema:
+          type: integer
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: parent_id
+        in: query
+        description: A simple equality filter for the parent_id field
+        schema:
+          type: integer
+      - name: sort
+        required: false
+        in: query
+        description: 'Which field to use when ordering the results. Available ordering_fields:
+          [''id'', ''job_id'', ''created_date'', ''gt_last_updated'', ''target_last_updated'',
+          ''parent_id'']'
+        schema:
+          type: string
+      - in: query
+        name: target
+        schema:
+          type: string
+        description: A simple equality filter for target
+      - in: query
+        name: task_id
+        schema:
+          type: integer
+        description: A simple equality filter for task id
+      tags:
+      - quality
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/PaginatedQualityReportList'
+          description: ''
+    post:
+      operationId: quality_create_report
+      summary: Creates a quality report asynchronously and allows to check request
+        status
+      parameters:
+      - in: query
+        name: rq_id
+        schema:
+          type: string
+        description: |
+          The report creation request id. Can be specified to check the report
+          creation status.
+      tags:
+      - quality
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QualityReportCreateRequest'
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/QualityReport'
+          description: ''
+        '202':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/RqId'
+          description: |
+            A quality report request has been enqueued, the request id is returned.
+            The request status can be checked at this endpoint by passing the rq_id
+            as the query parameter. If the request id is specified, this response
+            means the quality report request is queued or is being processed.
+        '400':
+          description: Invalid or failed request, check the response data for details
+  /api/quality/reports/{id}:
+    get:
+      operationId: quality_retrieve_report
+      summary: Method returns details of a quality report
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this quality report.
+        required: true
+      tags:
+      - quality
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/QualityReport'
+          description: ''
+  /api/quality/reports/{id}/data:
+    get:
+      operationId: quality_retrieve_report_data
+      summary: Retrieve full contents of the report in JSON format
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this quality report.
+        required: true
+      tags:
+      - quality
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/quality/settings:
+    get:
+      operationId: quality_list_settings
+      summary: Method returns a paginated list of quality settings instances
+      parameters:
+      - name: X-Organization
+        in: header
+        description: Organization unique slug
+        schema:
+          type: string
+      - name: filter
+        required: false
+        in: query
+        description: 'A filter term. Available filter_fields: [''id'', ''task_id'']'
+        schema:
+          type: string
+      - name: org
+        in: query
+        description: Organization unique slug
+        schema:
+          type: string
+      - name: org_id
+        in: query
+        description: Organization identifier
+        schema:
+          type: integer
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: sort
+        required: false
+        in: query
+        description: 'Which field to use when ordering the results. Available ordering_fields:
+          [''id'']'
+        schema:
+          type: string
+      - name: task_id
+        in: query
+        description: A simple equality filter for the task_id field
+        schema:
+          type: integer
+      tags:
+      - quality
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/PaginatedQualitySettingsList'
+          description: ''
+  /api/quality/settings/{id}:
+    get:
+      operationId: quality_retrieve_settings
+      summary: Method returns details of the quality settings instance
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: An id of a quality settings instance
+        required: true
+      tags:
+      - quality
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/QualitySettings'
+          description: ''
+    patch:
+      operationId: quality_partial_update_settings
+      summary: Methods does a partial update of chosen fields in the quality settings
+        instance
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: An id of a quality settings instance
+        required: true
+      tags:
+      - quality
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedQualitySettingsRequest'
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/QualitySettings'
+          description: ''
   /api/schema/:
     get:
       operationId: schema_retrieve
@@ -4195,8 +4678,57 @@ paths:
           description: Data of a specific type
     post:
       operationId: tasks_create_data
-      summary: Method permanently attaches images or video to a task. Supports tus
-        uploads, see more https://tus.io/
+      description: |
+        Allows to upload data to a task.
+        Supports the TUS open file uploading protocol (https://tus.io/).
+
+        Supports the following protocols:
+
+        1. A single Data request
+
+        and
+
+        2.1. An Upload-Start request
+        2.2.a. Regular TUS protocol requests (Upload-Length + Chunks)
+        2.2.b. Upload-Multiple requests
+        2.3. An Upload-Finish request
+
+        Requests:
+        - Data - POST, no extra headers or 'Upload-Start' + 'Upload-Finish' headers.
+          Contains data in the body.
+        - Upload-Start - POST, has an 'Upload-Start' header. No body is expected.
+        - Upload-Length - POST, has an 'Upload-Length' header (see the TUS specification)
+        - Chunk - HEAD/PATCH (see the TUS specification). Sent to /data/<file id> endpoints.
+        - Upload-Finish - POST, has an 'Upload-Finish' header. Can contain data in the body.
+        - Upload-Multiple - POST, has an 'Upload-Multiple' header. Contains data in the body.
+
+        The 'Upload-Finish' request allows to specify the uploaded files should be ordered.
+        This may be needed if the files can be sent unordered. To state that the input files
+        are sent ordered, pass an empty list of files in the 'upload_file_order' field.
+        If the files are sent unordered, the ordered file list is expected
+        in the 'upload_file_order' field. It must be a list of string file paths,
+        relative to the dataset root.
+
+        Example:
+        files = [
+            "cats/cat_1.jpg",
+            "dogs/dog2.jpg",
+            "image_3.png",
+            ...
+        ]
+
+        Independently of the file declaration field used
+        ('client_files', 'server_files', etc.), when the 'predefined'
+        sorting method is selected, the uploaded files will be ordered according
+        to the '.jsonl' manifest file, if it is found in the list of files.
+        For archives (e.g. '.zip'), a manifest file ('*.jsonl') is required when using
+        the 'predefined' file ordering. Such file must be provided next to the archive
+        in the list of files. Read more about manifest files here:
+        https://opencv.github.io/cvat/docs/manual/advanced/dataset_manifest/
+
+        After all data is sent, the operation status can be retrieved via
+        the /status endpoint.
+      summary: Method permanently attaches data (images, video, etc.) to a task
       parameters:
       - in: header
         name: Upload-Finish
@@ -4214,7 +4746,8 @@ paths:
         name: Upload-Start
         schema:
           type: boolean
-        description: Initializes data upload. No data should be sent with this header
+        description: Initializes data upload. Optionally, can include upload metadata
+          in the request body.
       - in: path
         name: id
         schema:
@@ -4231,7 +4764,6 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/DataRequest'
-        required: true
       security:
       - sessionAuth: []
         csrfAuth: []
@@ -4492,7 +5024,6 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/TaskFileRequest'
-        required: true
       security:
       - sessionAuth: []
         csrfAuth: []
@@ -4938,12 +5469,6 @@ paths:
       operationId: webhooks_list_deliveries
       summary: Method return a list of deliveries for a specific webhook
       parameters:
-      - name: filter
-        required: false
-        in: query
-        description: 'A filter term. Available filter_fields: None'
-        schema:
-          type: string
       - in: path
         name: id
         schema:
@@ -4962,19 +5487,6 @@ paths:
         description: Number of results to return per page.
         schema:
           type: integer
-      - name: search
-        required: false
-        in: query
-        description: 'A search term. Available search_fields: None'
-        schema:
-          type: string
-      - name: sort
-        required: false
-        in: query
-        description: 'Which field to use when ordering the results. Available ordering_fields:
-          None'
-        schema:
-          type: string
       tags:
       - webhooks
       security:
@@ -5119,6 +5631,52 @@ components:
       - description
       - name
       - version
+    AnnotationConflict:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        frame:
+          type: integer
+          readOnly: true
+        type:
+          allOf:
+          - $ref: '#/components/schemas/AnnotationConflictTypeEnum'
+          readOnly: true
+        annotation_ids:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnnotationId'
+        report_id:
+          type: integer
+          readOnly: true
+        severity:
+          allOf:
+          - $ref: '#/components/schemas/SeverityEnum'
+          readOnly: true
+      required:
+      - annotation_ids
+    AnnotationConflictTypeEnum:
+      enum:
+      - missing_annotation
+      - extra_annotation
+      - mismatching_label
+      - low_overlap
+      - mismatching_direction
+      - mismatching_attributes
+      - mismatching_groups
+      - covered_annotation
+      type: string
+      description: |-
+        * `missing_annotation` - MISSING_ANNOTATION
+        * `extra_annotation` - EXTRA_ANNOTATION
+        * `mismatching_label` - MISMATCHING_LABEL
+        * `low_overlap` - LOW_OVERLAP
+        * `mismatching_direction` - MISMATCHING_DIRECTION
+        * `mismatching_attributes` - MISMATCHING_ATTRIBUTES
+        * `mismatching_groups` - MISMATCHING_GROUPS
+        * `covered_annotation` - COVERED_ANNOTATION
     AnnotationFileRequest:
       type: object
       properties:
@@ -5127,6 +5685,35 @@ components:
           format: binary
       required:
       - annotation_file
+    AnnotationId:
+      type: object
+      properties:
+        obj_id:
+          type: integer
+          readOnly: true
+        job_id:
+          type: integer
+          readOnly: true
+        type:
+          allOf:
+          - $ref: '#/components/schemas/AnnotationIdTypeEnum'
+          readOnly: true
+        shape_type:
+          readOnly: true
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/ShapeType'
+          - $ref: '#/components/schemas/NullEnum'
+    AnnotationIdTypeEnum:
+      enum:
+      - tag
+      - shape
+      - track
+      type: string
+      description: |-
+        * `tag` - TAG
+        * `shape` - SHAPE
+        * `track` - TRACK
     AnnotationsRead:
       oneOf:
       - $ref: '#/components/schemas/LabeledData'
@@ -5469,6 +6056,8 @@ components:
         size:
           type: integer
           readOnly: true
+          description: |
+            The number of frames included. Deleted frames do not affect this value.
         image_quality:
           type: integer
           maximum: 100
@@ -5492,6 +6081,14 @@ components:
           items:
             type: integer
             minimum: 0
+        included_frames:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+          nullable: true
+          description: |
+            A list of valid frame ids. The None value means all frames are included.
       required:
       - deleted_frames
       - frames
@@ -5552,6 +6149,20 @@ components:
           default: []
           description: Paths to files from a file share mounted on the server, or
             from a cloud storage
+        remote_files:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 1024
+          default: []
+          description: Direct download URLs for files
+        use_zip_chunks:
+          type: boolean
+          default: false
+          description: |
+            When true, video chunks will be represented as zip archives with decoded video frames.
+            When false, video chunks are represented as video segments
         server_files_exclude:
           type: array
           items:
@@ -5572,20 +6183,6 @@ components:
 
             Exclude all cloud storage files with prefix 'sub' from the content of manifest file:
             server_files = ['manifest.jsonl'], server_files_exclude = ['sub/']
-        remote_files:
-          type: array
-          items:
-            type: string
-            minLength: 1
-            maxLength: 1024
-          default: []
-          description: Direct download URLs for files
-        use_zip_chunks:
-          type: boolean
-          default: false
-          description: |
-            When true, video chunks will be represented as zip archives with decoded video frames.
-            When false, video chunks are represented as video segments
         cloud_storage_id:
           type: integer
           writeOnly: true
@@ -5644,6 +6241,23 @@ components:
                 ["file3.png"], # job #2 files
                 ["file4.jpg", "file5.png", "file6.bmp"], # job #3 files
             ]
+        upload_file_order:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 1024
+          writeOnly: true
+          description: |
+            Allows to specify file order for client_file uploads.
+            Only valid with the "predefined" sorting method selected.
+
+            To state that the input files are sent in the correct order,
+            pass an empty list.
+
+            If you want to send files in an arbitrary order
+            and reorder them afterwards on the server,
+            pass the list of file names in the required order.
       required:
       - image_quality
     DatasetFileRequest:
@@ -5918,6 +6532,14 @@ components:
       - name
       - related_files
       - width
+    FrameSelectionMethodEnum:
+      enum:
+      - random_uniform
+      - manual
+      type: string
+      description: |-
+        * `random_uniform` - RANDOM_UNIFORM
+        * `manual` - MANUAL
     InputTypeEnum:
       enum:
       - checkbox
@@ -6097,6 +6719,9 @@ components:
         mode:
           type: string
           readOnly: true
+        frame_count:
+          type: integer
+          readOnly: true
         start_frame:
           type: integer
           maximum: 2147483647
@@ -6113,13 +6738,13 @@ components:
           minimum: 0
           nullable: true
           readOnly: true
-        organization:
-          type: integer
-          readOnly: true
-          nullable: true
         data_compressed_chunk_type:
           allOf:
           - $ref: '#/components/schemas/ChunkType'
+          readOnly: true
+        created_date:
+          type: string
+          format: date-time
           readOnly: true
         updated_date:
           type: string
@@ -6129,6 +6754,14 @@ components:
           $ref: '#/components/schemas/IssuesSummary'
         labels:
           $ref: '#/components/schemas/LabelsSummary'
+        type:
+          allOf:
+          - $ref: '#/components/schemas/JobType'
+          readOnly: true
+        organization:
+          type: integer
+          readOnly: true
+          nullable: true
       required:
       - issues
       - labels
@@ -6152,6 +6785,54 @@ components:
         * `annotation` - ANNOTATION
         * `validation` - VALIDATION
         * `completed` - COMPLETED
+    JobType:
+      enum:
+      - annotation
+      - ground_truth
+      type: string
+      description: |-
+        * `annotation` - ANNOTATION
+        * `ground_truth` - GROUND_TRUTH
+    JobWriteRequest:
+      type: object
+      properties:
+        assignee:
+          type: integer
+          nullable: true
+        stage:
+          $ref: '#/components/schemas/JobStage'
+        state:
+          $ref: '#/components/schemas/OperationStatus'
+        type:
+          $ref: '#/components/schemas/JobType'
+        task_id:
+          type: integer
+        frame_selection_method:
+          $ref: '#/components/schemas/FrameSelectionMethodEnum'
+        frame_count:
+          type: integer
+          minimum: 0
+          description: |
+            The number of frames included in the job.
+            Applicable only to the random frame selection
+        seed:
+          type: integer
+          minimum: 0
+          description: |
+            The seed value for the random number generator.
+            The same value will produce the same frame sets.
+            Applicable only to the random frame selection.
+            By default, a random value is used.
+        frames:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+          description: |
+            The list of frame ids. Applicable only to the manual frame selection
+      required:
+      - task_id
+      - type
     JobsSummary:
       type: object
       properties:
@@ -6552,6 +7233,9 @@ components:
       anyOf:
       - $ref: '#/components/schemas/User'
       - $ref: '#/components/schemas/BasicUser'
+    NullEnum:
+      enum:
+      - null
     OnlineFunctionCallRequest:
       type: object
       properties:
@@ -6621,6 +7305,26 @@ components:
           additionalProperties: {}
       required:
       - slug
+    PaginatedAnnotationConflictList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnnotationConflict'
     PaginatedCloudStorageReadList:
       type: object
       properties:
@@ -6821,6 +7525,46 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ProjectRead'
+    PaginatedQualityReportList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/QualityReport'
+    PaginatedQualitySettingsList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/QualitySettings'
     PaginatedTaskReadList:
       type: object
       properties:
@@ -7140,6 +7884,70 @@ components:
             type: string
             minLength: 1
           writeOnly: true
+    PatchedQualitySettingsRequest:
+      type: object
+      properties:
+        iou_threshold:
+          type: number
+          format: double
+          description: Used for distinction between matched / unmatched shapes
+        oks_sigma:
+          type: number
+          format: double
+          description: |
+            Like IoU threshold, but for points.
+            The percent of the bbox area, used as the radius of the circle around the GT point,
+            where the checked point is expected to be.
+            Read more: https://cocodataset.org/#keypoints-eval
+        line_thickness:
+          type: number
+          format: double
+          description: |
+            Thickness of polylines, relatively to the (image area) ^ 0.5.
+            The distance to the boundary around the GT line,
+            inside of which the checked line points should be
+        low_overlap_threshold:
+          type: number
+          format: double
+          description: |
+            Used for distinction between strong / weak (low_overlap) matches
+        compare_line_orientation:
+          type: boolean
+          description: Enables or disables polyline orientation comparison
+        line_orientation_threshold:
+          type: number
+          format: double
+          description: |
+            The minimal gain in the GT IoU between the given and reversed line directions
+            to consider the line inverted.
+            Only used when the 'compare_line_orientation' parameter is true
+        compare_groups:
+          type: boolean
+          description: Enables or disables annotation group checks
+        group_match_threshold:
+          type: number
+          format: double
+          description: |
+            Minimal IoU for groups to be considered matching.
+            Only used when the 'compare_groups' parameter is true
+        check_covered_annotations:
+          type: boolean
+          description: |
+            Check for partially-covered annotations, useful in segmentation tasks
+        object_visibility_threshold:
+          type: number
+          format: double
+          description: |
+            Minimal visible area percent of the spatial annotations (polygons, masks)
+            for reporting covered annotations.
+            Only used when the 'object_visibility_threshold' parameter is true
+        panoptic_comparison:
+          type: boolean
+          description: |
+            Use only the visible part of the masks and polygons in comparisons
+        compare_attributes:
+          type: boolean
+          description: Enables or disables annotation attribute comparison
     PatchedTaskWriteRequest:
       type: object
       properties:
@@ -7385,6 +8193,163 @@ components:
         * `AZURE_CONTAINER` - AZURE_CONTAINER
         * `GOOGLE_DRIVE` - GOOGLE_DRIVE
         * `GOOGLE_CLOUD_STORAGE` - GOOGLE_CLOUD_STORAGE
+    QualityReport:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        job_id:
+          type: integer
+          nullable: true
+          readOnly: true
+        task_id:
+          type: integer
+          nullable: true
+          readOnly: true
+        parent_id:
+          type: integer
+          nullable: true
+          readOnly: true
+        target:
+          $ref: '#/components/schemas/QualityReportTarget'
+        summary:
+          $ref: '#/components/schemas/QualityReportSummary'
+        created_date:
+          type: string
+          format: date-time
+          readOnly: true
+        target_last_updated:
+          type: string
+          format: date-time
+          readOnly: true
+        gt_last_updated:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - summary
+      - target
+    QualityReportCreateRequest:
+      type: object
+      properties:
+        task_id:
+          type: integer
+          writeOnly: true
+      required:
+      - task_id
+    QualityReportSummary:
+      type: object
+      properties:
+        frame_count:
+          type: integer
+        frame_share:
+          type: number
+          format: double
+        conflict_count:
+          type: integer
+        warning_count:
+          type: integer
+        error_count:
+          type: integer
+        conflicts_by_type:
+          type: object
+          additionalProperties:
+            type: integer
+        valid_count:
+          type: integer
+        ds_count:
+          type: integer
+        gt_count:
+          type: integer
+      required:
+      - conflict_count
+      - conflicts_by_type
+      - ds_count
+      - error_count
+      - frame_count
+      - frame_share
+      - gt_count
+      - valid_count
+      - warning_count
+    QualityReportTarget:
+      enum:
+      - job
+      - task
+      type: string
+      description: |-
+        * `job` - JOB
+        * `task` - TASK
+    QualitySettings:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        task_id:
+          type: integer
+          readOnly: true
+        iou_threshold:
+          type: number
+          format: double
+          description: Used for distinction between matched / unmatched shapes
+        oks_sigma:
+          type: number
+          format: double
+          description: |
+            Like IoU threshold, but for points.
+            The percent of the bbox area, used as the radius of the circle around the GT point,
+            where the checked point is expected to be.
+            Read more: https://cocodataset.org/#keypoints-eval
+        line_thickness:
+          type: number
+          format: double
+          description: |
+            Thickness of polylines, relatively to the (image area) ^ 0.5.
+            The distance to the boundary around the GT line,
+            inside of which the checked line points should be
+        low_overlap_threshold:
+          type: number
+          format: double
+          description: |
+            Used for distinction between strong / weak (low_overlap) matches
+        compare_line_orientation:
+          type: boolean
+          description: Enables or disables polyline orientation comparison
+        line_orientation_threshold:
+          type: number
+          format: double
+          description: |
+            The minimal gain in the GT IoU between the given and reversed line directions
+            to consider the line inverted.
+            Only used when the 'compare_line_orientation' parameter is true
+        compare_groups:
+          type: boolean
+          description: Enables or disables annotation group checks
+        group_match_threshold:
+          type: number
+          format: double
+          description: |
+            Minimal IoU for groups to be considered matching.
+            Only used when the 'compare_groups' parameter is true
+        check_covered_annotations:
+          type: boolean
+          description: |
+            Check for partially-covered annotations, useful in segmentation tasks
+        object_visibility_threshold:
+          type: number
+          format: double
+          description: |
+            Minimal visible area percent of the spatial annotations (polygons, masks)
+            for reporting covered annotations.
+            Only used when the 'object_visibility_threshold' parameter is true
+        panoptic_comparison:
+          type: boolean
+          description: |
+            Use only the visible part of the masks and polygons in comparisons
+        compare_attributes:
+          type: boolean
+          description: Enables or disables annotation attribute comparison
     RegisterSerializerEx:
       type: object
       properties:
@@ -7453,6 +8418,7 @@ components:
       properties:
         rq_id:
           type: string
+          description: Request id
       required:
       - rq_id
     RqStatus:
@@ -7482,6 +8448,14 @@ components:
         * `Started` - Started
         * `Finished` - Finished
         * `Failed` - Failed
+    SeverityEnum:
+      enum:
+      - warning
+      - error
+      type: string
+      description: |-
+        * `warning` - WARNING
+        * `error` - ERROR
     ShapeType:
       enum:
       - rectangle

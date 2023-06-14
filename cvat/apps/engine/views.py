@@ -6,19 +6,23 @@
 import io
 import os
 import os.path as osp
+from types import SimpleNamespace
+from typing import Optional
 import pytz
 import traceback
 import textwrap
+from copy import copy
 from datetime import datetime
 from distutils.util import strtobool
 from tempfile import NamedTemporaryFile
+from typing import Any, Dict, List, cast
 
 from django.db.models.query import Prefetch
 import django_rq
 from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.http import HttpResponse, HttpResponseNotFound, HttpResponseBadRequest
 from django.utils import timezone
 from django.db.models import Count, Q
@@ -48,7 +52,7 @@ from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.media_extractors import get_mime
 from cvat.apps.engine.models import (
-    Job, Label, Task, Project, Issue, Data,
+    ClientFile, Job, JobType, Label, SegmentType, Task, Project, Issue, Data,
     Comment, StorageMethodChoice, StorageChoice,
     CloudProviderChoice, Location
 )
@@ -68,7 +72,9 @@ from cvat.apps.engine.view_utils import get_cloud_storage_for_import_or_export
 
 from utils.dataset_manifest import ImageManifestManager
 from cvat.apps.engine.utils import (
-    av_scan_paths, process_failed_job, configure_dependent_job, parse_exception_message, get_rq_job_meta, get_import_rq_id, import_resource_with_clean_up_after
+    av_scan_paths, process_failed_job, configure_dependent_job,
+    parse_exception_message, get_rq_job_meta, get_import_rq_id,
+    import_resource_with_clean_up_after
 )
 from cvat.apps.engine import backup
 from cvat.apps.engine.mixins import PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
@@ -266,11 +272,15 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             queryset = perm.filter(queryset)
         return queryset
 
+    @transaction.atomic
     def perform_create(self, serializer, **kwargs):
         serializer.save(
             owner=self.request.user,
             organization=self.request.iam_context['organization']
         )
+
+        # Required for the extra summary information added in the queryset
+        serializer.instance = self.get_queryset().get(pk=serializer.instance.pk)
 
     @extend_schema(methods=['GET'], summary='Export project as a dataset in a specific format',
         description=textwrap.dedent("""
@@ -329,6 +339,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
         ],
         request=PolymorphicProxySerializer('DatasetWrite',
+            # TODO: refactor to use required=False when possible
             serializers=[DatasetFileSerializer, OpenApiTypes.NONE],
             resource_type_field_name=None
         ),
@@ -535,6 +546,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
         ],
         request=PolymorphicProxySerializer('BackupWrite',
+            # TODO: refactor to use required=False when possible
             serializers=[ProjectFileSerializer, OpenApiTypes.NONE],
             resource_type_field_name=None
         ),
@@ -547,7 +559,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '202': OpenApiResponse(RqIdSerializer, description='Importing a backup file has been started'),
         })
     @action(detail=False, methods=['OPTIONS', 'POST'], url_path=r'backup/?$',
-        serializer_class=ProjectFileSerializer(required=False),
+        serializer_class=None,
         parser_classes=_UPLOAD_PARSER_CLASSES)
     def import_backup(self, request, pk=None):
         return self.deserialize(request, backup.import_project)
@@ -618,9 +630,20 @@ class DataChunkGetter:
 
         self.dimension = task_dim
 
-    def __call__(self, request, start, stop, db_data):
+    def _check_frame_range(self, frame: int):
+        frame_range = range(self._start, self._stop + 1, self._db_data.get_frame_step())
+        if frame not in frame_range:
+            raise ValidationError(
+                f'The frame number should be in the [{self._start}, {self._stop}] range'
+            )
+
+    def __call__(self, request, start: int, stop: int, db_data: Optional[Data]):
         if not db_data:
             raise NotFound(detail='Cannot find requested data')
+
+        self._start = start
+        self._stop = stop
+        self._db_data = db_data
 
         frame_provider = FrameProvider(db_data, self.dimension)
 
@@ -630,7 +653,7 @@ class DataChunkGetter:
                 stop_chunk = frame_provider.get_chunk_number(stop)
                 # pylint: disable=superfluous-parens
                 if not (start_chunk <= self.number <= stop_chunk):
-                    raise ValidationError('The chunk number should be in ' +
+                    raise ValidationError('The chunk number should be in  the ' +
                         f'[{start_chunk}, {stop_chunk}] range')
 
                 # TODO: av.FFmpegError processing
@@ -643,9 +666,7 @@ class DataChunkGetter:
                 path = os.path.realpath(frame_provider.get_chunk(self.number, self.quality))
                 return sendfile(request, path)
             elif self.type == 'frame' or self.type == 'preview':
-                if not (start <= self.number <= stop):
-                    raise ValidationError('The frame number should be in ' +
-                        f'[{start}, {stop}] range')
+                self._check_frame_range(self.number)
 
                 if self.type == 'preview':
                     cache = MediaCache(self.dimension)
@@ -656,14 +677,13 @@ class DataChunkGetter:
                 return HttpResponse(buf.getvalue(), content_type=mime)
 
             elif self.type == 'context_image':
-                if start <= self.number <= stop:
-                    cache = MediaCache(self.dimension)
-                    buff, mime = cache.get_frame_context_images(db_data, self.number)
-                    if not buff:
-                        return HttpResponseNotFound()
-                    return HttpResponse(io.BytesIO(buff), content_type=mime)
-                raise ValidationError('The frame number should be in ' +
-                    f'[{start}, {stop}] range')
+                self._check_frame_range(self.number)
+
+                cache = MediaCache(self.dimension)
+                buff, mime = cache.get_frame_context_images(db_data, self.number)
+                if not buff:
+                    return HttpResponseNotFound()
+                return HttpResponse(io.BytesIO(buff), content_type=mime)
             else:
                 return Response(data='unknown data type {}.'.format(self.type),
                     status=status.HTTP_400_BAD_REQUEST)
@@ -671,6 +691,45 @@ class DataChunkGetter:
             msg = str(ex) if not isinstance(ex, ValidationError) else \
                 '\n'.join([str(d) for d in ex.detail])
             return Response(data=msg, status=ex.status_code)
+
+
+class JobDataGetter(DataChunkGetter):
+    def __init__(self, job: Job, data_type, data_num, data_quality):
+        super().__init__(data_type, data_num, data_quality, task_dim=job.segment.task.dimension)
+        self.job = job
+
+    def _check_frame_range(self, frame: int):
+        frame_range = self.job.segment.frame_set
+        if frame not in frame_range:
+            raise ValidationError("The frame number doesn't belong to the job")
+
+    def __call__(self, request, start, stop, db_data):
+        if self.type == 'chunk' and self.job.segment.type == SegmentType.SPECIFIC_FRAMES:
+            frame_provider = FrameProvider(db_data, self.dimension)
+
+            start_chunk = frame_provider.get_chunk_number(start)
+            stop_chunk = frame_provider.get_chunk_number(stop)
+            # pylint: disable=superfluous-parens
+            if not (start_chunk <= self.number <= stop_chunk):
+                raise ValidationError('The chunk number should be in the ' +
+                    f'[{start_chunk}, {stop_chunk}] range')
+
+            cache = MediaCache()
+
+            if settings.USE_CACHE and db_data.storage_method == StorageMethodChoice.CACHE:
+                buf, mime = cache.get_selective_job_chunk_data_with_mime(
+                    chunk_number=self.number, quality=self.quality, job=self.job
+                )
+            else:
+                buf, mime = cache.prepare_selective_job_chunk(
+                    chunk_number=self.number, quality=self.quality, db_job=self.job
+                )
+
+            return HttpResponse(buf.getvalue(), content_type=mime)
+
+        else:
+            return super().__call__(request, start, stop, db_data)
+
 
 @extend_schema(tags=['tasks'])
 @extend_schema_view(
@@ -796,7 +855,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         })
 
     @action(detail=False, methods=['OPTIONS', 'POST'], url_path=r'backup/?$',
-        serializer_class=TaskFileSerializer(required=False),
+        serializer_class=None,
         parser_classes=_UPLOAD_PARSER_CLASSES)
     def import_backup(self, request, pk=None):
         return self.deserialize(request, backup.import_task)
@@ -830,6 +889,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def export_backup(self, request, pk=None):
         return self.serialize(request, backup.export)
 
+    @transaction.atomic
     def perform_update(self, serializer):
         instance = serializer.instance
 
@@ -842,27 +902,102 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         if updated_instance.project:
             updated_instance.project.save()
 
+    @transaction.atomic
     def perform_create(self, serializer, **kwargs):
         serializer.save(
             owner=self.request.user,
             organization=self.request.iam_context['organization']
         )
+
         if serializer.instance.project:
             db_project = serializer.instance.project
             db_project.save()
             assert serializer.instance.organization == db_project.organization
 
+        # Required for the extra summary information added in the queryset
+        serializer.instance = self.get_queryset().get(pk=serializer.instance.pk)
+
+    def _is_data_uploading(self) -> bool:
+        return 'data' in self.action
+
     # UploadMixin method
     def get_upload_dir(self):
         if 'annotations' in self.action:
             return self._object.get_tmp_dirname()
-        elif 'data' in self.action:
+        elif self._is_data_uploading():
             return self._object.data.get_upload_dirname()
         elif 'backup' in self.action:
             return backup.get_backup_dirname()
         return ""
 
+    def _prepare_upload_info_entry(self, filename: str) -> str:
+        filename = osp.normpath(filename)
+        upload_dir = self.get_upload_dir()
+        return osp.join(upload_dir, filename)
+
+    def _maybe_append_upload_info_entry(self, filename: str):
+        task_data = cast(Data, self._object.data)
+
+        filename = self._prepare_upload_info_entry(filename)
+        task_data.client_files.get_or_create(file=filename)
+
+    def _append_upload_info_entries(self, client_files: List[Dict[str, Any]]):
+        # batch version without optional insertion
+        task_data = cast(Data, self._object.data)
+        task_data.client_files.bulk_create([
+            ClientFile(**cf, data=task_data) for cf in client_files
+        ])
+
+    def _sort_uploaded_files(self, uploaded_files: List[str], ordering: List[str]) -> List[str]:
+        """
+        Applies file ordering for the "predefined" file sorting method of the task creation.
+
+        Read more: https://github.com/opencv/cvat/issues/5061
+        """
+
+        expected_files = ordering
+
+        uploaded_file_names = set(uploaded_files)
+        mismatching_files = list(uploaded_file_names.symmetric_difference(expected_files))
+        if mismatching_files:
+            DISPLAY_ENTRIES_COUNT = 5
+            mismatching_display = [
+                fn + (" (extra)" if fn in uploaded_file_names else " (missing)")
+                for fn in mismatching_files[:DISPLAY_ENTRIES_COUNT]
+            ]
+            remaining_count = len(mismatching_files) - DISPLAY_ENTRIES_COUNT
+            raise ValidationError(
+                "Uploaded files do not match the '{}' field contents. "
+                "Please check the uploaded data and the list of uploaded files. "
+                "Mismatching files: {}{}"
+                .format(
+                    self._UPLOAD_FILE_ORDER_FIELD,
+                    ", ".join(mismatching_display),
+                    f" (and {remaining_count} more). " if 0 < remaining_count else ""
+                )
+            )
+
+        return list(expected_files)
+
     # UploadMixin method
+    def init_tus_upload(self, request):
+        response = super().init_tus_upload(request)
+
+        if self._is_data_uploading() and response.status_code == status.HTTP_201_CREATED:
+            self._maybe_append_upload_info_entry(response['Upload-Filename'])
+
+        return response
+
+    # UploadMixin method
+    def append_files(self, request):
+        client_files = self._get_request_client_files(request)
+        if self._is_data_uploading() and client_files:
+            self._append_upload_info_entries(client_files)
+
+        return super().append_files(request)
+
+    # UploadMixin method
+    @transaction.atomic
     def upload_finished(self, request):
         if self.action == 'annotations':
             format_name = request.query_params.get("format", "")
@@ -887,23 +1022,41 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             task_data = self._object.data
             serializer = DataSerializer(task_data, data=request.data)
             serializer.is_valid(raise_exception=True)
-            data = dict(serializer.validated_data.items())
-            uploaded_files = task_data.get_uploaded_files()
-            uploaded_files.extend(data.get('client_files'))
-            serializer.validated_data.update({'client_files': uploaded_files})
 
+            # Append new files to the previous ones
+            if uploaded_files := serializer.validated_data.get('client_files', None):
+                self._append_upload_info_entries(uploaded_files)
+                serializer.validated_data['client_files'] = [] # avoid file info duplication
+
+            # Refresh the db value with the updated file list and other request parameters
             db_data = serializer.save()
             self._object.data = db_data
             self._object.save()
-            data = {k: v for k, v in serializer.data.items()}
+
+            # Create a temporary copy of the parameters we will try to create the task with
+            data = copy(serializer.data)
 
             for optional_field in ['job_file_mapping', 'server_files_exclude']:
                 if optional_field in serializer.validated_data:
                     data[optional_field] = serializer.validated_data[optional_field]
 
+            if (
+                data['sorting_method'] == models.SortingMethod.PREDEFINED
+                and (uploaded_files := data['client_files'])
+                and (
+                    uploaded_file_order := serializer.validated_data[self._UPLOAD_FILE_ORDER_FIELD]
+                )
+            ):
+                # In the case of predefined sorting and custom file ordering,
+                # the requested order must be applied
+                data['client_files'] = self._sort_uploaded_files(
+                    uploaded_files, uploaded_file_order
+                )
+
             data['use_zip_chunks'] = serializer.validated_data['use_zip_chunks']
             data['use_cache'] = serializer.validated_data['use_cache']
             data['copy_data'] = serializer.validated_data['copy_data']
+
             if data['use_cache']:
                 self._object.data.storage_method = StorageMethodChoice.CACHE
                 self._object.data.save(update_fields=['storage_method'])
@@ -913,9 +1066,9 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             if db_data.cloud_storage:
                 self._object.data.storage = StorageChoice.CLOUD_STORAGE
                 self._object.data.save(update_fields=['storage'])
+            if 'stop_frame' not in serializer.validated_data:
                 # if the value of stop_frame is 0, then inside the function we cannot know
                 # the value specified by the user or it's default value from the database
-            if 'stop_frame' not in serializer.validated_data:
                 data['stop_frame'] = None
             task.create(self._object, data, request)
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
@@ -936,12 +1089,69 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         return Response(data='Unknown upload was finished',
                         status=status.HTTP_400_BAD_REQUEST)
 
+    _UPLOAD_FILE_ORDER_FIELD = 'upload_file_order'
+    assert _UPLOAD_FILE_ORDER_FIELD in DataSerializer().fields
+
     @extend_schema(methods=['POST'],
-        summary='Method permanently attaches images or video to a task. Supports tus uploads, see more https://tus.io/',
-        request=DataSerializer,
+        summary="Method permanently attaches data (images, video, etc.) to a task",
+        description=textwrap.dedent("""\
+            Allows to upload data to a task.
+            Supports the TUS open file uploading protocol (https://tus.io/).
+
+            Supports the following protocols:
+
+            1. A single Data request
+
+            and
+
+            2.1. An Upload-Start request
+            2.2.a. Regular TUS protocol requests (Upload-Length + Chunks)
+            2.2.b. Upload-Multiple requests
+            2.3. An Upload-Finish request
+
+            Requests:
+            - Data - POST, no extra headers or 'Upload-Start' + 'Upload-Finish' headers.
+              Contains data in the body.
+            - Upload-Start - POST, has an 'Upload-Start' header. No body is expected.
+            - Upload-Length - POST, has an 'Upload-Length' header (see the TUS specification)
+            - Chunk - HEAD/PATCH (see the TUS specification). Sent to /data/<file id> endpoints.
+            - Upload-Finish - POST, has an 'Upload-Finish' header. Can contain data in the body.
+            - Upload-Multiple - POST, has an 'Upload-Multiple' header. Contains data in the body.
+
+            The 'Upload-Finish' request allows to specify the uploaded files should be ordered.
+            This may be needed if the files can be sent unordered. To state that the input files
+            are sent ordered, pass an empty list of files in the '{upload_file_order_field}' field.
+            If the files are sent unordered, the ordered file list is expected
+            in the '{upload_file_order_field}' field. It must be a list of string file paths,
+            relative to the dataset root.
+
+            Example:
+            files = [
+                "cats/cat_1.jpg",
+                "dogs/dog2.jpg",
+                "image_3.png",
+                ...
+            ]
+
+            Independently of the file declaration field used
+            ('client_files', 'server_files', etc.), when the 'predefined'
+            sorting method is selected, the uploaded files will be ordered according
+            to the '.jsonl' manifest file, if it is found in the list of files.
+            For archives (e.g. '.zip'), a manifest file ('*.jsonl') is required when using
+            the 'predefined' file ordering. Such file must be provided next to the archive
+            in the list of files. Read more about manifest files here:
+            https://opencv.github.io/cvat/docs/manual/advanced/dataset_manifest/
+
+            After all data is sent, the operation status can be retrieved via
+            the /status endpoint.
+        """.format_map(
+            {'upload_file_order_field': _UPLOAD_FILE_ORDER_FIELD}
+        )),
+        # TODO: add a tutorial on this endpoint in the REST API docs
+        request=DataSerializer(required=False),
         parameters=[
             OpenApiParameter('Upload-Start', location=OpenApiParameter.HEADER, type=OpenApiTypes.BOOL,
-                description='Initializes data upload. No data should be sent with this header'),
+                description='Initializes data upload. Optionally, can include upload metadata in the request body.'),
             OpenApiParameter('Upload-Multiple', location=OpenApiParameter.HEADER, type=OpenApiTypes.BOOL,
                 description='Indicates that data with this request are single or multiple files that should be attached to a task'),
             OpenApiParameter('Upload-Finish', location=OpenApiParameter.HEADER, type=OpenApiTypes.BOOL,
@@ -950,7 +1160,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         responses={
             '202': OpenApiResponse(description=''),
         })
-    @extend_schema(methods=['GET'], summary='Method returns data for a specific task',
+    @extend_schema(methods=['GET'],
+        summary='Method returns data for a specific task',
         parameters=[
             OpenApiParameter('type', location=OpenApiParameter.QUERY, required=False,
                 type=OpenApiTypes.STR, enum=['chunk', 'frame', 'context_image'],
@@ -1040,6 +1251,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 description='rq id'),
         ],
         request=PolymorphicProxySerializer('TaskAnnotationsUpdate',
+            # TODO: refactor to use required=False when possible
             serializers=[LabeledDataSerializer, AnnotationFileSerializer, OpenApiTypes.NONE],
             resource_type_field_name=None
         ),
@@ -1070,6 +1282,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
         ],
         request=PolymorphicProxySerializer('TaskAnnotationsWrite',
+            # TODO: refactor to use required=False when possible
             serializers=[AnnotationFileSerializer, OpenApiTypes.NONE],
             resource_type_field_name=None
         ),
@@ -1307,8 +1520,15 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         return data_getter(request, self._object.data.start_frame,
             self._object.data.stop_frame, self._object.data)
 
+
 @extend_schema(tags=['jobs'])
 @extend_schema_view(
+    create=extend_schema(
+        summary='Method creates a new job in the task',
+        request=JobWriteSerializer,
+        responses={
+            '201': JobReadSerializer, # check JobWriteSerializer.to_representation
+        }),
     retrieve=extend_schema(
         summary='Method returns details of a job',
         responses={
@@ -1324,10 +1544,20 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         request=JobWriteSerializer(partial=True),
         responses={
             '200': JobReadSerializer, # check JobWriteSerializer.to_representation
-        })
+        }),
+    destroy=extend_schema(
+        summary='Method deletes a job and its related annotations',
+        description=textwrap.dedent("""\
+            Please note, that not every job can be removed. Currently,
+            it is only available for Ground Truth jobs.
+            """),
+        responses={
+            '204': OpenApiResponse(description='The job has been deleted'),
+        }),
 )
-class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
-    mixins.RetrieveModelMixin, PartialUpdateModelMixin, UploadMixin, AnnotationMixin
+class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateModelMixin,
+    mixins.RetrieveModelMixin, PartialUpdateModelMixin, mixins.DestroyModelMixin,
+    UploadMixin, AnnotationMixin
 ):
     queryset = Job.objects.select_related('assignee', 'segment__task__data',
         'segment__task__project'
@@ -1341,7 +1571,9 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     iam_organization_field = 'segment__task__organization'
     search_fields = ('task_name', 'project_name', 'assignee', 'state', 'stage')
-    filter_fields = list(search_fields) + ['id', 'task_id', 'project_id', 'updated_date', 'dimension']
+    filter_fields = list(search_fields) + [
+        'id', 'task_id', 'project_id', 'updated_date', 'dimension', 'type'
+    ]
     simple_filters = list(set(filter_fields) - {'id', 'updated_date'})
     ordering_fields = list(filter_fields)
     ordering = "-id"
@@ -1369,6 +1601,19 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return JobReadSerializer
         else:
             return JobWriteSerializer
+
+    @transaction.atomic
+    def perform_create(self, serializer):
+        super().perform_create(serializer)
+
+        # Required for the extra summary information added in the queryset
+        serializer.instance = self.get_queryset().get(pk=serializer.instance.pk)
+
+    def perform_destroy(self, instance):
+        if instance.type != JobType.GROUND_TRUTH:
+            raise ValidationError("Only ground truth jobs can be removed")
+
+        return super().perform_destroy(instance)
 
     # UploadMixin method
     def get_upload_dir(self):
@@ -1450,7 +1695,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             OpenApiParameter('filename', description='Annotation file name',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
         ],
-        request=AnnotationFileSerializer,
+        request=AnnotationFileSerializer(required=False),
         responses={
             '201': OpenApiResponse(description='Uploading has finished'),
             '202': OpenApiResponse(RqIdSerializer, description='Uploading has been started'),
@@ -1469,12 +1714,22 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         parameters=[
             OpenApiParameter('format', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
                 description='Input format name\nYou can get the list of supported formats at:\n/server/annotation/formats'),
+            OpenApiParameter('location', description='where to import the annotation from',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
+                enum=Location.list()),
+            OpenApiParameter('cloud_storage_id', description='Storage id',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.NUMBER, required=False),
+            OpenApiParameter('use_default_location', description='Use the location that was configured in the task to import annotation',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.BOOL, required=False,
+                default=True),
+            OpenApiParameter('filename', description='Annotation file name',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
             OpenApiParameter('rq_id', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
                 description='rq id'),
         ],
         request=PolymorphicProxySerializer(
             component_name='JobAnnotationsUpdate',
-            serializers=[LabeledDataSerializer, AnnotationFileSerializer],
+            serializers=[LabeledDataSerializer, AnnotationFileSerializer(required=False)],
             resource_type_field_name=None
         ),
         responses={
@@ -1619,15 +1874,16 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         responses={
             '200': OpenApiResponse(OpenApiTypes.BINARY, description='Data of a specific type'),
         })
-    @action(detail=True, methods=['GET'])
+    @action(detail=True, methods=['GET'],
+        simple_filters=[] # type query parameter conflicts with the filter
+    )
     def data(self, request, pk):
         db_job = self.get_object() # call check_object_permissions as well
         data_type = request.query_params.get('type', None)
         data_num = request.query_params.get('number', None)
         data_quality = request.query_params.get('quality', 'compressed')
 
-        data_getter = DataChunkGetter(data_type, data_num, data_quality,
-            db_job.segment.task.dimension)
+        data_getter = JobDataGetter(db_job, data_type, data_num, data_quality)
 
         return data_getter(request, db_job.segment.start_frame,
             db_job.segment.stop_frame, db_job.segment.task.data)
@@ -1657,8 +1913,10 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         db_data = db_job.segment.task.data
         start_frame = db_job.segment.start_frame
         stop_frame = db_job.segment.stop_frame
-        data_start_frame = db_data.start_frame + start_frame * db_data.get_frame_step()
-        data_stop_frame = db_data.start_frame + stop_frame * db_data.get_frame_step()
+        frame_step = db_data.get_frame_step()
+        data_start_frame = db_data.start_frame + start_frame * frame_step
+        data_stop_frame = min(db_data.stop_frame, db_data.start_frame + stop_frame * frame_step)
+        frame_set = db_job.segment.frame_set
 
         if request.method == 'PATCH':
             serializer = DataMetaWriteSerializer(instance=db_data, data=request.data)
@@ -1678,10 +1936,17 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         if hasattr(db_data, 'video'):
             media = [db_data.video]
         else:
-            media = list(db_data.images.filter(
-                frame__gte=data_start_frame,
-                frame__lte=data_stop_frame,
-            ).all())
+            media = [
+                # Insert placeholders if frames are skipped
+                # We could skip them here too, but UI can't decode chunks then
+                f if f.frame in frame_set else SimpleNamespace(
+                    path=f'placeholder.jpg', width=f.width, height=f.height
+                )
+                for f in db_data.images.filter(
+                    frame__gte=data_start_frame,
+                    frame__lte=data_stop_frame,
+                ).all()
+            ]
 
         # Filter data with segment size
         # Should data.size also be cropped by segment size?
@@ -1691,6 +1956,8 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         )
         db_data.start_frame = data_start_frame
         db_data.stop_frame = data_stop_frame
+        db_data.size = len(frame_set)
+        db_data.included_frames = db_job.segment.frames or None
 
         frame_meta = [{
             'width': item.width,
@@ -1721,6 +1988,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         return data_getter(request, self._object.segment.start_frame,
            self._object.segment.stop_frame, self._object.segment.task.data)
+
 
 @extend_schema(tags=['issues'])
 @extend_schema_view(
@@ -2392,6 +2660,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         except Exception as ex:
             msg = str(ex)
             return HttpResponseBadRequest(msg)
+
 
 def rq_exception_handler(rq_job, exc_type, exc_value, tb):
     rq_job.meta["formatted_exception"] = "".join(

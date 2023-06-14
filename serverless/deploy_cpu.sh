@@ -24,7 +24,8 @@ do
     fi
 
     echo "Deploying $func_rel_path function..."
-    nuctl deploy --project-name cvat --path "$func_root" --platform local
+    nuctl deploy --project-name cvat --path "$func_root" \
+        --file "$func_config" --platform local
 done
 
 nuctl get function --platform local
