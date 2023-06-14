@@ -22,42 +22,28 @@ spec:
 
     directives:
       preCopy:
-        - kind: ENV
-          value: PATH="/root/miniconda3/bin:${PATH}"
-        - kind: ARG
-          value: PATH="/root/miniconda3/bin:${PATH}"
         - kind: RUN
-          value: rm -f /etc/apt/sources.list.d/cuda.list /etc/apt/sources.list.d/nvidia-ml.list
-        - kind: RUN
-          value: apt update && apt install -y --no-install-recommends wget git ca-certificates libglib2.0-0 libgl1 && rm -rf /var/lib/apt/lists/* # libxrender1 libxext6
-        - kind: RUN
-          value: wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh &&
-            chmod +x Miniconda3-latest-Linux-x86_64.sh && bash Miniconda3-latest-Linux-x86_64.sh -b &&
-            rm -f Miniconda3-latest-Linux-x86_64.sh
+          value: |-
+            apt update \
+              && apt install -y --no-install-recommends \
+                git \
+                ca-certificates \
+                python-is-python3 \
+                python3 \
+                python3-pip \
+              && rm -rf /var/lib/apt/lists/*
         - kind: WORKDIR
           value: /opt/nuclio
         - kind: RUN
-          value: conda create -y -n transt python=3.8
-        - kind: SHELL
-          value: '["conda", "run", "-n", "transt", "/bin/bash", "-c"]'
-        - kind: RUN
           value: git clone --depth 1 --branch v1.0 https://github.com/dschoerk/TransT trans-t
-
         - kind: RUN
-          value: pip install torch==1.7.1+cpu torchvision==0.8.2+cpu torchaudio==0.7.2 -f https://download.pytorch.org/whl/torch_stable.html
-
-        - kind: RUN
-          value: pip install jsonpickle opencv-python
-
-        - kind: RUN
-          value: wget --no-check-certificate 'https://drive.google.com/uc?id=1Pq0sK-9jmbLAVtgB9-dPDc2pipCxYdM5' -O /transt.pth
-
-        - kind: RUN
-          value: apt remove -y git wget
-        - kind: RUN
-          value: cd trans-t
-        - kind: ENTRYPOINT
-          value: '["conda", "run", "-n", "transt"]'
+          value: |-
+            pip install \
+              jsonpickle opencv-python-headless \
+              torch==1.7.1+cpu torchvision==0.8.2+cpu \
+              --extra-index-url https://download.pytorch.org/whl/cpu
+        - kind: ADD
+          value: https://drive.google.com/uc?id=1Pq0sK-9jmbLAVtgB9-dPDc2pipCxYdM5 /transt.pth
 
   triggers:
     myHttpTrigger:
