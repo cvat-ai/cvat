@@ -71,7 +71,7 @@ export const config: Partial<Config> = {
                 // },
             },
         },
-        updated_date: {
+        updatedDate: {
             label: 'Last updated',
             type: 'datetime',
             operators: ['between', 'greater', 'greater_or_equal', 'less', 'less_or_equal'],
