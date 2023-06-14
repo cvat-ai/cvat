@@ -1742,7 +1742,7 @@ class AnnotationGuidePermission(OpenPolicyAgentPermission):
                     raise ValidationError(str(ex))
             elif self.task_id is not None:
                 try:
-                    db_task = Task.objects.get(id=self.project_id)
+                    db_task = Task.objects.get(id=self.task_id)
                     db_organization = getattr(db_task, 'organization', {})
                     data.update({
                         'task': {

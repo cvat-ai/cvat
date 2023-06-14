@@ -2036,7 +2036,6 @@ class AnnotationGuideWriteSerializer(WriteOnceMixin, serializers.ModelSerializer
                 task = models.Task.objects.get(id=task_id)
             except models.Task.DoesNotExist:
                 raise serializers.ValidationError(f'The specified task #{task_id} does not exist.')
-            print(task)
         db_data = models.AnnotationGuide.objects.create(**validated_data, project = project, task = task)
         return db_data
 

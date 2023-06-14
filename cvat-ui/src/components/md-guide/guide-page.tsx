@@ -4,7 +4,9 @@
 
 import './styles.scss';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, {
+    useState, useEffect, useRef, useCallback,
+} from 'react';
 import { useLocation, useParams } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import notification from 'antd/lib/notification';
@@ -88,7 +90,7 @@ function GuidePage(): JSX.Element {
     }, [guide, fetching]);
 
     const handleInsert = async (event: React.ClipboardEvent | React.DragEvent, files: FileList): Promise<void> => {
-        if (files.length) {
+        if (files.length && guide.id) {
             event.preventDefault();
             const assetsToAdd = Array.from(files);
             const addedAssets: [File, string][] = [];
@@ -175,7 +177,7 @@ function GuidePage(): JSX.Element {
                 <Space align='end' className='cvat-guide-page-bottom'>
                     <Button
                         type='primary'
-                        disabled={fetching}
+                        disabled={fetching || !guide.id}
                         onClick={() => submit(value)}
                     >
                         Submit
